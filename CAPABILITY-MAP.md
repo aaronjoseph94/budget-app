@@ -20,7 +20,7 @@ Dependency arrows point one way only.
 | `savings-coach` | Weekly limits and streaks, savings-capacity analysis, goal tracking and tradeoff conversion, the spend-interrogation loop and the answers it learns from, and the surfacing of insights: ranking, dismissal state, cadence and narration. The behavioural layer; every number it shows and every detector that fires comes from `calc-engine`. | `calc-engine`, `schema-contracts`, `persistence-schema`, `ingest-pipeline`, `llm-providers` |
 | `report-export` | Excel workbook and PDF report generation. Formats engine output and embeds `chart-specs` SVG; computes nothing. Dynamically imported, runs on the client. | `calc-engine`, `chart-specs`, `schema-contracts` |
 | `reminders-scheduler` | pg_cron bill reminders plus the heartbeat row that proves the job is still firing. | `persistence-schema`, `calc-engine` |
-| `app-client` | Vite + React PWA: routes, magic-link auth, the Supabase/TanStack Query data layer, design tokens, and every screen. Renders engine output. Computes nothing. | `calc-engine`, `schema-contracts`, `ingest-pipeline` |
+| `app-client` | Vite + React PWA: hash navigation (ADR 0003), magic-link auth, the Supabase data layer, design tokens, and every screen. Renders engine output. Computes nothing. | `calc-engine`, `schema-contracts`, `ingest-pipeline` |
 
 **Build order**
 

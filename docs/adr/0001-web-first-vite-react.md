@@ -3,6 +3,8 @@
 **Date:** 2026-09-21
 **Status:** Accepted
 **Supersedes:** the Expo decision recorded in CLAUDE.md on 2026-09-21
+**Amended by:** ADR 0003 (2026-09-22) — the app never adopted TanStack Router
+or TanStack Query; navigation stays the hand-rolled hash in `nav.ts`
 
 ## Context
 
