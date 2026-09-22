@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { cents, isoDate } from '@budget/money-primitives'
 import {
   DEDUPE_HASH_VERSION,
+  assignDiscriminators,
   computeDedupeHash,
   dedupeCanonicalString,
   type DedupeInput,
@@ -103,5 +104,81 @@ describe('computeDedupeHash', () => {
     )
     const hex = [...new Uint8Array(expected)].map((b) => b.toString(16).padStart(2, '0')).join('')
     expect(await computeDedupeHash(input)).toBe(hex)
+  })
+})
+
+describe('assignDiscriminators', () => {
+  const tuple = (r: { date: string; amount: number; merchant: string }) =>
+    `${r.date}|${r.amount}|${r.merchant}`
+
+  it('numbers identical rows in the order they appear', () => {
+    const rows = [
+      { date: '2025-03-01', amount: -825, merchant: 'COFFEE' },
+      { date: '2025-03-01', amount: -825, merchant: 'COFFEE' },
+      { date: '2025-03-01', amount: -825, merchant: 'COFFEE' },
+    ]
+    expect(assignDiscriminators(rows, tuple)).toEqual([
+      { kind: 'occurrence', index: 1 },
+      { kind: 'occurrence', index: 2 },
+      { kind: 'occurrence', index: 3 },
+    ])
+  })
+
+  it('counts per identical tuple, not per batch', () => {
+    const rows = [
+      { date: '2025-03-01', amount: -825, merchant: 'COFFEE' },
+      { date: '2025-03-01', amount: -1200, merchant: 'LUNCH' },
+      { date: '2025-03-01', amount: -825, merchant: 'COFFEE' },
+    ]
+    expect(assignDiscriminators(rows, tuple)).toEqual([
+      { kind: 'occurrence', index: 1 },
+      { kind: 'occurrence', index: 1 },
+      { kind: 'occurrence', index: 2 },
+    ])
+  })
+
+  it('keeps indices stable when a later import overlaps an earlier one', () => {
+    // The re-import case. January's rows must key identically whether they
+    // arrive alone or inside a January-to-February export, or every overlapping
+    // row duplicates on the second import.
+    const january = [
+      { date: '2025-01-05', amount: -825, merchant: 'COFFEE' },
+      { date: '2025-01-05', amount: -825, merchant: 'COFFEE' },
+    ]
+    const januaryToFebruary = [
+      ...january,
+      { date: '2025-02-03', amount: -825, merchant: 'COFFEE' },
+      { date: '2025-02-03', amount: -825, merchant: 'COFFEE' },
+    ]
+    const first = assignDiscriminators(january, tuple)
+    const second = assignDiscriminators(januaryToFebruary, tuple)
+    expect(second.slice(0, 2)).toEqual(first)
+  })
+
+  it('prefers the issuer id and does not count those rows', () => {
+    // Mixing the schemes would renumber the id-carrying rows and re-key them.
+    const rows = [
+      { date: '2025-03-01', amount: -825, merchant: 'COFFEE', txnId: 'TXN-1' },
+      { date: '2025-03-01', amount: -825, merchant: 'COFFEE', txnId: undefined },
+      { date: '2025-03-01', amount: -825, merchant: 'COFFEE', txnId: undefined },
+    ]
+    expect(assignDiscriminators(rows, tuple, (r) => r.txnId)).toEqual([
+      { kind: 'issuer_id', id: 'TXN-1' },
+      { kind: 'occurrence', index: 1 },
+      { kind: 'occurrence', index: 2 },
+    ])
+  })
+
+  it('treats an issuer id the export left blank as absent, not as an identity', () => {
+    // Otherwise every row with an empty id column collapses onto one key, and
+    // all but the first of them vanish.
+    const rows = [
+      { date: '2025-03-01', amount: -825, merchant: 'COFFEE', txnId: '' },
+      { date: '2025-03-01', amount: -825, merchant: 'COFFEE', txnId: '' },
+    ]
+    expect(assignDiscriminators(rows, tuple, (r) => r.txnId)).toEqual([
+      { kind: 'occurrence', index: 1 },
+      { kind: 'occurrence', index: 2 },
+    ])
   })
 })

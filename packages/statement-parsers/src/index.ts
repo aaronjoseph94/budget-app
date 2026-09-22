@@ -6,6 +6,7 @@
  */
 export {
   DEDUPE_HASH_VERSION,
+  assignDiscriminators,
   computeDedupeHash,
   dedupeCanonicalString,
   type DedupeInput,

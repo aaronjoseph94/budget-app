@@ -100,3 +100,36 @@ export async function computeDedupeHash(input: DedupeInput): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', bytes)
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')
 }
+
+/**
+ * Assign occurrence indices across one batch, in the order rows appear.
+ *
+ * Counting is per identical tuple, not per batch, which is what makes the index
+ * stable across overlapping imports: a January row keeps index 1 whether it
+ * arrives in a January statement or a January-to-February one, because the
+ * February rows differ by date and never share its tuple.
+ *
+ * Rows carrying an issuer id keep it and are not counted — their identity is
+ * already exact, and mixing the two schemes would renumber them.
+ */
+export function assignDiscriminators<T>(
+  rows: readonly T[],
+  tupleOf: (row: T) => string,
+  issuerIdOf?: (row: T) => string | undefined,
+): readonly OccurrenceDiscriminator[] {
+  const seen = new Map<string, number>()
+
+  return rows.map((row) => {
+    // An empty id is absent, not an identity: a column the issuer left blank
+    // would otherwise make every such row share one key.
+    const issuerId = issuerIdOf?.(row)
+    if (issuerId !== undefined && issuerId.length > 0) {
+      return { kind: 'issuer_id', id: issuerId }
+    }
+    const tuple = tupleOf(row)
+    const previous = seen.get(tuple)
+    const next = previous === undefined ? 1 : previous + 1
+    seen.set(tuple, next)
+    return { kind: 'occurrence', index: next }
+  })
+}
