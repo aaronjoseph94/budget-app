@@ -95,7 +95,13 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     const wantsObject = headers.get('accept')?.startsWith('application/vnd.pgrst.object+json') === true
 
     if (method === 'POST') {
-      const row = { id: `new-${nextId++}`, ...(JSON.parse(String(init?.body)) as Row) }
+      const row: Row = { id: `new-${nextId++}`, ...(JSON.parse(String(init?.body)) as Row) }
+      // What the database refuses, in the order it checks: NOT NULL before
+      // UNIQUE. Since 0005 a category has no default list (N11).
+      if (target === 'categories' && row.kind === undefined) return pgError('23502')
+      if ((target === 'categories' || target === 'accounts') && table.some((r) => r.name === row.name)) {
+        return pgError('23505', 409)
+      }
       table.push(row)
       return json(wantsObject ? row : [row], 201)
     }

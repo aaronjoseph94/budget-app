@@ -7,8 +7,8 @@ import { renderScreen } from './render-screen.js'
 function seeded(): FakeSupabase {
   return createFakeSupabase({
     categories: [
-      { id: 'c1', name: 'Groceries', weekly_budget_cents: 15000 },
-      { id: 'c2', name: 'Eating out', weekly_budget_cents: null },
+      { id: 'c1', name: 'Groceries', kind: 'variable', sort_order: 0, weekly_budget_cents: 15000 },
+      { id: 'c2', name: 'Eating out', kind: 'variable', sort_order: 0, weekly_budget_cents: null },
     ],
     ingest_candidates: [
       { id: 'p1', posted_on: '2026-03-09', amount_cents: -1349, merchant: 'LITWARE COFFEE', merchant_raw: 'SQ *LITWARE COFFEE', status: 'pending' },
@@ -80,9 +80,28 @@ describe('ReviewScreen', () => {
     fireEvent.click(coffee.getByRole('button', { name: /Approve/ }))
 
     await screen.findByText(/^Added\./)
+    // A charge defaults to Variable expenses, at the bottom of that list.
     const created = fake.tables.categories.find((c) => c.name === 'Coffee')
-    expect(created).toBeDefined()
+    expect(created).toMatchObject({ kind: 'variable', sort_order: 1 })
     expect(fake.rpcCalls).toEqual([{ name: 'approve_candidate', args: { p_candidate: 'p1', p_category: created?.id } }])
+  })
+
+  it('asks which list for money in, and files the new category there', async () => {
+    const fake = seeded()
+    renderScreen(<ReviewScreen />, fake)
+
+    const refund = await row('ADVENTURE WORKS REFUND')
+    fireEvent.change(refund.getByRole('combobox', { name: 'Category' }), { target: { value: '__new__' } })
+    fireEvent.change(refund.getByPlaceholderText(/Category name/), { target: { value: 'Card payments' } })
+    const list = refund.getByRole<HTMLSelectElement>('combobox', { name: 'Which list' })
+    expect(list.value).toBe('')
+    expect(refund.getByRole('button', { name: /Approve/ })).toHaveProperty('disabled', true)
+
+    fireEvent.change(list, { target: { value: 'transfer' } })
+    fireEvent.click(refund.getByRole('button', { name: /Approve/ }))
+
+    await screen.findByText(/^Added\./)
+    expect(fake.tables.categories.find((c) => c.name === 'Card payments')).toMatchObject({ kind: 'transfer', sort_order: 0 })
   })
 
   it('says so when the charge was already in the ledger', async () => {

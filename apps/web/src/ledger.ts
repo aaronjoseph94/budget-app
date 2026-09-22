@@ -15,6 +15,7 @@ import {
   type RejectedRow,
 } from '@budget/statement-parsers'
 import { describeWriteFailure } from './format.js'
+import { LIST_HEADING, type CategoryKind } from './lists.js'
 import type { SupabaseClient } from './supabase.js'
 
 export type IngestSource = 'card_csv' | 'card_xlsx' | 'card_pdf' | 'receipt_photo' | 'typed'
@@ -303,9 +304,15 @@ export interface NamedRow {
 }
 
 export interface Category extends NamedRow {
+  /** Which of Workbook's lists it is on (migration 0005). */
+  readonly kind: CategoryKind
+  /** Its row within that list; the list sorts by this, then by name. */
+  readonly sort_order: number
   /** Null when no weekly limit is set, which is not the same as zero. */
   readonly weekly_budget_cents: number | null
 }
+
+type Named = NamedRow & { readonly kind?: CategoryKind }
 
 /**
  * Find or create a row by name.
@@ -315,44 +322,85 @@ export interface Category extends NamedRow {
  * uniqueness made that race-safe; it did not — two quick taps both looked,
  * both found nothing, and the second insert failed with a raw 23505. Here the
  * violation IS the "already exists" answer.
+ *
+ * `fields` carries what else the table requires. A category needs its list:
+ * since 0005 the database refuses one without (23502), and the NOT NULL check
+ * fires before the unique one, so leaving it out failed even for a name that
+ * already existed (N11). Every column comes back, so the caller can see which
+ * list a name it did not create is on.
  */
 async function ensureNamed(
   supabase: SupabaseClient,
   table: 'accounts' | 'categories',
   userId: string,
   name: string,
-): Promise<NamedRow> {
+  fields: Readonly<Record<string, unknown>>,
+): Promise<Named> {
   const { data: created, error: createError } = await supabase
     .from(table)
-    .insert({ user_id: userId, name })
-    .select('id, name')
+    .insert({ user_id: userId, name, ...fields })
+    .select('*')
     .single()
-  if (createError === null) return created as NamedRow
+  if (createError === null) return created as Named
   if (createError.code !== '23505') fail(createError)
 
   const { data: found, error: findError } = await supabase
     .from(table)
-    .select('id, name')
+    .select('*')
     .eq('name', name)
     .single()
   if (findError !== null) fail(findError)
-  return found as NamedRow
+  return found as Named
 }
 
 export const ensureAccount = (supabase: SupabaseClient, userId: string, name: string) =>
-  ensureNamed(supabase, 'accounts', userId, name)
+  ensureNamed(supabase, 'accounts', userId, name, {})
 
-export const ensureCategory = (supabase: SupabaseClient, userId: string, name: string) =>
-  ensureNamed(supabase, 'categories', userId, name)
+export interface NewCategory {
+  readonly name: string
+  readonly kind: CategoryKind
+  /** From core's endOfList, so a new row lands at the bottom of its list. */
+  readonly sortOrder: number
+}
+
+/**
+ * Find or create a category on a list.
+ *
+ * A name lives on one list only (D11). Typing a name that is already on
+ * another list is refused in words rather than quietly filing the row there:
+ * the person asked for this list, and money received landing in Variable
+ * expenses would count as negative spending.
+ */
+export async function ensureCategory(
+  supabase: SupabaseClient,
+  userId: string,
+  category: NewCategory,
+): Promise<NamedRow> {
+  const row = await ensureNamed(
+    supabase,
+    'categories',
+    userId,
+    category.name,
+    { kind: category.kind, sort_order: category.sortOrder },
+  )
+  if (row.kind !== undefined && row.kind !== category.kind) {
+    throw new Error(
+      `You already have “${category.name}” in ${LIST_HEADING[row.kind]}. Choose it from the list, or use another name.`,
+    )
+  }
+  return row
+}
 
 export async function listCategories(supabase: SupabaseClient): Promise<readonly Category[]> {
   const { data, error } = await supabase
     .from('categories')
-    .select('id, name, weekly_budget_cents')
+    .select('id, name, kind, sort_order, weekly_budget_cents')
+    .order('sort_order')
     .order('name')
   if (error !== null) fail(error)
   return ((data ?? []) as Category[]).map((c) => ({
     ...c,
+    sort_order: Number(c.sort_order),
     weekly_budget_cents: c.weekly_budget_cents === null ? null : Number(c.weekly_budget_cents),
   }))
 }

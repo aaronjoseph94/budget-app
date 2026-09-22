@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { parseMoneyInput, useAppData } from '../app-data.js'
 import { ensureCategory, saveGoal, setWeeklyBudget, type Category } from '../ledger.js'
 import { formatCents } from '../format.js'
+import { atEndOf, ListSelect, type CategoryKind } from '../lists.js'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
@@ -41,13 +42,15 @@ export function SettingsScreen() {
 function BudgetsCard() {
   const { supabase, userId, categories, refresh } = useAppData()
   const [newName, setNewName] = useState('')
+  // A weekly limit is for day-to-day spending, so that list comes first.
+  const [newKind, setNewKind] = useState<CategoryKind | ''>('variable')
   const [error, setError] = useState<string | null>(null)
 
   const add = async () => {
     const name = newName.trim()
-    if (name === '') return
+    if (name === '' || newKind === '') return
     try {
-      await ensureCategory(supabase, userId, name)
+      await ensureCategory(supabase, userId, atEndOf(categories, name, newKind))
       setNewName('')
       await refresh()
     } catch (cause) {
@@ -75,14 +78,17 @@ function BudgetsCard() {
           </ul>
         )}
         <form
-          className="flex gap-2"
+          className="grid grid-cols-[1fr_auto] gap-2 sm:grid-cols-[1fr_11rem_auto]"
           onSubmit={(e) => {
             e.preventDefault()
             void add()
           }}
         >
           <Input placeholder="New category" value={newName} maxLength={60} onChange={(e) => setNewName(e.target.value)} />
-          <Button type="submit" variant="outline" disabled={newName.trim() === ''}>
+          <div className="col-span-2 row-start-2 sm:col-span-1 sm:row-start-1">
+            <ListSelect value={newKind} onChange={setNewKind} />
+          </div>
+          <Button type="submit" variant="outline" disabled={newName.trim() === '' || newKind === ''}>
             <Icon name="plus" /> Add
           </Button>
         </form>

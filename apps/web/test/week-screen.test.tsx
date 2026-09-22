@@ -11,8 +11,8 @@ const TODAY = new Date(2026, 2, 11, 12)
 function seeded(): FakeSupabase {
   return createFakeSupabase({
     categories: [
-      { id: 'c1', name: 'Groceries', weekly_budget_cents: 15000 },
-      { id: 'c2', name: 'Eating out', weekly_budget_cents: 6000 },
+      { id: 'c1', name: 'Groceries', kind: 'variable', sort_order: 0, weekly_budget_cents: 15000 },
+      { id: 'c2', name: 'Eating out', kind: 'variable', sort_order: 0, weekly_budget_cents: 6000 },
     ],
     transactions: [
       { id: 't1', posted_on: '2026-03-09', amount_cents: -6412, merchant_raw: 'CORNER MARKET', category_id: 'c1', source: 'card_pdf' },
@@ -90,7 +90,7 @@ describe('WeekScreen', () => {
   // Hand-derived: budgets 10.00 + 60.00 = 70.00 against 130.12 spent, 60.12 over.
   it('says by how much the week is over budget, and steps forward again', async () => {
     const fake = seeded()
-    fake.tables.categories[0] = { id: 'c1', name: 'Groceries', weekly_budget_cents: 1000 }
+    fake.tables.categories[0] = { id: 'c1', name: 'Groceries', kind: 'variable', sort_order: 0, weekly_budget_cents: 1000 }
     renderScreen(<WeekScreen />, fake)
 
     expect(await screen.findByText('$60.12 over')).toBeTruthy()
@@ -126,7 +126,7 @@ describe('WeekScreen', () => {
     const fake = seeded()
     fake.tables.categories = fake.tables.categories.map((c) => ({ ...c, weekly_budget_cents: null }))
     // In a category of its own, so it nets positive: money in, not a refund.
-    fake.tables.categories.push({ id: 'c3', name: 'Pay', weekly_budget_cents: null })
+    fake.tables.categories.push({ id: 'c3', name: 'Pay', kind: 'income', sort_order: 0, weekly_budget_cents: null })
     fake.tables.transactions.push({ id: 't5', posted_on: '2026-03-12', amount_cents: 2500, merchant_raw: 'PAYROLL', category_id: 'c3', source: 'typed' })
     renderScreen(<WeekScreen />, fake)
 

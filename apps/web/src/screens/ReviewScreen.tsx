@@ -14,6 +14,7 @@ import {
 } from '../ledger.js'
 import { describeReason, formatCents, formatIsoDate, localDateOf, todayIso } from '../format.js'
 import { IngestedText } from '../ui.js'
+import { atEndOf, ListSelect, type CategoryKind } from '../lists.js'
 import { Card } from '../components/ui/card.js'
 import { Alert, Badge, Empty } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
@@ -22,6 +23,12 @@ import { Icon } from '../components/ui/icons.js'
 import { cn } from '../lib/cn.js'
 
 const NEW_CATEGORY = '__new__'
+
+/** A category being made while filing a row: its name and the list it goes on. */
+interface NewName {
+  readonly name: string
+  readonly kind: CategoryKind
+}
 
 /**
  * How far back unreadable lines are shown: imports from the last six weeks.
@@ -87,7 +94,7 @@ export function ReviewScreen() {
 
   const categoryFor = (row: PendingCandidate) => picked[row.id] ?? rules.get(row.merchant) ?? ''
 
-  const act = async (row: PendingCandidate, action: 'approve' | 'reject', newName?: string) => {
+  const act = async (row: PendingCandidate, action: 'approve' | 'reject', created?: NewName) => {
     setBusy(row.id)
     setNote(null)
     setError(null)
@@ -98,7 +105,9 @@ export function ReviewScreen() {
         setNote('Removed from the queue. It will not be counted.')
       } else {
         let categoryId = categoryFor(row)
-        if (newName !== undefined) categoryId = (await ensureCategory(supabase, userId, newName)).id
+        if (created !== undefined) {
+          categoryId = (await ensureCategory(supabase, userId, atEndOf(categories, created.name, created.kind))).id
+        }
         if (categoryId === '' || categoryId === NEW_CATEGORY) return
         const outcome = await approveCandidate(supabase, row.id, categoryId)
         setNote(
@@ -154,7 +163,7 @@ export function ReviewScreen() {
             categories={categories}
             busy={busy === row.id}
             onPick={(id) => setPicked((p) => ({ ...p, [row.id]: id }))}
-            onApprove={(newName) => void act(row, 'approve', newName)}
+            onApprove={(created) => void act(row, 'approve', created)}
             onReject={() => void act(row, 'reject')}
           />
         ))}
@@ -187,12 +196,15 @@ function ReviewRow({
   categories: readonly { id: string; name: string }[]
   busy: boolean
   onPick: (id: string) => void
-  onApprove: (newName?: string) => void
+  onApprove: (created?: NewName) => void
   onReject: () => void
 }) {
   const [newName, setNewName] = useState('')
+  // A charge most likely belongs in Variable expenses. Money in could be a
+  // refund, a card payment or pay, so nothing is assumed for it.
+  const [newKind, setNewKind] = useState<CategoryKind | ''>(row.amount_cents < 0 ? 'variable' : '')
   const creating = categoryId === NEW_CATEGORY
-  const ready = creating ? newName.trim().length > 0 : categoryId !== ''
+  const ready = creating ? newName.trim().length > 0 && newKind !== '' : categoryId !== ''
 
   return (
     <li>
@@ -227,20 +239,25 @@ function ReviewRow({
             </NativeSelect>
           </div>
           {creating ? (
-            <Input
-              autoFocus
-              placeholder="Category name, e.g. Groceries"
-              value={newName}
-              maxLength={60}
-              onChange={(e) => setNewName(e.target.value)}
-              className="flex-1"
-            />
+            <>
+              <Input
+                autoFocus
+                placeholder="Category name, e.g. Groceries"
+                value={newName}
+                maxLength={60}
+                onChange={(e) => setNewName(e.target.value)}
+                className="flex-1"
+              />
+              <div className="sm:w-44">
+                <ListSelect value={newKind} onChange={setNewKind} disabled={busy} />
+              </div>
+            </>
           ) : null}
           <div className="flex gap-2">
             <Button
               className="flex-1 sm:flex-none"
               disabled={!ready || busy}
-              onClick={() => onApprove(creating ? newName.trim() : undefined)}
+              onClick={() => onApprove(creating && newKind !== '' ? { name: newName.trim(), kind: newKind } : undefined)}
             >
               <Icon name="check" /> Approve
             </Button>

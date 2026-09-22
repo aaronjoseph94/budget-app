@@ -8,6 +8,7 @@ import { readStatementPdf, type PdfImport } from '../pdf-import.js'
 import { readReceipt } from '../receipt.js'
 import { formatCents, formatIsoDate, todayIso } from '../format.js'
 import { IngestedText } from '../ui.js'
+import { atEndOf, ListSelect, LISTS_FOR, type CategoryKind } from '../lists.js'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card.js'
 import { Alert, Badge } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
@@ -333,20 +334,27 @@ function TypedEntry() {
   const [merchant, setMerchant] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [newCategory, setNewCategory] = useState('')
+  const [newKind, setNewKind] = useState<CategoryKind | ''>('variable')
   const [busy, setBusy] = useState(false)
   const [outcome, setOutcome] = useState<Outcome | null>(null)
 
   const cents = parseMoneyInput(amount)
   const creating = categoryId === '__new__'
   const ready =
-    cents !== null && cents > 0 && merchant.trim().length > 0 && (creating ? newCategory.trim().length > 0 : categoryId !== '')
+    cents !== null &&
+    cents > 0 &&
+    merchant.trim().length > 0 &&
+    (creating ? newCategory.trim().length > 0 && newKind !== '' : categoryId !== '')
 
   const submit = async () => {
     if (!ready || cents === null || accountId === null) return
     setBusy(true)
     setOutcome(null)
     try {
-      const category = creating ? (await ensureCategory(supabase, userId, newCategory.trim())).id : categoryId
+      const category =
+        creating && newKind !== ''
+          ? (await ensureCategory(supabase, userId, atEndOf(categories, newCategory.trim(), newKind))).id
+          : categoryId
       await addTypedTransaction(supabase, {
         accountId,
         postedOn: isoDate(date),
@@ -384,7 +392,12 @@ function TypedEntry() {
               <button
                 key={d}
                 type="button"
-                onClick={() => setDirection(d)}
+                onClick={() => {
+                  setDirection(d)
+                  // Each way starts on its likeliest list; a list the other
+                  // way offered may not be on offer here.
+                  setNewKind(d === 'spent' ? 'variable' : 'income')
+                }}
                 className={cn('rounded-md py-1.5 text-sm font-medium', direction === d ? 'bg-card shadow-sm' : 'text-muted-foreground')}
               >
                 {d === 'spent' ? 'I spent' : 'I received'}
@@ -414,9 +427,14 @@ function TypedEntry() {
             </Field>
           </div>
           {creating ? (
-            <Field label="New category name">
-              <Input value={newCategory} maxLength={60} onChange={(e) => setNewCategory(e.target.value)} />
-            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="New category name">
+                <Input value={newCategory} maxLength={60} onChange={(e) => setNewCategory(e.target.value)} />
+              </Field>
+              <Field label="On the list">
+                <ListSelect value={newKind} onChange={setNewKind} lists={LISTS_FOR[direction]} />
+              </Field>
+            </div>
           ) : null}
           {amount.trim().length > 0 && cents === null ? (
             <p className="text-sm text-spend">That amount is not a number of dollars and cents.</p>
