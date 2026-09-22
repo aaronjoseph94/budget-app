@@ -95,6 +95,27 @@ describe('the counts balance', () => {
   })
 })
 
+describe('a file that opens with a blank line', () => {
+  it('still finds the real header, agreeing with detectHeaderRow', () => {
+    // readStatement used to slice rows[0] while detectHeaderRow and
+    // profileColumns filtered blanks first, so the three disagreed about which
+    // record was the header. Every transaction was rejected as ragged, none
+    // accepted, and the count check still passed.
+    const r = read(`\n${HEADER}\n03/04/2025,COFFEE,-4.50\n03/05/2025,GAS,-40.00`)
+    expect(r.accepted).toHaveLength(2)
+    expect(r.rejected).toHaveLength(0)
+    expect(r.blankSkipped).toBe(1)
+    expect(r.parsed).toBe(2)
+  })
+
+  it('counts a blank line wherever it sits', () => {
+    const r = read(`\n\n${HEADER}\n03/04/2025,COFFEE,-4.50\n\n03/05/2025,GAS,-40.00`)
+    expect(r.accepted).toHaveLength(2)
+    expect(r.blankSkipped).toBe(3)
+    expect(r.parsed).toBe(r.accepted.length + r.rejected.length)
+  })
+})
+
 describe('a ragged row is a shape failure, decided before any field is read', () => {
   it('rejects an extra field rather than realigning it', () => {
     // An unquoted comma in `SMITH, JOHN LANDSCAPING`. Taking the last field as

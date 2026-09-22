@@ -216,6 +216,47 @@ describe('encoding and delimiters', () => {
     expect(fieldsOf(text, delimiter)).toEqual([['a', 'b', 'c']])
   })
 
+  it('does not treat the delimiter as padding when the delimiter is a tab', () => {
+    // Tab is an advertised delimiter. Skipping it as padding ran past it onto
+    // the next field and refused the whole file as text-after-quote, so any
+    // tab-separated statement containing a quoted merchant imported nothing.
+    expect(fieldsOf('a\t"b"\tc', '\t')).toEqual([['a', 'b', 'c']])
+    expect(fieldsOf('a\t"b"\t"c"', '\t')).toEqual([['a', 'b', 'c']])
+  })
+
+  it('keeps an empty field next to a quoted one under a tab delimiter', () => {
+    // The silent half of the same fault: the empty field was swallowed, so a
+    // well-formed row arrived one field short and was rejected downstream as
+    // ragged — a raggedness the file did not contain.
+    expect(fieldsOf('03/04\t\t"MEMO"', '\t')).toEqual([['03/04', '', 'MEMO']])
+    expect(fieldsOf('A\t"B"\t', '\t')).toEqual([['A', 'B', '']])
+  })
+
+  it.each([
+    ['a non-breaking space', '\u00a0'],
+    ['an ideographic space', '\u3000'],
+    ['an en quad', '\u2000'],
+  ])('treats %s before an opening quote as padding, as it does a plain space', (_l, pad) => {
+    // The normalizer collapses these, but the tokenizer used to recognise only
+    // space and tab. A field that began with one looked non-empty, so quoting
+    // never engaged, the quotes became merchant content, and the normalizer
+    // then trimmed the padding away and erased the evidence. The same charge
+    // hashed two ways and entered the ledger twice.
+    expect(fieldsOf(`03/13,${pad}"COFFEE HOUSE",-4.50`)).toEqual([
+      ['03/13', 'COFFEE HOUSE', '-4.50'],
+    ])
+  })
+
+  it('accepts exotic padding after a closing quote too', () => {
+    expect(fieldsOf('03/13,"COFFEE"\u00a0,-4.50')).toEqual([['03/13', 'COFFEE', '-4.50']])
+  })
+
+  it('does not let exotic padding split a quoted field that holds the delimiter', () => {
+    expect(fieldsOf('03/13,\u00a0"SMITH, JOHN",-45.00')).toEqual([
+      ['03/13', 'SMITH, JOHN', '-45.00'],
+    ])
+  })
+
   it('leaves a comma alone when the delimiter is a semicolon', () => {
     // The reason a European file is semicolon-delimited is that its decimal
     // separator is the comma. Reading it with the wrong delimiter changes

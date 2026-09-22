@@ -103,8 +103,8 @@ export function tokenizeCsv(text: string, options: CsvOptions): TokenizeOutcome 
     // A field is quoted only if its first non-blank character is a quote.
     // `15" PIZZA CO` therefore keeps its inch mark as a literal, while
     // Excel's `, "VALUE"` is still read as quoted.
-    if (field === '' && (ch === ' ' || ch === '\t')) {
-      const next = skipBlanks(src, i)
+    if (field === '' && isPadding(ch, d)) {
+      const next = skipPadding(src, i, d)
       if (src[next] === '"') {
         i = next
         continue
@@ -119,7 +119,7 @@ export function tokenizeCsv(text: string, options: CsvOptions): TokenizeOutcome 
       }
       field = quoted.value
       line = quoted.line
-      i = skipBlanks(src, quoted.next)
+      i = skipPadding(src, quoted.next, d)
 
       const after = src[i]
       if (after === undefined) break
@@ -192,9 +192,31 @@ function normalizeField(raw: string): string {
   return raw.replace(/\s+/gu, ' ').trim()
 }
 
-function skipBlanks(src: string, from: number): number {
+/**
+ * Whether a character is padding around a field rather than part of it.
+ *
+ * THE DELIMITER IS NEVER PADDING, whatever it looks like. Tab is a supported
+ * delimiter, and treating it as padding meant a tab-separated file with any
+ * quoted field was refused outright: the skip ran past the delimiter, landed
+ * on the next field, and reported text after a closing quote.
+ *
+ * The whitespace set matches `normalizeField` exactly. When it did not, a
+ * non-breaking space before an opening quote left the field looking non-empty,
+ * so quoting never engaged and the quotes became merchant content — and then
+ * the normalizer trimmed the padding away, erasing the evidence. A record
+ * separator is never padding either; it ends the record.
+ */
+const WHITESPACE = /\s/u
+
+function isPadding(ch: string, delimiter: string): boolean {
+  if (ch.length === 0 || ch === delimiter) return false
+  if (ch === '\r' || ch === '\n') return false
+  return WHITESPACE.test(ch)
+}
+
+function skipPadding(src: string, from: number, delimiter: string): number {
   let i = from
-  while (src[i] === ' ' || src[i] === '\t') i++
+  while (isPadding(src.charAt(i), delimiter)) i++
   return i
 }
 

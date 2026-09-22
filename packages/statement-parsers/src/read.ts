@@ -56,19 +56,24 @@ export interface StatementRead {
 }
 
 export function readStatement(rows: readonly CsvRow[], options: ReadOptions): StatementRead {
-  const all = options.hasHeader ? rows.slice(1) : rows
-  const header = options.hasHeader ? rows[0] : undefined
-  const width = options.expectedWidth ?? header?.fields.length ?? widestOf(all)
+  // Blank rows are removed BEFORE the header is taken, because that is what
+  // detectHeaderRow and profileColumns both do. When this module sliced
+  // rows[0] instead, a file opening with a blank line made the three disagree
+  // about which record is the header: those two reported the real headers, so
+  // a caller wiring them together passed hasHeader, and this module then
+  // treated the blank line as the header and every transaction as ragged —
+  // nothing accepted, the arithmetic still balancing, and the user told that
+  // rows are malformed when none are. Some exports do open with a blank line.
+  const records = rows.filter((r) => !isBlankRow(r))
+  const blankSkipped = rows.length - records.length
+  const header = options.hasHeader ? records[0] : undefined
+  const data = options.hasHeader ? records.slice(1) : records
+  const width = options.expectedWidth ?? header?.fields.length ?? widestOf(data)
 
   const accepted: AcceptedRow[] = []
   const rejected: RejectedRow[] = []
-  let blankSkipped = 0
 
-  for (const row of all) {
-    if (isBlankRow(row)) {
-      blankSkipped++
-      continue
-    }
+  for (const row of data) {
     const outcome = readRow(row, width, options)
     if (outcome.reason === undefined) accepted.push(outcome.row)
     else rejected.push({ line: row.line, reason: outcome.reason })
