@@ -1,5 +1,8 @@
 packages:
   - 'packages/*'
   - 'apps/*'
-allowBuilds:
-  esbuild: set this to true or false
+# esbuild ships a prebuilt binary as an optional dependency, so its install
+# script has nothing left to do. Declared rather than left unanswered, so the
+# bootstrap install is quiet and a future warning means something new.
+ignoredBuiltDependencies:
+  - esbuild

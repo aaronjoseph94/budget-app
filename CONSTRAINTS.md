@@ -17,6 +17,11 @@ Run everything: `./scripts/gates.sh` — it **fails closed**. A required gate
 whose tool is missing reports `MISCONFIGURED` and exits 2. A check that cannot
 run is never reported as green.
 
+The tools those gates name are installed by `.claude/hooks/session-start.sh`
+before each Claude Code web session: `pnpm install` against the committed
+lockfile, and a pinned, checksum-verified `gitleaks`. Without it a fresh
+container has neither, and every session opens `MISCONFIGURED`.
+
 ## Floor — always enforced
 
 - No new suppression comments: `@ts-ignore`, `eslint-disable`, `as any`, `as unknown as`
