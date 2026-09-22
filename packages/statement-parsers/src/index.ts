@@ -48,3 +48,12 @@ export {
   type DedupeInput,
   type OccurrenceDiscriminator,
 } from './dedupe.js'
+
+export {
+  readStatement,
+  type AcceptedRow,
+  type ColumnMapping,
+  type ReadOptions,
+  type RejectedRow,
+  type StatementRead,
+} from './read.js'

@@ -34,11 +34,24 @@ export type CategorySource = z.infer<typeof CategorySourceSchema>
  * set stays countable and the counts can be made to balance.
  */
 export const RejectionReasonSchema = z.enum([
+  /**
+   * The record had a different number of fields than the header.
+   *
+   * Structural, so it is decided before any field is read: the mapped indexes
+   * point at the wrong columns, and every value drawn through them is wrong
+   * while looking perfectly valid. A four-field row against a three-column
+   * header is the classic case — an unquoted comma in `SMITH, JOHN
+   * LANDSCAPING` — where taking the last field as the amount gives the right
+   * amount and a merchant silently truncated to `SMITH`.
+   */
+  'row_shape_mismatch',
   'missing_amount',
   'missing_date',
   'unparseable_amount',
   'unparseable_date',
   'missing_merchant',
+  /** Present, but rejected by IngestedTextSchema: control characters, or too long. */
+  'invalid_merchant',
   'duplicate_within_batch',
   'already_in_ledger',
   'model_output_invalid',
