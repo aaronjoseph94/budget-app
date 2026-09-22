@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { isoDate } from '@budget/money-primitives'
-import { weekBounds, weeklySummary, type LedgerEntry } from '../src/week.js'
+import { monthBounds, shiftMonth, shiftWeek, weekBounds, weeklySummary, type LedgerEntry } from '../src/week.js'
 
 /**
  * Not workbook-derived: the workbook has no weekly view (docs/ROADMAP.md makes
@@ -21,6 +21,11 @@ describe('weekBounds', () => {
   it('treats Sunday as the last day of the week before', () => {
     // A Sunday-first week would put this in a new week and split the weekend.
     expect(weekBounds(isoDate('2026-09-27'))).toEqual({ start: '2026-09-21', end: '2026-09-27' })
+  })
+
+  it('steps whole weeks, across a year boundary', () => {
+    expect(shiftWeek(isoDate('2026-12-28'), 1)).toBe('2027-01-04')
+    expect(shiftWeek(isoDate('2026-09-21'), -1)).toBe('2026-09-14')
   })
 
   it('crosses a month and a year boundary', () => {
@@ -95,6 +100,11 @@ describe('weeklySummary', () => {
     expect(week.remainingCents).toBe(2_300)
   })
 
+  it('reports the share of the whole budget used', () => {
+    // (6,500 + 7,200) / 16,000 = 85.625% -> 8,562 bp, floored.
+    expect(week.usedBasisPoints).toBe(8_562)
+  })
+
   it('keeps uncategorised spending visible instead of dropping it', () => {
     expect(week.uncategorisedSpentCents).toBe(1_800)
   })
@@ -132,5 +142,23 @@ describe('weeklySummary edge cases', () => {
         asOf: isoDate('2026-09-24'),
       }),
     ).toThrow(RangeError)
+  })
+})
+
+describe('monthBounds', () => {
+  it('spans the first to the last day', () => {
+    expect(monthBounds(isoDate('2026-09-22'))).toEqual({ start: '2026-09-01', end: '2026-09-30' })
+  })
+
+  it('knows February in a leap year and out of one', () => {
+    expect(monthBounds(isoDate('2028-02-10')).end).toBe('2028-02-29')
+    expect(monthBounds(isoDate('2027-02-10')).end).toBe('2027-02-28')
+  })
+
+  it('steps whole months from the first, never skipping a short one', () => {
+    // From the 31st, "one month on" lands in March and skips February; the
+    // ledger steps from the 1st so every month is visited.
+    expect(shiftMonth(isoDate('2026-01-31'), 1)).toBe('2026-02-01')
+    expect(shiftMonth(isoDate('2026-01-15'), -1)).toBe('2025-12-01')
   })
 })

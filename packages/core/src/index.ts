@@ -31,6 +31,9 @@ export {
 } from './statement-reconciliation.js'
 
 export {
+  monthBounds,
+  shiftMonth,
+  shiftWeek,
   weekBounds,
   weeklySummary,
   type BudgetedCategory,
@@ -39,3 +42,11 @@ export {
   type WeeklySummary,
   type WeeklySummaryInput,
 } from './week.js'
+
+/**
+ * Date validation, re-exported so the app can make an IsoDate without importing
+ * money-primitives — which apps/web may not do as a value, so that its money
+ * arithmetic stays out of the UI (.dependency-cruiser.cjs). A date parser is
+ * not arithmetic; routing it through core keeps that rule simple.
+ */
+export { isoDate } from '@budget/money-primitives'

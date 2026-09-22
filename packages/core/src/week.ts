@@ -19,6 +19,7 @@ import {
   type IsoDate,
   ZERO_CENTS,
   addDays,
+  addMonths,
   cents,
   daysBetween,
   sumCents,
@@ -69,6 +70,8 @@ export interface WeeklySummary {
   readonly budgetCents: Cents | null
   /** What remains across budgeted categories only. Null when none are set. */
   readonly remainingCents: Cents | null
+  /** Share of the total budget used, in basis points. Null when none is set. */
+  readonly usedBasisPoints: number | null
   /** Largest spending first. Budgeted categories appear even at zero. */
   readonly categories: readonly CategoryWeek[]
 }
@@ -87,6 +90,25 @@ export function weekBounds(date: IsoDate): { start: IsoDate; end: IsoDate } {
   const offset = ((daysBetween(A_MONDAY, date) % 7) + 7) % 7
   const start = addDays(date, -offset)
   return { start, end: addDays(start, 6) }
+}
+
+/** The calendar month containing `date`, first day to last. */
+export function monthBounds(date: IsoDate): { start: IsoDate; end: IsoDate } {
+  const start = `${date.slice(0, 7)}-01` as IsoDate
+  return { start, end: addDays(addMonths(start, 1), -1) }
+}
+
+/**
+ * The first of the month `months` away. Stepped from the 1st so that a
+ * 31st never skips a shorter month on the way.
+ */
+export function shiftMonth(date: IsoDate, months: number): IsoDate {
+  return addMonths(`${date.slice(0, 7)}-01` as IsoDate, months)
+}
+
+/** The same weekday, `weeks` weeks away. For stepping between weeks. */
+export function shiftWeek(date: IsoDate, weeks: number): IsoDate {
+  return addDays(date, weeks * 7)
 }
 
 export function weeklySummary(input: WeeklySummaryInput): WeeklySummary {
@@ -156,6 +178,8 @@ export function weeklySummary(input: WeeklySummaryInput): WeeklySummary {
     uncategorisedSpentCents: uncategorised,
     budgetCents,
     remainingCents: budgetCents === null ? null : cents(budgetCents - budgetedSpent),
+    usedBasisPoints:
+      budgetCents === null || budgetCents === 0 ? null : Math.floor((budgetedSpent * 10_000) / budgetCents),
     categories,
   }
 }
