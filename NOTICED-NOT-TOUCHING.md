@@ -214,3 +214,41 @@ checked against the live project, not written from here.
 
 **To settle:** once 0003 and 0004 are applied and a real statement is in,
 mark Phases 1, 2 and 4 with what is actually done, and leave one "next".
+
+---
+
+## N11 — After 0005, the app cannot create a category until S2a
+
+**Seen:** 2026-09-22, writing migration 0005.
+
+0005 drops the default on `categories.kind`, as the Workbook plan requires, so
+an insert without a list is refused with 23502. `ensureNamed` in
+`apps/web/src/ledger.ts` inserts `{ user_id, name }` only, and the not-null
+check fires before the unique check it relies on, so between pasting 0005 and
+deploying S2a, every "new category" in Review, Add and Settings fails with a
+code, even when the typed name already exists. Choosing an existing category
+from the list is unaffected. `docs/setup.md` now says so beside the 0005 row.
+
+**Why not fixed here:** the fix is app code (S2a: every new category asks
+which list), and this task changes no app code. Giving `kind` a default again
+would reopen exactly what 0005 closes.
+
+**To settle:** land S2a promptly after the owner confirms Sitting A ran.
+
+---
+
+## N12 — Two 0004 functions are missing from the anon-execute assertion
+
+**Seen:** 2026-09-22, extending `supabase/tests/schema-assertions.sql`.
+
+0004 revokes `reject_candidate(uuid)` and
+`add_typed_transaction(uuid, date, bigint, text, text, uuid)` from `anon`, but
+the final assertion lists only `approve_candidate` and the 5-argument
+`save_import`. Deleting either revoke would leave the schema gate green.
+The functions 0006 and 0007 add are in the list.
+
+**Why not fixed here:** the task adds its own functions to the list; widening
+the check for 0004 is a separate change to what 0004 is held to.
+
+**To settle:** add both to the `has_function_privilege('anon', …)` list, and
+observe the gate go RED with one of the revokes removed.
