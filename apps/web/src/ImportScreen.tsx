@@ -1,0 +1,379 @@
+import { useMemo, useState } from 'react'
+import {
+  DATE_FORMATS,
+  US_AMOUNT_FORMAT,
+  detectHeaderRow,
+  profileColumns,
+  readStatement,
+  tokenizeCsv,
+  type AcceptedRow,
+  type ColumnProfile,
+  type DateFormat,
+  type RejectedRow,
+  type StatementRead,
+} from '@budget/statement-parsers'
+import { summariseImport } from '@budget/core'
+import { Button, Card, IngestedText, Label, Select, Stat } from './ui.js'
+
+import { describeFailure, describeReason, formatCents, formatIsoDate } from './format.js'
+
+/** Only what the user has explicitly picked; everything else falls to the proposal. */
+interface Chosen {
+  dateIndex?: number
+  merchantIndex?: number
+  amountIndex?: number
+  dateFormat?: DateFormat
+  signKind?: 'signed' | 'debit_positive'
+}
+
+const DELIMITERS = [
+  { value: ',', label: 'Comma  (most banks)' },
+  { value: ';', label: 'Semicolon  (common in Europe)' },
+  { value: '\t', label: 'Tab' },
+  { value: '|', label: 'Pipe' },
+] as const
+
+export interface ImportScreenProps {
+  /** Present only when signed in; the preview works without it. */
+  readonly onSave?: (result: { accepted: readonly AcceptedRow[]; rejected: readonly RejectedRow[]; parsed: number }) => Promise<void>
+  readonly saving?: boolean
+  readonly saved?: string | null
+}
+
+export function ImportScreen({ onSave, saving = false, saved = null }: ImportScreenProps) {
+  const [fileName, setFileName] = useState<string | null>(null)
+  const [text, setText] = useState<string | null>(null)
+  const [delimiter, setDelimiter] = useState<string>(',')
+  // What the user has explicitly chosen. Everything unset falls through to the
+  // proposal below, so nothing is assigned during render and a later file
+  // cannot silently inherit an earlier file's columns.
+  const [chosen, setChosen] = useState<Chosen>({})
+  const choose = <K extends keyof Chosen>(key: K, value: Chosen[K]) =>
+    setChosen((prev) => ({ ...prev, [key]: value }))
+
+  // Everything below is derived from the file and the choices. No parsing
+  // happens in an event handler, so the screen always shows the result of the
+  // settings currently displayed rather than the ones that were set when a
+  // button was last pressed.
+  const tokenized = useMemo(
+    () => (text === null ? null : tokenizeCsv(text, { delimiter })),
+    [text, delimiter],
+  )
+
+  const analysis = useMemo(() => {
+    if (tokenized === null || !tokenized.ok) return null
+    const verdict = detectHeaderRow(tokenized.rows, US_AMOUNT_FORMAT)
+    const hasHeader = verdict !== 'data'
+    const columns = profileColumns({
+      rows: tokenized.rows,
+      hasHeader,
+      amountFormat: US_AMOUNT_FORMAT,
+    })
+    return { verdict, hasHeader, columns }
+  }, [tokenized])
+
+  // A proposal, applied once, that the user can override. It is never
+  // re-applied after they touch a control: a screen that silently re-picks a
+  // column while someone is choosing one is worse than no proposal at all.
+  const proposal = useMemo(() => {
+    if (analysis === null) return null
+    const { columns } = analysis
+    const date = columns.find((c) => c.dateFormats.length > 0)
+    const amount = columns.find((c) => c.readsAsAmount && c.index !== date?.index)
+    // A description is whatever is left once dates and money are excluded.
+    // Preferring a repeating column is a weak signal — a short statement may
+    // have no repeats at all — so it falls back to the first remaining column
+    // rather than to a fixed index that would only be right by accident.
+    const textual = columns.filter((c) => !c.readsAsAmount && c.dateFormats.length === 0)
+    const merchant = textual.find((c) => !c.unique) ?? textual[0]
+    return {
+      dateIndex: date?.index ?? 0,
+      amountIndex: amount?.index ?? Math.max(0, columns.length - 1),
+      merchantIndex: merchant?.index ?? 1,
+      dateFormats: date?.dateFormats ?? [],
+    }
+  }, [analysis])
+
+  // The mapping actually in force: the user's choice where they made one, the
+  // proposal otherwise. Derived, never stored, so the two cannot disagree.
+  const dateIndex = chosen.dateIndex ?? proposal?.dateIndex ?? 0
+  const merchantIndex = chosen.merchantIndex ?? proposal?.merchantIndex ?? 1
+  const amountIndex = chosen.amountIndex ?? proposal?.amountIndex ?? 2
+  const signKind = chosen.signKind ?? 'signed'
+  // A format is proposed only when the column admits exactly one. Where the
+  // data is ambiguous the user is asked, never defaulted past.
+  const soleFormat = proposal?.dateFormats.length === 1 ? proposal.dateFormats[0] : undefined
+  const dateFormat: DateFormat = chosen.dateFormat ?? soleFormat ?? 'MM/DD/YYYY'
+
+  const result: StatementRead | null = useMemo(() => {
+    if (tokenized === null || !tokenized.ok || analysis === null) return null
+    return readStatement(tokenized.rows, {
+      mapping: {
+        dateIndex,
+        merchantIndex,
+        amountIndex,
+        sign: { kind: signKind },
+      },
+      amountFormat: US_AMOUNT_FORMAT,
+      dateFormat,
+      hasHeader: analysis.hasHeader,
+    })
+  }, [tokenized, analysis, dateIndex, merchantIndex, amountIndex, dateFormat, signKind])
+
+  const summary = useMemo(
+    () =>
+      result === null
+        ? null
+        : summariseImport({ amountsCents: result.accepted.map((r) => r.amountCents) }),
+    [result],
+  )
+
+  const onFile = async (file: File) => {
+    setFileName(file.name)
+    setChosen({})
+    setText(await file.text())
+  }
+
+  const reset = () => {
+    setText(null)
+    setFileName(null)
+    setChosen({})
+  }
+
+  const ambiguousDate =
+    proposal !== null && proposal.dateFormats.length > 1 ? proposal.dateFormats : null
+
+  return (
+    <div>
+      <header className="mb-8">
+        <h1 className="text-2xl font-semibold tracking-tight">Import a statement</h1>
+        <p className="mt-1 text-sm text-ink-soft">
+          Nothing is saved yet. This shows exactly what would be imported, and what would not.
+        </p>
+      </header>
+
+      {text === null ? (
+        <FilePicker onFile={onFile} />
+      ) : (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <Label>File</Label>
+              <div className="truncate text-sm font-medium">{fileName}</div>
+            </div>
+            <Button variant="quiet" onClick={reset}>
+              Choose another
+            </Button>
+          </div>
+
+          {tokenized !== null && !tokenized.ok ? (
+            <Card className="border-spend/40 p-4">
+              <Label>This file could not be read</Label>
+              <p className="mt-2 text-sm">
+                {describeFailure(
+                  tokenized.failure.kind,
+                  'line' in tokenized.failure ? tokenized.failure.line : undefined,
+                )}
+              </p>
+              <p className="mt-3 text-sm text-ink-soft">
+                If your bank separates columns with something other than a comma, change it below.
+              </p>
+              <div className="mt-3 max-w-xs">
+                <Select
+                  label="Column separator"
+                  value={delimiter}
+                  options={DELIMITERS.map((d) => ({ value: d.value as string, label: d.label }))}
+                  onChange={setDelimiter}
+                />
+              </div>
+            </Card>
+          ) : null}
+
+          {analysis !== null ? (
+            <Card className="p-4">
+              <Label>What the file looks like</Label>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <Select
+                  label="Column separator"
+                  value={delimiter}
+                  options={DELIMITERS.map((d) => ({ value: d.value as string, label: d.label }))}
+                  onChange={setDelimiter}
+                />
+                <Select
+                  label="Date column"
+                  value={dateIndex}
+                  options={analysis.columns.map((c) => ({ value: c.index, label: columnName(c) }))}
+                  onChange={(v) => choose('dateIndex', v)}
+                />
+                <Select
+                  label="Description column"
+                  value={merchantIndex}
+                  options={analysis.columns.map((c) => ({ value: c.index, label: columnName(c) }))}
+                  onChange={(v) => choose('merchantIndex', v)}
+                />
+                <Select
+                  label="Amount column"
+                  value={amountIndex}
+                  options={analysis.columns.map((c) => ({ value: c.index, label: columnName(c) }))}
+                  onChange={(v) => choose('amountIndex', v)}
+                />
+                <Select
+                  label="Date format"
+                  value={dateFormat}
+                  options={DATE_FORMATS.map((f) => ({ value: f, label: f }))}
+                  onChange={(v) => choose('dateFormat', v)}
+                />
+                <Select
+                  label="How amounts are written"
+                  value={signKind}
+                  options={[
+                    { value: 'signed' as const, label: 'Purchases are negative' },
+                    { value: 'debit_positive' as const, label: 'Purchases are positive' },
+                  ]}
+                  onChange={(v) => choose('signKind', v)}
+                />
+              </div>
+
+              {ambiguousDate !== null ? (
+                <p className="mt-4 rounded-lg border border-line bg-surface p-3 text-sm">
+                  <strong className="font-medium">Which way round are these dates?</strong> Every
+                  day in this file is 12 or lower, so <code>03/04</code> could be 3 April or 4
+                  March. Nothing in the file settles it — please choose the format your bank uses.
+                </p>
+              ) : null}
+            </Card>
+          ) : null}
+
+          {result !== null && summary !== null ? (
+            <>
+              <Card>
+                <div className="grid grid-cols-2 divide-x divide-line sm:grid-cols-4">
+                  <Stat label="Would import" value={String(result.accepted.length)} />
+                  <Stat label="Needs a look" value={String(result.rejected.length)} />
+                  <Stat label="Money out" value={formatCents(summary.outflowCents)} tone="spend" />
+                  <Stat label="Money in" value={formatCents(summary.inflowCents)} tone="income" />
+                </div>
+              </Card>
+
+              {result.rejected.length > 0 ? (
+                <Card className="p-4">
+                  <Label>{result.rejected.length} rows would not be imported</Label>
+                  <ul className="mt-3 space-y-2">
+                    {result.rejected.map((r) => (
+                      <li key={r.line} className="flex gap-3 text-sm">
+                        <span className="tnum shrink-0 text-ink-soft">Line {r.line}</span>
+                        <span>{describeReason(r.reason)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
+              ) : null}
+
+              <Card className="overflow-hidden">
+                <div className="border-b border-line px-4 py-3">
+                  <Label>{result.accepted.length} transactions</Label>
+                </div>
+                <ul className="divide-y divide-line">
+                  {result.accepted.map((row) => (
+                    <li key={`${row.line}`} className="flex items-baseline gap-3 px-4 py-3">
+                      <span className="tnum w-28 shrink-0 text-sm text-ink-soft">
+                        {formatIsoDate(row.postedOn)}
+                      </span>
+                      <span className="min-w-0 flex-1 text-sm">
+                        <IngestedText>{row.merchantRaw}</IngestedText>
+                      </span>
+                      <span
+                        className={`tnum shrink-0 text-sm font-medium ${
+                          row.amountCents < 0 ? 'text-spend' : 'text-income'
+                        }`}
+                      >
+                        {formatCents(row.amountCents)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+
+              {onSave !== undefined ? (
+                <div className="flex flex-col items-center gap-2">
+                  <Button
+                    disabled={saving || result.accepted.length === 0}
+                    onClick={() => {
+                      void onSave({
+                        accepted: result.accepted,
+                        rejected: result.rejected,
+                        parsed: result.parsed,
+                      })
+                    }}
+                  >
+                    {saving
+                      ? 'Saving…'
+                      : `Send ${result.accepted.length} to the review queue`}
+                  </Button>
+                  {saved !== null ? <p className="text-sm text-income">{saved}</p> : null}
+                  <p className="text-xs text-ink-soft">
+                    Nothing reaches your ledger until you approve it.
+                  </p>
+                </div>
+              ) : null}
+
+              <p className="text-center text-xs text-ink-soft">
+                {result.parsed} rows read · {result.accepted.length} readable ·{' '}
+                {result.rejected.length} not · {result.blankSkipped} blank lines skipped
+              </p>
+            </>
+          ) : null}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function columnName(column: ColumnProfile): string {
+  const label = column.header === null ? `Column ${column.index + 1}` : column.header
+  const hints: string[] = []
+  if (column.dateFormats.length > 0) hints.push('dates')
+  if (column.readsAsAmount) hints.push('money')
+  if (column.constant) hints.push('always the same')
+  if (column.unique) hints.push('all different')
+  return hints.length === 0 ? label : `${label}  —  ${hints.join(', ')}`
+}
+
+function FilePicker({ onFile }: { onFile: (file: File) => void }) {
+  const [over, setOver] = useState(false)
+  return (
+    <label
+      onDragOver={(e) => {
+        e.preventDefault()
+        setOver(true)
+      }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(e) => {
+        e.preventDefault()
+        setOver(false)
+        const file = e.dataTransfer.files[0]
+        if (file !== undefined) onFile(file)
+      }}
+      className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-12 text-center transition ${
+        over ? 'border-accent bg-accent/5' : 'border-line'
+      }`}
+    >
+      <span className="text-base font-medium">Drop a statement here</span>
+      <span className="mt-1 text-sm text-ink-soft">
+        or choose a CSV exported from your bank
+      </span>
+      <input
+        type="file"
+        accept=".csv,text/csv,text/plain"
+        className="mt-4 text-sm text-ink-soft file:mr-3 file:rounded-lg file:border-0 file:bg-accent file:px-4 file:py-2 file:text-sm file:font-medium file:text-white"
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (file !== undefined) onFile(file)
+        }}
+      />
+      <span className="mt-4 text-xs text-ink-soft">
+        The file is read in your browser. Nothing leaves this page.
+      </span>
+    </label>
+  )
+}
