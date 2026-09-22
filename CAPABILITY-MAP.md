@@ -70,21 +70,46 @@ data layer would produce a task list rather than a boundary.
 ## Slice order for delivery
 
 Modules are the dependency structure, not the delivery plan. Work ships as
-vertical slices, each leaving the app usable:
+vertical slices, each leaving the app usable.
 
-**Weekly is the primary lens.** The workbook is month-first with a weekly tab
-bolted on; the user thinks in weeks. Weekly is the default screen and the unit
-limits, streaks, and goals are expressed in. Monthly is the summary view.
+**Month opens first; Week is one tap away** *(changed 2026-09-22)*. This
+section first said: "Weekly is the primary lens. The workbook is month-first
+with a weekly tab bolted on; the user thinks in weeks. Weekly is the default
+screen and the unit limits, streaks, and goals are expressed in. Monthly is the
+summary view." Since then the owner asked for the app to look and work like
+their Workbook workbook, whose money lands on month tabs, and when asked which
+screen should open first they chose Month (`docs/workbook-plan.md` §9a, decision
+1). Weekly limits and streaks, when the coach is built, are still weekly.
 
-1. Weekly budget from manually entered transactions
-2. Card CSV import → review queue → approved into the ledger
-3. Photo capture and natural-language entry
-4. Bills, calendar, due reminders
-5. Savings funds, debt payoff, net worth, retirement
-6. Forecast and reports
-7. Savings coach: weekly limits, the streak grid, interrogation, goal tradeoffs
-8. Sankey flow view: income sources -> categories -> savings, from the ledger
-9. Export: Excel workbook and PDF report, with the same figures as the screen
+Slices 1 and 2 of the original order are built (the Week screen; statement
+import into the review queue), and most of 3: photo capture and a typed-entry
+form, but not natural-language entry. The rest now runs in the
+Workbook plan's order (§8), ahead of the coach (§9a, decision 13):
 
-Slices 1–2 are what replace the spreadsheet's daily use. Everything after is
-addition, not replacement.
+1. Pre-work: unreadable statement lines shown in Review, dedupe tests that
+   bite, React Testing Library for the screens
+2. Schema sitting A: category lists (`kind`), recategorising a posted row,
+   statement periods
+3. Workbook's look; categories sorted into Workbook's lists; the Setup screen;
+   starter lists; Week counts by list
+4. The period engine, proven against the workbook before any screen shows it
+5. Navigation (Month · Week · Add · Review · More, with period addresses), then
+   **the first Workbook month filled from a statement**, then fixing a row from
+   the month
+6. Schema sitting B: budgets, planned bills, monthly starting balances, pay
+   schedules
+7. Budgets on the month; bills set-up; planned versus real; the summary card
+8. `chart-specs` and the month charts
+9. The Year engine and screen, including Workbook's Home at its top
+10. Week in Workbook's shape; Paycheck; Bill Calendar
+11. Schema sitting C: savings funds, then debts. Savings funds; Debts
+12. Savings coach: weekly limits, the streak grid, interrogation, goal tradeoffs
+13. Natural-language entry, the unbuilt rest of the original slice 3
+14. Due reminders and the forecast
+15. Sankey flow view: income sources -> categories -> savings, from the ledger
+16. Export: Excel workbook and PDF report, with the same figures as the screen
+
+Net worth, retirement and 50/30/20 are not scheduled (docs/ROADMAP.md).
+
+Slices 1–2 of the original order were what replaced the spreadsheet's daily
+use. Everything after is addition, not replacement.
