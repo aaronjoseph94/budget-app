@@ -73,6 +73,7 @@ limits, streaks, and goals are expressed in. Monthly is the summary view.
 5. Savings funds, debt payoff, net worth, retirement
 6. Forecast and reports
 7. Savings coach: weekly limits, the streak grid, interrogation, goal tradeoffs
+8. Sankey flow view: income sources -> categories -> savings, generated from the ledger
 
 Slices 1–2 are what replace the spreadsheet's daily use. Everything after is
 addition, not replacement.

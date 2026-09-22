@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Quality gates. FAILS CLOSED: a required gate whose command is missing reports
+# MISCONFIGURED and exits non-zero. A check that cannot run is never green.
+#
+# Pattern from addyosmani/factory (template/.claude/scripts/gates.sh).
+set -uo pipefail
+cd "$(dirname "$0")/.."
+
+LEVEL="${1:-full}"
+declare -a PASSED=() FAILED=() MISCONFIGURED=()
+
+have() { command -v "$1" >/dev/null 2>&1 || [ -x "node_modules/.bin/$1" ]; }
+
+gate() {
+  local name="$1" tool="$2"; shift 2
+  if ! have "$tool"; then
+    MISCONFIGURED+=("$name"); printf '  %-18s MISCONFIGURED (%s not installed)\n' "$name" "$tool"; return
+  fi
+  if "$@" >/tmp/gate-$name.log 2>&1; then
+    PASSED+=("$name"); printf '  %-18s PASS\n' "$name"
+  else
+    FAILED+=("$name"); printf '  %-18s FAIL\n' "$name"; tail -15 "/tmp/gate-$name.log" | sed 's/^/      /'
+  fi
+}
+
+echo "Running gates (level=$LEVEL)"
+gate types   tsc       npx tsc --build --force
+gate lint    eslint    npx eslint .
+gate purity  depcruise npx depcruise --config .dependency-cruiser.cjs --validate packages
+gate secrets gitleaks  gitleaks detect --redact --no-banner --source .
+gate golden  vitest    npx vitest run
+
+if [ "$LEVEL" = "full" ]; then
+  gate deps pnpm pnpm audit --audit-level high
+fi
+
+STATUS=GREEN
+[ ${#FAILED[@]} -gt 0 ] && STATUS=RED
+[ ${#MISCONFIGURED[@]} -gt 0 ] && STATUS=MISCONFIGURED
+
+join() { local IFS=,; echo "${*:-none}"; }
+echo
+echo "BUDGET_GATES: level=$LEVEL status=$STATUS passed=${#PASSED[@]} failed=${#FAILED[@]} failing=$(join "${FAILED[@]+"${FAILED[@]}"}") misconfigured=$(join "${MISCONFIGURED[@]+"${MISCONFIGURED[@]}"}")"
+
+case "$STATUS" in
+  GREEN) exit 0 ;;
+  RED) exit 1 ;;
+  MISCONFIGURED) exit 2 ;;
+esac

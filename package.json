@@ -6,14 +6,19 @@
     "node": ">=22"
   },
   "scripts": {
-    "check:fast": "tsc --build && vitest run --project core",
-    "check:task": "tsc --build && vitest run --coverage",
+    "gates": "./scripts/gates.sh",
+    "check:fast": "./scripts/gates.sh fast",
+    "check:task": "./scripts/gates.sh full",
     "test": "vitest run",
-    "verify": "pnpm check:task"
+    "verify": "./scripts/gates.sh full"
   },
   "devDependencies": {
     "@types/node": "^26.6.2",
+    "@vitest/coverage-v8": "^5.0.1",
+    "dependency-cruiser": "^18.4.0",
+    "eslint": "^10.11.0",
     "typescript": "^5.7.0",
+    "typescript-eslint": "^8.70.0",
     "vitest": "^3.0.0"
   }
 }
