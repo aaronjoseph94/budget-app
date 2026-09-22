@@ -1,0 +1,17 @@
+---
+description: Project rules for the budget app — always apply
+alwaysApply: true
+---
+
+This repository has binding rules. Before writing or changing code:
+
+- Read `CLAUDE.md` and follow it exactly. It is the project's rulebook, not
+  specific to any one tool. `CONSTRAINTS.md` lists what the checks enforce.
+- Read `HANDOFF.md` for current state, the owner's pending setup, and the
+  prioritised list of remaining work.
+- Run `./scripts/gates.sh full` before every commit and commit only on
+  `status=GREEN`. Never weaken a gate, threshold, test or rule to get there.
+- All arithmetic in `packages/core`; money as integer cents; nothing a model
+  produces reaches the ledger without the user approving it.
+- The owner is not an engineer: explain in plain language and make routine
+  engineering calls yourself.
