@@ -4,6 +4,29 @@ Settings that live in the Supabase and Netlify dashboards rather than in this
 repository. They are recorded here because a setting nobody wrote down is
 found again by hitting the same wall twice.
 
+## Supabase: making the one user account
+
+There is no sign-up screen, deliberately. This app holds one person's
+financial history and lives at a public URL, so the only way an account
+exists is if someone makes it in the dashboard.
+
+**Authentication → Users → Add user → Create new user**, with **Auto Confirm
+User** ticked. Without that tick the user is created but cannot sign in until
+a confirmation email — the same rate-limited mailer — is delivered and opened.
+
+To give an existing user a password instead: **Authentication → Users**, the
+`⋯` menu on the row, **Reset password**.
+
+## Supabase: the emailed-link path is rate limited
+
+The built-in mail sender allows a few messages an hour **across the whole
+project**, not per address. Two sign-in attempts while testing can exhaust it,
+and the error reads `email rate limit exceeded` — which looks like a bug in
+the app and is not one. This is why password is the default sign-in method.
+
+Lifting it means configuring a real SMTP sender under **Authentication →
+Emails → SMTP Settings**. Not needed while one person uses this.
+
 ## Supabase: where a sign-in link returns to
 
 **Authentication → URL Configuration**
