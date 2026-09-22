@@ -38,6 +38,10 @@ export function ReviewScreen() {
   const [picked, setPicked] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // Kept apart from `error`: the provider's first refresh reloads this screen,
+  // and a reload that succeeded used to clear the message of an approval that
+  // had just failed.
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
 
   const load = useCallback(async () => {
@@ -46,9 +50,9 @@ export function ReviewScreen() {
       setRows(page.rows)
       setTotal(page.total)
       setRules(r)
-      setError(null)
+      setLoadError(null)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not load the review queue.')
+      setLoadError(cause instanceof Error ? cause.message : 'Could not load the review queue.')
     }
   }, [supabase])
 
@@ -105,7 +109,7 @@ export function ReviewScreen() {
       {note !== null ? <Alert tone="success">{note}</Alert> : null}
       {/* Errors sit above the list and do NOT replace it: a single failure used
           to swap the whole queue for an error card until the page was reloaded. */}
-      {error !== null ? <Alert tone="error" title="That did not work">{error}</Alert> : null}
+      {(error ?? loadError) !== null ? <Alert tone="error" title="That did not work">{error ?? loadError}</Alert> : null}
 
       {rows !== null && rows.length === 0 ? (
         <Card>
