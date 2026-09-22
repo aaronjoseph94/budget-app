@@ -87,6 +87,22 @@ describe('WeekScreen', () => {
     expect(screen.queryByText('$130.12')).toBeNull()
   })
 
+  // Hand-derived: budgets 10.00 + 60.00 = 70.00 against 130.12 spent, 60.12 over.
+  it('says by how much the week is over budget, and steps forward again', async () => {
+    const fake = seeded()
+    fake.tables.categories[0] = { id: 'c1', name: 'Groceries', weekly_budget_cents: 1000 }
+    renderScreen(<WeekScreen />, fake)
+
+    expect(await screen.findByText('$60.12 over')).toBeTruthy()
+    expect(screen.getByText('a $70.00 budget')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Next week' })).toHaveProperty('disabled', true)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Previous week' }))
+    await screen.findByRole('heading', { name: 'Week of' })
+    fireEvent.click(screen.getByRole('button', { name: 'Next week' }))
+    expect(await screen.findByRole('heading', { name: 'This week' })).toBeTruthy()
+  })
+
   // Hand-derived: 8,450 of 30,000 is 28% with 21,550 to go; 21,550 over the
   // two weeks to 25 March is 10,775 a week; 130.12 at 275.00 an hour is 28 min.
   it('shows the goal, what it needs each week, and the week as goal time', async () => {
