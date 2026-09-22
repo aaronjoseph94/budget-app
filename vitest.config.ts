@@ -19,7 +19,7 @@ export default defineConfig({
       // Source only. `tsc --build` emits a parallel copy of every module into
       // dist/, which no test imports; counting it reported 36% overall while
       // the code the tests actually exercise was above 90%.
-      include: ['packages/*/src/**/*.ts', 'apps/*/src/**/*.ts'],
+      include: ['packages/*/src/**/*.ts', 'apps/*/src/**/*.{ts,tsx}'],
       exclude: ['**/dist/**'],
       reporter: ['text-summary'],
       // Aggregated per module rather than per file, because a barrel that only
@@ -30,8 +30,15 @@ export default defineConfig({
         'packages/money-primitives/src/**': { lines: 80, functions: 80, branches: 75 },
         'packages/statement-parsers/src/**': { lines: 80, functions: 80, branches: 75 },
         'packages/golden-verification/src/**': { lines: 80, functions: 80, branches: 75 },
-        // format.ts only: the screens are covered by the Playwright run, not here.
+        // The app as a whole, .tsx included, floored at what the screen tests
+        // measure today (rounded down). It sits under the 80/80/75 bar because
+        // Add, Import, Ledger, Settings and sign-in have no tests yet
+        // (NOTICED N5); it only moves up. The files that do have tests are held
+        // to their own figures so the whole-app number cannot hide them slipping.
+        'apps/web/src/**': { lines: 31, functions: 71, branches: 78 },
         'apps/web/src/format.ts': { lines: 80, functions: 80, branches: 75 },
+        'apps/web/src/screens/WeekScreen.tsx': { lines: 95, functions: 100, branches: 76 },
+        'apps/web/src/screens/ReviewScreen.tsx': { lines: 95, functions: 100, branches: 87 },
       },
     },
   },

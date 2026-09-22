@@ -107,7 +107,27 @@ to text cells only.
 
 ---
 
-## N5 — The coverage gate does not measure the app's screens
+## N5 — The coverage gate does not measure the app's screens *(partly settled 2026-09-22)*
+
+**Status: not fully addressed.** Plan slice P3 did the groundwork. jsdom,
+Testing Library (dom and react) and a fake Supabase client are in
+(`apps/web/test/fake-supabase.ts`: the real supabase-js client with a fake
+fetch). The app's `.tsx` files are now measured. The Week and Review screens
+have tests and their own floors: Week at 95/100/76 and Review at 95/100/87
+(lines, functions, branches). The app as a whole is floored at
+31/71/78, which is what it measures today.
+
+**What is left:** that whole-app floor is below CONSTRAINTS.md's 80/80/75,
+because Add (612 lines), Import, Ledger, Settings, sign-in (`auth.tsx`) and
+`App.tsx` have no tests. Each needs its own screen tests, using the same fake,
+and after each one the `apps/web/src/**` floor goes up to the new measured
+figure. N5 is settled once that floor reaches 80/80/75. Add and Import will
+also need the fake to answer `functions.invoke` (receipt reading) and the
+`save_import` RPC. The fake refuses anything it does not know, so a test that
+reaches for those fails loudly until they are added.
+
+The original note follows.
+
 
 **Seen:** 2026-09-22, by the architecture review, which proved it by adding
 200 untested lines to apps/web and watching the gate stay green.
