@@ -153,3 +153,166 @@ reaches the schema's guard and is still refused.
 
 **Not applied elsewhere.** `IngestedTextSchema` deliberately does not trim; one
 module owns this normalization and it is the tokenizer.
+
+---
+
+## How the Workbook entries below were settled
+
+D5 to D16 come from the Workbook plan (`docs/workbook-plan.md`, answered in §9a).
+Each says how it was settled: **owner chose** (asked, and answered),
+**stated to the owner, no objection** (told what would be done unless they
+said otherwise; they did not choose it), or **engineering default** (not put
+to the owner). Cached values are re-read from the workbook.
+
+---
+
+## D5 — A real charge replaces a bill's planned amount
+
+**Date:** 2026-09-22
+**Sheet / cells:** Jan..Dec E22:E44, K22:K44, P22:P44; Bills!D7:D29, H7:H29,
+L7:L29 and the log O7:R30; formula decision F3
+**Settled:** owner chose (plan decision 3)
+
+**Workbook behaviour.** A bill's month Actual is its fixed Monthly Amount plus
+every payment logged for it (`Jan!E22 =Bills!D7+SUMIFS(Bills!Q:Q,…)`). The
+sample's Credit Card 1 is $50 fixed plus a $200 payment: Paycheck
+Budget!L50 = **250**, Annual Budget!K29 = **550**.
+
+**Chosen behaviour.** If a bill, debt or subscription category has any real
+ledger row in the window, its Actual is those rows and the planned amount is
+ignored. Only with no real row does the planned amount count, labelled
+"planned". The same sample would show 200.
+
+**Why.** With imported statements Workbook's rule counts every card-paid bill
+twice: Netflix set up at $17.99 plus its $17.99 statement line makes $35.98.
+Workbook's own note on Bills!Q5 says the log is for bills "that have changing
+amounts each month … OR are paid at various times", so its author expected a
+bill to be fixed or logged, not both.
+
+**What it costs.** A typed *extra* debt payment replaces the planned payment
+rather than adding to it. The cells where the two rules differ are left out of
+the golden fixtures (plan §5.4).
+
+---
+
+## D6 — A due day of 29, 30 or 31 counts in a short month
+
+**Date:** 2026-09-22
+**Sheet / cells:** Bills!B7:B29, F7:F29, J7:J29 (day paid); Weekly Budget!D50
+and Paycheck Budget!D50 (the day match); Bill Calendar's day grid
+**Settled:** engineering default
+
+**Workbook behaviour.** A partial window matches a bill's day paid against the
+days that exist in the window, so a bill due on the 31st never matches in a
+30-day month and one due on the 30th vanishes in February. Bill Calendar
+likewise has no cell for the missing days. No sample bill is due after the
+23rd, so no cached value shows it.
+
+**Chosen behaviour.** A due day past the end of a month counts on that month's
+last day (formula decision F8).
+
+**Why.** Rent due "on the 31st" is still due in April. Dropping it makes a week
+look $1,600 cheaper than it is, with nothing on screen to say so.
+
+---
+
+## D7 — Workbook's arithmetic mistakes are fixed
+
+**Date:** 2026-09-22
+**Sheet / cells:** Annual Budget!P9, Q9, J9, V9, W9, D15, D20; Bills!H36
+**Settled:** stated to the owner, no objection (plan decision 9)
+
+**Workbook behaviour.**
+
+| Cell | Formula | Cached | Mistake |
+|---|---|---|---|
+| Annual!P9 | `=SUM(P10:P36)` | 1803.97 | runs past the twelve month rows into the Subscriptions card below |
+| Annual!Q9 | `=SUM(Q10:Q36)` | 4819.85 | the same; Annual!D11 and N6 repeat it |
+| Annual!J9, V9, W9 | `=SUM(J10:J16)` and so on | 19400, 3000, 0 | sum seven months, not twelve |
+| Annual!D15, D20 | `=D9+O6-D11-U6` | −4819.85 | read the blank O6 and U6 (formula decision F12) |
+| Bills!H36 | `=SUM(D32,H32,G46)` | 850 | G46 is empty, so subscriptions ($17.99) are dropped from "all fixed" |
+
+**Chosen behaviour.** Each total sums exactly the rows it is labelled for, over
+twelve months; D15 and D20 follow F12; "all fixed" is bills + debts +
+subscriptions.
+
+**Why.** These are range typos, not choices. J9 and V9 happen to be right in
+the sample only because August–December goals are 0, so the fix is covered by
+a hand-derived test rather than a cached cell.
+
+Bill Calendar's own mistakes fall under the same decision: its first Sunday
+cell (Bill Calendar!B9) reads the log as `Bills!$P$7:$Q44` where every other
+day reads `$P$7:$Q$30`, it shows at most five bills a day, and it drops days
+29–31 in short months (D6).
+They are recorded against their cells when the calendar is built (S15c).
+
+---
+
+## D8 — Money is shown with its cents and its minus sign
+
+**Date:** 2026-09-22
+**Sheet / cells:** Jan..Dec Actual columns P10:P16, U10:U16, E22:E44,
+K22:K44, P22:P44, U22:U44 (format `"$"#,##0.00;;`); Difference and Remaining
+columns V10:V16, V22:V44 (format `"$"#,##0.00;"$"#,##0.00;`); Bills!D32, H32,
+L32 (format `"$"#,##0`); Jan's income chart
+**Settled:** engineering default
+
+**Workbook behaviour.** On the Actual columns the `;;` format shows nothing
+for a negative or a zero, so a month where refunds beat purchases in a category
+shows an empty cell. On the Difference and Remaining columns the format shows a
+negative *without its minus sign*: Jan!V10 holds **−3000** (no savings against
+a $3,000 goal) and shows "$3,000.00", which reads like money saved. The Bills
+totals round to the dollar: L32 holds **17.99** and shows "$18". The income
+chart stacks Actual on top of Goal.
+
+**Chosen behaviour.** A negative Actual, Difference or Remaining shows its
+minus sign. A zero Actual on a budgeted row stays blank, as in Workbook. Totals
+show cents. The income chart draws Actual over a Goal track.
+
+**Why.** A hidden negative is a number the owner cannot see is wrong, and a
+total that disagrees with its own rows by a rounding is a total they stop
+trusting. Display only: no value changes.
+
+---
+
+## D9 — Paying the card is neither spending nor income
+
+**Date:** 2026-09-22
+**Sheet / cells:** Bills!O7:R7 (2025-01-05, Credit Card 1, 200, "Paid off my
+balance!"), read into Jan..Dec K22 and Paycheck Budget!K50 and L50
+**Settled:** stated to the owner, no objection (plan decision 4)
+
+**Workbook behaviour.** The sample logs a $200 card payment as a Debts payment,
+and it counts in Spent: Paycheck Budget!K50 = **250** ($50 + $200) feeds L22,
+and Spent (D11) is **1135**.
+
+**Chosen behaviour.** "PAYMENT, THANK YOU" is filed to "Card payments" in the
+app-only "Not spending" list. It is in no block, no total, and not income; a
+footnote says "Paid to your card: $… — not counted". Card interest and fees go
+to "Card interest & fees" under Variable expenses (plan decision 14).
+
+**Why.** The purchases the payment covers are already counted, one by one,
+from the same statement. Counting the payment too would count them twice.
+
+---
+
+## D10 — A month is always read in its own year
+
+**Date:** 2026-09-22
+**Sheet / cells:** Hidden!J4:U15 (reads Jan..Dec by position); Annual
+Budget!Q11, K9, W9, W30
+**Settled:** engineering default
+
+**Workbook behaviour.** Annual Budget shows 2025 (D6) but reads spending,
+income and savings from the month tabs, which are dated 2026, matching by
+month name alone. Q11 = **867.99** includes February 2026 spending ($0);
+February 2025's $356 of spending is never read. K9, W9 and W30 are **0** where
+the sample's 2025 rows give 2600, 2000 and 235.
+
+**Chosen behaviour.** Every window takes its year from its own dates (formula
+decision F4). February 2025 on the Year is February 2025 in the ledger.
+
+**Why.** The app has one ledger with real dates, not twelve tabs with a year
+typed on each; there is no second year to read by mistake. Formula decision
+F11 explains how the year fixture is transcribed so the golden cells still
+hold.
