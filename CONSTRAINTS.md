@@ -38,7 +38,7 @@ container has neither, and every session opens `MISCONFIGURED`.
 |---|---|---|---|
 | Types | Zero type errors | `tsc --build` | every edit |
 | Lint | Zero errors | `eslint .` | every edit |
-| Engine purity | `packages/core` imports only `money-primitives`; no ambient clock, randomness, or env | `depcruise --validate` + `eslint` | every edit |
+| Engine purity | `packages/core` imports only `money-primitives`; no ambient clock, randomness, or env | `depcruise` + `eslint` | every edit |
 | Float money | No `toFixed` / `parseFloat` in the engine; `Cents` brand enforced by the type system | `eslint` + `tsc --build` | every edit |
 | Weak assertions | No `toBeCloseTo`, no snapshots, no `vi.mock` under `packages/core` | `eslint` | every edit |
 | Secrets | Zero findings | `gitleaks detect --redact --no-banner` | every edit |
@@ -112,7 +112,7 @@ model is never auto-approved.** Auto-approved rows are stamped
 | Metric | Today | Direction |
 |---|---|---|
 | Golden assertion count | 9 | must not fall |
-| Total tests | 68 | must not fall |
+| Total tests | 83 | must not fall |
 
 ## Exceptions
 

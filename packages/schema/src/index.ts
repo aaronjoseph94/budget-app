@@ -24,8 +24,12 @@ export {
 } from './enums.js'
 
 export {
+  IngestBatchCountsSchema,
+  IngestCandidateRowSchema,
   MerchantRuleRowSchema,
   TransactionRowSchema,
+  type IngestBatchCounts,
+  type IngestCandidateRow,
   type MerchantRuleRow,
   type TransactionRow,
 } from './rows.js'
