@@ -311,3 +311,23 @@ the reasons changes the CSV import screen too.
 
 **To settle:** reword the two reasons so they read true for both sources.
 Leave the text unstored unless the owner finds row numbers too hard to use.
+
+---
+
+## N15 — The plan asks for Comfortaa numbers in tabular digits, which Comfortaa lacks
+
+**Seen:** 2026-09-22, S1 (Workbook's look).
+
+§6.6 says big numbers use Comfortaa, and §6.2 says the Month rows' numbers
+use tabular digits. Comfortaa cannot do both: the Google Fonts subset carries
+no `tnum` feature (its features are ccmp, dnom, frac, liga, locl, numr), and
+its digit widths differ, with the 1 at 378 units against 568–647 for the
+others. So `Figure` (Comfortaa) is only for a number standing on its own, and
+a column of amounts that must line up stays in the system face with `tnum`.
+
+**Why not fixed here:** S1 builds the styles, not the Month blocks, and the
+plan text is not part of this slice.
+
+**To settle:** before S5b, say in §6.2 and §6.6 that the block columns use
+the system face with tabular digits and that Comfortaa is for the big
+standalone totals only.
