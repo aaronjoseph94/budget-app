@@ -14,6 +14,13 @@ export {
 } from './amount.js'
 
 export {
+  DATE_FORMATS,
+  dateFormatCandidates,
+  parseStatementDate,
+  type DateFormat,
+} from './date.js'
+
+export {
   DEDUPE_HASH_VERSION,
   assignDiscriminators,
   computeDedupeHash,
