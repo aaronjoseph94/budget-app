@@ -55,6 +55,12 @@ whether a commit is clean.
 Verified to bite: injecting `Date.now()` and `toFixed()` into `packages/core`
 turns the gate run `RED`. A gate never seen to fail has not been tested.
 
+Every module has a coverage floor. `statement-parsers` and
+`golden-verification` had none: thresholds apply only to files a glob matches,
+so those two were measured into the printed summary and never checked. The
+highest-stakes module on the branch could have had its tests deleted with CI
+still green. Verified by deleting them and observing `RED`.
+
 Coverage is verified by raising its thresholds above the measured figure and
 observing the gate go `RED`. It is aggregated per module, not per changed line
 as this row originally promised: vitest measures whole files, and a per-file
@@ -132,7 +138,7 @@ model is never auto-approved.** Auto-approved rows are stamped
 | Metric | Today | Direction |
 |---|---|---|
 | Golden assertion count | 9 | must not fall |
-| Total tests | 158 | must not fall |
+| Total tests | 167 | must not fall |
 
 ## Exceptions
 

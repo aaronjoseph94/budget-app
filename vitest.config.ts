@@ -7,6 +7,7 @@ export default defineConfig({
       { test: { name: 'money', root: './packages/money-primitives' } },
       { test: { name: 'schema', root: './packages/schema' } },
       { test: { name: 'parsers', root: './packages/statement-parsers' } },
+      { test: { name: 'golden', root: './packages/golden-verification' } },
     ],
     coverage: {
       provider: 'v8',
@@ -22,6 +23,8 @@ export default defineConfig({
         'packages/core/src/**': { lines: 80, functions: 80, branches: 75 },
         'packages/schema/src/**': { lines: 80, functions: 80, branches: 75 },
         'packages/money-primitives/src/**': { lines: 80, functions: 80, branches: 75 },
+        'packages/statement-parsers/src/**': { lines: 80, functions: 80, branches: 75 },
+        'packages/golden-verification/src/**': { lines: 80, functions: 80, branches: 75 },
       },
     },
   },
