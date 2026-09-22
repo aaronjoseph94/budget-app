@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.expo/
+web-build/
+*.tsbuildinfo
+
+# Environment and secrets — never commit
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# Financial source data — never commit (CLAUDE.md)
+*.xlsx
+*.xls
+*.csv
+receipts/
+statements/
+!packages/*/test/fixtures/**/*.csv
+
+# Supabase local
+supabase/.temp/
+supabase/.branches/
+
+# Test output
+coverage/
+.vitest/
+
+# OS / editor
+.DS_Store
+.idea/
+*.swp
