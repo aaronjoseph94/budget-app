@@ -272,3 +272,144 @@ Money in the app is whole cents, so the fraction has to go somewhere.
 **Chosen: A.** A monthly goal exists to reach the target; the rounding should
 never be the reason it is missed. The golden value is Savings!Z14 → 8891
 cents.
+
+---
+
+## F10 — Which months of the Year count planned bills
+
+**Decided 2026-09-22. Engineering default: copies the workbook.**
+
+```
+Hidden!O4           =SUMIFS(Bills!Q:Q, Bills!O:O, ">="&DATE(YEAR('Annual Budget'!$C30), MONTH('Annual Budget'!$C30), 1),
+                      Bills!O:O, "<="&EOMONTH('Annual Budget'!$C30, 0), Bills!T:T, "Bills")
+                    +IF(OR(AND(MONTH('Annual Budget'!$C30)<=MONTH('Annual Budget'!$D$7), YEAR('Annual Budget'!$C30)<=YEAR('Annual Budget'!$D$7)),
+                      YEAR('Annual Budget'!$C30)<YEAR('Annual Budget'!$D$7)), Bills!$D$32, "")   [800]
+Annual Budget!D7    2025-05-01   note: "Enter today's date here!"
+Jan!E22 ... Dec!E22 =Bills!D7+SUMIFS(...)   [800 on every tab]
+```
+
+Annual Budget adds a month's fixed bill, debt and subscription amounts only up
+to its typed "today" (D7). The month tabs, and Spending Tracker rows 17–27,
+never gate: December shows its planned bills in January.
+
+**Chosen:** both, each where Workbook has it. The Year screen gates planned
+amounts at `asOf` and so shows the year to date, as Annual does (Annual!E34
+[800] for May counts; E35 [0] for June does not). A future month opened on the
+Month screen still shows its planned bills, as a month tab does.
+
+---
+
+## F11 — How the `workbook-year` golden fixture is transcribed
+
+**Decided 2026-09-22. Engineering default: a question about the test fixture,
+not about any number the owner sees.**
+
+```
+Hidden!J4  =Jan!$O$9    [19400]   (income goals)
+Hidden!K4  =Jan!$N$5    [0]       (income actual)
+Hidden!M4  =Jan!$U$9    [0]
+Hidden!U5  =Feb!$U$21   [0]       (February spending)
+Hidden!J18 =Jan!D9      [1000]    (starting balance, via Annual!D44 → D18)
+Jan!D7     2026-01-01             Annual Budget!D6  2025-01-01
+```
+
+Annual Budget reads goals, budgets, starting balances and the income, savings
+and spending Actuals from the month tabs by position — the **2026** tabs —
+whatever year Annual itself shows. Only Hidden!O, Q and S (bills, debts,
+subscriptions) filter by Annual's own year, 2025, through Annual!C30.
+
+**Chosen:** the fixture re-dates January's budgets, goals and starting balance
+from 2026-01 to 2025-01, so that one engine reading one year reproduces
+Annual's cached cells. Its ledger holds only the Bills-log rows, not the
+Transactions rows. The fixture's `$semantics` header says so. The engine
+itself always reads one year (D10).
+
+---
+
+## F12 — The Year's "Left To Spend" and "Ending Balance" boxes
+
+**Decided 2026-09-22 under plan decision 9, which was stated to the owner
+with no objection.** Decision 9 is "Workbook's arithmetic mistakes are fixed and
+recorded". This entry is plan decision 15, which falls under it; decision 15
+and its options below were not put to the owner on their own, so the owner
+did not choose "Left over".
+
+```
+Annual Budget!D15  =D9+O6-D11-U6   [-4819.85]   label "Left To Spend"
+Annual Budget!D20  =D9+O6-D11-U6   [-4819.85]   label "Ending Balance"
+Annual Budget!O6   (blank)          Annual Budget!U6  (blank)
+Annual Budget!D9   =H6   (income)   D11 =N6 (expenses)   D13 =T6 (savings)   D18 =D44 (starting balance)
+```
+
+Both boxes read two empty cells, so both show income − expenses, savings
+ignored, and the ending balance never includes the starting balance.
+
+**Options**
+
+- **A — income − expenses − savings, called "Left over".**
+- **B — Workbook's literal result:** income − expenses, savings ignored.
+- **C — leave the box off.**
+
+**Chosen: A.** D15 becomes D9 − D11 − D13, shown as **"Left over"** so it is
+not confused with the Month's "Left to spend", which means budget remaining
+(F5). D20 becomes D18 + D9 − D11 − D13. Recorded under divergence D7.
+
+---
+
+## F13 — Rounding a 50/30/20 share
+
+**Decided 2026-09-22. Engineering default. Dormant:** the owner did not choose
+the 50/30/20 view (plan decision 2), so nothing uses this until they do.
+
+```
+503020!G7  =SUM(L7/($L$7+$M$7+$N$7))   [0.9411764706]   format 0%
+503020!I7  =SUM(N7/($L$7+$M$7+$N$7))   [0.05882352941]
+```
+
+**Chosen:** a share is held in basis points, rounded half-up (G7 → 9412, I7 →
+588). Workbook displays whole percent; basis points keep two more places without
+a float.
+
+---
+
+## F14 — What "a year" is
+
+**Decided 2026-09-22. Engineering default: copies the workbook.**
+
+```
+Annual Budget!D6   2025-01-01   note: "Choose any month you'd like to see a 12-Month Budget display for!"
+Annual Budget!I10  =D6
+Annual Budget!I11  =DATE(YEAR(I10),MONTH(I10)+1,DAY(I10))
+```
+
+**Chosen:** the Year covers twelve months from a start month the owner picks,
+not a calendar year. Its address carries the start month (`#/year/2026-01`).
+
+---
+
+## F15 — How a pay period is found, and how a monthly bill is split across it
+
+**OPEN.** To be put to the account holder at slice S15b, before any Paycheck
+code is written.
+
+```
+Paycheck Budget!D6   2025-01-01          D7  2025-01-14     (both typed)
+Paycheck Budget!E22  =IF(F22, E50 / 2, D50)   [800]          F22  FALSE
+START HERE!C8        2025-01-10 (first pay date)             E8   Bi-weekly
+```
+
+Workbook's Paycheck tab takes a typed start and end date. A tick box (F22) halves
+a bill's monthly amount with a fixed ÷2, whatever pay frequency START HERE!E8
+says; unticked, it counts the bill only if its due day falls in the window
+(F8).
+
+**Options to put to the owner**
+
+- **A — copy Workbook.** Type both dates; halve a monthly bill with ÷2.
+- **B — find the period from the Income row's pay schedule**, and divide a
+  monthly bill by the pay frequency: 4.333 weekly, 2.1667 bi-weekly, 1 monthly.
+- **C — find the period from the pay schedule**, and divide a monthly bill by
+  the number of paydays that actually fall in that month.
+
+No option is chosen. A split that divides money also needs a rounding rule;
+that is settled with the answer.
