@@ -34,3 +34,10 @@ export {
   type MerchantRuleRow,
   type TransactionRow,
 } from './rows.js'
+
+export {
+  parseReceiptReply,
+  type ReceiptFailure,
+  type ReceiptOutcome,
+  type ReceiptReading,
+} from './receipt.js'
