@@ -83,6 +83,33 @@ describe('parseAmountToCents', () => {
     expect(parsed(raw)).toEqual({ ok: false, reason: 'unparseable_amount' })
   })
 
+  it('rejects a misdeclared format instead of silently multiplying by 100', () => {
+    // "12,34" is twelve euros thirty-four. Read under US_AMOUNT_FORMAT the
+    // comma looks like grouping, and stripping it yields $1,234.00 — a whole
+    // ledger 100x wrong with every row reporting ok. A group of two digits is
+    // not legal grouping, so it goes to the review queue instead.
+    expect(parsed('12,34')).toEqual({ ok: false, reason: 'unparseable_amount' })
+    expect(parsed('12.34', EU)).toEqual({ ok: false, reason: 'unparseable_amount' })
+    expect(parsed('1,23')).toEqual({ ok: false, reason: 'unparseable_amount' })
+  })
+
+  it.each([
+    ['a group of two', '1,23'],
+    ['single-digit groups', '1,2,3'],
+    ['four digits before the first separator', '1234,567'],
+    ['a trailing separator', '1,234,'],
+    ['a leading separator', ',234'],
+  ])('rejects %s as malformed grouping', (_label, raw) => {
+    expect(parsed(raw)).toEqual({ ok: false, reason: 'unparseable_amount' })
+  })
+
+  it('still accepts legal grouping, and no grouping at all', () => {
+    expect(parsed('1,234')).toEqual({ ok: true, value: cents(123400) })
+    expect(parsed('1,234,567.89')).toEqual({ ok: true, value: cents(123456789) })
+    expect(parsed('1234567.89')).toEqual({ ok: true, value: cents(123456789) })
+    expect(parsed('123')).toEqual({ ok: true, value: cents(12300) })
+  })
+
   it('never puts the amount into the failure it reports', () => {
     // CONSTRAINTS.md: a rejection reason is a thing that gets logged, and logs
     // carry ids, enum codes and counts only.

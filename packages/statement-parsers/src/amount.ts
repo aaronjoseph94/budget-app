@@ -70,12 +70,24 @@ export function parseAmountToCents(raw: string, format: AmountFormat): ParseOutc
 
   // The grouping separator is whichever one is not the decimal separator.
   const grouping = format.decimalSeparator === '.' ? ',' : '.'
-  body = body.split(grouping).join('')
 
+  // Split on the decimal separator BEFORE touching grouping, so the grouping
+  // that remains can be checked for position rather than blindly deleted.
   const parts = body.split(format.decimalSeparator)
   if (parts.length > 2) return { ok: false, reason: 'unparseable_amount' }
 
-  const [whole = '', fraction = ''] = parts
+  const [groupedWhole = '', fraction = ''] = parts
+
+  // A separator in the wrong place means the declared format is not this
+  // statement's format. Stripping it regardless is how "12,34" from a European
+  // export becomes $1,234.00 under US_AMOUNT_FORMAT — a ledger 100x wrong with
+  // every row reporting ok. The module promises nothing is guessed; this is
+  // where that promise is kept, by rejecting into the review queue instead.
+  if (!hasWellFormedGrouping(groupedWhole, grouping)) {
+    return { ok: false, reason: 'unparseable_amount' }
+  }
+
+  const whole = groupedWhole.split(grouping).join('')
   if (whole.length === 0 || !isDigits(whole)) return { ok: false, reason: 'unparseable_amount' }
 
   // More than two decimals cannot be paid, received, or reconciled against a
@@ -93,6 +105,23 @@ export function parseAmountToCents(raw: string, format: AmountFormat): ParseOutc
     // Swallows the RangeError deliberately: its message names the amount.
     return { ok: false, reason: 'unparseable_amount' }
   }
+}
+
+/**
+ * Whether the whole part groups its digits legally, or does not group at all.
+ *
+ * Legal is `1234`, `1`, `1,234`, `1,234,567`. Illegal is `12,34` (a group of
+ * two), `1,2,3` and `1234,567` (four digits before the first separator) —
+ * each of which is the signature of a statement whose format was misdeclared.
+ */
+function hasWellFormedGrouping(wholePart: string, grouping: string): boolean {
+  if (!wholePart.includes(grouping)) return true
+
+  const groups = wholePart.split(grouping)
+  const [lead] = groups
+  if (lead === undefined || lead.length < 1 || lead.length > 3 || !isDigits(lead)) return false
+
+  return groups.slice(1).every((group) => group.length === 3 && isDigits(group))
 }
 
 /**
