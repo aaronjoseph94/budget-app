@@ -5,6 +5,7 @@ import { parseMoneyInput, useAppData } from '../app-data.js'
 import { addTypedTransaction, ensureCategory, saveImport } from '../ledger.js'
 import { ImportScreen, type SaveRequest } from '../ImportScreen.js'
 import { readStatementPdf, type PdfImport } from '../pdf-import.js'
+import { readReceipt } from '../receipt.js'
 import { formatCents, formatIsoDate, todayIso } from '../format.js'
 import { IngestedText } from '../ui.js'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card.js'
@@ -15,12 +16,13 @@ import { Icon } from '../components/ui/icons.js'
 import { navigate } from '../nav.js'
 import { cn } from '../lib/cn.js'
 
-type Mode = 'statement' | 'typed'
+type Mode = 'statement' | 'photo' | 'typed'
 type Loaded =
   | { readonly kind: 'none' }
   | { readonly kind: 'reading'; readonly name: string }
   | { readonly kind: 'csv'; readonly name: string; readonly text: string }
   | { readonly kind: 'pdf'; readonly name: string; readonly result: PdfImport }
+  | { readonly kind: 'wrong'; readonly name: string; readonly message: string }
 
 interface Outcome {
   readonly ok: boolean
@@ -33,10 +35,10 @@ export function AddScreen() {
     <div className="space-y-4">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Add</h1>
-        <p className="text-sm text-muted-foreground">A statement from your bank, or one purchase by hand.</p>
+        <p className="text-sm text-muted-foreground">A statement from your bank, a receipt photo, or one purchase by hand.</p>
       </header>
-      <div role="tablist" className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
-        {(['statement', 'typed'] as const).map((m) => (
+      <div role="tablist" className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
+        {(['statement', 'photo', 'typed'] as const).map((m) => (
           <button
             key={m}
             role="tab"
@@ -48,12 +50,12 @@ export function AddScreen() {
               mode === m ? 'bg-card shadow-sm' : 'text-muted-foreground',
             )}
           >
-            <Icon name={m === 'statement' ? 'file' : 'pencil'} className="size-4" />
-            {m === 'statement' ? 'Statement' : 'Type it'}
+            <Icon name={m === 'statement' ? 'file' : m === 'photo' ? 'camera' : 'pencil'} className="size-4" />
+            {m === 'statement' ? 'Statement' : m === 'photo' ? 'Photo' : 'Type it'}
           </button>
         ))}
       </div>
-      {mode === 'statement' ? <StatementImport /> : <TypedEntry />}
+      {mode === 'statement' ? <StatementImport /> : mode === 'photo' ? <PhotoEntry /> : <TypedEntry />}
     </div>
   )
 }
@@ -66,6 +68,12 @@ function StatementImport() {
 
   const onFile = async (file: File) => {
     setOutcome(null)
+    // A photo dropped here would otherwise be read as a CSV and shown as
+    // columns of binary noise. Say where it belongs instead.
+    if (file.type.startsWith('image/')) {
+      setLoaded({ kind: 'wrong', name: file.name, message: 'That is a photo. Use the Photo tab above to read a receipt.' })
+      return
+    }
     setLoaded({ kind: 'reading', name: file.name })
     const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name)
     if (isPdf) {
@@ -108,6 +116,18 @@ function StatementImport() {
       <Card>
         <div className="py-10 text-center text-sm text-muted-foreground">Reading {loaded.name}…</div>
       </Card>
+    )
+  }
+  if (loaded.kind === 'wrong') {
+    return (
+      <div className="space-y-3">
+        <Alert tone="error" title={loaded.name}>
+          {loaded.message}
+        </Alert>
+        <Button variant="outline" onClick={reset}>
+          Choose another file
+        </Button>
+      </div>
     )
   }
   if (loaded.kind === 'csv') {
@@ -414,3 +434,179 @@ function TypedEntry() {
   )
 }
 
+type PhotoState =
+  | { readonly kind: 'none' }
+  | { readonly kind: 'reading'; readonly preview: string }
+  | { readonly kind: 'read'; readonly preview: string }
+  | { readonly kind: 'failed'; readonly preview: string; readonly message: string }
+
+/**
+ * A receipt photo, read by Gemini, checked by the user, then sent to Review.
+ *
+ * What the model reads only fills in the form. The user sees every field and
+ * can correct it, and the row still waits in Review for a category like any
+ * other — model output never reaches the ledger unreviewed (CLAUDE.md).
+ */
+function PhotoEntry() {
+  const { supabase, userId, accountId, refresh } = useAppData()
+  const [state, setState] = useState<PhotoState>({ kind: 'none' })
+  const [merchant, setMerchant] = useState('')
+  const [amount, setAmount] = useState('')
+  const [date, setDate] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [outcome, setOutcome] = useState<Outcome | null>(null)
+
+  const cents = parseMoneyInput(amount)
+  const ready = cents !== null && cents > 0 && merchant.trim().length > 0 && /^\d{4}-\d{2}-\d{2}$/.test(date)
+
+  const onPhoto = async (file: File) => {
+    const preview = URL.createObjectURL(file)
+    setOutcome(null)
+    setState({ kind: 'reading', preview })
+    const result = await readReceipt(supabase, file)
+    if (result.ok) {
+      setMerchant(result.reading.merchant ?? '')
+      setAmount(result.reading.total)
+      setDate(result.reading.date ?? '')
+      setState({ kind: 'read', preview })
+    } else {
+      setState({ kind: 'failed', preview, message: result.message })
+    }
+  }
+
+  const reset = () => {
+    if (state.kind !== 'none') URL.revokeObjectURL(state.preview)
+    setState({ kind: 'none' })
+    setMerchant('')
+    setAmount('')
+    setDate('')
+    setOutcome(null)
+  }
+
+  const send = async () => {
+    if (!ready || cents === null || accountId === null) return
+    setBusy(true)
+    setOutcome(null)
+    try {
+      const counts = await saveImport(supabase, {
+        userId,
+        accountId,
+        parsed: 1,
+        rejected: [],
+        source: 'receipt_photo',
+        accepted: [
+          {
+            line: 1,
+            postedOn: isoDate(date),
+            amountCents: applySignConvention(cents, { kind: 'debit_positive' }),
+            merchantRaw: merchant.trim(),
+            issuerTransactionId: undefined,
+          },
+        ],
+      })
+      setOutcome({
+        ok: true,
+        message:
+          counts.autoApproved > 0
+            ? 'Added — filed automatically from your past choices.'
+            : counts.deduped > 0
+              ? 'You already had this one, so nothing was added.'
+              : 'Sent to Review. Pick a category there and it counts.',
+      })
+      await refresh()
+    } catch (cause) {
+      setOutcome({ ok: false, message: cause instanceof Error ? cause.message : 'Nothing was saved.' })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (state.kind === 'none') {
+    return (
+      <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed bg-card px-6 py-12 text-center">
+        <span className="rounded-full bg-muted p-3">
+          <Icon name="camera" />
+        </span>
+        <span className="font-medium">Take or choose a receipt photo</span>
+        <span className="text-sm text-muted-foreground">Flat, in good light, with the total visible</span>
+        <input
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file !== undefined) void onPhoto(file)
+            e.target.value = ''
+          }}
+        />
+        <span className="mt-2 max-w-xs text-xs text-muted-foreground">
+          The photo is read by Google Gemini and is not stored. On the free tier Google may use it to improve its products.
+        </span>
+      </label>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3">
+        <img src={state.preview} alt="Your receipt" className="h-28 w-20 shrink-0 rounded-md border object-cover" />
+        <div className="min-w-0 flex-1 space-y-2">
+          {state.kind === 'reading' ? <p className="text-sm text-muted-foreground">Reading your receipt…</p> : null}
+          {state.kind === 'read' ? (
+            <p className="text-sm">
+              <Badge variant="outline">
+                <Icon name="sparkles" className="size-3" /> Read by Gemini
+              </Badge>{' '}
+              <span className="text-muted-foreground">Check each field before sending.</span>
+            </p>
+          ) : null}
+          {state.kind === 'failed' ? <Alert tone="error">{state.message}</Alert> : null}
+          <Button variant="outline" size="sm" onClick={reset}>
+            Use another photo
+          </Button>
+        </div>
+      </div>
+
+      {state.kind !== 'reading' ? (
+        <Card>
+          <CardContent className="pt-5">
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault()
+                void send()
+              }}
+            >
+              <Field label="Where">
+                <Input value={merchant} maxLength={120} onChange={(e) => setMerchant(e.target.value)} required />
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Total spent">
+                  <Input inputMode="decimal" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+                </Field>
+                <Field label="Date">
+                  <Input type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} required />
+                </Field>
+              </div>
+              {amount.trim().length > 0 && cents === null ? (
+                <p className="text-sm text-spend">That amount is not a number of dollars and cents.</p>
+              ) : null}
+              <Button type="submit" size="lg" className="w-full" disabled={!ready || busy}>
+                {busy ? 'Sending…' : 'Send to review'}
+              </Button>
+              {outcome !== null ? <Alert tone={outcome.ok ? 'success' : 'error'}>{outcome.message}</Alert> : null}
+              {outcome?.ok === true ? (
+                <Button variant="outline" className="w-full" onClick={() => navigate('review')}>
+                  Go to review
+                </Button>
+              ) : null}
+              <p className="text-xs text-muted-foreground">
+                For cash. A card purchase also on your statement would count twice.
+              </p>
+            </form>
+          </CardContent>
+        </Card>
+      ) : null}
+    </div>
+  )
+}
