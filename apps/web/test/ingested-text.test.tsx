@@ -1,5 +1,6 @@
 import { act, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
+import { within } from '@testing-library/dom'
 import { afterEach, describe, expect, it } from 'vitest'
 import { IngestedText } from '../src/ui.js'
 
@@ -31,8 +32,10 @@ describe('IngestedText', () => {
   it('renders a markup-looking merchant as text, never as elements', () => {
     const hostile = '<img src=x onerror="alert(1)"><b>COFFEE</b>'
     const el = render(<IngestedText>{hostile}</IngestedText>)
-    expect(el.querySelector('img')).toBeNull()
+    // By role and by text, as a reader would find it: no image was created,
+    // and the whole string sits in one element as characters.
+    expect(within(el).queryByRole('img')).toBeNull()
+    expect(within(el).getByText(hostile).tagName).toBe('SPAN')
     expect(el.querySelector('b')).toBeNull()
-    expect(el.textContent).toBe(hostile)
   })
 })
