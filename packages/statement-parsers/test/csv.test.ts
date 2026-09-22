@@ -65,8 +65,25 @@ describe('records and terminators', () => {
   it('treats a record separator inside quotes as data, not a separator', () => {
     // Amex extended details and several UK exports put multi-line memos in a
     // quoted column. Splitting on lines first fabricates a second transaction.
+    // One record is the structural claim; the break is then normalized to a
+    // space so a real charge is not rejected over its formatting (D4).
     const rows = fieldsOf('03/04/2025,"AMAZON MKTPLACE\r\nORDER 112-3456",-45.00')
-    expect(rows).toEqual([['03/04/2025', 'AMAZON MKTPLACE\r\nORDER 112-3456', '-45.00']])
+    expect(rows).toHaveLength(1)
+    expect(rows).toEqual([['03/04/2025', 'AMAZON MKTPLACE ORDER 112-3456', '-45.00']])
+  })
+
+  it('collapses internal whitespace runs, so one memo hashes one way', () => {
+    // The same descriptor arrives CRLF-separated in one download and
+    // LF-separated in the next; unnormalized they are two different charges.
+    expect(fieldsOf('a,"X\r\nY",b')[0]?.[1]).toBe('X Y')
+    expect(fieldsOf('a,"X\nY",b')[0]?.[1]).toBe('X Y')
+    expect(fieldsOf('a,"X   Y",b')[0]?.[1]).toBe('X Y')
+  })
+
+  it('still refuses a descriptor that displays differently than it is stored', () => {
+    // A bidi override is not whitespace, so normalization does not launder it
+    // and the schema's guard still sees it.
+    expect(fieldsOf('a,"SAFE \u202e EROTS",b')[0]?.[1]).toContain('\u202e')
   })
 
   it('counts a multi-line quoted field as one line break, not two', () => {

@@ -82,7 +82,7 @@ export function tokenizeCsv(text: string, options: CsvOptions): TokenizeOutcome 
   let i = 0
 
   const endField = (): void => {
-    fields.push(field.trim())
+    fields.push(normalizeField(field))
     field = ''
   }
   const endRecord = (): void => {
@@ -167,6 +167,29 @@ export function tokenizeCsv(text: string, options: CsvOptions): TokenizeOutcome 
     return { ok: false, failure: { kind: 'too_many_rows', limit: MAX_ROWS } }
   }
   return { ok: true, rows }
+}
+
+/**
+ * Collapse every run of whitespace to one space, then trim. See D4.
+ *
+ * The collapse exists for the line break inside a quoted field. Amex extended
+ * details and several UK exports put a multi-line memo in the merchant column,
+ * and that is a real transaction, not a malformed one — but a merchant
+ * descriptor is a single-line field, and `IngestedTextSchema` rejects control
+ * characters precisely because text that renders across lines can push content
+ * out of a reviewer's view. Rejecting the charge over its formatting would send
+ * a legitimate purchase to the queue every month.
+ *
+ * It also stabilises the dedupe hash: the same memo arrives CRLF-separated in
+ * one download and LF-separated in the next, and an unnormalized field hashes
+ * those as two different charges.
+ *
+ * This neutralizes only whitespace. The bidi overrides and isolates are not
+ * whitespace, so a descriptor that displays differently than it is stored still
+ * reaches the schema's guard and is still refused.
+ */
+function normalizeField(raw: string): string {
+  return raw.replace(/\s+/gu, ' ').trim()
 }
 
 function skipBlanks(src: string, from: number): number {

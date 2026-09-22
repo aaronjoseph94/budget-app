@@ -130,5 +130,20 @@ with a backfill in the same migration, exactly as changing the hash's field set
 would. It is recorded here so that a later "let us preserve whitespace
 properly" cleanup is recognised as a migration rather than a tidy-up.
 
+**Extended 2026-09-22: internal whitespace is collapsed too.** Every run of
+whitespace inside a field becomes one space. This exists for the line break in
+a quoted field: Amex extended details and several UK exports put a multi-line
+memo in the merchant column, and that is a real transaction, not a malformed
+one — but a descriptor is a single-line field, and `IngestedTextSchema` rejects
+control characters precisely because text rendering across lines can push
+content out of a reviewer's view. Without the collapse, a legitimate purchase
+goes to the review queue every month over its formatting. It also stabilises
+the hash: the same memo arrives CRLF-separated in one download and
+LF-separated in the next.
+
+Only whitespace is neutralized. The bidi overrides and isolates are not
+whitespace, so a descriptor that displays differently than it is stored still
+reaches the schema's guard and is still refused.
+
 **Not applied elsewhere.** `IngestedTextSchema` deliberately does not trim; one
 module owns this normalization and it is the tokenizer.
