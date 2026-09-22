@@ -41,6 +41,9 @@ if [ "$LEVEL" = "full" ]; then
   # The history scan still earns its place: it catches a secret committed
   # earlier, which a working-tree scan cannot see once the file is deleted.
   gate history  gitleaks gitleaks detect --redact --no-banner --source .
+  # Applies every migration to a throwaway database and asserts the schema
+  # refuses what it claims to. Never touches the hosted project.
+  gate schema   psql     ./scripts/verify-migrations.sh
   gate coverage vitest   npx vitest run --coverage
   gate deps     pnpm     pnpm audit --audit-level high
 fi

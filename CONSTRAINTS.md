@@ -50,6 +50,8 @@ whether a commit is clean.
 | Secret history | Zero findings in committed history | `gitleaks detect --redact --no-banner` | CI |
 | Golden replay | 100% exact match, zero tolerance | `vitest run` | every edit |
 | Coverage | ≥80% lines and functions, ≥75% branches, per module | `vitest run --coverage` | CI |
+| Migration replay | Applies cleanly to an empty database | `scripts/verify-migrations.sh` | CI |
+| RLS coverage | `pg_tables WHERE NOT rowsecurity` returns 0; policies isolate | `scripts/verify-migrations.sh` | CI |
 | Dependencies | Nothing high or above | `pnpm audit --audit-level high` | CI |
 
 Verified to bite: injecting `Date.now()` and `toFixed()` into `packages/core`
@@ -60,6 +62,12 @@ Every module has a coverage floor. `statement-parsers` and
 so those two were measured into the printed summary and never checked. The
 highest-stakes module on the branch could have had its tests deleted with CI
 still green. Verified by deleting them and observing `RED`.
+
+The schema gate applies the migrations verbatim to a throwaway PostgreSQL
+cluster and then attempts every write the schema promises to refuse, raising if
+one succeeds. Verified by deleting the constraint that stops a model-categorised
+candidate auto-approving and observing the run go `RED` — a schema is a set of
+claims about what cannot happen, and an unattempted refusal is an assumption.
 
 Coverage is verified by raising its thresholds above the measured figure and
 observing the gate go `RED`. It is aggregated per module, not per changed line
@@ -100,8 +108,6 @@ the command to actually run.
 |---|---|---|
 | Extraction accuracy | ≥90% zod-valid, ≥98% exact amounts over ≥20 labeled samples; no live provider calls in CI | `llm-providers` |
 | Ingest idempotency | Re-import yields 0 new rows; double-approve yields 1 transaction | `ingest-pipeline` |
-| RLS coverage | `pg_tables WHERE NOT rowsecurity` returns 0 | `persistence-schema` |
-| Migration replay | Applies cleanly to an empty database, zero drift | `persistence-schema` |
 | Web entry bundle | ≤700 KB gzipped, ≤115% of baseline; SheetJS and charts out of the entry chunk | `app-client` |
 | Engine speed | Full recompute over 5,000 transactions ≤50 ms | `calc-engine` rollups |
 | Feedback loop | `gates.sh fast` ≤5s · full ≤90s · CI ≤5 min | CI setup |
