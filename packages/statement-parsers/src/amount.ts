@@ -1,0 +1,139 @@
+/**
+ * Statement text to `Cents`, without ever forming a float.
+ *
+ * `parseFloat` is banned in this package by eslint, and for a concrete reason
+ * rather than a stylistic one: `parseFloat('0.29') * 100` is 28.999999999999996,
+ * and rounding that back is a cent that appears or vanishes depending on the
+ * value. Every amount here is assembled from its digits as an integer.
+ *
+ * NOTHING IS GUESSED. A statement that cannot be read produces a rejection code
+ * for the review queue, never a zero and never a best guess. CONSTRAINTS.md
+ * forbids a silent numeric fallback on a money path because $0.00 is a real
+ * amount: a row that quietly became zero is indistinguishable from a refund.
+ *
+ * Failures carry a code, never the text that failed. CLAUDE.md permits logs to
+ * hold ids, enum codes and counts only, and a rejection reason is a thing that
+ * gets logged.
+ */
+import { type Cents, cents } from '@budget/money-primitives'
+import type { RejectionReason } from '@budget/schema'
+
+export type ParseOutcome<T> =
+  | { readonly ok: true; readonly value: T }
+  | { readonly ok: false; readonly reason: RejectionReason }
+
+export interface AmountFormat {
+  /**
+   * Which character separates the whole part from the fraction.
+   *
+   * Explicit, never sniffed. "1.234" is one thousand two hundred and thirty
+   * four in Berlin and one-point-two-three-four in Boston, and no amount of
+   * cleverness can tell which from the string alone. Guessing here is how an
+   * import is wrong by a factor of a thousand.
+   */
+  readonly decimalSeparator: '.' | ','
+  /** Accounting exports write a negative as (1,234.56). */
+  readonly parenthesesMeanNegative: boolean
+}
+
+export const US_AMOUNT_FORMAT: AmountFormat = {
+  decimalSeparator: '.',
+  parenthesesMeanNegative: true,
+}
+
+/** Symbols that carry no numeric meaning and are dropped before parsing. */
+const CURRENCY = /[$£€¥\s ]/g
+
+export function parseAmountToCents(raw: string, format: AmountFormat): ParseOutcome<Cents> {
+  const trimmed = raw.trim()
+  if (trimmed.length === 0) return { ok: false, reason: 'missing_amount' }
+
+  let body = trimmed
+  let negative = false
+
+  // Parentheses first: "($12.34)" is negative, and the symbol sits inside them.
+  if (format.parenthesesMeanNegative && body.startsWith('(') && body.endsWith(')')) {
+    negative = true
+    body = body.slice(1, -1)
+  }
+
+  body = body.replace(CURRENCY, '')
+
+  if (body.startsWith('-')) {
+    // "-(12.34)" is not a convention anywhere; two negatives means malformed.
+    if (negative) return { ok: false, reason: 'unparseable_amount' }
+    negative = true
+    body = body.slice(1)
+  } else if (body.startsWith('+')) {
+    body = body.slice(1)
+  }
+
+  // The grouping separator is whichever one is not the decimal separator.
+  const grouping = format.decimalSeparator === '.' ? ',' : '.'
+  body = body.split(grouping).join('')
+
+  const parts = body.split(format.decimalSeparator)
+  if (parts.length > 2) return { ok: false, reason: 'unparseable_amount' }
+
+  const [whole = '', fraction = ''] = parts
+  if (whole.length === 0 || !isDigits(whole)) return { ok: false, reason: 'unparseable_amount' }
+
+  // More than two decimals cannot be paid, received, or reconciled against a
+  // bank. Rejecting sends it to the queue; rounding would invent a number.
+  if (parts.length === 2 && (fraction.length === 0 || fraction.length > 2 || !isDigits(fraction))) {
+    return { ok: false, reason: 'unparseable_amount' }
+  }
+
+  const minor = fraction.padEnd(2, '0')
+  const magnitude = Number(whole) * 100 + Number(minor)
+
+  try {
+    return { ok: true, value: cents(negate(magnitude, negative)) }
+  } catch {
+    // Swallows the RangeError deliberately: its message names the amount.
+    return { ok: false, reason: 'unparseable_amount' }
+  }
+}
+
+/**
+ * Negation that cannot produce `-0`.
+ *
+ * `-0 === 0` is true, so this changes no arithmetic, but `Object.is(-0, 0)` is
+ * false and `JSON.stringify` of a `-0` inside an array yields `0` while the
+ * value itself compares unequal in a test or a cache key. A zero amount is
+ * zero; there is no negative version of it.
+ */
+function negate(magnitude: number, negative: boolean): number {
+  if (magnitude === 0) return 0
+  return negative ? -magnitude : magnitude
+}
+
+function isDigits(value: string): boolean {
+  if (value.length === 0) return false
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i)
+    if (code < 0x30 || code > 0x39) return false
+  }
+  return true
+}
+
+/**
+ * How a statement expresses direction, chosen by the user when they map columns.
+ *
+ * The app stores outflows negative (docs/divergences.md D3), but exports
+ * disagree wildly about their own convention, and the difference between them
+ * is every number in the app having the wrong sign.
+ */
+export type SignConvention =
+  /** The column is already signed; a purchase is negative. */
+  | { readonly kind: 'signed' }
+  /** One column, positive numbers, where a purchase is written as a positive. */
+  | { readonly kind: 'debit_positive' }
+
+/** Apply the statement's convention to produce the app's signed value. */
+export function applySignConvention(amount: Cents, convention: SignConvention): Cents {
+  if (convention.kind === 'signed') return amount
+  // A positive debit is an outflow; a negative one is the refund of a debit.
+  // `negate` rather than `-amount`, so a zero does not become `-0`.
+  return cents(negate(amount, true))
+}

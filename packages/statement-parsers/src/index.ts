@@ -5,6 +5,15 @@
  * card export, and none of it needs a model. See CAPABILITY-MAP.md.
  */
 export {
+  US_AMOUNT_FORMAT,
+  applySignConvention,
+  parseAmountToCents,
+  type AmountFormat,
+  type ParseOutcome,
+  type SignConvention,
+} from './amount.js'
+
+export {
   DEDUPE_HASH_VERSION,
   assignDiscriminators,
   computeDedupeHash,

@@ -58,6 +58,9 @@ importers:
       '@budget/money-primitives':
         specifier: workspace:*
         version: link:../money-primitives
+      '@budget/schema':
+        specifier: workspace:*
+        version: link:../schema
 
 packages:
 
