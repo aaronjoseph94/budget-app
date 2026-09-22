@@ -1,6 +1,6 @@
 # Workbook in the app: the build plan (revised)
 
-**Status: proposed, 2026-09-22. Waiting on the owner's answers in §9 — nothing here is built yet.** Written from the owner's copy of the "Ultimate Annual Budget" (Workbook) workbook, which is never committed (CLAUDE.md). Every cached value cited below was re-read from that file's cached Excel values; the fixtures in §5.3 must be transcribed from it again, each with a header naming sheet and range. Branch `main` at `b90086e` when written.
+**Status: answered 2026-09-22 — the owner's answers are in §9a, and they amend the tables below where marked. Building from S0.** Written from the owner's copy of the "Ultimate Annual Budget" (Workbook) workbook, which is never committed (CLAUDE.md). Every cached value cited below was re-read from that file's cached Excel values; the fixtures in §5.3 must be transcribed from it again, each with a header naming sheet and range. Branch `main` at `b90086e` when written.
 
 **The short version, for the owner:**
 - **Month screen.** It looks and works like Workbook's Jan–Dec tabs. It is one screen, and arrows change the month.
@@ -53,10 +53,10 @@ Workbook is a chain of typed lists and lookups.
 | Transactions | The **ledger** (`transactions`, already exists), filled by statement, photo and typed entry | exists | Workbook's three logs (Transactions!B:E, G:I, K:M) become one signed ledger (D3, whose sheet citation S0 corrects). A row's list decides which block it feeds. Workbook's Notes column has no counterpart yet (§10). |
 | Jan … Dec | **One Month screen** with ‹ › | S4–S12 | This is exactly the roadmap's own "one month view with a period selector". |
 | Weekly Budget | The existing **Week** screen, rebuilt as Workbook blocks on the same engine as Month | S15 | The "/wk?" option (monthly amount ÷ 4.333) is not built. Weeks stay Monday–Sunday (D14). |
-| Paycheck Budget | **Not built** | — | Paycheck is Weekly with a typed end date and a hard-coded ÷2 (Paycheck!E22 `=IF(F22, E50 / 2, D50)`) that ignores the pay frequency in START HERE!E8. Month and Week cover it. Decision 2 can reverse this. |
+| Paycheck Budget | **Paycheck** screen (owner chose it, §9a): the Month blocks over one pay period, found from the pay schedule of an Income row | S15b | Workbook types both dates (Paycheck!D6/D7) and halves a monthly bill with a fixed ÷2 (Paycheck!E22 `=IF(F22, E50 / 2, D50)`) whatever the pay frequency in START HERE!E8. How the period and the split are found is an open formula question (F15), put to the owner at S15b before any code. |
 | Annual Budget | **Year** screen plus `yearSheet`, starting at a month you choose | S13, S14 | Its arithmetic mistakes are fixed (decision 9). It is always read in one year (D10). |
-| Bill Calendar | **Not built now** | roadmap Phase 5 | Due days exist from S9. The paydays would need Setup to add income start date and frequency back, so this is a full slice, not a small one. |
-| 503020 | Optional card on Month or Year | S18, only if decision 2 says so | Tags are keyed by category. Workbook's tags (H12:H58) are positional, next to a `FILTER`-compacted list, so they drift when a list changes. |
+| Bill Calendar | **Bill calendar** screen (owner chose it, §9a): a Sunday-first month grid of bills due, charges paid and paydays, with week and month totals | S15c | Due days exist from S9. Paydays need a pay schedule per Income row (first pay date and Weekly / Bi-weekly / Monthly, START HERE!C8:E14), added in Sitting B. Workbook's own calendar bugs are fixed under decision 9 (Bills!P7:Q44 range typo on Sundays, 5-bills-a-day cap, days 29–31 skipped). |
+| 503020 | **Not built** (owner did not choose it, §9a) | — | Tags would be keyed by category. Workbook's tags (H12:H58) are positional, next to a `FILTER`-compacted list, so they drift when a list changes. |
 | Savings | **Savings** screen: `savings_goals` (exists) linked to a Savings-list category, plus `savingsFundPlan` | S16 | Seven fund cards become any number. |
 | Debt Calculator | **Debts** screen. `amortize()` is already golden-verified. | S17 (roadmap Phase 7) | Needs tables and an as-of status function. |
 | Spending Tracker | Its 12-month grid of block totals (rows 17–27) becomes part of Year. Its second taxonomy is **not built**: 12 fixed groups in E31:E125 ("Home & Utilities", "Groceries", …). | S13, S14 | That taxonomy is a second list you would maintain only to feed Home's three group bars. Year shows your own top categories instead. |
@@ -71,8 +71,8 @@ Workbook is a chain of typed lists and lookups.
 |---|---|---|
 | Twelve month tabs become one month view with a selector | Built as exactly that (S5b) | No conflict. |
 | "Weekly is the primary lens" (ROADMAP; CAPABILITY-MAP: "the user thinks in weeks") | Your call (decision 1). Recommended: Month opens first, Week one tap away. | Both files record weekly-first as how you think. You have since asked for Workbook, whose money lands on month tabs, so decision 1 asks you instead of assuming either way. |
-| Paycheck view "superseded" because weekly is primary | Still not built, for a new reason | The old reason no longer holds if Month opens first. The new reason is in the table above. |
-| 50/30/20 demoted to a report | Optional last slice | Your call (decision 2). |
+| Paycheck view "superseded" because weekly is primary | Built (S15b) | The owner asked for it (§9a). |
+| 50/30/20 demoted to a report | Not built | The owner did not choose it (§9a). |
 | "The workbook is no longer the specification" | For the look and behaviour of the Workbook views you choose, it is again. For its arithmetic mistakes and the deferred tabs, it is not. | You asked for Workbook. |
 | Phase 3 savings coach is next | Moves behind S1–S15 | You asked for Workbook first. The coach will read the same `monthSheet` numbers, so nothing is wasted. |
 | Phases 5–7 come after the coach | Parts of them move ahead of Phase 3: bills and recurring amounts from Phase 5 (not the calendar, reminders or forecast), charts from Phase 6 (not Sankey or export), savings funds and the debt screen from Phase 7 (not net worth or retirement) | The Workbook views need them. |
@@ -179,10 +179,11 @@ Every migration that creates a table enables RLS and adds the `user_id = auth.ui
 | `0007_statement_periods` | `ingest_batches.period_start date`, `period_end date` (nullable). A 7-argument `save_import` records them. The 5-argument one stays, because migrations are forward-only. | "Statement imported up to Sep 7" must come from the statement, not from the latest row. Cash typed today would otherwise move it. |
 | `0008_category_budgets` | Table `category_budgets(user_id, category_id, month date CHECK first-of-month, applies enum ('onward','only'), budget_cents bigint NULL CHECK ≥ 0, unique(user_id, category_id, month, applies))`, with a foreign key `(category_id, user_id)` → `categories(id, user_id)` on delete cascade. RLS and the policy. Writes are plain upserts under RLS. | The month tabs' typed Budgeted and Goal cells: D/J/O/T 22:44, O10:O16, T10:T16. |
 | `0009_category_plans` | Table `category_plans(user_id, category_id, effective_month date CHECK first-of-month, planned_cents bigint NULL CHECK ≥ 0, due_day smallint NULL CHECK 1..31, unique(user_id, category_id, effective_month))`, with a composite foreign key. RLS and the policy. A trigger refuses a plan on a category whose kind is not bill, debt or subscription. A trigger on `categories` refuses moving such a category to another list while its current plan is non-null. | Bills!B/D, F/H, J/L. Effective-dated (D13); `planned_cents NULL` from a month means "stopped". |
-| `month_balances` (only if decision 6 is B) | Table `month_balances(user_id, month, starting_balance_cents bigint signed, unique(user_id, month))`, with RLS and the policy | Jan!D9, typed on every tab (note: "Type in the Bank Balance you started the month with!") |
+| `month_balances` (decision 6 = B, chosen) | Table `month_balances(user_id, month, starting_balance_cents bigint signed, unique(user_id, month))`, with RLS and the policy | Jan!D9, typed on every tab (note: "Type in the Bank Balance you started the month with!") |
+| `pay_schedules` (Sitting B, for S15b and S15c) | Table `pay_schedules(user_id, category_id, first_pay_date date, frequency enum ('weekly','biweekly','monthly'), unique(user_id, category_id))`, composite foreign key to `categories(id, user_id)` on delete cascade, a trigger refusing a category whose kind is not `income`. RLS and the policy. | START HERE!C8:C14 (first pay date) and E8:E14 (dropdown "Weekly,Bi-weekly,Monthly") |
 | `savings_funds` | `savings_goals.category_id` (unique; composite foreign key **on delete restrict**; `SET NULL` on a composite key would try to null the NOT NULL `user_id`) and `savings_goals.start_date`. Plus `balance_as_of date` if decision 7 is B. | Savings!C4, N14, R14 |
 | `debts` (Phase 7) | `debts(...)` and `debt_extra_payments(...)`, both with RLS and policies | Debt Calculator J18:J20 and I26:I494 |
-| `needs_wants` (only if chosen) | Enum `need_want`. `categories.need_want`, nullable, with `CHECK (need_want is null or kind in ('bill','subscription','variable'))`. Table `split_goals(user_id pk, needs_bp, wants_bp, savings_debt_bp, CHECK sum = 10000)`, with RLS and the policy. | 503020!H12:H58 and G5:I5. Debts are excluded because 503020 takes them from Jan!K21 (N7 = C50 + C52). |
+| `needs_wants` | **Not built** (§9a) | 503020 |
 
 What is *not* stored:
 - Any Actual, total, Remaining, Left to spend, Left over, ending balance or year figure. `packages/core` computes these on every read.
@@ -507,10 +508,44 @@ Line counts below are estimates.
 | S14a | Year screen | — | — | Start-month picker, at a glance in Home's palette, twelve-month tables | Workbook's Annual Budget and Home | 290 |
 | S14b | Year charts | — | — | Annual's three charts; Home's pie and top-3 doughnuts | Workbook's Year charts | 250 |
 | S15 | Week in Workbook's shape | — | Week on `periodSheet`; `workbook-week` | Week screen as Workbook blocks | Workbook's Weekly Budget | 250 |
+| S15b | Paycheck | uses `pay_schedules` | `payPeriod` (engine) after F15 is answered; Paycheck window over `periodSheet`; golden from Paycheck Budget cells that hold under D5 (§5.4) | Paycheck screen, lavender band (#F1F3FF) | Workbook's Paycheck Budget | 2 slices |
+| S15c | Bill calendar | uses `pay_schedules`, plans | `billCalendar` (engine): day grid, bills by due day with real charges replacing plans (D5), paydays, week and month totals; golden from Bill Calendar cells that hold under D5 | Calendar screen | Workbook's Bill Calendar | 2 slices |
 | **Sitting C** | `savings_funds` (and later `debts`) | ✓ | — | — | **You paste once for each.** | tests |
 | S16a/b | Savings funds | uses `savings_funds` | `savingsFundPlan`, `monthsBetween`; `workbook-savings` | Yellow fund cards | Workbook's Savings tab with your flight fund | 280 × 2 |
 | S17 | Debts | uses `debts` | `debtStatus`; extended debt fixture | Debt cards and doughnuts | Workbook's Debt Calculator | 2–3 slices |
-| S18 | 50/30/20 (only if chosen) | `needs_wants` | `needsWantsSplit`; `workbook-503020` | A card on Month or Year | Workbook's 50/30/20 | 250 |
+| ~~S18~~ | ~~50/30/20~~ | — | — | — | Not chosen (§9a) | — |
+
+## 9a. The owner's answers (2026-09-22)
+
+Asked in chat, with the recommended option first. Where a question was not put
+as a question, the recommended option was stated to the owner as what would be
+done "unless you say otherwise", and they did not object.
+
+| # | Answer | How it was settled |
+|---|---|---|
+| 1 | **A — Month opens first** | Owner chose |
+| 2 | **Build:** Month, Setup and Bills, Year and Home, Week, Savings, Debts, **plus Paycheck Budget and Bill Calendar**. **Not built:** 50/30/20, Net Worth, Financial Freedom, Spending Tracker's 12 extra groups | Owner chose the two extras from a list offering Paycheck Budget, Bill Calendar, 50/30/20 and Net Worth |
+| 3 | **A — the real charge replaces the plan** ($17.99, not $35.98) | Owner chose |
+| 4 | **A — card payments are neither spending nor income** | Stated to the owner; no objection |
+| 5 | **A — "from this month on" is the default**, "just this month" on offer | Engineering default (both remain available) |
+| 6 | **B — type the starting bank balance once a month** | Owner chose |
+| 7 | **B** (recommended) — revisit at S16 if the owner says otherwise | Default; to be confirmed at S16 |
+| 8 | **A — pay is typed** | Stated to the owner; no objection |
+| 9 | **A — Workbook's arithmetic mistakes are fixed and recorded** | Stated to the owner; no objection |
+| 10 | **A — Workbook's fills, darker readable text** | Stated to the owner; no objection |
+| 11 | **A — Workbook's names as placeholders** | Stated to the owner; no objection |
+| 12 | **Yes — React Testing Library**, each package in its own commit | Stated to the owner as "unless you say no"; no objection |
+| 13 | **A — Workbook first** | Follows from the owner's request |
+| 14 | **A — "Card interest & fees" under Variable expenses** | Stated to the owner; no objection |
+| 15 | **A — "Left over"** | Falls under decision 9 |
+
+**New open question, F15 (Paycheck), to put to the owner at S15b before any code.**
+Workbook's Paycheck tab takes a typed start and end date and halves a monthly bill
+with a fixed ÷2 that ignores the pay frequency (Paycheck!E22; START HERE!E8).
+Options: A — copy it (typed dates, ÷2); B — find the period from the Income
+row's pay schedule and divide by the pay frequency (4.333 / 2.1667 / 1);
+C — find the period from the pay schedule and divide by the number of paydays
+that actually fall in that month.
 
 ## 9. Decisions for you
 
