@@ -67,3 +67,33 @@ a port. It will be a separate function with independently derived test cases —
 the workbook cannot verify it, because the workbook cannot do it. The flat
 schedule remains the golden-verified baseline that proves the underlying
 amortization is right.
+
+---
+
+## D3 — One signed ledger replaces three parallel ones
+
+**Date:** 2026-09-22
+**Sheet / cells:** Monthly Budget income and expense blocks; Weekly Spending
+
+**Workbook behaviour.** Direction is carried by *location*. Income rows live on
+one block, expenses on another, and transfers on a third; every amount is
+written as a positive number, and what it means depends on which block it sits
+in. A formula sums a range and knows the sign from the range it summed.
+
+**Chosen behaviour.** One `transactions` table with a signed `amount_cents`:
+**outflows negative, inflows positive.** Direction is a property of the row.
+
+**Why.** A database filters where a spreadsheet had to separate. Keeping three
+tables to preserve the layout would mean three dedupe indexes, three RLS
+policies, and a categorization path per table — and every cross-cutting
+question ("what did this week actually cost?") becomes a union. With a signed
+column, a net figure is a sum, and the sign cannot be lost by reading a row
+without knowing which table it came from.
+
+**Consequence.** Anything that assumed positive-means-spend must say so
+explicitly. A category total for a spend category is a negative number, and
+the display helper is responsible for rendering it as `$80.00` under a heading
+that already says it is spending — not for deciding what it means.
+
+**Not a maths change.** No workbook figure moves. This is how a row is stored,
+not how any total is computed, and the debt golden case is untouched by it.
