@@ -14,10 +14,12 @@ export {
 
 export {
   CandidateStatusSchema,
+  CategoryKindSchema,
   CategorySourceSchema,
   IngestSourceSchema,
   RejectionReasonSchema,
   type CandidateStatus,
+  type CategoryKind,
   type CategorySource,
   type IngestSource,
   type RejectionReason,

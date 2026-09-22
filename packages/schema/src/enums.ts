@@ -11,6 +11,26 @@ import { z } from 'zod'
 export const IngestSourceSchema = z.enum(['card_csv', 'card_xlsx', 'card_pdf', 'receipt_photo', 'typed'])
 export type IngestSource = z.infer<typeof IngestSourceSchema>
 
+/**
+ * Which of Workbook's lists a category is on (migration 0005).
+ *
+ * The first six are the lists on Workbook's START HERE tab; `transfer` is the
+ * app's own "Not spending", for money that only moves, like paying off the
+ * card. The list decides which month block a charge lands in, so it is stored
+ * with the category, never guessed from its name (docs/workbook-plan.md §3.2).
+ * In the order the app shows them, which is START HERE's.
+ */
+export const CategoryKindSchema = z.enum([
+  'income',
+  'savings',
+  'bill',
+  'debt',
+  'subscription',
+  'variable',
+  'transfer',
+])
+export type CategoryKind = z.infer<typeof CategoryKindSchema>
+
 /** Where a candidate is in the review queue. There is no fourth state. */
 export const CandidateStatusSchema = z.enum(['pending', 'approved', 'rejected'])
 export type CandidateStatus = z.infer<typeof CandidateStatusSchema>
