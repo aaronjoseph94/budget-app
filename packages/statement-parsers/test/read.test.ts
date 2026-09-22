@@ -4,6 +4,7 @@ import {
   readStatement,
   tokenizeCsv,
   type ColumnMapping,
+  type CsvRow,
   type ReadOptions,
 } from '../src/index.js'
 
@@ -212,6 +213,38 @@ describe('sign, issuer id and headerless files', () => {
     })
     expect(r.parsed).toBe(3)
     expect(r.accepted.length + r.rejected.length).toBe(r.parsed)
+  })
+
+  it('still counts a row the loop never saw, so the loss shows as an imbalance', () => {
+    // The test above cannot tell `data.length` from accepted + rejected: the
+    // loop today files every row, so both give 3. Swapping one for the other
+    // passed every test. The count only earns its place on the day a row goes
+    // missing, so this makes one go missing: an array whose iterator drops its
+    // last row while its length and indexes stay honest — the shape of a
+    // future `continue` or early `break` in the loop. `parsed` must still say
+    // 3, leaving the imbalance for the ingest CHECK to refuse.
+    const out = tokenizeCsv('03/04/2025,COFFEE,-4.50\n03/05/2025,GAS,-40.00\n03/06/2025,SHOP,-1.00', {
+      delimiter: ',',
+    })
+    if (!out.ok) throw new Error(`tokenize failed: ${out.failure.kind}`)
+
+    class LossyRows extends Array<CsvRow> {
+      override *[Symbol.iterator](): ArrayIterator<CsvRow> {
+        for (let i = 0; i < this.length - 1; i += 1) yield this[i] as CsvRow
+        return undefined
+      }
+    }
+    const rows = LossyRows.from(out.rows)
+
+    const r = readStatement(rows, {
+      mapping: MAPPING,
+      amountFormat: US_AMOUNT_FORMAT,
+      dateFormat: 'MM/DD/YYYY',
+      hasHeader: false,
+    })
+    expect(r.accepted).toHaveLength(2)
+    expect(r.rejected).toHaveLength(0)
+    expect(r.parsed).toBe(3)
   })
 
   it('reads a headerless export without discarding its first charge', () => {
