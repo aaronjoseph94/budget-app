@@ -9,6 +9,32 @@
   NODE_VERSION = "22"
   PNPM_VERSION = "10"
 
+  # The two public Supabase values, compiled into the bundle at build time.
+  #
+  # These are here rather than in Netlify's environment settings because that
+  # API accepted two writes without storing either, then returned 422; a build
+  # that silently lacks its configuration is worse than one whose configuration
+  # is visible.
+  #
+  # Safe to commit, deliberately and narrowly:
+  #   - The repository is private.
+  #   - A publishable key is DESIGNED to be seen. It travels in every request
+  #     the browser makes and is readable in the deployed JavaScript by anyone
+  #     who opens the site, so keeping it out of the repository protects
+  #     nothing that is not already public the moment this deploys.
+  #   - The row-level security policies in supabase/migrations are what
+  #     actually protect the data. This key cannot read another user's rows.
+  #
+  # The service_role key is a different thing entirely and must NEVER appear
+  # here, in any VITE_ variable, or anywhere else reachable from the browser:
+  # it bypasses every one of those policies.
+  #
+  # To rotate: change it in Supabase, change it here, push. It is in git
+  # history, which is the cost of this choice and the reason it applies only
+  # to a key meant to be public.
+  VITE_SUPABASE_URL = "https://bnodrfghxbavlopxkgju.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "sb_publishable_7DPi7R1g44DDO20akSeYvQ_onu0VnK0"
+
 # A single-page app: every path serves the same document and the client routes.
 [[redirects]]
   from = "/*"

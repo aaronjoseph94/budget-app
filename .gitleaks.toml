@@ -7,7 +7,24 @@
 useDefault = true
 
 [allowlist]
-description = "Build output and dependencies, which are generated rather than authored"
+description = "Generated paths, gitignored env files, and one deliberately published value"
+
+# The Supabase publishable key, in the build config only.
+#
+# Matched on the whole assignment — variable name, key prefix and all — so it
+# exempts this one value and nothing else. A service_role key, a different
+# variable, or any other secret still fails, including in this same file.
+#
+# Added to the GLOBAL allowlist rather than as a [[rules]] block. Declaring
+# `[[rules]] id = "generic-api-key"` does not narrow the built-in rule, it
+# REPLACES it: the first attempt at this silently switched off generic-key
+# detection across the whole repository, so an sk_live_ key in any source file
+# passed. A loosening that disables the check is worse than the problem.
+regexTarget = "line"
+regexes = [
+  '''VITE_SUPABASE_ANON_KEY = "sb_publishable_[A-Za-z0-9_-]+"''',
+]
+
 paths = [
   '''(^|/)node_modules/''',
   '''(^|/)dist/''',
