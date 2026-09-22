@@ -51,7 +51,7 @@ whether a commit is clean.
 | Golden replay | 100% exact match, zero tolerance | `vitest run` | every edit |
 | Coverage | ≥80% lines and functions, ≥75% branches, per module | `vitest run --coverage` | CI |
 | Migration replay | Applies cleanly to an empty database | `scripts/verify-migrations.sh` | CI |
-| RLS coverage | `pg_tables WHERE NOT rowsecurity` returns 0; policies isolate | `scripts/verify-migrations.sh` | CI |
+| RLS coverage | `pg_tables WHERE NOT rowsecurity` returns 0; every public table has an all-commands `user_id = auth.uid()` policy (`pg_policies`); policies isolate | `scripts/verify-migrations.sh` | CI |
 | Dependencies | Nothing high or above | `pnpm audit --audit-level high` | CI |
 
 Verified to bite: injecting `Date.now()` and `toFixed()` into `packages/core`

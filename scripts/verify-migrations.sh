@@ -50,7 +50,17 @@ PSQL=("$PGBIN/psql" -h "$WORK" -p "$PORT" -U postgres -q -v ON_ERROR_STOP=1)
 
 # Forward-only and ordered: the filenames are the order, so a migration that
 # depends on an earlier one is applied after it, exactly as in production.
+#
+# A migration that changes existing rows (a backfill) can only be tested
+# against rows that existed before it ran. supabase/tests/before/<name>.sql,
+# when present, is applied just before the migration of the same name, so the
+# assertions can check what that migration did to data already there.
 for migration in "$ROOT"/supabase/migrations/*.sql; do
+  before="$ROOT/supabase/tests/before/$(basename "$migration")"
+  if [ -f "$before" ]; then
+    printf '  seeding rows for %s\n' "$(basename "$migration")"
+    "${PSQL[@]}" -f "$before" >/dev/null
+  fi
   printf '  applying %s\n' "$(basename "$migration")"
   "${PSQL[@]}" -f "$migration" >/dev/null
 done

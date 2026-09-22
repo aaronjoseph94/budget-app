@@ -24,9 +24,9 @@ set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
 insert into public.accounts (id, user_id, name)
   values ('aaaaaaaa-0000-4000-8000-000000000001',
           '11111111-1111-4111-8111-111111111111', 'Main Card');
-insert into public.categories (id, user_id, name)
+insert into public.categories (id, user_id, name, kind)
   values ('cccccccc-0000-4000-8000-000000000001',
-          '11111111-1111-4111-8111-111111111111', 'Coffee');
+          '11111111-1111-4111-8111-111111111111', 'Coffee', 'variable');
 insert into public.ingest_batches (id, user_id, account_id, source, parsed, deduped, inserted, rejected)
   values ('bbbbbbbb-0000-4000-8000-000000000001',
           '11111111-1111-4111-8111-111111111111',
@@ -105,7 +105,7 @@ begin
 
   -- 7. Ingested text may not carry control characters.
   begin
-    insert into public.categories (user_id,name) values (u, E'BAD\x1bNAME');
+    insert into public.categories (user_id,name,kind) values (u, E'BAD\x1bNAME', 'variable');
     raise exception 'NOT REFUSED: a control character reached stored text';
   exception when check_violation then refused := refused + 1;
   end;
@@ -227,6 +227,30 @@ begin
     raise exception 'tables without row-level security: %', unprotected;
   end if;
   raise notice 'every public table has row-level security enabled';
+end $$;
+
+-- RLS switched on with no policy is not protection, it is a table nobody can
+-- read, and the flag check above passes it. A table whose only policy is
+-- `using (true)` passes too. So every public table must also carry the owner
+-- policy each migration writes: all commands, using and with check both
+-- `user_id = auth.uid()`. Added with 0005; before it, only the flag was checked.
+do $$
+declare unowned text;
+begin
+  select string_agg(t.tablename, ', ') into unowned
+  from pg_tables t
+  where t.schemaname = 'public'
+    and not exists (
+      select 1 from pg_policies p
+       where p.schemaname = 'public' and p.tablename = t.tablename
+         and p.cmd = 'ALL'
+         and p.qual = '(user_id = auth.uid())'
+         and p.with_check = '(user_id = auth.uid())');
+
+  if unowned is not null then
+    raise exception 'tables without a user_id = auth.uid() owner policy: %', unowned;
+  end if;
+  raise notice 'every public table has an owner policy';
 end $$;
 
 -- The receipts bucket is private. A public bucket puts every receipt behind a
@@ -437,6 +461,46 @@ begin
 end $$;
 
 reset role;
+
+-- ---------------------------------------------------------------------------
+-- 0005: every category belongs to one of Workbook's lists
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  legacy record;
+begin
+  -- The backfill. supabase/tests/before/0005_category_kinds.sql wrote this row
+  -- before 0005 ran, the way the hosted project's categories were written.
+  select kind, sort_order into legacy
+    from public.categories where id = 'cccccccc-0000-4000-8000-000000000300';
+  if legacy is null or legacy.kind is distinct from 'variable' or legacy.sort_order <> 0 then
+    raise exception 'BACKFILL: a category from before 0005 has kind=% sort_order=%',
+      legacy.kind, legacy.sort_order;
+  end if;
+
+  -- The default was only there to backfill. A category written without a list
+  -- is refused, so a new one can never land in Variable expenses by omission.
+  begin
+    insert into public.categories (user_id, name)
+      values ('11111111-1111-4111-8111-111111111111', 'No List Given');
+    raise exception 'NOT REFUSED: a category was created without a kind';
+  exception when not_null_violation then null;
+  end;
+
+  -- The key later composite foreign keys point at, so a budget or a plan can
+  -- never name one user's category under another user's id.
+  if not exists (
+    select 1 from pg_constraint
+     where conrelid = 'public.categories'::regclass and contype = 'u'
+       and conkey::int[] = array[
+         (select attnum from pg_attribute where attrelid = 'public.categories'::regclass and attname = 'id'),
+         (select attnum from pg_attribute where attrelid = 'public.categories'::regclass and attname = 'user_id')
+       ]::int[]) then
+    raise exception 'categories has no unique (id, user_id) for composite foreign keys';
+  end if;
+
+  raise notice 'existing categories became variable, and a new one must name its list';
+end $$;
 
 -- The anonymous role — anyone holding the published key — cannot call any of
 -- these at all.
