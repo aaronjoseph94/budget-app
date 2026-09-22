@@ -4,6 +4,7 @@
     { "path": "./packages/money-primitives" },
     { "path": "./packages/golden-verification" },
     { "path": "./packages/core" },
-    { "path": "./packages/schema" }
+    { "path": "./packages/schema" },
+    { "path": "./packages/statement-parsers" }
   ]
 }

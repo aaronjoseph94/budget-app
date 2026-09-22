@@ -85,7 +85,29 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/core/test/**/*.ts', 'packages/schema/test/**/*.ts'],
+    // Parsers read money out of text, so the float rules apply in full. The
+    // engine stays on the other side of the boundary.
+    files: ['packages/statement-parsers/src/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': ['error', ...NO_FLOAT_MONEY],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            { group: ['@budget/core', '@budget/core/*'], message: 'statement-parsers must not depend on the engine — see CAPABILITY-MAP.md.' },
+            { group: ['react', 'react-*'], message: 'statement-parsers is not a UI module.' },
+            { group: ['@supabase/*'], message: 'statement-parsers takes bytes, not a database.' },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: [
+      'packages/core/test/**/*.ts',
+      'packages/schema/test/**/*.ts',
+      'packages/statement-parsers/test/**/*.ts',
+    ],
     rules: { 'no-restricted-syntax': ['error', ...NO_WEAK_ASSERTIONS] },
   },
 )

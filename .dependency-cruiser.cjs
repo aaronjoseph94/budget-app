@@ -38,6 +38,23 @@ module.exports = {
       },
     },
     {
+      name: 'parsers-stay-below-the-engine',
+      severity: 'error',
+      comment:
+        'statement-parsers turns bytes into validated rows. It may use money-primitives ' +
+        'and the zod contracts, never the engine: a parser that can compute a total will ' +
+        'eventually compute one, and invariant 1 puts all arithmetic in packages/core.',
+      from: { path: '^packages/statement-parsers/src' },
+      to: {
+        pathNot: [
+          '^packages/statement-parsers/src',
+          '^packages/money-primitives',
+          '^packages/schema/src',
+          'node_modules/zod/',
+        ],
+      },
+    },
+    {
       name: 'no-unresolvable',
       severity: 'error',
       comment:
