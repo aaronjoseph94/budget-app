@@ -66,10 +66,19 @@ own local hourly training rate, stored as a goal setting rather than assumed.
 - The user tolerates being asked questions. If interrogation gets muted, the
   grid and the limits still work standalone.
 
+## Decisions
+
+- **Currency: CAD.** Formatted `$1,234.56`.
+- **Hourly training rate: $275/hr** (midpoint of the user's $250-300 estimate),
+  stored as a goal setting and adjustable once a school is chosen.
+  $30,000 therefore buys **109 hours** of dual instruction.
+- **No target date yet, deliberately.** A deadline invented before the engine
+  has seen real spending is a number to miss. Once statements are imported, the
+  engine computes an achievable weekly contribution and the coach proposes a
+  date from it.
+
 ## Open Questions
 
-- Currency and locale for formatting. The workbook uses `$` without specifying.
-- The user's hourly flight training rate, for the goal-unit conversion.
-- Target date, or preferred weekly contribution. $30k is 5yr 9mo at $100/week
-  and 1yr 11mo at $300/week; the user picks which end to fix.
 - Split between debt payoff and the flying fund once real balances are known.
+- Whether the weekly limit should be per-category or a single discretionary
+  pool. Per-category is more precise; a single pool is easier to hold to.

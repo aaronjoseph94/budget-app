@@ -94,3 +94,20 @@ export function addMonths(date: IsoDate, months: number): IsoDate {
   const pad = (n: number, w = 2) => String(n).padStart(w, '0')
   return `${pad(year, 4)}-${pad(month)}-${pad(day)}` as IsoDate
 }
+
+/** Whole days between two dates. Positive when `to` is later. */
+export function daysBetween(from: IsoDate, to: IsoDate): number {
+  return Math.round((utcMs(to) - utcMs(from)) / 86_400_000)
+}
+
+/** Add whole days. */
+export function addDays(date: IsoDate, days: number): IsoDate {
+  const d = new Date(utcMs(date) + days * 86_400_000)
+  const pad = (n: number, w = 2) => String(n).padStart(w, '0')
+  return `${pad(d.getUTCFullYear(), 4)}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}` as IsoDate
+}
+
+function utcMs(date: IsoDate): number {
+  const [y, m, d] = date.split('-').map(Number) as [number, number, number]
+  return Date.UTC(y, m - 1, d)
+}

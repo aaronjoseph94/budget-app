@@ -7,3 +7,11 @@ export type {
   ExtraPaymentInput,
   ScheduleMonth,
 } from './debt.js'
+
+export {
+  goalProgress,
+  projectGoal,
+  requiredWeeklyContribution,
+  timeEquivalent,
+} from './goal.js'
+export type { SavingsGoal, GoalProgress, GoalProjection, TimeEquivalent } from './goal.js'
