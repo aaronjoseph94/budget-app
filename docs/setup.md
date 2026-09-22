@@ -16,6 +16,13 @@ returned." Running one twice is refused rather than applied twice.
 | `0002_unreadable_lines.sql` | A record of statement lines that could not be read |
 | `0003_save_import_atomically.sql` | Saving an import as one transaction |
 | `0004_one_path_into_the_ledger.sql` | Approval, rules that learn, budgets, the goal, PDF imports |
+| `0005_category_kinds.sql` | Which of Workbook's lists each category is on. Your existing categories go under Variable expenses until the Setup screen lets you move them |
+| `0006_recategorise.sql` | Moving a charge that is already saved to a different category |
+| `0007_statement_periods.sql` | Remembering which dates each imported statement covered |
+
+After `0005` runs, and until the app update that asks which list a new
+category goes on, making a *new* category from Review, Add or Settings fails
+with a code in brackets. Picking an existing category keeps working.
 
 The app expects all of them. A missing one shows up as an import or approval
 that fails with a code in brackets.
