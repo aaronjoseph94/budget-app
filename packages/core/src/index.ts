@@ -21,3 +21,11 @@ export {
   type ImportSummary,
   type ImportSummaryInput,
 } from './import-summary.js'
+
+export {
+  reconcileStatement,
+  type Discrepancy,
+  type Reconciliation,
+  type ReconcileInput,
+  type StatementSummary,
+} from './statement-reconciliation.js'
