@@ -272,3 +272,42 @@ the check for 0004 is a separate change to what 0004 is held to.
 
 **To settle:** add both to the `has_function_privilege('anon', …)` list, and
 observe the gate go RED with one of the revokes removed.
+
+---
+
+## N13 — Unreadable lines cannot be dismissed, and a re-import repeats them
+
+**Seen:** 2026-09-22, showing `ingest_unreadable_lines` on Review (P1).
+
+Review now lists the lines imports from the last six weeks could not read.
+Nothing records that the owner has dealt with one, so each stays on screen
+until it ages out, and importing the same statement twice shows its lines
+twice, under two imports: the table is unique on (batch, line), not on the
+statement. The browser has no write on the table (0004), which is right, so
+dismissing needs a new column and a SECURITY DEFINER function.
+
+**Why not fixed here:** it needs a migration, and P1 adds none.
+
+**To settle:** in the next migration batch, add `dismissed_at timestamptz`
+and a `dismiss_unreadable_line(uuid)` function checking ownership, add it to
+the anon-execute assertion, then give each line a dismiss button and drop the
+six-week window.
+
+---
+
+## N14 — Unreadable lines keep no text, and the reasons are worded for CSV
+
+**Seen:** 2026-09-22, same slice.
+
+0002 stores a line's position and reason only, deliberately, so Review can
+show "Row 7" but not what row 7 said; the owner has to find it on the
+statement. For a PDF the position counts transaction rows, not printed lines.
+And `describeReason` says "in the format you chose" for unreadable dates and
+amounts, which is true for a CSV and not for a PDF, where nobody chose one.
+
+**Why not fixed here:** storing text is a privacy decision 0002 made on
+purpose (it would put an unparsed amount in a second table), and rewording
+the reasons changes the CSV import screen too.
+
+**To settle:** reword the two reasons so they read true for both sources.
+Leave the text unstored unless the owner finds row numbers too hard to use.
