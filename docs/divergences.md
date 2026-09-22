@@ -97,3 +97,38 @@ that already says it is spending — not for deciding what it means.
 
 **Not a maths change.** No workbook figure moves. This is how a row is stored,
 not how any total is computed, and the debt golden case is untouched by it.
+
+---
+
+## D4 — Every CSV field is trimmed, against RFC 4180
+
+**Date:** 2026-09-22
+**Sheet / cells:** not workbook-derived; a property of the import path
+
+**Standard behaviour.** RFC 4180 treats spaces as field content. `COFFEE   ,`
+has a merchant of `COFFEE` followed by three spaces, and a conforming reader
+preserves them.
+
+**Chosen behaviour.** `tokenizeCsv` trims leading and trailing whitespace from
+every field, quoted or not.
+
+**Why.** The merchant string is an input to the dedupe hash. Exports pad
+columns inconsistently between downloads of the same statement — a pending row
+and its posted counterpart often differ by nothing but padding — and an
+untrimmed field makes the same charge hash differently on re-import, so it
+enters the ledger twice. That is the silent-duplicate failure the hash exists
+to prevent, reintroduced by faithfulness to a specification that has no opinion
+about ledgers.
+
+**What this costs.** A merchant whose name genuinely begins or ends with a
+space cannot be represented. No such merchant exists in practice, and the
+alternative costs duplicated transactions.
+
+**Frozen.** This is now an input to `DEDUPE_HASH_VERSION` 1. Changing the
+trimming rule changes every stored hash and therefore requires a version bump
+with a backfill in the same migration, exactly as changing the hash's field set
+would. It is recorded here so that a later "let us preserve whitespace
+properly" cleanup is recognised as a migration rather than a tidy-up.
+
+**Not applied elsewhere.** `IngestedTextSchema` deliberately does not trim; one
+module owns this normalization and it is the tokenizer.

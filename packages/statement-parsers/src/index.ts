@@ -14,6 +14,17 @@ export {
 } from './amount.js'
 
 export {
+  MAX_FIELD_CHARS,
+  MAX_ROWS,
+  isBlankRow,
+  tokenizeCsv,
+  type CsvFailure,
+  type CsvOptions,
+  type CsvRow,
+  type TokenizeOutcome,
+} from './csv.js'
+
+export {
   DATE_FORMATS,
   dateFormatCandidates,
   parseStatementDate,
