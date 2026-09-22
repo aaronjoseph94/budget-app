@@ -11,21 +11,24 @@ Dependency arrows point one way only.
 | `money-primitives` | Branded `Cents` type, entity ids, date helpers, the single rounding and sign-convention policy transcribed from the workbook. Zero dependencies, including zod. | — |
 | `golden-verification` | Extracts the workbook's cached Excel values into committed fixtures, and the replay harness that asserts a calculator reproduces them exactly. | `money-primitives` |
 | `calc-engine` | All arithmetic: budget rollups, debt amortization, future value, 50/30/20, cash-flow forecast, net worth. Pure functions, no I/O, no ambient clock. | `money-primitives`, `golden-verification` |
+| `chart-specs` | Chart layout and SVG generation as pure functions: Sankey flows, the contribution grid, category bars, trend lines. No React, no DOM, no react-native. | `money-primitives`, `calc-engine` |
 | `schema-contracts` | Every zod schema and the DB row types. The executed contract between client, Edge Functions, and Postgres. | `money-primitives` |
 | `persistence-schema` | Migrations, RLS policies, the dedupe unique index, private Storage bucket policies, seed fixtures. | `schema-contracts` |
 | `statement-parsers` | Deterministic CSV/XLSX parsing, merchant normalization, the dedupe hash. Bytes in, validated rows out. | `money-primitives`, `schema-contracts` |
 | `llm-providers` | One interface over GLM / Gemini / Qwen / DeepSeek / Ollama, the failover router, the hardcoded endpoint allowlist, prompt templates paired with their schemas. | `schema-contracts` |
 | `ingest-pipeline` | The candidate lifecycle: creation, merchant-rule lookup and learning, review-queue state machine, guarded promotion to `transactions`. | `schema-contracts`, `persistence-schema`, `statement-parsers`, `llm-providers` |
 | `savings-coach` | Weekly limits and streaks, savings-capacity analysis, goal tracking and tradeoff conversion, the spend-interrogation loop and the answers it learns from. The behavioural layer; every number it shows comes from `calc-engine`. | `calc-engine`, `schema-contracts`, `persistence-schema`, `ingest-pipeline`, `llm-providers` |
+| `report-export` | Excel workbook and PDF report generation. Formats engine output and embeds `chart-specs` SVG; computes nothing. Dynamically imported, runs on the client. | `calc-engine`, `chart-specs`, `schema-contracts` |
 | `reminders-scheduler` | pg_cron bill reminders plus the heartbeat row that proves the job is still firing. | `persistence-schema`, `calc-engine` |
 | `app-client` | Expo Router screens, auth, data layer, design tokens. Renders engine output. Computes nothing. | `calc-engine`, `schema-contracts`, `ingest-pipeline` |
 
 **Build order**
 
 ```
-money-primitives → golden-verification → calc-engine → schema-contracts
-  → persistence-schema → statement-parsers → llm-providers
-  → ingest-pipeline → savings-coach → reminders-scheduler → app-client
+money-primitives → golden-verification → calc-engine → chart-specs
+  → schema-contracts → persistence-schema → statement-parsers → llm-providers
+  → ingest-pipeline → savings-coach → report-export → reminders-scheduler
+  → app-client
 ```
 
 ## Why these boundaries
@@ -54,6 +57,13 @@ prompts, and the answers the user gives — which are training data for the
 impulse detector, not decoration. A coach that invents its own numbers is worse
 than no coach: it will confidently propose savings the user does not have.
 
+**`chart-specs` produces SVG strings, not components.** A chart built as a
+React component can only be drawn on a screen. As a pure function it serves
+three destinations — the app via react-native-svg, the PDF directly, and Excel
+after rasterisation — so a figure cannot look right on the phone and wrong in
+the export. It also makes chart layout golden-testable, which a component is
+not. See docs/ideas/export.md.
+
 **`app-client` is one module, not several**, because splitting screens from the
 data layer would produce a task list rather than a boundary.
 
@@ -73,7 +83,8 @@ limits, streaks, and goals are expressed in. Monthly is the summary view.
 5. Savings funds, debt payoff, net worth, retirement
 6. Forecast and reports
 7. Savings coach: weekly limits, the streak grid, interrogation, goal tradeoffs
-8. Sankey flow view: income sources -> categories -> savings, generated from the ledger
+8. Sankey flow view: income sources -> categories -> savings, from the ledger
+9. Export: Excel workbook and PDF report, with the same figures as the screen
 
 Slices 1–2 are what replace the spreadsheet's daily use. Everything after is
 addition, not replacement.
