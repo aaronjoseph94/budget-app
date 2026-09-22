@@ -8,6 +8,7 @@ import {
   formatDateRange,
   formatIsoDate,
   formatMagnitude,
+  localDateOf,
   todayIso,
 } from '../src/format.js'
 
@@ -123,5 +124,19 @@ describe('the smaller display helpers', () => {
 
   it('gives today as a local ISO date', () => {
     expect(todayIso()).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+
+  it('dates a timestamp by the local calendar, not by its UTC string', () => {
+    // Pinned to Alberta, so the test bites on a machine running in UTC too:
+    // 11:30pm on the 20th in Edmonton is 05:30 on the 21st in UTC, and slicing
+    // the UTC string would say the 21st.
+    const hostZone = process.env['TZ']
+    process.env['TZ'] = 'America/Edmonton'
+    try {
+      expect(localDateOf('2026-09-21T05:30:00+00:00')).toBe('2026-09-20')
+    } finally {
+      if (hostZone === undefined) delete process.env['TZ']
+      else process.env['TZ'] = hostZone
+    }
   })
 })

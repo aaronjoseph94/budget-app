@@ -136,6 +136,18 @@ export function todayIso(): string {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
 }
 
+/**
+ * The user's own calendar date of a database timestamp, as an ISO date.
+ *
+ * For the same reason as todayIso: slicing the UTC string would date an
+ * evening import in Alberta to the next day.
+ */
+export function localDateOf(timestamp: string): string {
+  const at = new Date(timestamp)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`
+}
+
 /** `2026-09-21`..`2026-09-27` as `21 – 27 Sep`, or across months `28 Sep – 4 Oct`. */
 export function formatDateRange(from: string, to: string): string {
   const [, fm, fd] = from.split('-')

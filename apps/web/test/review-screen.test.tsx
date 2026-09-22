@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ReviewScreen } from '../src/screens/ReviewScreen.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
@@ -130,5 +130,93 @@ describe('ReviewScreen', () => {
     expect(
       within(alert).getByText('Your sign-in does not allow this. Signing out and back in usually fixes it. (code 42501)'),
     ).toBeTruthy()
+  })
+})
+
+describe('ReviewScreen, lines an import could not read', () => {
+  // Only Date is faked, so the waits in findBy* run normally. Six weeks back
+  // from here is 11 Aug 2026.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 8, 22, 12))
+  })
+  afterEach(() => vi.useRealTimers())
+
+  const withLines = () => {
+    const fake = seeded()
+    fake.tables.ingest_batches.push(
+      { id: 'b-old', source: 'card_csv', created_at: '2026-07-01T12:00:00+00:00' },
+      { id: 'b-pdf', source: 'card_pdf', created_at: '2026-09-20T12:00:00+00:00' },
+      { id: 'b-clean', source: 'card_csv', created_at: '2026-09-21T12:00:00+00:00' },
+    )
+    fake.tables.ingest_unreadable_lines.push(
+      { batch_id: 'b-old', source_line: 5, reason: 'missing_date' },
+      { batch_id: 'b-pdf', source_line: 11, reason: 'invalid_merchant' },
+      { batch_id: 'b-pdf', source_line: 2, reason: 'missing_amount' },
+      { batch_id: 'b-pdf', source_line: 3, reason: 'unparseable_amount' },
+    )
+    return fake
+  }
+
+  it('lists each line from recent imports with its reason in words, in line order', async () => {
+    renderScreen(<ReviewScreen />, withLines())
+
+    const section = within(await screen.findByRole('region', { name: '3 lines could not be read' }))
+    expect(section.getByText('Card statement (PDF) · imported 20 Sep 2026')).toBeTruthy()
+    expect(section.queryByText(/Card statement \(CSV\)/)).toBeNull()
+    expect(section.getAllByRole('listitem').map((li) => li.textContent)).toEqual([
+      'Row 2This row had no amount.',
+      'Row 3The amount could not be read as money in the format you chose.',
+      'Row 11The description contained characters that could display as something other than what is stored.',
+    ])
+    // The queue is still there alongside it.
+    expect(await screen.findByText(/3 waiting for a category\./)).toBeTruthy()
+  })
+
+  it('shows a stored code only through describeReason, never as markup', async () => {
+    const fake = seeded()
+    fake.tables.ingest_batches.push({ id: 'b1', source: 'card_csv', created_at: '2026-09-20T12:00:00+00:00' })
+    fake.tables.ingest_unreadable_lines.push({ batch_id: 'b1', source_line: 4, reason: '<img src=x onerror=alert(1)>' })
+    const { container } = renderScreen(<ReviewScreen />, fake)
+
+    const section = within(await screen.findByRole('region', { name: '1 line could not be read' }))
+    expect(section.getByRole('listitem').textContent).toBe('Line 4This row could not be read.')
+    expect(container.querySelector('img')).toBeNull()
+  })
+
+  it('says how many there are when not all of them fit', async () => {
+    const fake = seeded()
+    fake.tables.ingest_batches.push({ id: 'b1', source: 'card_csv', created_at: '2026-09-20T12:00:00+00:00' })
+    for (let line = 1; line <= 201; line += 1) {
+      fake.tables.ingest_unreadable_lines.push({ batch_id: 'b1', source_line: line, reason: 'missing_date' })
+    }
+    renderScreen(<ReviewScreen />, fake)
+
+    const section = within(await screen.findByRole('region', { name: '201 lines could not be read' }))
+    expect(section.getAllByRole('listitem')).toHaveLength(200)
+    expect(section.getByText('Showing 200 of 201.')).toBeTruthy()
+  })
+
+  it('shows nothing about unreadable lines, and says all caught up, when there are none', async () => {
+    const fake = createFakeSupabase({
+      ingest_batches: [{ id: 'b1', source: 'card_pdf', created_at: '2026-09-20T12:00:00+00:00' }],
+    })
+    renderScreen(<ReviewScreen />, fake)
+
+    expect(await screen.findByText('All caught up')).toBeTruthy()
+    expect(screen.queryByRole('region')).toBeNull()
+  })
+
+  it('shows a readable message when the lines cannot be loaded', async () => {
+    const fake = withLines()
+    fake.fail('ingest_unreadable_lines', '42501')
+    renderScreen(<ReviewScreen />, fake)
+
+    const alert = await screen.findByRole('alert')
+    expect(
+      within(alert).getByText('Your sign-in does not allow this. Signing out and back in usually fixes it. (code 42501)'),
+    ).toBeTruthy()
+    // The charges waiting are still there to categorise.
+    expect(await screen.findByText(/3 waiting for a category\./)).toBeTruthy()
   })
 })

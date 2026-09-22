@@ -12,7 +12,15 @@
  * Adapted from the screenshot harness's fake, keeping what the tests use.
  */
 import { createClient } from '@supabase/supabase-js'
-import type { Category, GoalRow, LedgerRow, NamedRow, PendingCandidate } from '../src/ledger.js'
+import type {
+  Category,
+  GoalRow,
+  LedgerRow,
+  NamedRow,
+  PendingCandidate,
+  UnreadableBatch,
+  UnreadableLine,
+} from '../src/ledger.js'
 import type { SupabaseClient } from '../src/supabase.js'
 
 type Row = Readonly<Record<string, unknown>>
@@ -24,6 +32,8 @@ export interface FakeTables {
   ingest_candidates: (PendingCandidate & { readonly status: string })[]
   merchant_rules: { readonly match_merchant: string; readonly category_id: string }[]
   savings_goals: GoalRow[]
+  ingest_batches: UnreadableBatch[]
+  ingest_unreadable_lines: UnreadableLine[]
 }
 
 export interface RpcCall {
@@ -52,6 +62,8 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     ingest_candidates: [],
     merchant_rules: [],
     savings_goals: [],
+    ingest_batches: [],
+    ingest_unreadable_lines: [],
     ...seed,
   }
   const rpcCalls: RpcCall[] = []
@@ -96,13 +108,21 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       if (op === 'eq') rows = rows.filter((r) => String(r[key]) === operand)
       else if (op === 'gte') rows = rows.filter((r) => String(r[key]) >= operand)
       else if (op === 'lte') rows = rows.filter((r) => String(r[key]) <= operand)
+      else if (op === 'in') {
+        // `in.(a,b)`, with a value quoted only when it holds a reserved character.
+        const members = new Set(operand.slice(1, -1).split(',').map((v) => v.replace(/^"(.*)"$/, '$1')))
+        rows = rows.filter((r) => members.has(String(r[key])))
+      }
       else return pgError('FAKE_UNSUPPORTED_FILTER', 501)
     }
     const order = url.searchParams.get('order')
     if (order !== null) {
       const [column = '', direction] = order.split('.')
       const sign = direction === 'desc' ? -1 : 1
-      rows.sort((a, b) => sign * String(a[column]).localeCompare(String(b[column])))
+      // Numbers as numbers, as Postgres does: as strings, line 10 sorts before line 9.
+      const compare = (a: unknown, b: unknown) =>
+        typeof a === 'number' && typeof b === 'number' ? a - b : String(a).localeCompare(String(b))
+      rows.sort((a, b) => sign * compare(a[column], b[column]))
     }
     const total = rows.length
     const limit = url.searchParams.get('limit')

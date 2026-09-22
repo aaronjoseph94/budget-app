@@ -204,6 +204,62 @@ export async function rejectCandidate(supabase: SupabaseClient, candidateId: str
   if (error !== null) fail(error)
 }
 
+export interface UnreadableBatch {
+  readonly id: string
+  readonly source: IngestSource
+  readonly created_at: string
+}
+
+export interface UnreadableLine {
+  readonly batch_id: string
+  /** 1-based. Only the position is stored, never the text (migration 0002). */
+  readonly source_line: number
+  /** A rejection_reason code, for describeReason to put into words. */
+  readonly reason: string
+}
+
+export interface UnreadablePage {
+  /** Newest import first. Only imports that left at least one line behind. */
+  readonly batches: readonly UnreadableBatch[]
+  readonly lines: readonly UnreadableLine[]
+  /** The real number of lines, which can exceed the lines fetched. */
+  readonly total: number
+}
+
+/**
+ * Lines the imports since `since` could not read, grouped by the import.
+ *
+ * Two reads rather than an embedded join, so each is a plain query the fake
+ * test server answers the way PostgREST does. The browser keeps SELECT on both
+ * tables (0004 revoked only the writes), and RLS scopes both to the owner.
+ */
+export async function listUnreadable(
+  supabase: SupabaseClient,
+  since: string,
+  limit = 200,
+): Promise<UnreadablePage> {
+  const recent = await supabase
+    .from('ingest_batches')
+    .select('id, source, created_at')
+    .gte('created_at', since)
+    .order('created_at', { ascending: false })
+    .limit(100)
+  if (recent.error !== null) fail(recent.error)
+  const batches = (recent.data ?? []) as UnreadableBatch[]
+  if (batches.length === 0) return { batches: [], lines: [], total: 0 }
+
+  const { data, error, count } = await supabase
+    .from('ingest_unreadable_lines')
+    .select('batch_id, source_line, reason', { count: 'exact' })
+    .in('batch_id', batches.map((b) => b.id))
+    .order('source_line', { ascending: true })
+    .limit(limit)
+  if (error !== null) fail(error)
+  const lines = ((data ?? []) as UnreadableLine[]).map((l) => ({ ...l, source_line: Number(l.source_line) }))
+  const withLines = new Set(lines.map((l) => l.batch_id))
+  return { batches: batches.filter((b) => withLines.has(b.id)), lines, total: count ?? lines.length }
+}
+
 /** merchant -> category id, for suggesting what the user chose last time. */
 export async function listRules(supabase: SupabaseClient): Promise<ReadonlyMap<string, string>> {
   const { data, error } = await supabase.from('merchant_rules').select('match_merchant, category_id')
