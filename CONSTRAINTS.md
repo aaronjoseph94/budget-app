@@ -22,6 +22,11 @@ before each Claude Code web session: `pnpm install` against the committed
 lockfile, and a pinned, checksum-verified `gitleaks`. Without it a fresh
 container has neither, and every session opens `MISCONFIGURED`.
 
+The rows marked **CI** run in `.github/workflows/gates.yml`, on every push and
+pull request. It runs the same `gates.sh` and installs gitleaks from the same
+pinned script the session hook uses, so a session and CI cannot disagree about
+whether a commit is clean.
+
 ## Floor — always enforced
 
 - No new suppression comments: `@ts-ignore`, `eslint-disable`, `as any`, `as unknown as`

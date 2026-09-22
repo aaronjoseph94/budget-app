@@ -27,30 +27,11 @@ if ! pnpm install --frozen-lockfile --prefer-offline; then
 fi
 
 # --- gitleaks, the secrets gate ---------------------------------------------
-# Pinned and checksum-verified: an unverified binary that scans for secrets is
-# a worse trade than no scan at all.
-GITLEAKS_VERSION=8.30.0
-GITLEAKS_SHA256=79a3ab579b53f71efd634f3aaf7e04a0fa0cf206b7ed434638d1547a2470a66e
+# Shared with the CI workflow, so both scan with the same pinned version.
+./scripts/install-gitleaks.sh
 
-install_gitleaks() {
-  local target_dir="$1" work tarball
-  work="$(mktemp -d)"
-  tarball="$work/gitleaks.tar.gz"
-  curl -fsSL -o "$tarball" \
-    "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
-  echo "${GITLEAKS_SHA256}  ${tarball}" | sha256sum -c - >/dev/null
-  tar -xzf "$tarball" -C "$work" gitleaks
-  install -m 0755 "$work/gitleaks" "$target_dir/gitleaks"
-  rm -rf "$work"
-}
-
-if command -v gitleaks >/dev/null 2>&1; then
-  : # already installed; nothing to do
-elif [ -w /usr/local/bin ]; then
-  install_gitleaks /usr/local/bin
-else
-  mkdir -p "$HOME/.local/bin"
-  install_gitleaks "$HOME/.local/bin"
+# When it landed in ~/.local/bin, the rest of the session needs it on PATH.
+if ! command -v gitleaks >/dev/null 2>&1; then
   export PATH="$HOME/.local/bin:$PATH"
   if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
     echo 'export PATH="$HOME/.local/bin:$PATH"' >>"$CLAUDE_ENV_FILE"
