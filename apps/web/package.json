@@ -13,8 +13,10 @@
     "@budget/money-primitives": "workspace:*",
     "@budget/schema": "workspace:*",
     "@budget/statement-parsers": "workspace:*",
+    "@supabase/supabase-js": "^2.117.0",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

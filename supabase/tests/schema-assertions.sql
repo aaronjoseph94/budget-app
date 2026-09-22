@@ -190,6 +190,29 @@ end $$;
 
 reset role;
 
+-- A line that never parsed is recorded without its content: the reason and the
+-- line number are enough to act on, and the text could not be read anyway.
+do $$
+declare kept int;
+begin
+  insert into public.ingest_unreadable_lines (user_id, batch_id, source_line, reason)
+  values ('11111111-1111-4111-8111-111111111111',
+          'bbbbbbbb-0000-4000-8000-000000000001', 11, 'unparseable_date');
+  select count(*) into kept from public.ingest_unreadable_lines;
+  if kept <> 1 then raise exception 'unreadable line not recorded'; end if;
+
+  -- The same line of the same import cannot be recorded twice, so re-running a
+  -- failed import does not multiply the queue.
+  begin
+    insert into public.ingest_unreadable_lines (user_id, batch_id, source_line, reason)
+    values ('11111111-1111-4111-8111-111111111111',
+            'bbbbbbbb-0000-4000-8000-000000000001', 11, 'unparseable_date');
+    raise exception 'NOT REFUSED: one line was recorded twice for one batch';
+  exception when unique_violation then null;
+  end;
+  raise notice 'unreadable lines are recorded once, by line and reason only';
+end $$;
+
 -- Every table in public must have RLS on. This is the check that catches the
 -- table someone adds later and forgets to protect.
 do $$
