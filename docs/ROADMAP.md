@@ -80,12 +80,11 @@ retirement. Ends with: full parity, plus everything the workbook could not do.
 
 ## Known risks
 
-**react-native-web and rich output.** Expo's web target is the weakest place to
-build a Sankey, a dense contribution grid, and PDF generation. Mitigated by
-keeping `chart-specs` free of react-native entirely — the charts are SVG
-strings, so only the thin wrapper is platform-specific — and by dynamically
-importing the export libraries. Named here so it is monitored rather than
-discovered.
+~~**react-native-web and rich output.**~~ **Resolved 2026-09-21.** The stack
+moved to a web-first Vite + React PWA (ADR 0001). The Sankey, the contribution
+grid and the export pipeline are now ordinary DOM and SVG. Cost of the change
+was one module — `app-client` — with all 25 tests untouched, because no test
+ever knew what the UI was.
 
 **The debt-versus-goal split is unresolved.** The user has debt and a $30,000
 goal, and every dollar goes to one or the other. The coach cannot advise on the

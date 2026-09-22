@@ -11,7 +11,7 @@ Dependency arrows point one way only.
 | `money-primitives` | Branded `Cents` type, entity ids, date helpers, the single rounding and sign-convention policy transcribed from the workbook. Zero dependencies, including zod. | — |
 | `golden-verification` | Extracts the workbook's cached Excel values into committed fixtures, and the replay harness that asserts a calculator reproduces them exactly. | `money-primitives` |
 | `calc-engine` | All arithmetic: budget rollups, debt amortization, future value, 50/30/20, cash-flow forecast, net worth. Pure functions, no I/O, no ambient clock. | `money-primitives`, `golden-verification` |
-| `chart-specs` | Chart layout and SVG generation as pure functions: Sankey flows, the contribution grid, category bars, trend lines. No React, no DOM, no react-native. | `money-primitives`, `calc-engine` |
+| `chart-specs` | Chart layout and SVG generation as pure functions: Sankey flows, the contribution grid, category bars, trend lines. No React, no DOM. | `money-primitives`, `calc-engine` |
 | `schema-contracts` | Every zod schema and the DB row types. The executed contract between client, Edge Functions, and Postgres. | `money-primitives` |
 | `persistence-schema` | Migrations, RLS policies, the dedupe unique index, private Storage bucket policies, seed fixtures. | `schema-contracts` |
 | `statement-parsers` | Deterministic CSV/XLSX parsing, merchant normalization, the dedupe hash. Bytes in, validated rows out. | `money-primitives`, `schema-contracts` |
@@ -20,7 +20,7 @@ Dependency arrows point one way only.
 | `savings-coach` | Weekly limits and streaks, savings-capacity analysis, goal tracking and tradeoff conversion, the spend-interrogation loop and the answers it learns from, and the surfacing of insights: ranking, dismissal state, cadence and narration. The behavioural layer; every number it shows and every detector that fires comes from `calc-engine`. | `calc-engine`, `schema-contracts`, `persistence-schema`, `ingest-pipeline`, `llm-providers` |
 | `report-export` | Excel workbook and PDF report generation. Formats engine output and embeds `chart-specs` SVG; computes nothing. Dynamically imported, runs on the client. | `calc-engine`, `chart-specs`, `schema-contracts` |
 | `reminders-scheduler` | pg_cron bill reminders plus the heartbeat row that proves the job is still firing. | `persistence-schema`, `calc-engine` |
-| `app-client` | Expo Router screens, auth, data layer, design tokens. Renders engine output. Computes nothing. | `calc-engine`, `schema-contracts`, `ingest-pipeline` |
+| `app-client` | Vite + React PWA: routes, magic-link auth, the Supabase/TanStack Query data layer, design tokens, and every screen. Renders engine output. Computes nothing. | `calc-engine`, `schema-contracts`, `ingest-pipeline` |
 
 **Build order**
 
@@ -59,7 +59,7 @@ than no coach: it will confidently propose savings the user does not have.
 
 **`chart-specs` produces SVG strings, not components.** A chart built as a
 React component can only be drawn on a screen. As a pure function it serves
-three destinations — the app via react-native-svg, the PDF directly, and Excel
+three destinations — the app as inline SVG, the PDF directly, and Excel
 after rasterisation — so a figure cannot look right on the phone and wrong in
 the export. It also makes chart layout golden-testable, which a component is
 not. See docs/ideas/export.md.

@@ -74,8 +74,9 @@ writing code.
 
 - Never persist or cache a derived money value. Recompute from the engine on
   read — a stale balance is a correctness bug, not a performance tradeoff.
-- Never put a provider key or `service_role` key anywhere reachable from
-  `apps/mobile`. Not in `EXPO_PUBLIC_*`, not in app config, not in any bundle.
+- Never put a provider key or `service_role` key anywhere reachable from the
+  browser bundle. Not in `VITE_*`, not in any imported module. The only public
+  values are the Supabase URL and anon key.
 - Never log an amount, merchant, memo, image path, prompt, or model response.
   Logs carry ids, enum codes, and counts only.
 - Never create a public Storage bucket. Receipts live in a private bucket with a
@@ -106,8 +107,12 @@ writing code.
 
 ## Stack
 
-pnpm monorepo · Expo + Expo Router (iOS + web) · Supabase (Postgres, Storage,
-Edge Functions, pg_cron) · Cloudflare Pages (web hosting, user's own domain) ·
-TypeScript · zod · Vitest
+pnpm monorepo · **Vite + React 19 + TypeScript** · TanStack Router + Query ·
+Tailwind v4 · vite-plugin-pwa (installable, camera via file capture) ·
+Supabase (Postgres, Storage, Edge Functions, pg_cron) ·
+Cloudflare Pages (static, user's own domain) · zod · Vitest
+
+Web-first PWA, not native. See docs/adr/0001-web-first-vite-react.md.
+Native stays reachable via Capacitor wrapping the same build; not planned.
 
 Engineering practice follows `addyosmani/agent-skills`.
