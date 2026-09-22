@@ -5,6 +5,7 @@ export default defineConfig({
     projects: [
       { test: { name: 'core', root: './packages/core' } },
       { test: { name: 'money', root: './packages/money-primitives' } },
+      { test: { name: 'schema', root: './packages/schema' } },
     ],
   },
 })

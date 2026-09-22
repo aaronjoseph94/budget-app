@@ -67,7 +67,25 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/core/test/**/*.ts'],
+    // schema-contracts is allowed zod — it owns it — but money is still integer
+    // Cents here, and the engine stays on the other side of the boundary.
+    files: ['packages/schema/src/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': ['error', ...NO_FLOAT_MONEY],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            { group: ['@budget/core', '@budget/core/*'], message: 'schema-contracts must not depend on the engine — see CAPABILITY-MAP.md.' },
+            { group: ['react', 'react-*'], message: 'schema-contracts is not a UI module.' },
+            { group: ['@supabase/*'], message: 'schema-contracts describes rows; it does not fetch them.' },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['packages/core/test/**/*.ts', 'packages/schema/test/**/*.ts'],
     rules: { 'no-restricted-syntax': ['error', ...NO_WEAK_ASSERTIONS] },
   },
 )

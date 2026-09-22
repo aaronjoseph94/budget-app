@@ -24,6 +24,20 @@ module.exports = {
       to: { pathNot: ['^packages/money-primitives/src'] },
     },
     {
+      name: 'schema-never-imports-the-engine',
+      severity: 'error',
+      comment:
+        'packages/schema owns the zod contracts and may depend only on money-primitives. ' +
+        'The engine must not see zod and zod must not see the engine; both need the money ' +
+        'type, so it lives below them. Either arrow here makes that a cycle.',
+      from: { path: '^packages/schema/src' },
+      // zod resolves through pnpm's content-addressed store, so its path is
+      // `node_modules/.pnpm/zod@x.y.z/node_modules/zod/...` and cannot be anchored.
+      to: {
+        pathNot: ['^packages/schema/src', '^packages/money-primitives', 'node_modules/zod/'],
+      },
+    },
+    {
       name: 'no-unresolvable',
       severity: 'error',
       comment:

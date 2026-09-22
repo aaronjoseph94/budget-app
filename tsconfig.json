@@ -3,6 +3,7 @@
   "references": [
     { "path": "./packages/money-primitives" },
     { "path": "./packages/golden-verification" },
-    { "path": "./packages/core" }
+    { "path": "./packages/core" },
+    { "path": "./packages/schema" }
   ]
 }
