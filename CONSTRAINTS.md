@@ -43,10 +43,19 @@ container has neither, and every session opens `MISCONFIGURED`.
 | Weak assertions | No `toBeCloseTo`, no snapshots, no `vi.mock` under `packages/core` | `eslint` | every edit |
 | Secrets | Zero findings | `gitleaks detect --redact --no-banner` | every edit |
 | Golden replay | 100% exact match, zero tolerance | `vitest run` | every edit |
+| Coverage | ≥80% lines and functions, ≥75% branches, per module | `vitest run --coverage` | CI |
 | Dependencies | Nothing high or above | `pnpm audit --audit-level high` | CI |
 
 Verified to bite: injecting `Date.now()` and `toFixed()` into `packages/core`
 turns the gate run `RED`. A gate never seen to fail has not been tested.
+
+Coverage is verified by raising its thresholds above the measured figure and
+observing the gate go `RED`. It is aggregated per module, not per changed line
+as this row originally promised: vitest measures whole files, and a per-file
+rule reads a re-export barrel as 0% covered however well its exports are
+tested. Compiled `dist/` output is excluded — `tsc --build` emits a copy of
+every module that no test imports, and counting it reported 36% while the
+source the tests exercise was above 90%.
 
 Engine purity is verified separately, by injecting a forbidden import in each
 direction the rule guards — `core` importing zod, and `money-primitives`
@@ -63,7 +72,6 @@ the command to actually run.
 
 | Dimension | Rule | Activated by |
 |---|---|---|
-| Coverage | ≥80% changed-line in `packages/core`, `packages/schema` | `schema-contracts` |
 | Extraction accuracy | ≥90% zod-valid, ≥98% exact amounts over ≥20 labeled samples; no live provider calls in CI | `llm-providers` |
 | Ingest idempotency | Re-import yields 0 new rows; double-approve yields 1 transaction | `ingest-pipeline` |
 | RLS coverage | `pg_tables WHERE NOT rowsecurity` returns 0 | `persistence-schema` |

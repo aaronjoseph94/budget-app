@@ -34,7 +34,8 @@ gate secrets gitleaks  gitleaks detect --redact --no-banner --source .
 gate golden  vitest    npx vitest run
 
 if [ "$LEVEL" = "full" ]; then
-  gate deps pnpm pnpm audit --audit-level high
+  gate coverage vitest npx vitest run --coverage
+  gate deps     pnpm   pnpm audit --audit-level high
 fi
 
 STATUS=GREEN
