@@ -176,3 +176,41 @@ hand-rolled; it does not rewrite CLAUDE.md.
 used — hash navigation in `nav.ts` (ADR 0003), a web manifest without a
 service worker. If offline use is ever wanted, vite-plugin-pwa comes back as its own dependency
 commit.
+
+---
+
+## N9 — A blank starting balance is a divergence with no D-number
+
+**Seen:** 2026-09-22, writing formula decision F7.
+
+Workbook treats a blank Jan!D9 as $0 and still shows an ending balance (Jan!D15
+`=D9+N5-D11-S5`). The Workbook plan (§5.2, F7) has the engine return no ending
+balance instead. That departs from the workbook, and CLAUDE.md says every
+deliberate divergence gets a dated entry, but the plan numbers only D5–D16 and
+does not list this one.
+
+**Why not fixed here:** S0 records the D-numbers the plan cites; adding a new
+one is a change to the plan, not a transcription of it.
+
+**To settle:** before S11 (the summary card), add it to `docs/divergences.md`
+as the next free D-number — workbook value $0 start, chosen value "no ending
+balance", reason the CONSTRAINTS.md floor (no silent 0), as D15 does.
+
+---
+
+## N10 — ROADMAP's phase markers predate the build
+
+**Seen:** 2026-09-22, updating `docs/ROADMAP.md` for the Workbook plan.
+
+Phase 0 is marked done and Phase 1 "← next", but statement import, the review
+queue, learned merchant rules, the Week screen and photo reading are all
+built. With the Workbook views now also marked next, the page has two "next"
+phases.
+
+**Why not fixed here:** marking a phase done is a claim about its "Ends with"
+line — for Phase 1, "a real statement imported and categorised", which waits
+on migrations 0003 and 0004 being applied to the hosted project. That is
+checked against the live project, not written from here.
+
+**To settle:** once 0003 and 0004 are applied and a real statement is in,
+mark Phases 1, 2 and 4 with what is actually done, and leave one "next".
