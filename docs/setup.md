@@ -75,8 +75,8 @@ Emails → SMTP Settings**. Not needed while one person uses this.
 
 | Field | Value |
 |---|---|
-| Site URL | `https://aaron-budget-app.netlify.app` |
-| Redirect URLs | `https://aaron-budget-app.netlify.app/**` |
+| Site URL | `https://aaron-budget-app.pages.dev` (was the Netlify address) |
+| Redirect URLs | `https://aaron-budget-app.pages.dev/**` |
 | | `http://localhost:5173/**` |
 
 The app asks Supabase to return the user to whatever origin they signed in
@@ -101,7 +101,50 @@ means a rebuild, not just a redeploy of the existing build.
 `service_role` belongs to none of this. It bypasses every row-level security
 policy in `supabase/migrations` and must never reach the browser.
 
-## Netlify
+## Cloudflare Pages — where the site is hosted
+
+CLAUDE.md names Cloudflare Pages as the host; Netlify was a stopgap. Cloudflare
+builds the site from GitHub on every push, like Netlify did.
+
+**Workers & Pages → Create → Pages → Connect to Git**, pick
+`aaronjoseph94/budget-app`, then:
+
+| Setting | Value |
+|---|---|
+| Project name | `aaron-budget-app` (gives `https://aaron-budget-app.pages.dev`) |
+| Production branch | `main-tnlcto` |
+| Framework preset | None |
+| Build command | `pnpm --filter @budget/app-client build` |
+| Build output directory | `apps/web/dist` |
+| Root directory | *(leave empty)* |
+
+**Environment variables** (same screen, before the first deploy):
+
+| Name | Value |
+|---|---|
+| `NODE_VERSION` | `22` |
+| `PNPM_VERSION` | `10` |
+| `VITE_SUPABASE_URL` | `https://bnodrfghxbavlopxkgju.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | the publishable key — the same value as in `netlify.toml` |
+
+These two `VITE_` values are public by design and are compiled into the site
+at build time: changing them later needs a new deploy (**Deployments → Retry
+deployment**), not just a save.
+
+Security headers come from `apps/web/public/_headers`; nothing to set.
+
+**After it deploys:**
+
+1. In Supabase, **Authentication → URL Configuration**: set Site URL to
+   `https://aaron-budget-app.pages.dev` and add
+   `https://aaron-budget-app.pages.dev/**` to Redirect URLs.
+2. If Cloudflare gave the project a different address (the name was taken),
+   add it to the receipt function: **Edge Functions → Secrets →**
+   `EXTRA_ORIGINS` = `https://<the-address>.pages.dev`. Same for a custom domain.
+3. Once the Cloudflare site works, remove the Netlify site so there are not
+   two live copies: Netlify → Site configuration → **Delete this site**.
+
+## Netlify (being replaced by Cloudflare)
 
 Site `aaron-budget-app`, built from branch `main-tnlcto` per `netlify.toml`.
 

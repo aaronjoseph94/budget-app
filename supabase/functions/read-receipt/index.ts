@@ -30,8 +30,20 @@ const HOST = 'https://generativelanguage.googleapis.com/v1beta/models/'
 const DEFAULT_MODEL = 'gemini-2.5-flash'
 const MODEL_NAME = /^gemini-[a-z0-9.-]{1,40}$/
 
-// Browsers allowed to call this. Anything else gets no CORS headers.
-const ORIGINS = new Set(['https://aaron-budget-app.netlify.app', 'http://localhost:5173'])
+// Browsers allowed to call this: the Cloudflare and Netlify sites and a local
+// dev server. A custom domain, or a Cloudflare project that ended up with a
+// different name, is added with the EXTRA_ORIGINS secret (comma-separated,
+// full origins like https://budget.example.com) — no code change or redeploy.
+// Each must be an exact https origin; anything else in the setting is ignored.
+const ORIGINS = new Set([
+  'https://aaron-budget-app.pages.dev',
+  'https://aaron-budget-app.netlify.app',
+  'http://localhost:5173',
+  ...(Deno.env.get('EXTRA_ORIGINS') ?? '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter((o) => /^https:\/\/[a-z0-9.-]+(:\d+)?$/.test(o)),
+])
 
 // A phone photo, resized by the app to at most 1600px, is well under 1 MB.
 // Base64 adds a third. Six million characters leaves room and stops abuse.

@@ -1,0 +1,7 @@
+# Cloudflare Pages reads this file from the build output. The same three
+# headers netlify.toml sets, so the site is protected identically on either:
+# no framing (clickjacking), no MIME sniffing, and no referrer sent onward.
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
