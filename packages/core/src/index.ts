@@ -29,3 +29,13 @@ export {
   type ReconcileInput,
   type StatementSummary,
 } from './statement-reconciliation.js'
+
+export {
+  weekBounds,
+  weeklySummary,
+  type BudgetedCategory,
+  type CategoryWeek,
+  type LedgerEntry,
+  type WeeklySummary,
+  type WeeklySummaryInput,
+} from './week.js'
