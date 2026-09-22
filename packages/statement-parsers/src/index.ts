@@ -59,3 +59,32 @@ export {
   type RejectedRow,
   type StatementRead,
 } from './read.js'
+
+export {
+  readPdfText,
+  type PdfDocument,
+  type PdfReadOutcome,
+} from './pdf/read.js'
+export { groupRows, type LayoutRow } from './pdf/layout.js'
+export { type TextRun } from './pdf/text.js'
+export { type PdfFailure } from './pdf/objects.js'
+
+export {
+  LOOKBACK_DAYS,
+  daysFromCivil,
+  daysInMonth,
+  isoDate,
+  resolveYear,
+  type StatementPeriod,
+} from './statements/yearless-dates.js'
+
+export {
+  ROGERS_COLUMNS,
+  readPeriod,
+  readRogersStatement,
+  readSummary,
+  type RogersFailure,
+  type RogersOutcome,
+  type RogersRead,
+  type RogersSummary,
+} from './statements/rogers.js'
