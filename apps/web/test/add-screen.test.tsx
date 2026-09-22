@@ -29,6 +29,15 @@ const offered = () =>
 afterEach(cleanup)
 
 describe('AddScreen, typing one in with a new category', () => {
+  it("groups the category picker under Workbook's lists", async () => {
+    renderScreen(<AddScreen />, seeded())
+
+    fireEvent.click(await screen.findByRole('tab', { name: /Type it/ }))
+    const picker = screen.getByRole('combobox', { name: 'Category' })
+    const group = await within(picker).findByRole('group', { name: 'Variable expenses' })
+    expect(within(group).getByRole('option', { name: 'Groceries' })).toBeTruthy()
+  })
+
   // Pay filed under Variable expenses would count as negative spending, so
   // money received is never offered that list, and starts on Income.
   it('files money received under Income, and never offers Variable expenses', async () => {

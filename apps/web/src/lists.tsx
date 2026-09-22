@@ -35,6 +35,20 @@ export const LISTS_FOR: Readonly<Record<'spent' | 'received', readonly CategoryK
   received: ['income', 'savings', 'transfer'],
 }
 
+export interface ListGroup<T> {
+  readonly kind: CategoryKind
+  readonly heading: string
+  readonly rows: readonly T[]
+}
+
+/**
+ * Rows under their lists, in list order, keeping the order the rows came in
+ * (the database sorts by position, then name). Every list, empty or not.
+ */
+export function groupByList<T extends { readonly kind: CategoryKind }>(rows: readonly T[]): readonly ListGroup<T>[] {
+  return LISTS.map((kind) => ({ kind, heading: LIST_HEADING[kind], rows: rows.filter((r) => r.kind === kind) }))
+}
+
 /** A new category for the bottom of its list, where Workbook fills the next slot. */
 export function atEndOf(
   categories: readonly { readonly kind: CategoryKind; readonly sort_order: number }[],
@@ -80,4 +94,26 @@ export function ListSelect({
       ))}
     </NativeSelect>
   )
+}
+
+/**
+ * A category picker's options, under Workbook's headings in START HERE order.
+ * Lists with nothing on them are left out, so the picker shows only choices.
+ */
+export function CategoryOptions({
+  categories,
+}: {
+  categories: readonly { readonly id: string; readonly name: string; readonly kind: CategoryKind }[]
+}) {
+  return groupByList(categories)
+    .filter((group) => group.rows.length > 0)
+    .map((group) => (
+      <optgroup key={group.kind} label={group.heading}>
+        {group.rows.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.name}
+          </option>
+        ))}
+      </optgroup>
+    ))
 }

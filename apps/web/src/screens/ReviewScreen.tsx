@@ -8,13 +8,14 @@ import {
   listRules,
   listUnreadable,
   rejectCandidate,
+  type Category,
   type IngestSource,
   type PendingCandidate,
   type UnreadablePage,
 } from '../ledger.js'
 import { describeReason, formatCents, formatIsoDate, localDateOf, todayIso } from '../format.js'
 import { IngestedText } from '../ui.js'
-import { atEndOf, ListSelect, type CategoryKind } from '../lists.js'
+import { atEndOf, CategoryOptions, ListSelect, type CategoryKind } from '../lists.js'
 import { Card } from '../components/ui/card.js'
 import { Alert, Badge, Empty } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
@@ -193,7 +194,7 @@ function ReviewRow({
   row: PendingCandidate
   categoryId: string
   suggested: boolean
-  categories: readonly { id: string; name: string }[]
+  categories: readonly Category[]
   busy: boolean
   onPick: (id: string) => void
   onApprove: (created?: NewName) => void
@@ -230,11 +231,7 @@ function ReviewRow({
               disabled={busy}
             >
               <option value="">Choose a category…</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
+              <CategoryOptions categories={categories} />
               <option value={NEW_CATEGORY}>+ New category…</option>
             </NativeSelect>
           </div>

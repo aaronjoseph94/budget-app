@@ -138,12 +138,21 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     let rows = table.filter(matches)
     const order = url.searchParams.get('order')
     if (order !== null) {
-      const [column = '', direction] = order.split('.')
-      const sign = direction === 'desc' ? -1 : 1
+      // `order=a.asc,b.asc`: by the first column, then the next on a tie.
+      const keys = order.split(',').map((term) => {
+        const [column = '', direction] = term.split('.')
+        return { column, sign: direction === 'desc' ? -1 : 1 }
+      })
       // Numbers as numbers, as Postgres does: as strings, line 10 sorts before line 9.
       const compare = (a: unknown, b: unknown) =>
         typeof a === 'number' && typeof b === 'number' ? a - b : String(a).localeCompare(String(b))
-      rows.sort((a, b) => sign * compare(a[column], b[column]))
+      rows.sort((a, b) => {
+        for (const { column, sign } of keys) {
+          const by = sign * compare(a[column], b[column])
+          if (by !== 0) return by
+        }
+        return 0
+      })
     }
     const total = rows.length
     const limit = url.searchParams.get('limit')

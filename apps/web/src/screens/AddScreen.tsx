@@ -8,7 +8,7 @@ import { readStatementPdf, type PdfImport } from '../pdf-import.js'
 import { readReceipt } from '../receipt.js'
 import { formatCents, formatIsoDate, todayIso } from '../format.js'
 import { IngestedText } from '../ui.js'
-import { atEndOf, ListSelect, LISTS_FOR, type CategoryKind } from '../lists.js'
+import { atEndOf, CategoryOptions, ListSelect, LISTS_FOR, type CategoryKind } from '../lists.js'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card.js'
 import { Alert, Badge } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
@@ -417,11 +417,7 @@ function TypedEntry() {
             <Field label="Category">
               <NativeSelect value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required>
                 <option value="">Choose…</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
+                <CategoryOptions categories={categories} />
                 <option value="__new__">+ New…</option>
               </NativeSelect>
             </Field>

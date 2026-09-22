@@ -47,6 +47,30 @@ describe('ReviewScreen', () => {
     expect((await row('ADVENTURE WORKS REFUND')).getByText('$25.00')).toBeTruthy()
   })
 
+  it("groups the picker under Workbook's lists, each in its own order, then by name", async () => {
+    const fake = seeded()
+    fake.tables.categories.push(
+      { id: 'c3', name: 'Rent', kind: 'bill', sort_order: 1, weekly_budget_cents: null },
+      { id: 'c4', name: 'Water', kind: 'bill', sort_order: 0, weekly_budget_cents: null },
+      { id: 'c5', name: 'Card payments', kind: 'transfer', sort_order: 0, weekly_budget_cents: null },
+      { id: 'c6', name: 'Pay', kind: 'income', sort_order: 0, weekly_budget_cents: null },
+    )
+    renderScreen(<ReviewScreen />, fake)
+
+    const picker = (await row('SQ *LITWARE COFFEE')).getByRole('combobox', { name: 'Category' })
+    await waitFor(() => expect(picker.querySelectorAll('optgroup')).toHaveLength(4))
+    const groups = [...picker.querySelectorAll('optgroup')].map((g) => [
+      g.label,
+      [...g.querySelectorAll('option')].map((o) => o.textContent),
+    ])
+    expect(groups).toEqual([
+      ['Income', ['Pay']],
+      ['Bills', ['Water', 'Rent']],
+      ['Variable expenses', ['Eating out', 'Groceries']],
+      ['Not spending', ['Card payments']],
+    ])
+  })
+
   it('approves into the chosen category through approve_candidate', async () => {
     const fake = seeded()
     renderScreen(<ReviewScreen />, fake)
