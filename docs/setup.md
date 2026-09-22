@@ -112,7 +112,7 @@ builds the site from GitHub on every push, like Netlify did.
 | Setting | Value |
 |---|---|
 | Project name | `aaron-budget-app` (gives `https://aaron-budget-app.pages.dev`) |
-| Production branch | `main-tnlcto` |
+| Production branch | `main` |
 | Framework preset | None |
 | Build command | `pnpm --filter @budget/app-client build` |
 | Build output directory | `apps/web/dist` |

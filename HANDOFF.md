@@ -38,7 +38,7 @@ or delete a test to make a check pass.
 
 ## 2. What exists
 
-pnpm monorepo. Branch **`main-tnlcto`** is the working branch (it is what the
+pnpm monorepo. Branch **`main`** is the working branch (it is what the
 site deploys from). Vite + React 19 + TypeScript + Tailwind v4, Supabase
 (Postgres, auth, one Edge Function), Vitest.
 
@@ -83,7 +83,7 @@ Create → Pages → Connect to Git → `aaronjoseph94/budget-app`:
 | Setting | Value |
 |---|---|
 | Project name | `aaron-budget-app` |
-| Production branch | `main-tnlcto` |
+| Production branch | `main` |
 | Framework preset | None |
 | Build command | `pnpm --filter @budget/app-client build` |
 | Build output directory | `apps/web/dist` |
