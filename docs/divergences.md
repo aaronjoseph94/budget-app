@@ -73,7 +73,13 @@ amortization is right.
 ## D3 — One signed ledger replaces three parallel ones
 
 **Date:** 2026-09-22
-**Sheet / cells:** Monthly Budget income and expense blocks; Weekly Spending
+**Sheet / cells:** Transactions!B:E (spending: date, category, amount, notes),
+G:I (income) and K:M (savings transfers), read by the month blocks on the
+Jan..Dec tabs (Jan!M8:V16 for income and savings, Jan!B20:V45 for bills, debts,
+subscriptions and variable expenses)
+
+*Sheet line corrected 2026-09-22.* It first named a "Monthly Budget" and a
+"Weekly Spending" sheet; the workbook has neither.
 
 **Workbook behaviour.** Direction is carried by *location*. Income rows live on
 one block, expenses on another, and transfers on a third; every amount is
