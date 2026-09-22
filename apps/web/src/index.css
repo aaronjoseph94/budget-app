@@ -28,59 +28,142 @@
 }
 
 /*
- * shadcn/ui design tokens — the "zinc" base, as shadcn ships it for
- * Tailwind v4. The component files in src/components/ui are shadcn's
+ * shadcn/ui design tokens, on the "zinc" base as shadcn ships it for
+ * Tailwind v4, with Workbook's colours in place of zinc where Workbook has one
+ * (workbook-plan 6.6). The component files in src/components/ui are shadcn's
  * copy-paste components adapted to this app, and read only these names.
  *
  * Two additions shadcn does not have, because a budget needs them: `spend`
  * and `income`, for the direction money moved. Red and green are never the
  * ONLY signal — every amount also carries its sign — so the colours help
- * rather than carry the meaning.
+ * rather than carry the meaning. `spend` is the darker red Workbook's overspent
+ * pill needs for its cream text to be readable; Workbook's own #DC5454 stays,
+ * as `spend-bar`, for bars that carry no text.
+ *
+ * Then Workbook's own sets. Each month block has six: band (the big-total strip),
+ * header (column headings), total (the totals row), ink, accent and rule.
+ * INK is for every word and number. ACCENT is for fills, bars and decoration
+ * only — Workbook writes its headings in these pastels, at 1.3 to 1.9 to one on
+ * their bands, which nobody can read (decision 10). Bills, debts and
+ * subscriptions share `owed`, as Workbook colours all three alike.
+ *
+ * Page and card are shadcn's `background` and `card`; `summary` is the
+ * month's four-number card. Every text colour here was measured against
+ * every background it is meant for: 4.5 to one for text, 3 for the title.
  */
 :root {
   --radius: 0.75rem;
-  --background: oklch(0.985 0 0);
+  --background: #fffcfa;
   --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
+  --card: #fffefa;
   --card-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary: #2b5d6a; /* START HERE's header band */
+  --primary-foreground: #fffefa;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.96 0 0);
+  --muted: #f7f5ec; /* the Transactions and Bills page */
   --muted-foreground: oklch(0.52 0 0);
   --accent: oklch(0.96 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --spend: oklch(0.55 0.19 27);
-  --income: oklch(0.52 0.13 155);
+  --ring: #9abdb7;
+  --spend: #b83a3a;
+  --spend-foreground: #fffefa;
+  --spend-bar: #dc5454;
+  --income: #4f6e69;
   --warning: oklch(0.7 0.16 70);
+
+  --summary: #faffff;
+  --summary-label: #4e6e8c;
+  --summary-value: #4a7069;
+  --title-band: #f6fdfc;
+  --title-ink: #5b7a75;
+  --income-band: #eff9f8;
+  --income-header: #f6fdfd;
+  --income-total: #d7eeeb;
+  --income-ink: #4f6e69;
+  --income-accent: #9abdb7;
+  --income-rule: #cce2df;
+  --savings-band: #fff6c8;
+  --savings-header: #fffbe8;
+  --savings-total: #fff2b0;
+  --savings-ink: #7c5512;
+  --savings-accent: #fada6a;
+  --savings-rule: #ffeb8b;
+  --owed-band: #fcdad6;
+  --owed-header: #ffe9e6;
+  --owed-total: #f8d7d2;
+  --owed-ink: #a63428;
+  --owed-accent: #faaaa1;
+  --owed-rule: #ffc7c1;
+  --variable-band: #fee4d4;
+  --variable-header: #ffefe6;
+  --variable-total: #fadece;
+  --variable-ink: #91452d;
+  --variable-accent: #fdbc9a;
+  --variable-rule: #f3a68e;
 }
 
+/*
+ * Workbook has no dark mode. Each colour keeps its hue: bands sit at about 15%
+ * lightness, the page and cards darker still, and inks at about 85%, so a
+ * block still reads as its block.
+ */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: oklch(0.145 0 0);
+    --background: #171412;
     --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
+    --card: #1f1e19;
     --card-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
+    --primary: #b8d8e0;
+    --primary-foreground: #163036;
     --secondary: oklch(0.269 0 0);
     --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
+    --muted: #312f26;
     --muted-foreground: oklch(0.708 0 0);
     --accent: oklch(0.269 0 0);
     --accent-foreground: oklch(0.985 0 0);
     --destructive: oklch(0.704 0.191 22.216);
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --spend: oklch(0.72 0.16 25);
-    --income: oklch(0.74 0.14 155);
+    --ring: #5b8b83;
+    --spend: #df9a9a;
+    --spend-foreground: #2e0f0f;
+    --spend-bar: #db5757;
+    --income: #c4d4d2;
     --warning: oklch(0.8 0.15 75);
+
+    --summary: #182525;
+    --summary-label: #c4d2de;
+    --summary-value: #d1e1de;
+    --title-band: #1b322e;
+    --title-ink: #d3dedd;
+    --income-band: #193431;
+    --income-header: #203c3c;
+    --income-total: #274945;
+    --income-ink: #d2dfdd;
+    --income-accent: #74a49c;
+    --income-rule: #37625c;
+    --savings-band: #342f19;
+    --savings-header: #3c3720;
+    --savings-total: #494327;
+    --savings-ink: #f0dfc2;
+    --savings-accent: #c0a959;
+    --savings-rule: #635c36;
+    --owed-band: #341c19;
+    --owed-header: #3c2320;
+    --owed-total: #492c27;
+    --owed-ink: #f0c6c2;
+    --owed-accent: #c06359;
+    --owed-rule: #633a36;
+    --variable-band: #342319;
+    --variable-header: #3c2a20;
+    --variable-total: #493427;
+    --variable-ink: #edcec5;
+    --variable-accent: #c07c59;
+    --variable-rule: #634036;
   }
 }
 
@@ -109,8 +192,39 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-spend: var(--spend);
+  --color-spend-foreground: var(--spend-foreground);
+  --color-spend-bar: var(--spend-bar);
   --color-income: var(--income);
   --color-warning: var(--warning);
+  --color-summary: var(--summary);
+  --color-summary-label: var(--summary-label);
+  --color-summary-value: var(--summary-value);
+  --color-title-band: var(--title-band);
+  --color-title-ink: var(--title-ink);
+  --color-income-band: var(--income-band);
+  --color-income-header: var(--income-header);
+  --color-income-total: var(--income-total);
+  --color-income-ink: var(--income-ink);
+  --color-income-accent: var(--income-accent);
+  --color-income-rule: var(--income-rule);
+  --color-savings-band: var(--savings-band);
+  --color-savings-header: var(--savings-header);
+  --color-savings-total: var(--savings-total);
+  --color-savings-ink: var(--savings-ink);
+  --color-savings-accent: var(--savings-accent);
+  --color-savings-rule: var(--savings-rule);
+  --color-owed-band: var(--owed-band);
+  --color-owed-header: var(--owed-header);
+  --color-owed-total: var(--owed-total);
+  --color-owed-ink: var(--owed-ink);
+  --color-owed-accent: var(--owed-accent);
+  --color-owed-rule: var(--owed-rule);
+  --color-variable-band: var(--variable-band);
+  --color-variable-header: var(--variable-header);
+  --color-variable-total: var(--variable-total);
+  --color-variable-ink: var(--variable-ink);
+  --color-variable-accent: var(--variable-accent);
+  --color-variable-rule: var(--variable-rule);
 }
 
 @layer base {

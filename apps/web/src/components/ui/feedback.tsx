@@ -37,7 +37,7 @@ export function Badge({
  */
 export function Progress({ basisPoints, tone = 'default' }: { basisPoints: number; tone?: 'default' | 'over' | 'near' }) {
   const width = `${Math.min(10_000, Math.max(0, basisPoints)) / 100}%`
-  const fill = tone === 'over' ? 'bg-spend' : tone === 'near' ? 'bg-warning' : 'bg-primary'
+  const fill = tone === 'over' ? 'bg-spend-bar' : tone === 'near' ? 'bg-warning' : 'bg-primary'
   return (
     <div className="h-2 w-full overflow-hidden rounded-full bg-secondary" role="presentation">
       <div className={cn('h-full rounded-full transition-[width]', fill)} style={{ width }} />

@@ -131,7 +131,7 @@ function Shell() {
 
 function Count({ n }: { n: number }) {
   return (
-    <span className="tnum rounded-full bg-spend px-1.5 text-[10px] font-semibold leading-4 text-white">
+    <span className="tnum rounded-full bg-spend px-1.5 text-[10px] font-semibold leading-4 text-spend-foreground">
       {n > 99 ? '99+' : n}
     </span>
   )
