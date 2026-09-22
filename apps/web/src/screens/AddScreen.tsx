@@ -1,0 +1,416 @@
+import { useState } from 'react'
+import { applySignConvention, type AcceptedRow } from '@budget/statement-parsers'
+import { isoDate } from '@budget/core'
+import { parseMoneyInput, useAppData } from '../app-data.js'
+import { addTypedTransaction, ensureCategory, saveImport } from '../ledger.js'
+import { ImportScreen, type SaveRequest } from '../ImportScreen.js'
+import { readStatementPdf, type PdfImport } from '../pdf-import.js'
+import { formatCents, formatIsoDate, todayIso } from '../format.js'
+import { IngestedText } from '../ui.js'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card.js'
+import { Alert, Badge } from '../components/ui/feedback.js'
+import { Button } from '../components/ui/button.js'
+import { Field, Input, NativeSelect } from '../components/ui/form.js'
+import { Icon } from '../components/ui/icons.js'
+import { navigate } from '../nav.js'
+import { cn } from '../lib/cn.js'
+
+type Mode = 'statement' | 'typed'
+type Loaded =
+  | { readonly kind: 'none' }
+  | { readonly kind: 'reading'; readonly name: string }
+  | { readonly kind: 'csv'; readonly name: string; readonly text: string }
+  | { readonly kind: 'pdf'; readonly name: string; readonly result: PdfImport }
+
+interface Outcome {
+  readonly ok: boolean
+  readonly message: string
+}
+
+export function AddScreen() {
+  const [mode, setMode] = useState<Mode>('statement')
+  return (
+    <div className="space-y-4">
+      <header>
+        <h1 className="text-2xl font-semibold tracking-tight">Add</h1>
+        <p className="text-sm text-muted-foreground">A statement from your bank, or one purchase by hand.</p>
+      </header>
+      <div role="tablist" className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+        {(['statement', 'typed'] as const).map((m) => (
+          <button
+            key={m}
+            role="tab"
+            type="button"
+            aria-selected={mode === m}
+            onClick={() => setMode(m)}
+            className={cn(
+              'flex items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition-colors',
+              mode === m ? 'bg-card shadow-sm' : 'text-muted-foreground',
+            )}
+          >
+            <Icon name={m === 'statement' ? 'file' : 'pencil'} className="size-4" />
+            {m === 'statement' ? 'Statement' : 'Type it'}
+          </button>
+        ))}
+      </div>
+      {mode === 'statement' ? <StatementImport /> : <TypedEntry />}
+    </div>
+  )
+}
+
+function StatementImport() {
+  const { supabase, userId, accountId, refresh } = useAppData()
+  const [loaded, setLoaded] = useState<Loaded>({ kind: 'none' })
+  const [saving, setSaving] = useState(false)
+  const [outcome, setOutcome] = useState<Outcome | null>(null)
+
+  const onFile = async (file: File) => {
+    setOutcome(null)
+    setLoaded({ kind: 'reading', name: file.name })
+    const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name)
+    if (isPdf) {
+      const result = await readStatementPdf(new Uint8Array(await file.arrayBuffer()))
+      setLoaded({ kind: 'pdf', name: file.name, result })
+    } else {
+      setLoaded({ kind: 'csv', name: file.name, text: await file.text() })
+    }
+  }
+
+  const save = async (request: SaveRequest) => {
+    if (accountId === null) return
+    setSaving(true)
+    setOutcome(null)
+    try {
+      const counts = await saveImport(supabase, { userId, accountId, ...request })
+      const parts = [
+        counts.autoApproved > 0 ? `${counts.autoApproved} filed automatically from your past choices` : null,
+        counts.waiting > 0 ? `${counts.waiting} waiting for review` : null,
+        counts.deduped > 0 ? `${counts.deduped} you already had` : null,
+        counts.rejected > 0 ? `${counts.rejected} could not be read` : null,
+      ].filter((p): p is string => p !== null)
+      setOutcome({ ok: true, message: parts.length === 0 ? 'Nothing new in this file.' : `${parts.join(', ')}.` })
+      await refresh()
+    } catch (cause) {
+      setOutcome({ ok: false, message: cause instanceof Error ? cause.message : 'Nothing was saved.' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const reset = () => {
+    setLoaded({ kind: 'none' })
+    setOutcome(null)
+  }
+
+  if (loaded.kind === 'none') return <FilePicker onFile={(f) => void onFile(f)} />
+  if (loaded.kind === 'reading') {
+    return (
+      <Card>
+        <div className="py-10 text-center text-sm text-muted-foreground">Reading {loaded.name}…</div>
+      </Card>
+    )
+  }
+  if (loaded.kind === 'csv') {
+    return (
+      <ImportScreen
+        fileName={loaded.name}
+        text={loaded.text}
+        onReset={reset}
+        onSave={save}
+        saving={saving}
+        outcome={outcome}
+      />
+    )
+  }
+  return <PdfPreview name={loaded.name} result={loaded.result} onReset={reset} onSave={save} saving={saving} outcome={outcome} />
+}
+
+function PdfPreview({
+  name,
+  result,
+  onReset,
+  onSave,
+  saving,
+  outcome,
+}: {
+  name: string
+  result: PdfImport
+  onReset: () => void
+  onSave: (r: SaveRequest) => Promise<void>
+  saving: boolean
+  outcome: Outcome | null
+}) {
+  const header = (
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex min-w-0 items-center gap-2">
+        <Icon name="file" className="size-4 shrink-0 text-muted-foreground" />
+        <span className="truncate text-sm font-medium">{name}</span>
+      </div>
+      <Button variant="outline" size="sm" onClick={onReset}>
+        Choose another
+      </Button>
+    </div>
+  )
+
+  if (!result.ok) {
+    return (
+      <div className="space-y-4">
+        {header}
+        <Alert tone="error" title={result.title}>
+          {result.detail}
+        </Alert>
+      </div>
+    )
+  }
+
+  const { reconciliation: rec, accepted, rejected, parsed, period } = result
+  return (
+    <div className="space-y-4">
+      {header}
+
+      <Card>
+        <CardHeader>
+          <CardDescription>
+            Statement · {formatIsoDate(period.from)} – {formatIsoDate(period.to)}
+          </CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            {accepted.length} transactions
+            {rec.balances ? (
+              <Badge variant="income">
+                <Icon name="check" className="size-3" /> Matches your statement
+              </Badge>
+            ) : (
+              <Badge variant="spend">
+                <Icon name="alert" className="size-3" /> Does not add up
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-3 text-sm">
+          <div className="rounded-lg bg-muted p-3">
+            <p className="text-xs text-muted-foreground">Purchases</p>
+            <p className="tnum font-semibold">{formatCents(rec.parsedPurchasesCents)}</p>
+          </div>
+          <div className="rounded-lg bg-muted p-3">
+            <p className="text-xs text-muted-foreground">Payments &amp; credits</p>
+            <p className="tnum font-semibold">{formatCents(rec.parsedPaymentsCents)}</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {!rec.balances ? (
+        <Alert tone="error" title="Nothing will be imported from this file">
+          <p>
+            The transactions read from this PDF do not add up to the totals printed on the statement, which means something
+            was misread. Importing it would put wrong numbers in your budget.
+          </p>
+          <ul className="mt-2 space-y-1">
+            {rec.discrepancies.map((d) => (
+              <li key={d.what} className="tnum">
+                {DISCREPANCY[d.what]}: statement says {formatCents(d.statementCents)}, read {formatCents(d.parsedCents)}
+              </li>
+            ))}
+          </ul>
+        </Alert>
+      ) : null}
+
+      {rejected.length > 0 ? (
+        <Alert title={`${rejected.length} rows could not be read`}>They will be recorded so nothing goes missing silently.</Alert>
+      ) : null}
+
+      {rec.balances ? (
+        <div className="space-y-2">
+          <Button size="lg" className="w-full" disabled={saving} onClick={() => void onSave({ accepted, rejected, parsed, source: 'card_pdf' })}>
+            {saving ? 'Saving…' : `Import ${accepted.length} transactions`}
+          </Button>
+          {outcome !== null ? <Alert tone={outcome.ok ? 'success' : 'error'}>{outcome.message}</Alert> : null}
+          {outcome?.ok === true ? (
+            <Button variant="outline" className="w-full" onClick={() => navigate('review')}>
+              Go to review
+            </Button>
+          ) : null}
+          <p className="text-center text-xs text-muted-foreground">
+            Merchants you have filed before go straight in. New ones wait for you in Review.
+          </p>
+        </div>
+      ) : null}
+
+      <PreviewList rows={accepted} />
+    </div>
+  )
+}
+
+const DISCREPANCY: Record<string, string> = {
+  purchases_and_debits: 'Purchases',
+  payments_and_credits: 'Payments and credits',
+  balance_equation: 'Closing balance',
+}
+
+function PreviewList({ rows }: { rows: readonly AcceptedRow[] }) {
+  return (
+    <Card className="overflow-hidden">
+      <ul className="divide-y">
+        {rows.map((row) => (
+          <li key={row.line} className="flex items-baseline gap-3 px-4 py-2.5 text-sm">
+            <span className="tnum w-14 shrink-0 text-xs text-muted-foreground">{formatIsoDate(row.postedOn).replace(/ \d{4}$/, '')}</span>
+            <span className="min-w-0 flex-1 truncate">
+              <IngestedText>{row.merchantRaw}</IngestedText>
+            </span>
+            <span className={cn('tnum shrink-0', row.amountCents > 0 && 'text-income')}>{formatCents(row.amountCents)}</span>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  )
+}
+
+function FilePicker({ onFile }: { onFile: (file: File) => void }) {
+  const [over, setOver] = useState(false)
+  return (
+    <label
+      onDragOver={(e) => {
+        e.preventDefault()
+        setOver(true)
+      }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(e) => {
+        e.preventDefault()
+        setOver(false)
+        const file = e.dataTransfer.files[0]
+        if (file !== undefined) onFile(file)
+      }}
+      className={cn(
+        'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed bg-card px-6 py-12 text-center transition-colors',
+        over ? 'border-primary bg-accent' : 'border-border',
+      )}
+    >
+      <span className="rounded-full bg-muted p-3">
+        <Icon name="upload" />
+      </span>
+      <span className="font-medium">Choose a statement</span>
+      <span className="text-sm text-muted-foreground">PDF or CSV from your bank</span>
+      <input
+        type="file"
+        accept=".pdf,application/pdf,.csv,text/csv,text/plain"
+        className="sr-only"
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (file !== undefined) onFile(file)
+          e.target.value = ''
+        }}
+      />
+      <span className="mt-2 text-xs text-muted-foreground">Read on this device. The file itself is never uploaded.</span>
+    </label>
+  )
+}
+
+/** A purchase typed by hand — mostly for cash, since card purchases arrive with the statement. */
+function TypedEntry() {
+  const { supabase, userId, accountId, categories, refresh } = useAppData()
+  const [date, setDate] = useState(todayIso())
+  const [amount, setAmount] = useState('')
+  const [direction, setDirection] = useState<'spent' | 'received'>('spent')
+  const [merchant, setMerchant] = useState('')
+  const [categoryId, setCategoryId] = useState('')
+  const [newCategory, setNewCategory] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [outcome, setOutcome] = useState<Outcome | null>(null)
+
+  const cents = parseMoneyInput(amount)
+  const creating = categoryId === '__new__'
+  const ready =
+    cents !== null && cents > 0 && merchant.trim().length > 0 && (creating ? newCategory.trim().length > 0 : categoryId !== '')
+
+  const submit = async () => {
+    if (!ready || cents === null || accountId === null) return
+    setBusy(true)
+    setOutcome(null)
+    try {
+      const category = creating ? (await ensureCategory(supabase, userId, newCategory.trim())).id : categoryId
+      await addTypedTransaction(supabase, {
+        accountId,
+        postedOn: isoDate(date),
+        // The parser's own sign convention, not arithmetic here: spending is an
+        // outflow, which the ledger writes as negative (docs/divergences.md D3).
+        amountCents: applySignConvention(cents, { kind: direction === 'spent' ? 'debit_positive' : 'signed' }),
+        merchantRaw: merchant.trim(),
+        categoryId: category,
+      })
+      setOutcome({ ok: true, message: `Added ${formatCents(cents)} — ${merchant.trim()}.` })
+      setAmount('')
+      setMerchant('')
+      setNewCategory('')
+      if (creating) setCategoryId('')
+      await refresh()
+    } catch (cause) {
+      setOutcome({ ok: false, message: cause instanceof Error ? cause.message : 'Nothing was saved.' })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Card>
+      <CardContent className="space-y-4 pt-5">
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault()
+            void submit()
+          }}
+        >
+          <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+            {(['spent', 'received'] as const).map((d) => (
+              <button
+                key={d}
+                type="button"
+                onClick={() => setDirection(d)}
+                className={cn('rounded-md py-1.5 text-sm font-medium', direction === d ? 'bg-card shadow-sm' : 'text-muted-foreground')}
+              >
+                {d === 'spent' ? 'I spent' : 'I received'}
+              </button>
+            ))}
+          </div>
+          <Field label="Amount">
+            <Input inputMode="decimal" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+          </Field>
+          <Field label="What was it?">
+            <Input placeholder="e.g. Farmers market" value={merchant} maxLength={120} onChange={(e) => setMerchant(e.target.value)} required />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Date">
+              <Input type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} required />
+            </Field>
+            <Field label="Category">
+              <NativeSelect value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required>
+                <option value="">Choose…</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+                <option value="__new__">+ New…</option>
+              </NativeSelect>
+            </Field>
+          </div>
+          {creating ? (
+            <Field label="New category name">
+              <Input value={newCategory} maxLength={60} onChange={(e) => setNewCategory(e.target.value)} />
+            </Field>
+          ) : null}
+          {amount.trim().length > 0 && cents === null ? (
+            <p className="text-sm text-spend">That amount is not a number of dollars and cents.</p>
+          ) : null}
+          <Button type="submit" size="lg" className="w-full" disabled={!ready || busy}>
+            {busy ? 'Adding…' : 'Add'}
+          </Button>
+          {outcome !== null ? <Alert tone={outcome.ok ? 'success' : 'error'}>{outcome.message}</Alert> : null}
+          <p className="text-xs text-muted-foreground">
+            For cash. A card purchase typed here and later imported from your statement would count twice.
+          </p>
+        </form>
+      </CardContent>
+    </Card>
+  )
+}
+

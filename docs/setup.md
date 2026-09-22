@@ -4,6 +4,27 @@ Settings that live in the Supabase and Netlify dashboards rather than in this
 repository. They are recorded here because a setting nobody wrote down is
 found again by hitting the same wall twice.
 
+## Supabase: database migrations, in order
+
+Run each file in `supabase/migrations/` once, in filename order, in
+**SQL Editor → New query → paste → Run**. Each ends in "Success. No rows
+returned." Running one twice is refused rather than applied twice.
+
+| File | What it adds |
+|---|---|
+| `0001_initial_schema.sql` | Tables, row-level security, private receipts bucket |
+| `0002_unreadable_lines.sql` | A record of statement lines that could not be read |
+| `0003_save_import_atomically.sql` | Saving an import as one transaction |
+| `0004_one_path_into_the_ledger.sql` | Approval, rules that learn, budgets, the goal, PDF imports |
+
+The app expects all of them. A missing one shows up as an import or approval
+that fails with a code in brackets.
+
+## iPhone: install it
+
+Open the site in **Safari**, tap **Share → Add to Home Screen**. It then opens
+full-screen from its own icon, with no browser bar.
+
 ## Supabase: making the one user account
 
 There is no sign-up screen, deliberately. This app holds one person's

@@ -37,19 +37,21 @@ export interface SaveRequest {
   readonly accepted: readonly AcceptedRow[]
   readonly rejected: readonly RejectedRow[]
   readonly parsed: number
-  readonly source: 'card_csv' | 'card_xlsx' | 'receipt_photo' | 'typed'
+  readonly source: 'card_csv' | 'card_xlsx' | 'card_pdf' | 'receipt_photo' | 'typed'
 }
 
 export interface ImportScreenProps {
-  /** Present only when signed in; the preview works without it. */
+  /** The file, already chosen on the Add screen, which also routes PDFs away. */
+  readonly fileName: string
+  readonly text: string
+  readonly onReset: () => void
   readonly onSave?: (result: SaveRequest) => Promise<void>
   readonly saving?: boolean
   readonly outcome?: { readonly ok: boolean; readonly message: string } | null
 }
 
-export function ImportScreen({ onSave, saving = false, outcome = null }: ImportScreenProps) {
-  const [fileName, setFileName] = useState<string | null>(null)
-  const [text, setText] = useState<string | null>(null)
+/** A CSV export: preview the column mapping, then send to the review queue. */
+export function ImportScreen({ fileName, text, onReset, onSave, saving = false, outcome = null }: ImportScreenProps) {
   const [delimiter, setDelimiter] = useState<string>(',')
   // What the user has explicitly chosen. Everything unset falls through to the
   // proposal below, so nothing is assigned during render and a later file
@@ -63,12 +65,12 @@ export function ImportScreen({ onSave, saving = false, outcome = null }: ImportS
   // settings currently displayed rather than the ones that were set when a
   // button was last pressed.
   const tokenized = useMemo(
-    () => (text === null ? null : tokenizeCsv(text, { delimiter })),
+    () => tokenizeCsv(text, { delimiter }),
     [text, delimiter],
   )
 
   const analysis = useMemo(() => {
-    if (tokenized === null || !tokenized.ok) return null
+    if (!tokenized.ok) return null
     const verdict = detectHeaderRow(tokenized.rows, US_AMOUNT_FORMAT)
     const hasHeader = verdict !== 'data'
     const columns = profileColumns({
@@ -113,7 +115,7 @@ export function ImportScreen({ onSave, saving = false, outcome = null }: ImportS
   const dateFormat: DateFormat = chosen.dateFormat ?? soleFormat ?? 'MM/DD/YYYY'
 
   const result: StatementRead | null = useMemo(() => {
-    if (tokenized === null || !tokenized.ok || analysis === null) return null
+    if (!tokenized.ok || analysis === null) return null
     return readStatement(tokenized.rows, {
       mapping: {
         dateIndex,
@@ -135,16 +137,9 @@ export function ImportScreen({ onSave, saving = false, outcome = null }: ImportS
     [result],
   )
 
-  const onFile = async (file: File) => {
-    setFileName(file.name)
-    setChosen({})
-    setText(await file.text())
-  }
-
   const reset = () => {
-    setText(null)
-    setFileName(null)
     setChosen({})
+    onReset()
   }
 
   const ambiguousDate =
@@ -152,16 +147,7 @@ export function ImportScreen({ onSave, saving = false, outcome = null }: ImportS
 
   return (
     <div>
-      <header className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight">Import a statement</h1>
-        <p className="mt-1 text-sm text-ink-soft">
-          Nothing is saved yet. This shows exactly what would be imported, and what would not.
-        </p>
-      </header>
-
-      {text === null ? (
-        <FilePicker onFile={onFile} />
-      ) : (
+      {(
         <div className="space-y-6">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
@@ -173,7 +159,7 @@ export function ImportScreen({ onSave, saving = false, outcome = null }: ImportS
             </Button>
           </div>
 
-          {tokenized !== null && !tokenized.ok ? (
+          {!tokenized.ok ? (
             <Card className="border-spend/40 p-4">
               <Label>This file could not be read</Label>
               <p className="mt-2 text-sm">
@@ -182,7 +168,7 @@ export function ImportScreen({ onSave, saving = false, outcome = null }: ImportS
                   'line' in tokenized.failure ? tokenized.failure.line : undefined,
                 )}
               </p>
-              <p className="mt-3 text-sm text-ink-soft">
+              <p className="mt-3 text-sm text-muted-foreground">
                 If your bank separates columns with something other than a comma, change it below.
               </p>
               <div className="mt-3 max-w-xs">
@@ -242,7 +228,7 @@ export function ImportScreen({ onSave, saving = false, outcome = null }: ImportS
               </div>
 
               {ambiguousDate !== null ? (
-                <p className="mt-4 rounded-lg border border-line bg-surface p-3 text-sm">
+                <p className="mt-4 rounded-lg border border-border bg-muted p-3 text-sm">
                   <strong className="font-medium">Which way round are these dates?</strong> Every
                   day in this file is 12 or lower, so <code>03/04</code> could be 3 April or 4
                   March. Nothing in the file settles it — please choose the format your bank uses.
@@ -254,7 +240,7 @@ export function ImportScreen({ onSave, saving = false, outcome = null }: ImportS
           {result !== null && summary !== null ? (
             <>
               <Card>
-                <div className="grid grid-cols-2 divide-x divide-line sm:grid-cols-4">
+                <div className="grid grid-cols-2 divide-x divide-border sm:grid-cols-4">
                   <Stat label="Would import" value={String(result.accepted.length)} />
                   <Stat label="Needs a look" value={String(result.rejected.length)} />
                   <Stat label="Money out" value={formatCents(summary.outflowCents)} tone="spend" />
@@ -268,7 +254,7 @@ export function ImportScreen({ onSave, saving = false, outcome = null }: ImportS
                   <ul className="mt-3 space-y-2">
                     {result.rejected.map((r) => (
                       <li key={r.line} className="flex gap-3 text-sm">
-                        <span className="tnum shrink-0 text-ink-soft">Line {r.line}</span>
+                        <span className="tnum shrink-0 text-muted-foreground">Line {r.line}</span>
                         <span>{describeReason(r.reason)}</span>
                       </li>
                     ))}
@@ -277,13 +263,13 @@ export function ImportScreen({ onSave, saving = false, outcome = null }: ImportS
               ) : null}
 
               <Card className="overflow-hidden">
-                <div className="border-b border-line px-4 py-3">
+                <div className="border-b border-border px-4 py-3">
                   <Label>{result.accepted.length} transactions</Label>
                 </div>
-                <ul className="divide-y divide-line">
+                <ul className="divide-y divide-border">
                   {result.accepted.map((row) => (
                     <li key={`${row.line}`} className="flex items-baseline gap-3 px-4 py-3">
-                      <span className="tnum w-28 shrink-0 text-sm text-ink-soft">
+                      <span className="tnum w-28 shrink-0 text-sm text-muted-foreground">
                         {formatIsoDate(row.postedOn)}
                       </span>
                       <span className="min-w-0 flex-1 text-sm">
@@ -338,13 +324,13 @@ export function ImportScreen({ onSave, saving = false, outcome = null }: ImportS
                       {outcome.message}
                     </p>
                   ) : null}
-                  <p className="text-xs text-ink-soft">
+                  <p className="text-xs text-muted-foreground">
                     Nothing reaches your ledger until you approve it.
                   </p>
                 </div>
               ) : null}
 
-              <p className="text-center text-xs text-ink-soft">
+              <p className="text-center text-xs text-muted-foreground">
                 {result.parsed} rows read · {result.accepted.length} readable ·{' '}
                 {result.rejected.length} not · {result.blankSkipped} blank lines skipped
               </p>
@@ -364,43 +350,4 @@ function columnName(column: ColumnProfile): string {
   if (column.constant) hints.push('always the same')
   if (column.unique) hints.push('all different')
   return hints.length === 0 ? label : `${label}  —  ${hints.join(', ')}`
-}
-
-function FilePicker({ onFile }: { onFile: (file: File) => void }) {
-  const [over, setOver] = useState(false)
-  return (
-    <label
-      onDragOver={(e) => {
-        e.preventDefault()
-        setOver(true)
-      }}
-      onDragLeave={() => setOver(false)}
-      onDrop={(e) => {
-        e.preventDefault()
-        setOver(false)
-        const file = e.dataTransfer.files[0]
-        if (file !== undefined) onFile(file)
-      }}
-      className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-12 text-center transition ${
-        over ? 'border-accent bg-accent/5' : 'border-line'
-      }`}
-    >
-      <span className="text-base font-medium">Drop a statement here</span>
-      <span className="mt-1 text-sm text-ink-soft">
-        or choose a CSV exported from your bank
-      </span>
-      <input
-        type="file"
-        accept=".csv,text/csv,text/plain"
-        className="mt-4 text-sm text-ink-soft file:mr-3 file:rounded-lg file:border-0 file:bg-accent file:px-4 file:py-2 file:text-sm file:font-medium file:text-white"
-        onChange={(e) => {
-          const file = e.target.files?.[0]
-          if (file !== undefined) onFile(file)
-        }}
-      />
-      <span className="mt-4 text-xs text-ink-soft">
-        The file is read in your browser. Nothing leaves this page.
-      </span>
-    </label>
-  )
 }

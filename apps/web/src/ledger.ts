@@ -17,7 +17,7 @@ import {
 import { describeWriteFailure } from './format.js'
 import type { SupabaseClient } from './supabase.js'
 
-export type IngestSource = 'card_csv' | 'card_xlsx' | 'receipt_photo' | 'typed'
+export type IngestSource = 'card_csv' | 'card_xlsx' | 'card_pdf' | 'receipt_photo' | 'typed'
 
 export interface SaveImportInput {
   readonly userId: string
@@ -34,6 +34,10 @@ export interface SaveImportResult {
   readonly inserted: number
   readonly deduped: number
   readonly rejected: number
+  /** Of those inserted, how many a learned merchant rule approved outright. */
+  readonly autoApproved: number
+  /** Of those inserted, how many wait for a person. Row counts, not money. */
+  readonly waiting: number
 }
 
 /**
@@ -114,108 +118,147 @@ export async function saveImport(
     inserted: Number(result.inserted),
     deduped: Number(result.deduped),
     rejected: Number(result.rejected),
+    autoApproved: Number(result.auto_approved ?? 0),
+    waiting: Number(result.inserted) - Number(result.auto_approved ?? 0),
   }
 }
 
-/** What save_import returns. Shaped by migration 0003. */
+/** What save_import returns. Shaped by migrations 0003 and 0004. */
 interface SavedCounts {
   readonly batch_id: string
   readonly parsed: number
   readonly deduped: number
   readonly inserted: number
   readonly rejected: number
+  readonly auto_approved?: number
 }
+
+function fail(error: { code?: string | null } | null): never {
+  throw new Error(describeWriteFailure(error))
+}
+
+// ---------------------------------------------------------------------------
+// The review queue
+// ---------------------------------------------------------------------------
 
 export interface PendingCandidate {
   readonly id: string
   readonly posted_on: string
   readonly amount_cents: number
+  /** Normalised: what a learned rule matches on. */
+  readonly merchant: string
   readonly merchant_raw: string
-  readonly dedupe_hash: string
-  readonly dedupe_hash_v: number
-  readonly account_id: string
-  readonly source: string
 }
 
-export async function listPending(
-  supabase: SupabaseClient,
-  limit = 200,
-): Promise<readonly PendingCandidate[]> {
-  const { data, error } = await supabase
+export interface PendingPage {
+  readonly rows: readonly PendingCandidate[]
+  /** The real total, which can exceed the rows fetched. */
+  readonly total: number
+}
+
+/**
+ * The queue, oldest first, with its true size.
+ *
+ * The count comes from the database. It used to be the length of the page,
+ * which capped at 200 and then printed "200 waiting" for a queue of 400 — the
+ * rest unreachable and the headline wrong.
+ */
+export async function listPending(supabase: SupabaseClient, limit = 300): Promise<PendingPage> {
+  const { data, error, count } = await supabase
     .from('ingest_candidates')
-    .select('id, posted_on, amount_cents, merchant_raw, dedupe_hash, dedupe_hash_v, account_id, source')
+    .select('id, posted_on, amount_cents, merchant, merchant_raw', { count: 'exact' })
     .eq('status', 'pending')
-    .order('posted_on', { ascending: false })
+    .order('posted_on', { ascending: true })
     .limit(limit)
-  if (error !== null) throw new Error(describeWriteFailure(error))
-  return (data ?? []) as readonly PendingCandidate[]
+  if (error !== null) fail(error)
+  const rows = (data ?? []) as PendingCandidate[]
+  return { rows: rows.map((r) => ({ ...r, amount_cents: Number(r.amount_cents) })), total: count ?? rows.length }
 }
 
 export type ApproveOutcome = 'approved' | 'already_handled' | 'already_in_ledger'
 
 /**
- * Approve one candidate into the ledger.
+ * Approve one candidate into a category, in one database transaction.
  *
- * Two guards, both required by CLAUDE.md and both enforced by the database
- * rather than by checking first:
- *
- *   - The status change is conditional (`WHERE id = ? AND status = 'pending'`)
- *     and returns the row. A second approval of the same candidate matches
- *     nothing and returns nothing, so a double click cannot post twice.
- *   - The insert is `ON CONFLICT (user_id, dedupe_hash) DO NOTHING`. A charge
- *     already in the ledger adds no row. A SELECT-then-INSERT would race with
- *     itself; this cannot.
+ * approve_candidate (migration 0004) performs the conditional UPDATE and the
+ * ON CONFLICT insert CLAUDE.md prescribes, and records the merchant -> category
+ * rule so the next statement approves this merchant by itself. It was two
+ * browser round trips, and a failure between them lost the row entirely.
  */
 export async function approveCandidate(
   supabase: SupabaseClient,
   candidateId: string,
   categoryId: string,
 ): Promise<ApproveOutcome> {
-  const { data: claimed, error: claimError } = await supabase
-    .from('ingest_candidates')
-    .update({ status: 'approved', category_id: categoryId, category_source: 'user' })
-    .eq('id', candidateId)
-    .eq('status', 'pending')
-    .select('*')
-    .maybeSingle()
-  if (claimError !== null) throw new Error(describeWriteFailure(claimError))
-  if (claimed === null) return 'already_handled'
-
-  const row = claimed as unknown as PendingCandidate & { user_id: string }
-  const { data: written, error: insertError } = await supabase
-    .from('transactions')
-    .upsert(
-      {
-        user_id: row.user_id,
-        account_id: row.account_id,
-        posted_on: row.posted_on,
-        amount_cents: row.amount_cents,
-        merchant: row.merchant_raw,
-        merchant_raw: row.merchant_raw,
-        category_id: categoryId,
-        dedupe_hash: row.dedupe_hash,
-        dedupe_hash_v: row.dedupe_hash_v,
-        source: row.source,
-      },
-      { onConflict: 'user_id,dedupe_hash', ignoreDuplicates: true },
-    )
-    .select('id')
-  if (insertError !== null) throw new Error(describeWriteFailure(insertError))
-
-  return (written ?? []).length === 0 ? 'already_in_ledger' : 'approved'
+  const { data, error } = await supabase.rpc('approve_candidate', {
+    p_candidate: candidateId,
+    p_category: categoryId,
+  })
+  if (error !== null) fail(error)
+  const outcome = String(data)
+  return outcome === 'approved' || outcome === 'already_in_ledger' ? outcome : 'already_handled'
 }
+
+export async function rejectCandidate(supabase: SupabaseClient, candidateId: string): Promise<void> {
+  const { error } = await supabase.rpc('reject_candidate', { p_candidate: candidateId })
+  if (error !== null) fail(error)
+}
+
+/** merchant -> category id, for suggesting what the user chose last time. */
+export async function listRules(supabase: SupabaseClient): Promise<ReadonlyMap<string, string>> {
+  const { data, error } = await supabase.from('merchant_rules').select('match_merchant, category_id')
+  if (error !== null) fail(error)
+  const rules = (data ?? []) as { match_merchant: string; category_id: string }[]
+  return new Map(rules.map((r) => [r.match_merchant, r.category_id]))
+}
+
+// ---------------------------------------------------------------------------
+// Typed entry
+// ---------------------------------------------------------------------------
+
+export interface TypedEntry {
+  readonly accountId: string
+  readonly postedOn: string
+  /** Signed, ledger convention: a purchase is negative. */
+  readonly amountCents: number
+  readonly merchantRaw: string
+  readonly categoryId: string
+}
+
+export async function addTypedTransaction(supabase: SupabaseClient, entry: TypedEntry): Promise<void> {
+  const { error } = await supabase.rpc('add_typed_transaction', {
+    p_account_id: entry.accountId,
+    p_posted_on: entry.postedOn,
+    p_amount_cents: entry.amountCents,
+    p_merchant: normalizeMerchant(entry.merchantRaw),
+    p_merchant_raw: entry.merchantRaw,
+    p_category: entry.categoryId,
+  })
+  if (error !== null) fail(error)
+}
+
+// ---------------------------------------------------------------------------
+// Accounts and categories
+// ---------------------------------------------------------------------------
 
 export interface NamedRow {
   readonly id: string
   readonly name: string
 }
 
+export interface Category extends NamedRow {
+  /** Null when no weekly limit is set, which is not the same as zero. */
+  readonly weekly_budget_cents: number | null
+}
+
 /**
- * Find or create a row by name for this user.
+ * Find or create a row by name.
  *
- * Both tables are unique on (user_id, name), so a repeated call returns the
- * same row rather than creating a second one — the uniqueness is the
- * database's, not a check performed first that could race.
+ * Insert first, and read back only on a unique violation. The previous version
+ * looked first and inserted second, while its comment claimed the database's
+ * uniqueness made that race-safe; it did not — two quick taps both looked,
+ * both found nothing, and the second insert failed with a raw 23505. Here the
+ * violation IS the "already exists" answer.
  */
 async function ensureNamed(
   supabase: SupabaseClient,
@@ -223,21 +266,21 @@ async function ensureNamed(
   userId: string,
   name: string,
 ): Promise<NamedRow> {
-  const { data: found, error: findError } = await supabase
-    .from(table)
-    .select('id, name')
-    .eq('name', name)
-    .maybeSingle()
-  if (findError !== null) throw new Error(describeWriteFailure(findError))
-  if (found !== null) return found as NamedRow
-
   const { data: created, error: createError } = await supabase
     .from(table)
     .insert({ user_id: userId, name })
     .select('id, name')
     .single()
-  if (createError !== null) throw new Error(describeWriteFailure(createError))
-  return created as NamedRow
+  if (createError === null) return created as NamedRow
+  if (createError.code !== '23505') fail(createError)
+
+  const { data: found, error: findError } = await supabase
+    .from(table)
+    .select('id, name')
+    .eq('name', name)
+    .single()
+  if (findError !== null) fail(findError)
+  return found as NamedRow
 }
 
 export const ensureAccount = (supabase: SupabaseClient, userId: string, name: string) =>
@@ -246,28 +289,128 @@ export const ensureAccount = (supabase: SupabaseClient, userId: string, name: st
 export const ensureCategory = (supabase: SupabaseClient, userId: string, name: string) =>
   ensureNamed(supabase, 'categories', userId, name)
 
-export async function listCategories(supabase: SupabaseClient): Promise<readonly NamedRow[]> {
-  const { data, error } = await supabase.from('categories').select('id, name').order('name')
-  if (error !== null) throw new Error(describeWriteFailure(error))
-  return (data ?? []) as readonly NamedRow[]
+export async function listCategories(supabase: SupabaseClient): Promise<readonly Category[]> {
+  const { data, error } = await supabase
+    .from('categories')
+    .select('id, name, weekly_budget_cents')
+    .order('name')
+  if (error !== null) fail(error)
+  return ((data ?? []) as Category[]).map((c) => ({
+    ...c,
+    weekly_budget_cents: c.weekly_budget_cents === null ? null : Number(c.weekly_budget_cents),
+  }))
 }
+
+export async function setWeeklyBudget(
+  supabase: SupabaseClient,
+  categoryId: string,
+  weeklyBudgetCents: number | null,
+): Promise<void> {
+  const { error } = await supabase
+    .from('categories')
+    .update({ weekly_budget_cents: weeklyBudgetCents })
+    .eq('id', categoryId)
+  if (error !== null) fail(error)
+}
+
+// ---------------------------------------------------------------------------
+// The ledger
+// ---------------------------------------------------------------------------
 
 export interface LedgerRow {
   readonly id: string
   readonly posted_on: string
   readonly amount_cents: number
   readonly merchant_raw: string
+  readonly category_id: string
+  readonly source: string
 }
 
+/** Ledger rows between two dates, inclusive, newest first. */
 export async function listTransactions(
   supabase: SupabaseClient,
-  limit = 200,
+  range: { readonly from: string; readonly to: string },
 ): Promise<readonly LedgerRow[]> {
   const { data, error } = await supabase
     .from('transactions')
-    .select('id, posted_on, amount_cents, merchant_raw')
+    .select('id, posted_on, amount_cents, merchant_raw, category_id, source')
+    .gte('posted_on', range.from)
+    .lte('posted_on', range.to)
     .order('posted_on', { ascending: false })
-    .limit(limit)
-  if (error !== null) throw new Error(describeWriteFailure(error))
-  return (data ?? []) as readonly LedgerRow[]
+    .limit(2000)
+  if (error !== null) fail(error)
+  return ((data ?? []) as LedgerRow[]).map((r) => ({ ...r, amount_cents: Number(r.amount_cents) }))
+}
+
+export async function deleteTransaction(supabase: SupabaseClient, id: string): Promise<void> {
+  const { error } = await supabase.from('transactions').delete().eq('id', id)
+  if (error !== null) fail(error)
+}
+
+// ---------------------------------------------------------------------------
+// The goal
+// ---------------------------------------------------------------------------
+
+export interface GoalRow {
+  readonly id: string
+  readonly name: string
+  readonly target_cents: number
+  readonly saved_cents: number
+  readonly target_date: string | null
+  readonly unit_cost_cents: number | null
+  readonly unit_label: string | null
+}
+
+export async function getGoal(supabase: SupabaseClient): Promise<GoalRow | null> {
+  const { data, error } = await supabase
+    .from('savings_goals')
+    .select('id, name, target_cents, saved_cents, target_date, unit_cost_cents, unit_label')
+    .order('created_at')
+    .limit(1)
+    .maybeSingle()
+  if (error !== null) fail(error)
+  if (data === null) return null
+  const g = data as GoalRow
+  return {
+    ...g,
+    target_cents: Number(g.target_cents),
+    saved_cents: Number(g.saved_cents),
+    unit_cost_cents: g.unit_cost_cents === null ? null : Number(g.unit_cost_cents),
+  }
+}
+
+export interface GoalInput {
+  readonly name: string
+  readonly targetCents: number
+  readonly savedCents: number
+  readonly targetDate: string | null
+  readonly unitCostCents: number | null
+  readonly unitLabel: string | null
+}
+
+/**
+ * Create the goal, or update it by id.
+ *
+ * By id, not by name: upserting on (user_id, name) meant renaming the goal
+ * created a second one, and the week screen went on showing the first.
+ */
+export async function saveGoal(
+  supabase: SupabaseClient,
+  userId: string,
+  goal: GoalInput,
+  existingId: string | null,
+): Promise<void> {
+  const row = {
+    name: goal.name,
+    target_cents: goal.targetCents,
+    saved_cents: goal.savedCents,
+    target_date: goal.targetDate,
+    unit_cost_cents: goal.unitCostCents,
+    unit_label: goal.unitLabel,
+  }
+  const { error } =
+    existingId === null
+      ? await supabase.from('savings_goals').insert({ user_id: userId, ...row })
+      : await supabase.from('savings_goals').update(row).eq('id', existingId)
+  if (error !== null) fail(error)
 }

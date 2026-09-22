@@ -104,3 +104,46 @@ charge would hash two ways depending on which version of the importer read it
 `@`, tab or CR with an apostrophe in the cell writer, and test it there. Note
 that `-` is legitimate at the start of a negative amount, so the guard applies
 to text cells only.
+
+---
+
+## N5 — The coverage gate does not measure the app's screens
+
+**Seen:** 2026-09-22, by the architecture review, which proved it by adding
+200 untested lines to apps/web and watching the gate stay green.
+
+`vitest.config.ts` includes `*.ts` only, so every `.tsx` file is outside the
+measurement, and the app's thresholds name only `format.ts`. The screens built
+on this date (week, review, add, ledger, settings) are therefore untested by
+anything but a manual browser run against a stand-in data source.
+
+**Why not fixed here:** including `.tsx` turns the gate red today, and the
+honest fix is component tests with a fake Supabase client — a slice of its
+own, not a threshold edit. Lowering a bar to let this change pass is exactly
+what CLAUDE.md forbids.
+
+**To settle:** add React Testing Library (its own dependency commit), a fake
+client like the one used for the screenshots, then include `.tsx` and raise
+the app thresholds.
+
+---
+
+## N6 — Photo and scanned-receipt reading is not built
+
+**Seen:** 2026-09-22. The user chose to have photos read by Claude.
+
+It needs a Supabase Edge Function holding the provider key (never the browser
+bundle — CLAUDE.md), a model-response schema, and the review-queue path with
+`category_source = 'model'`, which migration 0004 already forbids from ever
+being approved as-is. None of it can be deployed or tested from this
+environment, which cannot reach Supabase.
+
+**To settle:** Phase 4 of docs/ROADMAP.md.
+
+---
+
+## N7 — The app bundle is 606 KB
+
+**Seen:** 2026-09-22, from `vite build`. Mostly supabase-js. It loads fine on a
+phone, but the PDF reader could be split into its own chunk loaded only on the
+Add screen, and the Supabase client trimmed to the modules used.

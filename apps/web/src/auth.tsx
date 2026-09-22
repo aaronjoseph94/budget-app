@@ -101,7 +101,7 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
   return (
     <div className="mx-auto flex min-h-full w-full max-w-md flex-col justify-center px-4 py-12">
       <h1 className="text-2xl font-semibold tracking-tight">Budget</h1>
-      <p className="mt-1 text-sm text-ink-soft">
+      <p className="mt-1 text-sm text-muted-foreground">
         Your statements and your spending, visible only to you.
       </p>
 
@@ -136,7 +136,7 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="mt-1 w-full rounded-lg border border-line bg-raised px-3 py-2 text-sm text-ink"
+                className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground"
               />
             </label>
 
@@ -149,7 +149,7 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-line bg-raised px-3 py-2 text-sm text-ink"
+                  className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground"
                 />
               </label>
             ) : null}
@@ -160,7 +160,7 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
               </Button>
               <button
                 type="button"
-                className="text-sm text-ink-soft underline underline-offset-2 hover:text-ink"
+                className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
                 onClick={() => {
                   setMethod(method === 'password' ? 'link' : 'password')
                   setAttempt({ kind: 'idle' })
@@ -175,7 +175,7 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
             ) : null}
 
             {method === 'link' ? (
-              <p className="mt-3 text-xs text-ink-soft">
+              <p className="mt-3 text-xs text-muted-foreground">
                 Emailed links are limited to a few per hour on this project’s mail settings. A
                 password has no such limit.
               </p>
@@ -206,7 +206,7 @@ export function NotConfigured({ missing }: { missing: readonly string[] }) {
         <p className="mt-2 text-sm">
           This build is missing {missing.length === 1 ? 'a setting' : 'some settings'}:
         </p>
-        <ul className="mt-2 list-inside list-disc text-sm text-ink-soft">
+        <ul className="mt-2 list-inside list-disc text-sm text-muted-foreground">
           {missing.map((name) => (
             <li key={name}>
               <code>{name}</code>
@@ -214,14 +214,14 @@ export function NotConfigured({ missing }: { missing: readonly string[] }) {
           ))}
         </ul>
 
-        <div className="mt-5 rounded-lg border border-line bg-surface p-4 text-sm">
+        <div className="mt-5 rounded-lg border border-border bg-muted p-4 text-sm">
           {hosted ? (
             <>
               <p className="font-medium">To fix this on the hosted site</p>
-              <ol className="mt-2 list-inside list-decimal space-y-1 text-ink-soft">
+              <ol className="mt-2 list-inside list-decimal space-y-1 text-muted-foreground">
                 <li>Add both values to the site’s environment variables.</li>
                 <li>
-                  <strong className="font-medium text-ink">Then trigger a new deploy.</strong> This
+                  <strong className="font-medium text-foreground">Then trigger a new deploy.</strong> This
                   is the step that is easy to miss: the values are compiled in when the site is
                   built, so adding them changes nothing until it builds again.
                 </li>
@@ -230,7 +230,7 @@ export function NotConfigured({ missing }: { missing: readonly string[] }) {
           ) : (
             <>
               <p className="font-medium">To fix this locally</p>
-              <ol className="mt-2 list-inside list-decimal space-y-1 text-ink-soft">
+              <ol className="mt-2 list-inside list-decimal space-y-1 text-muted-foreground">
                 <li>
                   Put both values in <code>apps/web/.env.local</code> — that exact folder, beside{' '}
                   <code>vite.config.ts</code>, not the repository root.
@@ -241,7 +241,7 @@ export function NotConfigured({ missing }: { missing: readonly string[] }) {
           )}
         </div>
 
-        <p className="mt-4 text-sm text-ink-soft">
+        <p className="mt-4 text-sm text-muted-foreground">
           Both come from the Supabase project’s API settings and are safe to publish — they travel
           in every request the browser makes, and the database’s own access rules are what protect
           the data. The <code>service_role</code> key is a different thing entirely and does not

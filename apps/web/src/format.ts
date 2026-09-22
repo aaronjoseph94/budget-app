@@ -120,3 +120,39 @@ export function describeWriteFailure(error: WriteError | null | undefined): stri
   }
   return code === '' ? body : `${body} (code ${code})`
 }
+
+/**
+ * Today, in the user's own time zone, as an ISO date.
+ *
+ * The one place the app reads the clock. packages/core takes `asOf` as a
+ * parameter and never reads one itself (CLAUDE.md), so the screen decides
+ * what "today" is and passes it down. Built from local date parts: an ISO
+ * string from toISOString() is UTC, and in Alberta that is tomorrow from
+ * 6pm onward.
+ */
+export function todayIso(): string {
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+}
+
+/** `2026-09-21`..`2026-09-27` as `21 – 27 Sep`, or across months `28 Sep – 4 Oct`. */
+export function formatDateRange(from: string, to: string): string {
+  const [, fm, fd] = from.split('-')
+  const [, tm, td] = to.split('-')
+  const fromMonth = MONTHS[Number(fm) - 1] ?? ''
+  const toMonth = MONTHS[Number(tm) - 1] ?? ''
+  return fm === tm
+    ? `${Number(fd)} – ${Number(td)} ${toMonth}`
+    : `${Number(fd)} ${fromMonth} – ${Number(td)} ${toMonth}`
+}
+
+/** Basis points from the engine, shown as a whole percentage. Display only. */
+export function formatBasisPoints(bp: number): string {
+  return `${Math.round(bp / 100)}%`
+}
+
+/** A signed amount shown as a magnitude, for places where the direction is the label. */
+export function formatMagnitude(amountCents: number): string {
+  return formatCents(Math.abs(amountCents))
+}

@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { describeFailure, describeReason, formatCents, formatIsoDate } from '../src/format.js'
+import {
+  describeFailure,
+  describeReason,
+  describeWriteFailure,
+  formatBasisPoints,
+  formatCents,
+  formatDateRange,
+  formatIsoDate,
+  formatMagnitude,
+  todayIso,
+} from '../src/format.js'
 
 describe('formatCents', () => {
   it.each([
@@ -66,5 +76,52 @@ describe('reasons a person can act on', () => {
   it('names the line of a file-level failure when it has one', () => {
     expect(describeFailure('unterminated_quote', 7)).toContain('line 7')
     expect(describeFailure('unterminated_quote')).not.toContain('line')
+  })
+})
+
+describe('describeWriteFailure', () => {
+  it('turns a code into a sentence and keeps the code for a screenshot', () => {
+    expect(describeWriteFailure({ code: '23514' })).toMatch(/did not add up.*\(code 23514\)$/)
+  })
+
+  it('names a dropped connection instead of ending in "undefined"', () => {
+    // supabase-js sets no code at all for a network failure — the likeliest
+    // first failure there is.
+    for (const error of [{}, { code: undefined }, null, undefined]) {
+      const message = describeWriteFailure(error)
+      expect(message).toMatch(/could not reach the database/i)
+      expect(message).not.toMatch(/undefined|: $/)
+    }
+  })
+
+  it('never passes the database message through', () => {
+    // Postgres quotes the offending value, which may be a merchant or an amount.
+    const leaky = { code: '23514', message: 'value "SHELL OIL -45.00" violates check' }
+    expect(describeWriteFailure(leaky)).not.toMatch(/SHELL|45/)
+  })
+
+  it('says something useful about a code it does not know', () => {
+    expect(describeWriteFailure({ code: 'XX999' })).toBe('Something went wrong and nothing was saved. (code XX999)')
+  })
+})
+
+describe('the smaller display helpers', () => {
+  it('shows a week inside one month, and one that crosses months', () => {
+    expect(formatDateRange('2026-09-21', '2026-09-27')).toBe('21 – 27 Sep')
+    expect(formatDateRange('2026-09-28', '2026-10-04')).toBe('28 Sep – 4 Oct')
+  })
+
+  it('shows basis points as a whole percentage', () => {
+    expect(formatBasisPoints(6_500)).toBe('65%')
+    expect(formatBasisPoints(12_000)).toBe('120%')
+  })
+
+  it('shows a magnitude without the sign, for places the label carries direction', () => {
+    expect(formatMagnitude(-1_200)).toBe('$12.00')
+    expect(formatMagnitude(1_200)).toBe('$12.00')
+  })
+
+  it('gives today as a local ISO date', () => {
+    expect(todayIso()).toMatch(/^\d{4}-\d{2}-\d{2}$/)
   })
 })
