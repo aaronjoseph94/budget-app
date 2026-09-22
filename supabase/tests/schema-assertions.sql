@@ -578,6 +578,80 @@ end $$;
 
 reset role;
 
+-- ---------------------------------------------------------------------------
+-- 0007: an import records the statement period it covers
+-- ---------------------------------------------------------------------------
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+
+do $$
+declare
+  acc   uuid := 'aaaaaaaa-0000-4000-8000-000000000001';
+  r     record;
+  b     record;
+  rows_in jsonb := jsonb_build_array(
+    jsonb_build_object('posted_on','2026-08-09','amount_cents',-2200,
+      'merchant','HARBOUR BAKERY','merchant_raw','HARBOUR BAKERY #3',
+      'dedupe_hash', repeat('4',64), 'dedupe_hash_v', 1),
+    jsonb_build_object('posted_on','2026-08-20','amount_cents',-1500,
+      'merchant','NORTH STAR BOOKS','merchant_raw','NORTH STAR BOOKS',
+      'dedupe_hash', repeat('5',64), 'dedupe_hash_v', 1));
+  unreadable jsonb := jsonb_build_array(
+    jsonb_build_object('source_line', 4, 'reason', 'unparseable_amount'));
+begin
+  -- The period comes from the statement and is kept on the batch.
+  select * into r from public.save_import(acc, 'card_pdf', 3, rows_in, unreadable,
+    '2026-08-08'::date, '2026-09-07'::date);
+  select * into b from public.ingest_batches where id = r.batch_id;
+  if b.period_start is distinct from '2026-08-08'::date
+     or b.period_end is distinct from '2026-09-07'::date then
+    raise exception 'the statement period was recorded as % to %', b.period_start, b.period_end;
+  end if;
+
+  -- Otherwise it is the same import: observed counts, and they balance.
+  if r.parsed <> 3 or r.inserted <> 2 or r.deduped <> 0 or r.rejected <> 1
+     or (b.parsed, b.deduped, b.inserted, b.rejected) <> (r.parsed, r.deduped, r.inserted, r.rejected)
+     or b.parsed <> b.deduped + b.inserted + b.rejected then
+    raise exception 'period import reported parsed=% deduped=% inserted=% rejected=%',
+      r.parsed, r.deduped, r.inserted, r.rejected;
+  end if;
+
+  -- The same statement again dedupes exactly as the 5-argument one does.
+  select * into r from public.save_import(acc, 'card_pdf', 3, rows_in, unreadable,
+    '2026-08-08'::date, '2026-09-07'::date);
+  if r.inserted <> 0 or r.deduped <> 2 or r.parsed <> r.deduped + r.inserted + r.rejected then
+    raise exception 'period re-import reported deduped=% inserted=%', r.deduped, r.inserted;
+  end if;
+
+  -- A period that ends before it starts is refused, and takes the whole
+  -- import with it: no batch, no candidate.
+  begin
+    perform public.save_import(acc, 'card_pdf', 1,
+      jsonb_build_array(jsonb_build_object('posted_on','2026-08-09','amount_cents',-100,
+        'merchant','X','merchant_raw','X','dedupe_hash', repeat('6',64), 'dedupe_hash_v', 1)),
+      '[]'::jsonb, '2026-09-07'::date, '2026-08-08'::date);
+    raise exception 'NOT REFUSED: a statement period ending before it starts';
+  exception when check_violation then null;
+  end;
+  if exists (select 1 from public.ingest_candidates where dedupe_hash = repeat('6',64)) then
+    raise exception 'a refused period left its candidate behind';
+  end if;
+
+  -- The 5-argument save_import still works, and records no period.
+  select * into r from public.save_import(acc, 'card_csv', 1,
+    jsonb_build_array(jsonb_build_object('posted_on','2026-08-10','amount_cents',-300,
+      'merchant','Y','merchant_raw','Y','dedupe_hash', repeat('7',64), 'dedupe_hash_v', 1)),
+    '[]'::jsonb);
+  if r.inserted <> 1 or exists (select 1 from public.ingest_batches
+       where id = r.batch_id and (period_start is not null or period_end is not null)) then
+    raise exception 'the 5-argument save_import changed behaviour';
+  end if;
+
+  raise notice 'an import records its statement period, and its counts still balance';
+end $$;
+
+reset role;
+
 -- The anonymous role — anyone holding the published key — cannot call any of
 -- these at all.
 do $$
@@ -585,6 +659,7 @@ begin
   if has_function_privilege('anon', 'public.approve_candidate(uuid, uuid)', 'execute')
      or has_function_privilege('anon', 'public.save_import(uuid, public.ingest_source, integer, jsonb, jsonb)', 'execute')
      or has_function_privilege('anon', 'public.recategorise_transaction(uuid, uuid, boolean)', 'execute')
+     or has_function_privilege('anon', 'public.save_import(uuid, public.ingest_source, integer, jsonb, jsonb, date, date)', 'execute')
      or has_function_privilege('authenticated', 'public._post_candidate(uuid)', 'execute') then
     raise exception 'a ledger-writing function is callable by a role that must not call it';
   end if;
