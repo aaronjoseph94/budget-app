@@ -104,6 +104,23 @@ describe('ReviewScreen', () => {
     expect(fake.tables.categories.find((c) => c.name === 'Card payments')).toMatchObject({ kind: 'transfer', sort_order: 0 })
   })
 
+  it('refuses a new name that is already on another list, in words', async () => {
+    const fake = seeded()
+    renderScreen(<ReviewScreen />, fake)
+
+    const coffee = await row('SQ *LITWARE COFFEE')
+    fireEvent.change(coffee.getByRole('combobox', { name: 'Category' }), { target: { value: '__new__' } })
+    fireEvent.change(coffee.getByPlaceholderText(/Category name/), { target: { value: 'Groceries' } })
+    fireEvent.change(coffee.getByRole('combobox', { name: 'Which list' }), { target: { value: 'bill' } })
+    fireEvent.click(coffee.getByRole('button', { name: /Approve/ }))
+
+    const alert = await screen.findByRole('alert')
+    expect(
+      within(alert).getByText('You already have “Groceries” in Variable expenses. Choose it from the list, or use another name.'),
+    ).toBeTruthy()
+    expect(fake.rpcCalls).toEqual([])
+  })
+
   it('says so when the charge was already in the ledger', async () => {
     const fake = seeded()
     fake.rpcReplies.approve_candidate = 'already_in_ledger'

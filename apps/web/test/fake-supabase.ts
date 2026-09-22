@@ -105,22 +105,37 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       table.push(row)
       return json(wantsObject ? row : [row], 201)
     }
-    if (method !== 'GET') return pgError('FAKE_UNSUPPORTED_METHOD', 501)
 
-    let rows = [...table]
+    // The filters, as one test per row, for reads, updates and deletes alike.
+    const tests: ((r: Row) => boolean)[] = []
     for (const [key, value] of url.searchParams) {
       if (key === 'select' || key === 'order' || key === 'limit') continue
       const [op, operand] = [value.slice(0, value.indexOf('.')), value.slice(value.indexOf('.') + 1)]
-      if (op === 'eq') rows = rows.filter((r) => String(r[key]) === operand)
-      else if (op === 'gte') rows = rows.filter((r) => String(r[key]) >= operand)
-      else if (op === 'lte') rows = rows.filter((r) => String(r[key]) <= operand)
+      if (op === 'eq') tests.push((r) => String(r[key]) === operand)
+      else if (op === 'gte') tests.push((r) => String(r[key]) >= operand)
+      else if (op === 'lte') tests.push((r) => String(r[key]) <= operand)
       else if (op === 'in') {
         // `in.(a,b)`, with a value quoted only when it holds a reserved character.
         const members = new Set(operand.slice(1, -1).split(',').map((v) => v.replace(/^"(.*)"$/, '$1')))
-        rows = rows.filter((r) => members.has(String(r[key])))
+        tests.push((r) => members.has(String(r[key])))
       }
       else return pgError('FAKE_UNSUPPORTED_FILTER', 501)
     }
+    const matches = (r: Row) => tests.every((test) => test(r))
+
+    if (method === 'PATCH' || method === 'DELETE') {
+      const body = method === 'PATCH' ? (JSON.parse(String(init?.body)) as Row) : {}
+      const next: Row[] = []
+      for (const r of table) {
+        if (!matches(r)) next.push(r)
+        else if (method === 'PATCH') next.push({ ...r, ...body })
+      }
+      table.splice(0, table.length, ...next)
+      return new Response(null, { status: 204 })
+    }
+    if (method !== 'GET') return pgError('FAKE_UNSUPPORTED_METHOD', 501)
+
+    let rows = table.filter(matches)
     const order = url.searchParams.get('order')
     if (order !== null) {
       const [column = '', direction] = order.split('.')
