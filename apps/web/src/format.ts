@@ -71,3 +71,52 @@ export function describeFailure(kind: string, line?: number): string {
   const body = FAILURES[kind] ?? 'This file could not be read.'
   return line === undefined ? body : `${body} It starts around line ${line}.`
 }
+
+/**
+ * A database failure as a sentence, without quoting the database.
+ *
+ * Two rules shape this, and they pull in the same direction.
+ *
+ * The error MESSAGE Postgres returns often quotes the offending value — the
+ * merchant that failed a domain check, the amount that broke a constraint.
+ * CLAUDE.md forbids an amount or a merchant reaching a log or a screen it was
+ * not meant for, so the message is never passed through. Only the code is
+ * read, and the code is an enum.
+ *
+ * And the user is not an engineer. `could not save the transactions: 23514`
+ * told them nothing; on a dropped connection — the likeliest first failure —
+ * `error.code` is not set at all and the sentence ended in a bare colon, or
+ * the word `undefined`. A sentence that names what happened and what to do is
+ * the whole requirement.
+ *
+ * The code is kept in parentheses. It is meaningless to the reader and exact
+ * for anyone they show it to, which is the only way a screenshot is useful.
+ */
+const WRITE_FAILURES: Record<string, string> = {
+  '23505': 'You already have this, so nothing was added.',
+  '23514':
+    'The numbers did not add up, so nothing was saved. This usually means a row went missing while the file was being read — it is a fault in the import, not in your file.',
+  '23503': 'This refers to an account or category that no longer exists.',
+  '23502': 'Something required was missing from this import.',
+  '22001': 'A description in this file is longer than the app will store.',
+  '42501': 'Your sign-in does not allow this. Signing out and back in usually fixes it.',
+  '28000': 'You are not signed in any more. Sign in again and retry — nothing was saved.',
+  PGRST301: 'Your session expired. Sign in again and retry — nothing was saved.',
+  '': 'Could not reach the database. Check your connection and try again — nothing was saved.',
+}
+
+export interface WriteError {
+  readonly code?: string | null | undefined
+}
+
+export function describeWriteFailure(error: WriteError | null | undefined): string {
+  // supabase-js leaves `code` unset for anything that is not a PostgREST
+  // response — a dropped connection, a DNS failure, a gateway error. That is
+  // the empty-string entry above, and it is the most likely case of all.
+  const code = typeof error?.code === 'string' ? error.code : ''
+  const body = WRITE_FAILURES[code]
+  if (body === undefined) {
+    return `Something went wrong and nothing was saved. (code ${code || 'unknown'})`
+  }
+  return code === '' ? body : `${body} (code ${code})`
+}

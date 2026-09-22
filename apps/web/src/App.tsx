@@ -29,6 +29,18 @@ function Configured({ env }: { env: Parameters<typeof createSupabase>[0] }) {
 
 type Tab = 'import' | 'review'
 
+/**
+ * What an import came to, and whether it worked.
+ *
+ * A boolean rather than a bare string because the two were previously the
+ * same value in the same slot, so a failure rendered in the success colour —
+ * a red-flag message in green, under a button still offering to save.
+ */
+export interface SaveOutcome {
+  readonly ok: boolean
+  readonly message: string
+}
+
 function SignedIn({
   supabase,
   userId,
@@ -40,33 +52,45 @@ function SignedIn({
 }) {
   const [tab, setTab] = useState<Tab>('import')
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState<string | null>(null)
+  const [outcome, setOutcome] = useState<SaveOutcome | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
 
   const onSave: Parameters<typeof ImportScreen>[0]['onSave'] = async (result) => {
     setSaving(true)
-    setSaved(null)
+    setOutcome(null)
     try {
       const account = await ensureAccount(supabase, userId, DEFAULT_ACCOUNT)
-      const outcome = await saveImport(supabase, {
+      const counts = await saveImport(supabase, {
         userId,
         accountId: account.id,
         accepted: result.accepted,
         rejected: result.rejected,
         parsed: result.parsed,
+        source: result.source,
       })
       // Says what happened to every row, including the ones it did nothing
       // with — a summary that only counts successes hides the rest.
-      setSaved(
-        `${outcome.inserted} sent to review` +
-          (outcome.deduped > 0 ? `, ${outcome.deduped} you already had` : '') +
-          (outcome.rejected > 0 ? `, ${outcome.rejected} unreadable` : '') +
+      setOutcome({
+        ok: true,
+        message:
+          `${counts.inserted} sent to review` +
+          (counts.deduped > 0 ? `, ${counts.deduped} you already had` : '') +
+          (counts.rejected > 0 ? `, ${counts.rejected} could not be read` : '') +
           '.',
-      )
+      })
       setRefreshKey((k) => k + 1)
-      setTab('review')
+      // Deliberately NOT switching tabs here.
+      //
+      // It used to, and the summary above is rendered by the import screen —
+      // so every import computed its counts and then unmounted the only thing
+      // that displayed them. The user never once saw what happened to their
+      // rows. Landing on the queue is not worth losing the only account of
+      // the import; the queue is one tap away and now says how many are in it.
     } catch (cause) {
-      setSaved(cause instanceof Error ? cause.message : 'could not save')
+      setOutcome({
+        ok: false,
+        message: cause instanceof Error ? cause.message : 'Nothing was saved.',
+      })
     } finally {
       setSaving(false)
     }
@@ -97,7 +121,7 @@ function SignedIn({
       </header>
 
       {tab === 'import' ? (
-        <ImportScreen onSave={onSave} saving={saving} saved={saved} />
+        <ImportScreen onSave={onSave} saving={saving} outcome={outcome} />
       ) : (
         <ReviewQueue supabase={supabase} userId={userId} refreshKey={refreshKey} />
       )}

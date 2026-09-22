@@ -33,14 +33,21 @@ const DELIMITERS = [
   { value: '|', label: 'Pipe' },
 ] as const
 
-export interface ImportScreenProps {
-  /** Present only when signed in; the preview works without it. */
-  readonly onSave?: (result: { accepted: readonly AcceptedRow[]; rejected: readonly RejectedRow[]; parsed: number }) => Promise<void>
-  readonly saving?: boolean
-  readonly saved?: string | null
+export interface SaveRequest {
+  readonly accepted: readonly AcceptedRow[]
+  readonly rejected: readonly RejectedRow[]
+  readonly parsed: number
+  readonly source: 'card_csv' | 'card_xlsx' | 'receipt_photo' | 'typed'
 }
 
-export function ImportScreen({ onSave, saving = false, saved = null }: ImportScreenProps) {
+export interface ImportScreenProps {
+  /** Present only when signed in; the preview works without it. */
+  readonly onSave?: (result: SaveRequest) => Promise<void>
+  readonly saving?: boolean
+  readonly outcome?: { readonly ok: boolean; readonly message: string } | null
+}
+
+export function ImportScreen({ onSave, saving = false, outcome = null }: ImportScreenProps) {
   const [fileName, setFileName] = useState<string | null>(null)
   const [text, setText] = useState<string | null>(null)
   const [delimiter, setDelimiter] = useState<string>(',')
@@ -296,21 +303,41 @@ export function ImportScreen({ onSave, saving = false, saved = null }: ImportScr
 
               {onSave !== undefined ? (
                 <div className="flex flex-col items-center gap-2">
+                  {/*
+                    Saveable when ANYTHING was read, readable or not. It used to
+                    require at least one accepted row, so a file where every row
+                    failed — a wrong date format, say — could not be saved at
+                    all, and its failures were never recorded anywhere. That is
+                    precisely the import most worth keeping a record of, and
+                    CLAUDE.md requires every ingestion failure to reach the
+                    review queue rather than ending on a screen that is about
+                    to be navigated away from.
+                  */}
                   <Button
-                    disabled={saving || result.accepted.length === 0}
+                    disabled={saving || result.parsed === 0}
                     onClick={() => {
                       void onSave({
                         accepted: result.accepted,
                         rejected: result.rejected,
                         parsed: result.parsed,
+                        source: 'card_csv',
                       })
                     }}
                   >
                     {saving
                       ? 'Saving…'
-                      : `Send ${result.accepted.length} to the review queue`}
+                      : result.accepted.length === 0
+                        ? `Record ${result.rejected.length} unreadable rows`
+                        : `Send ${result.accepted.length} to the review queue`}
                   </Button>
-                  {saved !== null ? <p className="text-sm text-income">{saved}</p> : null}
+                  {outcome !== null ? (
+                    <p
+                      className={`text-sm ${outcome.ok ? 'text-income' : 'text-spend'}`}
+                      role={outcome.ok ? undefined : 'alert'}
+                    >
+                      {outcome.message}
+                    </p>
+                  ) : null}
                   <p className="text-xs text-ink-soft">
                     Nothing reaches your ledger until you approve it.
                   </p>

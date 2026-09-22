@@ -10,7 +10,11 @@
 \set ON_ERROR_STOP on
 
 create role app_user nologin;
-grant usage on schema public, storage to app_user;
+-- `auth` is granted because real Supabase grants it: auth.uid() is how every
+-- RLS policy identifies the caller, and save_import (0003) calls it directly.
+-- Without it the stub is stricter than production, and a function that works
+-- against the hosted project fails here for a reason production does not have.
+grant usage on schema public, storage, auth to app_user;
 grant all on all tables in schema public to app_user;
 grant all on all tables in schema storage to app_user;
 
@@ -238,3 +242,86 @@ begin
   if is_public then raise exception 'the receipts bucket is PUBLIC'; end if;
   raise notice 'the receipts bucket is private';
 end $$;
+
+-- ---------------------------------------------------------------------------
+-- save_import (0003)
+-- ---------------------------------------------------------------------------
+-- The behaviour these assert is the reason the function exists. The client
+-- previously did this in five round trips with no transaction, and computed
+-- `deduped` by subtraction — which made the balance CHECK an algebraic
+-- identity that could not fail however many rows went missing.
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+
+do $$
+declare
+  r          record;
+  candidates int;
+  rows_in    jsonb := jsonb_build_array(
+    jsonb_build_object('posted_on','2025-04-01','amount_cents',-1250,
+      'merchant','BLUE BOTTLE','merchant_raw','SQ *BLUE BOTTLE',
+      'dedupe_hash', repeat('a',64), 'dedupe_hash_v', 1),
+    jsonb_build_object('posted_on','2025-04-02','amount_cents',-800,
+      'merchant','CORNER SHOP','merchant_raw','CORNER SHOP #12',
+      'dedupe_hash', repeat('b',64), 'dedupe_hash_v', 1));
+  unreadable jsonb := jsonb_build_array(
+    jsonb_build_object('source_line', 7, 'reason', 'unparseable_date'));
+begin
+  -- A first import writes everything and says so.
+  select * into r from public.save_import(
+    'aaaaaaaa-0000-4000-8000-000000000001','card_csv', 3, rows_in, unreadable);
+  if r.inserted <> 2 or r.deduped <> 0 or r.rejected <> 1 or r.parsed <> 3 then
+    raise exception 'first import reported parsed=% deduped=% inserted=% rejected=%',
+      r.parsed, r.deduped, r.inserted, r.rejected;
+  end if;
+
+  -- The same file again adds NOTHING to the queue and reports both rows as
+  -- already held. This is the case that previously doubled the review queue
+  -- while reporting zero duplicates.
+  select * into r from public.save_import(
+    'aaaaaaaa-0000-4000-8000-000000000001','card_csv', 3, rows_in, unreadable);
+  if r.inserted <> 0 or r.deduped <> 2 then
+    raise exception 're-import reported deduped=% inserted=%, expected 2 and 0',
+      r.deduped, r.inserted;
+  end if;
+
+  select count(*) into candidates from public.ingest_candidates;
+  if candidates <> 2 then
+    raise exception 'the queue holds % candidates after two identical imports', candidates;
+  end if;
+
+  -- A charge already in the LEDGER is skipped too, not just one already queued.
+  -- repeat('f',64) was posted to transactions earlier in this file.
+  select * into r from public.save_import(
+    'aaaaaaaa-0000-4000-8000-000000000001','card_csv', 1,
+    jsonb_build_array(jsonb_build_object('posted_on','2025-03-04','amount_cents',-450,
+      'merchant','COFFEE','merchant_raw','COFFEE',
+      'dedupe_hash', repeat('f',64), 'dedupe_hash_v', 1)),
+    '[]'::jsonb);
+  if r.inserted <> 0 or r.deduped <> 1 then
+    raise exception 'a charge already in the ledger reported deduped=% inserted=%',
+      r.deduped, r.inserted;
+  end if;
+
+  -- THE ONE THAT MATTERS. Claim more rows were read than were handed over, and
+  -- the counts must refuse to balance. Under the old subtraction this was
+  -- `parsed = parsed` and passed for any value at all.
+  begin
+    perform public.save_import(
+      'aaaaaaaa-0000-4000-8000-000000000001','card_csv', 99,
+      jsonb_build_array(jsonb_build_object('posted_on','2025-05-01','amount_cents',-100,
+        'merchant','X','merchant_raw','X','dedupe_hash', repeat('c',64), 'dedupe_hash_v', 1)),
+      '[]'::jsonb);
+    raise exception 'COUNTS NOT CHECKED: an import claiming 99 rows for 1 was accepted';
+  exception when check_violation then null;
+  end;
+
+  -- And that failure left nothing behind: no batch, no candidate.
+  if exists (select 1 from public.ingest_candidates where dedupe_hash = repeat('c',64)) then
+    raise exception 'a failed import left its candidate behind';
+  end if;
+
+  raise notice 'save_import is atomic, dedupes against queue and ledger, and its counts can fail';
+end $$;
+
+reset role;

@@ -10,10 +10,14 @@ import {
   assignDiscriminators,
   computeDedupeHash,
   DEDUPE_HASH_VERSION,
+  normalizeMerchant,
   type AcceptedRow,
   type RejectedRow,
 } from '@budget/statement-parsers'
+import { describeWriteFailure } from './format.js'
 import type { SupabaseClient } from './supabase.js'
+
+export type IngestSource = 'card_csv' | 'card_xlsx' | 'receipt_photo' | 'typed'
 
 export interface SaveImportInput {
   readonly userId: string
@@ -21,6 +25,8 @@ export interface SaveImportInput {
   readonly accepted: readonly AcceptedRow[]
   readonly rejected: readonly RejectedRow[]
   readonly parsed: number
+  /** Where the rows came from. Was hardcoded to card_csv, which a PDF is not. */
+  readonly source: IngestSource
 }
 
 export interface SaveImportResult {
@@ -31,35 +37,33 @@ export interface SaveImportResult {
 }
 
 /**
- * Save one import.
+ * Save one import: one call, one transaction.
  *
- * The counts are computed from what the database actually accepted, not from
- * what this function intended to write. CLAUDE.md requires
- * `parsed == deduped + inserted + rejected`, and a count taken from intent
- * cannot notice the row it failed to insert — which is the one case the rule
- * exists to catch. The batch row carries a CHECK enforcing the same equation,
- * so a disagreement fails the write rather than being stored.
+ * This was five round trips — insert a batch with zero counts, ask which
+ * hashes already existed, insert the candidates, insert the unreadable lines,
+ * go back and update the counts — with nothing holding them together. Any
+ * failure in the middle left the database holding part of an import that
+ * nothing would ever finish, and a retry then added a second copy of
+ * everything that had already landed.
+ *
+ * The duplicate question used to be asked by putting every hash in a URL.
+ * Sixty-four hex characters times a few hundred rows is past what a gateway
+ * accepts, so a large import died with a transport error before a single row
+ * was written. It is answered inside the database now (migration 0003), where
+ * the size of the question costs nothing.
+ *
+ * The counts come back from the database, and they are observed rather than
+ * derived. The previous version computed `deduped = parsed - inserted -
+ * rejected` and then leaned on the CHECK `parsed = deduped + inserted +
+ * rejected` to catch a lost row. Substituting one into the other gives
+ * `parsed = parsed` — an identity that holds however many rows went missing.
+ * The comment claiming that CHECK made the import trustworthy was simply
+ * wrong, for as long as it stood.
  */
 export async function saveImport(
   supabase: SupabaseClient,
   input: SaveImportInput,
 ): Promise<SaveImportResult> {
-  const { data: batch, error: batchError } = await supabase
-    .from('ingest_batches')
-    .insert({
-      user_id: input.userId,
-      account_id: input.accountId,
-      source: 'card_csv',
-      parsed: 0,
-      deduped: 0,
-      inserted: 0,
-      rejected: 0,
-    })
-    .select('id')
-    .single()
-  if (batchError !== null) throw new Error(`could not start the import: ${batchError.code}`)
-  const batchId = String((batch as { id: string }).id)
-
   // An issuer id where the export gave one, otherwise the nth occurrence among
   // rows identical in account, date, amount and description. Without it, two
   // identical coffees on one day collide and the ledger loses one.
@@ -69,100 +73,57 @@ export async function saveImport(
     (row) => row.issuerTransactionId,
   )
 
-  const hashed = await Promise.all(
+  const rows = await Promise.all(
     input.accepted.map(async (row, index) => {
       const discriminator = discriminators[index]
       if (discriminator === undefined) throw new Error('missing discriminator for a parsed row')
       return {
-        row,
-        dedupeHash: await computeDedupeHash({
+        posted_on: row.postedOn,
+        amount_cents: row.amountCents,
+        // The tidied name for matching a rule, the original for the record.
+        // These were both written with the raw descriptor until now, which
+        // made merchant_rules incapable of ever matching anything.
+        merchant: normalizeMerchant(row.merchantRaw),
+        merchant_raw: row.merchantRaw,
+        dedupe_hash: await computeDedupeHash({
           accountId: input.accountId,
           postedOn: row.postedOn,
           amountCents: row.amountCents,
           merchantRaw: row.merchantRaw,
           discriminator,
         }),
+        dedupe_hash_v: DEDUPE_HASH_VERSION,
       }
     }),
   )
 
-  // A charge already in the ledger becomes no candidate at all. Asking the
-  // database which hashes it already holds is the only honest way to know;
-  // the answer is enforced regardless by the unique index at approval time.
-  const existing = await existingHashes(
-    supabase,
-    hashed.map((h) => h.dedupeHash),
-  )
-  const fresh = hashed.filter((h) => !existing.has(h.dedupeHash))
+  const { data, error } = await supabase.rpc('save_import', {
+    p_account_id: input.accountId,
+    p_source: input.source,
+    p_parsed: input.parsed,
+    p_rows: rows,
+    p_unreadable: input.rejected.map((r) => ({ source_line: r.line, reason: r.reason })),
+  })
+  if (error !== null) throw new Error(describeWriteFailure(error))
 
-  let inserted = 0
-  if (fresh.length > 0) {
-    const { data, error } = await supabase
-      .from('ingest_candidates')
-      .insert(
-        fresh.map(({ row, dedupeHash }) => ({
-          user_id: input.userId,
-          batch_id: batchId,
-          account_id: input.accountId,
-          posted_on: row.postedOn,
-          amount_cents: row.amountCents,
-          merchant: row.merchantRaw,
-          merchant_raw: row.merchantRaw,
-          dedupe_hash: dedupeHash,
-          dedupe_hash_v: DEDUPE_HASH_VERSION,
-          source: 'card_csv',
-          status: 'pending',
-        })),
-      )
-      .select('id')
-    if (error !== null) throw new Error(`could not save the transactions: ${error.code}`)
-    inserted = (data ?? []).length
+  const result = (Array.isArray(data) ? data[0] : data) as SavedCounts | undefined
+  if (result === undefined) throw new Error(describeWriteFailure(null))
+
+  return {
+    batchId: String(result.batch_id),
+    inserted: Number(result.inserted),
+    deduped: Number(result.deduped),
+    rejected: Number(result.rejected),
   }
-
-  let rejected = 0
-  if (input.rejected.length > 0) {
-    const { data, error } = await supabase
-      .from('ingest_unreadable_lines')
-      .insert(
-        input.rejected.map((r) => ({
-          user_id: input.userId,
-          batch_id: batchId,
-          source_line: r.line,
-          reason: r.reason,
-        })),
-      )
-      .select('id')
-    if (error !== null) throw new Error(`could not record the unreadable lines: ${error.code}`)
-    rejected = (data ?? []).length
-  }
-
-  const deduped = input.parsed - inserted - rejected
-  const { error: countsError } = await supabase
-    .from('ingest_batches')
-    .update({ parsed: input.parsed, deduped, inserted, rejected })
-    .eq('id', batchId)
-  // The CHECK on the batch row is what makes this meaningful: if the three
-  // counts do not add up to what was read, the update fails and the import
-  // reports a problem rather than storing a tidy lie.
-  if (countsError !== null) {
-    throw new Error(`the import did not add up and was not recorded: ${countsError.code}`)
-  }
-
-  return { batchId, inserted, deduped, rejected }
 }
 
-/** Which of these hashes the ledger already holds, asked in one round trip. */
-async function existingHashes(
-  supabase: SupabaseClient,
-  hashes: readonly string[],
-): Promise<Set<string>> {
-  if (hashes.length === 0) return new Set()
-  const { data, error } = await supabase
-    .from('transactions')
-    .select('dedupe_hash')
-    .in('dedupe_hash', [...hashes])
-  if (error !== null) throw new Error(`could not check for duplicates: ${error.code}`)
-  return new Set((data ?? []).map((r) => String((r as { dedupe_hash: string }).dedupe_hash)))
+/** What save_import returns. Shaped by migration 0003. */
+interface SavedCounts {
+  readonly batch_id: string
+  readonly parsed: number
+  readonly deduped: number
+  readonly inserted: number
+  readonly rejected: number
 }
 
 export interface PendingCandidate {
@@ -186,7 +147,7 @@ export async function listPending(
     .eq('status', 'pending')
     .order('posted_on', { ascending: false })
     .limit(limit)
-  if (error !== null) throw new Error(`could not load the review queue: ${error.code}`)
+  if (error !== null) throw new Error(describeWriteFailure(error))
   return (data ?? []) as readonly PendingCandidate[]
 }
 
@@ -217,7 +178,7 @@ export async function approveCandidate(
     .eq('status', 'pending')
     .select('*')
     .maybeSingle()
-  if (claimError !== null) throw new Error(`could not approve: ${claimError.code}`)
+  if (claimError !== null) throw new Error(describeWriteFailure(claimError))
   if (claimed === null) return 'already_handled'
 
   const row = claimed as unknown as PendingCandidate & { user_id: string }
@@ -239,7 +200,7 @@ export async function approveCandidate(
       { onConflict: 'user_id,dedupe_hash', ignoreDuplicates: true },
     )
     .select('id')
-  if (insertError !== null) throw new Error(`could not add to the ledger: ${insertError.code}`)
+  if (insertError !== null) throw new Error(describeWriteFailure(insertError))
 
   return (written ?? []).length === 0 ? 'already_in_ledger' : 'approved'
 }
@@ -267,7 +228,7 @@ async function ensureNamed(
     .select('id, name')
     .eq('name', name)
     .maybeSingle()
-  if (findError !== null) throw new Error(`could not read ${table}: ${findError.code}`)
+  if (findError !== null) throw new Error(describeWriteFailure(findError))
   if (found !== null) return found as NamedRow
 
   const { data: created, error: createError } = await supabase
@@ -275,7 +236,7 @@ async function ensureNamed(
     .insert({ user_id: userId, name })
     .select('id, name')
     .single()
-  if (createError !== null) throw new Error(`could not create in ${table}: ${createError.code}`)
+  if (createError !== null) throw new Error(describeWriteFailure(createError))
   return created as NamedRow
 }
 
@@ -287,7 +248,7 @@ export const ensureCategory = (supabase: SupabaseClient, userId: string, name: s
 
 export async function listCategories(supabase: SupabaseClient): Promise<readonly NamedRow[]> {
   const { data, error } = await supabase.from('categories').select('id, name').order('name')
-  if (error !== null) throw new Error(`could not load categories: ${error.code}`)
+  if (error !== null) throw new Error(describeWriteFailure(error))
   return (data ?? []) as readonly NamedRow[]
 }
 
@@ -307,6 +268,6 @@ export async function listTransactions(
     .select('id, posted_on, amount_cents, merchant_raw')
     .order('posted_on', { ascending: false })
     .limit(limit)
-  if (error !== null) throw new Error(`could not load the ledger: ${error.code}`)
+  if (error !== null) throw new Error(describeWriteFailure(error))
   return (data ?? []) as readonly LedgerRow[]
 }
