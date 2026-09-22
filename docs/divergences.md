@@ -316,3 +316,140 @@ decision F4). February 2025 on the Year is February 2025 in the ledger.
 typed on each; there is no second year to read by mistake. Formula decision
 F11 explains how the year fixture is transcribed so the golden cells still
 hold.
+
+---
+
+## D11 — Lists have no fixed number of rows, and a name lives in one list
+
+**Date:** 2026-09-22
+**Sheet / cells:** START HERE!B8:B14, H7:H14, B18:B40, D18:D40, F18:F40,
+H17:H40; Jan!S10:S16 and S22:S44; Bills!T7
+**Settled:** engineering default
+
+**Workbook behaviour.** Each list has a fixed number of slots: 7 income
+sources, 8 savings funds, 23 bills, 23 debts, 23 subscriptions, 24 variable
+expenses. The month tabs show only the first 7 funds (Jan!S10:S16 =
+`'START HERE'!H7`…`H13`) and the first 23 variable expenses (S22:S44 = H17…H39),
+while the Transactions dropdowns allow all 8 and all 24, so an 8th fund or a
+24th category is typed and never counted. Every tab reads a name by its cell
+position. A name typed in two recurring lists resolves to the first match
+(Bills!T7, a `COUNTIF` chain: Bills, then Debts, then Subscriptions).
+
+**Chosen behaviour.** A list holds any number of categories. Rows are keyed by
+id, so renaming or reordering never orphans past rows. A category belongs to
+exactly one list.
+
+**Why.** A category that can be typed but never counted is a silent loss, and
+a name that means two things depending on lookup order is a guess. Moving a
+category to another list is refused while it has a monthly amount in effect;
+Setup says "remove the monthly amount first".
+
+---
+
+## D12 — A budget carries forward until changed
+
+**Date:** 2026-09-22
+**Sheet / cells:** Jan..Dec D22:D44, J22:J44, O22:O44, T22:T44 (budgets),
+O10:O16 and T10:T16 (goals)
+**Settled:** engineering default (plan decision 5: "from this month on" is the
+default, and "just this month" stays on offer)
+
+**Workbook behaviour.** Each month tab has its own typed budgets and goals,
+twelve independent sets. The sample fills only January; February–December are
+typed 0 or blank (Feb!D22 = 0), which is why Annual Budget!D29, the year's
+Bills budget, is **800** and not 9600.
+
+**Chosen behaviour.** A budget typed "from this month on" applies to that month
+and every later month until another is typed; "just this month" applies to that
+month only. The engine resolves each month: a "just this month" value wins,
+else the latest "from this month on" value at or before it, else no budget.
+Nothing is copied forward.
+
+**Why.** Twelve retyped budgets a year, forever, is the work the app exists to
+remove. Resolving on read, instead of copying values into later months, keeps
+Workbook's property that editing October never rewrites January, and lets a
+later "from this month on" edit to January still reach March. The sample is
+expressible exactly, so golden values hold.
+
+---
+
+## D13 — A planned bill amount applies from a month onward
+
+**Date:** 2026-09-22
+**Sheet / cells:** Bills!D7:D29, H7:H29, L7:L29 (Monthly Amount), read by
+every month tab
+**Settled:** engineering default
+
+**Workbook behaviour.** One Monthly Amount per bill serves all twelve tabs:
+Jan!E22 and Dec!E22 are both **800**, from Bills!D7. Changing it rewrites
+every month, past ones included.
+
+**Chosen behaviour.** A monthly amount applies from the month it is set and
+every month after, until changed or stopped. Raising rent from $1,600 to $1,700
+in October leaves September at $1,600. A bill set up today does not appear in
+earlier months.
+
+**Why.** A one-year workbook can afford one amount for every month. An app
+holding years of history cannot: last year's rent would change the day this
+year's goes up.
+
+---
+
+## D14 — A week runs Monday to Sunday
+
+**Date:** 2026-09-22
+**Sheet / cells:** Weekly Budget!D6 (typed start, 2025-01-01, a Wednesday),
+D7 `=D6+6`
+**Settled:** engineering default; the Week screen already worked this way
+(`packages/core/src/week.ts`)
+
+**Workbook behaviour.** A week is whatever seven days follow the typed start
+date. The sample's week runs Wednesday to Tuesday.
+
+**Chosen behaviour.** Weeks are Monday to Sunday, stepped with ‹ ›. The
+"/wk?" tick box (Weekly!F22; E22 `=IF(F22, E50 / 4.333, D50)`) is not built; a planned
+amount counts in a week when its due day falls in it (formula decision F8).
+
+**Why.** A fixed week can be stepped through and compared with the last one;
+a typed week has to be retyped each time. Monday-first keeps a weekend
+together.
+
+---
+
+## D15 — A savings fund with no dates says so instead of showing $0
+
+**Date:** 2026-09-22
+**Sheet / cells:** Savings!Z15 `=IFERROR((F15-J15)/V15, 0)`, cached **0**
+**Settled:** engineering default
+
+**Workbook behaviour.** Travel Fund has no start or goal date, so V15 is empty,
+the division fails, and `IFERROR` shows a monthly goal of $0.
+
+**Chosen behaviour.** The engine returns no monthly contribution, and the
+screen says "no dates yet".
+
+**Why.** $0 a month reads as "nothing to save", which is the opposite of true.
+The CONSTRAINTS.md floor forbids a silent 0 on a money path for this reason.
+
+---
+
+## D16 — A savings fund's balance: typed once, then kept by transfers (proposed)
+
+**Date:** 2026-09-22
+**Sheet / cells:** Savings!B5, F5 … Z5 ("Current Amount", typed; B5 note:
+"How much do you currently have in this Savings account or fund?")
+**Settled:** **not yet.** This is plan decision 7's recommended option B. The
+owner has not chosen it; it is recorded here as proposed, and is confirmed or
+replaced at S16, before the savings funds are built.
+
+**Workbook behaviour.** Each fund's current amount is typed by hand and
+nothing updates it. The sample's Emergency Fund shows **133** (Savings!B5)
+while the Transactions log records a $2,000 transfer into it (K7:M7).
+
+**Proposed behaviour.** Type the balance once; each savings transfer recorded
+in the app after that adds to it. The alternative (option A) is to type it
+every time, as Workbook and the app do today.
+
+**Why proposed.** A balance that has to be retyped goes stale, and the
+transfers are already recorded for the Month's Savings block. The owner may
+still prefer to type it; S16 asks.
