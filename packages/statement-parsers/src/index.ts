@@ -14,6 +14,15 @@ export {
 } from './amount.js'
 
 export {
+  detectHeaderRow,
+  explainsAsRunningBalance,
+  profileColumns,
+  type ColumnProfile,
+  type HeaderVerdict,
+  type ProfileInput,
+} from './columns.js'
+
+export {
   MAX_FIELD_CHARS,
   MAX_ROWS,
   isBlankRow,
