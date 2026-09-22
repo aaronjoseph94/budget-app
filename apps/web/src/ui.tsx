@@ -1,23 +1,29 @@
+/**
+ * The original small kit, now drawn with the shadcn/ui components in
+ * src/components/ui. Kept so the CSV preview and the sign-in screen keep
+ * their imports; new screens use the components directly.
+ */
 import type { ReactNode } from 'react'
+import { Button as UiButton } from './components/ui/button.js'
+import { Card as UiCard } from './components/ui/card.js'
+import { NativeSelect } from './components/ui/form.js'
+import { cn } from './lib/cn.js'
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={`rounded-xl border border-line bg-raised ${className}`}>{children}</div>
-  )
+  return <UiCard className={className}>{children}</UiCard>
 }
 
 export function Label({ children }: { children: ReactNode }) {
-  return (
-    <span className="text-xs font-medium uppercase tracking-wide text-ink-soft">{children}</span>
-  )
+  return <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{children}</span>
 }
 
 export function Stat({ label, value, tone }: { label: string; value: string; tone?: 'spend' | 'income' }) {
-  const colour = tone === 'spend' ? 'text-spend' : tone === 'income' ? 'text-income' : 'text-ink'
   return (
     <div className="px-4 py-3">
       <Label>{label}</Label>
-      <div className={`tnum mt-1 text-xl font-semibold ${colour}`}>{value}</div>
+      <div className={cn('tnum mt-1 text-xl font-semibold', tone === 'spend' && 'text-spend', tone === 'income' && 'text-income')}>
+        {value}
+      </div>
     </div>
   )
 }
@@ -35,16 +41,10 @@ export function Button({
   disabled?: boolean
   type?: 'button' | 'submit'
 }) {
-  const base =
-    'inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed'
-  const look =
-    variant === 'primary'
-      ? 'bg-accent text-white hover:opacity-90'
-      : 'border border-line text-ink hover:bg-surface'
   return (
-    <button type={type} onClick={onClick} disabled={disabled} className={`${base} ${look}`}>
+    <UiButton type={type} onClick={onClick} disabled={disabled} variant={variant === 'primary' ? 'default' : 'outline'}>
       {children}
-    </button>
+    </UiButton>
   )
 }
 
@@ -60,10 +60,9 @@ export function Select<T extends string | number>({
   onChange: (value: T) => void
 }) {
   return (
-    <label className="block">
-      <Label>{label}</Label>
-      <select
-        className="mt-1 w-full rounded-lg border border-line bg-raised px-3 py-2 text-sm text-ink"
+    <label className="flex flex-col gap-2">
+      <span className="text-sm font-medium">{label}</span>
+      <NativeSelect
         value={String(value)}
         onChange={(e) => {
           const picked = options.find((o) => String(o.value) === e.target.value)
@@ -75,7 +74,7 @@ export function Select<T extends string | number>({
             {o.label}
           </option>
         ))}
-      </select>
+      </NativeSelect>
     </label>
   )
 }
