@@ -31,3 +31,15 @@ create or replace function auth.uid() returns uuid
   language sql stable as $$
     select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
   $$;
+
+-- The roles Supabase requests arrive as, and the default grants Supabase gives
+-- them. Mirrored so a migration's REVOKE is tested against the privileges it
+-- will actually be revoking in production: without these, 0004's revokes would
+-- name roles that do not exist here, and the browser's real write access could
+-- not be asserted at all.
+do $$ begin create role anon nologin; exception when duplicate_object then null; end $$;
+do $$ begin create role authenticated nologin; exception when duplicate_object then null; end $$;
+grant usage on schema public, auth, storage to anon, authenticated;
+alter default privileges in schema public grant all on tables to anon, authenticated;
+alter default privileges in schema public grant all on functions to anon, authenticated;
+grant all on all tables in schema storage to authenticated;

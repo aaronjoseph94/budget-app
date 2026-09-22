@@ -8,7 +8,7 @@
 import { z } from 'zod'
 
 /** How a row entered the system. */
-export const IngestSourceSchema = z.enum(['card_csv', 'card_xlsx', 'receipt_photo', 'typed'])
+export const IngestSourceSchema = z.enum(['card_csv', 'card_xlsx', 'card_pdf', 'receipt_photo', 'typed'])
 export type IngestSource = z.infer<typeof IngestSourceSchema>
 
 /** Where a candidate is in the review queue. There is no fourth state. */

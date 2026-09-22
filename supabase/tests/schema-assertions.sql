@@ -9,14 +9,11 @@
 
 \set ON_ERROR_STOP on
 
+-- app_user is a member of `authenticated` and holds nothing else, so every
+-- assertion made as app_user is made with exactly the privileges a signed-in
+-- browser has in production — including what 0004 revoked from it.
 create role app_user nologin;
--- `auth` is granted because real Supabase grants it: auth.uid() is how every
--- RLS policy identifies the caller, and save_import (0003) calls it directly.
--- Without it the stub is stricter than production, and a function that works
--- against the hosted project fails here for a reason production does not have.
-grant usage on schema public, storage, auth to app_user;
-grant all on all tables in schema public to app_user;
-grant all on all tables in schema storage to app_user;
+grant authenticated to app_user;
 
 insert into auth.users (id) values
   ('11111111-1111-4111-8111-111111111111'),
@@ -140,17 +137,19 @@ begin
   raise notice '%', procedure_note;
 end $$;
 
--- Row-level security, exercised as a non-superuser: superusers bypass it, so
--- asserting RLS while superuser would assert nothing.
-set role app_user;
-
-set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+-- A ledger row to read back, seeded as the superuser. The browser can no
+-- longer write one directly (0004), which is asserted just below.
 insert into public.transactions
   (user_id,account_id,posted_on,amount_cents,merchant,merchant_raw,category_id,
    dedupe_hash,dedupe_hash_v,source)
 values ('11111111-1111-4111-8111-111111111111','aaaaaaaa-0000-4000-8000-000000000001',
         '2025-03-04',-450,'COFFEE','COFFEE','cccccccc-0000-4000-8000-000000000001',
         repeat('f',64),1,'card_csv');
+
+-- Row-level security, exercised as a non-superuser: superusers bypass it, so
+-- asserting RLS while superuser would assert nothing.
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
 
 do $$
 declare seen int;
@@ -165,31 +164,29 @@ begin
   select count(*) into seen from public.transactions;
   if seen <> 0 then raise exception 'RLS LEAK: another user saw % rows', seen; end if;
 
-  -- And cannot write a row owned by someone else.
+  -- THE ONE PATH. The signed-in browser cannot write a ledger row directly,
+  -- not even its own. Before 0004 it could, and the approval invariant was a
+  -- habit of one TypeScript file rather than a property of the database.
+  perform set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
   begin
     insert into public.transactions
       (user_id,account_id,posted_on,amount_cents,merchant,merchant_raw,category_id,
        dedupe_hash,dedupe_hash_v,source)
     values ('11111111-1111-4111-8111-111111111111','aaaaaaaa-0000-4000-8000-000000000001',
-            '2025-03-05',-999,'STOLEN','STOLEN','cccccccc-0000-4000-8000-000000000001',
+            '2025-03-05',-999,'DIRECT','DIRECT','cccccccc-0000-4000-8000-000000000001',
             repeat('9',64),1,'card_csv');
-    raise exception 'RLS LEAK: another user wrote a row owned by someone else';
+    raise exception 'ONE PATH BROKEN: the browser wrote a ledger row directly';
   exception when insufficient_privilege then null;
   end;
 
-  -- A re-import of a charge already in the ledger adds nothing.
-  perform set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
-  insert into public.transactions
-    (user_id,account_id,posted_on,amount_cents,merchant,merchant_raw,category_id,
-     dedupe_hash,dedupe_hash_v,source)
-  values ('11111111-1111-4111-8111-111111111111','aaaaaaaa-0000-4000-8000-000000000001',
-          '2025-03-04',-450,'COFFEE','COFFEE','cccccccc-0000-4000-8000-000000000001',
-          repeat('f',64),1,'card_csv')
-  on conflict (user_id, dedupe_hash) do nothing;
-  select count(*) into seen from public.transactions;
-  if seen <> 1 then raise exception 'a re-imported charge duplicated: % rows', seen; end if;
+  -- Nor mark a candidate approved behind the approval function's back.
+  begin
+    update public.ingest_candidates set status = 'approved';
+    raise exception 'ONE PATH BROKEN: the browser updated a candidate directly';
+  exception when insufficient_privilege then null;
+  end;
 
-  raise notice 'RLS isolates, and a re-import is a no-op';
+  raise notice 'RLS isolates, and the browser has no direct path into the ledger';
 end $$;
 
 reset role;
@@ -325,3 +322,130 @@ begin
 end $$;
 
 reset role;
+
+-- ---------------------------------------------------------------------------
+-- 0004: approval, learning, typed entry, and the holes it closes
+-- ---------------------------------------------------------------------------
+-- The model-category hole, asserted as the superuser because it is a CHECK and
+-- must hold for every writer, including the functions themselves.
+do $$
+begin
+  begin
+    insert into public.ingest_candidates
+      (user_id,batch_id,account_id,posted_on,amount_cents,merchant,merchant_raw,
+       category_id,category_source,status,dedupe_hash,dedupe_hash_v,source)
+    values ('11111111-1111-4111-8111-111111111111','bbbbbbbb-0000-4000-8000-000000000001',
+            'aaaaaaaa-0000-4000-8000-000000000001','2025-06-01',-100,'M','M',
+            'cccccccc-0000-4000-8000-000000000001','model','approved',
+            repeat('d',64),1,'card_csv');
+    raise exception 'APPROVAL HOLE: a model-categorised candidate was stored as approved';
+  exception when check_violation then null;
+  end;
+  raise notice 'a model category can never be the category of an approved row';
+end $$;
+
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+
+do $$
+declare
+  r        record;
+  outcome  text;
+  cand     uuid;
+  n        int;
+  one_row  jsonb := jsonb_build_array(jsonb_build_object(
+    'posted_on','2025-07-01','amount_cents',-640,
+    'merchant','LAVA GRILL','merchant_raw','LAVA GRILL RED DEER AB',
+    'dedupe_hash', repeat('1',64), 'dedupe_hash_v', 1));
+begin
+  -- A merchant never seen before waits for a person.
+  select * into r from public.save_import(
+    'aaaaaaaa-0000-4000-8000-000000000001','card_csv', 1, one_row, '[]'::jsonb);
+  if r.auto_approved <> 0 then
+    raise exception 'an unknown merchant was approved without review';
+  end if;
+
+  select id into cand from public.ingest_candidates where dedupe_hash = repeat('1',64);
+
+  -- Another user cannot approve it.
+  perform set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',false);
+  begin
+    perform public.approve_candidate(cand, 'cccccccc-0000-4000-8000-000000000001');
+    raise exception 'OWNERSHIP: another user approved into a category they do not own';
+  exception when insufficient_privilege then null;
+  end;
+  perform set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+
+  -- The owner approves it: it posts, with provenance, and a rule is learned.
+  outcome := public.approve_candidate(cand, 'cccccccc-0000-4000-8000-000000000001');
+  if outcome <> 'approved' then raise exception 'approve returned %', outcome; end if;
+  if not exists (select 1 from public.transactions where candidate_id = cand) then
+    raise exception 'an approved candidate has no ledger row carrying its id';
+  end if;
+  if not exists (select 1 from public.merchant_rules where match_merchant = 'LAVA GRILL') then
+    raise exception 'approving did not teach a rule';
+  end if;
+
+  -- Approving twice is a no-op, not a second posting.
+  outcome := public.approve_candidate(cand, 'cccccccc-0000-4000-8000-000000000001');
+  if outcome <> 'already_handled' then raise exception 'second approve returned %', outcome; end if;
+
+  -- THE LOOP. The same merchant on a later statement goes straight to the
+  -- ledger, categorised, with no review — because of an exact match, and only
+  -- because of one.
+  select * into r from public.save_import(
+    'aaaaaaaa-0000-4000-8000-000000000001','card_pdf', 2,
+    jsonb_build_array(
+      jsonb_build_object('posted_on','2025-07-08','amount_cents',-910,
+        'merchant','LAVA GRILL','merchant_raw','LAVA GRILL RED DEER AB',
+        'dedupe_hash', repeat('2',64), 'dedupe_hash_v', 1),
+      jsonb_build_object('posted_on','2025-07-08','amount_cents',-910,
+        'merchant','LAVA GRILLE','merchant_raw','LAVA GRILLE',
+        'dedupe_hash', repeat('3',64), 'dedupe_hash_v', 1)),
+    '[]'::jsonb);
+  if r.auto_approved <> 1 then
+    raise exception 'expected exactly 1 auto-approval, got %', r.auto_approved;
+  end if;
+  -- LAVA GRILLE is one letter away. Close is not equal; it waits.
+  select count(*) into n from public.ingest_candidates
+   where dedupe_hash = repeat('3',64) and status = 'pending';
+  if n <> 1 then raise exception 'a near-miss merchant was auto-approved'; end if;
+
+  -- Rejecting removes it from the queue with a reason.
+  select id into cand from public.ingest_candidates where dedupe_hash = repeat('3',64);
+  outcome := public.reject_candidate(cand);
+  if outcome <> 'rejected' then raise exception 'reject returned %', outcome; end if;
+
+  -- Typed entry posts through the same candidate path.
+  cand := public.add_typed_transaction('aaaaaaaa-0000-4000-8000-000000000001',
+    '2025-07-09', -350, 'FARMERS MARKET', 'Farmers market',
+    'cccccccc-0000-4000-8000-000000000001');
+  if not exists (select 1 from public.transactions where candidate_id = cand and source = 'typed') then
+    raise exception 'a typed entry did not reach the ledger through a candidate';
+  end if;
+
+  -- And it cannot post into someone else's account.
+  perform set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',false);
+  begin
+    perform public.add_typed_transaction('aaaaaaaa-0000-4000-8000-000000000001',
+      '2025-07-09', -1, 'X', 'X', 'cccccccc-0000-4000-8000-000000000001');
+    raise exception 'OWNERSHIP: a typed entry was written into another user''s account';
+  exception when insufficient_privilege then null;
+  end;
+
+  raise notice 'approval posts with provenance, learns a rule, and only an exact match auto-approves';
+end $$;
+
+reset role;
+
+-- The anonymous role — anyone holding the published key — cannot call any of
+-- these at all.
+do $$
+begin
+  if has_function_privilege('anon', 'public.approve_candidate(uuid, uuid)', 'execute')
+     or has_function_privilege('anon', 'public.save_import(uuid, public.ingest_source, integer, jsonb, jsonb)', 'execute')
+     or has_function_privilege('authenticated', 'public._post_candidate(uuid)', 'execute') then
+    raise exception 'a ledger-writing function is callable by a role that must not call it';
+  end if;
+  raise notice 'no ledger-writing function is callable anonymously, and the poster is private';
+end $$;
