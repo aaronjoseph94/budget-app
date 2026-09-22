@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Alert, Badge, Empty, Progress } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
+import { Figure } from '../components/ui/type.js'
 import { navigate } from '../nav.js'
 
 /**
@@ -101,7 +102,9 @@ export function WeekScreen() {
           <Card>
             <CardHeader>
               <CardDescription>Spent</CardDescription>
-              <p className="tnum text-4xl font-semibold tracking-tight">{formatCents(week.spentCents)}</p>
+              <p className="text-4xl font-bold tracking-tight">
+                <Figure>{formatCents(week.spentCents)}</Figure>
+              </p>
             </CardHeader>
             <CardContent className="space-y-3">
               {week.budgetCents !== null && week.remainingCents !== null ? (

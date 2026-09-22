@@ -9,6 +9,7 @@ import { Alert, Badge, Empty } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
+import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
@@ -86,11 +87,15 @@ export function LedgerScreen() {
         <div className="grid grid-cols-2 gap-3">
           <Card className="p-4">
             <p className="text-xs text-muted-foreground">Money out</p>
-            <p className="tnum text-xl font-semibold">{formatCents(totals.outflowCents)}</p>
+            <p className="text-xl font-bold">
+              <Figure>{formatCents(totals.outflowCents)}</Figure>
+            </p>
           </Card>
           <Card className="p-4">
             <p className="text-xs text-muted-foreground">Money in</p>
-            <p className="tnum text-xl font-semibold text-income">{formatCents(totals.inflowCents)}</p>
+            <p className="text-xl font-bold text-income">
+              <Figure>{formatCents(totals.inflowCents)}</Figure>
+            </p>
           </Card>
         </div>
       ) : null}
