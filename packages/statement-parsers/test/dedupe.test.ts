@@ -107,6 +107,33 @@ describe('computeDedupeHash', () => {
   })
 })
 
+describe('the stored key is frozen for version 1', () => {
+  // Every test above compares the function with itself, so swapping two fields
+  // in the canonical string passed all of them — and would have re-keyed every
+  // stored row, making the next import of an old statement a full duplicate.
+  // These literals were computed once from the version-1 code and must never
+  // be regenerated: a different key means DEDUPE_HASH_VERSION goes up, with a
+  // backfill in the same migration, and these gain a version-2 sibling.
+
+  it('is version 1', () => {
+    expect(DEDUPE_HASH_VERSION).toBe(1)
+  })
+
+  it('builds exactly this string for a fixed charge', () => {
+    // Readable where the digest is not: a failure here names the field that moved.
+    expect(dedupeCanonicalString(charge())).toBe(
+      'v1\u0000f47ac10b-58cc-4372-a567-0e02b2c3d479\u00002025-03-01\u0000-825' +
+        '\u0000SQ *BLUE BOTTLE COFFEE 4155551234\u0000occurrence:1',
+    )
+  })
+
+  it('hashes a fixed charge to exactly this digest', async () => {
+    expect(await computeDedupeHash(charge())).toBe(
+      '0e9c022458e5c1e162bcadd994ba77407fbb3e6eeedb2eacd6261aa52f02df47',
+    )
+  })
+})
+
 describe('assignDiscriminators', () => {
   const tuple = (r: { date: string; amount: number; merchant: string }) =>
     `${r.date}|${r.amount}|${r.merchant}`
