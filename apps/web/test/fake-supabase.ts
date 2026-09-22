@@ -50,6 +50,10 @@ export interface FakeSupabase {
   readonly rpcReplies: Record<string, unknown>
   /** Make a table read or an RPC fail with this Postgres error code, e.g. `fail('rpc/approve_candidate', '42501')`. */
   fail(target: string, code: string): void
+  /** The signed-in user as the auth server holds it, `user_metadata` included. */
+  readonly user: { id: string; email: string; user_metadata: Record<string, unknown> }
+  /** Give the client a session, which `auth.updateUser` needs. `fail('auth/user', …)` makes updates fail. */
+  signIn(): Promise<void>
 }
 
 let clients = 0
@@ -69,6 +73,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
   const rpcCalls: RpcCall[] = []
   const rpcReplies: Record<string, unknown> = { approve_candidate: 'approved', reject_candidate: null }
   const failures = new Map<string, string>()
+  const user = { id: 'u1', email: 'you@example.com', user_metadata: {} as Record<string, unknown> }
   let nextId = 1
 
   const json = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
@@ -79,6 +84,16 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     const url = new URL(input instanceof Request ? input.url : String(input))
     const method = init?.method ?? 'GET'
     const headers = new Headers(init?.headers)
+    if (url.pathname === '/auth/v1/user') {
+      // GET when a session is set, PUT for updateUser, which merges `data`
+      // into user_metadata as the auth server does.
+      if (method === 'PUT') {
+        if (failures.has('auth/user')) return json({ code: 'unexpected_failure', msg: 'fake failure' }, 500)
+        const body = JSON.parse(String(init?.body)) as { data?: Record<string, unknown> }
+        Object.assign(user.user_metadata, body.data)
+      }
+      return json({ ...user, aud: 'authenticated', app_metadata: {}, created_at: '2026-01-01T00:00:00Z' })
+    }
     const target = url.pathname.replace(/^\/rest\/v1\//, '')
     const failure = failures.get(target)
     if (failure !== undefined) return pgError(failure)
@@ -172,5 +187,14 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     global: { fetch: serve },
   })
 
-  return { client, tables, rpcCalls, rpcReplies, fail: (t, code) => void failures.set(t, code) }
+  // A token of the right shape, made here rather than written out: the client
+  // only decodes it for its expiry, and nothing checks the signature.
+  const part = (value: unknown) => btoa(JSON.stringify(value)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_')
+  const signIn = async () => {
+    const token = [part({ alg: 'none' }), part({ sub: user.id, exp: 4102444800 }), part('fake')].join('.')
+    const { error } = await client.auth.setSession({ access_token: token, refresh_token: 'fake-refresh' })
+    if (error !== null) throw error
+  }
+
+  return { client, tables, rpcCalls, rpcReplies, fail: (t, code) => void failures.set(t, code), user, signIn }
 }

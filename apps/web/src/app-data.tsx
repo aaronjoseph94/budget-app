@@ -24,6 +24,8 @@ export interface AppData {
   readonly supabase: SupabaseClient
   readonly userId: string
   readonly email: string
+  /** Your name from Setup, or '' before you have given one. */
+  readonly displayName: string
   readonly accountId: string | null
   readonly categories: readonly Category[]
   readonly goal: GoalRow | null
@@ -46,11 +48,13 @@ export function AppDataProvider({
   supabase,
   userId,
   email,
+  displayName = '',
   children,
 }: {
   supabase: SupabaseClient
   userId: string
   email: string
+  displayName?: string
   children: ReactNode
 }) {
   const [accountId, setAccountId] = useState<string | null>(null)
@@ -85,7 +89,7 @@ export function AppDataProvider({
 
   return (
     <Context.Provider
-      value={{ supabase, userId, email, accountId, categories, goal, pendingTotal, loadError, refresh, version }}
+      value={{ supabase, userId, email, displayName, accountId, categories, goal, pendingTotal, loadError, refresh, version }}
     >
       {children}
     </Context.Provider>

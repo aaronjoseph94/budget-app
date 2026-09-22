@@ -9,6 +9,7 @@ import { ReviewScreen } from './screens/ReviewScreen.js'
 import { AddScreen } from './screens/AddScreen.js'
 import { LedgerScreen } from './screens/LedgerScreen.js'
 import { SettingsScreen } from './screens/SettingsScreen.js'
+import { displayNameOf } from './profile.js'
 import { Alert } from './components/ui/feedback.js'
 import { Icon, type IconName } from './components/ui/icons.js'
 import { cn } from './lib/cn.js'
@@ -29,7 +30,12 @@ function Configured({ env }: { env: Parameters<typeof createSupabase>[0] }) {
   if (session.status === 'signed-out') return <SignIn supabase={supabase} />
 
   return (
-    <AppDataProvider supabase={supabase} userId={session.session.user.id} email={session.session.user.email ?? ''}>
+    <AppDataProvider
+      supabase={supabase}
+      userId={session.session.user.id}
+      email={session.session.user.email ?? ''}
+      displayName={displayNameOf(session.session.user.user_metadata)}
+    >
       <Shell />
     </AppDataProvider>
   )
