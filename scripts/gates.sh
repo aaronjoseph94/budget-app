@@ -29,7 +29,7 @@ gate lint    eslint    npx eslint .
 # NB: no `--validate` flag. dependency-cruiser validates whenever its config
 # carries rules; passing an unknown flag makes it print usage and exit 0, which
 # is a gate that reports PASS without ever looking at the graph.
-gate purity  depcruise npx depcruise --config .dependency-cruiser.cjs packages
+gate purity  depcruise npx depcruise --config .dependency-cruiser.cjs packages apps
 # `gitleaks dir` scans the working tree — the code being gated. `gitleaks
 # detect` walks COMMITS instead, so it is structurally blind to an uncommitted
 # edit and reported PASS on a live-looking key sitting in a source file. Both
