@@ -48,7 +48,7 @@ import of the same file a no-op.
 **Where the periods do not line up.** A transaction made a few days before a
 statement period opens still appears on that statement. The year for a bare
 `Aug 6` therefore comes from a window that starts 60 days before the period —
-see `packages/statement-parsers/src/statements/yearless-dates.ts`.
+see `packages/statement-parsers/src/formats/yearless-dates.ts`.
 
 ---
 
