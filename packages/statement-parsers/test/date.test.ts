@@ -121,6 +121,30 @@ describe('dateFormatCandidates', () => {
     expect(dateFormatCandidates(['13/04/2025', '', '  '])).toEqual(['DD/MM/YYYY'])
   })
 
+  it('survives a header row that slipped into the samples', () => {
+    // An importer that forgets to strip the header must not be told its date
+    // column is not a date column.
+    expect(dateFormatCandidates(['Posted Date', '13/04/2025', '01/03/2025'])).toEqual([
+      'DD/MM/YYYY',
+    ])
+  })
+
+  it('survives a single unreadable cell in an otherwise good column', () => {
+    // One n/a posting date is rejected on its own later, with its own queue
+    // reason. It says nothing about how the other rows are formatted.
+    expect(dateFormatCandidates(['13/04/2025', 'n/a', '01/03/2025'])).toEqual(['DD/MM/YYYY'])
+  })
+
+  it('still refuses a column that is mostly unreadable', () => {
+    // One cell that happens to look like a date does not make a merchant
+    // column into a date column.
+    expect(dateFormatCandidates(['Blue Bottle', 'Shell', 'Tesco', '13/04/2025'])).toEqual([])
+  })
+
+  it('accepts a column that is exactly half readable', () => {
+    expect(dateFormatCandidates(['n/a', '13/04/2025'])).toEqual(['DD/MM/YYYY'])
+  })
+
   it('returns nothing for an empty column', () => {
     expect(dateFormatCandidates([])).toEqual([])
     expect(dateFormatCandidates(['', '   '])).toEqual([])

@@ -101,17 +101,34 @@ function extractParts(value: string, format: DateFormat): DateParts | null {
  * to be 12 or lower stays genuinely ambiguous however many rows it has, and
  * this returns both — a caller that picks one is guessing.
  *
- * Samples that fail every format are ignored rather than fatal; a header row
- * or a blank line should not eliminate the column's real format.
+ * A cell that no format can read is ignored rather than fatal. A header row
+ * that slipped through, a footer total, or a single `n/a` posting date says
+ * nothing about the column's format, and each is rejected on its own merits
+ * later with its own queue reason. Letting one eliminate every format would
+ * tell the importer a perfectly good date column is not a date column.
+ *
+ * But a column where most cells are unreadable is not a date column that has a
+ * few gaps — it is a merchant column with one cell that happens to look like a
+ * date. So a majority of the non-blank samples must be readable before any
+ * format is offered.
  */
 export function dateFormatCandidates(samples: readonly string[]): readonly DateFormat[] {
   const usable = samples.filter((s) => s.trim().length > 0)
   if (usable.length === 0) return []
 
-  const viable = DATE_FORMATS.filter((format) =>
-    usable.every((s) => parseStatementDate(s, format).ok),
-  )
+  let viable: readonly DateFormat[] | null = null
+  let readable = 0
 
-  // Every sample unreadable in any format means the column is not dates.
+  for (const sample of usable) {
+    const forSample = DATE_FORMATS.filter((format) => parseStatementDate(sample, format).ok)
+    if (forSample.length === 0) continue
+    readable++
+    viable = viable === null ? forSample : viable.filter((format) => forSample.includes(format))
+  }
+
+  if (viable === null) return []
+  // Ties count as a majority: two readable cells out of four is still a column
+  // worth offering, where one out of four is noise.
+  if (readable * 2 < usable.length) return []
   return viable
 }
