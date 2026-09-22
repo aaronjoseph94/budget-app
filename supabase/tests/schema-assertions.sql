@@ -502,12 +502,89 @@ begin
   raise notice 'existing categories became variable, and a new one must name its list';
 end $$;
 
+-- ---------------------------------------------------------------------------
+-- 0006: moving a posted row to another category
+-- ---------------------------------------------------------------------------
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000000002', '11111111-1111-4111-8111-111111111111', 'Restaurants', 'variable'),
+  ('cccccccc-0000-4000-8000-000000000201', '22222222-2222-4222-8222-222222222222', 'Theirs', 'variable');
+
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+
+do $$
+declare
+  coffee  uuid := 'cccccccc-0000-4000-8000-000000000001';
+  rest    uuid := 'cccccccc-0000-4000-8000-000000000002';
+  theirs  uuid := 'cccccccc-0000-4000-8000-000000000201';
+  tx      uuid;
+  c       record;
+begin
+  -- The row approved by hand in the 0004 block. Moved without learning: the
+  -- ledger and its candidate both say Restaurants, and the rule is untouched.
+  select id into tx from public.transactions where dedupe_hash = repeat('1',64);
+  perform public.recategorise_transaction(tx, rest, false);
+  select t.category_id as t_cat, k.category_id as k_cat, k.category_source into c
+    from public.transactions t join public.ingest_candidates k on k.id = t.candidate_id
+   where t.id = tx;
+  if c.t_cat is distinct from rest or c.k_cat is distinct from rest
+     or c.category_source is distinct from 'user' then
+    raise exception 'recategorise left ledger=% candidate=% source=%', c.t_cat, c.k_cat, c.category_source;
+  end if;
+  if (select category_id from public.merchant_rules where match_merchant = 'LAVA GRILL') is distinct from coffee then
+    raise exception 'recategorise with p_learn=false changed the rule';
+  end if;
+
+  -- The row a rule auto-approved. A person has now decided its category, so
+  -- its candidate stops claiming the rule did — the CHECKs in 0001 forbid a
+  -- user category with an auto-approval stamp — and the rule learns.
+  select id into tx from public.transactions where dedupe_hash = repeat('2',64);
+  perform public.recategorise_transaction(tx, rest, true);
+  select k.category_source, k.auto_approved_at into c
+    from public.transactions t join public.ingest_candidates k on k.id = t.candidate_id
+   where t.id = tx;
+  if c.category_source is distinct from 'user' or c.auto_approved_at is not null then
+    raise exception 'an auto-approved row kept source=% stamp=%', c.category_source, c.auto_approved_at;
+  end if;
+  if (select category_id from public.merchant_rules where match_merchant = 'LAVA GRILL') is distinct from rest then
+    raise exception 'recategorise with p_learn=true did not update the rule';
+  end if;
+
+  -- A ledger row with no candidate (written before 0004) still moves.
+  select id into tx from public.transactions where dedupe_hash = repeat('f',64);
+  perform public.recategorise_transaction(tx, rest, false);
+
+  -- Another user cannot move it, even into a category of their own.
+  perform set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',false);
+  begin
+    perform public.recategorise_transaction(tx, theirs, false);
+    raise exception 'OWNERSHIP: another user recategorised a transaction they do not own';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- Nor can the owner move their row into another user's category.
+  perform set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+  begin
+    perform public.recategorise_transaction(tx, theirs, false);
+    raise exception 'OWNERSHIP: a transaction was moved into another user''s category';
+  exception when insufficient_privilege then null;
+  end;
+  if (select category_id from public.transactions where id = tx) is distinct from rest then
+    raise exception 'a refused recategorise still changed the row';
+  end if;
+
+  raise notice 'a posted row moves with its candidate, learns only when asked, and only within one user';
+end $$;
+
+reset role;
+
 -- The anonymous role — anyone holding the published key — cannot call any of
 -- these at all.
 do $$
 begin
   if has_function_privilege('anon', 'public.approve_candidate(uuid, uuid)', 'execute')
      or has_function_privilege('anon', 'public.save_import(uuid, public.ingest_source, integer, jsonb, jsonb)', 'execute')
+     or has_function_privilege('anon', 'public.recategorise_transaction(uuid, uuid, boolean)', 'execute')
      or has_function_privilege('authenticated', 'public._post_candidate(uuid)', 'execute') then
     raise exception 'a ledger-writing function is callable by a role that must not call it';
   end if;
