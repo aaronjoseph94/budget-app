@@ -15,3 +15,9 @@ export {
   timeEquivalent,
 } from './goal.js'
 export type { SavingsGoal, GoalProgress, GoalProjection, TimeEquivalent } from './goal.js'
+
+export {
+  summariseImport,
+  type ImportSummary,
+  type ImportSummaryInput,
+} from './import-summary.js'

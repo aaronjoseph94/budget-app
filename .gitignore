@@ -36,3 +36,7 @@ coverage/
 .DS_Store
 .idea/
 *.swp
+
+# App build output
+apps/*/dist/
+apps/*/dist-types/

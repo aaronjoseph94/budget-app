@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist-types",
+    "rootDir": ".",
+    "jsx": "react-jsx",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"],
+    "noEmit": false,
+    "emitDeclarationOnly": true
+  },
+  "include": ["src/**/*", "vite.config.ts"],
+  "references": [
+    { "path": "../../packages/money-primitives" },
+    { "path": "../../packages/schema" },
+    { "path": "../../packages/statement-parsers" },
+    { "path": "../../packages/core" }
+  ]
+}
