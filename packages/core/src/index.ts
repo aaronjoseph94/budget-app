@@ -23,6 +23,16 @@ export {
 } from './import-summary.js'
 
 export {
+  endOfList,
+  moveInList,
+  type EndOfListInput,
+  type EndOfListOutput,
+  type ListRow,
+  type MoveInListInput,
+  type MoveInListOutput,
+} from './list-order.js'
+
+export {
   reconcileStatement,
   type Discrepancy,
   type Reconciliation,
