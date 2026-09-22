@@ -33,6 +33,8 @@ export {
   type TokenizeOutcome,
 } from './csv.js'
 
+export { normalizeMerchant, sameMerchant } from './merchant.js'
+
 export {
   DATE_FORMATS,
   dateFormatCandidates,
