@@ -1,0 +1,19 @@
+{
+  "name": "budget-app",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check:fast": "tsc --build && vitest run --project core",
+    "check:task": "tsc --build && vitest run --coverage",
+    "test": "vitest run",
+    "verify": "pnpm check:task"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

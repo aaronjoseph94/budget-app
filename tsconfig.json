@@ -1,0 +1,8 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/money-primitives" },
+    { "path": "./packages/golden-verification" },
+    { "path": "./packages/core" }
+  ]
+}

@@ -31,7 +31,12 @@ The workbook is the oracle. It ships cached Excel-computed values, and the
 engine must reproduce them exactly.
 
 Canonical golden case — 4 debts from 2025-03-01:
-`debt-free 2034-05-01 · total 1191353 cents · 4518 bp progress · months [110, 22, 15, 11]`
+`debt-free 2034-05-01 · starting total 2173300 cents · monthly minimums 77500 cents · months [110, 22, 15, 11]`
+
+Golden values must be **date-independent**. The workbook's "current debt total"
+and "payoff progress" cells recompute against today's date and are therefore
+NOT valid golden assertions. Anything balance-like is asserted at an explicit
+`asOf` or by month index in the amortization schedule, never as "current".
 
 Write the golden assertion first and **observe it fail** before implementing.
 Golden fixtures come only from the workbook's cached values and carry a header
@@ -102,6 +107,7 @@ writing code.
 ## Stack
 
 pnpm monorepo · Expo + Expo Router (iOS + web) · Supabase (Postgres, Storage,
-Edge Functions, pg_cron) · TypeScript · zod · Vitest
+Edge Functions, pg_cron) · Cloudflare Pages (web hosting, user's own domain) ·
+TypeScript · zod · Vitest
 
 Engineering practice follows `addyosmani/agent-skills`.

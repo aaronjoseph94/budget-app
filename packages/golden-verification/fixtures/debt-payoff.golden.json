@@ -1,0 +1,911 @@
+{
+  "$provenance": {
+    "sourceWorkbook": "Ultimate Annual Budget (Google Sheets export, 28 sheets)",
+    "sourceSheet": "Debt Calculator",
+    "cells": {
+      "startDate": "D6",
+      "startingBalance": "J18/O18/T18/Y18",
+      "minimumPayment": "J19/O19/T19/Y19",
+      "apr": "J20/O20/T20/Y20",
+      "monthsToPayoff": "J21/O21/T21/Y21",
+      "debtFreeBy": "B14",
+      "totalMonthlyPayments": "E18",
+      "schedule": "B26:Y496"
+    },
+    "extractedOn": "2026-09-21",
+    "note": "Workbook sample data, not the user's real balances. Safe to commit."
+  },
+  "$semantics": {
+    "monthIndexing": "Month 1 is the start month itself. Month n falls on startDate + (n-1) months.",
+    "interestAccrual": "No interest in month 1; the payment applies directly to the starting balance. From month 2, interest accrues on the prior closing balance BEFORE the payment is subtracted.",
+    "periodRate": "apr / 12, simple monthly. No day-count adjustment.",
+    "payment": "min(minimumPayment + extraForThatMonth, outstandingBalance). The final month pays only the remainder.",
+    "monthsToPayoff": "payoffMonthIndex - 1. The workbook reports 110 while the balance reaches zero at month index 111.",
+    "debtFreeDate": "EDATE(startDate, max(monthsToPayoff)) across all debts.",
+    "roundingDivergence": "Excel retains sub-cent fractions; this engine rounds to whole cents each month (ROUND_HALF_UP on accrued interest). See docs/divergences.md."
+  },
+  "input": {
+    "startDate": "2025-03-01",
+    "debts": [
+      {
+        "name": "Credit Card 1",
+        "startingBalanceCents": 1333300,
+        "minimumPaymentCents": 15000,
+        "aprBasisPoints": 500
+      },
+      {
+        "name": "Credit Card 2",
+        "startingBalanceCents": 300000,
+        "minimumPaymentCents": 15000,
+        "aprBasisPoints": 1500
+      },
+      {
+        "name": "Car Loan",
+        "startingBalanceCents": 40000,
+        "minimumPaymentCents": 2500,
+        "aprBasisPoints": 0
+      },
+      {
+        "name": "Student Loan",
+        "startingBalanceCents": 500000,
+        "minimumPaymentCents": 45000,
+        "aprBasisPoints": 1200
+      }
+    ],
+    "extraPayments": [
+      {
+        "debtName": "Credit Card 1",
+        "month": 3,
+        "amountCents": 5000
+      }
+    ]
+  },
+  "expected": {
+    "startingTotalCents": 2173300,
+    "totalMinimumPaymentCents": 77500,
+    "debtFreeDate": "2034-05-01",
+    "perDebt": [
+      {
+        "name": "Credit Card 1",
+        "monthsToPayoff": 110,
+        "payoffMonthIndex": 111
+      },
+      {
+        "name": "Credit Card 2",
+        "monthsToPayoff": 22,
+        "payoffMonthIndex": 23
+      },
+      {
+        "name": "Car Loan",
+        "monthsToPayoff": 15,
+        "payoffMonthIndex": 16
+      },
+      {
+        "name": "Student Loan",
+        "monthsToPayoff": 11,
+        "payoffMonthIndex": 12
+      }
+    ],
+    "maxScheduleDivergenceCents": 5
+  },
+  "schedules": {
+    "Credit Card 1": [
+      {
+        "month": 1,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1318300
+      },
+      {
+        "month": 2,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1308793
+      },
+      {
+        "month": 3,
+        "extraCents": 5000,
+        "balanceCentsFromExcel": 1294246
+      },
+      {
+        "month": 4,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1284639
+      },
+      {
+        "month": 5,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1274992
+      },
+      {
+        "month": 6,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1265304
+      },
+      {
+        "month": 7,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1255576
+      },
+      {
+        "month": 8,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1245808
+      },
+      {
+        "month": 9,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1235999
+      },
+      {
+        "month": 10,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1226149
+      },
+      {
+        "month": 11,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1216258
+      },
+      {
+        "month": 12,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1206325
+      },
+      {
+        "month": 13,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1196352
+      },
+      {
+        "month": 14,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1186336
+      },
+      {
+        "month": 15,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1176279
+      },
+      {
+        "month": 16,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1166181
+      },
+      {
+        "month": 17,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1156040
+      },
+      {
+        "month": 18,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1145857
+      },
+      {
+        "month": 19,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1135631
+      },
+      {
+        "month": 20,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1125363
+      },
+      {
+        "month": 21,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1115052
+      },
+      {
+        "month": 22,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1104698
+      },
+      {
+        "month": 23,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1094301
+      },
+      {
+        "month": 24,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1083860
+      },
+      {
+        "month": 25,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1073376
+      },
+      {
+        "month": 26,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1062849
+      },
+      {
+        "month": 27,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1052277
+      },
+      {
+        "month": 28,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1041662
+      },
+      {
+        "month": 29,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1031002
+      },
+      {
+        "month": 30,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1020298
+      },
+      {
+        "month": 31,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 1009549
+      },
+      {
+        "month": 32,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 998756
+      },
+      {
+        "month": 33,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 987917
+      },
+      {
+        "month": 34,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 977033
+      },
+      {
+        "month": 35,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 966104
+      },
+      {
+        "month": 36,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 955130
+      },
+      {
+        "month": 37,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 944110
+      },
+      {
+        "month": 38,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 933043
+      },
+      {
+        "month": 39,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 921931
+      },
+      {
+        "month": 40,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 910772
+      },
+      {
+        "month": 41,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 899567
+      },
+      {
+        "month": 42,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 888315
+      },
+      {
+        "month": 43,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 877017
+      },
+      {
+        "month": 44,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 865671
+      },
+      {
+        "month": 45,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 854278
+      },
+      {
+        "month": 46,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 842837
+      },
+      {
+        "month": 47,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 831349
+      },
+      {
+        "month": 48,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 819813
+      },
+      {
+        "month": 49,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 808229
+      },
+      {
+        "month": 50,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 796597
+      },
+      {
+        "month": 51,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 784916
+      },
+      {
+        "month": 52,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 773186
+      },
+      {
+        "month": 53,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 761408
+      },
+      {
+        "month": 54,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 749581
+      },
+      {
+        "month": 55,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 737704
+      },
+      {
+        "month": 56,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 725778
+      },
+      {
+        "month": 57,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 713802
+      },
+      {
+        "month": 58,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 701776
+      },
+      {
+        "month": 59,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 689700
+      },
+      {
+        "month": 60,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 677574
+      },
+      {
+        "month": 61,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 665397
+      },
+      {
+        "month": 62,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 653169
+      },
+      {
+        "month": 63,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 640891
+      },
+      {
+        "month": 64,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 628561
+      },
+      {
+        "month": 65,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 616180
+      },
+      {
+        "month": 66,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 603748
+      },
+      {
+        "month": 67,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 591263
+      },
+      {
+        "month": 68,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 578727
+      },
+      {
+        "month": 69,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 566138
+      },
+      {
+        "month": 70,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 553497
+      },
+      {
+        "month": 71,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 540803
+      },
+      {
+        "month": 72,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 528057
+      },
+      {
+        "month": 73,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 515257
+      },
+      {
+        "month": 74,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 502404
+      },
+      {
+        "month": 75,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 489497
+      },
+      {
+        "month": 76,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 476537
+      },
+      {
+        "month": 77,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 463522
+      },
+      {
+        "month": 78,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 450454
+      },
+      {
+        "month": 79,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 437331
+      },
+      {
+        "month": 80,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 424153
+      },
+      {
+        "month": 81,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 410920
+      },
+      {
+        "month": 82,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 397632
+      },
+      {
+        "month": 83,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 384289
+      },
+      {
+        "month": 84,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 370890
+      },
+      {
+        "month": 85,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 357436
+      },
+      {
+        "month": 86,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 343925
+      },
+      {
+        "month": 87,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 330358
+      },
+      {
+        "month": 88,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 316735
+      },
+      {
+        "month": 89,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 303054
+      },
+      {
+        "month": 90,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 289317
+      },
+      {
+        "month": 91,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 275522
+      },
+      {
+        "month": 92,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 261670
+      },
+      {
+        "month": 93,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 247761
+      },
+      {
+        "month": 94,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 233793
+      },
+      {
+        "month": 95,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 219767
+      },
+      {
+        "month": 96,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 205683
+      },
+      {
+        "month": 97,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 191540
+      },
+      {
+        "month": 98,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 177338
+      },
+      {
+        "month": 99,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 163077
+      },
+      {
+        "month": 100,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 148756
+      },
+      {
+        "month": 101,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 134376
+      },
+      {
+        "month": 102,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 119936
+      },
+      {
+        "month": 103,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 105436
+      },
+      {
+        "month": 104,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 90875
+      },
+      {
+        "month": 105,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 76254
+      },
+      {
+        "month": 106,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 61572
+      },
+      {
+        "month": 107,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 46828
+      },
+      {
+        "month": 108,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 32023
+      },
+      {
+        "month": 109,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 17157
+      },
+      {
+        "month": 110,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 2228
+      },
+      {
+        "month": 111,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 0
+      }
+    ],
+    "Credit Card 2": [
+      {
+        "month": 1,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 285000
+      },
+      {
+        "month": 2,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 273562
+      },
+      {
+        "month": 3,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 261982
+      },
+      {
+        "month": 4,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 250257
+      },
+      {
+        "month": 5,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 238385
+      },
+      {
+        "month": 6,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 226365
+      },
+      {
+        "month": 7,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 214194
+      },
+      {
+        "month": 8,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 201872
+      },
+      {
+        "month": 9,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 189395
+      },
+      {
+        "month": 10,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 176763
+      },
+      {
+        "month": 11,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 163972
+      },
+      {
+        "month": 12,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 151022
+      },
+      {
+        "month": 13,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 137910
+      },
+      {
+        "month": 14,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 124633
+      },
+      {
+        "month": 15,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 111191
+      },
+      {
+        "month": 16,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 97581
+      },
+      {
+        "month": 17,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 83801
+      },
+      {
+        "month": 18,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 69849
+      },
+      {
+        "month": 19,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 55722
+      },
+      {
+        "month": 20,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 41418
+      },
+      {
+        "month": 21,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 26936
+      },
+      {
+        "month": 22,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 12273
+      },
+      {
+        "month": 23,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 0
+      }
+    ],
+    "Car Loan": [
+      {
+        "month": 1,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 37500
+      },
+      {
+        "month": 2,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 35000
+      },
+      {
+        "month": 3,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 32500
+      },
+      {
+        "month": 4,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 30000
+      },
+      {
+        "month": 5,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 27500
+      },
+      {
+        "month": 6,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 25000
+      },
+      {
+        "month": 7,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 22500
+      },
+      {
+        "month": 8,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 20000
+      },
+      {
+        "month": 9,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 17500
+      },
+      {
+        "month": 10,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 15000
+      },
+      {
+        "month": 11,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 12500
+      },
+      {
+        "month": 12,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 10000
+      },
+      {
+        "month": 13,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 7500
+      },
+      {
+        "month": 14,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 5000
+      },
+      {
+        "month": 15,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 2500
+      },
+      {
+        "month": 16,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 0
+      }
+    ],
+    "Student Loan": [
+      {
+        "month": 1,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 455000
+      },
+      {
+        "month": 2,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 414550
+      },
+      {
+        "month": 3,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 373696
+      },
+      {
+        "month": 4,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 332432
+      },
+      {
+        "month": 5,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 290757
+      },
+      {
+        "month": 6,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 248664
+      },
+      {
+        "month": 7,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 206151
+      },
+      {
+        "month": 8,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 163213
+      },
+      {
+        "month": 9,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 119845
+      },
+      {
+        "month": 10,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 76043
+      },
+      {
+        "month": 11,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 31804
+      },
+      {
+        "month": 12,
+        "extraCents": 0,
+        "balanceCentsFromExcel": 0
+      }
+    ]
+  }
+}
