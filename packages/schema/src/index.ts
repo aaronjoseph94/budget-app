@@ -24,6 +24,7 @@ export {
 } from './enums.js'
 
 export {
+  DedupeHashSchema,
   IngestBatchCountsSchema,
   IngestCandidateRowSchema,
   MerchantRuleRowSchema,

@@ -92,6 +92,11 @@ describe('IngestedTextSchema', () => {
     ['an escape character', 'ACME\u001bCORP'],
     ['a newline', 'ACME\nCORP'],
     ['a DEL byte', 'ACME\u007fCORP'],
+    ['a C1 control', 'ACME\u0085CORP'],
+    ['a line separator', 'ACME\u2028CORP'],
+    ['a paragraph separator', 'ACME\u2029CORP'],
+    ['a right-to-left override', 'ACME\u202eCORP'],
+    ['a bidi isolate', 'ACME\u2066CORP'],
     ['empty', ''],
   ])('rejects %s', (_label, input) => {
     expect(IngestedTextSchema.safeParse(input).success).toBe(false)
@@ -100,6 +105,22 @@ describe('IngestedTextSchema', () => {
   it('rejects text beyond 512 characters', () => {
     expect(IngestedTextSchema.safeParse('A'.repeat(512)).success).toBe(true)
     expect(IngestedTextSchema.safeParse('A'.repeat(513)).success).toBe(false)
+  })
+
+  it('rejects a descriptor that would display differently than it is stored', () => {
+    // A right-to-left override reverses how the rest of the string renders
+    // while leaving the stored bytes alone, so the reviewer reads one thing
+    // and approves another. It is not markup, so the render-time rule against
+    // markup never sees it, and the human is the only gate (CLAUDE.md #3).
+    expect(IngestedTextSchema.safeParse('SAFE STORE \u202e DEGGALF').success).toBe(false)
+  })
+
+  it('still accepts ordinary non-ASCII merchant names', () => {
+    // The rule targets display-control characters, not accented or non-Latin
+    // text, which is ordinary in a merchant descriptor.
+    expect(IngestedTextSchema.parse('CAFÉ MÜNCHEN')).toBe('CAFÉ MÜNCHEN')
+    expect(IngestedTextSchema.parse('セブンイレブン')).toBe('セブンイレブン')
+    expect(IngestedTextSchema.parse('Ω PHARMACY')).toBe('Ω PHARMACY')
   })
 
   it('never puts the merchant string into its error message', () => {

@@ -85,11 +85,28 @@ export const IngestedTextSchema = z
  * Scanned by code point rather than by regex: a control-character class in a
  * literal regex trips eslint's `no-control-regex`, and CONSTRAINTS.md's floor
  * forbids adding a suppression comment to silence it.
+ *
+ * Covers more than the ASCII range, because the threat is not a stray byte —
+ * it is a merchant descriptor chosen by whoever issued the charge, read by the
+ * one human who stands between model output and the ledger. A right-to-left
+ * override reverses how the rest of the string is DISPLAYED while leaving what
+ * is STORED unchanged, so the reviewer approves one thing having read another.
+ * Line and paragraph separators break a single-line field across lines and can
+ * push text out of view. None of these are markup, so the render-time rule
+ * against markup does not catch them.
  */
 function hasControlCharacter(value: string): boolean {
   for (let i = 0; i < value.length; i++) {
     const code = value.charCodeAt(i)
+    // C0 and DEL.
     if (code < 0x20 || code === 0x7f) return true
+    // C1.
+    if (code >= 0x80 && code <= 0x9f) return true
+    // Line separator, paragraph separator, and the bidi overrides/embeddings
+    // between them (U+202A-U+202E), plus the isolates (U+2066-U+2069).
+    if (code === 0x2028 || code === 0x2029) return true
+    if (code >= 0x202a && code <= 0x202e) return true
+    if (code >= 0x2066 && code <= 0x2069) return true
   }
   return false
 }
