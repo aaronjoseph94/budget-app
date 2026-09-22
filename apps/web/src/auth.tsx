@@ -127,10 +127,20 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
   )
 }
 
-/** Shown when the app was built without the two public Supabase values. */
+/**
+ * Shown when the app was built without the two public Supabase values.
+ *
+ * Says where to put them, because the answer differs by where this is running
+ * and the difference is not obvious: Vite substitutes `import.meta.env` values
+ * at BUILD time, so a hosted build that ran before the variables existed has
+ * "missing" compiled into it. Setting them afterwards changes nothing until it
+ * is rebuilt — which looks exactly like the settings not working.
+ */
 export function NotConfigured({ missing }: { missing: readonly string[] }) {
+  const hosted = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-md flex-col justify-center px-4 py-12">
+    <div className="mx-auto flex min-h-full w-full max-w-xl flex-col justify-center px-4 py-12">
       <Card className="p-5">
         <Label>Not configured</Label>
         <p className="mt-2 text-sm">
@@ -143,9 +153,39 @@ export function NotConfigured({ missing }: { missing: readonly string[] }) {
             </li>
           ))}
         </ul>
-        <p className="mt-3 text-sm text-ink-soft">
-          Both come from the Supabase project’s API settings and are safe to publish — the
-          database’s own access rules are what protect the data.
+
+        <div className="mt-5 rounded-lg border border-line bg-surface p-4 text-sm">
+          {hosted ? (
+            <>
+              <p className="font-medium">To fix this on the hosted site</p>
+              <ol className="mt-2 list-inside list-decimal space-y-1 text-ink-soft">
+                <li>Add both values to the site’s environment variables.</li>
+                <li>
+                  <strong className="font-medium text-ink">Then trigger a new deploy.</strong> This
+                  is the step that is easy to miss: the values are compiled in when the site is
+                  built, so adding them changes nothing until it builds again.
+                </li>
+              </ol>
+            </>
+          ) : (
+            <>
+              <p className="font-medium">To fix this locally</p>
+              <ol className="mt-2 list-inside list-decimal space-y-1 text-ink-soft">
+                <li>
+                  Put both values in <code>apps/web/.env.local</code> — that exact folder, beside{' '}
+                  <code>vite.config.ts</code>, not the repository root.
+                </li>
+                <li>Restart the dev server. It reads the file once, at startup.</li>
+              </ol>
+            </>
+          )}
+        </div>
+
+        <p className="mt-4 text-sm text-ink-soft">
+          Both come from the Supabase project’s API settings and are safe to publish — they travel
+          in every request the browser makes, and the database’s own access rules are what protect
+          the data. The <code>service_role</code> key is a different thing entirely and does not
+          belong here.
         </p>
       </Card>
     </div>
