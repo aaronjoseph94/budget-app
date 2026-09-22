@@ -87,6 +87,40 @@ describe('WeekScreen', () => {
     expect(screen.queryByText('$130.12')).toBeNull()
   })
 
+  // Hand-derived: 8,450 of 30,000 is 28% with 21,550 to go; 21,550 over the
+  // two weeks to 25 March is 10,775 a week; 130.12 at 275.00 an hour is 28 min.
+  it('shows the goal, what it needs each week, and the week as goal time', async () => {
+    const fake = seeded()
+    fake.tables.savings_goals.push({
+      id: 'g1', name: 'Flight training', target_cents: 3_000_000, saved_cents: 845_000,
+      target_date: '2026-03-25', unit_cost_cents: 27_500, unit_label: 'flight time',
+    })
+    renderScreen(<WeekScreen />, fake)
+
+    expect(await screen.findByText('Flight training')).toBeTruthy()
+    expect(screen.getByText('28%')).toBeTruthy()
+    expect(screen.getByText('$8,450.00')).toBeTruthy()
+    expect(screen.getByText('of $30,000.00 · $21,550.00 to go')).toBeTruthy()
+    expect(screen.getByText('$10,775.00')).toBeTruthy()
+    expect(await screen.findByText('28 min')).toBeTruthy()
+  })
+
+  it('without budgets, shows the spend, the money in, and a way to set one', async () => {
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
+    const fake = seeded()
+    fake.tables.categories = fake.tables.categories.map((c) => ({ ...c, weekly_budget_cents: null }))
+    // In a category of its own, so it nets positive: money in, not a refund.
+    fake.tables.categories.push({ id: 'c3', name: 'Pay', weekly_budget_cents: null })
+    fake.tables.transactions.push({ id: 't5', posted_on: '2026-03-12', amount_cents: 2500, merchant_raw: 'PAYROLL', category_id: 'c3', source: 'typed' })
+    renderScreen(<WeekScreen />, fake)
+
+    expect(await screen.findByText('$130.12')).toBeTruthy()
+    expect(screen.getByText(/No weekly budgets set yet\./)).toBeTruthy()
+    expect(screen.getByText('$25.00')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Set one' }))
+    expect(window.location.hash).toBe('#/settings')
+  })
+
   it('shows a readable message when the week cannot be loaded', async () => {
     const fake = seeded()
     fake.fail('transactions', '42501')
