@@ -46,7 +46,8 @@ whether a commit is clean.
 | Engine purity | `packages/core` imports only `money-primitives`; no ambient clock, randomness, or env | `depcruise` + `eslint` | every edit |
 | Float money | No `toFixed` / `parseFloat` in the engine; `Cents` brand enforced by the type system | `eslint` + `tsc --build` | every edit |
 | Weak assertions | No `toBeCloseTo`, no snapshots, no `vi.mock` under `packages/core` | `eslint` | every edit |
-| Secrets | Zero findings | `gitleaks detect --redact --no-banner` | every edit |
+| Secrets | Zero findings in the working tree | `gitleaks dir --redact --no-banner` | every edit |
+| Secret history | Zero findings in committed history | `gitleaks detect --redact --no-banner` | CI |
 | Golden replay | 100% exact match, zero tolerance | `vitest run` | every edit |
 | Coverage | ≥80% lines and functions, ≥75% branches, per module | `vitest run --coverage` | CI |
 | Dependencies | Nothing high or above | `pnpm audit --audit-level high` | CI |
@@ -61,6 +62,20 @@ rule reads a re-export barrel as 0% covered however well its exports are
 tested. Compiled `dist/` output is excluded — `tsc --build` emits a copy of
 every module that no test imports, and counting it reported 36% while the
 source the tests exercise was above 90%.
+
+The secrets gate previously ran `gitleaks detect`, which walks commits rather
+than the working tree — so it was structurally blind to the edit it was being
+run on, while this table listed it under "every edit". A live-looking key in a
+source file scanned clean and exit 0. It now runs `gitleaks dir` on the tree,
+with the history scan kept as its own gate, and was verified by putting a
+credential in a source file and observing `RED`.
+
+Inline `eslint-disable` comments are inert (`noInlineConfig`) and writing one
+is itself an error. The Floor below forbids them, but nothing enforced that:
+every gate whose mechanism is eslint — Engine purity, Float money, Weak
+assertions — could be switched off for a whole file by one comment while the
+gate still reported PASS. Verified by hiding `Date.now()` in the amortization
+schedule behind a disable comment and observing `RED`.
 
 Engine purity is verified separately, by injecting a forbidden import in each
 direction the rule guards — `core` importing zod, and `money-primitives`

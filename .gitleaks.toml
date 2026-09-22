@@ -1,0 +1,17 @@
+# Secret-scanning config.
+#
+# Extends the bundled ruleset rather than replacing it — the value of gitleaks
+# is that its rules are an opinion this project did not author, and rewriting
+# them would demote it from an External check to a Suite one (CONSTRAINTS.md).
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Build output and dependencies, which are generated rather than authored"
+paths = [
+  '''(^|/)node_modules/''',
+  '''(^|/)dist/''',
+  '''(^|/)coverage/''',
+  '''(^|/)\.git/''',
+  '''pnpm-lock\.yaml$''',
+]

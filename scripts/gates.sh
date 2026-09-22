@@ -30,12 +30,19 @@ gate lint    eslint    npx eslint .
 # carries rules; passing an unknown flag makes it print usage and exit 0, which
 # is a gate that reports PASS without ever looking at the graph.
 gate purity  depcruise npx depcruise --config .dependency-cruiser.cjs packages
-gate secrets gitleaks  gitleaks detect --redact --no-banner --source .
+# `gitleaks dir` scans the working tree — the code being gated. `gitleaks
+# detect` walks COMMITS instead, so it is structurally blind to an uncommitted
+# edit and reported PASS on a live-looking key sitting in a source file. Both
+# matter; this is the one that can stop a secret before it reaches history.
+gate secrets gitleaks  gitleaks dir --redact --no-banner .
 gate golden  vitest    npx vitest run
 
 if [ "$LEVEL" = "full" ]; then
-  gate coverage vitest npx vitest run --coverage
-  gate deps     pnpm   pnpm audit --audit-level high
+  # The history scan still earns its place: it catches a secret committed
+  # earlier, which a working-tree scan cannot see once the file is deleted.
+  gate history  gitleaks gitleaks detect --redact --no-banner --source .
+  gate coverage vitest   npx vitest run --coverage
+  gate deps     pnpm     pnpm audit --audit-level high
 fi
 
 STATUS=GREEN

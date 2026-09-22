@@ -48,6 +48,19 @@ const NO_WEAK_ASSERTIONS = [
 
 export default tseslint.config(
   { ignores: ['**/dist/**', '**/node_modules/**', '**/*.d.ts'] },
+  {
+    // CONSTRAINTS.md's Floor forbids `eslint-disable`, but nothing enforced it:
+    // every gate whose mechanism is eslint — Engine purity, Float money, Weak
+    // assertions — could be switched off for a file by one comment, and the
+    // gate would still report PASS. These are syntax rules, so depcruise cannot
+    // cover them either. `noInlineConfig` makes such a comment inert rather
+    // than trusted; `reportUnusedDisableDirectives` then makes writing one an
+    // error in its own right, so it fails loudly instead of doing nothing.
+    linterOptions: {
+      noInlineConfig: true,
+      reportUnusedDisableDirectives: 'error',
+    },
+  },
   ...tseslint.configs.recommended,
   {
     files: ['packages/core/src/**/*.ts', 'packages/money-primitives/src/**/*.ts'],
