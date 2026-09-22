@@ -20,6 +20,27 @@ returned." Running one twice is refused rather than applied twice.
 The app expects all of them. A missing one shows up as an import or approval
 that fails with a code in brackets.
 
+## Receipt photos: Gemini (optional)
+
+Needed only for the Photo option on the Add screen. Everything else works
+without it. Chosen in docs/adr/0002-gemini-free-tier-for-receipts.md.
+
+1. **Get a key.** Go to https://aistudio.google.com/apikey, sign in with a
+   Google account, and choose **Create API key**. Copy it.
+2. **Add the function.** In Supabase: **Edge Functions → Deploy a new function
+   → Via Editor**. Name it exactly `read-receipt`, replace the sample code with
+   the whole of `supabase/functions/read-receipt/index.ts`, and deploy. Leave
+   **Enforce JWT verification** on — it is what stops strangers using your key.
+3. **Add the key.** **Edge Functions → Secrets → Add new secret**: name
+   `GEMINI_API_KEY`, value the key from step 1.
+
+If a photo ever reports that the model has been retired, add a second secret,
+`GEMINI_MODEL`, set to a current model name from Google's list (for example
+`gemini-2.5-flash`). No redeploy is needed for secrets.
+
+The key is a password to your Google account's quota. It goes only in that
+Supabase secret — never in the app, never in this repository.
+
 ## iPhone: install it
 
 Open the site in **Safari**, tap **Share → Add to Home Screen**. It then opens

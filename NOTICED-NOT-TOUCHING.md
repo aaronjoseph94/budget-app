@@ -128,7 +128,13 @@ the app thresholds.
 
 ---
 
-## N6 — Photo and scanned-receipt reading is not built
+## N6 — Photo reading is built but unmeasured *(updated 2026-09-22)*
+
+Built with Gemini's free tier (docs/adr/0002). What remains is the
+CONSTRAINTS.md extraction bar — ≥20 labelled receipts — and a run against the
+real API, which this environment cannot reach. The original note follows.
+
+### Originally: photo and scanned-receipt reading is not built
 
 **Seen:** 2026-09-22. The user chose to have photos read by Claude.
 
