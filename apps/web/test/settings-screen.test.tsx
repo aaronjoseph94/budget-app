@@ -70,3 +70,12 @@ describe('SettingsScreen, budgets and the goal', () => {
     ])
   })
 })
+
+describe('SettingsScreen, the way to Setup', () => {
+  it('opens Setup', async () => {
+    renderScreen(<SettingsScreen />, createFakeSupabase())
+
+    fireEvent.click(await screen.findByRole('button', { name: /Open Setup/ }))
+    expect(window.location.hash).toBe('#/setup')
+  })
+})

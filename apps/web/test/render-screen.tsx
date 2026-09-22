@@ -9,9 +9,9 @@ import type { FakeSupabase } from './fake-supabase.js'
  * Nothing the screen reads is handed to it directly, so a test also covers
  * the provider's own loading.
  */
-export function renderScreen(screen: ReactNode, fake: FakeSupabase): RenderResult {
+export function renderScreen(screen: ReactNode, fake: FakeSupabase, displayName = ''): RenderResult {
   return render(
-    <AppDataProvider supabase={fake.client} userId="u1" email="you@example.com">
+    <AppDataProvider supabase={fake.client} userId="u1" email="you@example.com" displayName={displayName}>
       {screen}
     </AppDataProvider>,
   )

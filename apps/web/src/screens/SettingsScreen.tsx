@@ -8,6 +8,7 @@ import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Field, Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
+import { navigate } from '../nav.js'
 
 /** Cents as the text a person would type back in: "250.00", or "" for none. */
 function asInput(cents: number | null): string {
@@ -22,6 +23,17 @@ export function SettingsScreen() {
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         <p className="text-sm text-muted-foreground">Budgets, your goal, and your account.</p>
       </header>
+      <Card>
+        <CardHeader>
+          <CardTitle>Your lists</CardTitle>
+          <CardDescription>Your name, and which of Workbook's lists each category is on.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button variant="outline" onClick={() => navigate('setup')}>
+            <Icon name="list" /> Open Setup
+          </Button>
+        </CardContent>
+      </Card>
       <BudgetsCard />
       <GoalForm />
       <Card>

@@ -9,6 +9,7 @@ import { ReviewScreen } from './screens/ReviewScreen.js'
 import { AddScreen } from './screens/AddScreen.js'
 import { LedgerScreen } from './screens/LedgerScreen.js'
 import { SettingsScreen } from './screens/SettingsScreen.js'
+import { SetupScreen } from './screens/SetupScreen.js'
 import { displayNameOf } from './profile.js'
 import { Alert } from './components/ui/feedback.js'
 import { Icon, type IconName } from './components/ui/icons.js'
@@ -51,6 +52,8 @@ const TABS: readonly { screen: Screen; label: string; icon: IconName }[] = [
 
 function Shell() {
   const screen = useScreen()
+  // Setup is reached from Settings for now, so Settings stays lit while it shows.
+  const tab = screen === 'setup' ? 'settings' : screen
   const { pendingTotal, loadError } = useAppData()
 
   return (
@@ -65,10 +68,10 @@ function Shell() {
                 key={t.screen}
                 type="button"
                 onClick={() => navigate(t.screen)}
-                aria-current={screen === t.screen ? 'page' : undefined}
+                aria-current={tab === t.screen ? 'page' : undefined}
                 className={cn(
                   'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                  screen === t.screen ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
+                  tab === t.screen ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
                 )}
               >
                 <Icon name={t.icon} className="size-4" />
@@ -93,13 +96,14 @@ function Shell() {
         {screen === 'add' ? <AddScreen /> : null}
         {screen === 'ledger' ? <LedgerScreen /> : null}
         {screen === 'settings' ? <SettingsScreen /> : null}
+        {screen === 'setup' ? <SetupScreen /> : null}
       </main>
 
       {/* Phones: a bottom tab bar within thumb reach, clear of the home indicator. */}
       <nav className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t bg-background/90 backdrop-blur md:hidden">
         <div className="mx-auto grid max-w-md grid-cols-5">
           {TABS.map((t) => {
-            const active = screen === t.screen
+            const active = tab === t.screen
             return (
               <button
                 key={t.screen}

@@ -8,7 +8,7 @@
  */
 import { useSyncExternalStore } from 'react'
 
-export const SCREENS = ['week', 'review', 'add', 'ledger', 'settings'] as const
+export const SCREENS = ['week', 'review', 'add', 'ledger', 'settings', 'setup'] as const
 export type Screen = (typeof SCREENS)[number]
 
 function current(): Screen {

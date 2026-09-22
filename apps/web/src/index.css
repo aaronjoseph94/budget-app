@@ -104,6 +104,13 @@
   --variable-ink: #91452d;
   --variable-accent: #fdbc9a;
   --variable-rule: #f3a68e;
+
+  /* START HERE: its teal header band, the grey canvas under its white cards,
+     and the teal of its section labels. #F3F9FA is the name cell's ink. */
+  --setup-band: #2b5d6a;
+  --setup-band-ink: #f3f9fa;
+  --setup-canvas: #f3f3f3;
+  --setup-label: #2b5d6a;
 }
 
 /*
@@ -164,6 +171,11 @@
     --variable-ink: #edcec5;
     --variable-accent: #c07c59;
     --variable-rule: #634036;
+
+    --setup-band: #1f4751;
+    --setup-band-ink: #f3f9fa;
+    --setup-canvas: #11100e;
+    --setup-label: #b8d8e0;
   }
 }
 
@@ -225,6 +237,10 @@
   --color-variable-ink: var(--variable-ink);
   --color-variable-accent: var(--variable-accent);
   --color-variable-rule: var(--variable-rule);
+  --color-setup-band: var(--setup-band);
+  --color-setup-band-ink: var(--setup-band-ink);
+  --color-setup-canvas: var(--setup-canvas);
+  --color-setup-label: var(--setup-label);
 }
 
 @layer base {
