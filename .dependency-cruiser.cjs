@@ -23,6 +23,16 @@ module.exports = {
       from: { path: '^packages/money-primitives/src' },
       to: { pathNot: ['^packages/money-primitives/src'] },
     },
+    {
+      name: 'no-unresolvable',
+      severity: 'error',
+      comment:
+        'An import that does not resolve is invisible to every path-based rule above: ' +
+        'it is recorded under its bare specifier, so a forbidden cross-package import ' +
+        'would slip through as "unresolved" rather than as a violation.',
+      from: {},
+      to: { couldNotResolve: true },
+    },
     { name: 'no-circular', severity: 'error', from: {}, to: { circular: true } },
   ],
   options: {

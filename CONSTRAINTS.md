@@ -48,6 +48,14 @@ container has neither, and every session opens `MISCONFIGURED`.
 Verified to bite: injecting `Date.now()` and `toFixed()` into `packages/core`
 turns the gate run `RED`. A gate never seen to fail has not been tested.
 
+Engine purity is verified separately, by injecting a forbidden import in each
+direction the rule guards — `core` importing zod, and `money-primitives`
+importing anything — and observing `depcruise` report each one. Both were
+previously unproven: the gate invoked `depcruise --validate`, which is not a
+flag, so it printed usage and exited 0 on every run. Only the eslint half of
+the row was ever biting. **A gate whose failure has not been observed is an
+assumption, not a check** — including one this file already claims is verified.
+
 ## Pending — agreed, not yet checkable
 
 Each names the module whose existence activates it. Moving a row up requires

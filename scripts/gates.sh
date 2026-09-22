@@ -26,7 +26,10 @@ gate() {
 echo "Running gates (level=$LEVEL)"
 gate types   tsc       npx tsc --build --force
 gate lint    eslint    npx eslint .
-gate purity  depcruise npx depcruise --config .dependency-cruiser.cjs --validate packages
+# NB: no `--validate` flag. dependency-cruiser validates whenever its config
+# carries rules; passing an unknown flag makes it print usage and exit 0, which
+# is a gate that reports PASS without ever looking at the graph.
+gate purity  depcruise npx depcruise --config .dependency-cruiser.cjs packages
 gate secrets gitleaks  gitleaks detect --redact --no-banner --source .
 gate golden  vitest    npx vitest run
 
