@@ -132,6 +132,12 @@ export function tokenizeCsv(text: string, options: CsvOptions): TokenizeOutcome 
         i = consumeNewline(src, i)
         endRecord()
         line++
+        // Checked here too: a file whose every record ends in a quoted field
+        // never reaches the unquoted newline branch below, so the bound was
+        // unenforced on exactly the input most likely to be enormous.
+        if (rows.length > MAX_ROWS) {
+          return { ok: false, failure: { kind: 'too_many_rows', limit: MAX_ROWS } }
+        }
         continue
       }
       return { ok: false, failure: { kind: 'text_after_closing_quote', line } }

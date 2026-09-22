@@ -68,7 +68,7 @@ export function readStatement(rows: readonly CsvRow[], options: ReadOptions): St
   const blankSkipped = rows.length - records.length
   const header = options.hasHeader ? records[0] : undefined
   const data = options.hasHeader ? records.slice(1) : records
-  const width = options.expectedWidth ?? header?.fields.length ?? widestOf(data)
+  const width = options.expectedWidth ?? header?.fields.length ?? modalWidth(data)
 
   const accepted: AcceptedRow[] = []
   const rejected: RejectedRow[] = []
@@ -79,7 +79,11 @@ export function readStatement(rows: readonly CsvRow[], options: ReadOptions): St
     else rejected.push({ line: row.line, reason: outcome.reason })
   }
 
-  const parsed = accepted.length + rejected.length
+  // Counted from the INPUT, not from the two output lists. Defining it as
+  // accepted + rejected made every check of the balance a tautology that held
+  // however many rows the loop lost — the shape of check this project treats
+  // as no check at all.
+  const parsed = data.length
   return { parsed, accepted, rejected, blankSkipped }
 }
 
@@ -146,6 +150,28 @@ function readRow(row: CsvRow, width: number, options: ReadOptions): RowOutcome {
   }
 }
 
-function widestOf(rows: readonly CsvRow[]): number {
-  return rows.reduce((w, r) => Math.max(w, r.fields.length), 0)
+/**
+ * The field count most records agree on — the file's shape.
+ *
+ * Used only for a headerless file, where nothing declares the width. Taking
+ * the WIDEST row instead let a single ragged record define the shape, so every
+ * correct row in the file became a mismatch and the one malformed row was the
+ * only one accepted. Ties go to the wider count, which is arbitrary but fixed.
+ */
+function modalWidth(rows: readonly CsvRow[]): number {
+  const counts = new Map<number, number>()
+  for (const row of rows) {
+    const seen = counts.get(row.fields.length)
+    counts.set(row.fields.length, seen === undefined ? 1 : seen + 1)
+  }
+
+  let width = 0
+  let best = 0
+  for (const [candidate, count] of counts) {
+    if (count > best || (count === best && candidate > width)) {
+      width = candidate
+      best = count
+    }
+  }
+  return width
 }

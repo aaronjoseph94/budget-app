@@ -138,7 +138,7 @@ model is never auto-approved.** Auto-approved rows are stamped
 | Metric | Today | Direction |
 |---|---|---|
 | Golden assertion count | 9 | must not fall |
-| Total tests | 281 | must not fall |
+| Total tests | 283 | must not fall |
 
 ## Exceptions
 

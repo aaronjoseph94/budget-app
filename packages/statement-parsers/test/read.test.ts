@@ -187,6 +187,33 @@ describe('sign, issuer id and headerless files', () => {
     expect(r.accepted[0]?.issuerTransactionId).toBeUndefined()
   })
 
+  it('lets the majority of a headerless file define its shape', () => {
+    // Taking the WIDEST row let one ragged record set the width, so every
+    // correct row became a mismatch and the malformed one was the only row
+    // accepted — the file imported exactly backwards.
+    const r = read(
+      [
+        '03/04/2025,COFFEE,-4.50',
+        '03/05/2025,SMITH, JOHN LANDSCAPING,-45.00',
+        '03/06/2025,GAS,-40.00',
+        '03/07/2025,SHOP,-1.00',
+      ].join('\n'),
+      { hasHeader: false },
+    )
+    expect(r.accepted).toHaveLength(3)
+    expect(r.rejected).toEqual([{ line: 2, reason: 'row_shape_mismatch' }])
+  })
+
+  it('counts parsed from the input, so the balance is checkable', () => {
+    // parsed was defined as accepted + rejected, which made every check of the
+    // balance hold however many rows the loop lost.
+    const r = read('03/04/2025,COFFEE,-4.50\nnope,GAS,-40.00\n03/06/2025,SHOP,-1.00', {
+      hasHeader: false,
+    })
+    expect(r.parsed).toBe(3)
+    expect(r.accepted.length + r.rejected.length).toBe(r.parsed)
+  })
+
   it('reads a headerless export without discarding its first charge', () => {
     const r = read('03/04/2025,COFFEE,-4.50\n03/05/2025,GAS,-40.00', { hasHeader: false })
     expect(r.accepted).toHaveLength(2)
