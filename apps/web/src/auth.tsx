@@ -45,32 +45,58 @@ export function useSession(supabase: SupabaseClient): SessionState {
   return state
 }
 
-type SendState =
+type Attempt =
   | { readonly kind: 'idle' }
-  | { readonly kind: 'sending' }
-  | { readonly kind: 'sent'; readonly email: string }
+  | { readonly kind: 'working' }
+  | { readonly kind: 'link-sent'; readonly email: string }
   | { readonly kind: 'failed'; readonly message: string }
 
+type Method = 'password' | 'link'
+
+/**
+ * Sign in, by password or by emailed link.
+ *
+ * Password is the default because the alternative depends on a mail service:
+ * Supabase's built-in sender allows a handful of messages an hour across the
+ * whole project, so testing sign-in twice locks you out of it for an hour.
+ * A password has no such limit and no dependency.
+ *
+ * There is deliberately no way to CREATE an account here. This app holds one
+ * person's financial history; accounts are made in the Supabase dashboard, so
+ * a public URL cannot be used to register against this project at all.
+ */
 export function SignIn({ supabase }: { supabase: SupabaseClient }) {
+  const [method, setMethod] = useState<Method>('password')
   const [email, setEmail] = useState('')
-  const [send, setSend] = useState<SendState>({ kind: 'idle' })
+  const [password, setPassword] = useState('')
+  const [attempt, setAttempt] = useState<Attempt>({ kind: 'idle' })
 
   const submit = async () => {
     const address = email.trim()
     if (address.length === 0) return
-    setSend({ kind: 'sending' })
+    setAttempt({ kind: 'working' })
+
+    if (method === 'password') {
+      const { error } = await supabase.auth.signInWithPassword({ email: address, password })
+      // Supabase deliberately returns the same message whether the address is
+      // unknown or the password is wrong, so the form cannot be used to find
+      // out which addresses have accounts. Passed through unchanged.
+      setAttempt(error === null ? { kind: 'idle' } : { kind: 'failed', message: error.message })
+      return
+    }
+
     const { error } = await supabase.auth.signInWithOtp({
       email: address,
-      options: { emailRedirectTo: window.location.origin },
+      options: { emailRedirectTo: window.location.origin, shouldCreateUser: false },
     })
-    // The message names what went wrong and never the address: an auth error
-    // is a thing that gets logged.
-    setSend(
+    setAttempt(
       error === null
-        ? { kind: 'sent', email: address }
+        ? { kind: 'link-sent', email: address }
         : { kind: 'failed', message: error.message },
     )
   }
+
+  const busy = attempt.kind === 'working'
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-md flex-col justify-center px-4 py-12">
@@ -80,16 +106,17 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
       </p>
 
       <Card className="mt-8 p-5">
-        {send.kind === 'sent' ? (
+        {attempt.kind === 'link-sent' ? (
           <div>
             <Label>Check your email</Label>
             <p className="mt-2 text-sm">
-              A sign-in link is on its way to <strong className="font-medium">{send.email}</strong>.
-              Open it on this device and you are in — there is no password to remember.
+              A sign-in link is on its way to{' '}
+              <strong className="font-medium">{attempt.email}</strong>. Open it on this device and
+              you are in.
             </p>
             <div className="mt-4">
-              <Button variant="quiet" onClick={() => setSend({ kind: 'idle' })}>
-                Use a different address
+              <Button variant="quiet" onClick={() => setAttempt({ kind: 'idle' })}>
+                Back
               </Button>
             </div>
           </div>
@@ -112,13 +139,46 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
                 className="mt-1 w-full rounded-lg border border-line bg-raised px-3 py-2 text-sm text-ink"
               />
             </label>
-            <div className="mt-4">
-              <Button type="submit" disabled={send.kind === 'sending'}>
-                {send.kind === 'sending' ? 'Sending…' : 'Email me a sign-in link'}
+
+            {method === 'password' ? (
+              <label className="mt-3 block">
+                <Label>Password</Label>
+                <input
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-line bg-raised px-3 py-2 text-sm text-ink"
+                />
+              </label>
+            ) : null}
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <Button type="submit" disabled={busy}>
+                {busy ? 'Signing in…' : method === 'password' ? 'Sign in' : 'Email me a link'}
               </Button>
+              <button
+                type="button"
+                className="text-sm text-ink-soft underline underline-offset-2 hover:text-ink"
+                onClick={() => {
+                  setMethod(method === 'password' ? 'link' : 'password')
+                  setAttempt({ kind: 'idle' })
+                }}
+              >
+                {method === 'password' ? 'Email me a link instead' : 'Use a password instead'}
+              </button>
             </div>
-            {send.kind === 'failed' ? (
-              <p className="mt-3 text-sm text-spend">{send.message}</p>
+
+            {attempt.kind === 'failed' ? (
+              <p className="mt-3 text-sm text-spend">{attempt.message}</p>
+            ) : null}
+
+            {method === 'link' ? (
+              <p className="mt-3 text-xs text-ink-soft">
+                Emailed links are limited to a few per hour on this project’s mail settings. A
+                password has no such limit.
+              </p>
             ) : null}
           </form>
         )}
