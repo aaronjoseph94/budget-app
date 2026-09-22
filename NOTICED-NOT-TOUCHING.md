@@ -153,3 +153,26 @@ environment, which cannot reach Supabase.
 **Seen:** 2026-09-22, from `vite build`. Mostly supabase-js. It loads fine on a
 phone, but the PDF reader could be split into its own chunk loaded only on the
 Add screen, and the Supabase client trimmed to the modules used.
+
+---
+
+## N8 — CLAUDE.md's stack line names three libraries the app does not use
+
+**Seen:** 2026-09-22, writing ADR 0003.
+
+CLAUDE.md's Stack section lists "TanStack Router + Query" and "vite-plugin-pwa
+(installable, camera via file capture)". `apps/web/package.json` depends on
+none of them, and nothing under `apps/web/src` imports them. Navigation is the
+hash in `src/nav.ts`; data loading is `src/app-data.tsx` and each screen's own
+effect; the app is installable through a hand-written
+`public/manifest.webmanifest` and Apple meta tags, with no service worker.
+ADR 0001's table names the same three.
+
+**Why not fixed here:** CLAUDE.md is the owner's file, and changing what it
+says the stack is needs their approval. ADR 0003 records why navigation stays
+hand-rolled; it does not rewrite CLAUDE.md.
+
+**To settle:** with the owner's approval, change the stack line to what is
+used — hash navigation in `nav.ts` (ADR 0003), a web manifest without a
+service worker. If offline use is ever wanted, vite-plugin-pwa comes back as its own dependency
+commit.
