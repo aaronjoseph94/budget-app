@@ -1105,6 +1105,84 @@ end $$;
 
 reset role;
 
+-- ---------------------------------------------------------------------------
+-- 0012: an unreadable line can be dismissed
+-- ---------------------------------------------------------------------------
+-- A line already dismissed at a known time, so that dismissing it again can be
+-- seen to keep that time: within one test block now() never moves, and a
+-- second stamp would be indistinguishable from the first.
+insert into public.ingest_unreadable_lines (user_id, batch_id, source_line, reason, dismissed_at)
+values ('11111111-1111-4111-8111-111111111111', 'bbbbbbbb-0000-4000-8000-000000000001',
+        12, 'missing_amount', '2026-01-01 00:00:00+00');
+
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+
+do $$
+declare
+  bat      uuid := 'bbbbbbbb-0000-4000-8000-000000000001';
+  line     uuid;
+  earlier  uuid;
+begin
+  select id into line from public.ingest_unreadable_lines where batch_id = bat and source_line = 11;
+  select id into earlier from public.ingest_unreadable_lines where batch_id = bat and source_line = 12;
+
+  -- The browser still cannot change a line itself (0004); only the function
+  -- can, and only its stamp.
+  begin
+    update public.ingest_unreadable_lines set dismissed_at = now() where id = line;
+    raise exception 'ONE PATH BROKEN: the browser stamped an unreadable line directly';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- Another user cannot dismiss it, and is told only that it is not there.
+  perform set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',false);
+  begin
+    perform public.dismiss_unreadable_line(line);
+    raise exception 'OWNERSHIP: another user dismissed a line they do not own';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- Nor can a caller who is not signed in.
+  perform set_config('request.jwt.claim.sub','',false);
+  begin
+    perform public.dismiss_unreadable_line(line);
+    raise exception 'NOT REFUSED: a line was dismissed with nobody signed in';
+  exception when invalid_authorization_specification then null;
+  end;
+
+  perform set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+  if (select dismissed_at from public.ingest_unreadable_lines where id = line) is not null then
+    raise exception 'a refused dismissal still stamped the line';
+  end if;
+
+  -- An id that is nobody's line is refused the same way.
+  begin
+    perform public.dismiss_unreadable_line('eeeeeeee-0000-4000-8000-000000000001');
+    raise exception 'NOT REFUSED: dismissing a line that does not exist';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- The owner dismisses it. The line stays, stamped; no other line changes;
+  -- and dismissing one already dismissed keeps the time it was first done.
+  perform public.dismiss_unreadable_line(line);
+  perform public.dismiss_unreadable_line(earlier);
+  if (select dismissed_at from public.ingest_unreadable_lines where id = line) is null then
+    raise exception 'dismissing did not stamp the line';
+  end if;
+  if (select dismissed_at from public.ingest_unreadable_lines where id = earlier)
+     is distinct from '2026-01-01 00:00:00+00'::timestamptz then
+    raise exception 'dismissing a line twice moved the time it was first dismissed';
+  end if;
+  if (select count(*) from public.ingest_unreadable_lines where dismissed_at is not null) <> 2 then
+    raise exception 'dismissing one line stamped another';
+  end if;
+
+  raise notice 'an unreadable line is dismissed by its owner only, once, and kept';
+end $$;
+
+reset role;
+
 -- The anonymous role — anyone holding the published key — cannot call any of
 -- these at all.
 do $$
@@ -1113,6 +1191,7 @@ begin
      or has_function_privilege('anon', 'public.save_import(uuid, public.ingest_source, integer, jsonb, jsonb)', 'execute')
      or has_function_privilege('anon', 'public.recategorise_transaction(uuid, uuid, boolean)', 'execute')
      or has_function_privilege('anon', 'public.save_import(uuid, public.ingest_source, integer, jsonb, jsonb, date, date)', 'execute')
+     or has_function_privilege('anon', 'public.dismiss_unreadable_line(uuid)', 'execute')
      or has_function_privilege('authenticated', 'public._post_candidate(uuid)', 'execute') then
     raise exception 'a ledger-writing function is callable by a role that must not call it';
   end if;
