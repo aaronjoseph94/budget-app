@@ -139,6 +139,20 @@
      the same hue that reads at 6.3. */
   --paycheck-band: #f1f3ff;
   --paycheck-ink: #4a5591;
+  /* Bill Calendar's header band and pills (F5FEFF, E6F9FC), its bill text
+     (135D5C) and day numbers (3E4D5B). Its pill text A4BCBF, week totals
+     6E8AA3 and white-on-6CAC8F payday pill read at 1.8, 3.5 and 2.7 to one,
+     so darker inks of the same hues, and a darker green behind the white. */
+  --calendar-band: #f5feff;
+  --calendar-pill: #e6f9fc;
+  --calendar-pill-ink: #41666a;
+  --calendar-ink: #135d5c;
+  --calendar-day: #3e4d5b;
+  --calendar-total: #4e6e8c;
+  --calendar-head: #616f7c;
+  --calendar-rule: #bed3e9;
+  --payday: #3d7a5e;
+  --payday-ink: #ffffff;
 }
 
 /*
@@ -220,6 +234,16 @@
     --home-track: #2c3237;
     --paycheck-band: #1c1f33;
     --paycheck-ink: #d4d9f5;
+    --calendar-band: #172b2d;
+    --calendar-pill: #1f3a3e;
+    --calendar-pill-ink: #cfeff2;
+    --calendar-ink: #bfe3e1;
+    --calendar-day: #d0d9e2;
+    --calendar-total: #c4d2de;
+    --calendar-head: #aab6c2;
+    --calendar-rule: #33475a;
+    --payday: #2f6b50;
+    --payday-ink: #ffffff;
   }
 }
 
@@ -260,6 +284,16 @@
   --color-title-band: var(--title-band);
   --color-paycheck-band: var(--paycheck-band);
   --color-paycheck-ink: var(--paycheck-ink);
+  --color-calendar-band: var(--calendar-band);
+  --color-calendar-pill: var(--calendar-pill);
+  --color-calendar-pill-ink: var(--calendar-pill-ink);
+  --color-calendar-ink: var(--calendar-ink);
+  --color-calendar-day: var(--calendar-day);
+  --color-calendar-total: var(--calendar-total);
+  --color-calendar-head: var(--calendar-head);
+  --color-calendar-rule: var(--calendar-rule);
+  --color-payday: var(--payday);
+  --color-payday-ink: var(--payday-ink);
   --color-title-ink: var(--title-ink);
   --color-income-band: var(--income-band);
   --color-income-header: var(--income-header);
