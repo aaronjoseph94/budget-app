@@ -198,15 +198,18 @@ export function describeMoveFailure(error: WriteError | null | undefined): strin
 }
 
 /** What the Month was doing with budgets and goals when a request failed. */
-export type BudgetAction = 'read'
+export type BudgetAction = 'read' | 'save'
 
 /**
- * Why the Month's budgets and goals could not be read (0008).
+ * Why the Month's budgets and goals could not be read or saved (0008).
  *
  * PGRST205, or 42P01 from an older PostgREST, is the table not existing:
  * 0008 has not been pasted yet, which is the owner's to do, so say where
- * rather than leave a bare code (N28). A read saves nothing, so it never
- * falls back to the import wording, which says "nothing was saved".
+ * rather than leave a bare code (N28). The import wording is wrong for both
+ * of 0008's refusals: a category removed elsewhere is 23503, and the only
+ * CHECK the Month can meet is a negative amount (23514). A save otherwise
+ * falls back to that wording, whose connection and sign-in sentences hold
+ * for any write; a read saves nothing, so it never does.
  */
 const NOT_APPLIED = 'Budgets need a database update that has not been applied yet (0008 in the setup guide)'
 const BUDGET_FAILURES: Readonly<Record<BudgetAction, Readonly<Record<string, string>>>> = {
@@ -216,15 +219,21 @@ const BUDGET_FAILURES: Readonly<Record<BudgetAction, Readonly<Record<string, str
     '': 'Could not reach the database to read your budgets. Check your connection and try again.',
     PGRST301: 'Your session expired. Sign in again to see this month.',
   },
-}
-const BUDGET_ANY: Readonly<Record<BudgetAction, string>> = {
-  read: 'Your budgets could not be read, so this month is not shown. Try again.',
+  save: {
+    PGRST205: `${NOT_APPLIED}. Nothing was saved.`,
+    '42P01': `${NOT_APPLIED}. Nothing was saved.`,
+    '23503': 'That category is no longer there — it may have been removed on another device. Nothing was saved.',
+    '23514': 'A budget or goal cannot be below zero. Nothing was saved.',
+  },
 }
 
 export function describeBudgetFailure(action: BudgetAction, error: WriteError | null | undefined): string {
   const code = typeof error?.code === 'string' ? error.code : ''
-  const body = BUDGET_FAILURES[action][code] ?? BUDGET_ANY[action]
-  return code === '' ? body : `${body} (code ${code})`
+  const body = BUDGET_FAILURES[action][code]
+  if (body !== undefined) return code === '' ? body : `${body} (code ${code})`
+  return action === 'save'
+    ? describeWriteFailure(error)
+    : `Your budgets could not be read, so this month is not shown. Try again. (code ${code})`
 }
 
 /**

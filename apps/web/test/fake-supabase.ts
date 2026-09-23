@@ -37,8 +37,8 @@ export interface FakeTables {
   ingest_batches: (UnreadableBatch & { readonly period_end?: string | null })[]
   /** `dismissed_at` once dismissed (0012); absent reads as null, still waiting. */
   ingest_unreadable_lines: (UnreadableLine & { readonly dismissed_at?: string | null })[]
-  /** Budgets and goals as typed (0008). */
-  category_budgets: BudgetRow[]
+  /** Budgets and goals as typed (0008); `user_id` as the app writes it. */
+  category_budgets: (BudgetRow & { readonly user_id?: string })[]
 }
 
 export interface RpcCall {
@@ -168,6 +168,10 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       // An upsert with ignoreDuplicates is ON CONFLICT DO NOTHING: a taken
       // name is skipped. Without it, one taken name refuses the whole write.
       const skipTaken = headers.get('prefer')?.includes('resolution=ignore-duplicates') === true
+      // Any other upsert is ON CONFLICT (on_conflict) DO UPDATE: a row
+      // matching on those columns is replaced rather than added.
+      const merge = headers.get('prefer')?.includes('resolution=merge-duplicates') === true
+      const conflict = merge ? (url.searchParams.get('on_conflict')?.split(',') ?? []) : []
       const added: Row[] = []
       for (const fields of Array.isArray(body) ? body : [body]) {
         const row: Row = { id: `new-${nextId++}`, ...fields }
@@ -179,9 +183,22 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
           if (skipTaken) continue
           return pgError('23505', 409)
         }
+        // What 0008 refuses: its CHECKs, then the key to the category.
+        if (target === 'category_budgets') {
+          if ((typeof row.budget_cents === 'number' && row.budget_cents < 0) || !String(row.month).endsWith('-01')) {
+            return pgError('23514')
+          }
+          if (!tables.categories.some((c) => c.id === row.category_id)) return pgError('23503', 409)
+        }
         added.push(row)
       }
-      table.push(...added)
+      // Nothing is written until every row has passed, as in one statement.
+      for (const row of added) {
+        const at = conflict.length === 0 ? -1 : table.findIndex((r) => conflict.every((c) => r[c] === row[c]))
+        const kept = table[at]
+        if (kept === undefined) table.push(row)
+        else table[at] = { ...kept, ...row, id: kept.id }
+      }
       return json(wantsObject ? added[0] : added, 201)
     }
 

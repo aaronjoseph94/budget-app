@@ -733,6 +733,46 @@ export async function listBudgetHistory(supabase: SupabaseClient, through: strin
   return rows.map((r) => ({ ...r, budget_cents: r.budget_cents === null ? null : Number(r.budget_cents) }))
 }
 
+export interface BudgetEdit {
+  readonly userId: string
+  readonly categoryId: string
+  /** The first day of the month it is typed on. */
+  readonly month: string
+  readonly applies: 'onward' | 'only'
+  /** Null is "no budget" (Clear budget), which is not $0. */
+  readonly budgetCents: number | null
+  /**
+   * The month already has its own "just this month" value, which would go on
+   * winning there over one typed "from this month on" (D12). With this set,
+   * it is given the same value in the same write, so the month typed on
+   * shows what was typed.
+   */
+  readonly replacesOnly: boolean
+}
+
+/**
+ * Type a budget or goal on a month, as the owner meant it (0008, D12).
+ *
+ * A plain upsert under RLS on 0008's key, so typing over a value replaces it
+ * and never adds a second. Nothing is copied into other months; core
+ * resolves each month on read. One statement, so the "just this month" row
+ * it may also replace changes with it or not at all.
+ */
+export async function setBudget(supabase: SupabaseClient, edit: BudgetEdit): Promise<void> {
+  const row = (applies: BudgetEdit['applies']) => ({
+    user_id: edit.userId,
+    category_id: edit.categoryId,
+    month: edit.month,
+    applies,
+    budget_cents: edit.budgetCents,
+  })
+  const rows = edit.applies === 'onward' && edit.replacesOnly ? [row('onward'), row('only')] : [row(edit.applies)]
+  const { error } = await supabase
+    .from('category_budgets')
+    .upsert(rows, { onConflict: 'user_id,category_id,month,applies' })
+  if (error !== null) throw new Error(describeBudgetFailure('save', error))
+}
+
 // ---------------------------------------------------------------------------
 // The goal
 // ---------------------------------------------------------------------------
