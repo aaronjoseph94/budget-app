@@ -1,21 +1,25 @@
 import { useEffect, useMemo, useState } from 'react'
-import { isoDate, shiftWeek, weekBounds, weeklySummary } from '@budget/core'
+import { isoDate, monthBounds, shiftWeek, weekBounds, weekSheet, type WeekSheet } from '@budget/core'
 import { useAppData } from '../app-data.js'
-import { listTransactions, type LedgerRow } from '../ledger.js'
-import { formatBasisPoints, formatCents, formatDateRange, formatMagnitude, todayIso } from '../format.js'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card.js'
-import { Alert, Empty, Progress } from '../components/ui/feedback.js'
+import { latestStatementEnd, listPlanHistory, listTransactions, type LedgerRow, type PlanRow } from '../ledger.js'
+import { entriesForCore, plansForCore, weekCategoriesForCore } from '../sheet-input.js'
+import { formatDateRange, todayIso } from '../format.js'
+import { Card, CardContent } from '../components/ui/card.js'
+import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
-import { Figure } from '../components/ui/type.js'
 import { navigate } from '../nav.js'
+import { WeekBlocks } from './WeekBlocks.js'
 import { GoalCard, NoGoal } from './WeekGoal.js'
 
 /**
- * "How am I doing this week" — the roadmap's Phase 2 question.
+ * Workbook's Weekly Budget: the Month's summary and six blocks over the
+ * Monday-to-Sunday week (D14), with the flight goal beside them.
  *
- * Every figure comes from packages/core: weeklySummary for the budget,
- * goalProgress and timeEquivalent for the goal. This screen formats them.
+ * Every figure comes from packages/core: weekSheet over the week's ledger,
+ * the monthly amounts typed up to its last month and each category's weekly
+ * budget; goalProgress and timeEquivalent for the goal. This screen formats
+ * them. Nothing unreviewed is in it.
  */
 export function WeekScreen() {
   const { supabase, categories, goal, pendingTotal, loadError, version } = useAppData()
@@ -23,16 +27,24 @@ export function WeekScreen() {
   const [asOf, setAsOf] = useState(today)
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // A weekly budget refused after its editor closed, kept until another opens.
+  const [unsaved, setUnsaved] = useState<string | null>(null)
   const bounds = useMemo(() => weekBounds(asOf), [asOf])
 
   useEffect(() => {
-    // As on the Month (N35): nothing is read before the app's first load
-    // brings the categories, or every row would count as uncategorised.
+    // As on the Month: rows read before the first load brings the categories
+    // name categories core has not been given, and it refuses them (N35).
     if (version === 0) return
     let live = true
     setError(null)
-    listTransactions(supabase, { from: bounds.start, to: bounds.end })
-      .then((rows) => live && setLoaded({ start: bounds.start, rows }))
+    Promise.all([
+      listTransactions(supabase, { from: bounds.start, to: bounds.end }),
+      // Up to the week's last month: a week across a month end pays each
+      // month's amount on its own due day (D13).
+      listPlanHistory(supabase, monthBounds(bounds.end).start, 'week'),
+      latestStatementEnd(supabase),
+    ])
+      .then(([rows, plans, ends]) => live && setLoaded({ start: bounds.start, rows, plans, ends }))
       .catch((e: unknown) => live && setError(e instanceof Error ? e.message : 'Could not load this week.'))
     return () => {
       live = false
@@ -43,17 +55,25 @@ export function WeekScreen() {
   // screen waits rather than count the last one's, none of which fall in it,
   // and show an empty week under its dates.
   const here = loaded !== null && loaded.start === bounds.start ? loaded : null
-  const week = useMemo(
-    () =>
-      here === null
-        ? null
-        : weeklySummary({
-            entries: here.rows.map((r) => ({ postedOn: isoDate(r.posted_on), amountCents: r.amount_cents, categoryId: r.category_id })),
-            categories: categories.map((c) => ({ id: c.id, name: c.name, kind: c.kind, weeklyBudgetCents: c.weekly_budget_cents })),
-            asOf,
-          }),
-    [here, categories, asOf],
-  )
+  const week = useMemo((): WeekSheet | string | null => {
+    if (here === null) return null
+    try {
+      return weekSheet({
+        asOf,
+        categories: weekCategoriesForCore(categories),
+        planHistory: plansForCore(here.plans),
+        entries: entriesForCore(here.rows),
+        statementPeriodEnds: here.ends.map((e) => isoDate(e)),
+        // Nothing types a balance for a week, so there is no start, and no end (D17).
+        startingBalanceCents: null,
+      })
+    } catch {
+      // As on the Month: core refuses a row it cannot file rather than
+      // leave it out of every total. Said plainly, never as its message.
+      return 'A charge or a monthly amount this week names a category that did not load, so the week is not shown. Reload to try again.'
+    }
+  }, [here, categories, asOf])
+  const sheet = typeof week === 'string' ? null : week
 
   const isThisWeek = weekBounds(today).start === bounds.start
   // Back on this week, its days left count from today again, not its Monday.
@@ -64,12 +84,12 @@ export function WeekScreen() {
 
   return (
     <div className="space-y-4">
-      <header className="flex items-center justify-between gap-2">
+      <header className="-mx-4 flex items-center justify-between gap-2 bg-title-band px-4 py-4 md:mx-0 md:rounded-xl">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{isThisWeek ? 'This week' : 'Week of'}</h1>
           <p className="text-sm text-muted-foreground">
             {formatDateRange(bounds.start, bounds.end)}
-            {isThisWeek && week !== null ? ` · ${week.daysLeft} ${week.daysLeft === 1 ? 'day' : 'days'} left` : ''}
+            {isThisWeek && sheet !== null ? ` · ${sheet.daysLeft} ${sheet.daysLeft === 1 ? 'day' : 'days'} left` : ''}
           </p>
         </div>
         <div className="flex gap-1">
@@ -100,113 +120,17 @@ export function WeekScreen() {
       ) : null}
 
       {error !== null ? <Alert tone="error" title="Could not load this week">{error}</Alert> : null}
-
+      {unsaved !== null ? <Alert tone="error" title="A weekly budget or goal was not saved">{unsaved}</Alert> : null}
+      {typeof week === 'string' ? <Alert tone="error" title="Could not show this week">{week}</Alert> : null}
       {/* A first load that failed is said above the screen, by App, as on the Month. */}
       {week === null && error === null && (version > 0 || loadError === null) ? <SkeletonCard /> : null}
 
-      {week !== null ? (
-        <>
-          <Card>
-            <CardHeader>
-              <CardDescription>Spent</CardDescription>
-              <p className="text-4xl font-bold tracking-tight">
-                <Figure>{formatCents(week.spentCents)}</Figure>
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {week.budgetCents !== null && week.remainingCents !== null ? (
-                <>
-                  <Progress
-                    basisPoints={week.usedBasisPoints ?? 10_000}
-                    tone={week.remainingCents < 0 ? 'over' : 'default'}
-                  />
-                  <p className="text-sm">
-                    {week.remainingCents >= 0 ? (
-                      <>
-                        <span className="tnum font-medium">{formatCents(week.remainingCents)}</span>{' '}
-                        <span className="text-muted-foreground">left of {formatCents(week.budgetCents)} budgeted</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="tnum font-medium text-spend">{formatMagnitude(week.remainingCents)} over</span>{' '}
-                        <span className="text-muted-foreground">a {formatCents(week.budgetCents)} budget</span>
-                      </>
-                    )}
-                  </p>
-                </>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No weekly budgets set yet.{' '}
-                  <button type="button" className="font-medium text-foreground underline underline-offset-4" onClick={() => navigate('settings')}>
-                    Set one
-                  </button>{' '}
-                  to see what is left.
-                </p>
-              )}
-              {week.inflowCents > 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  Money in this week: <span className="tnum text-income">{formatCents(week.inflowCents)}</span>
-                </p>
-              ) : null}
-              {/* Left out of both figures above, so said out loud (D9). */}
-              {week.transfersCents !== 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  {week.transfersCents > 0 ? 'Paid to your card: ' : 'Moved out, not spending: '}
-                  <span className="tnum">{formatMagnitude(week.transfersCents)}</span> — not counted
-                </p>
-              ) : null}
-              {week.uncategorisedInCents > 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  Money in with no category: <span className="tnum">{formatCents(week.uncategorisedInCents)}</span> — not
-                  counted
-                </p>
-              ) : null}
-            </CardContent>
-          </Card>
-
-          {goal !== null ? <GoalCard weekSpentCents={week.spentCents} asOf={asOf} /> : <NoGoal />}
-
-          <Card>
-            <CardHeader>
-              <CardTitle>By category</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {week.categories.length === 0 && week.uncategorisedSpentCents === 0 ? (
-                <Empty icon={<Icon name="list" />} title="Nothing spent yet">
-                  Import a statement or add a purchase and it will show up here once approved.
-                </Empty>
-              ) : (
-                <ul className="space-y-4">
-                  {week.categories.map((c) => (
-                    <li key={c.categoryId} className="space-y-1.5">
-                      <div className="flex items-baseline justify-between gap-3 text-sm">
-                        <span className="truncate font-medium">{c.name}</span>
-                        <span className="tnum shrink-0">
-                          {formatCents(c.spentCents)}
-                          {c.budgetCents !== null ? <span className="text-muted-foreground"> / {formatCents(c.budgetCents)}</span> : null}
-                        </span>
-                      </div>
-                      {c.usedBasisPoints !== null ? (
-                        <div className="flex items-center gap-3">
-                          <Progress basisPoints={c.usedBasisPoints} tone={c.over ? 'over' : c.usedBasisPoints >= 8_500 ? 'near' : 'default'} />
-                          <span className={`tnum w-10 shrink-0 text-right text-xs ${c.over ? 'text-spend' : 'text-muted-foreground'}`}>
-                            {formatBasisPoints(c.usedBasisPoints)}
-                          </span>
-                        </div>
-                      ) : null}
-                    </li>
-                  ))}
-                  {week.uncategorisedSpentCents > 0 ? (
-                    <li className="flex items-baseline justify-between text-sm text-muted-foreground">
-                      <span>Uncategorised</span>
-                      <span className="tnum">{formatCents(week.uncategorisedSpentCents)}</span>
-                    </li>
-                  ) : null}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-        </>
+      {sheet !== null ? (
+        <WeekBlocks
+          sheet={sheet}
+          aside={goal !== null ? <GoalCard weekSpentCents={sheet.summary.spentCents} asOf={asOf} /> : <NoGoal />}
+          onUnsaved={setUnsaved}
+        />
       ) : null}
     </div>
   )
@@ -215,6 +139,9 @@ export function WeekScreen() {
 interface Loaded {
   readonly start: string
   readonly rows: readonly LedgerRow[]
+  /** Every monthly amount typed from the week's last month or before it. */
+  readonly plans: readonly PlanRow[]
+  readonly ends: readonly string[]
 }
 
 function SkeletonCard() {

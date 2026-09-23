@@ -6,11 +6,16 @@
  * amount is in effect, and what counts where, is core's to say. The Month
  * and the Year read the same rows, so they read them through one place.
  */
-import { isoDate, type BudgetHistoryRow, type PeriodCategory, type PeriodEntry, type PlanHistoryRow } from '@budget/core'
+import { isoDate, type BudgetHistoryRow, type PeriodCategory, type PeriodEntry, type PlanHistoryRow, type WeekCategory } from '@budget/core'
 import type { BudgetRow, Category, LedgerRow, PlanRow } from './ledger.js'
 
 export function categoriesForCore(categories: readonly Category[]): PeriodCategory[] {
   return categories.map((c) => ({ id: c.id, name: c.name, kind: c.kind, sortOrder: c.sort_order }))
+}
+
+/** As categoriesForCore, with the weekly budget the Week reads as each one's Budgeted or Goal. */
+export function weekCategoriesForCore(categories: readonly Category[]): WeekCategory[] {
+  return categories.map((c) => ({ id: c.id, name: c.name, kind: c.kind, sortOrder: c.sort_order, weeklyBudgetCents: c.weekly_budget_cents }))
 }
 
 /** Every budget and goal as typed; core picks the one in effect (D12). */

@@ -28,12 +28,13 @@ function seeded(): FakeSupabase {
   })
 }
 
-/** The list item that names a category, so its figures are read from its own row. */
-async function categoryRow(name: string): Promise<HTMLElement> {
-  const item = (await screen.findByText(name)).closest('li')
-  if (!(item instanceof HTMLElement)) throw new Error(`no list item for ${name}`)
-  return item
-}
+/** A figure on the summary card, once the week is in; the blocks' own are WeekBlocks' tests'. */
+const summary = async (label: string) =>
+  within(await screen.findByRole('region', { name: 'Summary' })).getByText(label).nextSibling?.textContent
+const cells = async (block: string, row: string) =>
+  within(within(await screen.findByRole('region', { name: block })).getByRole('rowheader', { name: row }).closest('tr')!)
+    .getAllByRole('cell')
+    .map((c) => c.textContent)
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
@@ -48,22 +49,17 @@ afterEach(() => {
 })
 
 describe('WeekScreen', () => {
-  // Hand-derived: spent 64.12 + 18.45 + 47.55 = 130.12; budgets 150 + 60 = 210,
-  // so 79.88 left. Eating out is 66.00 against 60.00. The Sunday before is out.
-  it("shows this week's spending against its budgets, by category", async () => {
+  // Hand-derived: spent 64.12 + 18.45 + 47.55 = 130.12. Left (F5): 150.00 −
+  // 64.12 = 85.88 and 60.00 − 66.00 = −6.00, so 79.88. The Sunday before is out.
+  it("shows this week's blocks, with each category's weekly budget as its Budgeted", async () => {
     renderScreen(<WeekScreen />, seeded())
 
-    expect(await screen.findByText('$130.12')).toBeTruthy()
+    expect(await summary('Spent')).toBe('$130.12')
+    expect(await summary('Left to spend')).toBe('$79.88')
     expect(screen.getByRole('heading', { name: 'This week' })).toBeTruthy()
-    expect(screen.getByText('$79.88')).toBeTruthy()
-    expect(screen.getByText('left of $210.00 budgeted')).toBeTruthy()
-
-    const groceries = within(await categoryRow('Groceries'))
-    expect(groceries.getByText('$64.12')).toBeTruthy()
-    expect(groceries.getByText('/ $150.00')).toBeTruthy()
-    const eatingOut = within(await categoryRow('Eating out'))
-    expect(eatingOut.getByText('$66.00')).toBeTruthy()
-    expect(eatingOut.getByText('/ $60.00')).toBeTruthy()
+    expect(screen.getByText(/5 days left/)).toBeTruthy()
+    expect(await cells('Variable expenses', 'Groceries')).toEqual(['150.00', '64.12', '85.88'])
+    expect(await cells('Variable expenses', 'Eating out')).toEqual(['60.00', '66.00', '-6.00'])
   })
 
   it('says how many wait for review, and the banner opens Review', async () => {
@@ -77,32 +73,41 @@ describe('WeekScreen', () => {
 
   it('steps back a week and counts only that week', async () => {
     renderScreen(<WeekScreen />, seeded())
-    await screen.findByText('$130.12')
+    expect(await summary('Spent')).toBe('$130.12')
 
     fireEvent.click(screen.getByRole('button', { name: 'Previous week' }))
 
     expect(await screen.findByRole('heading', { name: 'Week of' })).toBeTruthy()
-    // Once as the week's total, once on the Groceries row.
-    expect(await screen.findAllByText('$99.99')).toHaveLength(2)
-    expect(screen.queryByText('$130.12')).toBeNull()
+    await waitFor(async () => expect(await summary('Spent')).toBe('$99.99'))
+    expect(screen.queryByText(/days left/)).toBeNull()
   })
 
-  // Hand-derived: budgets 10.00 + 60.00 = 70.00 against 130.12 spent, 60.12 over.
-  it('says by how much the week is over budget, and steps forward again', async () => {
+  // Hand-derived: Left is 10.00 − 64.12 and 60.00 − 66.00, 60.12 below zero.
+  // Back on this week, its days left count from today, not from its Monday.
+  it('shows an overspent week below zero, and steps forward again to today', async () => {
     const fake = seeded()
     fake.tables.categories[0] = { id: 'c1', name: 'Groceries', kind: 'variable', sort_order: 0, weekly_budget_cents: 1000 }
     renderScreen(<WeekScreen />, fake)
 
-    expect(await screen.findByText('$60.12 over')).toBeTruthy()
-    expect(screen.getByText('a $70.00 budget')).toBeTruthy()
+    expect(await summary('Left to spend')).toBe('-$60.12')
     expect(screen.getByRole('button', { name: 'Next week' })).toHaveProperty('disabled', true)
 
     fireEvent.click(screen.getByRole('button', { name: 'Previous week' }))
     await screen.findByRole('heading', { name: 'Week of' })
     fireEvent.click(screen.getByRole('button', { name: 'Next week' }))
     expect(await screen.findByRole('heading', { name: 'This week' })).toBeTruthy()
-    // From today, Wednesday, not from the week's Monday.
     expect(await screen.findByText(/5 days left/)).toBeTruthy()
+  })
+
+  // Rent is due on the 10th, in this week; the phone on the 20th is not (F8).
+  it('reads the monthly amounts and counts a bill due on a day of this week', async () => {
+    const fake = seeded()
+    fake.tables.categories.push({ id: 'rent', name: 'Rent', kind: 'bill', sort_order: 0, weekly_budget_cents: null })
+    fake.tables.category_plans.push({ id: 'pl1', category_id: 'rent', effective_month: '2026-01-01', planned_cents: 160000, due_day: 10 })
+    renderScreen(<WeekScreen />, fake)
+
+    expect(await summary('Spent')).toBe('$1,730.12')
+    expect(await cells('Bills', 'Rent')).toEqual(['', '1,600.00planned', ''])
   })
 
   // Hand-derived: 8,450 of 30,000 is 28% with 21,550 to go; 21,550 over the
@@ -131,8 +136,7 @@ describe('WeekScreen', () => {
     expect(window.location.hash).toBe('#/settings')
   })
 
-  it('without budgets, shows the spend, the money in, and a way to set one', async () => {
-    vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
+  it('without budgets, shows the spend and the money in', async () => {
     const fake = seeded()
     fake.tables.categories = fake.tables.categories.map((c) => ({ ...c, weekly_budget_cents: null }))
     // In a category of its own, so it nets positive: money in, not a refund.
@@ -140,16 +144,14 @@ describe('WeekScreen', () => {
     fake.tables.transactions.push({ id: 't5', posted_on: '2026-03-12', amount_cents: 2500, merchant_raw: 'PAYROLL', category_id: 'c3', source: 'typed' })
     renderScreen(<WeekScreen />, fake)
 
-    expect(await screen.findByText('$130.12')).toBeTruthy()
-    expect(screen.getByText(/No weekly budgets set yet\./)).toBeTruthy()
-    expect(screen.getByText('$25.00')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Set one' }))
-    expect(window.location.hash).toBe('#/settings')
+    expect(await summary('Spent')).toBe('$130.12')
+    expect(screen.getByText('No weekly budgets on Variable expenses yet.')).toBeTruthy()
+    expect(await cells('Income', 'Pay')).toEqual(['', '25.00'])
   })
 
-  // Hand-derived: the $500.00 card payment and the $200.00 move to savings
-  // are in neither figure, so spent stays 130.12 and money in is the 25.00 pay.
-  it('leaves a card payment and a savings move out of spending and money in, and says so', async () => {
+  // Hand-derived: the $500.00 card payment is in no block and the $200.00
+  // move is Savings, so spent stays 130.12 and money in is the 25.00 pay.
+  it('leaves a card payment and a savings move out of spending, and says so', async () => {
     const fake = seeded()
     fake.tables.categories.push(
       { id: 'c3', name: 'Pay', kind: 'income', sort_order: 0, weekly_budget_cents: null },
@@ -163,15 +165,14 @@ describe('WeekScreen', () => {
     )
     renderScreen(<WeekScreen />, fake)
 
-    expect(await screen.findByText('$130.12')).toBeTruthy()
-    expect(screen.getByText('$25.00')).toBeTruthy()
-    expect(screen.getByText('$500.00').closest('p')?.textContent).toBe('Paid to your card: $500.00 — not counted')
-    expect(screen.queryByText('Flight fund')).toBeNull()
+    expect(await summary('Spent')).toBe('$130.12')
+    expect(await cells('Savings', 'Flight fund')).toEqual(['', '200.00', '200.00'])
+    expect(screen.getByText('$500.00').closest('p')?.textContent).toMatch(/^Paid to your card: \$500\.00 — not counted\./)
     expect(screen.queryByText('Card payments')).toBeNull()
   })
 
   // Hand-derived: a $40.00 return with no purchase makes the week 90.12.
-  it('shows a return as negative spending, and money moved out or unfiled as not counted', async () => {
+  it('shows a return as negative spending, money moved out as not counted, and no week with a row it cannot file', async () => {
     const fake = seeded()
     fake.tables.categories.push({ id: 'c5', name: 'Card payments', kind: 'transfer', sort_order: 0, weekly_budget_cents: null })
     fake.tables.categories.push({ id: 'c6', name: 'Shoes', kind: 'variable', sort_order: 0, weekly_budget_cents: null })
@@ -183,10 +184,13 @@ describe('WeekScreen', () => {
     )
     renderScreen(<WeekScreen />, fake)
 
-    expect(await screen.findByText('$90.12')).toBeTruthy()
-    expect(within(await categoryRow('Shoes')).getByText('-$40.00')).toBeTruthy()
-    expect(screen.getByText('$15.00').closest('p')?.textContent).toBe('Moved out, not spending: $15.00 — not counted')
-    expect(screen.getByText('$7.00').closest('p')?.textContent).toBe('Money in with no category: $7.00 — not counted')
+    expect(await screen.findByText('Could not show this week')).toBeTruthy()
+    fake.tables.transactions.pop()
+    cleanup()
+    renderScreen(<WeekScreen />, fake)
+    expect(await summary('Spent')).toBe('$90.12')
+    expect((await cells('Variable expenses', 'Shoes'))[1]).toBe('-40.00')
+    expect(screen.getByText('$15.00').closest('p')?.textContent).toBe('Moved out, not spending: $15.00 — not counted.')
   })
 
   it('shows a readable message when the week cannot be loaded', async () => {

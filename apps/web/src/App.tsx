@@ -82,8 +82,8 @@ function tabOf(screen: Screen, tabs: readonly Tab[]): Screen {
 export function Shell() {
   const { screen, month } = useAddress()
   const { pendingTotal, loadError } = useAppData()
-  // Month and Year widen on a desktop to take Workbook's four columns (§6.3, §6.4).
-  const width = screen === 'month' || screen === 'year' ? 'max-w-3xl lg:max-w-7xl' : 'max-w-3xl'
+  // Month, Week and Year widen on a desktop to take Workbook's four columns (§6.3, §6.4).
+  const width = screen === 'month' || screen === 'week' || screen === 'year' ? 'max-w-3xl lg:max-w-7xl' : 'max-w-3xl'
 
   return (
     <div className="min-h-full">
