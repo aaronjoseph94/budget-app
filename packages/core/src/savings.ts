@@ -22,7 +22,8 @@
  * The current amount is given, not worked out here: on the Savings screen it
  * is `fundBalance` (D16), the typed amount plus the transfers since.
  */
-import { type Cents, type IsoDate, cents, monthsBetween, subCents } from '@budget/money-primitives'
+import { type Cents, type IsoDate, ZERO_CENTS, addCents, cents, monthsBetween, subCents, sumCents } from '@budget/money-primitives'
+import { shareOf } from './shares.js'
 
 export interface SavingsFundPlanInput {
   /** Savings!B7, the Goal Amount. */
@@ -78,4 +79,146 @@ function ceilDiv(amount: Cents, by: number): Cents {
   const rest = amount % by
   const whole = (amount - rest) / by
   return cents(rest > 0 ? whole + 1 : whole)
+}
+
+export interface FundBalanceInput {
+  /** What was typed as the fund's balance (savings_goals.saved_cents). */
+  readonly typedCents: number
+  /** The day the typed amount was true, at its end (0013's balance_as_of). */
+  readonly typedOn: IsoDate
+  /** The day the balance is wanted for. */
+  readonly asOf: IsoDate
+  /** Ledger rows in the fund's Savings-list category, signed as the ledger is (D3). */
+  readonly entries: readonly { readonly postedOn: IsoDate; readonly amountCents: number }[]
+}
+
+export interface FundBalance {
+  readonly balanceCents: Cents
+  /** What moved in after the typed day, less what came back out. */
+  readonly transfersCents: Cents
+}
+
+/**
+ * A fund's balance, typed once and kept by transfers (D16, owner's choice):
+ * the typed amount plus every row after the day it was typed, up to `asOf`.
+ * A row on the typed day is already in the typed amount. Money into
+ * savings is a negative ledger row, as on the Month (D3), so it adds; money
+ * taken back out subtracts.
+ */
+export function fundBalance(input: FundBalanceInput): FundBalance {
+  const moved = sumCents(
+    input.entries
+      .filter((e) => e.postedOn > input.typedOn && e.postedOn <= input.asOf)
+      .map((e) => cents(e.amountCents)),
+  )
+  // Subtracted from zero, not negated, so no transfers is 0 and not -0.
+  const transfers = subCents(ZERO_CENTS, moved)
+  return { balanceCents: addCents(cents(input.typedCents), transfers), transfersCents: transfers }
+}
+
+export interface FundProgress {
+  /** The balance as a share of the goal, 0 to 10,000; the bar's length. */
+  readonly progressBp: number
+  /** The goal is met or passed: Savings!B9 is zero or below. */
+  readonly reached: boolean
+}
+
+/**
+ * How far along a fund's bar is. Half-up to a basis point as the charts'
+ * shares are (F17); a balance at or below zero draws nothing, and one past
+ * its goal the whole bar.
+ */
+export function fundProgress(input: { readonly goalCents: number; readonly balanceCents: number }): FundProgress {
+  const goal = cents(input.goalCents)
+  const balance = cents(input.balanceCents)
+  if (goal <= 0) throw new RangeError('A savings goal must be above zero')
+  return {
+    progressBp: balance <= 0 ? 0 : balance >= goal ? 10_000 : shareOf(balance, goal),
+    reached: balance >= goal,
+  }
+}
+
+/** A savings_goals row as the Savings screen reads it (0004, 0013). */
+export interface FundGoal {
+  readonly id: string
+  /** The Savings-list category it is the fund for; null for a goal on no fund yet. */
+  readonly categoryId: string | null
+  readonly goalCents: number
+  readonly typedCents: number
+  /** When `typedCents` was true; 0013 requires it on a goal with a category. */
+  readonly typedOn: IsoDate | null
+  readonly startDate: IsoDate | null
+  readonly goalDate: IsoDate | null
+}
+
+export interface SavingsFundsInput {
+  readonly asOf: IsoDate
+  readonly categories: readonly { readonly id: string; readonly name: string; readonly kind: string; readonly sortOrder: number }[]
+  readonly goals: readonly FundGoal[]
+  /** Ledger rows; those outside the funds' categories are not read. */
+  readonly entries: readonly { readonly postedOn: IsoDate; readonly amountCents: number; readonly categoryId: string }[]
+}
+
+export interface FundFigures extends FundBalance, FundProgress {
+  readonly goalId: string
+  readonly goalCents: Cents
+  readonly plan: SavingsFundPlan
+}
+
+export interface SavingsFund {
+  readonly categoryId: string
+  readonly name: string
+  /** Null for a fund with no goal yet. */
+  readonly figures: FundFigures | null
+}
+
+export interface SavingsFunds {
+  /** One per Savings-list category, in the list's order: Workbook's cards (Savings!C4 = START HERE!H7…). */
+  readonly funds: readonly SavingsFund[]
+  /**
+   * Goals on no fund: never linked, or linked to a category since moved off
+   * Savings (N52). Their typed amount is their balance; no transfer is read.
+   */
+  readonly unlinked: readonly (FundProgress & { readonly goalId: string; readonly plan: SavingsFundPlan })[]
+}
+
+/** Every savings fund's figures on `asOf`: Workbook's Savings tab, one card per fund. */
+export function savingsFunds(input: SavingsFundsInput): SavingsFunds {
+  const onSavings = input.categories
+    .filter((c) => c.kind === 'savings')
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+  const fundIds = new Set(onSavings.map((c) => c.id))
+  const planFor = (g: FundGoal, balance: Cents) =>
+    savingsFundPlan({ goalCents: g.goalCents, currentCents: balance, startDate: g.startDate, goalDate: g.goalDate })
+
+  const funds = onSavings.map((c): SavingsFund => {
+    const g = input.goals.find((x) => x.categoryId === c.id)
+    if (g === undefined) return { categoryId: c.id, name: c.name, figures: null }
+    if (g.typedOn === null) throw new RangeError(`The goal for fund ${c.id} has no day its balance was typed`)
+    const kept = fundBalance({
+      typedCents: g.typedCents,
+      typedOn: g.typedOn,
+      asOf: input.asOf,
+      entries: input.entries.filter((e) => e.categoryId === c.id),
+    })
+    return {
+      categoryId: c.id,
+      name: c.name,
+      figures: {
+        goalId: g.id,
+        goalCents: cents(g.goalCents),
+        ...kept,
+        ...fundProgress({ goalCents: g.goalCents, balanceCents: kept.balanceCents }),
+        plan: planFor(g, kept.balanceCents),
+      },
+    }
+  })
+  const unlinked = input.goals
+    .filter((g) => g.categoryId === null || !fundIds.has(g.categoryId))
+    .map((g) => ({
+      goalId: g.id,
+      ...fundProgress({ goalCents: g.goalCents, balanceCents: g.typedCents }),
+      plan: planFor(g, cents(g.typedCents)),
+    }))
+  return { funds, unlinked }
 }

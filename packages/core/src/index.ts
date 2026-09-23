@@ -17,7 +17,18 @@ export {
 export type { SavingsGoal, GoalProgress, GoalProjection, TimeEquivalent } from './goal.js'
 
 export {
+  fundBalance,
+  fundProgress,
   savingsFundPlan,
+  savingsFunds,
+  type FundBalance,
+  type FundBalanceInput,
+  type FundFigures,
+  type FundGoal,
+  type FundProgress,
+  type SavingsFund,
+  type SavingsFunds,
+  type SavingsFundsInput,
   type SavingsFundPlan,
   type SavingsFundPlanInput,
   type SavingsPlanStatus,
