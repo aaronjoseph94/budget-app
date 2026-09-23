@@ -8,3 +8,4 @@
  * lengths and angles; it never divides money (invariant 1).
  */
 export { escapeXml, type SvgMarkup } from './svg.js'
+export type { ChartFrame } from './frame.js'
