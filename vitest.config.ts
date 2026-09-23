@@ -8,6 +8,7 @@ export default defineConfig({
       { test: { name: 'schema', root: './packages/schema' } },
       { test: { name: 'parsers', root: './packages/statement-parsers' } },
       { test: { name: 'golden', root: './packages/golden-verification' } },
+      { test: { name: 'charts', root: './packages/chart-specs' } },
       // Split by extension: a .tsx test renders a component and needs a DOM,
       // a .ts test checks plain functions and keeps Node's faster, stricter
       // environment, where reaching for `window` by accident is an error.
@@ -30,6 +31,7 @@ export default defineConfig({
         'packages/money-primitives/src/**': { lines: 80, functions: 80, branches: 75 },
         'packages/statement-parsers/src/**': { lines: 80, functions: 80, branches: 75 },
         'packages/golden-verification/src/**': { lines: 80, functions: 80, branches: 75 },
+        'packages/chart-specs/src/**': { lines: 80, functions: 80, branches: 75 },
         // The app as a whole, .tsx included, floored at what the screen tests
         // measure today (rounded down). It sits under the 80/80/75 bar because
         // Add, Import, Ledger, Settings and sign-in have no tests yet

@@ -55,6 +55,20 @@ module.exports = {
       },
     },
     {
+      name: 'charts-draw-what-the-engine-computed',
+      severity: 'error',
+      comment:
+        'chart-specs turns the engine\'s basis points into geometry. It may name the ' +
+        'engine\'s types to describe what it is given, and use money-primitives; it may ' +
+        'not call the engine, or anything else. A chart that can compute a share will ' +
+        'one day compute a different one from the screen beside it (invariant 1).',
+      from: { path: '^packages/chart-specs/src' },
+      to: {
+        pathNot: ['^packages/chart-specs/src', '^packages/money-primitives/src'],
+        dependencyTypesNot: ['type-only'],
+      },
+    },
+    {
       name: 'app-uses-package-entry-points-only',
       severity: 'error',
       comment:
@@ -134,13 +148,15 @@ module.exports = {
       from: { path: '^packages/statement-parsers/' },
       to: { path: ['^packages/money-primitives/src/', '^packages/schema/src/', 'node_modules/zod/'] },
     },
+    { from: { path: '^packages/chart-specs/' }, to: { path: '^packages/money-primitives/src/' } },
+    { from: { path: '^packages/chart-specs/' }, to: { path: '^packages/core/src/', dependencyTypes: ['type-only'] } },
     // The app, and the libraries its package.json names. Which of the
     // packages' exports it may use is the forbidden rules' business above.
     {
       from: { path: '^apps/web/(src|test)/' },
       to: {
         path: [
-          '^packages/(money-primitives|core|schema|statement-parsers)/src/',
+          '^packages/(money-primitives|core|schema|statement-parsers|chart-specs)/src/',
           'node_modules/(react|react-dom|zod|@supabase/supabase-js)/',
         ],
       },

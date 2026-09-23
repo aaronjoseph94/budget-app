@@ -116,10 +116,49 @@ export default tseslint.config(
     },
   },
   {
+    // chart-specs is pure as the engine is: the same figure must come out for
+    // the phone, the PDF and the export, which ambient state would break. It
+    // turns basis points into geometry and never touches money, so the float
+    // rules apply in full. The engine's types describe what it is given; the
+    // engine's functions stay out, so no chart can compute its own figure.
+    files: ['packages/chart-specs/src/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': ['error', ...NO_AMBIENT_STATE, ...NO_FLOAT_MONEY],
+      'no-restricted-globals': [
+        'error',
+        ...['window', 'document', 'navigator', 'DOMParser', 'XMLSerializer'].map((name) => ({
+          name,
+          message: 'chart-specs returns strings and has no DOM; the app puts them on the page.',
+        })),
+      ],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            { group: ['react', 'react-*'], message: 'chart-specs returns SVG strings, not components.' },
+            { group: ['@supabase/*'], message: 'chart-specs is pure: no database.' },
+            { group: ['node:*', 'fs', 'path', 'os'], message: 'chart-specs is pure: no I/O.' },
+            { group: ['zod'], message: 'chart-specs takes validated values; zod parses at the boundaries only.' },
+            {
+              group: ['@budget/core', '@budget/core/*'],
+              allowTypeImports: true,
+              message: 'chart-specs may use the engine\'s types, never its functions — see CAPABILITY-MAP.md.',
+            },
+            {
+              group: ['@budget/schema', '@budget/statement-parsers', '@budget/golden-verification'],
+              message: 'chart-specs may depend on money-primitives and the engine\'s types only.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: [
       'packages/core/test/**/*.ts',
       'packages/schema/test/**/*.ts',
       'packages/statement-parsers/test/**/*.ts',
+      'packages/chart-specs/test/**/*.ts',
     ],
     rules: { 'no-restricted-syntax': ['error', ...NO_WEAK_ASSERTIONS] },
   },
