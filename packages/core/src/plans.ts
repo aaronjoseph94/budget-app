@@ -1,5 +1,6 @@
 /**
- * Which monthly amount is in effect in a month, from every one typed.
+ * Which monthly amount is in effect in a month, from every one typed, and
+ * Workbook's Bills totals from them.
  *
  * Workbook gives each bill, debt and subscription one Day Paid and one Monthly
  * Amount (Bills!B/D, F/H, J/L 7:29), and every month tab reads that one
@@ -22,8 +23,8 @@
  * Nothing is copied into later months, and nothing here is stored: the screen
  * asks again on every read (CLAUDE.md, never persist a derived money value).
  */
-import { type Cents, type IsoDate, cents } from '@budget/money-primitives'
-import { monthBounds } from './week.js'
+import { type Cents, type IsoDate, cents, sumCents } from '@budget/money-primitives'
+import { type CategoryKind, monthBounds } from './week.js'
 
 export interface PlanHistoryRow {
   readonly categoryId: string
@@ -91,4 +92,68 @@ export function resolvePlans(input: ResolvePlansInput): ResolvePlansOutput {
     plans.push({ categoryId, plannedCents: row.plannedCents === null ? null : cents(row.plannedCents), dueDay: row.dueDay })
   }
   return { plans }
+}
+
+/**
+ * Workbook's Bills tab totals, in a month (D13): the tiles under its three cards
+ * and the "Fixed Monthly Bills" tile under them.
+ *
+ * Excel semantics (docs/divergences.md):
+ *
+ * - `Bills!D32 =SUM(D7:D29)`, `H32 =SUM(H7:H29)`, `L32 =SUM(L7:L29)`: every
+ *   Monthly Amount on the card, a blank adding nothing. Here, every amount in
+ *   effect that month on a category on that list now; a stopped one adds
+ *   nothing, and so does a month before any was set, which is a real $0.
+ * - D7, `Bills!H36 =SUM(D32,H32,G46)`: G46 is an empty cell, so Workbook's
+ *   "Fixed Monthly Bills" drops the subscriptions (850 where the three tiles
+ *   make 867.99). The app adds all three.
+ * - D8: Workbook shows the tiles in whole dollars (`"$"#,##0`, so 17.99 reads
+ *   $18). The totals here keep their cents; the screen shows them.
+ *
+ * A category counts on the list it is on now. 0009 lets a category move off
+ * Bills, Debts and Subscriptions once its amount has stopped, and keeps the
+ * rows; an amount still in effect in an earlier month then counts nowhere,
+ * as 0009 says it should. A row naming a category not passed in is refused
+ * rather than dropped: removing a category removes its rows (0009), so this
+ * is a screen whose categories and amounts were read at different moments,
+ * and a total missing one looks right and is not.
+ */
+export interface BillsCategory {
+  readonly id: string
+  readonly kind: CategoryKind
+}
+
+export interface BillsTotalsInput {
+  /** Any day of the month to total. */
+  readonly month: IsoDate
+  readonly categories: readonly BillsCategory[]
+  /** Every monthly amount typed, for any month (0009). */
+  readonly planHistory: readonly PlanHistoryRow[]
+}
+
+export interface BillsTotals {
+  readonly billsCents: Cents
+  readonly debtsCents: Cents
+  readonly subscriptionsCents: Cents
+  /** Bills + Debts + Subscriptions (D7). */
+  readonly allFixedCents: Cents
+}
+
+export function billsTotals(input: BillsTotalsInput): BillsTotals {
+  const kinds = new Map(input.categories.map((c) => [c.id, c.kind]))
+  for (const row of input.planHistory) {
+    if (!kinds.has(row.categoryId)) {
+      throw new RangeError(`A monthly amount names category ${row.categoryId}, which was not passed in`)
+    }
+  }
+  const lists: Record<'bill' | 'debt' | 'subscription', Cents[]> = { bill: [], debt: [], subscription: [] }
+  for (const plan of resolvePlans({ asOf: input.month, history: input.planHistory }).plans) {
+    const kind = kinds.get(plan.categoryId)
+    if (plan.plannedCents === null) continue
+    if (kind === 'bill' || kind === 'debt' || kind === 'subscription') lists[kind].push(plan.plannedCents)
+  }
+  const billsCents = sumCents(lists.bill)
+  const debtsCents = sumCents(lists.debt)
+  const subscriptionsCents = sumCents(lists.subscription)
+  return { billsCents, debtsCents, subscriptionsCents, allFixedCents: sumCents([billsCents, debtsCents, subscriptionsCents]) }
 }

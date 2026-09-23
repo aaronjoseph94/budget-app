@@ -1,0 +1,62 @@
+{
+  "$provenance": {
+    "sourceWorkbook": "Ultimate Annual Budget (\"Workbook\"), the owner's copy, Google Sheets export (not committed)",
+    "sourceSheet": "Bills",
+    "cells": {"expected": "Bills!D32, H32, L32", "departures": "Bills!H36", "planHistory": "Bills!B7:D7, F7:H7, J7:L7 (Day Paid, name, Monthly Amount); every other Day Paid and Monthly Amount in B8:D29, F8:H29, J8:L29 is blank", "categories": "START HERE!B18:B24, D18:D21, F18:F20, as Bills!C7:C13, G7:G10, K7:K9 read them", "months": "Jan!D7, Dec!D7"},
+    "extractedOn": "2026-09-23",
+    "note": "Workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S9, workbook-bills: the total tiles under the Bills tab's three cards."
+  },
+  "$semantics": {
+    "totals": "D32 =SUM(D7:D29), H32 =SUM(H7:H29), L32 =SUM(L7:L29): every Monthly Amount on the card; a blank adds nothing. The tiles are formatted \"$\"#,##0, so L32 shows $18, but the cached value keeps its cents, and so does the app (D8).",
+    "planHistory": "D13. Workbook has one Monthly Amount for every month tab (Jan!E22 and Dec!E22 both read Bills!D7). Each amount typed is a row from Jan!D7's month, 2026-01, and each total is asked in January and in December (Dec!D7), the first and last month tabs that read it. A blank Monthly Amount is no row; a blank Day Paid would be a null dueDay.",
+    "departures": "D7: H36, 'Fixed Monthly Bills', =SUM(D32,H32,G46) reads the empty G46 and so drops the Subscriptions total. The app's all-fixed total is D32 + H32 + L32. The cached value is kept here only to show the app departs from it; it is never asserted as expected.",
+    "sample": "One amount per card, so each cached total is a single-addend sum; hand-derived multi-row totals are in packages/core/test/plans.test.ts.",
+    "merchants": "The engine takes no merchant text. Ids are synthetic."
+  },
+  "input": {
+    "categories": [
+      {"id": "cat-rent", "kind": "bill"},
+      {"id": "cat-electricity-bill", "kind": "bill"},
+      {"id": "cat-water-bill", "kind": "bill"},
+      {"id": "cat-gas-bill", "kind": "bill"},
+      {"id": "cat-phone", "kind": "bill"},
+      {"id": "cat-car-insurance", "kind": "bill"},
+      {"id": "cat-gym-membership", "kind": "bill"},
+      {"id": "cat-credit-card-1", "kind": "debt"},
+      {"id": "cat-credit-card-2", "kind": "debt"},
+      {"id": "cat-car-loan", "kind": "debt"},
+      {"id": "cat-student-loan", "kind": "debt"},
+      {"id": "cat-netflix", "kind": "subscription"},
+      {"id": "cat-spotify", "kind": "subscription"},
+      {"id": "cat-dropbox", "kind": "subscription"}
+    ],
+    "planHistory": [
+      {"categoryId": "cat-rent", "effectiveMonth": "2026-01-01", "plannedCents": 80000, "dueDay": 1, "from": "Bills!B7:D7"},
+      {"categoryId": "cat-credit-card-1", "effectiveMonth": "2026-01-01", "plannedCents": 5000, "dueDay": 14, "from": "Bills!F7:H7"},
+      {"categoryId": "cat-netflix", "effectiveMonth": "2026-01-01", "plannedCents": 1799, "dueDay": 23, "from": "Bills!J7:L7"}
+    ]
+  },
+  "expected": [
+    {
+      "month": "2026-01-01",
+      "window": "Jan!D7",
+      "cells": [
+        {"cell": "Bills!D32", "field": "billsCents", "cents": 80000},
+        {"cell": "Bills!H32", "field": "debtsCents", "cents": 5000},
+        {"cell": "Bills!L32", "field": "subscriptionsCents", "cents": 1799}
+      ]
+    },
+    {
+      "month": "2026-12-01",
+      "window": "Dec!D7",
+      "cells": [
+        {"cell": "Bills!D32", "field": "billsCents", "cents": 80000},
+        {"cell": "Bills!H32", "field": "debtsCents", "cents": 5000},
+        {"cell": "Bills!L32", "field": "subscriptionsCents", "cents": 1799}
+      ]
+    }
+  ],
+  "departures": [
+    {"cell": "Bills!H36", "field": "allFixedCents", "cachedCents": 85000, "divergence": "D7"}
+  ]
+}

@@ -44,7 +44,11 @@ export {
 } from './budgets.js'
 
 export {
+  billsTotals,
   resolvePlans,
+  type BillsCategory,
+  type BillsTotals,
+  type BillsTotalsInput,
   type PlanHistoryRow,
   type ResolvePlansInput,
   type ResolvePlansOutput,
