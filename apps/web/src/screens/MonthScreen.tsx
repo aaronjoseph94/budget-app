@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { isoDate, monthBounds, monthSheet, shiftMonth, type PeriodBlock, type PeriodSheet } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import {
@@ -106,7 +106,21 @@ export function MonthScreen({ month }: { month: string | null }) {
   const ownOnly = new Set(
     (here === null ? [] : here.budgets).filter((b) => b.applies === 'only' && b.month === start).map((b) => b.category_id),
   )
-  const blockProps = { month: start, ownOnly, onOpen: setOpened, onUnsaved: setUnsaved }
+  const blockProps = {
+    onOpen: setOpened,
+    onEditStart: () => setUnsaved(null),
+    editor: (row: Row, word: BudgetWord, done: EditorDone) => (
+      <BudgetEditor
+        row={row}
+        word={word}
+        month={start}
+        replacesOnly={ownOnly.has(row.categoryId)}
+        onCancel={done.cancel}
+        onSaved={done.saved}
+        onFailedAfterClose={setUnsaved}
+      />
+    ),
+  }
 
   return (
     <div className="space-y-4">
@@ -284,7 +298,7 @@ function ReviewBanner({
   )
 }
 
-type BlockKind = keyof PeriodSheet['blocks']
+export type BlockKind = keyof PeriodSheet['blocks']
 const BLOCKS: readonly BlockKind[] = ['variable', 'bill', 'subscription', 'debt', 'income', 'savings']
 
 /** Workbook's colours per block (§6.6): Bills, Debts and Subscriptions share one set. Written out for Tailwind. */
@@ -324,30 +338,40 @@ const COLUMNS: Record<BlockKind, { readonly budget: 'Budgeted' | 'Goal'; readonl
 }
 
 type Row = PeriodBlock['rows'][number]
+type BudgetWord = 'Budget' | 'Goal'
+/** How a budget editor under a row ends: closed unsaved, or saved with a note to show. */
+export interface EditorDone {
+  readonly cancel: () => void
+  readonly saved: (note: string) => void
+}
 
 /**
  * One block: its heading and "$Actual of $Budget" on the band, then a row
  * per category on the list with Workbook's columns. A row with no budget and
- * nothing this month folds behind "Show N empty". Cells leave out the "$",
+ * nothing in the period folds behind "Show N empty". Cells leave out the "$",
  * as the plan's phone sketch does (§6.2): with it, three columns of amounts
  * do not fit a 360px phone or a desktop card.
+ *
+ * The Month and the Week both draw their blocks here. Each says what a tap
+ * on a row opens, if anything, and which editor types a budget, since a
+ * month's budgets and a week's are stored apart.
  */
-function Block({
+export function Block({
   kind,
   block,
-  month,
-  ownOnly,
   onOpen,
-  onUnsaved,
+  onEditStart,
+  editor,
   className,
 }: {
   kind: BlockKind
   block: PeriodBlock
-  /** The month's first day. */
-  month: string
-  ownOnly: ReadonlySet<string>
-  onOpen: (categoryId: string) => void
-  onUnsaved: (message: string | null) => void
+  /** Opens a row's charges; without it a row is not a button. */
+  onOpen?: (categoryId: string) => void
+  /** Called as a budget editor opens, to clear what an earlier one left. */
+  onEditStart: () => void
+  /** The form that types a row's budget, in a row of its own under it. */
+  editor: (row: Row, word: BudgetWord, done: EditorDone) => ReactNode
   className: string
 }) {
   const [showEmpty, setShowEmpty] = useState(false)
@@ -411,21 +435,25 @@ function Block({
                 // or a screen reader reaches, named by the category.
                 <tr
                   key={r.categoryId}
-                  onClick={() => onOpen(r.categoryId)}
-                  className={cn('cursor-pointer border-t hover:bg-accent/60', tone.rule)}
+                  onClick={onOpen === undefined ? undefined : () => onOpen(r.categoryId)}
+                  className={cn('border-t', onOpen !== undefined && 'cursor-pointer hover:bg-accent/60', tone.rule)}
                 >
-                  <th scope="row" className="py-2 pl-4 pr-1 text-left font-normal">
-                    <button
-                      type="button"
-                      aria-haspopup="dialog"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onOpen(r.categoryId)
-                      }}
-                      className="break-words rounded-sm text-left underline-offset-4 outline-none [overflow-wrap:anywhere] hover:underline focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      {r.name}
-                    </button>
+                  <th scope="row" className="py-2 pl-4 pr-1 text-left font-normal [overflow-wrap:anywhere]">
+                    {onOpen === undefined ? (
+                      r.name
+                    ) : (
+                      <button
+                        type="button"
+                        aria-haspopup="dialog"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onOpen(r.categoryId)
+                        }}
+                        className="break-words rounded-sm text-left underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        {r.name}
+                      </button>
+                    )}
                   </th>
                   {/* Its own tap: the budget is typed here, in the row, and the
                     charges do not open. A pencil where none is set yet. */}
@@ -437,7 +465,7 @@ function Block({
                       onClick={(e) => {
                         e.stopPropagation()
                         setNote(null)
-                        onUnsaved(null)
+                        onEditStart()
                         setEditing(r.categoryId)
                       }}
                       className="rounded-sm underline decoration-dotted underline-offset-4 outline-none hover:decoration-solid focus-visible:ring-2 focus-visible:ring-ring"
@@ -475,20 +503,15 @@ function Block({
                 editing === r.categoryId ? (
                   <tr key={`${r.categoryId} budget`} className={cn('border-t', tone.rule)}>
                     <td colSpan={columns.third === null ? 3 : 4} className="px-4 py-3">
-                      <BudgetEditor
-                        row={r}
-                        word={word}
-                        month={month}
-                        replacesOnly={ownOnly.has(r.categoryId)}
-                        onCancel={() => setEditing(null)}
-                        onSaved={(saved) => {
+                      {editor(r, word, {
+                        cancel: () => setEditing(null),
+                        saved: (saved) => {
                           // Only its own editor: another row may have been
                           // opened while this one was saving.
                           setEditing((now) => (now === r.categoryId ? null : now))
                           setNote(saved)
-                        }}
-                        onFailedAfterClose={onUnsaved}
-                      />
+                        },
+                      })}
                     </td>
                   </tr>
                 ) : null,
