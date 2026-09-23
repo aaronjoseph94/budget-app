@@ -24,6 +24,7 @@ const year = (over: Partial<YearSheetInput>) =>
     budgetHistory: [],
     planHistory: [],
     entries: [],
+    startingBalances: [],
     ...over,
   })
 
@@ -76,7 +77,7 @@ describe('yearSheet gate (suite, F10)', () => {
   })
 })
 
-describe('yearSheet span (suite, F14)', () => {
+describe('yearSheet span and balances (suite, F14, F12)', () => {
   it('runs twelve months from a start in the middle of a year, into the next', () => {
     const s = year({
       startMonth: isoDate('2025-10-31'),
@@ -88,5 +89,27 @@ describe('yearSheet span (suite, F14)', () => {
     )
     expect(s.months[4]!.variable.actualCents).toBe(200)
     expect(s.totals.variable.actualCents).toBe(500)
+  })
+
+  it('reads the start month balance and ends at start + income − expenses − savings', () => {
+    const s = year({
+      startingBalances: [
+        { month: isoDate('2026-02-01'), cents: 999_999 },
+        { month: isoDate('2026-01-01'), cents: 100_000 },
+      ],
+      entries: [row('2026-01-02', 300_000, 'pay'), row('2026-05-02', -120_000, 'food'), row('2026-07-02', -50_000, 'fund')],
+    })
+    expect(s.startingBalanceCents).toBe(100_000)
+    expect(s.endingBalanceCents).toBe(230_000)
+  })
+
+  it('has no ending balance with no start typed, and refuses a start that 0010 would', () => {
+    const s = year({ entries: [row('2026-01-02', 300_000, 'pay')] })
+    expect(s.startingBalanceCents).toBeNull()
+    expect(s.endingBalanceCents).toBeNull()
+    const typed = (month: string, cents: number) => ({ month: isoDate(month), cents })
+    expect(() => year({ startingBalances: [typed('2026-01-02', 1)] })).toThrow(/first day/)
+    expect(() => year({ startingBalances: [typed('2026-03-01', 1), typed('2026-03-01', 2)] })).toThrow(/Two starting/)
+    expect(() => year({ startingBalances: [typed('2026-01-01', 1.5)] })).toThrow(RangeError)
   })
 })

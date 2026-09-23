@@ -2,17 +2,18 @@
   "$provenance": {
     "sourceWorkbook": "Ultimate Annual Budget (\"Workbook\"), the owner's copy, Google Sheets export (not committed)",
     "sourceSheet": "Annual Budget; Hidden",
-    "cells": {"window": "Annual Budget!D6 (start month), D7 (\"Current Month\", the gate)", "expected": "Annual Budget!E29, Q29, E34, E35, D29, J29, P29, V29, P10, Q14, J9, V9; Hidden!Q5, O15", "budgetHistory": "Jan!D22, J22, O22, T22:T23, O10:O14, T10; Feb!D22, J22, O22, T22, O10, T10 (Mar..Dec type the same zeros)", "planHistory": "Bills!B7:D7, F7:H7, J7:L7; every other Monthly Amount in D8:D29, H8:H29, L8:L29 is blank", "entries": "Bills!O7:Q9 (the Variable Bills log)", "categories": "START HERE!B8:B12, H7, B18, D18, D20:D21, F18, H17:H18"},
+    "cells": {"window": "Annual Budget!D6 (start month), D7 (\"Current Month\", the gate)", "expected": "Annual Budget!E29, Q29, E34, E35, D29, J29, P29, V29, P10, Q14, J9, V9, D18; Hidden!Q5, O15", "budgetHistory": "Jan!D22, J22, O22, T22:T23, O10:O14, T10; Feb!D22, J22, O22, T22, O10, T10 (Mar..Dec type the same zeros)", "startingBalances": "Jan!D9, read by Annual Budget!D44 through Hidden!J18", "planHistory": "Bills!B7:D7, F7:H7, J7:L7; every other Monthly Amount in D8:D29, H8:H29, L8:L29 is blank", "entries": "Bills!O7:Q9 (the Variable Bills log)", "categories": "START HERE!B8:B12, H7, B18, D18, D20:D21, F18, H17:H18"},
     "extractedOn": "2026-09-23",
-    "note": "Workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S13a, workbook-year part 1: the Year's month rows, the gate at asOf, and totals."
+    "note": "Workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S13a, workbook-year part 1: the Year's month rows, the gate at asOf, totals and the starting balance."
   },
   "$semantics": {
-    "transcription": "F11. Annual Budget shows 2025 (D6) but reads budgets and goals from the 2026 month tabs by month name (Hidden!J4 =Jan!$O$9, N4 =Jan!$D$21). One engine reading one year (D10) can only reproduce that if January's typed values are re-dated from 2026-01 to 2025-01, and February's typed zeros to 2025-02, so they are. Only Hidden!O, Q and S (bills, debts, subscriptions Actual) use Annual's own year, through Annual Budget!C30:C41, so the ledger holds the Bills-log rows and no Transactions rows: those are dated 2025 and Annual never reads them.",
+    "transcription": "F11. Annual Budget shows 2025 (D6) but reads budgets, goals and the starting balance from the 2026 month tabs by month name (Hidden!J4 =Jan!$O$9, N4 =Jan!$D$21, J18 =Jan!D9). One engine reading one year (D10) can only reproduce that if January's typed values are re-dated from 2026-01 to 2025-01, and February's typed zeros to 2025-02, so they are. Only Hidden!O, Q and S (bills, debts, subscriptions Actual) use Annual's own year, through Annual Budget!C30:C41, so the ledger holds the Bills-log rows and no Transactions rows: those are dated 2025 and Annual never reads them.",
     "budgetHistory": "D12. Jan's typed Budgeted and Goal cells are 'onward' rows at 2025-01. Feb..Dec type 0 in D22, J22, O22, T22, O10 and T10 and leave the rest blank; one 'onward' row at 2025-02 holding 0, for each category January gave more than 0, reads the same for every later month, as Workbook's sums read a blank as 0.",
     "gate": "F10. Hidden!O4 =SUMIFS(the log, that month)+IF(month <= Annual Budget!$D$7, Bills!$D$32, \"\"): a month's planned amounts count only up to the typed Current Month, 2025-05. E29 and Q29 (5 x 800, 5 x 17.99) and E34 (May, 800) prove the gate includes the month of asOf; E35 and Hidden!O15 (June, December: 0) prove later months leave the plan out. Hidden!Q5 is February's Credit Card 1 plan, 50.",
     "totals": "D29, J29, P29, V29 =SUM(x30:x42), twelve months of a list's budgets: January's alone, February's typed 0 stopping the carry. P10 =D30+J30+P30+V30 and Q14 =E34+K34+Q34+W34 are one month's expense budget and Actual. J9 and V9 are the income and savings goal totals; they sum only seven months in Workbook (D7), which the sample cannot show, its later goals being 0.",
+    "startingBalance": "Annual Budget!D18 =D44, the start month's typed balance (Jan!D9, re-dated per F11).",
     "signs": "D3: logged payments are positive in Bills!Q and negated in the ledger.",
-    "left out": "Plan section 5.4. Annual Budget!K29, K30, H27, Q10 and Hidden!Q4 add Credit Card 1's $200 to its $50 plan, where D5 replaces the plan. Q11 is February 2026 spending under a 2025 heading, and K9, W9, W30 read 2026 Actuals that F11's ledger holds none of. P9, Q9, N6, D11, D15, D20 are Workbook's range and blank-cell mistakes (D7).",
+    "left out": "Plan section 5.4. Annual Budget!K29, K30, H27, Q10 and Hidden!Q4 add Credit Card 1's $200 to its $50 plan, where D5 replaces the plan. Q11 is February 2026 spending under a 2025 heading, and K9, W9, W30 read 2026 Actuals that F11's ledger holds none of. P9, Q9, N6, D11, D15, D20 are Workbook's range and blank-cell mistakes (D7). D44:D55 beyond D44 repeat the typed 1000.",
     "merchants": "The engine takes no merchant text; Bills!R (Notes) is not transcribed. Ids are synthetic."
   },
   "input": {
@@ -65,9 +66,11 @@
       {"postedOn": "2025-01-05", "amountCents": -20000, "categoryId": "cat-credit-card-1", "from": "Bills!O7:Q7"},
       {"postedOn": "2025-01-15", "amountCents": -10000, "categoryId": "cat-car-loan", "from": "Bills!O8:Q8"},
       {"postedOn": "2026-02-10", "amountCents": -65000, "categoryId": "cat-student-loan", "from": "Bills!O9:Q9"}
-    ]
+    ],
+    "startingBalances": [{"month": "2025-01-01", "cents": 100000, "from": "Jan!D9"}]
   },
   "expected": {
+    "startingBalance": {"cell": "Annual Budget!D18", "cents": 100000},
     "cells": [
       {"cell": "Annual Budget!E29", "group": "bill", "month": null, "field": "actualCents", "cents": 400000},
       {"cell": "Annual Budget!Q29", "group": "subscription", "month": null, "field": "actualCents", "cents": 8995},

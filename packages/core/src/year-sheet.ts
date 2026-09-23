@@ -31,16 +31,27 @@
  * - D7, the totals. `Annual Budget!J9 =SUM(J10:J16)`, and V9 and W9, add
  *   seven months; `P9 =SUM(P10:P36)` and Q9 run on into the Subscriptions
  *   card below. Every total here adds the twelve rows and nothing else.
+ * - The balances. `Annual Budget!D18 =D44`: the start month's typed balance
+ *   (Jan!D9 through Hidden!J18), null when none was typed (D17). The ending
+ *   balance is F12's `D20 := D18 + D9 − D11 − D13`, start + income − expenses −
+ *   savings over the twelve months, where Workbook's `=D9+O6-D11-U6` reads two
+ *   blank cells and never adds the start.
  *
  * Proven by workbook-year part 1 (Annual Budget and Hidden, transcribed under
- * F11), and the D7 fixes, which the sample cannot show, by hand-derived
+ * F11), with the fixes above, which the sample cannot show, by hand-derived
  * tests.
  */
-import { type Cents, type IsoDate, sumCents } from '@budget/money-primitives'
+import { type Cents, type IsoDate, addCents, cents, subCents, sumCents } from '@budget/money-primitives'
 import type { BudgetHistoryRow } from './budgets.js'
 import { type PeriodBlock, type PeriodCategory, type PeriodEntry, type PeriodSheet, monthSheet } from './period-sheet.js'
 import type { PlanHistoryRow } from './plans.js'
 import { monthBounds, shiftMonth } from './week.js'
+
+export interface StartingBalance {
+  /** The month it was typed for, named by its first day (0010). */
+  readonly month: IsoDate
+  readonly cents: number
+}
 
 export interface YearSheetInput {
   /** Any day of the Year's first month (Annual Budget!D6). */
@@ -53,6 +64,8 @@ export interface YearSheetInput {
   /** Every monthly amount typed, for any month (0009). */
   readonly planHistory: readonly PlanHistoryRow[]
   readonly entries: readonly PeriodEntry[]
+  /** Every month's typed starting balance (0010); only the start month's is read. */
+  readonly startingBalances: readonly StartingBalance[]
 }
 
 /** One group's figures. On Income and Savings the budget is Workbook's Goal. */
@@ -86,6 +99,10 @@ export interface YearSheet {
   readonly months: readonly YearMonth[]
   /** The twelve months added up, each group on its own (D7). */
   readonly totals: YearGroups
+  /** Annual Budget!D18: the start month's typed balance, or null when none was typed. */
+  readonly startingBalanceCents: Cents | null
+  /** F12's D20: start + income − expenses − savings. Null with no start typed (D17). */
+  readonly endingBalanceCents: Cents | null
 }
 
 export function yearSheet(input: YearSheetInput): YearSheet {
@@ -129,7 +146,21 @@ export function yearSheet(input: YearSheetInput): YearSheet {
     variable: total('variable'),
   }
 
-  return { startMonth: start, months, totals }
+  const startingBalanceCents = startingBalanceFor(start, input.startingBalances)
+  return {
+    startMonth: start,
+    months,
+    totals,
+    startingBalanceCents,
+    // D17: no start typed is no ending balance, never one counted from $0.
+    endingBalanceCents:
+      startingBalanceCents === null
+        ? null
+        : subCents(
+            addCents(startingBalanceCents, totals.income.actualCents),
+            addCents(totals.expenses.actualCents, totals.savings.actualCents),
+          ),
+  }
 }
 
 function figure(block: PeriodBlock): YearFigure {
@@ -150,4 +181,21 @@ function groupsOf(sheet: PeriodSheet): YearGroups {
     subscription: figure(sheet.blocks.subscription),
     variable: figure(sheet.blocks.variable),
   }
+}
+
+/** The start month's typed balance. Every row is checked, as 0010 would refuse it. */
+function startingBalanceFor(start: IsoDate, balances: readonly StartingBalance[]): Cents | null {
+  const seen = new Set<IsoDate>()
+  let found: Cents | null = null
+  for (const b of balances) {
+    if (b.month !== monthBounds(b.month).start) {
+      throw new RangeError(`A starting balance is typed for a month, named by its first day; received ${b.month}`)
+    }
+    if (seen.has(b.month)) throw new RangeError(`Two starting balances for ${b.month}; 0010 keeps one`)
+    seen.add(b.month)
+    // cents() refuses a fraction, so a float typed start fails loudly here.
+    const amount = cents(b.cents)
+    if (b.month === start) found = amount
+  }
+  return found
 }

@@ -75,6 +75,7 @@ export { goalBars, type GoalBar, type GoalBarsInput, type GoalBarsOutput } from 
 
 export {
   yearSheet,
+  type StartingBalance,
   type YearFigure,
   type YearGroups,
   type YearMonth,
