@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { isoDate } from '@budget/money-primitives'
-import { monthSheet, periodSheet, type PeriodCategory, type PeriodEntry, type PeriodPlan } from '../src/period-sheet.js'
+import { monthSheet, periodSheet, weekSheet, type PeriodCategory, type PeriodEntry, type PeriodPlan } from '../src/period-sheet.js'
 import { resolvePlans } from '../src/plans.js'
 
 /**
@@ -529,5 +529,48 @@ describe('periodSheet budgets, Remaining and Difference (suite)', () => {
       empty.debt.rows[0]!.remainingCents,
     ]
     expect(zeros.every((z) => Object.is(z, 0))).toBe(true)
+  })
+})
+
+describe('weekSheet (suite)', () => {
+  const weekly = (c: PeriodCategory, weeklyBudgetCents: number | null) => ({ ...c, weeklyBudgetCents })
+  const categories = CATEGORIES.map((c) =>
+    weekly(c, { food: 10_000, pay: 50_000, fund: 20_000, loan: 0 }[c.id] ?? null),
+  )
+  const typed = (categoryId: string, month: string, plannedCents: number, dueDay: number) => ({
+    categoryId,
+    effectiveMonth: isoDate(`${month}-01`),
+    plannedCents,
+    dueDay,
+  })
+  const week = (asOf: string, entries: PeriodEntry[], planHistory: ReturnType<typeof typed>[] = []) =>
+    weekSheet({ asOf: isoDate(asOf), categories, entries, planHistory, statementPeriodEnds: [], startingBalanceCents: null })
+
+  it('runs Monday to Sunday around asOf and counts the days left, today included (D14)', () => {
+    // Thursday 2026-09-24: Thursday to Sunday is four days.
+    const s = week('2026-09-24', [row('2026-09-20', -100, 'food'), row('2026-09-21', -200, 'food'), row('2026-09-28', -400, 'food')])
+    expect([s.from, s.to, s.daysLeft]).toEqual(['2026-09-21', '2026-09-27', 4])
+    expect(s.blocks.variable.actualTotalCents).toBe(200)
+    expect(week('2026-09-27', []).daysLeft).toBe(1)
+  })
+
+  it('makes each weekly budget its Budgeted or Goal, on every list, and keeps none apart from $0', () => {
+    const s = week('2026-09-24', [row('2026-09-22', -3_000, 'food'), row('2026-09-23', 60_000, 'pay'), row('2026-09-23', -5_000, 'fund')])
+    expect(s.blocks.variable.rows.find((r) => r.categoryId === 'food')).toMatchObject({ budgetCents: 10_000, remainingCents: 7_000 })
+    expect(s.blocks.variable.rows.find((r) => r.categoryId === 'fuel')?.budgetCents).toBeNull()
+    expect(s.blocks.debt.rows[0]).toMatchObject({ budgetCents: 0, remainingCents: 0 })
+    expect(s.blocks.income).toMatchObject({ budgetTotalCents: 50_000, actualTotalCents: 60_000 })
+    // 50.00 saved against a 200.00 goal: 150.00 short (F6).
+    expect(s.blocks.savings.rows[0]).toMatchObject({ budgetCents: 20_000, differenceCents: -15_000 })
+  })
+
+  it("pays a bill due on the 1st at the new month's amount in a week that starts in the old one (D13, F8)", () => {
+    const history = [typed('rent', '2026-01', 160_000, 1), typed('rent', '2026-02', 170_000, 1), typed('loan', '2026-01', 25_000, 20)]
+    // Monday 26 January to Sunday 1 February 2026.
+    const s = week('2026-01-28', [], history)
+    expect(s.blocks.bill.rows[0]).toMatchObject({ categoryId: 'rent', actualCents: 170_000, basis: 'planned' })
+    expect(s.blocks.debt.rows[0]).toMatchObject({ actualCents: 0, basis: 'none' })
+    expect(week('2026-01-21', [], history).blocks.debt.rows[0]).toMatchObject({ actualCents: 25_000, basis: 'planned' })
+    expect(() => week('2026-01-28', [], [typed('gone', '2026-01', 100, 1)])).toThrow(/category gone/)
   })
 })

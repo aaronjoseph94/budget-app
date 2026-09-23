@@ -1,0 +1,79 @@
+{
+  "$provenance": {
+    "sourceWorkbook": "Ultimate Annual Budget (\"Workbook\"), the owner's copy, Google Sheets export (not committed)",
+    "sourceSheet": "Weekly Budget",
+    "cells": {"window": "Weekly Budget!D6:D7", "expected": "Weekly Budget!D11, Y10, Y9, Q9, W21, K21", "weeklyBudgets": "Weekly Budget!Q10:Q14, W10, D22, K22, Q22, W22; every other cell in Q10:Q16, W10:W16, D22:D44, K22:K44, Q22:Q44 and W22:W44 is blank", "entries": "Transactions!B7:D12, G7:I7, K7:M7; Bills!O7:Q9", "planHistory": "Bills!B7:D7, F7:H7, J7:L7", "categories": "START HERE!B8:B12, H7:H10, B18:B24, D18:D21, F18:F20, H17:H22, as Weekly Budget!P10:P14, V10:V13, C22:C28, J22:J25, P22:P24, V22:V27 read them"},
+    "extractedOn": "2026-09-23",
+    "note": "Workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S15: the Week on the Month's engine, with weekly budgets."
+  },
+  "$semantics": {
+    "window": "D14. Workbook's week is the typed D6 (Wednesday 2025-01-01) to D7 =D6+6 (Tuesday 01-07). The app's week holding D6 runs Monday 2024-12-30 to Sunday 2025-01-05. Every asserted cell is the same over both: the rows in Workbook's window (Transactions!B7, G7, K7 on 01-01; Bills!O7 on 01-05) are all in the app's, no Transactions or Bills-log row is dated 2024-12-30, 12-31, 2025-01-06 or 01-07, and of the Days Paid (1, 14, 23) only the 1st falls in either window, and in both. Budget and goal cells do not depend on the window.",
+    "weeklyBudgets": "Weekly Budget's typed Budgeted and Goal cells become each category's weekly budget (categories.weekly_budget_cents): one value for every week. A blank cell is no budget (null); Q22's typed 0 is a budget of 0.",
+    "planHistory": "D13, as in workbook-month part 2: Workbook's one Monthly Amount is typed as a row from 2025-01. The week's December days have no amount in effect, and none is due in them.",
+    "actuals": "F3/D5 and F8, as in workbook-month part 2: Weekly Budget!E22 counts Rent's plan (due day 1 in the window), L22 the real $200 (Credit Card 1's due day 14 is outside it).",
+    "cells": "D11 =SUM(C19,J19,P19,V19): Bills + Debts + Subscriptions + Variable (F7), the $2,000 Emergency Fund move left out. Y10 =X10-W10 and Y9 =SUM(Y10:Y16): Difference is Actual - Goal (F6), a fund with no goal adding nothing (F16). Q9 =SUM(Q10:Q16), five typed goals. W21 =SUM(W22:W45) and K21 =SUM(K22:K45): budget totals.",
+    "signs": "D3: spending, savings and logged payments are negated in the ledger; income stays positive.",
+    "left out": "D13 and D15 are asserted by workbook-month-summary and workbook-month part 3 through periodSheet; D9 (the typed start) is not transcribed. E50, L50 and R50 read the blank $E$6 (plan section 5.4).",
+    "merchants": "The engine takes no merchant text; no Notes column is transcribed. Ids are synthetic."
+  },
+  "input": {
+    "asOf": "2025-01-01",
+    "categories": [
+      {"id": "cat-income-1", "name": "Income 1", "kind": "income", "sortOrder": 0, "weeklyBudgetCents": 200000, "from": "Weekly Budget!Q10"},
+      {"id": "cat-income-2", "name": "Income 2", "kind": "income", "sortOrder": 1, "weeklyBudgetCents": 80000, "from": "Weekly Budget!Q11"},
+      {"id": "cat-side-hustle", "name": "Side Hustle", "kind": "income", "sortOrder": 2, "weeklyBudgetCents": 140000, "from": "Weekly Budget!Q12"},
+      {"id": "cat-freelance-work", "name": "Freelance Work", "kind": "income", "sortOrder": 3, "weeklyBudgetCents": 120000, "from": "Weekly Budget!Q13"},
+      {"id": "cat-donations", "name": "Donations", "kind": "income", "sortOrder": 4, "weeklyBudgetCents": 40000, "from": "Weekly Budget!Q14"},
+      {"id": "cat-emergency-fund", "name": "Emergency Fund", "kind": "savings", "sortOrder": 0, "weeklyBudgetCents": 300000, "from": "Weekly Budget!W10"},
+      {"id": "cat-travel-fund", "name": "Travel Fund", "kind": "savings", "sortOrder": 1, "weeklyBudgetCents": null},
+      {"id": "cat-down-payment", "name": "Down Payment", "kind": "savings", "sortOrder": 2, "weeklyBudgetCents": null},
+      {"id": "cat-car-repair-fund", "name": "Car Repair Fund", "kind": "savings", "sortOrder": 3, "weeklyBudgetCents": null},
+      {"id": "cat-rent", "name": "Rent", "kind": "bill", "sortOrder": 0, "weeklyBudgetCents": 80000, "from": "Weekly Budget!D22"},
+      {"id": "cat-electricity-bill", "name": "Electricity Bill", "kind": "bill", "sortOrder": 1, "weeklyBudgetCents": null},
+      {"id": "cat-water-bill", "name": "Water Bill", "kind": "bill", "sortOrder": 2, "weeklyBudgetCents": null},
+      {"id": "cat-gas-bill", "name": "Gas Bill", "kind": "bill", "sortOrder": 3, "weeklyBudgetCents": null},
+      {"id": "cat-phone", "name": "Phone", "kind": "bill", "sortOrder": 4, "weeklyBudgetCents": null},
+      {"id": "cat-car-insurance", "name": "Car Insurance", "kind": "bill", "sortOrder": 5, "weeklyBudgetCents": null},
+      {"id": "cat-gym-membership", "name": "Gym Membership", "kind": "bill", "sortOrder": 6, "weeklyBudgetCents": null},
+      {"id": "cat-credit-card-1", "name": "Credit Card 1", "kind": "debt", "sortOrder": 0, "weeklyBudgetCents": 30000, "from": "Weekly Budget!K22"},
+      {"id": "cat-credit-card-2", "name": "Credit Card 2", "kind": "debt", "sortOrder": 1, "weeklyBudgetCents": null},
+      {"id": "cat-car-loan", "name": "Car Loan", "kind": "debt", "sortOrder": 2, "weeklyBudgetCents": null},
+      {"id": "cat-student-loan", "name": "Student Loan", "kind": "debt", "sortOrder": 3, "weeklyBudgetCents": null},
+      {"id": "cat-netflix", "name": "Netflix", "kind": "subscription", "sortOrder": 0, "weeklyBudgetCents": 0, "from": "Weekly Budget!Q22"},
+      {"id": "cat-spotify", "name": "Spotify", "kind": "subscription", "sortOrder": 1, "weeklyBudgetCents": null},
+      {"id": "cat-dropbox", "name": "Dropbox", "kind": "subscription", "sortOrder": 2, "weeklyBudgetCents": null},
+      {"id": "cat-restaurants", "name": "Restaurants", "kind": "variable", "sortOrder": 0, "weeklyBudgetCents": 15000, "from": "Weekly Budget!W22"},
+      {"id": "cat-groceries", "name": "Groceries", "kind": "variable", "sortOrder": 1, "weeklyBudgetCents": null},
+      {"id": "cat-clothing", "name": "Clothing", "kind": "variable", "sortOrder": 2, "weeklyBudgetCents": null},
+      {"id": "cat-gas", "name": "Gas", "kind": "variable", "sortOrder": 3, "weeklyBudgetCents": null},
+      {"id": "cat-movie-theater", "name": "Movie Theater", "kind": "variable", "sortOrder": 4, "weeklyBudgetCents": null},
+      {"id": "cat-game-night", "name": "Game Night", "kind": "variable", "sortOrder": 5, "weeklyBudgetCents": null}
+    ],
+    "planHistory": [
+      {"categoryId": "cat-rent", "effectiveMonth": "2025-01-01", "plannedCents": 80000, "dueDay": 1, "from": "Bills!B7:D7"},
+      {"categoryId": "cat-credit-card-1", "effectiveMonth": "2025-01-01", "plannedCents": 5000, "dueDay": 14, "from": "Bills!F7:H7"},
+      {"categoryId": "cat-netflix", "effectiveMonth": "2025-01-01", "plannedCents": 1799, "dueDay": 23, "from": "Bills!J7:L7"}
+    ],
+    "entries": [
+      {"postedOn": "2025-01-01", "amountCents": -8500, "categoryId": "cat-restaurants", "from": "Transactions!B7:D7"},
+      {"postedOn": "2025-01-17", "amountCents": -10000, "categoryId": "cat-clothing", "from": "Transactions!B8:D8"},
+      {"postedOn": "2025-01-25", "amountCents": -5000, "categoryId": "cat-gas", "from": "Transactions!B9:D9"},
+      {"postedOn": "2025-02-10", "amountCents": -22000, "categoryId": "cat-groceries", "from": "Transactions!B10:D10"},
+      {"postedOn": "2025-02-15", "amountCents": -3600, "categoryId": "cat-movie-theater", "from": "Transactions!B11:D11"},
+      {"postedOn": "2025-02-23", "amountCents": -10000, "categoryId": "cat-game-night", "from": "Transactions!B12:D12"},
+      {"postedOn": "2025-01-01", "amountCents": 260000, "categoryId": "cat-income-1", "from": "Transactions!G7:I7"},
+      {"postedOn": "2025-01-01", "amountCents": -200000, "categoryId": "cat-emergency-fund", "from": "Transactions!K7:M7"},
+      {"postedOn": "2025-01-05", "amountCents": -20000, "categoryId": "cat-credit-card-1", "from": "Bills!O7:Q7"},
+      {"postedOn": "2025-01-15", "amountCents": -10000, "categoryId": "cat-car-loan", "from": "Bills!O8:Q8"},
+      {"postedOn": "2026-02-10", "amountCents": -65000, "categoryId": "cat-student-loan", "from": "Bills!O9:Q9"}
+    ]
+  },
+  "expected": [
+    {"cell": "Weekly Budget!D11", "field": "spentCents", "cents": 108500},
+    {"cell": "Weekly Budget!Y10", "block": "savings", "categoryId": "cat-emergency-fund", "field": "differenceCents", "cents": -100000},
+    {"cell": "Weekly Budget!Y9", "block": "savings", "field": "differenceTotalCents", "cents": -100000},
+    {"cell": "Weekly Budget!Q9", "block": "income", "field": "budgetTotalCents", "cents": 580000},
+    {"cell": "Weekly Budget!W21", "block": "variable", "field": "budgetTotalCents", "cents": 15000},
+    {"cell": "Weekly Budget!K21", "block": "debt", "field": "budgetTotalCents", "cents": 30000}
+  ]
+}

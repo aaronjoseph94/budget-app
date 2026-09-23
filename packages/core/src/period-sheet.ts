@@ -71,7 +71,7 @@
  * F5 and F7's Spent are proven by workbook-month-summary; budget totals,
  * Remaining and Difference by workbook-month part 1, planned against real by
  * part 2, through the plan history a month resolves, and F7's ending balance
- * by part 3.
+ * by part 3. weekSheet, the Week, by workbook-week.
  *
  * Signs (D3). The ledger is one signed column, outflows negative. Workbook writes
  * every amount positive and knows its direction from the log it sits in, so
@@ -80,11 +80,11 @@
  * nets against its category in the same window and can take it below zero,
  * and that minus sign is kept (D8).
  */
-import { type Cents, type IsoDate, ZERO_CENTS, addCents, cents, subCents, sumCents } from '@budget/money-primitives'
+import { type Cents, type IsoDate, ZERO_CENTS, addCents, cents, daysBetween, subCents, sumCents } from '@budget/money-primitives'
 import { type BudgetHistoryRow, resolveBudgets } from './budgets.js'
 import { type PlanHistoryRow, resolvePlans } from './plans.js'
 import { shareOf } from './shares.js'
-import { type CategoryKind, monthBounds, shiftMonth } from './week.js'
+import { type CategoryKind, monthBounds, shiftMonth, weekBounds } from './week.js'
 
 export interface PeriodCategory {
   readonly id: string
@@ -442,7 +442,17 @@ export function monthSheet(input: MonthSheetInput): PeriodSheet {
   const { asOf, budgetHistory, planHistory, ...rest } = input
   const { start, end } = monthBounds(asOf)
   const { budgets } = resolveBudgets({ asOf, history: budgetHistory })
-  const kinds = new Map(rest.categories.map((c) => [c.id, c.kind]))
+  const plans = plansInEffect(rest.categories, planHistory, asOf)
+  return periodSheet({ ...rest, budgets, plans, from: start, to: end })
+}
+
+/** The monthly amounts in effect in the month holding `asOf` (D13), on the lists that have them. */
+function plansInEffect(
+  categories: readonly PeriodCategory[],
+  planHistory: readonly PlanHistoryRow[],
+  asOf: IsoDate,
+): PeriodPlan[] {
+  const kinds = new Map(categories.map((c) => [c.id, c.kind]))
   // Refused, as billsTotals refuses it: removing a category removes its
   // amounts (0009), so this is a screen whose categories and amounts were
   // read at different moments, and a month missing a planned bill looks
@@ -456,9 +466,47 @@ export function monthSheet(input: MonthSheetInput): PeriodSheet {
   // Bills, Debts and Subscriptions once its amount has stopped, keeping its
   // rows, so an amount in effect in an earlier month then counts nowhere, as
   // in billsTotals; periodSheet would refuse it.
-  const plans = resolvePlans({ asOf, history: planHistory }).plans.filter((p) => {
+  return resolvePlans({ asOf, history: planHistory }).plans.filter((p) => {
     const kind = kinds.get(p.categoryId)
     return kind !== undefined && OWED.has(kind)
   })
-  return periodSheet({ ...rest, budgets, plans, from: start, to: end })
+}
+
+/** A category as the Week reads it: its one weekly budget, for every week (0004). */
+export interface WeekCategory extends PeriodCategory {
+  /** Budgeted, or on Income and Savings the Goal (Weekly Budget!D22, Q10, W10). Null is no budget, not $0. */
+  readonly weeklyBudgetCents: number | null
+}
+
+export interface WeekSheetInput extends Omit<MonthSheetInput, 'asOf' | 'categories' | 'budgetHistory'> {
+  /** Any day of the week to show; for this week, today, which sets `daysLeft`. */
+  readonly asOf: IsoDate
+  readonly categories: readonly WeekCategory[]
+}
+
+export interface WeekSheet extends PeriodSheet {
+  /** Days from asOf to the week's Sunday, counting asOf itself. */
+  readonly daysLeft: number
+}
+
+/**
+ * Workbook's Weekly Budget: periodSheet over the Monday-to-Sunday week holding
+ * `asOf` (D14), not a typed start, so weeks can be stepped through. A bill's
+ * planned amount counts only on its due day (F8), at the amount in effect in
+ * the month that day is in (D13), so a week across a month end is given
+ * each month's. The Budgeted and Goal columns are each category's weekly
+ * budget, one value for every week, as Weekly Budget types one set of its
+ * own (D22:W44, Q10:Q16, W10:W16) apart from the month tabs'. workbook-week
+ * replays its cells.
+ */
+export function weekSheet(input: WeekSheetInput): WeekSheet {
+  const { asOf, planHistory, categories, ...rest } = input
+  const { start, end } = weekBounds(asOf)
+  const months = [...new Set([monthBounds(start).start, monthBounds(end).start])]
+  const plans = months.flatMap((month) =>
+    plansInEffect(categories, planHistory, month).map((p): PeriodPlan => ({ ...p, month })),
+  )
+  const budgets = categories.map((c) => ({ categoryId: c.id, budgetCents: c.weeklyBudgetCents }))
+  const sheet = periodSheet({ ...rest, categories, budgets, plans, from: start, to: end })
+  return { ...sheet, daysLeft: daysBetween(asOf, end) + 1 }
 }

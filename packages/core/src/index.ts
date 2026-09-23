@@ -58,6 +58,7 @@ export {
 export {
   monthSheet,
   periodSheet,
+  weekSheet,
   type MonthSheetInput,
   type PeriodBlock,
   type PeriodBudget,
@@ -69,6 +70,9 @@ export {
   type PeriodSheetInput,
   type SavingsBlock,
   type VariableBlock,
+  type WeekCategory,
+  type WeekSheet,
+  type WeekSheetInput,
 } from './period-sheet.js'
 
 export {
