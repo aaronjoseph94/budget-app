@@ -16,6 +16,7 @@ import {
   type StatementPeriod,
 } from '@budget/statement-parsers'
 import {
+  describeBalanceFailure,
   describeBudgetFailure,
   describeMoveFailure,
   describePlanFailure,
@@ -854,6 +855,61 @@ export async function setPlan(supabase: SupabaseClient, edit: PlanEdit): Promise
     { onConflict: 'user_id,category_id,effective_month' },
   )
   if (error !== null) throw new Error(describePlanFailure('save', error))
+}
+
+// ---------------------------------------------------------------------------
+// The bank balance a month started with (migration 0010)
+// ---------------------------------------------------------------------------
+
+/** A month's starting balance as it was typed. Signed: an overdrawn month starts below zero. */
+export interface MonthBalanceRow {
+  readonly id: string
+  /** The first day of the month. */
+  readonly month: string
+  readonly starting_balance_cents: number
+}
+
+/**
+ * The starting balance typed for the month beginning `month`, or null when
+ * none was (D17). That month's alone: Workbook has it typed on every tab
+ * (Jan!D9), never carried from the month before.
+ */
+export async function getMonthBalance(supabase: SupabaseClient, month: string): Promise<number | null> {
+  const { data, error } = await supabase
+    .from('month_balances')
+    .select('starting_balance_cents')
+    .eq('month', month)
+    .maybeSingle()
+  if (error !== null) throw new Error(describeBalanceFailure('read', error))
+  return data === null ? null : Number((data as Pick<MonthBalanceRow, 'starting_balance_cents'>).starting_balance_cents)
+}
+
+export interface BalanceEdit {
+  readonly userId: string
+  /** The first day of the month. */
+  readonly month: string
+  /** Null clears it. */
+  readonly startingBalanceCents: number | null
+}
+
+/**
+ * Type, retype or clear the bank balance a month started with (0010).
+ *
+ * A plain upsert under RLS on 0010's key, so typing over a balance replaces
+ * it. Clearing deletes the row: 0010 stores no blank balance, so a month
+ * with none has no row, and core shows it no ending balance (D17).
+ */
+export async function setMonthBalance(supabase: SupabaseClient, edit: BalanceEdit): Promise<void> {
+  const { error } =
+    edit.startingBalanceCents === null
+      ? await supabase.from('month_balances').delete().eq('month', edit.month)
+      : await supabase
+          .from('month_balances')
+          .upsert(
+            { user_id: edit.userId, month: edit.month, starting_balance_cents: edit.startingBalanceCents },
+            { onConflict: 'user_id,month' },
+          )
+  if (error !== null) throw new Error(describeBalanceFailure('save', error))
 }
 
 // ---------------------------------------------------------------------------

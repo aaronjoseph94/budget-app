@@ -284,6 +284,44 @@ export function describePlanFailure(action: PlanAction, error: WriteError | null
   return `Your monthly amounts could not be read, so ${action === 'month' ? 'this month is' : 'they are'} not shown. Try again. (code ${code})`
 }
 
+/** What the Month was doing with its starting balance when a request failed. */
+export type BalanceAction = 'read' | 'save'
+
+/**
+ * Why a month's starting balance could not be read or saved (0010).
+ *
+ * As for budgets: PGRST205, or 42P01 from an older PostgREST, is 0010 not
+ * pasted yet, so say where, and a read never says "nothing was saved"
+ * (N28). A read that fails shows no month rather than ask for a balance
+ * that may be there. The Month sends only a first-of-month and a whole
+ * amount, and clears by deleting, so 0010's CHECK and NOT NULL never refuse
+ * a save; a save otherwise falls back to the import wording, whose
+ * connection and sign-in sentences hold for any write.
+ */
+const BALANCE_NOT_APPLIED =
+  'Starting balances need a database update that has not been applied yet (0010 in the setup guide)'
+const BALANCE_FAILURES: Readonly<Record<BalanceAction, Readonly<Record<string, string>>>> = {
+  read: {
+    PGRST205: `${BALANCE_NOT_APPLIED}, so this month cannot be shown.`,
+    '42P01': `${BALANCE_NOT_APPLIED}, so this month cannot be shown.`,
+    '': 'Could not reach the database to read your starting balance. Check your connection and try again.',
+    PGRST301: 'Your session expired. Sign in again to see this month.',
+  },
+  save: {
+    PGRST205: `${BALANCE_NOT_APPLIED}. Nothing was saved.`,
+    '42P01': `${BALANCE_NOT_APPLIED}. Nothing was saved.`,
+  },
+}
+
+export function describeBalanceFailure(action: BalanceAction, error: WriteError | null | undefined): string {
+  const code = typeof error?.code === 'string' ? error.code : ''
+  const body = BALANCE_FAILURES[action][code]
+  if (body !== undefined) return code === '' ? body : `${body} (code ${code})`
+  return action === 'save'
+    ? describeWriteFailure(error)
+    : `Your starting balance could not be read, so this month is not shown. Try again. (code ${code})`
+}
+
 /**
  * Today, in the user's own time zone, as an ISO date.
  *

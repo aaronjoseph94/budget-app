@@ -17,6 +17,7 @@ import type {
   Category,
   GoalRow,
   LedgerRow,
+  MonthBalanceRow,
   NamedRow,
   PendingCandidate,
   PlanRow,
@@ -42,6 +43,8 @@ export interface FakeTables {
   category_budgets: (BudgetRow & { readonly user_id?: string })[]
   /** Monthly amounts and days paid as typed (0009); `user_id` as the app writes it. */
   category_plans: (PlanRow & { readonly user_id?: string })[]
+  /** Starting balances as typed (0010); `user_id` as the app writes it. */
+  month_balances: (MonthBalanceRow & { readonly user_id?: string })[]
 }
 
 export interface RpcCall {
@@ -100,6 +103,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     ingest_unreadable_lines: [],
     category_budgets: [],
     category_plans: [],
+    month_balances: [],
     ...seed,
   }
   const rpcCalls: RpcCall[] = []
@@ -226,6 +230,11 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
           }
           if (typeof day === 'number' && (day < 1 || day > 31)) return pgError('23514')
           if (kind === undefined) return pgError('23503', 409)
+        }
+        // What 0010 refuses: a blank balance (NOT NULL), then a month that is not its first day.
+        if (target === 'month_balances') {
+          if (row.starting_balance_cents === null || row.starting_balance_cents === undefined) return pgError('23502')
+          if (!String(row.month).endsWith('-01')) return pgError('23514')
         }
         added.push(row)
       }

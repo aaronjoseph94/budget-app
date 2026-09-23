@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  describeBalanceFailure,
   describeBudgetFailure,
   describeFailure,
   describePlanFailure,
@@ -249,5 +250,37 @@ describe('describePlanFailure', () => {
     expect(describePlanFailure('save', { code: '23514' })).toMatch(/^That list can't have a monthly amount/)
     expect(describePlanFailure('save', { code: '42P01' })).toContain('(0009 in the setup guide). Nothing was saved.')
     expect(describePlanFailure('save', { code: '28000' })).toBe(describeWriteFailure({ code: '28000' }))
+  })
+})
+
+describe('describeBalanceFailure', () => {
+  it('names the update a read is missing, says the Month is not shown, and never words a read as a save', () => {
+    for (const code of ['PGRST205', '42P01']) {
+      expect(describeBalanceFailure('read', { code })).toBe(
+        `Starting balances need a database update that has not been applied yet (0010 in the setup guide), so this month cannot be shown. (code ${code})`,
+      )
+    }
+    expect(describeBalanceFailure('read', {})).toBe(
+      'Could not reach the database to read your starting balance. Check your connection and try again.',
+    )
+    expect(describeBalanceFailure('read', { code: 'PGRST301' })).toBe(
+      'Your session expired. Sign in again to see this month. (code PGRST301)',
+    )
+    expect(describeBalanceFailure('read', { code: 'XX000' })).toBe(
+      'Your starting balance could not be read, so this month is not shown. Try again. (code XX000)',
+    )
+    for (const code of ['PGRST205', '42P01', '', 'PGRST301', 'XX000']) {
+      expect(describeBalanceFailure('read', { code })).not.toContain('saved')
+    }
+  })
+
+  it('says nothing was saved when the update is missing, and otherwise uses the everyday wording', () => {
+    for (const code of ['PGRST205', '42P01']) {
+      expect(describeBalanceFailure('save', { code })).toBe(
+        `Starting balances need a database update that has not been applied yet (0010 in the setup guide). Nothing was saved. (code ${code})`,
+      )
+    }
+    expect(describeBalanceFailure('save', { code: '28000' })).toBe(describeWriteFailure({ code: '28000' }))
+    expect(describeBalanceFailure('save', null)).toBe(describeWriteFailure(null))
   })
 })
