@@ -516,3 +516,66 @@ show a refund as spending.
 **What the owner would see.** The ring's slices and each income bar's length.
 A category whose refunds beat its spending is named under the ring instead
 of being drawn.
+
+---
+
+## F18 — The Year's biggest expense, top 3 and best savings month
+
+**Decided 2026-09-23. Engineering default: the one reading that agrees with
+decisions already made (D5, which the owner chose as decision 3; D13; F10;
+F14).** It changes numbers the owner will see on the Year, so it is listed
+for them in the S13b report.
+
+```
+Hidden!P38:Q40  =QUERY(M73:O119, "SELECT M,O ORDER BY O DESC LIMIT 3")
+                [Rent 9600; Student Loan 650; Credit Card 1 600]
+Hidden!O73      =SUMIFS(Bills!D:D,Bills!C:C,$M73)*12 + (the same for H and L)*12
+                 + SUMIFS(Bills!Q:Q, …, O20..P20) + SUMIFS(Transactions!D:D, …, O20..P20)
+Hidden!O20:P20  =DATE(YEAR(M18),1,1) .. DATE(YEAR(M18),12,31)     M18 =TODAY()
+Hidden!R38      =O120 =SUM(O73:O119)   [11065.88]    Q43 =R38-Q42 ("Other Expenses")
+Hidden!M73      FILTER(Hidden!B3:B157): Variable expenses, Bills, Debts, Subscriptions
+Hidden!I60:K60  =QUERY('Annual Budget'!U10:X21, "SELECT U,V,W ORDER BY W DESC LIMIT 3")
+                [2025-01, 3000, 0]
+```
+
+Workbook's Home ranks each category by a third measure of a year: twelve
+times its monthly amount, whatever month it started, plus the logged
+payments and transactions of today's calendar year. A bill both planned and
+logged counts twice, and a bill set up in October counts twelve months. The
+top 3's cached values depend on today's date, so none is a golden value
+(plan §5.4).
+
+**Options**
+
+- **A — the Year's own Actuals.** Each Bills, Debts, Subscriptions and
+  Variable expenses category's Actual over the Year's twelve months, counted
+  as the month rows count it: a real charge replaces the plan (D5), a plan
+  counts from its month (D13) and only up to asOf (F10).
+- **B — Workbook's measure:** twelve times the monthly amount, plus the rows of
+  asOf's calendar year.
+- **C — A, with every month's planned amounts counted**, a projection of the
+  whole Year.
+
+**Chosen: A.** B counts twice what the owner chose to count once (decision
+3) and prices a bill for months before it existed (D13). C ranks categories
+by amounts the Year's own Expenses total leaves out, so a share would be of
+a whole shown nowhere. A is the only reading in which the top 3 agree with
+the Year around them.
+
+- **Top 3.** Categories with a Year Actual above zero, highest first. Equal
+  amounts keep Workbook's list order (Hidden!B3:B95: Variable expenses, Bills,
+  Debts, Subscriptions), then Setup's row order. `shareBp` is the amount
+  over the sum of every category's Year Actual above zero, half-up (F17),
+  which is Workbook's doughnut: the category against its "Other Expenses".
+- **Biggest expense** is the first of the top 3, and none when nothing was
+  spent.
+- **Best savings month** is the month with the largest Savings Actual, the
+  earliest of equals, as QUERY keeps row order; with nothing saved it is the
+  first month at $0, as Workbook shows January. Its goal comes with it (J60).
+  Home's red "↓ −$90" beneath it subtracts two date serials and shows the
+  difference as dollars; it has no meaning to carry over and is not built.
+
+**What the owner would see.** In September, on a Year from January,
+"Biggest expense" is the year so far (Rent at $1,600 is $14,400 by then),
+not a year projected from monthly amounts. If they want the projection, it
+is C, and changes the three cards only.
