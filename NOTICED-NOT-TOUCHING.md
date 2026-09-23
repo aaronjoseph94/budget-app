@@ -176,7 +176,12 @@ environment, which cannot reach Supabase.
 
 ---
 
-## N7 — The app bundle is 606 KB
+## N7 — The app bundle is 606 KB *(updated 2026-09-23, completion pass)*
+
+**Now:** 758.20 kB (213.15 kB gzipped) in the entry, with the Year in a
+chunk of its own (21.02 kB). Still mostly supabase-js and the PDF reader;
+still under the pending 700 KB-gzipped row. Splitting the PDF reader out to
+the Add screen is still the first saving.
 
 **Seen:** 2026-09-22, from `vite build`. Mostly supabase-js. It loads fine on a
 phone, but the PDF reader could be split into its own chunk loaded only on the
@@ -252,7 +257,11 @@ mark Phases 1, 2 and 4 with what is actually done, and leave one "next".
 
 ---
 
-## N11 — After 0005, the app cannot create a category until S2a
+## N11 — After 0005, the app cannot create a category until S2a *(settled 2026-09-23, S2a)*
+
+**Settled:** S2a landed on the same branch as 0005: every new category is
+made with a list, and the branch is merged only after every migration is
+pasted (HANDOFF.md), so the gap this describes never reaches the live site.
 
 **Seen:** 2026-09-22, writing migration 0005.
 
@@ -1008,6 +1017,10 @@ Year's engine and charts stay in it. The entry went from 686.08 kB (195.66
 kB gzipped) before S14 to 688.82 kB (196.79 kB): the Year's navigation,
 address and the shared row reading. The Month's charts are still in the
 entry, for the reason above.
+
+**Updated 2026-09-23, completion pass:** after S15–S17 (Week, Paycheck,
+Bill calendar, Savings, Debts, all in the entry) the entry is 758.20 kB
+(213.15 kB gzipped) and the Year chunk 21.02 kB (6.58 kB). Still open.
 
 ---
 
