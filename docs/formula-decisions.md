@@ -720,7 +720,10 @@ month a total of the weeks.
   weeks as the month touches, four to six; Workbook always draws six bands and
   leaves the spare ones blank (Q38 **0**).
 - **Order within a day** is Workbook's stack, Bills then Debts then
-  Subscriptions, each in Setup's order.
+  Subscriptions, each in Setup's order. A real charge takes its bill's
+  place in that stack; Workbook lists its logged payments after every monthly
+  amount, in the log's order (H9's `{…; Bills!P7:Q30}` comes last). Only the
+  order on the day differs, never an amount or a total.
 
 **What the owner would see.** Bills paid by card on the day they were
 charged, and never twice (decision 3).

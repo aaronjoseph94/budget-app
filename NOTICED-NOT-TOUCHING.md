@@ -1242,8 +1242,9 @@ should stop at the first pay date or the calendar should run back too.
 - **Tapping a day or a bill opens nothing.** The Month's charges sheet
   (with "Move to…") names a category and a month, not a day.
 - **A card-paid bill charged just after a month end** shows planned in its
-  own month and twice in the next, as on the Month (N36); the calendar
-  follows the Month's rule, so it will follow N36's answer.
+  own month and twice in the next, as on the Month (N36). The calendar
+  applies the same rule in its own code (`billCalendar`), so N36's answer
+  has to be made there as well as in `monthSheet`.
 - **The month shown is not kept per device** beyond the address; opening
   it from More always opens this month, as Paycheck opens this period.
 - **The desktop bar shows icons only between 768 and 1024px** (nine tabs

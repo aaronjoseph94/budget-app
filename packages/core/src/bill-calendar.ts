@@ -117,7 +117,8 @@ export function billCalendar(input: BillCalendarInput): BillCalendar {
   const last = Number(end.slice(8))
   const known = new Map(input.categories.map((c) => [c.id, c]))
   // Workbook's stack within a day (H9): Bills, then Debts, then Subscriptions,
-  // each in Setup's order; paydays in Income's.
+  // each in Setup's order; paydays in Income's. A real charge sits in its
+  // bill's place, where Workbook puts logged payments after every plan (F20).
   const inOrder = [...input.categories].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
   const owed = inOrder
     .flatMap((c) => (isOwed(c.kind) ? [{ ...c, kind: c.kind }] : []))
