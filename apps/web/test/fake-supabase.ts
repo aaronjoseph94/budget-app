@@ -15,6 +15,7 @@ import { createClient } from '@supabase/supabase-js'
 import type {
   BudgetRow,
   Category,
+  FundRow,
   GoalRow,
   LedgerRow,
   MonthBalanceRow,
@@ -35,7 +36,8 @@ export interface FakeTables {
   transactions: LedgerRow[]
   ingest_candidates: (PendingCandidate & { readonly status: string })[]
   merchant_rules: { readonly match_merchant: string; readonly category_id: string }[]
-  savings_goals: GoalRow[]
+  /** A goal from before 0013 may leave out its fund's columns; they read as null. */
+  savings_goals: (GoalRow & Partial<Pick<FundRow, 'category_id' | 'start_date' | 'balance_as_of'>> & { readonly user_id?: string })[]
   /** `period_end` only for a statement with a period (0007). */
   ingest_batches: (UnreadableBatch & { readonly period_end?: string | null })[]
   /** `dismissed_at` once dismissed (0012); absent reads as null, still waiting. */
@@ -159,6 +161,20 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     return new Response(null, { status: 204 })
   }
 
+  // What 0004 and 0013 refuse of a goal, in the order Postgres meets it: the
+  // BEFORE trigger (a category not on Savings), the CHECKs, then the unique
+  // name and fund, then the key to the category, which the trigger leaves to it.
+  function goalRefusal(row: Row, others: readonly Row[]): Response | null {
+    const fund = row.category_id ?? null
+    const kind = fund === null ? null : tables.categories.find((c) => c.id === fund)?.kind
+    if (kind !== undefined && kind !== null && kind !== 'savings') return pgError('23514')
+    if (Number(row.target_cents) <= 0 || (row.saved_cents !== undefined && Number(row.saved_cents) < 0)) return pgError('23514')
+    if (fund !== null && (row.balance_as_of ?? null) === null) return pgError('23514')
+    if (others.some((o) => o.name === row.name || (fund !== null && o.category_id === fund))) return pgError('23505', 409)
+    if (kind === undefined) return pgError('23503', 409)
+    return null
+  }
+
   async function serve(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
     const url = new URL(input instanceof Request ? input.url : String(input))
     const method = init?.method ?? 'GET'
@@ -246,6 +262,10 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
           if (kind !== undefined && kind !== 'income') return pgError('23514')
           if (kind === undefined) return pgError('23503', 409)
         }
+        if (target === 'savings_goals') {
+          const refused = goalRefusal(row, [...table, ...added])
+          if (refused !== null) return refused
+        }
         added.push(row)
       }
       // Nothing is written until every row has passed, as in one statement.
@@ -293,6 +313,12 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       if (target === 'categories' && table.some((r) => matches(r) && body.kind !== undefined && body.kind !== r.kind && planned(r.id))) {
         return pgError('23514')
       }
+      if (method === 'PATCH' && target === 'savings_goals') {
+        for (const r of table.filter(matches)) {
+          const refused = goalRefusal({ ...r, ...body }, table.filter((o) => o !== r))
+          if (refused !== null) return refused
+        }
+      }
       const next: Row[] = []
       for (const r of table) {
         if (!matches(r)) next.push(r)
@@ -336,7 +362,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     const caps = [limitParam === null ? null : Number(limitParam), server.maxRows].filter((n): n is number => n !== null)
     rows = rows.slice(offset, caps.length === 0 ? undefined : offset + Math.min(...caps))
     const columns = (url.searchParams.get('select') ?? '*').split(',')
-    const picked = columns.includes('*') ? rows : rows.map((r) => Object.fromEntries(columns.map((c) => [c, r[c]])))
+    const picked = columns.includes('*') ? rows : rows.map((r) => Object.fromEntries(columns.map((c) => [c.trim(), r[c.trim()] ?? null])))
 
     server.afterRead?.(target)
     const held = server.hold?.(target)

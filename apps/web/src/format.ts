@@ -409,6 +409,45 @@ export function describeBalanceFailure(action: BalanceAction, error: WriteError 
     : `Your starting balance could not be read, so this month is not shown. Try again. (code ${code})`
 }
 
+/** What the Savings screen was doing when a request failed. */
+export type FundAction = 'read' | 'save'
+
+/**
+ * Why savings funds could not be read or saved (0013).
+ *
+ * 0013 adds columns, not a table, so before it is pasted a read naming them
+ * is 42703 (no such column) and a write PGRST204 (PostgREST knows none), not
+ * PGRST205; either way, say where. A save meets 0013's refusals: 23514 from
+ * its trigger for a category moved off Savings on another device (or 0004's
+ * CHECKs, which the screen refuses before sending), 23505 for a second goal
+ * on one fund or a goal name already used, and 23503 for a category removed
+ * elsewhere. A read never says "nothing was saved" (N28).
+ */
+const FUNDS_NOT_APPLIED = 'Savings funds need a database update that has not been applied yet (0013 in the setup guide)'
+const FUND_FAILURES: Readonly<Record<FundAction, Readonly<Record<string, string>>>> = {
+  read: {
+    '42703': `${FUNDS_NOT_APPLIED}, so your funds cannot be shown.`,
+    '': 'Could not reach the database to read your savings funds. Check your connection and try again.',
+    PGRST301: 'Your session expired. Sign in again to see your savings funds.',
+  },
+  save: {
+    '42703': `${FUNDS_NOT_APPLIED}. Nothing was saved.`,
+    PGRST204: `${FUNDS_NOT_APPLIED}. Nothing was saved.`,
+    '23514': 'Only a fund on your Savings list can have a savings goal. It may have been moved on another device. Nothing was saved.',
+    '23505': 'That fund already has a goal, or another goal has this name. Nothing was saved.',
+    '23503': 'That fund is no longer there — it may have been removed on another device. Nothing was saved.',
+  },
+}
+
+export function describeFundFailure(action: FundAction, error: WriteError | null | undefined): string {
+  const code = typeof error?.code === 'string' ? error.code : ''
+  const body = FUND_FAILURES[action][code]
+  if (body !== undefined) return code === '' ? body : `${body} (code ${code})`
+  return action === 'save'
+    ? describeWriteFailure(error)
+    : `Your savings funds could not be read, so they are not shown. Try again. (code ${code})`
+}
+
 /**
  * Today, in the user's own time zone, as an ISO date.
  *

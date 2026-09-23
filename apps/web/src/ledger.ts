@@ -18,6 +18,7 @@ import {
 import {
   describeBalanceFailure,
   describeBudgetFailure,
+  describeFundFailure,
   describeMoveFailure,
   describePlanFailure,
   describeScheduleFailure,
@@ -1045,4 +1046,126 @@ export async function saveGoal(
       ? await supabase.from('savings_goals').insert({ user_id: userId, ...row })
       : await supabase.from('savings_goals').update(row).eq('id', existingId)
   if (error !== null) fail(error)
+}
+
+// ---------------------------------------------------------------------------
+// Savings funds (migration 0013)
+// ---------------------------------------------------------------------------
+
+/** A goal as the Savings screen reads it: the goal, plus which fund it is and when (0013). */
+export interface FundRow extends GoalRow {
+  /** The Savings-list category it is the fund for; null for a goal on no fund. */
+  readonly category_id: string | null
+  /** Savings!N14, the Start Date. */
+  readonly start_date: string | null
+  /** The day `saved_cents` was true; transfers after it add to the balance (D16). */
+  readonly balance_as_of: string | null
+}
+
+/** Every goal, oldest first, read whole: one per fund at most (0013), so a handful. */
+export async function listFunds(supabase: SupabaseClient): Promise<readonly FundRow[]> {
+  const rows = await readAll<FundRow>(
+    (from, to) =>
+      supabase
+        .from('savings_goals')
+        .select(
+          'id, name, target_cents, saved_cents, target_date, unit_cost_cents, unit_label, category_id, start_date, balance_as_of',
+          { count: 'exact' },
+        )
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true })
+        .range(from, to),
+    {
+      changed: 'Your savings goals changed while they were being read, so they are not shown. Try again.',
+      describe: (error) => describeFundFailure('read', error),
+    },
+  )
+  return rows.map((g) => ({
+    ...g,
+    target_cents: Number(g.target_cents),
+    saved_cents: Number(g.saved_cents),
+    unit_cost_cents: g.unit_cost_cents === null ? null : Number(g.unit_cost_cents),
+  }))
+}
+
+/**
+ * The funds' ledger rows from `from` to `to`, inclusive, read whole. Core
+ * counts only those after each fund's own typed day (fundBalance), so
+ * `from` is the earliest of those days and a row on it is left to core.
+ */
+export async function listFundTransfers(
+  supabase: SupabaseClient,
+  categoryIds: readonly string[],
+  range: { readonly from: string; readonly to: string },
+): Promise<readonly LedgerRow[]> {
+  if (categoryIds.length === 0) return []
+  const rows = await readAll<LedgerRow>(
+    (from, to) =>
+      supabase
+        .from('transactions')
+        .select('id, posted_on, amount_cents, merchant_raw, category_id, source', { count: 'exact' })
+        .in('category_id', [...categoryIds])
+        .gte('posted_on', range.from)
+        .lte('posted_on', range.to)
+        .order('posted_on', { ascending: true })
+        .order('id', { ascending: true })
+        .range(from, to),
+    {
+      changed: 'Money moved to savings while your funds were being read, so they are not shown. Try again.',
+      describe: (error) => describeFundFailure('read', error),
+    },
+  )
+  return rows.map((r) => ({ ...r, amount_cents: Number(r.amount_cents) }))
+}
+
+export interface FundEdit {
+  readonly goalCents: number
+  /** What is in the fund today, typed; true at the end of `asOf` (D16). */
+  readonly savedCents: number
+  readonly asOf: string
+  readonly startDate: string | null
+  readonly goalDate: string | null
+}
+
+/**
+ * Save a fund's goal. The typed balance and the day it is true are always
+ * written together (N52): a balance retyped without moving its day would
+ * count the transfers since the old day twice. A new goal takes its fund's
+ * name, which 0004 keeps unique among goals.
+ */
+export async function saveFund(
+  supabase: SupabaseClient,
+  target: { readonly userId: string; readonly categoryId: string; readonly name: string; readonly goalId: string | null },
+  edit: FundEdit,
+): Promise<void> {
+  const row = {
+    target_cents: edit.goalCents,
+    saved_cents: edit.savedCents,
+    balance_as_of: edit.asOf,
+    start_date: edit.startDate,
+    target_date: edit.goalDate,
+  }
+  const { error } =
+    target.goalId === null
+      ? await supabase
+          .from('savings_goals')
+          .insert({ user_id: target.userId, name: target.name, category_id: target.categoryId, ...row })
+      : await supabase.from('savings_goals').update(row).eq('id', target.goalId)
+  if (error !== null) throw new Error(describeFundFailure('save', error))
+}
+
+/**
+ * Make a goal on no fund the fund for `categoryId`, its typed amount true as
+ * of `asOf`: transfers already recorded are taken to be in it, and later
+ * ones add to it (D16).
+ */
+export async function linkFund(
+  supabase: SupabaseClient,
+  link: { readonly goalId: string; readonly categoryId: string; readonly asOf: string },
+): Promise<void> {
+  const { error } = await supabase
+    .from('savings_goals')
+    .update({ category_id: link.categoryId, balance_as_of: link.asOf })
+    .eq('id', link.goalId)
+  if (error !== null) throw new Error(describeFundFailure('save', error))
 }
