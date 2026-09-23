@@ -60,6 +60,7 @@ describe('PaycheckPeriod', () => {
 
     expect(await summary('Spent')).toBe('$801.45')
     expect(await summary('Left to spend')).toBe('$231.92')
+    expect(screen.queryByText(/No budgets on Variable expenses/)).toBeNull()
     expect(await cells('Bills', 'Rent')).toEqual(['', '738.46planned', ''])
     expect(await cells('Subscriptions', 'Streaming')).toEqual(['', '17.99', ''])
     expect(await cells('Variable expenses', 'Groceries')).toEqual(['276.92', '45.00', '231.92'])
@@ -75,6 +76,24 @@ describe('PaycheckPeriod', () => {
     expect(screen.getByText('$500.00').closest('p')?.textContent).toBe(
       'Paid to your card: $500.00 — not counted. What it paid for is already in the blocks above.',
     )
+  })
+
+  it('says why Left to spend is taken from nothing when Variable expenses have no budgets, as the Month and Week do', async () => {
+    const fake = seeded()
+    fake.tables.category_budgets = fake.tables.category_budgets.filter((b) => b.category_id !== 'food')
+    show(fake, null)
+
+    expect(await summary('Left to spend')).toBe('-$45.00')
+    expect(screen.getByText('No budgets on Variable expenses yet. They are typed on the Month.')).toBeTruthy()
+  })
+
+  it('says nothing of missing budgets while one Variable expenses row has a budget, even if another has none', async () => {
+    const fake = seeded()
+    fake.tables.categories.push(category('fun', 'Fun money', 'variable'))
+    show(fake, null)
+
+    expect(await summary('Left to spend')).toBe('$231.92')
+    expect(screen.queryByText(/No budgets on Variable expenses/)).toBeNull()
   })
 
   it('shows the period holding the day asked for, and steps to the paydays either side', async () => {

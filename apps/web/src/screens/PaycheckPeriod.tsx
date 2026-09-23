@@ -177,6 +177,7 @@ interface Loaded {
  */
 function Summary({ sheet }: { sheet: PaycheckSheet }) {
   const { spentCents, leftToSpendCents: left } = sheet.summary
+  const noBudgets = sheet.blocks.variable.rows.every((r) => r.budgetCents === null)
   return (
     <section aria-label="Summary" className="order-0 rounded-xl border bg-paycheck-band p-4 text-paycheck-ink shadow-sm xl:order-0">
       <dl className="grid grid-cols-2 gap-x-4 gap-y-3 xl:grid-cols-1">
@@ -193,6 +194,9 @@ function Summary({ sheet }: { sheet: PaycheckSheet }) {
               {formatCents(left)}
             </Figure>
           </dd>
+          {/* As the Month and Week say it (F5), and where a budget is typed,
+            since this view shows budgets and takes none. */}
+          {noBudgets ? <dd className="mt-0.5 text-xs">No budgets on Variable expenses yet. They are typed on the Month.</dd> : null}
         </div>
       </dl>
     </section>
