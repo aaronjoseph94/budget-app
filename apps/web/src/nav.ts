@@ -75,10 +75,6 @@ export function useAddress(): Address {
   return useMemo(() => readAddress(hash), [hash])
 }
 
-export function useScreen(): Screen {
-  return useAddress().screen
-}
-
 /** Go to a screen; `period` only for the Month, Year and Bill Calendar (`YYYY-MM`) and Paycheck (`YYYY-MM-DD`). */
 export function navigate(screen: Screen, period: string | null = null): void {
   const hash = hashOf({ screen, period })

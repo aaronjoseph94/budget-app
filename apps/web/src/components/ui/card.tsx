@@ -22,7 +22,3 @@ export function CardContent({ className, ...props }: HTMLAttributes<HTMLDivEleme
   // No top padding: a header above supplies the gap. Without a header, pass pt-5.
   return <div className={cn('px-5 pb-5', className)} {...props} />
 }
-
-export function CardFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('flex items-center gap-2 p-5 pt-0', className)} {...props} />
-}
