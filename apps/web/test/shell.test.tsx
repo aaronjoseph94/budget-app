@@ -89,7 +89,7 @@ describe('Shell', () => {
     expect(within(phoneBar()).getByRole('button', { name: 'More' }).getAttribute('aria-current')).toBe('page')
     const desktopBar = screen.getAllByRole('navigation', { name: 'Screens' })[0]!
     expect(within(desktopBar).getAllByRole('button').map((b) => b.textContent)).toEqual([
-      'Month', 'Week', 'Paycheck', 'Bills', 'Year', 'Savings', 'Debts', 'Review', 'Add', 'Setup', 'More',
+      'Month', 'Week', 'Paycheck', 'Calendar', 'Year', 'Savings', 'Debts', 'Review', 'Add', 'Setup', 'More',
     ])
     expect(within(desktopBar).getByRole('button', { name: 'Year' }).getAttribute('aria-current')).toBe('page')
   })
@@ -127,7 +127,7 @@ describe('Shell', () => {
     expect(await screen.findByText('Bill calendar')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'September 2026' })).toBeTruthy()
     const desktopBar = screen.getAllByRole('navigation', { name: 'Screens' })[0]!
-    expect(within(desktopBar).getByRole('button', { name: 'Bills' }).getAttribute('aria-current')).toBe('page')
+    expect(within(desktopBar).getByRole('button', { name: 'Calendar' }).getAttribute('aria-current')).toBe('page')
     expect(within(phoneBar()).getByRole('button', { name: 'More' }).getAttribute('aria-current')).toBe('page')
   })
 

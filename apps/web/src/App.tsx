@@ -66,7 +66,8 @@ const DESKTOP_TABS: readonly Tab[] = [
   { screen: 'month', label: 'Month', icon: 'calendar' },
   { screen: 'week', label: 'Week', icon: 'week' },
   { screen: 'paycheck', label: 'Paycheck', icon: 'wallet' },
-  { screen: 'calendar', label: 'Bills', icon: 'bills' },
+  // Not "Bills": that is a list and a Month block; this is the Bill calendar.
+  { screen: 'calendar', label: 'Calendar', icon: 'bills' },
   { screen: 'year', label: 'Year', icon: 'year' },
   { screen: 'savings', label: 'Savings', icon: 'piggy' },
   { screen: 'debts', label: 'Debts', icon: 'card' },
