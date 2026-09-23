@@ -56,7 +56,7 @@ export function SetupScreen() {
   const lists = new Map(groupByList(categories).map((group) => [group.kind, group.rows]))
 
   return (
-    <div className="-mx-4 -mt-6 bg-setup-canvas pb-6 md:mx-0 md:mt-0 md:overflow-hidden md:rounded-xl">
+    <div className="-mx-4 bg-setup-canvas pb-6 md:mx-0 md:overflow-hidden md:rounded-xl">
       <NameBand />
       <div className="space-y-6 px-4 pt-5">
         {SECTIONS.map((section) => (
@@ -95,7 +95,7 @@ function NameBand() {
   }
 
   return (
-    <header className="safe-top bg-setup-band px-4 pb-5 pt-3 text-white">
+    <header className="bg-setup-band px-4 pb-5 pt-3 text-white">
       <button
         type="button"
         onClick={() => navigate('settings')}
