@@ -1,8 +1,9 @@
 # Handoff — read this first
 
-Written 2026-09-22 when this project moved from Claude Code to Cursor. It tells
-the next agent what exists, what the owner still has to set up, how to check
-it worked, and what is left to build.
+Rewritten 2026-09-23, when the Workbook build (`docs/workbook-plan.md`) was
+finished on branch `main-tnlcto`. It tells the owner and the next agent what
+exists, what the owner has to do before using it, how to check it worked,
+what is still open, and what is left to build.
 
 **The owner is not a software engineer.** Explain in plain language. Do not ask
 them to judge engineering choices — make the call, say what you chose and why,
@@ -38,86 +39,113 @@ or delete a test to make a check pass.
 
 ## 2. What exists
 
-pnpm monorepo. Branch **`main`** is the working branch (it is what the
-site deploys from). Vite + React 19 + TypeScript + Tailwind v4, Supabase
-(Postgres, auth, one Edge Function), Vitest.
+pnpm monorepo: Vite + React 19 + TypeScript + Tailwind v4, Supabase
+(Postgres, auth, one Edge Function), Vitest. **Everything below is on
+branch `main-tnlcto`.** Branch `main` is what the live site deploys, and it
+has none of the Workbook screens until `main-tnlcto` is merged into it (§3).
 
-| Area | Where | State |
+**The app, screen by screen** (phone bar: Month · Week · Add · Review ·
+More; a wide screen puts them all on the top bar):
+
+| Screen | What it is | Workbook tab |
 |---|---|---|
-| Money types | `packages/money-primitives` | Done |
-| Engine | `packages/core` — debt payoff (verified against the workbook), goals, weekly summary vs budget, statement reconciliation | Done, tested |
-| Validation | `packages/schema` — zod schemas, receipt-reply parser | Done, tested |
-| Statement readers | `packages/statement-parsers` — CSV, **PDF** (hand-written reader), Rogers Bank format, dedupe hash, merchant normalising | Done, tested |
-| Database | `supabase/migrations/0001`–`0004` | 0001–0002 applied; **0003–0004 NOT yet applied** |
-| Receipt reading | `supabase/functions/read-receipt` — Gemini free tier | Written, **not deployed** |
-| App | `apps/web` — screens: Week, Review, Add (Statement / Photo / Type it), Ledger, Settings. shadcn/ui design system copied into `src/components/ui` | Done; live on Netlify, **Cloudflare not set up** |
+| Month | Opens first. Summary card (Start, Spent, Left to spend, End of month), the six lists as blocks with Budgeted, Actual and Left, the two charts. Tap a row to see its charges and move one ("Move to…"); tap a budget to type it "from this month on" or "just this month" | Jan–Dec |
+| Week | The same blocks for Monday to Sunday, with weekly budgets typed in the row, and the savings goal | Weekly Budget |
+| Paycheck | The same blocks for one pay period, found from your pay schedule | Paycheck Budget |
+| Bill calendar | Each bill on the day it is due, paydays, and each week's total | Bill Calendar |
+| Year | Twelve months from any start month, Home's "at a glance" cards and charts | Annual Budget, Home |
+| Savings | One card per savings fund: goal, what is saved, what to save a month | Savings |
+| Debts | One card per debt, when it is paid off, and minimums against snowball and avalanche | Debt Calculator |
+| Setup | Your name, the six lists, when each income pays, each bill's day and monthly amount | START HERE, Bills |
+| Add | A Rogers statement PDF (or a CSV), a receipt photo, or one entry typed by hand (cash, pay, savings moves) | Transactions |
+| Review | Every imported row waits here for a category, and every line the reader could not read | — |
+| All transactions | Every approved row, a month at a time, with search and remove | — |
+| Settings | Weekly budgets, the goal's hours, sign out | — |
+
+**Underneath:** all arithmetic is in `packages/core`, checked against the
+workbook's own cached values (121 golden tests); the charts are drawn by
+`packages/chart-specs`; the statement readers are in
+`packages/statement-parsers`; the database is `supabase/migrations/0001` to
+`0014`. Decisions are recorded in `docs/formula-decisions.md` (F1–F23) and
+`docs/divergences.md` (every place the app departs from Workbook, and why).
 
 Key decisions, already made by the owner (do not reopen): dates are the
-purchase date, not the settlement date (`docs/formula-decisions.md` F1);
-receipt photos use **Gemini's free tier**, privacy trade-off accepted
-(`docs/adr/0002-gemini-free-tier-for-receipts.md`); UI is shadcn/ui.
+purchase date (F1); receipt photos use Gemini's free tier
+(`docs/adr/0002-gemini-free-tier-for-receipts.md`); the answers in
+`docs/workbook-plan.md` §9a (Month first, a real charge replaces a planned
+bill, card payments are not spending, a starting balance typed each month,
+savings kept by transfers, pay periods from the pay schedule).
 
-## 3. The owner's setup tasks — do these first, in this order
+## 3. The owner's setup — do these in this order
 
-Full detail is in `docs/setup.md`. Supabase project ref: `bnodrfghxbavlopxkgju`.
+Supabase project ref: `bnodrfghxbavlopxkgju`. More detail for each step is
+in `docs/setup.md`.
 
-**Step 1 — apply migration 0003, then 0004.** Until both run, saving an import
-and approving a row fail. Easiest: Supabase dashboard → SQL Editor → New query →
-paste the file → Run → expect "Success. No rows returned."
+**Step 1 — paste the database updates, before anything else.** Supabase
+dashboard → **SQL Editor** → **New query**. Open the first file below on
+GitHub (branch `main-tnlcto`, folder `supabase/migrations`), copy all of it,
+paste, press **Run**, and wait for "Success. No rows returned." Then a new
+query for the next file. **One at a time, in this order, all twelve:**
 
-> **Do not run `supabase db push` as-is.** 0001 and 0002 were applied by hand,
-> so the CLI's migration history is empty and it would try to re-run 0001 and
-> fail. If you want the CLI, first record the applied ones:
-> `supabase migration repair --status applied 0001 0002 --project-ref bnodrfghxbavlopxkgju`,
-> then `supabase db push`. Check with `supabase migration list` before pushing.
+| # | File | What it adds |
+|---|---|---|
+| 1 | `0003_save_import_atomically.sql` | Saving an import in one go |
+| 2 | `0004_one_path_into_the_ledger.sql` | Approving, rules that learn, budgets, the goal, PDF imports |
+| 3 | `0005_category_kinds.sql` | Which of Workbook's lists each category is on |
+| 4 | `0006_recategorise.sql` | Moving a saved charge to another category |
+| 5 | `0007_statement_periods.sql` | The dates each statement covered |
+| 6 | `0008_category_budgets.sql` | Budgets and goals typed on the Month |
+| 7 | `0009_category_plans.sql` | Each bill's monthly amount and day paid |
+| 8 | `0010_month_balances.sql` | Each month's starting bank balance |
+| 9 | `0011_pay_schedules.sql` | When each income pays |
+| 10 | `0012_dismiss_unreadable_lines.sql` | Dismissing a line the reader could not read |
+| 11 | `0013_savings_funds.sql` | Savings funds and their balances |
+| 12 | `0014_debts.sql` | Debts and extra payments |
 
-**Step 2 — the owner's password.** Dashboard → Authentication → Users → `⋯` →
-Reset password (or Add user with "Auto Confirm User" ticked). There is
-deliberately no sign-up screen in the app.
-Also sign out all sessions for that user once (Authentication → Users → `⋯` →
-Sign out user): a sign-in link with a live token was pasted into a chat earlier.
+`0001` and `0002` are already applied; do not run them again. If one says
+something other than "Success", stop there and do not merge: nothing is
+lost, and the message says which line. Do not use `supabase db push` unless
+you first run `supabase migration repair --status applied 0001 0002
+--project-ref bnodrfghxbavlopxkgju` (the CLI does not know 0001 and 0002
+were applied by hand).
 
-**Step 3 — Cloudflare Pages** (replaces Netlify). Dashboard → Workers & Pages →
-Create → Pages → Connect to Git → `aaronjoseph94/budget-app`:
+**Step 2 — merge `main-tnlcto` into `main`, only after Step 1.** On GitHub:
+**Pull requests → New pull request**, base `main`, compare `main-tnlcto`,
+**Create pull request**, wait for the green check, then **Merge**. `main`
+deploys itself, so merging before Step 1 would put a site live that asks
+for tables that do not exist yet.
 
-| Setting | Value |
-|---|---|
-| Project name | `aaron-budget-app` |
-| Production branch | `main` |
-| Framework preset | None |
-| Build command | `pnpm --filter @budget/app-client build` |
-| Build output directory | `apps/web/dist` |
-| Env `NODE_VERSION` | `22` |
-| Env `PNPM_VERSION` | `10` |
-| Env `VITE_SUPABASE_URL` | `https://bnodrfghxbavlopxkgju.supabase.co` |
-| Env `VITE_SUPABASE_ANON_KEY` | the publishable key in `netlify.toml` (public by design) |
+**Step 3 — Cloudflare Pages** (replaces Netlify). **Workers & Pages →
+Create → Pages → Connect to Git →** `aaronjoseph94/budget-app`. Project name
+`aaron-budget-app`, production branch `main`, framework preset None, build
+command `pnpm --filter @budget/app-client build`, output directory
+`apps/web/dist`. Environment variables: `NODE_VERSION` = `22`,
+`PNPM_VERSION` = `10`, `VITE_SUPABASE_URL` =
+`https://bnodrfghxbavlopxkgju.supabase.co`, `VITE_SUPABASE_ANON_KEY` = the
+publishable key in `netlify.toml` (public by design). Then in Supabase →
+**Authentication → URL Configuration**: Site URL
+`https://aaron-budget-app.pages.dev`, and add
+`https://aaron-budget-app.pages.dev/**` to Redirect URLs (use the address
+Cloudflare gave, if different). Once it works, delete the Netlify site
+(Site configuration → Delete this site); the next agent then removes
+`netlify.toml` in a commit.
 
-The `VITE_` values are baked in at build time — changing them needs a redeploy.
-Security headers come from `apps/web/public/_headers`.
-Then in Supabase → Authentication → URL Configuration: Site URL
-`https://aaron-budget-app.pages.dev`, and add `https://aaron-budget-app.pages.dev/**`
-to Redirect URLs. If Cloudflare assigned a different address, use that.
+**Step 4 — receipt photos (optional).** Get a key at
+https://aistudio.google.com/apikey. Supabase → **Edge Functions → Deploy a
+new function → Via Editor**, name exactly `read-receipt`, paste
+`supabase/functions/read-receipt/index.ts`, deploy with **Enforce JWT
+verification** on. Then **Edge Functions → Secrets**: `GEMINI_API_KEY` =
+the key. If the site's address is not `aaron-budget-app.pages.dev`, also
+set `EXTRA_ORIGINS` = `https://<the address>`. The key goes only there.
 
-**Step 4 — receipt photos (Gemini).** Get a key at
-https://aistudio.google.com/apikey. Deploy the function either in the
-dashboard (Edge Functions → Deploy a new function → Via Editor, name exactly
-`read-receipt`, paste `supabase/functions/read-receipt/index.ts`) or by CLI:
+**Step 5 — your password, and sign out old sessions.** **Authentication →
+Users →** the `⋯` on your row → **Reset password** (there is no sign-up
+screen, deliberately). Then the same menu → **Sign out user**, once: a
+sign-in link with a live token was pasted into a chat earlier.
 
-```
-supabase functions deploy read-receipt --project-ref bnodrfghxbavlopxkgju
-supabase secrets set GEMINI_API_KEY=<key> --project-ref bnodrfghxbavlopxkgju
-```
-
-Keep JWT verification ON (the CLI default; do not pass `--no-verify-jwt`).
-If the site's address is not `aaron-budget-app.pages.dev` or `.netlify.app`, also
-set `EXTRA_ORIGINS=https://<address>` (comma-separated for several). If photos
-report the model is retired, set `GEMINI_MODEL` to a current Gemini model name.
-The key goes ONLY into Supabase secrets.
-
-**Step 5 — delete the Netlify site** once the Cloudflare one works (Netlify →
-Site configuration → Delete this site), then remove `netlify.toml` in a commit.
-
-**Step 6 — iPhone.** Safari → the site → Share → Add to Home Screen.
+**Step 6 — iPhone.** In Safari open the new address → **Share → Add to
+Home Screen**. If you added the old site to your home screen before, remove
+that icon first: it keeps opening the old Week screen (N24).
 
 ## 4. How to check it worked
 
