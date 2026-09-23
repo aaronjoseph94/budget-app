@@ -134,6 +134,11 @@
   --year-chart-ink: #5b6773;
   --year-chart-rule: #cccccc;
   --home-track: #f3f5f6;
+  /* Paycheck Budget's lavender header band and summary panel (A1, D9:D15);
+     its #909ED5 and #B2BCE2 text read at 2.4 and 1.7 to one, so an ink of
+     the same hue that reads at 6.3. */
+  --paycheck-band: #f1f3ff;
+  --paycheck-ink: #4a5591;
 }
 
 /*
@@ -213,6 +218,8 @@
     --year-chart-ink: #c3ccd4;
     --year-chart-rule: #4a4d50;
     --home-track: #2c3237;
+    --paycheck-band: #1c1f33;
+    --paycheck-ink: #d4d9f5;
   }
 }
 
@@ -251,6 +258,8 @@
   --color-summary-negative: var(--summary-negative);
   --color-summary-negative-ink: var(--summary-negative-ink);
   --color-title-band: var(--title-band);
+  --color-paycheck-band: var(--paycheck-band);
+  --color-paycheck-ink: var(--paycheck-ink);
   --color-title-ink: var(--title-ink);
   --color-income-band: var(--income-band);
   --color-income-header: var(--income-header);

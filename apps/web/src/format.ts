@@ -258,9 +258,10 @@ export function describeBudgetFailure(action: BudgetAction, error: WriteError | 
  * The Month reads them too ('month'), and unlike Setup it shows nothing
  * without them: a month without its planned bills has a Spent that looks
  * right and is not. So its sentences say the month is not shown. The Week
- * ('week') is the same, and its sentences name the week.
+ * ('week') is the same, and its sentences name the week, as Paycheck's
+ * ('paycheck') name its pay period.
  */
-export type PlanAction = 'read' | 'month' | 'week' | 'save'
+export type PlanAction = 'read' | 'month' | 'week' | 'paycheck' | 'save'
 const PLANS_NOT_APPLIED = 'Monthly amounts need a database update that has not been applied yet (0009 in the setup guide)'
 const PLAN_FAILURES: Readonly<Record<PlanAction, Readonly<Record<string, string>>>> = {
   month: {
@@ -274,6 +275,12 @@ const PLAN_FAILURES: Readonly<Record<PlanAction, Readonly<Record<string, string>
     '42P01': `${PLANS_NOT_APPLIED}, so this week cannot be shown.`,
     '': 'Could not reach the database to read your monthly amounts. Check your connection and try again.',
     PGRST301: 'Your session expired. Sign in again to see this week.',
+  },
+  paycheck: {
+    PGRST205: `${PLANS_NOT_APPLIED}, so this pay period cannot be shown.`,
+    '42P01': `${PLANS_NOT_APPLIED}, so this pay period cannot be shown.`,
+    '': 'Could not reach the database to read your monthly amounts. Check your connection and try again.',
+    PGRST301: 'Your session expired. Sign in again to see this pay period.',
   },
   read: {
     PGRST205: `${PLANS_NOT_APPLIED}, so they are not shown. Your lists still work.`,
@@ -300,6 +307,7 @@ export function describePlanFailure(action: PlanAction, error: WriteError | null
 
 /** What a failed read of monthly amounts leaves unshown, for its sentence. */
 export function shownBy(reader: PlanAction): string {
+  if (reader === 'paycheck') return 'this pay period is'
   return reader === 'month' ? 'this month is' : reader === 'week' ? 'this week is' : 'they are'
 }
 
