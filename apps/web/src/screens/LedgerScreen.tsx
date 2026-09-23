@@ -14,7 +14,7 @@ import { cn } from '../lib/cn.js'
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
-/** Everything that reached the ledger, a month at a time. */
+/** All transactions: everything that reached the ledger, a month at a time. */
 export function LedgerScreen() {
   const { supabase, categories, refresh, version } = useAppData()
   const [month, setMonth] = useState(() => shiftMonth(isoDate(todayIso()), 0))
@@ -68,7 +68,8 @@ export function LedgerScreen() {
     <div className="space-y-4">
       <header className="flex items-center justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Ledger</h1>
+          {/* More's name for it: one screen, one name. */}
+          <h1 className="text-2xl font-semibold tracking-tight">All transactions</h1>
           <p className="text-sm text-muted-foreground">
             {MONTHS[Number(monthNumber) - 1]} {year}
           </p>
@@ -97,6 +98,11 @@ export function LedgerScreen() {
               <Figure>{formatCents(totals.inflowCents)}</Figure>
             </p>
           </Card>
+          {/* A plain sum of the rows, so a card payment is money in here and
+            never on the Month; said, so neither reads as the Month's Spent. */}
+          <p className="col-span-2 text-xs text-muted-foreground">
+            Every row as it is, card payments and savings moves included. The Month counts spending by list.
+          </p>
         </div>
       ) : null}
 
