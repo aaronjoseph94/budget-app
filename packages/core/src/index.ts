@@ -74,6 +74,15 @@ export {
 export { goalBars, type GoalBar, type GoalBarsInput, type GoalBarsOutput } from './shares.js'
 
 export {
+  yearSheet,
+  type YearFigure,
+  type YearGroups,
+  type YearMonth,
+  type YearSheet,
+  type YearSheetInput,
+} from './year-sheet.js'
+
+export {
   reconcileStatement,
   type Discrepancy,
   type Reconciliation,

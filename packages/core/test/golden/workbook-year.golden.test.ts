@@ -1,0 +1,53 @@
+import { describe, expect, it } from 'vitest'
+import { loadGolden } from '@budget/golden-verification'
+import { isoDate } from '@budget/money-primitives'
+import type { BudgetHistoryRow } from '../../src/budgets.js'
+import type { PeriodCategory, PeriodEntry } from '../../src/period-sheet.js'
+import type { PlanHistoryRow } from '../../src/plans.js'
+import { yearSheet, type YearSheet } from '../../src/year-sheet.js'
+
+/**
+ * External check: Annual Budget's month rows and totals, each a cached value
+ * from the Workbook workbook, transcribed under F11 (the fixture's $semantics
+ * says how).
+ */
+
+type Dated<T, K extends keyof T> = Omit<T, K> & { [P in K]: string }
+interface Input {
+  startMonth: string
+  categories: PeriodCategory[]
+  budgetHistory: Dated<BudgetHistoryRow, 'month'>[]
+  planHistory: Dated<PlanHistoryRow, 'effectiveMonth'>[]
+  entries: Dated<PeriodEntry, 'postedOn'>[]
+}
+type Group = keyof YearSheet['totals']
+interface Cell {
+  cell: string
+  group: Group
+  /** Null asserts the twelve-month total rather than one month's row. */
+  month: string | null
+  field: 'budgetCents' | 'actualCents'
+  cents: number
+}
+
+function yearFrom(input: Input): YearSheet {
+  return yearSheet({
+    startMonth: isoDate(input.startMonth),
+    categories: input.categories,
+    budgetHistory: input.budgetHistory.map((h) => ({ ...h, month: isoDate(h.month) })),
+    planHistory: input.planHistory.map((p) => ({ ...p, effectiveMonth: isoDate(p.effectiveMonth) })),
+    entries: input.entries.map((e) => ({ ...e, postedOn: isoDate(e.postedOn) })),
+  })
+}
+
+const part1 = loadGolden<Input, { cells: Cell[] }>('workbook-year-part1')
+
+describe('the Year replays Annual Budget (workbook-year part 1)', () => {
+  const sheet = yearFrom(part1.input)
+
+  it.each(part1.expected.cells)('$cell = $cents', (c) => {
+    const row = c.month === null ? sheet.totals : sheet.months.find((m) => m.month === c.month)
+    expect(row, `${c.cell}: no row for ${c.month}`).toBeDefined()
+    expect(row![c.group][c.field]).toBe(c.cents)
+  })
+})

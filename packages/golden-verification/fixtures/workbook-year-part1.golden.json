@@ -1,0 +1,79 @@
+{
+  "$provenance": {
+    "sourceWorkbook": "Ultimate Annual Budget (\"Workbook\"), the owner's copy, Google Sheets export (not committed)",
+    "sourceSheet": "Annual Budget",
+    "cells": {"window": "Annual Budget!D6 (start month)", "expected": "Annual Budget!D29, J29, P29, V29, P10, J9, V9", "budgetHistory": "Jan!D22, J22, O22, T22:T23, O10:O14, T10; Feb!D22, J22, O22, T22, O10, T10 (Mar..Dec type the same zeros)", "planHistory": "Bills!B7:D7, F7:H7, J7:L7; every other Monthly Amount in D8:D29, H8:H29, L8:L29 is blank", "entries": "Bills!O7:Q9 (the Variable Bills log)", "categories": "START HERE!B8:B12, H7, B18, D18, D20:D21, F18, H17:H18"},
+    "extractedOn": "2026-09-23",
+    "note": "Workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S13a, workbook-year part 1: the Year's month rows and totals."
+  },
+  "$semantics": {
+    "transcription": "F11. Annual Budget shows 2025 (D6) but reads budgets and goals from the 2026 month tabs by month name (Hidden!J4 =Jan!$O$9, N4 =Jan!$D$21). One engine reading one year (D10) can only reproduce that if January's typed values are re-dated from 2026-01 to 2025-01, and February's typed zeros to 2025-02, so they are. Only Hidden!O, Q and S (bills, debts, subscriptions Actual) use Annual's own year, through Annual Budget!C30:C41, so the ledger holds the Bills-log rows and no Transactions rows: those are dated 2025 and Annual never reads them.",
+    "budgetHistory": "D12. Jan's typed Budgeted and Goal cells are 'onward' rows at 2025-01. Feb..Dec type 0 in D22, J22, O22, T22, O10 and T10 and leave the rest blank; one 'onward' row at 2025-02 holding 0, for each category January gave more than 0, reads the same for every later month, as Workbook's sums read a blank as 0.",
+    "totals": "D29, J29, P29, V29 =SUM(x30:x42), twelve months of a list's budgets: January's alone, February's typed 0 stopping the carry. P10 =D30+J30+P30+V30 is one month's expense budget. J9 and V9 are the income and savings goal totals; they sum only seven months in Workbook (D7), which the sample cannot show, its later goals being 0.",
+    "signs": "D3: logged payments are positive in Bills!Q and negated in the ledger.",
+    "left out": "Plan section 5.4. Annual Budget!K29, K30, H27, Q10 and Hidden!Q4 add Credit Card 1's $200 to its $50 plan, where D5 replaces the plan. Q11 is February 2026 spending under a 2025 heading, and K9, W9, W30 read 2026 Actuals that F11's ledger holds none of. P9, Q9, N6, D11, D15, D20 are Workbook's range and blank-cell mistakes (D7).",
+    "merchants": "The engine takes no merchant text; Bills!R (Notes) is not transcribed. Ids are synthetic."
+  },
+  "input": {
+    "startMonth": "2025-01-01",
+    "categories": [
+      {"id": "cat-income-1", "name": "Income 1", "kind": "income", "sortOrder": 0},
+      {"id": "cat-income-2", "name": "Income 2", "kind": "income", "sortOrder": 1},
+      {"id": "cat-side-hustle", "name": "Side Hustle", "kind": "income", "sortOrder": 2},
+      {"id": "cat-freelance-work", "name": "Freelance Work", "kind": "income", "sortOrder": 3},
+      {"id": "cat-donations", "name": "Donations", "kind": "income", "sortOrder": 4},
+      {"id": "cat-emergency-fund", "name": "Emergency Fund", "kind": "savings", "sortOrder": 0},
+      {"id": "cat-rent", "name": "Rent", "kind": "bill", "sortOrder": 0},
+      {"id": "cat-credit-card-1", "name": "Credit Card 1", "kind": "debt", "sortOrder": 0},
+      {"id": "cat-car-loan", "name": "Car Loan", "kind": "debt", "sortOrder": 2},
+      {"id": "cat-student-loan", "name": "Student Loan", "kind": "debt", "sortOrder": 3},
+      {"id": "cat-netflix", "name": "Netflix", "kind": "subscription", "sortOrder": 0},
+      {"id": "cat-restaurants", "name": "Restaurants", "kind": "variable", "sortOrder": 0},
+      {"id": "cat-groceries", "name": "Groceries", "kind": "variable", "sortOrder": 1}
+    ],
+    "budgetHistory": [
+      {"categoryId": "cat-rent", "month": "2025-01-01", "applies": "onward", "budgetCents": 80000, "from": "Jan!D22"},
+      {"categoryId": "cat-credit-card-1", "month": "2025-01-01", "applies": "onward", "budgetCents": 15000, "from": "Jan!J22"},
+      {"categoryId": "cat-netflix", "month": "2025-01-01", "applies": "onward", "budgetCents": 1799, "from": "Jan!O22"},
+      {"categoryId": "cat-restaurants", "month": "2025-01-01", "applies": "onward", "budgetCents": 0, "from": "Jan!T22"},
+      {"categoryId": "cat-groceries", "month": "2025-01-01", "applies": "onward", "budgetCents": 80000, "from": "Jan!T23"},
+      {"categoryId": "cat-income-1", "month": "2025-01-01", "applies": "onward", "budgetCents": 450000, "from": "Jan!O10"},
+      {"categoryId": "cat-income-2", "month": "2025-01-01", "applies": "onward", "budgetCents": 60000, "from": "Jan!O11"},
+      {"categoryId": "cat-side-hustle", "month": "2025-01-01", "applies": "onward", "budgetCents": 120000, "from": "Jan!O12"},
+      {"categoryId": "cat-freelance-work", "month": "2025-01-01", "applies": "onward", "budgetCents": 410000, "from": "Jan!O13"},
+      {"categoryId": "cat-donations", "month": "2025-01-01", "applies": "onward", "budgetCents": 900000, "from": "Jan!O14"},
+      {"categoryId": "cat-emergency-fund", "month": "2025-01-01", "applies": "onward", "budgetCents": 300000, "from": "Jan!T10"},
+      {"categoryId": "cat-rent", "month": "2025-02-01", "applies": "onward", "budgetCents": 0, "from": "Feb!D22"},
+      {"categoryId": "cat-credit-card-1", "month": "2025-02-01", "applies": "onward", "budgetCents": 0, "from": "Feb!J22"},
+      {"categoryId": "cat-netflix", "month": "2025-02-01", "applies": "onward", "budgetCents": 0, "from": "Feb!O22"},
+      {"categoryId": "cat-groceries", "month": "2025-02-01", "applies": "onward", "budgetCents": 0, "from": "Feb!T23 (blank)"},
+      {"categoryId": "cat-income-1", "month": "2025-02-01", "applies": "onward", "budgetCents": 0, "from": "Feb!O10"},
+      {"categoryId": "cat-income-2", "month": "2025-02-01", "applies": "onward", "budgetCents": 0, "from": "Feb!O11 (blank)"},
+      {"categoryId": "cat-side-hustle", "month": "2025-02-01", "applies": "onward", "budgetCents": 0, "from": "Feb!O12 (blank)"},
+      {"categoryId": "cat-freelance-work", "month": "2025-02-01", "applies": "onward", "budgetCents": 0, "from": "Feb!O13 (blank)"},
+      {"categoryId": "cat-donations", "month": "2025-02-01", "applies": "onward", "budgetCents": 0, "from": "Feb!O14 (blank)"},
+      {"categoryId": "cat-emergency-fund", "month": "2025-02-01", "applies": "onward", "budgetCents": 0, "from": "Feb!T10"}
+    ],
+    "planHistory": [
+      {"categoryId": "cat-rent", "effectiveMonth": "2025-01-01", "plannedCents": 80000, "dueDay": 1, "from": "Bills!B7:D7"},
+      {"categoryId": "cat-credit-card-1", "effectiveMonth": "2025-01-01", "plannedCents": 5000, "dueDay": 14, "from": "Bills!F7:H7"},
+      {"categoryId": "cat-netflix", "effectiveMonth": "2025-01-01", "plannedCents": 1799, "dueDay": 23, "from": "Bills!J7:L7"}
+    ],
+    "entries": [
+      {"postedOn": "2025-01-05", "amountCents": -20000, "categoryId": "cat-credit-card-1", "from": "Bills!O7:Q7"},
+      {"postedOn": "2025-01-15", "amountCents": -10000, "categoryId": "cat-car-loan", "from": "Bills!O8:Q8"},
+      {"postedOn": "2026-02-10", "amountCents": -65000, "categoryId": "cat-student-loan", "from": "Bills!O9:Q9"}
+    ]
+  },
+  "expected": {
+    "cells": [
+      {"cell": "Annual Budget!D29", "group": "bill", "month": null, "field": "budgetCents", "cents": 80000},
+      {"cell": "Annual Budget!J29", "group": "debt", "month": null, "field": "budgetCents", "cents": 15000},
+      {"cell": "Annual Budget!P29", "group": "subscription", "month": null, "field": "budgetCents", "cents": 1799},
+      {"cell": "Annual Budget!V29", "group": "variable", "month": null, "field": "budgetCents", "cents": 80000},
+      {"cell": "Annual Budget!P10", "group": "expenses", "month": "2025-01-01", "field": "budgetCents", "cents": 176799},
+      {"cell": "Annual Budget!J9", "group": "income", "month": null, "field": "budgetCents", "cents": 1940000},
+      {"cell": "Annual Budget!V9", "group": "savings", "month": null, "field": "budgetCents", "cents": 300000}
+    ]
+  }
+}
