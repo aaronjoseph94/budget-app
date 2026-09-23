@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { WeekScreen } from '../src/screens/WeekScreen.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
@@ -199,5 +199,55 @@ describe('WeekScreen', () => {
     expect(
       within(alert).getByText('Your sign-in does not allow this. Signing out and back in usually fixes it. (code 42501)'),
     ).toBeTruthy()
+  })
+
+  // As on the Month (N35): rows read before the categories arrive would name
+  // categories the screen does not know yet.
+  it('reads no rows before the app has its categories', async () => {
+    const fake = seeded()
+    const answered: string[] = []
+    let release = () => {}
+    fake.server.hold = (table) => {
+      answered.push(table)
+      return table === 'categories' ? new Promise<void>((resolve) => (release = resolve)) : null
+    }
+    renderScreen(<WeekScreen />, fake)
+
+    // The goal is read by the app alone, after anything the Week would have asked for.
+    await waitFor(() => expect(answered).toContain('savings_goals'))
+    expect(answered).not.toContain('transactions')
+    expect(screen.queryByRole('alert')).toBeNull()
+
+    fake.server.hold = null
+    release()
+    expect((await screen.findAllByText('$130.12')).length).toBeGreaterThan(0)
+  })
+
+  it("shows no figures under the next week's dates until its rows are in", async () => {
+    const fake = seeded()
+    renderScreen(<WeekScreen />, fake)
+    expect((await screen.findAllByText('$130.12')).length).toBeGreaterThan(0)
+
+    let release = () => {}
+    fake.server.hold = (table) => (table === 'transactions' ? new Promise<void>((resolve) => (release = resolve)) : null)
+    fireEvent.click(screen.getByRole('button', { name: 'Previous week' }))
+
+    expect(await screen.findByRole('heading', { name: 'Week of' })).toBeTruthy()
+    // Not this week's figures, and not a $0 week either: no figures at all.
+    expect(screen.queryByText('Spent')).toBeNull()
+
+    fake.server.hold = null
+    release()
+    expect((await screen.findAllByText('$99.99')).length).toBeGreaterThan(0)
+  })
+
+  it('stops showing the loading card when the first load fails, which the app says above the screen', async () => {
+    const fake = seeded()
+    fake.fail('categories', '42501')
+    const { container } = renderScreen(<WeekScreen />, fake)
+
+    expect(container.querySelector('.animate-pulse')).not.toBeNull()
+    await waitFor(() => expect(container.querySelector('.animate-pulse')).toBeNull())
+    expect(screen.queryByText('$130.12')).toBeNull()
   })
 })

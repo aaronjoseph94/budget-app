@@ -18,33 +18,41 @@ import { GoalCard, NoGoal } from './WeekGoal.js'
  * goalProgress and timeEquivalent for the goal. This screen formats them.
  */
 export function WeekScreen() {
-  const { supabase, categories, goal, pendingTotal, version } = useAppData()
+  const { supabase, categories, goal, pendingTotal, loadError, version } = useAppData()
   const today = isoDate(todayIso())
   const [asOf, setAsOf] = useState(today)
-  const [rows, setRows] = useState<readonly LedgerRow[] | null>(null)
+  const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [error, setError] = useState<string | null>(null)
   const bounds = useMemo(() => weekBounds(asOf), [asOf])
 
   useEffect(() => {
+    // As on the Month (N35): nothing is read before the app's first load
+    // brings the categories, or every row would count as uncategorised.
+    if (version === 0) return
     let live = true
+    setError(null)
     listTransactions(supabase, { from: bounds.start, to: bounds.end })
-      .then((r) => live && (setRows(r), setError(null)))
+      .then((rows) => live && setLoaded({ start: bounds.start, rows }))
       .catch((e: unknown) => live && setError(e instanceof Error ? e.message : 'Could not load this week.'))
     return () => {
       live = false
     }
   }, [supabase, bounds.start, bounds.end, version])
 
+  // A week's rows only ever fill that week: while the next one loads, the
+  // screen waits rather than count the last one's, none of which fall in it,
+  // and show an empty week under its dates.
+  const here = loaded !== null && loaded.start === bounds.start ? loaded : null
   const week = useMemo(
     () =>
-      rows === null
+      here === null
         ? null
         : weeklySummary({
-            entries: rows.map((r) => ({ postedOn: isoDate(r.posted_on), amountCents: r.amount_cents, categoryId: r.category_id })),
+            entries: here.rows.map((r) => ({ postedOn: isoDate(r.posted_on), amountCents: r.amount_cents, categoryId: r.category_id })),
             categories: categories.map((c) => ({ id: c.id, name: c.name, kind: c.kind, weeklyBudgetCents: c.weekly_budget_cents })),
             asOf,
           }),
-    [rows, categories, asOf],
+    [here, categories, asOf],
   )
 
   const isThisWeek = weekBounds(today).start === bounds.start
@@ -93,7 +101,8 @@ export function WeekScreen() {
 
       {error !== null ? <Alert tone="error" title="Could not load this week">{error}</Alert> : null}
 
-      {week === null && error === null ? <SkeletonCard /> : null}
+      {/* A first load that failed is said above the screen, by App, as on the Month. */}
+      {week === null && error === null && (version > 0 || loadError === null) ? <SkeletonCard /> : null}
 
       {week !== null ? (
         <>
@@ -201,6 +210,11 @@ export function WeekScreen() {
       ) : null}
     </div>
   )
+}
+
+interface Loaded {
+  readonly start: string
+  readonly rows: readonly LedgerRow[]
 }
 
 function SkeletonCard() {
