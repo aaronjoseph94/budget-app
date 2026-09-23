@@ -4,6 +4,7 @@ import {
   describeBudgetFailure,
   describeFailure,
   describePlanFailure,
+  describeScheduleFailure,
   describeReason,
   describeSetupFailure,
   describeWriteFailure,
@@ -261,6 +262,23 @@ describe('describePlanFailure', () => {
     )
     for (const code of ['PGRST205', '42P01', '', 'PGRST301', 'XX000']) {
       expect(describePlanFailure('week', { code })).not.toMatch(/saved|month is|this month|lists still work/)
+    }
+  })
+
+  it('says the Bill Calendar is not shown when it cannot read them, or when it is paid', () => {
+    expect(describePlanFailure('calendar', { code: 'PGRST205' })).toContain('(0009 in the setup guide), so this calendar cannot be shown.')
+    expect(describePlanFailure('calendar', { code: 'XX000' })).toBe(
+      'Your monthly amounts could not be read, so this calendar is not shown. Try again. (code XX000)',
+    )
+    expect(describeScheduleFailure('calendar', { code: 'PGRST301' })).toBe(
+      'Your session expired. Sign in again to see this calendar. (code PGRST301)',
+    )
+    expect(describeScheduleFailure('calendar', { code: 'XX000' })).toBe(
+      'When you are paid could not be read, so this calendar is not shown. Try again. (code XX000)',
+    )
+    for (const code of ['PGRST205', '42P01', '', 'PGRST301', 'XX000']) {
+      expect(describePlanFailure('calendar', { code })).not.toMatch(/saved|month is|pay period|lists still work/)
+      expect(describeScheduleFailure('calendar', { code })).not.toMatch(/saved|pay period|lists still work/)
     }
   })
 

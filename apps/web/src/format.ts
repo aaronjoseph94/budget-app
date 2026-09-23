@@ -259,9 +259,9 @@ export function describeBudgetFailure(action: BudgetAction, error: WriteError | 
  * without them: a month without its planned bills has a Spent that looks
  * right and is not. So its sentences say the month is not shown. The Week
  * ('week') is the same, and its sentences name the week, as Paycheck's
- * ('paycheck') name its pay period.
+ * ('paycheck') name its pay period and the Bill Calendar's ('calendar') it.
  */
-export type PlanAction = 'read' | 'month' | 'week' | 'paycheck' | 'save'
+export type PlanAction = 'read' | 'month' | 'week' | 'paycheck' | 'calendar' | 'save'
 const PLANS_NOT_APPLIED = 'Monthly amounts need a database update that has not been applied yet (0009 in the setup guide)'
 const PLAN_FAILURES: Readonly<Record<PlanAction, Readonly<Record<string, string>>>> = {
   month: {
@@ -281,6 +281,12 @@ const PLAN_FAILURES: Readonly<Record<PlanAction, Readonly<Record<string, string>
     '42P01': `${PLANS_NOT_APPLIED}, so this pay period cannot be shown.`,
     '': 'Could not reach the database to read your monthly amounts. Check your connection and try again.',
     PGRST301: 'Your session expired. Sign in again to see this pay period.',
+  },
+  calendar: {
+    PGRST205: `${PLANS_NOT_APPLIED}, so this calendar cannot be shown.`,
+    '42P01': `${PLANS_NOT_APPLIED}, so this calendar cannot be shown.`,
+    '': 'Could not reach the database to read your monthly amounts. Check your connection and try again.',
+    PGRST301: 'Your session expired. Sign in again to see this calendar.',
   },
   read: {
     PGRST205: `${PLANS_NOT_APPLIED}, so they are not shown. Your lists still work.`,
@@ -308,6 +314,7 @@ export function describePlanFailure(action: PlanAction, error: WriteError | null
 /** What a failed read of monthly amounts leaves unshown, for its sentence. */
 export function shownBy(reader: PlanAction): string {
   if (reader === 'paycheck') return 'this pay period is'
+  if (reader === 'calendar') return 'this calendar is'
   return reader === 'month' ? 'this month is' : reader === 'week' ? 'this week is' : 'they are'
 }
 
@@ -317,12 +324,13 @@ export function shownBy(reader: PlanAction): string {
  * As for monthly amounts: PGRST205, or 42P01 from an older PostgREST, is
  * 0011 not pasted yet, so say where, and a read never says "nothing was
  * saved" (N28). Setup ('read') still shows its lists without them; the
- * Paycheck view ('paycheck') has no period to show. A save meets 0011's
+ * Paycheck view ('paycheck') has no period to show, and the Bill Calendar
+ * ('calendar') no paydays, so it shows nothing. A save meets 0011's
  * trigger, 23514, only for a category moved off Income on another device
  * after Setup read it, since Setup offers a schedule on Income alone, and
  * the key to the category, 23503, for one removed there.
  */
-export type ScheduleAction = 'read' | 'paycheck' | 'save'
+export type ScheduleAction = 'read' | 'paycheck' | 'calendar' | 'save'
 const SCHEDULES_NOT_APPLIED = 'Pay schedules need a database update that has not been applied yet (0011 in the setup guide)'
 const SCHEDULE_FAILURES: Readonly<Record<ScheduleAction, Readonly<Record<string, string>>>> = {
   read: {
@@ -335,6 +343,12 @@ const SCHEDULE_FAILURES: Readonly<Record<ScheduleAction, Readonly<Record<string,
     '42P01': `${SCHEDULES_NOT_APPLIED}, so no pay period can be shown.`,
     '': 'Could not reach the database to read when you are paid. Check your connection and try again.',
     PGRST301: 'Your session expired. Sign in again to see this pay period.',
+  },
+  calendar: {
+    PGRST205: `${SCHEDULES_NOT_APPLIED}, so this calendar cannot be shown.`,
+    '42P01': `${SCHEDULES_NOT_APPLIED}, so this calendar cannot be shown.`,
+    '': 'Could not reach the database to read when you are paid. Check your connection and try again.',
+    PGRST301: 'Your session expired. Sign in again to see this calendar.',
   },
   save: {
     PGRST205: `${SCHEDULES_NOT_APPLIED}. Nothing was saved.`,
@@ -349,7 +363,12 @@ export function describeScheduleFailure(action: ScheduleAction, error: WriteErro
   const body = SCHEDULE_FAILURES[action][code]
   if (body !== undefined) return code === '' ? body : `${body} (code ${code})`
   if (action === 'save') return describeWriteFailure(error)
-  return `When you are paid could not be read, so ${action === 'read' ? 'it is' : 'this pay period is'} not shown. Try again. (code ${code})`
+  return `When you are paid could not be read, so ${scheduleShownBy(action)} not shown. Try again. (code ${code})`
+}
+
+/** What a failed read of pay schedules leaves unshown, for its sentence. */
+export function scheduleShownBy(reader: Exclude<ScheduleAction, 'save'>): string {
+  return reader === 'read' ? 'it is' : reader === 'calendar' ? 'this calendar is' : 'this pay period is'
 }
 
 /** What the Month was doing with its starting balance when a request failed. */

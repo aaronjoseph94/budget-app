@@ -23,6 +23,7 @@ import {
   describeScheduleFailure,
   describeSetupFailure,
   describeWriteFailure,
+  scheduleShownBy,
   shownBy,
   type PlanAction,
   type ScheduleAction,
@@ -892,7 +893,7 @@ export async function listPaySchedules(
         .order('id', { ascending: true })
         .range(from, to),
     {
-      changed: `When you are paid changed while it was being read, so ${reader === 'read' ? 'it is' : 'this pay period is'} not shown. Try again.`,
+      changed: `When you are paid changed while it was being read, so ${scheduleShownBy(reader)} not shown. Try again.`,
       describe: (error) => describeScheduleFailure(reader, error),
     },
   )
