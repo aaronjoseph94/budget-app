@@ -1,5 +1,6 @@
 /**
- * Which screen is showing, and which month, kept in the URL's #hash.
+ * Which screen is showing, and which month or pay period, kept in the URL's
+ * #hash.
  *
  * The hash rather than state so that a refresh, the phone's back gesture and
  * reopening the app from the iPhone home screen land where the user was,
@@ -7,12 +8,14 @@
  * dependency for a handful of fixed destinations with at most one period
  * each; this is the whole of what they need.
  *
- * Reading a month out of an address is parsing, not arithmetic, so it lives
- * here. Stepping a month back or forward is `shiftMonth` in packages/core.
+ * Reading a period out of an address is parsing, not arithmetic, so it lives
+ * here. Stepping one back or forward is `shiftMonth` or `shiftPayPeriod` in
+ * packages/core.
  */
 import { useMemo, useSyncExternalStore } from 'react'
+import { isoDate } from '@budget/core'
 
-export const SCREENS = ['month', 'week', 'review', 'add', 'more', 'ledger', 'settings', 'setup', 'year'] as const
+export const SCREENS = ['month', 'week', 'review', 'add', 'more', 'ledger', 'settings', 'setup', 'year', 'paycheck'] as const
 export type Screen = (typeof SCREENS)[number]
 
 /** What a bare or unreadable address opens: Month first (plan §9a, decision 1). */
@@ -22,14 +25,24 @@ export interface Address {
   readonly screen: Screen
   /**
    * `YYYY-MM`: the month on the Month screen, the start month on the Year
-   * (`#/year/2026-01`, F14). Null for the screen's own default, and on
-   * every other screen.
+   * (`#/year/2026-01`, F14). `YYYY-MM-DD` on Paycheck: a day of the pay
+   * period, its payday when the arrows wrote it (`#/paycheck/2026-09-11`).
+   * Null for the screen's own default, and on every other screen.
    */
-  readonly month: string | null
+  readonly period: string | null
 }
 
-const DEFAULT: Address = { screen: HOME, month: null }
+const DEFAULT: Address = { screen: HOME, period: null }
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/
+
+/** A real calendar day: `2026-02-30` is refused, not rolled into March. */
+function isDay(text: string): boolean {
+  try {
+    return isoDate(text) === text
+  } catch {
+    return false
+  }
+}
 
 /**
  * An address as the app reads it. Anything it cannot read in full (an
@@ -40,12 +53,13 @@ export function readAddress(hash: string): Address {
   const [name = '', period, ...rest] = hash.replace(/^#\/?/, '').split('/')
   const screen = SCREENS.find((s) => s === name)
   if (screen === undefined || rest.length > 0) return DEFAULT
-  if (period === undefined) return { screen, month: null }
-  return (screen === 'month' || screen === 'year') && MONTH.test(period) ? { screen, month: period } : DEFAULT
+  if (period === undefined) return { screen, period: null }
+  if ((screen === 'month' || screen === 'year') && MONTH.test(period)) return { screen, period }
+  return screen === 'paycheck' && isDay(period) ? { screen, period } : DEFAULT
 }
 
 export function hashOf(address: Address): string {
-  return address.month === null ? `#/${address.screen}` : `#/${address.screen}/${address.month}`
+  return address.period === null ? `#/${address.screen}` : `#/${address.screen}/${address.period}`
 }
 
 function subscribe(onChange: () => void): () => void {
@@ -64,9 +78,9 @@ export function useScreen(): Screen {
   return useAddress().screen
 }
 
-/** Go to a screen; `month` (`YYYY-MM`) only for the Month and Year screens. */
-export function navigate(screen: Screen, month: string | null = null): void {
-  const hash = hashOf({ screen, month })
+/** Go to a screen; `period` only for the Month and Year (`YYYY-MM`) and Paycheck (`YYYY-MM-DD`). */
+export function navigate(screen: Screen, period: string | null = null): void {
+  const hash = hashOf({ screen, period })
   if (window.location.hash !== hash) window.location.hash = hash.slice(1)
   window.scrollTo({ top: 0 })
 }

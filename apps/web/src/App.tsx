@@ -80,7 +80,7 @@ function tabOf(screen: Screen, tabs: readonly Tab[]): Screen {
 }
 
 export function Shell() {
-  const { screen, month } = useAddress()
+  const { screen, period } = useAddress()
   const { pendingTotal, loadError } = useAppData()
   // Month, Week and Year widen on a desktop to take Workbook's four columns (§6.3, §6.4).
   const width = screen === 'month' || screen === 'week' || screen === 'year' ? 'max-w-3xl lg:max-w-7xl' : 'max-w-3xl'
@@ -123,7 +123,7 @@ export function Shell() {
             </Alert>
           </div>
         ) : null}
-        {screen === 'month' ? <MonthScreen month={month} /> : null}
+        {screen === 'month' ? <MonthScreen month={period} /> : null}
         {screen === 'week' ? <WeekScreen /> : null}
         {screen === 'review' ? <ReviewScreen /> : null}
         {screen === 'add' ? <AddScreen /> : null}
@@ -133,7 +133,7 @@ export function Shell() {
         {screen === 'setup' ? <SetupScreen /> : null}
         {screen === 'year' ? (
           <Suspense fallback={<p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>}>
-            <YearScreen start={month} />
+            <YearScreen start={period} />
           </Suspense>
         ) : null}
       </main>

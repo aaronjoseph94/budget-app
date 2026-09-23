@@ -7,21 +7,29 @@ afterEach(() => {
 
 describe('readAddress', () => {
   it('reads a screen, and a month on the Month screen', () => {
-    expect(readAddress('#/month/2026-09')).toEqual({ screen: 'month', month: '2026-09' })
-    expect(readAddress('#/month')).toEqual({ screen: 'month', month: null })
-    expect(readAddress('#/review')).toEqual({ screen: 'review', month: null })
-    expect(readAddress('#/ledger')).toEqual({ screen: 'ledger', month: null })
+    expect(readAddress('#/month/2026-09')).toEqual({ screen: 'month', period: '2026-09' })
+    expect(readAddress('#/month')).toEqual({ screen: 'month', period: null })
+    expect(readAddress('#/review')).toEqual({ screen: 'review', period: null })
+    expect(readAddress('#/ledger')).toEqual({ screen: 'ledger', period: null })
   })
 
   it('reads the Year and its start month', () => {
-    expect(readAddress('#/year/2026-01')).toEqual({ screen: 'year', month: '2026-01' })
-    expect(readAddress('#/year')).toEqual({ screen: 'year', month: null })
-    expect(readAddress('#/year/2026-13')).toEqual({ screen: HOME, month: null })
+    expect(readAddress('#/year/2026-01')).toEqual({ screen: 'year', period: '2026-01' })
+    expect(readAddress('#/year')).toEqual({ screen: 'year', period: null })
+    expect(readAddress('#/year/2026-13')).toEqual({ screen: HOME, period: null })
+  })
+
+  it('reads a day of a pay period on Paycheck, and only a real one', () => {
+    expect(readAddress('#/paycheck/2026-09-11')).toEqual({ screen: 'paycheck', period: '2026-09-11' })
+    expect(readAddress('#/paycheck')).toEqual({ screen: 'paycheck', period: null })
+    for (const hash of ['#/paycheck/2026-02-30', '#/paycheck/2026-09', '#/paycheck/2026-9-11', '#/month/2026-09-11']) {
+      expect(readAddress(hash), hash).toEqual({ screen: HOME, period: null })
+    }
   })
 
   it('opens the home screen when there is no address', () => {
-    expect(readAddress('')).toEqual({ screen: HOME, month: null })
-    expect(readAddress('#/')).toEqual({ screen: HOME, month: null })
+    expect(readAddress('')).toEqual({ screen: HOME, period: null })
+    expect(readAddress('#/')).toEqual({ screen: HOME, period: null })
   })
 
   it('opens the home screen rather than guess at an address it cannot read in full', () => {
@@ -37,12 +45,12 @@ describe('readAddress', () => {
       '#/nowhere',
       '#/Month',
     ]) {
-      expect(readAddress(hash), hash).toEqual({ screen: HOME, month: null })
+      expect(readAddress(hash), hash).toEqual({ screen: HOME, period: null })
     }
   })
 
   it('writes back what it reads', () => {
-    for (const hash of ['#/month/2026-09', '#/month', '#/settings', '#/year/2025-04']) expect(hashOf(readAddress(hash))).toBe(hash)
+    for (const hash of ['#/month/2026-09', '#/month', '#/settings', '#/year/2025-04', '#/paycheck/2026-09-11']) expect(hashOf(readAddress(hash))).toBe(hash)
   })
 })
 
