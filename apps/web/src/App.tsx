@@ -61,7 +61,7 @@ const PHONE_TABS: readonly Tab[] = [
   { screen: 'more', label: 'More', icon: 'menu' },
 ]
 
-/** Wide screens have room for Paycheck, the Bill calendar, Year, Savings and Setup on the bar itself (§6.1). */
+/** Wide screens have room for Paycheck, the Bill calendar, Year, Savings, Debts and Setup on the bar itself (§6.1). */
 const DESKTOP_TABS: readonly Tab[] = [
   { screen: 'month', label: 'Month', icon: 'calendar' },
   { screen: 'week', label: 'Week', icon: 'week' },
@@ -69,6 +69,7 @@ const DESKTOP_TABS: readonly Tab[] = [
   { screen: 'calendar', label: 'Bills', icon: 'bills' },
   { screen: 'year', label: 'Year', icon: 'calendar' },
   { screen: 'savings', label: 'Savings', icon: 'piggy' },
+  { screen: 'debts', label: 'Debts', icon: 'card' },
   { screen: 'review', label: 'Review', icon: 'inbox' },
   { screen: 'add', label: 'Add', icon: 'plus' },
   { screen: 'setup', label: 'Setup', icon: 'list' },
@@ -118,8 +119,8 @@ export function Shell() {
                 >
                   <Icon name={t.icon} className="size-4" />
                   {/* A tablet's 768 has room for the icons only, and each keeps
-                    its name as its label; ten with their words need about 960px
-                    beside the name, so the words come back from 1280px. */}
+                    its name as its label; eleven with their words need about
+                    1,040px beside the name, so the words come back from 1280px. */}
                   <span className="hidden xl:inline">{t.label}</span>
                   {t.screen === 'review' && pendingTotal > 0 ? <Count n={pendingTotal} /> : null}
                 </button>
