@@ -172,7 +172,10 @@ function MoveCharge({
           onChange={(e) => setLearn(e.target.checked)}
         />
         <span className="min-w-0 break-words [overflow-wrap:anywhere]">
-          Always file <IngestedText>{charge.merchant_raw}</IngestedText> here
+          {/* Inside a sheet titled with the category the charge is leaving,
+            "here" reads as that one, so once a category is chosen it is named. */}
+          Always file <IngestedText>{charge.merchant_raw}</IngestedText>{' '}
+          {target === undefined ? 'here' : `in ${target.name}`}
         </span>
       </label>
       {error !== null ? (

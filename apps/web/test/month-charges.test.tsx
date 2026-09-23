@@ -106,6 +106,8 @@ describe('Moving a charge from the Month', () => {
     expect(sheet.getByRole('button', { name: 'Move' }).hasAttribute('disabled')).toBe(true)
 
     fireEvent.change(sheet.getByRole('combobox', { name: 'Move to' }), { target: { value: 'dining' } })
+    // In a sheet titled Groceries, "here" would read as Groceries.
+    expect(sheet.getByRole('checkbox', { name: 'Always file CONTOSO MARKET in Restaurants' })).toBe(learn)
     fireEvent.click(sheet.getByRole('button', { name: 'Move' }))
 
     expect((await sheet.findByRole('status')).textContent).toBe('Moved CONTOSO MARKET to Restaurants.')
