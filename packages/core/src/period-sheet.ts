@@ -43,7 +43,10 @@
  *   as the month tabs never read Bills!B. A partial window counts a plan only
  *   when its due day is one of the window's days (`Weekly Budget!D50`'s
  *   REGEXMATCH), so a blank due day never counts in one. A due day of 29–31
- *   counts on the last day of a shorter month (D6).
+ *   counts on the last day of a shorter month (D6). A window across a month
+ *   end can be given each month's amount, which counts on its due day in its
+ *   own month (D13), so a rent raised from February is paid at the new
+ *   amount on February 1st whichever month the week started in.
  * - F10, which months count planned amounts. The month tabs never gate them
  *   on a date (Dec!E22 is 800 whatever today is), so a month here never
  *   does, and a future month shows its planned bills. Only the Year will
@@ -110,6 +113,14 @@ export interface PeriodPlan {
   readonly plannedCents: number | null
   /** Day of the month it is paid, 1–31; null when none was typed. */
   readonly dueDay: number | null
+  /**
+   * The month this amount is in effect for, by its first day, when the
+   * window runs across a month end: it then counts only on its due day in
+   * that month, so a week holding February 1st pays February's rent, raised
+   * or not (D13). Left out, the amount counts on its due day in any month
+   * the window touches.
+   */
+  readonly month?: IsoDate
 }
 
 export interface PeriodSheetInput {
@@ -238,13 +249,22 @@ export function periodSheet(input: PeriodSheetInput): PeriodSheet {
     budgets.set(b.categoryId, b.budgetCents === null ? null : cents(b.budgetCents))
   }
 
-  const plans = new Map<string, PeriodPlan>()
+  const plans = new Map<string, PeriodPlan[]>()
   for (const p of input.plans) {
     const kind = known.get(p.categoryId)?.kind
     if (kind === undefined || !OWED.has(kind)) {
       throw new RangeError(`A monthly amount for category ${p.categoryId}, which is not a bill, debt or subscription`)
     }
-    if (plans.has(p.categoryId)) {
+    if (p.month !== undefined && p.month !== monthBounds(p.month).start) {
+      throw new RangeError(`A monthly amount's month is named by its first day; received ${p.month}`)
+    }
+    if (p.month !== undefined && (p.month > input.to || monthBounds(p.month).end < input.from)) {
+      throw new RangeError(`A monthly amount for ${p.month}, a month the window does not touch`)
+    }
+    // One per month named, and a category's amounts either all name their
+    // month or it has just one: an unnamed one would count in every month.
+    const earlier = plans.get(p.categoryId)
+    if (earlier !== undefined && earlier.some((q) => q.month === undefined || p.month === undefined || q.month === p.month)) {
       throw new RangeError(`Two monthly amounts for category ${p.categoryId}; resolve them to one before asking`)
     }
     if (p.dueDay !== null && !(Number.isInteger(p.dueDay) && p.dueDay >= 1 && p.dueDay <= 31)) {
@@ -253,14 +273,21 @@ export function periodSheet(input: PeriodSheetInput): PeriodSheet {
     if (p.plannedCents !== null && cents(p.plannedCents) < 0) {
       throw new RangeError(`A monthly amount cannot be negative, received ${p.plannedCents}`)
     }
-    plans.set(p.categoryId, p)
+    if (earlier === undefined) plans.set(p.categoryId, [p])
+    else earlier.push(p)
   }
   const wholeMonth = input.from === monthBounds(input.from).start && input.to === monthBounds(input.from).end
-  const plannedHere = (p: PeriodPlan | undefined): Cents | null => {
-    if (p === undefined || p.plannedCents === null) return null
-    if (wholeMonth) return cents(p.plannedCents)
-    if (p.dueDay === null) return null
-    return dueInWindow(p.dueDay, input.from, input.to) ? cents(p.plannedCents) : null
+  const counts = (p: PeriodPlan): p is PeriodPlan & { plannedCents: number } => {
+    if (p.plannedCents === null) return false
+    if (wholeMonth) return true
+    if (p.dueDay === null) return false
+    return dueInWindow(p.dueDay, input.from, input.to, p.month)
+  }
+  // Every month's amount paid in the window. Two only when the day paid
+  // moved at a month end and both days fall in it: both were paid.
+  const plannedHere = (list: readonly PeriodPlan[] | undefined): Cents | null => {
+    const paid = (list === undefined ? [] : list).filter(counts)
+    return paid.length === 0 ? null : sumCents(paid.map((p) => cents(p.plannedCents)))
   }
 
   // Rows by category, signed. A row naming a category that was not passed in
@@ -393,10 +420,12 @@ function present(values: readonly (Cents | null)[]): Cents[] {
 /**
  * Whether a bill due on `day` of each month falls on one of the window's days.
  * Every month the window touches is checked, so a week across a month end
- * finds the 1st. A day the month lacks counts on its last day (D6).
+ * finds the 1st, or only `month` when the amount is that month's. A day the
+ * month lacks counts on its last day (D6).
  */
-function dueInWindow(day: number, from: IsoDate, to: IsoDate): boolean {
-  for (let first = monthBounds(from).start; first <= to; first = shiftMonth(first, 1)) {
+function dueInWindow(day: number, from: IsoDate, to: IsoDate, month: IsoDate | undefined): boolean {
+  const final = month === undefined ? to : month
+  for (let first = month === undefined ? monthBounds(from).start : month; first <= final; first = shiftMonth(first, 1)) {
     const last = monthBounds(first).end
     const due = `${first.slice(0, 8)}${String(Math.min(day, Number(last.slice(8)))).padStart(2, '0')}`
     if (due >= from && due <= to) return true

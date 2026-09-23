@@ -224,6 +224,40 @@ describe('periodSheet bills, debts and subscriptions (suite)', () => {
   })
 })
 
+describe('periodSheet across a month end, a plan per month (suite)', () => {
+  const inMonth = (month: string, plannedCents: number | null, dueDay: number | null): PeriodPlan => ({
+    ...plan('rent', plannedCents, dueDay),
+    month: isoDate(`${month}-01`),
+  })
+  const rent = (plans: PeriodPlan[], entries: PeriodEntry[] = []) =>
+    owed(plans, entries, '2026-01-26', '2026-02-01').blocks.bill.rows[0]
+
+  it("counts the rent due on the 1st at February's amount when it was raised from February (D13)", () => {
+    const plans = [inMonth('2026-01', 160_000, 1), inMonth('2026-02', 170_000, 1)]
+    expect(rent(plans)).toMatchObject({ actualCents: 170_000, basis: 'planned' })
+    // Each month's amount is looked for on its own due day in that month:
+    // January's 1st is outside this week, so January's amount is not counted.
+    expect(rent([inMonth('2026-01', 160_000, 1)])).toMatchObject({ actualCents: 0, basis: 'none' })
+  })
+
+  it('counts both when the day paid moved and each month has its day in the window', () => {
+    // January's amount due on the 30th, February's on the 1st: both are paid this week.
+    const plans = [inMonth('2026-01', 160_000, 30), inMonth('2026-02', 170_000, 1)]
+    expect(rent(plans)).toMatchObject({ actualCents: 330_000, basis: 'planned' })
+    // A stopped month adds nothing, and a real row still replaces every plan (D5).
+    expect(rent([inMonth('2026-01', 160_000, 30), inMonth('2026-02', null, 1)])).toMatchObject({ actualCents: 160_000 })
+    expect(rent(plans, [row('2026-01-30', -150_000, 'rent')])).toMatchObject({ actualCents: 150_000, basis: 'real' })
+  })
+
+  it('refuses two amounts for one month, one with a month beside one without, and a month the window misses', () => {
+    const week = (plans: PeriodPlan[]) => () => rent(plans)
+    expect(week([inMonth('2026-02', 100, 1), inMonth('2026-02', 200, 1)])).toThrow(/Two monthly amounts/)
+    expect(week([plan('rent', 100, 1), inMonth('2026-02', 200, 1)])).toThrow(/Two monthly amounts/)
+    expect(week([inMonth('2026-03', 100, 1)])).toThrow(/does not touch/)
+    expect(week([{ ...plan('rent', 100, 1), month: isoDate('2026-02-02') }])).toThrow(/first day/)
+  })
+})
+
 describe('monthSheet (suite)', () => {
   it('runs the calendar month holding asOf, both ends included', () => {
     const s = monthSheet({
