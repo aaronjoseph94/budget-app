@@ -451,7 +451,7 @@ is kept and not offered.
 
 ---
 
-## N20 — The period engine is narrower than the plan's §5.1 table, for now *(settled in part 2026-09-23, S7, S10 and S11)*
+## N20 — The period engine is narrower than the plan's §5.1 table, for now *(settled 2026-09-23, S7, S10, S11 and S12b)*
 
 **Seen:** 2026-09-23, S4a and S4b (the period engine).
 
@@ -511,6 +511,12 @@ summary's income and saved (S11), and `shareBp` (S12b).
 balance, income, saved and the ending balance (F7), proven by workbook-month
 part 3 (seen failing first); with no start typed there is no ending balance
 (D17). Still open: `shareBp` (S12b).
+
+**Settled, S12b:** every row carries `shareBp`, its part of the rows above
+zero in its block, half-up (F17), so a row refunds took below zero has none
+rather than a slice. The income bars' Actual against Goal is `goalBars`
+beside it: both in basis points of the largest, one scale for every row.
+Hand-derived tests, seen failing first; Workbook prints no share to replay.
 
 ---
 

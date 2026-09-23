@@ -71,6 +71,8 @@ export {
   type VariableBlock,
 } from './period-sheet.js'
 
+export { goalBars, type GoalBar, type GoalBarsInput, type GoalBarsOutput } from './shares.js'
+
 export {
   reconcileStatement,
   type Discrepancy,

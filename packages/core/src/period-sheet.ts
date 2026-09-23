@@ -48,6 +48,10 @@
  *   on a date (Dec!E22 is 800 whatever today is), so a month here never
  *   does, and a future month shows its planned bills. Only the Year will
  *   gate, at its asOf, as Annual Budget does.
+ * - F17, a row's share, for the charts. Jan chart13 sizes each Variable row
+ *   by its Actual and prints no number. `shareBp` is the Actual over the
+ *   block's Actuals above zero, half-up, so a row refunds took below zero is
+ *   left out of the ring rather than drawn as spending.
  *
  * periodSheet takes plans and budgets already resolved for its window.
  * monthSheet resolves both itself, from everything typed: budgets and goals
@@ -76,6 +80,7 @@
 import { type Cents, type IsoDate, ZERO_CENTS, addCents, cents, subCents, sumCents } from '@budget/money-primitives'
 import { type BudgetHistoryRow, resolveBudgets } from './budgets.js'
 import { type PlanHistoryRow, resolvePlans } from './plans.js'
+import { shareOf } from './shares.js'
 import { type CategoryKind, monthBounds, shiftMonth } from './week.js'
 
 export interface PeriodCategory {
@@ -151,6 +156,12 @@ export interface PeriodRow {
   readonly remainingCents: Cents | null
   /** Actual − Goal (F6, Jan!V10), below zero when short of the goal. Savings only; null elsewhere. */
   readonly differenceCents: Cents | null
+  /**
+   * This row's part of its block, in basis points, for a chart (F17): its
+   * Actual over the block's Actuals above zero, half-up. Null when its own
+   * Actual is not above zero, which no slice can draw, or nothing is.
+   */
+  readonly shareBp: number | null
 }
 
 export interface PeriodBlock {
@@ -269,14 +280,14 @@ export function periodSheet(input: PeriodSheetInput): PeriodSheet {
   }
 
   const block = (kind: CategoryKind): PeriodBlock => {
-    const rows = input.categories
+    const unshared = input.categories
       .filter((c) => c.kind === kind)
       .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
-      .map((c): PeriodRow => {
+      .map((c): Omit<PeriodRow, 'shareBp'> => {
         const real = byCategory.get(c.id)
         const budget = budgets.get(c.id)
         const budgetCents = budget === undefined ? null : budget
-        const row = (actualCents: Cents, basis: PeriodRow['basis']): PeriodRow => ({
+        const row = (actualCents: Cents, basis: PeriodRow['basis']) => ({
           categoryId: c.id,
           name: c.name,
           budgetCents,
@@ -295,6 +306,12 @@ export function periodSheet(input: PeriodSheetInput): PeriodSheet {
         const planned = OWED.has(kind) ? plannedHere(plans.get(c.id)) : null
         return planned === null ? row(ZERO_CENTS, 'none') : row(planned, 'planned')
       })
+    // F17: a share is of the rows above zero, so a refund-heavy row is left
+    // out of the whole rather than shrinking it, and the slices close a ring.
+    const whole = sumCents(unshared.flatMap((r) => (r.actualCents > 0 ? [r.actualCents] : [])))
+    const rows = unshared.map(
+      (r): PeriodRow => ({ ...r, shareBp: r.actualCents > 0 ? shareOf(r.actualCents, whole) : null }),
+    )
     return {
       rows,
       budgetTotalCents: sumCents(present(rows.map((r) => r.budgetCents))),
