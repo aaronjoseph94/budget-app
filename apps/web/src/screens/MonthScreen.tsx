@@ -472,15 +472,21 @@ function Block({
                       )}
                     </button>
                   </td>
-                  {/* A zero on a budgeted row stays blank, as Workbook's ";;" format leaves it. */}
+                  {/* A zero on a budgeted row stays blank, as Workbook's ";;" format
+                    leaves it. "planned" follows its amount, as in the plan's
+                    §6.2 sketch, but on a line of its own: on the same line the
+                    word widened the column past a four-across desktop card,
+                    and Left was cut off. */}
                   <td
                     className={cn(
                       'tnum whitespace-nowrap px-1 py-2 text-right last:pr-4',
                       r.actualCents < 0 && 'text-spend',
                     )}
                   >
-                    {r.basis === 'planned' ? <span className="mr-1.5 text-xs text-muted-foreground">planned</span> : null}
                     {r.basis === 'none' ? '' : formatAmount(r.actualCents)}
+                    {r.basis === 'planned' ? (
+                      <span className="block text-xs leading-none text-muted-foreground xl:text-[0.625rem]">planned</span>
+                    ) : null}
                   </td>
                   {columns.third === null ? null : (
                     <td className="tnum whitespace-nowrap py-2 pl-1 pr-4 text-right">
