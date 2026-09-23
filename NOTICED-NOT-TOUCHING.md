@@ -973,6 +973,13 @@ straight after the entry every time, one more request for no saving.
 **To settle:** when the bundle gate is built, either word the row as
 "chart libraries", or split MonthCharts out with React.lazy; measure both.
 
+**Updated 2026-09-23, S14:** the Year is its own chunk (20.56 kB, 7.01 kB
+gzipped), and core and chart-specs are marked free of side effects, so the
+Year's engine and charts stay in it. The entry went from 686.08 kB (195.66
+kB gzipped) before S14 to 688.82 kB (196.79 kB): the Year's navigation,
+address and the shared row reading. The Month's charts are still in the
+entry, for the reason above.
+
 ---
 
 ## N40 — HANDOFF §5 still lists items 1, 2 and 4 as open
@@ -1010,3 +1017,45 @@ for a problem not seen could break the browser that was checked.
 **To settle:** open the Month on the iPhone (or in Safari) at a month with
 spending, and look at the ring and the income bars. If either is the wrong
 shape, give `.workbook-chart` an explicit `aspect-ratio` from the viewBox.
+
+---
+
+## N42 — A failed read on the Year says "this month"
+
+**Seen:** 2026-09-23, S14 (the Year screen).
+
+The Year reads budgets and monthly amounts through the Month's functions,
+whose failure sentences end "so this month cannot be shown" or "so this
+month is not shown". The Year shows them under "Could not load this year",
+so the heading is right and the sentence says month.
+
+**Why not fixed here:** the sentences live in `format.ts`
+(`describeBudgetFailure`, `describePlanFailure`) with their own tests, and
+giving them a Year wording is a change to the Month's messages too.
+
+**To settle:** give both a `'year'` reader, as `describePlanFailure`
+already has `'month'` and `'read'`, and pass it from the Year.
+
+---
+
+## N43 — Three Year defaults the owner has not been told
+
+**Seen:** 2026-09-23, S14.
+
+1. **The Year opens on this calendar year, from January.** Workbook's Annual
+   has whatever start month was last typed; the app has no stored start,
+   so a bare `#/year` is January of this year. The picker changes it, and
+   the address keeps it.
+2. **Best savings month with nothing saved shows the first month at
+   $0.00**, as F18 decided, following Workbook's January. It could read as a
+   real "best" month.
+3. **Annual's column chart stacks expenses on income** (chart40, F19), so a
+   column's height is income plus expenses, which means nothing on its own.
+   The plan asked for Workbook's stack.
+
+**Why not fixed here:** each follows the plan or a recorded decision; none
+is a wrong number, but the owner would notice them.
+
+**To settle:** tell the owner once. If they want the stack side by side
+(F19 option C) or "Nothing saved yet" in place of a $0 month, each is a
+display change with its own D-entry.
