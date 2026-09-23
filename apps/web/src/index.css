@@ -78,6 +78,10 @@
   --summary: #faffff;
   --summary-label: #4e6e8c;
   --summary-value: #4a7069;
+  /* A negative Left to spend: Jan!D13:E14's conditional fill, and in place
+     of its #DD766B (2.74 to one) a red that reads at 5.84. */
+  --summary-negative: #ffefed;
+  --summary-negative-ink: #a33a3a;
   --title-band: #f6fdfc;
   --title-ink: #5b7a75;
   --income-band: #eff9f8;
@@ -145,6 +149,8 @@
     --summary: #182525;
     --summary-label: #c4d2de;
     --summary-value: #d1e1de;
+    --summary-negative: #3d1f1c;
+    --summary-negative-ink: #f0b8b0;
     --title-band: #1b322e;
     --title-ink: #d3dedd;
     --income-band: #193431;
@@ -211,6 +217,8 @@
   --color-summary: var(--summary);
   --color-summary-label: var(--summary-label);
   --color-summary-value: var(--summary-value);
+  --color-summary-negative: var(--summary-negative);
+  --color-summary-negative-ink: var(--summary-negative-ink);
   --color-title-band: var(--title-band);
   --color-title-ink: var(--title-ink);
   --color-income-band: var(--income-band);

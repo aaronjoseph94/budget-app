@@ -3,6 +3,7 @@ import { isoDate, monthBounds, monthSheet, shiftMonth, type PeriodBlock, type Pe
 import { useAppData } from '../app-data.js'
 import {
   countPendingBetween,
+  getMonthBalance,
   latestStatementEnd,
   listBudgetHistory,
   listPlanHistory,
@@ -21,6 +22,7 @@ import { Figure, MonthTitle } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
 import { BudgetEditor } from './BudgetEditor.js'
 import { MonthCharges } from './MonthCharges.js'
+import { MonthSummary } from './MonthSummary.js'
 
 /**
  * One Workbook month tab (plan §6.2, §6.3). `month` is the address's `YYYY-MM`,
@@ -29,8 +31,9 @@ import { MonthCharges } from './MonthCharges.js'
  * back gesture returns to it.
  *
  * Every number is monthSheet's, from packages/core, over the whole month's
- * ledger and the budgets and monthly amounts typed up to it; this screen only
- * formats them. Nothing unreviewed is in it.
+ * ledger, the budgets and monthly amounts typed up to it and the starting
+ * balance typed for it; this screen only formats them. Nothing unreviewed is
+ * in it.
  */
 export function MonthScreen({ month }: { month: string | null }) {
   const { supabase, categories, pendingTotal, loadError, version } = useAppData()
@@ -58,10 +61,11 @@ export function MonthScreen({ month }: { month: string | null }) {
       listPlanHistory(supabase, start, 'month'),
       latestStatementEnd(supabase),
       countPendingBetween(supabase, { from: start, to: end }),
+      getMonthBalance(supabase, start),
     ])
       .then(
-        ([rows, budgets, plans, ends, pendingHere]) =>
-          live && setLoaded({ start, rows, budgets, plans, ends, pendingHere }),
+        ([rows, budgets, plans, ends, pendingHere, balance]) =>
+          live && setLoaded({ start, rows, budgets, plans, ends, pendingHere, balance }),
       )
       .catch((e: unknown) => live && setError(e instanceof Error ? e.message : 'Could not load this month.'))
     return () => {
@@ -99,8 +103,8 @@ export function MonthScreen({ month }: { month: string | null }) {
           categoryId: r.category_id,
         })),
         statementPeriodEnds: here.ends.map((e) => isoDate(e)),
-        // The card has no Start or End of month yet, so no balance is read.
-        startingBalanceCents: null,
+        // This month's alone, or none: never last month's, and never $0 (D17).
+        startingBalanceCents: here.balance,
       })
     } catch {
       // The engine refuses a charge, a budget or a monthly amount whose
@@ -166,7 +170,7 @@ export function MonthScreen({ month }: { month: string | null }) {
             from 1280px: below that a card is too narrow for three columns of
             amounts, and two columns hold them. */}
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Summary sheet={sheet} />
+            <MonthSummary sheet={sheet} />
             <Block kind="variable" block={sheet.blocks.variable} {...blockProps} className="order-1 xl:order-7" />
             <Block kind="bill" block={sheet.blocks.bill} {...blockProps} className="order-2 xl:order-4" />
             <Block kind="subscription" block={sheet.blocks.subscription} {...blockProps} className="order-3 xl:order-6" />
@@ -238,6 +242,8 @@ interface Loaded {
   readonly ends: readonly string[]
   /** Charges dated this month still waiting for review. */
   readonly pendingHere: number
+  /** The starting balance typed for this month, or null when none was. */
+  readonly balance: number | null
 }
 
 /**
@@ -279,40 +285,6 @@ function ReviewBanner({
       </span>
       <Icon name="chevronRight" className="size-4 text-muted-foreground" />
     </button>
-  )
-}
-
-/**
- * Workbook's summary card, Jan!B7:F16. Spent and Left to spend now; Start and
- * End join when a starting balance can be typed (S11). The grid already has
- * room for them, and nothing stands in for them until then.
- */
-function Summary({ sheet }: { sheet: PeriodSheet }) {
-  const left = sheet.summary.leftToSpendCents
-  const noBudgets = sheet.blocks.variable.rows.every((r) => r.budgetCents === null)
-  return (
-    <section
-      aria-label="Summary"
-      className="order-0 rounded-xl border bg-summary p-4 shadow-sm md:col-span-2 xl:order-1"
-    >
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
-        <div>
-          <dt className="text-xs font-medium text-summary-label">Spent</dt>
-          <dd className="text-2xl font-bold text-summary-value">
-            <Figure>{formatCents(sheet.summary.spentCents)}</Figure>
-          </dd>
-        </div>
-        <div>
-          <dt className="text-xs font-medium text-summary-label">Left to spend</dt>
-          <dd className={cn('text-2xl font-bold', left < 0 ? 'text-spend' : 'text-summary-value')}>
-            <Figure>{formatCents(left)}</Figure>
-          </dd>
-          {/* Workbook takes a blank budget as $0, so every dollar spent comes off
-            (F5). Only Variable expenses count here, so the hint names them. */}
-          {noBudgets ? <dd className="mt-0.5 text-xs text-summary-label">No budgets on Variable expenses yet.</dd> : null}
-        </div>
-      </dl>
-    </section>
   )
 }
 

@@ -344,6 +344,69 @@ describe('MonthScreen summary and notes', () => {
     expect(summary.getByText('No budgets on Variable expenses yet.')).toBeTruthy()
   })
 
+  const balance = (id: string, month: string, starting_balance_cents: number) => ({
+    id, user_id: 'u1', month, starting_balance_cents,
+  })
+  const figure = (summary: ReturnType<typeof within>, label: string) => summary.getByText(label).nextSibling as HTMLElement
+
+  // Hand-derived. From 2,400.00: + pay 2,500.00 − spent 140.00 − saved
+  // 300.00 = 4,460.00 (F7). The 500.00 card payment is in none of it.
+  it("shows Workbook's four numbers in Workbook's order, End of month from the start typed for the month", async () => {
+    const fake = seeded()
+    fake.tables.month_balances.push(balance('m1', '2026-09-01', 240_000))
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+
+    const summary = within(await screen.findByRole('region', { name: 'Summary' }))
+    expect(summary.getAllByRole('term').map((t) => t.textContent)).toEqual(['Start', 'Spent', 'Left to spend', 'End of month'])
+    expect(figure(summary, 'Start').textContent).toBe('$2,400.00')
+    expect(figure(summary, 'End of month').textContent).toBe('$4,460.00')
+  })
+
+  it("asks for the start, and shows no End of month, when none is typed for this month, even with last month's (D17)", async () => {
+    const fake = seeded()
+    fake.tables.month_balances.push(balance('m1', '2026-08-01', 240_000))
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+
+    const summary = within(await screen.findByRole('region', { name: 'Summary' }))
+    expect(figure(summary, 'Start').textContent).toBe('Type your starting bank balance')
+    expect(figure(summary, 'End of month').textContent).toBe('Shown once Start is typed')
+    expect(figure(summary, 'Spent').textContent).toBe('$140.00')
+  })
+
+  // −3,000.00 + 2,500.00 − 140.00 − 300.00 = −940.00.
+  it("marks a negative Left to spend in Workbook's pink, and an overdrawn start and end with their minus sign alone", async () => {
+    const fake = seeded()
+    fake.tables.month_balances.push(balance('m1', '2026-09-01', -300_000))
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+
+    const summary = within(await screen.findByRole('region', { name: 'Summary' }))
+    const pink = ['bg-summary-negative', 'text-summary-negative-ink']
+    const left = figure(summary, 'Left to spend').firstElementChild!
+    expect(left.textContent).toBe('-$85.00')
+    expect(left.className.split(' ')).toEqual(expect.arrayContaining(pink))
+    for (const [label, shown] of [['Start', '-$3,000.00'], ['End of month', '-$940.00']] as const) {
+      const value = figure(summary, label)
+      expect(value.textContent).toBe(shown)
+      // Nothing in it takes the pink, however deep its number sits.
+      expect(value.outerHTML).not.toContain('summary-negative')
+    }
+    cleanup()
+
+    // Workbook's rule is below zero (Jan!D13:E14, lessThan 0): exactly $0.00 left is not pink.
+    const even = seeded()
+    even.tables.category_budgets.push(budget('b1', 'groceries', '2026-09-01', 'onward', 8500))
+    renderScreen(<MonthScreen month="2026-09" />, even)
+    const zero = figure(within(await screen.findByRole('region', { name: 'Summary' })), 'Left to spend')
+    expect(zero.textContent).toBe('$0.00')
+    expect(zero.outerHTML).not.toContain('summary-negative')
+    cleanup()
+
+    renderScreen(<MonthScreen month="2026-09" />, budgeted())
+    const kept = figure(within(await screen.findByRole('region', { name: 'Summary' })), 'Left to spend').firstElementChild!
+    expect(kept.textContent).toBe('$135.00')
+    expect(kept.className).not.toContain('summary-negative')
+  })
+
   it('says what was paid to the card, and that it is not counted (D9)', async () => {
     renderScreen(<MonthScreen month="2026-09" />, seeded())
 
