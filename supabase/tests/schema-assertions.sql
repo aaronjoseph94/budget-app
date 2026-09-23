@@ -1310,6 +1310,163 @@ begin
   end if;
 end $$;
 
+-- ---------------------------------------------------------------------------
+-- 0014: the Debt Calculator's debts and extra payments
+-- ---------------------------------------------------------------------------
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+
+do $$
+declare
+  u      uuid := '11111111-1111-4111-8111-111111111111';
+  them   uuid := '22222222-2222-4222-8222-222222222222';
+  loan   uuid;
+  gone   uuid;
+  n      int;
+begin
+  -- A debt as Workbook's calculator takes it: balance, minimum, APR, start month.
+  insert into public.debts
+    (user_id, name, starting_balance_cents, minimum_payment_cents, apr_basis_points, start_date, sort_order)
+    values (u, 'Car Loan', 500000, 45000, 1200, '2026-03-01', 0)
+    returning id into loan;
+  -- A paid-off debt and a 0% one are real values, not blanks.
+  insert into public.debts
+    (user_id, name, starting_balance_cents, minimum_payment_cents, apr_basis_points, start_date)
+    values (u, 'Paid Off', 0, 0, 0, '2026-03-01');
+
+  begin
+    insert into public.debts (user_id, name, starting_balance_cents, minimum_payment_cents, apr_basis_points, start_date)
+      values (u, 'Car Loan', 100, 10, 0, '2026-03-01');
+    raise exception 'NOT REFUSED: two debts with one name';
+  exception when unique_violation then null;
+  end;
+  begin
+    update public.debts set starting_balance_cents = -1 where id = loan;
+    raise exception 'NOT REFUSED: a negative starting balance';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.debts set minimum_payment_cents = -1 where id = loan;
+    raise exception 'NOT REFUSED: a negative minimum payment';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.debts set apr_basis_points = -1 where id = loan;
+    raise exception 'NOT REFUSED: a negative APR';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.debts set start_date = '2026-03-15' where id = loan;
+    raise exception 'NOT REFUSED: a start date that is not a month''s first day';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.debts set start_date = null where id = loan;
+    raise exception 'NOT REFUSED: a debt with no start month';
+  exception when not_null_violation then null;
+  end;
+
+  -- Extra payments: in the start month or later, one per month, set and
+  -- changed as a plain upsert.
+  insert into public.debt_extra_payments (user_id, debt_id, month, amount_cents)
+    values (u, loan, '2026-03-01', 5000), (u, loan, '2026-05-01', 5000);
+  insert into public.debt_extra_payments (user_id, debt_id, month, amount_cents)
+    values (u, loan, '2026-05-01', 7500)
+    on conflict (user_id, debt_id, month) do update set amount_cents = excluded.amount_cents;
+  if (select amount_cents from public.debt_extra_payments
+       where debt_id = loan and month = '2026-05-01') <> 7500 then
+    raise exception 'changing an extra payment did not replace it';
+  end if;
+
+  begin
+    insert into public.debt_extra_payments (user_id, debt_id, month, amount_cents)
+      values (u, loan, '2026-05-01', 100);
+    raise exception 'NOT REFUSED: two extra payments on one debt in one month';
+  exception when unique_violation then null;
+  end;
+  begin
+    insert into public.debt_extra_payments (user_id, debt_id, month, amount_cents)
+      values (u, loan, '2026-06-01', 0);
+    raise exception 'NOT REFUSED: an extra payment of nothing';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.debt_extra_payments (user_id, debt_id, month, amount_cents)
+      values (u, loan, '2026-06-15', 100);
+    raise exception 'NOT REFUSED: an extra payment on a day that is not a month''s first';
+  exception when check_violation then null;
+  end;
+
+  -- Before the start month there is no month of the schedule to put it in,
+  -- written new, moved there, or left there by moving the start month.
+  begin
+    insert into public.debt_extra_payments (user_id, debt_id, month, amount_cents)
+      values (u, loan, '2026-02-01', 100);
+    raise exception 'NOT REFUSED: an extra payment before its debt''s start month';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.debt_extra_payments set month = '2026-02-01'
+     where debt_id = loan and month = '2026-03-01';
+    raise exception 'NOT REFUSED: an extra payment moved before its debt''s start month';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.debts set start_date = '2026-04-01' where id = loan;
+    raise exception 'NOT REFUSED: a start month moved past an extra payment';
+  exception when check_violation then null;
+  end;
+  -- Moving it earlier leaves every extra inside the schedule.
+  update public.debts set start_date = '2026-01-01' where id = loan;
+  -- Moving it later, up to the month of the earliest extra itself, is fine:
+  -- that extra is then paid in month 1.
+  update public.debts set start_date = '2026-03-01' where id = loan;
+  update public.debts set start_date = '2026-01-01' where id = loan;
+
+  -- Another user's debt is the composite key's to refuse.
+  insert into public.debts (id, user_id, name, starting_balance_cents, minimum_payment_cents, apr_basis_points, start_date)
+    values ('eeeeeeee-0000-4000-8000-000000000014', u, 'Student Loan', 100000, 5000, 500, '2026-01-01');
+  perform set_config('request.jwt.claim.sub', them::text, false);
+  begin
+    insert into public.debt_extra_payments (user_id, debt_id, month, amount_cents)
+      values (them, 'eeeeeeee-0000-4000-8000-000000000014', '2026-06-01', 100);
+    raise exception 'NOT REFUSED: an extra payment on another user''s debt';
+  exception when foreign_key_violation then null;
+  end;
+  select count(*) into n from public.debts;
+  if n <> 0 then raise exception 'RLS LEAK: another user saw % debts', n; end if;
+  select count(*) into n from public.debt_extra_payments;
+  if n <> 0 then raise exception 'RLS LEAK: another user saw % extra payments', n; end if;
+  perform set_config('request.jwt.claim.sub', u::text, false);
+
+  begin
+    insert into public.debts (user_id, name, starting_balance_cents, minimum_payment_cents, apr_basis_points, start_date)
+      values (them, 'Theirs', 100, 10, 0, '2026-01-01');
+    raise exception 'RLS: a debt was written under another user''s id';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    insert into public.debt_extra_payments (user_id, debt_id, month, amount_cents)
+      values (them, loan, '2026-06-01', 100);
+    raise exception 'RLS: an extra payment was written under another user''s id';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- A removed debt takes its extra payments with it.
+  insert into public.debts (user_id, name, starting_balance_cents, minimum_payment_cents, apr_basis_points, start_date)
+    values (u, 'Gone', 100000, 5000, 0, '2026-01-01') returning id into gone;
+  insert into public.debt_extra_payments (user_id, debt_id, month, amount_cents)
+    values (u, gone, '2026-02-01', 100);
+  delete from public.debts where id = gone;
+  if exists (select 1 from public.debt_extra_payments where debt_id = gone) then
+    raise exception 'a removed debt left its extra payments behind';
+  end if;
+
+  raise notice 'a debt is typed as Workbook''s calculator takes it, with extras in or after its start month';
+end $$;
+
+reset role;
+
 -- The anonymous role — anyone holding the published key — cannot call any of
 -- these at all. Every SECURITY DEFINER function the browser calls is listed:
 -- one left off can lose its revoke with this check still green, as 0004's

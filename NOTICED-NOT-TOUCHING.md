@@ -1290,3 +1290,30 @@ goal date, and have the save write `balance_as_of` whenever it writes
 `saved_cents` on a linked fund, and decide which goal the Settings card and
 the Week show once there are several.
 
+---
+
+## N53 — A debt names no Debts-list category, so its payments are not read
+
+**Seen:** 2026-09-23, writing migration 0014 (Sitting C).
+
+Workbook's Debt Calculator takes each debt's name from START HERE's Debts list
+(H6 = `'START HERE'!D18`) but reads no charges: its balances come from the
+schedule alone. 0014 keeps a debt's own name and no category link. A link
+would show none of the payments on the debt most likely to be entered, a
+card paid off from the bank, because that card is deliberately not a
+Debts-list row (plan §3.3, decision 14).
+
+Two things 0014 chose beyond the sheet: each debt has its own start month
+(Workbook has one, D6), and an extra payment is kept against a calendar month,
+not a schedule row number. When every debt shares a start month, the
+schedule is the same as Workbook's.
+
+**Why not fixed here:** whether a recorded payment should move a debt's
+balance changes a number the owner would see, and has not been asked. For
+savings the owner chose that it should (D16); nobody has asked for debts.
+
+**To settle:** at S17, before `debtStatus`, ask: A — balances from the
+schedule only, as Workbook; B — link a debt to a Debts-list category and let
+recorded payments replace the schedule's; C — link it only to show recorded
+payments beside the schedule. B or C needs a migration adding a nullable
+`category_id` (no backfill); A needs nothing.

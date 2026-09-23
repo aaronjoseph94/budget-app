@@ -25,6 +25,7 @@ returned." Running one twice is refused rather than applied twice.
 | `0011_pay_schedules.sql` | When each income source pays: a payday, and weekly, every two weeks or monthly. Needed by Setup's Paid and First payday on each Income row, and by Paycheck, as soon as this branch is merged; the Bill Calendar will read it too |
 | `0012_dismiss_unreadable_lines.sql` | Dismissing a statement line the app could not read. Needed by Review as soon as this branch is merged |
 | `0013_savings_funds.sql` | Linking a savings goal to one of your Savings-list funds, with the date saving started and the date the amount you typed was true, so transfers you record after it can add to it. Your existing goal keeps working as it is. Nothing reads it yet; the Savings screen will |
+| `0014_debts.sql` | Your debts for the Debt Calculator: each one's starting balance, minimum payment, interest rate and start month, and any extra payments by month. Nothing reads it yet; the Debts screen will |
 
 **Paste them in number order, all of them, before `main-tnlcto` is merged
 into `main`.** `main` deploys itself, and the app on this branch already
