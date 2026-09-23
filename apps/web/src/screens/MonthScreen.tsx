@@ -17,6 +17,7 @@ import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
+import { BudgetEditor } from './BudgetEditor.js'
 import { MonthCharges } from './MonthCharges.js'
 
 /**
@@ -86,6 +87,12 @@ export function MonthScreen({ month }: { month: string | null }) {
       return 'A charge or a budget this month names a category that did not load, so the month is not shown. Reload to try again.'
     }
   }, [here, categories, start])
+  // Categories with their own "just this month" value in this month, which a
+  // "from this month on" edit here must replace too (setBudget).
+  const ownOnly = new Set(
+    (here === null ? [] : here.budgets).filter((b) => b.applies === 'only' && b.month === start).map((b) => b.category_id),
+  )
+  const blockProps = { month: start, ownOnly, onOpen: setOpened }
 
   return (
     <div className="space-y-4">
@@ -130,12 +137,12 @@ export function MonthScreen({ month }: { month: string | null }) {
             amounts, and two columns hold them. */}
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <Summary sheet={sheet} />
-            <Block kind="variable" block={sheet.blocks.variable} onOpen={setOpened} className="order-1 xl:order-7" />
-            <Block kind="bill" block={sheet.blocks.bill} onOpen={setOpened} className="order-2 xl:order-4" />
-            <Block kind="subscription" block={sheet.blocks.subscription} onOpen={setOpened} className="order-3 xl:order-6" />
-            <Block kind="debt" block={sheet.blocks.debt} onOpen={setOpened} className="order-4 xl:order-5" />
-            <Block kind="income" block={sheet.blocks.income} onOpen={setOpened} className="order-5 xl:order-2" />
-            <Block kind="savings" block={sheet.blocks.savings} onOpen={setOpened} className="order-6 xl:order-3" />
+            <Block kind="variable" block={sheet.blocks.variable} {...blockProps} className="order-1 xl:order-7" />
+            <Block kind="bill" block={sheet.blocks.bill} {...blockProps} className="order-2 xl:order-4" />
+            <Block kind="subscription" block={sheet.blocks.subscription} {...blockProps} className="order-3 xl:order-6" />
+            <Block kind="debt" block={sheet.blocks.debt} {...blockProps} className="order-4 xl:order-5" />
+            <Block kind="income" block={sheet.blocks.income} {...blockProps} className="order-5 xl:order-2" />
+            <Block kind="savings" block={sheet.blocks.savings} {...blockProps} className="order-6 xl:order-3" />
           </div>
           {/* Left out of every block and total above, so said out loud (D9). */}
           {sheet.transfersCents !== 0 ? (
@@ -327,17 +334,26 @@ type Row = PeriodBlock['rows'][number]
 function Block({
   kind,
   block,
+  month,
+  ownOnly,
   onOpen,
   className,
 }: {
   kind: BlockKind
   block: PeriodBlock
+  /** The month's first day. */
+  month: string
+  ownOnly: ReadonlySet<string>
   onOpen: (categoryId: string) => void
   className: string
 }) {
   const [showEmpty, setShowEmpty] = useState(false)
+  // The row whose budget is being typed, and what the last save did.
+  const [editing, setEditing] = useState<string | null>(null)
+  const [note, setNote] = useState<string | null>(null)
   const tone = TONE[kind]
   const columns = COLUMNS[kind]
+  const word = columns.budget === 'Goal' ? 'Goal' : 'Budget'
   const heading = LIST_HEADING[kind]
   const isEmpty = (r: Row) => r.basis === 'none' && r.budgetCents === null
   const empty = block.rows.filter(isEmpty).length
@@ -387,7 +403,7 @@ function Block({
               </tr>
             </thead>
             <tbody>
-              {shown.map((r) => (
+              {shown.flatMap((r) => [
                 // The whole row takes a tap; the button in it is what a keyboard
                 // or a screen reader reaches, named by the category.
                 <tr
@@ -408,8 +424,26 @@ function Block({
                       {r.name}
                     </button>
                   </th>
+                  {/* Its own tap: the budget is typed here, in the row, and the
+                    charges do not open. A pencil where none is set yet. */}
                   <td className="tnum whitespace-nowrap px-1 py-2 text-right">
-                    {r.budgetCents === null ? '' : formatAmount(r.budgetCents)}
+                    <button
+                      type="button"
+                      aria-label={`${word} for ${r.name}, ${r.budgetCents === null ? 'none set' : formatCents(r.budgetCents)}`}
+                      aria-expanded={editing === r.categoryId}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setNote(null)
+                        setEditing(r.categoryId)
+                      }}
+                      className="rounded-sm underline decoration-dotted underline-offset-4 outline-none hover:decoration-solid focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      {r.budgetCents === null ? (
+                        <Icon name="pencil" className="inline size-3.5 opacity-60" />
+                      ) : (
+                        formatAmount(r.budgetCents)
+                      )}
+                    </button>
                   </td>
                   {/* A zero on a budgeted row stays blank, as Workbook's ";;" format leaves it. */}
                   <td
@@ -426,12 +460,37 @@ function Block({
                       <Third row={r} column={columns.third} empty={isEmpty(r)} />
                     </td>
                   )}
-                </tr>
-              ))}
+                </tr>,
+                // The budget is typed in a row of its own, under the one tapped.
+                editing === r.categoryId ? (
+                  <tr key={`${r.categoryId} budget`} className={cn('border-t', tone.rule)}>
+                    <td colSpan={columns.third === null ? 3 : 4} className="px-4 py-3">
+                      <BudgetEditor
+                        row={r}
+                        word={word}
+                        month={month}
+                        replacesOnly={ownOnly.has(r.categoryId)}
+                        onCancel={() => setEditing(null)}
+                        onSaved={(saved) => {
+                          // Only its own editor: another row may have been
+                          // opened while this one was saving.
+                          setEditing((now) => (now === r.categoryId ? null : now))
+                          setNote(saved)
+                        }}
+                      />
+                    </td>
+                  </tr>
+                ) : null,
+              ])}
             </tbody>
           </table>
         </div>
       )}
+      {note !== null ? (
+        <p role="status" className={cn('border-t px-4 py-2 text-xs', tone.rule, tone.ink)}>
+          {note}
+        </p>
+      ) : null}
       {empty > 0 ? (
         <button
           type="button"
