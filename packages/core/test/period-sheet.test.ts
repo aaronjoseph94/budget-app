@@ -282,3 +282,92 @@ describe('periodSheet summary (suite)', () => {
     expect(Object.is(empty.leftToSpendCents, 0)).toBe(true)
   })
 })
+
+describe('periodSheet budgets, Remaining and Difference (suite)', () => {
+  // Hand-derived, several rows per list. Food 30.00 + 45.00 − 5.00 refund =
+  // 70.00 of 100.00: 30.00 left. Fuel 60.00 with no budget: −60.00 (F5).
+  // Rent planned 1,200.00 of 1,150.00: −50.00. Phone real 40.00, no budget:
+  // no Remaining (F16). Loan 100.00 of 100.00: 0. Music 9.99 of 12.00: 2.01.
+  // Pay 3,000.00 of a 2,800.00 goal, bonus 200.00 with none. Fund 300.00 in,
+  // 50.00 back out: 250.00 of 400.00, −150.00; trip 80.00 with no goal: 80.00.
+  const s = periodSheet({
+    ...BASE,
+    categories: [...CATEGORIES, cat('trip', 'savings', 1), cat('bonus', 'income', 1)],
+    budgets: [
+      { categoryId: 'food', budgetCents: 10_000 },
+      { categoryId: 'rent', budgetCents: 115_000 },
+      { categoryId: 'loan', budgetCents: 10_000 },
+      { categoryId: 'music', budgetCents: 1_200 },
+      { categoryId: 'pay', budgetCents: 280_000 },
+      { categoryId: 'fund', budgetCents: 40_000 },
+    ],
+    plans: [plan('rent', 120_000, 1), plan('phone', 5_000, 12)],
+    entries: [
+      row('2026-09-02', -3_000, 'food'),
+      row('2026-09-10', -4_500, 'food'),
+      row('2026-09-11', 500, 'food'),
+      row('2026-09-05', -6_000, 'fuel'),
+      row('2026-09-12', -4_000, 'phone'),
+      row('2026-09-15', -10_000, 'loan'),
+      row('2026-09-20', -999, 'music'),
+      row('2026-09-15', 300_000, 'pay'),
+      row('2026-09-16', 20_000, 'bonus'),
+      row('2026-09-16', -30_000, 'fund'),
+      row('2026-09-25', 5_000, 'fund'),
+      row('2026-09-17', -8_000, 'trip'),
+    ],
+  })
+  const columns = (block: keyof typeof s.blocks) =>
+    s.blocks[block].rows.map((r) => [r.categoryId, r.budgetCents, r.actualCents, r.remainingCents, r.differenceCents])
+
+  it('gives each spending row Budget − Actual, and a bill with no budget none (F5, F16)', () => {
+    expect(columns('variable')).toEqual([
+      ['fuel', null, 6_000, -6_000, null],
+      ['food', 10_000, 7_000, 3_000, null],
+    ])
+    expect(columns('bill')).toEqual([
+      ['rent', 115_000, 120_000, -5_000, null],
+      ['phone', null, 4_000, null, null],
+    ])
+    expect(columns('debt')).toEqual([['loan', 10_000, 10_000, 0, null]])
+    expect(columns('subscription')).toEqual([['music', 1_200, 999, 201, null]])
+  })
+
+  it('gives each fund Actual − Goal, and a fund with no goal what went into it (F6, F16)', () => {
+    expect(columns('savings')).toEqual([
+      ['fund', 40_000, 25_000, null, -15_000],
+      ['trip', null, 8_000, null, 8_000],
+    ])
+  })
+
+  it('shows income as goal and actual, with neither Remaining nor Difference', () => {
+    expect(columns('income')).toEqual([
+      ['pay', 280_000, 300_000, null, null],
+      ['bonus', null, 20_000, null, null],
+    ])
+  })
+
+  it('totals the budgets set on each list, and each column adds up to its own total', () => {
+    const { variable, savings, bill, debt, subscription, income } = s.blocks
+    expect([variable, bill, debt, subscription, income, savings].map((b) => b.budgetTotalCents)).toEqual([
+      10_000, 115_000, 10_000, 1_200, 280_000, 40_000,
+    ])
+    // V21 = T21 − U21 and V9 = U9 − T9 once each blank reads as Workbook reads it.
+    expect(variable.remainingTotalCents).toBe(10_000 - 13_000)
+    expect(savings.differenceTotalCents).toBe(33_000 - 40_000)
+    expect(s.summary.leftToSpendCents).toBe(variable.remainingTotalCents)
+  })
+
+  it('is zero, not minus zero, with nothing budgeted and nothing spent or saved', () => {
+    const empty = periodSheet({ ...BASE, budgets: [{ categoryId: 'loan', budgetCents: 0 }] }).blocks
+    const zeros = [
+      empty.variable.budgetTotalCents,
+      empty.variable.remainingTotalCents,
+      empty.savings.differenceTotalCents,
+      empty.variable.rows[0]!.remainingCents,
+      empty.savings.rows[0]!.differenceCents,
+      empty.debt.rows[0]!.remainingCents,
+    ]
+    expect(zeros.every((z) => Object.is(z, 0))).toBe(true)
+  })
+})
