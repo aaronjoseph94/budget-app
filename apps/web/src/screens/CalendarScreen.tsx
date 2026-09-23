@@ -78,8 +78,11 @@ export function CalendarScreen({ month }: { month: string | null }) {
         </div>
         <div className="flex items-center gap-2">
           {calendar !== null && typeof calendar !== 'string' ? (
-            <p className="rounded-full bg-calendar-pill px-3 py-1.5 text-calendar-pill-ink">
-              <span className="sr-only">Due this month: </span>
+            // Named on the pill, not only to a screen reader: Workbook's J3 sits
+            // under its own heading, and a bare figure in the band said nothing.
+            <p className="flex flex-col rounded-2xl bg-calendar-pill px-3 py-1 leading-tight text-calendar-pill-ink">
+              <span className="text-[11px] font-medium">Due this month</span>
+              <span className="sr-only">: </span>
               <Figure className="text-lg font-bold">{formatCents(calendar.totalCents)}</Figure>
             </p>
           ) : null}

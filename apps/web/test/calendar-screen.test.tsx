@@ -63,7 +63,7 @@ async function week(range: string): Promise<string[]> {
 
 /** The month's total pill, once the month is in. */
 async function total(): Promise<string | undefined> {
-  return (await screen.findByText('Due this month:')).parentElement?.textContent ?? undefined
+  return (await screen.findByText('Due this month')).parentElement?.textContent ?? undefined
 }
 
 beforeEach(() => {
@@ -83,6 +83,8 @@ describe('CalendarScreen', () => {
 
     expect(screen.getByRole('heading', { name: 'September 2026' })).toBeTruthy()
     expect(await total()).toBe('Due this month: $1,970.11')
+    // Said on the pill itself: a lone figure in a band means nothing to the eye.
+    expect(screen.getByText('Due this month').className).not.toContain('sr-only')
   })
 
   it("lays this month's bills on their days, real charges in place of the plan, with paydays and week totals", async () => {
@@ -105,7 +107,7 @@ describe('CalendarScreen', () => {
       'Fri25Day job payday',
     ])
     expect(await week('27 – 30 Sep')).toEqual(['27 – 30 SepWeek total $300.00', 'Wed30Car loan$300.00planned', 'Car loan$300.00planned'])
-    expect(screen.getByText('Due this month:').parentElement?.textContent).toBe('Due this month: $1,970.11')
+    expect(screen.getByText('Due this month').parentElement?.textContent).toBe('Due this month: $1,970.11')
     expect(screen.queryByText('Groceries')).toBeNull()
   })
 
@@ -173,7 +175,7 @@ describe('CalendarScreen', () => {
     expect((await screen.findByRole('alert')).textContent).toContain(
       'Monthly amounts need a database update that has not been applied yet (0009 in the setup guide), so this calendar cannot be shown. (code PGRST205)',
     )
-    expect(screen.queryByText('Due this month:')).toBeNull()
+    expect(screen.queryByText('Due this month')).toBeNull()
   })
 
   it('says pay schedules need 0011 when the table is not there yet', async () => {
@@ -209,7 +211,7 @@ describe('CalendarScreen while another month loads', () => {
     })
     expect(screen.getByRole('heading', { name: 'October 2026' })).toBeTruthy()
     expect(screen.getByText('Loading…')).toBeTruthy()
-    expect(screen.queryByText('Due this month:')).toBeNull()
+    expect(screen.queryByText('Due this month')).toBeNull()
 
     // October: every monthly amount planned, none charged, and the Gym undated.
     expect(await total()).toBe('Due this month: $1,966.99')
