@@ -13,6 +13,15 @@
  * reported as a positive number because that is how a person reads it, and a
  * category's spending is NET of refunds within the week — a $30 return on a
  * $45 purchase is $15 spent, not $45 spent and $30 of income.
+ *
+ * Which of Workbook's lists a category is on decides what its rows are (Workbook
+ * plan §5.1, S3b). Bills, debts, subscriptions and variable expenses are
+ * spending, netted and signed as the Month will be, so a week with only a
+ * return shows negative spending instead of vanishing. Money in is the Income
+ * list only. Savings moves and transfers are neither: paying off the card
+ * moves money, and what it paid for was counted when it was bought (D9).
+ * Transfers are reported on their own so the screen can say they were left
+ * out.
  */
 import {
   type Cents,
@@ -32,9 +41,16 @@ export interface LedgerEntry {
   readonly categoryId: string | null
 }
 
+/** Workbook's lists (migration 0005's category_kind), as core names them. */
+export type CategoryKind = 'income' | 'savings' | 'bill' | 'debt' | 'subscription' | 'variable' | 'transfer'
+
+/** The lists whose rows are spending. */
+const SPENDING: ReadonlySet<CategoryKind> = new Set(['bill', 'debt', 'subscription', 'variable'])
+
 export interface BudgetedCategory {
   readonly id: string
   readonly name: string
+  readonly kind: CategoryKind
   /** Null when the user has set no limit — which is not the same as zero. */
   readonly weeklyBudgetCents: number | null
 }
@@ -63,16 +79,25 @@ export interface WeeklySummary {
   /** Days from asOf to the end of the week, counting asOf itself. */
   readonly daysLeft: number
   readonly entryCount: number
+  /** Spending lists plus uncategorised outflows. Negative in a week of returns. */
   readonly spentCents: Cents
+  /** The Income list, net. */
   readonly inflowCents: Cents
+  /** The Not spending list, net: positive when money was paid to the card. Never in a total. */
+  readonly transfersCents: Cents
   readonly uncategorisedSpentCents: Cents
+  /** Uncategorised inflows. Nothing says what they are, so no total counts them. */
+  readonly uncategorisedInCents: Cents
   /** Sum of the budgets that are set. Null when none are. */
   readonly budgetCents: Cents | null
   /** What remains across budgeted categories only. Null when none are set. */
   readonly remainingCents: Cents | null
   /** Share of the total budget used, in basis points. Null when none is set. */
   readonly usedBasisPoints: number | null
-  /** Largest spending first. Budgeted categories appear even at zero. */
+  /**
+   * Spending lists only, largest first. A category appears when it has a
+   * row this week or a budget, so a return shows even though it nets below zero.
+   */
   readonly categories: readonly CategoryWeek[]
 }
 
@@ -114,59 +139,68 @@ export function shiftWeek(date: IsoDate, weeks: number): IsoDate {
 export function weeklySummary(input: WeeklySummaryInput): WeeklySummary {
   const { start, end } = weekBounds(input.asOf)
   const inWeek = input.entries.filter((e) => e.postedOn >= start && e.postedOn <= end)
-
-  // Net per category, signed. cents() refuses a fraction, so a float that
-  // reached this far fails loudly here instead of being summed.
-  const net = new Map<string | null, Cents[]>()
-  for (const e of inWeek) {
-    const list = net.get(e.categoryId) ?? []
-    list.push(cents(e.amountCents))
-    net.set(e.categoryId, list)
-  }
-  const netOf = (id: string | null): Cents => sumCents(net.get(id) ?? [])
-  const spentOf = (id: string | null): Cents => {
-    const n = netOf(id)
-    return n < 0 ? cents(-n) : ZERO_CENTS
-  }
-
   const known = new Map(input.categories.map((c) => [c.id, c]))
-  const ids = new Set<string>()
-  for (const c of input.categories) if (c.weeklyBudgetCents !== null) ids.add(c.id)
-  for (const id of net.keys()) if (id !== null && spentOf(id) > 0) ids.add(id)
 
-  const categories: CategoryWeek[] = [...ids].map((id) => {
-    const spent = spentOf(id)
-    const limit = known.get(id)?.weeklyBudgetCents ?? null
-    const budget = limit === null ? null : cents(limit)
-    return {
-      categoryId: id,
-      name: known.get(id)?.name ?? 'Unknown category',
-      spentCents: spent,
-      budgetCents: budget,
-      remainingCents: budget === null ? null : cents(budget - spent),
-      usedBasisPoints: budget === null || budget === 0 ? null : Math.floor((spent * 10_000) / budget),
-      over: budget !== null && spent > budget,
+  // Rows by category, signed. A row whose category is missing, or not one
+  // this list knows, has no list to say what it is, so it is loose. cents()
+  // refuses a fraction, so a float that reached this far fails loudly here
+  // instead of being summed.
+  const byCategory = new Map<string, Cents[]>()
+  const loose: Cents[] = []
+  for (const e of inWeek) {
+    const amount = cents(e.amountCents)
+    if (e.categoryId === null || !known.has(e.categoryId)) {
+      loose.push(amount)
+      continue
     }
-  })
+    const list = byCategory.get(e.categoryId)
+    if (list === undefined) byCategory.set(e.categoryId, [amount])
+    else list.push(amount)
+  }
+  const netOf = (id: string): Cents => {
+    const list = byCategory.get(id)
+    return list === undefined ? ZERO_CENTS : sumCents(list)
+  }
+  const netOn = (kind: CategoryKind): Cents =>
+    sumCents(input.categories.filter((c) => c.kind === kind).map((c) => netOf(c.id)))
+
+  const categories: CategoryWeek[] = input.categories
+    .filter((c) => SPENDING.has(c.kind) && (c.weeklyBudgetCents !== null || byCategory.has(c.id)))
+    .map((c) => {
+      // Signed: a return with no purchase this week is negative spending.
+      // Subtracted from zero, not negated: -0 is not the 0 a test or a
+      // screen expects for a purchase and its full return.
+      const spent = cents(ZERO_CENTS - netOf(c.id))
+      const budget = c.weeklyBudgetCents === null ? null : cents(c.weeklyBudgetCents)
+      return {
+        categoryId: c.id,
+        name: c.name,
+        spentCents: spent,
+        budgetCents: budget,
+        remainingCents: budget === null ? null : cents(budget - spent),
+        usedBasisPoints: budget === null || budget === 0 ? null : Math.floor((spent * 10_000) / budget),
+        over: budget !== null && spent > budget,
+      }
+    })
   categories.sort((a, b) => b.spentCents - a.spentCents || a.name.localeCompare(b.name))
 
-  const budgeted = categories.filter((c) => c.budgetCents !== null)
-  const budgetCents = budgeted.length === 0 ? null : sumCents(budgeted.map((c) => c.budgetCents ?? ZERO_CENTS))
-  const budgetedSpent = sumCents(budgeted.map((c) => c.spentCents))
+  // Only rows with a budget count against the budget. Collected with the
+  // null case as its own branch: a missing budget is not a zero one.
+  const budgets: Cents[] = []
+  const budgetedSpent: Cents[] = []
+  for (const c of categories) {
+    if (c.budgetCents === null) continue
+    budgets.push(c.budgetCents)
+    budgetedSpent.push(c.spentCents)
+  }
+  const budgetCents = budgets.length === 0 ? null : sumCents(budgets)
+  const spentAgainstBudget = sumCents(budgetedSpent)
 
-  // Uncategorised rows are NOT netted. Netting is right inside a category,
-  // where a refund belongs to the purchase it reverses; with no category
-  // nothing links the rows, and netting let a $500 card payment silently
-  // erase $18 of uncategorised spending from the week's total.
-  const loose = (net.get(null) ?? []).filter((a) => a < 0).map((a) => cents(-a))
-  const uncategorised = sumCents(loose)
-
-  // Money in: a category that netted positive, plus loose inflows. A refund
-  // absorbed by its own category's spending is not money in.
-  const inflows = [
-    ...[...net.keys()].filter((id): id is string => id !== null).map(netOf).filter((n) => n > 0),
-    ...(net.get(null) ?? []).filter((a) => a > 0),
-  ]
+  // Loose rows are NOT netted. Netting is right inside a category, where a
+  // refund belongs to the purchase it reverses; with no category nothing
+  // links the rows, and netting let a $500 card payment silently erase $18
+  // of uncategorised spending from the week's total.
+  const uncategorised = sumCents(loose.filter((a) => a < 0).map((a) => cents(-a)))
 
   return {
     start,
@@ -174,12 +208,14 @@ export function weeklySummary(input: WeeklySummaryInput): WeeklySummary {
     daysLeft: daysBetween(input.asOf, end) + 1,
     entryCount: inWeek.length,
     spentCents: sumCents([...categories.map((c) => c.spentCents), uncategorised]),
-    inflowCents: sumCents(inflows),
+    inflowCents: netOn('income'),
+    transfersCents: netOn('transfer'),
     uncategorisedSpentCents: uncategorised,
+    uncategorisedInCents: sumCents(loose.filter((a) => a > 0)),
     budgetCents,
-    remainingCents: budgetCents === null ? null : cents(budgetCents - budgetedSpent),
+    remainingCents: budgetCents === null ? null : cents(budgetCents - spentAgainstBudget),
     usedBasisPoints:
-      budgetCents === null || budgetCents === 0 ? null : Math.floor((budgetedSpent * 10_000) / budgetCents),
+      budgetCents === null || budgetCents === 0 ? null : Math.floor((spentAgainstBudget * 10_000) / budgetCents),
     categories,
   }
 }

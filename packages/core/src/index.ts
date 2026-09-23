@@ -50,6 +50,7 @@ export {
   weekBounds,
   weeklySummary,
   type BudgetedCategory,
+  type CategoryKind,
   type CategoryWeek,
   type LedgerEntry,
   type WeeklySummary,

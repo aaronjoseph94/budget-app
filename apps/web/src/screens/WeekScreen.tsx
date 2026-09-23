@@ -47,7 +47,7 @@ export function WeekScreen() {
         ? null
         : weeklySummary({
             entries: rows.map((r) => ({ postedOn: isoDate(r.posted_on), amountCents: r.amount_cents, categoryId: r.category_id })),
-            categories: categories.map((c) => ({ id: c.id, name: c.name, weeklyBudgetCents: c.weekly_budget_cents })),
+            categories: categories.map((c) => ({ id: c.id, name: c.name, kind: c.kind, weeklyBudgetCents: c.weekly_budget_cents })),
             asOf,
           }),
     [rows, categories, asOf],
