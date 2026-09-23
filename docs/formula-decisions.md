@@ -579,3 +579,59 @@ the Year around them.
 "Biggest expense" is the year so far (Rent at $1,600 is $14,400 by then),
 not a year projected from monthly amounts. If they want the projection, it
 is C, and changes the three cards only.
+
+---
+
+## F19 — What a share is, for the Year's charts
+
+**Decided 2026-09-23. Engineering default: changes no cached value.** It
+follows F17 and F18, so each chart agrees with the Year's own totals beside
+it.
+
+```
+chart40  stacked column, overlap 100   cats 'Annual Budget'!I10:I21
+         series K10:K21 (income Actual, #D7EEEB), Q10:Q21 (expense Actual, #F9D7D2)
+chart41  pie, varyColors               Hidden!I40:J42 = Annual H6, N6, T6
+         (Income, Expenses, Savings; #D7EEEB, #F9D7D2, #F7EAA9, no labels)
+chart42  clustered column               Hidden!I32:K37: Goal J32:J37, Actual K32:K37
+         (= Annual J9 V9 V29 D29 J29 P29 and K9 W9 W29 E29 K29 Q29; #517070, #E6E1CE)
+Home chart3  the same pie as chart41 in Home's colours, percent labels only
+Home chart9-11  one doughnut per top-3 row, hole 75%: the row against R38 − it
+```
+
+None of the five prints a number, and the sample draws them from cells the
+Year recomputes (D7, F12, F18), so there is no cached share to copy. Their
+geometry is arithmetic on money, which invariant 1 puts in `packages/core`.
+
+**Options considered**
+
+- **A — F17's rule for every chart.** A part is drawn only above zero, and
+  its share is of the parts above zero, half-up to a basis point; bars share
+  one scale, the largest thing drawn.
+- **B — shares of the Year's signed totals.** A refund-heavy month or a
+  negative Left over would give parts that add to more than the whole.
+- **C — draw chart40 as a clustered column.** Its stack adds income to
+  expenses, a height that means nothing, but the plan (§6.4) asks for
+  Workbook's stack, so A keeps it.
+
+**Chosen: A.**
+
+- **Stacked column** (chart40): each month's column is its income Actual
+  with its expense Actual stacked on it, as Workbook stacks them. A part at or
+  below zero is not drawn. Core gives each drawn part where it starts and
+  ends, in basis points of the tallest column, half-up, so parts meet
+  exactly and no column passes the top.
+- **Pie** (chart41, Home chart3): Income, Expenses and Savings Actuals over
+  the twelve months (the Year's totals, D7), each over those of the three
+  above zero, half-up. Workbook's pie mixes money in with money out; so does
+  this, as the plan asks.
+- **Clustered column** (chart42): Goal and Actual for Income, Savings,
+  Variable expenses, Bills, Debts and Subscriptions over twelve months, on
+  one scale, the largest Goal or Actual, as `goalBars` (F17) draws the
+  Month's income. Workbook's J9, V9 and W9 add seven months (D7); these add
+  twelve.
+- **Top-3 doughnuts** (Home chart9–11): each row's `shareBp` from F18, the
+  rest of the ring the track, as Workbook's "Other Expenses" is.
+
+**What the owner would see.** The charts' shapes. The numbers written
+beside them are the Year's own.
