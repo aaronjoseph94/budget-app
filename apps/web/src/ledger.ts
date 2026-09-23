@@ -13,6 +13,7 @@ import {
   normalizeMerchant,
   type AcceptedRow,
   type RejectedRow,
+  type StatementPeriod,
 } from '@budget/statement-parsers'
 import { describeSetupFailure, describeWriteFailure } from './format.js'
 import { LIST_HEADING, type CategoryKind } from './lists.js'
@@ -20,14 +21,32 @@ import type { SupabaseClient } from './supabase.js'
 
 export type IngestSource = 'card_csv' | 'card_xlsx' | 'card_pdf' | 'receipt_photo' | 'typed'
 
-export interface SaveImportInput {
-  readonly userId: string
-  readonly accountId: string
+/** What a reader hands over to be saved. */
+export type ImportRequest = {
   readonly accepted: readonly AcceptedRow[]
   readonly rejected: readonly RejectedRow[]
   readonly parsed: number
-  /** Where the rows came from. Was hardcoded to card_csv, which a PDF is not. */
-  readonly source: IngestSource
+} & (
+  | {
+      readonly source: 'card_pdf'
+      /**
+       * The dates the statement says it covers. Required for a PDF, which
+       * always prints them, so that "Statement imported up to" comes from the
+       * statement and not from the latest row (migration 0007).
+       */
+      readonly period: StatementPeriod
+    }
+  | {
+      /** Where the rows came from. Was hardcoded to card_csv, which a PDF is not. */
+      readonly source: Exclude<IngestSource, 'card_pdf'>
+      /** A CSV export, a photo and a typed row carry no period. */
+      readonly period?: undefined
+    }
+)
+
+export type SaveImportInput = ImportRequest & {
+  readonly userId: string
+  readonly accountId: string
 }
 
 export interface SaveImportResult {
@@ -102,13 +121,22 @@ export async function saveImport(
     }),
   )
 
-  const { data, error } = await supabase.rpc('save_import', {
+  const args = {
     p_account_id: input.accountId,
     p_source: input.source,
     p_parsed: input.parsed,
     p_rows: rows,
     p_unreadable: input.rejected.map((r) => ({ source_line: r.line, reason: r.reason })),
-  })
+  }
+  // With a period, the seven-argument save_import (0007), which saves the
+  // import exactly as the five-argument one does and records the period in
+  // the same transaction. Without one, the five-argument function as before.
+  const { data, error } = await supabase.rpc(
+    'save_import',
+    input.period === undefined
+      ? args
+      : { ...args, p_period_start: input.period.from, p_period_end: input.period.to },
+  )
   if (error !== null) throw new Error(describeWriteFailure(error))
 
   const result = (Array.isArray(data) ? data[0] : data) as SavedCounts | undefined

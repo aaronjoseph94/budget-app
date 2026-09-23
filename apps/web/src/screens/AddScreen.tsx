@@ -241,7 +241,7 @@ function PdfPreview({
 
       {rec.balances ? (
         <div className="space-y-2">
-          <Button size="lg" className="w-full" disabled={saving} onClick={() => void onSave({ accepted, rejected, parsed, source: 'card_pdf' })}>
+          <Button size="lg" className="w-full" disabled={saving} onClick={() => void onSave({ accepted, rejected, parsed, source: 'card_pdf', period })}>
             {saving ? 'Saving…' : `Import ${accepted.length} transactions`}
           </Button>
           {outcome !== null ? <Alert tone={outcome.ok ? 'success' : 'error'}>{outcome.message}</Alert> : null}

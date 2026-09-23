@@ -6,13 +6,12 @@ import {
   profileColumns,
   readStatement,
   tokenizeCsv,
-  type AcceptedRow,
   type ColumnProfile,
   type DateFormat,
-  type RejectedRow,
   type StatementRead,
 } from '@budget/statement-parsers'
 import { summariseImport } from '@budget/core'
+import type { ImportRequest } from './ledger.js'
 import { Button, Card, IngestedText, Label, Select, Stat } from './ui.js'
 
 import { describeFailure, describeReason, formatCents, formatIsoDate } from './format.js'
@@ -33,12 +32,7 @@ const DELIMITERS = [
   { value: '|', label: 'Pipe' },
 ] as const
 
-export interface SaveRequest {
-  readonly accepted: readonly AcceptedRow[]
-  readonly rejected: readonly RejectedRow[]
-  readonly parsed: number
-  readonly source: 'card_csv' | 'card_xlsx' | 'card_pdf' | 'receipt_photo' | 'typed'
-}
+export type SaveRequest = ImportRequest
 
 export interface ImportScreenProps {
   /** The file, already chosen on the Add screen, which also routes PDFs away. */
