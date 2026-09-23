@@ -229,7 +229,11 @@ one: it was never asked of the owner, nor told to them. F7 now cites it.
 
 ---
 
-## N10 — ROADMAP's phase markers predate the build
+## N10 — ROADMAP's phase markers predate the build *(settled 2026-09-23, completion pass)*
+
+**Settled:** each phase now says what is built and what is not, with one
+"next" (the coach). Phase 1 is marked built, and its "Ends with" is said
+to wait on the owner applying the migrations, which is still true.
 
 **Seen:** 2026-09-22, updating `docs/ROADMAP.md` for the Workbook plan.
 
@@ -716,7 +720,9 @@ a balance that may be stored.
 
 ---
 
-## N29 — ROADMAP still says the month view is not built
+## N29 — ROADMAP still says the month view is not built *(settled 2026-09-23, completion pass)*
+
+**Settled:** with N10; the twelve-month-tabs row says the Month is built.
 
 **Seen:** 2026-09-23, S7 (the budget engine).
 

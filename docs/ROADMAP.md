@@ -1,6 +1,6 @@
 # Roadmap
 
-Last revised: 2026-09-22
+Last revised: 2026-09-23 (the Workbook views are built)
 
 ## What this project is
 
@@ -28,7 +28,7 @@ cutting is how nothing ships. These are deferred, not deleted:
 |---|---|
 | **Retirement projection** (Financial Freedom sheet) | A 35-year horizon while the live goal is ~2 years away. The maths is twenty lines; it can return any time. It just should not compete with ingestion for build order. |
 | **Net worth monthly snapshots** | Manual data entry twelve times a year, feeding a number no weekly decision depends on. Revisit once ingestion makes it cheap to populate. |
-| **Twelve separate month tabs** | Collapsed into one month view with a period selector. The workbook needed twelve sheets because a spreadsheet cannot filter; a database can. To be built that way in the Workbook plan (S5b); not built yet. |
+| **Twelve separate month tabs** | Collapsed into one month view with a period selector. The workbook needed twelve sheets because a spreadsheet cannot filter; a database can. Built that way: the Month screen, one month at a time with arrows (Workbook plan S5b–S12b). |
 | **50/30/20 split** | Not built. Originally demoted to a report page, because the coach's proven-floor targets are better guidance than a generic ratio. On 2026-09-22 the owner was offered it as a Workbook view and did not choose it. |
 
 The retirement and net-worth deferrals stand after the Workbook plan. Net worth
@@ -39,7 +39,7 @@ strengthens the case.
 "superseded — weekly is the primary lens; a third cadence alongside weekly and
 monthly is a maintenance cost with no new information." On 2026-09-22 the owner
 chose it, and Workbook's Bill Calendar, from a list of Workbook tabs. Both are now
-in the build (Workbook plan S15b and S15c); neither exists yet. How a pay period
+built (Workbook plan S15b and S15c). How a pay period
 is found and a bill split across it is formula decision F15: on 2026-09-23
 the owner chose to find the period from the pay schedule and divide a monthly
 bill by the pay frequency.
@@ -66,16 +66,17 @@ spreadsheet; everything after is addition.
 Engineering standard, enforced gates, money primitives, golden harness,
 debt amortization verified against the workbook, savings-goal maths.
 
-**Phase 1 — Data in** ← *next, and the bottleneck for everything*
-Supabase project, schema with RLS, card CSV/XLSX import, dedupe, the review
-queue, merchant rules that learn. *Blocked on: a free Supabase account.*
+**Phase 1 — Data in** ✅ *built; ends when the owner runs it*
+Supabase project, schema with RLS, card CSV and Rogers PDF import, dedupe,
+the review queue, merchant rules that learn. Its "Ends with" waits on the
+owner pasting migrations 0003 onwards into the hosted project (HANDOFF.md).
 Ends with: a real statement imported and categorised.
 
-**Phase 2 — Weekly truth**
+**Phase 2 — Weekly truth** ✅ *built, except the contribution grid (a coach piece)*
 Weekly rollups in the engine, the weekly screen, categories, budget vs. actual,
 the contribution grid. Ends with: the real answer to "how am I doing this week".
 
-**Workbook views** ← *next, ahead of the coach (owner's answer, 2026-09-22)*
+**Workbook views** ✅ *built 2026-09-23 (owner's answer, 2026-09-22: ahead of the coach)*
 Month, Setup and Bills, Year and Home, Week in Workbook's shape, Paycheck, Bill
 Calendar, Savings funds, Debts — in the order of `docs/workbook-plan.md` §8.
 Pulls forward from later phases only what these need: bills and recurring
@@ -85,24 +86,24 @@ funds and the debt screen from Phase 7 (not net worth or retirement).
 The coach is not wasted by waiting: it will read the same month figures.
 Ends with: the owner's statement filling Workbook's month, year and setup views.
 
-**Phase 3 — The coach** *(moved behind the Workbook views)*
+**Phase 3 — The coach** ← *next (moved behind the Workbook views)*
 Weekly limits, proven-floor targets, savings capacity, interrogation loop,
 tradeoff framing in flight hours, goal tracking.
 Ends with: a Sunday check-in that argues with the user.
 
-**Phase 4 — Photos and natural language**
+**Phase 4 — Photos and natural language** *(photos and typed entry built, the receipt function not yet deployed; natural language not built)*
 Provider interface, the picker, failover, receipt capture, typed entry.
 Ends with: three ways in, one review queue.
 
-**Phase 5 — Commitments**
+**Phase 5 — Commitments** *(bills, recurring amounts and the Bill calendar built; reminders and the forecast not)*
 Bills, recurring, the calendar, due reminders, forecast.
 Ends with: nothing is a surprise.
 
-**Phase 6 — Seeing it**
+**Phase 6 — Seeing it** *(the Month and Year charts built; Sankey, reports and export not)*
 Sankey, charts, reports, Excel and PDF export.
 Ends with: a report worth showing someone.
 
-**Phase 7 — The rest of the workbook**
+**Phase 7 — The rest of the workbook** *(snowball/avalanche and savings funds built; net worth and retirement deferred, above)*
 Snowball/avalanche, sinking funds beyond the flying goal, net worth,
 retirement. Ends with: full parity, plus everything the workbook could not do.
 
