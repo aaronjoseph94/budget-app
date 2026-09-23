@@ -31,7 +31,7 @@ async function namesOn(list: string): Promise<string[]> {
   const card = await screen.findByRole('region', { name: list })
   return within(card)
     .queryAllByRole('listitem')
-    .map((li) => within(li).queryByRole<HTMLInputElement>('textbox')?.value ?? li.textContent ?? '')
+    .map((li) => within(li).queryByRole<HTMLInputElement>('textbox', { name: /^Rename / })?.value ?? li.textContent ?? '')
 }
 
 afterEach(cleanup)

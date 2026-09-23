@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useAppData } from '../app-data.js'
 import { appendToLists, moveInList } from '@budget/core'
 import {
@@ -276,16 +276,18 @@ function ListCardView({ card, rows }: { card: ListCard; rows: readonly Category[
   )
 }
 
-/** One category: its name, edited where it stands. */
+/** One category: its name, edited where it stands, and anything its list adds on a line below. */
 function CategoryRow({
   row,
   list,
   write,
+  children,
 }: {
   row: Category
   /** The whole list it is on, in the order shown. */
   list: readonly Category[]
   write: (change: () => Promise<unknown>) => Promise<boolean>
+  children?: ReactNode
 }) {
   const { supabase, categories } = useAppData()
   const [text, setText] = useState(row.name)
@@ -319,57 +321,60 @@ function CategoryRow({
   }
 
   return (
-    <li className="flex items-center gap-1 py-1">
-      <input
-        aria-label={`Rename ${row.name}`}
-        value={text}
-        maxLength={60}
-        onChange={(e) => setText(e.target.value)}
-        onBlur={() => void rename()}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') e.currentTarget.blur()
-          // Back to the stored name; leaving the field then saves nothing.
-          if (e.key === 'Escape') setText(row.name)
-        }}
-        className="min-w-0 flex-1 rounded-md bg-transparent px-1 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-      />
-      <Button variant="ghost" size="icon" className="size-9" aria-label={`Move ${row.name} up`} disabled={list[0]?.id === row.id} onClick={() => step('up')}>
-        <Icon name="up" />
-      </Button>
-      <Button variant="ghost" size="icon" className="size-9" aria-label={`Move ${row.name} down`} disabled={list.at(-1)?.id === row.id} onClick={() => step('down')}>
-        <Icon name="down" />
-      </Button>
-      {/* A native picker under an icon: on a phone it opens the system wheel. */}
-      <span className="relative inline-flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent">
-        <Icon name="move" className="size-4" />
-        <select
-          aria-label={`Move ${row.name} to another list`}
-          value=""
-          onChange={(e) => {
-            const kind = LISTS.find((k) => k === e.target.value)
-            if (kind !== undefined) moveTo(kind)
+    <li className="py-1">
+      <div className="flex items-center gap-1">
+        <input
+          aria-label={`Rename ${row.name}`}
+          value={text}
+          maxLength={60}
+          onChange={(e) => setText(e.target.value)}
+          onBlur={() => void rename()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.blur()
+            // Back to the stored name; leaving the field then saves nothing.
+            if (e.key === 'Escape') setText(row.name)
           }}
-          className="absolute inset-0 cursor-pointer opacity-0"
-        >
-          <option value="" disabled>
-            Move to…
-          </option>
-          {LISTS.filter((k) => k !== row.kind).map((k) => (
-            <option key={k} value={k}>
-              {LIST_HEADING[k]}
+          className="min-w-0 flex-1 rounded-md bg-transparent px-1 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        />
+        <Button variant="ghost" size="icon" className="size-9" aria-label={`Move ${row.name} up`} disabled={list[0]?.id === row.id} onClick={() => step('up')}>
+          <Icon name="up" />
+        </Button>
+        <Button variant="ghost" size="icon" className="size-9" aria-label={`Move ${row.name} down`} disabled={list.at(-1)?.id === row.id} onClick={() => step('down')}>
+          <Icon name="down" />
+        </Button>
+        {/* A native picker under an icon: on a phone it opens the system wheel. */}
+        <span className="relative inline-flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent">
+          <Icon name="move" className="size-4" />
+          <select
+            aria-label={`Move ${row.name} to another list`}
+            value=""
+            onChange={(e) => {
+              const kind = LISTS.find((k) => k === e.target.value)
+              if (kind !== undefined) moveTo(kind)
+            }}
+            className="absolute inset-0 cursor-pointer opacity-0"
+          >
+            <option value="" disabled>
+              Move to…
             </option>
-          ))}
-        </select>
-      </span>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-9 text-muted-foreground"
-        aria-label={`Remove ${row.name}`}
-        onClick={() => void write(() => removeCategory(supabase, row.id))}
-      >
-        <Icon name="trash" />
-      </Button>
+            {LISTS.filter((k) => k !== row.kind).map((k) => (
+              <option key={k} value={k}>
+                {LIST_HEADING[k]}
+              </option>
+            ))}
+          </select>
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-9 text-muted-foreground"
+          aria-label={`Remove ${row.name}`}
+          onClick={() => void write(() => removeCategory(supabase, row.id))}
+        >
+          <Icon name="trash" />
+        </Button>
+      </div>
+      {children}
     </li>
   )
 }
