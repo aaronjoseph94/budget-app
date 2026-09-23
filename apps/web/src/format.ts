@@ -122,7 +122,7 @@ export function describeWriteFailure(error: WriteError | null | undefined): stri
 }
 
 /** What Setup was doing when a write failed. */
-export type SetupAction = 'rename' | 'move' | 'reorder' | 'remove'
+export type SetupAction = 'add' | 'rename' | 'move' | 'reorder' | 'remove'
 
 /**
  * Setup's own sentences for the refusals its writes can meet.
@@ -135,6 +135,7 @@ export type SetupAction = 'rename' | 'move' | 'reorder' | 'remove'
  * sign-in failures that can happen anywhere.
  */
 const SETUP_FAILURES: Readonly<Record<SetupAction, Readonly<Record<string, string>>>> = {
+  add: {},
   rename: {
     '23505': 'You already have a category with that name, on this list or another. Use a different name.',
     // The name domain (0001) refuses control characters and empty names.

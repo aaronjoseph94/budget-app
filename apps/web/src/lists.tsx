@@ -60,6 +60,41 @@ export function atEndOf(
 }
 
 /**
+ * Workbook's example names, for Setup's "Start from Workbook's list" (plan §7).
+ * They are placeholders to rename: START HERE's rows in its own order
+ * (Income B8:B12, Savings H7:H10, Bills B18:B24, Debts D18:D21,
+ * Subscriptions F18:F20, Variable H17:H22), plus the app's two rows a card
+ * statement needs from its first import. No amount comes with them; the
+ * sample's figures are the template's, not yours.
+ */
+const WORKBOOK_STARTER: readonly { readonly name: string; readonly kind: CategoryKind }[] = [
+  ...['Income 1', 'Income 2', 'Side Hustle', 'Freelance Work', 'Donations'].map((name) => ({ name, kind: 'income' as const })),
+  ...['Emergency Fund', 'Travel Fund', 'Down Payment', 'Car Repair Fund'].map((name) => ({ name, kind: 'savings' as const })),
+  ...['Rent', 'Electricity Bill', 'Water Bill', 'Gas Bill', 'Phone', 'Car Insurance', 'Gym Membership'].map((name) => ({
+    name,
+    kind: 'bill' as const,
+  })),
+  ...['Credit Card 1', 'Credit Card 2', 'Car Loan', 'Student Loan'].map((name) => ({ name, kind: 'debt' as const })),
+  ...['Netflix', 'Spotify', 'Dropbox'].map((name) => ({ name, kind: 'subscription' as const })),
+  // Interest is a charge, not a payment you make, so it is spending (decision 14).
+  ...['Restaurants', 'Groceries', 'Clothing', 'Gas', 'Movie Theater', 'Game Night', 'Card interest & fees'].map((name) => ({
+    name,
+    kind: 'variable' as const,
+  })),
+  // Paying the card moves money; what it paid for is already counted (D9).
+  { name: 'Card payments', kind: 'transfer' },
+]
+
+/**
+ * The starter names, with your savings goal's name first on Savings when
+ * there is one, so the goal you already track heads the list Workbook's
+ * savings funds sit on.
+ */
+export function starterList(goalName: string | null): readonly { readonly name: string; readonly kind: CategoryKind }[] {
+  return goalName === null ? WORKBOOK_STARTER : [{ name: goalName, kind: 'savings' }, ...WORKBOOK_STARTER]
+}
+
+/**
  * Which list a new category goes on. Shown whenever one is being made, with
  * the caller's sensible choice already picked, so the choice is always seen
  * and can always be changed. `lists` narrows what makes sense in the place

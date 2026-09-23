@@ -391,6 +391,32 @@ export async function ensureCategory(
   return row
 }
 
+/**
+ * Add many categories in one write, leaving out any name already stored.
+ *
+ * ON CONFLICT (user_id, name) DO NOTHING, so a name that arrived between
+ * reading the lists and writing them is skipped by the database rather than
+ * refusing the whole set: two quick presses of Setup's starter button add
+ * each name once. Returns how many rows were actually added.
+ */
+export async function addCategories(
+  supabase: SupabaseClient,
+  userId: string,
+  rows: readonly NewCategory[],
+): Promise<number> {
+  if (rows.length === 0) return 0
+  const { data, error } = await supabase
+    .from('categories')
+    .upsert(
+      rows.map((row) => ({ user_id: userId, name: row.name, kind: row.kind, sort_order: row.sortOrder })),
+      { onConflict: 'user_id,name', ignoreDuplicates: true },
+    )
+    .select('id')
+  // Nothing back with no error is not "none added"; say it failed instead.
+  if (error !== null || data === null) throw new Error(describeSetupFailure('add', error))
+  return data.length
+}
+
 export async function listCategories(supabase: SupabaseClient): Promise<readonly Category[]> {
   const { data, error } = await supabase
     .from('categories')

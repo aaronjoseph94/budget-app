@@ -113,15 +113,25 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     const wantsObject = headers.get('accept')?.startsWith('application/vnd.pgrst.object+json') === true
 
     if (method === 'POST') {
-      const row: Row = { id: `new-${nextId++}`, ...(JSON.parse(String(init?.body)) as Row) }
-      // What the database refuses, in the order it checks: NOT NULL before
-      // UNIQUE. Since 0005 a category has no default list (N11).
-      if (target === 'categories' && row.kind === undefined) return pgError('23502')
-      if ((target === 'categories' || target === 'accounts') && table.some((r) => r.name === row.name)) {
-        return pgError('23505', 409)
+      const body = JSON.parse(String(init?.body)) as Row | Row[]
+      // An upsert with ignoreDuplicates is ON CONFLICT DO NOTHING: a taken
+      // name is skipped. Without it, one taken name refuses the whole write.
+      const skipTaken = headers.get('prefer')?.includes('resolution=ignore-duplicates') === true
+      const added: Row[] = []
+      for (const fields of Array.isArray(body) ? body : [body]) {
+        const row: Row = { id: `new-${nextId++}`, ...fields }
+        // What the database refuses, in the order it checks: NOT NULL before
+        // UNIQUE. Since 0005 a category has no default list (N11).
+        if (target === 'categories' && row.kind === undefined) return pgError('23502')
+        const named = target === 'categories' || target === 'accounts'
+        if (named && [...table, ...added].some((r) => r.name === row.name)) {
+          if (skipTaken) continue
+          return pgError('23505', 409)
+        }
+        added.push(row)
       }
-      table.push(row)
-      return json(wantsObject ? row : [row], 201)
+      table.push(...added)
+      return json(wantsObject ? added[0] : added, 201)
     }
 
     // The filters, as one test per row, for reads, updates and deletes alike.

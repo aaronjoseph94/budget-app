@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useAppData } from '../app-data.js'
-import { moveInList } from '@budget/core'
+import { appendToLists, moveInList } from '@budget/core'
 import {
+  addCategories,
   ensureCategory,
   moveCategory,
   removeCategory,
@@ -9,7 +10,7 @@ import {
   setCategoryOrder,
   type Category,
 } from '../ledger.js'
-import { atEndOf, groupByList, LIST_HEADING, LISTS, type CategoryKind } from '../lists.js'
+import { atEndOf, groupByList, LIST_HEADING, LISTS, starterList, type CategoryKind } from '../lists.js'
 import { saveDisplayName } from '../profile.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
@@ -58,13 +59,19 @@ const SECTIONS: readonly { readonly label: string; readonly cards: readonly List
  * list it belongs to, which decides where its charges are counted.
  */
 export function SetupScreen() {
-  const { categories } = useAppData()
+  const { categories, version } = useAppData()
   const lists = new Map(groupByList(categories).map((group) => [group.kind, group.rows]))
+  // How many the starter button added, kept here so its message stays once
+  // the button itself is gone.
+  const [added, setAdded] = useState<number | null>(null)
 
   return (
     <div className="-mx-4 bg-setup-canvas pb-6 md:mx-0 md:overflow-hidden md:rounded-xl">
       <NameBand />
       <div className="space-y-6 px-4 pt-5">
+        {/* Not before the first load, when every account reads as empty. */}
+        {version > 0 && categories.length < FEW_CATEGORIES ? <StarterCard onAdded={setAdded} /> : null}
+        {added !== null ? <StarterAdded count={added} /> : null}
         {SECTIONS.map((section) => (
           <section key={section.label} className="space-y-2">
             <h2 className="text-xl font-medium text-setup-label">{section.label}</h2>
@@ -75,6 +82,66 @@ export function SetupScreen() {
         ))}
       </div>
     </div>
+  )
+}
+
+/**
+ * Below this many categories, Setup offers Workbook's names. Workbook's list is 31
+ * names, so once it has been added the offer is gone; someone who has
+ * already built lists of their own is not asked.
+ */
+const FEW_CATEGORIES = 20
+
+/** "Start from Workbook's list": every list filled with names to rename (plan §7). */
+function StarterCard({ onAdded }: { onAdded: (count: number) => void }) {
+  const { supabase, userId, categories, goal, refresh } = useAppData()
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+
+  const start = async () => {
+    setBusy(true)
+    setMessage(null)
+    const { rows } = appendToLists({
+      existing: categories.map((c) => ({ name: c.name, kind: c.kind, sortOrder: c.sort_order })),
+      wanted: starterList(goal === null ? null : goal.name),
+    })
+    try {
+      onAdded(await addCategories(supabase, userId, rows))
+      await refresh()
+    } catch (cause) {
+      setMessage(cause instanceof Error ? cause.message : 'Nothing was added. Check your connection and try again.')
+    }
+    setBusy(false)
+  }
+
+  return (
+    <section aria-label="Start from Workbook's list" className="rounded-xl bg-card px-4 py-4 shadow-sm">
+      <p className="text-sm">
+        Fill your lists with Workbook&apos;s example names — Rent, Groceries, Netflix and the rest — plus Card payments and
+        Card interest &amp; fees for your statement. Names you already have stay as they are.
+      </p>
+      {message !== null ? (
+        <div className="mt-2">
+          <Alert tone="error">{message}</Alert>
+        </div>
+      ) : null}
+      <Button className="mt-3" disabled={busy} onClick={() => void start()}>
+        Start from Workbook&apos;s list
+      </Button>
+    </section>
+  )
+}
+
+/** What the starter button did, and that the names are only placeholders. */
+function StarterAdded({ count }: { count: number }) {
+  if (count === 0) {
+    return <Alert tone="success">Everything on Workbook&apos;s list is already here, so nothing was added.</Alert>
+  }
+  return (
+    <Alert tone="success" title={`Added ${count} of Workbook's example ${count === 1 ? 'name' : 'names'}`}>
+      They are placeholders. Rename each one to your own, move any to another list, and remove the ones you don&apos;t
+      need. None of them has an amount.
+    </Alert>
   )
 }
 

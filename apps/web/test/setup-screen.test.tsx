@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { SetupScreen } from '../src/screens/SetupScreen.js'
-import type { Category } from '../src/ledger.js'
+import { addCategories, type Category } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 
@@ -216,5 +216,87 @@ describe('SetupScreen, your name', () => {
     const alert = await screen.findByRole('alert')
     expect(within(alert).getByText('Your name was not saved. Check your connection and try again.')).toBeTruthy()
     expect(fake.user.user_metadata).toEqual({})
+  })
+})
+
+describe("SetupScreen, starting from Workbook's list", () => {
+  const start = async () => fireEvent.click(await screen.findByRole('button', { name: "Start from Workbook's list" }))
+
+  it("adds Workbook's names under each list, after yours, your goal first on Savings", async () => {
+    const fake = seeded()
+    fake.tables.savings_goals.push({
+      id: 'g1', name: 'Flight training', target_cents: 3_000_000, saved_cents: 0,
+      target_date: null, unit_cost_cents: null, unit_label: null,
+    })
+    renderScreen(<SetupScreen />, fake)
+    await start()
+
+    // 31 of Workbook's names and the goal, less the five already here.
+    expect(await screen.findByText("Added 27 of Workbook's example names")).toBeTruthy()
+    expect(screen.getByText(/^They are placeholders\. Rename each one/)).toBeTruthy()
+    expect(await namesOn('Savings')).toEqual(['Flight training', 'Emergency Fund', 'Travel Fund', 'Down Payment', 'Car Repair Fund'])
+    expect(await namesOn('Income')).toEqual(['Pay', 'Income 1', 'Income 2', 'Side Hustle', 'Freelance Work', 'Donations'])
+    expect(await namesOn('Bills')).toEqual(['Phone', 'Rent', 'Electricity Bill', 'Water Bill', 'Gas Bill', 'Car Insurance', 'Gym Membership'])
+    expect(await namesOn('Debts')).toEqual(['Credit Card 1', 'Credit Card 2', 'Car Loan', 'Student Loan'])
+    expect(await namesOn('Subscriptions')).toEqual(['Netflix', 'Spotify', 'Dropbox'])
+    expect(await namesOn('Variable expenses')).toEqual([
+      'Groceries', 'Restaurants', 'Clothing', 'Gas', 'Movie Theater', 'Game Night', 'Card interest & fees',
+    ])
+    expect(await namesOn('Not spending')).toEqual(['Card payments'])
+    // 33 categories now, so the offer is gone and the message stays.
+    expect(screen.queryByRole('button', { name: "Start from Workbook's list" })).toBeNull()
+    expect(fake.tables.categories).toHaveLength(33)
+  })
+
+  it('adds each name once when pressed twice, and without a goal starts Savings with Workbook', async () => {
+    const fake = seeded()
+    renderScreen(<SetupScreen />, fake)
+    const button = await screen.findByRole('button', { name: "Start from Workbook's list" })
+    fireEvent.click(button)
+    fireEvent.click(button)
+
+    expect(await screen.findByText("Added 26 of Workbook's example names")).toBeTruthy()
+    expect(fake.tables.categories).toHaveLength(32)
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(await namesOn('Savings')).toEqual(['Emergency Fund', 'Travel Fund', 'Down Payment', 'Car Repair Fund'])
+  })
+
+  it('is not offered to someone with lists of their own', async () => {
+    const fake = createFakeSupabase({
+      categories: Array.from({ length: 20 }, (_, i) => category(`c${i}`, `Mine ${i}`, 'variable', i)),
+    })
+    renderScreen(<SetupScreen />, fake)
+    // Before the first load every account reads as empty; not offered then either.
+    expect(screen.queryByRole('button', { name: "Start from Workbook's list" })).toBeNull()
+
+    await waitFor(async () => expect(await namesOn('Variable expenses')).toHaveLength(20))
+    expect(screen.queryByRole('button', { name: "Start from Workbook's list" })).toBeNull()
+  })
+
+  it('says so when the names could not be added, and adds none', async () => {
+    const fake = seeded()
+    fake.fail('POST categories', '42501')
+    renderScreen(<SetupScreen />, fake)
+    await start()
+
+    const card = within(screen.getByRole('region', { name: "Start from Workbook's list" }))
+    expect(await card.findByText(/\(code 42501\)$/)).toBeTruthy()
+    expect(fake.tables.categories).toHaveLength(6)
+  })
+})
+
+describe('addCategories', () => {
+  // ON CONFLICT DO NOTHING: a name that arrived in between is skipped by the
+  // database, not a refusal of the whole set.
+  it('skips a name that is already stored, and counts only what it added', async () => {
+    const fake = seeded()
+    const rows = [
+      { name: 'Rent', kind: 'bill' as const, sortOrder: 5 },
+      { name: 'Water Bill', kind: 'bill' as const, sortOrder: 6 },
+    ]
+    expect(await addCategories(fake.client, 'u1', rows)).toBe(1)
+    expect(await addCategories(fake.client, 'u1', rows)).toBe(0)
+    expect(await addCategories(fake.client, 'u1', [])).toBe(0)
+    expect(fake.tables.categories.filter((c) => c.name === 'Water Bill')).toHaveLength(1)
   })
 })
