@@ -20,7 +20,7 @@ returned." Running one twice is refused rather than applied twice.
 | `0006_recategorise.sql` | Moving a charge that is already saved to a different category |
 | `0007_statement_periods.sql` | Remembering which dates each imported statement covered |
 | `0008_category_budgets.sql` | The budgets and goals you type on a month, "from this month on" or "just this month". Needed by the Month as soon as this branch is merged |
-| `0009_category_plans.sql` | Each bill's, debt's and subscription's monthly amount and the day it is paid. Needed by Setup's Day paid and Monthly amount as soon as this branch is merged, and by planned amounts on the Month, still to come. Once it runs, a category with a monthly amount stays on its list until you stop the amount (Stop, under it in Setup) |
+| `0009_category_plans.sql` | Each bill's, debt's and subscription's monthly amount and the day it is paid. Needed by Setup's Day paid and Monthly amount, and by the Month, which counts each bill's planned amount, as soon as this branch is merged. Once it runs, a category with a monthly amount stays on its list until you stop the amount (Stop, under it in Setup) |
 | `0010_month_balances.sql` | The bank balance you type for the start of each month. Needed by the Month's projected ending balance, still to come |
 | `0011_pay_schedules.sql` | When each income source pays: a payday, and weekly, every two weeks or monthly. Needed by Paycheck and the Bill Calendar, still to come |
 | `0012_dismiss_unreadable_lines.sql` | Dismissing a statement line the app could not read. Needed by Review as soon as this branch is merged |
@@ -30,7 +30,7 @@ into `main`.** `main` deploys itself, and the app on this branch already
 reads what `0008`, `0009` and `0012` add. Without `0008`, the Month says "Budgets
 need a database update that has not been applied yet" and shows no month.
 Without `0009`, Setup says the same of monthly amounts and shows none, and
-your lists still work. Without `0012`, Review cannot list the lines an
+your lists still work; the Month says it too, and shows no month. Without `0012`, Review cannot list the lines an
 import could not read and shows a code in brackets instead. Screens built
 next read `0010` and `0011`. A file can rely on the ones before it (`0008` and `0009`
 point at a key `0005` adds, for example), so keep to the order.

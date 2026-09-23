@@ -21,6 +21,7 @@ import {
   describePlanFailure,
   describeSetupFailure,
   describeWriteFailure,
+  type PlanAction,
   type WriteError,
 } from './format.js'
 import { LIST_HEADING, type CategoryKind } from './lists.js'
@@ -793,8 +794,14 @@ export interface PlanRow {
 /**
  * Every monthly amount typed from the month starting `through` or before it,
  * read whole (readAll): everything that month's amounts can come from.
+ * `reader` words a failure for the screen asking: Setup ('read') still shows
+ * its lists, the Month ('month') shows nothing.
  */
-export async function listPlanHistory(supabase: SupabaseClient, through: string): Promise<readonly PlanRow[]> {
+export async function listPlanHistory(
+  supabase: SupabaseClient,
+  through: string,
+  reader: Exclude<PlanAction, 'save'>,
+): Promise<readonly PlanRow[]> {
   const rows = await readAll<PlanRow>(
     (from, to) =>
       supabase
@@ -805,8 +812,8 @@ export async function listPlanHistory(supabase: SupabaseClient, through: string)
         .order('id', { ascending: true })
         .range(from, to),
     {
-      changed: 'Your monthly amounts changed while they were being read, so they are not shown. Try again.',
-      describe: (error) => describePlanFailure('read', error),
+      changed: `Your monthly amounts changed while they were being read, so ${reader === 'month' ? 'this month is' : 'they are'} not shown. Try again.`,
+      describe: (error) => describePlanFailure(reader, error),
     },
   )
   return rows.map((r) => ({

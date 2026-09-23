@@ -247,9 +247,20 @@ export function describeBudgetFailure(action: BudgetAction, error: WriteError | 
  * after Setup read it; the screen refuses a negative amount or a day
  * outside 1 to 31 before sending, so those CHECKs never reach here. A
  * category removed elsewhere is 23503.
+ *
+ * The Month reads them too ('month'), and unlike Setup it shows nothing
+ * without them: a month without its planned bills has a Spent that looks
+ * right and is not. So its sentences say the month is not shown.
  */
+export type PlanAction = 'read' | 'month' | 'save'
 const PLANS_NOT_APPLIED = 'Monthly amounts need a database update that has not been applied yet (0009 in the setup guide)'
-const PLAN_FAILURES: Readonly<Record<'read' | 'save', Readonly<Record<string, string>>>> = {
+const PLAN_FAILURES: Readonly<Record<PlanAction, Readonly<Record<string, string>>>> = {
+  month: {
+    PGRST205: `${PLANS_NOT_APPLIED}, so this month cannot be shown.`,
+    '42P01': `${PLANS_NOT_APPLIED}, so this month cannot be shown.`,
+    '': 'Could not reach the database to read your monthly amounts. Check your connection and try again.',
+    PGRST301: 'Your session expired. Sign in again to see this month.',
+  },
   read: {
     PGRST205: `${PLANS_NOT_APPLIED}, so they are not shown. Your lists still work.`,
     '42P01': `${PLANS_NOT_APPLIED}, so they are not shown. Your lists still work.`,
@@ -265,13 +276,12 @@ const PLAN_FAILURES: Readonly<Record<'read' | 'save', Readonly<Record<string, st
   },
 }
 
-export function describePlanFailure(action: 'read' | 'save', error: WriteError | null | undefined): string {
+export function describePlanFailure(action: PlanAction, error: WriteError | null | undefined): string {
   const code = typeof error?.code === 'string' ? error.code : ''
   const body = PLAN_FAILURES[action][code]
   if (body !== undefined) return code === '' ? body : `${body} (code ${code})`
-  return action === 'save'
-    ? describeWriteFailure(error)
-    : `Your monthly amounts could not be read, so they are not shown. Try again. (code ${code})`
+  if (action === 'save') return describeWriteFailure(error)
+  return `Your monthly amounts could not be read, so ${action === 'month' ? 'this month is' : 'they are'} not shown. Try again. (code ${code})`
 }
 
 /**

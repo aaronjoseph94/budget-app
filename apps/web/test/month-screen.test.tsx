@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MonthScreen } from '../src/screens/MonthScreen.js'
 import { useAddress } from '../src/nav.js'
-import type { BudgetRow, Category, LedgerRow } from '../src/ledger.js'
+import type { BudgetRow, Category, LedgerRow, PlanRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 
@@ -209,7 +209,7 @@ describe('MonthScreen budgets and goals', () => {
 
     expect((await screen.findByRole('alert')).textContent).toBe(
       'Could not show this month' +
-        'A charge or a budget this month names a category that did not load, so the month is not shown. Reload to try again.',
+        'A charge, a budget or a monthly amount this month names a category that did not load, so the month is not shown. Reload to try again.',
     )
     expect(screen.queryByRole('region')).toBeNull()
   })
@@ -252,6 +252,75 @@ describe('MonthScreen budgets and goals', () => {
       'Could not load this month' +
         'Budgets need a database update that has not been applied yet (0008 in the setup guide), so this month cannot be shown. (code PGRST205)',
     )
+    expect(screen.queryByRole('region')).toBeNull()
+  })
+})
+
+const plan = (id: string, category_id: string, effective_month: string, planned_cents: number | null, due_day: number | null): PlanRow => ({
+  id, category_id, effective_month, planned_cents, due_day,
+})
+
+function planned(): FakeSupabase {
+  const fake = seeded()
+  fake.tables.category_plans.push(
+    plan('m1', 'rent', '2026-01-01', 160000, 1),
+    // Raised from October: never reaches back into September (D13).
+    plan('m2', 'rent', '2026-10-01', 170000, 1),
+    // September's real 55.00 replaces it there (D5).
+    plan('m3', 'phone', '2026-01-01', 5000, 5),
+    plan('m4', 'music', '2026-10-01', 1199, 9),
+  )
+  return fake
+}
+
+describe('MonthScreen planned amounts', () => {
+  // Hand-derived. Bills: rent planned 1,600.00 + phone real 55.00 = 1,655.00.
+  // Spent: variable 85.00 + 1,655.00 = 1,740.00 (F7).
+  it('counts a monthly amount where nothing real is filed, says so, and puts it in Spent', async () => {
+    renderScreen(<MonthScreen month="2026-09" />, planned())
+    await screen.findByRole('region', { name: 'Bills' })
+
+    expect(cells('Bills', 'Rent')).toEqual(['', 'planned1,600.00', ''])
+    expect(cells('Bills', 'Phone')).toEqual(['', '55.00', ''])
+    expect(band('Bills')).toBe('$1,655.00')
+    // Starts in October, so nothing here yet.
+    expect(block('Subscriptions').queryByRole('rowheader', { name: 'Music' })).toBeNull()
+    const summary = within(screen.getByRole('region', { name: 'Summary' }))
+    expect(summary.getByText('Spent').nextSibling?.textContent).toBe('$1,740.00')
+  })
+
+  // Hand-derived for October: rent 1,700.00, phone 50.00, music 11.99, all
+  // planned, nothing spent: 1,761.99.
+  it('shows a month still to come its planned bills, at the amounts in effect then (F10, D13)', async () => {
+    renderScreen(<MonthScreen month="2026-10" />, planned())
+    await screen.findByRole('heading', { name: 'October 2026' })
+
+    expect(await block('Bills').findByRole('rowheader', { name: 'Rent' })).toBeTruthy()
+    expect(cells('Bills', 'Rent')).toEqual(['', 'planned1,700.00', ''])
+    expect(cells('Bills', 'Phone')).toEqual(['', 'planned50.00', ''])
+    expect(cells('Subscriptions', 'Music')).toEqual(['', 'planned11.99', ''])
+    const summary = within(screen.getByRole('region', { name: 'Summary' }))
+    expect(summary.getByText('Spent').nextSibling?.textContent).toBe('$1,761.99')
+  })
+
+  it('shows no month, rather than one without its planned bills, when they cannot be read', async () => {
+    const fake = planned()
+    fake.fail('category_plans', 'PGRST205')
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Could not load this month' +
+        'Monthly amounts need a database update that has not been applied yet (0009 in the setup guide), so this month cannot be shown. (code PGRST205)',
+    )
+    expect(screen.queryByRole('region')).toBeNull()
+  })
+
+  it('says so, rather than leave a planned bill out, when its category did not load', async () => {
+    const fake = planned()
+    fake.tables.category_plans.push(plan('m5', 'gone', '2026-01-01', 700, 1))
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+
+    expect(within(await screen.findByRole('alert')).getByText('Could not show this month')).toBeTruthy()
     expect(screen.queryByRole('region')).toBeNull()
   })
 })

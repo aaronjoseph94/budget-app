@@ -46,7 +46,7 @@ export function useMonthlyAmounts(month: string): MonthlyAmounts {
   useEffect(() => {
     if (version === 0) return
     let live = true
-    listPlanHistory(supabase, month)
+    listPlanHistory(supabase, month, 'read')
       .then((rows) => {
         if (!live) return
         setLoaded({ month, version, rows })

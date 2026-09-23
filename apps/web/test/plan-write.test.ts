@@ -87,17 +87,35 @@ describe('listPlanHistory', () => {
       await setPlan(fake.client, { ...september(cents), month })
     }
     fake.server.maxRows = 1
-    const rows = await listPlanHistory(fake.client, '2026-09-01')
+    const rows = await listPlanHistory(fake.client, '2026-09-01', 'read')
     expect(rows.map((r) => [r.effective_month, r.planned_cents, r.due_day])).toEqual([
       ['2026-01-01', 160_000, 1],
       ['2026-09-01', null, 1],
     ])
   })
 
+  it('refuses a read the amounts changed under, in the words of the screen reading', async () => {
+    for (const [reader, words] of [
+      ['read', 'so they are not shown'],
+      ['month', 'so this month is not shown'],
+    ] as const) {
+      const fake = withLists()
+      for (const month of ['2026-01-01', '2026-09-01']) await setPlan(fake.client, { ...september(160_000), month })
+      fake.server.maxRows = 1
+      fake.server.afterRead = () => {
+        fake.tables.category_plans.splice(0, 1)
+        fake.server.afterRead = null
+      }
+      await expect(listPlanHistory(fake.client, '2026-09-01', reader)).rejects.toThrow(
+        `Your monthly amounts changed while they were being read, ${words}. Try again.`,
+      )
+    }
+  })
+
   it('says a missing update is missing, and never that nothing was saved', async () => {
     const fake = withLists()
     fake.fail('category_plans', 'PGRST205')
-    await expect(listPlanHistory(fake.client, '2026-09-01')).rejects.toThrow(
+    await expect(listPlanHistory(fake.client, '2026-09-01', 'read')).rejects.toThrow(
       'Monthly amounts need a database update that has not been applied yet (0009 in the setup guide), so they are not shown. Your lists still work. (code PGRST205)',
     )
   })

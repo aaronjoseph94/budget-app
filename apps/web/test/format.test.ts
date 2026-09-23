@@ -227,6 +227,24 @@ describe('describePlanFailure', () => {
     }
   })
 
+  it('says the Month is not shown when it cannot read them, since it shows no month without them', () => {
+    expect(describePlanFailure('month', { code: 'PGRST205' })).toContain('(0009 in the setup guide), so this month cannot be shown.')
+    expect(describePlanFailure('month', { code: '42P01' })).toContain('(0009 in the setup guide), so this month cannot be shown.')
+    expect(describePlanFailure('month', {})).toBe(
+      'Could not reach the database to read your monthly amounts. Check your connection and try again.',
+    )
+    expect(describePlanFailure('month', { code: 'PGRST301' })).toBe(
+      'Your session expired. Sign in again to see this month. (code PGRST301)',
+    )
+    expect(describePlanFailure('month', { code: 'XX000' })).toBe(
+      'Your monthly amounts could not be read, so this month is not shown. Try again. (code XX000)',
+    )
+    for (const code of ['PGRST205', '42P01', '', 'PGRST301', 'XX000']) {
+      expect(describePlanFailure('month', { code })).not.toContain('saved')
+      expect(describePlanFailure('month', { code })).not.toContain('Your lists still work')
+    }
+  })
+
   it("says a list can't have an amount, and never that the numbers did not add up", () => {
     expect(describePlanFailure('save', { code: '23514' })).toMatch(/^That list can't have a monthly amount/)
     expect(describePlanFailure('save', { code: '42P01' })).toContain('(0009 in the setup guide). Nothing was saved.')

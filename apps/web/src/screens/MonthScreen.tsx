@@ -5,9 +5,11 @@ import {
   countPendingBetween,
   latestStatementEnd,
   listBudgetHistory,
+  listPlanHistory,
   listTransactions,
   type BudgetRow,
   type LedgerRow,
+  type PlanRow,
 } from '../ledger.js'
 import { LIST_HEADING } from '../lists.js'
 import { navigate } from '../nav.js'
@@ -27,7 +29,8 @@ import { MonthCharges } from './MonthCharges.js'
  * back gesture returns to it.
  *
  * Every number is monthSheet's, from packages/core, over the whole month's
- * ledger; this screen only formats them. Nothing unreviewed is in it.
+ * ledger and the budgets and monthly amounts typed up to it; this screen only
+ * formats them. Nothing unreviewed is in it.
  */
 export function MonthScreen({ month }: { month: string | null }) {
   const { supabase, categories, pendingTotal, version } = useAppData()
@@ -48,10 +51,14 @@ export function MonthScreen({ month }: { month: string | null }) {
     Promise.all([
       listTransactions(supabase, { from: start, to: end }),
       listBudgetHistory(supabase, start),
+      listPlanHistory(supabase, start, 'month'),
       latestStatementEnd(supabase),
       countPendingBetween(supabase, { from: start, to: end }),
     ])
-      .then(([rows, budgets, ends, pendingHere]) => live && setLoaded({ start, rows, budgets, ends, pendingHere }))
+      .then(
+        ([rows, budgets, plans, ends, pendingHere]) =>
+          live && setLoaded({ start, rows, budgets, plans, ends, pendingHere }),
+      )
       .catch((e: unknown) => live && setError(e instanceof Error ? e.message : 'Could not load this month.'))
     return () => {
       live = false
@@ -74,8 +81,14 @@ export function MonthScreen({ month }: { month: string | null }) {
           applies: b.applies,
           budgetCents: b.budget_cents,
         })),
-        // Monthly amounts are stored from Sitting B, and read here from S10.
-        planHistory: [],
+        // Every monthly amount typed up to this month; core picks the one in
+        // effect (D13), and counts it where no real charge replaces it (D5).
+        planHistory: here.plans.map((p) => ({
+          categoryId: p.category_id,
+          effectiveMonth: isoDate(p.effective_month),
+          plannedCents: p.planned_cents,
+          dueDay: p.due_day,
+        })),
         entries: here.rows.map((r) => ({
           postedOn: isoDate(r.posted_on),
           amountCents: r.amount_cents,
@@ -84,10 +97,10 @@ export function MonthScreen({ month }: { month: string | null }) {
         statementPeriodEnds: here.ends.map((e) => isoDate(e)),
       })
     } catch {
-      // The engine refuses a charge or a budget whose category it was not
-      // given rather than leave it out of every total. Said plainly, never as
-      // its message.
-      return 'A charge or a budget this month names a category that did not load, so the month is not shown. Reload to try again.'
+      // The engine refuses a charge, a budget or a monthly amount whose
+      // category it was not given rather than leave it out of every total.
+      // Said plainly, never as its message.
+      return 'A charge, a budget or a monthly amount this month names a category that did not load, so the month is not shown. Reload to try again.'
     }
   }, [here, categories, start])
   // Categories with their own "just this month" value in this month, which a
@@ -210,6 +223,8 @@ interface Loaded {
   readonly rows: readonly LedgerRow[]
   /** Every budget and goal typed for this month or before it. */
   readonly budgets: readonly BudgetRow[]
+  /** Every monthly amount typed from this month or before it. */
+  readonly plans: readonly PlanRow[]
   readonly ends: readonly string[]
   /** Charges dated this month still waiting for review. */
   readonly pendingHere: number
