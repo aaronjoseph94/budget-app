@@ -841,3 +841,34 @@ once they arrive; it failed before the change. Waiting exposed four Month
 tests that read a block as soon as the title showed, passing only because
 the rows had already come; each now waits for the block. If the first load
 fails, the Month stops saying "Loading…" under the app's own message.
+
+---
+
+## N36 — A card-paid bill whose charge slips past a month end counts twice
+
+**Seen:** 2026-09-23, S10 (planned against real on the Month).
+
+D5 works a month at a time: a real charge in a month replaces the planned
+amount, and a month with none counts the plan. A subscription due on the
+30th whose charge lands on the 1st of the next month leaves its own month
+with no real row, so that month counts the plan ($17.99, planned), and the
+next month holds two real charges, the late one and its own ($35.98). Two
+months, two bills, $53.97 counted. The same happens to anything charged
+near a month end on a day that moves (weekends, a 31st in a short month),
+and it repeats whenever it drifts back. Within one month nothing is
+counted twice, which is what decision 3 asked about.
+
+**Why not fixed here:** S10 builds the rule the owner chose, and the
+workbook has no answer: Workbook adds fixed and logged amounts (F3), which is
+worse. Deciding which month a late charge belongs to changes a number the
+owner would see, so it is theirs to choose.
+
+**To settle:** put it to the owner with options: A — leave it, and say in
+Setup that a bill charged to the card near a month end can leave its
+monthly amount blank, as §10 item 4 says for yearly bills; B — a real
+charge within a few days after the due day counts for the month it was due
+(needs the due day, and a rule for how many days); C — mark a bill "paid
+by card" in Setup, and once a statement covering its due day is imported,
+count only its real rows, so a late charge moves to the next month but is
+never counted twice (needs a new column; rent paid from the bank keeps its
+plan).
