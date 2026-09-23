@@ -519,3 +519,40 @@ rewriting `#/week` on open would break asking for Week on purpose.
 
 **To settle:** tell the owner once: remove the icon and add it again from
 Safari's Share menu.
+
+---
+
+## N25 — "Always file" moves the shop's rule, not its other charges
+
+**Seen:** 2026-09-23, S6 (moving a charge from the Month).
+
+Moving one charge with "Always file <shop> here" ticked re-points the shop's
+learned rule, so the next statement files it in the new place, but the same
+shop's other charges already posted stay where they were. A shop filed wrong
+eight times in a month takes eight moves, and until then the rule and those
+charges disagree.
+
+**Why not fixed here:** `recategorise_transaction` (0006) moves one row by
+design, and moving the rest is a new function (or a loop of calls that can
+stop part-way), which needs its own migration or a decision on partial moves.
+
+**To settle:** after a move with "Always file" on, offer "Move the other N
+from <shop> in <month> too", backed by one function that moves every row of
+that normalised merchant in a date range in one transaction.
+
+---
+
+## N26 — A charge filed under Not spending cannot be opened from the Month
+
+**Seen:** 2026-09-23, S6.
+
+Not spending (`transfer`) has no block on the Month, only the footnote "Paid
+to your card: … — not counted", so a purchase filed there by mistake leaves
+every total and cannot be reached to move back. Setup can move the whole
+category, not one charge.
+
+**Why not fixed here:** S6 is about tapping a Month row, and the footnote is
+one sum over possibly several categories, so it needs its own design.
+
+**To settle:** make the footnote open a sheet listing that month's Not
+spending charges, each with "Move to…", as a Month row does.
