@@ -27,8 +27,17 @@ const row = (postedOn: string, amountCents: number, categoryId: string): PeriodE
   amountCents,
   categoryId,
 })
+const BASE = {
+  from: isoDate('2026-09-01'),
+  to: isoDate('2026-09-30'),
+  categories: CATEGORIES,
+  budgets: [],
+  plans: [],
+  entries: [],
+  statementPeriodEnds: [],
+}
 const sheet = (entries: PeriodEntry[], from = '2026-09-01', to = '2026-09-30') =>
-  periodSheet({ from: isoDate(from), to: isoDate(to), categories: CATEGORIES, budgets: [], entries })
+  periodSheet({ ...BASE, from: isoDate(from), to: isoDate(to), entries })
 
 describe('periodSheet (suite)', () => {
   it('sums every row of a category, nets refunds, and totals the block', () => {
@@ -75,15 +84,12 @@ describe('periodSheet (suite)', () => {
 
   it('passes a resolved budget through, and keeps no budget apart from a zero one', () => {
     const s = periodSheet({
-      from: isoDate('2026-09-01'),
-      to: isoDate('2026-09-30'),
-      categories: CATEGORIES,
+      ...BASE,
       budgets: [
         { categoryId: 'food', budgetCents: 0 },
         { categoryId: 'fuel', budgetCents: null },
         { categoryId: 'pay', budgetCents: 400_000 },
       ],
-      entries: [],
     })
     expect(s.blocks.variable.rows.map((r) => r.budgetCents)).toEqual([null, 0])
     expect(s.blocks.income.rows[0]!.budgetCents).toBe(400_000)
@@ -99,14 +105,11 @@ describe('periodSheet (suite)', () => {
     expect(() => sheet([], '2026-09-30', '2026-09-01')).toThrow(/cannot end before/)
     expect(() =>
       periodSheet({
-        from: isoDate('2026-09-01'),
-        to: isoDate('2026-09-30'),
-        categories: CATEGORIES,
+        ...BASE,
         budgets: [
           { categoryId: 'food', budgetCents: 100 },
           { categoryId: 'food', budgetCents: 200 },
         ],
-        entries: [],
       }),
     ).toThrow(/Two budgets/)
   })

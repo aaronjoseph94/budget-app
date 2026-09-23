@@ -1,12 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import { loadGolden } from '@budget/golden-verification'
 import { isoDate } from '@budget/money-primitives'
-import { periodSheet, type PeriodCategory, type PeriodEntry, type PeriodSheet } from '../../src/period-sheet.js'
+import {
+  monthSheet,
+  periodSheet,
+  type PeriodCategory,
+  type PeriodEntry,
+  type PeriodPlan,
+  type PeriodSheet,
+} from '../../src/period-sheet.js'
 
 /**
  * External check: every expected number is a cached value from the Workbook
- * workbook's Weekly Budget and Paycheck Budget tabs, whose windows run over
- * the Transactions sample (plan §5.5 (a)). The engine is run once per window.
+ * workbook. Part 1 is Weekly Budget and Paycheck Budget, whose windows run
+ * over the Transactions sample (plan §5.5 (a)). Part 2 is the bill and debt
+ * blocks over the Bills log and monthly amounts: a pay period, Paycheck's
+ * "Actual This Month", and the only 2026 log row (§5.5 (b), (c)).
  */
 
 type Block = keyof PeriodSheet['blocks']
@@ -45,9 +54,44 @@ describe('periodSheet replays Workbook over a typed window (workbook-period part
       to: isoDate(c.to),
       categories: golden.input.categories,
       budgets: [],
+      plans: [],
       entries: golden.input.entries.map((e) => ({ ...e, postedOn: isoDate(e.postedOn) })),
+      statementPeriodEnds: [],
     })
     it.each(c.cells)(`${c.window} → $cell = $actualCents`, (cell) => {
+      expect(actualOf(sheet, cell)).toBe(cell.actualCents)
+    })
+  }
+})
+
+interface MonthCase {
+  window?: string
+  from?: string
+  to?: string
+  month?: string
+  asOf?: string
+  cells: Cell[]
+}
+interface Input2 extends Input {
+  plans: PeriodPlan[]
+}
+
+const part2 = loadGolden<Input2, MonthCase[]>('workbook-period-part2')
+
+describe('bills, debts and subscriptions replay Workbook (workbook-period part 2)', () => {
+  const shared = {
+    categories: part2.input.categories,
+    budgets: [],
+    plans: part2.input.plans,
+    entries: part2.input.entries.map((e) => ({ ...e, postedOn: isoDate(e.postedOn) })),
+    statementPeriodEnds: [],
+  }
+  for (const c of part2.expected) {
+    const sheet =
+      c.asOf === undefined
+        ? periodSheet({ ...shared, from: isoDate(c.from!), to: isoDate(c.to!) })
+        : monthSheet({ ...shared, asOf: isoDate(c.asOf) })
+    it.each(c.cells)(`${c.window ?? c.month} → $cell = $actualCents`, (cell) => {
       expect(actualOf(sheet, cell)).toBe(cell.actualCents)
     })
   }

@@ -1,0 +1,75 @@
+{
+  "$provenance": {
+    "sourceWorkbook": "Ultimate Annual Budget (\"Workbook\"), the owner's copy, Google Sheets export (not committed)",
+    "sourceSheet": "Paycheck Budget; Feb; Mar",
+    "cells": {"windows": "Paycheck Budget!D6:D7; months from Paycheck Budget!D6, Feb!B3, Mar!B3", "expected": "Paycheck Budget!K52, L52; Feb!K25; Mar!K25", "entries": "Bills!O7:Q9 (the Variable Bills log)", "plans": "Bills!B7:D7, F7:H7, J7:L7 (day paid, monthly amount)", "categories": "START HERE!B18:B24 (bills), D18:D21 (debts), F18:F20 (subscriptions)"},
+    "extractedOn": "2026-09-23",
+    "note": "Workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S4b, workbook-period part 2."
+  },
+  "$semantics": {
+    "window": "F4: both ends included. A \"month\" case is monthSheet at asOf, the whole calendar month (Paycheck L52 reads DATE(Y,M,1)..EOMONTH($D$6)).",
+    "plans": "D5/F3: a real row in the window replaces a bill's planned amount; F8: a partial window counts a plan only on its due day. Workbook's one Monthly Amount applies to every month, so each case passes the same resolved plans.",
+    "signs": "D3: logged payments are positive in Bills!Q and negated in the ledger. actualCents is as Workbook shows it, positive.",
+    "left out": "Credit Card 1's $200 on 2025-01-05 is in the input, but Paycheck!K50/L50 (250) are not asserted: Workbook adds it to the $50 plan, D5 replaces the plan (plan §5.4).",
+    "merchants": "The engine takes no merchant text; Bills!R (Notes) is not transcribed. Ids are synthetic."
+  },
+  "input": {
+    "categories": [
+      {"id": "cat-rent", "name": "Rent", "kind": "bill", "sortOrder": 0},
+      {"id": "cat-electricity-bill", "name": "Electricity Bill", "kind": "bill", "sortOrder": 1},
+      {"id": "cat-water-bill", "name": "Water Bill", "kind": "bill", "sortOrder": 2},
+      {"id": "cat-gas-bill", "name": "Gas Bill", "kind": "bill", "sortOrder": 3},
+      {"id": "cat-phone", "name": "Phone", "kind": "bill", "sortOrder": 4},
+      {"id": "cat-car-insurance", "name": "Car Insurance", "kind": "bill", "sortOrder": 5},
+      {"id": "cat-gym-membership", "name": "Gym Membership", "kind": "bill", "sortOrder": 6},
+      {"id": "cat-credit-card-1", "name": "Credit Card 1", "kind": "debt", "sortOrder": 0},
+      {"id": "cat-credit-card-2", "name": "Credit Card 2", "kind": "debt", "sortOrder": 1},
+      {"id": "cat-car-loan", "name": "Car Loan", "kind": "debt", "sortOrder": 2},
+      {"id": "cat-student-loan", "name": "Student Loan", "kind": "debt", "sortOrder": 3},
+      {"id": "cat-netflix", "name": "Netflix", "kind": "subscription", "sortOrder": 0},
+      {"id": "cat-spotify", "name": "Spotify", "kind": "subscription", "sortOrder": 1},
+      {"id": "cat-dropbox", "name": "Dropbox", "kind": "subscription", "sortOrder": 2}
+    ],
+    "plans": [
+      {"categoryId": "cat-rent", "plannedCents": 80000, "dueDay": 1, "from": "Bills!B7:D7"},
+      {"categoryId": "cat-credit-card-1", "plannedCents": 5000, "dueDay": 14, "from": "Bills!F7:H7"},
+      {"categoryId": "cat-netflix", "plannedCents": 1799, "dueDay": 23, "from": "Bills!J7:L7"}
+    ],
+    "entries": [
+      {"postedOn": "2025-01-05", "amountCents": -20000, "categoryId": "cat-credit-card-1", "from": "Bills!O7:Q7"},
+      {"postedOn": "2025-01-15", "amountCents": -10000, "categoryId": "cat-car-loan", "from": "Bills!O8:Q8"},
+      {"postedOn": "2026-02-10", "amountCents": -65000, "categoryId": "cat-student-loan", "from": "Bills!O9:Q9"}
+    ]
+  },
+  "expected": [
+    {
+      "window": "Paycheck Budget!D6:D7",
+      "from": "2025-01-01",
+      "to": "2025-01-14",
+      "cells": [
+        {"cell": "Paycheck Budget!K52", "block": "debt", "categoryId": "cat-car-loan", "actualCents": 0}
+      ]
+    },
+    {
+      "month": "Paycheck Budget!D6 (EOMONTH)",
+      "asOf": "2025-01-01",
+      "cells": [
+        {"cell": "Paycheck Budget!L52", "block": "debt", "categoryId": "cat-car-loan", "actualCents": 10000}
+      ]
+    },
+    {
+      "month": "Feb!B3",
+      "asOf": "2026-02-01",
+      "cells": [
+        {"cell": "Feb!K25", "block": "debt", "categoryId": "cat-student-loan", "actualCents": 65000}
+      ]
+    },
+    {
+      "month": "Mar!B3",
+      "asOf": "2026-03-01",
+      "cells": [
+        {"cell": "Mar!K25", "block": "debt", "categoryId": "cat-student-loan", "actualCents": 0}
+      ]
+    }
+  ]
+}
