@@ -57,6 +57,29 @@ describe('Sheet', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
+  it('keeps Tab and Shift+Tab inside the open sheet', () => {
+    render(
+      <>
+        <button type="button">Behind</button>
+        <Sheet title="Groceries" onClose={() => undefined}>
+          <button type="button">Move to…</button>
+        </Sheet>
+      </>,
+    )
+    const close = screen.getByRole('button', { name: 'Close' })
+    const move = screen.getByRole('button', { name: 'Move to…' })
+    // Opening focuses the panel; Shift+Tab from there goes to its last control.
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
+    expect(document.activeElement).toBe(move)
+    fireEvent.keyDown(document, { key: 'Tab' })
+    expect(document.activeElement).toBe(close)
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
+    expect(document.activeElement).toBe(move)
+    screen.getByRole('button', { name: 'Behind' }).focus()
+    fireEvent.keyDown(document, { key: 'Tab' })
+    expect(document.activeElement).toBe(close)
+  })
+
   it('shows a title written as markup as text', () => {
     render(<Opener title="<b>Dinner & drinks</b>" />)
     open()
