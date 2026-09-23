@@ -57,6 +57,13 @@ export interface FakeSupabase {
   readonly user: { id: string; email: string; user_metadata: Record<string, unknown> }
   /** Give the client a session, which `auth.updateUser` needs. `fail('auth/user', …)` makes updates fail. */
   signIn(): Promise<void>
+  /**
+   * How the server behaves. `maxRows` is PostgREST's cap on one response,
+   * which Supabase sets to 1,000 and which wins over any limit a query asks
+   * for. `afterRead` runs after each table read is answered, so a test can
+   * change the table between two pages of one read.
+   */
+  readonly server: { maxRows: number | null; afterRead: ((table: string) => void) | null }
 }
 
 let clients = 0
@@ -76,6 +83,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
   const rpcCalls: RpcCall[] = []
   const rpcReplies: Record<string, unknown> = { approve_candidate: 'approved', reject_candidate: null }
   const failures = new Map<string, string>()
+  const server: FakeSupabase['server'] = { maxRows: null, afterRead: null }
   const user = { id: 'u1', email: 'you@example.com', user_metadata: {} as Record<string, unknown> }
   let nextId = 1
 
@@ -137,7 +145,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     // The filters, as one test per row, for reads, updates and deletes alike.
     const tests: ((r: Row) => boolean)[] = []
     for (const [key, value] of url.searchParams) {
-      if (key === 'select' || key === 'order' || key === 'limit') continue
+      if (key === 'select' || key === 'order' || key === 'limit' || key === 'offset') continue
       const [op, operand] = [value.slice(0, value.indexOf('.')), value.slice(value.indexOf('.') + 1)]
       if (op === 'eq') tests.push((r) => String(r[key]) === operand)
       else if (op === 'gte') tests.push((r) => String(r[key]) >= operand)
@@ -192,13 +200,19 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       })
     }
     const total = rows.length
-    const limit = url.searchParams.get('limit')
-    if (limit !== null) rows = rows.slice(0, Number(limit))
+    const offsetParam = url.searchParams.get('offset')
+    const offset = offsetParam === null ? 0 : Number(offsetParam)
+    const limitParam = url.searchParams.get('limit')
+    const caps = [limitParam === null ? null : Number(limitParam), server.maxRows].filter((n): n is number => n !== null)
+    rows = rows.slice(offset, caps.length === 0 ? undefined : offset + Math.min(...caps))
     const columns = (url.searchParams.get('select') ?? '*').split(',')
     const picked = columns.includes('*') ? rows : rows.map((r) => Object.fromEntries(columns.map((c) => [c, r[c]])))
 
+    server.afterRead?.(target)
     if (wantsObject) return picked.length === 1 ? json(picked[0]) : pgError('PGRST116', 406)
-    const range = headers.get('prefer')?.includes('count=exact') === true ? { 'content-range': `0-${picked.length - 1}/${total}` } : {}
+    // As PostgREST writes it: the rows sent, then the total; `*` when none were.
+    const sent = picked.length === 0 ? '*' : `${offset}-${offset + picked.length - 1}`
+    const range = headers.get('prefer')?.includes('count=exact') === true ? { 'content-range': `${sent}/${total}` } : {}
     return json(picked, 200, range)
   }
 
@@ -218,5 +232,5 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     if (error !== null) throw error
   }
 
-  return { client, tables, rpcCalls, rpcReplies, fail: (t, code) => void failures.set(t, code), user, signIn }
+  return { client, tables, rpcCalls, rpcReplies, fail: (t, code) => void failures.set(t, code), user, signIn, server }
 }

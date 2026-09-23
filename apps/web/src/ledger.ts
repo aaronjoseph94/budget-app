@@ -532,20 +532,56 @@ export interface LedgerRow {
   readonly source: string
 }
 
-/** Ledger rows between two dates, inclusive, newest first. */
+/**
+ * Rows per request. Supabase answers at most 1,000 rows a request (PostgREST's
+ * max-rows), whatever limit is asked for, so a bigger page is not one.
+ */
+const LEDGER_PAGE = 1000
+
+const PARTIAL_READ = 'Your transactions changed while this period was being read, so nothing is shown. Try again.'
+
+/**
+ * Every ledger row between two dates, inclusive, newest first — all of them,
+ * or an error.
+ *
+ * This used to be one request with `.limit(2000)`, and the server stops at
+ * 1,000 regardless, so a busy month would have come back short with nothing
+ * to say so, and every total on screen been too low. It now reads page after
+ * page, each with the exact count of matching rows, until it holds that many.
+ * If the count moves between pages, a page comes back empty early, or a row
+ * arrives twice, rows were added or removed mid-read and the pages may overlap
+ * or skip one, so it refuses rather than guess. Ordered by date and then id,
+ * so no two rows tie and a page boundary cannot shuffle one row into two
+ * pages. One change it cannot see: a row removed from an earlier page while
+ * another is added past the next page keeps the count and repeats nothing, yet
+ * skips a row (NOTICED N22).
+ */
 export async function listTransactions(
   supabase: SupabaseClient,
   range: { readonly from: string; readonly to: string },
 ): Promise<readonly LedgerRow[]> {
-  const { data, error } = await supabase
-    .from('transactions')
-    .select('id, posted_on, amount_cents, merchant_raw, category_id, source')
-    .gte('posted_on', range.from)
-    .lte('posted_on', range.to)
-    .order('posted_on', { ascending: false })
-    .limit(2000)
-  if (error !== null) fail(error)
-  return ((data ?? []) as LedgerRow[]).map((r) => ({ ...r, amount_cents: Number(r.amount_cents) }))
+  const rows: LedgerRow[] = []
+  let expected: number | null = null
+  do {
+    const { data, error, count } = await supabase
+      .from('transactions')
+      .select('id, posted_on, amount_cents, merchant_raw, category_id, source', { count: 'exact' })
+      .gte('posted_on', range.from)
+      .lte('posted_on', range.to)
+      .order('posted_on', { ascending: false })
+      .order('id', { ascending: true })
+      .range(rows.length, rows.length + LEDGER_PAGE - 1)
+    if (error !== null) fail(error)
+    const page = (data ?? []) as LedgerRow[]
+    if (count === null || (expected !== null && count !== expected)) throw new Error(PARTIAL_READ)
+    expected = count
+    if (page.length === 0 && rows.length < expected) throw new Error(PARTIAL_READ)
+    rows.push(...page.map((r) => ({ ...r, amount_cents: Number(r.amount_cents) })))
+  } while (rows.length < expected)
+  if (rows.length !== expected || new Set(rows.map((r) => r.id)).size !== rows.length) {
+    throw new Error(PARTIAL_READ)
+  }
+  return rows
 }
 
 export async function deleteTransaction(supabase: SupabaseClient, id: string): Promise<void> {
