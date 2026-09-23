@@ -33,7 +33,9 @@ export function MonthCharts({ sheet, className }: { sheet: PeriodSheet; classNam
           {drawn.income === null ? (
             <p className="text-sm text-muted-foreground">No income or goals this month yet.</p>
           ) : (
-            <SvgChart svg={drawn.income} />
+            // Text scales with a chart, so neither grows past a phone's
+            // width when the panel spans two columns on a tablet.
+            <SvgChart svg={drawn.income} className="max-w-sm" />
           )}
         </div>
         <div className="space-y-2">
