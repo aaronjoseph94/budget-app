@@ -1,5 +1,6 @@
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { useAppData } from '../src/app-data.js'
 import { MonthScreen } from '../src/screens/MonthScreen.js'
 import { useAddress } from '../src/nav.js'
 import type { BudgetRow, Category, LedgerRow, PlanRow } from '../src/ledger.js'
@@ -48,6 +49,11 @@ function seeded(): FakeSupabase {
 
 function block(name: string): ReturnType<typeof within> {
   return within(screen.getByRole('region', { name }))
+}
+
+/** A block once the month's rows are in: the title shows at once, the blocks only after the reads. */
+async function loaded(name: string): Promise<ReturnType<typeof within>> {
+  return within(await screen.findByRole('region', { name }))
 }
 
 const heads = (name: string) => block(name).getAllByRole('columnheader').map((h: HTMLElement) => h.textContent)
@@ -119,7 +125,7 @@ describe('MonthScreen blocks', () => {
     renderScreen(<MonthScreen month="2026-08" />, seeded())
 
     expect(await screen.findByRole('heading', { name: 'August 2026' })).toBeTruthy()
-    expect(await block('Variable expenses').findByRole('rowheader', { name: 'Groceries' })).toBeTruthy()
+    expect((await loaded('Variable expenses')).getByRole('rowheader', { name: 'Groceries' })).toBeTruthy()
     expect(block('Variable expenses').getByText('99.99', { selector: 'td' })).toBeTruthy()
     expect(screen.queryByRole('rowheader', { name: 'Clothing' })).toBeNull()
   })
@@ -238,7 +244,7 @@ describe('MonthScreen budgets and goals', () => {
     renderScreen(<MonthScreen month="2026-10" />, budgeted())
     await screen.findByRole('heading', { name: 'October 2026' })
 
-    expect(await block('Variable expenses').findByRole('rowheader', { name: 'Clothing' })).toBeTruthy()
+    expect((await loaded('Variable expenses')).getByRole('rowheader', { name: 'Clothing' })).toBeTruthy()
     expect(cells('Variable expenses', '<b>Dinner & drinks</b>')).toEqual(['50.00', '', '50.00'])
     expect(within(screen.getByRole('region', { name: 'Summary' })).getByText('Left to spend').nextSibling?.textContent).toBe('$349.99')
   })
@@ -295,7 +301,7 @@ describe('MonthScreen planned amounts', () => {
     renderScreen(<MonthScreen month="2026-10" />, planned())
     await screen.findByRole('heading', { name: 'October 2026' })
 
-    expect(await block('Bills').findByRole('rowheader', { name: 'Rent' })).toBeTruthy()
+    expect((await loaded('Bills')).getByRole('rowheader', { name: 'Rent' })).toBeTruthy()
     expect(cells('Bills', 'Rent')).toEqual(['', '1,700.00planned', ''])
     expect(cells('Bills', 'Phone')).toEqual(['', '50.00planned', ''])
     expect(cells('Subscriptions', 'Music')).toEqual(['', '11.99planned', ''])
@@ -381,6 +387,42 @@ describe('MonthScreen summary and notes', () => {
   })
 })
 
+describe("MonthScreen before the app's first load (N35)", () => {
+  it('reads nothing and says nothing until the categories are in, then shows the month', async () => {
+    const fake = planned()
+    // Every table read, as it is answered; the categories are held back.
+    const answered: string[] = []
+    let release = () => {}
+    fake.server.hold = (table) => {
+      answered.push(table)
+      return table === 'categories' ? new Promise<void>((resolve) => (release = resolve)) : null
+    }
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+
+    // The app's first load is answered, all but its categories. The goal is
+    // read by the app alone, after anything the Month would have asked for.
+    await waitFor(() => expect(answered).toContain('savings_goals'))
+    expect(answered).not.toContain('transactions')
+    expect(screen.getByText('Loading…')).toBeTruthy()
+    expect(screen.queryByRole('alert')).toBeNull()
+
+    fake.server.hold = null
+    release()
+    expect((await loaded('Bills')).getByRole('rowheader', { name: 'Rent' })).toBeTruthy()
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  it('stops saying Loading when the first load fails, which the app says above the screen', async () => {
+    const fake = planned()
+    fake.fail('categories', '42501')
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+
+    expect(screen.getByText('Loading…')).toBeTruthy()
+    await waitFor(() => expect(screen.queryByText('Loading…')).toBeNull())
+    expect(screen.queryByRole('region')).toBeNull()
+  })
+})
+
 describe('MonthScreen while another month loads', () => {
   function Routed() {
     return <MonthScreen month={useAddress().month} />
@@ -406,5 +448,26 @@ describe('MonthScreen while another month loads', () => {
     expect(screen.queryByRole('button', { name: /Not filed yet/ })).toBeNull()
 
     expect(await screen.findByRole('button', { name: '1 from other months waiting for review' })).toBeTruthy()
+  })
+
+  it('still says Loading for the next month after a later reload failed, the categories being in', async () => {
+    function Reload() {
+      const { refresh, loadError } = useAppData()
+      return <button onClick={() => void refresh()}>{loadError === null ? 'Reload' : 'Reload failed'}</button>
+    }
+    const fake = planned()
+    window.location.hash = '/month/2026-09'
+    renderScreen(<><Routed /><Reload /></>, fake)
+    await loaded('Bills')
+    fake.fail('categories', '42501')
+    fireEvent.click(screen.getByRole('button', { name: 'Reload' }))
+    await screen.findByRole('button', { name: 'Reload failed' })
+
+    act(() => {
+      window.location.hash = '/month/2026-10'
+      window.dispatchEvent(new HashChangeEvent('hashchange'))
+    })
+    expect(screen.getByText('Loading…')).toBeTruthy()
+    expect((await loaded('Bills')).getByRole('rowheader', { name: 'Rent' })).toBeTruthy()
   })
 })

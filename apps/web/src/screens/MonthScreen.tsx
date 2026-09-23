@@ -33,7 +33,7 @@ import { MonthCharges } from './MonthCharges.js'
  * formats them. Nothing unreviewed is in it.
  */
 export function MonthScreen({ month }: { month: string | null }) {
-  const { supabase, categories, pendingTotal, version } = useAppData()
+  const { supabase, categories, pendingTotal, loadError, version } = useAppData()
   const { start, end } = monthBounds(isoDate(month === null ? todayIso() : `${month}-01`))
   const step = (months: number) => navigate('month', shiftMonth(start, months).slice(0, 7))
   const [loaded, setLoaded] = useState<Loaded | null>(null)
@@ -46,6 +46,10 @@ export function MonthScreen({ month }: { month: string | null }) {
   const [unsaved, setUnsaved] = useState<string | null>(null)
 
   useEffect(() => {
+    // Nothing is read before the app's first load (version 0) brings the
+    // categories: rows read sooner name categories core has not been given,
+    // and it refuses them, so a slow first load showed "did not load" (N35).
+    if (version === 0) return
     let live = true
     setError(null)
     Promise.all([
@@ -139,7 +143,10 @@ export function MonthScreen({ month }: { month: string | null }) {
           {sheet}
         </Alert>
       ) : null}
-      {sheet === null && error === null ? (
+      {/* A first load that failed is said above the screen, by App, and this
+        screen reads nothing without it. A later reload that failed leaves
+        the categories in place, so a month still loads, and says so. */}
+      {sheet === null && error === null && (version > 0 || loadError === null) ? (
         <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>
       ) : null}
 

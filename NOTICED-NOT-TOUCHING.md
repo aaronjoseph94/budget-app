@@ -810,7 +810,7 @@ effect, in one statement, and call it from `setPlan`.
 
 ---
 
-## N35 — The Month can say a category "did not load" for a moment on opening
+## N35 — The Month can say a category "did not load" for a moment on opening *(settled 2026-09-23, S10)*
 
 **Seen:** 2026-09-23, reviewing S9 (the same fault, fixed in Setup).
 
@@ -831,3 +831,13 @@ monthly amounts, and waits now for the app's first load (`version` above
 **To settle:** have the Month's read wait for the app's first load, as
 Setup's starter button and monthly amounts do, with a test that holds the
 categories back and checks no alert appears meanwhile.
+
+**Settled:** the Month reads nothing before the app's first load (version
+0), as Setup's monthly amounts wait; S10 gave it monthly amounts to read
+too, each of which would have been refused the same way. A test holds the
+categories back and checks the Month has read no charges and shown no
+alert by the time the rest of the first load is in, then shows the month
+once they arrive; it failed before the change. Waiting exposed four Month
+tests that read a block as soon as the title showed, passing only because
+the rows had already come; each now waits for the block. If the first load
+fails, the Month stops saying "Loading…" under the app's own message.
