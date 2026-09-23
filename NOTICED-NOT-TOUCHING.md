@@ -763,7 +763,10 @@ see or clear it.
 
 ---
 
-## N31 — CONSTRAINTS.md's measured figures are far below today's
+## N31 — CONSTRAINTS.md's measured figures are far below today's *(settled 2026-09-23, completion pass)*
+
+**Settled:** re-measured in its own commit: 121 golden tests (the files in
+`packages/core/test/golden`) and 1,110 tests in all, dated.
 
 **Seen:** 2026-09-23, S7 (the budget engine).
 
