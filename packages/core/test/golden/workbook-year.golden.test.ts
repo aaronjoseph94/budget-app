@@ -60,3 +60,18 @@ describe('the Year replays Annual Budget (workbook-year part 1)', () => {
     expect(sheet.startingBalanceCents).toBe(part1.expected.startingBalance.cents)
   })
 })
+
+/**
+ * Part 2: Spending Tracker's twelve-month group totals over the 2026 month
+ * tabs, which never gate planned amounts; an asOf in the Year's last month
+ * lets every month's plan through.
+ */
+const part2 = loadGolden<Input, { cells: Cell[] }>('workbook-year-part2')
+
+describe('the Year replays Spending Tracker (workbook-year part 2)', () => {
+  const sheet = yearFrom(part2.input)
+
+  it.each(part2.expected.cells)('$cell = $cents', (c) => {
+    expect(sheet.totals[c.group][c.field]).toBe(c.cents)
+  })
+})

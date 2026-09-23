@@ -1,0 +1,48 @@
+{
+  "$provenance": {
+    "sourceWorkbook": "Ultimate Annual Budget (\"Workbook\"), the owner's copy, Google Sheets export (not committed)",
+    "sourceSheet": "Spending Tracker",
+    "cells": {"window": "Jan!D7 .. Dec!D7 (2026-01 .. 2026-12), read by Spending Tracker!N15:Y15", "expected": "Spending Tracker!M17, M20, M23", "planHistory": "Bills!B7:D7, F7:H7, J7:L7; every other Monthly Amount in D8:D29, H8:H29, L8:L29 is blank", "entries": "Bills!O7:Q9 (the Variable Bills log)", "categories": "START HERE!B18, D18, D20:D21, F18"},
+    "extractedOn": "2026-09-23",
+    "note": "Workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S13b, workbook-year part 2: a year of Bills, Debts and Subscriptions Actuals."
+  },
+  "$semantics": {
+    "rows": "Spending Tracker!M17 =SUM(N17:Y18), N17 =Jan!$C$19 .. Y17 =Dec!$C$19, and C19 =E21, the Bills block's Actual; M20 reads I19 (Debts) and M23 N19 (Subscriptions) the same way. So each is a twelve-month total of one group's Actual over the 2026 month tabs, a Year starting 2026-01.",
+    "gate": "F10. Spending Tracker never gates planned amounts, as the month tabs never do. asOf is 2026-12, so every month of the Year counts its plan and the Year's gate lets all twelve through.",
+    "actuals": "F3/D5, as in workbook-month part 2. M20 is Credit Card 1's planned 50 in eleven months and 700 in February 2026, where Student Loan's logged 650 has no plan to replace. The 2025 log rows fall outside the Year.",
+    "planHistory": "D13. Workbook's one Monthly Amount serves every tab; each is typed here as a row from 2025-01, as in workbook-month parts 2 and 3.",
+    "signs": "D3: logged payments are positive in Bills!Q and negated in the ledger.",
+    "left out": "Spending Tracker!M26 (Variable expenses, 0): the month tabs' Transactions-driven Actuals are 0 for any engine (plan section 5.4). Hidden!P38:R40, the Top 3 (Rent 9600, Student Loan 650, Credit Card 1 600, of 11065.88), and Home's cards built from them read a window from TODAY() (Hidden!M18, O20:P20) and are not valid golden values (CLAUDE.md).",
+    "merchants": "The engine takes no merchant text; Bills!R (Notes) is not transcribed. Ids are synthetic."
+  },
+  "input": {
+    "startMonth": "2026-01-01",
+    "asOf": "2026-12-01",
+    "categories": [
+      {"id": "cat-rent", "name": "Rent", "kind": "bill", "sortOrder": 0},
+      {"id": "cat-credit-card-1", "name": "Credit Card 1", "kind": "debt", "sortOrder": 0},
+      {"id": "cat-car-loan", "name": "Car Loan", "kind": "debt", "sortOrder": 2},
+      {"id": "cat-student-loan", "name": "Student Loan", "kind": "debt", "sortOrder": 3},
+      {"id": "cat-netflix", "name": "Netflix", "kind": "subscription", "sortOrder": 0}
+    ],
+    "budgetHistory": [],
+    "planHistory": [
+      {"categoryId": "cat-rent", "effectiveMonth": "2025-01-01", "plannedCents": 80000, "dueDay": 1, "from": "Bills!B7:D7"},
+      {"categoryId": "cat-credit-card-1", "effectiveMonth": "2025-01-01", "plannedCents": 5000, "dueDay": 14, "from": "Bills!F7:H7"},
+      {"categoryId": "cat-netflix", "effectiveMonth": "2025-01-01", "plannedCents": 1799, "dueDay": 23, "from": "Bills!J7:L7"}
+    ],
+    "entries": [
+      {"postedOn": "2025-01-05", "amountCents": -20000, "categoryId": "cat-credit-card-1", "from": "Bills!O7:Q7"},
+      {"postedOn": "2025-01-15", "amountCents": -10000, "categoryId": "cat-car-loan", "from": "Bills!O8:Q8"},
+      {"postedOn": "2026-02-10", "amountCents": -65000, "categoryId": "cat-student-loan", "from": "Bills!O9:Q9"}
+    ],
+    "startingBalances": []
+  },
+  "expected": {
+    "cells": [
+      {"cell": "Spending Tracker!M17", "group": "bill", "month": null, "field": "actualCents", "cents": 960000},
+      {"cell": "Spending Tracker!M20", "group": "debt", "month": null, "field": "actualCents", "cents": 125000},
+      {"cell": "Spending Tracker!M23", "group": "subscription", "month": null, "field": "actualCents", "cents": 21588}
+    ]
+  }
+}
