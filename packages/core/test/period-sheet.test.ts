@@ -228,3 +228,55 @@ describe('monthSheet (suite)', () => {
     expect(s.blocks.bill.actualTotalCents).toBe(160_000)
   })
 })
+
+describe('periodSheet summary (suite)', () => {
+  // Hand-derived. Spent: food 30.00 + 45.00 − 5.00 refund = 70.00; fuel 60.00;
+  // rent planned 1,200.00; phone real 40.00 (its 50.00 plan ignored); loan
+  // 100.00; music 9.99. 70 + 60 + 1,200 + 40 + 100 + 9.99 = 1,479.99. The pay,
+  // the 250.00 to the fund and the 500.00 card payment are in none of it.
+  const plans: PeriodPlan[] = [
+    { categoryId: 'rent', plannedCents: 120_000, dueDay: 1 },
+    { categoryId: 'phone', plannedCents: 5_000, dueDay: 12 },
+  ]
+  const entries = [
+    row('2026-09-02', -3_000, 'food'),
+    row('2026-09-10', -4_500, 'food'),
+    row('2026-09-11', 500, 'food'),
+    row('2026-09-05', -6_000, 'fuel'),
+    row('2026-09-12', -4_000, 'phone'),
+    row('2026-09-15', -10_000, 'loan'),
+    row('2026-09-20', -999, 'music'),
+    row('2026-09-15', 300_000, 'pay'),
+    row('2026-09-16', -25_000, 'fund'),
+    row('2026-09-18', 50_000, 'card'),
+  ]
+  const summary = (budgets: { categoryId: string; budgetCents: number | null }[]) =>
+    periodSheet({ ...BASE, plans, entries, budgets }).summary
+
+  it('adds bills, debts, subscriptions and variable expenses, and nothing else (F7)', () => {
+    expect(summary([]).spentCents).toBe(147_999)
+  })
+
+  it('subtracts every Variable row, budgeted or not, and keeps the minus sign (F5)', () => {
+    // Food 100.00 − 70.00 = 30.00; fuel has no budget, so 0 − 60.00. 30 − 60 = −30.00.
+    expect(summary([{ categoryId: 'food', budgetCents: 10_000 }]).leftToSpendCents).toBe(-3_000)
+    // Food 100.00 − 70.00 = 30.00; fuel 80.00 − 60.00 = 20.00. The rent budget is not a Variable row.
+    expect(
+      summary([
+        { categoryId: 'food', budgetCents: 10_000 },
+        { categoryId: 'fuel', budgetCents: 8_000 },
+        { categoryId: 'rent', budgetCents: 1 },
+      ]).leftToSpendCents,
+    ).toBe(5_000)
+  })
+
+  it('with no budgets at all, is minus the Variable spend, as Workbook shows a tab left blank', () => {
+    expect(summary([]).leftToSpendCents).toBe(-13_000)
+  })
+
+  it('is zero, not minus zero, for an empty window', () => {
+    const empty = periodSheet(BASE).summary
+    expect(Object.is(empty.spentCents, 0)).toBe(true)
+    expect(Object.is(empty.leftToSpendCents, 0)).toBe(true)
+  })
+})

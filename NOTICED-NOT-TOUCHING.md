@@ -430,6 +430,11 @@ passes it. Building them now would let those goldens pass on first run.
 **To settle:** S7 adds history resolution to `monthSheet` (or a resolver
 it calls) with the budget columns; S10, S11 and S12b add the rest.
 
+**Since:** S5b needed Spent and Left to spend for the Month's summary card,
+so both landed then, in `summary`, with their own golden cells
+(`workbook-month-summary`: Jan!D11, D13, Feb!D11, Dec!D11, Weekly!D11, D13,
+Paycheck!D13), seen failing first. S7 and S10 keep the rest of their cells.
+
 ---
 
 ## N21 — Review's unreadable lines read at most 100 imports, uncounted

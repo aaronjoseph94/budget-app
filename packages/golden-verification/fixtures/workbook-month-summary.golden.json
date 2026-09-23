@@ -1,0 +1,95 @@
+{
+  "$provenance": {
+    "sourceWorkbook": "Ultimate Annual Budget (\"Workbook\"), the owner's copy, Google Sheets export (not committed)",
+    "sourceSheet": "Jan; Feb; Dec; Weekly Budget; Paycheck Budget",
+    "cells": {"windows": "Jan!B3, Feb!B3, Dec!B3; Weekly Budget!D6:D7; Paycheck Budget!D6:D7", "expected": "Jan!D11, D13; Feb!D11; Dec!D11; Weekly Budget!D11, D13; Paycheck Budget!D13", "budgets": "Jan!T22:T23; Weekly Budget!W22; Paycheck Budget!W22", "entries": "Transactions!B7:D12, G7:I7, K7:M7; Bills!O7:Q9", "plans": "Bills!B7:D7, F7:H7, J7:L7", "categories": "START HERE!B8:B12, H7:H10, B18:B24, D18:D21, F18:F20, H17:H22"},
+    "extractedOn": "2026-09-23",
+    "note": "Workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). The summary card's Spent (F7) and Left to spend (F5)."
+  },
+  "$semantics": {
+    "spent": "F7: D11 =SUM(C19,I19,N19,S19) on a month tab, =SUM(C19,J19,P19,V19) on Weekly: Bills + Debts + Subscriptions + Variable, never savings. Weekly's window holds the $2,000 Emergency Fund move, so 108500 proves savings are left out.",
+    "leftToSpend": "F5: D13 =V21 (Weekly and Paycheck =Y21), the Variable rows' Budget - Actual summed. Weekly!D13 subtracts a real Actual (150 - 85).",
+    "budgets": "Typed Budget cells; a blank cell is no budget (null), Jan!T22's typed 0 is a budget of 0. Other variable rows have no budget.",
+    "plans": "D5/F3 and F8, as in workbook-period part 2. Every Jan-Dec D11 cell holds under D5 (plan §5.4 lists the ones that do not; Paycheck!D11 is one, so it is not asserted).",
+    "signs": "D3: spending, savings and logged payments are negated in the ledger; income stays positive.",
+    "merchants": "The engine takes no merchant text; no Notes column is transcribed. Ids are synthetic."
+  },
+  "input": {
+    "categories": [
+      {"id": "cat-income-1", "name": "Income 1", "kind": "income", "sortOrder": 0},
+      {"id": "cat-emergency-fund", "name": "Emergency Fund", "kind": "savings", "sortOrder": 0},
+      {"id": "cat-rent", "name": "Rent", "kind": "bill", "sortOrder": 0},
+      {"id": "cat-credit-card-1", "name": "Credit Card 1", "kind": "debt", "sortOrder": 0},
+      {"id": "cat-car-loan", "name": "Car Loan", "kind": "debt", "sortOrder": 2},
+      {"id": "cat-student-loan", "name": "Student Loan", "kind": "debt", "sortOrder": 3},
+      {"id": "cat-netflix", "name": "Netflix", "kind": "subscription", "sortOrder": 0},
+      {"id": "cat-restaurants", "name": "Restaurants", "kind": "variable", "sortOrder": 0},
+      {"id": "cat-groceries", "name": "Groceries", "kind": "variable", "sortOrder": 1},
+      {"id": "cat-clothing", "name": "Clothing", "kind": "variable", "sortOrder": 2},
+      {"id": "cat-gas", "name": "Gas", "kind": "variable", "sortOrder": 3},
+      {"id": "cat-movie-theater", "name": "Movie Theater", "kind": "variable", "sortOrder": 4},
+      {"id": "cat-game-night", "name": "Game Night", "kind": "variable", "sortOrder": 5}
+    ],
+    "plans": [
+      {"categoryId": "cat-rent", "plannedCents": 80000, "dueDay": 1, "from": "Bills!B7:D7"},
+      {"categoryId": "cat-credit-card-1", "plannedCents": 5000, "dueDay": 14, "from": "Bills!F7:H7"},
+      {"categoryId": "cat-netflix", "plannedCents": 1799, "dueDay": 23, "from": "Bills!J7:L7"}
+    ],
+    "entries": [
+      {"postedOn": "2025-01-01", "amountCents": -8500, "categoryId": "cat-restaurants", "from": "Transactions!B7:D7"},
+      {"postedOn": "2025-01-17", "amountCents": -10000, "categoryId": "cat-clothing", "from": "Transactions!B8:D8"},
+      {"postedOn": "2025-01-25", "amountCents": -5000, "categoryId": "cat-gas", "from": "Transactions!B9:D9"},
+      {"postedOn": "2025-02-10", "amountCents": -22000, "categoryId": "cat-groceries", "from": "Transactions!B10:D10"},
+      {"postedOn": "2025-02-15", "amountCents": -3600, "categoryId": "cat-movie-theater", "from": "Transactions!B11:D11"},
+      {"postedOn": "2025-02-23", "amountCents": -10000, "categoryId": "cat-game-night", "from": "Transactions!B12:D12"},
+      {"postedOn": "2025-01-01", "amountCents": 260000, "categoryId": "cat-income-1", "from": "Transactions!G7:I7"},
+      {"postedOn": "2025-01-01", "amountCents": -200000, "categoryId": "cat-emergency-fund", "from": "Transactions!K7:M7"},
+      {"postedOn": "2025-01-05", "amountCents": -20000, "categoryId": "cat-credit-card-1", "from": "Bills!O7:Q7"},
+      {"postedOn": "2025-01-15", "amountCents": -10000, "categoryId": "cat-car-loan", "from": "Bills!O8:Q8"},
+      {"postedOn": "2026-02-10", "amountCents": -65000, "categoryId": "cat-student-loan", "from": "Bills!O9:Q9"}
+    ]
+  },
+  "expected": [
+    {
+      "window": "Jan!B3",
+      "asOf": "2026-01-01",
+      "budgets": [
+        {"categoryId": "cat-restaurants", "budgetCents": 0, "from": "Jan!T22"},
+        {"categoryId": "cat-groceries", "budgetCents": 80000, "from": "Jan!T23"}
+      ],
+      "cells": [
+        {"cell": "Jan!D11", "field": "spentCents", "cents": 86799},
+        {"cell": "Jan!D13", "field": "leftToSpendCents", "cents": 80000}
+      ]
+    },
+    {
+      "window": "Feb!B3",
+      "asOf": "2026-02-01",
+      "budgets": [],
+      "cells": [{"cell": "Feb!D11", "field": "spentCents", "cents": 151799}]
+    },
+    {
+      "window": "Dec!B3",
+      "asOf": "2026-12-01",
+      "budgets": [],
+      "cells": [{"cell": "Dec!D11", "field": "spentCents", "cents": 86799}]
+    },
+    {
+      "window": "Weekly Budget!D6:D7",
+      "from": "2025-01-01",
+      "to": "2025-01-07",
+      "budgets": [{"categoryId": "cat-restaurants", "budgetCents": 15000, "from": "Weekly Budget!W22"}],
+      "cells": [
+        {"cell": "Weekly Budget!D11", "field": "spentCents", "cents": 108500},
+        {"cell": "Weekly Budget!D13", "field": "leftToSpendCents", "cents": 6500}
+      ]
+    },
+    {
+      "window": "Paycheck Budget!D6:D7",
+      "from": "2025-01-01",
+      "to": "2025-01-14",
+      "budgets": [{"categoryId": "cat-restaurants", "budgetCents": 15000, "from": "Paycheck Budget!W22"}],
+      "cells": [{"cell": "Paycheck Budget!D13", "field": "leftToSpendCents", "cents": 6500}]
+    }
+  ]
+}

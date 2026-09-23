@@ -43,9 +43,9 @@
  * taken from the statement, not the latest row, so cash typed today cannot
  * move it.
  *
- * F5–F7 are the tab's summary card. They are not computed yet: each arrives
- * with the slice whose golden cells prove it (plan §8, S7, S10, S11), and a
- * golden assertion has to be seen failing before the code that passes it.
+ * F5 and F7's Spent are the first half of the tab's summary card, proven by
+ * workbook-month-summary. F7's ending balance waits for the typed starting
+ * balance (Sitting B, S11), and was left out rather than guessed.
  *
  * Signs (D3). The ledger is one signed column, outflows negative. Workbook writes
  * every amount positive and knows its direction from the log it sits in, so
@@ -54,7 +54,7 @@
  * nets against its category in the same window and can take it below zero,
  * and that minus sign is kept (D8).
  */
-import { type Cents, type IsoDate, ZERO_CENTS, cents, sumCents } from '@budget/money-primitives'
+import { type Cents, type IsoDate, ZERO_CENTS, cents, subCents, sumCents } from '@budget/money-primitives'
 import { type CategoryKind, monthBounds, shiftMonth } from './week.js'
 
 export interface PeriodCategory {
@@ -130,6 +130,13 @@ export interface PeriodSheet {
     readonly bill: PeriodBlock
     readonly debt: PeriodBlock
     readonly subscription: PeriodBlock
+  }
+  /** The first two of the tab's four summary numbers (Jan!D11, D13); Start and End wait for S11. */
+  readonly summary: {
+    /** F7: bills, debts, subscriptions and variable expenses; never savings or card payments. */
+    readonly spentCents: Cents
+    /** F5: each Variable-expenses row's Budget − Actual, summed. Below zero when overspent. */
+    readonly leftToSpendCents: Cents
   }
   /** Net of the Not spending list: positive when money was paid to the card. Never in a total. */
   readonly transfersCents: Cents
@@ -217,16 +224,29 @@ export function periodSheet(input: PeriodSheetInput): PeriodSheet {
     return { rows, actualTotalCents: sumCents(rows.map((r) => r.actualCents)) }
   }
 
+  const blocks = {
+    income: block('income'),
+    savings: block('savings'),
+    variable: block('variable'),
+    bill: block('bill'),
+    debt: block('debt'),
+    subscription: block('subscription'),
+  }
+
   return {
     from: input.from,
     to: input.to,
-    blocks: {
-      income: block('income'),
-      savings: block('savings'),
-      variable: block('variable'),
-      bill: block('bill'),
-      debt: block('debt'),
-      subscription: block('subscription'),
+    blocks,
+    summary: {
+      spentCents: sumCents([blocks.bill, blocks.debt, blocks.subscription, blocks.variable].map((b) => b.actualTotalCents)),
+      leftToSpendCents: sumCents(
+        blocks.variable.rows.map((r) =>
+          // F5, not a fallback: Workbook's V22 is T22 − U22, and a blank T22 is
+          // read as 0 there, so a row with no budget still takes its Actual
+          // off what is left. The row itself keeps its null budget.
+          r.budgetCents === null ? subCents(ZERO_CENTS, r.actualCents) : subCents(r.budgetCents, r.actualCents),
+        ),
+      ),
     },
     transfersCents: sumCents(
       input.categories.flatMap((c) => {
