@@ -19,7 +19,7 @@ returned." Running one twice is refused rather than applied twice.
 | `0005_category_kinds.sql` | Which of Workbook's lists each category is on. Your existing categories go under Variable expenses until the Setup screen lets you move them |
 | `0006_recategorise.sql` | Moving a charge that is already saved to a different category |
 | `0007_statement_periods.sql` | Remembering which dates each imported statement covered |
-| `0008_category_budgets.sql` | The budgets and goals you type on a month, "from this month on" or "just this month". Needed by the Month's Budgeted and Goal columns, still to come |
+| `0008_category_budgets.sql` | The budgets and goals you type on a month, "from this month on" or "just this month". Needed by the Month as soon as this branch is merged |
 | `0009_category_plans.sql` | Each bill's, debt's and subscription's monthly amount and the day it is paid. Needed by Setup's Day paid and Monthly amount, and by planned amounts on the Month, both still to come. Once it runs, a category with a monthly amount stays on its list until you remove the amount |
 | `0010_month_balances.sql` | The bank balance you type for the start of each month. Needed by the Month's projected ending balance, still to come |
 | `0011_pay_schedules.sql` | When each income source pays: a payday, and weekly, every two weeks or monthly. Needed by Paycheck and the Bill Calendar, still to come |
@@ -27,9 +27,10 @@ returned." Running one twice is refused rather than applied twice.
 
 **Paste them in number order, all of them, before `main-tnlcto` is merged
 into `main`.** `main` deploys itself, and the app on this branch already
-reads what `0012` adds: without it, Review cannot list the lines an import
-could not read and shows a code in brackets instead. Screens built next read
-`0008` to `0011`. A file can rely on the ones before it (`0008` and `0009`
+reads what `0008` and `0012` add. Without `0008`, the Month says "Budgets
+need a database update that has not been applied yet" and shows no month.
+Without `0012`, Review cannot list the lines an import could not read and
+shows a code in brackets instead. Screens built next read `0009` to `0011`. A file can rely on the ones before it (`0008` and `0009`
 point at a key `0005` adds, for example), so keep to the order.
 
 After `0012` runs, Review lists every unreadable line you have not dismissed,

@@ -411,7 +411,7 @@ list." Still open: the "set amount" action and its sentence, at S9.
 
 ---
 
-## N19 — Settings offers a weekly budget on lists the Week no longer counts
+## N19 — Settings offers a weekly budget on lists the Week no longer counts *(settled 2026-09-23, S8)*
 
 **Seen:** 2026-09-23, S3b (Week counts by list).
 
@@ -429,6 +429,12 @@ under More anyway.
 **To settle:** in Settings, show the budget field only for spending lists,
 grouped under Workbook's headings as the pickers are (`CategoryOptions`), and
 leave any stored limit on the other lists untouched.
+
+**Settled:** Settings lists weekly budgets for Bills, Debts, Subscriptions
+and Variable expenses only, under their headings, and its "new category"
+picker offers those four lists. Which lists are spending is core's
+`SPENDING_LISTS`, the set the Week sums over. A limit stored on another list
+is kept and not offered.
 
 ---
 
@@ -511,6 +517,11 @@ unlikely, and reloading shows the right total.
 after the last row seen) or one server-side read, a larger change than S4c's.
 
 **To settle:** page by key rather than offset, and keep the exact-count check.
+
+**Updated 2026-09-23, S8:** the paging now lives in `readAll`, which
+`listTransactions` and the Month's budget read (`listBudgetHistory`) both
+use, so the budget read has the same gap, and one keyset change in
+`readAll` closes both.
 
 ---
 
@@ -609,7 +620,7 @@ reads `pay_schedules`, so nothing is wrong on screen.
 
 ---
 
-## N28 — A read that meets a missing column says "nothing was saved"
+## N28 — A read that meets a missing column says "nothing was saved" *(settled in part 2026-09-23, S8)*
 
 **Seen:** 2026-09-23, Sitting B (Review reads 0012's `dismissed_at`).
 
@@ -629,6 +640,12 @@ naming the fix, as `MOVE_FAILURES` does for 0006: "This needs a database
 update that has not been applied yet — see the migrations in the setup
 guide."
 
+**Settled in part:** the Month's budget read and save have their own
+sentences (`describeBudgetFailure`). A missing `category_budgets` table
+(PGRST205, or 42P01 from an older PostgREST) says 0008 has not been applied,
+and a read never says "nothing was saved". Still open: every other read,
+and 42703 and PGRST202 in `describeWriteFailure`.
+
 ---
 
 ## N29 — ROADMAP still says the month view is not built
@@ -646,7 +663,7 @@ out of date too (N10); fixing one line would leave the page half-current.
 
 ---
 
-## N30 — A budget on a category in no block is dropped without a word
+## N30 — A budget on a category in no block is dropped without a word *(settled in part 2026-09-23, S8)*
 
 **Seen:** 2026-09-23, S7 (the budget engine).
 
@@ -668,6 +685,14 @@ refuse a budget for a category it was not given, as it does ledger rows and
 monthly amounts, so a screen that reads categories and budgets at different
 moments fails loudly instead of showing a short total.
 
+**Settled in part:** `periodSheet` now refuses a budget naming a category it
+was not given, and the Month says a charge or a budget names a category that
+did not load. A budget on a Not spending category is still accepted and
+shown in no block, since it counts again if the category moves back. Still
+open: Setup does not say the budget is kept when a budgeted category moves
+to Not spending, and while it is there the Month has no row from which to
+see or clear it.
+
 ---
 
 ## N31 — CONSTRAINTS.md's measured figures are far below today's
@@ -685,3 +710,48 @@ inside a slice.
 
 **To settle:** in its own commit, re-measure both figures and write them
 in, dated.
+
+---
+
+## N32 — The plan puts Workbook's four-across Month at 1024px; S8 moved it to 1280px
+
+**Seen:** 2026-09-23, S8 (budgets on the Month).
+
+Plan §6.3 heads the desktop layout "Month on desktop (≥1024 px …)", and S5b
+built it at Tailwind's `lg` (1024px). With S8's three columns of amounts, a
+card four across is 234px wide at 1024px and 298px at 1280px or wider, and a
+Bills table needs about 342px with a "$" on every figure. S8 drops the "$"
+in row cells, as §6.2's phone sketch already does, uses a smaller table type
+four across, and starts the four-across arrangement at 1280px, with two
+columns below it. The plan's text still says 1024.
+
+**Why not fixed here:** the plan is the owner's agreed document; S8 changes
+the screen, and the reason is recorded in the S8 commit and in
+MonthScreen.tsx.
+
+**To settle:** with N15's wording changes to §6.2 and §6.6, change §6.3's
+"≥1024 px" to "≥1280 px (two columns from 768 px)", and note that row cells
+carry no "$" while band totals do. S12b's chart panel sits in the same grid
+and should be measured at 1280px.
+
+---
+
+## N33 — A "just this month" budget typed elsewhere can outlast a "from this month on" edit
+
+**Seen:** 2026-09-23, S8 (typing a budget on the Month).
+
+A month's own "just this month" value wins over anything typed "from this
+month on" there (D12). So when the owner types "from this month on" on a
+month that has one, `setBudget` gives it the new value in the same write.
+It knows the month has one from the history the Month read. One typed on
+another device after that read is not replaced: the save succeeds, the
+Month re-reads, and the month still shows the other device's value. Typing
+it again fixes it.
+
+**Why not fixed here:** checking and writing in one step needs a database
+function (a new migration and another paste for the owner), for a case that
+needs two devices editing the same month's budget within seconds.
+
+**To settle:** if it is ever seen, add a `set_category_budget` function that
+upserts the 'onward' row and updates the month's 'only' row, if one exists,
+in one statement, and call it from `setBudget`.
