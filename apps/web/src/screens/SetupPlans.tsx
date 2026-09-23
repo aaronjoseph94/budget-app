@@ -278,7 +278,11 @@ export function PlanFields({
           )}
         </div>
       </div>
-      {problem !== null ? <p className="mt-1 text-xs text-destructive">{problem}</p> : null}
+      {problem !== null ? (
+        <p role="alert" className="mt-1 text-xs text-destructive">
+          {problem}
+        </p>
+      ) : null}
       {/* F8: a blank day counts in a whole month, never in a week. */}
       {storedCents !== null && storedDay === null ? (
         <p className="mt-1 text-xs text-owed-ink">Add a day paid so this shows in weeks.</p>

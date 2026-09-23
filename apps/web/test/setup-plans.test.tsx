@@ -197,7 +197,7 @@ describe('SetupScreen, day paid and monthly amount', () => {
     await waitFor(async () => expect((await field('Bills', 'Day paid for Rent')).value).toBe('1'))
 
     const day = await type('Bills', 'Day paid for Rent', '45')
-    expect((await card('Bills')).getByText('Type the day of the month it is paid, 1 to 31, or leave it blank.')).toBeTruthy()
+    expect((await card('Bills')).getByRole('alert').textContent).toBe('Type the day of the month it is paid, 1 to 31, or leave it blank.')
     expect(day.value).toBe('1')
     for (const typed of ['-5', 'about 20']) {
       const amount = await type('Bills', 'Monthly amount for Rent, from September on', typed)
