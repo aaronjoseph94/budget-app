@@ -146,6 +146,7 @@ describe('the smaller display helpers', () => {
   it('gives an amount as it would be typed back in, with no symbol or commas, and none as empty', () => {
     expect(formatForInput(125_050)).toBe('1250.50')
     expect(formatForInput(0)).toBe('0.00')
+    expect(formatForInput(-41_275)).toBe('-412.75')
     expect(formatForInput(null)).toBe('')
   })
 
