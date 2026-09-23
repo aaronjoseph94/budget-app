@@ -390,7 +390,7 @@ Setup), reading `merchant_rules`, with a way to re-point or delete one.
 
 ---
 
-## N18 — Two of Setup's messages wait on monthly amounts
+## N18 — Two of Setup's messages wait on monthly amounts *(settled in part 2026-09-23, Sitting B)*
 
 **Seen:** 2026-09-23, S2b.
 
@@ -404,6 +404,10 @@ not written.
 **To settle:** in 0009, have both triggers raise `check_violation` (23514),
 and at S9 add the "set amount" action to `describeSetupFailure` with the
 first sentence.
+
+**Settled in part:** both of 0009's triggers raise 23514, so a refused move
+already shows "Remove the monthly amount first, then move it to another
+list." Still open: the "set amount" action and its sentence, at S9.
 
 ---
 
@@ -570,3 +574,46 @@ one sum over possibly several categories, so it needs its own design.
 
 **To settle:** make the footnote open a sheet listing that month's Not
 spending charges, each with "Move to…", as a Month row does.
+
+---
+
+## N27 — An income source with a pay schedule can move off Income
+
+**Seen:** 2026-09-23, writing migration 0011 (Sitting B).
+
+0011 refuses a pay schedule on anything but an income source, but nothing
+refuses moving an income source with a schedule to another list, so the
+schedule stays behind on, say, a savings fund. 0009 does refuse that move
+for a bill with a monthly amount.
+
+**Why not fixed here:** the task specified only the check on
+`pay_schedules`. A matching trigger on `categories` would raise 23514, and
+Setup turns 23514 on a move into "Remove the monthly amount first", which
+is the wrong sentence for a pay schedule.
+
+**To settle:** at S15b, either refuse the move with its own code and a
+Setup sentence ("remove the pay schedule first"), or have Paycheck and the
+Bill Calendar read schedules for income sources only. Until then nothing
+reads `pay_schedules`, so nothing is wrong on screen.
+
+---
+
+## N28 — A read that meets a missing column says "nothing was saved"
+
+**Seen:** 2026-09-23, Sitting B (Review reads 0012's `dismissed_at`).
+
+If this branch is merged before 0012 is pasted, Review's read of unreadable
+lines fails with Postgres code 42703 (no such column), and
+`describeWriteFailure` words it "Something went wrong and nothing was
+saved. (code 42703)". That is worded for a write, and does not say that a
+database update is missing. Screens built on 0008 to 0011 will meet the
+same.
+
+**Why not fixed here:** `describeWriteFailure` is shared by every screen;
+changing its sentences is its own change. docs/setup.md now says to paste
+every migration, in order, before merging.
+
+**To settle:** give 42703 and PGRST202 (no such function) one sentence
+naming the fix, as `MOVE_FAILURES` does for 0006: "This needs a database
+update that has not been applied yet — see the migrations in the setup
+guide."
