@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  describeBudgetFailure,
   describeFailure,
   describeReason,
   describeSetupFailure,
@@ -173,5 +174,23 @@ describe('describeSetupFailure', () => {
   it('falls back to the everyday wording for connection and sign-in failures', () => {
     expect(describeSetupFailure('rename', null)).toBe(describeWriteFailure(null))
     expect(describeSetupFailure('move', { code: '28000' })).toBe(describeWriteFailure({ code: '28000' }))
+  })
+})
+
+describe('describeBudgetFailure', () => {
+  it('names the update a read is missing, and never words a read as a save', () => {
+    expect(describeBudgetFailure('read', { code: 'PGRST205' })).toBe(
+      'Budgets need a database update that has not been applied yet (0008 in the setup guide), so this month cannot be shown. (code PGRST205)',
+    )
+    expect(describeBudgetFailure('read', { code: '42P01' })).toContain('(0008 in the setup guide)')
+    expect(describeBudgetFailure('read', {})).toBe(
+      'Could not reach the database to read your budgets. Check your connection and try again.',
+    )
+    expect(describeBudgetFailure('read', { code: 'XX000' })).toBe(
+      'Your budgets could not be read, so this month is not shown. Try again. (code XX000)',
+    )
+    for (const code of ['PGRST205', '', 'PGRST301', 'XX000']) {
+      expect(describeBudgetFailure('read', { code })).not.toContain('saved')
+    }
   })
 })

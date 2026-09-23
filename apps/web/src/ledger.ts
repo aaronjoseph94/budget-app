@@ -15,7 +15,13 @@ import {
   type RejectedRow,
   type StatementPeriod,
 } from '@budget/statement-parsers'
-import { describeMoveFailure, describeSetupFailure, describeWriteFailure, type WriteError } from './format.js'
+import {
+  describeBudgetFailure,
+  describeMoveFailure,
+  describeSetupFailure,
+  describeWriteFailure,
+  type WriteError,
+} from './format.js'
 import { LIST_HEADING, type CategoryKind } from './lists.js'
 import type { SupabaseClient } from './supabase.js'
 
@@ -686,6 +692,45 @@ export async function recategoriseTransaction(supabase: SupabaseClient, move: Re
 export async function deleteTransaction(supabase: SupabaseClient, id: string): Promise<void> {
   const { error } = await supabase.from('transactions').delete().eq('id', id)
   if (error !== null) fail(error)
+}
+
+// ---------------------------------------------------------------------------
+// Budgets and goals typed on a month (migration 0008)
+// ---------------------------------------------------------------------------
+
+/** One budget or goal as it was typed. Which one is in effect is core's to say (resolveBudgets). */
+export interface BudgetRow {
+  readonly id: string
+  readonly category_id: string
+  /** The first day of the month it was typed for. */
+  readonly month: string
+  /** "From this month on" or "just this month" (D12). */
+  readonly applies: 'onward' | 'only'
+  /** Null is a typed "no budget", which is not $0. */
+  readonly budget_cents: number | null
+}
+
+/**
+ * Every budget and goal typed for the month starting `through` or before it,
+ * read whole (readAll): everything that month's budgets can come from. A
+ * later month's never reaches back, so none is read.
+ */
+export async function listBudgetHistory(supabase: SupabaseClient, through: string): Promise<readonly BudgetRow[]> {
+  const rows = await readAll<BudgetRow>(
+    (from, to) =>
+      supabase
+        .from('category_budgets')
+        .select('id, category_id, month, applies, budget_cents', { count: 'exact' })
+        .lte('month', through)
+        .order('month', { ascending: true })
+        .order('id', { ascending: true })
+        .range(from, to),
+    {
+      changed: 'Your budgets changed while this month was being read, so nothing is shown. Try again.',
+      describe: (error) => describeBudgetFailure('read', error),
+    },
+  )
+  return rows.map((r) => ({ ...r, budget_cents: r.budget_cents === null ? null : Number(r.budget_cents) }))
 }
 
 // ---------------------------------------------------------------------------

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { countPendingBetween, latestStatementEnd, listTransactions, type LedgerRow } from '../src/ledger.js'
+import {
+  countPendingBetween,
+  latestStatementEnd,
+  listBudgetHistory,
+  listTransactions,
+  type BudgetRow,
+  type LedgerRow,
+} from '../src/ledger.js'
 import { createFakeSupabase } from './fake-supabase.js'
 
 /**
@@ -71,6 +78,34 @@ describe('listTransactions', () => {
 
   it('reads an empty month as empty', async () => {
     expect(await listTransactions(capped().client, { from: '2026-11-01', to: '2026-11-30' })).toEqual([])
+  })
+})
+
+describe('listBudgetHistory', () => {
+  const typed = (id: string, month: string): BudgetRow => ({
+    id, category_id: 'c1', month, applies: 'onward', budget_cents: 100,
+  })
+  const history = () => {
+    const fake = createFakeSupabase({
+      category_budgets: [typed('b3', '2026-09-01'), typed('b1', '2026-01-01'), typed('b4', '2026-10-01'), typed('b2', '2026-09-01')],
+    })
+    fake.server.maxRows = 2
+    return fake
+  }
+
+  it('reads everything typed for the month or before it, across pages, and nothing after', async () => {
+    expect((await listBudgetHistory(history().client, '2026-09-01')).map((b) => b.id)).toEqual(['b1', 'b2', 'b3'])
+  })
+
+  it('refuses a read the budgets changed under', async () => {
+    const fake = history()
+    fake.server.afterRead = () => {
+      fake.tables.category_budgets.splice(0, 1)
+      fake.server.afterRead = null
+    }
+    await expect(listBudgetHistory(fake.client, '2026-09-01')).rejects.toThrow(
+      'Your budgets changed while this month was being read, so nothing is shown. Try again.',
+    )
   })
 })
 

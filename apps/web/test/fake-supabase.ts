@@ -13,6 +13,7 @@
  */
 import { createClient } from '@supabase/supabase-js'
 import type {
+  BudgetRow,
   Category,
   GoalRow,
   LedgerRow,
@@ -36,6 +37,8 @@ export interface FakeTables {
   ingest_batches: (UnreadableBatch & { readonly period_end?: string | null })[]
   /** `dismissed_at` once dismissed (0012); absent reads as null, still waiting. */
   ingest_unreadable_lines: (UnreadableLine & { readonly dismissed_at?: string | null })[]
+  /** Budgets and goals as typed (0008). */
+  category_budgets: BudgetRow[]
 }
 
 export interface RpcCall {
@@ -87,6 +90,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     savings_goals: [],
     ingest_batches: [],
     ingest_unreadable_lines: [],
+    category_budgets: [],
     ...seed,
   }
   const rpcCalls: RpcCall[] = []
