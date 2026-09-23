@@ -51,7 +51,7 @@ describe('DebtsScreen', () => {
   it("gives each debt a card in the screen's order, its name as text", async () => {
     renderScreen(<DebtsScreen />, seeded())
     await screen.findByRole('region', { name: 'Loan' })
-    const cards = within(screen.getByRole('list')).getAllByRole('region').map((r) => r.getAttribute('aria-label'))
+    const cards = within(screen.getAllByRole('list')[0]!).getAllByRole('region').map((r) => r.getAttribute('aria-label'))
     expect(cards).toEqual(['Loan', 'Car <b>loan</b>', "Next year's"])
     expect(screen.getByRole('heading', { name: 'Car <b>loan</b>' })).toBeTruthy()
   })
@@ -99,5 +99,41 @@ describe('DebtsScreen', () => {
     fake.fail('debts', 'PGRST205')
     renderScreen(<DebtsScreen />, fake)
     expect(await screen.findByText(/0014 in the setup guide/)).toBeTruthy()
+  })
+})
+
+describe('DebtsScreen, payoff plans', () => {
+  it('shows the debt-free month and interest on three plans, side by side', async () => {
+    // Loan and the car only, both hand-derived in debt-strategy's terms:
+    // the car clears in September with nothing over, so no plan has money
+    // to roll before the loan's last $3.05 in October; every plan agrees.
+    const fake = seeded()
+    fake.tables.debts.splice(fake.tables.debts.findIndex((d) => d.id === 'later'), 1)
+    renderScreen(<DebtsScreen />, fake)
+    const plans = await screen.findByRole('region', { name: 'Payoff plans' })
+    const cards = within(plans).getAllByRole('listitem')
+    expect(cards.map((c) => c.getAttribute('aria-label'))).toEqual(['Minimums only', 'Snowball', 'Avalanche'])
+    // Loan interest: 200 + 102 + 3.
+    for (const c of cards) expect([...c.querySelectorAll('dd')].map((d) => d.textContent)).toEqual(['October 2026', '$3.05'])
+  })
+
+  it("rolls a cleared debt's payment on the snowball, and says when a plan never ends", async () => {
+    // A $50.00 card on $100.00 a month clears in its first month with
+    // $50.00 over; a $300.00 loan at 0% on $100.00 a month takes three
+    // months alone, two when the card's payment rolls into it.
+    const fake = createFakeSupabase({
+      debts: [
+        debt('a', 'Card', 5_000, 10_000, 0, '2026-09-01', 0),
+        debt('b', 'Loan', 30_000, 10_000, 0, '2026-09-01', 1),
+      ],
+    })
+    renderScreen(<DebtsScreen />, fake)
+    const plans = await screen.findByRole('region', { name: 'Payoff plans' })
+    const month = (name: string) => within(within(plans).getByRole('listitem', { name })).getAllByRole('definition')[0]?.textContent
+    expect([month('Minimums only'), month('Snowball'), month('Avalanche')]).toEqual(['November 2026', 'October 2026', 'October 2026'])
+    cleanup()
+    renderScreen(<DebtsScreen />, createFakeSupabase({ debts: [debt('c', 'Store card', 100_000, 1_000, 2_400, '2026-01-01', 0)] }))
+    const never = await screen.findByRole('region', { name: 'Payoff plans' })
+    expect(within(never).getAllByText('Not within 50 years')).toHaveLength(3)
   })
 })

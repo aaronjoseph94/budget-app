@@ -5,6 +5,7 @@ import { useDebts } from '../debts.js'
 import type { DebtRow } from '../ledger.js'
 import { formatBasisPoints, formatCents, formatMonthTitle, formatRate } from '../format.js'
 import { DebtEditor } from './DebtEditor.js'
+import { DebtStrategies } from './DebtStrategies.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { SvgChart } from '../components/ui/chart.js'
@@ -82,6 +83,7 @@ export function DebtsScreen() {
           >
             Add a debt
           </Button>
+          {state.debts.strategies === null ? null : <DebtStrategies strategies={state.debts.strategies} />}
         </>
       ) : null}
       {ready !== null && editing !== null && (editing === 'new' || shown !== null) ? (
