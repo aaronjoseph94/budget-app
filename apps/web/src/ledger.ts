@@ -289,6 +289,46 @@ export async function listUnreadable(
   return { batches: batches.filter((b) => withLines.has(b.id)), lines, total: count ?? lines.length }
 }
 
+/**
+ * The latest day any imported statement covers, or null before the first.
+ *
+ * From the statement's own period (0007), never the newest ledger row: a
+ * coffee typed today would otherwise claim a statement had been read up to
+ * today. Only the latest is fetched; the engine takes a list so that a later
+ * screen can pass more.
+ */
+export async function latestStatementEnd(supabase: SupabaseClient): Promise<readonly string[]> {
+  const { data, error } = await supabase
+    .from('ingest_batches')
+    .select('period_end')
+    .not('period_end', 'is', null)
+    .order('period_end', { ascending: false })
+    .limit(1)
+  if (error !== null) fail(error)
+  return ((data ?? []) as { period_end: string }[]).map((b) => b.period_end)
+}
+
+/**
+ * How many charges dated in a range still wait for review. A count, from the
+ * database, so it is right however long the queue is; nothing else about them
+ * is read, because nothing unreviewed is counted in a month (invariant 3).
+ */
+export async function countPendingBetween(
+  supabase: SupabaseClient,
+  range: { readonly from: string; readonly to: string },
+): Promise<number> {
+  const { error, count } = await supabase
+    .from('ingest_candidates')
+    .select('id', { count: 'exact' })
+    .eq('status', 'pending')
+    .gte('posted_on', range.from)
+    .lte('posted_on', range.to)
+    .limit(1)
+  if (error !== null) fail(error)
+  if (count === null) throw new Error('The review queue could not be counted. Try again.')
+  return count
+}
+
 /** merchant -> category id, for suggesting what the user chose last time. */
 export async function listRules(supabase: SupabaseClient): Promise<ReadonlyMap<string, string>> {
   const { data, error } = await supabase.from('merchant_rules').select('match_merchant, category_id')

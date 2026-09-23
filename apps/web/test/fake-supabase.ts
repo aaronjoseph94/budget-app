@@ -32,7 +32,8 @@ export interface FakeTables {
   ingest_candidates: (PendingCandidate & { readonly status: string })[]
   merchant_rules: { readonly match_merchant: string; readonly category_id: string }[]
   savings_goals: GoalRow[]
-  ingest_batches: UnreadableBatch[]
+  /** `period_end` only for a statement with a period (0007). */
+  ingest_batches: (UnreadableBatch & { readonly period_end?: string | null })[]
   ingest_unreadable_lines: UnreadableLine[]
 }
 
@@ -150,6 +151,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       if (op === 'eq') tests.push((r) => String(r[key]) === operand)
       else if (op === 'gte') tests.push((r) => String(r[key]) >= operand)
       else if (op === 'lte') tests.push((r) => String(r[key]) <= operand)
+      else if (op === 'not' && operand === 'is.null') tests.push((r) => r[key] !== null && r[key] !== undefined)
       else if (op === 'in') {
         // `in.(a,b)`, with a value quoted only when it holds a reserved character.
         const members = new Set(operand.slice(1, -1).split(',').map((v) => v.replace(/^"(.*)"$/, '$1')))

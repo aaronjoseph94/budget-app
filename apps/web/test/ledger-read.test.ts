@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { listTransactions, type LedgerRow } from '../src/ledger.js'
+import { countPendingBetween, latestStatementEnd, listTransactions, type LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase } from './fake-supabase.js'
 
 /**
@@ -71,5 +71,56 @@ describe('listTransactions', () => {
 
   it('reads an empty month as empty', async () => {
     expect(await listTransactions(capped().client, { from: '2026-11-01', to: '2026-11-30' })).toEqual([])
+  })
+})
+
+describe('latestStatementEnd', () => {
+  it("is the latest statement period's end, whatever order the imports came in", async () => {
+    const fake = createFakeSupabase({
+      ingest_batches: [
+        { id: 'b1', source: 'card_pdf', created_at: '2026-08-09T10:00:00Z', period_end: '2026-08-07' },
+        { id: 'b2', source: 'card_pdf', created_at: '2026-09-09T10:00:00Z', period_end: '2026-09-07' },
+        // A photo and a typed row have no period, and never move the date.
+        { id: 'b3', source: 'receipt_photo', created_at: '2026-09-20T10:00:00Z', period_end: null },
+        { id: 'b4', source: 'typed', created_at: '2026-09-21T10:00:00Z' },
+        // Re-importing August later does not take the date back.
+        { id: 'b5', source: 'card_pdf', created_at: '2026-09-22T10:00:00Z', period_end: '2026-08-07' },
+      ],
+    })
+    expect(await latestStatementEnd(fake.client)).toEqual(['2026-09-07'])
+  })
+
+  it('is empty before any statement, and says so when it cannot be read', async () => {
+    const fake = createFakeSupabase({ ingest_batches: [{ id: 'b1', source: 'typed', created_at: '2026-09-21T10:00:00Z' }] })
+    expect(await latestStatementEnd(fake.client)).toEqual([])
+    fake.fail('ingest_batches', '42501')
+    await expect(latestStatementEnd(fake.client)).rejects.toThrow(/does not allow this/)
+  })
+})
+
+describe('countPendingBetween', () => {
+  const candidate = (id: string, posted_on: string, status = 'pending') => ({
+    id, posted_on, amount_cents: -100, merchant: 'SYNTHETIC SHOP', merchant_raw: 'SYNTHETIC SHOP', status,
+  })
+
+  it("counts only the range's charges still waiting, both ends included, past any page cap", async () => {
+    const fake = createFakeSupabase({
+      ingest_candidates: [
+        candidate('p1', '2026-09-01'),
+        candidate('p2', '2026-09-30'),
+        candidate('p3', '2026-09-15'),
+        candidate('p4', '2026-09-15', 'approved'),
+        candidate('p5', '2026-08-31'),
+        candidate('p6', '2026-10-01'),
+      ],
+    })
+    fake.server.maxRows = 1
+    expect(await countPendingBetween(fake.client, SEPTEMBER)).toBe(3)
+  })
+
+  it('says so when the queue cannot be read', async () => {
+    const fake = createFakeSupabase()
+    fake.fail('ingest_candidates', '42501')
+    await expect(countPendingBetween(fake.client, SEPTEMBER)).rejects.toThrow(/does not allow this/)
   })
 })
