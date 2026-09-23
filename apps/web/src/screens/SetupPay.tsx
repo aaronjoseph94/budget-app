@@ -5,6 +5,7 @@ import { listPaySchedules, removePaySchedule, setPaySchedule, type Category, typ
 import { formatIsoDate } from '../format.js'
 import { Button } from '../components/ui/button.js'
 import { Input, NativeSelect } from '../components/ui/form.js'
+import { Icon } from '../components/ui/icons.js'
 
 /**
  * When each income source pays, inside Setup's Income card: START HERE's
@@ -49,7 +50,7 @@ const FREQUENCIES: readonly PayFrequency[] = ['weekly', 'biweekly', 'monthly']
 export function PayHeadings() {
   return (
     <div className="mt-2 space-y-1 border-t border-income-rule pt-2">
-      <p className="grid grid-cols-[8.5rem_1fr] gap-2 text-xs font-medium text-income-ink" aria-hidden="true">
+      <p className="grid grid-cols-[7.5rem_minmax(0,1fr)] gap-2 text-xs font-medium text-income-ink" aria-hidden="true">
         <span>Paid</span>
         <span>First payday</span>
       </p>
@@ -127,7 +128,7 @@ export function PayFields({
 
   return (
     <div className="pb-1 pl-1">
-      <div className="grid grid-cols-[8.5rem_1fr] items-center gap-2">
+      <div className="grid grid-cols-[7.5rem_minmax(0,1fr)] items-center gap-2">
         <NativeSelect
           aria-label={`How often ${row.name} pays`}
           value={frequency}
@@ -144,7 +145,8 @@ export function PayFields({
             </option>
           ))}
         </NativeSelect>
-        <div className="flex items-center gap-2">
+        {/* Shrinks on a phone rather than push Clear past the card. */}
+        <div className="flex min-w-0 items-center gap-1">
           <Input
             size="sm"
             type="date"
@@ -152,12 +154,13 @@ export function PayFields({
             value={date}
             onChange={(e) => setDate(e.target.value)}
             onBlur={() => commit(frequency, date)}
-            className="w-40"
+            className="min-w-0 flex-1 px-2 text-sm [color-scheme:light_dark] sm:w-40 sm:flex-none"
           />
           {stored === undefined ? null : (
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
+              className="size-8 shrink-0 text-muted-foreground"
               aria-label={`Clear when ${row.name} pays`}
               onClick={() => {
                 setFrequency('')
@@ -165,7 +168,7 @@ export function PayFields({
                 commit('', '')
               }}
             >
-              Clear
+              <Icon name="x" />
             </Button>
           )}
         </div>
