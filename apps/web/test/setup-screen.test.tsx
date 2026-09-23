@@ -111,6 +111,56 @@ describe('SetupScreen, changing a list', () => {
   })
 })
 
+describe('SetupScreen, order and lists', () => {
+  it('moves a row up and down its list', async () => {
+    const fake = seeded()
+    renderScreen(<SetupScreen />, fake)
+
+    const bills = within(await screen.findByRole('region', { name: 'Bills' }))
+    expect(bills.getByRole('button', { name: 'Move Phone up' })).toHaveProperty('disabled', true)
+    expect(bills.getByRole('button', { name: 'Move Rent down' })).toHaveProperty('disabled', true)
+    fireEvent.click(bills.getByRole('button', { name: 'Move Rent up' }))
+    await waitFor(async () => expect(await namesOn('Bills')).toEqual(['Rent', 'Phone']))
+
+    fireEvent.click(await bills.findByRole('button', { name: 'Move Rent down' }))
+    await waitFor(async () => expect(await namesOn('Bills')).toEqual(['Phone', 'Rent']))
+  })
+
+  // Both start at position 0, ordered by name; the move has to show anyway.
+  it('moves a row past one sharing its position', async () => {
+    const fake = seeded()
+    renderScreen(<SetupScreen />, fake)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Move Restaurants up' }))
+    await waitFor(async () => expect(await namesOn('Variable expenses')).toEqual(['Restaurants', 'Groceries']))
+  })
+
+  it('moves a category to the bottom of another list', async () => {
+    const fake = seeded()
+    renderScreen(<SetupScreen />, fake)
+
+    const picker = await screen.findByRole('combobox', { name: 'Move Groceries to another list' })
+    expect(within(picker).queryByRole('option', { name: 'Variable expenses' })).toBeNull()
+    fireEvent.change(picker, { target: { value: 'bill' } })
+
+    await waitFor(async () => expect(await namesOn('Bills')).toEqual(['Phone', 'Rent', 'Groceries']))
+    expect(await namesOn('Variable expenses')).toEqual(['Restaurants'])
+    expect(fake.tables.categories.find((c) => c.id === 'c1')).toMatchObject({ kind: 'bill', sort_order: 2 })
+  })
+
+  it('says to remove the monthly amount when a move is refused, and moves nothing', async () => {
+    const fake = seeded()
+    fake.fail('PATCH categories', '23514')
+    renderScreen(<SetupScreen />, fake)
+
+    fireEvent.change(await screen.findByRole('combobox', { name: 'Move Rent to another list' }), { target: { value: 'debt' } })
+
+    const card = within(screen.getByRole('region', { name: 'Bills' }))
+    expect(await card.findByText(/^Remove the monthly amount first/)).toBeTruthy()
+    expect(await namesOn('Bills')).toEqual(['Phone', 'Rent'])
+  })
+})
+
 describe('SetupScreen, your name', () => {
   it('saves your name to your sign-in when you leave the field', async () => {
     const fake = seeded()

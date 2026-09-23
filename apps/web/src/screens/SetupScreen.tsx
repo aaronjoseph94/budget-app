@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useAppData } from '../app-data.js'
-import { ensureCategory, renameCategory, type Category } from '../ledger.js'
-import { atEndOf, groupByList, LIST_HEADING, type CategoryKind } from '../lists.js'
+import { moveInList } from '@budget/core'
+import { ensureCategory, moveCategory, renameCategory, setCategoryOrder, type Category } from '../ledger.js'
+import { atEndOf, groupByList, LIST_HEADING, LISTS, type CategoryKind } from '../lists.js'
 import { saveDisplayName } from '../profile.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
@@ -168,7 +169,7 @@ function ListCardView({ card, rows }: { card: ListCard; rows: readonly Category[
       ) : (
         <ul className="mt-2 divide-y">
           {rows.map((row) => (
-            <CategoryRow key={row.id} row={row} write={write} />
+            <CategoryRow key={row.id} row={row} list={rows} write={write} />
           ))}
         </ul>
       )}
@@ -198,12 +199,15 @@ function ListCardView({ card, rows }: { card: ListCard; rows: readonly Category[
 /** One category: its name, edited where it stands. */
 function CategoryRow({
   row,
+  list,
   write,
 }: {
   row: Category
+  /** The whole list it is on, in the order shown. */
+  list: readonly Category[]
   write: (change: () => Promise<unknown>) => Promise<boolean>
 }) {
-  const { supabase } = useAppData()
+  const { supabase, categories } = useAppData()
   const [text, setText] = useState(row.name)
   // Follow a rename from elsewhere during render, not in an effect: a mount
   // effect can run after the first keystroke and put the old name back.
@@ -223,6 +227,17 @@ function CategoryRow({
     if (!(await write(() => renameCategory(supabase, row.id, name)))) setText(row.name)
   }
 
+  const step = (direction: 'up' | 'down') => {
+    const rows = list.map((r) => ({ id: r.id, sortOrder: r.sort_order }))
+    const { changes } = moveInList({ rows, id: row.id, direction })
+    void write(() => setCategoryOrder(supabase, changes))
+  }
+
+  const moveTo = (kind: CategoryKind) => {
+    const { sortOrder } = atEndOf(categories, row.name, kind)
+    void write(() => moveCategory(supabase, row.id, { kind, sortOrder }))
+  }
+
   return (
     <li className="flex items-center gap-1 py-1">
       <input
@@ -238,6 +253,34 @@ function CategoryRow({
         }}
         className="min-w-0 flex-1 rounded-md bg-transparent px-1 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
       />
+      <Button variant="ghost" size="icon" className="size-9" aria-label={`Move ${row.name} up`} disabled={list[0]?.id === row.id} onClick={() => step('up')}>
+        <Icon name="up" />
+      </Button>
+      <Button variant="ghost" size="icon" className="size-9" aria-label={`Move ${row.name} down`} disabled={list.at(-1)?.id === row.id} onClick={() => step('down')}>
+        <Icon name="down" />
+      </Button>
+      {/* A native picker under an icon: on a phone it opens the system wheel. */}
+      <span className="relative inline-flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent">
+        <Icon name="move" className="size-4" />
+        <select
+          aria-label={`Move ${row.name} to another list`}
+          value=""
+          onChange={(e) => {
+            const kind = LISTS.find((k) => k === e.target.value)
+            if (kind !== undefined) moveTo(kind)
+          }}
+          className="absolute inset-0 cursor-pointer opacity-0"
+        >
+          <option value="" disabled>
+            Move to…
+          </option>
+          {LISTS.filter((k) => k !== row.kind).map((k) => (
+            <option key={k} value={k}>
+              {LIST_HEADING[k]}
+            </option>
+          ))}
+        </select>
+      </span>
     </li>
   )
 }

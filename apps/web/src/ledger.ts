@@ -415,6 +415,34 @@ export async function renameCategory(supabase: SupabaseClient, categoryId: strin
   if (error !== null) throw new Error(describeSetupFailure('rename', error))
 }
 
+/**
+ * Write new positions within a list, as core's moveInList worked them out.
+ * One row at a time: a failure part-way leaves a valid order that is simply
+ * not the one asked for, and the screen reloads to show what is stored.
+ */
+export async function setCategoryOrder(
+  supabase: SupabaseClient,
+  changes: readonly { readonly id: string; readonly sortOrder: number }[],
+): Promise<void> {
+  for (const change of changes) {
+    const { error } = await supabase.from('categories').update({ sort_order: change.sortOrder }).eq('id', change.id)
+    if (error !== null) throw new Error(describeSetupFailure('reorder', error))
+  }
+}
+
+/** Move a category to another list, at the bottom of it. Its charges move with it. */
+export async function moveCategory(
+  supabase: SupabaseClient,
+  categoryId: string,
+  to: { readonly kind: CategoryKind; readonly sortOrder: number },
+): Promise<void> {
+  const { error } = await supabase
+    .from('categories')
+    .update({ kind: to.kind, sort_order: to.sortOrder })
+    .eq('id', categoryId)
+  if (error !== null) throw new Error(describeSetupFailure('move', error))
+}
+
 export async function setWeeklyBudget(
   supabase: SupabaseClient,
   categoryId: string,
