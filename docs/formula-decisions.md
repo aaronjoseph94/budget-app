@@ -667,3 +667,60 @@ geometry is arithmetic on money, which invariant 1 puts in `packages/core`.
 
 **What the owner would see.** The charts' shapes. The numbers written
 beside them are the Year's own.
+
+---
+
+## F20 — What the Bill Calendar puts on a day, and what it adds up
+
+**Decided 2026-09-23. Engineering default: copies the workbook except where
+D5 (owner chose), D19, D20 and D21 depart from it.**
+
+```
+Bill Calendar!G3   2025-01-01 (the month, typed)
+Bill Calendar!H9   FILTER({Bills!C7:D29; G7:H29; K7:L29; P7:Q30},
+                          ({Bills!B7:B29; F7:F29; J7:J29; O7:O30} = H8)
+                        + ({same} = DATE(YEAR(G3), MONTH(G3), H8)))     [Rent, 800]
+Bill Calendar!M14  FILTER('START HERE'!B8:B44, E = "Bi-weekly",
+                          C <= date, (date − C) / 14 whole)              [Income 1]
+Bill Calendar!Q8   =SUM(C9:C13, E9:E13, …, O9:O13)                       [800]
+Bill Calendar!J3   =SUM(Q8:Q43)                                          [1167.99]
+```
+
+The calendar lays a month out Sunday first (B6 "S U N D A Y"). Each day
+lists the bills, debts and subscriptions whose Day Paid is that day, and the
+Bills log's payments dated that day; the right-hand cell of the day's
+number names an income source paid that day. Each week has a total, and the
+month a total of the weeks.
+
+**Chosen.**
+
+- **Planned against real (D5, owner's decision 3).** A bill, debt or
+  subscription with a real ledger row anywhere in the month shows each of
+  those rows on its own date, and its monthly amount is not shown that
+  month. With none, its monthly amount in effect that month (D13) shows on
+  its due day. So Credit Card 1 in January 2025 shows $200 on the 5th and
+  nothing on the 14th, where Workbook shows both: Q20 is 100, not **150**, and
+  J3 1,117.99, not **1,167.99**. The month's total is therefore the Month's
+  Bills + Debts + Subscriptions Actuals for the same month, except as below.
+- **A monthly amount with no day paid** is on no day and in no total, as in
+  Workbook (a blank B7 equals no day). The screen lists it under the calendar
+  as having no day paid, so it is not lost. The Month still counts it (F8):
+  a whole month counts every plan.
+- **Paydays** come from the pay schedules of categories on Income only
+  (N27), on each payday from the first pay date on, as Workbook's `C <= date`
+  asks; before the first pay date there are none. Weekly and bi-weekly ones
+  fall every 7 or 14 days, monthly ones on the first pay date's day of each
+  month (D21 for a day the month lacks). A payday shows the income source's
+  name and never an amount, as Workbook does.
+- **A real row is shown as Workbook shows a payment**, positive when money
+  went out (D3), each row by itself; a refund shows with its minus sign
+  (D8). Rows on other lists are not on the calendar.
+- **Weeks** hold only the days of the month; a week total adds its days'
+  amounts (Q8), and the month total its weeks (J3). The calendar has as many
+  weeks as the month touches, four to six; Workbook always draws six bands and
+  leaves the spare ones blank (Q38 **0**).
+- **Order within a day** is Workbook's stack, Bills then Debts then
+  Subscriptions, each in Setup's order.
+
+**What the owner would see.** Bills paid by card on the day they were
+charged, and never twice (decision 3).

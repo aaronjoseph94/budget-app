@@ -522,3 +522,65 @@ START HERE already asks for the first pay date and frequency.
 **What it costs.** The Paycheck cells that depend on the typed budgets, the
 due-day rule or the ÷ 2 (and those D5 changes) are left out of the golden
 fixture; `workbook-paycheck`'s `$semantics` lists them.
+
+---
+
+## D19 — The Bill Calendar's Sundays read the whole Bills log
+
+**Date:** 2026-09-23
+**Sheet / cells:** Bill Calendar!B9 (the first week's Sunday)
+**Settled:** stated to the owner, no objection (plan decision 9, "Workbook's
+arithmetic mistakes are fixed")
+
+**Workbook behaviour.** Every day's bill formula filters Bills!P7:Q30 by
+Bills!O7:O30, except B9, whose value range is typed `Bills!$P$7:$Q44`: 38
+rows against 24. FILTER refuses ranges of different sizes and IFERROR turns
+that into a blank, so in any month whose 1st is a Sunday (June 2025,
+February and March 2026) every bill due on the 1st, Rent included, is
+missing from the calendar and from its totals.
+
+**Chosen behaviour.** Every day reads the same bills and payments.
+
+**Why.** A range typo, not a rule: the other 41 day cells read P7:Q30.
+
+---
+
+## D20 — A day on the Bill Calendar holds every bill and every payday
+
+**Date:** 2026-09-23
+**Sheet / cells:** Bill Calendar!B9:O43 (`ARRAY_CONSTRAIN(…, 5, 2)`, five
+rows under each day), C8:O38 (`ARRAY_CONSTRAIN(…, 1, 1)`, one payday name)
+**Settled:** stated to the owner, no objection (plan decision 9)
+
+**Workbook behaviour.** A day shows at most five bills. A sixth due the same
+day is dropped from the day and from the week and month totals, which add
+the cells shown. A day shows one payday name even when two income sources
+are paid that day.
+
+**Chosen behaviour.** A day lists every bill, debt, subscription and charge
+on it, and every income source paid on it; the totals add them all.
+
+**Why.** A sixth bill on the 1st is still owed. The limit is the size of the
+sheet's grid, not a choice about money.
+
+---
+
+## D21 — Days 29 to 31 on the Bill Calendar in a short month
+
+**Date:** 2026-09-23
+**Sheet / cells:** Bill Calendar!B9:O43 (`{Bills!B7:B29; F7:F29; J7:J29} =
+day`) and C8:O38 (monthly paydays, `DAY('START HERE'!C8:C44) = day`); D6
+**Settled:** engineering default, as D6
+
+**Workbook behaviour.** A bill due on the 31st matches no day in a 30-day
+month, and one due on the 29th, 30th or 31st none in February, so it is on
+no day and in no total. A monthly payday first paid on the 31st is missing
+the same way.
+
+**Chosen behaviour.** A bill due on a day the month lacks shows on the
+month's last day, as D6 and formula decision F8 count it everywhere else. A
+monthly payday does the same, as the Paycheck view's pay periods already do
+(F15).
+
+**Why.** The same as D6: rent due on the 31st is still due in April, and the
+Month counts it there, so the calendar must show it somewhere.
