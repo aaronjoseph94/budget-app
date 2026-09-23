@@ -154,7 +154,12 @@ const SETUP_FAILURES: Readonly<Record<SetupAction, Readonly<Record<string, strin
   // 0009); it must raise check_violation for this sentence to be the one shown.
   move: { '23514': 'Remove the monthly amount first, then move it to another list.' },
   reorder: {},
-  remove: { '23503': 'This category still has charges filed under it — move them first.' },
+  // Charges are not the only thing that holds a category: a learned shop
+  // rule does too (N17), and moving a charge with "Always file" moves both.
+  remove: {
+    '23503':
+      'This category still has charges, or shops the app learned to file here. On the Month, tap its row and use Move to… on each charge, with “Always file” ticked so the shop moves too.',
+  },
 }
 
 /** For any Setup write, so the import wording for these two never shows here. */

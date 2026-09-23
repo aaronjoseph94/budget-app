@@ -182,7 +182,7 @@ describe('SetupScreen, removing a category', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Remove Rent' }))
 
     const card = within(screen.getByRole('region', { name: 'Bills' }))
-    expect(await card.findByText('This category still has charges filed under it — move them first. (code 23503)')).toBeTruthy()
+    expect(await card.findByText('This category still has charges, or shops the app learned to file here. On the Month, tap its row and use Move to… on each charge, with “Always file” ticked so the shop moves too. (code 23503)')).toBeTruthy()
     expect(await namesOn('Bills')).toEqual(['Phone', 'Rent'])
   })
 })

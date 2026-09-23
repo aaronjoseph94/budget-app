@@ -356,7 +356,7 @@ and look at each screen on a phone.
 
 ---
 
-## N17 — Removing a category is refused for more than charges
+## N17 — Removing a category is refused for more than charges *(settled in part 2026-09-23, S6)*
 
 **Seen:** 2026-09-23, S2b.
 
@@ -371,6 +371,14 @@ belongs with S6, which is where charges and rules move.
 
 **To settle:** at S6, word the remove message for charges or learned shops,
 and say where to move them.
+
+**Settled in part:** S6 words the message for charges or learned shops, and
+says to move each charge from its Month row with "Always file" ticked, which
+moves the shop's rule with it. Still open: a shop rule whose charges were all
+moved with "Always file" off, or whose charges were removed, keeps the
+category and has no screen to move or forget it, so removing is refused with
+nothing the owner can do. It needs a list of learned shops (Settings or
+Setup), reading `merchant_rules`, with a way to re-point or delete one.
 
 ---
 
