@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { isoDate, monthBounds, monthSheet, shiftMonth, type PeriodBlock, type PeriodSheet } from '@budget/core'
 import { useAppData } from '../app-data.js'
-import { countPendingBetween, latestStatementEnd, listTransactions, type LedgerRow } from '../ledger.js'
+import {
+  countPendingBetween,
+  latestStatementEnd,
+  listBudgetHistory,
+  listTransactions,
+  type BudgetRow,
+  type LedgerRow,
+} from '../ledger.js'
 import { LIST_HEADING } from '../lists.js'
 import { navigate } from '../nav.js'
 import { formatAmount, formatCents, formatIsoDate, formatMagnitude, formatMonthTitle, todayIso } from '../format.js'
@@ -36,10 +43,11 @@ export function MonthScreen({ month }: { month: string | null }) {
     setError(null)
     Promise.all([
       listTransactions(supabase, { from: start, to: end }),
+      listBudgetHistory(supabase, start),
       latestStatementEnd(supabase),
       countPendingBetween(supabase, { from: start, to: end }),
     ])
-      .then(([rows, ends, pendingHere]) => live && setLoaded({ start, rows, ends, pendingHere }))
+      .then(([rows, budgets, ends, pendingHere]) => live && setLoaded({ start, rows, budgets, ends, pendingHere }))
       .catch((e: unknown) => live && setError(e instanceof Error ? e.message : 'Could not load this month.'))
     return () => {
       live = false
@@ -55,9 +63,14 @@ export function MonthScreen({ month }: { month: string | null }) {
       return monthSheet({
         asOf: start,
         categories: categories.map((c) => ({ id: c.id, name: c.name, kind: c.kind, sortOrder: c.sort_order })),
-        // Budgets and monthly amounts are stored from Sitting B, and read
-        // here from S8 and S9.
-        budgetHistory: [],
+        // Everything typed up to this month; core picks the one in effect (D12).
+        budgetHistory: here.budgets.map((b) => ({
+          categoryId: b.category_id,
+          month: isoDate(b.month),
+          applies: b.applies,
+          budgetCents: b.budget_cents,
+        })),
+        // Monthly amounts are stored from Sitting B, and read here from S9.
         plans: [],
         entries: here.rows.map((r) => ({
           postedOn: isoDate(r.posted_on),
@@ -67,9 +80,10 @@ export function MonthScreen({ month }: { month: string | null }) {
         statementPeriodEnds: here.ends.map((e) => isoDate(e)),
       })
     } catch {
-      // The engine refuses a charge whose category it was not given rather
-      // than leave it out of every total. Said plainly, never as its message.
-      return 'A charge this month is filed under a category that did not load, so the month is not shown. Reload to try again.'
+      // The engine refuses a charge or a budget whose category it was not
+      // given rather than leave it out of every total. Said plainly, never as
+      // its message.
+      return 'A charge or a budget this month names a category that did not load, so the month is not shown. Reload to try again.'
     }
   }, [here, categories, start])
 
@@ -179,6 +193,8 @@ function OpenedRow({
 interface Loaded {
   readonly start: string
   readonly rows: readonly LedgerRow[]
+  /** Every budget and goal typed for this month or before it. */
+  readonly budgets: readonly BudgetRow[]
   readonly ends: readonly string[]
   /** Charges dated this month still waiting for review. */
   readonly pendingHere: number
@@ -251,8 +267,9 @@ function Summary({ sheet }: { sheet: PeriodSheet }) {
           <dd className={cn('text-2xl font-bold', left < 0 ? 'text-spend' : 'text-summary-value')}>
             <Figure>{formatCents(left)}</Figure>
           </dd>
-          {/* Workbook takes a blank budget as $0, so every dollar spent comes off (F5). */}
-          {noBudgets ? <dd className="mt-0.5 text-xs text-summary-label">No budgets set yet.</dd> : null}
+          {/* Workbook takes a blank budget as $0, so every dollar spent comes off
+            (F5). Only Variable expenses count here, so the hint names them. */}
+          {noBudgets ? <dd className="mt-0.5 text-xs text-summary-label">No budgets on Variable expenses yet.</dd> : null}
         </div>
       </dl>
     </section>
@@ -283,12 +300,29 @@ const TONE: Record<BlockKind, { band: string; header: string; ink: string; rule:
 }
 
 /**
- * One block: its heading and Actual total on the band, then a row per
- * category on the list. A row with no budget and nothing this month folds
- * behind "Show N empty". Budget and Left columns join when budgets are
- * stored (S8); until then no row has one, so only Actual is shown. Cells
- * leave out the "$", as the plan's phone sketch does (§6.2): with it, three
- * columns of amounts do not fit a 360px phone or a desktop card.
+ * The columns on each list. Workbook's Variable expenses have Budgeted, Actual
+ * and Remaining (Jan!R20:V20, "Left" here to fit a phone); its Bills, Debts
+ * and Subscriptions have Budgeted and Actual only, and the app adds a Left
+ * (F16). Goal, Actual and Difference on Savings (R8:V8), Goal and Actual on
+ * Income (M8:P8), as Workbook has.
+ */
+const COLUMNS: Record<BlockKind, { readonly budget: 'Budgeted' | 'Goal'; readonly third: 'Left' | 'Difference' | null }> = {
+  income: { budget: 'Goal', third: null },
+  savings: { budget: 'Goal', third: 'Difference' },
+  bill: { budget: 'Budgeted', third: 'Left' },
+  debt: { budget: 'Budgeted', third: 'Left' },
+  subscription: { budget: 'Budgeted', third: 'Left' },
+  variable: { budget: 'Budgeted', third: 'Left' },
+}
+
+type Row = PeriodBlock['rows'][number]
+
+/**
+ * One block: its heading and "$Actual of $Budget" on the band, then a row
+ * per category on the list with Workbook's columns. A row with no budget and
+ * nothing this month folds behind "Show N empty". Cells leave out the "$",
+ * as the plan's phone sketch does (§6.2): with it, three columns of amounts
+ * do not fit a 360px phone or a desktop card.
  */
 function Block({
   kind,
@@ -303,19 +337,26 @@ function Block({
 }) {
   const [showEmpty, setShowEmpty] = useState(false)
   const tone = TONE[kind]
+  const columns = COLUMNS[kind]
   const heading = LIST_HEADING[kind]
-  const isEmpty = (r: PeriodBlock['rows'][number]) => r.basis === 'none' && r.budgetCents === null
+  const isEmpty = (r: Row) => r.basis === 'none' && r.budgetCents === null
   const empty = block.rows.filter(isEmpty).length
   const shown = showEmpty ? block.rows : block.rows.filter((r) => !isEmpty(r))
+  // "of $0.00" would read as a budget of nothing, so the band names a budget
+  // total only once a budget or goal is set on the list.
+  const budgeted = block.rows.some((r) => r.budgetCents !== null)
 
   return (
     <section
       aria-label={heading}
       className={cn('overflow-hidden rounded-xl border bg-card shadow-sm', tone.rule, className)}
     >
-      <div className={cn('flex items-baseline justify-between gap-3 px-4 py-3', tone.band, tone.ink)}>
+      <div className={cn('flex flex-wrap items-baseline justify-between gap-x-3 px-4 py-3', tone.band, tone.ink)}>
         <h2 className="text-sm font-semibold uppercase tracking-wide">{heading}</h2>
-        <Figure className="text-lg font-bold">{formatCents(block.actualTotalCents)}</Figure>
+        <p>
+          <Figure className="text-lg font-bold">{formatCents(block.actualTotalCents)}</Figure>
+          {budgeted ? <span className="tnum text-sm"> of {formatCents(block.budgetTotalCents)}</span> : null}
+        </p>
       </div>
       {block.rows.length === 0 ? (
         <p className="px-4 py-3 text-sm text-muted-foreground">
@@ -335,12 +376,14 @@ function Block({
           <table className="w-full text-sm xl:text-xs">
             <thead className={cn(tone.header, tone.ink)}>
               <tr>
-                <th scope="col" className="px-4 py-1.5 text-left text-xs font-medium">
+                <th scope="col" className="py-1.5 pl-4 pr-1 text-left text-xs font-medium">
                   Category
                 </th>
-                <th scope="col" className="px-4 py-1.5 text-right text-xs font-medium">
-                  Actual
-                </th>
+                {[columns.budget, 'Actual', ...(columns.third === null ? [] : [columns.third])].map((name) => (
+                  <th key={name} scope="col" className="px-1 py-1.5 text-right text-xs font-medium last:pr-4">
+                    {name}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -352,7 +395,7 @@ function Block({
                   onClick={() => onOpen(r.categoryId)}
                   className={cn('cursor-pointer border-t hover:bg-accent/60', tone.rule)}
                 >
-                  <th scope="row" className="px-4 py-2 text-left font-normal">
+                  <th scope="row" className="py-2 pl-4 pr-1 text-left font-normal">
                     <button
                       type="button"
                       aria-haspopup="dialog"
@@ -365,11 +408,24 @@ function Block({
                       {r.name}
                     </button>
                   </th>
+                  <td className="tnum whitespace-nowrap px-1 py-2 text-right">
+                    {r.budgetCents === null ? '' : formatAmount(r.budgetCents)}
+                  </td>
                   {/* A zero on a budgeted row stays blank, as Workbook's ";;" format leaves it. */}
-                  <td className={cn('tnum whitespace-nowrap px-4 py-2 text-right', r.actualCents < 0 && 'text-spend')}>
+                  <td
+                    className={cn(
+                      'tnum whitespace-nowrap px-1 py-2 text-right last:pr-4',
+                      r.actualCents < 0 && 'text-spend',
+                    )}
+                  >
                     {r.basis === 'planned' ? <span className="mr-1.5 text-xs text-muted-foreground">planned</span> : null}
                     {r.basis === 'none' ? '' : formatAmount(r.actualCents)}
                   </td>
+                  {columns.third === null ? null : (
+                    <td className="tnum whitespace-nowrap py-2 pl-1 pr-4 text-right">
+                      <Third row={r} column={columns.third} empty={isEmpty(r)} />
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -388,4 +444,20 @@ function Block({
       ) : null}
     </section>
   )
+}
+
+/**
+ * A row's Left (Budget − Actual) or Difference (Actual − Goal), from core.
+ * Overspent is Workbook's pill (Jan!V22:V44, cream on red), in the darker red
+ * that makes its text readable, with the minus sign Workbook's format hid (D8).
+ * A fund short of its goal keeps its minus sign without the pill, as Workbook
+ * marks only spending. Blank where core gives none, and on an empty row.
+ */
+function Third({ row, column, empty }: { row: Row; column: 'Left' | 'Difference'; empty: boolean }) {
+  const value = column === 'Left' ? row.remainingCents : row.differenceCents
+  if (value === null || empty) return null
+  if (column === 'Left' && value < 0) {
+    return <span className="rounded-full bg-spend px-1.5 py-0.5 text-spend-foreground">{formatAmount(value)}</span>
+  }
+  return <>{formatAmount(value)}</>
 }

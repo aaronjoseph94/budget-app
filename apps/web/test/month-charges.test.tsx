@@ -119,7 +119,7 @@ describe('Moving a charge from the Month', () => {
       'Variable expenses · September 2026 · $35.88',
     )
     const variable = within(screen.getByRole('region', { name: 'Variable expenses' }))
-    expect(variable.getByRole('rowheader', { name: 'Restaurants' }).closest('tr')?.textContent).toBe('Restaurants89.12')
+    expect(variable.getByRole('rowheader', { name: 'Restaurants' }).closest('tr')?.textContent).toBe('Restaurants89.12-89.12')
   })
 
   it('moves only this charge when "Always file" is turned off', async () => {

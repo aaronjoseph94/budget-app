@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MonthScreen } from '../src/screens/MonthScreen.js'
 import { useAddress } from '../src/nav.js'
-import type { Category, LedgerRow } from '../src/ledger.js'
+import type { BudgetRow, Category, LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 
@@ -50,6 +50,11 @@ function block(name: string): ReturnType<typeof within> {
   return within(screen.getByRole('region', { name }))
 }
 
+const heads = (name: string) => block(name).getAllByRole('columnheader').map((h: HTMLElement) => h.textContent)
+const band = (name: string) => block(name).getByRole('heading').nextSibling?.textContent
+const cells = (name: string, row: string) =>
+  within(block(name).getByRole('rowheader', { name: row }).closest('tr')!).getAllByRole('cell').map((c) => c.textContent)
+
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(TODAY)
@@ -66,6 +71,7 @@ afterEach(() => {
 describe('MonthScreen blocks', () => {
   // Hand-derived. Variable: groceries 64.12 + 35.88 = 100.00, dining 25.00,
   // clothing −40.00: 85.00. Bills: phone 55.00. Income 2,500.00, savings 300.00.
+  // No budgets, so each Variable row's Left is 0 − Actual (F5, F16).
   it("fills Workbook's blocks from the month's rows, phone order first", async () => {
     renderScreen(<MonthScreen month={null} />, seeded())
 
@@ -75,10 +81,11 @@ describe('MonthScreen blocks', () => {
 
     const variable = block('Variable expenses')
     expect(variable.getByText('$85.00')).toBeTruthy()
-    expect(variable.getByRole('rowheader', { name: 'Groceries' }).closest('tr')?.textContent).toBe('Groceries100.00')
+    expect(variable.getByRole('rowheader', { name: 'Groceries' }).closest('tr')?.textContent).toBe('Groceries100.00-100.00')
     expect(block('Bills').getByText('55.00', { selector: 'td' })).toBeTruthy()
     expect(block('Income').getByText('2,500.00', { selector: 'td' })).toBeTruthy()
-    expect(block('Savings').getByText('300.00', { selector: 'td' })).toBeTruthy()
+    // No goal, so its Difference is what went in (F16).
+    expect(cells('Savings', 'Flight fund')).toEqual(['', '300.00', '300.00'])
     // The card payment is in no block.
     expect(screen.queryByText('Card payments')).toBeNull()
   })
@@ -87,7 +94,7 @@ describe('MonthScreen blocks', () => {
     renderScreen(<MonthScreen month="2026-09" />, seeded())
 
     const clothing = (await screen.findByRole('rowheader', { name: 'Clothing' })).closest('tr')
-    expect(clothing?.textContent).toBe('Clothing-40.00')
+    expect(clothing?.textContent).toBe('Clothing-40.0040.00')
     expect(await screen.findByText('<b>Dinner & drinks</b>')).toBeTruthy()
     expect(document.querySelector('section b')).toBeNull()
   })
@@ -137,6 +144,118 @@ describe('MonthScreen blocks', () => {
   })
 })
 
+const budget = (id: string, category_id: string, month: string, applies: BudgetRow['applies'], budget_cents: number): BudgetRow => ({
+  id, category_id, month, applies, budget_cents,
+})
+
+function budgeted(): FakeSupabase {
+  const fake = seeded()
+  fake.tables.category_budgets.push(
+    budget('b1', 'groceries', '2026-07-01', 'onward', 20000),
+    // Just September beats August's "from this month on", in September only.
+    budget('b2', 'dining', '2026-08-01', 'onward', 5000),
+    budget('b3', 'dining', '2026-09-01', 'only', 2000),
+    // From October on: never reaches back into September.
+    budget('b4', 'clothing', '2026-10-01', 'onward', 9999),
+    budget('b5', 'rent', '2026-01-01', 'onward', 160000),
+    budget('b6', 'pay', '2026-09-01', 'onward', 300000),
+    budget('b7', 'fund', '2026-09-01', 'onward', 50000),
+    // On Not spending: kept, and in no block (N30).
+    budget('b8', 'card', '2026-09-01', 'onward', 1000),
+  )
+  return fake
+}
+
+describe('MonthScreen budgets and goals', () => {
+  // Hand-derived. Groceries 200.00 − 100.00; dining 20.00 − 25.00; clothing
+  // no budget: 0 − (−40.00); gifts 0 − 0. Left to spend 100 − 5 + 40 = 135.00.
+  it("shows Workbook's columns from the budgets in effect this month, and Left to spend with them", async () => {
+    renderScreen(<MonthScreen month="2026-09" />, budgeted())
+    await screen.findByRole('region', { name: 'Variable expenses' })
+
+    expect(heads('Variable expenses')).toEqual(['Category', 'Budgeted', 'Actual', 'Left'])
+    expect(heads('Bills')).toEqual(['Category', 'Budgeted', 'Actual', 'Left'])
+    expect(heads('Income')).toEqual(['Category', 'Goal', 'Actual'])
+    expect(heads('Savings')).toEqual(['Category', 'Goal', 'Actual', 'Difference'])
+
+    expect(cells('Variable expenses', 'Groceries')).toEqual(['200.00', '100.00', '100.00'])
+    expect(cells('Variable expenses', '<b>Dinner & drinks</b>')).toEqual(['20.00', '25.00', '-5.00'])
+    expect(cells('Variable expenses', 'Clothing')).toEqual(['', '-40.00', '40.00'])
+    // No budget and nothing spent: blank throughout, not a Left of 0.00.
+    fireEvent.click(block('Variable expenses').getByRole('button', { name: 'Show 1 empty' }))
+    expect(cells('Variable expenses', 'Gifts')).toEqual(['', '', ''])
+    // Budgeted with nothing paid yet, so it no longer folds away; a bill with no budget has no Left (F16).
+    expect(cells('Bills', 'Rent')).toEqual(['1,600.00', '', '1,600.00'])
+    expect(cells('Bills', 'Phone')).toEqual(['', '55.00', ''])
+    expect(cells('Income', 'Pay')).toEqual(['3,000.00', '2,500.00'])
+    expect(cells('Savings', 'Flight fund')).toEqual(['500.00', '300.00', '-200.00'])
+
+    expect(band('Variable expenses')).toBe('$85.00 of $220.00')
+    expect(band('Bills')).toBe('$55.00 of $1,600.00')
+    expect(band('Subscriptions')).toBe('$0.00')
+    expect(band('Income')).toBe('$2,500.00 of $3,000.00')
+    expect(band('Savings')).toBe('$300.00 of $500.00')
+
+    const summary = within(screen.getByRole('region', { name: 'Summary' }))
+    expect(summary.getByText('Left to spend').nextSibling?.textContent).toBe('$135.00')
+    expect(summary.queryByText('No budgets on Variable expenses yet.')).toBeNull()
+    expect(screen.queryByText('$10.00')).toBeNull()
+  })
+
+  it('says so, rather than leave a budget out, when its category did not load (N30)', async () => {
+    const fake = budgeted()
+    fake.tables.category_budgets.push(budget('b9', 'gone', '2026-09-01', 'onward', 700))
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Could not show this month' +
+        'A charge or a budget this month names a category that did not load, so the month is not shown. Reload to try again.',
+    )
+    expect(screen.queryByRole('region')).toBeNull()
+  })
+
+  it('says Left to spend has no budget while only another list has one', async () => {
+    const fake = seeded()
+    fake.tables.category_budgets.push(budget('b1', 'rent', '2026-09-01', 'onward', 160000))
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+
+    const summary = within(await screen.findByRole('region', { name: 'Summary' }))
+    expect(summary.getByText('No budgets on Variable expenses yet.')).toBeTruthy()
+  })
+
+  it("marks overspending with Workbook's pill and its minus sign, and a fund short of its goal with the sign alone", async () => {
+    renderScreen(<MonthScreen month="2026-09" />, budgeted())
+    await screen.findByRole('region', { name: 'Variable expenses' })
+
+    const over = block('Variable expenses').getByText('-5.00')
+    expect(over.className.split(' ')).toEqual(expect.arrayContaining(['rounded-full', 'bg-spend', 'text-spend-foreground']))
+    expect(block('Savings').getByText('-200.00').tagName).toBe('TD')
+  })
+
+  // Hand-derived for October: groceries 200.00 from July, dining back to
+  // August's 50.00, clothing 99.99 from October; nothing spent. 349.99.
+  it('carries a budget into later months, and a "just this month" one into none', async () => {
+    renderScreen(<MonthScreen month="2026-10" />, budgeted())
+    await screen.findByRole('heading', { name: 'October 2026' })
+
+    expect(await block('Variable expenses').findByRole('rowheader', { name: 'Clothing' })).toBeTruthy()
+    expect(cells('Variable expenses', '<b>Dinner & drinks</b>')).toEqual(['50.00', '', '50.00'])
+    expect(within(screen.getByRole('region', { name: 'Summary' })).getByText('Left to spend').nextSibling?.textContent).toBe('$349.99')
+  })
+
+  it('says in words when budgets cannot be read, and shows no month', async () => {
+    const fake = budgeted()
+    fake.fail('category_budgets', 'PGRST205')
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Could not load this month' +
+        'Budgets need a database update that has not been applied yet (0008 in the setup guide), so this month cannot be shown. (code PGRST205)',
+    )
+    expect(screen.queryByRole('region')).toBeNull()
+  })
+})
+
 describe('MonthScreen summary and notes', () => {
   // Hand-derived. Spent: variable 85.00 + bills 55.00 = 140.00; savings and
   // the card payment are not spending. No budgets, so Left to spend is
@@ -147,7 +266,7 @@ describe('MonthScreen summary and notes', () => {
     const summary = within(await screen.findByRole('region', { name: 'Summary' }))
     expect(summary.getByText('Spent').nextSibling?.textContent).toBe('$140.00')
     expect(summary.getByText('Left to spend').nextSibling?.textContent).toBe('-$85.00')
-    expect(summary.getByText('No budgets set yet.')).toBeTruthy()
+    expect(summary.getByText('No budgets on Variable expenses yet.')).toBeTruthy()
   })
 
   it('says what was paid to the card, and that it is not counted (D9)', async () => {
