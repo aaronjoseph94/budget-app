@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { isoDate } from '@budget/money-primitives'
+import { cents, isoDate } from '@budget/money-primitives'
 import { periodSheet, type PeriodCategory, type PeriodEntry, type PeriodPlan } from '../src/period-sheet.js'
-import { goalBars } from '../src/shares.js'
+import { goalBars, shareOf } from '../src/shares.js'
 
 /**
  * Suite tests, worked by hand. Workbook's charts print no number and the
@@ -148,5 +148,15 @@ describe('goalBars (F17)', () => {
 
   it('refuses a fraction of a cent rather than scale it', () => {
     expect(() => goalBars({ rows: [bar('pay', 10.5, 0)] })).toThrow(RangeError)
+  })
+})
+
+describe('shareOf', () => {
+  // A budget is never below zero (0008's check), and callers leave out a
+  // row below zero; either reaching here is a bug to hear about, not a share.
+  it('refuses a part below zero, or a whole that is not above zero', () => {
+    expect(() => shareOf(cents(-1), cents(100))).toThrow(RangeError)
+    expect(() => shareOf(cents(0), cents(0))).toThrow(RangeError)
+    expect(shareOf(cents(0), cents(100))).toBe(0)
   })
 })

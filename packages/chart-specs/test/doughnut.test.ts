@@ -55,6 +55,22 @@ describe('spendingDoughnut', () => {
     expect(second![0]).toMatch(/^M1500 20A700 700 0 0 1 1500 1420 A/)
   })
 
+  // Two halves: neither is the long way round, and a second half rounded up
+  // a basis point (F17) still ends at twelve o'clock, not past it.
+  it('draws two halves the short way round, stopping the second at the whole', () => {
+    expect(paths(chart([slice('a', 5_000, 0), slice('b', 5_001, 1)])).map(([d]) => d)).toEqual([
+      'M1500 20A700 700 0 0 1 1500 1420L1500 1070A350 350 0 0 0 1500 370Z',
+      'M1500 1420A700 700 0 0 1 1500 20L1500 370A350 350 0 0 0 1500 1070Z',
+    ])
+  })
+
+  it('shortens a legend name that would run into its amount', () => {
+    // "$10000 · x%" is 11 characters, 770 units; the name has 3,000 − 100 −
+    // 60 − 770 − 60 = 2,010, which is 28 characters at 70 each: 27 and "…".
+    const svg = chart([slice('A category name far too long to sit beside its amount', 10_000, 0)])
+    expect(svg).toContain('>A category name far too lon…</text>')
+  })
+
   it('names a category with too small a share to draw, and draws no slice for it', () => {
     const svg = chart([slice('tiny', 0, 3), slice('rest', 10_000, 4)])
     expect(paths(svg)).toHaveLength(1)

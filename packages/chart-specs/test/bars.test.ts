@@ -44,6 +44,15 @@ describe('incomeBars', () => {
       [390, '#9ABDB7', 3_000],
     ])
     expect(svg).toContain('<line x1="2000" y1="390" x2="2000" y2="490" stroke="#FFFEFA"')
+    // An Actual that meets its Goal exactly ends where the track does: no notch.
+    expect(chart([bar('Pay', 10_000, 10_000)])).not.toContain('<line')
+  })
+
+  it('shortens a name that would run into its figures', () => {
+    // "$1.00 of $2.00" is 14 characters, 980 units; the name has 3,000 − 980
+    // − 60 = 1,960, which is 28 characters at 70 each: 27 and "…".
+    const svg = chart([bar('An income source with a long, long name', 10_000, 10_000)])
+    expect(svg).toContain('>An income source with a lon…</text>')
   })
 
   it('draws no bar for money back out, and no track without a goal', () => {
