@@ -301,4 +301,14 @@ describe('YearScreen, debts', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Add your debts to see them here' }))
     expect(window.location.hash).toBe('#/debts')
   })
+
+  it('says so when debts are typed but none is ever paid off, rather than asking for debts', async () => {
+    const fake = seeded()
+    // $1,000.00 at 2% a month paying $10.00: never paid off.
+    fake.tables.debts.push({ id: 'd1', name: 'Store card', starting_balance_cents: 100_000, minimum_payment_cents: 1_000, apr_basis_points: 2_400, start_date: '2026-01-01', sort_order: 0 })
+    renderScreen(<YearScreen start={null} />, fake)
+    fireEvent.click(await screen.findByRole('button', { name: 'None of your debts is ever paid off at its minimum. Open Debts to see why' }))
+    expect(window.location.hash).toBe('#/debts')
+    expect(screen.queryByRole('button', { name: 'Add your debts to see them here' })).toBeNull()
+  })
 })

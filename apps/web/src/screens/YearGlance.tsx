@@ -125,7 +125,9 @@ export function YearGlance({ sheet, wide }: { sheet: YearSheet; wide: boolean })
         {debts.status === 'ready' ? (
           debts.debts.status === null ? (
             <button type="button" className="text-left text-sm underline underline-offset-4" onClick={() => navigate('debts')}>
-              Add your debts to see them here
+              {debts.debts.rows.length === 0
+                ? 'Add your debts to see them here'
+                : 'None of your debts is ever paid off at its minimum. Open Debts to see why'}
             </button>
           ) : (
             <DebtsChart status={debts.debts.status} />
