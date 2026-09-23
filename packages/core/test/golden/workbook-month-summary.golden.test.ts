@@ -43,19 +43,20 @@ const golden = loadGolden<Input, Case[]>('workbook-month-summary')
 describe("the summary card replays Workbook's Spent and Left to spend (workbook-month-summary)", () => {
   const shared = {
     categories: golden.input.categories,
-    plans: golden.input.plans,
     entries: golden.input.entries.map((e) => ({ ...e, postedOn: isoDate(e.postedOn) })),
     statementPeriodEnds: [],
   }
   for (const c of golden.expected) {
     const sheet =
       c.asOf === undefined
-        ? periodSheet({ ...shared, budgets: c.budgets, from: isoDate(c.from!), to: isoDate(c.to!) })
+        ? periodSheet({ ...shared, budgets: c.budgets, plans: golden.input.plans, from: isoDate(c.from!), to: isoDate(c.to!) })
         : monthSheet({
             ...shared,
             // What is typed on a month tab is that tab's alone. Each asOf is
             // the tab's first day, which names its month.
             budgetHistory: c.budgets.map((b) => ({ ...b, month: isoDate(c.asOf!), applies: 'only' as const })),
+            // Workbook's one Monthly Amount serves every tab, so each has it from its own month.
+            planHistory: golden.input.plans.map((p) => ({ ...p, effectiveMonth: isoDate(c.asOf!) })),
             asOf: isoDate(c.asOf),
           })
     it.each(c.cells)(`${c.window} → $cell = $cents`, (cell) => {

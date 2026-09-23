@@ -107,7 +107,7 @@ describe('monthSheet budgets (suite)', () => {
         asOf: isoDate(asOf),
         categories: [{ id: 'food', name: 'Food', kind: 'variable', sortOrder: 0 }],
         budgetHistory: [typed('food', '2026-01', 'onward', 10_000), typed('food', '2026-03', 'only', 5_000)],
-        plans: [],
+        planHistory: [],
         entries: [],
         statementPeriodEnds: [],
       }).blocks.variable.rows[0]!.budgetCents

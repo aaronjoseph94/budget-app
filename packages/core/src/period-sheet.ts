@@ -40,10 +40,15 @@
  *   when its due day is one of the window's days (`Weekly Budget!D50`'s
  *   REGEXMATCH), so a blank due day never counts in one. A due day of 29–31
  *   counts on the last day of a shorter month (D6).
+ * - F10, which months count planned amounts. The month tabs never gate them
+ *   on a date (Dec!E22 is 800 whatever today is), so a month here never
+ *   does, and a future month shows its planned bills. Only the Year will
+ *   gate, at its asOf, as Annual Budget does.
  *
  * periodSheet takes plans and budgets already resolved for its window.
- * monthSheet resolves budgets itself, from everything typed (resolveBudgets,
- * D12); which monthly amount is in effect in which month (D13) waits for S9.
+ * monthSheet resolves both itself, from everything typed: budgets and goals
+ * by resolveBudgets (D12), monthly amounts by resolvePlans (D13), so raising
+ * the rent from October leaves September as it was.
  *
  * Card payments (the Not spending list) are in no block and no total; their
  * net is reported alone so the screen can say what was left out (D9). Workbook
@@ -54,8 +59,9 @@
  *
  * F5 and F7's Spent are the first half of the tab's summary card, proven by
  * workbook-month-summary; budget totals, Remaining and Difference are proven by
- * workbook-month. F7's ending balance waits for the typed starting balance
- * (Sitting B, S11), and was left out rather than guessed.
+ * workbook-month part 1, and planned against real by part 2, through the plan
+ * history a month resolves. F7's ending balance waits for the typed starting
+ * balance (Sitting B, S11), and was left out rather than guessed.
  *
  * Signs (D3). The ledger is one signed column, outflows negative. Workbook writes
  * every amount positive and knows its direction from the log it sits in, so
@@ -66,6 +72,7 @@
  */
 import { type Cents, type IsoDate, ZERO_CENTS, cents, subCents, sumCents } from '@budget/money-primitives'
 import { type BudgetHistoryRow, resolveBudgets } from './budgets.js'
+import { type PlanHistoryRow, resolvePlans } from './plans.js'
 import { type CategoryKind, monthBounds, shiftMonth } from './week.js'
 
 export interface PeriodCategory {
@@ -110,11 +117,13 @@ export interface PeriodSheetInput {
   readonly statementPeriodEnds: readonly IsoDate[]
 }
 
-export interface MonthSheetInput extends Omit<PeriodSheetInput, 'from' | 'to' | 'budgets'> {
+export interface MonthSheetInput extends Omit<PeriodSheetInput, 'from' | 'to' | 'budgets' | 'plans'> {
   /** Any day of the month to show. */
   readonly asOf: IsoDate
   /** Every budget and goal typed, for any month (0008); resolved here for this one. */
   readonly budgetHistory: readonly BudgetHistoryRow[]
+  /** Every monthly amount and day paid typed, for any month (0009); resolved here for this one. */
+  readonly planHistory: readonly PlanHistoryRow[]
 }
 
 export interface PeriodRow {
@@ -352,11 +361,30 @@ function dueInWindow(day: number, from: IsoDate, to: IsoDate): boolean {
 
 /**
  * One Workbook month tab: periodSheet over the calendar month holding `asOf`,
- * with the budgets and goals in effect that month (D12).
+ * with the budgets and goals (D12) and the monthly amounts (D13) in effect
+ * that month.
  */
 export function monthSheet(input: MonthSheetInput): PeriodSheet {
-  const { asOf, budgetHistory, ...rest } = input
+  const { asOf, budgetHistory, planHistory, ...rest } = input
   const { start, end } = monthBounds(asOf)
   const { budgets } = resolveBudgets({ asOf, history: budgetHistory })
-  return periodSheet({ ...rest, budgets, from: start, to: end })
+  const kinds = new Map(rest.categories.map((c) => [c.id, c.kind]))
+  // Refused, as billsTotals refuses it: removing a category removes its
+  // amounts (0009), so this is a screen whose categories and amounts were
+  // read at different moments, and a month missing a planned bill looks
+  // right and is not.
+  for (const row of planHistory) {
+    if (!kinds.has(row.categoryId)) {
+      throw new RangeError(`A monthly amount names category ${row.categoryId}, which was not passed in`)
+    }
+  }
+  // A category counts on the list it is on now. 0009 lets one move off
+  // Bills, Debts and Subscriptions once its amount has stopped, keeping its
+  // rows, so an amount in effect in an earlier month then counts nowhere, as
+  // in billsTotals; periodSheet would refuse it.
+  const plans = resolvePlans({ asOf, history: planHistory }).plans.filter((p) => {
+    const kind = kinds.get(p.categoryId)
+    return kind !== undefined && OWED.has(kind)
+  })
+  return periodSheet({ ...rest, budgets, plans, from: start, to: end })
 }

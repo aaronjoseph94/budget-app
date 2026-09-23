@@ -448,7 +448,7 @@ is kept and not offered.
 
 ---
 
-## N20 — The period engine is narrower than the plan's §5.1 table, for now *(settled in part 2026-09-23, S7)*
+## N20 — The period engine is narrower than the plan's §5.1 table, for now *(settled in part 2026-09-23, S7 and S10)*
 
 **Seen:** 2026-09-23, S4a and S4b (the period engine).
 
@@ -496,6 +496,13 @@ once the amount has stopped); `periodSheet` refuses a plan for any other
 list, so S10 must leave those out, as `billsTotals` does. The comment in
 `MonthScreen.tsx` beside `plans: []` says "read here from S9"; it is S10's
 to correct when it wires them.
+
+**Updated 2026-09-23, S10:** `monthSheet` takes the plan history and
+resolves it for its month (`resolvePlans`, D13), proven by workbook-month
+part 2 (seen failing first). It leaves out an amount on a category moved off
+the three recurring lists, and refuses one naming a category it was not
+given, as `billsTotals` does. Still open: the ending balance and the
+summary's income and saved (S11), and `shareBp` (S12b).
 
 ---
 

@@ -74,8 +74,8 @@ export function MonthScreen({ month }: { month: string | null }) {
           applies: b.applies,
           budgetCents: b.budget_cents,
         })),
-        // Monthly amounts are stored from Sitting B, and read here from S9.
-        plans: [],
+        // Monthly amounts are stored from Sitting B, and read here from S10.
+        planHistory: [],
         entries: here.rows.map((r) => ({
           postedOn: isoDate(r.posted_on),
           amountCents: r.amount_cents,

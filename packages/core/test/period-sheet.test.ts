@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { isoDate } from '@budget/money-primitives'
 import { monthSheet, periodSheet, type PeriodCategory, type PeriodEntry, type PeriodPlan } from '../src/period-sheet.js'
+import { resolvePlans } from '../src/plans.js'
 
 /**
  * Suite tests, worked by hand from the invented rows below. Workbook's cached
@@ -229,12 +230,81 @@ describe('monthSheet (suite)', () => {
       budgetHistory: [],
       statementPeriodEnds: [],
       asOf: isoDate('2028-02-17'),
-      plans: [plan('rent', 160_000, 31)],
+      planHistory: [{ ...plan('rent', 160_000, 31), effectiveMonth: isoDate('2028-02-01') }],
       entries: [row('2028-01-31', -100, 'food'), row('2028-02-29', -200, 'food'), row('2028-03-01', -400, 'food')],
     })
     expect([s.from, s.to]).toEqual(['2028-02-01', '2028-02-29'])
     expect(s.blocks.variable.actualTotalCents).toBe(200)
     expect(s.blocks.bill.actualTotalCents).toBe(160_000)
+  })
+})
+
+describe('monthSheet monthly amounts (suite)', () => {
+  const typed = (categoryId: string, month: string, plannedCents: number | null, dueDay: number | null) => ({
+    categoryId,
+    effectiveMonth: isoDate(`${month}-01`),
+    plannedCents,
+    dueDay,
+  })
+  const categories = [...CATEGORIES, cat('netflix', 'subscription', 1)]
+  const month = (asOf: string, planHistory: ReturnType<typeof typed>[], entries: PeriodEntry[] = []) =>
+    monthSheet({ categories, budgetHistory: [], statementPeriodEnds: [], asOf: isoDate(asOf), planHistory, entries })
+
+  it("counts Netflix's $17.99 once when the card charges $17.99, and planned in a month it does not (decision 3)", () => {
+    const history = [typed('netflix', '2026-01', 1_799, 23)]
+    const september = month('2026-09-30', history, [row('2026-09-23', -1_799, 'netflix')])
+    expect(actuals(september, 'subscription')).toEqual([
+      ['music', 0, 'none'],
+      ['netflix', 1_799, 'real'],
+    ])
+    // 17.99, not 35.98: nothing else is spent, so Spent is the one charge (F7).
+    expect(september.summary.spentCents).toBe(1_799)
+    expect(actuals(month('2026-10-01', history, [row('2026-09-23', -1_799, 'netflix')]), 'subscription')[1]).toEqual([
+      'netflix',
+      1_799,
+      'planned',
+    ])
+  })
+
+  it('leaves September at the old rent when it is raised from October, and never reaches back (D13)', () => {
+    const history = [typed('rent', '2026-10', 170_000, 1), typed('rent', '2026-01', 160_000, 1)]
+    const rent = (asOf: string) => actuals(month(asOf, history), 'bill')[0]
+    expect(['2025-12-31', '2026-09-30', '2026-10-01', '2027-06-15'].map(rent)).toEqual([
+      ['rent', 0, 'none'],
+      ['rent', 160_000, 'planned'],
+      ['rent', 170_000, 'planned'],
+      ['rent', 170_000, 'planned'],
+    ])
+  })
+
+  it('counts a bill due on the 31st in February, and in the week holding its last day (D6, F8)', () => {
+    const history = [typed('rent', '2026-01', 160_000, 31)]
+    expect(actuals(month('2026-02-14', history), 'bill')[0]).toEqual(['rent', 160_000, 'planned'])
+    const week = (from: string, to: string) =>
+      owed([...resolvePlans({ asOf: isoDate(from), history }).plans], [], from, to).blocks.bill.rows[0]!.basis
+    // A week that ends on Feb 28 (Monday to Sunday, 2027), carried from the
+    // amount typed in 2026: a 31st left unclamped sorts after the week's end
+    // and is missed. One that runs into March would not show it.
+    expect(week('2027-02-22', '2027-02-28')).toBe('planned')
+    expect(week('2027-02-15', '2027-02-21')).toBe('none')
+  })
+
+  it('shows a future month its planned bills, and a stopped one none (F10)', () => {
+    const history = [typed('loan', '2026-09', 25_000, 20), typed('phone', '2026-09', 6_000, null), typed('phone', '2027-01', null, null)]
+    expect(actuals(month('2031-05-01', history), 'debt')).toEqual([['loan', 25_000, 'planned']])
+    expect(actuals(month('2031-05-01', history), 'bill')).toEqual([
+      ['rent', 0, 'none'],
+      ['phone', 0, 'none'],
+    ])
+  })
+
+  it('counts an amount on a category moved off the recurring lists nowhere, and refuses one it was not given', () => {
+    // Fuel was a bill until its amount stopped in August (0009 allows the move then).
+    const history = [typed('fuel', '2026-01', 5_000, 3), typed('fuel', '2026-08', null, 3)]
+    const march = month('2026-03-01', history)
+    expect(march.blocks.variable.rows.map((r) => [r.categoryId, r.actualCents, r.basis])[0]).toEqual(['fuel', 0, 'none'])
+    expect(march.summary.spentCents).toBe(0)
+    expect(() => month('2026-03-01', [typed('gone', '2026-01', 100, 1)])).toThrow(/category gone/)
   })
 })
 
