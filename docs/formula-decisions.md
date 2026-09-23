@@ -727,3 +727,42 @@ month a total of the weeks.
 
 **What the owner would see.** Bills paid by card on the day they were
 charged, and never twice (decision 3).
+
+---
+
+## F21 — A savings fund's months remaining and monthly contribution
+
+**Decided 2026-09-23. Engineering default: copies the workbook, except
+where D15 and D22 depart from it and D16 (owner chose) supplies the
+current amount.**
+
+```
+Savings!B9   =SUM(B7-B5)                                        [1867]
+Savings!V14  =IF(OR(ISBLANK(N14),ISBLANK(R14)),"",DATEDIF(N14,R14,"M"))   [21]
+Savings!Z14  =IFERROR((F14-J14)/V14, 0)                         [88.9047619]
+             F14 = B7 (goal), J14 = B5 (current amount), N14 2024-01-08, R14 2025-10-08
+```
+
+**Chosen.**
+
+- **Amount needed** is the goal less the current amount, with no floor, as
+  B9 has none: a fund past its goal shows how far past it is, with its
+  minus sign (D8). The screen says the goal is reached beside it.
+- **Months remaining** is `DATEDIF(start, goal, "M")`: whole calendar
+  months from the start date to the goal date, one fewer when the goal
+  date's day of the month is before the start date's (2024-01-31 to
+  2024-02-29 is 0). It is measured from the typed Start Date, not from
+  today, as V14 is, so it does not count down as time passes.
+- **Monthly contribution** is the amount needed over the months remaining,
+  rounded up to the cent (F9). The current amount in it is the fund's
+  balance on the day it is read (D16), where Workbook's J14 is whatever was
+  last typed in B5.
+- **No dates** gives no months and no contribution (D15). **A goal date
+  before the start date, or in the start date's own month**, gives no
+  contribution (D22); the months are shown as 0 in the second case, as V14
+  shows them, and not at all in the first, where V14 shows `#NUM!`.
+
+**What the owner would see.** Workbook's figure, to the cent. Because the
+months are counted from the start date, the monthly figure goes down as the
+fund fills, not up as the goal date nears; that is also what Workbook does
+each time its current amount is retyped (NOTICED N54).

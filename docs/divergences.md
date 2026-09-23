@@ -459,6 +459,15 @@ every time, as Workbook and the app do today.
 **Why.** A balance that has to be retyped goes stale, and the transfers are
 already recorded for the Month's Savings block.
 
+**How it is kept** (engineering defaults under the owner's choice, S16).
+The typed amount is true at the end of the day it was typed (0013's
+`balance_as_of`). Every ledger row in the fund's Savings-list category
+dated after that day, up to the day the balance is read, moves it: money
+into savings (a negative ledger row, D3) adds, money taken back out
+subtracts. Retyping the amount sets that day again, so nothing is counted
+twice. A category moved off the Savings list fills no fund (N52), and a
+goal not yet linked to a fund keeps its typed amount, as before.
+
 ---
 
 ## D17 — A month with no starting balance has no ending balance
@@ -584,3 +593,51 @@ monthly payday does the same, as the Paycheck view's pay periods already do
 
 **Why.** The same as D6: rent due on the 31st is still due in April, and the
 Month counts it there, so the calendar must show it somewhere.
+
+---
+
+## D22 — A savings fund whose dates leave no whole month says so instead of $0
+
+**Date:** 2026-09-23
+**Sheet / cells:** Savings!V14 `=IF(…, DATEDIF(N14,R14,"M"))` and Z14
+`=IFERROR((F14-J14)/V14, 0)`; formula decision F21
+**Settled:** engineering default, as D15. It was not put to the owner.
+
+**Workbook behaviour.** A goal date in the start date's own month makes V14
+0 and the division fail; a goal date before the start date makes V14
+`#NUM!`. Either way `IFERROR` shows a monthly contribution of $0.
+
+**Chosen behaviour.** The engine returns no monthly contribution, and says
+why: the goal date is before the start date, or less than a whole month
+after it. Months remaining is 0 in the second case, as V14 shows, and
+missing in the first.
+
+**Why.** As D15: $0 a month reads as "nothing to save", when the whole
+amount is still needed. The CONSTRAINTS.md floor forbids a silent 0 on a
+money path.
+
+---
+
+## D23 — Home's savings-goals chart draws what is saved against the goal
+
+**Date:** 2026-09-23
+**Sheet / cells:** Home chart5 (anchor O4), a percent-stacked column of
+Hidden!J77:J83 (`=Savings!F14`, the goal: 2000, 20000) and K77:K83
+(`=SUM(Savings!F14-Savings!J14)`, the amount needed: 1867, 16000); its
+heading image's legend reads "Goal Amount" and "Current Balance"
+**Settled:** stated to the owner, no objection (plan decision 9, Workbook's
+mistakes fixed)
+
+**Workbook behaviour.** Each column stacks the goal on the amount still
+needed and scales them to 100%, so the goal's part is goal ÷ (goal + amount
+needed). A fund with nothing saved fills half its column (2000 ÷ 4000); the
+Emergency Fund's $133 of $2,000 fills 51.7%.
+
+**Chosen behaviour.** Each fund is a bar: what is saved (#EBD15C) over a
+track as long as its goal (#FEEA8D), the saved part in basis points of the
+goal from packages/core, so an empty fund draws nothing and a full one the
+whole track. Each fund is on its own scale, as each of Workbook's columns is.
+
+**Why.** The legend says the chart shows the current balance against the
+goal; the series it plots cannot show that, since half a column is drawn
+for a fund with nothing in it.

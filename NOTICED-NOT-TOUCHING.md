@@ -1317,3 +1317,26 @@ schedule only, as Workbook; B — link a debt to a Debts-list category and let
 recorded payments replace the schedule's; C — link it only to show recorded
 payments beside the schedule. B or C needs a migration adding a nullable
 `category_id` (no backfill); A needs nothing.
+
+---
+
+## N54 — A fund's monthly figure falls as it fills, not as its date nears
+
+**Seen:** 2026-09-23, writing formula decision F21 (S16).
+
+Workbook counts a fund's months from its typed Start Date to its Goal Date
+(Savings!V14), not from today, and divides what is still needed by that
+fixed count (Z14). With the balance now kept by transfers (D16), each
+transfer lowers the monthly figure: a fund needing $1,867 over 21 months
+asks $88.91 a month, and after ten months of that it asks about $47, though
+only 11 months are left. Workbook does the same each time its current amount
+is retyped. The app copies it (F21).
+
+**Why not fixed here:** the formula is not ambiguous, and counting from
+today instead would be a divergence the owner has not chosen.
+
+**To settle:** tell the owner, and ask: A — keep Workbook's (months from the
+start date); B — months from today to the goal date, so the figure is what
+the rest of the goal needs each remaining month; C — keep the start date,
+but divide what was needed on the start date. B or C is a D-entry and a
+change to `savingsFundPlan` only.
