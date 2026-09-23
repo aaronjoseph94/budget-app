@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { isoDate, monthBounds, paycheckSheet, payPeriod, shiftPayPeriod, type PaycheckSheet, type PaySchedule } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { latestStatementEnd, listBudgetHistory, listPlanHistory, listTransactions } from '../ledger.js'
 import type { BudgetRow, Category, LedgerRow, PayScheduleRow, PlanRow } from '../ledger.js'
 import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
-import { formatCents, formatDateRange, formatIsoDate, formatMagnitude, todayIso } from '../format.js'
+import { formatCents, formatDateRange, formatIsoDate, formatMagnitude, formatMonthTitle, todayIso } from '../format.js'
 import { navigate } from '../nav.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
@@ -13,6 +13,13 @@ import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
 import { Block } from './MonthScreen.js'
 import { FREQUENCY_WORD } from './SetupPay.js'
+
+/** In words, how a monthly amount is shared across this pay (F15). */
+const SHARE: Readonly<Record<PaySchedule['frequency'], string>> = {
+  weekly: 'You are paid weekly, so each shows 12 months over 52 paydays: a week’s share.',
+  biweekly: 'You are paid every two weeks, so each shows 12 months over 26 paydays: two weeks’ share.',
+  monthly: 'You are paid monthly, so each shows its whole monthly amount.',
+}
 
 /**
  * One pay period of Workbook's Paycheck Budget (S15b): the Month's blocks over
@@ -28,11 +35,14 @@ export function PaycheckPeriod({
   day,
   source,
   row,
+  chooser,
 }: {
   day: string | null
   /** The income source whose schedule this is. */
   source: Category
   row: PayScheduleRow
+  /** Which source drives the period, when there is a choice; shown above how it is counted. */
+  chooser?: ReactNode
 }) {
   const { supabase, categories, version } = useAppData()
   const { first_pay_date: first, frequency } = row
@@ -117,6 +127,19 @@ export function PaycheckPeriod({
           </p>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <Summary sheet={sheet} />
+            {/* Where Workbook's chart well stands (I3:M18): the owner was told a
+              share is about $738 of $1,600 rent, and this says how it is found. */}
+            <section
+              aria-label="How this period is counted"
+              className="order-7 space-y-3 rounded-xl border bg-card p-4 text-sm shadow-sm md:col-span-2 xl:order-1 xl:col-span-1"
+            >
+              {chooser}
+              <p>
+                Bills with no charge yet in this period, and budgets and goals, are {formatMonthTitle(sheet.month)}’s.{' '}
+                {SHARE[schedule.frequency]} Charges count as they are.
+              </p>
+              <p className="text-muted-foreground">Budgets and goals are typed on the Month.</p>
+            </section>
             <Block kind="variable" block={sheet.blocks.variable} className="order-1 xl:order-7" />
             <Block kind="bill" block={sheet.blocks.bill} className="order-2 xl:order-4" />
             <Block kind="subscription" block={sheet.blocks.subscription} className="order-3 xl:order-6" />

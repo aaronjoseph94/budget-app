@@ -69,6 +69,9 @@ describe('PaycheckPeriod', () => {
 
     expect(screen.getByRole('heading', { name: 'This pay period' })).toBeTruthy()
     expect(screen.getByText('11 – 24 Sep · Day job, paid bi-weekly')).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'How this period is counted' }).textContent).toBe(
+      'Bills with no charge yet in this period, and budgets and goals, are September 2026’s. You are paid every two weeks, so each shows 12 months over 26 paydays: two weeks’ share. Charges count as they are.Budgets and goals are typed on the Month.',
+    )
     expect(screen.getByText('$500.00').closest('p')?.textContent).toBe(
       'Paid to your card: $500.00 — not counted. What it paid for is already in the blocks above.',
     )
@@ -86,6 +89,22 @@ describe('PaycheckPeriod', () => {
     expect(window.location.hash).toBe('#/paycheck/2026-10-09')
     fireEvent.click(screen.getByRole('button', { name: 'Previous pay period' }))
     expect(window.location.hash).toBe('#/paycheck/2026-09-11')
+  })
+
+  it('shows the whole monthly amount to someone paid monthly, and a week’s share to someone paid weekly', async () => {
+    show(seeded(), null, { ...BIWEEKLY, first_pay_date: '2026-01-15', frequency: 'monthly' })
+    expect(await cells('Bills', 'Rent')).toEqual(['', '1,600.00planned', ''])
+    // 15 September to 14 October: the 12th's 45.00 is in the period before.
+    expect(await cells('Variable expenses', 'Groceries')).toEqual(['600.00', '20.00', '580.00'])
+    expect(screen.getByText('15 Sep – 14 Oct · Day job, paid monthly')).toBeTruthy()
+    expect(screen.getByText(/You are paid monthly, so each shows its whole monthly amount\./)).toBeTruthy()
+    cleanup()
+
+    // Weekly from Friday 18 September: 1600.00 × 12 ÷ 52 = 369.23; 600.00 → 138.46.
+    show(seeded(), null, { ...BIWEEKLY, first_pay_date: '2026-09-18', frequency: 'weekly' })
+    expect(await cells('Bills', 'Rent')).toEqual(['', '369.23planned', ''])
+    expect(await cells('Variable expenses', 'Groceries')).toEqual(['138.46', '', '138.46'])
+    expect(screen.getByText(/12 months over 52 paydays: a week’s share\./)).toBeTruthy()
   })
 
   it('says which pay period cannot be shown when its monthly amounts cannot be read', async () => {
