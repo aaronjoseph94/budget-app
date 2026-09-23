@@ -652,6 +652,106 @@ end $$;
 
 reset role;
 
+-- ---------------------------------------------------------------------------
+-- 0008: budgets and goals typed on a month
+-- ---------------------------------------------------------------------------
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+
+do $$
+declare
+  u       uuid := '11111111-1111-4111-8111-111111111111';
+  coffee  uuid := 'cccccccc-0000-4000-8000-000000000001';
+  theirs  uuid := 'cccccccc-0000-4000-8000-000000000201';
+  gone    uuid;
+  n       int;
+begin
+  -- The browser writes budgets itself, as plain upserts under RLS. Typing over
+  -- a month's "from this month on" replaces it; "just this month" sits beside
+  -- it; a typed "no budget" is kept, as null.
+  insert into public.category_budgets (user_id, category_id, month, applies, budget_cents)
+    values (u, coffee, '2026-01-01', 'onward', 80000);
+  insert into public.category_budgets (user_id, category_id, month, applies, budget_cents)
+    values (u, coffee, '2026-01-01', 'onward', 75000)
+    on conflict (user_id, category_id, month, applies) do update set budget_cents = excluded.budget_cents;
+  insert into public.category_budgets (user_id, category_id, month, applies, budget_cents)
+    values (u, coffee, '2026-01-01', 'only', 0), (u, coffee, '2026-02-01', 'onward', null);
+  select count(*) into n from public.category_budgets where category_id = coffee;
+  if n <> 3 or (select budget_cents from public.category_budgets
+                 where category_id = coffee and month = '2026-01-01' and applies = 'onward') <> 75000 then
+    raise exception 'budget upserts left % rows, or did not replace the typed value', n;
+  end if;
+
+  -- A month is named by its first day only.
+  begin
+    insert into public.category_budgets (user_id, category_id, month, applies, budget_cents)
+      values (u, coffee, '2026-03-15', 'onward', 100);
+    raise exception 'NOT REFUSED: a budget month that is not the first of a month';
+  exception when check_violation then null;
+  end;
+
+  -- A budget is never negative.
+  begin
+    insert into public.category_budgets (user_id, category_id, month, applies, budget_cents)
+      values (u, coffee, '2026-03-01', 'onward', -1);
+    raise exception 'NOT REFUSED: a negative budget';
+  exception when check_violation then null;
+  end;
+
+  -- One value per meaning per month, so a month can never hold two answers.
+  begin
+    insert into public.category_budgets (user_id, category_id, month, applies, budget_cents)
+      values (u, coffee, '2026-01-01', 'only', 500);
+    raise exception 'NOT REFUSED: two "just this month" budgets for one month';
+  exception when unique_violation then null;
+  end;
+
+  -- It applies from this month on, or to this month only; nothing else.
+  begin
+    insert into public.category_budgets (user_id, category_id, month, applies, budget_cents)
+      values (u, coffee, '2026-03-01', 'sometimes', 100);
+    raise exception 'NOT REFUSED: a budget that applies neither onward nor only';
+  exception when invalid_text_representation then null;
+  end;
+
+  -- The composite key: a budget under the owner's id cannot name another
+  -- user's category, even though RLS would let the row itself be written.
+  begin
+    insert into public.category_budgets (user_id, category_id, month, applies, budget_cents)
+      values (u, theirs, '2026-01-01', 'onward', 100);
+    raise exception 'NOT REFUSED: a budget on another user''s category';
+  exception when foreign_key_violation then null;
+  end;
+
+  -- Nor can the owner write a row under someone else's id.
+  begin
+    insert into public.category_budgets (user_id, category_id, month, applies, budget_cents)
+      values ('22222222-2222-4222-8222-222222222222', theirs, '2026-01-01', 'onward', 100);
+    raise exception 'RLS: a budget was written under another user''s id';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- A removed category takes its budgets with it.
+  insert into public.categories (user_id, name, kind) values (u, 'Gone Soon', 'variable')
+    returning id into gone;
+  insert into public.category_budgets (user_id, category_id, month, applies, budget_cents)
+    values (u, gone, '2026-01-01', 'onward', 100);
+  delete from public.categories where id = gone;
+  if exists (select 1 from public.category_budgets where category_id = gone) then
+    raise exception 'a removed category left its budget behind';
+  end if;
+
+  -- Another user sees none of them.
+  perform set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',false);
+  select count(*) into n from public.category_budgets;
+  if n <> 0 then raise exception 'RLS LEAK: another user saw % budgets', n; end if;
+  perform set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+
+  raise notice 'a budget is typed per month and meaning, never negative, and only on the owner''s own category';
+end $$;
+
+reset role;
+
 -- The anonymous role — anyone holding the published key — cannot call any of
 -- these at all.
 do $$
