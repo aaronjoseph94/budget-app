@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@budget/chart-specs": "workspace:*",
     "@budget/core": "workspace:*",
     "@budget/money-primitives": "workspace:*",
     "@budget/schema": "workspace:*",

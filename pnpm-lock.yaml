@@ -32,6 +32,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@budget/chart-specs':
+        specifier: workspace:*
+        version: link:../../packages/chart-specs
       '@budget/core':
         specifier: workspace:*
         version: link:../../packages/core

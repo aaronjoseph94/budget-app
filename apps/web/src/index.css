@@ -277,6 +277,37 @@
   font-variant-numeric: tabular-nums;
 }
 
+/*
+ * Charts from chart-specs (components/ui/chart.tsx). Each is drawn at a
+ * designed width and scaled to its card, text included. Its marks carry
+ * Workbook's colours as attributes, which an exported file keeps; these rules
+ * outrank them on the page, so a chart follows the block tokens above into
+ * dark mode. In light mode each token is the same colour as the attribute.
+ */
+.workbook-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.workbook-chart .chart-income-goal {
+  fill: var(--income-rule);
+}
+.workbook-chart .chart-income-actual {
+  fill: var(--income-accent);
+}
+.workbook-chart .chart-income-ink {
+  fill: var(--income-ink);
+}
+.workbook-chart .chart-variable-ink {
+  fill: var(--variable-ink);
+}
+.workbook-chart .chart-variable-track {
+  fill: var(--variable-header);
+}
+.workbook-chart .chart-surface-gap {
+  stroke: var(--card);
+}
+
 /* Room for the bottom tab bar and the iPhone home indicator beneath it. */
 .pb-safe {
   padding-bottom: calc(5rem + env(safe-area-inset-bottom));

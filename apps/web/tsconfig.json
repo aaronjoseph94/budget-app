@@ -14,6 +14,7 @@
     { "path": "../../packages/money-primitives" },
     { "path": "../../packages/schema" },
     { "path": "../../packages/statement-parsers" },
-    { "path": "../../packages/core" }
+    { "path": "../../packages/core" },
+    { "path": "../../packages/chart-specs" }
   ]
 }

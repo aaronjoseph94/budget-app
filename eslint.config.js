@@ -154,6 +154,27 @@ export default tseslint.config(
     },
   },
   {
+    // Text a person typed or a statement carried is never markup (CLAUDE.md).
+    // The one string the app may put into the page as markup is a chart from
+    // chart-specs, which escapes as it builds; components/ui/chart.tsx is the
+    // only place that does it, and nothing may pass a string off as one.
+    files: ['apps/web/src/**/*.{ts,tsx}'],
+    ignores: ['apps/web/src/components/ui/chart.tsx'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "JSXAttribute[name.name='dangerouslySetInnerHTML']",
+          message: 'Markup from a string only through SvgChart (components/ui/chart.tsx), and only from chart-specs.',
+        },
+        {
+          selector: "TSAsExpression[typeAnnotation.typeName.name='SvgMarkup']",
+          message: 'Only chart-specs makes SvgMarkup; a string cast to it would be injected unescaped.',
+        },
+      ],
+    },
+  },
+  {
     files: [
       'packages/core/test/**/*.ts',
       'packages/schema/test/**/*.ts',
