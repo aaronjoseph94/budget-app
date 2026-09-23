@@ -14,6 +14,7 @@ import {
 } from '../ledger.js'
 import { LIST_HEADING } from '../lists.js'
 import { navigate } from '../nav.js'
+import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
 import { formatAmount, formatCents, formatIsoDate, formatMagnitude, formatMonthTitle, todayIso } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
@@ -84,27 +85,11 @@ export function MonthScreen({ month }: { month: string | null }) {
     try {
       return monthSheet({
         asOf: start,
-        categories: categories.map((c) => ({ id: c.id, name: c.name, kind: c.kind, sortOrder: c.sort_order })),
-        // Everything typed up to this month; core picks the one in effect (D12).
-        budgetHistory: here.budgets.map((b) => ({
-          categoryId: b.category_id,
-          month: isoDate(b.month),
-          applies: b.applies,
-          budgetCents: b.budget_cents,
-        })),
-        // Every monthly amount typed up to this month; core picks the one in
-        // effect (D13), and counts it where no real charge replaces it (D5).
-        planHistory: here.plans.map((p) => ({
-          categoryId: p.category_id,
-          effectiveMonth: isoDate(p.effective_month),
-          plannedCents: p.planned_cents,
-          dueDay: p.due_day,
-        })),
-        entries: here.rows.map((r) => ({
-          postedOn: isoDate(r.posted_on),
-          amountCents: r.amount_cents,
-          categoryId: r.category_id,
-        })),
+        categories: categoriesForCore(categories),
+        // Everything typed up to this month; core picks what is in effect.
+        budgetHistory: budgetsForCore(here.budgets),
+        planHistory: plansForCore(here.plans),
+        entries: entriesForCore(here.rows),
         statementPeriodEnds: here.ends.map((e) => isoDate(e)),
         // This month's alone, or none: never last month's, and never $0 (D17).
         startingBalanceCents: here.balance,
