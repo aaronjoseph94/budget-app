@@ -8,6 +8,7 @@ import { CalendarScreen } from './screens/CalendarScreen.js'
 import { MonthScreen } from './screens/MonthScreen.js'
 import { MoreScreen } from './screens/MoreScreen.js'
 import { PaycheckScreen } from './screens/PaycheckScreen.js'
+import { SavingsScreen } from './screens/SavingsScreen.js'
 import { WeekScreen } from './screens/WeekScreen.js'
 import { ReviewScreen } from './screens/ReviewScreen.js'
 import { AddScreen } from './screens/AddScreen.js'
@@ -142,6 +143,7 @@ export function Shell() {
         {screen === 'ledger' ? <LedgerScreen /> : null}
         {screen === 'settings' ? <SettingsScreen /> : null}
         {screen === 'setup' ? <SetupScreen /> : null}
+        {screen === 'savings' ? <SavingsScreen /> : null}
         {screen === 'year' ? (
           <Suspense fallback={<p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>}>
             <YearScreen start={period} />

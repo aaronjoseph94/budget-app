@@ -27,6 +27,11 @@ describe('readAddress', () => {
     }
   })
 
+  it('reads Savings, which has no period', () => {
+    expect(readAddress('#/savings')).toEqual({ screen: 'savings', period: null })
+    expect(readAddress('#/savings/2026-09')).toEqual({ screen: HOME, period: null })
+  })
+
   it('reads a day of a pay period on Paycheck, and only a real one', () => {
     expect(readAddress('#/paycheck/2026-09-11')).toEqual({ screen: 'paycheck', period: '2026-09-11' })
     expect(readAddress('#/paycheck')).toEqual({ screen: 'paycheck', period: null })
