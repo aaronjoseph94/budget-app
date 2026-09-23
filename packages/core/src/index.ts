@@ -44,6 +44,14 @@ export {
 } from './budgets.js'
 
 export {
+  resolvePlans,
+  type PlanHistoryRow,
+  type ResolvePlansInput,
+  type ResolvePlansOutput,
+  type ResolvedPlan,
+} from './plans.js'
+
+export {
   monthSheet,
   periodSheet,
   type MonthSheetInput,
