@@ -800,3 +800,27 @@ as N33's.
 **To settle:** if it is ever seen, add a `set_category_plan` function that
 upserts this month's row taking the unchanged column from the row in
 effect, in one statement, and call it from `setPlan`.
+
+---
+
+## N35 — The Month can say a category "did not load" for a moment on opening
+
+**Seen:** 2026-09-23, reviewing S9 (the same fault, fixed in Setup).
+
+The Month reads its charges and budgets as soon as it opens, while the
+app's own first load, which brings the categories, may still be on its
+way. If the month's rows arrive first, `monthSheet` is given charges whose
+categories it was not given, refuses them, and the Month shows "Could not
+show this month: A charge or a budget this month names a category that did
+not load" until the categories arrive and it redraws. Seen in a test that
+holds the categories back on the first load. The Month opens first
+(decision 1), so a slow first load can show this red box on launch.
+Nothing is wrong with the data.
+
+**Why not fixed here:** S9 is Setup. Setup had the same fault in its new
+monthly amounts, and waits now for the app's first load (`version` above
+0) before reading them; the Month's read is S5b's and S8's.
+
+**To settle:** have the Month's read wait for the app's first load, as
+Setup's starter button and monthly amounts do, with a test that holds the
+categories back and checks no alert appears meanwhile.
