@@ -1,0 +1,32 @@
+{
+  "$provenance": {
+    "sourceWorkbook": "Ultimate Annual Budget (\"Workbook\"), the owner's copy, Google Sheets export (not committed)",
+    "sourceSheet": "Savings",
+    "cells": {"expected": "Savings!B9, F9, V14, Z14", "departures": "Savings!Z15", "funds": "Savings!B5, B7 (card 1), F5, F7 (card 2); F14 =SUM(B7), J14 =SUM(B5), F15 =SUM(F7), J15 =SUM(F5)", "dates": "Savings!N14, R14; N15 and R15 are blank"},
+    "extractedOn": "2026-09-23",
+    "note": "Workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S16, workbook-savings: the first two fund cards and their rows of \"How To Reach These Goals\"."
+  },
+  "$semantics": {
+    "amountNeeded": "B9 =SUM(B7-B5) and F9 =SUM(F7-F5): the goal less the current amount, with no floor (F21).",
+    "monthsRemaining": "V14 =IF(OR(ISBLANK(N14),ISBLANK(R14)),\"\",DATEDIF(N14,R14,\"M\")): whole months from the typed start date to the goal date, not from today, so it is date-independent (F21).",
+    "monthlyContribution": "Z14 =IFERROR((F14-J14)/V14, 0) caches 88.9047619, i.e. 186700 / 21 = 8890.476… cents. F9 rounds up to the cent: 8891.",
+    "currentAmount": "J14 and J15 read the typed Current Amount (B5, F5). In the app the current amount is the fund's balance (D16); here it is given directly, as typed, with no transfers.",
+    "departures": "Z15: Travel Fund has no dates, so V15 is \"\" and IFERROR shows 0. The app returns no contribution and says no dates yet (D15). The cached 0 is kept only to show the departure; it is never asserted as expected.",
+    "merchants": "The engine takes no merchant text. Fund names come from START HERE!H7:H8 via Savings!C4, G4."
+  },
+  "input": {
+    "funds": [
+      {"fund": "Emergency Fund", "goalCents": 200000, "currentCents": 13300, "startDate": "2024-01-08", "goalDate": "2025-10-08", "from": "Savings!B7, B5, N14, R14"},
+      {"fund": "Travel Fund", "goalCents": 2000000, "currentCents": 400000, "startDate": null, "goalDate": null, "from": "Savings!F7, F5, N15, R15"}
+    ]
+  },
+  "expected": [
+    {"fund": "Emergency Fund", "cell": "Savings!B9", "field": "amountNeededCents", "value": 186700},
+    {"fund": "Travel Fund", "cell": "Savings!F9", "field": "amountNeededCents", "value": 1600000},
+    {"fund": "Emergency Fund", "cell": "Savings!V14", "field": "monthsRemaining", "value": 21},
+    {"fund": "Emergency Fund", "cell": "Savings!Z14", "field": "monthlyContributionCents", "value": 8891, "cached": 88.9047619}
+  ],
+  "departures": [
+    {"fund": "Travel Fund", "cell": "Savings!Z15", "field": "monthlyContributionCents", "cachedCents": 0, "divergence": "D15"}
+  ]
+}
