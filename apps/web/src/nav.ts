@@ -12,7 +12,7 @@
  */
 import { useMemo, useSyncExternalStore } from 'react'
 
-export const SCREENS = ['month', 'week', 'review', 'add', 'more', 'ledger', 'settings', 'setup'] as const
+export const SCREENS = ['month', 'week', 'review', 'add', 'more', 'ledger', 'settings', 'setup', 'year'] as const
 export type Screen = (typeof SCREENS)[number]
 
 /** What a bare or unreadable address opens: Month first (plan §9a, decision 1). */
@@ -20,7 +20,11 @@ export const HOME: Screen = 'month'
 
 export interface Address {
   readonly screen: Screen
-  /** `YYYY-MM` on the Month screen; null for this month, and on every other screen. */
+  /**
+   * `YYYY-MM`: the month on the Month screen, the start month on the Year
+   * (`#/year/2026-01`, F14). Null for the screen's own default, and on
+   * every other screen.
+   */
   readonly month: string | null
 }
 
@@ -37,7 +41,7 @@ export function readAddress(hash: string): Address {
   const screen = SCREENS.find((s) => s === name)
   if (screen === undefined || rest.length > 0) return DEFAULT
   if (period === undefined) return { screen, month: null }
-  return screen === 'month' && MONTH.test(period) ? { screen, month: period } : DEFAULT
+  return (screen === 'month' || screen === 'year') && MONTH.test(period) ? { screen, month: period } : DEFAULT
 }
 
 export function hashOf(address: Address): string {
@@ -60,7 +64,7 @@ export function useScreen(): Screen {
   return useAddress().screen
 }
 
-/** Go to a screen; `month` (`YYYY-MM`) only for the Month screen. */
+/** Go to a screen; `month` (`YYYY-MM`) only for the Month and Year screens. */
 export function navigate(screen: Screen, month: string | null = null): void {
   const hash = hashOf({ screen, month })
   if (window.location.hash !== hash) window.location.hash = hash.slice(1)

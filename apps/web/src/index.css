@@ -115,6 +115,10 @@
   --setup-band-ink: #f3f9fa;
   --setup-canvas: #f3f3f3;
   --setup-label: #2b5d6a;
+
+  /* Annual Budget: its #456464 header band, whose title ink is #FFFBE8. */
+  --year-header: #456464;
+  --year-header-ink: #fffbe8;
 }
 
 /*
@@ -182,6 +186,9 @@
     --setup-band-ink: #f3f9fa;
     --setup-canvas: #11100e;
     --setup-label: #b8d8e0;
+
+    --year-header: #253b3b;
+    --year-header-ink: #fffbe8;
   }
 }
 
@@ -249,6 +256,8 @@
   --color-setup-band-ink: var(--setup-band-ink);
   --color-setup-canvas: var(--setup-canvas);
   --color-setup-label: var(--setup-label);
+  --color-year-header: var(--year-header);
+  --color-year-header-ink: var(--year-header-ink);
 }
 
 @layer base {

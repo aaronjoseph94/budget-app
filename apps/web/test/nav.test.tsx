@@ -13,6 +13,12 @@ describe('readAddress', () => {
     expect(readAddress('#/ledger')).toEqual({ screen: 'ledger', month: null })
   })
 
+  it('reads the Year and its start month', () => {
+    expect(readAddress('#/year/2026-01')).toEqual({ screen: 'year', month: '2026-01' })
+    expect(readAddress('#/year')).toEqual({ screen: 'year', month: null })
+    expect(readAddress('#/year/2026-13')).toEqual({ screen: HOME, month: null })
+  })
+
   it('opens the home screen when there is no address', () => {
     expect(readAddress('')).toEqual({ screen: HOME, month: null })
     expect(readAddress('#/')).toEqual({ screen: HOME, month: null })
@@ -36,7 +42,7 @@ describe('readAddress', () => {
   })
 
   it('writes back what it reads', () => {
-    for (const hash of ['#/month/2026-09', '#/month', '#/settings']) expect(hashOf(readAddress(hash))).toBe(hash)
+    for (const hash of ['#/month/2026-09', '#/month', '#/settings', '#/year/2025-04']) expect(hashOf(readAddress(hash))).toBe(hash)
   })
 })
 

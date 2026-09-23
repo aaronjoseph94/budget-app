@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { Suspense, lazy, useMemo } from 'react'
 import { readEnv } from './env.js'
 import { createSupabase } from './supabase.js'
 import { NotConfigured, SignIn, useSession } from './auth.js'
@@ -16,6 +16,10 @@ import { displayNameOf } from './profile.js'
 import { Alert } from './components/ui/feedback.js'
 import { Icon, type IconName } from './components/ui/icons.js'
 import { cn } from './lib/cn.js'
+
+// Its own chunk, fetched the first time the Year opens: Month opens first
+// (decision 1) and should not wait for twelve months' tables and charts.
+const YearScreen = lazy(() => import('./screens/YearScreen.js').then((m) => ({ default: m.YearScreen })))
 
 export function App() {
   const env = useMemo(() => readEnv(), [])
@@ -53,10 +57,11 @@ const PHONE_TABS: readonly Tab[] = [
   { screen: 'more', label: 'More', icon: 'menu' },
 ]
 
-/** Wide screens have room for Setup on the bar itself. Year joins at S14. */
+/** Wide screens have room for Year and Setup on the bar itself (§6.1). */
 const DESKTOP_TABS: readonly Tab[] = [
   { screen: 'month', label: 'Month', icon: 'calendar' },
   { screen: 'week', label: 'Week', icon: 'week' },
+  { screen: 'year', label: 'Year', icon: 'calendar' },
   { screen: 'review', label: 'Review', icon: 'inbox' },
   { screen: 'add', label: 'Add', icon: 'plus' },
   { screen: 'setup', label: 'Setup', icon: 'list' },
@@ -77,8 +82,8 @@ function tabOf(screen: Screen, tabs: readonly Tab[]): Screen {
 export function Shell() {
   const { screen, month } = useAddress()
   const { pendingTotal, loadError } = useAppData()
-  // Month widens on a desktop to take Workbook's four columns (plan §6.3).
-  const width = screen === 'month' ? 'max-w-3xl lg:max-w-7xl' : 'max-w-3xl'
+  // Month and Year widen on a desktop to take Workbook's four columns (§6.3, §6.4).
+  const width = screen === 'month' || screen === 'year' ? 'max-w-3xl lg:max-w-7xl' : 'max-w-3xl'
 
   return (
     <div className="min-h-full">
@@ -126,6 +131,11 @@ export function Shell() {
         {screen === 'ledger' ? <LedgerScreen /> : null}
         {screen === 'settings' ? <SettingsScreen /> : null}
         {screen === 'setup' ? <SetupScreen /> : null}
+        {screen === 'year' ? (
+          <Suspense fallback={<p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>}>
+            <YearScreen start={month} />
+          </Suspense>
+        ) : null}
       </main>
 
       {/* Phones: a bottom tab bar within thumb reach, clear of the home indicator. */}

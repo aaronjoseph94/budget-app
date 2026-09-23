@@ -2,10 +2,11 @@ import { navigate, type Screen } from '../nav.js'
 import { Icon, type IconName } from '../components/ui/icons.js'
 
 /**
- * What the phone's bottom bar has no room for (plan §6.1). Year, Savings and
- * Debts join this list as they are built.
+ * What the phone's bottom bar has no room for (plan §6.1). Savings and Debts
+ * join this list as they are built.
  */
 const ITEMS: readonly { screen: Screen; label: string; hint: string; icon: IconName }[] = [
+  { screen: 'year', label: 'Year', hint: 'Twelve months at a glance, from any month', icon: 'calendar' },
   { screen: 'setup', label: 'Setup', hint: "Your name, and Workbook's lists", icon: 'list' },
   { screen: 'ledger', label: 'All transactions', hint: 'Every approved charge and payment', icon: 'file' },
   { screen: 'settings', label: 'Settings', hint: 'Weekly budgets, your goal, signing out', icon: 'settings' },

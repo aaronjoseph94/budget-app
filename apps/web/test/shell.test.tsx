@@ -55,19 +55,34 @@ describe('Shell', () => {
     expect(window.location.hash).toBe('#/month/2026-01')
   })
 
-  it('keeps Setup, All transactions and Settings under More, and lights More while they show', async () => {
+  it('keeps Year, Setup, All transactions and Settings under More, and lights More while they show', async () => {
     renderScreen(<Shell />, createFakeSupabase())
     fireEvent.click(within(phoneBar()).getByRole('button', { name: 'More' }))
     expect(window.location.hash).toBe('#/more')
     go('/more')
 
     const items = (await screen.findAllByRole('listitem')).map((li) => li.querySelector('.font-medium')?.textContent)
-    expect(items).toEqual(['Setup', 'All transactions', 'Settings'])
+    expect(items).toEqual(['Year', 'Setup', 'All transactions', 'Settings'])
 
     fireEvent.click(screen.getByRole('button', { name: /All transactions/ }))
     expect(window.location.hash).toBe('#/ledger')
     go('/ledger')
     expect(within(phoneBar()).getByRole('button', { name: 'More' }).getAttribute('aria-current')).toBe('page')
+  })
+
+  it('opens the Year, fetched on first use, from More on a phone and from the bar on a desktop', async () => {
+    renderScreen(<Shell />, createFakeSupabase())
+    go('/more')
+    fireEvent.click(within(await screen.findByRole('list')).getByRole('button', { name: /^Year/ }))
+    expect(window.location.hash).toBe('#/year')
+    go('/year')
+    expect(await screen.findByRole('heading', { name: 'Year' })).toBeTruthy()
+    expect(within(phoneBar()).getByRole('button', { name: 'More' }).getAttribute('aria-current')).toBe('page')
+    const desktopBar = screen.getAllByRole('navigation', { name: 'Screens' })[0]!
+    expect(within(desktopBar).getAllByRole('button').map((b) => b.textContent)).toEqual([
+      'Month', 'Week', 'Year', 'Review', 'Add', 'Setup', 'More',
+    ])
+    expect(within(desktopBar).getByRole('button', { name: 'Year' }).getAttribute('aria-current')).toBe('page')
   })
 
   it('shows the review count on the Review tab', async () => {
