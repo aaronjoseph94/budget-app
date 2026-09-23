@@ -19,6 +19,7 @@ import type {
   LedgerRow,
   MonthBalanceRow,
   NamedRow,
+  PayScheduleRow,
   PendingCandidate,
   PlanRow,
   UnreadableBatch,
@@ -45,6 +46,8 @@ export interface FakeTables {
   category_plans: (PlanRow & { readonly user_id?: string })[]
   /** Starting balances as typed (0010); `user_id` as the app writes it. */
   month_balances: (MonthBalanceRow & { readonly user_id?: string })[]
+  /** Pay schedules as typed (0011); `user_id` as the app writes it. */
+  pay_schedules: (PayScheduleRow & { readonly user_id?: string })[]
 }
 
 export interface RpcCall {
@@ -104,6 +107,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     category_budgets: [],
     category_plans: [],
     month_balances: [],
+    pay_schedules: [],
     ...seed,
   }
   const rpcCalls: RpcCall[] = []
@@ -236,6 +240,12 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
           if (row.starting_balance_cents === null || row.starting_balance_cents === undefined) return pgError('23502')
           if (!String(row.month).endsWith('-01')) return pgError('23514')
         }
+        // What 0011 refuses: its trigger (a list other than Income), then the key to the category.
+        if (target === 'pay_schedules') {
+          const kind = tables.categories.find((c) => c.id === row.category_id)?.kind
+          if (kind !== undefined && kind !== 'income') return pgError('23514')
+          if (kind === undefined) return pgError('23503', 409)
+        }
         added.push(row)
       }
       // Nothing is written until every row has passed, as in one statement.
@@ -289,11 +299,12 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
         else if (method === 'PATCH') next.push({ ...r, ...body })
       }
       table.splice(0, table.length, ...next)
-      // A category takes its budgets and monthly amounts with it (0008, 0009: ON DELETE CASCADE).
+      // A category takes its budgets, monthly amounts and schedule with it (0008, 0009, 0011: ON DELETE CASCADE).
       if (method === 'DELETE' && target === 'categories') {
         const kept = (r: { category_id: string }) => tables.categories.some((c) => c.id === r.category_id)
         tables.category_budgets = tables.category_budgets.filter(kept)
         tables.category_plans = tables.category_plans.filter(kept)
+        tables.pay_schedules = tables.pay_schedules.filter(kept)
       }
       return new Response(null, { status: 204 })
     }

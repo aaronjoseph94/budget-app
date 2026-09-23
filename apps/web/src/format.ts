@@ -303,6 +303,47 @@ export function shownBy(reader: PlanAction): string {
   return reader === 'month' ? 'this month is' : reader === 'week' ? 'this week is' : 'they are'
 }
 
+/**
+ * Why pay schedules could not be read or saved (0011).
+ *
+ * As for monthly amounts: PGRST205, or 42P01 from an older PostgREST, is
+ * 0011 not pasted yet, so say where, and a read never says "nothing was
+ * saved" (N28). Setup ('read') still shows its lists without them; the
+ * Paycheck view ('paycheck') has no period to show. A save meets 0011's
+ * trigger, 23514, only for a category moved off Income on another device
+ * after Setup read it, since Setup offers a schedule on Income alone, and
+ * the key to the category, 23503, for one removed there.
+ */
+export type ScheduleAction = 'read' | 'paycheck' | 'save'
+const SCHEDULES_NOT_APPLIED = 'Pay schedules need a database update that has not been applied yet (0011 in the setup guide)'
+const SCHEDULE_FAILURES: Readonly<Record<ScheduleAction, Readonly<Record<string, string>>>> = {
+  read: {
+    PGRST205: `${SCHEDULES_NOT_APPLIED}, so when you are paid is not shown. Your lists still work.`,
+    '42P01': `${SCHEDULES_NOT_APPLIED}, so when you are paid is not shown. Your lists still work.`,
+    '': 'Could not reach the database to read when you are paid. Check your connection and try again.',
+  },
+  paycheck: {
+    PGRST205: `${SCHEDULES_NOT_APPLIED}, so no pay period can be shown.`,
+    '42P01': `${SCHEDULES_NOT_APPLIED}, so no pay period can be shown.`,
+    '': 'Could not reach the database to read when you are paid. Check your connection and try again.',
+    PGRST301: 'Your session expired. Sign in again to see this pay period.',
+  },
+  save: {
+    PGRST205: `${SCHEDULES_NOT_APPLIED}. Nothing was saved.`,
+    '42P01': `${SCHEDULES_NOT_APPLIED}. Nothing was saved.`,
+    '23514': 'Only an income source can have a payday. It may have been moved to another list on another device. Nothing was saved.',
+    '23503': 'That category is no longer there — it may have been removed on another device. Nothing was saved.',
+  },
+}
+
+export function describeScheduleFailure(action: ScheduleAction, error: WriteError | null | undefined): string {
+  const code = typeof error?.code === 'string' ? error.code : ''
+  const body = SCHEDULE_FAILURES[action][code]
+  if (body !== undefined) return code === '' ? body : `${body} (code ${code})`
+  if (action === 'save') return describeWriteFailure(error)
+  return `When you are paid could not be read, so ${action === 'read' ? 'it is' : 'this pay period is'} not shown. Try again. (code ${code})`
+}
+
 /** What the Month was doing with its starting balance when a request failed. */
 export type BalanceAction = 'read' | 'save'
 

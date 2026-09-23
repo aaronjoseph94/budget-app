@@ -20,10 +20,12 @@ import {
   describeBudgetFailure,
   describeMoveFailure,
   describePlanFailure,
+  describeScheduleFailure,
   describeSetupFailure,
   describeWriteFailure,
   shownBy,
   type PlanAction,
+  type ScheduleAction,
   type WriteError,
 } from './format.js'
 import { LIST_HEADING, type CategoryKind } from './lists.js'
@@ -856,6 +858,69 @@ export async function setPlan(supabase: SupabaseClient, edit: PlanEdit): Promise
     { onConflict: 'user_id,category_id,effective_month' },
   )
   if (error !== null) throw new Error(describePlanFailure('save', error))
+}
+
+// ---------------------------------------------------------------------------
+// When each income source pays (migration 0011)
+// ---------------------------------------------------------------------------
+
+/** How often an income source pays, as 0011's enum spells it. */
+export type PayFrequency = 'weekly' | 'biweekly' | 'monthly'
+
+/** One income source's schedule as it was typed. Its periods are core's to work out (payPeriod). */
+export interface PayScheduleRow {
+  readonly id: string
+  readonly category_id: string
+  /** A payday the others are counted from. */
+  readonly first_pay_date: string
+  readonly frequency: PayFrequency
+}
+
+/**
+ * Every pay schedule, read whole: one per income source at most (0011's
+ * key), so a handful. `reader` words a failure for the screen asking.
+ */
+export async function listPaySchedules(
+  supabase: SupabaseClient,
+  reader: Exclude<ScheduleAction, 'save'>,
+): Promise<readonly PayScheduleRow[]> {
+  return readAll<PayScheduleRow>(
+    (from, to) =>
+      supabase
+        .from('pay_schedules')
+        .select('id, category_id, first_pay_date, frequency', { count: 'exact' })
+        .order('id', { ascending: true })
+        .range(from, to),
+    {
+      changed: `When you are paid changed while it was being read, so ${reader === 'read' ? 'it is' : 'this pay period is'} not shown. Try again.`,
+      describe: (error) => describeScheduleFailure(reader, error),
+    },
+  )
+}
+
+export interface ScheduleEdit {
+  readonly userId: string
+  readonly categoryId: string
+  readonly firstPayDate: string
+  readonly frequency: PayFrequency
+}
+
+/**
+ * Set when an income source pays. A plain upsert under RLS on 0011's key,
+ * so typing over a schedule replaces it and never adds a second.
+ */
+export async function setPaySchedule(supabase: SupabaseClient, edit: ScheduleEdit): Promise<void> {
+  const { error } = await supabase.from('pay_schedules').upsert(
+    { user_id: edit.userId, category_id: edit.categoryId, first_pay_date: edit.firstPayDate, frequency: edit.frequency },
+    { onConflict: 'user_id,category_id' },
+  )
+  if (error !== null) throw new Error(describeScheduleFailure('save', error))
+}
+
+/** Forget when an income source pays: 0011 stores no half schedule, so none is a missing row. */
+export async function removePaySchedule(supabase: SupabaseClient, categoryId: string): Promise<void> {
+  const { error } = await supabase.from('pay_schedules').delete().eq('category_id', categoryId)
+  if (error !== null) throw new Error(describeScheduleFailure('save', error))
 }
 
 // ---------------------------------------------------------------------------
