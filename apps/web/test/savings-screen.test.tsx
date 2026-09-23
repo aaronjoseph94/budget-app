@@ -98,6 +98,18 @@ describe('SavingsScreen', () => {
     expect(lines(await card('House'))).toEqual(['House', 'No goal yet.'])
   })
 
+  it('words money taken back out of a fund plainly, never as a negative amount moved in', async () => {
+    const fake = seeded()
+    // Hand-derived: $30.00 back out of Travel on the 21st, after its day (the 20th).
+    fake.tables.transactions.push(moved('t5', '2026-09-21', 3_000, 'travel'))
+    renderScreen(<SavingsScreen />, fake)
+    const travel = await card('Travel <b>fund</b>')
+    expect(lines(travel)).toContain(
+      '$1,000.00 typed on 20 Sep 2026; since then, more was taken out than moved in, a change of -$30.00.',
+    )
+    expect(travel.textContent).not.toMatch(/moved in since/)
+  })
+
   it('says when the Savings list is empty, and where to add to it', async () => {
     renderScreen(<SavingsScreen />, createFakeSupabase({ categories: [cat('food', 'Groceries', 'variable', 0)] }))
     expect(await screen.findByText('Your Savings list has no funds yet. Each fund on it gets a card here.')).toBeTruthy()

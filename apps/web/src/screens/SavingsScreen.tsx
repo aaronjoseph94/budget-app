@@ -170,7 +170,12 @@ function Kept({ figures, goal }: { figures: FundFigures; goal: FundRow }) {
       {goal.balance_as_of === null ? null : (
         <p>
           {formatCents(goal.saved_cents)} typed on {formatIsoDate(goal.balance_as_of)}
-          {figures.transfersCents === 0 ? ', nothing moved in since.' : `, and ${formatCents(figures.transfersCents)} moved in since.`}
+          {figures.transfersCents === 0
+            ? ', nothing moved in since.'
+            : figures.transfersCents > 0
+              ? `, and ${formatCents(figures.transfersCents)} moved in since.`
+              : // More taken back out than moved in: say so, rather than "-$10.00 moved in".
+                `; since then, more was taken out than moved in, a change of ${formatCents(figures.transfersCents)}.`}
         </p>
       )}
       {units !== null && units > 0 ? (
