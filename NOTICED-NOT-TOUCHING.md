@@ -549,7 +549,9 @@ that normalised merchant in a date range in one transaction.
 Not spending (`transfer`) has no block on the Month, only the footnote "Paid
 to your card: … — not counted", so a purchase filed there by mistake leaves
 every total and cannot be reached to move back. Setup can move the whole
-category, not one charge.
+category, not one charge. It also means Setup's "can't remove this
+category" message (N17), which says to tap the category's row on the Month,
+points at a row that does not exist when the category is on Not spending.
 
 **Why not fixed here:** S6 is about tapping a Month row, and the footnote is
 one sum over possibly several categories, so it needs its own design.
