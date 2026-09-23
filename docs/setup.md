@@ -22,19 +22,20 @@ returned." Running one twice is refused rather than applied twice.
 | `0008_category_budgets.sql` | The budgets and goals you type on a month, "from this month on" or "just this month". Needed by the Month as soon as this branch is merged |
 | `0009_category_plans.sql` | Each bill's, debt's and subscription's monthly amount and the day it is paid. Needed by Setup's Day paid and Monthly amount, and by the Month, which counts each bill's planned amount, as soon as this branch is merged. Once it runs, a category with a monthly amount stays on its list until you stop the amount (Stop, under it in Setup) |
 | `0010_month_balances.sql` | The bank balance you type for the start of each month. Needed by the Month, whose card shows it as Start and projects End of month from it, as soon as this branch is merged |
-| `0011_pay_schedules.sql` | When each income source pays: a payday, and weekly, every two weeks or monthly. Needed by Paycheck and the Bill Calendar, still to come |
+| `0011_pay_schedules.sql` | When each income source pays: a payday, and weekly, every two weeks or monthly. Needed by Setup's Paid and First payday on each Income row, and by Paycheck, as soon as this branch is merged; the Bill Calendar will read it too |
 | `0012_dismiss_unreadable_lines.sql` | Dismissing a statement line the app could not read. Needed by Review as soon as this branch is merged |
 
 **Paste them in number order, all of them, before `main-tnlcto` is merged
 into `main`.** `main` deploys itself, and the app on this branch already
-reads what `0008`, `0009`, `0010` and `0012` add. Without `0008`, the Month says "Budgets
+reads what `0008` to `0012` add. Without `0008`, the Month says "Budgets
 need a database update that has not been applied yet" and shows no month.
 Without `0009`, Setup says the same of monthly amounts and shows none, and
 your lists still work; the Month says it too, and shows no month. Without
 `0010`, the Month says starting balances need the update, and shows no
-month. Without `0012`, Review cannot list the lines an
-import could not read and shows a code in brackets instead. Screens built
-next read `0011`. A file can rely on the ones before it (`0008` and `0009`
+month. Without `0011`, Setup says pay schedules need the update and shows
+no Paid or First payday, and your lists still work; Paycheck says it too,
+and shows no pay period. Without `0012`, Review cannot list the lines an
+import could not read and shows a code in brackets instead. A file can rely on the ones before it (`0008` and `0009`
 point at a key `0005` adds, for example), so keep to the order.
 
 After `0012` runs, Review lists every unreadable line you have not dismissed,

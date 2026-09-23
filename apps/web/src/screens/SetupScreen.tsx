@@ -19,6 +19,7 @@ import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { navigate } from '../nav.js'
 import { PlanFields, PlanHeadings, TotalTile, useMonthlyAmounts, type MonthlyAmounts } from './SetupPlans.js'
+import { PayFields, PayHeadings, usePaySchedules, type PaySchedules } from './SetupPay.js'
 
 interface ListCard {
   readonly kind: CategoryKind
@@ -70,6 +71,7 @@ export function SetupScreen() {
   // sets one for every month.
   const month = monthBounds(isoDate(todayIso())).start
   const amounts = useMonthlyAmounts(month)
+  const schedules = usePaySchedules()
 
   return (
     <div className="-mx-4 bg-setup-canvas pb-6 md:mx-0 md:overflow-hidden md:rounded-xl">
@@ -82,6 +84,7 @@ export function SetupScreen() {
           <section key={section.label} className="space-y-2">
             <h2 className="text-xl font-medium text-setup-label">{section.label}</h2>
             {section.label === 'Recurring expenses' ? <AmountsProblem amounts={amounts} /> : null}
+            {section.label === 'Income' && schedules.status === 'failed' ? <Alert tone="error">{schedules.message}</Alert> : null}
             {section.cards.map((card) => (
               <ListCardView
                 key={card.kind}
@@ -89,6 +92,7 @@ export function SetupScreen() {
                 rows={lists.get(card.kind) ?? []}
                 month={month}
                 amounts={RECURRING.has(card.kind) ? amounts : null}
+                schedules={card.kind === 'income' ? schedules : null}
               />
             ))}
             {section.label === 'Recurring expenses' ? <FixedTotal amounts={amounts} month={month} /> : null}
@@ -262,6 +266,7 @@ function ListCardView({
   rows,
   month,
   amounts,
+  schedules,
 }: {
   card: ListCard
   rows: readonly Category[]
@@ -269,6 +274,8 @@ function ListCardView({
   month: string
   /** On Bills, Debts and Subscriptions only; null on the other lists. */
   amounts: MonthlyAmounts | null
+  /** On Income only; null on the other lists. */
+  schedules: PaySchedules | null
 }) {
   const { supabase, userId, categories, refresh } = useAppData()
   const heading = LIST_HEADING[card.kind]
@@ -277,6 +284,7 @@ function ListCardView({
   // What the last monthly amount saved on this card did.
   const [note, setNote] = useState<string | null>(null)
   const plans = amounts?.status === 'ready' ? amounts.plans : null
+  const paid = schedules?.status === 'ready' ? schedules.byCategory : null
   const totals = amounts?.status === 'ready' ? amounts.totals : null
   const total = CARD_TOTAL[card.kind]
 
@@ -319,12 +327,14 @@ function ListCardView({
       ) : (
         <>
           {plans !== null ? <PlanHeadings month={month} /> : null}
+          {paid !== null ? <PayHeadings /> : null}
           <ul className="mt-2 divide-y">
             {rows.map((row) => (
               <CategoryRow key={row.id} row={row} list={rows} write={write}>
                 {plans !== null ? (
                   <PlanFields row={row} plan={plans.get(row.id)} month={month} write={write} onSaved={setNote} />
                 ) : null}
+                {paid !== null ? <PayFields row={row} stored={paid.get(row.id)} write={write} onSaved={setNote} /> : null}
               </CategoryRow>
             ))}
           </ul>
