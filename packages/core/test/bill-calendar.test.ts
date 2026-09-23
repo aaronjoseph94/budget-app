@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { isoDate } from '@budget/money-primitives'
-import { billCalendar, type BillCalendar } from '../src/bill-calendar.js'
+import { billCalendar, type BillCalendar, type CalendarPaySchedule } from '../src/bill-calendar.js'
 import { monthSheet, type PeriodCategory } from '../src/period-sheet.js'
 import type { PlanHistoryRow } from '../src/plans.js'
 
@@ -11,7 +11,7 @@ import type { PlanHistoryRow } from '../src/plans.js'
  */
 
 /** A month with nothing in it, but its grid. */
-const bare = (month: string) => billCalendar({ month: isoDate(month), categories: [], planHistory: [], entries: [] })
+const bare = (month: string) => billCalendar({ month: isoDate(month), categories: [], planHistory: [], entries: [], paySchedules: [] })
 
 /** Each week as its seven day numbers, 0 for a blank place. */
 const grid = (calendar: BillCalendar) => calendar.weeks.map((w) => w.days.map((d) => (d === null ? 0 : d.day)))
@@ -38,7 +38,7 @@ describe('billCalendar, the grid', () => {
     const calendar = bare('2024-02-29')
     expect(calendar.month).toBe('2024-02-01')
     // 29 February 2024 is a Thursday, the leap day, in the fifth week.
-    expect(calendar.weeks[4]?.days[4]).toEqual({ date: '2024-02-29', day: 29, bills: [] })
+    expect(calendar.weeks[4]?.days[4]).toEqual({ date: '2024-02-29', day: 29, bills: [], paydays: [] })
     expect(calendar.weeks[4]?.days[5]).toBeNull()
   })
 })
@@ -73,6 +73,7 @@ describe('billCalendar, what is due', () => {
       month: isoDate('2026-04-01'),
       categories,
       planHistory,
+      paySchedules: [],
       // Streamly charged on the 11th, not its day paid, then refunded in part;
       // groceries and a card payment are on no day.
       entries: [entry('2026-04-11', -1799, 'stream'), entry('2026-04-20', 500, 'stream'), entry('2026-04-11', -6000, 'food'), entry('2026-04-02', 25000, 'card')],
@@ -90,7 +91,7 @@ describe('billCalendar, what is due', () => {
   })
 
   it('lists a monthly amount with no day paid apart, in no total, as a blank Bills!B7 is on no day', () => {
-    const calendar = billCalendar({ month: isoDate('2026-04-01'), categories, planHistory, entries: [] })
+    const calendar = billCalendar({ month: isoDate('2026-04-01'), categories, planHistory, entries: [], paySchedules: [] })
     expect(calendar.undated.map((b) => `${b.name} ${b.amountCents}`)).toEqual(['Gym 4500'])
     expect(calendar.totalCents).toBe(30000 + 1799 + 9000 + 160000)
   })
@@ -98,7 +99,7 @@ describe('billCalendar, what is due', () => {
   it('adds up to the Month’s Bills, Debts and Subscriptions when every amount has a day paid', () => {
     const dated = planHistory.filter((p) => p.dueDay !== null)
     const entries = [entry('2026-02-11', -1799, 'stream'), entry('2026-02-27', -30500, 'loan')]
-    const calendar = billCalendar({ month: isoDate('2026-02-01'), categories, planHistory: dated, entries })
+    const calendar = billCalendar({ month: isoDate('2026-02-01'), categories, planHistory: dated, entries, paySchedules: [] })
     const month = monthSheet({
       asOf: isoDate('2026-02-01'), categories, budgetHistory: [], planHistory: dated, entries, statementPeriodEnds: [], startingBalanceCents: null,
     })
@@ -110,7 +111,7 @@ describe('billCalendar, what is due', () => {
 
   it('holds every bill on a day, in list order, not Workbook’s five (D20)', () => {
     const many = Array.from({ length: 7 }, (_, i): PeriodCategory => ({ id: `b${i}`, name: `Bill ${i}`, kind: i < 3 ? 'subscription' : 'bill', sortOrder: 6 - i }))
-    const calendar = billCalendar({ month: isoDate('2026-03-01'), categories: many, planHistory: many.map((c) => plan(c.id, 100, 1)), entries: [] })
+    const calendar = billCalendar({ month: isoDate('2026-03-01'), categories: many, planHistory: many.map((c) => plan(c.id, 100, 1)), entries: [], paySchedules: [] })
     expect(calendar.weeks[0]?.days[0]?.bills.map((b) => b.name)).toEqual(['Bill 6', 'Bill 5', 'Bill 4', 'Bill 3', 'Bill 2', 'Bill 1', 'Bill 0'])
     // 1 March 2026 is a Sunday, the day Workbook's B9 typo emptied (D19).
     expect(calendar.weeks[0]?.totalCents).toBe(700)
@@ -118,14 +119,55 @@ describe('billCalendar, what is due', () => {
 
   it('uses the amount in effect that month (D13), shows none once stopped, and none on a category moved off the bill lists', () => {
     const history = [plan('rent', 160000, 1), plan('rent', 170000, 1, '2026-06-01'), plan('power', 9000, 15), plan('power', null, 15, '2026-06-01'), plan('food', 100, 3)]
-    expect(listed(billCalendar({ month: isoDate('2026-05-01'), categories, planHistory: history, entries: [] }))).toEqual(['1: Rent 160000 planned', '15: Power 9000 planned'])
-    expect(listed(billCalendar({ month: isoDate('2026-06-01'), categories, planHistory: history, entries: [] }))).toEqual(['1: Rent 170000 planned'])
+    expect(listed(billCalendar({ month: isoDate('2026-05-01'), categories, planHistory: history, entries: [], paySchedules: [] }))).toEqual(['1: Rent 160000 planned', '15: Power 9000 planned'])
+    expect(listed(billCalendar({ month: isoDate('2026-06-01'), categories, planHistory: history, entries: [], paySchedules: [] }))).toEqual(['1: Rent 170000 planned'])
   })
 
   it('refuses a charge or an amount naming a category it was not given, rather than leave it off every day', () => {
     const ask = (planHistory: PlanHistoryRow[], entries: ReturnType<typeof entry>[]) => () =>
-      billCalendar({ month: isoDate('2026-04-01'), categories, planHistory, entries })
+      billCalendar({ month: isoDate('2026-04-01'), categories, planHistory, entries, paySchedules: [] })
     expect(ask([plan('gone', 100, 1)], [])).toThrow(/category gone/)
     expect(ask([], [entry('2025-01-01', -100, 'gone')])).toThrow(/category gone/)
+  })
+})
+
+describe('billCalendar, paydays', () => {
+  const people: PeriodCategory[] = [
+    { id: 'job', name: 'Day job', kind: 'income', sortOrder: 1 },
+    { id: 'side', name: 'Side work', kind: 'income', sortOrder: 0 },
+    { id: 'fund', name: 'Flight fund', kind: 'savings', sortOrder: 0 },
+  ]
+  const paydays = (month: string, paySchedules: CalendarPaySchedule[]) =>
+    billCalendar({ month: isoDate(month), categories: people, planHistory: [], entries: [], paySchedules }).weeks.flatMap((w) =>
+      w.days.flatMap((d) => (d === null || d.paydays.length === 0 ? [] : [`${d.day}: ${d.paydays.map((p) => p.name).join(', ')}`])),
+    )
+  const pays = (categoryId: string, firstPayDate: string, frequency: CalendarPaySchedule['frequency']) => ({
+    categoryId, firstPayDate: isoDate(firstPayDate), frequency,
+  })
+
+  it('pays weekly and bi-weekly from the first pay date on, and never before it (C <= date)', () => {
+    expect(paydays('2026-09-01', [pays('job', '2026-09-11', 'biweekly')])).toEqual(['11: Day job', '25: Day job'])
+    expect(paydays('2026-09-01', [pays('job', '2026-08-28', 'weekly')])).toEqual(['4: Day job', '11: Day job', '18: Day job', '25: Day job'])
+    expect(paydays('2026-08-01', [pays('job', '2026-09-11', 'biweekly')])).toEqual([])
+  })
+
+  it('pays monthly on the first pay date’s day, on a short month’s last day, and back on the 31st after (D21)', () => {
+    const schedule = [pays('job', '2026-01-31', 'monthly')]
+    expect(paydays('2026-02-01', schedule)).toEqual(['28: Day job'])
+    expect(paydays('2026-03-01', schedule)).toEqual(['31: Day job'])
+    expect(paydays('2026-04-01', schedule)).toEqual(['30: Day job'])
+  })
+
+  it('names every source paid on a day, in Setup’s order, not Workbook’s first one (D20)', () => {
+    expect(paydays('2026-10-01', [pays('job', '2026-10-15', 'monthly'), pays('side', '2026-10-01', 'biweekly')])).toEqual([
+      '1: Side work',
+      '15: Side work, Day job',
+      '29: Side work',
+    ])
+  })
+
+  it('reads no schedule left on a category moved off Income (N27), and refuses one naming a category it was not given', () => {
+    expect(paydays('2026-09-01', [pays('fund', '2026-09-11', 'biweekly')])).toEqual([])
+    expect(() => paydays('2026-09-01', [pays('gone', '2026-09-11', 'biweekly')])).toThrow(/category gone/)
   })
 })
