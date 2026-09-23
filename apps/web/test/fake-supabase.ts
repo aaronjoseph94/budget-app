@@ -69,7 +69,8 @@ export interface FakeSupabase {
    * change the table between two pages of one read. `hold` is asked as each
    * table read is answered; a promise it returns delays the answer, which
    * still carries the rows as they were when the read was asked, so a test
-   * can make a read begun earlier arrive after one begun later.
+   * can make a read begun earlier arrive after one begun later. A write is
+   * asked as `POST <table>` once it is stored, so its answer can arrive late.
    */
   readonly server: {
     maxRows: number | null
@@ -199,6 +200,8 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
         if (kept === undefined) table.push(row)
         else table[at] = { ...kept, ...row, id: kept.id }
       }
+      const held = server.hold?.(`POST ${target}`)
+      if (held !== undefined && held !== null) await held
       return json(wantsObject ? added[0] : added, 201)
     }
 
