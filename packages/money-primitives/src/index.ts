@@ -100,6 +100,21 @@ export function daysBetween(from: IsoDate, to: IsoDate): number {
   return Math.round((utcMs(to) - utcMs(from)) / 86_400_000)
 }
 
+/**
+ * Whole calendar months from `from` to `to`, as Excel's `DATEDIF(from, to,
+ * "M")` counts them (Savings!V14): the difference in months, less one when
+ * `to`'s day of the month is before `from`'s. So 2024-01-31 to 2024-02-29
+ * is 0, and 2024-01-08 to 2025-10-08 is 21. DATEDIF gives `#NUM!` when `to`
+ * is before `from`; this throws, so a caller has to say what that means.
+ */
+export function monthsBetween(from: IsoDate, to: IsoDate): number {
+  if (to < from) throw new RangeError(`${to} is before ${from}; DATEDIF has no months for it`)
+  const [y1, m1, d1] = from.split('-').map(Number) as [number, number, number]
+  const [y2, m2, d2] = to.split('-').map(Number) as [number, number, number]
+  const months = (y2 - y1) * 12 + (m2 - m1)
+  return d2 < d1 ? months - 1 : months
+}
+
 /** Add whole days. */
 export function addDays(date: IsoDate, days: number): IsoDate {
   const d = new Date(utcMs(date) + days * 86_400_000)
