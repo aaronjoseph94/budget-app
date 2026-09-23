@@ -129,6 +129,24 @@ describe('billCalendar, what is due', () => {
     expect(ask([plan('gone', 100, 1)], [])).toThrow(/category gone/)
     expect(ask([], [entry('2025-01-01', -100, 'gone')])).toThrow(/category gone/)
   })
+
+  it('lets only a charge inside the month replace its monthly amount, and puts one outside it on no day (D5)', () => {
+    // Streamly charged on 31 March and the car loan paid early, on 1 May:
+    // April still shows both monthly amounts, and neither charge.
+    const entries = [entry('2026-03-31', -1799, 'stream'), entry('2026-05-01', -30000, 'loan')]
+    const calendar = billCalendar({ month: isoDate('2026-04-01'), categories, planHistory, entries, paySchedules: [] })
+    expect(listed(calendar)).toEqual(['1: Car loan 30000 planned', '9: Streamly 1799 planned', '15: Power 9000 planned', '30: Rent 160000 planned'])
+  })
+
+  it('stacks a day as Workbook does, Bills then Debts then Subscriptions, whatever their places in Setup', () => {
+    const lists: PeriodCategory[] = [
+      { id: 's', name: 'Alpha sub', kind: 'subscription', sortOrder: 0 },
+      { id: 'd', name: 'Mid debt', kind: 'debt', sortOrder: 0 },
+      { id: 'b', name: 'Zed bill', kind: 'bill', sortOrder: 5 },
+    ]
+    const calendar = billCalendar({ month: isoDate('2026-03-01'), categories: lists, planHistory: lists.map((c) => plan(c.id, 100, 1)), entries: [], paySchedules: [] })
+    expect(calendar.weeks[0]?.days[0]?.bills.map((b) => b.name)).toEqual(['Zed bill', 'Mid debt', 'Alpha sub'])
+  })
 })
 
 describe('billCalendar, paydays', () => {
