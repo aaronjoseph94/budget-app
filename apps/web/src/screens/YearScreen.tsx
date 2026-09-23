@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { isoDate, monthBounds, shiftMonth, yearSheet, type YearSheet } from '@budget/core'
+import { isoDate, monthBounds, shiftMonth, yearSheet, type YearGroups, type YearSheet } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import {
   getMonthBalance,
@@ -12,8 +12,10 @@ import {
 } from '../ledger.js'
 import { navigate } from '../nav.js'
 import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
-import { MONTH_NAMES, formatMonthTitle, todayIso } from '../format.js'
+import { MONTH_NAMES, formatAmount, formatCents, formatMonthTitle, todayIso } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
+import { Figure } from '../components/ui/type.js'
+import { cn } from '../lib/cn.js'
 
 /**
  * Workbook's Annual Budget (plan §6.4): twelve months from a start month the
@@ -35,6 +37,7 @@ export function YearScreen({ start: address }: { start: string | null }) {
   const end = monthBounds(last).end
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [group, setGroup] = useState<GroupKey>('income')
 
   useEffect(() => {
     // As on the Month (N35): rows read before the app's first load name
@@ -112,6 +115,28 @@ export function YearScreen({ start: address }: { start: string | null }) {
           {pendingTotal} waiting for review — not counted below
         </button>
       ) : null}
+
+      {sheet !== null && typeof sheet !== 'string' ? (
+        <>
+          <div role="group" aria-label="Table" className="grid grid-cols-4 gap-1.5">
+            {GROUPS.map((g) => (
+              <button
+                key={g.key}
+                type="button"
+                aria-pressed={group === g.key}
+                onClick={() => setGroup(g.key)}
+                className={cn(
+                  'rounded-full border px-2 py-1.5 text-xs font-medium',
+                  group === g.key ? 'border-year-header bg-year-header text-year-header-ink' : 'bg-card',
+                )}
+              >
+                {g.label}
+              </button>
+            ))}
+          </div>
+          <YearTable sheet={sheet} group={group} thisMonth={thisMonth} />
+        </>
+      ) : null}
     </div>
   )
 }
@@ -156,3 +181,83 @@ function StartPicker({ start, today }: { start: string; today: string }) {
   )
 }
 
+type GroupKey = keyof YearGroups
+type Tone = 'income' | 'savings' | 'owed' | 'variable'
+
+/**
+ * Annual's seven cards: Income, Expenses and Savings across the top (H3:X21)
+ * and Bills, Debts, Subscriptions and Variable expenses below (B25:X41),
+ * each in its Month block's colours. Expenses are the four added (P10, Q10).
+ */
+const GROUPS: readonly { key: GroupKey; label: string; heading: string; budget: 'Goal' | 'Budgeted'; tone: Tone }[] = [
+  { key: 'income', label: 'Income', heading: 'Income', budget: 'Goal', tone: 'income' },
+  { key: 'expenses', label: 'Expenses', heading: 'Expenses', budget: 'Budgeted', tone: 'owed' },
+  { key: 'savings', label: 'Savings', heading: 'Savings', budget: 'Goal', tone: 'savings' },
+  { key: 'bill', label: 'Bills', heading: 'Bills', budget: 'Budgeted', tone: 'owed' },
+  { key: 'debt', label: 'Debts', heading: 'Debts', budget: 'Budgeted', tone: 'owed' },
+  { key: 'subscription', label: 'Subscriptions', heading: 'Subscriptions', budget: 'Budgeted', tone: 'owed' },
+  { key: 'variable', label: 'Variable', heading: 'Variable expenses', budget: 'Budgeted', tone: 'variable' },
+]
+
+const TONE: Record<Tone, { band: string; header: string; total: string; ink: string; rule: string }> = {
+  income: { band: 'bg-income-band', header: 'bg-income-header', total: 'bg-income-total', ink: 'text-income-ink', rule: 'border-income-rule' },
+  savings: { band: 'bg-savings-band', header: 'bg-savings-header', total: 'bg-savings-total', ink: 'text-savings-ink', rule: 'border-savings-rule' },
+  owed: { band: 'bg-owed-band', header: 'bg-owed-header', total: 'bg-owed-total', ink: 'text-owed-ink', rule: 'border-owed-rule' },
+  variable: { band: 'bg-variable-band', header: 'bg-variable-header', total: 'bg-variable-total', ink: 'text-variable-ink', rule: 'border-variable-rule' },
+}
+
+/**
+ * One card: its heading and Actual total on the band, then a row a month.
+ * A zero stays blank, as Workbook's `"$"#,##0.00;;` leaves it, so a month the
+ * gate has not reached reads as not yet rather than as $0; a negative keeps
+ * its minus sign (D8). The totals row adds twelve months (D7).
+ */
+function YearTable({ sheet, group, thisMonth }: { sheet: YearSheet; group: GroupKey; thisMonth: string }) {
+  const g = GROUPS.find((x) => x.key === group)!
+  const tone = TONE[g.tone]
+  const total = sheet.totals[group]
+  const blank = (c: number) => (c === 0 ? '' : formatAmount(c))
+  return (
+    <section aria-label={`${g.heading} by month`} className={cn('overflow-hidden rounded-xl border bg-card shadow-sm', tone.rule)}>
+      <div className={cn('flex items-baseline justify-between gap-3 px-4 py-3', tone.band, tone.ink)}>
+        <h2 className="text-sm font-semibold uppercase tracking-wide">{g.heading}</h2>
+        <Figure className="text-lg font-bold">{formatCents(total.actualCents)}</Figure>
+      </div>
+      <table className="w-full text-sm">
+        <thead className={cn(tone.header, tone.ink)}>
+          <tr>
+            {['Month', g.budget, 'Actual'].map((name, i) => (
+              <th key={name} scope="col" className={cn('px-1 py-1.5 text-xs font-medium', i === 0 ? 'pl-4 text-left' : 'text-right last:pr-4')}>
+                {name}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {sheet.months.map((m) => (
+            <tr
+              key={m.month}
+              aria-current={m.month === thisMonth ? 'date' : undefined}
+              className={cn('border-t', tone.rule, m.month === thisMonth ? 'bg-year-today' : 'even:bg-year-row-alt')}
+            >
+              <th scope="row" className="py-1.5 pl-4 pr-1 text-left font-normal">
+                {formatMonthTitle(m.month)}
+              </th>
+              <td className="tnum px-1 py-1.5 text-right">{blank(m[group].budgetCents)}</td>
+              <td className={cn('tnum py-1.5 pl-1 pr-4 text-right', m[group].actualCents < 0 && 'text-spend')}>
+                {blank(m[group].actualCents)}
+              </td>
+            </tr>
+          ))}
+          <tr className={cn('border-t font-semibold', tone.rule, tone.total, tone.ink)}>
+            <th scope="row" className="py-1.5 pl-4 pr-1 text-left">
+              Total
+            </th>
+            <td className="tnum px-1 py-1.5 text-right">{formatAmount(total.budgetCents)}</td>
+            <td className="tnum py-1.5 pl-1 pr-4 text-right">{formatAmount(total.actualCents)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  )
+}

@@ -116,9 +116,13 @@
   --setup-canvas: #f3f3f3;
   --setup-label: #2b5d6a;
 
-  /* Annual Budget: its #456464 header band, whose title ink is #FFFBE8. */
+  /* Annual Budget: its #456464 header band, whose title ink is #FFFBE8,
+     its rows (#FFFEFA, the card, and #FFFDFB) and the current month's
+     #F5F1E1 (conditional-format rules 2-5). */
   --year-header: #456464;
   --year-header-ink: #fffbe8;
+  --year-row-alt: #fffdfb;
+  --year-today: #f5f1e1;
 }
 
 /*
@@ -189,6 +193,8 @@
 
     --year-header: #253b3b;
     --year-header-ink: #fffbe8;
+    --year-row-alt: #22211c;
+    --year-today: #3b3625;
   }
 }
 
@@ -258,6 +264,8 @@
   --color-setup-label: var(--setup-label);
   --color-year-header: var(--year-header);
   --color-year-header-ink: var(--year-header-ink);
+  --color-year-row-alt: var(--year-row-alt);
+  --color-year-today: var(--year-today);
 }
 
 @layer base {
