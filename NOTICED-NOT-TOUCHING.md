@@ -406,3 +406,65 @@ under More anyway.
 **To settle:** in Settings, show the budget field only for spending lists,
 grouped under Workbook's headings as the pickers are (`CategoryOptions`), and
 leave any stored limit on the other lists untouched.
+
+---
+
+## N20 — The period engine is narrower than the plan's §5.1 table, for now
+
+**Seen:** 2026-09-23, S4a and S4b (the period engine).
+
+Plan §5.1 gives `monthSheet` the budget and plan *histories* and has it
+resolve them, and gives `periodSheet`'s output a summary card, a budget
+total, Remaining or Difference, and `shareBp` on every row. As built,
+`monthSheet` takes budgets and plans already resolved for the month, and
+the output has only the rows, Actuals, `basis`, block Actual totals,
+`transfersCents` and `importedThrough`.
+
+**Why not done here:** the task said to pass budgets and plans resolved,
+because resolution (D12, D13) reads Sitting B's tables. The rest each has
+its own slice and golden cells in §8 — Remaining, Difference and Left to
+spend at S7, Spent at S10, the ending balance at S11, `shareBp` at S12b —
+and CLAUDE.md wants a golden assertion seen failing before the code that
+passes it. Building them now would let those goldens pass on first run.
+
+**To settle:** S7 adds history resolution to `monthSheet` (or a resolver
+it calls) with the budget columns; S10, S11 and S12b add the rest.
+
+---
+
+## N21 — Review's unreadable lines read at most 100 imports, uncounted
+
+**Seen:** 2026-09-23, S4c (whole-month reads).
+
+`listUnreadable` in `apps/web/src/ledger.ts` reads the imports of the last
+six weeks with `.limit(100)` and no count, so a 101st import's unreadable
+lines would not show, with nothing to say so. The lines themselves are
+counted. A hundred imports in six weeks is unlikely for one person, which
+is why it is noted rather than fixed.
+
+**Why not fixed here:** S4c changes the ledger read the Month will total;
+this is Review's read.
+
+**To settle:** read the batches with an exact count, as `listTransactions`
+now does, or fold them into one query — and settle N13's six-week window
+at the same time.
+
+---
+
+## N22 — A whole-month read can still miss a row changed at just the wrong moment
+
+**Seen:** 2026-09-23, reviewing S4c (whole-month reads).
+
+`listTransactions` in `apps/web/src/ledger.ts` pages by offset and refuses a
+read whose count moves, whose page comes back empty early, or where a row
+arrives twice. One change slips past all three: while the month is being
+read, a row on an already-read page is deleted and a row that sorts after the
+next page is added. The count holds, nothing repeats, and the first row of
+the next page is skipped. It needs more than 1,000 rows in the month and two
+edits landing between two page requests, so for one person it is very
+unlikely, and reloading shows the right total.
+
+**Why not fixed here:** closing it means keyset paging (`posted_on`, `id`
+after the last row seen) or one server-side read, a larger change than S4c's.
+
+**To settle:** page by key rather than offset, and keep the exact-count check.
