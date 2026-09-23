@@ -642,7 +642,7 @@ spending charges, each with "Move to…", as a Month row does.
 
 ---
 
-## N27 — An income source with a pay schedule can move off Income
+## N27 — An income source with a pay schedule can move off Income *(settled in part 2026-09-23, S15b)*
 
 **Seen:** 2026-09-23, writing migration 0011 (Sitting B).
 
@@ -660,6 +660,12 @@ is the wrong sentence for a pay schedule.
 Setup sentence ("remove the pay schedule first"), or have Paycheck and the
 Bill Calendar read schedules for income sources only. Until then nothing
 reads `pay_schedules`, so nothing is wrong on screen.
+
+**Settled in part, S15b:** the second way. Paycheck reads a schedule only
+for a category on Income, so one left on a moved category is not read, and
+Setup offers Paid and First payday on Income rows only. The schedule stays
+stored, unseen, and comes back if the category moves back to Income. Still
+open: the Bill Calendar (S15c) must read them the same way.
 
 ---
 
@@ -1103,6 +1109,12 @@ the week; C: type one per week, which needs a migration.
 **To settle:** record the owner's answer in docs/formula-decisions.md, then
 build it.
 
+**Updated 2026-09-23, S15b:** the Paycheck view is the same. Workbook's
+Paycheck Budget types a start (D9, sample 1000) and shows an Ending Balance
+(D15 `=D9+P6-D11-V6`, cached 465); the view shows Spent and Left to spend
+only, and the same three options apply to a pay period. One answer should
+cover both.
+
 ---
 
 ## N46 — What the Week does not have that the Month does
@@ -1142,3 +1154,31 @@ Week is now the place a weekly budget is typed.
 
 **To settle:** either offer Income and Savings goals in Settings too, or
 drop the weekly budgets card from Settings now the Week types them.
+
+---
+
+## N48 — What the Paycheck view does not have that the Month does
+
+**Seen:** 2026-09-23, S15b.
+
+- **Tapping a row opens nothing,** as on the Week (N46): the Month's
+  charges sheet names its month.
+- **No charts.** Workbook's Paycheck Budget has the Month's two (chart38, the
+  income stack, and chart39, the Variable doughnut); the card that says
+  how a period's share is found stands in their place.
+- **No review line.** The Month and the Week say how many charges wait for
+  review; the Paycheck view does not, so a pending charge is simply not in
+  it, as it is not counted anywhere (invariant 3).
+- **The choice of income source is not kept.** With two sources on
+  schedules, the one picked holds until the screen is left; it opens on the
+  first in Setup's order again.
+- **A failed read of budgets says "this month".** Monthly amounts have a
+  `'paycheck'` wording; budgets have no reader argument, as N42 found on the
+  Year.
+
+**Why not fixed here:** S15b is the period, its share and the schedule
+that finds it; each of these is its own screen change, and the first two
+wait on N46's.
+
+**To settle:** after N46 and N42, give the Paycheck view the Week's
+answers; keep the chosen source in the address or on the device.
