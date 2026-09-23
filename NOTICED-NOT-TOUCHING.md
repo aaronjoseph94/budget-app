@@ -1182,3 +1182,24 @@ wait on N46's.
 
 **To settle:** after N46 and N42, give the Paycheck view the Week's
 answers; keep the chosen source in the address or on the device.
+
+---
+
+## N49 — The plan names Bill Calendar!Q14 where D5 changes Q20
+
+**Seen:** 2026-09-23, S15c, re-reading Bill Calendar against the workbook.
+
+`docs/workbook-plan.md` §5.4 lists "Bill Calendar!J3, Q14 | 1167.99, 200"
+among the cells D5 changes. Q14 is the week of 5–11 January 2025: its only
+entry is Credit Card 1's logged $200 on the 5th (B15:C15), which D5 keeps,
+so Q14 is 200 under both rules. The week D5 changes is the next one, Q20
+(**150**): Credit Card 1's $50 monthly amount on the 14th (F21:G21) plus
+Car Loan's logged $100 (H21:I21); under D5 the $50 is replaced by the $200,
+so Q20 is 100. J3 is right as listed (1,167.99; 1,117.99 under D5).
+
+**Why not fixed here:** the S15c task repeated §5.4's list, so the
+`workbook-bill-calendar` fixture leaves out both Q14 and Q20, and asserts the
+$200 on the 5th through B15:C19 instead.
+
+**To settle:** correct §5.4 to "J3, Q20 | 1167.99, 150", and add Q14 = 200
+to `workbook-bill-calendar`.

@@ -82,8 +82,10 @@ export {
   billCalendar,
   type BillCalendar,
   type BillCalendarInput,
+  type CalendarBill,
   type CalendarDay,
   type CalendarWeek,
+  type OwedKind,
 } from './bill-calendar.js'
 
 export {
