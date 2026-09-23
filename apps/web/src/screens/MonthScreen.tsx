@@ -163,6 +163,17 @@ export function MonthScreen({ month }: { month: string | null }) {
         <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>
       ) : null}
 
+      {/* A first run: six empty blocks each saying "Add one in Setup" left
+        the first step unsaid, so it is said once, here. */}
+      {version > 0 && categories.length === 0 ? (
+        <section aria-label="Start here" className="rounded-xl border bg-card p-4 shadow-sm">
+          <p className="text-sm">Start in Setup: Workbook's lists, when you are paid, and your bills.</p>
+          <Button className="mt-3" size="sm" onClick={() => navigate('setup')}>
+            Open Setup
+          </Button>
+        </section>
+      ) : null}
+
       {here !== null ? <ReviewBanner month={start} pendingHere={here.pendingHere} pendingTotal={pendingTotal} /> : null}
 
       {sheet !== null && typeof sheet !== 'string' ? (

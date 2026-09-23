@@ -550,3 +550,23 @@ describe('MonthScreen while another month loads', () => {
     expect((await loaded('Bills')).getByRole('rowheader', { name: 'Rent' })).toBeTruthy()
   })
 })
+
+describe('MonthScreen, on a first run', () => {
+  // Six empty blocks each saying "Add one in Setup" left the first step
+  // unsaid: an account with no categories is sent to Setup once, at the top.
+  it('with no categories at all, says to start in Setup, and opens it', async () => {
+    renderScreen(<MonthScreen month={null} />, createFakeSupabase())
+
+    const start = await screen.findByRole('region', { name: 'Start here' })
+    expect(start.textContent).toContain("Start in Setup: Workbook's lists, when you are paid, and your bills.")
+    fireEvent.click(within(start).getByRole('button', { name: 'Open Setup' }))
+    expect(window.location.hash).toBe('#/setup')
+  })
+
+  it('says nothing of the kind once there are categories', async () => {
+    renderScreen(<MonthScreen month={null} />, seeded())
+
+    await loaded('Bills')
+    expect(screen.queryByRole('region', { name: 'Start here' })).toBeNull()
+  })
+})
