@@ -55,6 +55,7 @@ describe('budgets, goals, Remaining and Difference replay Workbook (workbook-mon
     categories: golden.input.categories,
     entries: golden.input.entries.map((e) => ({ ...e, postedOn: isoDate(e.postedOn) })),
     statementPeriodEnds: [],
+    startingBalanceCents: null,
   }
   for (const c of golden.expected) {
     const sheet =
@@ -103,6 +104,7 @@ describe('planned and real Actuals replay Workbook (workbook-month part 2)', () 
     categories: part2.input.categories,
     entries: part2.input.entries.map((e) => ({ ...e, postedOn: isoDate(e.postedOn) })),
     statementPeriodEnds: [],
+    startingBalanceCents: null,
   }
   const sheetFor = (c: Part2Case): PeriodSheet =>
     c.asOf === undefined
@@ -121,4 +123,45 @@ describe('planned and real Actuals replay Workbook (workbook-month part 2)', () 
       expect(cell.categoryId === null ? block.actualTotalCents : row?.actualCents).toBe(cell.actualCents)
     })
   }
+})
+
+/**
+ * Part 3: the ending balance (F7), start + income − spent − saved, from the
+ * typed starting balance. The month tabs have no income or savings in 2026
+ * (plan §5.5), so Weekly Budget, whose window has both, proves they count.
+ */
+interface Part3Case {
+  window: string
+  asOf?: string
+  from?: string
+  to?: string
+  start: { cell: string; cents: number }
+  cell: string
+  cents: number
+}
+
+const part3 = loadGolden<Part2Input, Part3Case[]>('workbook-month-part3')
+
+describe('the ending balance replays Workbook (workbook-month part 3)', () => {
+  const planHistory = part3.input.planHistory.map((p) => ({ ...p, effectiveMonth: isoDate(p.effectiveMonth) }))
+  const shared = {
+    categories: part3.input.categories,
+    entries: part3.input.entries.map((e) => ({ ...e, postedOn: isoDate(e.postedOn) })),
+    statementPeriodEnds: [],
+  }
+  it.each(part3.expected)('$window → $cell = $cents', (c) => {
+    const startingBalanceCents = c.start.cents
+    const sheet =
+      c.asOf === undefined
+        ? periodSheet({
+            ...shared,
+            startingBalanceCents,
+            budgets: [],
+            plans: resolvePlans({ asOf: isoDate(c.from!), history: planHistory }).plans,
+            from: isoDate(c.from!),
+            to: isoDate(c.to!),
+          })
+        : monthSheet({ ...shared, startingBalanceCents, budgetHistory: [], planHistory, asOf: isoDate(c.asOf) })
+    expect(sheet.summary.endingBalanceCents).toBe(c.cents)
+  })
 })

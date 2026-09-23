@@ -26,8 +26,12 @@
  *   app's is Budget − Actual where a budget is set and null where none is.
  *   Income has Goal and Actual only (M8:P16). A budget total (D21, J21, O21,
  *   T21, O9, T9) adds the budgets set, as SUM skips a blank.
- * - F7, Spent. `Jan!D11 =SUM(C19,I19,N19,S19)`: Bills + Debts + Subscriptions
- *   + Variable expenses, never savings.
+ * - F7, Spent and the ending balance. `Jan!D11 =SUM(C19,I19,N19,S19)`: Bills
+ *   + Debts + Subscriptions + Variable expenses, never savings. `Jan!D15
+ *   =D9+N5-D11-S5`: the typed start + income − spent − saved. Workbook reads a
+ *   blank D9 as $0 and still projects from it; here no start typed is no
+ *   ending balance (D17), since one counted from a $0 nobody typed is wrong
+ *   by the whole bank balance and looks right.
  *
  * - F3 and D5, planned versus real. `Jan!E22 =Bills!D7+SUMIFS(Bills!Q:Q, …)` adds
  *   a bill's Monthly Amount to every payment logged for it. Here a bill, debt
@@ -57,11 +61,10 @@
  * taken from the statement, not the latest row, so cash typed today cannot
  * move it.
  *
- * F5 and F7's Spent are the first half of the tab's summary card, proven by
- * workbook-month-summary; budget totals, Remaining and Difference are proven by
- * workbook-month part 1, and planned against real by part 2, through the plan
- * history a month resolves. F7's ending balance waits for the typed starting
- * balance (Sitting B, S11), and was left out rather than guessed.
+ * F5 and F7's Spent are proven by workbook-month-summary; budget totals,
+ * Remaining and Difference by workbook-month part 1, planned against real by
+ * part 2, through the plan history a month resolves, and F7's ending balance
+ * by part 3.
  *
  * Signs (D3). The ledger is one signed column, outflows negative. Workbook writes
  * every amount positive and knows its direction from the log it sits in, so
@@ -70,7 +73,7 @@
  * nets against its category in the same window and can take it below zero,
  * and that minus sign is kept (D8).
  */
-import { type Cents, type IsoDate, ZERO_CENTS, cents, subCents, sumCents } from '@budget/money-primitives'
+import { type Cents, type IsoDate, ZERO_CENTS, addCents, cents, subCents, sumCents } from '@budget/money-primitives'
 import { type BudgetHistoryRow, resolveBudgets } from './budgets.js'
 import { type PlanHistoryRow, resolvePlans } from './plans.js'
 import { type CategoryKind, monthBounds, shiftMonth } from './week.js'
@@ -115,6 +118,11 @@ export interface PeriodSheetInput {
   readonly plans: readonly PeriodPlan[]
   /** Where each imported statement's period ended, in any order. */
   readonly statementPeriodEnds: readonly IsoDate[]
+  /**
+   * The bank balance the window started with, as typed (Jan!D9, migration
+   * 0010); null when none was, which is never read as $0 (D17).
+   */
+  readonly startingBalanceCents: number | null
 }
 
 export interface MonthSheetInput extends Omit<PeriodSheetInput, 'from' | 'to' | 'budgets' | 'plans'> {
@@ -174,12 +182,20 @@ export interface PeriodSheet {
     readonly debt: PeriodBlock
     readonly subscription: PeriodBlock
   }
-  /** The first two of the tab's four summary numbers (Jan!D11, D13); Start and End wait for S11. */
+  /** The tab's four summary numbers (Jan!D9, D11, D13, D15), and the two totals D15 reads (N5, S5). */
   readonly summary: {
+    /** Jan!D9 as typed, or null when no start was typed. */
+    readonly startingBalanceCents: Cents | null
     /** F7: bills, debts, subscriptions and variable expenses; never savings or card payments. */
     readonly spentCents: Cents
     /** F5: the Variable block's Remaining total (Jan!D13 = V21). Below zero when overspent. */
     readonly leftToSpendCents: Cents
+    /** Jan!N5 = P9, the Income block's Actual total. */
+    readonly incomeCents: Cents
+    /** Jan!S5 = U9, the Savings block's Actual total. */
+    readonly savedCents: Cents
+    /** F7, Jan!D15: start + income − spent − saved. Null with no start typed (D17). Below zero when overdrawn. */
+    readonly endingBalanceCents: Cents | null
   }
   /** Net of the Not spending list: positive when money was paid to the card. Never in a total. */
   readonly transfersCents: Cents
@@ -297,13 +313,25 @@ export function periodSheet(input: PeriodSheetInput): PeriodSheet {
     subscription: block('subscription'),
   }
 
+  const spentCents = sumCents([blocks.bill, blocks.debt, blocks.subscription, blocks.variable].map((b) => b.actualTotalCents))
+  const incomeCents = blocks.income.actualTotalCents
+  const savedCents = blocks.savings.actualTotalCents
+  // cents() refuses a fraction here too, so a typed start that reached this
+  // far as a float fails loudly rather than being added in.
+  const start = input.startingBalanceCents === null ? null : cents(input.startingBalanceCents)
+
   return {
     from: input.from,
     to: input.to,
     blocks,
     summary: {
-      spentCents: sumCents([blocks.bill, blocks.debt, blocks.subscription, blocks.variable].map((b) => b.actualTotalCents)),
+      startingBalanceCents: start,
+      spentCents,
       leftToSpendCents: blocks.variable.remainingTotalCents,
+      incomeCents,
+      savedCents,
+      // D17: no start typed is no ending balance, never one counted from $0.
+      endingBalanceCents: start === null ? null : subCents(addCents(start, incomeCents), addCents(spentCents, savedCents)),
     },
     transfersCents: sumCents(
       input.categories.flatMap((c) => {

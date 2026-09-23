@@ -99,6 +99,8 @@ export function MonthScreen({ month }: { month: string | null }) {
           categoryId: r.category_id,
         })),
         statementPeriodEnds: here.ends.map((e) => isoDate(e)),
+        // The card has no Start or End of month yet, so no balance is read.
+        startingBalanceCents: null,
       })
     } catch {
       // The engine refuses a charge, a budget or a monthly amount whose

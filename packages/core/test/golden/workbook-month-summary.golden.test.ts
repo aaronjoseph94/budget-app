@@ -45,6 +45,7 @@ describe("the summary card replays Workbook's Spent and Left to spend (workbook-
     categories: golden.input.categories,
     entries: golden.input.entries.map((e) => ({ ...e, postedOn: isoDate(e.postedOn) })),
     statementPeriodEnds: [],
+    startingBalanceCents: null,
   }
   for (const c of golden.expected) {
     const sheet =

@@ -110,6 +110,7 @@ describe('monthSheet budgets (suite)', () => {
         planHistory: [],
         entries: [],
         statementPeriodEnds: [],
+        startingBalanceCents: null,
       }).blocks.variable.rows[0]!.budgetCents
     expect([month('2025-12-31'), month('2026-02-28'), month('2026-03-31'), month('2026-04-01')]).toEqual([null, 10_000, 5_000, 10_000])
   })

@@ -40,6 +40,7 @@ const BASE = {
   plans: [],
   entries: [],
   statementPeriodEnds: [],
+  startingBalanceCents: null,
 }
 const sheet = (entries: PeriodEntry[], from = '2026-09-01', to = '2026-09-30') =>
   periodSheet({ ...BASE, from: isoDate(from), to: isoDate(to), entries })
@@ -229,6 +230,7 @@ describe('monthSheet (suite)', () => {
       categories: CATEGORIES,
       budgetHistory: [],
       statementPeriodEnds: [],
+      startingBalanceCents: null,
       asOf: isoDate('2028-02-17'),
       planHistory: [{ ...plan('rent', 160_000, 31), effectiveMonth: isoDate('2028-02-01') }],
       entries: [row('2028-01-31', -100, 'food'), row('2028-02-29', -200, 'food'), row('2028-03-01', -400, 'food')],
@@ -248,7 +250,7 @@ describe('monthSheet monthly amounts (suite)', () => {
   })
   const categories = [...CATEGORIES, cat('netflix', 'subscription', 1)]
   const month = (asOf: string, planHistory: ReturnType<typeof typed>[], entries: PeriodEntry[] = []) =>
-    monthSheet({ categories, budgetHistory: [], statementPeriodEnds: [], asOf: isoDate(asOf), planHistory, entries })
+    monthSheet({ categories, budgetHistory: [], statementPeriodEnds: [], startingBalanceCents: null, asOf: isoDate(asOf), planHistory, entries })
 
   it("counts Netflix's $17.99 once when the card charges $17.99, and planned in a month it does not (decision 3)", () => {
     const history = [typed('netflix', '2026-01', 1_799, 23)]
@@ -357,6 +359,53 @@ describe('periodSheet summary (suite)', () => {
     const empty = periodSheet(BASE).summary
     expect(Object.is(empty.spentCents, 0)).toBe(true)
     expect(Object.is(empty.leftToSpendCents, 0)).toBe(true)
+  })
+})
+
+describe('periodSheet ending balance (suite)', () => {
+  // Hand-derived, several rows per list. In: pay 2,500.00 + 500.00, bonus
+  // 120.00 = 3,120.00. Saved: fund 300.00 in and 50.00 back out, trip 80.00 =
+  // 330.00. Spent: food 45.00 + rent planned 1,200.00 = 1,245.00. The 500.00
+  // card payment is in none of it. From 1,000.00: 1,000 + 3,120 − 1,245 − 330
+  // = 2,545.00 (F7).
+  const from = (startingBalanceCents: number | null) =>
+    periodSheet({
+      ...BASE,
+      categories: [...CATEGORIES, cat('trip', 'savings', 1), cat('bonus', 'income', 1)],
+      plans: [{ categoryId: 'rent', plannedCents: 120_000, dueDay: 1 }],
+      entries: [
+        row('2026-09-15', 250_000, 'pay'),
+        row('2026-09-30', 50_000, 'pay'),
+        row('2026-09-20', 12_000, 'bonus'),
+        row('2026-09-16', -30_000, 'fund'),
+        row('2026-09-25', 5_000, 'fund'),
+        row('2026-09-17', -8_000, 'trip'),
+        row('2026-09-03', -4_500, 'food'),
+        row('2026-09-18', 50_000, 'card'),
+      ],
+      startingBalanceCents,
+    }).summary
+
+  it('adds every income row and takes off every saving and everything spent', () => {
+    expect(from(100_000)).toEqual({
+      startingBalanceCents: 100_000,
+      spentCents: 124_500,
+      leftToSpendCents: -4_500,
+      incomeCents: 312_000,
+      savedCents: 33_000,
+      endingBalanceCents: 254_500,
+    })
+  })
+
+  it('counts from a typed $0 or an overdrawn start, and gives none with no start typed (D17)', () => {
+    expect(from(0).endingBalanceCents).toBe(154_500)
+    expect(from(-20_000).endingBalanceCents).toBe(134_500)
+    expect(from(null)).toMatchObject({ startingBalanceCents: null, endingBalanceCents: null, spentCents: 124_500 })
+  })
+
+  it('refuses a start that is not whole cents, and ends an empty window at zero, not minus zero', () => {
+    expect(() => periodSheet({ ...BASE, startingBalanceCents: 10.5 })).toThrow(RangeError)
+    expect(Object.is(periodSheet({ ...BASE, startingBalanceCents: 0 }).summary.endingBalanceCents, 0)).toBe(true)
   })
 })
 

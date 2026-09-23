@@ -451,7 +451,7 @@ is kept and not offered.
 
 ---
 
-## N20 — The period engine is narrower than the plan's §5.1 table, for now *(settled in part 2026-09-23, S7 and S10)*
+## N20 — The period engine is narrower than the plan's §5.1 table, for now *(settled in part 2026-09-23, S7, S10 and S11)*
 
 **Seen:** 2026-09-23, S4a and S4b (the period engine).
 
@@ -506,6 +506,11 @@ part 2 (seen failing first). It leaves out an amount on a category moved off
 the three recurring lists, and refuses one naming a category it was not
 given, as `billsTotals` does. Still open: the ending balance and the
 summary's income and saved (S11), and `shareBp` (S12b).
+
+**Updated 2026-09-23, S11:** the summary carries the typed starting
+balance, income, saved and the ending balance (F7), proven by workbook-month
+part 3 (seen failing first); with no start typed there is no ending balance
+(D17). Still open: `shareBp` (S12b).
 
 ---
 

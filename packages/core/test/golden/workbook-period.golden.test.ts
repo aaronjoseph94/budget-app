@@ -57,6 +57,7 @@ describe('periodSheet replays Workbook over a typed window (workbook-period part
       plans: [],
       entries: golden.input.entries.map((e) => ({ ...e, postedOn: isoDate(e.postedOn) })),
       statementPeriodEnds: [],
+      startingBalanceCents: null,
     })
     it.each(c.cells)(`${c.window} → $cell = $actualCents`, (cell) => {
       expect(actualOf(sheet, cell)).toBe(cell.actualCents)
@@ -83,6 +84,7 @@ describe('bills, debts and subscriptions replay Workbook (workbook-period part 2
     categories: part2.input.categories,
     entries: part2.input.entries.map((e) => ({ ...e, postedOn: isoDate(e.postedOn) })),
     statementPeriodEnds: [],
+    startingBalanceCents: null,
   }
   // Workbook's one Monthly Amount serves every month, so each month has it from its own first day.
   const planHistory = (asOf: string) => part2.input.plans.map((p) => ({ ...p, effectiveMonth: isoDate(asOf) }))
