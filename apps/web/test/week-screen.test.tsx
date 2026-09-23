@@ -137,6 +137,48 @@ describe('WeekScreen', () => {
     expect(window.location.hash).toBe('#/settings')
   })
 
+  // Hand-derived: the $500.00 card payment and the $200.00 move to savings
+  // are in neither figure, so spent stays 130.12 and money in is the 25.00 pay.
+  it('leaves a card payment and a savings move out of spending and money in, and says so', async () => {
+    const fake = seeded()
+    fake.tables.categories.push(
+      { id: 'c3', name: 'Pay', kind: 'income', sort_order: 0, weekly_budget_cents: null },
+      { id: 'c4', name: 'Flight fund', kind: 'savings', sort_order: 0, weekly_budget_cents: null },
+      { id: 'c5', name: 'Card payments', kind: 'transfer', sort_order: 0, weekly_budget_cents: null },
+    )
+    fake.tables.transactions.push(
+      { id: 't5', posted_on: '2026-03-12', amount_cents: 2500, merchant_raw: 'PAYROLL', category_id: 'c3', source: 'typed' },
+      { id: 't6', posted_on: '2026-03-10', amount_cents: -20000, merchant_raw: 'TO SAVINGS', category_id: 'c4', source: 'typed' },
+      { id: 't7', posted_on: '2026-03-11', amount_cents: 50000, merchant_raw: 'PAYMENT THANK YOU', category_id: 'c5', source: 'card_pdf' },
+    )
+    renderScreen(<WeekScreen />, fake)
+
+    expect(await screen.findByText('$130.12')).toBeTruthy()
+    expect(screen.getByText('$25.00')).toBeTruthy()
+    expect(screen.getByText('$500.00').closest('p')?.textContent).toBe('Paid to your card: $500.00 — not counted')
+    expect(screen.queryByText('Flight fund')).toBeNull()
+    expect(screen.queryByText('Card payments')).toBeNull()
+  })
+
+  // Hand-derived: a $40.00 return with no purchase makes the week 90.12.
+  it('shows a return as negative spending, and money moved out or unfiled as not counted', async () => {
+    const fake = seeded()
+    fake.tables.categories.push({ id: 'c5', name: 'Card payments', kind: 'transfer', sort_order: 0, weekly_budget_cents: null })
+    fake.tables.categories.push({ id: 'c6', name: 'Shoes', kind: 'variable', sort_order: 0, weekly_budget_cents: null })
+    fake.tables.transactions.push(
+      { id: 't5', posted_on: '2026-03-12', amount_cents: 4000, merchant_raw: 'SHOE RETURN', category_id: 'c6', source: 'card_pdf' },
+      { id: 't6', posted_on: '2026-03-12', amount_cents: -1500, merchant_raw: 'CASH ADVANCE', category_id: 'c5', source: 'card_pdf' },
+      // Its category is not among those loaded, so nothing says what it is.
+      { id: 't7', posted_on: '2026-03-12', amount_cents: 700, merchant_raw: 'UNKNOWN', category_id: 'gone', source: 'typed' },
+    )
+    renderScreen(<WeekScreen />, fake)
+
+    expect(await screen.findByText('$90.12')).toBeTruthy()
+    expect(within(await categoryRow('Shoes')).getByText('-$40.00')).toBeTruthy()
+    expect(screen.getByText('$15.00').closest('p')?.textContent).toBe('Moved out, not spending: $15.00 — not counted')
+    expect(screen.getByText('$7.00').closest('p')?.textContent).toBe('Money in with no category: $7.00 — not counted')
+  })
+
   it('shows a readable message when the week cannot be loaded', async () => {
     const fake = seeded()
     fake.fail('transactions', '42501')

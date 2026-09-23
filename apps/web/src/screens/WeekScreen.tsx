@@ -141,6 +141,19 @@ export function WeekScreen() {
                   Money in this week: <span className="tnum text-income">{formatCents(week.inflowCents)}</span>
                 </p>
               ) : null}
+              {/* Left out of both figures above, so said out loud (D9). */}
+              {week.transfersCents !== 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  {week.transfersCents > 0 ? 'Paid to your card: ' : 'Moved out, not spending: '}
+                  <span className="tnum">{formatMagnitude(week.transfersCents)}</span> — not counted
+                </p>
+              ) : null}
+              {week.uncategorisedInCents > 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  Money in with no category: <span className="tnum">{formatCents(week.uncategorisedInCents)}</span> — not
+                  counted
+                </p>
+              ) : null}
             </CardContent>
           </Card>
 
