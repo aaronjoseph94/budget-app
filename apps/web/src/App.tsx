@@ -59,11 +59,12 @@ const PHONE_TABS: readonly Tab[] = [
   { screen: 'more', label: 'More', icon: 'menu' },
 ]
 
-/** Wide screens have room for Paycheck, Year and Setup on the bar itself (§6.1). */
+/** Wide screens have room for Paycheck, the Bill calendar, Year and Setup on the bar itself (§6.1). */
 const DESKTOP_TABS: readonly Tab[] = [
   { screen: 'month', label: 'Month', icon: 'calendar' },
   { screen: 'week', label: 'Week', icon: 'week' },
   { screen: 'paycheck', label: 'Paycheck', icon: 'wallet' },
+  { screen: 'calendar', label: 'Bills', icon: 'bills' },
   { screen: 'year', label: 'Year', icon: 'calendar' },
   { screen: 'review', label: 'Review', icon: 'inbox' },
   { screen: 'add', label: 'Add', icon: 'plus' },
@@ -111,7 +112,10 @@ export function Shell() {
                   )}
                 >
                   <Icon name={t.icon} className="size-4" />
-                  {t.label}
+                  {/* Nine tabs with their words need about 930px; a tablet's
+                    768 has room for the icons, and each keeps its name as
+                    its label, so the words come back from 1024px. */}
+                  <span className="hidden lg:inline">{t.label}</span>
                   {t.screen === 'review' && pendingTotal > 0 ? <Count n={pendingTotal} /> : null}
                 </button>
               )

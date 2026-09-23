@@ -55,14 +55,14 @@ describe('Shell', () => {
     expect(window.location.hash).toBe('#/month/2026-01')
   })
 
-  it('keeps Paycheck, Year, Setup, All transactions and Settings under More, and lights More while they show', async () => {
+  it('keeps Paycheck, the Bill calendar, Year, Setup, All transactions and Settings under More, and lights More while they show', async () => {
     renderScreen(<Shell />, createFakeSupabase())
     fireEvent.click(within(phoneBar()).getByRole('button', { name: 'More' }))
     expect(window.location.hash).toBe('#/more')
     go('/more')
 
     const items = (await screen.findAllByRole('listitem')).map((li) => li.querySelector('.font-medium')?.textContent)
-    expect(items).toEqual(['Paycheck', 'Year', 'Setup', 'All transactions', 'Settings'])
+    expect(items).toEqual(['Paycheck', 'Bill calendar', 'Year', 'Setup', 'All transactions', 'Settings'])
 
     fireEvent.click(screen.getByRole('button', { name: /All transactions/ }))
     expect(window.location.hash).toBe('#/ledger')
@@ -80,9 +80,22 @@ describe('Shell', () => {
     expect(within(phoneBar()).getByRole('button', { name: 'More' }).getAttribute('aria-current')).toBe('page')
     const desktopBar = screen.getAllByRole('navigation', { name: 'Screens' })[0]!
     expect(within(desktopBar).getAllByRole('button').map((b) => b.textContent)).toEqual([
-      'Month', 'Week', 'Paycheck', 'Year', 'Review', 'Add', 'Setup', 'More',
+      'Month', 'Week', 'Paycheck', 'Bills', 'Year', 'Review', 'Add', 'Setup', 'More',
     ])
     expect(within(desktopBar).getByRole('button', { name: 'Year' }).getAttribute('aria-current')).toBe('page')
+  })
+
+  it('opens the Bill calendar from More on a phone, and from the bar on a desktop, at this month', async () => {
+    renderScreen(<Shell />, createFakeSupabase())
+    go('/more')
+    fireEvent.click(within(await screen.findByRole('list')).getByRole('button', { name: /^Bill calendar/ }))
+    expect(window.location.hash).toBe('#/calendar')
+    go('/calendar')
+    expect(await screen.findByText('Bill calendar')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'September 2026' })).toBeTruthy()
+    const desktopBar = screen.getAllByRole('navigation', { name: 'Screens' })[0]!
+    expect(within(desktopBar).getByRole('button', { name: 'Bills' }).getAttribute('aria-current')).toBe('page')
+    expect(within(phoneBar()).getByRole('button', { name: 'More' }).getAttribute('aria-current')).toBe('page')
   })
 
   it('shows the review count on the Review tab', async () => {
