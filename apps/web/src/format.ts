@@ -365,6 +365,14 @@ export function formatBasisPoints(bp: number): string {
   return `${Math.round(bp / 100)}%`
 }
 
+/**
+ * A share of a whole from the engine, as a whole percentage. A category with
+ * spending never reads "0%": under half a percent says so instead.
+ */
+export function formatShare(bp: number): string {
+  return bp < 50 ? 'under 1%' : formatBasisPoints(bp)
+}
+
 /** An amount in a column whose heading already says it is money: `1,600.00`, `-32.74`. */
 export function formatAmount(amountCents: number): string {
   return formatCents(amountCents).replace('$', '')

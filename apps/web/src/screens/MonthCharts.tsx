@@ -1,0 +1,117 @@
+import { useId, useMemo } from 'react'
+import { goalBars, type PeriodRow, type PeriodSheet } from '@budget/core'
+import { incomeBars, spendingDoughnut, type SvgMarkup } from '@budget/chart-specs'
+import { formatCents, formatShare } from '../format.js'
+import { SvgChart } from '../components/ui/chart.js'
+import { cn } from '../lib/cn.js'
+
+/**
+ * Workbook's chart panel, Jan!H3:K18: the income chart (chart12) and the
+ * Variable-expenses doughnut (chart13), drawn by chart-specs from the month
+ * core computed. Every length and angle is core's basis points (`goalBars`,
+ * `shareBp`, F17); this screen only formats the amounts written beside them.
+ *
+ * An income source shows once it has a goal or money in, as its row does in
+ * the Income block. A Variable category whose refunds beat its spending has
+ * no slice, since none can be drawn below zero, and is named under the ring.
+ */
+export function MonthCharts({ sheet, className }: { sheet: PeriodSheet; className: string }) {
+  // Names the charts' titles for a screen reader; useId's own punctuation is
+  // not allowed in an id chart-specs accepts.
+  const id = `chart${useId().replace(/[^A-Za-z0-9_-]/g, '')}`
+  const income = sheet.blocks.income.rows.filter((r) => r.budgetCents !== null || r.basis !== 'none')
+  const variable = sheet.blocks.variable.rows
+  const refunded = variable.filter((r) => r.actualCents < 0)
+  // Redrawn only when the month does: the rows above all come from `sheet`.
+  const drawn = useMemo(() => draw(id, income, variable, refunded), [id, sheet])
+
+  return (
+    <section aria-label="Charts" className={cn('rounded-xl border bg-card p-4 shadow-sm', className)}>
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-1">
+        <div className="space-y-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-income-ink">Income against goals</h2>
+          {drawn.income === null ? (
+            <p className="text-sm text-muted-foreground">No income or goals this month yet.</p>
+          ) : (
+            <SvgChart svg={drawn.income} />
+          )}
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-variable-ink">
+            Variable expenses by category
+          </h2>
+          {drawn.spending === null ? (
+            <p className="text-sm text-muted-foreground">Nothing spent on Variable expenses this month yet.</p>
+          ) : (
+            <SvgChart svg={drawn.spending} className="mx-auto max-w-sm" />
+          )}
+          {refunded.length > 0 ? (
+            <p className="text-xs text-muted-foreground">
+              Not in the ring, as refunds were more than spending:{' '}
+              {refunded.map((r) => `${r.name} (${formatCents(r.actualCents)})`).join(', ')}.
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function draw(
+  id: string,
+  income: readonly PeriodRow[],
+  variable: readonly PeriodRow[],
+  refunded: readonly PeriodRow[],
+): { income: SvgMarkup | null; spending: SvgMarkup | null } {
+  const named = new Map(income.map((r) => [r.categoryId, r]))
+  const bars = goalBars({ rows: income }).bars.flatMap((b) => {
+    const r = named.get(b.categoryId)
+    if (r === undefined) return []
+    const valueText =
+      r.budgetCents === null
+        ? formatCents(r.actualCents)
+        : `${formatCents(r.actualCents)} of ${formatCents(r.budgetCents)}`
+    return [{ label: r.name, valueText, goalBp: b.goalBp, actualBp: b.actualBp }]
+  })
+  // Colour by the row's place on its whole list, as chart13 colours by row,
+  // so a category keeps its colour whichever others have spending.
+  const shared = variable.flatMap((r, listIndex) => (r.shareBp === null ? [] : [{ r, listIndex, shareBp: r.shareBp }]))
+  const slices = shared.map(({ r, listIndex, shareBp }) => ({
+    label: r.name,
+    valueText: `${formatCents(r.actualCents)} · ${formatShare(shareBp)}`,
+    shareBp,
+    listIndex,
+  }))
+  const said = (parts: readonly string[]) => parts.join('. ') + '.'
+  return {
+    income:
+      bars.length === 0
+        ? null
+        : incomeBars({
+            id: `${id}-income`,
+            title: 'Income against goals',
+            description: said(
+              income.map((r) =>
+                r.budgetCents === null
+                  ? `${r.name}: ${formatCents(r.actualCents)}, no goal`
+                  : `${r.name}: ${formatCents(r.actualCents)} of a ${formatCents(r.budgetCents)} goal`,
+              ),
+            ),
+            bars,
+          }),
+    spending:
+      slices.length === 0
+        ? null
+        : spendingDoughnut({
+            id: `${id}-spending`,
+            title: 'Variable expenses by category',
+            description: said([
+              ...shared.map(
+                ({ r, shareBp }) => `${r.name}: ${formatCents(r.actualCents)}, ${formatShare(shareBp)} of spending`,
+              ),
+              ...refunded.map((r) => `${r.name} is not drawn: refunds were more than spending`),
+            ]),
+            slices,
+          }),
+  }
+}

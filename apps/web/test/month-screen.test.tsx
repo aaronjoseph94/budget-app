@@ -83,7 +83,7 @@ describe('MonthScreen blocks', () => {
 
     expect(await screen.findByRole('heading', { name: 'September 2026' })).toBeTruthy()
     const order = (await screen.findAllByRole('region')).map((r) => r.getAttribute('aria-label'))
-    expect(order).toEqual(['Summary', 'Variable expenses', 'Bills', 'Subscriptions', 'Debts', 'Income', 'Savings'])
+    expect(order).toEqual(['Summary', 'Variable expenses', 'Bills', 'Subscriptions', 'Debts', 'Income', 'Savings', 'Charts'])
 
     const variable = block('Variable expenses')
     expect(variable.getByText('$85.00')).toBeTruthy()
@@ -101,7 +101,9 @@ describe('MonthScreen blocks', () => {
 
     const clothing = (await screen.findByRole('rowheader', { name: 'Clothing' })).closest('tr')
     expect(clothing?.textContent).toBe('Clothing-40.0040.00')
-    expect(await screen.findByText('<b>Dinner & drinks</b>')).toBeTruthy()
+    expect((await loaded('Variable expenses')).getByText('<b>Dinner & drinks</b>')).toBeTruthy()
+    // The chart panel writes it too, inside an SVG it puts into the page.
+    expect(block('Charts').getByText('<b>Dinner & drinks</b>', { selector: 'text' })).toBeTruthy()
     expect(document.querySelector('section b')).toBeNull()
   })
 

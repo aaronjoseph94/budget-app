@@ -40,9 +40,11 @@ export function MonthSummary({
   return (
     <section
       aria-label="Summary"
-      className="order-0 rounded-xl border bg-summary p-4 shadow-sm md:col-span-2 xl:order-1"
+      className="order-0 rounded-xl border bg-summary p-4 shadow-sm md:col-span-2 xl:order-1 xl:col-span-1"
     >
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
+      {/* One card of four on a desktop, beside the charts (§6.3): too narrow
+        for two amounts side by side, so the four stack. */}
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-3 xl:grid-cols-1">
         <Entry label="Start">
           <button
             type="button"

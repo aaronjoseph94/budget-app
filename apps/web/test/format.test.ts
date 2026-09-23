@@ -9,6 +9,7 @@ import {
   describeWriteFailure,
   formatAmount,
   formatBasisPoints,
+  formatShare,
   formatCents,
   formatDateRange,
   formatForInput,
@@ -130,6 +131,9 @@ describe('the smaller display helpers', () => {
   it('shows basis points as a whole percentage', () => {
     expect(formatBasisPoints(6_500)).toBe('65%')
     expect(formatBasisPoints(12_000)).toBe('120%')
+    expect([formatShare(1), formatShare(49), formatShare(50), formatShare(4_792)]).toEqual([
+      'under 1%', 'under 1%', '1%', '48%',
+    ])
   })
 
   it('shows a magnitude without the sign, for places the label carries direction', () => {

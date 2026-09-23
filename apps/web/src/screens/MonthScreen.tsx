@@ -22,6 +22,7 @@ import { Figure, MonthTitle } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
 import { BudgetEditor } from './BudgetEditor.js'
 import { MonthCharges } from './MonthCharges.js'
+import { MonthCharts } from './MonthCharts.js'
 import { MonthSummary } from './MonthSummary.js'
 
 /**
@@ -172,10 +173,12 @@ export function MonthScreen({ month }: { month: string | null }) {
               ? 'No statement imported yet.'
               : `Statement imported up to ${formatIsoDate(sheet.importedThrough)}`}
           </p>
-          {/* Phones: the block every statement changes first (§6.2). Four
-            columns on a desktop in Workbook's own arrangement, Jan!B3:V44 (§6.3),
-            from 1280px: below that a card is too narrow for three columns of
-            amounts, and two columns hold them. */}
+          {/* Phones: the block every statement changes first, and the charts
+            last (§6.2). Four columns on a desktop in Workbook's own arrangement,
+            Jan!B3:V44 (§6.3), the charts second on the top row as Workbook's
+            panel H3:K18 is, from 1280px: below that a card is too narrow for
+            three columns of amounts, and two columns hold them. The page is
+            in phone order, which is the order a screen reader follows. */}
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <MonthSummary sheet={sheet} month={start} onUnsaved={setStartUnsaved} />
             <Block kind="variable" block={sheet.blocks.variable} {...blockProps} className="order-1 xl:order-7" />
@@ -184,6 +187,7 @@ export function MonthScreen({ month }: { month: string | null }) {
             <Block kind="debt" block={sheet.blocks.debt} {...blockProps} className="order-4 xl:order-5" />
             <Block kind="income" block={sheet.blocks.income} {...blockProps} className="order-5 xl:order-2" />
             <Block kind="savings" block={sheet.blocks.savings} {...blockProps} className="order-6 xl:order-3" />
+            <MonthCharts sheet={sheet} className="order-7 md:col-span-2 xl:order-1 xl:col-span-1" />
           </div>
           {/* Left out of every block and total above, so said out loud (D9). */}
           {sheet.transfersCents !== 0 ? (
