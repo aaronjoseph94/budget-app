@@ -76,6 +76,16 @@ export {
 } from './period-sheet.js'
 
 export {
+  PAYDAYS_A_YEAR,
+  payPeriod,
+  payShare,
+  shiftPayPeriod,
+  type PayFrequency,
+  type PayPeriod,
+  type PaySchedule,
+} from './pay-period.js'
+
+export {
   goalBars,
   partShares,
   stackedColumns,
