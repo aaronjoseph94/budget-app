@@ -71,7 +71,19 @@ export {
   type VariableBlock,
 } from './period-sheet.js'
 
-export { goalBars, type GoalBar, type GoalBarsInput, type GoalBarsOutput } from './shares.js'
+export {
+  goalBars,
+  partShares,
+  stackedColumns,
+  type GoalBar,
+  type GoalBarsInput,
+  type GoalBarsOutput,
+  type PartSharesInput,
+  type PartSharesOutput,
+  type StackedColumnsInput,
+  type StackedColumnsOutput,
+  type StackedPart,
+} from './shares.js'
 
 export {
   yearSheet,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { cents, isoDate } from '@budget/money-primitives'
 import { periodSheet, type PeriodCategory, type PeriodEntry, type PeriodPlan } from '../src/period-sheet.js'
-import { goalBars, shareOf } from '../src/shares.js'
+import { goalBars, partShares, shareOf, stackedColumns } from '../src/shares.js'
 
 /**
  * Suite tests, worked by hand. Workbook's charts print no number and the
@@ -158,5 +158,73 @@ describe('shareOf', () => {
     expect(() => shareOf(cents(-1), cents(100))).toThrow(RangeError)
     expect(() => shareOf(cents(0), cents(0))).toThrow(RangeError)
     expect(shareOf(cents(0), cents(100))).toBe(0)
+  })
+})
+
+describe('partShares (F19, the Year pie)', () => {
+  const part = (key: string, c: number) => ({ key, cents: c })
+
+  it('gives each part above zero its share of those parts, half-up', () => {
+    // Income 6,000 + expenses 3,000 + savings 1,000.01 = 10,000.01 above zero.
+    expect(partShares({ parts: [part('in', 600_000), part('out', 300_000), part('saved', 100_001)] })).toEqual({
+      wholeCents: 1_000_001,
+      parts: [
+        { key: 'in', shareBp: 6_000 },
+        { key: 'out', shareBp: 3_000 },
+        { key: 'saved', shareBp: 1_000 },
+      ],
+    })
+  })
+
+  it('draws nothing at or below zero, and leaves it out of the whole', () => {
+    // Savings taken back out (−50.00) is not a slice, and the two left share 100%.
+    expect(partShares({ parts: [part('in', 30_000), part('out', 10_000), part('saved', -5_000), part('none', 0)] })).toEqual({
+      wholeCents: 40_000,
+      parts: [
+        { key: 'in', shareBp: 7_500 },
+        { key: 'out', shareBp: 2_500 },
+        { key: 'saved', shareBp: null },
+        { key: 'none', shareBp: null },
+      ],
+    })
+  })
+
+  it('has no share at all when nothing is above zero', () => {
+    expect(partShares({ parts: [part('in', 0), part('out', -100)] }).parts.map((p) => p.shareBp)).toEqual([null, null])
+  })
+})
+
+describe('stackedColumns (F19, the Year stacked column)', () => {
+  const col = (key: string, ...parts: number[]) => ({ key, parts })
+
+  it('stacks each column on one scale, the tallest column, with parts that meet exactly', () => {
+    // January 300 + 100 = 400 is the tallest; February 100 + 200 = 300.
+    const out = stackedColumns({ columns: [col('jan', 30_000, 10_000), col('feb', 10_000, 20_000)] })
+    expect(out.scaleCents).toBe(40_000)
+    expect(out.columns).toEqual([
+      { key: 'jan', parts: [{ fromBp: 0, toBp: 7_500 }, { fromBp: 7_500, toBp: 10_000 }] },
+      { key: 'feb', parts: [{ fromBp: 0, toBp: 2_500 }, { fromBp: 2_500, toBp: 7_500 }] },
+    ])
+    // A third is 3,333.33… bp and rounds down, and the second part starts
+    // exactly there: no gap or overlap between them.
+    const thirds = stackedColumns({ columns: [col('a', 1, 2)] }).columns[0]!.parts
+    expect(thirds).toEqual([{ fromBp: 0, toBp: 3_333 }, { fromBp: 3_333, toBp: 10_000 }])
+  })
+
+  it('leaves a part at or below zero undrawn, and out of its column', () => {
+    // A refund-only month's expenses (−20.00) are not drawn and do not shorten
+    // its income; the scale is the tallest column drawn.
+    const out = stackedColumns({ columns: [col('jan', 10_000, -2_000), col('feb', 0, 5_000)] })
+    expect(out.scaleCents).toBe(10_000)
+    expect(out.columns.map((c) => c.parts)).toEqual([
+      [{ fromBp: 0, toBp: 10_000 }, null],
+      [null, { fromBp: 0, toBp: 5_000 }],
+    ])
+  })
+
+  it('draws nothing when no column has anything above zero', () => {
+    const out = stackedColumns({ columns: [col('jan', 0, 0), col('feb', -1, 0)] })
+    expect(out.scaleCents).toBe(0)
+    expect(out.columns.flatMap((c) => c.parts)).toEqual([null, null, null, null])
   })
 })

@@ -1,5 +1,5 @@
 /**
- * The parts of a whole that the Month's charts draw (F17).
+ * The parts of a whole that the Month's and the Year's charts draw (F17, F19).
  *
  * A chart's geometry is a division of money — a slice is a category's
  * spending over the block's, a bar is an amount over the largest — and
@@ -14,7 +14,7 @@
  * zero, half-up to a basis point as F13 rounds, so a refund is never drawn
  * as spending.
  */
-import { type Cents, ZERO_CENTS, cents } from '@budget/money-primitives'
+import { type Cents, ZERO_CENTS, addCents, cents, sumCents } from '@budget/money-primitives'
 
 /**
  * `part` of `whole` in basis points, rounded half-up. Exact for any amount:
@@ -69,5 +69,77 @@ export function goalBars(input: GoalBarsInput): GoalBarsOutput {
       // amount beside the chart, not as a length.
       actualBp: scale === 0 || r.actual < 0 ? null : shareOf(r.actual, scale),
     })),
+  }
+}
+
+export interface PartSharesInput {
+  readonly parts: readonly { readonly key: string; readonly cents: number }[]
+}
+
+export interface PartSharesOutput {
+  /** The parts above zero, added: what 10,000 bp is. */
+  readonly wholeCents: Cents
+  /** Each part's share, in the order given; null at or below zero, or with nothing above it. */
+  readonly parts: readonly { readonly key: string; readonly shareBp: number | null }[]
+}
+
+/**
+ * The Year's pie (F19; Annual chart41, Home chart3): each part's share of
+ * the parts above zero, half-up, as F17 shares a block's rows. A part at or
+ * below zero has no slice and is not in the whole.
+ */
+export function partShares(input: PartSharesInput): PartSharesOutput {
+  const amounts = input.parts.map((p) => ({ key: p.key, amount: cents(p.cents) }))
+  const whole = sumCents(amounts.filter((p) => p.amount > 0).map((p) => p.amount))
+  return {
+    wholeCents: whole,
+    parts: amounts.map((p) => ({ key: p.key, shareBp: p.amount > 0 ? shareOf(p.amount, whole) : null })),
+  }
+}
+
+export interface StackedColumnsInput {
+  /** Each column's parts, bottom first. */
+  readonly columns: readonly { readonly key: string; readonly parts: readonly number[] }[]
+}
+
+/** Where a drawn part starts and ends, in basis points of the scale from the baseline. */
+export interface StackedPart {
+  readonly fromBp: number
+  readonly toBp: number
+}
+
+export interface StackedColumnsOutput {
+  /** The tallest column, its parts above zero added: 10,000 bp. Zero when nothing is. */
+  readonly scaleCents: Cents
+  /** Each column's parts in the order given; null for a part not drawn. */
+  readonly columns: readonly { readonly key: string; readonly parts: readonly (StackedPart | null)[] }[]
+}
+
+/**
+ * The Year's stacked column (F19; Annual chart40): each column's parts
+ * above zero stacked bottom first on one scale, the tallest column. Each
+ * part's ends are the running totals' shares, so one part ends exactly
+ * where the next starts and no column passes 10,000 bp; rounding each
+ * part's own share would leave a gap or an overlap between them.
+ */
+export function stackedColumns(input: StackedColumnsInput): StackedColumnsOutput {
+  const columns = input.columns.map((c) => ({ key: c.key, parts: c.parts.map((p) => cents(p)) }))
+  const heights = columns.map((c) => sumCents(c.parts.filter((p) => p > 0)))
+  const scale = heights.reduce<Cents>((max, h) => (h > max ? h : max), ZERO_CENTS)
+  return {
+    scaleCents: scale,
+    columns: columns.map((c) => {
+      let below = ZERO_CENTS
+      return {
+        key: c.key,
+        parts: c.parts.map((p): StackedPart | null => {
+          if (p <= 0) return null
+          const top = addCents(below, p)
+          const part = { fromBp: shareOf(below, scale), toBp: shareOf(top, scale) }
+          below = top
+          return part
+        }),
+      }
+    }),
   }
 }
