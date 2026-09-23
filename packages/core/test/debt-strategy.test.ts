@@ -49,11 +49,12 @@ describe('payoffStrategies (F23)', () => {
   })
 
   it("moves the rest of a clearing debt's payment the same month", () => {
-    // A $50 on $100 a month clears in January with $50 over: B 30,000 less
-    // 10,000 less 5,000 is 15,000; February 5,000 then A's 10,000 clears it.
-    const s = plans([debt('A', 5_000, 10_000), debt('B', 30_000, 10_000)])
+    // A $50 on $100 a month clears in January with $50 over: B 35,000 less
+    // 10,000 less 5,000 is 20,000; February 10,000 then A's 10,000 clears it.
+    // Were the $50 lost, B would stand at 25,000, then 5,000, and clear in March.
+    const s = plans([debt('A', 5_000, 10_000), debt('B', 35_000, 10_000)])
     expect(months(s.snowball)).toEqual({ A: '01', B: '02' })
-    expect(months(s.flat)).toEqual({ A: '01', B: '03' })
+    expect(months(s.flat)).toEqual({ A: '01', B: '04' })
   })
 
   it('breaks a tie of balances by name, whatever order they were typed in', () => {
@@ -66,18 +67,33 @@ describe('payoffStrategies (F23)', () => {
 
   it('rolls nothing into a debt before its start month', () => {
     // Loan starts in March: A's freed money in January and February has
-    // nowhere to go. March pays 10,000 and A's 10,000 clears it.
-    const s = plans([debt('A', 5_000, 10_000), debt('Loan', 20_000, 10_000, 0, month('03'))])
-    expect(months(s.snowball)).toEqual({ A: '01', Loan: '03' })
-    expect(months(s.flat)).toEqual({ A: '01', Loan: '04' })
+    // nowhere to go. March pays 10,000 and A's 10,000: 10,000 left, cleared
+    // in April. Rolled into early, it would stand at 15,000 by March and
+    // clear then.
+    const s = plans([debt('A', 5_000, 10_000), debt('Loan', 30_000, 10_000, 0, month('03'))])
+    expect(months(s.snowball)).toEqual({ A: '01', Loan: '04' })
+    expect(months(s.flat)).toEqual({ A: '01', Loan: '05' })
   })
 
   it('counts an extra in its month, and rolls what its debt does not need', () => {
     const s = payoffStrategies({
-      debts: [debt('A', 5_000, 10_000), debt('B', 30_000, 10_000)],
+      debts: [debt('A', 5_000, 10_000), debt('B', 40_000, 10_000)],
       extraPayments: [{ debtName: 'A', month: month('01'), amountCents: 10_000 }],
     })!
-    // A's $200 clears $50; B takes 15,000 in January, 5,000 left, then clears.
+    // A's $200 clears $50; B takes 10,000 and 15,000 in January, 15,000
+    // left; February 10,000 and A's 10,000 clear it. Without the extra's
+    // 10,000 over, B would stand at 25,000, then 5,000, and clear in March.
+    expect(months(s.snowball)).toEqual({ A: '01', B: '02' })
+  })
+
+  it('rolls an extra typed on a debt already paid off', () => {
+    // A clears in January with 5,000 over: B 55,000 → 40,000. February: A's
+    // 10,000 and its 30,000 extra roll with B's own 10,000, 50,000 in all,
+    // which clears B. Rolling A's minimum alone would leave 20,000.
+    const s = payoffStrategies({
+      debts: [debt('A', 5_000, 10_000), debt('B', 55_000, 10_000)],
+      extraPayments: [{ debtName: 'A', month: month('02'), amountCents: 30_000 }],
+    })!
     expect(months(s.snowball)).toEqual({ A: '01', B: '02' })
   })
 
