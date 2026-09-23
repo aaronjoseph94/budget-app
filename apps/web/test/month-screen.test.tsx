@@ -70,7 +70,7 @@ describe('MonthScreen blocks', () => {
 
     expect(await screen.findByRole('heading', { name: 'September 2026' })).toBeTruthy()
     const order = (await screen.findAllByRole('region')).map((r) => r.getAttribute('aria-label'))
-    expect(order).toEqual(['Variable expenses', 'Bills', 'Subscriptions', 'Debts', 'Income', 'Savings'])
+    expect(order).toEqual(['Summary', 'Variable expenses', 'Bills', 'Subscriptions', 'Debts', 'Income', 'Savings'])
 
     const variable = block('Variable expenses')
     expect(variable.getByText('$85.00')).toBeTruthy()
@@ -133,5 +133,61 @@ describe('MonthScreen blocks', () => {
 
     const alert = await screen.findByRole('alert')
     expect(within(alert).getByText('Could not load this month')).toBeTruthy()
+  })
+})
+
+describe('MonthScreen summary and notes', () => {
+  // Hand-derived. Spent: variable 85.00 + bills 55.00 = 140.00; savings and
+  // the card payment are not spending. No budgets, so Left to spend is
+  // 0 − 85.00 (F5).
+  it('shows Spent and Left to spend from core, with its minus sign and why', async () => {
+    renderScreen(<MonthScreen month="2026-09" />, seeded())
+
+    const summary = within(await screen.findByRole('region', { name: 'Summary' }))
+    expect(summary.getByText('Spent').nextSibling?.textContent).toBe('$140.00')
+    expect(summary.getByText('Left to spend').nextSibling?.textContent).toBe('-$85.00')
+    expect(summary.getByText('No budgets set yet.')).toBeTruthy()
+  })
+
+  it('says what was paid to the card, and that it is not counted (D9)', async () => {
+    renderScreen(<MonthScreen month="2026-09" />, seeded())
+
+    const note = (await screen.findByText('$500.00')).closest('p')
+    expect(note?.textContent).toBe(
+      'Paid to your card: $500.00 — not counted. What it paid for is already in the blocks above.',
+    )
+  })
+
+  it("says how far the latest statement reaches, from the statement's own period", async () => {
+    const fake = seeded()
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+    expect(await screen.findByText('No statement imported yet.')).toBeTruthy()
+    cleanup()
+
+    fake.tables.ingest_batches.push(
+      { id: 'b1', source: 'card_pdf', created_at: '2026-09-09T10:00:00Z', period_end: '2026-09-07' },
+      { id: 'b2', source: 'card_pdf', created_at: '2026-08-09T10:00:00Z', period_end: '2026-08-07' },
+    )
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+    expect(await screen.findByText('Statement imported up to 7 Sep 2026')).toBeTruthy()
+  })
+
+  it("puts charges not filed yet in one line at the top, this month's first, and it opens Review", async () => {
+    const fake = seeded()
+    const pending = (id: string, posted_on: string) => ({
+      id, posted_on, amount_cents: -1349, merchant: 'LITWARE COFFEE', merchant_raw: 'LITWARE COFFEE', status: 'pending',
+    })
+    fake.tables.ingest_candidates.push(pending('p1', '2026-09-03'), pending('p2', '2026-09-29'), pending('p3', '2026-08-20'))
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+
+    const banner = await screen.findByRole('button', { name: /Not filed yet: 2 from September waiting for review/ })
+    expect(banner.textContent).toContain('— not counted below')
+    expect(screen.queryByText('$13.49')).toBeNull()
+    fireEvent.click(banner)
+    expect(window.location.hash).toBe('#/review')
+    cleanup()
+
+    renderScreen(<MonthScreen month="2026-10" />, fake)
+    expect(await screen.findByRole('button', { name: '3 from other months waiting for review' })).toBeTruthy()
   })
 })
