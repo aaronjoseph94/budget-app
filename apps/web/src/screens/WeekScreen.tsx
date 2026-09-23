@@ -19,7 +19,8 @@ import { GoalCard, NoGoal } from './WeekGoal.js'
  */
 export function WeekScreen() {
   const { supabase, categories, goal, pendingTotal, version } = useAppData()
-  const [asOf, setAsOf] = useState(() => isoDate(todayIso()))
+  const today = isoDate(todayIso())
+  const [asOf, setAsOf] = useState(today)
   const [rows, setRows] = useState<readonly LedgerRow[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const bounds = useMemo(() => weekBounds(asOf), [asOf])
@@ -46,8 +47,12 @@ export function WeekScreen() {
     [rows, categories, asOf],
   )
 
-  const isThisWeek = weekBounds(isoDate(todayIso())).start === bounds.start
-  const step = (weeks: number) => setAsOf(shiftWeek(bounds.start, weeks))
+  const isThisWeek = weekBounds(today).start === bounds.start
+  // Back on this week, its days left count from today again, not its Monday.
+  const step = (weeks: number) => {
+    const next = shiftWeek(bounds.start, weeks)
+    setAsOf(weekBounds(next).start === weekBounds(today).start ? today : next)
+  }
 
   return (
     <div className="space-y-4">

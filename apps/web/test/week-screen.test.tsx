@@ -101,6 +101,8 @@ describe('WeekScreen', () => {
     await screen.findByRole('heading', { name: 'Week of' })
     fireEvent.click(screen.getByRole('button', { name: 'Next week' }))
     expect(await screen.findByRole('heading', { name: 'This week' })).toBeTruthy()
+    // From today, Wednesday, not from the week's Monday.
+    expect(await screen.findByText(/5 days left/)).toBeTruthy()
   })
 
   // Hand-derived: 8,450 of 30,000 is 28% with 21,550 to go; 21,550 over the
