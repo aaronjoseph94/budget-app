@@ -79,6 +79,14 @@ export {
 } from './period-sheet.js'
 
 export {
+  billCalendar,
+  type BillCalendar,
+  type BillCalendarInput,
+  type CalendarDay,
+  type CalendarWeek,
+} from './bill-calendar.js'
+
+export {
   PAYDAYS_A_YEAR,
   payPeriod,
   payShare,

@@ -1,0 +1,25 @@
+{
+  "$provenance": {
+    "sourceWorkbook": "Ultimate Annual Budget (\"Workbook\"), the owner's copy, Google Sheets export (not committed)",
+    "sourceSheet": "Bill Calendar",
+    "cells": {"month": "Bill Calendar!G3", "expected": "Bill Calendar!B8, H8, N8, B14, L32, N32"},
+    "extractedOn": "2026-09-23",
+    "note": "Workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S15c: the Bill Calendar under D5 (F20)."
+  },
+  "$semantics": {
+    "grid": "Sunday first (B6). A cell names its week (0 is rows 8-13, 1 is rows 14-19, ...) and weekday (0 Sunday, B:C, to 6 Saturday, N:O). A day cell's cached number is that date's day of the month; B8 and N32 are blank, so those places hold no day."
+  },
+  "input": {
+    "month": "2025-01-01"
+  },
+  "expected": {
+    "days": [
+      {"cell": "Bill Calendar!B8", "week": 0, "weekday": 0, "day": null},
+      {"cell": "Bill Calendar!H8", "week": 0, "weekday": 3, "day": 1},
+      {"cell": "Bill Calendar!N8", "week": 0, "weekday": 6, "day": 4},
+      {"cell": "Bill Calendar!B14", "week": 1, "weekday": 0, "day": 5},
+      {"cell": "Bill Calendar!L32", "week": 4, "weekday": 5, "day": 31},
+      {"cell": "Bill Calendar!N32", "week": 4, "weekday": 6, "day": null}
+    ]
+  }
+}
