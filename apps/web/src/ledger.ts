@@ -831,9 +831,9 @@ export interface PlanEdit {
  *
  * A plain upsert under RLS on 0009's key, so typing over this month's row
  * replaces it and never adds a second; earlier months keep theirs. Both
- * columns go in every write, the one not being changed as Setup last read
- * it: a row for this month that left out the day paid would blank it from
- * here on.
+ * columns go in every write, the one not being changed as its field in
+ * Setup holds it, which may be typed and not yet read back: a row for this
+ * month that left out the day paid would blank it from here on.
  */
 export async function setPlan(supabase: SupabaseClient, edit: PlanEdit): Promise<void> {
   const { error } = await supabase.from('category_plans').upsert(
