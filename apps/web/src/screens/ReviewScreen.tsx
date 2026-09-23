@@ -22,6 +22,7 @@ import { Button } from '../components/ui/button.js'
 import { Input, NativeSelect } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { cn } from '../lib/cn.js'
+import { navigate } from '../nav.js'
 
 const NEW_CATEGORY = '__new__'
 
@@ -163,6 +164,12 @@ export function ReviewScreen() {
           <Empty icon={<Icon name="check" />} title="All caught up">
             Import a statement and anything it finds that you have not categorised before will wait here.
           </Empty>
+          {/* Not a dead end: what was just approved is counted on the Month. */}
+          <div className="-mt-6 flex justify-center pb-8">
+            <Button variant="outline" onClick={() => navigate('month')}>
+              See this month
+            </Button>
+          </div>
         </Card>
       ) : null}
 

@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ReviewScreen } from '../src/screens/ReviewScreen.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
@@ -28,7 +28,11 @@ async function row(merchantRaw: string) {
   return within(item)
 }
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+  window.location.hash = ''
+})
 
 describe('ReviewScreen', () => {
   it('lists what is waiting, with amounts and the suggestion from a learned rule', async () => {
@@ -261,6 +265,10 @@ describe('ReviewScreen, lines an import could not read', () => {
 
     expect(await screen.findByText('All caught up')).toBeTruthy()
     expect(screen.queryByRole('region')).toBeNull()
+    // Not a dead end: what was just approved is on the Month.
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
+    fireEvent.click(screen.getByRole('button', { name: 'See this month' }))
+    expect(window.location.hash).toBe('#/month')
   })
 
   it('shows a readable message when the lines cannot be loaded', async () => {
