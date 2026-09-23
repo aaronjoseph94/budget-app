@@ -1,0 +1,58 @@
+import { describe, expect, it } from 'vitest'
+import { loadGolden } from '@budget/golden-verification'
+import { isoDate } from '@budget/money-primitives'
+import { NeverPaidOff, amortize, type AmortizeInput } from '../src/debt.js'
+import { debtPlan, type PlannedDebt } from '../src/debt-plan.js'
+
+const golden = loadGolden<AmortizeInput, { debtFreeDate: string }>('debt-payoff')
+const month = (m: string) => isoDate(`${m}-01`)
+
+// Hand-derived, as debt-status.test.ts: $300.00 at 1% a month, $100.00 a
+// month from January 2026, paid off in April with $3.05 (D24).
+const loan: PlannedDebt = { name: 'Loan', startMonth: month('2026-01'), startingBalanceCents: 30_000, minimumPaymentCents: 10_000, aprBasisPoints: 1_200 }
+// $50.00 at 0%, $25.00 a month from June 2026: June and July.
+const car: PlannedDebt = { name: 'Car', startMonth: month('2026-06'), startingBalanceCents: 5_000, minimumPaymentCents: 2_500, aprBasisPoints: 0 }
+
+describe('debtPlan', () => {
+  it("is amortize() when every debt shares a start month, as Workbook's do", () => {
+    const start = isoDate(golden.input.startDate)
+    const plan = debtPlan({
+      debts: golden.input.debts.map((d) => ({ ...d, startMonth: start })),
+      // Workbook's I28, month 3 of a March start, is May.
+      extraPayments: [{ debtName: 'Credit Card 1', month: month('2025-05'), amountCents: 5_000 }],
+    })
+    expect(plan.neverPaidOff).toEqual([])
+    expect(plan.amortization).toEqual(amortize(golden.input))
+    expect(plan.amortization?.debtFreeDate).toBe(golden.expected.debtFreeDate)
+  })
+
+  it('starts each debt in its own month, and numbers its extras from there', () => {
+    const plan = debtPlan({ debts: [loan, car], extraPayments: [{ debtName: 'Car', month: month('2026-06'), amountCents: 2_500 }] })
+    const [l, c] = plan.amortization!.perDebt
+    expect(l!.months.map((m) => m.date)).toEqual(['2026-01-01', '2026-02-01', '2026-03-01', '2026-04-01'])
+    // $25.00 plus the $25.00 extra clears the car in its first month, June.
+    expect(c!.months).toEqual([{ month: 1, date: '2026-06-01', interestCents: 0, paymentCents: 5_000, extraCents: 2_500, balanceCents: 0 }])
+    expect(plan.amortization).toMatchObject({ startingTotalCents: 35_000, totalMinimumPaymentCents: 12_500, debtFreeDate: '2026-06-01', totalInterestCents: 305 })
+  })
+
+  it('names a debt whose payment never clears its interest, and plans the rest', () => {
+    // $1,000.00 at 24% (2% a month, $20.00) paying $10.00 grows for ever.
+    const card: PlannedDebt = { name: 'Card', startMonth: month('2026-01'), startingBalanceCents: 100_000, minimumPaymentCents: 1_000, aprBasisPoints: 2_400 }
+    const plan = debtPlan({ debts: [card, loan], extraPayments: [] })
+    expect(plan.neverPaidOff).toEqual(['Card'])
+    expect(plan.amortization?.perDebt.map((d) => d.name)).toEqual(['Loan'])
+    expect(plan.amortization?.startingTotalCents).toBe(30_000)
+    expect(debtPlan({ debts: [card], extraPayments: [] })).toEqual({ amortization: null, neverPaidOff: ['Card'] })
+    expect(() => amortize({ startDate: '2026-01-01', debts: [card], extraPayments: [] })).toThrow(NeverPaidOff)
+  })
+
+  it('has no plan with no debts', () => {
+    expect(debtPlan({ debts: [], extraPayments: [] })).toEqual({ amortization: null, neverPaidOff: [] })
+  })
+
+  it('refuses an extra before its debt starts, which 0014 refuses too', () => {
+    expect(() => debtPlan({ debts: [car], extraPayments: [{ debtName: 'Car', month: month('2026-05'), amountCents: 100 }] })).toThrow(
+      /before its start month/,
+    )
+  })
+})

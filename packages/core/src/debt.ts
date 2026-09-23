@@ -151,9 +151,19 @@ function amortizeOne(
     }
   }
 
-  throw new Error(
-    `"${debt.name}" does not amortize within ${MAX_MONTHS} months. ` +
-      `A minimum payment of ${minimum} cents never clears the interest on a balance of ` +
-      `${debt.startingBalanceCents} cents at ${debt.aprBasisPoints} basis points.`,
-  )
+  throw new NeverPaidOff(debt.name, MAX_MONTHS)
+}
+
+/**
+ * A debt whose minimum never clears its own interest. It names the debt and
+ * nothing else: the message can reach a screen, and amounts are never logged.
+ */
+export class NeverPaidOff extends Error {
+  constructor(
+    readonly debtName: string,
+    months: number,
+  ) {
+    super(`"${debtName}" is not paid off within ${months} months: its payment never clears its interest.`)
+    this.name = 'NeverPaidOff'
+  }
 }
