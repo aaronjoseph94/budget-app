@@ -331,3 +331,57 @@ plan text is not part of this slice.
 **To settle:** before S5b, say in §6.2 and §6.6 that the block columns use
 the system face with tabular digits and that Comfortaa is for the big
 standalone totals only.
+
+---
+
+## N16 — main's `pt-6` never applies, so screens start flush with the top
+
+**Seen:** 2026-09-23, S2b (Setup's phone screenshot).
+
+`App.tsx` gives `<main>` both `safe-top` and `pt-6`. `.safe-top` is declared
+in `index.css` outside Tailwind's layers, so it beats the `pt-6` utility and
+the padding is `env(safe-area-inset-top)` alone: 0 in a browser tab. Setup
+was pulling its band up by the 24px it assumed, which hid its back button.
+Every other screen's heading sits at the very top edge of a phone browser.
+
+**Why not fixed here:** it changes the top of every screen, and S5a rebuilds
+the navigation shell anyway.
+
+**To settle:** in S5a, write the padding as
+`calc(1.5rem + env(safe-area-inset-top))` on `<main>` instead of two classes,
+and look at each screen on a phone.
+
+---
+
+## N17 — Removing a category is refused for more than charges
+
+**Seen:** 2026-09-23, S2b.
+
+`merchant_rules` and `ingest_candidates` reference `categories` ON DELETE
+RESTRICT, like `transactions` (0001). A category with a learned shop rule, or
+an approved candidate, but no charge left (after S6's recategorise with
+`p_learn = false`) is refused with 23503, and Setup says it "still has
+charges filed under it". Moving charges from a screen also waits for S6.
+
+**Why not fixed here:** the sentence is the plan's (§6.5), and the fix
+belongs with S6, which is where charges and rules move.
+
+**To settle:** at S6, word the remove message for charges or learned shops,
+and say where to move them.
+
+---
+
+## N18 — Two of Setup's messages wait on monthly amounts
+
+**Seen:** 2026-09-23, S2b.
+
+§6.5 lists "that list can't have a monthly amount" and "remove the monthly
+amount first". Setup maps the second to a refused move (23514) now; nothing
+sets a monthly amount yet, so the first has no action to attach to and is
+not written.
+
+**Why not fixed here:** both depend on 0009 `category_plans` (Sitting B).
+
+**To settle:** in 0009, have both triggers raise `check_violation` (23514),
+and at S9 add the "set amount" action to `describeSetupFailure` with the
+first sentence.
