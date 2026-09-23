@@ -280,6 +280,12 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
         else if (method === 'PATCH') next.push({ ...r, ...body })
       }
       table.splice(0, table.length, ...next)
+      // A category takes its budgets and monthly amounts with it (0008, 0009: ON DELETE CASCADE).
+      if (method === 'DELETE' && target === 'categories') {
+        const kept = (r: { category_id: string }) => tables.categories.some((c) => c.id === r.category_id)
+        tables.category_budgets = tables.category_budgets.filter(kept)
+        tables.category_plans = tables.category_plans.filter(kept)
+      }
       return new Response(null, { status: 204 })
     }
     if (method !== 'GET') return pgError('FAKE_UNSUPPORTED_METHOD', 501)

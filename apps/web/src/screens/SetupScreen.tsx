@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { useAppData } from '../app-data.js'
-import { appendToLists, moveInList } from '@budget/core'
+import { appendToLists, isoDate, monthBounds, moveInList } from '@budget/core'
 import {
   addCategories,
   ensureCategory,
@@ -12,11 +12,13 @@ import {
 } from '../ledger.js'
 import { atEndOf, groupByList, LIST_HEADING, LISTS, starterList, type CategoryKind } from '../lists.js'
 import { saveDisplayName } from '../profile.js'
+import { todayIso } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { navigate } from '../nav.js'
+import { useMonthlyAmounts, type MonthlyAmounts } from './SetupPlans.js'
 
 interface ListCard {
   readonly kind: CategoryKind
@@ -64,6 +66,10 @@ export function SetupScreen() {
   // How many the starter button added, kept here so its message stays once
   // the button itself is gone.
   const [added, setAdded] = useState<number | null>(null)
+  // Monthly amounts are set from this month on (D13), as Workbook's Bills tab
+  // sets one for every month.
+  const month = monthBounds(isoDate(todayIso())).start
+  const amounts = useMonthlyAmounts(month)
 
   return (
     <div className="-mx-4 bg-setup-canvas pb-6 md:mx-0 md:overflow-hidden md:rounded-xl">
@@ -75,6 +81,7 @@ export function SetupScreen() {
         {SECTIONS.map((section) => (
           <section key={section.label} className="space-y-2">
             <h2 className="text-xl font-medium text-setup-label">{section.label}</h2>
+            {section.label === 'Recurring expenses' ? <AmountsProblem amounts={amounts} /> : null}
             {section.cards.map((card) => (
               <ListCardView key={card.kind} card={card} rows={lists.get(card.kind) ?? []} />
             ))}
@@ -83,6 +90,19 @@ export function SetupScreen() {
       </div>
     </div>
   )
+}
+
+/** Why monthly amounts are not shown, once, above the three cards that would show them. */
+function AmountsProblem({ amounts }: { amounts: MonthlyAmounts }) {
+  if (amounts.status === 'failed') return <Alert tone="error">{amounts.message}</Alert>
+  if (amounts.status === 'ready' && amounts.mismatch) {
+    return (
+      <Alert tone="error">
+        A monthly amount names a category that did not load, so the totals are not shown. Reload to try again.
+      </Alert>
+    )
+  }
+  return null
 }
 
 /**
