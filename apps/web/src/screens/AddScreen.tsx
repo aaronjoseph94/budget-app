@@ -36,7 +36,7 @@ export function AddScreen() {
     <div className="space-y-4">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Add</h1>
-        <p className="text-sm text-muted-foreground">A statement from your bank, a receipt photo, or one purchase by hand.</p>
+        <p className="text-sm text-muted-foreground">A statement from your bank, a receipt photo, or one by hand: cash, pay or a move to savings.</p>
       </header>
       <div role="tablist" className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
         {(['statement', 'photo', 'typed'] as const).map((m) => (
@@ -440,7 +440,9 @@ function TypedEntry() {
           </Button>
           {outcome !== null ? <Alert tone={outcome.ok ? 'success' : 'error'}>{outcome.message}</Alert> : null}
           <p className="text-xs text-muted-foreground">
-            For cash. A card purchase typed here and later imported from your statement would count twice.
+            {/* Pay and savings moves are typed (decision 8), so not "for cash" alone. */}
+            For what a card statement never shows: cash, pay and moves to savings. A card purchase typed here and later
+            imported from your statement would count twice.
           </p>
         </form>
       </CardContent>

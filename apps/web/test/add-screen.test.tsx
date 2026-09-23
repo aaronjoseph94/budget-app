@@ -28,6 +28,18 @@ const offered = () =>
 
 afterEach(cleanup)
 
+describe('AddScreen, what it is for', () => {
+  // Pay and savings moves are typed (plan §3.3, decision 8), and never on a
+  // card statement, so the screen says so rather than "for cash" alone.
+  it('says pay and moves to savings are typed here, as well as cash', async () => {
+    renderScreen(<AddScreen />, seeded())
+
+    expect(await screen.findByText(/or one by hand: cash, pay or a move to savings\./)).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: /Type it/ }))
+    expect(screen.getByText(/^For what a card statement never shows: cash, pay and moves to savings\./)).toBeTruthy()
+  })
+})
+
 describe('AddScreen, typing one in with a new category', () => {
   it("groups the category picker under Workbook's lists", async () => {
     renderScreen(<AddScreen />, seeded())
