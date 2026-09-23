@@ -19,6 +19,14 @@ describe('readAddress', () => {
     expect(readAddress('#/year/2026-13')).toEqual({ screen: HOME, period: null })
   })
 
+  it('reads the month on the Bill Calendar, and only a month', () => {
+    expect(readAddress('#/calendar/2026-09')).toEqual({ screen: 'calendar', period: '2026-09' })
+    expect(readAddress('#/calendar')).toEqual({ screen: 'calendar', period: null })
+    for (const hash of ['#/calendar/2026-13', '#/calendar/2026-09-11', '#/calendar/2026-9']) {
+      expect(readAddress(hash), hash).toEqual({ screen: HOME, period: null })
+    }
+  })
+
   it('reads a day of a pay period on Paycheck, and only a real one', () => {
     expect(readAddress('#/paycheck/2026-09-11')).toEqual({ screen: 'paycheck', period: '2026-09-11' })
     expect(readAddress('#/paycheck')).toEqual({ screen: 'paycheck', period: null })
@@ -50,7 +58,7 @@ describe('readAddress', () => {
   })
 
   it('writes back what it reads', () => {
-    for (const hash of ['#/month/2026-09', '#/month', '#/settings', '#/year/2025-04', '#/paycheck/2026-09-11']) expect(hashOf(readAddress(hash))).toBe(hash)
+    for (const hash of ['#/month/2026-09', '#/month', '#/settings', '#/year/2025-04', '#/paycheck/2026-09-11', '#/calendar/2026-02']) expect(hashOf(readAddress(hash))).toBe(hash)
   })
 })
 

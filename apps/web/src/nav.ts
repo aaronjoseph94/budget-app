@@ -15,7 +15,7 @@
 import { useMemo, useSyncExternalStore } from 'react'
 import { isoDate } from '@budget/core'
 
-export const SCREENS = ['month', 'week', 'review', 'add', 'more', 'ledger', 'settings', 'setup', 'year', 'paycheck'] as const
+export const SCREENS = ['month', 'week', 'review', 'add', 'more', 'ledger', 'settings', 'setup', 'year', 'paycheck', 'calendar'] as const
 export type Screen = (typeof SCREENS)[number]
 
 /** What a bare or unreadable address opens: Month first (plan §9a, decision 1). */
@@ -24,8 +24,9 @@ export const HOME: Screen = 'month'
 export interface Address {
   readonly screen: Screen
   /**
-   * `YYYY-MM`: the month on the Month screen, the start month on the Year
-   * (`#/year/2026-01`, F14). `YYYY-MM-DD` on Paycheck: a day of the pay
+   * `YYYY-MM`: the month on the Month screen and the Bill Calendar
+   * (`#/calendar/2026-09`), the start month on the Year (`#/year/2026-01`,
+   * F14). `YYYY-MM-DD` on Paycheck: a day of the pay
    * period, its payday when the arrows wrote it (`#/paycheck/2026-09-11`).
    * Null for the screen's own default, and on every other screen.
    */
@@ -54,7 +55,7 @@ export function readAddress(hash: string): Address {
   const screen = SCREENS.find((s) => s === name)
   if (screen === undefined || rest.length > 0) return DEFAULT
   if (period === undefined) return { screen, period: null }
-  if ((screen === 'month' || screen === 'year') && MONTH.test(period)) return { screen, period }
+  if ((screen === 'month' || screen === 'year' || screen === 'calendar') && MONTH.test(period)) return { screen, period }
   return screen === 'paycheck' && isDay(period) ? { screen, period } : DEFAULT
 }
 
@@ -78,7 +79,7 @@ export function useScreen(): Screen {
   return useAddress().screen
 }
 
-/** Go to a screen; `period` only for the Month and Year (`YYYY-MM`) and Paycheck (`YYYY-MM-DD`). */
+/** Go to a screen; `period` only for the Month, Year and Bill Calendar (`YYYY-MM`) and Paycheck (`YYYY-MM-DD`). */
 export function navigate(screen: Screen, period: string | null = null): void {
   const hash = hashOf({ screen, period })
   if (window.location.hash !== hash) window.location.hash = hash.slice(1)

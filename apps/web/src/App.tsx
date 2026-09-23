@@ -4,6 +4,7 @@ import { createSupabase } from './supabase.js'
 import { NotConfigured, SignIn, useSession } from './auth.js'
 import { AppDataProvider, useAppData } from './app-data.js'
 import { navigate, useAddress, type Screen } from './nav.js'
+import { CalendarScreen } from './screens/CalendarScreen.js'
 import { MonthScreen } from './screens/MonthScreen.js'
 import { MoreScreen } from './screens/MoreScreen.js'
 import { PaycheckScreen } from './screens/PaycheckScreen.js'
@@ -129,6 +130,7 @@ export function Shell() {
         {screen === 'month' ? <MonthScreen month={period} /> : null}
         {screen === 'week' ? <WeekScreen /> : null}
         {screen === 'paycheck' ? <PaycheckScreen day={period} /> : null}
+        {screen === 'calendar' ? <CalendarScreen month={period} /> : null}
         {screen === 'review' ? <ReviewScreen /> : null}
         {screen === 'add' ? <AddScreen /> : null}
         {screen === 'more' ? <MoreScreen /> : null}
