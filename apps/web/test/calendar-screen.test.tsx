@@ -109,6 +109,28 @@ describe('CalendarScreen', () => {
     expect(screen.queryByText('Groceries')).toBeNull()
   })
 
+  it("draws Workbook's grid for a wide screen, Sunday first, with each week's total in its last column", async () => {
+    renderScreen(<CalendarScreen month="2026-09" />, seeded())
+
+    const grid = await screen.findByRole('table', { name: /^Bills and paydays by day, with each week’s total\. Amounts in italics are planned/ })
+    const rows = within(grid).getAllByRole('row').map((r) => [...r.querySelectorAll('th, td')].map((c) => c.textContent))
+    expect(rows[0]).toEqual(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Week'])
+    expect(rows[1]).toEqual(['', '', '1Rent1,600.00 planned', '2', '3', '4', '5', 'Week total $1,600.00'])
+    expect(rows[2]).toEqual(['6', '7', '8Phone58.12', '9', '10', '11Payday: Day job', '12', 'Week total $58.12'])
+    expect(rows[4]?.[0]).toBe('20<b>Tunes & more</b>11.99 planned')
+    expect(rows[5]).toEqual(['27', '28', '29', '30Car loan300.00 planned', '', '', '', 'Week total $300.00'])
+    expect(rows).toHaveLength(6)
+  })
+
+  it("keeps the phone's dotted month out of a screen reader's way, since the list under it says the same", async () => {
+    const { container } = renderScreen(<CalendarScreen month="2026-09" />, seeded())
+    await screen.findByRole('table')
+
+    const picture = container.querySelector('div[aria-hidden="true"]')
+    expect(picture?.textContent).toContain('a bill due')
+    expect(screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'))).toContain('Week of 1 – 5 Sep')
+  })
+
   it('lists a monthly amount with no day paid apart, and leads to Setup to add one', async () => {
     renderScreen(<CalendarScreen month="2026-09" />, seeded())
 

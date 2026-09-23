@@ -9,9 +9,8 @@ import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
-
-/** Sunday first, as Workbook's B6:N6 are. */
-export const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const
+import { cn } from '../lib/cn.js'
+import { CompactGrid, MonthGrid, WEEKDAYS } from './CalendarGrid.js'
 
 /**
  * Workbook's Bill Calendar (S15c): a month's bills, debts and subscriptions on
@@ -102,7 +101,11 @@ export function CalendarScreen({ month }: { month: string | null }) {
 
       {calendar !== null && typeof calendar !== 'string' ? (
         <>
-          <Agenda calendar={calendar} />
+          {/* Phones get the month as a picture with the list under it; a
+            wider screen has room for Workbook's grid, names and all. */}
+          <CompactGrid calendar={calendar} className="md:hidden" />
+          <MonthGrid calendar={calendar} className="hidden md:table" />
+          <Agenda calendar={calendar} className="md:hidden" />
           <Undated calendar={calendar} />
         </>
       ) : null}
@@ -121,9 +124,9 @@ interface Loaded {
  * The calendar as a list, a week at a time: each day with something on it,
  * its bills and who is paid, and the week's total (Workbook's Q8).
  */
-export function Agenda({ calendar }: { calendar: BillCalendar }) {
+export function Agenda({ calendar, className }: { calendar: BillCalendar; className?: string }) {
   return (
-    <div className="space-y-3">
+    <div className={cn('space-y-3', className)}>
       {calendar.weeks.map((week) => {
         const days = week.days.flatMap((d, weekday) => (d === null ? [] : [{ d, weekday }]))
         const first = days[0]
