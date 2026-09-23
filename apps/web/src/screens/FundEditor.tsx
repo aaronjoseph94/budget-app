@@ -82,7 +82,7 @@ export function FundEditor({
   return (
     <Sheet title={goal === null ? `Set a goal for ${fund.name}` : `${fund.name}'s goal`} onClose={onClose}>
       <form
-        className="space-y-4"
+        className="space-y-4 p-4"
         onSubmit={(e) => {
           e.preventDefault()
           void submit()
