@@ -47,6 +47,8 @@ export function MonthScreen({ month }: { month: string | null }) {
   // A budget refused after its editor closed, which it can no longer show;
   // kept, across months too, until another editor opens.
   const [unsaved, setUnsaved] = useState<string | null>(null)
+  // The starting balance's, kept the same way until its editor opens again.
+  const [startUnsaved, setStartUnsaved] = useState<string | null>(null)
 
   useEffect(() => {
     // Nothing is read before the app's first load (version 0) brings the
@@ -144,6 +146,11 @@ export function MonthScreen({ month }: { month: string | null }) {
           {unsaved}
         </Alert>
       ) : null}
+      {startUnsaved !== null ? (
+        <Alert tone="error" title="The starting balance was not saved">
+          {startUnsaved}
+        </Alert>
+      ) : null}
       {typeof sheet === 'string' ? (
         <Alert tone="error" title="Could not show this month">
           {sheet}
@@ -170,7 +177,7 @@ export function MonthScreen({ month }: { month: string | null }) {
             from 1280px: below that a card is too narrow for three columns of
             amounts, and two columns hold them. */}
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <MonthSummary sheet={sheet} month={start} />
+            <MonthSummary sheet={sheet} month={start} onUnsaved={setStartUnsaved} />
             <Block kind="variable" block={sheet.blocks.variable} {...blockProps} className="order-1 xl:order-7" />
             <Block kind="bill" block={sheet.blocks.bill} {...blockProps} className="order-2 xl:order-4" />
             <Block kind="subscription" block={sheet.blocks.subscription} {...blockProps} className="order-3 xl:order-6" />

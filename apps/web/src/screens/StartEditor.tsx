@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { parseMoneyInput, useAppData } from '../app-data.js'
 import { setMonthBalance } from '../ledger.js'
 import { formatCents, formatForInput, formatMonthTitle } from '../format.js'
@@ -18,19 +18,23 @@ import { Input } from '../components/ui/form.js'
  * minus sign in front of the text for the parser to read; nothing here
  * turns dollars into cents or changes a sign itself. Clearing removes the
  * balance, and the month then has no ending balance (D17). After a save the
- * app's data is refreshed, which re-reads the month.
+ * app's data is refreshed, which re-reads the month. A refusal that answers
+ * once the editor has closed (another month opened while it saved) is handed
+ * to `onFailedAfterClose`, so it is never lost.
  */
 export function StartEditor({
   month,
   start,
   onCancel,
   onSaved,
+  onFailedAfterClose,
 }: {
   /** The month's first day. */
   month: string
   start: number | null
   onCancel: () => void
   onSaved: (note: string) => void
+  onFailedAfterClose: (message: string) => void
 }) {
   const { supabase, userId, refresh } = useAppData()
   const shown = formatForInput(start)
@@ -39,6 +43,13 @@ export function StartEditor({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const monthName = formatMonthTitle(month).split(' ')[0]
+  const open = useRef(true)
+  useEffect(() => {
+    open.current = true
+    return () => {
+      open.current = false
+    }
+  }, [])
 
   const save = async (clear: boolean) => {
     const cents = clear ? null : parseMoneyInput(overdrawn ? `-${text.trim()}` : text)
@@ -54,7 +65,12 @@ export function StartEditor({
       // Re-reads the categories and, through `version`, the month itself.
       await refresh()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not save the starting balance. Nothing was saved.')
+      const message = cause instanceof Error ? cause.message : 'Could not save the starting balance. Nothing was saved.'
+      if (!open.current) {
+        onFailedAfterClose(`${monthName}: ${message}`)
+        return
+      }
+      setError(message)
       setBusy(false)
     }
   }

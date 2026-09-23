@@ -1,6 +1,7 @@
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MonthScreen } from '../src/screens/MonthScreen.js'
+import { useAddress } from '../src/nav.js'
 import type { Category } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
@@ -25,6 +26,7 @@ function seeded(...month_balances: ReturnType<typeof balance>[]): FakeSupabase {
   })
 }
 
+const said = 'Your sign-in does not allow this. Signing out and back in usually fixes it. (code 42501)'
 const summary = () => within(screen.getByRole('region', { name: 'Summary' }))
 const value = (label: string) => (summary().getByText(label).nextSibling as HTMLElement).textContent
 const stored = (fake: FakeSupabase) => fake.tables.month_balances.map((b) => [b.month, b.starting_balance_cents])
@@ -114,8 +116,34 @@ describe('Typing the starting balance on the Month', () => {
     refused.fail('POST month_balances', '42501')
     fireEvent.change(await open(refused), { target: { value: '100' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
-    const said = 'Your sign-in does not allow this. Signing out and back in usually fixes it. (code 42501)'
     expect((await screen.findByRole('alert')).textContent).toBe(said)
     expect(field().value).toBe('100')
+  })
+
+  it('says so on the Month when a save is refused after another month opened, until its editor opens again', async () => {
+    const moved = seeded()
+    moved.fail('POST month_balances', '42501')
+    let answer = (): void => undefined
+    const answered = new Promise<void>((resolve) => {
+      answer = resolve
+    })
+    moved.server.hold = (target) => (target === 'POST month_balances' ? answered : null)
+    function Routed() {
+      return <MonthScreen month={useAddress().month} />
+    }
+    window.location.hash = '/month/2026-09'
+    renderScreen(<Routed />, moved)
+    fireEvent.click(await screen.findByRole('button', { name: 'Starting balance for September, none typed' }))
+    fireEvent.change(field(), { target: { value: '100' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    act(() => {
+      window.location.hash = '/month/2026-10'
+      window.dispatchEvent(new HashChangeEvent('hashchange'))
+    })
+    answer()
+    expect(await screen.findByRole('heading', { name: 'October 2026' })).toBeTruthy()
+    expect((await screen.findByRole('alert')).textContent).toBe(`The starting balance was not saved` + `September: ${said}`)
+    fireEvent.click(await screen.findByRole('button', { name: 'Starting balance for October, none typed' }))
+    expect(screen.queryByRole('alert')).toBeNull()
   })
 })

@@ -15,7 +15,8 @@ import { StartEditor } from './StartEditor.js'
  * Start is the balance typed for this month (decision 6), and is typed by
  * tapping it. With none typed the card asks for it where the number would
  * be, and End of month, which core gives only from a typed start (D17), says
- * what it waits for.
+ * what it waits for. A save refused after its editor closed goes to
+ * `onUnsaved`, which is cleared when the editor opens again.
  *
  * A negative Left to spend takes Workbook's pink (Jan!D13:E14's conditional
  * format) in an ink that can be read on it. Workbook marks nothing else on the
@@ -25,10 +26,12 @@ import { StartEditor } from './StartEditor.js'
 export function MonthSummary({
   sheet,
   month,
+  onUnsaved,
 }: {
   sheet: PeriodSheet
   /** The month's first day. */
   month: string
+  onUnsaved: (message: string | null) => void
 }) {
   const { startingBalanceCents: start, spentCents, leftToSpendCents: left, endingBalanceCents: end } = sheet.summary
   const noBudgets = sheet.blocks.variable.rows.every((r) => r.budgetCents === null)
@@ -47,6 +50,7 @@ export function MonthSummary({
             aria-expanded={editing}
             onClick={() => {
               setNote(null)
+              onUnsaved(null)
               setEditing(true)
             }}
             className="rounded-sm text-left underline decoration-dotted underline-offset-4 outline-none hover:decoration-solid focus-visible:ring-2 focus-visible:ring-ring"
@@ -82,6 +86,7 @@ export function MonthSummary({
             setEditing(false)
             setNote(saved)
           }}
+          onFailedAfterClose={onUnsaved}
         />
       ) : null}
       {note !== null ? (
