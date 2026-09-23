@@ -131,6 +131,21 @@ describe('CalendarScreen', () => {
     expect(screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'))).toContain('Week of 1 – 5 Sep')
   })
 
+  it("marks the phone's dotted month with a dot per bill and a green number on each payday", async () => {
+    const { container } = renderScreen(<CalendarScreen month="2026-09" />, seeded())
+    await screen.findByRole('table')
+
+    // Every day place after the weekday letters; the legend is a paragraph.
+    const places = [...container.querySelectorAll('div[aria-hidden="true"] > div:not(:first-child) > div')]
+    const marked = places.flatMap((place) => {
+      const [number, dots] = place.children
+      if (number === undefined || dots === undefined) return []
+      const payday = number.classList.contains('bg-payday')
+      return dots.children.length > 0 || payday ? [`${number.textContent}: ${dots.children.length}${payday ? ' payday' : ''}`] : []
+    })
+    expect(marked).toEqual(['1: 1', '8: 1', '11: 0 payday', '20: 1', '25: 0 payday', '30: 1'])
+  })
+
   it('lists a monthly amount with no day paid apart, and leads to Setup to add one', async () => {
     renderScreen(<CalendarScreen month="2026-09" />, seeded())
 
