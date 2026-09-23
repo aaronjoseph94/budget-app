@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { PeriodRow } from '@budget/core'
 import { parseMoneyInput, useAppData } from '../app-data.js'
 import { setBudget } from '../ledger.js'
@@ -16,7 +16,9 @@ import { cn } from '../lib/cn.js'
  * budget", never $0. The amount goes through the parser statements use, so
  * "250", "250.5" and "$1,250.00" mean what they mean there; nothing here
  * turns dollars into cents itself. After a save the app's data is refreshed,
- * which re-reads the month, so every figure shown is core's again.
+ * which re-reads the month, so every figure shown is core's again. A refusal
+ * that answers once the editor has closed (another row or month opened while
+ * it saved) is handed to `onFailedAfterClose`, so it is never lost.
  */
 export function BudgetEditor({
   row,
@@ -25,6 +27,7 @@ export function BudgetEditor({
   replacesOnly,
   onCancel,
   onSaved,
+  onFailedAfterClose,
 }: {
   row: PeriodRow
   word: 'Budget' | 'Goal'
@@ -32,6 +35,7 @@ export function BudgetEditor({
   replacesOnly: boolean
   onCancel: () => void
   onSaved: (note: string) => void
+  onFailedAfterClose: (message: string) => void
 }) {
   const { supabase, userId, refresh } = useAppData()
   const [text, setText] = useState(formatForInput(row.budgetCents))
@@ -40,6 +44,13 @@ export function BudgetEditor({
   const [error, setError] = useState<string | null>(null)
   const lower = word.toLowerCase()
   const monthName = formatMonthTitle(month).split(' ')[0]
+  const open = useRef(true)
+  useEffect(() => {
+    open.current = true
+    return () => {
+      open.current = false
+    }
+  }, [])
 
   const save = async (clear: boolean) => {
     const cents = clear ? null : parseMoneyInput(text)
@@ -60,7 +71,12 @@ export function BudgetEditor({
       // Re-reads the categories and, through `version`, the month itself.
       await refresh()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : `Could not save this ${lower}. Nothing was saved.`)
+      const message = cause instanceof Error ? cause.message : `Could not save this ${lower}. Nothing was saved.`
+      if (!open.current) {
+        onFailedAfterClose(`${row.name}, ${monthName}: ${message}`)
+        return
+      }
+      setError(message)
       setBusy(false)
     }
   }

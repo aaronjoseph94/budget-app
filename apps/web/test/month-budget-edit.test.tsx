@@ -1,6 +1,7 @@
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MonthScreen } from '../src/screens/MonthScreen.js'
+import { useAddress } from '../src/nav.js'
 import type { BudgetRow, Category } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
@@ -32,6 +33,21 @@ const variable = () => within(screen.getByRole('region', { name: 'Variable expen
 const groceries = () =>
   within(variable().getByRole('rowheader', { name: 'Groceries' }).closest('tr')!).getAllByRole('cell').map((c) => c.textContent)
 const stored = (fake: FakeSupabase) => fake.tables.category_budgets.map((b) => [b.month, b.applies, b.budget_cents])
+
+/** A save that is refused (42501), and answers only when told to. */
+function refusedLate(fake: FakeSupabase): () => void {
+  fake.fail('POST category_budgets', '42501')
+  let answer = (): void => undefined
+  const answered = new Promise<void>((resolve) => {
+    answer = resolve
+  })
+  fake.server.hold = (target) => (target === 'POST category_budgets' ? answered : null)
+  return () => answer()
+}
+
+function Routed() {
+  return <MonthScreen month={useAddress().month} />
+}
 
 async function edit(fake: FakeSupabase, month = '2026-09') {
   renderScreen(<MonthScreen month={month} />, fake)
@@ -208,5 +224,40 @@ describe('Typing a budget on the Month', () => {
 
     expect((await variable().findByRole('status')).textContent).toBe('Groceries: $250.00 from September on.')
     expect(screen.getByRole('textbox', { name: 'Budget for Restaurants in September' })).toBeTruthy()
+  })
+
+  it('says so on the Month when a save is refused after its editor closed, until another opens', async () => {
+    const lost =
+      'A budget or goal was not saved' +
+      'Groceries, September: Your sign-in does not allow this. Signing out and back in usually fixes it. (code 42501)'
+    // Another row opened while it saved.
+    const fake = seeded()
+    const answer = refusedLate(fake)
+    fireEvent.change(await edit(fake), { target: { value: '250' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(variable().getByRole('button', { name: 'Budget for Restaurants, none set' }))
+    answer()
+    expect((await screen.findByRole('alert')).textContent).toBe(lost)
+    expect(variable().queryByRole('status')).toBeNull()
+    expect(fake.tables.category_budgets).toEqual([])
+    fireEvent.click(variable().getByRole('button', { name: 'Budget for Groceries, none set' }))
+    expect(screen.queryByRole('alert')).toBeNull()
+    cleanup()
+
+    // Another month opened while it saved.
+    const moved = seeded()
+    const answerMoved = refusedLate(moved)
+    window.location.hash = '/month/2026-09'
+    renderScreen(<Routed />, moved)
+    fireEvent.click(await screen.findByRole('button', { name: 'Budget for Groceries, none set' }))
+    fireEvent.change(screen.getByRole('textbox', { name: 'Budget for Groceries in September' }), { target: { value: '250' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    act(() => {
+      window.location.hash = '/month/2026-10'
+      window.dispatchEvent(new HashChangeEvent('hashchange'))
+    })
+    answerMoved()
+    expect(await screen.findByRole('heading', { name: 'October 2026' })).toBeTruthy()
+    expect((await screen.findByRole('alert')).textContent).toBe(lost)
   })
 })

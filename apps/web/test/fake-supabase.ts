@@ -70,7 +70,8 @@ export interface FakeSupabase {
    * table read is answered; a promise it returns delays the answer, which
    * still carries the rows as they were when the read was asked, so a test
    * can make a read begun earlier arrive after one begun later. A write is
-   * asked as `POST <table>` once it is stored, so its answer can arrive late.
+   * asked as `POST <table>` once it is stored, or refused, so its answer can
+   * arrive late.
    */
   readonly server: {
     maxRows: number | null
@@ -149,7 +150,12 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     }
     const target = url.pathname.replace(/^\/rest\/v1\//, '')
     const failure = failures.get(target) ?? failures.get(`${method} ${target}`)
-    if (failure !== undefined) return pgError(failure)
+    if (failure !== undefined) {
+      // A write's refusal can arrive late, as its success can (`POST <table>`).
+      const held = method === 'POST' ? server.hold?.(`POST ${target}`) : null
+      if (held !== undefined && held !== null) await held
+      return pgError(failure)
+    }
 
     if (target.startsWith('rpc/')) {
       const name = target.slice('rpc/'.length)

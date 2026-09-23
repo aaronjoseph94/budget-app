@@ -38,6 +38,9 @@ export function MonthScreen({ month }: { month: string | null }) {
   // The category whose charges are open, by id; a new month closes it.
   const [opened, setOpened] = useState<string | null>(null)
   useEffect(() => setOpened(null), [start])
+  // A budget refused after its editor closed, which it can no longer show;
+  // kept, across months too, until another editor opens.
+  const [unsaved, setUnsaved] = useState<string | null>(null)
 
   useEffect(() => {
     let live = true
@@ -92,7 +95,7 @@ export function MonthScreen({ month }: { month: string | null }) {
   const ownOnly = new Set(
     (here === null ? [] : here.budgets).filter((b) => b.applies === 'only' && b.month === start).map((b) => b.category_id),
   )
-  const blockProps = { month: start, ownOnly, onOpen: setOpened }
+  const blockProps = { month: start, ownOnly, onOpen: setOpened, onUnsaved: setUnsaved }
 
   return (
     <div className="space-y-4">
@@ -111,6 +114,11 @@ export function MonthScreen({ month }: { month: string | null }) {
       {error !== null ? (
         <Alert tone="error" title="Could not load this month">
           {error}
+        </Alert>
+      ) : null}
+      {unsaved !== null ? (
+        <Alert tone="error" title="A budget or goal was not saved">
+          {unsaved}
         </Alert>
       ) : null}
       {typeof sheet === 'string' ? (
@@ -337,6 +345,7 @@ function Block({
   month,
   ownOnly,
   onOpen,
+  onUnsaved,
   className,
 }: {
   kind: BlockKind
@@ -345,6 +354,7 @@ function Block({
   month: string
   ownOnly: ReadonlySet<string>
   onOpen: (categoryId: string) => void
+  onUnsaved: (message: string | null) => void
   className: string
 }) {
   const [showEmpty, setShowEmpty] = useState(false)
@@ -434,6 +444,7 @@ function Block({
                       onClick={(e) => {
                         e.stopPropagation()
                         setNote(null)
+                        onUnsaved(null)
                         setEditing(r.categoryId)
                       }}
                       className="rounded-sm underline decoration-dotted underline-offset-4 outline-none hover:decoration-solid focus-visible:ring-2 focus-visible:ring-ring"
@@ -477,6 +488,7 @@ function Block({
                           setEditing((now) => (now === r.categoryId ? null : now))
                           setNote(saved)
                         }}
+                        onFailedAfterClose={onUnsaved}
                       />
                     </td>
                   </tr>
