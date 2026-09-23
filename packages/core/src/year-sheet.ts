@@ -36,6 +36,18 @@
  *   balance is F12's `D20 := D18 + D9 − D11 − D13`, start + income − expenses −
  *   savings over the twelve months, where Workbook's `=D9+O6-D11-U6` reads two
  *   blank cells and never adds the start.
+ * - F12, Left over. `Annual Budget!D15`, labelled "Left To Spend", is the same
+ *   `=D9+O6-D11-U6`. Under decision 15 it is income − expenses − savings,
+ *   named "Left over" so it is never taken for the Month's budget remaining
+ *   (F5). Below zero when the Year spent and saved more than came in.
+ * - F18, at a glance (Home). Workbook ranks categories by twelve times their
+ *   monthly amount plus today's calendar year of rows (Hidden!O73, P38:Q40).
+ *   Here the top 3 are the Bills, Debts, Subscriptions and Variable expenses
+ *   categories with the largest Year Actual, counted as the rows count it;
+ *   equals keep Workbook's list order (Hidden!B3:B95), and a share is of every
+ *   category above zero, half-up (F17). The best savings month is the one
+ *   that saved most, the earliest of equals, as `Hidden!I60`'s QUERY keeps
+ *   row order.
  *
  * Proven by workbook-year part 1 (Annual Budget and Hidden, transcribed under
  * F11), with the fixes above, which the sample cannot show, by hand-derived
@@ -45,7 +57,8 @@ import { type Cents, type IsoDate, addCents, cents, subCents, sumCents } from '@
 import type { BudgetHistoryRow } from './budgets.js'
 import { type PeriodBlock, type PeriodCategory, type PeriodEntry, type PeriodSheet, monthSheet } from './period-sheet.js'
 import type { PlanHistoryRow } from './plans.js'
-import { monthBounds, shiftMonth } from './week.js'
+import { shareOf } from './shares.js'
+import { type CategoryKind, monthBounds, shiftMonth } from './week.js'
 
 export interface StartingBalance {
   /** The month it was typed for, named by its first day (0010). */
@@ -92,6 +105,26 @@ export interface YearMonth extends YearGroups {
   readonly countsPlanned: boolean
 }
 
+/** One of Home's top 3 (F18). */
+export interface TopExpense {
+  readonly categoryId: string
+  readonly name: string
+  readonly kind: CategoryKind
+  /** What the category cost over the Year, as its month rows count it. */
+  readonly amountCents: Cents
+  /** Its part of every category's Year Actual above zero, half-up (F17). */
+  readonly shareBp: number
+}
+
+export interface AtAGlance {
+  /** Home's "Biggest Expense": the first of the top 3, or null when nothing was spent. */
+  readonly biggest: TopExpense | null
+  /** At most three, highest first; a category at or below zero is not ranked. */
+  readonly top3: readonly TopExpense[]
+  /** The month that saved most, the earliest of equals; the first month when none saved. */
+  readonly bestSavingsMonth: { readonly month: IsoDate; readonly savedCents: Cents; readonly goalCents: Cents }
+}
+
 export interface YearSheet {
   /** The first month's first day. */
   readonly startMonth: IsoDate
@@ -103,7 +136,13 @@ export interface YearSheet {
   readonly startingBalanceCents: Cents | null
   /** F12's D20: start + income − expenses − savings. Null with no start typed (D17). */
   readonly endingBalanceCents: Cents | null
+  /** F12, "Left over": income − expenses − savings over the twelve months. Below zero when overspent. */
+  readonly leftOverCents: Cents
+  readonly atAGlance: AtAGlance
 }
+
+/** Workbook's master list order, Hidden!B3:B95, which its QUERY keeps for equal amounts. */
+const RANKED = ['variable', 'bill', 'debt', 'subscription'] as const
 
 export function yearSheet(input: YearSheetInput): YearSheet {
   const start = monthBounds(input.startMonth).start
@@ -117,6 +156,7 @@ export function yearSheet(input: YearSheetInput): YearSheet {
     }
   }
 
+  const sheets: PeriodSheet[] = []
   const months = Array.from({ length: 12 }, (_, i): YearMonth => {
     const month = shiftMonth(start, i)
     const countsPlanned = month <= gate
@@ -129,6 +169,7 @@ export function yearSheet(input: YearSheetInput): YearSheet {
       statementPeriodEnds: [],
       startingBalanceCents: null,
     })
+    sheets.push(sheet)
     return { month, countsPlanned, ...groupsOf(sheet) }
   })
 
@@ -147,20 +188,48 @@ export function yearSheet(input: YearSheetInput): YearSheet {
   }
 
   const startingBalanceCents = startingBalanceFor(start, input.startingBalances)
+  const leftOverCents = subCents(
+    totals.income.actualCents,
+    addCents(totals.expenses.actualCents, totals.savings.actualCents),
+  )
+  // Strictly greater, so the earliest of equal months stays.
+  const best = months.reduce((b, m) => (m.savings.actualCents > b.savings.actualCents ? m : b))
   return {
     startMonth: start,
     months,
     totals,
     startingBalanceCents,
     // D17: no start typed is no ending balance, never one counted from $0.
-    endingBalanceCents:
-      startingBalanceCents === null
-        ? null
-        : subCents(
-            addCents(startingBalanceCents, totals.income.actualCents),
-            addCents(totals.expenses.actualCents, totals.savings.actualCents),
-          ),
+    endingBalanceCents: startingBalanceCents === null ? null : addCents(startingBalanceCents, leftOverCents),
+    leftOverCents,
+    atAGlance: {
+      ...topExpenses(sheets),
+      bestSavingsMonth: { month: best.month, savedCents: best.savings.actualCents, goalCents: best.savings.budgetCents },
+    },
   }
+}
+
+/**
+ * F18: each spending category's Year Actual, the twelve month rows' Actuals
+ * added, ranked. Every sheet lists the same categories, so the first gives
+ * the order equals keep: list by Workbook's master order, then row order.
+ */
+function topExpenses(sheets: readonly PeriodSheet[]): Pick<AtAGlance, 'biggest' | 'top3'> {
+  const spent = RANKED.flatMap((kind) =>
+    sheets[0]!.blocks[kind].rows.map((first) => ({
+      categoryId: first.categoryId,
+      name: first.name,
+      kind,
+      amountCents: sumCents(sheets.map((s) => s.blocks[kind].rows.find((r) => r.categoryId === first.categoryId)!.actualCents)),
+    })),
+  ).filter((c) => c.amountCents > 0)
+  const whole = sumCents(spent.map((c) => c.amountCents))
+  // Array.prototype.sort is stable, so equal amounts keep the order above.
+  const top3 = [...spent]
+    .sort((a, b) => b.amountCents - a.amountCents)
+    .slice(0, 3)
+    .map((c): TopExpense => ({ ...c, shareBp: shareOf(c.amountCents, whole) }))
+  return { biggest: top3[0] ?? null, top3 }
 }
 
 function figure(block: PeriodBlock): YearFigure {

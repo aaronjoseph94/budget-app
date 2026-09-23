@@ -113,3 +113,71 @@ describe('yearSheet span and balances (suite, F14, F12)', () => {
     expect(() => year({ startingBalances: [typed('2026-01-01', 1.5)] })).toThrow(RangeError)
   })
 })
+
+describe('yearSheet Left over and at a glance (suite, F12, F18)', () => {
+  const ranked = (id: string, kind: PeriodCategory['kind'], sortOrder: number): PeriodCategory => ({ id, name: id, kind, sortOrder })
+  const CATS = [
+    ranked('pay', 'income', 0),
+    ranked('fund', 'savings', 0),
+    ranked('gas', 'variable', 1),
+    ranked('eat', 'variable', 0),
+    ranked('back', 'variable', 2),
+    ranked('rent', 'bill', 0),
+    ranked('loan', 'debt', 0),
+    ranked('music', 'subscription', 0),
+  ]
+  const top = (s: ReturnType<typeof year>) => s.atAGlance.top3.map((t) => [t.categoryId, t.amountCents, t.shareBp])
+
+  it('leaves income − expenses − savings over, below zero when more went out than came in', () => {
+    const entries = [row('2026-01-02', 300_000, 'pay'), row('2026-05-02', -120_000, 'food'), row('2026-07-02', -50_000, 'fund')]
+    expect(year({ entries }).leftOverCents).toBe(130_000)
+    expect(year({ entries: [...entries, row('2026-08-02', -200_000, 'rent')] }).leftOverCents).toBe(-70_000)
+  })
+
+  it('ranks the Year Actuals, shares them of all spent, and leaves out refunds and gated plans', () => {
+    const s = year({
+      categories: CATS,
+      asOf: isoDate('2025-12-31'),
+      planHistory: [plan('rent', '2026-01-01', 80_000)],
+      entries: [row('2026-02-01', -1_000, 'music'), row('2026-03-01', -20_000, 'loan'), row('2026-09-01', -30_000, 'loan'), row('2026-04-01', -30_000, 'eat'), row('2026-04-02', 2_000, 'back')],
+    })
+    // Of 81,000 spent: 50,000 is 6,172.8 bp, 30,000 is 3,703.7, 1,000 is 123.5 (half-up).
+    expect(top(s)).toEqual([
+      ['loan', 50_000, 6_173],
+      ['eat', 30_000, 3_704],
+      ['music', 1_000, 123],
+    ])
+    expect(s.atAGlance.biggest).toEqual({ categoryId: 'loan', name: 'loan', kind: 'debt', amountCents: 50_000, shareBp: 6_173 })
+  })
+
+  it("breaks a tie by Workbook's list order, then Setup's row order (Hidden!B3:B95)", () => {
+    const s = year({
+      categories: CATS,
+      asOf: isoDate('2026-01-31'),
+      planHistory: [plan('rent', '2026-01-01', 30_000)],
+      entries: [row('2026-02-01', -30_000, 'loan'), row('2026-03-01', -30_000, 'gas'), row('2026-04-01', -30_000, 'eat')],
+    })
+    expect(top(s)).toEqual([
+      ['eat', 30_000, 2_500],
+      ['gas', 30_000, 2_500],
+      ['rent', 30_000, 2_500],
+    ])
+  })
+
+  it('has no biggest expense when nothing was spent, only refunded', () => {
+    const s = year({ categories: CATS, entries: [row('2026-04-02', 2_000, 'back')] })
+    expect(s.atAGlance.top3).toEqual([])
+    expect(s.atAGlance.biggest).toBeNull()
+  })
+
+  it('picks the month that saved most, the earliest of equals, with its goal (Hidden!I60)', () => {
+    const s = year({
+      budgetHistory: [budget('fund', '2026-03-01', 4_000)],
+      entries: [row('2026-03-09', -5_000, 'fund'), row('2026-07-09', -5_000, 'fund'), row('2026-05-09', -3_000, 'fund')],
+    })
+    expect(s.atAGlance.bestSavingsMonth).toEqual({ month: '2026-03-01', savedCents: 5_000, goalCents: 4_000 })
+    // Nothing saved, and money taken out in January: the first month at $0.
+    const none = year({ entries: [row('2026-01-09', 1_000, 'fund')] })
+    expect(none.atAGlance.bestSavingsMonth).toEqual({ month: '2026-02-01', savedCents: 0, goalCents: 0 })
+  })
+})
