@@ -257,7 +257,7 @@ would reopen exactly what 0005 closes.
 
 ---
 
-## N12 — Two 0004 functions are missing from the anon-execute assertion
+## N12 — Two 0004 functions are missing from the anon-execute assertion *(settled 2026-09-23, Sitting B)*
 
 **Seen:** 2026-09-22, extending `supabase/tests/schema-assertions.sql`.
 
@@ -272,6 +272,9 @@ the check for 0004 is a separate change to what 0004 is held to.
 
 **To settle:** add both to the `has_function_privilege('anon', …)` list, and
 observe the gate go RED with one of the revokes removed.
+
+**Settled:** both are in the list. With either revoke deleted from 0004 the
+gate was green before and is RED now; each was tried.
 
 ---
 

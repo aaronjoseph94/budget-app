@@ -1184,16 +1184,20 @@ end $$;
 reset role;
 
 -- The anonymous role — anyone holding the published key — cannot call any of
--- these at all.
+-- these at all. Every SECURITY DEFINER function the browser calls is listed:
+-- one left off can lose its revoke with this check still green, as 0004's
+-- reject_candidate and add_typed_transaction could until N12.
 do $$
 begin
   if has_function_privilege('anon', 'public.approve_candidate(uuid, uuid)', 'execute')
+     or has_function_privilege('anon', 'public.reject_candidate(uuid)', 'execute')
+     or has_function_privilege('anon', 'public.add_typed_transaction(uuid, date, bigint, text, text, uuid)', 'execute')
      or has_function_privilege('anon', 'public.save_import(uuid, public.ingest_source, integer, jsonb, jsonb)', 'execute')
      or has_function_privilege('anon', 'public.recategorise_transaction(uuid, uuid, boolean)', 'execute')
      or has_function_privilege('anon', 'public.save_import(uuid, public.ingest_source, integer, jsonb, jsonb, date, date)', 'execute')
      or has_function_privilege('anon', 'public.dismiss_unreadable_line(uuid)', 'execute')
      or has_function_privilege('authenticated', 'public._post_candidate(uuid)', 'execute') then
-    raise exception 'a ledger-writing function is callable by a role that must not call it';
+    raise exception 'a SECURITY DEFINER function is callable by a role that must not call it';
   end if;
-  raise notice 'no ledger-writing function is callable anonymously, and the poster is private';
+  raise notice 'no SECURITY DEFINER function is callable anonymously, and the poster is private';
 end $$;
