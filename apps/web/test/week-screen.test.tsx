@@ -121,6 +121,14 @@ describe('WeekScreen', () => {
     expect(await screen.findByText('28 min')).toBeTruthy()
   })
 
+  it('without a goal, offers to set one where the goal would be', async () => {
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
+    renderScreen(<WeekScreen />, seeded())
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Set a goal' }))
+    expect(window.location.hash).toBe('#/settings')
+  })
+
   it('without budgets, shows the spend, the money in, and a way to set one', async () => {
     vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
     const fake = seeded()
