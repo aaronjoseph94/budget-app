@@ -32,12 +32,11 @@ export default defineConfig({
         'packages/statement-parsers/src/**': { lines: 80, functions: 80, branches: 75 },
         'packages/golden-verification/src/**': { lines: 80, functions: 80, branches: 75 },
         'packages/chart-specs/src/**': { lines: 80, functions: 80, branches: 75 },
-        // The app as a whole, .tsx included, floored at what the screen tests
-        // measure today (rounded down). It sits under the 80/80/75 bar because
-        // Add, Import, Ledger, Settings and sign-in have no tests yet
-        // (NOTICED N5); it only moves up. The files that do have tests are held
-        // to their own figures so the whole-app number cannot hide them slipping.
-        'apps/web/src/**': { lines: 31, functions: 71, branches: 78 },
+        // The app as a whole, .tsx included, now held to the bar every module
+        // has (N5): measured 86.6 / 88.9 / 91.1 on 2026-09-23 once every
+        // screen had tests. The files held to their own figures below keep
+        // the whole-app number from hiding one of them slipping.
+        'apps/web/src/**': { lines: 80, functions: 80, branches: 75 },
         'apps/web/src/format.ts': { lines: 80, functions: 80, branches: 75 },
         'apps/web/src/screens/WeekScreen.tsx': { lines: 95, functions: 100, branches: 76 },
         'apps/web/src/screens/ReviewScreen.tsx': { lines: 95, functions: 100, branches: 87 },

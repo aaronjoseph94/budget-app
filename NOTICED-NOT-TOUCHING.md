@@ -107,9 +107,17 @@ to text cells only.
 
 ---
 
-## N5 — The coverage gate does not measure the app's screens *(partly settled 2026-09-22)*
+## N5 — The coverage gate does not measure the app's screens *(settled 2026-09-23, completion pass)*
 
-**Status: not fully addressed.** Plan slice P3 did the groundwork. jsdom,
+**Settled:** the app as a whole measured 86.6% lines, 88.9% functions and
+91.1% branches once S5–S17 and the completion pass had given the screens
+tests, so its floor is now CONSTRAINTS.md's 80/80/75, like every other
+module. Still thin, and worth tests when next touched: sign-in
+(`auth.tsx`, 3%), the CSV import screen (`ImportScreen.tsx`, 5%), the
+photo path (`receipt.ts`, 28%) and the rest of Add (36%). The fake still
+answers no `functions.invoke`.
+
+**Status before settling (2026-09-22): not fully addressed.** Plan slice P3 did the groundwork. jsdom,
 Testing Library (dom and react) and a fake Supabase client are in
 (`apps/web/test/fake-supabase.ts`: the real supabase-js client with a fake
 fetch). The app's `.tsx` files are now measured. The Week and Review screens
