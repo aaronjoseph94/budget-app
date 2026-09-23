@@ -940,6 +940,74 @@ begin
   raise notice 'a plan being written holds its category''s list until it commits';
 end $$;
 
+-- ---------------------------------------------------------------------------
+-- 0010: the bank balance a month started with
+-- ---------------------------------------------------------------------------
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+
+do $$
+declare
+  u  uuid := '11111111-1111-4111-8111-111111111111';
+  n  int;
+begin
+  -- Typed and retyped as a plain upsert under RLS. An overdrawn start is a
+  -- real balance, kept with its sign.
+  insert into public.month_balances (user_id, month, starting_balance_cents)
+    values (u, '2026-01-01', 100000), (u, '2026-02-01', -2500);
+  insert into public.month_balances (user_id, month, starting_balance_cents)
+    values (u, '2026-01-01', 120000)
+    on conflict (user_id, month) do update set starting_balance_cents = excluded.starting_balance_cents;
+  if (select starting_balance_cents from public.month_balances where month = '2026-01-01') <> 120000
+     or (select starting_balance_cents from public.month_balances where month = '2026-02-01') <> -2500 then
+    raise exception 'a typed starting balance was not kept as typed';
+  end if;
+
+  begin
+    insert into public.month_balances (user_id, month, starting_balance_cents)
+      values (u, '2026-03-31', 100);
+    raise exception 'NOT REFUSED: a balance month that is not the first of a month';
+  exception when check_violation then null;
+  end;
+
+  begin
+    insert into public.month_balances (user_id, month, starting_balance_cents)
+      values (u, '2026-02-01', 100);
+    raise exception 'NOT REFUSED: two starting balances for one month';
+  exception when unique_violation then null;
+  end;
+
+  -- A blank balance is no row, never a stored nothing that could read as $0.
+  begin
+    insert into public.month_balances (user_id, month, starting_balance_cents)
+      values (u, '2026-04-01', null);
+    raise exception 'NOT REFUSED: a month balance with no amount';
+  exception when not_null_violation then null;
+  end;
+
+  begin
+    insert into public.month_balances (user_id, month, starting_balance_cents)
+      values ('22222222-2222-4222-8222-222222222222', '2026-01-01', 100);
+    raise exception 'RLS: a balance was written under another user''s id';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- Clearing a month's balance is deleting its row, which the browser may do.
+  delete from public.month_balances where month = '2026-02-01';
+
+  perform set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',false);
+  select count(*) into n from public.month_balances;
+  if n <> 0 then raise exception 'RLS LEAK: another user saw % balances', n; end if;
+  perform set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+
+  if (select count(*) from public.month_balances) <> 1 then
+    raise exception 'clearing a month''s balance did not remove it';
+  end if;
+  raise notice 'a month''s starting balance is typed once, signed, and never blank';
+end $$;
+
+reset role;
+
 -- The anonymous role — anyone holding the published key — cannot call any of
 -- these at all.
 do $$
