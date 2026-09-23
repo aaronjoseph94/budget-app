@@ -407,6 +407,20 @@ describe('MonthScreen summary and notes', () => {
     expect(kept.className).not.toContain('summary-negative')
   })
 
+  // Asking for a start that may be stored would invite typing over it.
+  it('shows no month, rather than ask for a start, when starting balances cannot be read', async () => {
+    const fake = seeded()
+    fake.fail('month_balances', 'PGRST205')
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Could not load this month' +
+        'Starting balances need a database update that has not been applied yet (0010 in the setup guide), so this month cannot be shown. (code PGRST205)',
+    )
+    expect(screen.queryByRole('region')).toBeNull()
+    expect(screen.queryByText('Type your starting bank balance')).toBeNull()
+  })
+
   it('says what was paid to the card, and that it is not counted (D9)', async () => {
     renderScreen(<MonthScreen month="2026-09" />, seeded())
 
