@@ -385,3 +385,24 @@ not written.
 **To settle:** in 0009, have both triggers raise `check_violation` (23514),
 and at S9 add the "set amount" action to `describeSetupFailure` with the
 first sentence.
+
+---
+
+## N19 — Settings offers a weekly budget on lists the Week no longer counts
+
+**Seen:** 2026-09-23, S3b (Week counts by list).
+
+Settings → Weekly budgets lists every category with a budget field. Since
+S3b, `weeklySummary` sums budgets over bills, debts, subscriptions and
+variable expenses only, so a limit typed on an Income, Savings or Not
+spending category is stored and then ignored by Week, with nothing on
+screen saying so. After "Start from Workbook's list" that is 10 of the 31
+names (the goal's makes 11), and the card is 30-odd rows long.
+
+**Why not fixed here:** S3b is the engine and the Week screen; which
+categories Settings shows is a Settings change, and S5a moves Settings
+under More anyway.
+
+**To settle:** in Settings, show the budget field only for spending lists,
+grouped under Workbook's headings as the pickers are (`CategoryOptions`), and
+leave any stored limit on the other lists untouched.
