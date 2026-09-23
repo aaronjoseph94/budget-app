@@ -1008,6 +1008,103 @@ end $$;
 
 reset role;
 
+-- ---------------------------------------------------------------------------
+-- 0011: when each income source pays
+-- ---------------------------------------------------------------------------
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000000007', '11111111-1111-4111-8111-111111111111', 'Income 1', 'income');
+
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+
+do $$
+declare
+  u       uuid := '11111111-1111-4111-8111-111111111111';
+  pay     uuid := 'cccccccc-0000-4000-8000-000000000007';
+  rent    uuid := 'cccccccc-0000-4000-8000-000000000003';
+  theirs  uuid := 'cccccccc-0000-4000-8000-000000000201';
+  gone    uuid;
+  n       int;
+begin
+  -- Set and changed as a plain upsert under RLS.
+  insert into public.pay_schedules (user_id, category_id, first_pay_date, frequency)
+    values (u, pay, '2026-01-09', 'biweekly');
+  insert into public.pay_schedules (user_id, category_id, first_pay_date, frequency)
+    values (u, pay, '2026-01-02', 'weekly')
+    on conflict (user_id, category_id)
+    do update set first_pay_date = excluded.first_pay_date, frequency = excluded.frequency;
+  if (select frequency from public.pay_schedules where category_id = pay) <> 'weekly' then
+    raise exception 'changing a pay schedule did not replace it';
+  end if;
+
+  begin
+    insert into public.pay_schedules (user_id, category_id, first_pay_date, frequency)
+      values (u, pay, '2026-01-16', 'monthly');
+    raise exception 'NOT REFUSED: two pay schedules for one income source';
+  exception when unique_violation then null;
+  end;
+
+  -- Weekly, bi-weekly or monthly, as Workbook's dropdown offers; nothing else.
+  begin
+    update public.pay_schedules set frequency = 'daily' where category_id = pay;
+    raise exception 'NOT REFUSED: a pay frequency Workbook does not offer';
+  exception when invalid_text_representation then null;
+  end;
+
+  begin
+    update public.pay_schedules set first_pay_date = null where category_id = pay;
+    raise exception 'NOT REFUSED: a pay schedule with no pay date';
+  exception when not_null_violation then null;
+  end;
+
+  -- Only an income source has paydays, written new or moved onto another row.
+  begin
+    insert into public.pay_schedules (user_id, category_id, first_pay_date, frequency)
+      values (u, rent, '2026-01-01', 'monthly');
+    raise exception 'NOT REFUSED: a pay schedule on a bill';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.pay_schedules set category_id = rent where category_id = pay;
+    raise exception 'NOT REFUSED: a pay schedule moved onto a bill';
+  exception when check_violation then null;
+  end;
+
+  -- Another user's category is the composite key's to refuse, not the list check's.
+  begin
+    insert into public.pay_schedules (user_id, category_id, first_pay_date, frequency)
+      values (u, theirs, '2026-01-01', 'monthly');
+    raise exception 'NOT REFUSED: a pay schedule on another user''s category';
+  exception when foreign_key_violation then null;
+  end;
+
+  begin
+    insert into public.pay_schedules (user_id, category_id, first_pay_date, frequency)
+      values ('22222222-2222-4222-8222-222222222222', theirs, '2026-01-01', 'monthly');
+    raise exception 'RLS: a pay schedule was written under another user''s id';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- A removed income source takes its schedule with it.
+  insert into public.categories (user_id, name, kind) values (u, 'Gone Pay', 'income')
+    returning id into gone;
+  insert into public.pay_schedules (user_id, category_id, first_pay_date, frequency)
+    values (u, gone, '2026-01-01', 'monthly');
+  delete from public.categories where id = gone;
+  if exists (select 1 from public.pay_schedules where category_id = gone) then
+    raise exception 'a removed income source left its pay schedule behind';
+  end if;
+
+  perform set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',false);
+  select count(*) into n from public.pay_schedules;
+  if n <> 0 then raise exception 'RLS LEAK: another user saw % pay schedules', n; end if;
+  perform set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+
+  raise notice 'a pay schedule is one per income source, weekly, bi-weekly or monthly';
+end $$;
+
+reset role;
+
 -- The anonymous role — anyone holding the published key — cannot call any of
 -- these at all.
 do $$
