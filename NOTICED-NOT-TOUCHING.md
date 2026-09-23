@@ -782,6 +782,12 @@ MonthScreen.tsx.
 carry no "$" while band totals do. S12b's chart panel sits in the same grid
 and should be measured at 1280px.
 
+**Updated 2026-09-23, S12b:** measured. At 1280px the chart panel is one
+card of four, 300px wide, second on the top row as §6.3 draws it; the
+summary card, which had spanned two columns there, takes one and stacks
+its four figures. From 768px to 1279px the panel spans both columns under
+the blocks, its two charts side by side. §6.3 still says 1024.
+
 ---
 
 ## N33 — A "just this month" budget typed elsewhere can outlast a "from this month on" edit
@@ -919,3 +925,50 @@ things to explain.
 (no End of month until Start is typed) or Workbook's $0 start. If they want
 an overdrawn End of month to stand out, that is a display-only divergence
 and needs its own D-entry.
+
+---
+
+## N38 — The doughnut's biggest slices can be its palest
+
+**Seen:** 2026-09-23, S12b (the Month's charts).
+
+Workbook colours its spending doughnut by row (Jan chart13, points idx 0–22),
+palest first, and the app copies that. The starter list puts Restaurants
+and Groceries first, so the two categories most people spend most on get
+the two palest colours, #FFE3DE and #F9D8D3, close to each other and to
+the card; the darker half of the scale shows only from a list's ninth
+row. Slices are parted by a gap and every one is named in the legend with
+its amount and share, so nothing is unreadable, but the ring looks washed
+out, where a chart's neighbouring colours would usually be set clearly
+apart.
+
+**Why not fixed here:** the plan asks for Workbook's fills (§6.6; decision
+10), and giving the rows other steps of the scale is a change of look the
+owner has not asked for. CLAUDE.md puts a deliberate divergence under Ask
+first.
+
+**To settle:** show the owner the ring and ask. A — keep Workbook's colours
+by row. B — spread the same scale over the list's length (eight categories
+take every third step, #FFE3DE to #4C0B02), still one colour per row, with
+a D-entry. C — colour by spending rank; not recommended, as a category's
+colour would change from month to month.
+
+---
+
+## N39 — The charts are in the entry bundle, which a pending CONSTRAINTS row says they should not be
+
+**Seen:** 2026-09-23, S12b, building the app.
+
+CONSTRAINTS.md's Pending table has "Web entry bundle ≤700 KB gzipped,
+≤115% of baseline; SheetJS and charts out of the entry chunk". The Month's
+charts (chart-specs and MonthCharts) are in the entry chunk: the build went
+from 678.19 kB (192.83 kB gzipped) before S12 to 686.00 kB (195.62 kB
+gzipped), 2.8 kB gzipped more. The row is not enforced yet.
+
+**Why not fixed here:** the row was written with a chart library in mind;
+these charts are hand-built SVG, and the Month, which opens first (decision
+1), draws them on every open, so a chunk of their own would be fetched
+straight after the entry every time, one more request for no saving.
+
+**To settle:** when the bundle gate is built, either word the row as
+"chart libraries", or split MonthCharts out with React.lazy; measure both.
