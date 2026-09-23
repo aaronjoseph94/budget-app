@@ -27,10 +27,37 @@ export interface IncomeBarsInput extends ChartFrame {
   readonly bars: readonly IncomeBar[]
 }
 
-const GOAL = { fill: '#CCE2DF', class: 'chart-income-goal' } as const
-const ACTUAL = { fill: '#9ABDB7', class: 'chart-income-actual' } as const
-/** Income's ink (§6.6), readable on the card. */
-const INK = { fill: '#4F6E69', class: 'chart-income-ink' } as const
+interface Paint {
+  readonly fill: string
+  readonly class: string
+}
+interface Palette {
+  readonly goal: Paint
+  readonly actual: Paint
+  /** For every word: the block's ink (§6.6), readable on the card. */
+  readonly ink: Paint
+  readonly keys: readonly [string, string]
+}
+
+const INCOME: Palette = {
+  goal: { fill: '#CCE2DF', class: 'chart-income-goal' },
+  actual: { fill: '#9ABDB7', class: 'chart-income-actual' },
+  ink: { fill: '#4F6E69', class: 'chart-income-ink' },
+  keys: ['Goal', 'Actual'],
+}
+
+/**
+ * Home's savings-goals chart (chart5, D23): what each fund holds over a
+ * track as long as its goal, in Home's #EBD15C over #FEEA8D, and the
+ * savings ink for words, since #EBD15C, Home's label colour, reads at 1.5
+ * to one on white.
+ */
+const SAVINGS: Palette = {
+  goal: { fill: '#FEEA8D', class: 'chart-savings-goal' },
+  actual: { fill: '#EBD15C', class: 'chart-savings-saved' },
+  ink: { fill: '#7C5512', class: 'chart-savings-ink' },
+  keys: ['Goal', 'Saved'],
+}
 const KEY = 220
 const ROW = 340
 /** 10 px thick at the designed size, with 4 px rounded ends. */
@@ -38,22 +65,36 @@ const BAR = 100
 const ROUND = 40
 
 export function incomeBars(input: IncomeBarsInput): SvgMarkup {
-  const rows = input.bars.map((b, i) => row(b, KEY + i * ROW))
-  return frame(input, KEY + input.bars.length * ROW + 20, [key(), ...rows])
+  return drawBars(input, INCOME)
+}
+
+/**
+ * The Year's savings goals: each fund's balance over its goal, as Home's
+ * chart5 is meant to show them (D23). Each fund is on its own scale, as
+ * each of chart5's columns is, so core gives the goal 10,000 bp and the
+ * balance its share of it (`fundProgress`).
+ */
+export function savingsGoalBars(input: IncomeBarsInput): SvgMarkup {
+  return drawBars(input, SAVINGS)
+}
+
+function drawBars(input: IncomeBarsInput, palette: Palette): SvgMarkup {
+  const rows = input.bars.map((b, i) => row(b, KEY + i * ROW, palette))
+  return frame(input, KEY + input.bars.length * ROW + 20, [key(palette), ...rows])
 }
 
 /** Two series, so a key names them: colour is never the only way to tell them apart. */
-function key(): SvgNode {
-  const second = 160 + textUnits('Goal') + 100
+function key({ goal, actual, ink, keys }: Palette): SvgNode {
+  const second = 160 + textUnits(keys[0]) + 100
   return el('g', {}, [
-    el('rect', { x: 0, y: 30, width: BAR, height: BAR, rx: ROUND / 2, ...GOAL }),
-    el('text', { x: 160, y: FONT, ...INK }, ['Goal']),
-    el('rect', { x: second, y: 30, width: BAR, height: BAR, rx: ROUND / 2, ...ACTUAL }),
-    el('text', { x: second + 160, y: FONT, ...INK }, ['Actual']),
+    el('rect', { x: 0, y: 30, width: BAR, height: BAR, rx: ROUND / 2, ...goal }),
+    el('text', { x: 160, y: FONT, ...ink }, [keys[0]]),
+    el('rect', { x: second, y: 30, width: BAR, height: BAR, rx: ROUND / 2, ...actual }),
+    el('text', { x: second + 160, y: FONT, ...ink }, [keys[1]]),
   ])
 }
 
-function row(bar: IncomeBar, top: number): SvgNode {
+function row(bar: IncomeBar, top: number, { goal: GOAL, actual: ACTUAL, ink: INK }: Palette): SvgNode {
   const barTop = top + 170
   const goal = bar.goalBp === null ? 0 : lengthOf(bar.goalBp, WIDTH)
   const actual = bar.actualBp === null ? 0 : lengthOf(bar.actualBp, WIDTH)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { incomeBars, type IncomeBar } from '../src/bars.js'
+import { incomeBars, savingsGoalBars, type IncomeBar } from '../src/bars.js'
 
 /** Suite tests: lengths worked by hand on the 3,000-unit grid. */
 
@@ -69,5 +69,29 @@ describe('incomeBars', () => {
     expect(svg).toMatch(/fill="#CCE2DF" class="chart-income-goal"\/><text x="160" y="120" [^>]*>Goal</)
     expect(svg).toMatch(/>Actual<\/text>/)
     expect([...svg.matchAll(/<text x="0" y="(\d+)"/g)].map((m) => m[1])).toEqual(['340', '680'])
+  })
+})
+
+describe('savingsGoalBars', () => {
+  const funds = (bars: IncomeBar[]) => savingsGoalBars({ id: 'funds', title: 'Savings goals', description: 'd', bars })
+
+  it("draws each fund's balance over its goal in Home's colours, keyed Goal and Saved (D23)", () => {
+    // 43% of one fund's goal; one reached; one with nothing in it yet.
+    const svg = funds([bar('Flight', 10_000, 4_317), bar('Car', 10_000, 10_000), bar('House', 10_000, null)])
+    expect(rects(svg)).toEqual([
+      [390, '#FEEA8D', 3_000],
+      [390, '#EBD15C', 1_295],
+      [730, '#FEEA8D', 3_000],
+      [730, '#EBD15C', 3_000],
+      [1070, '#FEEA8D', 3_000],
+    ])
+    expect(svg).toContain('class="chart-savings-ink">Saved</text>')
+    expect(svg).not.toContain('#9ABDB7')
+  })
+
+  it('writes a fund name with < and & as text, never as a tag', () => {
+    const svg = funds([bar('Trip & <fun>', 10_000, 0)])
+    expect(svg).toContain('>Trip &amp; &lt;fun&gt;</text>')
+    expect(svg).not.toContain('<fun>')
   })
 })
