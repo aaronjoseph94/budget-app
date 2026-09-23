@@ -161,7 +161,8 @@ in `NOTICED-NOT-TOUCHING.md` (N1–N7).
    add a test that fails on it.
 5. **Boundary rules are per-package**: a new package, and
    `packages/golden-verification`, are governed by no dependency rule. Make
-   `.dependency-cruiser.cjs` deny by default.
+   `.dependency-cruiser.cjs` deny by default. *(Settled 2026-09-23, S12a:
+   every import must match an `allowed` line; see CONSTRAINTS.md.)*
 6. **CSV column guessing** (`apps/web/src/ImportScreen.tsx`): it can pick a
    card-number column as the amount, or a category column as the description.
    The dedupe hash also depends on the sign/date choices made on that screen,

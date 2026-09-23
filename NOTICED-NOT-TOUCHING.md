@@ -972,3 +972,41 @@ straight after the entry every time, one more request for no saving.
 
 **To settle:** when the bundle gate is built, either word the row as
 "chart libraries", or split MonthCharts out with React.lazy; measure both.
+
+---
+
+## N40 — HANDOFF §5 still lists items 1, 2 and 4 as open
+
+**Seen:** 2026-09-23, S12a review (closing item 5).
+
+HANDOFF.md §5 is the next reader's list of what is left. S12a marks item 5
+settled, but items 1, 2 and 4 still read as open although the plan's
+pre-work addressed them: item 1 (screen tests) by P3, `ca35c76`, with N5
+still open in part; item 2 (unreadable lines never shown) by P1, `a65497f`;
+item 4 (tests that do not bite) by P2, `64293be` and `fdaa313`.
+
+**Why not fixed here:** those slices are already on the branch, and each
+entry should say what settled it, which is theirs to state.
+
+**To settle:** mark items 1, 2 and 4 as settled in HANDOFF §5, naming the
+slice and commit, with item 1 pointing at N5 for what is still unmeasured.
+
+---
+
+## N41 — The Month's charts were sized and checked in Chromium only
+
+**Seen:** 2026-09-23, S12b.
+
+The charts scale to their card with `width: 100%; height: auto` on an
+inline SVG that carries its own width, height and viewBox (index.css,
+`.workbook-chart`). S12b's screenshots at 390, 1024 and 1280px were taken in
+Chromium, the only browser here. The owner's iPhone uses WebKit, which has
+handled `height: auto` on inline SVG differently in the past, so the ring
+could draw squashed or with a gap under it there.
+
+**Why not fixed here:** nothing here can run WebKit, and a guess at a fix
+for a problem not seen could break the browser that was checked.
+
+**To settle:** open the Month on the iPhone (or in Safari) at a month with
+spending, and look at the ring and the income bars. If either is the wrong
+shape, give `.workbook-chart` an explicit `aspect-ratio` from the viewBox.
