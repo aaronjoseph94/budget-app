@@ -1059,3 +1059,86 @@ is a wrong number, but the owner would notice them.
 **To settle:** tell the owner once. If they want the stack side by side
 (F19 option C) or "Nothing saved yet" in place of a $0 month, each is a
 display change with its own D-entry.
+
+---
+
+## N44 — weeklySummary has no caller since S15
+
+**Seen:** 2026-09-23, S15 (the Week on periodSheet).
+
+The Week now reads `weekSheet`, and nothing else called `weeklySummary`
+(`packages/core/src/week.ts`). It was not removed: its tests could not be
+kept equivalent, because what it computes is not what the Week now shows.
+It totals one budget over every spending list with a share used, and
+counts a row with no known category as "uncategorised"; `weekSheet` gives
+Workbook's per-block totals and F5's Left to spend, and refuses a row it
+cannot file, as the Month does. `weekBounds`, `shiftWeek`, `monthBounds`,
+`shiftMonth` and `SPENDING_LISTS` in the same file are all still used.
+
+**Why not fixed here:** removing it would delete tested behaviour with no
+equivalent in its place, which the task allowed only if the tests moved
+across unchanged.
+
+**To settle:** when the savings coach's weekly limits are built (plan
+slice 12), either build them on it or remove it with its tests.
+
+---
+
+## N45 — The Week shows no starting or ending balance
+
+**Seen:** 2026-09-23, S15.
+
+Workbook's Weekly Budget types a starting balance (D9, sample 1000) and shows
+an Ending Balance (D15 `=D9+P6-D11-V6`). The app stores starting balances
+per month only (0010), so the Week's summary shows Spent and Left to spend
+and leaves both balances off. The engine takes a start and would give the
+end (workbook-month part 3 proves Weekly!D15).
+
+**Why not fixed here:** where a week's start comes from changes a number
+the owner would see, so it is theirs to choose. It is raised as a blocker
+and not yet answered, with options A: leave it off (built now); B: derive
+it in the engine from the month's typed start and that month's rows before
+the week; C: type one per week, which needs a migration.
+
+**To settle:** record the owner's answer in docs/formula-decisions.md, then
+build it.
+
+---
+
+## N46 — What the Week does not have that the Month does
+
+**Seen:** 2026-09-23, S15.
+
+- **Tapping a row opens nothing.** The Month's charges sheet (with "Move
+  to…") names its month; the Week has no sheet of its own, so a mis-filed
+  charge seen on the Week is moved from the Month.
+- **No charts.** Workbook's Weekly Budget has the Month's two (chart36, an
+  income stack, and chart37, the Variable doughnut); `MonthCharts` words its
+  empty states "this month". The flight goal stands in their place.
+- **No address for a week.** `#/week` always opens this week; a refresh or
+  the back gesture after stepping returns to this week, not the one shown.
+
+**Why not fixed here:** S15 is the blocks and summary on the shared
+engine; each of these is its own screen change.
+
+**To settle:** give `MonthCharges` and `MonthCharts` a period word and use
+them on the Week, and add `#/week/YYYY-MM-DD` (the Monday) to `nav.ts`.
+
+---
+
+## N47 — Weekly goals on Income and Savings are typed on the Week only
+
+**Seen:** 2026-09-23, S15.
+
+The Week reads each category's weekly budget as its Budgeted, or on Income
+and Savings its Goal, as Workbook's Weekly Budget types Q10:Q16 and W10:W16.
+It can be typed in the row on the Week. Settings → Weekly budgets still
+lists the four spending lists only (N19). So a weekly limit stored on an
+Income or Savings category before S15, which N19 left "kept and not
+offered", now shows on the Week as that category's goal.
+
+**Why not fixed here:** Settings' list is N19's settled answer, and the
+Week is now the place a weekly budget is typed.
+
+**To settle:** either offer Income and Savings goals in Settings too, or
+drop the weekly budgets card from Settings now the Week types them.

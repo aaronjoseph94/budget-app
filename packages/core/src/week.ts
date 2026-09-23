@@ -5,9 +5,12 @@
  * cannot filter; docs/ROADMAP.md makes weekly the primary lens as a new
  * capability. Tests are therefore worked by hand rather than golden-replayed.
  *
- * Every figure the week screen shows comes from here. Invariant 1: the screen
- * formats these numbers and never adds anything up itself, and nothing here is
- * ever stored — it is recomputed from the ledger on every read.
+ * No screen reads weeklySummary since S15: the Week is Workbook's Weekly Budget,
+ * from weekSheet in period-sheet.ts. It is kept, not removed, because what it
+ * gives (one budget over every spending list, the share of it used, rows
+ * with no category) is not what weekSheet gives, so its tests could not move
+ * across unchanged, and the coach's weekly limits may want it (N44). Nothing
+ * here is ever stored — it is recomputed from the ledger on every read.
  *
  * Amounts are signed (docs/divergences.md D3): outflows negative. "Spent" is
  * reported as a positive number because that is how a person reads it, and a
