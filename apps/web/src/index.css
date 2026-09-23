@@ -162,6 +162,9 @@
   --savings-title: #fff7de;
   --savings-needed: #fff7dd;
   --savings-bar: #fac935;
+  /* Home's savings-goals chart (chart5): its goal and, as D23 draws it, the saved part. */
+  --savings-chart-goal: #feea8d;
+  --savings-chart-saved: #ebd15c;
 }
 
 /*
@@ -257,6 +260,8 @@
     --savings-title: #36301a;
     --savings-needed: #3a331b;
     --savings-bar: #c9a22e;
+    --savings-chart-goal: #4a4222;
+    --savings-chart-saved: #c9b04a;
   }
 }
 
@@ -408,6 +413,12 @@
 }
 .workbook-chart .chart-savings-ink {
   fill: var(--savings-ink);
+}
+.workbook-chart .chart-savings-goal {
+  fill: var(--savings-chart-goal);
+}
+.workbook-chart .chart-savings-saved {
+  fill: var(--savings-chart-saved);
 }
 .workbook-chart .chart-home-ink {
   fill: var(--home-ink);

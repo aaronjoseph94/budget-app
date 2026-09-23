@@ -1,6 +1,6 @@
 import { useId, useMemo, type ReactNode } from 'react'
-import { goalBars, partShares, stackedColumns, type TopExpense, type YearGroups, type YearSheet } from '@budget/core'
-import { goalActualColumns, incomeExpenseColumns, shareRing, yearPie, type SvgMarkup } from '@budget/chart-specs'
+import { goalBars, partShares, stackedColumns, type SavingsFund, type TopExpense, type YearGroups, type YearSheet } from '@budget/core'
+import { goalActualColumns, incomeExpenseColumns, savingsGoalBars, shareRing, yearPie, type SvgMarkup } from '@budget/chart-specs'
 import { formatCents, formatShare, formatShortMonth } from '../format.js'
 import { SvgChart } from '../components/ui/chart.js'
 import { cn } from '../lib/cn.js'
@@ -73,6 +73,32 @@ export function TopRing({ top, rank }: { top: TopExpense; rank: number }) {
       <SvgChart svg={svg} />
     </div>
   )
+}
+
+/**
+ * Home's savings-goals chart (chart5, D23): each fund with a goal, its
+ * balance today over a track as long as the goal, the bar's length core's
+ * `fundProgress`. Funds with no goal are left out, as Workbook's empty slots
+ * draw nothing.
+ */
+export function SavingsGoalsChart({ funds }: { funds: readonly SavingsFund[] }) {
+  const id = useChartId()
+  const svg = useMemo(() => {
+    const bars = funds.flatMap((f) => {
+      const g = f.figures
+      if (g === null) return []
+      const valueText = `${formatCents(g.balanceCents)} of ${formatCents(g.goalCents)}`
+      return [{ label: f.name, valueText, goalBp: 10_000, actualBp: g.progressBp === 0 ? null : g.progressBp }]
+    })
+    if (bars.length === 0) return null
+    return savingsGoalBars({
+      id,
+      title: 'Savings goals',
+      description: said(bars.map((b) => `${b.label}: ${b.valueText}`)),
+      bars,
+    })
+  }, [id, funds])
+  return svg === null ? null : <SvgChart svg={svg} className="max-w-md" />
 }
 
 /** chart42's six, in its order (Hidden!I32:I37), short enough to sit under a pair of columns. */

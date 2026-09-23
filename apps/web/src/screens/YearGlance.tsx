@@ -5,7 +5,8 @@ import { navigate } from '../nav.js'
 import { formatCents, formatMonthTitle, formatShare } from '../format.js'
 import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
-import { TopRing, YearPie } from './YearCharts.js'
+import { useFunds } from '../funds.js'
+import { SavingsGoalsChart, TopRing, YearPie } from './YearCharts.js'
 
 /**
  * Workbook's Home, as the top of the Year (plan §2, §6.4): white cards on
@@ -22,6 +23,7 @@ export function YearGlance({ sheet, wide }: { sheet: YearSheet; wide: boolean })
   const { atAGlance, startingBalanceCents: start, endingBalanceCents: end } = sheet
   const startMonth = formatMonthTitle(sheet.startMonth).split(' ')[0]
   const best = atAGlance.bestSavingsMonth
+  const funds = useFunds()
   return (
     <section
       aria-label="Year at a glance"
@@ -97,6 +99,21 @@ export function YearGlance({ sheet, wide }: { sheet: YearSheet; wide: boolean })
             ))}
           </ol>
         )}
+      </Card>
+      {/* Home's "Savings Goals" card (O3:P11): each fund today, whichever year is shown. */}
+      <Card className="sm:col-span-2 lg:col-span-4">
+        <h3 className="mb-2 text-xs font-medium text-muted-foreground">Savings goals today</h3>
+        {funds.status === 'loading' ? <p className="text-sm">Loading…</p> : null}
+        {funds.status === 'failed' ? <p className="text-sm">{funds.message}</p> : null}
+        {funds.status === 'ready' ? (
+          funds.funds.funds.some((f) => f.figures !== null) ? (
+            <SavingsGoalsChart funds={funds.funds.funds} />
+          ) : (
+            <button type="button" className="text-left text-sm underline underline-offset-4" onClick={() => navigate('savings')}>
+              Set a goal for a savings fund to see it here
+            </button>
+          )
+        ) : null}
       </Card>
     </section>
   )

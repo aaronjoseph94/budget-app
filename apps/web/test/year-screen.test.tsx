@@ -256,4 +256,24 @@ describe('YearScreen', () => {
     expect(alert.textContent).toMatch(/Could not load this year.*0008/)
     expect(screen.queryByRole('region', { name: 'Income by month' })).toBeNull()
   })
+
+  it("draws each fund's balance today against its goal, as Home's savings-goals chart, whatever year is shown (D23)", async () => {
+    const fake = seeded()
+    // 1,000.00 typed at the end of 1 March; the 500.00 on the 12th adds to it.
+    fake.tables.savings_goals.push({
+      id: 'g1', name: 'Flight', target_cents: 600_000, saved_cents: 100_000, target_date: null, unit_cost_cents: null,
+      unit_label: null, category_id: 'fund', start_date: null, balance_as_of: '2026-03-01',
+    })
+    renderScreen(<YearScreen start="2025-01" />, fake)
+    const chart = await screen.findByRole('img', { name: 'Savings goals' })
+    expect(chart.textContent).toContain('Flight fund: $1,500.00 of $6,000.00')
+    // 1,500 of 6,000 is 2,500 bp: 750 of the 3,000-unit track.
+    expect(chart.innerHTML).toMatch(/width="750" height="100" rx="40" fill="#EBD15C"/)
+  })
+
+  it('offers to set a goal when no savings fund has one', async () => {
+    renderScreen(<YearScreen start={null} />, seeded())
+    fireEvent.click(await screen.findByRole('button', { name: 'Set a goal for a savings fund to see it here' }))
+    expect(window.location.hash).toBe('#/savings')
+  })
 })
