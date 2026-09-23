@@ -443,6 +443,16 @@ export async function moveCategory(
   if (error !== null) throw new Error(describeSetupFailure('move', error))
 }
 
+/**
+ * Remove a category. The database refuses while anything is filed under it
+ * (every reference to a category is ON DELETE RESTRICT, migration 0001), so
+ * a charge can never be left without one; Setup says so in words.
+ */
+export async function removeCategory(supabase: SupabaseClient, categoryId: string): Promise<void> {
+  const { error } = await supabase.from('categories').delete().eq('id', categoryId)
+  if (error !== null) throw new Error(describeSetupFailure('remove', error))
+}
+
 export async function setWeeklyBudget(
   supabase: SupabaseClient,
   categoryId: string,

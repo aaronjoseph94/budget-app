@@ -143,6 +143,12 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
 
     if (method === 'PATCH' || method === 'DELETE') {
       const body = method === 'PATCH' ? (JSON.parse(String(init?.body)) as Row) : {}
+      // ON DELETE RESTRICT, as 0001 declares for everything that files under a category.
+      const inUse = (id: unknown) =>
+        tables.transactions.some((t) => t.category_id === id) || tables.merchant_rules.some((m) => m.category_id === id)
+      if (method === 'DELETE' && target === 'categories' && table.some((r) => matches(r) && inUse(r.id))) {
+        return pgError('23503', 409)
+      }
       if (target === 'categories' && table.some((r) => !matches(r) && body.name !== undefined && r.name === body.name)) {
         return pgError('23505', 409)
       }

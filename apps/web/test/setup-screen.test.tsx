@@ -161,6 +161,30 @@ describe('SetupScreen, order and lists', () => {
   })
 })
 
+describe('SetupScreen, removing a category', () => {
+  it('removes one with nothing filed under it', async () => {
+    const fake = seeded()
+    renderScreen(<SetupScreen />, fake)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove Phone' }))
+
+    await waitFor(async () => expect(await namesOn('Bills')).toEqual(['Rent']))
+    expect(fake.tables.categories.some((c) => c.id === 'c4')).toBe(false)
+  })
+
+  it('says to move its charges first when something is still filed under it', async () => {
+    const fake = seeded()
+    fake.tables.transactions.push({ id: 't1', posted_on: '2026-09-01', amount_cents: -160000, merchant_raw: 'LANDLORD', category_id: 'c3', source: 'typed' })
+    renderScreen(<SetupScreen />, fake)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove Rent' }))
+
+    const card = within(screen.getByRole('region', { name: 'Bills' }))
+    expect(await card.findByText('This category still has charges filed under it — move them first. (code 23503)')).toBeTruthy()
+    expect(await namesOn('Bills')).toEqual(['Phone', 'Rent'])
+  })
+})
+
 describe('SetupScreen, your name', () => {
   it('saves your name to your sign-in when you leave the field', async () => {
     const fake = seeded()

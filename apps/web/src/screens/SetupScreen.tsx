@@ -1,7 +1,14 @@
 import { useState } from 'react'
 import { useAppData } from '../app-data.js'
 import { moveInList } from '@budget/core'
-import { ensureCategory, moveCategory, renameCategory, setCategoryOrder, type Category } from '../ledger.js'
+import {
+  ensureCategory,
+  moveCategory,
+  removeCategory,
+  renameCategory,
+  setCategoryOrder,
+  type Category,
+} from '../ledger.js'
 import { atEndOf, groupByList, LIST_HEADING, LISTS, type CategoryKind } from '../lists.js'
 import { saveDisplayName } from '../profile.js'
 import { Alert } from '../components/ui/feedback.js'
@@ -281,6 +288,15 @@ function CategoryRow({
           ))}
         </select>
       </span>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="size-9 text-muted-foreground"
+        aria-label={`Remove ${row.name}`}
+        onClick={() => void write(() => removeCategory(supabase, row.id))}
+      >
+        <Icon name="trash" />
+      </Button>
     </li>
   )
 }
