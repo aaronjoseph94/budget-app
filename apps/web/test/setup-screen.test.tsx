@@ -54,6 +54,8 @@ describe('SetupScreen, the lists', () => {
     expect(await namesOn('Not spending')).toEqual(['Card payments'])
     expect(within(screen.getByRole('region', { name: 'Savings' })).getByText('Nothing here yet.')).toBeTruthy()
     expect(within(screen.getByRole('region', { name: 'Debts' })).getByText('Nothing here yet.')).toBeTruthy()
+    // Plan §3.3: the card itself is not a Debts row, or its purchases count twice.
+    expect(within(screen.getByRole('region', { name: 'Debts' })).getByText(/^What loans .* its purchases are already counted\.$/)).toBeTruthy()
   })
 })
 

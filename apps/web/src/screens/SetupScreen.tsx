@@ -36,7 +36,13 @@ const SECTIONS: readonly { readonly label: string; readonly cards: readonly List
     label: 'Recurring expenses',
     cards: [
       { kind: 'bill', header: ['🏠', 'Bills'], hint: 'What bills do you pay each month? Their amounts usually stay the same.' },
-      { kind: 'debt', header: ['💳', 'Debts'], hint: 'What debt do you have? Loans and credit lines you plan to pay off.' },
+      {
+        kind: 'debt',
+        header: ['💳', 'Debts'],
+        // Workbook's note (D17) invites every open credit line; the second
+        // sentence is the plan's (§3.3), so the Rogers card is not put here.
+        hint: 'What loans are you paying off from the bank? A card you pay off from your bank is not a monthly debt payment here — its purchases are already counted.',
+      },
       { kind: 'subscription', header: ['💻', 'Subscriptions'], hint: 'What are you subscribed to? A statement shows them.' },
     ],
   },
