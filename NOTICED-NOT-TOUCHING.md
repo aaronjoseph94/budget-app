@@ -642,7 +642,7 @@ spending charges, each with "Move to…", as a Month row does.
 
 ---
 
-## N27 — An income source with a pay schedule can move off Income *(settled in part 2026-09-23, S15b)*
+## N27 — An income source with a pay schedule can move off Income *(settled 2026-09-23, S15b and S15c)*
 
 **Seen:** 2026-09-23, writing migration 0011 (Sitting B).
 
@@ -666,6 +666,12 @@ for a category on Income, so one left on a moved category is not read, and
 Setup offers Paid and First payday on Income rows only. The schedule stays
 stored, unseen, and comes back if the category moves back to Income. Still
 open: the Bill Calendar (S15c) must read them the same way.
+
+**Settled, S15c:** the Bill Calendar reads them the same way: `billCalendar`
+names a payday only for a schedule on a category on Income, so one left on
+a moved category pays nobody there either (tested in core and on the
+screen). Refusing the move itself, with its own Setup sentence, was not
+needed for either screen and was not built.
 
 ---
 
@@ -1203,3 +1209,48 @@ $200 on the 5th through B15:C19 instead.
 
 **To settle:** correct §5.4 to "J3, Q20 | 1167.99, 150", and add Q14 = 200
 to `workbook-bill-calendar`.
+
+---
+
+## N50 — F15 says the Bill Calendar's bi-weekly paydays run back before the first pay date; they do not
+
+**Seen:** 2026-09-23, S15c, re-reading Bill Calendar!C8:O38.
+
+F15's last bullet ("Before the first payday") says Workbook's Bill Calendar
+"is not consistent here: its bi-weekly paydays go back before START
+HERE!C8, and its weekly and monthly ones do not". Every one of the 42
+payday cells filters all three frequencies on `'START HERE'!C8:C44 <=
+DATE(…)`, so none runs back. The Paycheck view's choice to run back (F15)
+is unaffected; its stated reason is not quite right.
+
+The two screens now differ: the Bill Calendar shows no payday before the
+first pay date, as Workbook does (F20), while Paycheck steps back past it
+into periods the same schedule gives. Nothing adds up differently; a
+payday pill is a name, never an amount.
+
+**Why not fixed here:** F15 is a settled entry for another slice.
+
+**To settle:** correct F15's last bullet, and decide whether Paycheck
+should stop at the first pay date or the calendar should run back too.
+
+---
+
+## N51 — What the Bill Calendar does not have yet
+
+**Seen:** 2026-09-23, S15c.
+
+- **Tapping a day or a bill opens nothing.** The Month's charges sheet
+  (with "Move to…") names a category and a month, not a day.
+- **A card-paid bill charged just after a month end** shows planned in its
+  own month and twice in the next, as on the Month (N36); the calendar
+  follows the Month's rule, so it will follow N36's answer.
+- **The month shown is not kept per device** beyond the address; opening
+  it from More always opens this month, as Paycheck opens this period.
+- **The desktop bar shows icons only between 768 and 1024px** (nine tabs
+  no longer fit with their words); Month and Year still share one icon.
+
+**Why not fixed here:** each is its own screen change, and the second
+waits on the owner's answer to N36.
+
+**To settle:** with N46 and N48, give the Week, Paycheck and the calendar
+one way to open a row's charges; give Year an icon of its own.
