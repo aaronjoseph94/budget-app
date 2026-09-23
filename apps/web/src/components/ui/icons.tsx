@@ -36,6 +36,8 @@ const PATHS = {
     'M16 10h.01',
     'M2 8v1a2 2 0 0 0 2 2h1',
   ],
+  // Lucide's chart-column, for the Year: it had shared Month's calendar, and a tablet's bar shows icons alone.
+  year: ['M3 3v16a2 2 0 0 0 2 2h16', 'M18 17V9', 'M13 17V5', 'M8 17v-3'],
   card: ['M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z', 'M2 10h20'],
   alert: ['M12 9v4', 'M12 17h.01', 'M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z'],
 } as const

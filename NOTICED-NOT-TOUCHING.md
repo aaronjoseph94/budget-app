@@ -1250,7 +1250,8 @@ should stop at the first pay date or the calendar should run back too.
 - **The desktop bar shows icons only between 768 and 1024px** (nine tabs
   no longer fit with their words); Month and Year still share one icon.
   Since S16 (ten tabs) the words show from 1280px, and the bar takes the
-  wide width on every screen.
+  wide width on every screen. *(Icon settled 2026-09-23, completion pass:
+  Year has a column-chart icon of its own, on the bar and on More.)*
 
 **Why not fixed here:** each is its own screen change, and the second
 waits on the owner's answer to N36.

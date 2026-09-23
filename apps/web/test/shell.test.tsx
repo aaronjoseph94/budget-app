@@ -40,6 +40,15 @@ describe('Shell', () => {
     expect(within(phoneBar()).getByRole('button', { name: 'Month' }).getAttribute('aria-current')).toBe('page')
   })
 
+  it('gives every tab on the desktop bar an icon of its own, which is all a tablet shows of it', async () => {
+    renderScreen(<Shell />, createFakeSupabase())
+    await screen.findByRole('heading', { name: 'September 2026' })
+
+    const desk = screen.getAllByRole('navigation', { name: 'Screens' })[0]!
+    const drawn = within(desk).getAllByRole('button').map((b) => b.querySelector('svg')?.innerHTML)
+    expect(new Set(drawn).size).toBe(drawn.length)
+  })
+
   it('steps months through the address, so a refresh and the back gesture land on the same one', async () => {
     renderScreen(<Shell />, createFakeSupabase())
     await screen.findByRole('heading', { name: 'September 2026' })

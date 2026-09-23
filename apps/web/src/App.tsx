@@ -67,7 +67,7 @@ const DESKTOP_TABS: readonly Tab[] = [
   { screen: 'week', label: 'Week', icon: 'week' },
   { screen: 'paycheck', label: 'Paycheck', icon: 'wallet' },
   { screen: 'calendar', label: 'Bills', icon: 'bills' },
-  { screen: 'year', label: 'Year', icon: 'calendar' },
+  { screen: 'year', label: 'Year', icon: 'year' },
   { screen: 'savings', label: 'Savings', icon: 'piggy' },
   { screen: 'debts', label: 'Debts', icon: 'card' },
   { screen: 'review', label: 'Review', icon: 'inbox' },

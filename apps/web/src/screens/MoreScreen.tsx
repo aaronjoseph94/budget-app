@@ -5,7 +5,7 @@ import { Icon, type IconName } from '../components/ui/icons.js'
 const ITEMS: readonly { screen: Screen; label: string; hint: string; icon: IconName }[] = [
   { screen: 'paycheck', label: 'Paycheck', hint: 'Your budget one pay period at a time', icon: 'wallet' },
   { screen: 'calendar', label: 'Bill calendar', hint: 'What is due each day of the month, and paydays', icon: 'bills' },
-  { screen: 'year', label: 'Year', hint: 'Twelve months at a glance, from any month', icon: 'calendar' },
+  { screen: 'year', label: 'Year', hint: 'Twelve months at a glance, from any month', icon: 'year' },
   { screen: 'savings', label: 'Savings', hint: 'Each fund, what it needs, and what to save a month', icon: 'piggy' },
   { screen: 'debts', label: 'Debts', hint: 'Each loan and card balance, and when it is paid off', icon: 'card' },
   { screen: 'setup', label: 'Setup', hint: "Your name, and Workbook's lists", icon: 'list' },
