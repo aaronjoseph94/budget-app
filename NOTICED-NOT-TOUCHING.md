@@ -390,7 +390,7 @@ Setup), reading `merchant_rules`, with a way to re-point or delete one.
 
 ---
 
-## N18 — Two of Setup's messages wait on monthly amounts *(settled in part 2026-09-23, Sitting B)*
+## N18 — Two of Setup's messages wait on monthly amounts *(settled 2026-09-23, S9)*
 
 **Seen:** 2026-09-23, S2b.
 
@@ -408,6 +408,16 @@ first sentence.
 **Settled in part:** both of 0009's triggers raise 23514, so a refused move
 already shows "Remove the monthly amount first, then move it to another
 list." Still open: the "set amount" action and its sentence, at S9.
+
+**Settled:** S9 sets monthly amounts from Setup, and an amount refused by
+0009's trigger (the category moved off Bills, Debts and Subscriptions on
+another device) says "That list can't have a monthly amount: only Bills,
+Debts and Subscriptions can." The sentence lives in `describePlanFailure`,
+beside the read's, rather than in `describeSetupFailure`, because a read
+of monthly amounts needs its own words too and must never say "nothing was
+saved" (N28). A refused move now says how to remove the amount: "Remove
+the monthly amount first (Stop, under its amount), then move it to another
+list."
 
 ---
 
@@ -474,6 +484,18 @@ where §8 puts it, because what a share is of is a chart's question: the
 spending doughnut needs a row's part of its block, the income bars need
 Actual against Goal, and a refund can make a row, or a whole block,
 negative, which no slice of a doughnut can show.
+
+**Updated 2026-09-23, S9:** core now resolves monthly amounts from
+everything typed (`resolvePlans`, D13) and totals them for Setup
+(`billsTotals`, workbook-bills). `monthSheet` still takes them already
+resolved, and the Month still passes none: plan §8 puts planned amounts on
+the Month at S10, whose workbook-month part 2 cells should be seen failing
+before `monthSheet` takes the plan history. A plan history can hold rows
+for a category since moved off the three recurring lists (0009 allows it
+once the amount has stopped); `periodSheet` refuses a plan for any other
+list, so S10 must leave those out, as `billsTotals` does. The comment in
+`MonthScreen.tsx` beside `plans: []` says "read here from S9"; it is S10's
+to correct when it wires them.
 
 ---
 
@@ -755,3 +777,26 @@ needs two devices editing the same month's budget within seconds.
 **To settle:** if it is ever seen, add a `set_category_budget` function that
 upserts the 'onward' row and updates the month's 'only' row, if one exists,
 in one statement, and call it from `setBudget`.
+
+---
+
+## N34 — Setup writes a row's day and amount together, from what it last read
+
+**Seen:** 2026-09-23, S9 (Setup's day paid and monthly amount).
+
+A monthly amount and its day paid are one row per month in 0009, and a
+PostgREST upsert writes every column it is given, so Setup sends both on
+every save: the one being changed, and the other as the row's field holds
+it. If another device changes the day paid for this month after Setup read
+it, and the amount is then changed here, the save puts the old day back.
+Typing the day again fixes it. It needs two devices editing one bill's row
+within the same few minutes.
+
+**Why not fixed here:** writing one column of this month's row, or adding
+one carrying the rest forward, in a single step needs a database function
+(a new migration and another paste for the owner), for a case as unlikely
+as N33's.
+
+**To settle:** if it is ever seen, add a `set_category_plan` function that
+upserts this month's row taking the unchanged column from the row in
+effect, in one statement, and call it from `setPlan`.
