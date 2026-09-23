@@ -14,7 +14,7 @@ import {
   type AcceptedRow,
   type RejectedRow,
 } from '@budget/statement-parsers'
-import { describeWriteFailure } from './format.js'
+import { describeSetupFailure, describeWriteFailure } from './format.js'
 import { LIST_HEADING, type CategoryKind } from './lists.js'
 import type { SupabaseClient } from './supabase.js'
 
@@ -403,6 +403,16 @@ export async function listCategories(supabase: SupabaseClient): Promise<readonly
     sort_order: Number(c.sort_order),
     weekly_budget_cents: c.weekly_budget_cents === null ? null : Number(c.weekly_budget_cents),
   }))
+}
+
+/**
+ * Rename a category where it stands. Rows are keyed by id, never by name, so
+ * every charge already filed under it follows the new name (unlike Workbook,
+ * where a renamed cell orphans the rows that typed the old one).
+ */
+export async function renameCategory(supabase: SupabaseClient, categoryId: string, name: string): Promise<void> {
+  const { error } = await supabase.from('categories').update({ name }).eq('id', categoryId)
+  if (error !== null) throw new Error(describeSetupFailure('rename', error))
 }
 
 export async function setWeeklyBudget(

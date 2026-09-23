@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useAppData } from '../app-data.js'
-import type { Category } from '../ledger.js'
-import { groupByList, LIST_HEADING, type CategoryKind } from '../lists.js'
+import { ensureCategory, renameCategory, type Category } from '../ledger.js'
+import { atEndOf, groupByList, LIST_HEADING, type CategoryKind } from '../lists.js'
 import { saveDisplayName } from '../profile.js'
 import { Alert } from '../components/ui/feedback.js'
+import { Button } from '../components/ui/button.js'
+import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { navigate } from '../nav.js'
 
@@ -123,8 +125,32 @@ function NameBand() {
 }
 
 function ListCardView({ card, rows }: { card: ListCard; rows: readonly Category[] }) {
+  const { supabase, userId, categories, refresh } = useAppData()
+  const heading = LIST_HEADING[card.kind]
+  const [newName, setNewName] = useState('')
+  const [message, setMessage] = useState<string | null>(null)
+
+  /** Run one write, then reload, or show why it was refused. */
+  const write = async (change: () => Promise<unknown>): Promise<boolean> => {
+    setMessage(null)
+    try {
+      await change()
+    } catch (cause) {
+      setMessage(cause instanceof Error ? cause.message : 'That did not work. Nothing was changed.')
+      return false
+    }
+    await refresh()
+    return true
+  }
+
+  const add = async () => {
+    const name = newName.trim()
+    if (name === '') return
+    if (await write(() => ensureCategory(supabase, userId, atEndOf(categories, name, card.kind)))) setNewName('')
+  }
+
   return (
-    <section aria-label={LIST_HEADING[card.kind]} className="rounded-xl bg-card px-4 pb-3 pt-3 shadow-sm">
+    <section aria-label={heading} className="rounded-xl bg-card px-4 pb-3 pt-3 shadow-sm">
       {card.header !== undefined ? (
         <h3 className="text-base font-medium text-setup-label">
           <span aria-hidden="true">{card.header[0]} </span>
@@ -132,17 +158,86 @@ function ListCardView({ card, rows }: { card: ListCard; rows: readonly Category[
         </h3>
       ) : null}
       <p className="mt-0.5 text-xs text-muted-foreground">{card.hint}</p>
+      {message !== null ? (
+        <div className="mt-2">
+          <Alert tone="error">{message}</Alert>
+        </div>
+      ) : null}
       {rows.length === 0 ? (
         <p className="py-3 text-sm text-muted-foreground">Nothing here yet.</p>
       ) : (
         <ul className="mt-2 divide-y">
           {rows.map((row) => (
-            <li key={row.id} className="py-2 text-sm">
-              {row.name}
-            </li>
+            <CategoryRow key={row.id} row={row} write={write} />
           ))}
         </ul>
       )}
+      <form
+        className="mt-2 flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault()
+          void add()
+        }}
+      >
+        <Input
+          size="sm"
+          aria-label={`New ${heading} category`}
+          placeholder={`Add to ${heading}`}
+          value={newName}
+          maxLength={60}
+          onChange={(e) => setNewName(e.target.value)}
+        />
+        <Button type="submit" size="sm" variant="outline" className="h-9" disabled={newName.trim() === ''}>
+          <Icon name="plus" /> Add
+        </Button>
+      </form>
     </section>
+  )
+}
+
+/** One category: its name, edited where it stands. */
+function CategoryRow({
+  row,
+  write,
+}: {
+  row: Category
+  write: (change: () => Promise<unknown>) => Promise<boolean>
+}) {
+  const { supabase } = useAppData()
+  const [text, setText] = useState(row.name)
+  // Follow a rename from elsewhere during render, not in an effect: a mount
+  // effect can run after the first keystroke and put the old name back.
+  const [shown, setShown] = useState(row.name)
+  if (shown !== row.name) {
+    setShown(row.name)
+    setText(row.name)
+  }
+
+  const rename = async () => {
+    const name = text.trim()
+    // An empty name is never saved; the old one comes back instead.
+    if (name === '' || name === row.name) {
+      setText(row.name)
+      return
+    }
+    if (!(await write(() => renameCategory(supabase, row.id, name)))) setText(row.name)
+  }
+
+  return (
+    <li className="flex items-center gap-1 py-1">
+      <input
+        aria-label={`Rename ${row.name}`}
+        value={text}
+        maxLength={60}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={() => void rename()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.currentTarget.blur()
+          // Back to the stored name; leaving the field then saves nothing.
+          if (e.key === 'Escape') setText(row.name)
+        }}
+        className="min-w-0 flex-1 rounded-md bg-transparent px-1 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+      />
+    </li>
   )
 }

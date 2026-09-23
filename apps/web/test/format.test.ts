@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   describeFailure,
   describeReason,
+  describeSetupFailure,
   describeWriteFailure,
   formatBasisPoints,
   formatCents,
@@ -138,5 +139,30 @@ describe('the smaller display helpers', () => {
       if (hostZone === undefined) delete process.env['TZ']
       else process.env['TZ'] = hostZone
     }
+  })
+})
+
+describe('describeSetupFailure', () => {
+  it("says what went wrong in Setup's own words, keeping the code", () => {
+    expect(describeSetupFailure('remove', { code: '23503' })).toBe(
+      'This category still has charges filed under it — move them first. (code 23503)',
+    )
+    expect(describeSetupFailure('move', { code: '23514' })).toBe(
+      'Remove the monthly amount first, then move it to another list. (code 23514)',
+    )
+    expect(describeSetupFailure('rename', { code: '23505' })).toMatch(/^You already have a category with that name/)
+    expect(describeSetupFailure('rename', { code: '23514' })).toMatch(/^That name has characters the app cannot store/)
+  })
+
+  // The import wording is exactly what Setup must not say for these.
+  it('never says the numbers did not add up', () => {
+    for (const action of ['rename', 'move', 'reorder', 'remove'] as const) {
+      expect(describeSetupFailure(action, { code: '23514' })).not.toMatch(/did not add up/)
+    }
+  })
+
+  it('falls back to the everyday wording for connection and sign-in failures', () => {
+    expect(describeSetupFailure('rename', null)).toBe(describeWriteFailure(null))
+    expect(describeSetupFailure('move', { code: '28000' })).toBe(describeWriteFailure({ code: '28000' }))
   })
 })

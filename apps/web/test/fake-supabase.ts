@@ -48,7 +48,10 @@ export interface FakeSupabase {
   readonly rpcCalls: RpcCall[]
   /** What each RPC answers with. approve_candidate says 'approved' unless told otherwise. */
   readonly rpcReplies: Record<string, unknown>
-  /** Make a table read or an RPC fail with this Postgres error code, e.g. `fail('rpc/approve_candidate', '42501')`. */
+  /**
+   * Make a table or an RPC fail with this Postgres error code, e.g. `fail('rpc/approve_candidate', '42501')`,
+   * or only one method on a table, e.g. `fail('PATCH categories', '23514')`.
+   */
   fail(target: string, code: string): void
   /** The signed-in user as the auth server holds it, `user_metadata` included. */
   readonly user: { id: string; email: string; user_metadata: Record<string, unknown> }
@@ -95,7 +98,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       return json({ ...user, aud: 'authenticated', app_metadata: {}, created_at: '2026-01-01T00:00:00Z' })
     }
     const target = url.pathname.replace(/^\/rest\/v1\//, '')
-    const failure = failures.get(target)
+    const failure = failures.get(target) ?? failures.get(`${method} ${target}`)
     if (failure !== undefined) return pgError(failure)
 
     if (target.startsWith('rpc/')) {
@@ -140,6 +143,9 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
 
     if (method === 'PATCH' || method === 'DELETE') {
       const body = method === 'PATCH' ? (JSON.parse(String(init?.body)) as Row) : {}
+      if (target === 'categories' && table.some((r) => !matches(r) && body.name !== undefined && r.name === body.name)) {
+        return pgError('23505', 409)
+      }
       const next: Row[] = []
       for (const r of table) {
         if (!matches(r)) next.push(r)

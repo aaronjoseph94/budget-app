@@ -57,6 +57,60 @@ describe('SetupScreen, the lists', () => {
   })
 })
 
+describe('SetupScreen, changing a list', () => {
+  it('renames a category where it stands, keeping its id', async () => {
+    const fake = seeded()
+    renderScreen(<SetupScreen />, fake)
+
+    const field = await screen.findByRole('textbox', { name: 'Rename Phone' })
+    fireEvent.change(field, { target: { value: ' Mobile ' } })
+    fireEvent.keyDown(field, { key: 'Enter' })
+    fireEvent.blur(field)
+
+    await waitFor(async () => expect(await namesOn('Bills')).toEqual(['Mobile', 'Rent']))
+    expect(fake.tables.categories.find((c) => c.id === 'c4')?.name).toBe('Mobile')
+  })
+
+  it('puts the old name back for an empty name or Escape, and saves nothing', async () => {
+    const fake = seeded()
+    renderScreen(<SetupScreen />, fake)
+
+    const field = await screen.findByRole<HTMLInputElement>('textbox', { name: 'Rename Rent' })
+    fireEvent.change(field, { target: { value: '   ' } })
+    fireEvent.blur(field)
+    await waitFor(() => expect(field.value).toBe('Rent'))
+    fireEvent.change(field, { target: { value: 'Mortgage' } })
+    fireEvent.keyDown(field, { key: 'Escape' })
+    fireEvent.blur(field)
+    expect(field.value).toBe('Rent')
+    expect(fake.tables.categories.find((c) => c.id === 'c3')?.name).toBe('Rent')
+  })
+
+  it('refuses a name another category has, in words, and keeps the old one', async () => {
+    renderScreen(<SetupScreen />, seeded())
+
+    const field = await screen.findByRole<HTMLInputElement>('textbox', { name: 'Rename Rent' })
+    fireEvent.change(field, { target: { value: 'Groceries' } })
+    fireEvent.blur(field)
+
+    const card = within(screen.getByRole('region', { name: 'Bills' }))
+    expect(await card.findByText(/^You already have a category with that name/)).toBeTruthy()
+    expect(field.value).toBe('Rent')
+  })
+
+  it('adds a category to the bottom of the list it was typed into', async () => {
+    const fake = seeded()
+    renderScreen(<SetupScreen />, fake)
+
+    const input = await screen.findByRole('textbox', { name: 'New Bills category' })
+    fireEvent.change(input, { target: { value: 'Water' } })
+    fireEvent.click(within(screen.getByRole('region', { name: 'Bills' })).getByRole('button', { name: /Add/ }))
+
+    await waitFor(async () => expect(await namesOn('Bills')).toEqual(['Phone', 'Rent', 'Water']))
+    expect(fake.tables.categories.find((c) => c.name === 'Water')).toMatchObject({ kind: 'bill', sort_order: 2 })
+  })
+})
+
 describe('SetupScreen, your name', () => {
   it('saves your name to your sign-in when you leave the field', async () => {
     const fake = seeded()

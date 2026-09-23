@@ -121,6 +121,44 @@ export function describeWriteFailure(error: WriteError | null | undefined): stri
   return code === '' ? body : `${body} (code ${code})`
 }
 
+/** What Setup was doing when a write failed. */
+export type SetupAction = 'rename' | 'move' | 'reorder' | 'remove'
+
+/**
+ * Setup's own sentences for the refusals its writes can meet.
+ *
+ * describeWriteFailure is worded for imports: a refused CHECK (23514) reads
+ * "the numbers did not add up", and a category still in use (23503) reads
+ * "no longer exists". Neither is true here (docs/workbook-plan.md §6.5). The
+ * code decides the sentence together with what was being done. Anything not
+ * listed falls back to the import wording, which covers the connection and
+ * sign-in failures that can happen anywhere.
+ */
+const SETUP_FAILURES: Readonly<Record<SetupAction, Readonly<Record<string, string>>>> = {
+  rename: {
+    '23505': 'You already have a category with that name, on this list or another. Use a different name.',
+    // The name domain (0001) refuses control characters and empty names.
+    '23514': 'That name has characters the app cannot store. Use letters, numbers and ordinary punctuation.',
+  },
+  // The trigger that refuses this arrives with monthly amounts (Workbook plan
+  // 0009); it must raise check_violation for this sentence to be the one shown.
+  move: { '23514': 'Remove the monthly amount first, then move it to another list.' },
+  reorder: {},
+  remove: { '23503': 'This category still has charges filed under it — move them first.' },
+}
+
+/** For any Setup write, so the import wording for these two never shows here. */
+const SETUP_ANY: Readonly<Record<string, string>> = {
+  '23514': 'That change breaks a rule your lists follow, so nothing was saved.',
+  '23503': 'That category is still in use, so nothing was changed.',
+}
+
+export function describeSetupFailure(action: SetupAction, error: WriteError | null | undefined): string {
+  const code = typeof error?.code === 'string' ? error.code : ''
+  const body = SETUP_FAILURES[action][code] ?? SETUP_ANY[code]
+  return body === undefined ? describeWriteFailure(error) : `${body} (code ${code})`
+}
+
 /**
  * Today, in the user's own time zone, as an ISO date.
  *
