@@ -216,6 +216,9 @@ describe('describePlanFailure', () => {
     expect(describePlanFailure('read', {})).toBe(
       'Could not reach the database to read your monthly amounts. Check your connection and try again.',
     )
+    expect(describePlanFailure('read', { code: 'PGRST301' })).toBe(
+      'Your session expired. Sign in again to see your monthly amounts. (code PGRST301)',
+    )
     expect(describePlanFailure('read', { code: 'XX000' })).toBe(
       'Your monthly amounts could not be read, so they are not shown. Try again. (code XX000)',
     )

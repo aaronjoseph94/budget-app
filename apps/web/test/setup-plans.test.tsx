@@ -86,6 +86,19 @@ describe('SetupScreen, reading monthly amounts', () => {
     )
   })
 
+  it('says plainly when the amounts read cannot be shown, and the lists still work', async () => {
+    const fake = seeded()
+    // A row 0009 would refuse: a month is named by its first day.
+    fake.tables.category_plans.push({ ...plan('p9', 'rent', '2026-02', 5_000, 3), effective_month: '2026-02-15' })
+    renderScreen(<SetupScreen />, fake)
+
+    expect((await screen.findByRole('alert')).textContent).toBe('Your monthly amounts could not be shown. Reload to try again.')
+    const bills = await card('Bills')
+    expect(bills.getByRole('textbox', { name: 'Rename Rent' })).toBeTruthy()
+    expect(bills.queryByRole('textbox', { name: /^Day paid/ })).toBeNull()
+    expect(screen.queryByText('Fixed monthly bills')).toBeNull()
+  })
+
   it('waits for the amounts read after a category is removed, rather than call them wrong', async () => {
     const fake = seeded()
     renderScreen(<SetupScreen />, fake)
@@ -156,6 +169,8 @@ describe('SetupScreen, day paid and monthly amount', () => {
     expect((await card('Bills')).getByText('Monthly amount (from September on)')).toBeTruthy()
     // F8: an amount with no day counts in the month, never in a week.
     expect((await card('Bills')).getAllByText('Add a day paid so this shows in weeks.')).toHaveLength(1)
+    // Car Loan has neither, so there is nothing to nudge.
+    expect((await card('Debts')).queryByText('Add a day paid so this shows in weeks.')).toBeNull()
     expect((await card('Variable expenses')).queryByRole('textbox', { name: /^Day paid/ })).toBeNull()
     // Plan §3.3: the Debts card keeps saying the card itself is not a Debts row.
     expect((await card('Debts')).getByText(/A card you pay off from your bank is not a monthly debt payment here/)).toBeTruthy()
@@ -211,14 +226,42 @@ describe('SetupScreen, day paid and monthly amount', () => {
     expect(september(fake)).toEqual([['rent', null, 1]])
   })
 
+  it('keeps a day just typed when Stop is pressed next', async () => {
+    const fake = seeded()
+    renderScreen(<SetupScreen />, fake)
+    await waitFor(async () => expect((await field('Bills', 'Day paid for Rent')).value).toBe('1'))
+
+    await type('Bills', 'Day paid for Rent', '3')
+    fireEvent.click((await card('Bills')).getByRole('button', { name: 'Stop Rent from September' }))
+
+    await waitFor(() => expect(september(fake)).toEqual([['rent', null, 3]]))
+  })
+
+  it('saves nothing for a field left as it was, or typed again the same', async () => {
+    const fake = seeded()
+    renderScreen(<SetupScreen />, fake)
+    await waitFor(async () => expect((await field('Bills', 'Day paid for Rent')).value).toBe('1'))
+
+    await type('Bills', 'Day paid for Rent', '1')
+    await type('Bills', 'Monthly amount for Rent, from September on', '1,600')
+    await type('Debts', 'Day paid for Car Loan', '')
+    // A change made after them is saved, and nothing else is.
+    await type('Bills', 'Day paid for Phone', '12')
+
+    await waitFor(() => expect(september(fake)).toEqual([['phone', 8_500, 12]]))
+    expect(fake.tables.category_plans).toHaveLength(5)
+  })
+
   it('refuses a day or an amount it cannot save, puts the field back, and saves nothing', async () => {
     const fake = seeded()
     renderScreen(<SetupScreen />, fake)
     await waitFor(async () => expect((await field('Bills', 'Day paid for Rent')).value).toBe('1'))
 
-    const day = await type('Bills', 'Day paid for Rent', '45')
-    expect((await card('Bills')).getByRole('alert').textContent).toBe('Type the day of the month it is paid, 1 to 31, or leave it blank.')
-    expect(day.value).toBe('1')
+    for (const typed of ['45', '0']) {
+      const day = await type('Bills', 'Day paid for Rent', typed)
+      expect((await card('Bills')).getByRole('alert').textContent).toBe('Type the day of the month it is paid, 1 to 31, or leave it blank.')
+      expect(day.value).toBe('1')
+    }
     for (const typed of ['-5', 'about 20']) {
       const amount = await type('Bills', 'Monthly amount for Rent, from September on', typed)
       expect((await card('Bills')).getByText('Type the monthly amount as $0 or more, like 1600 or 17.99, or leave it blank.')).toBeTruthy()
@@ -307,6 +350,17 @@ describe("SetupScreen, Workbook's total tiles", () => {
     fireEvent.click(await (await card('Bills')).findByRole('button', { name: 'Stop Phone from September' }))
     await waitFor(async () => expect(await tile('Bills total', 'Bills')).toBe('$1,600.00'))
     expect(await tile('Fixed monthly bills')).toBe('$1,950.00')
+  })
+
+  it('shows no tile under an empty card, and still counts the other two', async () => {
+    const fake = seeded()
+    fake.tables.categories = fake.tables.categories.filter((c) => c.id !== 'car-loan')
+    renderScreen(<SetupScreen />, fake)
+
+    await waitFor(async () => expect(await tile('Bills total', 'Bills')).toBe('$1,685.00'))
+    expect((await card('Debts')).getByText('Nothing here yet.')).toBeTruthy()
+    expect((await card('Debts')).queryByText('Debts total')).toBeNull()
+    expect(await tile('Fixed monthly bills')).toBe('$1,685.00')
   })
 
   it('shows no totals while an amount names a category that did not load', async () => {
