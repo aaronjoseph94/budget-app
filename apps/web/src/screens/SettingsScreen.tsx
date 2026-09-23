@@ -105,7 +105,13 @@ function BudgetRow({ category, onError }: { category: Category; onError: (m: str
   const [text, setText] = useState(asInput(category.weekly_budget_cents))
   const [state, setState] = useState<'idle' | 'saved' | 'invalid'>('idle')
 
-  useEffect(() => setText(asInput(category.weekly_budget_cents)), [category.weekly_budget_cents])
+  // Follow the stored budget when it changes, during render rather than in an
+  // effect: a mount effect can run after the first keystroke and wipe it.
+  const [shown, setShown] = useState(category.weekly_budget_cents)
+  if (!Object.is(shown, category.weekly_budget_cents)) {
+    setShown(category.weekly_budget_cents)
+    setText(asInput(category.weekly_budget_cents))
+  }
 
   const commit = async () => {
     const cents = text.trim() === '' ? null : parseMoneyInput(text)
