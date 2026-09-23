@@ -2,7 +2,7 @@
   "name": "Budget",
   "short_name": "Budget",
   "description": "Your spending, your week, and your flight-training goal.",
-  "start_url": "/#/week",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
