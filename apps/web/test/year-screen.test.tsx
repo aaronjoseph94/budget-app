@@ -229,6 +229,8 @@ describe('YearScreen', () => {
     expect([said('Starting month'), said('Current month'), said('Left over'), said('Ending balance')]).toEqual([
       'January 2026', 'September 2026', '-$12,550.00', 'Not yet',
     ])
+    fireEvent.click(totals.getByRole('button', { name: 'Type January’s starting balance on the Month to see these' }))
+    expect(window.location.hash).toBe('#/month/2026-01')
     const tables = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'))
     expect(tables.filter((t) => t?.endsWith(' by month'))).toEqual([
       'Income by month', 'Expenses by month', 'Savings by month', 'Bills by month',

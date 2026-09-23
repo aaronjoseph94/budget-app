@@ -342,7 +342,8 @@ function YearTable({
 /**
  * Annual's left panel (A6:F21): the start and current month, then the
  * year's totals, Left over (F12, decision 15) and the balances (D18, D20),
- * in the Month summary card's colours, which are Workbook's for both.
+ * in the Month summary card's colours, which are Workbook's for both. Until
+ * the start month's balance is typed, it says where to type it.
  */
 function YearTotals({ sheet, thisMonth }: { sheet: YearSheet; thisMonth: string }) {
   const rows: readonly [string, string][] = [
@@ -365,6 +366,16 @@ function YearTotals({ sheet, thisMonth }: { sheet: YearSheet; thisMonth: string 
           </div>
         ))}
       </dl>
+      {/* As the phone's balances card says: where the missing start is typed (D17). */}
+      {sheet.startingBalanceCents === null ? (
+        <button
+          type="button"
+          className="mt-3 text-left text-xs text-summary-label underline underline-offset-4"
+          onClick={() => navigate('month', sheet.startMonth.slice(0, 7))}
+        >
+          Type {formatMonthTitle(sheet.startMonth).split(' ')[0]}&rsquo;s starting balance on the Month to see these
+        </button>
+      ) : null}
     </section>
   )
 }
