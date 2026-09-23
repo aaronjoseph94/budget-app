@@ -532,6 +532,12 @@ export function formatBasisPoints(bp: number): string {
   return `${Math.round(bp / 100)}%`
 }
 
+/** An APR as typed, in hundredths of a percent: 1999 is "19.99%", 500 is "5%". Display only. */
+export function formatRate(bp: number): string {
+  const hundredths = bp % 100
+  return hundredths === 0 ? `${(bp - hundredths) / 100}%` : `${(bp - hundredths) / 100}.${String(hundredths).padStart(2, '0')}%`
+}
+
 /**
  * A share of a whole from the engine, as a whole percentage. A category with
  * spending never reads "0%": under half a percent says so instead.

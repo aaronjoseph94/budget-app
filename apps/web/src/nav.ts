@@ -15,7 +15,7 @@
 import { useMemo, useSyncExternalStore } from 'react'
 import { isoDate } from '@budget/core'
 
-export const SCREENS = ['month', 'week', 'review', 'add', 'more', 'ledger', 'settings', 'setup', 'year', 'paycheck', 'calendar', 'savings'] as const
+export const SCREENS = ['month', 'week', 'review', 'add', 'more', 'ledger', 'settings', 'setup', 'year', 'paycheck', 'calendar', 'savings', 'debts'] as const
 export type Screen = (typeof SCREENS)[number]
 
 /** What a bare or unreadable address opens: Month first (plan §9a, decision 1). */

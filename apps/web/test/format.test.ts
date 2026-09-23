@@ -10,6 +10,7 @@ import {
   describeWriteFailure,
   formatAmount,
   formatBasisPoints,
+  formatRate,
   formatShare,
   formatCents,
   formatDateRange,
@@ -134,6 +135,12 @@ describe('the smaller display helpers', () => {
     expect(formatBasisPoints(12_000)).toBe('120%')
     expect([formatShare(1), formatShare(49), formatShare(50), formatShare(4_792)]).toEqual([
       'under 1%', 'under 1%', '1%', '48%',
+    ])
+  })
+
+  it('shows an APR as typed, to the hundredth of a percent', () => {
+    expect([formatRate(1_999), formatRate(500), formatRate(0), formatRate(1_205), formatRate(7)]).toEqual([
+      '19.99%', '5%', '0%', '12.05%', '0.07%',
     ])
   })
 

@@ -5,6 +5,7 @@ import { NotConfigured, SignIn, useSession } from './auth.js'
 import { AppDataProvider, useAppData } from './app-data.js'
 import { navigate, useAddress, type Screen } from './nav.js'
 import { CalendarScreen } from './screens/CalendarScreen.js'
+import { DebtsScreen } from './screens/DebtsScreen.js'
 import { MonthScreen } from './screens/MonthScreen.js'
 import { MoreScreen } from './screens/MoreScreen.js'
 import { PaycheckScreen } from './screens/PaycheckScreen.js'
@@ -147,6 +148,7 @@ export function Shell() {
         {screen === 'settings' ? <SettingsScreen /> : null}
         {screen === 'setup' ? <SetupScreen /> : null}
         {screen === 'savings' ? <SavingsScreen /> : null}
+        {screen === 'debts' ? <DebtsScreen /> : null}
         {screen === 'year' ? (
           <Suspense fallback={<p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>}>
             <YearScreen start={period} />
