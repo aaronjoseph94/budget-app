@@ -129,6 +129,8 @@
   --home-canvas: #ecf1f5;
   --home-card: #ffffff;
   --home-ink: #343434;
+  /* The grey track of Home's top-3 rings. */
+  --home-track: #f3f5f6;
 }
 
 /*
@@ -205,6 +207,7 @@
     --home-canvas: #14181b;
     --home-card: #1e2327;
     --home-ink: #e9ecee;
+    --home-track: #2c3237;
   }
 }
 
@@ -333,6 +336,18 @@
 }
 .workbook-chart .chart-variable-track {
   fill: var(--variable-header);
+}
+.workbook-chart .chart-owed-ink {
+  fill: var(--owed-ink);
+}
+.workbook-chart .chart-savings-ink {
+  fill: var(--savings-ink);
+}
+.workbook-chart .chart-home-ink {
+  fill: var(--home-ink);
+}
+.workbook-chart .chart-ring-track {
+  fill: var(--home-track);
 }
 .workbook-chart .chart-surface-gap {
   stroke: var(--card);

@@ -154,18 +154,33 @@ describe('YearScreen', () => {
     const glance = within(await screen.findByRole('region', { name: 'Year at a glance' }))
     expect(glance.getByRole('heading', { name: 'Hi, Robin!' })).toBeTruthy()
     const said = (label: string) => glance.getByText(label).nextElementSibling?.textContent
-    // Expenses 14,400.00 of Rent + 150.00 of Groceries; Left over is
-    // 2,500.00 − 14,550.00 − 500.00, and the end 1,000.00 more.
-    expect([said('Income'), said('Expenses'), said('Savings')]).toEqual(['$2,500.00', '$14,550.00', '$500.00'])
+    // Expenses 14,400.00 of Rent + 150.00 of Groceries; of the 17,550.00 in
+    // the pie, income is 1,425 bp, expenses 8,291 and savings 285. Left over
+    // is 2,500.00 − 14,550.00 − 500.00, and the end 1,000.00 more.
+    const pie = glance.getByRole('img', { name: 'Income, expenses and savings' })
+    expect(pie.querySelector('desc')?.textContent).toBe(
+      'Income: $2,500.00 · 14%. Expenses: $14,550.00 · 83%. Savings: $500.00 · 3%.',
+    )
+    // Home's pastels, outlined in Home's label colours.
+    expect([...pie.querySelectorAll('path')].map((p) => [p.getAttribute('fill'), p.getAttribute('stroke')])).toEqual([
+      ['#D4F8E8', '#36976E'], ['#FFDCE1', '#D66375'], ['#FFECD9', '#FFD05C'],
+    ])
     expect([said('Left over'), said('Starting balance'), said('Ending balance')]).toEqual([
       '-$12,550.00', '$1,000.00', '-$11,550.00',
     ])
     expect(said('Biggest expense')).toBe('Rent$14,400.00')
     expect(said('Best savings month')).toBe('March 2026$500.00')
-    // 14,400 of 14,550 is 9,897 bp; 150 of it 103 bp.
-    expect(glance.getAllByRole('listitem').map((li) => li.textContent)).toEqual([
-      'Rent$14,400.00 · 99%',
-      'Groceries$150.00 · 1%',
+    // 14,400 of 14,550 is 9,897 bp; 150 of it 103 bp. Each has Home's ring
+    // in its rank's colour, drawn to its share.
+    const top = glance.getAllByRole('listitem')
+    expect(top.map((li) => [...li.querySelectorAll(':scope > span')].map((s) => s.textContent))).toEqual([
+      ['Rent', '$14,400.00 · 99%'],
+      ['Groceries', '$150.00 · 1%'],
+    ])
+    const rings = top.map((li) => within(li).getByRole('img'))
+    expect(rings.map((r) => [r.querySelector('title')?.textContent, r.querySelectorAll('path')[1]?.getAttribute('fill')])).toEqual([
+      ['Rent', '#FFAC9E'],
+      ['Groceries', '#A9D4D4'],
     ])
   })
 

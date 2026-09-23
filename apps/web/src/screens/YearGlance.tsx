@@ -5,6 +5,7 @@ import { navigate } from '../nav.js'
 import { formatCents, formatMonthTitle, formatShare } from '../format.js'
 import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
+import { TopRing, YearPie } from './YearCharts.js'
 
 /**
  * Workbook's Home, as the top of the Year (plan §2, §6.4): white cards on
@@ -18,7 +19,7 @@ import { cn } from '../lib/cn.js'
  */
 export function YearGlance({ sheet, wide }: { sheet: YearSheet; wide: boolean }) {
   const { displayName } = useAppData()
-  const { totals, atAGlance, startingBalanceCents: start, endingBalanceCents: end } = sheet
+  const { atAGlance, startingBalanceCents: start, endingBalanceCents: end } = sheet
   const startMonth = formatMonthTitle(sheet.startMonth).split(' ')[0]
   const best = atAGlance.bestSavingsMonth
   return (
@@ -35,37 +36,34 @@ export function YearGlance({ sheet, wide }: { sheet: YearSheet; wide: boolean })
           </button>
         ) : null}
       </Card>
+      {/* Home's "Annual Totals" card (G9:H18): its pie, whose legend names
+        the three totals with their shares. */}
+      <Card>
+        <h3 className="mb-2 text-xs font-medium text-muted-foreground">Annual totals</h3>
+        <YearPie sheet={sheet} palette="home" />
+      </Card>
       {/* On a desktop these are Annual's left panel, beside the tables. */}
       {wide ? null : (
-        <>
-          <Card>
-            <dl className="grid grid-cols-3 gap-2 sm:grid-cols-1">
-              <Amount label="Income" cents={totals.income.actualCents} />
-              <Amount label="Expenses" cents={totals.expenses.actualCents} />
-              <Amount label="Savings" cents={totals.savings.actualCents} />
-            </dl>
-          </Card>
-          <Card>
-            <dl className="space-y-2">
-              <Amount label="Left over" cents={sheet.leftOverCents} hint="Income, less expenses and savings" />
-              <div className="grid grid-cols-2 gap-2">
-                <Amount label="Starting balance" cents={start} />
-                <Amount label="Ending balance" cents={end} />
-              </div>
-            </dl>
-            {start === null ? (
-              <button
-                type="button"
-                className="mt-2 text-left text-xs underline underline-offset-4"
-                onClick={() => navigate('month', sheet.startMonth.slice(0, 7))}
-              >
-                Type {startMonth}&rsquo;s starting balance on the Month to see these
-              </button>
-            ) : null}
-          </Card>
-        </>
+        <Card>
+          <dl className="space-y-2">
+            <Amount label="Left over" cents={sheet.leftOverCents} hint="Income, less expenses and savings" />
+            <div className="grid grid-cols-2 gap-2">
+              <Amount label="Starting balance" cents={start} />
+              <Amount label="Ending balance" cents={end} />
+            </div>
+          </dl>
+          {start === null ? (
+            <button
+              type="button"
+              className="mt-2 text-left text-xs underline underline-offset-4"
+              onClick={() => navigate('month', sheet.startMonth.slice(0, 7))}
+            >
+              Type {startMonth}&rsquo;s starting balance on the Month to see these
+            </button>
+          ) : null}
+        </Card>
       )}
-      <Card className="lg:col-span-2">
+      <Card>
         <h3 className="text-xs font-medium text-muted-foreground">Biggest expense</h3>
         {atAGlance.biggest === null ? (
           <p className="mt-1 text-sm">Nothing spent yet</p>
@@ -88,9 +86,10 @@ export function YearGlance({ sheet, wide }: { sheet: YearSheet; wide: boolean })
           <p className="mt-1 text-sm">Nothing spent yet</p>
         ) : (
           <ol className="mt-1 space-y-1.5 text-sm">
-            {atAGlance.top3.map((t) => (
-              <li key={t.categoryId} className="flex items-baseline justify-between gap-2">
-                <span className="min-w-0 break-words [overflow-wrap:anywhere]">{t.name}</span>
+            {atAGlance.top3.map((t, i) => (
+              <li key={t.categoryId} className="flex items-center gap-2">
+                <TopRing top={t} rank={i} />
+                <span className="min-w-0 flex-1 break-words [overflow-wrap:anywhere]">{t.name}</span>
                 <span className="tnum shrink-0 text-right">
                   {formatCents(t.amountCents)} · {formatShare(t.shareBp)}
                 </span>
