@@ -283,6 +283,7 @@ Several cached cells are single-addend sums or a budget minus zero. An engine th
 | `workbook-year` part 1 | S13a | Annual Budget (D6 = 2025-01, D7 = 2025-05, fixture per F11): **E29 400000 and Q29 8995** (5 × 800 and 5 × 17.99: non-zero proofs of the gate), **E34 80000** (May counts: the gate includes the current month), **E35 0** (June: the first gated month), D29 80000 (February's typed 0 stops carry-forward), J29 15000, P29 1799, V29 80000, P10 176799, Q14 86799, J9 1940000, V9 300000, D18 100000. Hidden!Q5 5000, Hidden!O15 0. |
 | `workbook-year` part 2 | S13b | Spending Tracker (the 2026 tabs, ungated, so `asOf` 2026-12): M17 960000, M20 125000, M23 21588. |
 | `workbook-week` | S15 | Weekly Budget: D11 108500, Y10 −100000, Y9 −100000, Q9 580000, W21 15000, K21 30000 |
+| `workbook-paycheck` | S15b | Paycheck Budget over the schedule D6 and D7 describe (a payday on 2025-01-01, bi-weekly): R10 260000, R9 260000, P6 260000, X10 200000, X9 200000, V6 200000, X22 8500, X21 8500, **X24 0** (Clothing on 2025-01-17 is in the next period), **L24 0** (Car Loan on 2025-01-15 likewise; no monthly amount). Every other Paycheck cell depends on a typed period budget, the due-day rule or the ÷ 2, which F15 B replaces (D18), or on D5. |
 | `workbook-savings` | S16 | Savings: B9 186700, F9 1600000, V14 21 months, Z14 88.9047619 → 8891 under F9 |
 | `workbook-503020` | S18 | 503020: L7 80000, N7 5000, G7 0.9411764706 → 9412 bp, I7 0.05882352941 → 588 bp |
 | existing `debt-payoff` (extended) | S17 | Debt Calculator column E (E26 775, E28 825) and column D (D27 20958) are the only new oracle data. Balances at an explicit asOf of 2026-09-01, which is month 19 (J44 11356.30966, O44 557.2168436), are already in the schedule fixture (B26:Y496); they are asserted by month index and never via H9. This waits for the final-month-interest decision. |
@@ -299,6 +300,7 @@ J9 and V9 pass whether or not the seven-month mistake is fixed, because the Augu
 | **Annual Budget!K9, W9, W30** | 0, 0, 0 | Cross-year. A correct-year reading of the sample gives 2600, 2000 and 235. Under F11's fixture (no Transactions rows) these zeros would pass any engine. |
 | Annual Budget!P9, Q9, N6, D11, D15, D20; Hidden!J41; Home Chart12/Chart31 | 1803.97, 4819.85, … | Range mistake and blank-cell mistake |
 | Bills!H36 | 850 | `G46` is empty, so subscriptions are dropped |
+| Paycheck Budget!E22, R22, C19, P19, E21, R21 and every Q, W, D, K budget or goal cell, Y10, Y9, Y22, Y21, D13 | 800, 0, 800, 0, 800, 0; typed; −1000, −1000, 65, 65, 65 | F15 B (D18): a bill's share replaces the due-day rule and the ÷ 2, and a period's budgets are the month's split, not typed on the tab |
 | Weekly Budget!E50, L50, R50 | 800 / 50 / 17.99 | They read the blank `$E$6` |
 | Everything driven by `TODAY()`: Hidden!P23, P25, P27, Q33:S33, P38:R40, O22:O116; Home top-3 and annual cards; Debt Calculator H9, B10, E20, I495:I496 | — | Date-dependent (CLAUDE.md) |
 | Home's 15 flattened scorecards | — | They are images and have no cell |

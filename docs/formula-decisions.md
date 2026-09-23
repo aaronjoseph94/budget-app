@@ -389,8 +389,10 @@ not a calendar year. Its address carries the start month (`#/year/2026-01`).
 
 ## F15 — How a pay period is found, and how a monthly bill is split across it
 
-**Decided 2026-09-23 by the account holder: option B.** The rounding rule is
-still open, and is settled before any Paycheck code (S15b).
+**Decided 2026-09-23 by the account holder: option B.** Asked and answered
+on 2026-09-23. The rounding, and the three smaller questions B leaves open,
+are engineering defaults recorded below before the Paycheck engine (S15b).
+The departure from the workbook is D18.
 
 ```
 Paycheck Budget!D6   2025-01-01          D7  2025-01-14     (both typed)
@@ -416,9 +418,39 @@ first pay date and its frequency, Weekly, Bi-weekly or Monthly (START
 HERE!C8:C14 and E8:E14, the plan's `pay_schedules` table, §4). A monthly
 bill is divided by the pay frequency.
 
+- **The period.** From one payday up to the day before the next. Weekly and
+  bi-weekly paydays fall every 7 or 14 days from the first pay date. Monthly
+  ones fall on the first pay date's day of each month; a day the month lacks
+  pays on its last day, as D6 treats a due day, so a first payday on the 31st
+  pays on 28 February and the period runs to 30 March.
+- **The split.** A monthly amount shown in a pay period is × 12 ÷ 52 weekly,
+  × 12 ÷ 26 bi-weekly and × 1 monthly: the 4.333 and 2.1667 put to the owner,
+  exactly (52 ÷ 12 and 26 ÷ 12). The example given with the question was
+  $1,600 rent, about $738 a bi-weekly period. It replaces F8's due-day rule on
+  this screen: the share counts in every period, whatever the day paid, as
+  Workbook's ticked Split does. Real rows in the period count as they are, and
+  a bill with one shows it instead of its share (F3, D5).
+
 A split that divides money also needs a rounding rule, and B does not give
-one. It is an engineering default that changes cents only, and is recorded
-here before the Paycheck engine is written.
+one. These are engineering defaults, recorded 2026-09-23 (S15b):
+
+- **Rounding.** Worked in integer cents and rounded half-up to the cent:
+  $1,600 × 12 ÷ 26 = $738.4615… is **$738.46**; weekly, $369.23. With 52 and
+  26 as divisors a half cent cannot arise, so this is rounding to the
+  nearest cent. Each row rounds on its own and a block adds the rounded
+  rows, so a total can be a cent or two away from the monthly total divided.
+- **Budgets and goals.** The month's budgets and goals, as the Month
+  resolves them (D12), are split the same way. Workbook types a separate set per
+  period on the Paycheck tab (D22:W44, Q10:Q16, W10:W16); the app stores none,
+  and a budget the owner already typed per month is the one they meant.
+- **Which month's amounts.** The month the payday starting the period falls
+  in, so a period from 28 January to 10 February shows January's rent and
+  budgets. This copies the workbook: `Paycheck Budget!E50` finds its month
+  from the start date alone (`DATE(YEAR($D$6),MONTH($D$6),1)`).
+- **Before the first payday.** The schedule runs back as well as forward, so
+  stepping back past the first pay date shows the periods the same schedule
+  gives. Workbook's Bill Calendar is not consistent here: its bi-weekly paydays
+  go back before START HERE!C8, and its weekly and monthly ones do not.
 
 ---
 

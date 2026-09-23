@@ -486,3 +486,39 @@ ending balance counts from it.
 projection and is wrong by the whole bank balance. The CONSTRAINTS.md floor
 forbids a silent 0 on a money path for this reason, as D15 does. Spent and
 Left to spend are shown either way.
+
+---
+
+## D18 — A pay period comes from the pay schedule, and a bill is split by the pay frequency
+
+**Date:** 2026-09-23
+**Sheet / cells:** Paycheck Budget!D6, D7 (typed dates), E22:E44, L22:L44,
+R22:R44 (`=IF(F22, E50 / 2, D50)`), the Split boxes F22:F44, M22:M44,
+S22:S44, and the typed per-period budgets D22:D44, K22:K44, Q22:Q44,
+W22:W44, Q10:Q16, W10:W16; START HERE!C8:C14, E8:E14; formula decision F15
+**Settled:** owner chose (F15, option B), asked and answered on 2026-09-23.
+The rounding, the split budgets and the month the amounts come from are
+engineering defaults under it (F15).
+
+**Workbook behaviour.** The period is whatever two dates are typed: D6
+**2025-01-01** and D7 **2025-01-14**. START HERE's first pay date and
+frequency (C8 2025-01-10, E8 Bi-weekly) are never read by it. A bill counts
+in full when its day paid falls in the window (E22 **800**, Rent due on the
+1st, Split unticked), or at half its month's Actual when Split is ticked
+(`E50 / 2`, which would be 400), whatever the pay frequency. Budgets and
+goals are typed again for the period (D22 800, K22 300, W22 150, W10 3000).
+
+**Chosen behaviour.** The period is found from an Income row's pay schedule,
+from one payday to the day before the next. A monthly amount with no real
+charge in the period counts as its share: × 12 ÷ 26 bi-weekly, so the same
+Rent shows **$369.23**; × 12 ÷ 52 weekly; in full monthly. The month's
+budgets and goals are split the same way. Real rows count as they are.
+
+**Why.** The owner chose it (F15, option B). What it changes: typed dates
+no longer have to be retyped every payday, and a fixed ÷ 2 no longer
+misstates a bill for anyone not paid exactly twice a month. Workbook's own
+START HERE already asks for the first pay date and frequency.
+
+**What it costs.** The Paycheck cells that depend on the typed budgets, the
+due-day rule or the ÷ 2 (and those D5 changes) are left out of the golden
+fixture; `workbook-paycheck`'s `$semantics` lists them.
