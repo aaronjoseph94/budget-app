@@ -334,7 +334,7 @@ standalone totals only.
 
 ---
 
-## N16 — main's `pt-6` never applies, so screens start flush with the top
+## N16 — main's `pt-6` never applies, so screens start flush with the top *(settled 2026-09-23, S5a)*
 
 **Seen:** 2026-09-23, S2b (Setup's phone screenshot).
 
@@ -350,6 +350,9 @@ the navigation shell anyway.
 **To settle:** in S5a, write the padding as
 `calc(1.5rem + env(safe-area-inset-top))` on `<main>` instead of two classes,
 and look at each screen on a phone.
+
+**Settled:** S5a gives `<main>` one class, `.pt-screen`, holding
+`calc(1.5rem + env(safe-area-inset-top))`.
 
 ---
 

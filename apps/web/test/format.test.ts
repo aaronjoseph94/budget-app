@@ -9,6 +9,7 @@ import {
   formatDateRange,
   formatIsoDate,
   formatMagnitude,
+  formatMonthTitle,
   localDateOf,
   todayIso,
 } from '../src/format.js'
@@ -39,6 +40,14 @@ describe('formatCents', () => {
 
   it('renders a negative zero as zero', () => {
     expect(formatCents(-0)).toBe('$0.00')
+  })
+})
+
+describe('formatMonthTitle', () => {
+  it('names the month in full, from a month or a date', () => {
+    expect(formatMonthTitle('2026-09')).toBe('September 2026')
+    expect(formatMonthTitle('2026-01-31')).toBe('January 2026')
+    expect(formatMonthTitle('2026-13')).toBe('2026-13')
   })
 })
 

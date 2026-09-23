@@ -3,7 +3,9 @@ import { readEnv } from './env.js'
 import { createSupabase } from './supabase.js'
 import { NotConfigured, SignIn, useSession } from './auth.js'
 import { AppDataProvider, useAppData } from './app-data.js'
-import { navigate, useScreen, type Screen } from './nav.js'
+import { navigate, useAddress, type Screen } from './nav.js'
+import { MonthScreen } from './screens/MonthScreen.js'
+import { MoreScreen } from './screens/MoreScreen.js'
 import { WeekScreen } from './screens/WeekScreen.js'
 import { ReviewScreen } from './screens/ReviewScreen.js'
 import { AddScreen } from './screens/AddScreen.js'
@@ -42,48 +44,73 @@ function Configured({ env }: { env: Parameters<typeof createSupabase>[0] }) {
   )
 }
 
-const TABS: readonly { screen: Screen; label: string; icon: IconName }[] = [
-  { screen: 'week', label: 'Week', icon: 'home' },
-  { screen: 'review', label: 'Review', icon: 'inbox' },
+/** Phones: Month first, Add in the centre within thumb reach (plan §6.1). */
+const PHONE_TABS: readonly Tab[] = [
+  { screen: 'month', label: 'Month', icon: 'calendar' },
+  { screen: 'week', label: 'Week', icon: 'week' },
   { screen: 'add', label: 'Add', icon: 'plus' },
-  { screen: 'ledger', label: 'Ledger', icon: 'list' },
-  { screen: 'settings', label: 'Settings', icon: 'settings' },
+  { screen: 'review', label: 'Review', icon: 'inbox' },
+  { screen: 'more', label: 'More', icon: 'menu' },
 ]
 
-function Shell() {
-  const screen = useScreen()
-  // Setup is reached from Settings for now, so Settings stays lit while it shows.
-  const tab = screen === 'setup' ? 'settings' : screen
+/** Wide screens have room for Setup on the bar itself. Year joins at S14. */
+const DESKTOP_TABS: readonly Tab[] = [
+  { screen: 'month', label: 'Month', icon: 'calendar' },
+  { screen: 'week', label: 'Week', icon: 'week' },
+  { screen: 'review', label: 'Review', icon: 'inbox' },
+  { screen: 'add', label: 'Add', icon: 'plus' },
+  { screen: 'setup', label: 'Setup', icon: 'list' },
+  { screen: 'more', label: 'More', icon: 'menu' },
+]
+
+interface Tab {
+  readonly screen: Screen
+  readonly label: string
+  readonly icon: IconName
+}
+
+/** The screens reached through More light the More tab while they show. */
+function tabOf(screen: Screen, tabs: readonly Tab[]): Screen {
+  return tabs.some((t) => t.screen === screen) ? screen : 'more'
+}
+
+export function Shell() {
+  const { screen, month } = useAddress()
   const { pendingTotal, loadError } = useAppData()
+  // Month widens on a desktop to take Workbook's four columns (plan §6.3).
+  const width = screen === 'month' ? 'max-w-3xl lg:max-w-7xl' : 'max-w-3xl'
 
   return (
     <div className="min-h-full">
-      {/* Wide screens: the same five destinations across the top. */}
       <header className="safe-top sticky top-0 z-20 hidden border-b bg-background/85 backdrop-blur md:block">
-        <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4">
+        <div className={cn('mx-auto flex h-14 items-center justify-between px-4', width)}>
           <span className="font-semibold tracking-tight">Budget</span>
-          <nav className="flex gap-1">
-            {TABS.map((t) => (
-              <button
-                key={t.screen}
-                type="button"
-                onClick={() => navigate(t.screen)}
-                aria-current={tab === t.screen ? 'page' : undefined}
-                className={cn(
-                  'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                  tab === t.screen ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
-                )}
-              >
-                <Icon name={t.icon} className="size-4" />
-                {t.label}
-                {t.screen === 'review' && pendingTotal > 0 ? <Count n={pendingTotal} /> : null}
-              </button>
-            ))}
+          <nav aria-label="Screens" className="flex gap-1">
+            {DESKTOP_TABS.map((t) => {
+              const active = tabOf(screen, DESKTOP_TABS) === t.screen
+              return (
+                <button
+                  key={t.screen}
+                  type="button"
+                  onClick={() => navigate(t.screen)}
+                  aria-current={active ? 'page' : undefined}
+                  aria-label={labelOf(t, pendingTotal)}
+                  className={cn(
+                    'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                    active ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  <Icon name={t.icon} className="size-4" />
+                  {t.label}
+                  {t.screen === 'review' && pendingTotal > 0 ? <Count n={pendingTotal} /> : null}
+                </button>
+              )
+            })}
           </nav>
         </div>
       </header>
 
-      <main className="safe-top pb-safe mx-auto w-full max-w-3xl px-4 pt-6 md:pb-12">
+      <main className={cn('pt-screen pb-safe mx-auto w-full px-4 md:pb-12', width)}>
         {loadError !== null ? (
           <div className="mb-4">
             <Alert tone="error" title="Could not load your data">
@@ -91,25 +118,31 @@ function Shell() {
             </Alert>
           </div>
         ) : null}
+        {screen === 'month' ? <MonthScreen month={month} /> : null}
         {screen === 'week' ? <WeekScreen /> : null}
         {screen === 'review' ? <ReviewScreen /> : null}
         {screen === 'add' ? <AddScreen /> : null}
+        {screen === 'more' ? <MoreScreen /> : null}
         {screen === 'ledger' ? <LedgerScreen /> : null}
         {screen === 'settings' ? <SettingsScreen /> : null}
         {screen === 'setup' ? <SetupScreen /> : null}
       </main>
 
       {/* Phones: a bottom tab bar within thumb reach, clear of the home indicator. */}
-      <nav className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t bg-background/90 backdrop-blur md:hidden">
+      <nav
+        aria-label="Screens"
+        className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t bg-background/90 backdrop-blur md:hidden"
+      >
         <div className="mx-auto grid max-w-md grid-cols-5">
-          {TABS.map((t) => {
-            const active = tab === t.screen
+          {PHONE_TABS.map((t) => {
+            const active = tabOf(screen, PHONE_TABS) === t.screen
             return (
               <button
                 key={t.screen}
                 type="button"
                 onClick={() => navigate(t.screen)}
                 aria-current={active ? 'page' : undefined}
+                aria-label={labelOf(t, pendingTotal)}
                 className={cn(
                   'relative flex flex-col items-center gap-0.5 pb-1.5 pt-2 text-[11px] font-medium transition-colors',
                   active ? 'text-foreground' : 'text-muted-foreground',
@@ -119,7 +152,8 @@ function Shell() {
                 <span
                   className={cn(
                     'flex size-8 items-center justify-center rounded-full',
-                    t.screen === 'add' && (active ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground'),
+                    t.screen === 'add' &&
+                      (active ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground'),
                   )}
                 >
                   <Icon name={t.icon} className={t.screen === 'add' ? 'size-5' : 'size-6'} />
@@ -137,6 +171,11 @@ function Shell() {
       </nav>
     </div>
   )
+}
+
+/** "Review, 3 waiting" to a screen reader, rather than the badge read as "Review3". */
+function labelOf(t: Tab, pendingTotal: number): string {
+  return t.screen === 'review' && pendingTotal > 0 ? `${t.label}, ${pendingTotal} waiting` : t.label
 }
 
 function Count({ n }: { n: number }) {

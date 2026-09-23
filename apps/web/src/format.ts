@@ -30,6 +30,15 @@ export function formatIsoDate(isoDate: string): string {
   return `${Number(day)} ${name} ${year}`
 }
 
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
+/** `2026-09` or `2026-09-14` as `September 2026`, the Month screen's title. */
+export function formatMonthTitle(isoDate: string): string {
+  const [year, month] = isoDate.split('-')
+  const name = MONTH_NAMES[Number(month) - 1]
+  return year === undefined || name === undefined ? isoDate : `${name} ${year}`
+}
+
 /**
  * A rejection code as a sentence a person can act on.
  *

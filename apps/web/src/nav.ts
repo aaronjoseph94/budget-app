@@ -15,8 +15,8 @@ import { useMemo, useSyncExternalStore } from 'react'
 export const SCREENS = ['month', 'week', 'review', 'add', 'more', 'ledger', 'settings', 'setup'] as const
 export type Screen = (typeof SCREENS)[number]
 
-/** What a bare or unreadable address opens. */
-export const HOME: Screen = 'week'
+/** What a bare or unreadable address opens: Month first (plan §9a, decision 1). */
+export const HOME: Screen = 'month'
 
 export interface Address {
   readonly screen: Screen

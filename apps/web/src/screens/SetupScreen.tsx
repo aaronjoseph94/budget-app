@@ -171,10 +171,10 @@ function NameBand() {
     <header className="bg-setup-band px-4 pb-5 pt-3 text-white">
       <button
         type="button"
-        onClick={() => navigate('settings')}
+        onClick={() => navigate('more')}
         className="-ml-1 mb-2 rounded px-1 text-sm text-setup-band-ink/90 outline-none focus-visible:ring-2 focus-visible:ring-white/70"
       >
-        ‹ Settings
+        ‹ More
       </button>
       <h1 className="font-serif text-4xl italic">Start here!</h1>
       <label className="mt-4 flex items-baseline gap-3 text-setup-band-ink">

@@ -279,3 +279,8 @@
 .safe-top {
   padding-top: env(safe-area-inset-top);
 }
+/* A screen's own top gap plus the notch, as one rule: two classes for the
+   two would leave one of them losing (N16). */
+.pt-screen {
+  padding-top: calc(1.5rem + env(safe-area-inset-top));
+}

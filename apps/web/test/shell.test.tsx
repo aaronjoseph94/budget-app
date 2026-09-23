@@ -1,0 +1,82 @@
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { Shell } from '../src/App.js'
+import { createFakeSupabase } from './fake-supabase.js'
+import { renderScreen } from './render-screen.js'
+
+// Wednesday 23 September 2026, local noon. Only Date is faked.
+const TODAY = new Date(2026, 8, 23, 12)
+
+function go(hash: string) {
+  act(() => {
+    window.location.hash = hash
+    window.dispatchEvent(new HashChangeEvent('hashchange'))
+  })
+}
+
+/** The phone's bottom bar comes after the desktop one. */
+const phoneBar = () => screen.getAllByRole('navigation', { name: 'Screens' })[1]!
+
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(TODAY)
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
+})
+
+afterEach(() => {
+  cleanup()
+  vi.useRealTimers()
+  vi.restoreAllMocks()
+  window.location.hash = ''
+})
+
+describe('Shell', () => {
+  it('opens on this month, with Month, Week, Add, Review and More on the phone bar', async () => {
+    renderScreen(<Shell />, createFakeSupabase())
+
+    expect(await screen.findByRole('heading', { name: 'September 2026' })).toBeTruthy()
+    const labels = within(phoneBar()).getAllByRole('button').map((b) => b.textContent)
+    expect(labels).toEqual(['Month', 'Week', 'Add', 'Review', 'More'])
+    expect(within(phoneBar()).getByRole('button', { name: 'Month' }).getAttribute('aria-current')).toBe('page')
+  })
+
+  it('steps months through the address, so a refresh and the back gesture land on the same one', async () => {
+    renderScreen(<Shell />, createFakeSupabase())
+    await screen.findByRole('heading', { name: 'September 2026' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Previous month' }))
+    expect(window.location.hash).toBe('#/month/2026-08')
+    go('/month/2026-08')
+    expect(await screen.findByRole('heading', { name: 'August 2026' })).toBeTruthy()
+
+    // Across a year end.
+    go('/month/2025-12')
+    fireEvent.click(await screen.findByRole('button', { name: 'Next month' }))
+    expect(window.location.hash).toBe('#/month/2026-01')
+  })
+
+  it('keeps Setup, All transactions and Settings under More, and lights More while they show', async () => {
+    renderScreen(<Shell />, createFakeSupabase())
+    fireEvent.click(within(phoneBar()).getByRole('button', { name: 'More' }))
+    expect(window.location.hash).toBe('#/more')
+    go('/more')
+
+    const items = (await screen.findAllByRole('listitem')).map((li) => li.querySelector('.font-medium')?.textContent)
+    expect(items).toEqual(['Setup', 'All transactions', 'Settings'])
+
+    fireEvent.click(screen.getByRole('button', { name: /All transactions/ }))
+    expect(window.location.hash).toBe('#/ledger')
+    go('/ledger')
+    expect(within(phoneBar()).getByRole('button', { name: 'More' }).getAttribute('aria-current')).toBe('page')
+  })
+
+  it('shows the review count on the Review tab', async () => {
+    const fake = createFakeSupabase({
+      ingest_candidates: [
+        { id: 'p1', posted_on: '2026-09-10', amount_cents: -1349, merchant: 'LITWARE COFFEE', merchant_raw: 'LITWARE COFFEE', status: 'pending' },
+      ],
+    })
+    renderScreen(<Shell />, fake)
+    expect(await within(phoneBar()).findByRole('button', { name: 'Review, 1 waiting' })).toBeTruthy()
+  })
+})
