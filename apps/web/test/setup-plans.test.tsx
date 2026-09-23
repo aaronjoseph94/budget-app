@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SetupScreen } from '../src/screens/SetupScreen.js'
 import type { Category, PlanRow } from '../src/ledger.js'
@@ -103,6 +103,26 @@ describe('SetupScreen, reading monthly amounts', () => {
     fake.server.hold = null
     release()
     await waitFor(() => expect(bills.getByRole('textbox', { name: 'Rename Rent' })).toBeTruthy())
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  it('says nothing about the amounts until the lists have loaded', async () => {
+    const fake = seeded()
+    // The lists are held back on the first load, so until they arrive every
+    // amount names a category the screen has not been given yet.
+    let release = () => {}
+    fake.server.hold = (table) => {
+      if (table !== 'categories') return null
+      fake.server.hold = null
+      return new Promise<void>((resolve) => (release = resolve))
+    }
+    renderScreen(<SetupScreen />, fake)
+
+    // Long enough for any read begun with the screen to be answered and shown.
+    await act(() => new Promise((resolve) => setTimeout(resolve, 50)))
+    expect(screen.queryByRole('alert')).toBeNull()
+    release()
+    await waitFor(async () => expect(await tile('Bills total', 'Bills')).toBe('$1,685.00'))
     expect(screen.queryByRole('alert')).toBeNull()
   })
 })

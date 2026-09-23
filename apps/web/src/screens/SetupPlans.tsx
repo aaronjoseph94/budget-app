@@ -35,7 +35,8 @@ export type MonthlyAmounts =
  * amounts (0009), and for a moment the amounts read before it still name it,
  * which core refuses to total rather than leave a row out. So the totals wait
  * for the amounts read after the change; only if those still disagree is it
- * a fault worth saying.
+ * a fault worth saying. Nothing is read before the app's first load (version
+ * 0): there are no categories yet, so every amount would disagree.
  */
 export function useMonthlyAmounts(month: string): MonthlyAmounts {
   const { supabase, categories, version } = useAppData()
@@ -43,6 +44,7 @@ export function useMonthlyAmounts(month: string): MonthlyAmounts {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (version === 0) return
     let live = true
     listPlanHistory(supabase, month)
       .then((rows) => {
