@@ -68,6 +68,7 @@ export {
 } from './statement-reconciliation.js'
 
 export {
+  SPENDING_LISTS,
   monthBounds,
   shiftMonth,
   shiftWeek,

@@ -44,8 +44,13 @@ export interface LedgerEntry {
 /** Workbook's lists (migration 0005's category_kind), as core names them. */
 export type CategoryKind = 'income' | 'savings' | 'bill' | 'debt' | 'subscription' | 'variable' | 'transfer'
 
-/** The lists whose rows are spending. */
-const SPENDING: ReadonlySet<CategoryKind> = new Set(['bill', 'debt', 'subscription', 'variable'])
+/**
+ * The lists whose rows are spending, and so the only ones a weekly budget
+ * counts on. Exported so a screen offering weekly budgets offers them on
+ * these lists alone (N19).
+ */
+export const SPENDING_LISTS: readonly CategoryKind[] = ['bill', 'debt', 'subscription', 'variable']
+const SPENDING: ReadonlySet<CategoryKind> = new Set(SPENDING_LISTS)
 
 export interface BudgetedCategory {
   readonly id: string

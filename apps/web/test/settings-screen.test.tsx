@@ -1,6 +1,7 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { SettingsScreen } from '../src/screens/SettingsScreen.js'
+import type { Category } from '../src/ledger.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 
@@ -22,6 +23,35 @@ describe('SettingsScreen, adding a category', () => {
 })
 
 describe('SettingsScreen, budgets and the goal', () => {
+  it('offers a weekly budget only on the lists the Week counts, under their headings (N19)', async () => {
+    const cat = (id: string, name: string, kind: Category['kind'], weekly_budget_cents: number | null = null): Category => ({
+      id, name, kind, sort_order: 0, weekly_budget_cents,
+    })
+    const fake = createFakeSupabase({
+      categories: [
+        cat('c1', 'Groceries', 'variable'),
+        cat('c2', 'Rent', 'bill'),
+        cat('c3', 'Pay', 'income', 5000),
+        cat('c4', 'Flight fund', 'savings'),
+        cat('c5', 'Card payments', 'transfer'),
+      ],
+    })
+    renderScreen(<SettingsScreen />, fake)
+
+    await screen.findByRole('textbox', { name: 'Weekly budget for Groceries' })
+    const field = (list: string) =>
+      within(screen.getByRole('region', { name: list })).getAllByRole('textbox').map((f) => f.getAttribute('aria-label'))
+    expect(field('Bills')).toEqual(['Weekly budget for Rent'])
+    expect(field('Variable expenses')).toEqual(['Weekly budget for Groceries'])
+    for (const name of ['Pay', 'Flight fund', 'Card payments']) {
+      expect(screen.queryByRole('textbox', { name: `Weekly budget for ${name}` })).toBeNull()
+    }
+    // A limit already stored on Income is left as it is.
+    expect(fake.tables.categories.find((c) => c.id === 'c3')?.weekly_budget_cents).toBe(5000)
+    const lists = [...screen.getByRole<HTMLSelectElement>('combobox', { name: 'Which list' }).options].map((o) => o.text)
+    expect(lists).toEqual(['Which list?', 'Bills', 'Debts', 'Subscriptions', 'Variable expenses'])
+  })
+
   it('saves a weekly budget when the field is left, and clears it when emptied', async () => {
     const fake = createFakeSupabase({
       categories: [{ id: 'c1', name: 'Groceries', kind: 'variable', sort_order: 0, weekly_budget_cents: 15000 }],

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
+import { SPENDING_LISTS } from '@budget/core'
 import { parseMoneyInput, useAppData } from '../app-data.js'
 import { ensureCategory, saveGoal, setWeeklyBudget, type Category } from '../ledger.js'
 import { formatForInput } from '../format.js'
-import { atEndOf, ListSelect, type CategoryKind } from '../lists.js'
+import { atEndOf, groupByList, ListSelect, type CategoryKind } from '../lists.js'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
@@ -52,6 +53,9 @@ function BudgetsCard() {
   // A weekly limit is for day-to-day spending, so that list comes first.
   const [newKind, setNewKind] = useState<CategoryKind | ''>('variable')
   const [error, setError] = useState<string | null>(null)
+  // Only the lists the Week counts as spending take a weekly limit; one
+  // stored on another list is left as it is, and not offered (N19).
+  const lists = groupByList(categories).filter((g) => SPENDING_LISTS.includes(g.kind) && g.rows.length > 0)
 
   const add = async () => {
     const name = newName.trim()
@@ -69,20 +73,27 @@ function BudgetsCard() {
     <Card>
       <CardHeader>
         <CardTitle>Weekly budgets</CardTitle>
-        <CardDescription>A limit per category, per week. Leave one blank for no limit.</CardDescription>
+        <CardDescription>
+          A limit per category, per week, on the lists the Week counts as spending. Leave one blank for no limit.
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {error !== null ? <Alert tone="error">{error}</Alert> : null}
-        {categories.length === 0 ? (
+        {lists.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No categories yet. They are created as you review transactions, or add one here.
+            No spending categories yet. They are created as you review transactions, or add one here.
           </p>
         ) : (
-          <ul className="divide-y rounded-lg border">
-            {categories.map((c) => (
-              <BudgetRow key={c.id} category={c} onError={setError} />
-            ))}
-          </ul>
+          lists.map((list) => (
+            <section key={list.kind} aria-label={list.heading} className="space-y-1.5">
+              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{list.heading}</h3>
+              <ul className="divide-y rounded-lg border">
+                {list.rows.map((c) => (
+                  <BudgetRow key={c.id} category={c} onError={setError} />
+                ))}
+              </ul>
+            </section>
+          ))
         )}
         <form
           className="grid grid-cols-[1fr_auto] gap-2 sm:grid-cols-[1fr_11rem_auto]"
@@ -93,7 +104,7 @@ function BudgetsCard() {
         >
           <Input placeholder="New category" value={newName} maxLength={60} onChange={(e) => setNewName(e.target.value)} />
           <div className="col-span-2 row-start-2 sm:col-span-1 sm:row-start-1">
-            <ListSelect value={newKind} onChange={setNewKind} />
+            <ListSelect value={newKind} onChange={setNewKind} lists={SPENDING_LISTS} />
           </div>
           <Button type="submit" variant="outline" disabled={newName.trim() === '' || newKind === ''}>
             <Icon name="plus" /> Add
