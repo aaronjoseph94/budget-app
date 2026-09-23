@@ -19,6 +19,7 @@ import type {
   LedgerRow,
   NamedRow,
   PendingCandidate,
+  PlanRow,
   UnreadableBatch,
   UnreadableLine,
 } from '../src/ledger.js'
@@ -39,6 +40,8 @@ export interface FakeTables {
   ingest_unreadable_lines: (UnreadableLine & { readonly dismissed_at?: string | null })[]
   /** Budgets and goals as typed (0008); `user_id` as the app writes it. */
   category_budgets: (BudgetRow & { readonly user_id?: string })[]
+  /** Monthly amounts and days paid as typed (0009); `user_id` as the app writes it. */
+  category_plans: (PlanRow & { readonly user_id?: string })[]
 }
 
 export interface RpcCall {
@@ -82,6 +85,9 @@ export interface FakeSupabase {
 
 let clients = 0
 
+/** The lists 0009 lets have a monthly amount. */
+const RECURRING: ReadonlySet<string> = new Set(['bill', 'debt', 'subscription'])
+
 export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase {
   const tables: FakeTables = {
     accounts: [{ id: 'a1', name: 'Main Card' }],
@@ -93,6 +99,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     ingest_batches: [],
     ingest_unreadable_lines: [],
     category_budgets: [],
+    category_plans: [],
     ...seed,
   }
   const rpcCalls: RpcCall[] = []
@@ -122,6 +129,16 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     if (moving === undefined || !known) return pgError('42501', 403)
     tables.transactions[row] = { ...moving, category_id: String(args['p_category']) }
     return new Response(null, { status: 204 })
+  }
+
+  // What 0009's trigger on categories asks before a move: is an amount in
+  // effect this month, or set for a later one? The month is the server's, in
+  // UTC as the database's is, so a test that fixes the clock fixes it here.
+  function planned(categoryId: unknown): boolean {
+    const month = `${new Date().toISOString().slice(0, 7)}-01`
+    const rows = tables.category_plans.filter((p) => p.category_id === categoryId)
+    const now = rows.filter((p) => p.effective_month <= month).sort((a, b) => b.effective_month.localeCompare(a.effective_month))[0]
+    return (now !== undefined && now.planned_cents !== null) || rows.some((p) => p.effective_month > month && p.planned_cents !== null)
   }
 
   // What 0012 does: stamp the line, keeping the first stamp. A line that is
@@ -197,6 +214,19 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
           }
           if (!tables.categories.some((c) => c.id === row.category_id)) return pgError('23503', 409)
         }
+        // What 0009 refuses, in the order Postgres meets it: the BEFORE
+        // trigger (a list that cannot have an amount), its CHECKs, then the
+        // key to the category, which the trigger leaves to it.
+        if (target === 'category_plans') {
+          const kind = tables.categories.find((c) => c.id === row.category_id)?.kind
+          if (kind !== undefined && !RECURRING.has(kind)) return pgError('23514')
+          const day = row.due_day
+          if ((typeof row.planned_cents === 'number' && row.planned_cents < 0) || !String(row.effective_month).endsWith('-01')) {
+            return pgError('23514')
+          }
+          if (typeof day === 'number' && (day < 1 || day > 31)) return pgError('23514')
+          if (kind === undefined) return pgError('23503', 409)
+        }
         added.push(row)
       }
       // Nothing is written until every row has passed, as in one statement.
@@ -240,6 +270,9 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       }
       if (target === 'categories' && table.some((r) => !matches(r) && body.name !== undefined && r.name === body.name)) {
         return pgError('23505', 409)
+      }
+      if (target === 'categories' && table.some((r) => matches(r) && body.kind !== undefined && body.kind !== r.kind && planned(r.id))) {
+        return pgError('23514')
       }
       const next: Row[] = []
       for (const r of table) {

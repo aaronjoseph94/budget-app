@@ -18,6 +18,7 @@ import {
 import {
   describeBudgetFailure,
   describeMoveFailure,
+  describePlanFailure,
   describeSetupFailure,
   describeWriteFailure,
   type WriteError,
@@ -771,6 +772,81 @@ export async function setBudget(supabase: SupabaseClient, edit: BudgetEdit): Pro
     .from('category_budgets')
     .upsert(rows, { onConflict: 'user_id,category_id,month,applies' })
   if (error !== null) throw new Error(describeBudgetFailure('save', error))
+}
+
+// ---------------------------------------------------------------------------
+// Monthly amounts and days paid, from a month on (migration 0009)
+// ---------------------------------------------------------------------------
+
+/** One monthly amount as it was typed. Which one is in effect is core's to say (resolvePlans). */
+export interface PlanRow {
+  readonly id: string
+  readonly category_id: string
+  /** The first day of the first month it applies to. */
+  readonly effective_month: string
+  /** Null is "stopped from this month", which is not $0. */
+  readonly planned_cents: number | null
+  /** Workbook's Day Paid, 1–31, or null when none was typed. */
+  readonly due_day: number | null
+}
+
+/**
+ * Every monthly amount typed from the month starting `through` or before it,
+ * read whole (readAll): everything that month's amounts can come from.
+ */
+export async function listPlanHistory(supabase: SupabaseClient, through: string): Promise<readonly PlanRow[]> {
+  const rows = await readAll<PlanRow>(
+    (from, to) =>
+      supabase
+        .from('category_plans')
+        .select('id, category_id, effective_month, planned_cents, due_day', { count: 'exact' })
+        .lte('effective_month', through)
+        .order('effective_month', { ascending: true })
+        .order('id', { ascending: true })
+        .range(from, to),
+    {
+      changed: 'Your monthly amounts changed while they were being read, so they are not shown. Try again.',
+      describe: (error) => describePlanFailure('read', error),
+    },
+  )
+  return rows.map((r) => ({
+    ...r,
+    planned_cents: r.planned_cents === null ? null : Number(r.planned_cents),
+    due_day: r.due_day === null ? null : Number(r.due_day),
+  }))
+}
+
+export interface PlanEdit {
+  readonly userId: string
+  readonly categoryId: string
+  /** The first day of the month it applies from. */
+  readonly month: string
+  /** Null stops it from this month on, which is not $0. */
+  readonly plannedCents: number | null
+  readonly dueDay: number | null
+}
+
+/**
+ * Set a bill's monthly amount and day paid from a month on (0009, D13).
+ *
+ * A plain upsert under RLS on 0009's key, so typing over this month's row
+ * replaces it and never adds a second; earlier months keep theirs. Both
+ * columns go in every write, the one not being changed as Setup last read
+ * it: a row for this month that left out the day paid would blank it from
+ * here on.
+ */
+export async function setPlan(supabase: SupabaseClient, edit: PlanEdit): Promise<void> {
+  const { error } = await supabase.from('category_plans').upsert(
+    {
+      user_id: edit.userId,
+      category_id: edit.categoryId,
+      effective_month: edit.month,
+      planned_cents: edit.plannedCents,
+      due_day: edit.dueDay,
+    },
+    { onConflict: 'user_id,category_id,effective_month' },
+  )
+  if (error !== null) throw new Error(describePlanFailure('save', error))
 }
 
 // ---------------------------------------------------------------------------

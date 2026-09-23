@@ -150,9 +150,9 @@ const SETUP_FAILURES: Readonly<Record<SetupAction, Readonly<Record<string, strin
     // The name domain (0001) refuses control characters and empty names.
     '23514': 'That name has characters the app cannot store. Use letters, numbers and ordinary punctuation.',
   },
-  // The trigger that refuses this arrives with monthly amounts (Workbook plan
-  // 0009); it must raise check_violation for this sentence to be the one shown.
-  move: { '23514': 'Remove the monthly amount first, then move it to another list.' },
+  // 0009's trigger raises check_violation while an amount is in effect this
+  // month or set for a later one. Stop is how Setup removes it (S9).
+  move: { '23514': 'Remove the monthly amount first (Stop, under its amount), then move it to another list.' },
   reorder: {},
   // Charges are not the only thing that holds a category: a learned shop
   // rule does too (N17), and moving a charge with "Always file" moves both.
@@ -234,6 +234,44 @@ export function describeBudgetFailure(action: BudgetAction, error: WriteError | 
   return action === 'save'
     ? describeWriteFailure(error)
     : `Your budgets could not be read, so this month is not shown. Try again. (code ${code})`
+}
+
+/**
+ * Why Setup's monthly amounts and days paid could not be read or saved (0009).
+ *
+ * As for budgets: PGRST205, or 42P01 from an older PostgREST, is 0009 not
+ * pasted yet, so say where, and a read never says "nothing was saved"
+ * (N28). A save meets two refusals of its own. 0009's trigger raises 23514
+ * for a category not on Bills, Debts or Subscriptions, which Setup only
+ * offers on those lists, so it means the category moved on another device
+ * after Setup read it; the screen refuses a negative amount or a day
+ * outside 1 to 31 before sending, so those CHECKs never reach here. A
+ * category removed elsewhere is 23503.
+ */
+const PLANS_NOT_APPLIED = 'Monthly amounts need a database update that has not been applied yet (0009 in the setup guide)'
+const PLAN_FAILURES: Readonly<Record<'read' | 'save', Readonly<Record<string, string>>>> = {
+  read: {
+    PGRST205: `${PLANS_NOT_APPLIED}, so they are not shown. Your lists still work.`,
+    '42P01': `${PLANS_NOT_APPLIED}, so they are not shown. Your lists still work.`,
+    '': 'Could not reach the database to read your monthly amounts. Check your connection and try again.',
+    PGRST301: 'Your session expired. Sign in again to see your monthly amounts.',
+  },
+  save: {
+    PGRST205: `${PLANS_NOT_APPLIED}. Nothing was saved.`,
+    '42P01': `${PLANS_NOT_APPLIED}. Nothing was saved.`,
+    '23514':
+      "That list can't have a monthly amount: only Bills, Debts and Subscriptions can. It may have been moved on another device. Nothing was saved.",
+    '23503': 'That category is no longer there — it may have been removed on another device. Nothing was saved.',
+  },
+}
+
+export function describePlanFailure(action: 'read' | 'save', error: WriteError | null | undefined): string {
+  const code = typeof error?.code === 'string' ? error.code : ''
+  const body = PLAN_FAILURES[action][code]
+  if (body !== undefined) return code === '' ? body : `${body} (code ${code})`
+  return action === 'save'
+    ? describeWriteFailure(error)
+    : `Your monthly amounts could not be read, so they are not shown. Try again. (code ${code})`
 }
 
 /**

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   describeBudgetFailure,
   describeFailure,
+  describePlanFailure,
   describeReason,
   describeSetupFailure,
   describeWriteFailure,
@@ -172,7 +173,7 @@ describe('describeSetupFailure', () => {
       'This category still has charges, or shops the app learned to file here. On the Month, tap its row and use Move to… on each charge, with “Always file” ticked so the shop moves too. (code 23503)',
     )
     expect(describeSetupFailure('move', { code: '23514' })).toBe(
-      'Remove the monthly amount first, then move it to another list. (code 23514)',
+      'Remove the monthly amount first (Stop, under its amount), then move it to another list. (code 23514)',
     )
     expect(describeSetupFailure('rename', { code: '23505' })).toMatch(/^You already have a category with that name/)
     expect(describeSetupFailure('rename', { code: '23514' })).toMatch(/^That name has characters the app cannot store/)
@@ -206,5 +207,26 @@ describe('describeBudgetFailure', () => {
     for (const code of ['PGRST205', '', 'PGRST301', 'XX000']) {
       expect(describeBudgetFailure('read', { code })).not.toContain('saved')
     }
+  })
+})
+
+describe('describePlanFailure', () => {
+  it('names the update a read is missing, and never words a read as a save', () => {
+    expect(describePlanFailure('read', { code: '42P01' })).toContain('(0009 in the setup guide), so they are not shown.')
+    expect(describePlanFailure('read', {})).toBe(
+      'Could not reach the database to read your monthly amounts. Check your connection and try again.',
+    )
+    expect(describePlanFailure('read', { code: 'XX000' })).toBe(
+      'Your monthly amounts could not be read, so they are not shown. Try again. (code XX000)',
+    )
+    for (const code of ['PGRST205', '42P01', '', 'PGRST301', 'XX000']) {
+      expect(describePlanFailure('read', { code })).not.toContain('saved')
+    }
+  })
+
+  it("says a list can't have an amount, and never that the numbers did not add up", () => {
+    expect(describePlanFailure('save', { code: '23514' })).toMatch(/^That list can't have a monthly amount/)
+    expect(describePlanFailure('save', { code: '42P01' })).toContain('(0009 in the setup guide). Nothing was saved.')
+    expect(describePlanFailure('save', { code: '28000' })).toBe(describeWriteFailure({ code: '28000' }))
   })
 })
