@@ -611,7 +611,9 @@ inside it.
 
 ---
 
-## N24 — A home-screen icon added before S5a still opens on Week
+## N24 — A home-screen icon added before S5a still opens on Week *(told 2026-09-23, completion pass)*
+
+**Told:** HANDOFF.md §3 Step 6 says to remove the old icon and add it again.
 
 **Seen:** 2026-09-23, S5a.
 
@@ -944,7 +946,10 @@ plan).
 
 ---
 
-## N37 — Three things about the Month's End of month the owner has not been told
+## N37 — Three things about the Month's End of month the owner has not been told *(written for the owner 2026-09-23, completion pass)*
+
+**Written for the owner:** HANDOFF.md §5, "Things to know". Still to be
+said to them; D17 (N37 item 1) is theirs to keep or change.
 
 **Seen:** 2026-09-23, S11 (the summary card).
 
@@ -1030,7 +1035,10 @@ Bill calendar, Savings, Debts, all in the entry) the entry is 758.20 kB
 
 ---
 
-## N40 — HANDOFF §5 still lists items 1, 2 and 4 as open
+## N40 — HANDOFF §5 still lists items 1, 2 and 4 as open *(settled 2026-09-23, completion pass)*
+
+**Settled:** HANDOFF.md was rewritten for the finished app; its list of
+what is left (§6) no longer carries the items P1, P2, P3 and S12a closed.
 
 **Seen:** 2026-09-23, S12a review (closing item 5).
 
@@ -1049,6 +1057,9 @@ slice and commit, with item 1 pointing at N5 for what is still unmeasured.
 ---
 
 ## N41 — The Month's charts were sized and checked in Chromium only
+
+**Updated 2026-09-23, completion pass:** HANDOFF.md §4 item 12 asks the
+owner to look at the ring on the iPhone. Still unchecked in WebKit.
 
 **Seen:** 2026-09-23, S12b.
 
@@ -1086,7 +1097,10 @@ already has `'month'` and `'read'`, and pass it from the Year.
 
 ---
 
-## N43 — Three Year defaults the owner has not been told
+## N43 — Three Year defaults the owner has not been told *(written for the owner 2026-09-23, completion pass)*
+
+**Written for the owner:** HANDOFF.md §5, "Things to know". Still to be
+said to them.
 
 **Seen:** 2026-09-23, S14.
 
@@ -1133,6 +1147,9 @@ slice 12), either build them on it or remove it with its tests.
 ---
 
 ## N45 — The Week shows no starting or ending balance
+
+**Updated 2026-09-23, completion pass:** listed in HANDOFF.md §5 as a
+question for the owner, with A (not shown) in use. Still open.
 
 **Seen:** 2026-09-23, S15.
 
@@ -1358,6 +1375,9 @@ the fund whose unit is hours).
 
 ## N53 — A debt names no Debts-list category, so its payments are not read
 
+**Updated 2026-09-23, completion pass:** listed in HANDOFF.md §5 as a
+question for the owner, with A (the schedule only) in use. Still open.
+
 **Seen:** 2026-09-23, writing migration 0014 (Sitting C).
 
 Workbook's Debt Calculator takes each debt's name from START HERE's Debts list
@@ -1462,7 +1482,10 @@ account question goes with the first per-account figure.
 
 ---
 
-## N57 — Three Debts defaults the owner has not been told
+## N57 — Three Debts defaults the owner has not been told *(written for the owner 2026-09-23, completion pass)*
+
+**Written for the owner:** HANDOFF.md §5, "Things to know". Still to be
+said to them.
 
 **Seen:** 2026-09-23, S17.
 

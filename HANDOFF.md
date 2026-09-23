@@ -147,70 +147,127 @@ sign-in link with a live token was pasted into a chat earlier.
 Home Screen**. If you added the old site to your home screen before, remove
 that icon first: it keeps opening the old Week screen (N24).
 
-## 4. How to check it worked
+## 4. How to check it worked, screen by screen
 
-Nothing has been run against the real Supabase or Gemini yet — the previous
-environment could not reach either. Walk through this with the owner:
+Nothing has been run against the real Supabase yet: this environment cannot
+reach it. The whole walk below was run in a stand-in (the screen tests' fake
+database) with invented data, and the owner's statement was read by the app
+in memory; the real run is the owner's. Any failure shows a sentence, often
+ending in a code like `(code 23514)` that names the cause (`format.ts`); a
+sentence saying "a database update that has not been applied yet (00NN …)"
+means that file from Step 1 was missed.
 
-1. Sign in with the password.
-2. Settings → the goal is prefilled ($30,000 flight training, $275/hour). Save it.
-3. Add → Statement → the owner's Rogers Bank PDF. Expect **"80 transactions ·
-   Matches your statement"** for the Aug 8 – Sep 7 2026 statement, then
-   Import. Expected result: "80 waiting for review" (no rules learned yet).
-4. Review → pick a category for a few rows → Approve. Each approval teaches a
-   rule for that merchant.
-5. Import the **same PDF again**: expect "… you already had" and **no** new rows
-   in Review. If Review doubles, dedupe is broken — fix the hash, never the UI
-   (CLAUDE.md).
-6. Week screen shows spending against budgets; set a weekly budget in Settings
-   and watch it update.
-7. Add → Photo → a cash receipt. Fields should prefill; send to Review.
+1. **Sign in** with the password from Step 5. The **Month** opens on this
+   month and, with no lists yet, says "Start in Setup".
+2. **Setup.** Type your name. Press **Start from Workbook's list**: Workbook's
+   names appear under Income, Savings, Bills, Debts, Subscriptions and
+   Variable expenses, plus Card payments under Not spending. Rename or
+   remove what does not fit. On your pay row pick how often it pays and the
+   first payday. On each bill type the day paid and the monthly amount;
+   "Fixed monthly bills" adds them up.
+3. **Add → Statement →** the Rogers PDF. Expect "80 transactions · Matches
+   your statement" for Aug 8 – Sep 7 2026, then **Import**: "80 waiting for
+   review".
+4. **Review.** Pick a category for each row and **Approve**. Each shop is
+   learned: the next statement files it without asking. File "PAYMENT, THANK
+   YOU" under Card payments and interest under Card interest & fees.
+   Import the same PDF again: nothing new appears (if Review doubles, the
+   dedupe hash is broken; fix the hash, never the screen).
+5. **Month (August).** Your charges sit in their blocks; rent shows
+   "planned" until a real rent charge exists. Tap **Type your starting bank
+   balance** and End of month appears. Tap a pencil to type a budget. Tap a
+   row to see its charges and **Move to…** another category. The card
+   payment is a line under the blocks, never spending.
+6. **Add → Type it**, "I received": your pay, under your income. It shows
+   on the Month's Income block, and on Paycheck.
+7. **Week, Paycheck, Bill calendar, Year** (More on a phone): the same
+   charges in a week, a pay period, a calendar and twelve months. A weekly
+   budget is typed in the Week's row.
+8. **Savings.** Pick a fund → **Set a goal**. Transfers typed to that fund
+   afterwards add to it.
+9. **Debts.** **Add a debt**: balance, month, minimum, rate. The card shows
+   when it is paid off, and the three ways to pay compare.
+10. **All transactions** and **Settings** (More): every approved row;
+    weekly budgets, the goal's hours, sign out.
+11. **Add → Photo** (after Step 4): a cash receipt fills the form; it goes
+    to Review like everything else.
+12. **iPhone:** open the Month and look at the ring chart. If it is
+    squashed, tell the next agent (N41: only Chromium was checked here).
 
-Any failure shows a sentence ending in a code like `(code 23514)` — that code
-names the cause (`apps/web/src/format.ts`, `describeWriteFailure`).
+## 5. Questions for the owner
 
-## 5. What is left, most important first
+Each has a default already in use, so nothing waits on the answer. Answer
+any of them and the next agent records it and builds it.
 
-From two review passes (a write-path audit and an architecture review); details
-in `NOTICED-NOT-TOUCHING.md` (N1–N7).
+1. **Week and Paycheck: starting and ending balance (N45).** Workbook's Weekly
+   and Paycheck tabs show a starting and an ending bank balance. The app
+   stores a starting balance per month only. **In use: A — not shown.**
+   B — work each week's start out from the month's typed start and that
+   month's rows before the week. C — type a start for every week (needs a
+   database update).
+2. **Do payments you record move a debt's balance? (N53)** Workbook's Debt
+   Calculator takes balances from its payoff schedule alone. **In use:
+   A — the schedule only, as in Workbook.** B — link a debt to a Debts-list
+   category and let recorded payments replace the schedule's. C — show
+   recorded payments beside the schedule without changing it. B or C
+   needs a database update.
+3. **The Year's "Biggest expense" and "Top 3" (F18).** An engineering
+   default, told here so it is not a surprise. **In use: each category's
+   real total over the Year's months, a real charge replacing a planned
+   bill, planned bills counted only from the month they were set up and
+   only up to this month.** Workbook instead counts twelve times each monthly
+   amount plus everything logged, so a bill set up in October counts all
+   year and a card-paid bill counts twice. Say if you want Workbook's measure,
+   or planned bills counted for the whole year.
 
-1. **No tests for the screens** (N5). The coverage gate reads `*.ts` only, so
-   every `.tsx` is unmeasured. Add React Testing Library (one dependency, its
-   own commit, justified), a fake Supabase client, include `.tsx`, raise app
-   thresholds.
-2. **Unreadable lines are saved but never shown** (`ingest_unreadable_lines`
-   has no screen). CLAUDE.md requires every failure to be visible in the queue.
-3. **Receipt accuracy is unmeasured** (N6). CONSTRAINTS.md wants ≥20 labelled
-   receipts, ≥90% valid, ≥98% exact amounts, no live calls in CI.
-4. **Tests that do not bite** (proved by mutation): swapping two fields in the
-   dedupe key passes every test — pin the exact digest in a test
-   (`packages/statement-parsers/src/dedupe.ts`); replacing `parsed = data.length`
-   with `accepted.length + rejected.length` in `read.ts` passes every test —
-   add a test that fails on it.
-5. **Boundary rules are per-package**: a new package, and
-   `packages/golden-verification`, are governed by no dependency rule. Make
-   `.dependency-cruiser.cjs` deny by default. *(Settled 2026-09-23, S12a:
-   every import must match an `allowed` line; see CONSTRAINTS.md.)*
-6. **CSV column guessing** (`apps/web/src/ImportScreen.tsx`): it can pick a
-   card-number column as the amount, or a category column as the description.
-   The dedupe hash also depends on the sign/date choices made on that screen,
-   so a different choice on a second import re-keys every charge.
-7. `packages/schema` validates model and statement text, but the Postgres
-   `ingested_text` domain does not refuse bidi/C1 characters as zod does.
-8. The receipts bucket (0001) does not force an existing bucket private.
-9. Bundle is ~606 KB (N7) — load the PDF reader only on the Add screen.
-10. Typed and photo entries use a random dedupe hash on purpose; a card
-    purchase entered that way AND imported from a statement counts twice. The
-    screens say "for cash". A real fix is matching on date and amount.
-11. `transactions.posted_on` holds the purchase date (F1), despite the name.
-    Rename it the next time that table is migrated for another reason.
+Things to know, which follow Workbook or a recorded choice (details in the
+N-entries named): with no starting balance typed there is no End of month,
+where Workbook counts from $0 (D17, N37; say if you would rather have
+Workbook's $0); End of month reads low until pay is typed (N37); a negative
+End of month shows its minus sign but is not coloured, as Workbook colours
+only Left to spend (N37); the Year opens on January of this year (N43);
+"Best savings month" with nothing saved shows January at $0.00 (N43); the
+Year's column chart stacks expenses on top of income, as Workbook's does, so
+a column's full height means nothing on its own (N43); Debts' "Paid this
+month" is what the payoff schedule pays, not what you recorded (N57); the
+Year's debt chart shows today's balances (N57); snowball and avalanche
+assume no extra money (N57); a bill charged just
+after a month ends can count planned in one month and twice in the next
+(N36, a question if it happens); a fund's monthly figure falls as it fills
+(N54); a fund past its goal shows a negative monthly figure (N55).
 
-Roadmap beyond this (`docs/ROADMAP.md`): Phase 3 is the savings coach; Phases
-5–7 are bills/reminders, charts and export, and the rest of the workbook
-(snowball/avalanche debt payoff — the engine for it already exists in
-`packages/core/src/debt.ts`).
+## 6. What is left, most important first
 
-## 6. Things to know about how this code is written
+Details in `NOTICED-NOT-TOUCHING.md`; each entry says what would settle it.
+
+1. **The owner's real run** (§3 and §4). Until then nothing has touched the
+   hosted database.
+2. **Receipt accuracy is unmeasured** (N6): ≥20 labelled receipts, ≥90%
+   valid, ≥98% exact amounts, no live calls in CI.
+3. **The rest of the plan's order** (`CAPABILITY-MAP.md`): the savings
+   coach (weekly limits, streaks, the flight goal's tradeoffs), then
+   natural-language entry, reminders and the forecast, the Sankey, export.
+4. **Week, Paycheck and the Bill calendar open nothing on a tap** (N46,
+   N48, N51): moving a charge is done from the Month. The Week has no
+   address of its own and no charts.
+5. **Coverage is thin on sign-in, the CSV screen and the photo path** (N5).
+6. **A statement's first days of a month** (N23): August says "imported up
+   to 7 Sep" while August 1–7 came from a statement not imported.
+7. **"Always file" moves the shop's rule, not its other charges** (N25); a
+   charge filed under Not spending cannot be opened from the Month (N26);
+   a learned shop has no screen to forget it (N17).
+8. **Small:** CSV column guessing can pick the wrong column (the CSV screen);
+   the Postgres `ingested_text` check is looser than zod's; the receipts
+   bucket is not forced private if it already existed; the bundle is 758 kB
+   (213 kB gzipped, N7); a card purchase typed by hand and also imported
+   counts twice (the screen says so); `transactions.posted_on` holds the
+   purchase date (F1) despite its name; CI actions are pinned to tags (N1);
+   CLAUDE.md's stack line names three libraries the app does not use (N8,
+   the owner's file).
+9. **Not built, by the owner's choice:** 50/30/20, Net Worth, Financial
+   Freedom, the Spending Tracker's extra groups (`docs/workbook-plan.md` §9a).
+
+## 7. Things to know about how this code is written
 
 - Comments explain *why*, often with the bug that motivated them. Keep that.
   If code changes, change the comment — a comment that lies is worse than none.
