@@ -57,9 +57,12 @@ export {
 
 export {
   monthSheet,
+  paycheckSheet,
   periodSheet,
   weekSheet,
   type MonthSheetInput,
+  type PaycheckSheet,
+  type PaycheckSheetInput,
   type PeriodBlock,
   type PeriodBudget,
   type PeriodCategory,

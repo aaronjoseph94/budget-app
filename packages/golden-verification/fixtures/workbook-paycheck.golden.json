@@ -1,0 +1,60 @@
+{
+  "$provenance": {
+    "sourceWorkbook": "Ultimate Annual Budget (\"Workbook\"), the owner's copy, Google Sheets export (not committed)",
+    "sourceSheet": "Paycheck Budget",
+    "cells": {"schedule": "Paycheck Budget!D6:D7 and their notes", "expected": "Paycheck Budget!R10, R9, P6, X10, X9, V6, X22, X21, X24, L24", "entries": "Transactions!B7:D9, G7:I7, K7:M7; Bills!O7:Q8", "planHistory": "Bills!B7:D7, F7:H7, J7:L7", "categories": "START HERE!B8, H7, B18, D18, D20, F18, H17, H19, H20, as Paycheck Budget!P10, V10, C22, J22, J24, P22, V22, V24, V25 read them"},
+    "extractedOn": "2026-09-23",
+    "note": "Workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S15b: the Paycheck view under F15 option B."
+  },
+  "$semantics": {
+    "schedule": "F15 B finds the period from a pay schedule; Workbook types it (D18). D6 is 2025-01-01, noted 'Type in the Date you received your paycheck!', and D7 is 2025-01-14, noted 'Type in the Date prior to your next paycheck! (example: bi-weekly pay = 2 weeks after Start Date)'. So the window is the bi-weekly period of a payday on 2025-01-01, and the schedule here is that one. START HERE!C8 (2025-01-10, Bi-weekly) is not used: Paycheck never reads it, and its period holding D6 runs 2024-12-27 to 2025-01-09.",
+    "cells": "Only cells that hold under both D5 and F15 B. R10, X10 and X22 are SUMIFS over the window (F4); R9, X9, X21 their block totals; P6 =R9 and V6 =X9 the income and saved that D15 reads. X24 is 0 because Clothing's $100 on 2025-01-17 is in the next period, and L24 (=K52) is 0 because Car Loan's $100 on 2025-01-15 is too, and it has no Monthly Amount (Bills!H9 blank).",
+    "left out": "E22, E21, C19 (Rent, due day 1 in the window: Workbook 800, F15 B its share, 369.23), R22, R21, P19 (Netflix, due day 23 outside it: Workbook 0, F15 B 8.30), L22, L21, J19 (Credit Card 1: Workbook 250, D5 200), D11 and D15 (built from those), every typed budget and goal (Q10:Q16, W10:W16, D22:W44) and what subtracts them (Y10, Y9, Y22, Y21, D13: F15 B splits the month's budgets instead), D9 (no balance is typed for a period), and the hidden month block E50:R73, which the Paycheck view does not show (E50, R50 and L52 are workbook-month and workbook-period cells). Trivial zeros in rows 11-16 and 23-44 are not transcribed.",
+    "planHistory": "D13, as in workbook-week: Workbook's one Monthly Amount is typed as a row from 2025-01, the payday's month.",
+    "budgetHistory": "None: the month tabs' budgets are typed for 2026, and none is in effect in January 2025. No asserted cell reads one.",
+    "signs": "D3: spending, savings and logged payments are negated in the ledger; income stays positive.",
+    "minimum": "Only the categories that the rows, the monthly amounts and the asserted cells name, and only the rows dated in January 2025, the payday's month. A list's other rows are 0 in every asserted cell. Each keeps its START HERE position as its sort order.",
+    "merchants": "The engine takes no merchant text; no Notes column is transcribed. Ids are synthetic."
+  },
+  "input": {
+    "asOf": "2025-01-01",
+    "schedule": {"firstPayDate": "2025-01-01", "frequency": "biweekly", "from": "Paycheck Budget!D6:D7"},
+    "categories": [
+      {"id": "cat-income-1", "name": "Income 1", "kind": "income", "sortOrder": 0},
+      {"id": "cat-emergency-fund", "name": "Emergency Fund", "kind": "savings", "sortOrder": 0},
+      {"id": "cat-rent", "name": "Rent", "kind": "bill", "sortOrder": 0},
+      {"id": "cat-credit-card-1", "name": "Credit Card 1", "kind": "debt", "sortOrder": 0},
+      {"id": "cat-car-loan", "name": "Car Loan", "kind": "debt", "sortOrder": 2},
+      {"id": "cat-netflix", "name": "Netflix", "kind": "subscription", "sortOrder": 0},
+      {"id": "cat-restaurants", "name": "Restaurants", "kind": "variable", "sortOrder": 0},
+      {"id": "cat-clothing", "name": "Clothing", "kind": "variable", "sortOrder": 2},
+      {"id": "cat-gas", "name": "Gas", "kind": "variable", "sortOrder": 3}
+    ],
+    "planHistory": [
+      {"categoryId": "cat-rent", "effectiveMonth": "2025-01-01", "plannedCents": 80000, "dueDay": 1, "from": "Bills!B7:D7"},
+      {"categoryId": "cat-credit-card-1", "effectiveMonth": "2025-01-01", "plannedCents": 5000, "dueDay": 14, "from": "Bills!F7:H7"},
+      {"categoryId": "cat-netflix", "effectiveMonth": "2025-01-01", "plannedCents": 1799, "dueDay": 23, "from": "Bills!J7:L7"}
+    ],
+    "entries": [
+      {"postedOn": "2025-01-01", "amountCents": -8500, "categoryId": "cat-restaurants", "from": "Transactions!B7:D7"},
+      {"postedOn": "2025-01-17", "amountCents": -10000, "categoryId": "cat-clothing", "from": "Transactions!B8:D8"},
+      {"postedOn": "2025-01-25", "amountCents": -5000, "categoryId": "cat-gas", "from": "Transactions!B9:D9"},
+      {"postedOn": "2025-01-01", "amountCents": 260000, "categoryId": "cat-income-1", "from": "Transactions!G7:I7"},
+      {"postedOn": "2025-01-01", "amountCents": -200000, "categoryId": "cat-emergency-fund", "from": "Transactions!K7:M7"},
+      {"postedOn": "2025-01-05", "amountCents": -20000, "categoryId": "cat-credit-card-1", "from": "Bills!O7:Q7"},
+      {"postedOn": "2025-01-15", "amountCents": -10000, "categoryId": "cat-car-loan", "from": "Bills!O8:Q8"}
+    ]
+  },
+  "expected": [
+    {"cell": "Paycheck Budget!R10", "block": "income", "categoryId": "cat-income-1", "field": "actualCents", "cents": 260000},
+    {"cell": "Paycheck Budget!R9", "block": "income", "field": "actualTotalCents", "cents": 260000},
+    {"cell": "Paycheck Budget!P6", "field": "incomeCents", "cents": 260000},
+    {"cell": "Paycheck Budget!X10", "block": "savings", "categoryId": "cat-emergency-fund", "field": "actualCents", "cents": 200000},
+    {"cell": "Paycheck Budget!X9", "block": "savings", "field": "actualTotalCents", "cents": 200000},
+    {"cell": "Paycheck Budget!V6", "field": "savedCents", "cents": 200000},
+    {"cell": "Paycheck Budget!X22", "block": "variable", "categoryId": "cat-restaurants", "field": "actualCents", "cents": 8500},
+    {"cell": "Paycheck Budget!X21", "block": "variable", "field": "actualTotalCents", "cents": 8500},
+    {"cell": "Paycheck Budget!X24", "block": "variable", "categoryId": "cat-clothing", "field": "actualCents", "cents": 0},
+    {"cell": "Paycheck Budget!L24", "block": "debt", "categoryId": "cat-car-loan", "field": "actualCents", "cents": 0}
+  ]
+}

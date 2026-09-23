@@ -71,7 +71,8 @@
  * F5 and F7's Spent are proven by workbook-month-summary; budget totals,
  * Remaining and Difference by workbook-month part 1, planned against real by
  * part 2, through the plan history a month resolves, and F7's ending balance
- * by part 3. weekSheet, the Week, by workbook-week.
+ * by part 3. weekSheet, the Week, by workbook-week; paycheckSheet, the Paycheck
+ * view, by workbook-paycheck, in the cells F15 B leaves as Workbook has them.
  *
  * Signs (D3). The ledger is one signed column, outflows negative. Workbook writes
  * every amount positive and knows its direction from the log it sits in, so
@@ -82,6 +83,7 @@
  */
 import { type Cents, type IsoDate, ZERO_CENTS, addCents, cents, daysBetween, subCents, sumCents } from '@budget/money-primitives'
 import { type BudgetHistoryRow, resolveBudgets } from './budgets.js'
+import { type PaySchedule, PAYDAYS_A_YEAR, payPeriod, payShare } from './pay-period.js'
 import { type PlanHistoryRow, resolvePlans } from './plans.js'
 import { shareOf } from './shares.js'
 import { type CategoryKind, monthBounds, shiftMonth, weekBounds } from './week.js'
@@ -121,6 +123,11 @@ export interface PeriodPlan {
    * the window touches.
    */
   readonly month?: IsoDate
+  /**
+   * Already a pay period's share of the month (F15): it counts in the window
+   * whatever its due day, as Workbook's ticked Split does, in place of F8.
+   */
+  readonly spread?: true
 }
 
 export interface PeriodSheetInput {
@@ -279,7 +286,7 @@ export function periodSheet(input: PeriodSheetInput): PeriodSheet {
   const wholeMonth = input.from === monthBounds(input.from).start && input.to === monthBounds(input.from).end
   const counts = (p: PeriodPlan): p is PeriodPlan & { plannedCents: number } => {
     if (p.plannedCents === null) return false
-    if (wholeMonth) return true
+    if (wholeMonth || p.spread === true) return true
     if (p.dueDay === null) return false
     return dueInWindow(p.dueDay, input.from, input.to, p.month)
   }
@@ -509,4 +516,43 @@ export function weekSheet(input: WeekSheetInput): WeekSheet {
   const budgets = categories.map((c) => ({ categoryId: c.id, budgetCents: c.weeklyBudgetCents }))
   const sheet = periodSheet({ ...rest, categories, budgets, plans, from: start, to: end })
   return { ...sheet, daysLeft: daysBetween(asOf, end) + 1 }
+}
+
+export interface PaycheckSheetInput extends Omit<MonthSheetInput, 'asOf'> {
+  /** Any day of the pay period to show. */
+  readonly asOf: IsoDate
+  /** The income source's schedule the period is found from (0011). */
+  readonly schedule: PaySchedule
+}
+
+export interface PaycheckSheet extends PeriodSheet {
+  /** The month whose amounts and budgets are shared, by its first day: the payday's. */
+  readonly month: IsoDate
+  /** Paydays a year the monthly amounts are shared across: 52, 26 or 12 (F15). */
+  readonly paydaysAYear: number
+}
+
+/**
+ * Workbook's Paycheck Budget under F15 B (D18): periodSheet over the pay period
+ * holding `asOf`, found from the schedule rather than typed. Each monthly
+ * amount and each budget and goal in effect in the payday's month (as
+ * Paycheck!E50 reads $D$6's) counts as its share of a period, × 12 ÷ paydays
+ * a year, whatever its due day. Real rows count as they are, and replace a
+ * bill's share (D5). workbook-paycheck replays the cells that still hold.
+ */
+export function paycheckSheet(input: PaycheckSheetInput): PaycheckSheet {
+  const { asOf, schedule, budgetHistory, planHistory, ...rest } = input
+  const { start, end } = payPeriod({ schedule, asOf })
+  const month = monthBounds(start).start
+  const share = (monthlyCents: number | null): Cents | null =>
+    monthlyCents === null ? null : payShare({ monthlyCents, frequency: schedule.frequency })
+  const budgets = resolveBudgets({ asOf: month, history: budgetHistory }).budgets.map((b) => ({
+    categoryId: b.categoryId,
+    budgetCents: share(b.budgetCents),
+  }))
+  const plans = plansInEffect(rest.categories, planHistory, month).map(
+    (p): PeriodPlan => ({ ...p, plannedCents: share(p.plannedCents), spread: true }),
+  )
+  const sheet = periodSheet({ ...rest, budgets, plans, from: start, to: end })
+  return { ...sheet, month, paydaysAYear: PAYDAYS_A_YEAR[schedule.frequency] }
 }
