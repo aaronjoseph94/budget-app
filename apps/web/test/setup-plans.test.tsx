@@ -128,11 +128,14 @@ describe('SetupScreen, day paid and monthly amount', () => {
     expect((await field('Bills', 'Day paid for Rent')).value).toBe('1')
     expect((await field('Bills', 'Monthly amount for Phone, from September on')).value).toBe('85.00')
     expect((await field('Bills', 'Day paid for Phone')).value).toBe('')
-    // Netflix stopped from June: no amount, its day kept.
+    // Netflix stopped from June: no amount, its day kept, nothing to stop.
     expect((await field('Subscriptions', 'Monthly amount for Netflix, from September on')).value).toBe('')
     expect((await field('Subscriptions', 'Day paid for Netflix')).value).toBe('23')
+    expect((await card('Subscriptions')).queryByRole('button', { name: /^Stop / })).toBeNull()
     expect((await field('Debts', 'Monthly amount for Car Loan, from September on')).value).toBe('')
     expect((await card('Bills')).getByText('Monthly amount (from September on)')).toBeTruthy()
+    // F8: an amount with no day counts in the month, never in a week.
+    expect((await card('Bills')).getAllByText('Add a day paid so this shows in weeks.')).toHaveLength(1)
     expect((await card('Variable expenses')).queryByRole('textbox', { name: /^Day paid/ })).toBeNull()
     // Plan §3.3: the Debts card keeps saying the card itself is not a Debts row.
     expect((await card('Debts')).getByText(/A card you pay off from your bank is not a monthly debt payment here/)).toBeTruthy()
@@ -160,6 +163,32 @@ describe('SetupScreen, day paid and monthly amount', () => {
 
     expect(await (await card('Bills')).findByText('Phone: paid on day 12 from September on.')).toBeTruthy()
     expect(september(fake)).toEqual([['phone', 8_500, 12]])
+    await waitFor(async () => expect((await card('Bills')).queryByText('Add a day paid so this shows in weeks.')).toBeNull())
+  })
+
+  it('stops an amount from this month, keeping the day, which lets the category move', async () => {
+    const fake = seeded()
+    renderScreen(<SetupScreen />, fake)
+
+    fireEvent.click(await (await card('Bills')).findByRole('button', { name: 'Stop Rent from September' }))
+
+    expect(await (await card('Bills')).findByText('Rent: no monthly amount from September on.')).toBeTruthy()
+    expect(september(fake)).toEqual([['rent', null, 1]])
+    await waitFor(async () => expect((await card('Bills')).queryByRole('button', { name: 'Stop Rent from September' })).toBeNull())
+    expect((await field('Bills', 'Monthly amount for Rent, from September on')).value).toBe('')
+    fireEvent.change(await (await card('Bills')).findByRole('combobox', { name: 'Move Rent to another list' }), { target: { value: 'variable' } })
+    await waitFor(() => expect(fake.tables.categories.find((c) => c.id === 'rent')?.kind).toBe('variable'))
+  })
+
+  it('stops an amount whose field is emptied, as Stop does', async () => {
+    const fake = seeded()
+    renderScreen(<SetupScreen />, fake)
+    await waitFor(async () => expect((await field('Bills', 'Monthly amount for Rent, from September on')).value).toBe('1600.00'))
+
+    await type('Bills', 'Monthly amount for Rent, from September on', '  ')
+
+    expect(await (await card('Bills')).findByText('Rent: no monthly amount from September on.')).toBeTruthy()
+    expect(september(fake)).toEqual([['rent', null, 1]])
   })
 
   it('refuses a day or an amount it cannot save, puts the field back, and saves nothing', async () => {
@@ -175,6 +204,48 @@ describe('SetupScreen, day paid and monthly amount', () => {
       expect((await card('Bills')).getByText('Type the monthly amount as $0 or more, like 1600 or 17.99, or leave it blank.')).toBeTruthy()
       expect(amount.value).toBe('1600.00')
     }
+    expect(september(fake)).toEqual([])
+  })
+})
+
+describe('SetupScreen, monthly amounts saved in quick succession or refused', () => {
+  it('keeps a day left just before the amount, sending the amount only once the day is saved', async () => {
+    const fake = seeded()
+    renderScreen(<SetupScreen />, fake)
+    await waitFor(async () => expect((await field('Bills', 'Monthly amount for Phone, from September on')).value).toBe('85.00'))
+    // The first save is stored and its answer held back, so the day is on its
+    // way, and not yet read back, when the amount is left.
+    let release = () => {}
+    fake.server.hold = (target) => {
+      if (target !== 'POST category_plans') return null
+      fake.server.hold = null
+      return new Promise<void>((resolve) => (release = resolve))
+    }
+
+    await type('Bills', 'Day paid for Phone', '12')
+    await type('Bills', 'Monthly amount for Phone, from September on', '95')
+    await waitFor(() => expect(september(fake)).toEqual([['phone', 8_500, 12]]))
+    release()
+
+    await waitFor(() => expect(september(fake)).toEqual([['phone', 9_500, 12]]))
+    expect(await (await card('Bills')).findByText('Phone: $95.00 a month from September on.')).toBeTruthy()
+    await waitFor(async () => expect((await field('Bills', 'Day paid for Phone')).value).toBe('12'))
+  })
+
+  it("says the list can't have an amount when the category moved on another device, and puts the field back", async () => {
+    const fake = seeded()
+    renderScreen(<SetupScreen />, fake)
+    await waitFor(async () => expect((await field('Bills', 'Monthly amount for Phone, from September on')).value).toBe('85.00'))
+    // Another device stopped Phone's amount and moved it to Variable expenses.
+    fake.tables.categories = fake.tables.categories.map((c) => (c.id === 'phone' ? { ...c, kind: 'variable' } : c))
+
+    const amount = await type('Bills', 'Monthly amount for Phone, from September on', '90')
+
+    const alert = await (await card('Bills')).findByRole('alert')
+    expect(alert.textContent).toBe(
+      "That list can't have a monthly amount: only Bills, Debts and Subscriptions can. It may have been moved on another device. Nothing was saved. (code 23514)",
+    )
+    expect(amount.value).toBe('85.00')
     expect(september(fake)).toEqual([])
   })
 })

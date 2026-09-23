@@ -3,6 +3,7 @@ import { billsTotals, isoDate, resolvePlans, type BillsTotals, type ResolvedPlan
 import { parseMoneyInput, useAppData } from '../app-data.js'
 import { listPlanHistory, setPlan, type Category, type PlanRow } from '../ledger.js'
 import { formatCents, formatForInput, formatMonthTitle } from '../format.js'
+import { Button } from '../components/ui/button.js'
 import { Input } from '../components/ui/form.js'
 
 /**
@@ -247,9 +248,23 @@ export function PlanFields({
               className="tnum"
             />
           </div>
+          {storedCents === null ? null : (
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-label={`Stop ${row.name} from ${monthName}`}
+              onClick={() => save(null, dayNow(), `${row.name}: no monthly amount from ${monthName} on.`)}
+            >
+              Stop from {monthName}
+            </Button>
+          )}
         </div>
       </div>
       {problem !== null ? <p className="mt-1 text-xs text-destructive">{problem}</p> : null}
+      {/* F8: a blank day counts in a whole month, never in a week. */}
+      {storedCents !== null && storedDay === null ? (
+        <p className="mt-1 text-xs text-owed-ink">Add a day paid so this shows in weeks.</p>
+      ) : null}
     </div>
   )
 }
