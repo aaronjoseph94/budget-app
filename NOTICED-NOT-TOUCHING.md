@@ -278,7 +278,7 @@ gate was green before and is RED now; each was tried.
 
 ---
 
-## N13 — Unreadable lines cannot be dismissed, and a re-import repeats them
+## N13 — Unreadable lines cannot be dismissed, and a re-import repeats them *(settled 2026-09-23, Sitting B)*
 
 **Seen:** 2026-09-22, showing `ingest_unreadable_lines` on Review (P1).
 
@@ -295,6 +295,11 @@ dismissing needs a new column and a SECURITY DEFINER function.
 and a `dismiss_unreadable_line(uuid)` function checking ownership, add it to
 the anon-execute assertion, then give each line a dismiss button and drop the
 six-week window.
+
+**Settled:** 0012 adds both, and the function is in the anon-execute
+assertion. Each line on Review has a Dismiss button, and Review shows every
+line not dismissed, however old. A statement imported twice still lists its
+lines twice, under two imports; each can now be dismissed.
 
 ---
 
@@ -451,7 +456,7 @@ Paycheck!D13), seen failing first. S7 and S10 keep the rest of their cells.
 
 ---
 
-## N21 — Review's unreadable lines read at most 100 imports, uncounted
+## N21 — Review's unreadable lines read at most 100 imports, uncounted *(settled 2026-09-23, Sitting B)*
 
 **Seen:** 2026-09-23, S4c (whole-month reads).
 
@@ -467,6 +472,10 @@ this is Review's read.
 **To settle:** read the batches with an exact count, as `listTransactions`
 now does, or fold them into one query — and settle N13's six-week window
 at the same time.
+
+**Settled:** `listUnreadable` now reads the lines still waiting first, with
+an exact count, and then only the imports those lines came from, so no cap
+on imports can hide a line. The six-week window is gone with N13.
 
 ---
 

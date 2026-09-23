@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { ReviewScreen } from '../src/screens/ReviewScreen.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
@@ -194,14 +194,6 @@ describe('ReviewScreen', () => {
 })
 
 describe('ReviewScreen, lines an import could not read', () => {
-  // Only Date is faked, so the waits in findBy* run normally. Six weeks back
-  // from here is 11 Aug 2026.
-  beforeEach(() => {
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date(2026, 8, 22, 12))
-  })
-  afterEach(() => vi.useRealTimers())
-
   const withLines = () => {
     const fake = seeded()
     fake.tables.ingest_batches.push(
@@ -210,24 +202,28 @@ describe('ReviewScreen, lines an import could not read', () => {
       { id: 'b-clean', source: 'card_csv', created_at: '2026-09-21T12:00:00+00:00' },
     )
     fake.tables.ingest_unreadable_lines.push(
-      { batch_id: 'b-old', source_line: 5, reason: 'missing_date' },
-      { batch_id: 'b-pdf', source_line: 11, reason: 'invalid_merchant' },
-      { batch_id: 'b-pdf', source_line: 2, reason: 'missing_amount' },
-      { batch_id: 'b-pdf', source_line: 3, reason: 'unparseable_amount' },
+      { id: 'l-old', batch_id: 'b-old', source_line: 5, reason: 'missing_date' },
+      { id: 'l-11', batch_id: 'b-pdf', source_line: 11, reason: 'invalid_merchant' },
+      { id: 'l-2', batch_id: 'b-pdf', source_line: 2, reason: 'missing_amount' },
+      { id: 'l-3', batch_id: 'b-pdf', source_line: 3, reason: 'unparseable_amount' },
+      { id: 'l-done', batch_id: 'b-pdf', source_line: 7, reason: 'missing_date', dismissed_at: '2026-09-21T09:00:00+00:00' },
     )
     return fake
   }
 
-  it('lists each line from recent imports with its reason in words, in line order', async () => {
+  it('lists every line not dismissed, however old, newest import first and in line order', async () => {
     renderScreen(<ReviewScreen />, withLines())
 
-    const section = within(await screen.findByRole('region', { name: '3 lines could not be read' }))
-    expect(section.getByText('Card statement (PDF) · imported 20 Sep 2026')).toBeTruthy()
-    expect(section.queryByText(/Card statement \(CSV\)/)).toBeNull()
+    const section = within(await screen.findByRole('region', { name: '4 lines could not be read' }))
+    expect(section.getAllByText(/^Card statement/).map((p) => p.textContent)).toEqual([
+      'Card statement (PDF) · imported 20 Sep 2026',
+      'Card statement (CSV) · imported 1 Jul 2026',
+    ])
     expect(section.getAllByRole('listitem').map((li) => li.textContent)).toEqual([
-      'Row 2This row had no amount.',
-      'Row 3The amount could not be read as money in the format you chose.',
-      'Row 11The description contained characters that could display as something other than what is stored.',
+      'Row 2This row had no amount.Dismiss',
+      'Row 3The amount could not be read as money in the format you chose.Dismiss',
+      'Row 11The description contained characters that could display as something other than what is stored.Dismiss',
+      'Line 5This row had no date.Dismiss',
     ])
     // The queue is still there alongside it.
     expect(await screen.findByText(/3 waiting for a category\./)).toBeTruthy()
@@ -236,11 +232,11 @@ describe('ReviewScreen, lines an import could not read', () => {
   it('shows a stored code only through describeReason, never as markup', async () => {
     const fake = seeded()
     fake.tables.ingest_batches.push({ id: 'b1', source: 'card_csv', created_at: '2026-09-20T12:00:00+00:00' })
-    fake.tables.ingest_unreadable_lines.push({ batch_id: 'b1', source_line: 4, reason: '<img src=x onerror=alert(1)>' })
+    fake.tables.ingest_unreadable_lines.push({ id: 'l1', batch_id: 'b1', source_line: 4, reason: '<img src=x onerror=alert(1)>' })
     const { container } = renderScreen(<ReviewScreen />, fake)
 
     const section = within(await screen.findByRole('region', { name: '1 line could not be read' }))
-    expect(section.getByRole('listitem').textContent).toBe('Line 4This row could not be read.')
+    expect(section.getByRole('listitem').textContent).toBe('Line 4This row could not be read.Dismiss')
     expect(container.querySelector('img')).toBeNull()
   })
 
@@ -248,7 +244,7 @@ describe('ReviewScreen, lines an import could not read', () => {
     const fake = seeded()
     fake.tables.ingest_batches.push({ id: 'b1', source: 'card_csv', created_at: '2026-09-20T12:00:00+00:00' })
     for (let line = 1; line <= 201; line += 1) {
-      fake.tables.ingest_unreadable_lines.push({ batch_id: 'b1', source_line: line, reason: 'missing_date' })
+      fake.tables.ingest_unreadable_lines.push({ id: `l${line}`, batch_id: 'b1', source_line: line, reason: 'missing_date' })
     }
     renderScreen(<ReviewScreen />, fake)
 
@@ -278,5 +274,51 @@ describe('ReviewScreen, lines an import could not read', () => {
     ).toBeTruthy()
     // The charges waiting are still there to categorise.
     expect(await screen.findByText(/3 waiting for a category\./)).toBeTruthy()
+  })
+
+  it('dismisses one line through dismiss_unreadable_line, one at a time', async () => {
+    const fake = withLines()
+    renderScreen(<ReviewScreen />, fake)
+
+    const before = within(await screen.findByRole('region', { name: '4 lines could not be read' }))
+    fireEvent.click(before.getByRole('button', { name: 'Dismiss row 11' }))
+    // Until the list is read again, no other line can be dismissed in its place.
+    expect(before.getByRole('button', { name: 'Dismiss row 2' })).toHaveProperty('disabled', true)
+
+    expect(await screen.findByText('Dismissed. That line will not show here again.')).toBeTruthy()
+    const after = within(await screen.findByRole('region', { name: '3 lines could not be read' }))
+    expect(after.getAllByRole('listitem').map((li) => li.firstChild?.textContent)).toEqual(['Row 2', 'Row 3', 'Line 5'])
+    expect(after.getByRole('button', { name: 'Dismiss row 2' })).toHaveProperty('disabled', false)
+    expect(fake.rpcCalls).toEqual([{ name: 'dismiss_unreadable_line', args: { p_line: 'l-11' } }])
+  })
+
+  it('keeps the line, and says why, when dismissing fails', async () => {
+    const fake = withLines()
+    fake.fail('rpc/dismiss_unreadable_line', '42501')
+    renderScreen(<ReviewScreen />, fake)
+
+    const section = within(await screen.findByRole('region', { name: '4 lines could not be read' }))
+    fireEvent.click(section.getByRole('button', { name: 'Dismiss line 5' }))
+
+    const alert = await screen.findByRole('alert')
+    expect(
+      within(alert).getByText('Your sign-in does not allow this. Signing out and back in usually fixes it. (code 42501)'),
+    ).toBeTruthy()
+    expect(section.getByRole('button', { name: 'Dismiss line 5' })).toHaveProperty('disabled', false)
+    expect(screen.queryByText(/^Dismissed\./)).toBeNull()
+  })
+
+  it('says all caught up once the last line is dismissed', async () => {
+    const fake = createFakeSupabase({
+      ingest_batches: [{ id: 'b1', source: 'card_pdf', created_at: '2026-09-20T12:00:00+00:00' }],
+      ingest_unreadable_lines: [{ id: 'l1', batch_id: 'b1', source_line: 4, reason: 'missing_amount' }],
+    })
+    renderScreen(<ReviewScreen />, fake)
+
+    const section = within(await screen.findByRole('region', { name: '1 line could not be read' }))
+    fireEvent.click(section.getByRole('button', { name: 'Dismiss row 4' }))
+
+    expect(await screen.findByText('All caught up')).toBeTruthy()
+    expect(screen.queryByRole('region')).toBeNull()
   })
 })

@@ -240,6 +240,7 @@ export interface UnreadableBatch {
 }
 
 export interface UnreadableLine {
+  readonly id: string
   readonly batch_id: string
   /** 1-based. Only the position is stored, never the text (migration 0002). */
   readonly source_line: number
@@ -256,37 +257,51 @@ export interface UnreadablePage {
 }
 
 /**
- * Lines the imports since `since` could not read, grouped by the import.
+ * Lines no import could read that the owner has not dismissed, grouped by
+ * the import, newest first.
+ *
+ * However old: a line leaves only when dismissed (0012), so there is no
+ * window to age it out. The lines are read first and then only their own
+ * imports, so no cap on imports can hide a line (N21). A line is written in
+ * the same transaction as its import and shares its created_at, which is
+ * what puts the newest import's lines first.
  *
  * Two reads rather than an embedded join, so each is a plain query the fake
  * test server answers the way PostgREST does. The browser keeps SELECT on both
  * tables (0004 revoked only the writes), and RLS scopes both to the owner.
  */
-export async function listUnreadable(
-  supabase: SupabaseClient,
-  since: string,
-  limit = 200,
-): Promise<UnreadablePage> {
-  const recent = await supabase
-    .from('ingest_batches')
-    .select('id, source, created_at')
-    .gte('created_at', since)
-    .order('created_at', { ascending: false })
-    .limit(100)
-  if (recent.error !== null) fail(recent.error)
-  const batches = (recent.data ?? []) as UnreadableBatch[]
-  if (batches.length === 0) return { batches: [], lines: [], total: 0 }
-
+export async function listUnreadable(supabase: SupabaseClient, limit = 200): Promise<UnreadablePage> {
   const { data, error, count } = await supabase
     .from('ingest_unreadable_lines')
-    .select('batch_id, source_line, reason', { count: 'exact' })
-    .in('batch_id', batches.map((b) => b.id))
+    .select('id, batch_id, source_line, reason', { count: 'exact' })
+    .is('dismissed_at', null)
+    .order('created_at', { ascending: false })
+    .order('batch_id', { ascending: true })
     .order('source_line', { ascending: true })
     .limit(limit)
   if (error !== null) fail(error)
   const lines = ((data ?? []) as UnreadableLine[]).map((l) => ({ ...l, source_line: Number(l.source_line) }))
-  const withLines = new Set(lines.map((l) => l.batch_id))
-  return { batches: batches.filter((b) => withLines.has(b.id)), lines, total: count ?? lines.length }
+  if (lines.length === 0) return { batches: [], lines, total: count ?? lines.length }
+
+  const imports = await supabase
+    .from('ingest_batches')
+    .select('id, source, created_at')
+    .in('id', [...new Set(lines.map((l) => l.batch_id))])
+    .order('created_at', { ascending: false })
+  if (imports.error !== null) fail(imports.error)
+  return { batches: (imports.data ?? []) as UnreadableBatch[], lines, total: count ?? lines.length }
+}
+
+/**
+ * Record that the owner has dealt with a line, so Review stops showing it.
+ *
+ * Through dismiss_unreadable_line (0012), because 0004 took UPDATE on these
+ * lines away from the browser. The line is kept, stamped; dismissing one
+ * already dismissed changes nothing.
+ */
+export async function dismissUnreadableLine(supabase: SupabaseClient, lineId: string): Promise<void> {
+  const { error } = await supabase.rpc('dismiss_unreadable_line', { p_line: lineId })
+  if (error !== null) fail(error)
 }
 
 /**

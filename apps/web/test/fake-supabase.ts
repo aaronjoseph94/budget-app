@@ -34,7 +34,8 @@ export interface FakeTables {
   savings_goals: GoalRow[]
   /** `period_end` only for a statement with a period (0007). */
   ingest_batches: (UnreadableBatch & { readonly period_end?: string | null })[]
-  ingest_unreadable_lines: UnreadableLine[]
+  /** `dismissed_at` once dismissed (0012); absent reads as null, still waiting. */
+  ingest_unreadable_lines: (UnreadableLine & { readonly dismissed_at?: string | null })[]
 }
 
 export interface RpcCall {
@@ -86,6 +87,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     approve_candidate: 'approved',
     reject_candidate: null,
     recategorise_transaction: null,
+    dismiss_unreadable_line: null,
   }
   const failures = new Map<string, string>()
   const server: FakeSupabase['server'] = { maxRows: null, afterRead: null }
@@ -106,6 +108,16 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     const moving = tables.transactions[row]
     if (moving === undefined || !known) return pgError('42501', 403)
     tables.transactions[row] = { ...moving, category_id: String(args['p_category']) }
+    return new Response(null, { status: 204 })
+  }
+
+  // What 0012 does: stamp the line, keeping the first stamp. A line that is
+  // not there is 42501, as there.
+  function dismiss(args: Readonly<Record<string, unknown>>): Response {
+    const at = tables.ingest_unreadable_lines.findIndex((l) => l.id === args['p_line'])
+    const line = tables.ingest_unreadable_lines[at]
+    if (line === undefined) return pgError('42501', 403)
+    tables.ingest_unreadable_lines[at] = { ...line, dismissed_at: line.dismissed_at ?? '2026-09-23T12:00:00+00:00' }
     return new Response(null, { status: 204 })
   }
 
@@ -132,6 +144,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       rpcCalls.push({ name, args: JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown> })
       if (!(name in rpcReplies)) return pgError('PGRST202', 404)
       if (name === 'recategorise_transaction') return recategorise(rpcCalls[rpcCalls.length - 1]?.args ?? {})
+      if (name === 'dismiss_unreadable_line') return dismiss(rpcCalls[rpcCalls.length - 1]?.args ?? {})
       return json(rpcReplies[name] ?? null)
     }
 
@@ -170,6 +183,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       else if (op === 'gte') tests.push((r) => String(r[key]) >= operand)
       else if (op === 'lte') tests.push((r) => String(r[key]) <= operand)
       else if (op === 'not' && operand === 'is.null') tests.push((r) => r[key] !== null && r[key] !== undefined)
+      else if (op === 'is' && operand === 'null') tests.push((r) => r[key] === null || r[key] === undefined)
       else if (op === 'in') {
         // `in.(a,b)`, with a value quoted only when it holds a reserved character.
         const members = new Set(operand.slice(1, -1).split(',').map((v) => v.replace(/^"(.*)"$/, '$1')))
