@@ -86,6 +86,19 @@ describe('Month row charges', () => {
     const sheet = within(screen.getByRole('dialog', { name: 'Rent' }))
     expect(sheet.getByText('No charges filed here in September.')).toBeTruthy()
   })
+
+  it("says a planned row's amount is its monthly amount, which a charge filed there would replace", async () => {
+    const fake = seeded()
+    fake.tables.category_plans.push({ id: 'm1', category_id: 'rent', effective_month: '2026-01-01', planned_cents: 160000, due_day: 1 })
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+
+    await screen.findByRole('rowheader', { name: 'Rent' })
+    const sheet = openRow('Bills', 'Rent')
+    expect(sheet.getByText(/Bills · September 2026 ·/).textContent).toBe('Bills · September 2026 · $1,600.00 planned')
+    expect(sheet.getByText(/^No charges filed here/).textContent).toBe(
+      'No charges filed here in September. The amount above is its monthly amount from Setup. A charge filed here counts instead.',
+    )
+  })
 })
 
 async function startMoving(fake: FakeSupabase, merchant: string): Promise<ReturnType<typeof within>> {

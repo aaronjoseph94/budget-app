@@ -22,6 +22,10 @@ import { cn } from '../lib/cn.js'
  * Each charge can be moved to another category from here (S6). After a move
  * the app's data is refreshed, which re-reads the month, so the charge leaves
  * this list and every total on the Month is the engine's again.
+ *
+ * A bill with nothing filed shows its planned amount (D5); the sheet says
+ * where that came from, or its Actual would stand over "No charges" with
+ * nothing to explain it.
  */
 export function MonthCharges({
   categoryId,
@@ -29,6 +33,7 @@ export function MonthCharges({
   heading,
   month,
   actualCents,
+  basis,
   charges,
   onClose,
 }: {
@@ -39,6 +44,8 @@ export function MonthCharges({
   /** The month's first day. */
   month: string
   actualCents: number
+  /** What made the Actual, from core: 'planned' is the monthly amount from Setup. */
+  basis: 'real' | 'planned' | 'none'
   charges: readonly LedgerRow[]
   onClose: () => void
 }) {
@@ -51,6 +58,7 @@ export function MonthCharges({
       subtitle={
         <>
           {heading} · {monthName} · <span className="tnum">{formatCents(actualCents)}</span>
+          {basis === 'planned' ? ' planned' : null}
         </>
       }
       onClose={onClose}
@@ -65,6 +73,9 @@ export function MonthCharges({
       {charges.length === 0 ? (
         <p className="px-4 py-6 text-center text-sm text-muted-foreground">
           No charges filed here in {monthName.split(' ')[0]}.
+          {basis === 'planned'
+            ? ' The amount above is its monthly amount from Setup. A charge filed here counts instead.'
+            : null}
         </p>
       ) : (
         <ul aria-label="Charges" className="divide-y">

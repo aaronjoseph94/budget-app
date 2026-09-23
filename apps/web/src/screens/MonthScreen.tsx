@@ -210,6 +210,7 @@ function OpenedRow({
         heading={LIST_HEADING[kind]}
         month={month}
         actualCents={row.actualCents}
+        basis={row.basis}
         charges={rows.filter((r) => r.category_id === categoryId)}
         onClose={onClose}
       />
