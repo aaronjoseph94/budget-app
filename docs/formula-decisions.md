@@ -419,3 +419,50 @@ bill is divided by the pay frequency.
 A split that divides money also needs a rounding rule, and B does not give
 one. It is an engineering default that changes cents only, and is recorded
 here before the Paycheck engine is written.
+
+---
+
+## F16 — Remaining and Difference on a row with no budget or goal
+
+**Decided 2026-09-23. Engineering default: copies the workbook where it has
+the column, and shows nothing where it has none.**
+
+```
+Jan!V22   =T22-U22        (Remaining, Variable expenses; a blank T22 reads as 0)
+Jan!V21   =SUM(V22:V45)   [800]    Jan!D13 =V21
+Jan!V11   =U11-T11        [0]      (Difference, Savings; Travel Fund, T11 blank)
+Jan!V9    =SUM(V10:V16)   [-3000]
+Jan!B20:E20, H20:K20, M20:P20   Categories · Budgeted · Actual   (no Remaining)
+Jan!M8:P8                       Income Streams · Goal · Actual   (no Difference)
+```
+
+A budget or goal can be missing: never typed, or typed as "no budget" from a
+month on (D12). Workbook reads a blank as 0 in every formula, so it has no
+missing case. The engine keeps "no budget" apart from $0, and so has to say
+what each column shows without one.
+
+**Chosen:**
+
+- **Variable expenses.** Remaining is Budget − Actual; with no budget it is
+  0 − Actual, F5's reading of a blank applied to each row. The rows then add
+  up to the block's Remaining (V21), which is Left to spend (D13).
+- **Savings.** Difference is Actual − Goal (F6); with no goal it is what was
+  saved, as V11 reads a blank goal. The rows then add up to V9, which stays
+  total saved − total goals.
+- **Bills, Debts and Subscriptions.** Workbook has no Remaining column here. The
+  app's is Budget − Actual where a budget is set, and empty where none is:
+  0 − Actual would show every unbudgeted bill, Rent included, as overspent by
+  its whole amount. These lists get no Remaining total, as Workbook has none.
+- **Income.** Goal and Actual, with their totals (O9, P9), and no
+  difference, as Workbook has.
+- **Budget totals** (D21, J21, O21, T21, O9, T9) add the budgets that are set;
+  a row with none adds nothing, as `SUM` skips a blank, and a list with none
+  totals $0, as Workbook shows.
+
+The row itself always keeps its missing budget, so a screen can tell "no
+budget" from "$0". Each branch that reads a missing value as 0 is written out
+and cites F5 or this entry; neither is a `?? 0` (CONSTRAINTS.md floor).
+
+**What the owner would see.** A savings fund with no goal shows what went
+into it as its Difference, and a bill with no budget shows no Remaining.
+Neither changes any cached value.
