@@ -63,9 +63,16 @@ export interface FakeSupabase {
    * How the server behaves. `maxRows` is PostgREST's cap on one response,
    * which Supabase sets to 1,000 and which wins over any limit a query asks
    * for. `afterRead` runs after each table read is answered, so a test can
-   * change the table between two pages of one read.
+   * change the table between two pages of one read. `hold` is asked as each
+   * table read is answered; a promise it returns delays the answer, which
+   * still carries the rows as they were when the read was asked, so a test
+   * can make a read begun earlier arrive after one begun later.
    */
-  readonly server: { maxRows: number | null; afterRead: ((table: string) => void) | null }
+  readonly server: {
+    maxRows: number | null
+    afterRead: ((table: string) => void) | null
+    hold: ((table: string) => Promise<void> | null) | null
+  }
 }
 
 let clients = 0
@@ -90,7 +97,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     dismiss_unreadable_line: null,
   }
   const failures = new Map<string, string>()
-  const server: FakeSupabase['server'] = { maxRows: null, afterRead: null }
+  const server: FakeSupabase['server'] = { maxRows: null, afterRead: null, hold: null }
   const user = { id: 'u1', email: 'you@example.com', user_metadata: {} as Record<string, unknown> }
   let nextId = 1
 
@@ -243,6 +250,8 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     const picked = columns.includes('*') ? rows : rows.map((r) => Object.fromEntries(columns.map((c) => [c, r[c]])))
 
     server.afterRead?.(target)
+    const held = server.hold?.(target)
+    if (held !== undefined && held !== null) await held
     if (wantsObject) return picked.length === 1 ? json(picked[0]) : pgError('PGRST116', 406)
     // As PostgREST writes it: the rows sent, then the total; `*` when none were.
     const sent = picked.length === 0 ? '*' : `${offset}-${offset + picked.length - 1}`

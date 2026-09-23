@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { ReviewScreen } from '../src/screens/ReviewScreen.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
@@ -290,6 +290,51 @@ describe('ReviewScreen, lines an import could not read', () => {
     expect(after.getAllByRole('listitem').map((li) => li.firstChild?.textContent)).toEqual(['Row 2', 'Row 3', 'Line 5'])
     expect(after.getByRole('button', { name: 'Dismiss row 2' })).toHaveProperty('disabled', false)
     expect(fake.rpcCalls).toEqual([{ name: 'dismiss_unreadable_line', args: { p_line: 'l-11' } }])
+  })
+
+  it('does not bring a dismissed line back when a read begun before the dismissal answers after it', async () => {
+    const fake = withLines()
+    renderScreen(<ReviewScreen />, fake)
+    const section = within(await screen.findByRole('region', { name: '4 lines could not be read' }))
+    const coffee = await row('SQ *LITWARE COFFEE')
+
+    // A slow connection: each read of the lines begun before the dismissal is
+    // held back, and when it does answer it lists them as they were then.
+    let release = (): void => undefined
+    const released = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    let held = 0
+    fake.server.hold = (table) => {
+      if (table !== 'ingest_unreadable_lines' || fake.rpcCalls.some((c) => c.name === 'dismiss_unreadable_line')) {
+        return null
+      }
+      held += 1
+      return released
+    }
+
+    // Removing a charge re-reads the screen twice: once itself, and once for
+    // the app's refresh. Both are held.
+    fireEvent.click(coffee.getByRole('button', { name: 'Not a real transaction — remove' }))
+    await waitFor(() => expect(held).toBe(2))
+    const dismiss = section.getByRole('button', { name: 'Dismiss row 11' })
+    expect(dismiss).toHaveProperty('disabled', false)
+
+    fireEvent.click(dismiss)
+    await screen.findByRole('region', { name: '3 lines could not be read' })
+
+    // The two older reads now answer, with row 11 still in them. Each goes on
+    // to read its imports; once both have, give the screen a turn to apply them.
+    let answered = 0
+    fake.server.afterRead = (table) => {
+      if (table === 'ingest_batches') answered += 1
+    }
+    release()
+    await waitFor(() => expect(answered).toBe(2))
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)))
+
+    expect(screen.getByRole('region', { name: '3 lines could not be read' })).toBeTruthy()
+    expect(section.queryByRole('button', { name: 'Dismiss row 11' })).toBeNull()
   })
 
   it('keeps the line, and says why, when dismissing fails', async () => {
