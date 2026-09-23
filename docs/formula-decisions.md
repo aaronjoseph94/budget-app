@@ -214,7 +214,7 @@ saved.
 **Where it differs.** Workbook treats a blank D9 as $0 and still shows an ending
 balance. The engine returns no ending balance when no starting balance is typed
 for that month, because a projection from an invented $0 is a wrong number
-that looks right. The plan gives this no D-number of its own.
+that looks right. Recorded as divergence D17 (N9).
 
 ---
 

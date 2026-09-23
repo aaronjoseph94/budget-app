@@ -158,7 +158,8 @@ module owns this normalization and it is the tokenizer.
 
 ## How the Workbook entries below were settled
 
-D5 to D16 come from the Workbook plan (`docs/workbook-plan.md`, answered in §9a).
+D5 to D16 come from the Workbook plan (`docs/workbook-plan.md`, answered in §9a);
+D17 onward were found while building it.
 Each says how it was settled: **owner chose** (asked, and answered),
 **stated to the owner, no objection** (told what would be done unless they
 said otherwise; they did not choose it), or **engineering default** (not put
@@ -451,3 +452,31 @@ every time, as Workbook and the app do today.
 
 **Why.** A balance that has to be retyped goes stale, and the transfers are
 already recorded for the Month's Savings block.
+
+---
+
+## D17 — A month with no starting balance has no ending balance
+
+**Date:** 2026-09-23 (chosen 2026-09-22, writing formula decision F7)
+**Sheet / cells:** Jan..Dec D9 (typed; note: "Type in the Bank Balance you
+started the month with!") and D15 `=D9+N5-D11-S5`; Weekly Budget!D15 and
+Paycheck Budget!D15 `=D9+P6-D11-V6`
+**Settled:** engineering default, stated to no one. It was never put to the
+owner, nor told to them as what would be done; it had no D-number until S11
+(N9).
+
+**Workbook behaviour.** A blank D9 reads as $0, so a tab with no balance typed
+still shows an ending balance: $0 plus income, less everything spent and
+saved. The sample types 1000 on every tab, so its cached D15 values count from
+$1,000 (Jan!D15 **132.01**); with D9 left blank the same formula would show
+January ending at −867.99.
+
+**Chosen behaviour.** With no starting balance typed for a month, the engine
+returns no ending balance, and the Month's card asks for the starting balance
+where Start would be. A balance typed as $0 is a start like any other, and the
+ending balance counts from it.
+
+**Why.** An ending balance counted from a $0 nobody typed looks like a real
+projection and is wrong by the whole bank balance. The CONSTRAINTS.md floor
+forbids a silent 0 on a money path for this reason, as D15 does. Spent and
+Left to spend are shown either way.

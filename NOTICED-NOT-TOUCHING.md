@@ -199,7 +199,7 @@ commit.
 
 ---
 
-## N9 — A blank starting balance is a divergence with no D-number
+## N9 — A blank starting balance is a divergence with no D-number *(settled 2026-09-23, S11)*
 
 **Seen:** 2026-09-22, writing formula decision F7.
 
@@ -215,6 +215,9 @@ one is a change to the plan, not a transcription of it.
 **To settle:** before S11 (the summary card), add it to `docs/divergences.md`
 as the next free D-number — workbook value $0 start, chosen value "no ending
 balance", reason the CONSTRAINTS.md floor (no silent 0), as D15 does.
+
+**Settled:** recorded as D17, marked as an engineering default stated to no
+one: it was never asked of the owner, nor told to them. F7 now cites it.
 
 ---
 
