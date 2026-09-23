@@ -432,7 +432,7 @@ leave any stored limit on the other lists untouched.
 
 ---
 
-## N20 — The period engine is narrower than the plan's §5.1 table, for now
+## N20 — The period engine is narrower than the plan's §5.1 table, for now *(settled in part 2026-09-23, S7)*
 
 **Seen:** 2026-09-23, S4a and S4b (the period engine).
 
@@ -457,6 +457,17 @@ it calls) with the budget columns; S10, S11 and S12b add the rest.
 so both landed then, in `summary`, with their own golden cells
 (`workbook-month-summary`: Jan!D11, D13, Feb!D11, Dec!D11, Weekly!D11, D13,
 Paycheck!D13), seen failing first. S7 and S10 keep the rest of their cells.
+
+**Settled in part:** S7 gives `monthSheet` the budget history and resolves
+it (`resolveBudgets`, D12), and gives every row its budget, a Remaining or
+Difference wherever F16 gives one (never on Income), and every block its
+budget total, with V21 and V9 (F16; `workbook-month` part 1). Still open: `monthSheet` takes monthly amounts
+already resolved (plan history, S9), the ending balance and the summary's
+income and saved (S11), and `shareBp` (S12b). `shareBp` was left for S12b,
+where §8 puts it, because what a share is of is a chart's question: the
+spending doughnut needs a row's part of its block, the income bars need
+Actual against Goal, and a refund can make a row, or a whole block,
+negative, which no slice of a doughnut can show.
 
 ---
 
@@ -617,3 +628,60 @@ every migration, in order, before merging.
 naming the fix, as `MOVE_FAILURES` does for 0006: "This needs a database
 update that has not been applied yet — see the migrations in the setup
 guide."
+
+---
+
+## N29 — ROADMAP still says the month view is not built
+
+**Seen:** 2026-09-23, S7 (the budget engine).
+
+`docs/ROADMAP.md`'s table of workbook features says the twelve month tabs
+are "To be built that way in the Workbook plan (S5b); not built yet". S5b
+built the Month screen, and S7 its budgets in the engine.
+
+**Why not fixed here:** S7 is engine work, and ROADMAP's other markers are
+out of date too (N10); fixing one line would leave the page half-current.
+
+**To settle:** with N10, bring ROADMAP up to what is built.
+
+---
+
+## N30 — A budget on a category in no block is dropped without a word
+
+**Seen:** 2026-09-23, S7 (the budget engine).
+
+`periodSheet` refuses a ledger row or a monthly amount that names a
+category it was not given. A budget for such a category, or for one on Not
+spending, is left out instead: it reaches no row and no total. 0008 has no
+check on the category's list, so a budget typed on a Variable row stays
+stored if the category moves to Not spending, is ignored while it is
+there, and counts again if the category moves back. Nothing reads budgets
+from the database yet, so nothing is wrong on screen today.
+
+**Why not fixed here:** S7 is the engine. What the owner should see when a
+budgeted category moves to Not spending is a Setup and Month question, and
+S8 is where budgets reach a screen.
+
+**To settle:** at S8, decide whether Setup says the budget is kept when a
+budgeted category moves to Not spending, and whether `periodSheet` should
+refuse a budget for a category it was not given, as it does ledger rows and
+monthly amounts, so a screen that reads categories and budgets at different
+moments fails loudly instead of showing a short total.
+
+---
+
+## N31 — CONSTRAINTS.md's measured figures are far below today's
+
+**Seen:** 2026-09-23, S7 (the budget engine).
+
+CONSTRAINTS.md's "Measured, not yet enforced" table gives 9 golden
+assertions and 283 tests as today's figures. At S7, `vitest run` runs 638
+tests, 39 of them in the golden files. Neither figure has fallen, so the
+ratchet holds, but a floor this far under the real count would not notice
+most of the suite being deleted.
+
+**Why not fixed here:** CONSTRAINTS.md changes go in their own commit, not
+inside a slice.
+
+**To settle:** in its own commit, re-measure both figures and write them
+in, dated.
