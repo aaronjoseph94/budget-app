@@ -55,6 +55,8 @@ export {
   type PeriodRow,
   type PeriodSheet,
   type PeriodSheetInput,
+  type SavingsBlock,
+  type VariableBlock,
 } from './period-sheet.js'
 
 export {

@@ -18,6 +18,14 @@
  *   summed; a row with no budget still subtracts its Actual.
  * - F6, the savings sign. `Jan!V10 =U10-T10`: Difference is Actual − Goal, the
  *   opposite sign to a spending row's Remaining, and kept that way.
+ * - F16, a missing budget or goal. Workbook reads a blank as 0 everywhere. Where
+ *   it has the column the engine does too, as a named branch: a Variable row
+ *   with no budget subtracts its whole Actual (V22), and a fund with no goal
+ *   shows what was saved (V11), so each column still adds up to its total
+ *   (V21, V9). Bills, debts and subscriptions have no Remaining in Workbook; the
+ *   app's is Budget − Actual where a budget is set and null where none is.
+ *   Income has Goal and Actual only (M8:P16). A budget total (D21, J21, O21,
+ *   T21, O9, T9) adds the budgets set, as SUM skips a blank.
  * - F7, Spent. `Jan!D11 =SUM(C19,I19,N19,S19)`: Bills + Debts + Subscriptions
  *   + Variable expenses, never savings.
  *
@@ -45,8 +53,9 @@
  * move it.
  *
  * F5 and F7's Spent are the first half of the tab's summary card, proven by
- * workbook-month-summary. F7's ending balance waits for the typed starting
- * balance (Sitting B, S11), and was left out rather than guessed.
+ * workbook-month-summary; budget totals, Remaining and Difference are proven by
+ * workbook-month. F7's ending balance waits for the typed starting balance
+ * (Sitting B, S11), and was left out rather than guessed.
  *
  * Signs (D3). The ledger is one signed column, outflows negative. Workbook writes
  * every amount positive and knows its direction from the log it sits in, so
@@ -111,17 +120,38 @@ export interface MonthSheetInput extends Omit<PeriodSheetInput, 'from' | 'to' | 
 export interface PeriodRow {
   readonly categoryId: string
   readonly name: string
+  /** Budgeted, or on Income and Savings the Goal. Null is no budget, not $0. */
   readonly budgetCents: Cents | null
   /** As Workbook shows it: spent, received or saved, positive; below zero after refunds. */
   readonly actualCents: Cents
   /** What made the Actual: ledger rows, a bill's planned amount (F3), or nothing. */
   readonly basis: 'real' | 'planned' | 'none'
+  /**
+   * Budget − Actual (Jan!V22), below zero when overspent, on Variable
+   * expenses, Bills, Debts and Subscriptions. Null on Income and Savings, and
+   * on a bill, debt or subscription with no budget (F16).
+   */
+  readonly remainingCents: Cents | null
+  /** Actual − Goal (F6, Jan!V10), below zero when short of the goal. Savings only; null elsewhere. */
+  readonly differenceCents: Cents | null
 }
 
 export interface PeriodBlock {
   /** Every category on the list, in list order, including those with nothing yet. */
   readonly rows: readonly PeriodRow[]
+  /** The rows' budgets or goals added up (Jan!D21, J21, O21, T21, O9, T9); a row with none adds nothing. */
+  readonly budgetTotalCents: Cents
   readonly actualTotalCents: Cents
+}
+
+/** Variable expenses, whose Remaining column has a total (Jan!V21): Left to spend. */
+export interface VariableBlock extends PeriodBlock {
+  readonly remainingTotalCents: Cents
+}
+
+/** Savings, whose Difference column has a total (Jan!V9): saved − goals. */
+export interface SavingsBlock extends PeriodBlock {
+  readonly differenceTotalCents: Cents
 }
 
 export interface PeriodSheet {
@@ -129,8 +159,8 @@ export interface PeriodSheet {
   readonly to: IsoDate
   readonly blocks: {
     readonly income: PeriodBlock
-    readonly savings: PeriodBlock
-    readonly variable: PeriodBlock
+    readonly savings: SavingsBlock
+    readonly variable: VariableBlock
     readonly bill: PeriodBlock
     readonly debt: PeriodBlock
     readonly subscription: PeriodBlock
@@ -139,7 +169,7 @@ export interface PeriodSheet {
   readonly summary: {
     /** F7: bills, debts, subscriptions and variable expenses; never savings or card payments. */
     readonly spentCents: Cents
-    /** F5: each Variable-expenses row's Budget − Actual, summed. Below zero when overspent. */
+    /** F5: the Variable block's Remaining total (Jan!D13 = V21). Below zero when overspent. */
     readonly leftToSpendCents: Cents
   }
   /** Net of the Not spending list: positive when money was paid to the card. Never in a total. */
@@ -212,26 +242,39 @@ export function periodSheet(input: PeriodSheetInput): PeriodSheet {
       .map((c): PeriodRow => {
         const real = byCategory.get(c.id)
         const budget = budgets.get(c.id)
-        const row = { categoryId: c.id, name: c.name, budgetCents: budget === undefined ? null : budget }
+        const budgetCents = budget === undefined ? null : budget
+        const row = (actualCents: Cents, basis: PeriodRow['basis']): PeriodRow => ({
+          categoryId: c.id,
+          name: c.name,
+          budgetCents,
+          actualCents,
+          basis,
+          remainingCents: remaining(kind, budgetCents, actualCents),
+          differenceCents: difference(kind, budgetCents, actualCents),
+        })
         if (real !== undefined) {
           const net = sumCents(real)
           // Subtracted from zero, not negated: -0 is not the 0 a screen or a
           // test expects for a purchase and its full refund.
-          return { ...row, actualCents: kind === 'income' ? net : cents(ZERO_CENTS - net), basis: 'real' }
+          return row(kind === 'income' ? net : cents(ZERO_CENTS - net), 'real')
         }
         // F3: the planned amount only when no real row is in the window.
         const planned = OWED.has(kind) ? plannedHere(plans.get(c.id)) : null
-        return planned === null
-          ? { ...row, actualCents: ZERO_CENTS, basis: 'none' }
-          : { ...row, actualCents: planned, basis: 'planned' }
+        return planned === null ? row(ZERO_CENTS, 'none') : row(planned, 'planned')
       })
-    return { rows, actualTotalCents: sumCents(rows.map((r) => r.actualCents)) }
+    return {
+      rows,
+      budgetTotalCents: sumCents(present(rows.map((r) => r.budgetCents))),
+      actualTotalCents: sumCents(rows.map((r) => r.actualCents)),
+    }
   }
 
+  const savings = block('savings')
+  const variable = block('variable')
   const blocks = {
     income: block('income'),
-    savings: block('savings'),
-    variable: block('variable'),
+    savings: { ...savings, differenceTotalCents: sumCents(present(savings.rows.map((r) => r.differenceCents))) },
+    variable: { ...variable, remainingTotalCents: sumCents(present(variable.rows.map((r) => r.remainingCents))) },
     bill: block('bill'),
     debt: block('debt'),
     subscription: block('subscription'),
@@ -243,14 +286,7 @@ export function periodSheet(input: PeriodSheetInput): PeriodSheet {
     blocks,
     summary: {
       spentCents: sumCents([blocks.bill, blocks.debt, blocks.subscription, blocks.variable].map((b) => b.actualTotalCents)),
-      leftToSpendCents: sumCents(
-        blocks.variable.rows.map((r) =>
-          // F5, not a fallback: Workbook's V22 is T22 − U22, and a blank T22 is
-          // read as 0 there, so a row with no budget still takes its Actual
-          // off what is left. The row itself keeps its null budget.
-          r.budgetCents === null ? subCents(ZERO_CENTS, r.actualCents) : subCents(r.budgetCents, r.actualCents),
-        ),
-      ),
+      leftToSpendCents: blocks.variable.remainingTotalCents,
     },
     transfersCents: sumCents(
       input.categories.flatMap((c) => {
@@ -263,6 +299,33 @@ export function periodSheet(input: PeriodSheetInput): PeriodSheet {
       null,
     ),
   }
+}
+
+/** Remaining, Budget − Actual (Jan!V22), on the lists that spend (F16). */
+function remaining(kind: CategoryKind, budget: Cents | null, actual: Cents): Cents | null {
+  if (kind === 'variable') {
+    // F5 and F16, not a fallback: V22 is T22 − U22 and reads a blank T22 as
+    // 0, so a row with no budget still takes its Actual off what is left.
+    // The row itself keeps its null budget.
+    return budget === null ? subCents(ZERO_CENTS, actual) : subCents(budget, actual)
+  }
+  // F16: Workbook has no Remaining on these lists. With no budget there is
+  // nothing to compare, and 0 − Actual would show Rent as overspent.
+  if (OWED.has(kind)) return budget === null ? null : subCents(budget, actual)
+  return null
+}
+
+/** Difference, Actual − Goal (F6, Jan!V10), on Savings only. */
+function difference(kind: CategoryKind, goal: Cents | null, actual: Cents): Cents | null {
+  if (kind !== 'savings') return null
+  // F16, not a fallback: V11 is U11 − T11 and reads a blank goal as 0, so a
+  // fund with no goal shows what went into it.
+  return goal === null ? actual : subCents(actual, goal)
+}
+
+/** The values that are there; a missing budget adds nothing to a total, as SUM skips a blank. */
+function present(values: readonly (Cents | null)[]): Cents[] {
+  return values.flatMap((v) => (v === null ? [] : [v]))
 }
 
 /**
