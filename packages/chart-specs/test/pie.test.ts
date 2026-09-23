@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { shareRing, yearPie, type PieSlice } from '../src/pie.js'
+import { debtRing, shareRing, yearPie, type PieSlice } from '../src/pie.js'
 
 /** Suite tests: coordinates worked by hand on the 3,000-unit grid, pie centred at (1500, 840), radius 800. */
 
@@ -64,5 +64,25 @@ describe('shareRing', () => {
     expect(paths(ring(0, 2)).map((p) => p[1])).toEqual(['#F3F5F6'])
     expect(paths(ring(100, 1)).map((p) => p[1])).toEqual(['#F3F5F6', '#A9D4D4'])
     expect(() => ring(100, 3)).toThrow(RangeError)
+  })
+})
+
+describe('debtRing', () => {
+  const ring = (paidBp: number) => debtRing({ id: 'debt', title: 'Car loan', description: 'Car loan: 25% paid.', paidBp, centreText: '25%' })
+
+  it("draws what is paid over a ring of what is left, in Home's debt colours, hole 50% (D25)", () => {
+    expect(paths(ring(2_500))).toEqual([
+      [
+        'M1500 100A1400 1400 0 0 1 1500 2900 A1400 1400 0 0 1 1500 100 Z M1500 800A700 700 0 0 1 1500 2200 A700 700 0 0 1 1500 800 Z',
+        '#9171D7',
+      ],
+      ['M1500 100A1400 1400 0 0 1 2900 1500L2200 1500A700 700 0 0 0 1500 800Z', '#C8B6EB'],
+    ])
+    expect(ring(2_500)).toContain('class="chart-debt-ink">25%</text>')
+  })
+
+  it('draws what is left alone with nothing paid, and all paid as one ring', () => {
+    expect(paths(ring(0)).map((p) => p[1])).toEqual(['#9171D7'])
+    expect(paths(ring(10_000))[1]?.[0]).toBe(paths(ring(10_000))[0]?.[0])
   })
 })

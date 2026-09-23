@@ -58,6 +58,17 @@ const SAVINGS: Palette = {
   ink: { fill: '#7C5512', class: 'chart-savings-ink' },
   keys: ['Goal', 'Saved'],
 }
+/**
+ * Home's debt chart (chart4, D25): what is left of each debt, #9171D7, over
+ * a track as long as its starting balance, #C8B6EB, and a purple ink of the
+ * chart's hue for words, since #9171D7 reads at 3.8 to one on white.
+ */
+const DEBTS: Palette = {
+  goal: { fill: '#C8B6EB', class: 'chart-debt-paid' },
+  actual: { fill: '#9171D7', class: 'chart-debt-left' },
+  ink: { fill: '#5B3FA8', class: 'chart-debt-ink' },
+  keys: ['Starting balance', 'Left to pay'],
+}
 const KEY = 220
 const ROW = 340
 /** 10 px thick at the designed size, with 4 px rounded ends. */
@@ -76,6 +87,15 @@ export function incomeBars(input: IncomeBarsInput): SvgMarkup {
  */
 export function savingsGoalBars(input: IncomeBarsInput): SvgMarkup {
   return drawBars(input, SAVINGS)
+}
+
+/**
+ * The Year's debts: each one's balance today over its starting balance
+ * (D25), every debt on one scale, the largest starting balance, as chart4's
+ * columns share one axis; core gives the lengths (`goalBars`).
+ */
+export function debtBars(input: IncomeBarsInput): SvgMarkup {
+  return drawBars(input, DEBTS)
 }
 
 function drawBars(input: IncomeBarsInput, palette: Palette): SvgMarkup {

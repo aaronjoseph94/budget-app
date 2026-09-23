@@ -132,6 +132,31 @@ export function shareRing(input: ShareRingInput): SvgMarkup {
   return frame(input, WIDTH, [...marks, el('text', text, [input.centreText])])
 }
 
+export interface DebtRingInput extends ChartFrame {
+  /** From core (`debtStatus`'s progressBp): what is paid, 0–10,000. */
+  readonly paidBp: number
+  /** What the hole says, e.g. "45%". */
+  readonly centreText: string
+}
+
+/**
+ * The Debt Calculator's doughnut (I495:I496: Balance Paid, Remaining
+ * Balance; holeSize 50) in Home's debt colours (D25): what is paid, #C8B6EB,
+ * clockwise from twelve o'clock over a ring of what is left, #9171D7.
+ */
+export function debtRing(input: DebtRingInput): SvgMarkup {
+  const c = WIDTH / 2
+  const paid = lengthOf(input.paidBp, 10_000)
+  const marks: SvgNode[] = [
+    el('path', { d: sector(c, c, RING, RING / 2, 0, 10_000), fill: '#9171D7', 'fill-rule': 'evenodd', class: 'chart-debt-left' }),
+  ]
+  if (paid > 0) {
+    marks.push(el('path', { d: sector(c, c, RING, RING / 2, 0, paid), fill: '#C8B6EB', 'fill-rule': 'evenodd', class: 'chart-debt-paid' }))
+  }
+  const text = { x: c, y: c + 150, 'text-anchor': 'middle', 'font-size': FONT * 4, fill: '#5B3FA8', class: 'chart-debt-ink' }
+  return frame(input, WIDTH, [...marks, el('text', text, [input.centreText])])
+}
+
 /**
  * A slice of a circle, or of a ring when `inner` is above zero, between two
  * points of the whole in basis points clockwise from twelve o'clock. A whole

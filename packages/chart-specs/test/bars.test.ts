@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { incomeBars, savingsGoalBars, type IncomeBar } from '../src/bars.js'
+import { debtBars, incomeBars, savingsGoalBars, type IncomeBar } from '../src/bars.js'
 
 /** Suite tests: lengths worked by hand on the 3,000-unit grid. */
 
@@ -93,5 +93,21 @@ describe('savingsGoalBars', () => {
     const svg = funds([bar('Trip & <fun>', 10_000, 0)])
     expect(svg).toContain('>Trip &amp; &lt;fun&gt;</text>')
     expect(svg).not.toContain('<fun>')
+  })
+})
+
+describe('debtBars', () => {
+  it("draws what is left of each debt over its starting balance, on one scale, keyed (D25)", () => {
+    // The largest starting balance is the scale: a loan half paid, and a
+    // card a fifth the size, untouched.
+    const svg = debtBars({ id: 'debts', title: 'Debts', description: 'd', bars: [bar('Loan', 10_000, 5_000), bar('Card <1>', 2_000, 2_000)] })
+    expect(rects(svg)).toEqual([
+      [390, '#C8B6EB', 3_000],
+      [390, '#9171D7', 1_500],
+      [730, '#C8B6EB', 600],
+      [730, '#9171D7', 600],
+    ])
+    expect(svg).toContain('class="chart-debt-ink">Left to pay</text>')
+    expect(svg).toContain('>Card &lt;1&gt;</text>')
   })
 })
