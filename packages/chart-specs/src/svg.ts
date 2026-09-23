@@ -20,16 +20,31 @@
 export type SvgMarkup = string & { readonly __brand: 'SvgMarkup' }
 
 /**
- * An element `el` built. A class, not a string, so that a child can be told
- * apart from text at run time: a string child is always escaped, and only an
- * instance of this is trusted. Only `el` makes one, and the package's index
- * does not export it, so nothing outside can hand one in.
+ * An element `el` built. An object, not a string, so that a child can be
+ * told apart from text at run time: a string child is always escaped, and
+ * only a node `el` built is trusted. Being shaped like one is not enough:
+ * `el` records every node it makes, and anything else handed in as a child
+ * or to `finish` is refused, so no file here can write a tag by hand.
  */
-export class SvgNode {
-  constructor(readonly markup: string) {}
+export interface SvgNode {
+  readonly markup: string
 }
 
 export type SvgChild = SvgNode | string
+
+// Every node `el` has made. Private to this file, so nothing else can add one.
+const BUILT = new WeakSet<SvgNode>()
+
+function built(markup: string): SvgNode {
+  const node = Object.freeze({ markup })
+  BUILT.add(node)
+  return node
+}
+
+function trusted(node: SvgNode): string {
+  if (!BUILT.has(node)) throw new TypeError('Only el builds markup; this node was made some other way')
+  return node.markup
+}
 
 // Element and attribute names are this package's constants, never input; the
 // check makes a mistake loud rather than a malformed document.
@@ -66,12 +81,12 @@ export function el(
     return ` ${key}="${escapeXml(String(value))}"`
   })
   const open = `<${name}${attrs.join('')}`
-  if (children.length === 0) return new SvgNode(`${open}/>`)
-  const inner = children.map((c) => (c instanceof SvgNode ? c.markup : escapeXml(c))).join('')
-  return new SvgNode(`${open}>${inner}</${name}>`)
+  if (children.length === 0) return built(`${open}/>`)
+  const inner = children.map((c) => (typeof c === 'string' ? escapeXml(c) : trusted(c))).join('')
+  return built(`${open}>${inner}</${name}>`)
 }
 
 /** The finished string for an `svg` element built by `el`. */
 export function finish(root: SvgNode): SvgMarkup {
-  return root.markup as SvgMarkup
+  return trusted(root) as SvgMarkup
 }

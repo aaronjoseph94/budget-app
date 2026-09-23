@@ -49,6 +49,14 @@ describe('el', () => {
     expect(() => el('rect', { width: Number.NaN })).toThrow(RangeError)
   })
 
+  // A node is trusted because el made it, not because it looks like one: a
+  // hand-written tag would otherwise go into the page unescaped.
+  it('refuses a node it did not build, as a child or as the whole chart', () => {
+    const forged = { markup: '<script>alert(1)</script>' }
+    expect(() => el('g', {}, [forged])).toThrow('Only el builds markup')
+    expect(() => finish(forged)).toThrow(TypeError)
+  })
+
   it('refuses an element or attribute name that is not a name', () => {
     expect(() => el('g onload', {})).toThrow('Not an element name: g onload')
     expect(() => el('g', { 'x="1" y': 2 })).toThrow('Not an attribute name: x="1" y')
