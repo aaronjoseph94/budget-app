@@ -23,7 +23,7 @@ describe('spendingDoughnut', () => {
 
   it('is its title and description, then the ring, then a legend row per category', () => {
     const svg = chart([slice('a', 10_000, 0), slice('b', 0, 1)])
-    expect(svg).toMatch(/^<svg [^>]*viewBox="0 0 3000 1980" [^>]*aria-labelledby="spend-title spend-desc"/)
+    expect(svg).toMatch(/^<svg [^>]*viewBox="0 0 3000 1980" [^>]*aria-labelledby="spend-title" aria-describedby="spend-desc"/)
     expect(svg).toContain('<title id="spend-title">Variable expenses by category</title><desc id="spend-desc">')
     expect([...svg.matchAll(/<text x="160" y="(\d+)"/g)].map((m) => m[1])).toEqual(['1540', '1740'])
   })

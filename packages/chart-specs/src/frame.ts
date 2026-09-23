@@ -38,7 +38,8 @@ const ID = /^[A-Za-z][A-Za-z0-9_-]*$/
 /**
  * The outer `svg`: an image whose accessible name is its title and whose
  * description is its desc, both escaped text, sized in units and drawn at
- * a tenth of that in pixels unless the page scales it.
+ * a tenth of that in pixels unless the page scales it. Named and described
+ * separately: naming it by both would read every value as its name.
  */
 export function frame(chart: ChartFrame, height: number, children: readonly SvgChild[]): SvgMarkup {
   if (!ID.test(chart.id)) throw new RangeError(`A chart id must be letters, digits, "-" and "_": ${chart.id}`)
@@ -51,7 +52,8 @@ export function frame(chart: ChartFrame, height: number, children: readonly SvgC
         width: WIDTH / 10,
         height: Math.ceil(height / 10),
         role: 'img',
-        'aria-labelledby': `${chart.id}-title ${chart.id}-desc`,
+        'aria-labelledby': `${chart.id}-title`,
+        'aria-describedby': `${chart.id}-desc`,
         class: 'workbook-chart',
         'font-family': 'ui-sans-serif, system-ui, sans-serif',
         'font-size': FONT,
