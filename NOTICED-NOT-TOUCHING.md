@@ -683,6 +683,11 @@ sentences (`describeBudgetFailure`). A missing `category_budgets` table
 and a read never says "nothing was saved". Still open: every other read,
 and 42703 and PGRST202 in `describeWriteFailure`.
 
+**Updated 2026-09-23, S11:** the Month's starting balance has its own
+sentences too (`describeBalanceFailure`): a missing `month_balances` says
+0010 has not been applied, and its read shows no month rather than ask for
+a balance that may be stored.
+
 ---
 
 ## N29 — ROADMAP still says the month view is not built
