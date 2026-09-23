@@ -476,3 +476,38 @@ unlikely, and reloading shows the right total.
 after the last row seen) or one server-side read, a larger change than S4c's.
 
 **To settle:** page by key rather than offset, and keep the exact-count check.
+
+---
+
+## N23 — The Month says where statements end, not where they begin
+
+**Seen:** 2026-09-23, S5b, running a real statement through the reader.
+
+A card statement runs across two months (for example Aug 8 – Sep 7). After
+importing only that one, August's Month says "Statement imported up to 7 Sep
+2026", which is true, but August 1–7 came from the statement before, which
+was never imported. The month looks complete and is short by a week.
+
+**Why not fixed here:** saying it needs the earliest period start as well as
+the latest end, and a rule for gaps between statements; that is engine work
+(`importedThrough` gives only the latest end) beyond S5b's screen.
+
+**To settle:** have core return the covered span, or the uncovered days, for
+the month, and have the Month say "Aug 1–7 not imported yet" when a gap is
+inside it.
+
+---
+
+## N24 — A home-screen icon added before S5a still opens on Week
+
+**Seen:** 2026-09-23, S5a.
+
+The manifest's start address changed from `/#/week` to `/`, so that the app
+reopens on the last month shown. An iPhone keeps the start address it saw
+when the icon was added, so an icon added earlier keeps opening Week.
+
+**Why not fixed here:** the app cannot change an installed icon, and
+rewriting `#/week` on open would break asking for Week on purpose.
+
+**To settle:** tell the owner once: remove the icon and add it again from
+Safari's Share menu.
