@@ -1397,3 +1397,44 @@ reached, nothing more to save" (a D-entry and a `savingsFundPlan` status).
 For the second, have linking a goal that already has a `balance_as_of`
 first write its kept balance as the typed amount, and keep Settings from
 editing any goal with a `category_id`.
+
+---
+
+## N56 — The Rogers statement's balance does not reach the Debts screen
+
+**Seen:** 2026-09-23, S17.
+
+Plan §10 item 12 says the statement already prints its New Balance, which
+reconciliation parses, so it could feed the Debts screen with no typing,
+and that this and a "Bank / cash" account were "settled at S17". S17 did
+neither: a debt is typed (starting balance, minimum, APR, start month),
+as Workbook's are, and typed pay and savings still land in "Main Card".
+
+**Why not fixed here:** feeding a statement balance into a debt changes
+what its balance means (a schedule from a typed start, F22, against the
+card's printed figure each month), which is N53's question in another
+form, and an account needs a migration and the owner's say.
+
+**To settle:** with N53. If the owner chooses B or C there, the card's
+New Balance can be the balance a debt restarts from each statement; the
+account question goes with the first per-account figure.
+
+---
+
+## N57 — Three Debts defaults the owner has not been told
+
+**Seen:** 2026-09-23, S17.
+
+1. **"Paid this month"** on the summary is the schedule's payments for
+   this month (the Debt Calculator's E column), not what was recorded;
+   Workbook's E18 shows the first month's instead.
+2. **The Year's debt chart shows today's balances** whichever year is
+   shown, as its savings chart does, and as Home's H9 reads TODAY().
+3. **Snowball and avalanche spend the same monthly amount** as the
+   minimums-only plan (F23): nothing extra is assumed, so a person with
+   more to put toward debt types it as extra payments.
+
+**Why not fixed here:** each follows the workbook or a recorded
+decision; none is a wrong number, but the owner would notice them.
+
+**To settle:** tell the owner once.
