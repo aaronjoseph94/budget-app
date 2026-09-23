@@ -110,6 +110,21 @@ describe('WeekScreen', () => {
     expect(await cells('Bills', 'Rent')).toEqual(['', '1,600.00planned', ''])
   })
 
+  // Monday 23 February to Sunday 1 March: the rent typed from March, due on
+  // the 1st, is paid in this week though the week starts in February (D13).
+  it("reads the monthly amounts of a week's last month when it runs across a month end", async () => {
+    const fake = seeded()
+    fake.tables.categories.push({ id: 'rent', name: 'Rent', kind: 'bill', sort_order: 0, weekly_budget_cents: null })
+    fake.tables.category_plans.push({ id: 'pl1', category_id: 'rent', effective_month: '2026-03-01', planned_cents: 170000, due_day: 1 })
+    renderScreen(<WeekScreen />, fake)
+    expect(await summary('Spent')).toBe('$130.12')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Previous week' }))
+    await waitFor(async () => expect(await summary('Spent')).toBe('$99.99'))
+    fireEvent.click(screen.getByRole('button', { name: 'Previous week' }))
+    await waitFor(async () => expect(await cells('Bills', 'Rent')).toEqual(['', '1,700.00planned', '']))
+  })
+
   // Hand-derived: 8,450 of 30,000 is 28% with 21,550 to go; 21,550 over the
   // two weeks to 25 March is 10,775 a week; 130.12 at 275.00 an hour is 28 min.
   it('shows the goal, what it needs each week, and the week as goal time', async () => {
