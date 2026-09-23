@@ -60,13 +60,14 @@ const PHONE_TABS: readonly Tab[] = [
   { screen: 'more', label: 'More', icon: 'menu' },
 ]
 
-/** Wide screens have room for Paycheck, the Bill calendar, Year and Setup on the bar itself (§6.1). */
+/** Wide screens have room for Paycheck, the Bill calendar, Year, Savings and Setup on the bar itself (§6.1). */
 const DESKTOP_TABS: readonly Tab[] = [
   { screen: 'month', label: 'Month', icon: 'calendar' },
   { screen: 'week', label: 'Week', icon: 'week' },
   { screen: 'paycheck', label: 'Paycheck', icon: 'wallet' },
   { screen: 'calendar', label: 'Bills', icon: 'bills' },
   { screen: 'year', label: 'Year', icon: 'calendar' },
+  { screen: 'savings', label: 'Savings', icon: 'piggy' },
   { screen: 'review', label: 'Review', icon: 'inbox' },
   { screen: 'add', label: 'Add', icon: 'plus' },
   { screen: 'setup', label: 'Setup', icon: 'list' },
@@ -95,7 +96,9 @@ export function Shell() {
   return (
     <div className="min-h-full">
       <header className="safe-top sticky top-0 z-20 hidden border-b bg-background/85 backdrop-blur md:block">
-        <div className={cn('mx-auto flex h-14 items-center justify-between px-4', width)}>
+        {/* The bar takes the wide width on every screen: a narrow screen's
+          768 held nine tabs' words only by running past its edge. */}
+        <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 lg:max-w-7xl">
           <span className="font-semibold tracking-tight">Budget</span>
           <nav aria-label="Screens" className="flex gap-1">
             {DESKTOP_TABS.map((t) => {
@@ -113,10 +116,10 @@ export function Shell() {
                   )}
                 >
                   <Icon name={t.icon} className="size-4" />
-                  {/* Nine tabs with their words need about 930px; a tablet's
-                    768 has room for the icons, and each keeps its name as
-                    its label, so the words come back from 1024px. */}
-                  <span className="hidden lg:inline">{t.label}</span>
+                  {/* A tablet's 768 has room for the icons only, and each keeps
+                    its name as its label; ten with their words need about 960px
+                    beside the name, so the words come back from 1280px. */}
+                  <span className="hidden xl:inline">{t.label}</span>
                   {t.screen === 'review' && pendingTotal > 0 ? <Count n={pendingTotal} /> : null}
                 </button>
               )

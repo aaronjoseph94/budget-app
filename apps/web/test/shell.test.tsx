@@ -55,14 +55,14 @@ describe('Shell', () => {
     expect(window.location.hash).toBe('#/month/2026-01')
   })
 
-  it('keeps Paycheck, the Bill calendar, Year, Setup, All transactions and Settings under More, and lights More while they show', async () => {
+  it('keeps Paycheck, the Bill calendar, Year, Savings, Setup, All transactions and Settings under More, and lights More while they show', async () => {
     renderScreen(<Shell />, createFakeSupabase())
     fireEvent.click(within(phoneBar()).getByRole('button', { name: 'More' }))
     expect(window.location.hash).toBe('#/more')
     go('/more')
 
     const items = (await screen.findAllByRole('listitem')).map((li) => li.querySelector('.font-medium')?.textContent)
-    expect(items).toEqual(['Paycheck', 'Bill calendar', 'Year', 'Setup', 'All transactions', 'Settings'])
+    expect(items).toEqual(['Paycheck', 'Bill calendar', 'Year', 'Savings', 'Setup', 'All transactions', 'Settings'])
 
     fireEvent.click(screen.getByRole('button', { name: /All transactions/ }))
     expect(window.location.hash).toBe('#/ledger')
@@ -80,9 +80,21 @@ describe('Shell', () => {
     expect(within(phoneBar()).getByRole('button', { name: 'More' }).getAttribute('aria-current')).toBe('page')
     const desktopBar = screen.getAllByRole('navigation', { name: 'Screens' })[0]!
     expect(within(desktopBar).getAllByRole('button').map((b) => b.textContent)).toEqual([
-      'Month', 'Week', 'Paycheck', 'Bills', 'Year', 'Review', 'Add', 'Setup', 'More',
+      'Month', 'Week', 'Paycheck', 'Bills', 'Year', 'Savings', 'Review', 'Add', 'Setup', 'More',
     ])
     expect(within(desktopBar).getByRole('button', { name: 'Year' }).getAttribute('aria-current')).toBe('page')
+  })
+
+  it('opens Savings from More on a phone, and from the bar on a desktop', async () => {
+    renderScreen(<Shell />, createFakeSupabase())
+    go('/more')
+    fireEvent.click(within(await screen.findByRole('list')).getByRole('button', { name: /^Savings/ }))
+    expect(window.location.hash).toBe('#/savings')
+    go('/savings')
+    expect(await screen.findByRole('heading', { name: 'Savings goals' })).toBeTruthy()
+    const desktopBar = screen.getAllByRole('navigation', { name: 'Screens' })[0]!
+    expect(within(desktopBar).getByRole('button', { name: 'Savings' }).getAttribute('aria-current')).toBe('page')
+    expect(within(phoneBar()).getByRole('button', { name: 'More' }).getAttribute('aria-current')).toBe('page')
   })
 
   it('opens the Bill calendar from More on a phone, and from the bar on a desktop, at this month', async () => {
