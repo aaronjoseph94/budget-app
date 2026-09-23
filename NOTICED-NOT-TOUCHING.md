@@ -1363,3 +1363,32 @@ start date); B — months from today to the goal date, so the figure is what
 the rest of the goal needs each remaining month; C — keep the start date,
 but divide what was needed on the start date. B or C is a D-entry and a
 change to `savingsFundPlan` only.
+
+---
+
+## N55 — Two things a savings card can still show oddly
+
+**Seen:** 2026-09-23, reviewing S16.
+
+- **A fund past its goal, with both dates, shows a negative monthly
+  contribution** (for example -$1.66), beside "goal reached". That is what
+  Workbook's Savings!Z14 `=IFERROR((F14-J14)/V14, 0)` gives too, and
+  `savingsFundPlan` copies it on purpose (F21, its tests pin -250), but a
+  minus sign on "what to save each month" reads oddly.
+- **A goal whose category moved off Savings, then linked to another fund,**
+  keeps only the amount typed on its old day: the "Use … for this fund"
+  button sets `balance_as_of` to today, so transfers into its old category
+  between that day and today are dropped. The same goal, while on no fund,
+  also opens Settings' old form (when it is the oldest goal), which writes
+  `saved_cents` without a day.
+
+**Why not fixed here:** the first departs from the workbook, which needs
+the owner; the second needs a rule for what a re-linked goal's balance
+should be.
+
+**To settle:** ask the owner, for the first: A — keep Workbook's negative
+figure; B — show no monthly figure once the goal is reached and say "goal
+reached, nothing more to save" (a D-entry and a `savingsFundPlan` status).
+For the second, have linking a goal that already has a `balance_as_of`
+first write its kept balance as the typed amount, and keep Settings from
+editing any goal with a `category_id`.
