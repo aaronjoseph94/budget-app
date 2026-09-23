@@ -752,6 +752,194 @@ end $$;
 
 reset role;
 
+-- ---------------------------------------------------------------------------
+-- 0009: a bill's monthly amount and the day it is paid
+-- ---------------------------------------------------------------------------
+-- The trigger on categories reads today's month, so these plans start in 2020
+-- (always in effect by now) or in 2999 (always still to come), and the result
+-- is the same whatever day the gate runs.
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000000003', '11111111-1111-4111-8111-111111111111', 'Rent', 'bill'),
+  ('cccccccc-0000-4000-8000-000000000004', '11111111-1111-4111-8111-111111111111', 'Gym Membership', 'bill'),
+  ('cccccccc-0000-4000-8000-000000000005', '11111111-1111-4111-8111-111111111111', 'Old Phone', 'bill');
+
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+
+do $$
+declare
+  u       uuid := '11111111-1111-4111-8111-111111111111';
+  coffee  uuid := 'cccccccc-0000-4000-8000-000000000001';
+  theirs  uuid := 'cccccccc-0000-4000-8000-000000000201';
+  rent    uuid := 'cccccccc-0000-4000-8000-000000000003';
+  gym     uuid := 'cccccccc-0000-4000-8000-000000000004';
+  phone   uuid := 'cccccccc-0000-4000-8000-000000000005';
+  gone    uuid;
+  n       int;
+begin
+  -- The browser sets and retypes an amount as plain upserts under RLS.
+  insert into public.category_plans (user_id, category_id, effective_month, planned_cents, due_day)
+    values (u, rent, '2020-01-01', 160000, 1);
+  insert into public.category_plans (user_id, category_id, effective_month, planned_cents, due_day)
+    values (u, rent, '2020-01-01', 165000, 1)
+    on conflict (user_id, category_id, effective_month)
+    do update set planned_cents = excluded.planned_cents, due_day = excluded.due_day;
+  if (select planned_cents from public.category_plans
+       where category_id = rent and effective_month = '2020-01-01') <> 165000 then
+    raise exception 'retyping a monthly amount did not replace it';
+  end if;
+
+  -- A blank day paid is allowed, and so is a stop (no amount from a month).
+  insert into public.category_plans (user_id, category_id, effective_month, planned_cents, due_day)
+    values (u, phone, '2020-01-01', 5000, null), (u, phone, '2020-06-01', null, null),
+           (u, gym, '2020-01-01', null, 15), (u, gym, '2999-01-01', 4000, 15);
+
+  begin
+    insert into public.category_plans (user_id, category_id, effective_month, planned_cents)
+      values (u, rent, '2020-02-02', 100);
+    raise exception 'NOT REFUSED: a plan month that is not the first of a month';
+  exception when check_violation then null;
+  end;
+
+  begin
+    insert into public.category_plans (user_id, category_id, effective_month, planned_cents)
+      values (u, rent, '2020-02-01', -1);
+    raise exception 'NOT REFUSED: a negative monthly amount';
+  exception when check_violation then null;
+  end;
+
+  begin
+    insert into public.category_plans (user_id, category_id, effective_month, planned_cents, due_day)
+      values (u, rent, '2020-02-01', 100, 0);
+    raise exception 'NOT REFUSED: day paid 0';
+  exception when check_violation then null;
+  end;
+
+  begin
+    insert into public.category_plans (user_id, category_id, effective_month, planned_cents, due_day)
+      values (u, rent, '2020-02-01', 100, 32);
+    raise exception 'NOT REFUSED: day paid 32';
+  exception when check_violation then null;
+  end;
+
+  begin
+    insert into public.category_plans (user_id, category_id, effective_month, planned_cents)
+      values (u, rent, '2020-01-01', 100);
+    raise exception 'NOT REFUSED: two plans for one category from one month';
+  exception when unique_violation then null;
+  end;
+
+  -- Only a bill, a debt or a subscription has a monthly amount, whether the
+  -- row is written new or changed to point at another category.
+  begin
+    insert into public.category_plans (user_id, category_id, effective_month, planned_cents)
+      values (u, coffee, '2020-01-01', 100);
+    raise exception 'NOT REFUSED: a monthly amount on a Variable expenses category';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.category_plans set category_id = coffee where category_id = rent;
+    raise exception 'NOT REFUSED: a plan moved onto a Variable expenses category';
+  exception when check_violation then null;
+  end;
+
+  -- Another user's category is refused by the composite key, not reported as
+  -- the wrong list: the trigger cannot see it, and says nothing about it.
+  begin
+    insert into public.category_plans (user_id, category_id, effective_month, planned_cents)
+      values (u, theirs, '2020-01-01', 100);
+    raise exception 'NOT REFUSED: a plan on another user''s category';
+  exception when foreign_key_violation then null;
+  end;
+
+  begin
+    insert into public.category_plans (user_id, category_id, effective_month, planned_cents)
+      values ('22222222-2222-4222-8222-222222222222', theirs, '2020-01-01', 100);
+    raise exception 'RLS: a plan was written under another user''s id';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- A category with an amount in effect keeps its list, to any other list.
+  begin
+    update public.categories set kind = 'variable' where id = rent;
+    raise exception 'NOT REFUSED: a bill with a monthly amount moved to Variable expenses';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.categories set kind = 'subscription' where id = rent;
+    raise exception 'NOT REFUSED: a bill with a monthly amount moved to Subscriptions';
+  exception when check_violation then null;
+  end;
+  -- So does one with an amount set for a later month.
+  begin
+    update public.categories set kind = 'variable' where id = gym;
+    raise exception 'NOT REFUSED: a bill with an amount starting later moved list';
+  exception when check_violation then null;
+  end;
+
+  -- Renaming, reordering and writing the list it is already on are not moves,
+  -- and a plan stopped in the past no longer holds its category.
+  update public.categories set name = 'Rent and Parking', sort_order = 3 where id = rent;
+  update public.categories set kind = 'bill' where id = rent;
+  update public.categories set kind = 'variable' where id = phone;
+  if (select kind from public.categories where id = phone) <> 'variable' then
+    raise exception 'a bill whose amount was stopped could not move list';
+  end if;
+
+  -- A removed category takes its plans with it.
+  insert into public.categories (user_id, name, kind) values (u, 'Gone Bill', 'bill')
+    returning id into gone;
+  insert into public.category_plans (user_id, category_id, effective_month, planned_cents)
+    values (u, gone, '2020-01-01', 100);
+  delete from public.categories where id = gone;
+  if exists (select 1 from public.category_plans where category_id = gone) then
+    raise exception 'a removed category left its plan behind';
+  end if;
+
+  perform set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',false);
+  select count(*) into n from public.category_plans;
+  if n <> 0 then raise exception 'RLS LEAK: another user saw % plans', n; end if;
+  perform set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+
+  raise notice 'a monthly amount is dated, lives on a bill, debt or subscription, and holds that list';
+end $$;
+
+reset role;
+
+-- The two triggers each read the other's table, so on two devices a plan and
+-- a move could each pass their own check before either commits. Writing a
+-- plan holds its category FOR SHARE; a second connection (dblink, in a schema
+-- of its own so public stays as the migrations left it) then tries to move
+-- that category. It must wait for the plan, and is told to wait 200ms at most.
+-- Nothing here is timed: this session holds the lock until the block ends,
+-- so the move either waits and times out, or it never waited at all.
+create schema test_tools;
+create extension dblink schema test_tools;
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000000006', '11111111-1111-4111-8111-111111111111', 'Water Bill', 'bill');
+
+do $$
+declare
+  water uuid := 'cccccccc-0000-4000-8000-000000000006';
+begin
+  perform test_tools.dblink_connect('other', format('host=%s port=%s dbname=%s user=postgres',
+    split_part(current_setting('unix_socket_directories'), ',', 1),
+    current_setting('port'), current_database()));
+  perform test_tools.dblink_exec('other', 'set lock_timeout = ''200ms''');
+
+  insert into public.category_plans (user_id, category_id, effective_month, planned_cents)
+    values ('11111111-1111-4111-8111-111111111111', water, '2020-01-01', 4500);
+  begin
+    perform test_tools.dblink_exec('other',
+      format('update public.categories set kind = ''variable'' where id = %L', water));
+    raise exception 'RACE: a category moved list while a plan on it was still being written';
+  exception when lock_not_available then null;
+  end;
+
+  perform test_tools.dblink_disconnect('other');
+  raise notice 'a plan being written holds its category''s list until it commits';
+end $$;
+
 -- The anonymous role — anyone holding the published key — cannot call any of
 -- these at all.
 do $$
