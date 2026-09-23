@@ -81,7 +81,6 @@ const part2 = loadGolden<Input2, MonthCase[]>('workbook-period-part2')
 describe('bills, debts and subscriptions replay Workbook (workbook-period part 2)', () => {
   const shared = {
     categories: part2.input.categories,
-    budgets: [],
     plans: part2.input.plans,
     entries: part2.input.entries.map((e) => ({ ...e, postedOn: isoDate(e.postedOn) })),
     statementPeriodEnds: [],
@@ -89,8 +88,8 @@ describe('bills, debts and subscriptions replay Workbook (workbook-period part 2
   for (const c of part2.expected) {
     const sheet =
       c.asOf === undefined
-        ? periodSheet({ ...shared, from: isoDate(c.from!), to: isoDate(c.to!) })
-        : monthSheet({ ...shared, asOf: isoDate(c.asOf) })
+        ? periodSheet({ ...shared, budgets: [], from: isoDate(c.from!), to: isoDate(c.to!) })
+        : monthSheet({ ...shared, budgetHistory: [], asOf: isoDate(c.asOf) })
     it.each(c.cells)(`${c.window ?? c.month} → $cell = $actualCents`, (cell) => {
       expect(actualOf(sheet, cell)).toBe(cell.actualCents)
     })

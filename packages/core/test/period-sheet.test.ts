@@ -218,7 +218,9 @@ describe('periodSheet bills, debts and subscriptions (suite)', () => {
 describe('monthSheet (suite)', () => {
   it('runs the calendar month holding asOf, both ends included', () => {
     const s = monthSheet({
-      ...BASE,
+      categories: CATEGORIES,
+      budgetHistory: [],
+      statementPeriodEnds: [],
       asOf: isoDate('2028-02-17'),
       plans: [plan('rent', 160_000, 31)],
       entries: [row('2028-01-31', -100, 'food'), row('2028-02-29', -200, 'food'), row('2028-03-01', -400, 'food')],

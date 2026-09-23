@@ -51,7 +51,13 @@ describe("the summary card replays Workbook's Spent and Left to spend (workbook-
     const sheet =
       c.asOf === undefined
         ? periodSheet({ ...shared, budgets: c.budgets, from: isoDate(c.from!), to: isoDate(c.to!) })
-        : monthSheet({ ...shared, budgets: c.budgets, asOf: isoDate(c.asOf) })
+        : monthSheet({
+            ...shared,
+            // What is typed on a month tab is that tab's alone. Each asOf is
+            // the tab's first day, which names its month.
+            budgetHistory: c.budgets.map((b) => ({ ...b, month: isoDate(c.asOf!), applies: 'only' as const })),
+            asOf: isoDate(c.asOf),
+          })
     it.each(c.cells)(`${c.window} → $cell = $cents`, (cell) => {
       expect(sheet.summary[cell.field]).toBe(cell.cents)
     })

@@ -33,8 +33,9 @@
  *   REGEXMATCH), so a blank due day never counts in one. A due day of 29–31
  *   counts on the last day of a shorter month (D6).
  *
- * Plans and budgets arrive already resolved for the window: which amount is in
- * effect in which month (D12, D13) is read from tables Sitting B adds.
+ * periodSheet takes plans and budgets already resolved for its window.
+ * monthSheet resolves budgets itself, from everything typed (resolveBudgets,
+ * D12); which monthly amount is in effect in which month (D13) waits for S9.
  *
  * Card payments (the Not spending list) are in no block and no total; their
  * net is reported alone so the screen can say what was left out (D9). Workbook
@@ -55,6 +56,7 @@
  * and that minus sign is kept (D8).
  */
 import { type Cents, type IsoDate, ZERO_CENTS, cents, subCents, sumCents } from '@budget/money-primitives'
+import { type BudgetHistoryRow, resolveBudgets } from './budgets.js'
 import { type CategoryKind, monthBounds, shiftMonth } from './week.js'
 
 export interface PeriodCategory {
@@ -99,9 +101,11 @@ export interface PeriodSheetInput {
   readonly statementPeriodEnds: readonly IsoDate[]
 }
 
-export interface MonthSheetInput extends Omit<PeriodSheetInput, 'from' | 'to'> {
+export interface MonthSheetInput extends Omit<PeriodSheetInput, 'from' | 'to' | 'budgets'> {
   /** Any day of the month to show. */
   readonly asOf: IsoDate
+  /** Every budget and goal typed, for any month (0008); resolved here for this one. */
+  readonly budgetHistory: readonly BudgetHistoryRow[]
 }
 
 export interface PeriodRow {
@@ -275,9 +279,13 @@ function dueInWindow(day: number, from: IsoDate, to: IsoDate): boolean {
   return false
 }
 
-/** One Workbook month tab: periodSheet over the calendar month holding `asOf`. */
+/**
+ * One Workbook month tab: periodSheet over the calendar month holding `asOf`,
+ * with the budgets and goals in effect that month (D12).
+ */
 export function monthSheet(input: MonthSheetInput): PeriodSheet {
-  const { asOf, ...rest } = input
+  const { asOf, budgetHistory, ...rest } = input
   const { start, end } = monthBounds(asOf)
-  return periodSheet({ ...rest, from: start, to: end })
+  const { budgets } = resolveBudgets({ asOf, history: budgetHistory })
+  return periodSheet({ ...rest, budgets, from: start, to: end })
 }

@@ -55,8 +55,9 @@ export function MonthScreen({ month }: { month: string | null }) {
       return monthSheet({
         asOf: start,
         categories: categories.map((c) => ({ id: c.id, name: c.name, kind: c.kind, sortOrder: c.sort_order })),
-        // Budgets and monthly amounts are stored from Sitting B (S8, S9).
-        budgets: [],
+        // Budgets and monthly amounts are stored from Sitting B, and read
+        // here from S8 and S9.
+        budgetHistory: [],
         plans: [],
         entries: here.rows.map((r) => ({
           postedOn: isoDate(r.posted_on),
