@@ -1,24 +1,69 @@
-import { isoDate, monthBounds, shiftMonth } from '@budget/core'
+import { useEffect, useMemo, useState } from 'react'
+import { isoDate, monthBounds, monthSheet, shiftMonth, type PeriodBlock, type PeriodSheet } from '@budget/core'
+import { useAppData } from '../app-data.js'
+import { listTransactions, type LedgerRow } from '../ledger.js'
+import { LIST_HEADING } from '../lists.js'
 import { navigate } from '../nav.js'
-import { formatMonthTitle, todayIso } from '../format.js'
+import { formatCents, formatMonthTitle, todayIso } from '../format.js'
+import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
-import { MonthTitle } from '../components/ui/type.js'
+import { Figure, MonthTitle } from '../components/ui/type.js'
+import { cn } from '../lib/cn.js'
 
 /**
- * One Workbook month tab (plan §6.2). `month` is the address's `YYYY-MM`, or
- * null for this month; the arrows step through shiftMonth in packages/core
+ * One Workbook month tab (plan §6.2, §6.3). `month` is the address's `YYYY-MM`,
+ * or null for this month; the arrows step through shiftMonth in packages/core
  * and write the month they land on into the address, so a refresh or the
  * back gesture returns to it.
+ *
+ * Every number is monthSheet's, from packages/core, over the whole month's
+ * ledger; this screen only formats them. Nothing unreviewed is in it.
  */
 export function MonthScreen({ month }: { month: string | null }) {
-  const first = monthBounds(isoDate(month === null ? todayIso() : `${month}-01`)).start
-  const step = (months: number) => navigate('month', shiftMonth(first, months).slice(0, 7))
+  const { supabase, categories, version } = useAppData()
+  const { start, end } = monthBounds(isoDate(month === null ? todayIso() : `${month}-01`))
+  const step = (months: number) => navigate('month', shiftMonth(start, months).slice(0, 7))
+  const [loaded, setLoaded] = useState<{ start: string; rows: readonly LedgerRow[] } | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let live = true
+    setError(null)
+    listTransactions(supabase, { from: start, to: end })
+      .then((rows) => live && setLoaded({ start, rows }))
+      .catch((e: unknown) => live && setError(e instanceof Error ? e.message : 'Could not load this month.'))
+    return () => {
+      live = false
+    }
+  }, [supabase, start, end, version])
+
+  // A month's rows only ever fill that month: while the next one loads, the
+  // screen waits rather than show last month's charges under this title.
+  const rows = loaded !== null && loaded.start === start ? loaded.rows : null
+  const sheet = useMemo((): PeriodSheet | string | null => {
+    if (rows === null) return null
+    try {
+      return monthSheet({
+        asOf: start,
+        categories: categories.map((c) => ({ id: c.id, name: c.name, kind: c.kind, sortOrder: c.sort_order })),
+        // Budgets and monthly amounts are stored from Sitting B (S8, S9).
+        budgets: [],
+        plans: [],
+        entries: rows.map((r) => ({ postedOn: isoDate(r.posted_on), amountCents: r.amount_cents, categoryId: r.category_id })),
+        statementPeriodEnds: [],
+      })
+    } catch {
+      // The engine refuses a charge whose category it was not given rather
+      // than leave it out of every total. Said plainly, never as its message.
+      return 'A charge this month is filed under a category that did not load, so the month is not shown. Reload to try again.'
+    }
+  }, [rows, categories, start])
 
   return (
     <div className="space-y-4">
       <header className="-mx-4 flex items-center justify-between gap-2 bg-title-band px-4 py-4 md:mx-0 md:rounded-xl">
-        <MonthTitle>{formatMonthTitle(first)}</MonthTitle>
+        <MonthTitle>{formatMonthTitle(start)}</MonthTitle>
         <div className="flex gap-1">
           <Button variant="outline" size="icon" aria-label="Previous month" onClick={() => step(-1)}>
             <Icon name="chevronLeft" />
@@ -28,6 +73,104 @@ export function MonthScreen({ month }: { month: string | null }) {
           </Button>
         </div>
       </header>
+
+      {error !== null ? <Alert tone="error" title="Could not load this month">{error}</Alert> : null}
+      {typeof sheet === 'string' ? <Alert tone="error" title="Could not show this month">{sheet}</Alert> : null}
+      {sheet === null && error === null ? <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p> : null}
+
+      {sheet !== null && typeof sheet !== 'string' ? (
+        // Phones: the block every statement changes first (§6.2). Four
+        // columns on a desktop in Workbook's own arrangement, Jan!B3:V44 (§6.3).
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Block kind="variable" block={sheet.blocks.variable} className="order-1 lg:order-7" />
+          <Block kind="bill" block={sheet.blocks.bill} className="order-2 lg:order-4" />
+          <Block kind="subscription" block={sheet.blocks.subscription} className="order-3 lg:order-6" />
+          <Block kind="debt" block={sheet.blocks.debt} className="order-4 lg:order-5" />
+          <Block kind="income" block={sheet.blocks.income} className="order-5 lg:order-2" />
+          <Block kind="savings" block={sheet.blocks.savings} className="order-6 lg:order-3" />
+        </div>
+      ) : null}
     </div>
+  )
+}
+
+type BlockKind = keyof PeriodSheet['blocks']
+
+/** Workbook's colours per block (§6.6): Bills, Debts and Subscriptions share one set. Written out for Tailwind. */
+const TONE: Record<BlockKind, { band: string; header: string; ink: string; rule: string }> = {
+  income: { band: 'bg-income-band', header: 'bg-income-header', ink: 'text-income-ink', rule: 'border-income-rule' },
+  savings: { band: 'bg-savings-band', header: 'bg-savings-header', ink: 'text-savings-ink', rule: 'border-savings-rule' },
+  bill: { band: 'bg-owed-band', header: 'bg-owed-header', ink: 'text-owed-ink', rule: 'border-owed-rule' },
+  debt: { band: 'bg-owed-band', header: 'bg-owed-header', ink: 'text-owed-ink', rule: 'border-owed-rule' },
+  subscription: { band: 'bg-owed-band', header: 'bg-owed-header', ink: 'text-owed-ink', rule: 'border-owed-rule' },
+  variable: { band: 'bg-variable-band', header: 'bg-variable-header', ink: 'text-variable-ink', rule: 'border-variable-rule' },
+}
+
+/**
+ * One block: its heading and Actual total on the band, then a row per
+ * category on the list. A row with no budget and nothing this month folds
+ * behind "Show N empty". Budget and Left columns join when budgets are
+ * stored (S8); until then no row has one, so only Actual is shown.
+ */
+function Block({ kind, block, className }: { kind: BlockKind; block: PeriodBlock; className: string }) {
+  const [showEmpty, setShowEmpty] = useState(false)
+  const tone = TONE[kind]
+  const heading = LIST_HEADING[kind]
+  const isEmpty = (r: PeriodBlock['rows'][number]) => r.basis === 'none' && r.budgetCents === null
+  const empty = block.rows.filter(isEmpty).length
+  const shown = showEmpty ? block.rows : block.rows.filter((r) => !isEmpty(r))
+
+  return (
+    <section aria-label={heading} className={cn('overflow-hidden rounded-xl border bg-card shadow-sm', tone.rule, className)}>
+      <div className={cn('flex items-baseline justify-between gap-3 px-4 py-3', tone.band, tone.ink)}>
+        <h2 className="text-sm font-semibold uppercase tracking-wide">{heading}</h2>
+        <Figure className="text-lg font-bold">{formatCents(block.actualTotalCents)}</Figure>
+      </div>
+      {block.rows.length === 0 ? (
+        <p className="px-4 py-3 text-sm text-muted-foreground">
+          Nothing on this list yet.{' '}
+          <button type="button" className="font-medium text-foreground underline underline-offset-4" onClick={() => navigate('setup')}>
+            Add one in Setup
+          </button>
+        </p>
+      ) : (
+        <table className="w-full text-sm">
+          <thead className={cn(tone.header, tone.ink)}>
+            <tr>
+              <th scope="col" className="px-4 py-1.5 text-left text-xs font-medium">
+                Category
+              </th>
+              <th scope="col" className="px-4 py-1.5 text-right text-xs font-medium">
+                Actual
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {shown.map((r) => (
+              <tr key={r.categoryId} className={cn('border-t', tone.rule)}>
+                <th scope="row" className="max-w-0 truncate px-4 py-2 text-left font-normal">
+                  {r.name}
+                </th>
+                {/* A zero on a budgeted row stays blank, as Workbook's ";;" format leaves it. */}
+                <td className={cn('tnum whitespace-nowrap px-4 py-2 text-right', r.actualCents < 0 && 'text-spend')}>
+                  {r.basis === 'planned' ? <span className="mr-1.5 text-xs text-muted-foreground">planned</span> : null}
+                  {r.basis === 'none' ? '' : formatCents(r.actualCents)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {empty > 0 ? (
+        <button
+          type="button"
+          aria-expanded={showEmpty}
+          onClick={() => setShowEmpty((v) => !v)}
+          className={cn('w-full border-t px-4 py-2 text-left text-xs font-medium', tone.rule, tone.ink)}
+        >
+          {showEmpty ? 'Hide empty' : `Show ${empty} empty`}
+        </button>
+      ) : null}
+    </section>
   )
 }
