@@ -143,6 +143,22 @@ describe('WeekScreen', () => {
     expect(await screen.findByText('28 min')).toBeTruthy()
   })
 
+  // Hand-derived: 8,450.00 typed at the end of 1 March, and 200.00 moved in
+  // on the 5th (D16): 8,650.00, which Savings shows too.
+  it("shows a fund's goal with the balance its transfers keep", async () => {
+    const fake = seeded()
+    fake.tables.categories.push({ id: 'c4', name: 'Flight fund', kind: 'savings', sort_order: 0, weekly_budget_cents: null })
+    fake.tables.transactions.push({ id: 't9', posted_on: '2026-03-05', amount_cents: -20_000, merchant_raw: 'TO FLIGHT FUND', category_id: 'c4', source: 'typed' })
+    fake.tables.savings_goals.push({
+      id: 'g1', name: 'Flight training', target_cents: 3_000_000, saved_cents: 845_000, target_date: null,
+      unit_cost_cents: null, unit_label: null, category_id: 'c4', start_date: null, balance_as_of: '2026-03-01',
+    })
+    renderScreen(<WeekScreen />, fake)
+
+    expect(await screen.findByText('$8,650.00')).toBeTruthy()
+    expect(screen.getByText('of $30,000.00 · $21,350.00 to go')).toBeTruthy()
+  })
+
   it('without a goal, offers to set one where the goal would be', async () => {
     vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
     renderScreen(<WeekScreen />, seeded())

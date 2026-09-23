@@ -10,6 +10,7 @@ import { Button } from '../components/ui/button.js'
 import { Field, Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { navigate } from '../nav.js'
+import { useFunds } from '../funds.js'
 
 export function SettingsScreen() {
   const { supabase, email } = useAppData()
@@ -31,7 +32,7 @@ export function SettingsScreen() {
         </CardContent>
       </Card>
       <BudgetsCard />
-      <GoalForm />
+      <Goal />
       <Card>
         <CardHeader>
           <CardTitle>Account</CardTitle>
@@ -170,6 +171,38 @@ function BudgetRow({ category, onError }: { category: Category; onError: (m: str
         />
       </div>
     </li>
+  )
+}
+
+/**
+ * The goal, or where it is kept now. A goal that has become a savings fund's
+ * is edited on Savings only: its balance is written there with the day it
+ * was true (N52), and this form, which types what is saved without a day,
+ * would count every transfer since twice. While the funds load, or when
+ * they cannot be read (0013 not applied), the form is as it was.
+ */
+function Goal() {
+  const { goal } = useAppData()
+  const funds = useFunds()
+  const fund =
+    goal === null || funds.status !== 'ready' ? undefined : funds.funds.funds.find((f) => f.figures?.goalId === goal.id)
+  if (goal === null || fund === undefined) return <GoalForm />
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Icon name="plane" className="size-4" /> Your goal
+        </CardTitle>
+        <CardDescription>
+          {goal.name} is now the goal of your {fund.name} savings fund, kept on Savings with the money you move into it.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button variant="outline" onClick={() => navigate('savings')}>
+          Edit it on Savings
+        </Button>
+      </CardContent>
+    </Card>
   )
 }
 

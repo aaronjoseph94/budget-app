@@ -101,6 +101,24 @@ describe('SettingsScreen, budgets and the goal', () => {
   })
 })
 
+describe('SettingsScreen, a goal that is a fund', () => {
+  it('sends its editing to Savings, where its balance is kept with its day (N52)', async () => {
+    const fake = createFakeSupabase({
+      categories: [{ id: 'f', name: 'Flight fund', kind: 'savings', sort_order: 0, weekly_budget_cents: null }],
+      savings_goals: [{
+        id: 'g1', name: 'Flight training', target_cents: 3_000_000, saved_cents: 845_000, target_date: null,
+        unit_cost_cents: null, unit_label: null, category_id: 'f', start_date: null, balance_as_of: '2026-03-01',
+      }],
+    })
+    renderScreen(<SettingsScreen />, fake)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit it on Savings' }))
+    expect(window.location.hash).toBe('#/savings')
+    expect(screen.getByText(/Flight training is now the goal of your Flight fund savings fund/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Save goal' })).toBeNull()
+  })
+})
+
 describe('SettingsScreen, the way to Setup', () => {
   it('opens Setup', async () => {
     renderScreen(<SettingsScreen />, createFakeSupabase())

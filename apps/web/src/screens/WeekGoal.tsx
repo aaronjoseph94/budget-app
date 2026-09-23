@@ -1,5 +1,6 @@
 import { goalProgress, isoDate, requiredWeeklyContribution, timeEquivalent } from '@budget/core'
 import { useAppData } from '../app-data.js'
+import { useFunds } from '../funds.js'
 import { formatBasisPoints, formatCents } from '../format.js'
 import { Card, CardContent, CardTitle } from '../components/ui/card.js'
 import { Badge, Progress } from '../components/ui/feedback.js'
@@ -15,11 +16,16 @@ import { navigate } from '../nav.js'
  */
 export function GoalCard({ weekSpentCents, asOf }: { weekSpentCents: number; asOf: string }) {
   const { goal } = useAppData()
+  const funds = useFunds()
   if (goal === null) return null
+  // A goal that is a savings fund's has the balance its transfers keep (D16),
+  // as on Savings; one on no fund, or before the funds load, what was typed.
+  const kept = funds.status === 'ready' ? funds.funds.funds.find((f) => f.figures?.goalId === goal.id)?.figures : undefined
+  const savedCents = kept === undefined || kept === null ? goal.saved_cents : kept.balanceCents
   const saving = {
     name: goal.name,
     targetCents: goal.target_cents,
-    savedCents: goal.saved_cents,
+    savedCents,
     ...(goal.unit_cost_cents !== null ? { unitCostCents: goal.unit_cost_cents } : {}),
     ...(goal.unit_label !== null ? { unitLabel: goal.unit_label } : {}),
   }
@@ -42,7 +48,7 @@ export function GoalCard({ weekSpentCents, asOf }: { weekSpentCents: number; asO
       <CardContent className="space-y-3">
         <Progress basisPoints={progress.percentCompleteBasisPoints} />
         <p className="text-sm">
-          <span className="tnum font-medium">{formatCents(goal.saved_cents)}</span>
+          <span className="tnum font-medium">{formatCents(savedCents)}</span>
           <span className="text-muted-foreground"> of {formatCents(goal.target_cents)} · {formatCents(progress.remainingCents)} to go</span>
         </p>
         {perWeek !== null ? (
