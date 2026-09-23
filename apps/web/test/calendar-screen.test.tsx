@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CalendarScreen } from '../src/screens/CalendarScreen.js'
 import { useAddress } from '../src/nav.js'
@@ -55,6 +55,12 @@ function seeded(): FakeSupabase {
   })
 }
 
+/** A week's lines as the screen shows them, heading first. */
+async function week(range: string): Promise<string[]> {
+  const region = await screen.findByRole('region', { name: `Week of ${range}` })
+  return [region.querySelector('h2'), ...region.querySelectorAll('li, p')].map((e) => e?.textContent ?? '')
+}
+
 /** The month's total pill, once the month is in. */
 async function total(): Promise<string | undefined> {
   return (await screen.findByText('Due this month:')).parentElement?.textContent ?? undefined
@@ -77,6 +83,39 @@ describe('CalendarScreen', () => {
 
     expect(screen.getByRole('heading', { name: 'September 2026' })).toBeTruthy()
     expect(await total()).toBe('Due this month: $1,970.11')
+  })
+
+  it("lays this month's bills on their days, real charges in place of the plan, with paydays and week totals", async () => {
+    renderScreen(<CalendarScreen month={null} />, seeded())
+
+    expect(screen.getByRole('heading', { name: 'September 2026' })).toBeTruthy()
+    expect(await week('1 – 5 Sep')).toEqual(['1 – 5 SepWeek total $1,600.00', 'Tue1Rent$1,600.00planned', 'Rent$1,600.00planned'])
+    expect(await week('6 – 12 Sep')).toEqual([
+      '6 – 12 SepWeek total $58.12',
+      'Tue8Phone$58.12',
+      'Phone$58.12',
+      'Fri11Day job payday',
+    ])
+    expect(await week('13 – 19 Sep')).toEqual(['13 – 19 SepWeek total $0.00', 'Nothing due.'])
+    // A category name is text, never markup.
+    expect(await week('20 – 26 Sep')).toEqual([
+      '20 – 26 SepWeek total $11.99',
+      'Sun20<b>Tunes & more</b>$11.99planned',
+      '<b>Tunes & more</b>$11.99planned',
+      'Fri25Day job payday',
+    ])
+    expect(await week('27 – 30 Sep')).toEqual(['27 – 30 SepWeek total $300.00', 'Wed30Car loan$300.00planned', 'Car loan$300.00planned'])
+    expect(screen.getByText('Due this month:').parentElement?.textContent).toBe('Due this month: $1,970.11')
+    expect(screen.queryByText('Groceries')).toBeNull()
+  })
+
+  it('lists a monthly amount with no day paid apart, and leads to Setup to add one', async () => {
+    renderScreen(<CalendarScreen month="2026-09" />, seeded())
+
+    const undated = within(await screen.findByRole('region', { name: 'No day paid' }))
+    expect(undated.getByRole('listitem').textContent).toBe('Gym$45.00')
+    fireEvent.click(undated.getByRole('button', { name: 'Add a day paid in Setup' }))
+    expect(window.location.hash).toBe('#/setup')
   })
 
   it('steps a month at a time and writes it into the address', async () => {

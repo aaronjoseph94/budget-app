@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
-import { billCalendar, isoDate, monthBounds, shiftMonth, type BillCalendar } from '@budget/core'
+import { billCalendar, isoDate, monthBounds, shiftMonth, type BillCalendar, type CalendarDay } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { listPaySchedules, listPlanHistory, listTransactions, type LedgerRow, type PayScheduleRow, type PlanRow } from '../ledger.js'
 import { navigate } from '../nav.js'
 import { categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
-import { formatCents, formatMonthTitle, todayIso } from '../format.js'
+import { formatCents, formatDateRange, formatMonthTitle, todayIso } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
+
+/** Sunday first, as Workbook's B6:N6 are. */
+export const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const
 
 /**
  * Workbook's Bill Calendar (S15c): a month's bills, debts and subscriptions on
@@ -96,6 +99,13 @@ export function CalendarScreen({ month }: { month: string | null }) {
       {calendar === null && error === null && (version > 0 || loadError === null) ? (
         <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>
       ) : null}
+
+      {calendar !== null && typeof calendar !== 'string' ? (
+        <>
+          <Agenda calendar={calendar} />
+          <Undated calendar={calendar} />
+        </>
+      ) : null}
     </div>
   )
 }
@@ -105,4 +115,94 @@ interface Loaded {
   readonly rows: readonly LedgerRow[]
   readonly plans: readonly PlanRow[]
   readonly schedules: readonly PayScheduleRow[]
+}
+
+/**
+ * The calendar as a list, a week at a time: each day with something on it,
+ * its bills and who is paid, and the week's total (Workbook's Q8).
+ */
+export function Agenda({ calendar }: { calendar: BillCalendar }) {
+  return (
+    <div className="space-y-3">
+      {calendar.weeks.map((week) => {
+        const days = week.days.flatMap((d, weekday) => (d === null ? [] : [{ d, weekday }]))
+        const first = days[0]
+        const last = days[days.length - 1]
+        if (first === undefined || last === undefined) return null
+        const busy = days.filter(({ d }) => d.bills.length > 0 || d.paydays.length > 0)
+        const range = formatDateRange(first.d.date, last.d.date)
+        return (
+          <section key={first.d.date} aria-label={`Week of ${range}`} className="rounded-xl border bg-card shadow-sm">
+            <h2 className="flex items-baseline justify-between gap-2 border-b border-calendar-rule px-4 py-2.5 text-sm">
+              <span className="font-medium text-calendar-day">{range}</span>
+              <span className="tnum font-semibold text-calendar-total">
+                <span className="sr-only">Week total </span>
+                {formatCents(week.totalCents)}
+              </span>
+            </h2>
+            {busy.length === 0 ? (
+              <p className="px-4 py-3 text-sm text-muted-foreground">Nothing due.</p>
+            ) : (
+              <ul className="divide-y">
+                {busy.map(({ d, weekday }) => (
+                  <AgendaDay key={d.date} day={d} weekday={weekday} />
+                ))}
+              </ul>
+            )}
+          </section>
+        )
+      })}
+    </div>
+  )
+}
+
+function AgendaDay({ day, weekday }: { day: CalendarDay; weekday: number }) {
+  return (
+    <li className="flex gap-3 px-4 py-2.5">
+      <span className="w-10 shrink-0 text-center leading-tight text-calendar-day">
+        <span className="block text-xs">{WEEKDAYS[weekday]?.slice(0, 3)}</span>
+        <span className="block text-lg font-bold">{day.day}</span>
+      </span>
+      <div className="min-w-0 flex-1 space-y-1">
+        {day.paydays.map((p) => (
+          <span key={p.categoryId} className="mr-1 inline-block rounded-full bg-payday px-2 py-0.5 text-xs font-semibold text-payday-ink">
+            {p.name} payday
+          </span>
+        ))}
+        {day.bills.map((b, i) => (
+          <p key={`${b.categoryId}-${i}`} className="flex items-baseline justify-between gap-3 text-sm text-calendar-ink">
+            <span className="min-w-0 truncate">{b.name}</span>
+            <span className="shrink-0 text-right">
+              <span className="tnum">{formatCents(b.amountCents)}</span>
+              {b.basis === 'planned' ? <span className="ml-1.5 text-xs text-muted-foreground">planned</span> : null}
+            </span>
+          </p>
+        ))}
+      </div>
+    </li>
+  )
+}
+
+/** Monthly amounts with no day paid: on no day and in no total (F20), so said. */
+function Undated({ calendar }: { calendar: BillCalendar }) {
+  if (calendar.undated.length === 0) return null
+  return (
+    <section aria-label="No day paid" className="space-y-2 rounded-xl border bg-card p-4 text-sm shadow-sm">
+      <h2 className="font-medium">No day paid</h2>
+      <p className="text-muted-foreground">
+        These have a monthly amount but no day paid, so they are not on the calendar or in its totals. The Month still counts them.
+      </p>
+      <ul className="space-y-1 text-calendar-ink">
+        {calendar.undated.map((b) => (
+          <li key={b.categoryId} className="flex justify-between gap-3">
+            <span className="min-w-0 truncate">{b.name}</span>
+            <span className="tnum shrink-0">{formatCents(b.amountCents)}</span>
+          </li>
+        ))}
+      </ul>
+      <Button variant="outline" size="sm" onClick={() => navigate('setup')}>
+        Add a day paid in Setup
+      </Button>
+    </section>
+  )
 }
