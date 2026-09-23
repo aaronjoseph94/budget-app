@@ -1249,6 +1249,8 @@ should stop at the first pay date or the calendar should run back too.
   it from More always opens this month, as Paycheck opens this period.
 - **The desktop bar shows icons only between 768 and 1024px** (nine tabs
   no longer fit with their words); Month and Year still share one icon.
+  Since S16 (ten tabs) the words show from 1280px, and the bar takes the
+  wide width on every screen.
 
 **Why not fixed here:** each is its own screen change, and the second
 waits on the owner's answer to N36.
@@ -1258,7 +1260,7 @@ one way to open a row's charges; give Year an icon of its own.
 
 ---
 
-## N52 — What 0013 leaves for the Savings screen to handle
+## N52 — What 0013 leaves for the Savings screen to handle *(settled in part 2026-09-23, S16)*
 
 **Seen:** 2026-09-23, writing migration 0013 (Sitting C).
 
@@ -1289,6 +1291,27 @@ a fund's category, decide what Savings shows for a start date after the
 goal date, and have the save write `balance_as_of` whenever it writes
 `saved_cents` on a linked fund, and decide which goal the Settings card and
 the Week show once there are several.
+
+**Settled in part, S16:**
+- A fund whose category moves off Savings loses its card, and its goal
+  reads no transfer and keeps its typed amount (`savingsFunds`); it can be
+  linked again from any fund with no goal. Nothing refuses the move, so no
+  Setup sentence is needed for it.
+- A start date after the goal date gives no monthly figure, and the card
+  says why (D22).
+- The Savings screen writes `balance_as_of` (today) with every
+  `saved_cents` (`saveFund`). Settings no longer edits a fund's goal: it
+  points to Savings, since its form has no day to write.
+- The Week shows a fund's goal with its kept balance, as Savings does.
+
+Still open: removing a category that a goal names is refused (23503), and
+Setup still says it "still has charges, or shops the app learned to file
+here". And which goal the
+Week and Settings show is still the oldest one; with the flight goal made
+the flight fund's, that is the flight goal, but a second goal made first
+would take its place. To settle: give Setup's remove a 23503 sentence that
+names a savings goal, and let the owner choose the Week's goal (or show
+the fund whose unit is hours).
 
 ---
 
