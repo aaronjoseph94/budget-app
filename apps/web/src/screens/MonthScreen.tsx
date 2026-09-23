@@ -10,6 +10,7 @@ import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
+import { MonthCharges } from './MonthCharges.js'
 
 /**
  * One Workbook month tab (plan §6.2, §6.3). `month` is the address's `YYYY-MM`,
@@ -26,6 +27,9 @@ export function MonthScreen({ month }: { month: string | null }) {
   const step = (months: number) => navigate('month', shiftMonth(start, months).slice(0, 7))
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // The category whose charges are open, by id; a new month closes it.
+  const [opened, setOpened] = useState<string | null>(null)
+  useEffect(() => setOpened(null), [start])
 
   useEffect(() => {
     let live = true
@@ -109,12 +113,12 @@ export function MonthScreen({ month }: { month: string | null }) {
             columns on a desktop in Workbook's own arrangement, Jan!B3:V44 (§6.3). */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Summary sheet={sheet} />
-            <Block kind="variable" block={sheet.blocks.variable} className="order-1 lg:order-7" />
-            <Block kind="bill" block={sheet.blocks.bill} className="order-2 lg:order-4" />
-            <Block kind="subscription" block={sheet.blocks.subscription} className="order-3 lg:order-6" />
-            <Block kind="debt" block={sheet.blocks.debt} className="order-4 lg:order-5" />
-            <Block kind="income" block={sheet.blocks.income} className="order-5 lg:order-2" />
-            <Block kind="savings" block={sheet.blocks.savings} className="order-6 lg:order-3" />
+            <Block kind="variable" block={sheet.blocks.variable} onOpen={setOpened} className="order-1 lg:order-7" />
+            <Block kind="bill" block={sheet.blocks.bill} onOpen={setOpened} className="order-2 lg:order-4" />
+            <Block kind="subscription" block={sheet.blocks.subscription} onOpen={setOpened} className="order-3 lg:order-6" />
+            <Block kind="debt" block={sheet.blocks.debt} onOpen={setOpened} className="order-4 lg:order-5" />
+            <Block kind="income" block={sheet.blocks.income} onOpen={setOpened} className="order-5 lg:order-2" />
+            <Block kind="savings" block={sheet.blocks.savings} onOpen={setOpened} className="order-6 lg:order-3" />
           </div>
           {/* Left out of every block and total above, so said out loud (D9). */}
           {sheet.transfersCents !== 0 ? (
@@ -124,10 +128,48 @@ export function MonthScreen({ month }: { month: string | null }) {
               {sheet.transfersCents > 0 ? ' What it paid for is already in the blocks above.' : ''}
             </p>
           ) : null}
+          {here !== null && opened !== null ? (
+            <OpenedRow sheet={sheet} rows={here.rows} categoryId={opened} month={start} onClose={() => setOpened(null)} />
+          ) : null}
         </>
       ) : null}
     </div>
   )
+}
+
+/**
+ * The opened row's charges, found by id in the sheet the screen shows, so its
+ * name, list and Actual are the ones on screen. A category gone after a reload
+ * has nothing to show, and the sheet closes rather than show a stale row.
+ */
+function OpenedRow({
+  sheet,
+  rows,
+  categoryId,
+  month,
+  onClose,
+}: {
+  sheet: PeriodSheet
+  rows: readonly LedgerRow[]
+  categoryId: string
+  month: string
+  onClose: () => void
+}) {
+  for (const kind of BLOCKS) {
+    const row = sheet.blocks[kind].rows.find((r) => r.categoryId === categoryId)
+    if (row === undefined) continue
+    return (
+      <MonthCharges
+        name={row.name}
+        heading={LIST_HEADING[kind]}
+        month={month}
+        actualCents={row.actualCents}
+        charges={rows.filter((r) => r.category_id === categoryId)}
+        onClose={onClose}
+      />
+    )
+  }
+  return null
 }
 
 interface Loaded {
@@ -214,6 +256,7 @@ function Summary({ sheet }: { sheet: PeriodSheet }) {
 }
 
 type BlockKind = keyof PeriodSheet['blocks']
+const BLOCKS: readonly BlockKind[] = ['variable', 'bill', 'subscription', 'debt', 'income', 'savings']
 
 /** Workbook's colours per block (§6.6): Bills, Debts and Subscriptions share one set. Written out for Tailwind. */
 const TONE: Record<BlockKind, { band: string; header: string; ink: string; rule: string }> = {
@@ -241,7 +284,17 @@ const TONE: Record<BlockKind, { band: string; header: string; ink: string; rule:
  * behind "Show N empty". Budget and Left columns join when budgets are
  * stored (S8); until then no row has one, so only Actual is shown.
  */
-function Block({ kind, block, className }: { kind: BlockKind; block: PeriodBlock; className: string }) {
+function Block({
+  kind,
+  block,
+  onOpen,
+  className,
+}: {
+  kind: BlockKind
+  block: PeriodBlock
+  onOpen: (categoryId: string) => void
+  className: string
+}) {
   const [showEmpty, setShowEmpty] = useState(false)
   const tone = TONE[kind]
   const heading = LIST_HEADING[kind]
@@ -283,9 +336,25 @@ function Block({ kind, block, className }: { kind: BlockKind; block: PeriodBlock
           </thead>
           <tbody>
             {shown.map((r) => (
-              <tr key={r.categoryId} className={cn('border-t', tone.rule)}>
-                <th scope="row" className="break-words px-4 py-2 text-left font-normal [overflow-wrap:anywhere]">
-                  {r.name}
+              // The whole row takes a tap; the button in it is what a keyboard
+              // or a screen reader reaches, named by the category.
+              <tr
+                key={r.categoryId}
+                onClick={() => onOpen(r.categoryId)}
+                className={cn('cursor-pointer border-t hover:bg-accent/60', tone.rule)}
+              >
+                <th scope="row" className="px-4 py-2 text-left font-normal">
+                  <button
+                    type="button"
+                    aria-haspopup="dialog"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onOpen(r.categoryId)
+                    }}
+                    className="break-words rounded-sm text-left underline-offset-4 outline-none [overflow-wrap:anywhere] hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {r.name}
+                  </button>
                 </th>
                 {/* A zero on a budgeted row stays blank, as Workbook's ";;" format leaves it. */}
                 <td className={cn('tnum whitespace-nowrap px-4 py-2 text-right', r.actualCents < 0 && 'text-spend')}>
