@@ -270,6 +270,12 @@ chart stacks Actual on top of Goal.
 minus sign. A zero Actual on a budgeted row stays blank, as in Workbook. Totals
 show cents. The income chart draws Actual over a Goal track.
 
+*Added 2026-09-23, S12b:* the income chart is a named horizontal bar per
+income row that has a goal or money in. Workbook's columns are numbered 1 to 7,
+one per row slot, and print their scale in the chart's own background colour,
+so neither says whose bar is whose. Each bar keeps chart12's colours (#CCE2DF
+track, #9ABDB7 Actual) and its single scale (F17).
+
 **Why.** A hidden negative is a number the owner cannot see is wrong, and a
 total that disagrees with its own rows by a rounding is a total they stop
 trusting. Display only: no value changes.

@@ -466,3 +466,51 @@ and cites F5 or this entry; neither is a `?? 0` (CONSTRAINTS.md floor).
 **What the owner would see.** A savings fund with no goal shows what went
 into it as its Difference, and a bill with no budget shows no Remaining.
 Neither changes any cached value.
+
+---
+
+## F17 — What a share is, for the Month's charts
+
+**Decided 2026-09-23. Engineering default: changes no cached value.**
+
+```
+Jan chart13  doughnut, hole 50%   categories Jan!$S$22:$S$45   values Jan!$U$22:$U$45
+             data labels off; one colour per row position (dPt idx 0-22)
+Jan chart12  stacked columns      Goal Jan!$O$10:$O$16   Actual Jan!$P$10:$P$16
+             one value axis, overlap 100
+```
+
+Workbook's doughnut sizes each Variable-expenses row by its Actual against the
+others, and its income chart draws every Goal and Actual on one value axis.
+Neither prints a number, and the cached sample has every U22:U45 at 0, so the
+doughnut is empty and there is no share to copy. The charts' geometry is
+arithmetic on money, which invariant 1 puts in `packages/core`, so the engine
+has to say what a share is — including for a row that refunds have taken
+below zero (D8), which no slice of a doughnut can draw.
+
+**Options considered**
+
+- **A — a share of the rows above zero.** A row's share is its Actual over the
+  sum of its block's Actuals that are above zero. A row at or below zero has
+  none and is left out of the ring, and the Month says so beside it.
+- **B — a share of the block's total.** With a row below zero the shares add
+  to more than the whole, and the slices cannot close a ring.
+- **C — a share of the absolute values** (what a spreadsheet pie does with a
+  negative). A $45.99 refund would be drawn as $45.99 of spending.
+
+**Chosen: A.** It is the only one of the three a ring can draw that does not
+show a refund as spending.
+
+- **`shareBp`** on every row of every block: its Actual × 10,000 over the sum
+  of the block's Actuals above zero, rounded half-up to a basis point as F13
+  rounds. Null when the row's Actual is not above zero, or nothing in the
+  block is. Rounded shares can add to 9,999 or 10,001 basis points; the
+  gap between slices is wider than that.
+- **Goal bars** (`goalBars`): each income row's Goal and Actual in basis points
+  of the largest Goal or Actual among the rows given, rounded half-up, so every
+  bar is drawn to one scale, as chart12's single axis draws them. An Actual
+  below zero has no bar; a row with no goal has no track.
+
+**What the owner would see.** The ring's slices and each income bar's length.
+A category whose refunds beat its spending is named under the ring instead
+of being drawn.
