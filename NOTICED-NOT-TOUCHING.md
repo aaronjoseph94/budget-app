@@ -885,3 +885,31 @@ by card" in Setup, and once a statement covering its due day is imported,
 count only its real rows, so a late charge moves to the next month but is
 never counted twice (needs a new column; rent paid from the bank keeps its
 plan).
+
+---
+
+## N37 — Three things about the Month's End of month the owner has not been told
+
+**Seen:** 2026-09-23, S11 (the summary card).
+
+1. **D17 was never put to the owner.** With no starting balance typed, the
+   Month shows no End of month, where Workbook counts from $0. It is recorded
+   as an engineering default, stated to no one. CLAUDE.md lists a
+   deliberate divergence under "Ask first".
+2. **End of month reads low until pay is typed.** Planned bills count in
+   full for the whole month (F8, F10), and pay counts only once it is typed
+   (decision 8). Partway through a month, before payday, End of month can
+   show below zero. Workbook's D15 reads the income typed so far (Jan!N5) and
+   behaves the same.
+3. **A negative End of month is not highlighted.** Workbook's pink marks only
+   a negative Left to spend (Jan!D13:E14), so an overdrawn End of month
+   shows its minus sign in the card's normal colour.
+
+**Why not fixed here:** each is how S11 was specified, and none is a wrong
+number. The first is a question for the owner; the second and third are
+things to explain.
+
+**To settle:** tell the owner once, and ask whether they want D17 kept
+(no End of month until Start is typed) or Workbook's $0 start. If they want
+an overdrawn End of month to stand out, that is a display-only divergence
+and needs its own D-entry.
