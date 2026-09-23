@@ -1,9 +1,11 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { goalProgress, type FundFigures, type SavingsFund, type SavingsFundPlan } from '@budget/core'
+import { useAppData } from '../app-data.js'
 import { useFunds } from '../funds.js'
-import type { FundRow } from '../ledger.js'
+import { linkFund, type FundRow } from '../ledger.js'
 import { navigate } from '../nav.js'
-import { formatBasisPoints, formatCents, formatIsoDate } from '../format.js'
+import { formatBasisPoints, formatCents, formatIsoDate, todayIso } from '../format.js'
+import { FundEditor } from './FundEditor.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Figure } from '../components/ui/type.js'
@@ -20,6 +22,27 @@ import { Figure } from '../components/ui/type.js'
  */
 export function SavingsScreen() {
   const state = useFunds()
+  const { supabase, refresh } = useAppData()
+  const [editing, setEditing] = useState<string | null>(null)
+  const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null)
+  const ready = state.status === 'ready' ? state : null
+  const goalOf = (fund: SavingsFund) => ready?.goals.find((g) => g.id === fund.figures?.goalId) ?? null
+  // Goals on no fund, such as the one Settings saved before there were funds:
+  // each can become a fund's goal, keeping what was typed in it.
+  const unlinked = ready === null ? [] : ready.goals.filter((g) => ready.funds.unlinked.some((u) => u.goalId === g.id))
+  const shown = ready?.funds.funds.find((f) => f.categoryId === editing) ?? null
+
+  const link = async (goal: FundRow, fund: SavingsFund) => {
+    setNotice(null)
+    try {
+      await linkFund(supabase, { goalId: goal.id, categoryId: fund.categoryId, asOf: todayIso() })
+      setNotice({ ok: true, text: `“${goal.name}” is now ${fund.name}'s goal.` })
+      await refresh()
+    } catch (cause) {
+      setNotice({ ok: false, text: cause instanceof Error ? cause.message : 'Could not use that goal. Nothing was saved.' })
+    }
+  }
+
   return (
     <div className="space-y-4">
       <header className="-mx-4 bg-savings-banner px-4 py-5 text-savings-ink md:mx-0 md:rounded-xl">
@@ -27,6 +50,7 @@ export function SavingsScreen() {
         <p className="mt-1 text-sm">What each fund needs, and what to put in it each month to get there by its date.</p>
       </header>
       {state.status === 'loading' ? <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p> : null}
+      {notice !== null ? <Alert tone={notice.ok ? 'success' : 'error'}>{notice.text}</Alert> : null}
       {state.status === 'failed' ? <Alert tone="error" title="Could not load your savings funds">{state.message}</Alert> : null}
       {state.status === 'ready' ? (
         state.funds.funds.length === 0 ? (
@@ -40,23 +64,52 @@ export function SavingsScreen() {
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {state.funds.funds.map((fund) => (
               <li key={fund.categoryId}>
-                <FundCard fund={fund} goal={state.goals.find((g) => g.id === fund.figures?.goalId) ?? null} />
+                <FundCard fund={fund} goal={goalOf(fund)} onEdit={() => setEditing(fund.categoryId)}>
+                  {fund.figures === null
+                    ? unlinked.map((g) => (
+                        <Button key={g.id} variant="outline" size="sm" className="mr-2" onClick={() => void link(g, fund)}>
+                          Use “{g.name}” for this fund
+                        </Button>
+                      ))
+                    : null}
+                </FundCard>
               </li>
             ))}
           </ul>
         )
       ) : null}
+      {shown !== null ? (
+        <FundEditor
+          key={shown.categoryId}
+          fund={shown}
+          goal={goalOf(shown)}
+          onClose={() => setEditing(null)}
+          onSaved={(text) => {
+            setEditing(null)
+            setNotice({ ok: true, text })
+          }}
+          onFailedAfterClose={(text) => setNotice({ ok: false, text })}
+        />
+      ) : null}
     </div>
   )
 }
 
-function FundCard({ fund, goal }: { fund: SavingsFund; goal: FundRow | null }) {
+function FundCard({ fund, goal, onEdit, children }: { fund: SavingsFund; goal: FundRow | null; onEdit: () => void; children: ReactNode }) {
   const f = fund.figures
   return (
     <section aria-label={fund.name} className="overflow-hidden rounded-xl border border-savings-rule bg-card text-savings-ink shadow-sm">
       <h2 className="break-words bg-savings-title px-4 py-2 font-title text-3xl font-bold [overflow-wrap:anywhere]">{fund.name}</h2>
       {f === null || goal === null ? (
-        <p className="px-4 py-4 text-sm">No goal yet.</p>
+        <div className="space-y-3 px-4 py-4 text-sm">
+          <p>No goal yet.</p>
+          <div className="flex flex-wrap gap-y-2">
+            {children}
+            <Button size="sm" onClick={onEdit}>
+              Set a goal
+            </Button>
+          </div>
+        </div>
       ) : (
         <div className="space-y-3 px-4 py-4">
           <p>
@@ -78,6 +131,9 @@ function FundCard({ fund, goal }: { fund: SavingsFund; goal: FundRow | null }) {
           </dl>
           {f.plan.status === 'planned' ? null : <p className="text-sm">{WHY_NO_MONTHLY[f.plan.status]}</p>}
           <Kept figures={f} goal={goal} />
+          <Button variant="outline" size="sm" onClick={onEdit}>
+            Edit goal
+          </Button>
         </div>
       )}
     </section>
