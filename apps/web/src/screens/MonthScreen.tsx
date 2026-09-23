@@ -352,9 +352,10 @@ export interface EditorDone {
  * as the plan's phone sketch does (§6.2): with it, three columns of amounts
  * do not fit a 360px phone or a desktop card.
  *
- * The Month and the Week both draw their blocks here. Each says what a tap
- * on a row opens, if anything, and which editor types a budget, since a
- * month's budgets and a week's are stored apart.
+ * The Month, the Week and Paycheck draw their blocks here. Each says what a
+ * tap on a row opens, if anything, and which editor types a budget, since a
+ * month's budgets and a week's are stored apart. Paycheck has none: its
+ * budgets are the month's, shared across the period (F15), and typed there.
  */
 export function Block({
   kind,
@@ -369,9 +370,9 @@ export function Block({
   /** Opens a row's charges; without it a row is not a button. */
   onOpen?: (categoryId: string) => void
   /** Called as a budget editor opens, to clear what an earlier one left. */
-  onEditStart: () => void
-  /** The form that types a row's budget, in a row of its own under it. */
-  editor: (row: Row, word: BudgetWord, done: EditorDone) => ReactNode
+  onEditStart?: () => void
+  /** The form that types a row's budget, in a row of its own under it; without it a budget is only shown. */
+  editor?: (row: Row, word: BudgetWord, done: EditorDone) => ReactNode
   className: string
 }) {
   const [showEmpty, setShowEmpty] = useState(false)
@@ -458,24 +459,28 @@ export function Block({
                   {/* Its own tap: the budget is typed here, in the row, and the
                     charges do not open. A pencil where none is set yet. */}
                   <td className="tnum whitespace-nowrap px-1 py-2 text-right">
-                    <button
-                      type="button"
-                      aria-label={`${word} for ${r.name}, ${r.budgetCents === null ? 'none set' : formatCents(r.budgetCents)}`}
-                      aria-expanded={editing === r.categoryId}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setNote(null)
-                        onEditStart()
-                        setEditing(r.categoryId)
-                      }}
-                      className="rounded-sm underline decoration-dotted underline-offset-4 outline-none hover:decoration-solid focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      {r.budgetCents === null ? (
-                        <Icon name="pencil" className="inline size-3.5 opacity-60" />
-                      ) : (
-                        formatAmount(r.budgetCents)
-                      )}
-                    </button>
+                    {editor === undefined ? (
+                      r.budgetCents === null ? '' : formatAmount(r.budgetCents)
+                    ) : (
+                      <button
+                        type="button"
+                        aria-label={`${word} for ${r.name}, ${r.budgetCents === null ? 'none set' : formatCents(r.budgetCents)}`}
+                        aria-expanded={editing === r.categoryId}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setNote(null)
+                          onEditStart?.()
+                          setEditing(r.categoryId)
+                        }}
+                        className="rounded-sm underline decoration-dotted underline-offset-4 outline-none hover:decoration-solid focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        {r.budgetCents === null ? (
+                          <Icon name="pencil" className="inline size-3.5 opacity-60" />
+                        ) : (
+                          formatAmount(r.budgetCents)
+                        )}
+                      </button>
+                    )}
                   </td>
                   {/* A zero on a budgeted row stays blank, as Workbook's ";;" format
                     leaves it. "planned" follows its amount, as in the plan's
@@ -500,7 +505,7 @@ export function Block({
                   )}
                 </tr>,
                 // The budget is typed in a row of its own, under the one tapped.
-                editing === r.categoryId ? (
+                editor !== undefined && editing === r.categoryId ? (
                   <tr key={`${r.categoryId} budget`} className={cn('border-t', tone.rule)}>
                     <td colSpan={columns.third === null ? 3 : 4} className="px-4 py-3">
                       {editor(r, word, {
