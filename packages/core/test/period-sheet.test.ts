@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { isoDate } from '@budget/money-primitives'
-import { periodSheet, type PeriodCategory, type PeriodEntry } from '../src/period-sheet.js'
+import { monthSheet, periodSheet, type PeriodCategory, type PeriodEntry, type PeriodPlan } from '../src/period-sheet.js'
 
 /**
  * Suite tests, worked by hand from the invented rows below. Workbook's cached
@@ -21,6 +21,10 @@ const CATEGORIES = [
   cat('pay', 'income', 0),
   cat('fund', 'savings', 0),
   cat('card', 'transfer', 0),
+  cat('rent', 'bill', 0),
+  cat('phone', 'bill', 1),
+  cat('loan', 'debt', 0),
+  cat('music', 'subscription', 0),
 ]
 const row = (postedOn: string, amountCents: number, categoryId: string): PeriodEntry => ({
   postedOn: isoDate(postedOn),
@@ -112,5 +116,115 @@ describe('periodSheet (suite)', () => {
         ],
       }),
     ).toThrow(/Two budgets/)
+  })
+})
+
+const plan = (categoryId: string, plannedCents: number | null, dueDay: number | null): PeriodPlan => ({
+  categoryId,
+  plannedCents,
+  dueDay,
+})
+const owed = (plans: PeriodPlan[], entries: PeriodEntry[], from: string, to: string) =>
+  periodSheet({ ...BASE, from: isoDate(from), to: isoDate(to), plans, entries })
+const actuals = (s: ReturnType<typeof periodSheet>, block: 'bill' | 'debt' | 'subscription') =>
+  s.blocks[block].rows.map((r) => [r.categoryId, r.actualCents, r.basis])
+
+describe('periodSheet bills, debts and subscriptions (suite)', () => {
+  const PLANS = [plan('rent', 160_000, 1), plan('phone', 6_000, null), plan('loan', 25_000, 20), plan('music', 1_199, 12)]
+
+  it('counts every plan in a whole month, due day or not, and totals the block (F8)', () => {
+    const s = owed(PLANS, [], '2026-09-01', '2026-09-30')
+    expect(actuals(s, 'bill')).toEqual([
+      ['rent', 160_000, 'planned'],
+      ['phone', 6_000, 'planned'],
+    ])
+    expect(s.blocks.bill.actualTotalCents).toBe(166_000)
+  })
+
+  it('lets real rows replace the plan, summing all of them, even when they net to zero (F3, D5)', () => {
+    const s = owed(
+      PLANS,
+      [
+        row('2026-09-01', -80_000, 'rent'),
+        row('2026-09-15', -80_000, 'rent'), // rent paid in halves: 1,600 real, plan ignored
+        row('2026-09-12', -1_199, 'music'),
+        row('2026-09-13', 1_199, 'music'), // charged and refunded: 0, still real
+      ],
+      '2026-09-01',
+      '2026-09-30',
+    )
+    expect(actuals(s, 'bill')).toEqual([
+      ['rent', 160_000, 'real'],
+      ['phone', 6_000, 'planned'],
+    ])
+    expect(actuals(s, 'subscription')).toEqual([['music', 0, 'real']])
+  })
+
+  it('counts a plan in a partial window only on its due day, and never with no day', () => {
+    const s = owed(PLANS, [], '2026-09-07', '2026-09-13')
+    expect(actuals(s, 'bill')).toEqual([
+      ['rent', 0, 'none'],
+      ['phone', 0, 'none'],
+    ])
+    expect(actuals(s, 'debt')).toEqual([['loan', 0, 'none']])
+    expect(actuals(s, 'subscription')).toEqual([['music', 1_199, 'planned']])
+  })
+
+  it('finds a due day across a month end, and puts 29-31 on a short month\'s last day (D6)', () => {
+    const due = (day: number, from: string, to: string) =>
+      owed([plan('rent', 100, day)], [], from, to).blocks.bill.rows[0]!.basis
+    expect(due(1, '2026-09-28', '2026-10-04')).toBe('planned')
+    expect(due(5, '2026-09-28', '2026-10-04')).toBe('none')
+    expect(due(1, '2026-09-25', '2026-10-01')).toBe('planned') // the window's last day is the 1st
+    // Each window ends on the short month's last day, so a day left unclamped
+    // (Feb 31, Apr 31) sorts after the window's end and is missed.
+    expect(due(31, '2026-02-22', '2026-02-28')).toBe('planned') // Feb 28
+    expect(due(29, '2026-02-22', '2026-02-28')).toBe('planned') // Feb 28, not a leap year
+    expect(due(31, '2026-04-24', '2026-04-30')).toBe('planned') // Apr 30
+    expect(due(31, '2026-03-23', '2026-03-29')).toBe('none') // March has a 31st
+  })
+
+  it('shows nothing for a stopped plan', () => {
+    expect(actuals(owed([plan('loan', null, 20)], [], '2026-09-01', '2026-09-30'), 'debt')).toEqual([['loan', 0, 'none']])
+  })
+
+  it('keeps card payments out of every block and reports them alone (D9)', () => {
+    const s = sheet([
+      row('2026-09-05', 10_000, 'card'),
+      row('2026-09-20', 5_000, 'card'),
+      row('2026-10-01', 7_000, 'card'),
+      row('2026-09-06', -2_000, 'food'),
+    ])
+    expect(s.transfersCents).toBe(15_000)
+    expect(s.blocks.variable.actualTotalCents).toBe(2_000)
+    expect(s.blocks.income.actualTotalCents).toBe(0)
+  })
+
+  it('reads importedThrough from the latest statement end, and null before any', () => {
+    const ends = [isoDate('2026-09-07'), isoDate('2026-10-07'), isoDate('2026-08-07')]
+    expect(periodSheet({ ...BASE, statementPeriodEnds: ends }).importedThrough).toBe('2026-10-07')
+    expect(periodSheet(BASE).importedThrough).toBeNull()
+  })
+
+  it('refuses a plan on another list, two plans for one bill, a bad due day and a negative amount', () => {
+    const month = (plans: PeriodPlan[]) => () => owed(plans, [], '2026-09-01', '2026-09-30')
+    expect(month([plan('food', 100, 1)])).toThrow(/not a bill/)
+    expect(month([plan('rent', 100, 1), plan('rent', 200, 1)])).toThrow(/Two monthly amounts/)
+    for (const day of [0, 32, 1.5]) expect(month([plan('rent', 100, day)])).toThrow(/due day/)
+    for (const amount of [-100, -1]) expect(month([plan('rent', amount, 1)])).toThrow(/negative/)
+  })
+})
+
+describe('monthSheet (suite)', () => {
+  it('runs the calendar month holding asOf, both ends included', () => {
+    const s = monthSheet({
+      ...BASE,
+      asOf: isoDate('2028-02-17'),
+      plans: [plan('rent', 160_000, 31)],
+      entries: [row('2028-01-31', -100, 'food'), row('2028-02-29', -200, 'food'), row('2028-03-01', -400, 'food')],
+    })
+    expect([s.from, s.to]).toEqual(['2028-02-01', '2028-02-29'])
+    expect(s.blocks.variable.actualTotalCents).toBe(200)
+    expect(s.blocks.bill.actualTotalCents).toBe(160_000)
   })
 })
