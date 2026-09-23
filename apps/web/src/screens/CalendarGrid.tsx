@@ -25,7 +25,7 @@ export function MonthGrid({ calendar, className }: { calendar: BillCalendar; cla
             <th
               key={name}
               scope="col"
-              className="border border-calendar-rule px-1 py-2 text-[0.625rem] font-medium uppercase tracking-[0.25em] text-calendar-head"
+              className="border border-calendar-rule px-1 py-2 text-[0.625rem] font-medium uppercase tracking-[0.1em] text-calendar-head xl:tracking-[0.25em]"
             >
               {/* Workbook spells them out letter by letter ("S U N D A Y"); spacing does it here, so a screen reader still says the day. */}
               {name}
@@ -72,8 +72,9 @@ function GridDay({ day }: { day: CalendarDay }) {
         ))}
       </div>
       {day.bills.map((b, i) => (
-        <p key={`${b.categoryId}-${i}`} className="flex items-baseline justify-between gap-1 text-xs leading-tight text-calendar-ink">
-          <span className="min-w-0 break-words">{b.name}</span>
+        <p key={`${b.categoryId}-${i}`} className="flex flex-wrap items-baseline justify-between gap-x-1 text-xs leading-tight text-calendar-ink">
+          {/* On a narrow column the amount drops under the name rather than split it. */}
+          <span className="max-w-full break-words">{b.name}</span>
           <span className={cn('tnum shrink-0', b.basis === 'planned' && 'italic')}>
             {formatAmount(b.amountCents)}
             {b.basis === 'planned' ? <span className="sr-only"> planned</span> : null}
