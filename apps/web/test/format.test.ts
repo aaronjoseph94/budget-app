@@ -9,6 +9,7 @@ import {
   formatBasisPoints,
   formatCents,
   formatDateRange,
+  formatForInput,
   formatIsoDate,
   formatMagnitude,
   formatMonthTitle,
@@ -138,6 +139,12 @@ describe('the smaller display helpers', () => {
     expect(formatAmount(160_000)).toBe('1,600.00')
     expect(formatAmount(-3_274)).toBe('-32.74')
     expect(formatAmount(0)).toBe('0.00')
+  })
+
+  it('gives an amount as it would be typed back in, with no symbol or commas, and none as empty', () => {
+    expect(formatForInput(125_050)).toBe('1250.50')
+    expect(formatForInput(0)).toBe('0.00')
+    expect(formatForInput(null)).toBe('')
   })
 
   it('gives today as a local ISO date', () => {

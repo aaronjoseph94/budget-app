@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { parseMoneyInput, useAppData } from '../app-data.js'
 import { ensureCategory, saveGoal, setWeeklyBudget, type Category } from '../ledger.js'
-import { formatCents } from '../format.js'
+import { formatForInput } from '../format.js'
 import { atEndOf, ListSelect, type CategoryKind } from '../lists.js'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card.js'
 import { Alert } from '../components/ui/feedback.js'
@@ -9,11 +9,6 @@ import { Button } from '../components/ui/button.js'
 import { Field, Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { navigate } from '../nav.js'
-
-/** Cents as the text a person would type back in: "250.00", or "" for none. */
-function asInput(cents: number | null): string {
-  return cents === null ? '' : formatCents(cents).replace(/^\$/, '').replace(/,/g, '')
-}
 
 export function SettingsScreen() {
   const { supabase, email } = useAppData()
@@ -114,7 +109,7 @@ const refreshHint = 'Budgets save when you leave the field.'
 
 function BudgetRow({ category, onError }: { category: Category; onError: (m: string | null) => void }) {
   const { supabase, refresh } = useAppData()
-  const [text, setText] = useState(asInput(category.weekly_budget_cents))
+  const [text, setText] = useState(formatForInput(category.weekly_budget_cents))
   const [state, setState] = useState<'idle' | 'saved' | 'invalid'>('idle')
 
   // Follow the stored budget when it changes, during render rather than in an
@@ -122,7 +117,7 @@ function BudgetRow({ category, onError }: { category: Category; onError: (m: str
   const [shown, setShown] = useState(category.weekly_budget_cents)
   if (!Object.is(shown, category.weekly_budget_cents)) {
     setShown(category.weekly_budget_cents)
-    setText(asInput(category.weekly_budget_cents))
+    setText(formatForInput(category.weekly_budget_cents))
   }
 
   const commit = async () => {
@@ -170,20 +165,20 @@ function BudgetRow({ category, onError }: { category: Category; onError: (m: str
 function GoalForm() {
   const { supabase, userId, goal, refresh } = useAppData()
   const [name, setName] = useState(goal?.name ?? 'Flight training')
-  const [target, setTarget] = useState(goal === null ? '30000' : asInput(goal.target_cents))
-  const [saved, setSaved] = useState(goal === null ? '0' : asInput(goal.saved_cents))
+  const [target, setTarget] = useState(goal === null ? '30000' : formatForInput(goal.target_cents))
+  const [saved, setSaved] = useState(goal === null ? '0' : formatForInput(goal.saved_cents))
   const [date, setDate] = useState(goal?.target_date ?? '')
-  const [unitCost, setUnitCost] = useState(goal === null ? '275' : asInput(goal.unit_cost_cents))
+  const [unitCost, setUnitCost] = useState(goal === null ? '275' : formatForInput(goal.unit_cost_cents))
   const [unitLabel, setUnitLabel] = useState(goal?.unit_label ?? 'flight time')
   const [outcome, setOutcome] = useState<{ ok: boolean; message: string } | null>(null)
 
   useEffect(() => {
     if (goal === null) return
     setName(goal.name)
-    setTarget(asInput(goal.target_cents))
-    setSaved(asInput(goal.saved_cents))
+    setTarget(formatForInput(goal.target_cents))
+    setSaved(formatForInput(goal.saved_cents))
     setDate(goal.target_date ?? '')
-    setUnitCost(asInput(goal.unit_cost_cents))
+    setUnitCost(formatForInput(goal.unit_cost_cents))
     setUnitLabel(goal.unit_label ?? '')
   }, [goal])
 

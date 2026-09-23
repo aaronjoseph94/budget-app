@@ -284,6 +284,11 @@ export function formatAmount(amountCents: number): string {
   return formatCents(amountCents).replace('$', '')
 }
 
+/** Cents as the text a person would type back in: "250.00", or "" for none. */
+export function formatForInput(cents: number | null): string {
+  return cents === null ? '' : formatCents(cents).replace(/^\$/, '').replace(/,/g, '')
+}
+
 /** A signed amount shown as a magnitude, for places where the direction is the label. */
 export function formatMagnitude(amountCents: number): string {
   return formatCents(Math.abs(amountCents))
