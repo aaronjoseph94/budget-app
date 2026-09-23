@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MonthScreen } from '../src/screens/MonthScreen.js'
 import type { Category, LedgerRow } from '../src/ledger.js'
@@ -60,7 +60,7 @@ describe('Month row charges', () => {
       'Variable expenses · September 2026 · $100.00',
     )
     const charges = sheet.getAllByRole('listitem').map((li: HTMLElement) => li.textContent)
-    expect(charges).toEqual([`${MARKUP}20 Sep 2026-$35.88`, 'CONTOSO MARKET2 Sep 2026-$64.12'])
+    expect(charges).toEqual([`${MARKUP}20 Sep 2026-$35.88Move to…`, 'CONTOSO MARKET2 Sep 2026-$64.12Move to…'])
     // Another category's charge and August's are not in it.
     expect(sheet.queryByText('TAILSPIN GRILL')).toBeNull()
     expect(sheet.queryByText('NORTHWIND FOODS')).toBeNull()
@@ -85,5 +85,74 @@ describe('Month row charges', () => {
     fireEvent.click(row)
     const sheet = within(screen.getByRole('dialog', { name: 'Rent' }))
     expect(sheet.getByText('No charges filed here in September.')).toBeTruthy()
+  })
+})
+
+async function startMoving(fake: FakeSupabase, merchant: string): Promise<ReturnType<typeof within>> {
+  renderScreen(<MonthScreen month="2026-09" />, fake)
+  await screen.findByRole('rowheader', { name: 'Groceries' })
+  const sheet = openRow('Variable expenses', 'Groceries')
+  fireEvent.click(sheet.getByRole('button', { name: new RegExp(`^Move to… \\(${merchant}`) }))
+  return sheet
+}
+
+describe('Moving a charge from the Month', () => {
+  // Hand-derived. Restaurants 25.00 + 64.12 = 89.12; Groceries keeps 35.88.
+  it('moves it, learns the shop by default, and re-reads the month', async () => {
+    const fake = seeded()
+    const sheet = await startMoving(fake, 'CONTOSO MARKET')
+    const learn = sheet.getByRole('checkbox', { name: 'Always file CONTOSO MARKET here' })
+    expect((learn as HTMLInputElement).checked).toBe(true)
+    expect(sheet.getByRole('button', { name: 'Move' }).hasAttribute('disabled')).toBe(true)
+
+    fireEvent.change(sheet.getByRole('combobox', { name: 'Move to' }), { target: { value: 'dining' } })
+    fireEvent.click(sheet.getByRole('button', { name: 'Move' }))
+
+    expect((await sheet.findByRole('status')).textContent).toBe('Moved CONTOSO MARKET to Restaurants.')
+    expect(fake.rpcCalls).toEqual([
+      { name: 'recategorise_transaction', args: { p_transaction: 't1', p_category: 'dining', p_learn: true } },
+    ])
+    await waitFor(() => expect(sheet.queryByText('CONTOSO MARKET', { selector: 'p span' })).toBeNull())
+    expect(sheet.getByText(/Variable expenses · September 2026 ·/).textContent).toBe(
+      'Variable expenses · September 2026 · $35.88',
+    )
+    const variable = within(screen.getByRole('region', { name: 'Variable expenses' }))
+    expect(variable.getByRole('rowheader', { name: 'Restaurants' }).closest('tr')?.textContent).toBe('Restaurants$89.12')
+  })
+
+  it('moves only this charge when "Always file" is turned off', async () => {
+    const fake = seeded()
+    const sheet = await startMoving(fake, 'CONTOSO MARKET')
+    fireEvent.click(sheet.getByRole('checkbox', { name: 'Always file CONTOSO MARKET here' }))
+    fireEvent.change(sheet.getByRole('combobox', { name: 'Move to' }), { target: { value: 'card' } })
+    fireEvent.click(sheet.getByRole('button', { name: 'Move' }))
+
+    await sheet.findByRole('status')
+    expect(fake.rpcCalls[0]?.args).toEqual({ p_transaction: 't1', p_category: 'card', p_learn: false })
+  })
+
+  it("offers every other category under Workbook's headings, in list order", async () => {
+    const sheet = await startMoving(seeded(), 'CONTOSO MARKET')
+    const picker = sheet.getByRole('combobox', { name: 'Move to' })
+    const groups = [...picker.querySelectorAll('optgroup')].map((g) => [g.label, ...[...g.children].map((o) => o.textContent)])
+    expect(groups).toEqual([['Bills', 'Rent'], ['Variable expenses', 'Restaurants'], ['Not spending', 'Card payments']])
+    fireEvent.click(sheet.getByRole('button', { name: 'Cancel' }))
+    expect(sheet.queryByRole('combobox')).toBeNull()
+  })
+
+  it('says why in words when the move is refused, and leaves the charge where it was', async () => {
+    const fake = seeded()
+    fake.fail('rpc/recategorise_transaction', '42501')
+    const sheet = await startMoving(fake, 'CONTOSO MARKET')
+    fireEvent.change(sheet.getByRole('combobox', { name: 'Move to' }), { target: { value: 'dining' } })
+    fireEvent.click(sheet.getByRole('button', { name: 'Move' }))
+
+    const alert = await sheet.findByRole('alert')
+    expect(alert.textContent).toBe(
+      'Could not move this chargeThat charge or that category is no longer there — it may have changed on another device. Nothing was moved. (code 42501)',
+    )
+    expect(sheet.getByText('CONTOSO MARKET', { selector: 'p span' })).toBeTruthy()
+    expect(fake.tables.transactions.find((t) => t.id === 't1')?.category_id).toBe('groceries')
+    expect(sheet.getByRole('button', { name: 'Move' }).hasAttribute('disabled')).toBe(false)
   })
 })

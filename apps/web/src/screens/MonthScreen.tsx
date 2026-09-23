@@ -160,6 +160,7 @@ function OpenedRow({
     if (row === undefined) continue
     return (
       <MonthCharges
+        categoryId={categoryId}
         name={row.name}
         heading={LIST_HEADING[kind]}
         month={month}
