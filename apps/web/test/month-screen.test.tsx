@@ -1,6 +1,7 @@
-import { cleanup, fireEvent, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MonthScreen } from '../src/screens/MonthScreen.js'
+import { useAddress } from '../src/nav.js'
 import type { Category, LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
@@ -189,5 +190,33 @@ describe('MonthScreen summary and notes', () => {
 
     renderScreen(<MonthScreen month="2026-10" />, fake)
     expect(await screen.findByRole('button', { name: '3 from other months waiting for review' })).toBeTruthy()
+  })
+})
+
+describe('MonthScreen while another month loads', () => {
+  function Routed() {
+    return <MonthScreen month={useAddress().month} />
+  }
+
+  it("never shows one month's rows or review count under the next month's title", async () => {
+    const fake = seeded()
+    fake.tables.ingest_candidates.push({
+      id: 'p1', posted_on: '2026-09-03', amount_cents: -1349, merchant: 'LITWARE COFFEE', merchant_raw: 'LITWARE COFFEE', status: 'pending',
+    })
+    window.location.hash = '/month/2026-09'
+    renderScreen(<Routed />, fake)
+    expect(await screen.findByRole('button', { name: /Not filed yet: 1 from September/ })).toBeTruthy()
+
+    // The address changes; August's reads have not answered yet.
+    act(() => {
+      window.location.hash = '/month/2026-08'
+      window.dispatchEvent(new HashChangeEvent('hashchange'))
+    })
+    expect(screen.getByRole('heading', { name: 'August 2026' })).toBeTruthy()
+    expect(screen.getByText('Loading…')).toBeTruthy()
+    expect(screen.queryByRole('region')).toBeNull()
+    expect(screen.queryByRole('button', { name: /Not filed yet/ })).toBeNull()
+
+    expect(await screen.findByRole('button', { name: '1 from other months waiting for review' })).toBeTruthy()
   })
 })
