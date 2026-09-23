@@ -12,3 +12,12 @@ export type { ChartFrame } from './frame.js'
 export { spendingDoughnut, type DoughnutInput, type DoughnutSlice } from './doughnut.js'
 export { incomeBars, type IncomeBar, type IncomeBarsInput } from './bars.js'
 export { shareRing, yearPie, TOP3_COLOURS, type PieInput, type PieSlice, type ShareRingInput } from './pie.js'
+export {
+  goalActualColumns,
+  incomeExpenseColumns,
+  type ColumnPart,
+  type GoalActualGroup,
+  type GoalActualInput,
+  type IncomeExpenseInput,
+  type MonthColumn,
+} from './columns.js'
