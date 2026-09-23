@@ -75,10 +75,10 @@ describe('MonthScreen blocks', () => {
 
     const variable = block('Variable expenses')
     expect(variable.getByText('$85.00')).toBeTruthy()
-    expect(variable.getByRole('rowheader', { name: 'Groceries' }).closest('tr')?.textContent).toBe('Groceries$100.00')
-    expect(block('Bills').getByText('$55.00', { selector: 'td' })).toBeTruthy()
-    expect(block('Income').getByText('$2,500.00', { selector: 'td' })).toBeTruthy()
-    expect(block('Savings').getByText('$300.00', { selector: 'td' })).toBeTruthy()
+    expect(variable.getByRole('rowheader', { name: 'Groceries' }).closest('tr')?.textContent).toBe('Groceries100.00')
+    expect(block('Bills').getByText('55.00', { selector: 'td' })).toBeTruthy()
+    expect(block('Income').getByText('2,500.00', { selector: 'td' })).toBeTruthy()
+    expect(block('Savings').getByText('300.00', { selector: 'td' })).toBeTruthy()
     // The card payment is in no block.
     expect(screen.queryByText('Card payments')).toBeNull()
   })
@@ -87,7 +87,7 @@ describe('MonthScreen blocks', () => {
     renderScreen(<MonthScreen month="2026-09" />, seeded())
 
     const clothing = (await screen.findByRole('rowheader', { name: 'Clothing' })).closest('tr')
-    expect(clothing?.textContent).toBe('Clothing-$40.00')
+    expect(clothing?.textContent).toBe('Clothing-40.00')
     expect(await screen.findByText('<b>Dinner & drinks</b>')).toBeTruthy()
     expect(document.querySelector('section b')).toBeNull()
   })
@@ -113,7 +113,7 @@ describe('MonthScreen blocks', () => {
 
     expect(await screen.findByRole('heading', { name: 'August 2026' })).toBeTruthy()
     expect(await block('Variable expenses').findByRole('rowheader', { name: 'Groceries' })).toBeTruthy()
-    expect(block('Variable expenses').getByText('$99.99', { selector: 'td' })).toBeTruthy()
+    expect(block('Variable expenses').getByText('99.99', { selector: 'td' })).toBeTruthy()
     expect(screen.queryByRole('rowheader', { name: 'Clothing' })).toBeNull()
   })
 

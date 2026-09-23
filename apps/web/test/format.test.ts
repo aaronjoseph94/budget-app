@@ -5,6 +5,7 @@ import {
   describeReason,
   describeSetupFailure,
   describeWriteFailure,
+  formatAmount,
   formatBasisPoints,
   formatCents,
   formatDateRange,
@@ -131,6 +132,12 @@ describe('the smaller display helpers', () => {
   it('shows a magnitude without the sign, for places the label carries direction', () => {
     expect(formatMagnitude(-1_200)).toBe('$12.00')
     expect(formatMagnitude(1_200)).toBe('$12.00')
+  })
+
+  it('shows a cell amount without the symbol, keeping its sign and cents', () => {
+    expect(formatAmount(160_000)).toBe('1,600.00')
+    expect(formatAmount(-3_274)).toBe('-32.74')
+    expect(formatAmount(0)).toBe('0.00')
   })
 
   it('gives today as a local ISO date', () => {

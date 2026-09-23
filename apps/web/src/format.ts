@@ -270,6 +270,11 @@ export function formatBasisPoints(bp: number): string {
   return `${Math.round(bp / 100)}%`
 }
 
+/** An amount in a column whose heading already says it is money: `1,600.00`, `-32.74`. */
+export function formatAmount(amountCents: number): string {
+  return formatCents(amountCents).replace('$', '')
+}
+
 /** A signed amount shown as a magnitude, for places where the direction is the label. */
 export function formatMagnitude(amountCents: number): string {
   return formatCents(Math.abs(amountCents))

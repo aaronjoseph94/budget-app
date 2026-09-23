@@ -4,7 +4,7 @@ import { useAppData } from '../app-data.js'
 import { countPendingBetween, latestStatementEnd, listTransactions, type LedgerRow } from '../ledger.js'
 import { LIST_HEADING } from '../lists.js'
 import { navigate } from '../nav.js'
-import { formatCents, formatIsoDate, formatMagnitude, formatMonthTitle, todayIso } from '../format.js'
+import { formatAmount, formatCents, formatIsoDate, formatMagnitude, formatMonthTitle, todayIso } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
@@ -111,15 +111,17 @@ export function MonthScreen({ month }: { month: string | null }) {
               : `Statement imported up to ${formatIsoDate(sheet.importedThrough)}`}
           </p>
           {/* Phones: the block every statement changes first (§6.2). Four
-            columns on a desktop in Workbook's own arrangement, Jan!B3:V44 (§6.3). */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            columns on a desktop in Workbook's own arrangement, Jan!B3:V44 (§6.3),
+            from 1280px: below that a card is too narrow for three columns of
+            amounts, and two columns hold them. */}
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <Summary sheet={sheet} />
-            <Block kind="variable" block={sheet.blocks.variable} onOpen={setOpened} className="order-1 lg:order-7" />
-            <Block kind="bill" block={sheet.blocks.bill} onOpen={setOpened} className="order-2 lg:order-4" />
-            <Block kind="subscription" block={sheet.blocks.subscription} onOpen={setOpened} className="order-3 lg:order-6" />
-            <Block kind="debt" block={sheet.blocks.debt} onOpen={setOpened} className="order-4 lg:order-5" />
-            <Block kind="income" block={sheet.blocks.income} onOpen={setOpened} className="order-5 lg:order-2" />
-            <Block kind="savings" block={sheet.blocks.savings} onOpen={setOpened} className="order-6 lg:order-3" />
+            <Block kind="variable" block={sheet.blocks.variable} onOpen={setOpened} className="order-1 xl:order-7" />
+            <Block kind="bill" block={sheet.blocks.bill} onOpen={setOpened} className="order-2 xl:order-4" />
+            <Block kind="subscription" block={sheet.blocks.subscription} onOpen={setOpened} className="order-3 xl:order-6" />
+            <Block kind="debt" block={sheet.blocks.debt} onOpen={setOpened} className="order-4 xl:order-5" />
+            <Block kind="income" block={sheet.blocks.income} onOpen={setOpened} className="order-5 xl:order-2" />
+            <Block kind="savings" block={sheet.blocks.savings} onOpen={setOpened} className="order-6 xl:order-3" />
           </div>
           {/* Left out of every block and total above, so said out loud (D9). */}
           {sheet.transfersCents !== 0 ? (
@@ -235,7 +237,7 @@ function Summary({ sheet }: { sheet: PeriodSheet }) {
   return (
     <section
       aria-label="Summary"
-      className="order-0 rounded-xl border bg-summary p-4 shadow-sm md:col-span-2 lg:order-1"
+      className="order-0 rounded-xl border bg-summary p-4 shadow-sm md:col-span-2 xl:order-1"
     >
       <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
         <div>
@@ -284,7 +286,9 @@ const TONE: Record<BlockKind, { band: string; header: string; ink: string; rule:
  * One block: its heading and Actual total on the band, then a row per
  * category on the list. A row with no budget and nothing this month folds
  * behind "Show N empty". Budget and Left columns join when budgets are
- * stored (S8); until then no row has one, so only Actual is shown.
+ * stored (S8); until then no row has one, so only Actual is shown. Cells
+ * leave out the "$", as the plan's phone sketch does (§6.2): with it, three
+ * columns of amounts do not fit a 360px phone or a desktop card.
  */
 function Block({
   kind,
@@ -325,48 +329,52 @@ function Block({
           </button>
         </p>
       ) : (
-        <table className="w-full text-sm">
-          <thead className={cn(tone.header, tone.ink)}>
-            <tr>
-              <th scope="col" className="px-4 py-1.5 text-left text-xs font-medium">
-                Category
-              </th>
-              <th scope="col" className="px-4 py-1.5 text-right text-xs font-medium">
-                Actual
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {shown.map((r) => (
-              // The whole row takes a tap; the button in it is what a keyboard
-              // or a screen reader reaches, named by the category.
-              <tr
-                key={r.categoryId}
-                onClick={() => onOpen(r.categoryId)}
-                className={cn('cursor-pointer border-t hover:bg-accent/60', tone.rule)}
-              >
-                <th scope="row" className="px-4 py-2 text-left font-normal">
-                  <button
-                    type="button"
-                    aria-haspopup="dialog"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onOpen(r.categoryId)
-                    }}
-                    className="break-words rounded-sm text-left underline-offset-4 outline-none [overflow-wrap:anywhere] hover:underline focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    {r.name}
-                  </button>
+        // A table wider than its card scrolls rather than clip a column. On
+        // a desktop the four cards take Workbook's smaller table type.
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm xl:text-xs">
+            <thead className={cn(tone.header, tone.ink)}>
+              <tr>
+                <th scope="col" className="px-4 py-1.5 text-left text-xs font-medium">
+                  Category
                 </th>
-                {/* A zero on a budgeted row stays blank, as Workbook's ";;" format leaves it. */}
-                <td className={cn('tnum whitespace-nowrap px-4 py-2 text-right', r.actualCents < 0 && 'text-spend')}>
-                  {r.basis === 'planned' ? <span className="mr-1.5 text-xs text-muted-foreground">planned</span> : null}
-                  {r.basis === 'none' ? '' : formatCents(r.actualCents)}
-                </td>
+                <th scope="col" className="px-4 py-1.5 text-right text-xs font-medium">
+                  Actual
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {shown.map((r) => (
+                // The whole row takes a tap; the button in it is what a keyboard
+                // or a screen reader reaches, named by the category.
+                <tr
+                  key={r.categoryId}
+                  onClick={() => onOpen(r.categoryId)}
+                  className={cn('cursor-pointer border-t hover:bg-accent/60', tone.rule)}
+                >
+                  <th scope="row" className="px-4 py-2 text-left font-normal">
+                    <button
+                      type="button"
+                      aria-haspopup="dialog"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onOpen(r.categoryId)
+                      }}
+                      className="break-words rounded-sm text-left underline-offset-4 outline-none [overflow-wrap:anywhere] hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      {r.name}
+                    </button>
+                  </th>
+                  {/* A zero on a budgeted row stays blank, as Workbook's ";;" format leaves it. */}
+                  <td className={cn('tnum whitespace-nowrap px-4 py-2 text-right', r.actualCents < 0 && 'text-spend')}>
+                    {r.basis === 'planned' ? <span className="mr-1.5 text-xs text-muted-foreground">planned</span> : null}
+                    {r.basis === 'none' ? '' : formatAmount(r.actualCents)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
       {empty > 0 ? (
         <button
