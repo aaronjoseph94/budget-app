@@ -123,20 +123,26 @@ describe('DebtsScreen, payoff plans', () => {
     for (const c of cards) expect([...c.querySelectorAll('dd')].map((d) => d.textContent)).toEqual(['October 2026', '$3.05'])
   })
 
-  it("rolls a cleared debt's payment on the snowball, and says when a plan never ends", async () => {
-    // A $50.00 card on $100.00 a month clears in its first month with
-    // $50.00 over; a $300.00 loan at 0% on $100.00 a month takes three
-    // months alone, two when the card's payment rolls into it.
+  it("rolls a cleared debt's payment into the smallest balance or the highest APR, and says when a plan never ends", async () => {
+    // debt-strategy.test.ts's three, from September: Z $100 at 0%, X $600 at
+    // 12%, Y $300 at 0%, $100.00 a month each. Minimums only: X is paid in
+    // March with $15.55 of interest. Snowball (Z, Y, X): December, $10.14.
+    // Avalanche (X first): December, $9.13.
     const fake = createFakeSupabase({
       debts: [
-        debt('a', 'Card', 5_000, 10_000, 0, '2026-09-01', 0),
-        debt('b', 'Loan', 30_000, 10_000, 0, '2026-09-01', 1),
+        debt('z', 'Z', 10_000, 10_000, 0, '2026-09-01', 0),
+        debt('x', 'X', 60_000, 10_000, 1_200, '2026-09-01', 1),
+        debt('y', 'Y', 30_000, 10_000, 0, '2026-09-01', 2),
       ],
     })
     renderScreen(<DebtsScreen />, fake)
     const plans = await screen.findByRole('region', { name: 'Payoff plans' })
-    const month = (name: string) => within(within(plans).getByRole('listitem', { name })).getAllByRole('definition')[0]?.textContent
-    expect([month('Minimums only'), month('Snowball'), month('Avalanche')]).toEqual(['November 2026', 'October 2026', 'October 2026'])
+    const figures = (name: string) => within(within(plans).getByRole('listitem', { name })).getAllByRole('definition').map((d) => d.textContent)
+    expect([figures('Minimums only'), figures('Snowball'), figures('Avalanche')]).toEqual([
+      ['March 2027', '$15.55'],
+      ['December 2026', '$10.14'],
+      ['December 2026', '$9.13'],
+    ])
     cleanup()
     renderScreen(<DebtsScreen />, createFakeSupabase({ debts: [debt('c', 'Store card', 100_000, 1_000, 2_400, '2026-01-01', 0)] }))
     const never = await screen.findByRole('region', { name: 'Payoff plans' })
