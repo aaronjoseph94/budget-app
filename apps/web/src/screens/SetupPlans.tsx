@@ -5,6 +5,7 @@ import { listPlanHistory, setPlan, type Category, type PlanRow } from '../ledger
 import { formatCents, formatForInput, formatMonthTitle } from '../format.js'
 import { Button } from '../components/ui/button.js'
 import { Input } from '../components/ui/form.js'
+import { Figure } from '../components/ui/type.js'
 
 /**
  * Workbook's Bills tab, inside Setup (plan §6.5, S9): a day paid and a monthly
@@ -106,6 +107,22 @@ export function PlanHeadings({ month }: { month: string }) {
         $8.34 a month; if your card is charged for it once a year, leave the amount blank instead.
       </p>
     </div>
+  )
+}
+
+/**
+ * One of Workbook's total tiles (Bills!D32, H32, L32 and H36): the label on the
+ * card's pink, the figure in Comfortaa beside it, from core's billsTotals.
+ * To the cent (D8), where Workbook's "$"#,##0 shows Netflix's 17.99 as $18.
+ */
+export function TotalTile({ label, cents }: { label: string; cents: number }) {
+  return (
+    <dl className="flex overflow-hidden rounded-lg border border-owed-rule text-owed-ink">
+      <dt className="flex items-center bg-owed-band px-3 py-2 text-sm font-medium">{label}</dt>
+      <dd className="flex flex-1 items-center justify-end bg-card px-3 py-2">
+        <Figure className="text-xl font-bold">{formatCents(cents)}</Figure>
+      </dd>
+    </dl>
   )
 }
 

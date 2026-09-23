@@ -249,3 +249,53 @@ describe('SetupScreen, monthly amounts saved in quick succession or refused', ()
     expect(september(fake)).toEqual([])
   })
 })
+
+/** A tile's figure, found by its label, in a card or anywhere. */
+const tile = async (label: string, list?: string) => {
+  const term = list === undefined ? await screen.findByText(label) : await (await card(list)).findByText(label)
+  return term.nextElementSibling?.textContent
+}
+
+describe("SetupScreen, Workbook's total tiles", () => {
+  it('totals each card and all three together, to the cent, for this month', async () => {
+    const fake = seeded()
+    fake.tables.categories.push(category('spotify', 'Spotify', 'subscription', 1))
+    fake.tables.category_plans.push(plan('p5', 'spotify', '2026-02', 1_199, 2))
+    renderScreen(<SetupScreen />, fake)
+
+    // Rent 1,600 + Phone 85; nothing on Debts; Netflix stopped, Spotify 11.99.
+    await waitFor(async () => expect(await tile('Bills total', 'Bills')).toBe('$1,685.00'))
+    expect(await tile('Debts total', 'Debts')).toBe('$0.00')
+    expect(await tile('Subscriptions total', 'Subscriptions')).toBe('$11.99')
+    // D7: Workbook's Bills!H36 would leave the subscriptions out, at $1,685.00.
+    expect(await tile('Fixed monthly bills')).toBe('$1,696.99')
+    expect(screen.getByText('Bills, debts and subscriptions together, in September 2026.')).toBeTruthy()
+    expect((await card('Variable expenses')).queryByText(/ total$/)).toBeNull()
+  })
+
+  it('follows a saved amount, a stop and a later month', async () => {
+    const fake = seeded()
+    // October's rise is typed already; September's totals do not see it (D13).
+    fake.tables.category_plans.push(plan('p6', 'rent', '2026-10', 170_000, 1))
+    renderScreen(<SetupScreen />, fake)
+    await waitFor(async () => expect(await tile('Bills total', 'Bills')).toBe('$1,685.00'))
+
+    await type('Debts', 'Monthly amount for Car Loan, from September on', '350')
+    await waitFor(async () => expect(await tile('Debts total', 'Debts')).toBe('$350.00'))
+    expect(await tile('Fixed monthly bills')).toBe('$2,035.00')
+
+    fireEvent.click(await (await card('Bills')).findByRole('button', { name: 'Stop Phone from September' }))
+    await waitFor(async () => expect(await tile('Bills total', 'Bills')).toBe('$1,600.00'))
+    expect(await tile('Fixed monthly bills')).toBe('$1,950.00')
+  })
+
+  it('shows no totals while an amount names a category that did not load', async () => {
+    const fake = seeded()
+    fake.tables.category_plans.push(plan('p9', 'gone', '2026-02', 5_000, 3))
+    renderScreen(<SetupScreen />, fake)
+
+    await screen.findByRole('alert')
+    expect(screen.queryByText('Bills total')).toBeNull()
+    expect(screen.queryByText('Fixed monthly bills')).toBeNull()
+  })
+})

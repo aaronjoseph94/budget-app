@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { useAppData } from '../app-data.js'
-import { appendToLists, isoDate, monthBounds, moveInList } from '@budget/core'
+import { appendToLists, isoDate, monthBounds, moveInList, type BillsTotals } from '@budget/core'
 import {
   addCategories,
   ensureCategory,
@@ -12,13 +12,13 @@ import {
 } from '../ledger.js'
 import { atEndOf, groupByList, LIST_HEADING, LISTS, starterList, type CategoryKind } from '../lists.js'
 import { saveDisplayName } from '../profile.js'
-import { todayIso } from '../format.js'
+import { formatMonthTitle, todayIso } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { navigate } from '../nav.js'
-import { PlanFields, PlanHeadings, useMonthlyAmounts, type MonthlyAmounts } from './SetupPlans.js'
+import { PlanFields, PlanHeadings, TotalTile, useMonthlyAmounts, type MonthlyAmounts } from './SetupPlans.js'
 
 interface ListCard {
   readonly kind: CategoryKind
@@ -91,6 +91,7 @@ export function SetupScreen() {
                 amounts={RECURRING.has(card.kind) ? amounts : null}
               />
             ))}
+            {section.label === 'Recurring expenses' ? <FixedTotal amounts={amounts} month={month} /> : null}
           </section>
         ))}
       </div>
@@ -100,6 +101,28 @@ export function SetupScreen() {
 
 /** The lists with Workbook's Day Paid and Monthly Amount columns (Bills!B:D, F:H, J:L). */
 const RECURRING: ReadonlySet<CategoryKind> = new Set(['bill', 'debt', 'subscription'])
+
+/** The tile under each recurring card, and the total its list adds to (Bills!D32, H32, L32). */
+const CARD_TOTAL: Readonly<Partial<Record<CategoryKind, { label: string; field: keyof BillsTotals }>>> = {
+  bill: { label: 'Bills total', field: 'billsCents' },
+  debt: { label: 'Debts total', field: 'debtsCents' },
+  subscription: { label: 'Subscriptions total', field: 'subscriptionsCents' },
+}
+
+/**
+ * Workbook's "Fixed Monthly Bills" tile (Bills!H36), under the three cards. It
+ * adds all three lists: Workbook's formula reads an empty cell for the third
+ * and drops the subscriptions (D7), so the line under it says what is in it.
+ */
+function FixedTotal({ amounts, month }: { amounts: MonthlyAmounts; month: string }) {
+  if (amounts.status !== 'ready' || amounts.totals === null) return null
+  return (
+    <section aria-label="Fixed monthly bills" className="space-y-1 pt-1">
+      <TotalTile label="Fixed monthly bills" cents={amounts.totals.allFixedCents} />
+      <p className="text-xs text-muted-foreground">Bills, debts and subscriptions together, in {formatMonthTitle(month)}.</p>
+    </section>
+  )
+}
 
 /** Why monthly amounts are not shown, once, above the three cards that would show them. */
 function AmountsProblem({ amounts }: { amounts: MonthlyAmounts }) {
@@ -254,6 +277,8 @@ function ListCardView({
   // What the last monthly amount saved on this card did.
   const [note, setNote] = useState<string | null>(null)
   const plans = amounts?.status === 'ready' ? amounts.plans : null
+  const totals = amounts?.status === 'ready' ? amounts.totals : null
+  const total = CARD_TOTAL[card.kind]
 
   /** Run one write, then reload, or show why it was refused. */
   const write = async (change: () => Promise<unknown>): Promise<boolean> => {
@@ -306,6 +331,11 @@ function ListCardView({
         </>
       )}
       {note !== null ? <p role="status" className="mt-2 text-xs text-owed-ink">{note}</p> : null}
+      {totals !== null && total !== undefined && rows.length > 0 ? (
+        <div className="mt-3">
+          <TotalTile label={total.label} cents={totals[total.field]} />
+        </div>
+      ) : null}
       <form
         className="mt-2 flex gap-2"
         onSubmit={(e) => {
