@@ -104,6 +104,13 @@ describe('periodSheet (suite)', () => {
     expect(() => sheet([row('2025-01-01', -100, 'gone')])).toThrow(/category gone/)
   })
 
+  it('refuses a budget whose category was not passed in, and shows one on Not spending in no block (N30)', () => {
+    expect(() => periodSheet({ ...BASE, budgets: [{ categoryId: 'gone', budgetCents: 100 }] })).toThrow(/category gone/)
+    // 0008 keeps a budget when its category moves to Not spending; no block has a row for it.
+    const s = periodSheet({ ...BASE, budgets: [{ categoryId: 'card', budgetCents: 5_000 }] })
+    expect(Object.values(s.blocks).map((b) => b.budgetTotalCents)).toEqual([0, 0, 0, 0, 0, 0])
+  })
+
   it('refuses a fractional amount, a backwards window and two budgets for one category', () => {
     expect(() => sheet([row('2026-09-02', -10.5, 'food')])).toThrow(RangeError)
     expect(() => sheet([], '2026-09-30', '2026-09-01')).toThrow(/cannot end before/)

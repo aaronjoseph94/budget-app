@@ -188,6 +188,14 @@ export function periodSheet(input: PeriodSheetInput): PeriodSheet {
   const known = new Map(input.categories.map((c) => [c.id, c]))
   const budgets = new Map<string, Cents | null>()
   for (const b of input.budgets) {
+    // Refused, as a ledger row is below: a budget left out of its block is a
+    // budget total that looks right and is not. A category removed takes its
+    // budgets with it (0008), so this is a screen whose categories and
+    // budgets were read at different moments. One on Not spending is known,
+    // and kept: no block has a row to show it in (N30).
+    if (!known.has(b.categoryId)) {
+      throw new RangeError(`A budget names category ${b.categoryId}, which was not passed in`)
+    }
     if (budgets.has(b.categoryId)) {
       throw new RangeError(`Two budgets for category ${b.categoryId}; resolve them to one before asking`)
     }
