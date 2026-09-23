@@ -99,6 +99,15 @@ flag, so it printed usage and exited 0 on every run. Only the eslint half of
 the row was ever biting. **A gate whose failure has not been observed is an
 assumption, not a check** — including one this file already claims is verified.
 
+Module boundaries are deny by default (2026-09-23). The rules used to name
+only what each listed package could not reach, so `golden-verification` and
+any new package were governed by nothing, and an import resolving into a
+library's `dist/` was dropped from the graph entirely by an unanchored
+exclude, so no rule could see supabase-js, vitest or vite. Every arrow must
+now match an `allowed` line in `.dependency-cruiser.cjs`. Verified by
+importing the engine from `golden-verification`, and `vitest` from an app
+source file: both passed the old rules and turn the purity gate `RED`.
+
 ## Pending — agreed, not yet checkable
 
 Each names the module whose existence activates it. Moving a row up requires

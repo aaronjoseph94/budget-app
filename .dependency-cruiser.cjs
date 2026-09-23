@@ -106,6 +106,51 @@ module.exports = {
     },
     { name: 'no-circular', severity: 'error', from: {}, to: { circular: true } },
   ],
+  // Deny by default. The rules above name what each module may NOT reach, so
+  // a package they do not mention was governed by nothing: golden-verification
+  // could have imported the engine it grades, and a new package started life
+  // with no boundary at all. Every dependency must now match one line below or
+  // it is a `not-in-allowed` error, so a new package or a new arrow is refused
+  // until someone writes down that it is meant. The forbidden rules stay for
+  // their messages, which say why.
+  allowedSeverity: 'error',
+  allowed: [
+    // Within a module. Tests read their own source, helpers and fixtures;
+    // source never reads its tests.
+    { from: { path: '^(packages|apps)/([^/]+)/src/' }, to: { path: '^$1/$2/src/' } },
+    { from: { path: '^(packages|apps)/([^/]+)/test/' }, to: { path: '^$1/$2/(src|test|fixtures)/' } },
+    // Tests run under vitest, screens under Testing Library, and a test or
+    // the fixture loader may read files; nothing that ships may.
+    {
+      from: { path: '^(packages|apps)/[^/]+/test/' },
+      to: { path: 'node_modules/(vitest|@testing-library/[^/]+)/' },
+    },
+    { from: { path: '^(packages/[^/]+/test/|packages/golden-verification/src/)' }, to: { dependencyTypes: ['core'] } },
+    // The graph in CAPABILITY-MAP.md. money-primitives has no line: it is the root.
+    { from: { path: '^packages/core/' }, to: { path: '^packages/money-primitives/src/' } },
+    { from: { path: '^packages/core/test/' }, to: { path: '^packages/golden-verification/src/' } },
+    { from: { path: '^packages/schema/' }, to: { path: ['^packages/money-primitives/src/', 'node_modules/zod/'] } },
+    {
+      from: { path: '^packages/statement-parsers/' },
+      to: { path: ['^packages/money-primitives/src/', '^packages/schema/src/', 'node_modules/zod/'] },
+    },
+    // The app, and the libraries its package.json names. Which of the
+    // packages' exports it may use is the forbidden rules' business above.
+    {
+      from: { path: '^apps/web/(src|test)/' },
+      to: {
+        path: [
+          '^packages/(money-primitives|core|schema|statement-parsers)/src/',
+          'node_modules/(react|react-dom|zod|@supabase/supabase-js)/',
+        ],
+      },
+    },
+    // Build configuration beside the app: Vite and its plugins, never the app.
+    {
+      from: { path: '^apps/web/[^/]+\\.ts$' },
+      to: { path: 'node_modules/(vite|@vitejs/plugin-react|@tailwindcss/vite)/' },
+    },
+  ],
   options: {
     doNotFollow: { path: 'node_modules' },
     tsConfig: { fileName: 'tsconfig.base.json' },
@@ -113,8 +158,11 @@ module.exports = {
     // Generated declaration output. It mirrors src, so leaving it in means
     // every rule is evaluated twice and every violation reported twice — and
     // its `./index.css` import is unresolvable by construction, since tsc does
-    // not emit the stylesheet Vite handles.
-    exclude: { path: '(^|/)(dist|dist-types|coverage)/' },
+    // not emit the stylesheet Vite handles. Anchored to this repository's own
+    // folders: unanchored, it also dropped every import that resolves into a
+    // library's dist/ — supabase-js, vitest, vite — so those arrows were
+    // invisible to every rule, and a package importing one read as clean.
+    exclude: { path: '^(packages|apps)/[^/]+/(dist|dist-types|coverage)/' },
     // vite and its plugins are ESM-only and describe themselves with an
     // `exports` map. Without the import condition, resolution falls back to a
     // `main` that is not there and vite.config.ts reads as unresolvable —
