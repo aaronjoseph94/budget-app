@@ -6,6 +6,7 @@ import { AppDataProvider, useAppData } from './app-data.js'
 import { navigate, useAddress, type Screen } from './nav.js'
 import { MonthScreen } from './screens/MonthScreen.js'
 import { MoreScreen } from './screens/MoreScreen.js'
+import { PaycheckScreen } from './screens/PaycheckScreen.js'
 import { WeekScreen } from './screens/WeekScreen.js'
 import { ReviewScreen } from './screens/ReviewScreen.js'
 import { AddScreen } from './screens/AddScreen.js'
@@ -57,10 +58,11 @@ const PHONE_TABS: readonly Tab[] = [
   { screen: 'more', label: 'More', icon: 'menu' },
 ]
 
-/** Wide screens have room for Year and Setup on the bar itself (§6.1). */
+/** Wide screens have room for Paycheck, Year and Setup on the bar itself (§6.1). */
 const DESKTOP_TABS: readonly Tab[] = [
   { screen: 'month', label: 'Month', icon: 'calendar' },
   { screen: 'week', label: 'Week', icon: 'week' },
+  { screen: 'paycheck', label: 'Paycheck', icon: 'wallet' },
   { screen: 'year', label: 'Year', icon: 'calendar' },
   { screen: 'review', label: 'Review', icon: 'inbox' },
   { screen: 'add', label: 'Add', icon: 'plus' },
@@ -82,8 +84,9 @@ function tabOf(screen: Screen, tabs: readonly Tab[]): Screen {
 export function Shell() {
   const { screen, period } = useAddress()
   const { pendingTotal, loadError } = useAppData()
-  // Month, Week and Year widen on a desktop to take Workbook's four columns (§6.3, §6.4).
-  const width = screen === 'month' || screen === 'week' || screen === 'year' ? 'max-w-3xl lg:max-w-7xl' : 'max-w-3xl'
+  // Month, Week, Paycheck and Year widen on a desktop to take Workbook's four columns (§6.3, §6.4).
+  const wide = screen === 'month' || screen === 'week' || screen === 'paycheck' || screen === 'year'
+  const width = wide ? 'max-w-3xl lg:max-w-7xl' : 'max-w-3xl'
 
   return (
     <div className="min-h-full">
@@ -125,6 +128,7 @@ export function Shell() {
         ) : null}
         {screen === 'month' ? <MonthScreen month={period} /> : null}
         {screen === 'week' ? <WeekScreen /> : null}
+        {screen === 'paycheck' ? <PaycheckScreen day={period} /> : null}
         {screen === 'review' ? <ReviewScreen /> : null}
         {screen === 'add' ? <AddScreen /> : null}
         {screen === 'more' ? <MoreScreen /> : null}
