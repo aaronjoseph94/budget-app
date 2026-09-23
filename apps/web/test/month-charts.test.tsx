@@ -20,15 +20,18 @@ const tx = (id: string, amount_cents: number, category_id: string): LedgerRow =>
 /**
  * Hand-derived. Variable: groceries 60.00 + 20.00 = 80.00 and the oddly
  * named one 20.00, of 100.00 above zero: 80% and 20%. Clothing's 40.00
- * return has no purchase, so it is below zero and not drawn (F17). Pay
+ * return has no purchase, so it is below zero and not drawn (F17); it sits
+ * between the two on the list, so the oddly named one is the third row.
+ * Books has nothing this month: no slice, and nothing to say about it. Pay
  * 2,500.00 against a 3,000.00 goal; Side hustle has neither and no bar.
  */
 function seeded(transactions: LedgerRow[]): FakeSupabase {
   return createFakeSupabase({
     categories: [
       cat('groceries', 'Groceries', 'variable', 0),
-      cat('odd', NAME, 'variable', 1),
-      cat('clothing', 'Clothing', 'variable', 2),
+      cat('clothing', 'Clothing', 'variable', 1),
+      cat('odd', NAME, 'variable', 2),
+      cat('books', 'Books', 'variable', 3),
       cat('pay', 'Pay', 'income', 0),
       cat('side', 'Side hustle', 'income', 1),
     ],
@@ -61,9 +64,10 @@ describe('MonthCharts', () => {
     renderScreen(<MonthScreen month="2026-09" />, seeded(MONTH))
 
     const doughnut = (await charts()).getByRole('img', { name: 'Variable expenses by category' })
-    // Groceries is the list's first row and takes Workbook's palest coral, the
-    // next row the next step (Jan chart13's colours by row).
-    expect([...doughnut.querySelectorAll('path')].map((p) => p.getAttribute('fill'))).toEqual(['#FFE3DE', '#F9D8D3'])
+    // Groceries is the list's first row and takes Workbook's palest coral; the
+    // oddly named one is its third row and takes the third step, though
+    // Clothing between them has no slice (Jan chart13's colours by row).
+    expect([...doughnut.querySelectorAll('path')].map((p) => p.getAttribute('fill'))).toEqual(['#FFE3DE', '#FFB8AE'])
     expect(texts(doughnut)).toEqual(['Groceries', '$80.00 · 80%', NAME, '$20.00 · 20%'])
     expect(doughnut.querySelector('desc')?.textContent).toBe(
       `Groceries: $80.00, 80% of spending. ${NAME}: $20.00, 20% of spending. Clothing is not drawn: refunds were more than spending.`,
@@ -95,6 +99,23 @@ describe('MonthCharts', () => {
       ['#9ABDB7', '2500'],
     ])
     expect(bars.querySelector('desc')?.textContent).toBe('Pay: $2,500.00 of a $3,000.00 goal.')
+  })
+
+  it('draws money in with no goal as a bar alone, on the same scale', async () => {
+    renderScreen(<MonthScreen month="2026-09" />, seeded([...MONTH, tx('t6', 50000, 'side')]))
+
+    const bars = (await charts()).getByRole('img', { name: 'Income against goals' })
+    expect(texts(bars)).toEqual(['Goal', 'Actual', 'Pay', '$2,500.00 of $3,000.00', 'Side hustle', '$500.00'])
+    // 500 of the 3,000.00 scale is 1,667 bp, 500 units of 3,000; no track.
+    const widths = [...bars.querySelectorAll('rect[rx="40"]')].map((r) => [r.getAttribute('fill'), r.getAttribute('width')])
+    expect(widths).toEqual([
+      ['#CCE2DF', '3000'],
+      ['#9ABDB7', '2500'],
+      ['#9ABDB7', '500'],
+    ])
+    expect(bars.querySelector('desc')?.textContent).toBe(
+      'Pay: $2,500.00 of a $3,000.00 goal. Side hustle: $500.00, no goal.',
+    )
   })
 
   it('says there is nothing to draw in a month with no spending, income or goals', async () => {
