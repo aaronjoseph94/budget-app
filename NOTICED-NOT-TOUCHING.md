@@ -1255,3 +1255,38 @@ waits on the owner's answer to N36.
 
 **To settle:** with N46 and N48, give the Week, Paycheck and the calendar
 one way to open a row's charges; give Year an icon of its own.
+
+---
+
+## N52 — What 0013 leaves for the Savings screen to handle
+
+**Seen:** 2026-09-23, writing migration 0013 (Sitting C).
+
+- **A fund's category can move off Savings.** 0013 refuses linking a goal
+  to anything but a Savings-list category, but nothing refuses moving that
+  category to another list afterwards, as with pay schedules (N27). Setup
+  turns 23514 on a move into "Remove the monthly amount first", which would
+  be the wrong sentence here.
+- **Removing a fund's category is refused (23503)**, and Setup says it
+  "still has charges filed under it", which is wrong for a category whose
+  only tie is a fund.
+- **A start date after the goal date is not refused.** Workbook shows `#NUM!`
+  in Months Remaining and $0 as the Monthly Contribution (Savings!V14,
+  Z14). Refusing it in the schema would be a divergence nobody chose.
+- **`balance_as_of` must move with `saved_cents`.** Retyping a linked
+  fund's amount without moving the date would count the transfers since
+  the old date twice. Nothing in the schema enforces that; the save does.
+- **The Settings card shows the oldest goal.** `getGoal` reads the first
+  goal by `created_at`. Once there is one goal per fund, which one Settings
+  and the Week show is an accident of which was created first.
+
+**Why not fixed here:** nothing reads the new columns until S16, and each
+is a screen or engine choice, not a migration's.
+
+**To settle:** at S16, read a fund's transfers only while its category is
+on Savings (as N27 settled it for pay schedules), give Setup a sentence for
+a fund's category, decide what Savings shows for a start date after the
+goal date, and have the save write `balance_as_of` whenever it writes
+`saved_cents` on a linked fund, and decide which goal the Settings card and
+the Week show once there are several.
+

@@ -24,6 +24,7 @@ returned." Running one twice is refused rather than applied twice.
 | `0010_month_balances.sql` | The bank balance you type for the start of each month. Needed by the Month, whose card shows it as Start and projects End of month from it, as soon as this branch is merged |
 | `0011_pay_schedules.sql` | When each income source pays: a payday, and weekly, every two weeks or monthly. Needed by Setup's Paid and First payday on each Income row, and by Paycheck, as soon as this branch is merged; the Bill Calendar will read it too |
 | `0012_dismiss_unreadable_lines.sql` | Dismissing a statement line the app could not read. Needed by Review as soon as this branch is merged |
+| `0013_savings_funds.sql` | Linking a savings goal to one of your Savings-list funds, with the date saving started and the date the amount you typed was true, so transfers you record after it can add to it. Your existing goal keeps working as it is. Nothing reads it yet; the Savings screen will |
 
 **Paste them in number order, all of them, before `main-tnlcto` is merged
 into `main`.** `main` deploys itself, and the app on this branch already

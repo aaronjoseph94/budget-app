@@ -1183,6 +1183,133 @@ end $$;
 
 reset role;
 
+-- ---------------------------------------------------------------------------
+-- 0013: a savings goal becomes a savings fund
+-- ---------------------------------------------------------------------------
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000000008', '11111111-1111-4111-8111-111111111111', 'Emergency Fund', 'savings'),
+  ('cccccccc-0000-4000-8000-000000000009', '11111111-1111-4111-8111-111111111111', 'Travel Fund', 'savings');
+
+-- The goal before/0013_savings_funds.sql wrote the way the Settings card
+-- saves one: it survives with every new column empty, and saves as before.
+set role app_user;
+set request.jwt.claim.sub = '33333333-3333-4333-8333-333333333333';
+
+do $$
+declare
+  legacy record;
+begin
+  select category_id, start_date, balance_as_of, saved_cents into legacy
+    from public.savings_goals where id = 'dddddddd-0000-4000-8000-000000000300';
+  if legacy is null or legacy.saved_cents <> 13300 or legacy.category_id is not null
+     or legacy.start_date is not null or legacy.balance_as_of is not null then
+    raise exception 'BACKFILL: a goal from before 0013 came out as %', legacy;
+  end if;
+  update public.savings_goals set saved_cents = 20000, target_date = '2026-12-01'
+   where id = 'dddddddd-0000-4000-8000-000000000300';
+  if (select saved_cents from public.savings_goals
+       where id = 'dddddddd-0000-4000-8000-000000000300') <> 20000 then
+    raise exception 'a goal with no fund could not be saved as the Settings card saves it';
+  end if;
+end $$;
+
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+
+do $$
+declare
+  u       uuid := '11111111-1111-4111-8111-111111111111';
+  fund    uuid := 'cccccccc-0000-4000-8000-000000000008';
+  travel  uuid := 'cccccccc-0000-4000-8000-000000000009';
+  rent    uuid := 'cccccccc-0000-4000-8000-000000000003';
+  theirs  uuid := 'cccccccc-0000-4000-8000-000000000201';
+  goal    uuid;
+begin
+  -- A fund: its category, when saving began, and when the typed amount was true.
+  insert into public.savings_goals
+    (user_id, name, target_cents, saved_cents, target_date, category_id, start_date, balance_as_of)
+    values (u, 'Emergency', 200000, 13300, '2026-10-08', fund, '2026-01-08', '2026-09-23')
+    returning id into goal;
+
+  -- Linked with no as-of date, which transfers are already in the typed
+  -- amount would be a guess.
+  begin
+    insert into public.savings_goals (user_id, name, target_cents, category_id)
+      values (u, 'Travel', 100000, travel);
+    raise exception 'NOT REFUSED: a fund linked to a category with no as-of date';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.savings_goals set balance_as_of = null where id = goal;
+    raise exception 'NOT REFUSED: a linked fund''s as-of date was cleared';
+  exception when check_violation then null;
+  end;
+
+  -- One fund per category, or each would count the same transfers.
+  begin
+    insert into public.savings_goals (user_id, name, target_cents, category_id, balance_as_of)
+      values (u, 'Emergency Again', 100000, fund, '2026-09-23');
+    raise exception 'NOT REFUSED: two funds filled by one category';
+  exception when unique_violation then null;
+  end;
+
+  -- Only a Savings-list category, written new or moved onto another row.
+  begin
+    insert into public.savings_goals (user_id, name, target_cents, category_id, balance_as_of)
+      values (u, 'Rent Fund', 100000, rent, '2026-09-23');
+    raise exception 'NOT REFUSED: a fund filled by a bill';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.savings_goals set category_id = rent where id = goal;
+    raise exception 'NOT REFUSED: a fund moved onto a bill';
+  exception when check_violation then null;
+  end;
+
+  -- Another user's category is the composite key's to refuse, not the list check's.
+  begin
+    insert into public.savings_goals (user_id, name, target_cents, category_id, balance_as_of)
+      values (u, 'Theirs', 100000, theirs, '2026-09-23');
+    raise exception 'NOT REFUSED: a fund on another user''s category';
+  exception when foreign_key_violation then null;
+  end;
+
+  -- Removing the category would lose the goal and its typed balance, so it is
+  -- refused while the fund names it.
+  begin
+    delete from public.categories where id = fund;
+    raise exception 'NOT REFUSED: a fund''s category was removed from under it';
+  exception when foreign_key_violation then null;
+  end;
+
+  -- Unlinked, the fund is a typed balance again and the category can go.
+  update public.savings_goals set category_id = null where id = goal;
+  delete from public.categories where id = fund;
+  if not exists (select 1 from public.savings_goals where id = goal) then
+    raise exception 'removing an unlinked category took the goal with it';
+  end if;
+
+  raise notice 'a savings fund is one per Savings-list category, with its as-of date';
+end $$;
+
+reset role;
+
+-- Removing a user still removes their funds and categories together: RESTRICT
+-- refuses removing a category on its own, not the cascade from auth.users.
+insert into auth.users (id) values ('44444444-4444-4444-8444-444444444444');
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000000400', '44444444-4444-4444-8444-444444444444', 'Fund', 'savings');
+insert into public.savings_goals (user_id, name, target_cents, category_id, balance_as_of) values
+  ('44444444-4444-4444-8444-444444444444', 'Fund', 100000,
+   'cccccccc-0000-4000-8000-000000000400', '2026-09-23');
+delete from auth.users where id = '44444444-4444-4444-8444-444444444444';
+do $$
+begin
+  if exists (select 1 from public.savings_goals
+              where user_id = '44444444-4444-4444-8444-444444444444') then
+    raise exception 'a removed user left a savings fund behind';
+  end if;
+end $$;
+
 -- The anonymous role — anyone holding the published key — cannot call any of
 -- these at all. Every SECURITY DEFINER function the browser calls is listed:
 -- one left off can lose its revoke with this check still green, as 0004's
