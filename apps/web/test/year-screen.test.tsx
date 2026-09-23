@@ -277,3 +277,28 @@ describe('YearScreen', () => {
     expect(window.location.hash).toBe('#/savings')
   })
 })
+
+describe('YearScreen, debts', () => {
+  it("draws each debt's balance today over its starting balance, on one scale, as Home's debt chart (D25)", async () => {
+    const fake = seeded()
+    // $300.00 at 1% a month from July, $100.00 a month: $3.02 left after
+    // September. A $600.00 loan at 0% from September, $100.00 a month: $500.00.
+    fake.tables.debts.push(
+      { id: 'd1', name: 'Loan', starting_balance_cents: 30_000, minimum_payment_cents: 10_000, apr_basis_points: 1_200, start_date: '2026-07-01', sort_order: 0 },
+      { id: 'd2', name: 'Car <b>', starting_balance_cents: 60_000, minimum_payment_cents: 10_000, apr_basis_points: 0, start_date: '2026-09-01', sort_order: 1 },
+    )
+    renderScreen(<YearScreen start="2025-01" />, fake)
+    const chart = await screen.findByRole('img', { name: 'Debts' })
+    expect(chart.textContent).toContain('Loan: $3.02 left of $300.00. Car <b>: $500.00 left of $600.00.')
+    // The scale is $600.00: the loan's track is half of 3,000 units, and
+    // the car's $500.00 is 8,333 bp, 2,500 units.
+    expect(chart.innerHTML).toMatch(/width="1500" height="100" rx="40" fill="#C8B6EB"/)
+    expect(chart.innerHTML).toMatch(/width="2500" height="100" rx="40" fill="#9171D7"/)
+  })
+
+  it('offers to add debts when there are none', async () => {
+    renderScreen(<YearScreen start={null} />, seeded())
+    fireEvent.click(await screen.findByRole('button', { name: 'Add your debts to see them here' }))
+    expect(window.location.hash).toBe('#/debts')
+  })
+})

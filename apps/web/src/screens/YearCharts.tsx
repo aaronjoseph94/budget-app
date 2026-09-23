@@ -1,6 +1,6 @@
 import { useId, useMemo, type ReactNode } from 'react'
-import { goalBars, partShares, stackedColumns, type SavingsFund, type TopExpense, type YearGroups, type YearSheet } from '@budget/core'
-import { goalActualColumns, incomeExpenseColumns, savingsGoalBars, shareRing, yearPie, type SvgMarkup } from '@budget/chart-specs'
+import { goalBars, partShares, stackedColumns, type DebtStatus, type SavingsFund, type TopExpense, type YearGroups, type YearSheet } from '@budget/core'
+import { debtBars, goalActualColumns, incomeExpenseColumns, savingsGoalBars, shareRing, yearPie, type SvgMarkup } from '@budget/chart-specs'
 import { formatCents, formatShare, formatShortMonth } from '../format.js'
 import { SvgChart } from '../components/ui/chart.js'
 import { cn } from '../lib/cn.js'
@@ -99,6 +99,29 @@ export function SavingsGoalsChart({ funds }: { funds: readonly SavingsFund[] }) 
     })
   }, [id, funds])
   return svg === null ? null : <SvgChart svg={svg} className="max-w-md" />
+}
+
+/**
+ * Home's debt chart (chart4, D25): each debt's balance today over a track
+ * as long as its starting balance, every debt on one scale, the largest
+ * starting balance, as chart4's columns share one axis; core's `goalBars`
+ * gives the lengths, the starting balance standing where a goal does.
+ */
+export function DebtsChart({ status }: { status: DebtStatus }) {
+  const id = useChartId()
+  const svg = useMemo(() => {
+    const lengths = goalBars({
+      rows: status.debts.map((d) => ({ categoryId: d.name, budgetCents: d.startingBalanceCents, actualCents: d.balanceCents })),
+    }).bars
+    const bars = status.debts.map((d, i) => ({
+      label: d.name,
+      valueText: `${formatCents(d.balanceCents)} left of ${formatCents(d.startingBalanceCents)}`,
+      goalBp: lengths[i]!.goalBp,
+      actualBp: lengths[i]!.actualBp === 0 ? null : lengths[i]!.actualBp,
+    }))
+    return debtBars({ id, title: 'Debts', description: said(bars.map((b) => `${b.label}: ${b.valueText}`)), bars })
+  }, [id, status])
+  return <SvgChart svg={svg} className="max-w-md" />
 }
 
 /** chart42's six, in its order (Hidden!I32:I37), short enough to sit under a pair of columns. */

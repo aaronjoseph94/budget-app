@@ -6,7 +6,8 @@ import { formatCents, formatMonthTitle, formatShare } from '../format.js'
 import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
 import { useFunds } from '../funds.js'
-import { SavingsGoalsChart, TopRing, YearPie } from './YearCharts.js'
+import { useDebts } from '../debts.js'
+import { DebtsChart, SavingsGoalsChart, TopRing, YearPie } from './YearCharts.js'
 
 /**
  * Workbook's Home, as the top of the Year (plan §2, §6.4): white cards on
@@ -24,6 +25,7 @@ export function YearGlance({ sheet, wide }: { sheet: YearSheet; wide: boolean })
   const startMonth = formatMonthTitle(sheet.startMonth).split(' ')[0]
   const best = atAGlance.bestSavingsMonth
   const funds = useFunds()
+  const debts = useDebts()
   return (
     <section
       aria-label="Year at a glance"
@@ -112,6 +114,21 @@ export function YearGlance({ sheet, wide }: { sheet: YearSheet; wide: boolean })
             <button type="button" className="text-left text-sm underline underline-offset-4" onClick={() => navigate('savings')}>
               Set a goal for a savings fund to see it here
             </button>
+          )
+        ) : null}
+      </Card>
+      {/* Home's debt chart (J12:M23, chart4): each debt today, whichever year is shown. */}
+      <Card className="sm:col-span-2 lg:col-span-4">
+        <h3 className="mb-2 text-xs font-medium text-muted-foreground">Debts today</h3>
+        {debts.status === 'loading' ? <p className="text-sm">Loading…</p> : null}
+        {debts.status === 'failed' ? <p className="text-sm">{debts.message}</p> : null}
+        {debts.status === 'ready' ? (
+          debts.debts.status === null ? (
+            <button type="button" className="text-left text-sm underline underline-offset-4" onClick={() => navigate('debts')}>
+              Add your debts to see them here
+            </button>
+          ) : (
+            <DebtsChart status={debts.debts.status} />
           )
         ) : null}
       </Card>
