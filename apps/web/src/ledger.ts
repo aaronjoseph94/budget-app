@@ -22,6 +22,7 @@ import {
   describePlanFailure,
   describeSetupFailure,
   describeWriteFailure,
+  shownBy,
   type PlanAction,
   type WriteError,
 } from './format.js'
@@ -813,7 +814,7 @@ export async function listPlanHistory(
         .order('id', { ascending: true })
         .range(from, to),
     {
-      changed: `Your monthly amounts changed while they were being read, so ${reader === 'month' ? 'this month is' : 'they are'} not shown. Try again.`,
+      changed: `Your monthly amounts changed while they were being read, so ${shownBy(reader)} not shown. Try again.`,
       describe: (error) => describePlanFailure(reader, error),
     },
   )

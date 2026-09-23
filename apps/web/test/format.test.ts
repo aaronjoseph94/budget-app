@@ -251,6 +251,19 @@ describe('describePlanFailure', () => {
     }
   })
 
+  it('says the Week is not shown when it cannot read them, and never names a month', () => {
+    expect(describePlanFailure('week', { code: 'PGRST205' })).toContain('(0009 in the setup guide), so this week cannot be shown.')
+    expect(describePlanFailure('week', { code: 'PGRST301' })).toBe(
+      'Your session expired. Sign in again to see this week. (code PGRST301)',
+    )
+    expect(describePlanFailure('week', { code: 'XX000' })).toBe(
+      'Your monthly amounts could not be read, so this week is not shown. Try again. (code XX000)',
+    )
+    for (const code of ['PGRST205', '42P01', '', 'PGRST301', 'XX000']) {
+      expect(describePlanFailure('week', { code })).not.toMatch(/saved|month is|this month|lists still work/)
+    }
+  })
+
   it("says a list can't have an amount, and never that the numbers did not add up", () => {
     expect(describePlanFailure('save', { code: '23514' })).toMatch(/^That list can't have a monthly amount/)
     expect(describePlanFailure('save', { code: '42P01' })).toContain('(0009 in the setup guide). Nothing was saved.')
