@@ -9,12 +9,14 @@ import { yearSheet, type YearSheet } from '../../src/year-sheet.js'
 /**
  * External check: Annual Budget's month rows and totals, each a cached value
  * from the Workbook workbook, transcribed under F11 (the fixture's $semantics
- * says how).
+ * says how). The Year gates planned amounts at its asOf, Annual's typed
+ * Current Month (F10).
  */
 
 type Dated<T, K extends keyof T> = Omit<T, K> & { [P in K]: string }
 interface Input {
   startMonth: string
+  asOf: string
   categories: PeriodCategory[]
   budgetHistory: Dated<BudgetHistoryRow, 'month'>[]
   planHistory: Dated<PlanHistoryRow, 'effectiveMonth'>[]
@@ -33,6 +35,7 @@ interface Cell {
 function yearFrom(input: Input): YearSheet {
   return yearSheet({
     startMonth: isoDate(input.startMonth),
+    asOf: isoDate(input.asOf),
     categories: input.categories,
     budgetHistory: input.budgetHistory.map((h) => ({ ...h, month: isoDate(h.month) })),
     planHistory: input.planHistory.map((p) => ({ ...p, effectiveMonth: isoDate(p.effectiveMonth) })),

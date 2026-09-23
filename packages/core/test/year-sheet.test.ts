@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { isoDate } from '@budget/money-primitives'
 import type { BudgetHistoryRow } from '../src/budgets.js'
 import type { PeriodCategory, PeriodEntry } from '../src/period-sheet.js'
+import type { PlanHistoryRow } from '../src/plans.js'
 import { yearSheet, type YearSheetInput } from '../src/year-sheet.js'
 
 /**
@@ -14,9 +15,11 @@ const cat = (id: string, kind: PeriodCategory['kind']): PeriodCategory => ({ id,
 const CATEGORIES = [cat('pay', 'income'), cat('fund', 'savings'), cat('rent', 'bill'), cat('loan', 'debt'), cat('music', 'subscription'), cat('food', 'variable')]
 const row = (postedOn: string, amountCents: number, categoryId: string): PeriodEntry => ({ postedOn: isoDate(postedOn), amountCents, categoryId })
 const budget = (categoryId: string, month: string, budgetCents: number): BudgetHistoryRow => ({ categoryId, month: isoDate(month), applies: 'only', budgetCents })
+const plan = (categoryId: string, effectiveMonth: string, plannedCents: number): PlanHistoryRow => ({ categoryId, effectiveMonth: isoDate(effectiveMonth), plannedCents, dueDay: 1 })
 const year = (over: Partial<YearSheetInput>) =>
   yearSheet({
     startMonth: isoDate('2026-01-01'),
+    asOf: isoDate('2026-12-31'),
     categories: CATEGORIES,
     budgetHistory: [],
     planHistory: [],
@@ -45,6 +48,31 @@ describe('yearSheet totals (suite, D7)', () => {
     expect(s.totals.expenses.actualCents).toBe(3_000)
     expect(s.months[3]!.variable.actualCents).toBe(2_000)
     expect(s.months.map((m) => m.expenses.budgetCents).filter((c) => c !== 0)).toEqual([91_000])
+  })
+})
+
+describe('yearSheet gate (suite, F10)', () => {
+  const plans = [plan('rent', '2026-01-01', 80_000), plan('music', '2026-01-01', 1_000)]
+
+  it('counts planned bills up to and including the month of asOf, and none after', () => {
+    const s = year({ asOf: isoDate('2026-04-17'), planHistory: plans })
+    expect(s.months.map((m) => m.bill.actualCents)).toEqual([80_000, 80_000, 80_000, 80_000, 0, 0, 0, 0, 0, 0, 0, 0])
+    expect(s.months.map((m) => m.countsPlanned).lastIndexOf(true)).toBe(3)
+    expect(s.totals.expenses.actualCents).toBe(4 * 81_000)
+  })
+
+  it('still counts a real row after asOf, and lets a real row replace its plan before it (D5)', () => {
+    const s = year({
+      asOf: isoDate('2026-02-01'),
+      planHistory: plans,
+      entries: [row('2026-02-03', -1_299, 'music'), row('2026-06-03', -1_000, 'music')],
+    })
+    expect(s.months.slice(0, 6).map((m) => m.subscription.actualCents)).toEqual([1_000, 1_299, 0, 0, 0, 1_000])
+  })
+
+  it('counts no plan when the whole Year is after asOf, and still refuses one naming an unknown category', () => {
+    expect(year({ asOf: isoDate('2025-12-31'), planHistory: plans }).totals.bill.actualCents).toBe(0)
+    expect(() => year({ asOf: isoDate('2025-12-31'), planHistory: [plan('gone', '2026-01-01', 1)] })).toThrow(/category gone/)
   })
 })
 

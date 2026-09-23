@@ -22,12 +22,19 @@
  *   Budgeted and Actual (Hidden!N4:U4). Expenses are the four added
  *   (`Annual Budget!P10 =D30+J30+P30+V30`, `Q10 =E30+K30+Q30+W30`); savings
  *   are not an expense, as on the month tab (F7).
+ * - F10, the gate. `Hidden!O4 =SUMIFS(Bills!Q:Q, …that month…)+IF(month <=
+ *   'Annual Budget'!$D$7, Bills!$D$32, "")`: a bill's planned amount counts
+ *   only in months up to and including the month of asOf, Annual's typed
+ *   Current Month. Real rows count in every month, as the SUMIFS half does,
+ *   and budgets and goals are never gated (Hidden!N4 =Jan!$D$21). Under D5 a
+ *   real row still replaces its bill's plan in a month the gate lets through.
  * - D7, the totals. `Annual Budget!J9 =SUM(J10:J16)`, and V9 and W9, add
  *   seven months; `P9 =SUM(P10:P36)` and Q9 run on into the Subscriptions
  *   card below. Every total here adds the twelve rows and nothing else.
  *
- * Proven by workbook-year part 1 (Annual Budget, transcribed under F11), and
- * the D7 fixes, which the sample cannot show, by hand-derived tests.
+ * Proven by workbook-year part 1 (Annual Budget and Hidden, transcribed under
+ * F11), and the D7 fixes, which the sample cannot show, by hand-derived
+ * tests.
  */
 import { type Cents, type IsoDate, sumCents } from '@budget/money-primitives'
 import type { BudgetHistoryRow } from './budgets.js'
@@ -38,6 +45,8 @@ import { monthBounds, shiftMonth } from './week.js'
 export interface YearSheetInput {
   /** Any day of the Year's first month (Annual Budget!D6). */
   readonly startMonth: IsoDate
+  /** Today, or the day asked about: the last month whose planned bills count (F10). */
+  readonly asOf: IsoDate
   readonly categories: readonly PeriodCategory[]
   /** Every budget and goal typed, for any month (0008). */
   readonly budgetHistory: readonly BudgetHistoryRow[]
@@ -66,6 +75,8 @@ export interface YearGroups {
 export interface YearMonth extends YearGroups {
   /** The month's first day. */
   readonly month: IsoDate
+  /** Whether this month counts its planned bills: at or before the month of asOf (F10). */
+  readonly countsPlanned: boolean
 }
 
 export interface YearSheet {
@@ -79,19 +90,29 @@ export interface YearSheet {
 
 export function yearSheet(input: YearSheetInput): YearSheet {
   const start = monthBounds(input.startMonth).start
+  const gate = monthBounds(input.asOf).start
+  // Refused here, as monthSheet refuses it, because the gate hands a later
+  // month no plans at all: a stale amount must fail whichever months it hits.
+  const known = new Set(input.categories.map((c) => c.id))
+  for (const row of input.planHistory) {
+    if (!known.has(row.categoryId)) {
+      throw new RangeError(`A monthly amount names category ${row.categoryId}, which was not passed in`)
+    }
+  }
 
   const months = Array.from({ length: 12 }, (_, i): YearMonth => {
     const month = shiftMonth(start, i)
+    const countsPlanned = month <= gate
     const sheet = monthSheet({
       asOf: month,
       categories: input.categories,
       budgetHistory: input.budgetHistory,
-      planHistory: input.planHistory,
+      planHistory: countsPlanned ? input.planHistory : [],
       entries: input.entries,
       statementPeriodEnds: [],
       startingBalanceCents: null,
     })
-    return { month, ...groupsOf(sheet) }
+    return { month, countsPlanned, ...groupsOf(sheet) }
   })
 
   const total = (g: keyof YearGroups): YearFigure => ({
