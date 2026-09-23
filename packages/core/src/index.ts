@@ -23,8 +23,11 @@ export {
 } from './import-summary.js'
 
 export {
+  appendToLists,
   endOfList,
   moveInList,
+  type AppendToListsInput,
+  type AppendToListsOutput,
   type EndOfListInput,
   type EndOfListOutput,
   type ListRow,

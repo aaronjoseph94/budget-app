@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { endOfList, moveInList } from '../src/list-order.js'
+import { appendToLists, endOfList, moveInList } from '../src/list-order.js'
 
 describe('endOfList', () => {
   it('starts an empty list at 0', () => {
@@ -55,5 +55,59 @@ describe('moveInList', () => {
     expect(moveInList({ rows: list, id: 'a', direction: 'up' }).changes).toEqual([])
     expect(moveInList({ rows: list, id: 'b', direction: 'down' }).changes).toEqual([])
     expect(moveInList({ rows: list, id: 'z', direction: 'up' }).changes).toEqual([])
+  })
+})
+
+describe('appendToLists', () => {
+  const row = (name: string, kind: string, sortOrder: number) => ({ name, kind, sortOrder })
+
+  // Each list continues after its own highest position, in the order asked.
+  it('adds each row to the bottom of its own list, in order', () => {
+    const { rows } = appendToLists({
+      existing: [row('Pay', 'income', 0), row('Rent', 'bill', 4)],
+      wanted: [
+        { name: 'Income 1', kind: 'income' },
+        { name: 'Phone', kind: 'bill' },
+        { name: 'Income 2', kind: 'income' },
+        { name: 'Netflix', kind: 'subscription' },
+      ],
+    })
+    expect(rows).toEqual([
+      row('Income 1', 'income', 1),
+      row('Phone', 'bill', 5),
+      row('Income 2', 'income', 2),
+      row('Netflix', 'subscription', 0),
+    ])
+  })
+
+  // Whatever list it is on: a name lives on one list only (D11), and the
+  // database would refuse the second. " rent " is the same name to a person.
+  it('skips a name already there, on any list and in any case', () => {
+    const { rows } = appendToLists({
+      existing: [row('Rent', 'variable', 0)],
+      wanted: [
+        { name: ' rent ', kind: 'bill' },
+        { name: 'Phone', kind: 'bill' },
+      ],
+    })
+    expect(rows).toEqual([row('Phone', 'bill', 0)])
+  })
+
+  // The goal's name can be one of Workbook's own; it is added once.
+  it('adds a name asked for twice only once', () => {
+    const { rows } = appendToLists({
+      existing: [],
+      wanted: [
+        { name: 'Travel Fund', kind: 'savings' },
+        { name: 'Travel Fund', kind: 'savings' },
+      ],
+    })
+    expect(rows).toEqual([row('Travel Fund', 'savings', 0)])
+  })
+
+  // What makes a second press harmless: everything is already there.
+  it('adds nothing when every name exists', () => {
+    const existing = [row('Rent', 'bill', 0), row('Phone', 'bill', 1)]
+    expect(appendToLists({ existing, wanted: existing }).rows).toEqual([])
   })
 })

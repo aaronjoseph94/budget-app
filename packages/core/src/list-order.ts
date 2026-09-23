@@ -27,6 +27,46 @@ export function endOfList(input: EndOfListInput): EndOfListOutput {
   return { sortOrder: Math.max(...input.sortOrders) + 1 }
 }
 
+export interface AppendToListsInput<K extends string> {
+  /** Every row already stored, on every list. */
+  readonly existing: readonly { readonly name: string; readonly kind: K; readonly sortOrder: number }[]
+  /** The rows to add, in the order each list should show them. */
+  readonly wanted: readonly { readonly name: string; readonly kind: K }[]
+}
+
+export interface AppendToListsOutput<K extends string> {
+  /** Only the rows to write, each with its position. Empty when all exist. */
+  readonly rows: readonly { readonly name: string; readonly kind: K; readonly sortOrder: number }[]
+}
+
+/**
+ * Many rows at once, each to the bottom of its own list, as endOfList places
+ * one. A name already stored, on any list, is left out: a name lives on one
+ * list only (D11), and leaving it out is what makes adding the same set twice
+ * add nothing the second time. Names compare trimmed and case-blind, because
+ * "rent" beside "Rent" reads to a person as the same category twice.
+ */
+export function appendToLists<K extends string>(input: AppendToListsInput<K>): AppendToListsOutput<K> {
+  const key = (name: string) => name.trim().toLowerCase()
+  const taken = new Set(input.existing.map((row) => key(row.name)))
+  const next = new Map<K, number>()
+  const rows: { name: string; kind: K; sortOrder: number }[] = []
+  for (const want of input.wanted) {
+    if (taken.has(key(want.name))) continue
+    taken.add(key(want.name))
+    // The first new row on a list goes after what is stored; each one after
+    // it goes after the row added before it.
+    const following = next.get(want.kind)
+    const sortOrder =
+      following !== undefined
+        ? following
+        : endOfList({ sortOrders: input.existing.filter((row) => row.kind === want.kind).map((row) => row.sortOrder) }).sortOrder
+    rows.push({ name: want.name, kind: want.kind, sortOrder })
+    next.set(want.kind, sortOrder + 1)
+  }
+  return { rows }
+}
+
 export interface ListRow {
   readonly id: string
   readonly sortOrder: number
