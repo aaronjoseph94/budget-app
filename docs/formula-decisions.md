@@ -766,3 +766,75 @@ Savings!Z14  =IFERROR((F14-J14)/V14, 0)                         [88.9047619]
 months are counted from the start date, the monthly figure goes down as the
 fund fills, not up as the goal date nears; that is also what Workbook does
 each time its current amount is retyped (NOTICED N54).
+
+---
+
+## F22 — What a debt's status is on a day
+
+**Decided 2026-09-23. Engineering default: copies the workbook, read at an
+explicit day instead of today.** The final month's interest is D24 (owner
+chose). Whether recorded payments move a debt's balance is not decided
+(NOTICED N53); until it is, balances come from the schedule alone, as
+Workbook's do.
+
+```
+Debt Calculator!H9    =INDEX(J26:J496, MATCH(EOMONTH(TODAY(),-1)+1, $C$26:$C496))  [11356.30966]
+Debt Calculator!B10   =SUM(H9, M9, … DN9)                                         [11913.52651]
+Debt Calculator!E20   =100%-(B10/D26)                                             [0.4518231949]
+Debt Calculator!I495  =J18-H9  ("Balance Paid")    I496 =H9  ("Remaining Balance")
+Debt Calculator!D27   =SUM(J26, O26, … DP26)   [20958]   E26 =SUM(I26 …)+SUM(H26 …)   [775]
+```
+
+**Chosen.**
+
+- **The day.** `debtStatus` takes `asOf` and finds the schedule row of
+  `asOf`'s month, as H9 finds the row of today's month. The balance is that
+  row's closing balance, so the month's payment counts as made from its
+  first day, as in Workbook. The cached H9 was worked out in September 2026,
+  month 19 of the sample; the golden test asserts month 19 by its index,
+  never by today (CLAUDE.md).
+- **Paid** is the starting balance less the balance (I495). It is net of
+  interest, so it can be below zero while interest outruns the payments.
+  **Remaining** is the balance itself (I496).
+- **Progress** is paid over the starting balance, E20, in basis points,
+  half-up as F13 and F17 round. With no starting balance at all (no debts,
+  or every one typed as 0) there is no progress, where E20 divides by 0.
+- **Before a debt's start month** its balance is its starting balance and
+  nothing is paid; Workbook's MATCH finds no row there and shows `#N/A`. After
+  its last payment, its balance is 0.
+- **Totals.** Starting (D26), the balance (B10), paid, progress (E20), this
+  month's payments with extras (E column) and the balances this month
+  started from (D column: the prior month's closing balances).
+- **Start months.** Each debt keeps its own start month (0014); when every
+  debt shares one, as all of Workbook's do, this is the workbook exactly. The
+  debt-free date is the latest payoff month among them (B14).
+
+**What the owner would see.** Workbook's figures, at whichever month the
+screen reads, with the cents of D1 and the final-month interest of D24.
+
+---
+
+## F23 — Snowball and avalanche
+
+**Decided 2026-09-23. Engineering default. Not from the workbook**, which
+cannot do it (D2): Hidden Debt's ACCELERATOR (CL:DH) is an unfinished stub
+whose every cell is 0 or FALSE. So nothing here has a cached value, and the
+tests are hand-derived.
+
+**Chosen.**
+
+- **What rolls.** Every month the plan pays out what all the started debts'
+  minimums and that month's extras add up to, the same amount the flat plan
+  pays while every debt is owed. A cleared debt's minimum, and what is left
+  of a payment larger than the balance it clears, go to the next debt in
+  order, in the same month.
+- **The order.** Snowball: the smallest starting balance first. Avalanche:
+  the highest APR first. Ties go by name. The order is set once from what
+  was typed, not re-sorted as balances change, so it is the list a person
+  would write down and work through.
+- **Everything else is `amortize`'s:** no interest in a debt's first month,
+  interest half-up to the cent (D1), the final month charged (D24), each
+  debt from its own start month; a debt that has not started takes no
+  rolled money. The flat plan is `amortize` itself, and the tests check that
+  it gives the golden debt-free date.
+- **Shown** side by side: each plan's debt-free date and its total interest.

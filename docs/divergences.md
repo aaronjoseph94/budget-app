@@ -641,3 +641,71 @@ whole track. Each fund is on its own scale, as each of Workbook's columns is.
 **Why.** The legend says the chart shows the current balance against the
 goal; the series it plots cannot show that, since half a column is drawn
 for a fund with nothing in it.
+
+---
+
+## D24 — A debt's final month is charged its interest
+
+**Date:** 2026-09-23
+**Sheet / cells:** Hidden Debt!EH15:FD998 (the balance the Debt Calculator
+shows in J27:J494, O27, T27, Y27 …) and the Payment columns H27:H494, M27,
+R27, W27 …; formula decision F22
+**Settled:** owner chose, asked and answered on 2026-09-23.
+
+**Workbook behaviour.** Each month's balance is
+`IF(ROUND(prior − minimum − extra, 2) <= 0, 0, prior × (1 + APR/12) − minimum − extra)`
+(Hidden Debt!EH15). When the payment would clear the prior balance, the
+balance is set to 0 and that month's interest is never charged, and the
+Payment column shows the prior balance (`IF(Y36<Y$19, Y36, …)`, W37). The
+sample's Student Loan ends so: its month-11 balance is **318.0350271**
+(Debt Calculator!Y36); month 12 pays **318.0350271** (W37) and closes at
+**0** (Y37), with the month's total payments **643.0350271** (E37). Credit
+Card 2's last month pays **122.7263215** (M48) and Credit Card 1's
+**22.28132305** (H136).
+
+**Chosen behaviour.** The final month is a month like any other: interest
+accrues on the prior balance, and the payment is that balance plus its
+interest. The Student Loan's month 12 charges $3.18 at 12% and pays
+**$321.22**, so that month's total payments are **$646.22**. Credit Card 2
+pays $124.29 ($1.53 of interest; $1.56 more than Workbook's, with D1's cents)
+and Credit Card 1 pays $22.32.
+
+**Why.** A lender charges interest on the days a balance is owed, including
+the last month's. Leaving it off makes the plan a few dollars cheaper than
+the real payoff and the last payment too small to clear the debt.
+
+**The effect.** For Workbook's sample: $4.80 more interest across the four
+debts, on their final payments only. Every payoff month and the debt-free
+date are unchanged (D1's table stands), and so are the golden cells, all
+from months where no debt ends: E26 775, E28 825, D27 20958. One case can
+move a payoff by a month: a prior balance at or under the minimum that
+interest lifts over it. Workbook clears it that month; the engine leaves the
+few cents of interest for the next.
+
+---
+
+## D25 — Home's debt chart draws what is left against where it started
+
+**Date:** 2026-09-23
+**Sheet / cells:** Home chart4 (anchor J15), a stacked column of Hidden!J69:J73
+(`='Debt Calculator'!H9`, the balance this month, #9171D7) on
+Hidden!K69:K73 (`='Debt Calculator'!J18`, the starting balance, #C8B6EB);
+the Debt Calculator's doughnuts (I495:I496 per debt, 23 pastel pairs)
+**Settled:** stated to the owner, no objection (plan decision 9, Workbook's
+mistakes fixed), as D23 was for the savings chart beside it.
+
+**Workbook behaviour.** Each debt's column stacks the balance left on top of
+the starting balance, so its height is the two added: Credit Card 1 stands
+at 13,333 + 11,356, taller than it ever was, and a debt paid off still
+stands at its starting balance.
+
+**Chosen behaviour.** Each debt is a bar: what is left (#9171D7) over a
+track as long as its starting balance (#C8B6EB), every debt on one scale,
+the largest starting balance, as chart4's columns share one axis. The
+lengths are basis points from packages/core. On the Debts screen each
+card's doughnut, and the total's, use the same two colours (paid #C8B6EB,
+left #9171D7) in place of the Debt Calculator's 23 pastel pairs, so the
+debt colours mean one thing wherever they appear.
+
+**Why.** A stack of two amounts that are not parts of one whole means
+nothing on its own: the chart could never show a debt shrinking.

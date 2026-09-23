@@ -1341,6 +1341,11 @@ recorded payments replace the schedule's; C — link it only to show recorded
 payments beside the schedule. B or C needs a migration adding a nullable
 `category_id` (no backfill); A needs nothing.
 
+**Still open at S17 (2026-09-23).** The owner could not be asked during
+S17. The Debts screen reads balances from the schedule alone, which is A
+and is Workbook's own behaviour (F22), so nothing departs from the workbook
+while the question waits; B or C can still be added without a backfill.
+
 ---
 
 ## N54 — A fund's monthly figure falls as it fills, not as its date nears
