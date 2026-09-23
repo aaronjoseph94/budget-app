@@ -21,16 +21,23 @@ const tx = (id: string, posted_on: string, amount_cents: number, category_id: st
  * 14,400.00. Groceries has a 400.00 budget from January, so Expenses are
  * budgeted 400.00 a month, 4,800.00 a year; February spends 120.00 and
  * October 30.00, a real row after the gate, which counts. Pay has a
- * 3,000.00 goal from January and 2,500.00 in September.
+ * 3,000.00 goal from January and 2,500.00 in September. 500.00 goes to
+ * the flight fund in March.
  */
 function seeded(): FakeSupabase {
   return createFakeSupabase({
-    categories: [cat('pay', 'Pay', 'income'), cat('rent', 'Rent', 'bill'), cat('food', 'Groceries', 'variable')],
+    categories: [
+      cat('pay', 'Pay', 'income'),
+      cat('rent', 'Rent', 'bill'),
+      cat('food', 'Groceries', 'variable'),
+      cat('fund', 'Flight fund', 'savings'),
+    ],
     transactions: [
       tx('t1', '2026-02-10', -12000, 'food'),
       tx('t2', '2026-09-15', 250000, 'pay'),
       tx('t3', '2026-10-02', -3000, 'food'),
       tx('t4', '2027-01-05', -4500, 'food'),
+      tx('t5', '2026-03-12', -50000, 'fund'),
     ],
     category_budgets: [
       { id: 'b1', category_id: 'food', month: '2026-01-01', applies: 'onward', budget_cents: 40000 },
@@ -136,6 +143,39 @@ describe('YearScreen', () => {
     cleanup()
     renderScreen(<YearScreen start="2026-04" />, seeded())
     expect(await screen.findByText('April 2026 to March 2027')).toBeTruthy()
+  })
+
+  it("shows Home's cards at the top, each number the Year's own", async () => {
+    const fake = seeded()
+    fake.tables.month_balances.push({ id: 'mb1', month: '2026-01-01', starting_balance_cents: 100000 })
+    renderScreen(<YearScreen start="2026-01" />, fake, 'Robin')
+
+    const glance = within(await screen.findByRole('region', { name: 'Year at a glance' }))
+    expect(glance.getByRole('heading', { name: 'Hi, Robin!' })).toBeTruthy()
+    const said = (label: string) => glance.getByText(label).nextElementSibling?.textContent
+    // Expenses 14,400.00 of Rent + 150.00 of Groceries; Left over is
+    // 2,500.00 − 14,550.00 − 500.00, and the end 1,000.00 more.
+    expect([said('Income'), said('Expenses'), said('Savings')]).toEqual(['$2,500.00', '$14,550.00', '$500.00'])
+    expect([said('Left over'), said('Starting balance'), said('Ending balance')]).toEqual([
+      '-$12,550.00', '$1,000.00', '-$11,550.00',
+    ])
+    expect(said('Biggest expense')).toBe('Rent$14,400.00')
+    expect(said('Best savings month')).toBe('March 2026$500.00')
+    // 14,400 of 14,550 is 9,897 bp; 150 of it 103 bp.
+    expect(glance.getAllByRole('listitem').map((li) => li.textContent)).toEqual([
+      'Rent$14,400.00 · 99%',
+      'Groceries$150.00 · 1%',
+    ])
+  })
+
+  it('asks for a name and a starting balance where they are missing', async () => {
+    renderScreen(<YearScreen start="2026-01" />, seeded())
+
+    const glance = within(await screen.findByRole('region', { name: 'Year at a glance' }))
+    expect(glance.getByRole('heading', { name: 'Hi!' })).toBeTruthy()
+    expect(glance.getAllByText('Not yet')).toHaveLength(2)
+    fireEvent.click(glance.getByRole('button', { name: 'Type January’s starting balance on the Month to see these' }))
+    expect(window.location.hash).toBe('#/month/2026-01')
   })
 
   it('shows no year when a read fails, and says why', async () => {

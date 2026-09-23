@@ -16,6 +16,7 @@ import { MONTH_NAMES, formatAmount, formatCents, formatMonthTitle, todayIso } fr
 import { Alert } from '../components/ui/feedback.js'
 import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
+import { YearGlance } from './YearGlance.js'
 
 /**
  * Workbook's Annual Budget (plan §6.4): twelve months from a start month the
@@ -118,6 +119,7 @@ export function YearScreen({ start: address }: { start: string | null }) {
 
       {sheet !== null && typeof sheet !== 'string' ? (
         <>
+          <YearGlance sheet={sheet} />
           <div role="group" aria-label="Table" className="grid grid-cols-4 gap-1.5">
             {GROUPS.map((g) => (
               <button
