@@ -123,7 +123,13 @@ export default tseslint.config(
     // engine's functions stay out, so no chart can compute its own figure.
     files: ['packages/chart-specs/src/**/*.ts'],
     rules: {
-      'no-restricted-syntax': ['error', ...NO_AMBIENT_STATE, ...NO_FLOAT_MONEY],
+      'no-restricted-syntax': [
+        'error',
+        // The engine's messages, naming this package, so a failure points at
+        // the file it is in.
+        ...NO_AMBIENT_STATE.map((rule) => ({ ...rule, message: rule.message.replace('packages/core', 'chart-specs') })),
+        ...NO_FLOAT_MONEY,
+      ],
       'no-restricted-globals': [
         'error',
         ...['window', 'document', 'navigator', 'DOMParser', 'XMLSerializer'].map((name) => ({
