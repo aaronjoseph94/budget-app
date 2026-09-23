@@ -170,7 +170,7 @@ export function MonthScreen({ month }: { month: string | null }) {
             from 1280px: below that a card is too narrow for three columns of
             amounts, and two columns hold them. */}
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <MonthSummary sheet={sheet} />
+            <MonthSummary sheet={sheet} month={start} />
             <Block kind="variable" block={sheet.blocks.variable} {...blockProps} className="order-1 xl:order-7" />
             <Block kind="bill" block={sheet.blocks.bill} {...blockProps} className="order-2 xl:order-4" />
             <Block kind="subscription" block={sheet.blocks.subscription} {...blockProps} className="order-3 xl:order-6" />

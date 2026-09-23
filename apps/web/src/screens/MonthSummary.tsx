@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { PeriodSheet } from '@budget/core'
-import { formatCents } from '../format.js'
+import { formatCents, formatMonthTitle } from '../format.js'
 import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
+import { StartEditor } from './StartEditor.js'
 
 /**
  * Workbook's summary card, Jan!B5:F16: Start, Spent, Left to spend and End of
@@ -11,18 +12,28 @@ import { cn } from '../lib/cn.js'
  * and its D9 note ("Type in the Bank Balance you started the month with!")
  * say each number is, in Workbook's order, two to a row as in the plan's sketch.
  *
- * Start is the balance typed for this month (decision 6). With none typed
- * the card asks for it where the number would be, and End of month, which
- * core gives only from a typed start (D17), says what it waits for.
+ * Start is the balance typed for this month (decision 6), and is typed by
+ * tapping it. With none typed the card asks for it where the number would
+ * be, and End of month, which core gives only from a typed start (D17), says
+ * what it waits for.
  *
  * A negative Left to spend takes Workbook's pink (Jan!D13:E14's conditional
  * format) in an ink that can be read on it. Workbook marks nothing else on the
  * card, so a negative End of month keeps the card's colour and shows its
  * minus sign (D8).
  */
-export function MonthSummary({ sheet }: { sheet: PeriodSheet }) {
+export function MonthSummary({
+  sheet,
+  month,
+}: {
+  sheet: PeriodSheet
+  /** The month's first day. */
+  month: string
+}) {
   const { startingBalanceCents: start, spentCents, leftToSpendCents: left, endingBalanceCents: end } = sheet.summary
   const noBudgets = sheet.blocks.variable.rows.every((r) => r.budgetCents === null)
+  const [editing, setEditing] = useState(false)
+  const [note, setNote] = useState<string | null>(null)
   return (
     <section
       aria-label="Summary"
@@ -30,7 +41,18 @@ export function MonthSummary({ sheet }: { sheet: PeriodSheet }) {
     >
       <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
         <Entry label="Start">
-          {start === null ? <Waiting>Type your starting bank balance</Waiting> : <Figure>{formatCents(start)}</Figure>}
+          <button
+            type="button"
+            aria-label={`Starting balance for ${formatMonthTitle(month).split(' ')[0]}, ${start === null ? 'none typed' : formatCents(start)}`}
+            aria-expanded={editing}
+            onClick={() => {
+              setNote(null)
+              setEditing(true)
+            }}
+            className="rounded-sm text-left underline decoration-dotted underline-offset-4 outline-none hover:decoration-solid focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {start === null ? <Waiting>Type your starting bank balance</Waiting> : <Figure>{formatCents(start)}</Figure>}
+          </button>
         </Entry>
         <Entry label="Spent">
           <Figure>{formatCents(spentCents)}</Figure>
@@ -51,6 +73,22 @@ export function MonthSummary({ sheet }: { sheet: PeriodSheet }) {
           {end === null ? <Waiting>Shown once Start is typed</Waiting> : <Figure>{formatCents(end)}</Figure>}
         </Entry>
       </dl>
+      {editing ? (
+        <StartEditor
+          month={month}
+          start={start}
+          onCancel={() => setEditing(false)}
+          onSaved={(saved) => {
+            setEditing(false)
+            setNote(saved)
+          }}
+        />
+      ) : null}
+      {note !== null ? (
+        <p role="status" className="mt-3 text-xs text-summary-label">
+          {note}
+        </p>
+      ) : null}
     </section>
   )
 }
