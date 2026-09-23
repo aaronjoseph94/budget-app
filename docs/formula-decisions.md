@@ -793,9 +793,10 @@ Debt Calculator!D27   =SUM(J26, O26, … DP26)   [20958]   E26 =SUM(I26 …)+SUM
   first day, as in Workbook. The cached H9 was worked out in September 2026,
   month 19 of the sample; the golden test asserts month 19 by its index,
   never by today (CLAUDE.md).
-- **Paid** is the starting balance less the balance (I495). It is net of
-  interest, so it can be below zero while interest outruns the payments.
-  **Remaining** is the balance itself (I496).
+- **Paid** is the starting balance less the balance (I495), net of
+  interest. Workbook's goes below zero for a debt whose interest outruns its
+  minimum; `amortize` refuses such a debt and says which, so here it never
+  does. **Remaining** is the balance itself (I496).
 - **Progress** is paid over the starting balance, E20, in basis points,
   half-up as F13 and F17 round. With no starting balance at all (no debts,
   or every one typed as 0) there is no progress, where E20 divides by 0.

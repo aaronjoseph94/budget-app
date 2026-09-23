@@ -68,6 +68,8 @@ export interface ScheduleMonth {
 
 export interface DebtSchedule {
   readonly name: string
+  /** J18: the balance as of the start month, before month 1's payment. */
+  readonly startingBalanceCents: number
   readonly months: readonly ScheduleMonth[]
   /** Months after the start month. The workbook's J21. */
   readonly monthsToPayoff: number
@@ -140,6 +142,7 @@ function amortizeOne(
     if (balance === 0) {
       return {
         name: debt.name,
+        startingBalanceCents: cents(debt.startingBalanceCents),
         months,
         monthsToPayoff: month - 1,
         payoffMonthIndex: month,

@@ -1,4 +1,5 @@
 export { amortize } from './debt.js'
+export { debtStatus, type DebtStanding, type DebtStatus, type DebtStatusInput, type DebtTotals } from './debt-status.js'
 export type {
   AmortizeInput,
   AmortizeOutput,

@@ -10,7 +10,10 @@
       "monthsToPayoff": "J21/O21/T21/Y21",
       "debtFreeBy": "B14",
       "totalMonthlyPayments": "E18",
-      "schedule": "B26:Y496"
+      "schedule": "B26:Y496",
+      "monthPayments": "E26, E28",
+      "monthOpeningBalances": "D27",
+      "statusRow": "H9 (the row of a month, read here by its index), I495, I496, E20"
     },
     "extractedOn": "2026-09-21",
     "note": "Workbook sample data, not the user's real balances. Safe to commit."
@@ -22,7 +25,8 @@
     "payment": "min(minimumPayment + extraForThatMonth, outstandingBalance). The final month pays only the remainder.",
     "monthsToPayoff": "payoffMonthIndex - 1. The workbook reports 110 while the balance reaches zero at month index 111.",
     "debtFreeDate": "EDATE(startDate, max(monthsToPayoff)) across all debts.",
-    "roundingDivergence": "Excel retains sub-cent fractions; this engine rounds to whole cents each month (ROUND_HALF_UP on accrued interest). See docs/divergences.md."
+    "roundingDivergence": "Excel retains sub-cent fractions; this engine rounds to whole cents each month (ROUND_HALF_UP on accrued interest). See docs/divergences.md.",
+    "status": "debtStatus reads the schedule row of asOf's month, as H9 reads today's (F22). Month 19 (2026-09-01) is the month the cached H9 (11356.30966) and M9 (557.2168436) were worked out in; it is asserted by its index against the schedule rows, never through H9. E37 (643.0350271, the Student Loan's final month) is left out: D24 charges the interest Workbook forgives."
   },
   "input": {
     "startDate": "2025-03-01",
@@ -907,5 +911,33 @@
         "balanceCentsFromExcel": 0
       }
     ]
+  },
+  "status": {
+    "payments": [
+      {
+        "cell": "E26",
+        "asOf": "2025-03-01",
+        "month": 1,
+        "paymentCents": 77500
+      },
+      {
+        "cell": "E28",
+        "asOf": "2025-05-01",
+        "month": 3,
+        "paymentCents": 82500
+      }
+    ],
+    "openingBalances": [
+      {
+        "cell": "D27",
+        "asOf": "2025-04-01",
+        "month": 2,
+        "openingBalanceCents": 2095800
+      }
+    ],
+    "balancesAt": {
+      "asOf": "2026-09-15",
+      "month": 19
+    }
   }
 }
