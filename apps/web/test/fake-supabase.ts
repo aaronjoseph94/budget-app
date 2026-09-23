@@ -82,7 +82,11 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     ...seed,
   }
   const rpcCalls: RpcCall[] = []
-  const rpcReplies: Record<string, unknown> = { approve_candidate: 'approved', reject_candidate: null }
+  const rpcReplies: Record<string, unknown> = {
+    approve_candidate: 'approved',
+    reject_candidate: null,
+    recategorise_transaction: null,
+  }
   const failures = new Map<string, string>()
   const server: FakeSupabase['server'] = { maxRows: null, afterRead: null }
   const user = { id: 'u1', email: 'you@example.com', user_metadata: {} as Record<string, unknown> }
@@ -91,6 +95,19 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
   const json = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
     new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', ...headers } })
   const pgError = (code: string, status = 400) => json({ code, message: 'fake failure', details: null, hint: null }, status)
+
+  // What 0006 does to the ledger, so a screen that re-reads the month after a
+  // move sees the charge where it went. Either id not found is 42501, as there.
+  // The rule it learns is keyed on the normalised merchant, which these rows
+  // do not carry; tests read `p_learn` from rpcCalls instead.
+  function recategorise(args: Readonly<Record<string, unknown>>): Response {
+    const row = tables.transactions.findIndex((t) => t.id === args['p_transaction'])
+    const known = tables.categories.some((c) => c.id === args['p_category'])
+    const moving = tables.transactions[row]
+    if (moving === undefined || !known) return pgError('42501', 403)
+    tables.transactions[row] = { ...moving, category_id: String(args['p_category']) }
+    return new Response(null, { status: 204 })
+  }
 
   async function serve(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
     const url = new URL(input instanceof Request ? input.url : String(input))
@@ -114,6 +131,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       const name = target.slice('rpc/'.length)
       rpcCalls.push({ name, args: JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown> })
       if (!(name in rpcReplies)) return pgError('PGRST202', 404)
+      if (name === 'recategorise_transaction') return recategorise(rpcCalls[rpcCalls.length - 1]?.args ?? {})
       return json(rpcReplies[name] ?? null)
     }
 

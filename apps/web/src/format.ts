@@ -170,6 +170,29 @@ export function describeSetupFailure(action: SetupAction, error: WriteError | nu
 }
 
 /**
+ * Why a charge could not be moved to another category (Month → Move to…).
+ *
+ * recategorise_transaction (0006) raises 42501 when the charge or the
+ * category is not the caller's, which in practice means it was removed or
+ * changed on another device since the month was read; the import wording,
+ * "your sign-in does not allow this", would send the owner to sign out for
+ * nothing. PGRST202 is PostgREST saying the function does not exist: 0006
+ * has not been pasted yet, which is the owner's to do, so say where.
+ */
+const MOVE_FAILURES: Readonly<Record<string, string>> = {
+  '42501': 'That charge or that category is no longer there — it may have changed on another device. Nothing was moved.',
+  PGRST202:
+    'Moving a charge needs a database update that has not been applied yet (0006 in the setup guide). Nothing was moved.',
+  '23514': 'That move breaks a rule the ledger follows, so nothing was moved.',
+}
+
+export function describeMoveFailure(error: WriteError | null | undefined): string {
+  const code = typeof error?.code === 'string' ? error.code : ''
+  const body = MOVE_FAILURES[code]
+  return body === undefined ? describeWriteFailure(error) : `${body} (code ${code})`
+}
+
+/**
  * Today, in the user's own time zone, as an ISO date.
  *
  * The one place the app reads the clock. packages/core takes `asOf` as a

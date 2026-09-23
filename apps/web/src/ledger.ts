@@ -15,7 +15,7 @@ import {
   type RejectedRow,
   type StatementPeriod,
 } from '@budget/statement-parsers'
-import { describeSetupFailure, describeWriteFailure } from './format.js'
+import { describeMoveFailure, describeSetupFailure, describeWriteFailure } from './format.js'
 import { LIST_HEADING, type CategoryKind } from './lists.js'
 import type { SupabaseClient } from './supabase.js'
 
@@ -622,6 +622,30 @@ export async function listTransactions(
     throw new Error(PARTIAL_READ)
   }
   return rows
+}
+
+export interface Recategorise {
+  readonly transactionId: string
+  readonly categoryId: string
+  /** Also file this shop here from now on: its merchant rule is set to the category. */
+  readonly learn: boolean
+}
+
+/**
+ * Move one posted charge to another category.
+ *
+ * Through recategorise_transaction (migration 0006), because 0004 took UPDATE
+ * on the ledger away from the browser. The function moves the charge and its
+ * source candidate together, and with `learn` rewrites the shop's rule the way
+ * approving it did, so the next statement files that shop in the new place.
+ */
+export async function recategoriseTransaction(supabase: SupabaseClient, move: Recategorise): Promise<void> {
+  const { error } = await supabase.rpc('recategorise_transaction', {
+    p_transaction: move.transactionId,
+    p_category: move.categoryId,
+    p_learn: move.learn,
+  })
+  if (error !== null) throw new Error(describeMoveFailure(error))
 }
 
 export async function deleteTransaction(supabase: SupabaseClient, id: string): Promise<void> {
