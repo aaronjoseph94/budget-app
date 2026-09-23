@@ -86,9 +86,15 @@ describe('DebtsScreen', () => {
     fake.tables.debts.push(debt('card', 'Store card', 100_000, 1_000, 2_400, '2026-01-01', 3))
     renderScreen(<DebtsScreen />, fake)
     expect(await screen.findByText('Store card is never paid off')).toBeTruthy()
-    expect(within(screen.getByRole('region', { name: 'Store card' })).getByText('Never')).toBeTruthy()
+    const card = screen.getByRole('region', { name: 'Store card' })
+    expect(within(card).getByText('Never')).toBeTruthy()
+    expect(within(card).getByText('—')).toBeTruthy()
+    expect(within(card).queryByText('$1,000.00', { selector: '.text-2xl' })).toBeNull()
     const summary = screen.getByRole('region', { name: 'Debt summary' })
-    expect(within(summary).getByText('Not while one is never paid off')).toBeTruthy()
+    expect(within(summary).getByText('Not until every minimum covers its interest')).toBeTruthy()
+    // The totals are the other three alone, as before, and say which is left out.
+    expect(within(summary).getByText('$203.02')).toBeTruthy()
+    expect(within(summary).getByText('Not in these totals, because they are never paid off: Store card.')).toBeTruthy()
   })
 
   it('says so with no debts, and why when they cannot be read', async () => {

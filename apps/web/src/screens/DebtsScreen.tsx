@@ -57,7 +57,7 @@ export function DebtsScreen() {
             <Summary
               status={state.debts.status}
               debtFree={state.debts.plan.amortization.debtFreeDate}
-              unpaid={state.debts.plan.neverPaidOff.length > 0}
+              leftOut={state.debts.plan.neverPaidOff}
             />
           )}
           {state.debts.rows.length === 0 ? (
@@ -104,8 +104,12 @@ export function DebtsScreen() {
   )
 }
 
-/** B8:F21. "Debt-Free By" is B14's month, which no unpayable debt can have. */
-function Summary({ status, debtFree, unpaid }: { status: DebtStatus; debtFree: string; unpaid: boolean }) {
+/**
+ * B8:F21. "Debt-Free By" is B14's month, which no unpayable debt can have.
+ * A debt that is never paid off has no schedule, so the totals leave it
+ * out, and say so.
+ */
+function Summary({ status, debtFree, leftOut }: { status: DebtStatus; debtFree: string; leftOut: readonly string[] }) {
   const t = status.totals
   return (
     <section aria-label="Debt summary" className="grid grid-cols-[1fr_auto] gap-4 rounded-xl bg-card p-4 shadow-sm">
@@ -114,7 +118,7 @@ function Summary({ status, debtFree, unpaid }: { status: DebtStatus; debtFree: s
           <Figure className="text-2xl font-bold">{formatCents(t.balanceCents)}</Figure>
         </Stat>
         <Stat label="Debt-free by">
-          <span className="text-lg font-semibold">{unpaid ? 'Not while one is never paid off' : formatMonthTitle(debtFree)}</span>
+          <span className="text-lg font-semibold">{leftOut.length > 0 ? 'Not until every minimum covers its interest' : formatMonthTitle(debtFree)}</span>
         </Stat>
         <Stat label="Paid this month">
           <span className="tnum">{formatCents(t.paymentCents)}</span>
@@ -127,6 +131,9 @@ function Summary({ status, debtFree, unpaid }: { status: DebtStatus; debtFree: s
         </Stat>
       </dl>
       <Ring label="All debts" paidBp={t.progressBp ?? 10_000} className="w-24" />
+      {leftOut.length > 0 ? (
+        <p className="col-span-2 text-xs">Not in these totals, because they are never paid off: {leftOut.join(', ')}.</p>
+      ) : null}
     </section>
   )
 }
@@ -138,9 +145,9 @@ function DebtCard({ row, standing, onEdit }: { row: DebtRow; standing: DebtStand
       <div className="grid grid-cols-[1fr_auto] items-start gap-3 px-4 py-3">
         <div>
           <p className="text-xs text-debt-label">Balance today</p>
-          <Figure className="text-2xl font-bold">
-            {formatCents(standing === null ? row.starting_balance_cents : standing.balanceCents)}
-          </Figure>
+          {/* No standing is a debt never paid off: its balance is not worked out. */}
+          <Figure className="text-2xl font-bold">{standing === null ? '—' : formatCents(standing.balanceCents)}</Figure>
+          {standing === null ? <p className="text-xs">Not worked out, since it is never paid off</p> : null}
           {standing !== null && standing.month === null ? (
             <p className="text-xs">Starts {formatMonthTitle(row.start_date)}</p>
           ) : null}
