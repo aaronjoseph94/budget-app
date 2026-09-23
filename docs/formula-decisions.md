@@ -482,8 +482,8 @@ Jan chart12  stacked columns      Goal Jan!$O$10:$O$16   Actual Jan!$P$10:$P$16
 
 Workbook's doughnut sizes each Variable-expenses row by its Actual against the
 others, and its income chart draws every Goal and Actual on one value axis.
-Neither prints a number, and the cached sample has every U22:U45 at 0, so the
-doughnut is empty and there is no share to copy. The charts' geometry is
+Neither prints a number, and the cached sample has every U22:U44 at 0 and
+U45 empty, so the doughnut is empty and there is no share to copy. The charts' geometry is
 arithmetic on money, which invariant 1 puts in `packages/core`, so the engine
 has to say what a share is — including for a row that refunds have taken
 below zero (D8), which no slice of a doughnut can draw.
@@ -492,7 +492,8 @@ below zero (D8), which no slice of a doughnut can draw.
 
 - **A — a share of the rows above zero.** A row's share is its Actual over the
   sum of its block's Actuals that are above zero. A row at or below zero has
-  none and is left out of the ring, and the Month says so beside it.
+  none and is left out of the ring; the Month names a row below zero beside
+  it, and a row at zero has nothing to name.
 - **B — a share of the block's total.** With a row below zero the shares add
   to more than the whole, and the slices cannot close a ring.
 - **C — a share of the absolute values** (what a spreadsheet pie does with a
@@ -504,8 +505,9 @@ show a refund as spending.
 - **`shareBp`** on every row of every block: its Actual × 10,000 over the sum
   of the block's Actuals above zero, rounded half-up to a basis point as F13
   rounds. Null when the row's Actual is not above zero, or nothing in the
-  block is. Rounded shares can add to 9,999 or 10,001 basis points; the
-  gap between slices is wider than that.
+  block is. Rounded shares can miss 10,000 by up to half a basis point a
+  row (seven equal rows add to 10,003); the ring stops at the whole, and a
+  shortfall of a few basis points is narrower than the gap between slices.
 - **Goal bars** (`goalBars`): each income row's Goal and Actual in basis points
   of the largest Goal or Actual among the rows given, rounded half-up, so every
   bar is drawn to one scale, as chart12's single axis draws them. An Actual

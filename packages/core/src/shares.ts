@@ -9,9 +9,10 @@
  * Excel semantics. Jan chart13 is a doughnut of Jan!U22:U45, each row by
  * position, labels off; Jan chart12 stacks Goal (O10:O16) and Actual
  * (P10:P16) on one value axis. Neither prints a number, and the sample's
- * doughnut is empty (every U22:U45 is 0), so no cached share exists. What a
- * share is, and how it rounds, is F17: of the rows above zero, half-up to a
- * basis point as F13 rounds, so a refund is never drawn as spending.
+ * doughnut is empty (U22:U44 are 0, U45 is blank), so no cached share
+ * exists. What a share is, and how it rounds, is F17: of the rows above
+ * zero, half-up to a basis point as F13 rounds, so a refund is never drawn
+ * as spending.
  */
 import { type Cents, ZERO_CENTS, cents } from '@budget/money-primitives'
 

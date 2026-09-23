@@ -60,8 +60,8 @@ export function spendingDoughnut(input: DoughnutInput): SvgMarkup {
   let from = 0
   const slices: SvgNode[] = []
   for (const s of input.slices) {
-    // Half-up shares can add to a basis point over the whole (F17); the ring
-    // stops at the whole, and the gap between slices is wider than that.
+    // Half-up shares can add to a few basis points over the whole, half a
+    // basis point a row at most (F17); the ring stops at the whole.
     const to = Math.min(from + lengthOf(s.shareBp, 10_000), 10_000)
     if (to > from) {
       const d = ring(from, to)
