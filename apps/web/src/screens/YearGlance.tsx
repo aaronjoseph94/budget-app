@@ -16,13 +16,16 @@ import { cn } from '../lib/cn.js'
  * on the Month is what is left of a budget. Balances need the start month's
  * balance typed on the Month (D17), and say so until it is.
  */
-export function YearGlance({ sheet, className }: { sheet: YearSheet; className?: string }) {
+export function YearGlance({ sheet, wide }: { sheet: YearSheet; wide: boolean }) {
   const { displayName } = useAppData()
   const { totals, atAGlance, startingBalanceCents: start, endingBalanceCents: end } = sheet
   const startMonth = formatMonthTitle(sheet.startMonth).split(' ')[0]
   const best = atAGlance.bestSavingsMonth
   return (
-    <section aria-label="Year at a glance" className={cn('-mx-4 grid gap-3 bg-home-canvas p-4 sm:grid-cols-2 md:mx-0 md:rounded-xl lg:grid-cols-4', className)}>
+    <section
+      aria-label="Year at a glance"
+      className="-mx-4 grid gap-3 bg-home-canvas p-4 sm:grid-cols-2 md:mx-0 md:rounded-xl lg:grid-cols-4"
+    >
       {/* Home!C4, the name typed on START HERE with Workbook's "!". */}
       <Card className="sm:col-span-2 lg:col-span-4">
         <h2 className="text-2xl text-home-ink">{displayName === '' ? 'Hi!' : `Hi, ${displayName}!`}</h2>
@@ -32,32 +35,37 @@ export function YearGlance({ sheet, className }: { sheet: YearSheet; className?:
           </button>
         ) : null}
       </Card>
-      <Card>
-        <dl className="grid grid-cols-3 gap-2 sm:grid-cols-1">
-          <Amount label="Income" cents={totals.income.actualCents} />
-          <Amount label="Expenses" cents={totals.expenses.actualCents} />
-          <Amount label="Savings" cents={totals.savings.actualCents} />
-        </dl>
-      </Card>
-      <Card>
-        <dl className="space-y-2">
-          <Amount label="Left over" cents={sheet.leftOverCents} hint="Income, less expenses and savings" />
-          <div className="grid grid-cols-2 gap-2">
-            <Amount label="Starting balance" cents={start} />
-            <Amount label="Ending balance" cents={end} />
-          </div>
-        </dl>
-        {start === null ? (
-          <button
-            type="button"
-            className="mt-2 text-left text-xs underline underline-offset-4"
-            onClick={() => navigate('month', sheet.startMonth.slice(0, 7))}
-          >
-            Type {startMonth}&rsquo;s starting balance on the Month to see these
-          </button>
-        ) : null}
-      </Card>
-      <Card>
+      {/* On a desktop these are Annual's left panel, beside the tables. */}
+      {wide ? null : (
+        <>
+          <Card>
+            <dl className="grid grid-cols-3 gap-2 sm:grid-cols-1">
+              <Amount label="Income" cents={totals.income.actualCents} />
+              <Amount label="Expenses" cents={totals.expenses.actualCents} />
+              <Amount label="Savings" cents={totals.savings.actualCents} />
+            </dl>
+          </Card>
+          <Card>
+            <dl className="space-y-2">
+              <Amount label="Left over" cents={sheet.leftOverCents} hint="Income, less expenses and savings" />
+              <div className="grid grid-cols-2 gap-2">
+                <Amount label="Starting balance" cents={start} />
+                <Amount label="Ending balance" cents={end} />
+              </div>
+            </dl>
+            {start === null ? (
+              <button
+                type="button"
+                className="mt-2 text-left text-xs underline underline-offset-4"
+                onClick={() => navigate('month', sheet.startMonth.slice(0, 7))}
+              >
+                Type {startMonth}&rsquo;s starting balance on the Month to see these
+              </button>
+            ) : null}
+          </Card>
+        </>
+      )}
+      <Card className="lg:col-span-2">
         <h3 className="text-xs font-medium text-muted-foreground">Biggest expense</h3>
         {atAGlance.biggest === null ? (
           <p className="mt-1 text-sm">Nothing spent yet</p>
@@ -74,7 +82,7 @@ export function YearGlance({ sheet, className }: { sheet: YearSheet; className?:
           {best.goalCents > 0 ? <span className="tnum text-xs"> of {formatCents(best.goalCents)}</span> : null}
         </p>
       </Card>
-      <Card>
+      <Card className="lg:col-span-2">
         <h3 className="text-xs font-medium text-muted-foreground">Top 3 expenses</h3>
         {atAGlance.top3.length === 0 ? (
           <p className="mt-1 text-sm">Nothing spent yet</p>

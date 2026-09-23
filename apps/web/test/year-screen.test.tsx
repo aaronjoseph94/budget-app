@@ -55,6 +55,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  vi.unstubAllGlobals()
   vi.useRealTimers()
   vi.restoreAllMocks()
   window.location.hash = ''
@@ -176,6 +177,27 @@ describe('YearScreen', () => {
     expect(glance.getAllByText('Not yet')).toHaveLength(2)
     fireEvent.click(glance.getByRole('button', { name: 'Type January’s starting balance on the Month to see these' }))
     expect(window.location.hash).toBe('#/month/2026-01')
+  })
+
+  it('lays a desktop out as Annual does: the totals panel and all seven tables at once', async () => {
+    const wide = { matches: true, addEventListener: () => undefined, removeEventListener: () => undefined }
+    vi.stubGlobal('matchMedia', () => wide)
+    renderScreen(<YearScreen start="2026-01" />, seeded())
+
+    const totals = within(await screen.findByRole('region', { name: 'Year totals' }))
+    const said = (label: string) => totals.getByText(label).nextElementSibling?.textContent
+    expect([said('Starting month'), said('Current month'), said('Left over'), said('Ending balance')]).toEqual([
+      'January 2026', 'September 2026', '-$12,550.00', 'Not yet',
+    ])
+    const tables = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'))
+    expect(tables.filter((t) => t?.endsWith(' by month'))).toEqual([
+      'Income by month', 'Expenses by month', 'Savings by month', 'Bills by month',
+      'Debts by month', 'Subscriptions by month', 'Variable expenses by month',
+    ])
+    // No picking one table, and Left over once, in the panel, not again above it.
+    expect(screen.queryByRole('group', { name: 'Table' })).toBeNull()
+    expect(screen.getAllByText('Left over')).toHaveLength(1)
+    expect((await rowsOf('Bills by month'))[8]).toEqual(['Sep 2026', '', '1,600.00'])
   })
 
   it('shows no year when a read fails, and says why', async () => {
