@@ -110,3 +110,12 @@ export function parseMoneyInput(text: string): Cents | null {
   const parsed = parseAmountToCents(withCents, US_AMOUNT_FORMAT)
   return parsed.ok ? parsed.value : null
 }
+
+/**
+ * A percentage typed by a person, as hundredths of a percent — "19.99" or
+ * "19.99%" is 1999 — or null if it is not one. Hundredths of a percent are
+ * read exactly as cents are read from dollars, so it is the same parser.
+ */
+export function parsePercentInput(text: string): number | null {
+  return parseMoneyInput(text.trim().replace(/%$/, ''))
+}

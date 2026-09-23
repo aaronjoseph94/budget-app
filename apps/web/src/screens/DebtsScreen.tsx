@@ -1,10 +1,12 @@
-import { useId, useMemo, type ReactNode } from 'react'
-import type { DebtStanding, DebtStatus } from '@budget/core'
+import { useId, useMemo, useState, type ReactNode } from 'react'
+import { endOfList, type DebtStanding, type DebtStatus } from '@budget/core'
 import { debtRing } from '@budget/chart-specs'
 import { useDebts } from '../debts.js'
 import type { DebtRow } from '../ledger.js'
 import { formatBasisPoints, formatCents, formatMonthTitle, formatRate } from '../format.js'
+import { DebtEditor } from './DebtEditor.js'
 import { Alert } from '../components/ui/feedback.js'
+import { Button } from '../components/ui/button.js'
 import { SvgChart } from '../components/ui/chart.js'
 import { Figure } from '../components/ui/type.js'
 
@@ -20,6 +22,11 @@ import { Figure } from '../components/ui/type.js'
  */
 export function DebtsScreen() {
   const state = useDebts()
+  // The debt being edited, by id; 'new' to add one.
+  const [editing, setEditing] = useState<string | null>(null)
+  const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null)
+  const ready = state.status === 'ready' ? state.debts : null
+  const shown = editing === 'new' ? null : (ready?.rows.find((r) => r.id === editing) ?? null)
   return (
     <div className="-mx-4 space-y-4 bg-debt-page px-4 pb-6 text-debt-ink md:mx-0 md:rounded-xl">
       <header className="-mx-4 bg-debt-banner px-4 py-5 md:rounded-t-xl">
@@ -36,6 +43,7 @@ export function DebtsScreen() {
         list: what you bought on it is already counted there.
       </p>
       {state.status === 'loading' ? <p className="py-8 text-center text-sm">Loading…</p> : null}
+      {notice !== null ? <Alert tone={notice.ok ? 'success' : 'error'}>{notice.text}</Alert> : null}
       {state.status === 'failed' ? <Alert tone="error" title="Could not load your debts">{state.message}</Alert> : null}
       {state.status === 'ready' ? (
         <>
@@ -57,12 +65,38 @@ export function DebtsScreen() {
             <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {state.debts.rows.map((row) => (
                 <li key={row.id}>
-                  <DebtCard row={row} standing={state.debts.status?.debts.find((d) => d.name === row.name) ?? null} />
+                  <DebtCard
+                    row={row}
+                    standing={state.debts.status?.debts.find((d) => d.name === row.name) ?? null}
+                    onEdit={() => setEditing(row.id)}
+                  />
                 </li>
               ))}
             </ul>
           )}
+          <Button
+            onClick={() => {
+              setNotice(null)
+              setEditing('new')
+            }}
+          >
+            Add a debt
+          </Button>
         </>
+      ) : null}
+      {ready !== null && editing !== null && (editing === 'new' || shown !== null) ? (
+        <DebtEditor
+          key={editing}
+          row={shown}
+          extras={shown === null ? [] : ready.extras.filter((e) => e.debt_id === shown.id)}
+          sortOrder={endOfList({ sortOrders: ready.rows.map((r) => r.sort_order) }).sortOrder}
+          onClose={() => setEditing(null)}
+          onSaved={(text) => {
+            setEditing(null)
+            setNotice({ ok: true, text })
+          }}
+          onFailedAfterClose={(text) => setNotice({ ok: false, text })}
+        />
       ) : null}
     </div>
   )
@@ -95,7 +129,7 @@ function Summary({ status, debtFree, unpaid }: { status: DebtStatus; debtFree: s
   )
 }
 
-function DebtCard({ row, standing }: { row: DebtRow; standing: DebtStanding | null }) {
+function DebtCard({ row, standing, onEdit }: { row: DebtRow; standing: DebtStanding | null; onEdit: () => void }) {
   return (
     <section aria-label={row.name} className="overflow-hidden rounded-xl bg-card shadow-sm">
       <h2 className="break-words px-4 pt-3 font-title text-3xl font-bold [overflow-wrap:anywhere]">{row.name}</h2>
@@ -123,6 +157,11 @@ function DebtCard({ row, standing }: { row: DebtRow; standing: DebtStanding | nu
         </Stat>
         <Stat label="Paid off in">{standing === null ? 'Never' : formatMonthTitle(standing.paidOffIn)}</Stat>
       </dl>
+      <div className="px-4 pb-4">
+        <Button variant="outline" size="sm" onClick={onEdit}>
+          Edit
+        </Button>
+      </div>
     </section>
   )
 }
