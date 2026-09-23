@@ -177,6 +177,23 @@ export default tseslint.config(
           selector: "TSAsExpression[typeAnnotation.typeName.name='SvgMarkup']",
           message: 'Only chart-specs makes SvgMarkup; a string cast to it would be injected unescaped.',
         },
+        {
+          selector: "TSTypeAssertion[typeAnnotation.typeName.name='SvgMarkup']",
+          message: 'Only chart-specs makes SvgMarkup; a string cast to it would be injected unescaped.',
+        },
+        // The DOM's own ways to parse a string as markup, which bypass React.
+        {
+          selector: "AssignmentExpression[left.property.name=/^(innerHTML|outerHTML)$/]",
+          message: 'Markup from a string only through SvgChart (components/ui/chart.tsx), and only from chart-specs.',
+        },
+        {
+          selector: "CallExpression[callee.property.name=/^(insertAdjacentHTML|createContextualFragment|setHTMLUnsafe)$/]",
+          message: 'Markup from a string only through SvgChart (components/ui/chart.tsx), and only from chart-specs.',
+        },
+        {
+          selector: "CallExpression[callee.object.name='document'][callee.property.name=/^write(ln)?$/]",
+          message: 'Markup from a string only through SvgChart (components/ui/chart.tsx), and only from chart-specs.',
+        },
       ],
     },
   },
