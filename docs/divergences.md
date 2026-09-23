@@ -433,23 +433,21 @@ The CONSTRAINTS.md floor forbids a silent 0 on a money path for this reason.
 
 ---
 
-## D16 — A savings fund's balance: typed once, then kept by transfers (proposed)
+## D16 — A savings fund's balance: typed once, then kept by transfers
 
 **Date:** 2026-09-22
 **Sheet / cells:** Savings!B5, F5 … Z5 ("Current Amount", typed; B5 note:
 "How much do you currently have in this Savings account or fund?")
-**Settled:** **not yet.** This is plan decision 7's recommended option B. The
-owner has not chosen it; it is recorded here as proposed, and is confirmed or
-replaced at S16, before the savings funds are built.
+**Settled:** owner chose (plan decision 7, option B), asked and answered on
+2026-09-23.
 
 **Workbook behaviour.** Each fund's current amount is typed by hand and
 nothing updates it. The sample's Emergency Fund shows **133** (Savings!B5)
 while the Transactions log records a $2,000 transfer into it (K7:M7).
 
-**Proposed behaviour.** Type the balance once; each savings transfer recorded
-in the app after that adds to it. The alternative (option A) is to type it
+**Chosen behaviour.** Type the balance once; each savings transfer recorded
+in the app after that adds to it. The alternative (option A) was to type it
 every time, as Workbook and the app do today.
 
-**Why proposed.** A balance that has to be retyped goes stale, and the
-transfers are already recorded for the Month's Savings block. The owner may
-still prefer to type it; S16 asks.
+**Why.** A balance that has to be retyped goes stale, and the transfers are
+already recorded for the Month's Savings block.

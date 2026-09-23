@@ -40,7 +40,9 @@ strengthens the case.
 monthly is a maintenance cost with no new information." On 2026-09-22 the owner
 chose it, and Workbook's Bill Calendar, from a list of Workbook tabs. Both are now
 in the build (Workbook plan S15b and S15c); neither exists yet. How a pay period
-is found and a bill split across it is formula decision F15, still open.
+is found and a bill split across it is formula decision F15: on 2026-09-23
+the owner chose to find the period from the pay schedule and divide a monthly
+bill by the pay frequency.
 
 Deferring these frees the build order for the ingestion pipeline and the coach,
 which is where all the value is concentrated.

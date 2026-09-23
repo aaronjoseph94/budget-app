@@ -53,7 +53,7 @@ Workbook is a chain of typed lists and lookups.
 | Transactions | The **ledger** (`transactions`, already exists), filled by statement, photo and typed entry | exists | Workbook's three logs (Transactions!B:E, G:I, K:M) become one signed ledger (D3, whose sheet citation S0 corrects). A row's list decides which block it feeds. Workbook's Notes column has no counterpart yet (§10). |
 | Jan … Dec | **One Month screen** with ‹ › | S4–S12 | This is exactly the roadmap's own "one month view with a period selector". |
 | Weekly Budget | The existing **Week** screen, rebuilt as Workbook blocks on the same engine as Month | S15 | The "/wk?" option (monthly amount ÷ 4.333) is not built. Weeks stay Monday–Sunday (D14). |
-| Paycheck Budget | **Paycheck** screen (owner chose it, §9a): the Month blocks over one pay period, found from the pay schedule of an Income row | S15b | Workbook types both dates (Paycheck!D6/D7) and halves a monthly bill with a fixed ÷2 (Paycheck!E22 `=IF(F22, E50 / 2, D50)`) whatever the pay frequency in START HERE!E8. How the period and the split are found is an open formula question (F15), put to the owner at S15b before any code. |
+| Paycheck Budget | **Paycheck** screen (owner chose it, §9a): the Month blocks over one pay period, found from the pay schedule of an Income row | S15b | Workbook types both dates (Paycheck!D6/D7) and halves a monthly bill with a fixed ÷2 (Paycheck!E22 `=IF(F22, E50 / 2, D50)`) whatever the pay frequency in START HERE!E8. How the period and the split are found is formula question F15; on 2026-09-23 the owner chose B, the period from the pay schedule and a monthly bill divided by the pay frequency. |
 | Annual Budget | **Year** screen plus `yearSheet`, starting at a month you choose | S13, S14 | Its arithmetic mistakes are fixed (decision 9). It is always read in one year (D10). |
 | Bill Calendar | **Bill calendar** screen (owner chose it, §9a): a Sunday-first month grid of bills due, charges paid and paydays, with week and month totals | S15c | Due days exist from S9. Paydays need a pay schedule per Income row (first pay date and Weekly / Bi-weekly / Monthly, START HERE!C8:E14), added in Sitting B. Workbook's own calendar bugs are fixed under decision 9 (Bills!P7:Q44 range typo on Sundays, 5-bills-a-day cap, days 29–31 skipped). |
 | 503020 | **Not built** (owner did not choose it, §9a) | — | Tags would be keyed by category. Workbook's tags (H12:H58) are positional, next to a `FILTER`-compacted list, so they drift when a list changes. |
@@ -529,7 +529,7 @@ done "unless you say otherwise", and they did not object.
 | 4 | **A — card payments are neither spending nor income** | Stated to the owner; no objection |
 | 5 | **A — "from this month on" is the default**, "just this month" on offer | Engineering default (both remain available) |
 | 6 | **B — type the starting bank balance once a month** | Owner chose |
-| 7 | **B** (recommended) — revisit at S16 if the owner says otherwise | Default; to be confirmed at S16 |
+| 7 | **B — type it once, then recorded transfers add to it** | Owner chose (asked 2026-09-23) |
 | 8 | **A — pay is typed** | Stated to the owner; no objection |
 | 9 | **A — Workbook's arithmetic mistakes are fixed and recorded** | Stated to the owner; no objection |
 | 10 | **A — Workbook's fills, darker readable text** | Stated to the owner; no objection |
@@ -545,7 +545,8 @@ with a fixed ÷2 that ignores the pay frequency (Paycheck!E22; START HERE!E8).
 Options: A — copy it (typed dates, ÷2); B — find the period from the Income
 row's pay schedule and divide by the pay frequency (4.333 / 2.1667 / 1);
 C — find the period from the pay schedule and divide by the number of paydays
-that actually fall in that month.
+that actually fall in that month. **Answered 2026-09-23: B** (owner chose;
+recorded in F15). The rounding rule is settled with the Paycheck engine.
 
 ## 9. Decisions for you
 

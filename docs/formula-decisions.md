@@ -389,8 +389,8 @@ not a calendar year. Its address carries the start month (`#/year/2026-01`).
 
 ## F15 — How a pay period is found, and how a monthly bill is split across it
 
-**OPEN.** To be put to the account holder at slice S15b, before any Paycheck
-code is written.
+**Decided 2026-09-23 by the account holder: option B.** The rounding rule is
+still open, and is settled before any Paycheck code (S15b).
 
 ```
 Paycheck Budget!D6   2025-01-01          D7  2025-01-14     (both typed)
@@ -403,7 +403,7 @@ a bill's monthly amount with a fixed ÷2, whatever pay frequency START HERE!E8
 says; unticked, it counts the bill only if its due day falls in the window
 (F8).
 
-**Options to put to the owner**
+**Options put to the owner**
 
 - **A — copy Workbook.** Type both dates; halve a monthly bill with ÷2.
 - **B — find the period from the Income row's pay schedule**, and divide a
@@ -411,5 +411,11 @@ says; unticked, it counts the bill only if its due day falls in the window
 - **C — find the period from the pay schedule**, and divide a monthly bill by
   the number of paydays that actually fall in that month.
 
-No option is chosen. A split that divides money also needs a rounding rule;
-that is settled with the answer.
+**Chosen: B.** The pay period comes from an Income row's pay schedule: its
+first pay date and its frequency, Weekly, Bi-weekly or Monthly (START
+HERE!C8:C14 and E8:E14, the plan's `pay_schedules` table, §4). A monthly
+bill is divided by the pay frequency.
+
+A split that divides money also needs a rounding rule, and B does not give
+one. It is an engineering default that changes cents only, and is recorded
+here before the Paycheck engine is written.
