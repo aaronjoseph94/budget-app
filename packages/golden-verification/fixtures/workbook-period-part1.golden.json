@@ -1,0 +1,69 @@
+{
+  "$provenance": {
+    "sourceWorkbook": "Ultimate Annual Budget (\"Workbook\"), the owner's copy, Google Sheets export (not committed)",
+    "sourceSheet": "Weekly Budget; Paycheck Budget",
+    "cells": {"windows": "Weekly Budget!D6:D7; Paycheck Budget!D6:D7", "expected": "Weekly Budget!X22, X21, R10, X10; Paycheck Budget!X21, R10, X10", "entries": "Transactions!B7:D12 (spending), G7:I7 (income), K7:M7 (savings)", "categories": "START HERE!B8:B12 (income), H7:H10 (savings), H17:H22 (variable)"},
+    "extractedOn": "2026-09-23",
+    "note": "Workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S4a, workbook-period part 1."
+  },
+  "$semantics": {
+    "window": "F4: from and to are D6 and D7 of the sheet, both days included, dates only.",
+    "signs": "D3: Transactions amounts are positive in every log; the ledger negates spending (B:D) and savings (K:M) and keeps income (G:I) positive.",
+    "actual": "actualCents is as Workbook shows it: money spent, received or saved, positive. A null categoryId asserts the block total (row 21 for Variable, SUM(X22:X45)).",
+    "categories": "Ids are synthetic; names and order are START HERE row order. Workbook matches by name, the app by id.",
+    "merchants": "The engine takes no merchant text, so none is carried. Transactions!E (Notes) is not transcribed.",
+    "endExclusion": "Paycheck Budget!X21 is 85, not 185: Clothing on 2025-01-17 falls after D7 (2025-01-14) and is left out."
+  },
+  "input": {
+    "categories": [
+      {"id": "cat-income-1", "name": "Income 1", "kind": "income", "sortOrder": 0},
+      {"id": "cat-income-2", "name": "Income 2", "kind": "income", "sortOrder": 1},
+      {"id": "cat-side-hustle", "name": "Side Hustle", "kind": "income", "sortOrder": 2},
+      {"id": "cat-freelance-work", "name": "Freelance Work", "kind": "income", "sortOrder": 3},
+      {"id": "cat-donations", "name": "Donations", "kind": "income", "sortOrder": 4},
+      {"id": "cat-emergency-fund", "name": "Emergency Fund", "kind": "savings", "sortOrder": 0},
+      {"id": "cat-travel-fund", "name": "Travel Fund", "kind": "savings", "sortOrder": 1},
+      {"id": "cat-down-payment", "name": "Down Payment", "kind": "savings", "sortOrder": 2},
+      {"id": "cat-car-repair-fund", "name": "Car Repair Fund", "kind": "savings", "sortOrder": 3},
+      {"id": "cat-restaurants", "name": "Restaurants", "kind": "variable", "sortOrder": 0},
+      {"id": "cat-groceries", "name": "Groceries", "kind": "variable", "sortOrder": 1},
+      {"id": "cat-clothing", "name": "Clothing", "kind": "variable", "sortOrder": 2},
+      {"id": "cat-gas", "name": "Gas", "kind": "variable", "sortOrder": 3},
+      {"id": "cat-movie-theater", "name": "Movie Theater", "kind": "variable", "sortOrder": 4},
+      {"id": "cat-game-night", "name": "Game Night", "kind": "variable", "sortOrder": 5}
+    ],
+    "entries": [
+      {"postedOn": "2025-01-01", "amountCents": -8500, "categoryId": "cat-restaurants", "from": "Transactions!B7:D7"},
+      {"postedOn": "2025-01-17", "amountCents": -10000, "categoryId": "cat-clothing", "from": "Transactions!B8:D8"},
+      {"postedOn": "2025-01-25", "amountCents": -5000, "categoryId": "cat-gas", "from": "Transactions!B9:D9"},
+      {"postedOn": "2025-02-10", "amountCents": -22000, "categoryId": "cat-groceries", "from": "Transactions!B10:D10"},
+      {"postedOn": "2025-02-15", "amountCents": -3600, "categoryId": "cat-movie-theater", "from": "Transactions!B11:D11"},
+      {"postedOn": "2025-02-23", "amountCents": -10000, "categoryId": "cat-game-night", "from": "Transactions!B12:D12"},
+      {"postedOn": "2025-01-01", "amountCents": 260000, "categoryId": "cat-income-1", "from": "Transactions!G7:I7"},
+      {"postedOn": "2025-01-01", "amountCents": -200000, "categoryId": "cat-emergency-fund", "from": "Transactions!K7:M7"}
+    ]
+  },
+  "expected": [
+    {
+      "window": "Weekly Budget!D6:D7",
+      "from": "2025-01-01",
+      "to": "2025-01-07",
+      "cells": [
+        {"cell": "Weekly Budget!X22", "block": "variable", "categoryId": "cat-restaurants", "actualCents": 8500},
+        {"cell": "Weekly Budget!X21", "block": "variable", "categoryId": null, "actualCents": 8500},
+        {"cell": "Weekly Budget!R10", "block": "income", "categoryId": "cat-income-1", "actualCents": 260000},
+        {"cell": "Weekly Budget!X10", "block": "savings", "categoryId": "cat-emergency-fund", "actualCents": 200000}
+      ]
+    },
+    {
+      "window": "Paycheck Budget!D6:D7",
+      "from": "2025-01-01",
+      "to": "2025-01-14",
+      "cells": [
+        {"cell": "Paycheck Budget!X21", "block": "variable", "categoryId": null, "actualCents": 8500},
+        {"cell": "Paycheck Budget!R10", "block": "income", "categoryId": "cat-income-1", "actualCents": 260000},
+        {"cell": "Paycheck Budget!X10", "block": "savings", "categoryId": "cat-emergency-fund", "actualCents": 200000}
+      ]
+    }
+  ]
+}
