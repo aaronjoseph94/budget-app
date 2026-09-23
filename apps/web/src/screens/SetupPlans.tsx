@@ -272,7 +272,8 @@ export function PlanFields({
               aria-label={`Stop ${row.name} from ${monthName}`}
               onClick={() => save(null, dayNow(), `${row.name}: no monthly amount from ${monthName} on.`)}
             >
-              Stop from {monthName}
+              {/* A phone has room for the word alone; the headings above name the month. */}
+              Stop<span className="hidden sm:inline">&nbsp;from {monthName}</span>
             </Button>
           )}
         </div>
