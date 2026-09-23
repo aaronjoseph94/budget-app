@@ -165,6 +165,18 @@
   /* Home's savings-goals chart (chart5): its goal and, as D23 draws it, the saved part. */
   --savings-chart-goal: #feea8d;
   --savings-chart-saved: #ebd15c;
+  /* Debt Calculator: its banner (B1:Z4, #688F9D, which only the big white
+     title sits on, at 3.5 to one), its page (#F7F5EC) and its Caveat
+     summary labels (B8, B12, B18, B20), whose #E46F67 reads at 3.1 to one,
+     so a darker coral at 5.0. Home's debt chart (chart4, D25): what is left
+     #9171D7, over #C8B6EB; #9171D7 reads at 3.8 on white, so a purple ink
+     of its hue carries every word (7.7). */
+  --debt-banner: #688f9d;
+  --debt-page: #f7f5ec;
+  --debt-label: #b8413a;
+  --debt-ink: #5b3fa8;
+  --debt-left: #9171d7;
+  --debt-paid: #c8b6eb;
 }
 
 /*
@@ -262,6 +274,12 @@
     --savings-bar: #c9a22e;
     --savings-chart-goal: #4a4222;
     --savings-chart-saved: #c9b04a;
+    --debt-banner: #2d434b;
+    --debt-page: #1b1a16;
+    --debt-label: #f0b3ad;
+    --debt-ink: #d9cdf5;
+    --debt-left: #a58be0;
+    --debt-paid: #3e3558;
   }
 }
 
@@ -353,6 +371,12 @@
   --color-home-card: var(--home-card);
   --color-home-ink: var(--home-ink);
   --color-year-chart-ink: var(--year-chart-ink);
+  --color-debt-banner: var(--debt-banner);
+  --color-debt-page: var(--debt-page);
+  --color-debt-label: var(--debt-label);
+  --color-debt-ink: var(--debt-ink);
+  --color-debt-left: var(--debt-left);
+  --color-debt-paid: var(--debt-paid);
 }
 
 @layer base {
@@ -419,6 +443,15 @@
 }
 .workbook-chart .chart-savings-saved {
   fill: var(--savings-chart-saved);
+}
+.workbook-chart .chart-debt-ink {
+  fill: var(--debt-ink);
+}
+.workbook-chart .chart-debt-left {
+  fill: var(--debt-left);
+}
+.workbook-chart .chart-debt-paid {
+  fill: var(--debt-paid);
 }
 .workbook-chart .chart-home-ink {
   fill: var(--home-ink);
