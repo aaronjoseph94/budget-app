@@ -6,12 +6,14 @@ import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Field, Input } from '../components/ui/form.js'
 import { Sheet } from '../components/ui/sheet.js'
+import { DebtExtras } from './DebtExtras.js'
 
 /**
  * A debt, typed where Workbook types it: its Starting Balance, Minimum Payment
  * and APR (Debt Calculator!J18:J20, with their cell notes as hints), the
- * month the balance is as of (D6, per debt in 0014). A month is typed as a
- * month, and stored as its first day, as 0014 requires. The screen refuses what 0014 would
+ * month the balance is as of (D6, per debt in 0014), and below them its
+ * extra payments (DebtExtras). A month is typed as a month, and stored as
+ * its first day, as 0014 requires. The screen refuses what 0014 would
  * before sending; a refusal that answers once the sheet has closed is
  * handed to `onFailedAfterClose`, so it is never lost.
  */
@@ -132,6 +134,7 @@ export function DebtEditor({
           </Button>
         </div>
       </form>
+      {row === null ? null : <DebtExtras row={row} extras={extras} />}
     </Sheet>
   )
 }
