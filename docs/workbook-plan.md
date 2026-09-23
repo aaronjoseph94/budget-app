@@ -1,6 +1,6 @@
 # Workbook in the app: the build plan (revised)
 
-**Status: answered 2026-09-22 — the owner's answers are in §9a, and they amend the tables below where marked. Building from S0.** Written from the owner's copy of the "Ultimate Annual Budget" (Workbook) workbook, which is never committed (CLAUDE.md). Every cached value cited below was re-read from that file's cached Excel values; the fixtures in §5.3 must be transcribed from it again, each with a header naming sheet and range. Branch `main` at `b90086e` when written.
+**Status: built (2026-09-23).** Every slice in §8 from S0 to S17 is on branch `main-tnlcto`, with migrations 0005–0014; S18 (50/30/20) was not chosen by the owner (§9a) and is not built. What the owner still has to do, and the questions still open, are in `HANDOFF.md`. The owner's answers are in §9a, and they amend the tables below where marked. Written from the owner's copy of the "Ultimate Annual Budget" (Workbook) workbook, which is never committed (CLAUDE.md). Every cached value cited below was re-read from that file's cached Excel values; the fixtures in §5.3 must be transcribed from it again, each with a header naming sheet and range. Branch `main` at `b90086e` when written.
 
 **The short version, for the owner:**
 - **Month screen.** It looks and works like Workbook's Jan–Dec tabs. It is one screen, and arrows change the month.
@@ -295,7 +295,7 @@ J9 and V9 pass whether or not the seven-month mistake is fixed, because the Augu
 | Cells | Cached value | Why |
 |---|---|---|
 | Paycheck Budget!L22, L21, J19, K50, **L50**; D11, D15 | 250 (each); 1135, 465 | Workbook's fixed + real rule ($50 + $200). Under D5 the value is 200. |
-| Annual Budget!K29, K30, H27, Q10; Hidden!Q4; Bill Calendar!J3, Q14 | 550, 350, 550, 1167.99, 350; 1167.99, 200 | The same rule applied to January 2025 |
+| Annual Budget!K29, K30, H27, Q10; Hidden!Q4; Bill Calendar!J3, Q20 | 550, 350, 550, 1167.99, 350; 1167.99, 150 | The same rule applied to January 2025 |
 | **Annual Budget!Q11** | 867.99 | Cross-year: W31 is February **2026** spending (Feb!U21 = 0). Reading the sample in one year gives 1223.99, because February 2025 has $356 of spending (Transactions!B10:D12). |
 | **Annual Budget!K9, W9, W30** | 0, 0, 0 | Cross-year. A correct-year reading of the sample gives 2600, 2000 and 235. Under F11's fixture (no Transactions rows) these zeros would pass any engine. |
 | Annual Budget!P9, Q9, N6, D11, D15, D20; Hidden!J41; Home Chart12/Chart31 | 1803.97, 4819.85, … | Range mistake and blank-cell mistake |
@@ -354,10 +354,10 @@ J9 and V9 pass whether or not the seven-month mistake is fixed, because the Augu
 ```
 
 - **Block order on the phone** is Summary → Variable expenses → Bills → Subscriptions → Debts → Income → Savings → Charts. The block every statement changes sits above the fold. Desktop keeps Workbook's exact arrangement.
-- **Rows.** Rows with no budget and no Actual collapse behind "Show N empty". A zero Actual on a budgeted row stays blank, as Workbook's `;;` format does. Negatives show their minus sign (D8). Numbers use tabular digits.
+- **Rows.** Rows with no budget and no Actual collapse behind "Show N empty". A zero Actual on a budgeted row stays blank, as Workbook's `;;` format does. Negatives show their minus sign (D8). Numbers use tabular digits in the system face; Comfortaa has none (N15), so it is for standalone totals only. Row cells carry no "$"; band totals do (N32).
 - **Tapping a row** opens that category's charges for the month. Merchant text goes through `IngestedText` and is never rendered as markup. The sheet also offers "Move to…" (S6) and budget editing (S8).
 
-### 6.3 Month on desktop (≥1024 px; Month and Year widen from `max-w-3xl` to about 1280 px)
+### 6.3 Month on desktop (≥1280 px, two columns from 768 px; Month and Year widen from `max-w-3xl` to about 1280 px)
 
 ```
 | Title + summary (Jan!B3:F16) | Charts (H3:K18) | INCOME (M3:P16)        | SAVINGS (R3:V16)  |
@@ -444,7 +444,7 @@ Mapping onto the existing shadcn tokens in `apps/web/src/index.css`:
 **Type.**
 - **Month title.** Caveat 47 bold (Jan!B3), a handwritten face.
 - **Italic serif.** Workbook's heading images ("Start Here!", "Savings Goals") are an italic serif. The Setup, Savings and Year page titles use `ui-serif` italic, which needs no download. Caveat is not used for Setup.
-- **Big numbers** use Comfortaa. Body text stays the system sans, which is close to Helvetica Neue.
+- **Big standalone numbers** use Comfortaa. Columns of amounts use the system face with tabular digits, which Comfortaa lacks (N15). Body text stays the system sans, which is close to Helvetica Neue.
 - **Fonts are self-hosted.** Caveat and Comfortaa are under the SIL Open Font License. They ship as latin-subset woff2 files in `apps/web/public/fonts`: static files, not npm dependencies, and no request goes to Google. The app has no service worker, so they are cached by the browser like any file. The app does not work offline yet.
 
 **Dark mode.** Workbook has none, and the app follows the phone's setting today. Each group gets a dark variant: the same hue, with the band at about 15% lightness and the ink at about 85%.

@@ -346,7 +346,10 @@ Leave the text unstored unless the owner finds row numbers too hard to use.
 
 ---
 
-## N15 — The plan asks for Comfortaa numbers in tabular digits, which Comfortaa lacks
+## N15 — The plan asks for Comfortaa numbers in tabular digits, which Comfortaa lacks *(settled 2026-09-23, completion pass)*
+
+**Settled:** §6.2 and §6.6 now say columns use the system face with
+tabular digits, and Comfortaa is for standalone totals.
 
 **Seen:** 2026-09-22, S1 (Workbook's look).
 
@@ -799,7 +802,10 @@ in, dated.
 
 ---
 
-## N32 — The plan puts Workbook's four-across Month at 1024px; S8 moved it to 1280px
+## N32 — The plan puts Workbook's four-across Month at 1024px; S8 moved it to 1280px *(settled 2026-09-23, completion pass)*
+
+**Settled:** §6.3 now says ≥1280 px, two columns from 768 px, and §6.2
+that row cells carry no "$" while band totals do.
 
 **Seen:** 2026-09-23, S8 (budgets on the Month).
 
@@ -1221,7 +1227,11 @@ answers; keep the chosen source in the address or on the device.
 
 ---
 
-## N49 — The plan names Bill Calendar!Q14 where D5 changes Q20
+## N49 — The plan names Bill Calendar!Q14 where D5 changes Q20 *(settled in part 2026-09-23, completion pass)*
+
+**Settled in part:** §5.4 now reads "J3, Q20 | 1167.99, 150". Still open:
+adding Q14 = 200 to `workbook-bill-calendar`, which is a golden fixture change
+and goes in its own commit, transcribed from the workbook.
 
 **Seen:** 2026-09-23, S15c, re-reading Bill Calendar against the workbook.
 
