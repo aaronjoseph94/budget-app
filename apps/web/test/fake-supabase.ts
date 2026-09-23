@@ -15,6 +15,8 @@ import { createClient } from '@supabase/supabase-js'
 import type {
   BudgetRow,
   Category,
+  DebtExtraRow,
+  DebtRow,
   FundRow,
   GoalRow,
   LedgerRow,
@@ -50,6 +52,9 @@ export interface FakeTables {
   month_balances: (MonthBalanceRow & { readonly user_id?: string })[]
   /** Pay schedules as typed (0011); `user_id` as the app writes it. */
   pay_schedules: (PayScheduleRow & { readonly user_id?: string })[]
+  /** Debts and their extra payments as typed (0014); `user_id` as the app writes it. */
+  debts: (DebtRow & { readonly user_id?: string })[]
+  debt_extra_payments: (DebtExtraRow & { readonly user_id?: string })[]
 }
 
 export interface RpcCall {
@@ -110,6 +115,8 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     category_plans: [],
     month_balances: [],
     pay_schedules: [],
+    debts: [],
+    debt_extra_payments: [],
     ...seed,
   }
   const rpcCalls: RpcCall[] = []
@@ -173,6 +180,25 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     if (others.some((o) => o.name === row.name || (fund !== null && o.category_id === fund))) return pgError('23505', 409)
     if (kind === undefined) return pgError('23503', 409)
     return null
+  }
+
+  // What 0014 refuses of a debt: its CHECKs, then its unique name. Moving
+  // a start month past one of its extras is its trigger's 23514.
+  function debtRefusal(row: Row, others: readonly Row[]): Response | null {
+    const negative = ['starting_balance_cents', 'minimum_payment_cents', 'apr_basis_points'].some((c) => Number(row[c]) < 0)
+    if (negative || !String(row.start_date).endsWith('-01')) return pgError('23514')
+    if (others.some((o) => o.name === row.name)) return pgError('23505', 409)
+    const early = tables.debt_extra_payments.some((e) => e.debt_id === row.id && e.month < String(row.start_date))
+    return early ? pgError('23514') : null
+  }
+
+  // What 0014 refuses of an extra: its trigger (before the debt's start), its
+  // CHECKs, then the key to the debt, which the trigger leaves to it.
+  function extraRefusal(row: Row): Response | null {
+    const debt = tables.debts.find((d) => d.id === row.debt_id)
+    if (debt !== undefined && String(row.month) < debt.start_date) return pgError('23514')
+    if (Number(row.amount_cents) <= 0 || !String(row.month).endsWith('-01')) return pgError('23514')
+    return debt === undefined ? pgError('23503', 409) : null
   }
 
   async function serve(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
@@ -266,6 +292,9 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
           const refused = goalRefusal(row, [...table, ...added])
           if (refused !== null) return refused
         }
+        const refused =
+          target === 'debts' ? debtRefusal(row, [...table, ...added]) : target === 'debt_extra_payments' ? extraRefusal(row) : null
+        if (refused !== null) return refused
         added.push(row)
       }
       // Nothing is written until every row has passed, as in one statement.
@@ -319,6 +348,13 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
           if (refused !== null) return refused
         }
       }
+      if (method === 'PATCH' && (target === 'debts' || target === 'debt_extra_payments')) {
+        for (const r of table.filter(matches)) {
+          const edited = { ...r, ...body }
+          const refused = target === 'debts' ? debtRefusal(edited, table.filter((o) => o !== r)) : extraRefusal(edited)
+          if (refused !== null) return refused
+        }
+      }
       const next: Row[] = []
       for (const r of table) {
         if (!matches(r)) next.push(r)
@@ -331,6 +367,10 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
         tables.category_budgets = tables.category_budgets.filter(kept)
         tables.category_plans = tables.category_plans.filter(kept)
         tables.pay_schedules = tables.pay_schedules.filter(kept)
+      }
+      // A debt takes its extra payments with it (0014: ON DELETE CASCADE).
+      if (method === 'DELETE' && target === 'debts') {
+        tables.debt_extra_payments = tables.debt_extra_payments.filter((e) => tables.debts.some((d) => d.id === e.debt_id))
       }
       return new Response(null, { status: 204 })
     }

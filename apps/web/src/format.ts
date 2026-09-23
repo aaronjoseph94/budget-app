@@ -448,6 +448,47 @@ export function describeFundFailure(action: FundAction, error: WriteError | null
     : `Your savings funds could not be read, so they are not shown. Try again. (code ${code})`
 }
 
+/** What the Debts screen was doing when a request failed. */
+export type DebtAction = 'read' | 'save' | 'extra'
+
+/**
+ * Why debts could not be read or saved (0014).
+ *
+ * PGRST205, or 42P01 from an older PostgREST, is 0014 not pasted yet. A
+ * debt's name is unique (23505). 0014's triggers refuse an extra payment
+ * before its debt's start month, and a start month moved past an extra
+ * (23514); the screen checks both before sending, so 23514 here is another
+ * device's change. 23503 is a debt removed elsewhere.
+ */
+const DEBTS_NOT_APPLIED = 'Debts need a database update that has not been applied yet (0014 in the setup guide)'
+const DEBT_FAILURES: Readonly<Record<DebtAction, Readonly<Record<string, string>>>> = {
+  read: {
+    PGRST205: `${DEBTS_NOT_APPLIED}, so your debts cannot be shown.`,
+    '42P01': `${DEBTS_NOT_APPLIED}, so your debts cannot be shown.`,
+    '': 'Could not reach the database to read your debts. Check your connection and try again.',
+    PGRST301: 'Your session expired. Sign in again to see your debts.',
+  },
+  save: {
+    PGRST205: `${DEBTS_NOT_APPLIED}. Nothing was saved.`,
+    '42P01': `${DEBTS_NOT_APPLIED}. Nothing was saved.`,
+    '23505': 'You already have a debt with that name. Nothing was saved.',
+    '23514': 'This debt has extra payments before that start month. Remove them first, or choose an earlier month. Nothing was saved.',
+  },
+  extra: {
+    PGRST205: `${DEBTS_NOT_APPLIED}. Nothing was saved.`,
+    '42P01': `${DEBTS_NOT_APPLIED}. Nothing was saved.`,
+    '23514': 'An extra payment cannot come before the month the debt starts. It may have been changed on another device. Nothing was saved.',
+    '23503': 'That debt is no longer there. It may have been removed on another device. Nothing was saved.',
+  },
+}
+
+export function describeDebtFailure(action: DebtAction, error: WriteError | null | undefined): string {
+  const code = typeof error?.code === 'string' ? error.code : ''
+  const body = DEBT_FAILURES[action][code]
+  if (body !== undefined) return code === '' ? body : `${body} (code ${code})`
+  return action === 'read' ? `Your debts could not be read, so they are not shown. Try again. (code ${code})` : describeWriteFailure(error)
+}
+
 /**
  * Today, in the user's own time zone, as an ISO date.
  *

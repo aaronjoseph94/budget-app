@@ -18,6 +18,7 @@ import {
 import {
   describeBalanceFailure,
   describeBudgetFailure,
+  describeDebtFailure,
   describeFundFailure,
   describeMoveFailure,
   describePlanFailure,
@@ -1168,4 +1169,124 @@ export async function linkFund(
     .update({ category_id: link.categoryId, balance_as_of: link.asOf })
     .eq('id', link.goalId)
   if (error !== null) throw new Error(describeFundFailure('save', error))
+}
+
+// ---------------------------------------------------------------------------
+// Debts (migration 0014)
+// ---------------------------------------------------------------------------
+
+/** A debt as typed on the Debts screen: Debt Calculator!J18:J20 and its start month. */
+export interface DebtRow {
+  readonly id: string
+  readonly name: string
+  readonly starting_balance_cents: number
+  readonly minimum_payment_cents: number
+  /** Hundredths of a percent: 19.99% is 1999. */
+  readonly apr_basis_points: number
+  /** The first of the month the starting balance is as of. */
+  readonly start_date: string
+  readonly sort_order: number
+}
+
+/** A one-off extra payment on a debt, in the month it is paid (I26:I494). */
+export interface DebtExtraRow {
+  readonly id: string
+  readonly debt_id: string
+  readonly month: string
+  readonly amount_cents: number
+}
+
+/** Every debt, in the Debts screen's order, read whole. */
+export async function listDebts(supabase: SupabaseClient): Promise<readonly DebtRow[]> {
+  const rows = await readAll<DebtRow>(
+    (from, to) =>
+      supabase
+        .from('debts')
+        .select('id, name, starting_balance_cents, minimum_payment_cents, apr_basis_points, start_date, sort_order', { count: 'exact' })
+        .order('sort_order', { ascending: true })
+        .order('name', { ascending: true })
+        .order('id', { ascending: true })
+        .range(from, to),
+    {
+      changed: 'Your debts changed while they were being read, so they are not shown. Try again.',
+      describe: (error) => describeDebtFailure('read', error),
+    },
+  )
+  return rows.map((d) => ({
+    ...d,
+    starting_balance_cents: Number(d.starting_balance_cents),
+    minimum_payment_cents: Number(d.minimum_payment_cents),
+  }))
+}
+
+/** Every extra payment on every debt, read whole. */
+export async function listDebtExtras(supabase: SupabaseClient): Promise<readonly DebtExtraRow[]> {
+  const rows = await readAll<DebtExtraRow>(
+    (from, to) =>
+      supabase
+        .from('debt_extra_payments')
+        .select('id, debt_id, month, amount_cents', { count: 'exact' })
+        .order('month', { ascending: true })
+        .order('id', { ascending: true })
+        .range(from, to),
+    {
+      changed: 'Your extra payments changed while they were being read, so your debts are not shown. Try again.',
+      describe: (error) => describeDebtFailure('read', error),
+    },
+  )
+  return rows.map((e) => ({ ...e, amount_cents: Number(e.amount_cents) }))
+}
+
+export interface DebtEdit {
+  readonly name: string
+  readonly startingBalanceCents: number
+  readonly minimumPaymentCents: number
+  readonly aprBasisPoints: number
+  /** The first of the month the balance is as of. */
+  readonly startMonth: string
+}
+
+/** Add a debt at the end of the list (`sortOrder`), or change one. */
+export async function saveDebt(
+  supabase: SupabaseClient,
+  target: { readonly userId: string; readonly debtId: string | null; readonly sortOrder: number },
+  edit: DebtEdit,
+): Promise<void> {
+  const row = {
+    name: edit.name,
+    starting_balance_cents: edit.startingBalanceCents,
+    minimum_payment_cents: edit.minimumPaymentCents,
+    apr_basis_points: edit.aprBasisPoints,
+    start_date: edit.startMonth,
+  }
+  const { error } =
+    target.debtId === null
+      ? await supabase.from('debts').insert({ user_id: target.userId, sort_order: target.sortOrder, ...row })
+      : await supabase.from('debts').update(row).eq('id', target.debtId)
+  if (error !== null) throw new Error(describeDebtFailure('save', error))
+}
+
+/** Remove a debt; its extra payments go with it (0014: ON DELETE CASCADE). */
+export async function removeDebt(supabase: SupabaseClient, debtId: string): Promise<void> {
+  const { error } = await supabase.from('debts').delete().eq('id', debtId)
+  if (error !== null) throw new Error(describeDebtFailure('save', error))
+}
+
+/** Set a debt's extra payment for a month; one per debt a month, as Workbook has one cell. */
+export async function saveDebtExtra(
+  supabase: SupabaseClient,
+  extra: { readonly userId: string; readonly debtId: string; readonly month: string; readonly amountCents: number },
+): Promise<void> {
+  const { error } = await supabase
+    .from('debt_extra_payments')
+    .upsert(
+      { user_id: extra.userId, debt_id: extra.debtId, month: extra.month, amount_cents: extra.amountCents },
+      { onConflict: 'user_id,debt_id,month' },
+    )
+  if (error !== null) throw new Error(describeDebtFailure('extra', error))
+}
+
+export async function removeDebtExtra(supabase: SupabaseClient, extraId: string): Promise<void> {
+  const { error } = await supabase.from('debt_extra_payments').delete().eq('id', extraId)
+  if (error !== null) throw new Error(describeDebtFailure('extra', error))
 }
