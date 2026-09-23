@@ -18,7 +18,7 @@ import { Button } from '../components/ui/button.js'
 import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { navigate } from '../nav.js'
-import { useMonthlyAmounts, type MonthlyAmounts } from './SetupPlans.js'
+import { PlanFields, PlanHeadings, useMonthlyAmounts, type MonthlyAmounts } from './SetupPlans.js'
 
 interface ListCard {
   readonly kind: CategoryKind
@@ -83,7 +83,13 @@ export function SetupScreen() {
             <h2 className="text-xl font-medium text-setup-label">{section.label}</h2>
             {section.label === 'Recurring expenses' ? <AmountsProblem amounts={amounts} /> : null}
             {section.cards.map((card) => (
-              <ListCardView key={card.kind} card={card} rows={lists.get(card.kind) ?? []} />
+              <ListCardView
+                key={card.kind}
+                card={card}
+                rows={lists.get(card.kind) ?? []}
+                month={month}
+                amounts={RECURRING.has(card.kind) ? amounts : null}
+              />
             ))}
           </section>
         ))}
@@ -91,6 +97,9 @@ export function SetupScreen() {
     </div>
   )
 }
+
+/** The lists with Workbook's Day Paid and Monthly Amount columns (Bills!B:D, F:H, J:L). */
+const RECURRING: ReadonlySet<CategoryKind> = new Set(['bill', 'debt', 'subscription'])
 
 /** Why monthly amounts are not shown, once, above the three cards that would show them. */
 function AmountsProblem({ amounts }: { amounts: MonthlyAmounts }) {
@@ -225,15 +234,31 @@ function NameBand() {
   )
 }
 
-function ListCardView({ card, rows }: { card: ListCard; rows: readonly Category[] }) {
+function ListCardView({
+  card,
+  rows,
+  month,
+  amounts,
+}: {
+  card: ListCard
+  rows: readonly Category[]
+  /** This month's first day. */
+  month: string
+  /** On Bills, Debts and Subscriptions only; null on the other lists. */
+  amounts: MonthlyAmounts | null
+}) {
   const { supabase, userId, categories, refresh } = useAppData()
   const heading = LIST_HEADING[card.kind]
   const [newName, setNewName] = useState('')
   const [message, setMessage] = useState<string | null>(null)
+  // What the last monthly amount saved on this card did.
+  const [note, setNote] = useState<string | null>(null)
+  const plans = amounts?.status === 'ready' ? amounts.plans : null
 
   /** Run one write, then reload, or show why it was refused. */
   const write = async (change: () => Promise<unknown>): Promise<boolean> => {
     setMessage(null)
+    setNote(null)
     try {
       await change()
     } catch (cause) {
@@ -267,12 +292,20 @@ function ListCardView({ card, rows }: { card: ListCard; rows: readonly Category[
       {rows.length === 0 ? (
         <p className="py-3 text-sm text-muted-foreground">Nothing here yet.</p>
       ) : (
-        <ul className="mt-2 divide-y">
-          {rows.map((row) => (
-            <CategoryRow key={row.id} row={row} list={rows} write={write} />
-          ))}
-        </ul>
+        <>
+          {plans !== null ? <PlanHeadings month={month} /> : null}
+          <ul className="mt-2 divide-y">
+            {rows.map((row) => (
+              <CategoryRow key={row.id} row={row} list={rows} write={write}>
+                {plans !== null ? (
+                  <PlanFields row={row} plan={plans.get(row.id)} month={month} write={write} onSaved={setNote} />
+                ) : null}
+              </CategoryRow>
+            ))}
+          </ul>
+        </>
       )}
+      {note !== null ? <p role="status" className="mt-2 text-xs text-owed-ink">{note}</p> : null}
       <form
         className="mt-2 flex gap-2"
         onSubmit={(e) => {

@@ -106,3 +106,75 @@ describe('SetupScreen, reading monthly amounts', () => {
     expect(screen.queryByRole('alert')).toBeNull()
   })
 })
+
+/** A field in a card, by its accessible name. */
+const field = async (list: string, name: string) => (await card(list)).findByRole<HTMLInputElement>('textbox', { name })
+/** Type into a field and leave it, which is when Setup saves. */
+const type = async (list: string, name: string, value: string) => {
+  const input = await field(list, name)
+  fireEvent.change(input, { target: { value } })
+  fireEvent.blur(input)
+  return input
+}
+const september = (fake: FakeSupabase) =>
+  fake.tables.category_plans.filter((p) => p.effective_month === '2026-09-01').map((p) => [p.category_id, p.planned_cents, p.due_day])
+
+describe('SetupScreen, day paid and monthly amount', () => {
+  it('shows what is in effect this month on each recurring row, and nothing on the other lists', async () => {
+    renderScreen(<SetupScreen />, seeded())
+
+    const rentAmount = await field('Bills', 'Monthly amount for Rent, from September on')
+    await waitFor(() => expect(rentAmount.value).toBe('1600.00'))
+    expect((await field('Bills', 'Day paid for Rent')).value).toBe('1')
+    expect((await field('Bills', 'Monthly amount for Phone, from September on')).value).toBe('85.00')
+    expect((await field('Bills', 'Day paid for Phone')).value).toBe('')
+    // Netflix stopped from June: no amount, its day kept.
+    expect((await field('Subscriptions', 'Monthly amount for Netflix, from September on')).value).toBe('')
+    expect((await field('Subscriptions', 'Day paid for Netflix')).value).toBe('23')
+    expect((await field('Debts', 'Monthly amount for Car Loan, from September on')).value).toBe('')
+    expect((await card('Bills')).getByText('Monthly amount (from September on)')).toBeTruthy()
+    expect((await card('Variable expenses')).queryByRole('textbox', { name: /^Day paid/ })).toBeNull()
+    // Plan §3.3: the Debts card keeps saying the card itself is not a Debts row.
+    expect((await card('Debts')).getByText(/A card you pay off from your bank is not a monthly debt payment here/)).toBeTruthy()
+  })
+
+  it('saves an amount from this month on, keeping the day and every earlier month', async () => {
+    const fake = seeded()
+    renderScreen(<SetupScreen />, fake)
+    await waitFor(async () => expect((await field('Bills', 'Monthly amount for Rent, from September on')).value).toBe('1600.00'))
+
+    const input = await type('Bills', 'Monthly amount for Rent, from September on', '$1,650')
+
+    expect(await (await card('Bills')).findByRole('status')).toHaveProperty('textContent', 'Rent: $1,650.00 a month from September on.')
+    expect(september(fake)).toEqual([['rent', 165_000, 1]])
+    expect(fake.tables.category_plans.find((p) => p.id === 'p1')).toMatchObject({ planned_cents: 160_000, due_day: 1 })
+    await waitFor(() => expect(input.value).toBe('1650.00'))
+  })
+
+  it('saves a day paid from this month on, keeping the amount', async () => {
+    const fake = seeded()
+    renderScreen(<SetupScreen />, fake)
+    await waitFor(async () => expect((await field('Bills', 'Monthly amount for Phone, from September on')).value).toBe('85.00'))
+
+    await type('Bills', 'Day paid for Phone', '12')
+
+    expect(await (await card('Bills')).findByText('Phone: paid on day 12 from September on.')).toBeTruthy()
+    expect(september(fake)).toEqual([['phone', 8_500, 12]])
+  })
+
+  it('refuses a day or an amount it cannot save, puts the field back, and saves nothing', async () => {
+    const fake = seeded()
+    renderScreen(<SetupScreen />, fake)
+    await waitFor(async () => expect((await field('Bills', 'Day paid for Rent')).value).toBe('1'))
+
+    const day = await type('Bills', 'Day paid for Rent', '45')
+    expect((await card('Bills')).getByText('Type the day of the month it is paid, 1 to 31, or leave it blank.')).toBeTruthy()
+    expect(day.value).toBe('1')
+    for (const typed of ['-5', 'about 20']) {
+      const amount = await type('Bills', 'Monthly amount for Rent, from September on', typed)
+      expect((await card('Bills')).getByText('Type the monthly amount as $0 or more, like 1600 or 17.99, or leave it blank.')).toBeTruthy()
+      expect(amount.value).toBe('1600.00')
+    }
+    expect(september(fake)).toEqual([])
+  })
+})
