@@ -184,6 +184,31 @@ describe('YearScreen', () => {
     ])
   })
 
+  it("draws Annual's income and expenses by month and each list against its goal", async () => {
+    renderScreen(<YearScreen start="2026-01" />, seeded())
+
+    const charts = within(await screen.findByRole('region', { name: 'Year charts' }))
+    const months = charts.getByRole('img', { name: 'Income and expenses by month' })
+    // The tallest column is September, 2,500.00 + 1,600.00: the scale. Its
+    // income is 6,098 bp of it, 854 of the plot's 1,400 units.
+    expect(months.querySelectorAll('g > title')[8]?.textContent).toBe('Sep: income $2,500.00, expenses $1,600.00')
+    const september = [...months.querySelectorAll('g')][9]!
+    expect([...september.querySelectorAll('rect')].map((r) => r.getAttribute('height'))).toEqual(['854', '546'])
+    const totals = charts.getByRole('img', { name: 'Goals and budgets against actuals' })
+    expect(totals.querySelector('desc')?.textContent).toBe(
+      'Income: $2,500.00 of $36,000.00. Savings: $500.00 of $0.00. Variable expenses: $150.00 of $4,800.00. ' +
+        'Bills: $14,400.00 of $0.00. Debts: $0.00 of $0.00. Subscriptions: $0.00 of $0.00.',
+    )
+    // One scale, the Income goal of 36,000.00: its 2,500.00 is 694 bp, 97 of
+    // 1,400 units, and Bills' 14,400.00 is 4,000 bp, 560 units, with no goal bar.
+    const bars = (i: number) =>
+      [...[...totals.querySelectorAll('g')][i]!.querySelectorAll('rect')].map((r) => [r.getAttribute('fill'), r.getAttribute('height')])
+    expect(bars(1)).toEqual([['#517070', '1400'], ['#E6E1CE', '97']])
+    expect(bars(4)).toEqual([['#E6E1CE', '560']])
+    // A phone has Home's pie above; Annual's joins the charts on a desktop.
+    expect(charts.queryByRole('img', { name: 'Income, expenses and savings' })).toBeNull()
+  })
+
   it('asks for a name and a starting balance where they are missing', async () => {
     renderScreen(<YearScreen start="2026-01" />, seeded())
 
@@ -213,6 +238,11 @@ describe('YearScreen', () => {
     expect(screen.queryByRole('group', { name: 'Table' })).toBeNull()
     expect(screen.getAllByText('Left over')).toHaveLength(1)
     expect((await rowsOf('Bills by month'))[8]).toEqual(['Sep 2026', '', '1,600.00'])
+    // Annual's pie in the chart row, in Annual's own colours.
+    const annual = within(screen.getByRole('region', { name: 'Year charts' })).getByRole('img', {
+      name: 'Income, expenses and savings',
+    })
+    expect([...annual.querySelectorAll('path')].map((p) => p.getAttribute('fill'))).toEqual(['#D7EEEB', '#F9D7D2', '#F7EAA9'])
   })
 
   it('shows no year when a read fails, and says why', async () => {

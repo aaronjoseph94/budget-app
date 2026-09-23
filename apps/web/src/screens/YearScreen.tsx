@@ -17,6 +17,7 @@ import { Alert } from '../components/ui/feedback.js'
 import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
 import { useWide } from '../lib/wide.js'
+import { AnnualCharts } from './YearCharts.js'
 import { YearGlance } from './YearGlance.js'
 
 /**
@@ -128,7 +129,12 @@ export function YearScreen({ start: address }: { start: string | null }) {
             // Bills, Debts, Subscriptions and Variable expenses (B25:X41).
             <div className="grid grid-cols-4 gap-4 rounded-xl bg-muted p-4">
               <YearTotals sheet={sheet} thisMonth={thisMonth} />
-              {GROUPS.map((g) => (
+              {GROUPS.slice(0, 3).map((g) => (
+                <YearTable key={g.key} sheet={sheet} group={g.key} thisMonth={thisMonth} compact />
+              ))}
+              {/* Annual's chart row, between its top and bottom cards. */}
+              <AnnualCharts sheet={sheet} wide className="col-span-4" />
+              {GROUPS.slice(3).map((g) => (
                 <YearTable key={g.key} sheet={sheet} group={g.key} thisMonth={thisMonth} compact />
               ))}
             </div>
@@ -151,6 +157,7 @@ export function YearScreen({ start: address }: { start: string | null }) {
                 ))}
               </div>
               <YearTable sheet={sheet} group={group} thisMonth={thisMonth} />
+              <AnnualCharts sheet={sheet} wide={false} />
             </>
           )}
         </>

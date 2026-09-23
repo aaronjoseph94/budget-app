@@ -129,7 +129,10 @@
   --home-canvas: #ecf1f5;
   --home-card: #ffffff;
   --home-ink: #343434;
-  /* The grey track of Home's top-3 rings. */
+  /* The Year's charts: Annual's axis text #616F7C, darkened to read on the
+     card, its #CCCCCC gridline, and the grey track of Home's top-3 rings. */
+  --year-chart-ink: #5b6773;
+  --year-chart-rule: #cccccc;
   --home-track: #f3f5f6;
 }
 
@@ -207,6 +210,8 @@
     --home-canvas: #14181b;
     --home-card: #1e2327;
     --home-ink: #e9ecee;
+    --year-chart-ink: #c3ccd4;
+    --year-chart-rule: #4a4d50;
     --home-track: #2c3237;
   }
 }
@@ -282,6 +287,7 @@
   --color-home-canvas: var(--home-canvas);
   --color-home-card: var(--home-card);
   --color-home-ink: var(--home-ink);
+  --color-year-chart-ink: var(--year-chart-ink);
 }
 
 @layer base {
@@ -345,6 +351,12 @@
 }
 .workbook-chart .chart-home-ink {
   fill: var(--home-ink);
+}
+.workbook-chart .chart-year-ink {
+  fill: var(--year-chart-ink);
+}
+.workbook-chart .chart-year-rule {
+  stroke: var(--year-chart-rule);
 }
 .workbook-chart .chart-ring-track {
   fill: var(--home-track);

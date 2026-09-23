@@ -1,8 +1,9 @@
-import { useId, useMemo } from 'react'
-import { partShares, type TopExpense, type YearSheet } from '@budget/core'
-import { shareRing, yearPie, type SvgMarkup } from '@budget/chart-specs'
-import { formatCents, formatShare } from '../format.js'
+import { useId, useMemo, type ReactNode } from 'react'
+import { goalBars, partShares, stackedColumns, type TopExpense, type YearGroups, type YearSheet } from '@budget/core'
+import { goalActualColumns, incomeExpenseColumns, shareRing, yearPie, type SvgMarkup } from '@budget/chart-specs'
+import { formatCents, formatShare, formatShortMonth } from '../format.js'
 import { SvgChart } from '../components/ui/chart.js'
+import { cn } from '../lib/cn.js'
 
 /**
  * The Year's charts (plan §6.4, S14b), drawn by chart-specs from what core
@@ -70,6 +71,95 @@ export function TopRing({ top, rank }: { top: TopExpense; rank: number }) {
   return (
     <div className="w-14 shrink-0">
       <SvgChart svg={svg} />
+    </div>
+  )
+}
+
+/** chart42's six, in its order (Hidden!I32:I37), short enough to sit under a pair of columns. */
+const TOTALS: readonly [keyof YearGroups, string, string][] = [
+  ['income', 'Income', 'Income'],
+  ['savings', 'Savings', 'Savings'],
+  ['variable', 'Variable', 'Variable expenses'],
+  ['bill', 'Bills', 'Bills'],
+  ['debt', 'Debts', 'Debts'],
+  ['subscription', 'Subs.', 'Subscriptions'],
+]
+
+/**
+ * Annual's chart row (row 23): income and expenses by month (chart40), and
+ * each list's Goal against its Actual over the Year (chart42). Annual's pie
+ * (chart41) joins them on a desktop; a phone already has Home's above.
+ */
+export function AnnualCharts({ sheet, wide, className }: { sheet: YearSheet; wide: boolean; className?: string }) {
+  const id = useChartId()
+  const drawn = useMemo(() => {
+    const stacked = stackedColumns({
+      columns: sheet.months.map((m) => ({ key: m.month, parts: [m.income.actualCents, m.expenses.actualCents] })),
+    }).columns
+    const columns = incomeExpenseColumns({
+      id: `${id}-months`,
+      title: 'Income and expenses by month',
+      description: said(
+        sheet.months.map(
+          (m) =>
+            `${formatShortMonth(m.month)}: income ${formatCents(m.income.actualCents)}, expenses ${formatCents(m.expenses.actualCents)}`,
+        ),
+      ),
+      columns: sheet.months.map((m, i) => ({
+        label: formatShortMonth(m.month).slice(0, 3),
+        valueText: `income ${formatCents(m.income.actualCents)}, expenses ${formatCents(m.expenses.actualCents)}`,
+        parts: [stacked[i]!.parts[0] ?? null, stacked[i]!.parts[1] ?? null],
+      })),
+    })
+    const bars = goalBars({
+      rows: TOTALS.map(([key]) => ({
+        categoryId: key,
+        budgetCents: sheet.totals[key].budgetCents,
+        actualCents: sheet.totals[key].actualCents,
+      })),
+    }).bars
+    const text = (key: keyof YearGroups) =>
+      `${formatCents(sheet.totals[key].actualCents)} of ${formatCents(sheet.totals[key].budgetCents)}`
+    const totals = goalActualColumns({
+      id: `${id}-totals`,
+      title: 'Goals and budgets against actuals',
+      description: said(TOTALS.map(([key, , name]) => `${name}: ${text(key)}`)),
+      groups: TOTALS.map(([key, label], i) => ({
+        label,
+        valueText: text(key),
+        goalBp: bars[i]!.goalBp,
+        actualBp: bars[i]!.actualBp,
+      })),
+    })
+    return { columns, totals }
+  }, [id, sheet])
+
+  return (
+    <section
+      aria-label="Year charts"
+      className={cn('grid gap-6 rounded-xl border bg-card p-4 shadow-sm', wide && 'grid-cols-4', className)}
+    >
+      <Chart title="Income and expenses by month" className={cn(wide && 'col-span-2')}>
+        {/* Text scales with a chart, so it stops at about a phone's width. */}
+        <SvgChart svg={drawn.columns} className="max-w-md" />
+      </Chart>
+      {wide ? (
+        <Chart title="Annual totals">
+          <YearPie sheet={sheet} palette="annual" />
+        </Chart>
+      ) : null}
+      <Chart title="Against goals and budgets">
+        <SvgChart svg={drawn.totals} className={cn(!wide && 'max-w-sm')} />
+      </Chart>
+    </section>
+  )
+}
+
+function Chart({ title, className, children }: { title: string; className?: string; children: ReactNode }) {
+  return (
+    <div className={cn('space-y-2', className)}>
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-year-chart-ink">{title}</h2>
+      {children}
     </div>
   )
 }
