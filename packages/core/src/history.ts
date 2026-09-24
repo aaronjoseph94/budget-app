@@ -11,6 +11,7 @@
  * ledger's earliest date stands in only when no statement has a period.
  */
 import type { IsoDate } from '@budget/money-primitives'
+import { shiftMonth } from './week.js'
 
 export interface HistoryStartInput {
   /** The first day of each imported statement's period (0007), in any order. */
@@ -35,4 +36,37 @@ export function historyStart(input: HistoryStartInput): HistoryStart {
 
 function earliest(dates: readonly IsoDate[]): IsoDate | null {
   return dates.reduce<IsoDate | null>((first, d) => (first === null || d < first ? d : first), null)
+}
+
+/** How much history a figure rests on (F24): thin with 0–2 complete months, some with 3–5, solid with 6 or more. */
+export type Evidence = 'thin' | 'some' | 'solid'
+
+export function evidenceOf(completeMonths: number): Evidence {
+  return completeMonths >= 6 ? 'solid' : completeMonths >= 3 ? 'some' : 'thin'
+}
+
+export interface CompleteMonthsInput {
+  /** Today: its month is still running, so never complete. */
+  readonly asOf: IsoDate
+  /** From historyStart; null when there are no records. */
+  readonly historyStart: IsoDate | null
+  /** The first day the caller read rows from. A month before it was not read, so it is missing, not $0. */
+  readonly readFrom: IsoDate
+}
+
+export interface CompleteMonths {
+  /** Each complete month by its first day, newest first. */
+  readonly months: readonly IsoDate[]
+  readonly evidence: Evidence
+}
+
+/** F24: the months wholly inside the records and what was read, and before asOf's month. */
+export function completeMonths(input: CompleteMonthsInput): CompleteMonths {
+  const months: IsoDate[] = []
+  if (input.historyStart !== null) {
+    const first = input.historyStart > input.readFrom ? input.historyStart : input.readFrom
+    // A month is whole only when it starts on or after the first day covered.
+    for (let m = shiftMonth(input.asOf, -1); m >= first; m = shiftMonth(m, -1)) months.push(m)
+  }
+  return { months, evidence: evidenceOf(months.length) }
 }

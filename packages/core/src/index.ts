@@ -170,9 +170,28 @@ export {
   type WeeklySummaryInput,
 } from './week.js'
 
-export { historyStart, type HistoryStart, type HistoryStartInput } from './history.js'
+export {
+  completeMonths,
+  evidenceOf,
+  historyStart,
+  type CompleteMonths,
+  type CompleteMonthsInput,
+  type Evidence,
+  type HistoryStart,
+  type HistoryStartInput,
+} from './history.js'
 
 export { mad, median, quantile, type QuantileInput, type StatsInput } from './stats.js'
+
+export {
+  changeSize,
+  notableBand,
+  usualMonth,
+  type ChangeSize,
+  type NotableBandInput,
+  type UsualMonth,
+  type UsualMonthInput,
+} from './notable.js'
 
 export {
   comparisonWindow,
