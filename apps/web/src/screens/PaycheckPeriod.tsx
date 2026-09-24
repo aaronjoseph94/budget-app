@@ -26,6 +26,7 @@ import { useEarlier } from '../earlier.js'
 import { CompareLine } from './CompareLine.js'
 import { ImportedThrough, PeriodBlocks, TransfersNote } from './MonthScreen.js'
 import { FREQUENCY_WORD } from './SetupPay.js'
+import { HelpButton } from '../help/HelpButton.js'
 
 /** In words, how a monthly amount is shared across this pay (F15). */
 const SHARE: Readonly<Record<PaySchedule['frequency'], string>> = {
@@ -134,9 +135,12 @@ export function PaycheckPeriod({
     <>
       <header className="-mx-4 flex flex-wrap items-center justify-between gap-2 bg-paycheck-band px-4 py-4 text-paycheck-ink md:mx-0 md:rounded-xl">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {payPeriod({ schedule, asOf: today }).start === start ? 'This pay period' : 'Pay period'}
-          </h1>
+          <div className="flex items-center gap-1">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {payPeriod({ schedule, asOf: today }).start === start ? 'This pay period' : 'Pay period'}
+            </h1>
+            <HelpButton screen="paycheck" />
+          </div>
           <p className="text-sm">
             {formatDateRange(start, end)} · {source.name}, paid {FREQUENCY_WORD[schedule.frequency].toLowerCase()}
           </p>

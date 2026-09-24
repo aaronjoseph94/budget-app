@@ -22,6 +22,7 @@ import { FundEditor } from './FundEditor.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Figure } from '../components/ui/type.js'
+import { HelpButton } from '../help/HelpButton.js'
 
 /**
  * The workbook's Savings tab (S16): a yellow card for every fund on the Savings
@@ -60,7 +61,10 @@ export function SavingsScreen() {
   return (
     <div className="space-y-4">
       <header className="-mx-4 bg-savings-banner px-4 py-5 text-savings-ink md:mx-0 md:rounded-xl">
-        <h1 className="font-serif text-4xl italic">Savings goals</h1>
+        <div className="flex items-center gap-1">
+          <h1 className="font-serif text-4xl italic">Savings goals</h1>
+          <HelpButton screen="savings" />
+        </div>
         <p className="mt-1 text-sm">What each fund needs, and what to put in it each month to get there by its date.</p>
       </header>
       {state.status === 'loading' ? <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p> : null}

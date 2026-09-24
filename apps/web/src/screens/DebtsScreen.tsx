@@ -10,6 +10,7 @@ import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { SvgChart } from '../components/ui/chart.js'
 import { Figure } from '../components/ui/type.js'
+import { HelpButton } from '../help/HelpButton.js'
 
 /**
  * The workbook's Debt Calculator (S17): the summary card (Current Debt Total,
@@ -42,7 +43,10 @@ export function DebtsScreen() {
     <div className="-mx-4 space-y-4 bg-debt-page px-4 pb-6 text-debt-ink md:mx-0 md:rounded-xl">
       <header className="-mx-4 bg-debt-banner px-4 py-5 md:rounded-t-xl">
         {/* The banner's only words: large, where white reads at 3.5 to one. */}
-        <h1 className="font-serif text-4xl italic text-white">Debt payoff</h1>
+        <div className="flex items-center gap-1 text-white">
+          <h1 className="font-serif text-4xl italic">Debt payoff</h1>
+          <HelpButton screen="debts" />
+        </div>
       </header>
       {/* Plan 3.3: the debts here are not the Month's Debts list. */}
       <p className="text-sm">

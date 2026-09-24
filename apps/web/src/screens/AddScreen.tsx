@@ -16,6 +16,7 @@ import { Field, Input, NativeSelect } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { navigate } from '../nav.js'
 import { cn } from '../lib/cn.js'
+import { HelpButton } from '../help/HelpButton.js'
 
 type Mode = 'statement' | 'photo' | 'typed'
 type Loaded =
@@ -64,7 +65,10 @@ export function AddScreen() {
   return (
     <div className="space-y-4">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Add</h1>
+        <div className="flex items-center gap-1">
+          <h1 className="text-2xl font-semibold tracking-tight">Add</h1>
+          <HelpButton screen="add" />
+        </div>
         <p className="text-sm text-muted-foreground">A statement from your bank, a receipt photo, or one by hand: cash, pay or a move to savings.</p>
       </header>
       <div role="tablist" aria-label="How to add" className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">

@@ -11,13 +11,17 @@ import { Field, Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { navigate } from '../nav.js'
 import { useFunds } from '../funds.js'
+import { HelpButton } from '../help/HelpButton.js'
 
 export function SettingsScreen() {
   const { supabase, email } = useAppData()
   return (
     <div className="space-y-4">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+        <div className="flex items-center gap-1">
+          <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+          <HelpButton screen="settings" />
+        </div>
         <p className="text-sm text-muted-foreground">Budgets, your goal, and your account.</p>
       </header>
       <Card>

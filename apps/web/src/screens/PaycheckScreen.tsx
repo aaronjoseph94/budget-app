@@ -7,6 +7,7 @@ import { Button } from '../components/ui/button.js'
 import { NativeSelect } from '../components/ui/form.js'
 import { PaycheckPeriod } from './PaycheckPeriod.js'
 import { PeriodSwitch } from './PeriodSwitch.js'
+import { HelpButton } from '../help/HelpButton.js'
 
 /**
  * The workbook's Paycheck Budget (S15b): the pay period of an income source with a
@@ -87,7 +88,10 @@ export function PaycheckScreen({ day }: { day: string | null }) {
 function NoSchedule() {
   return (
     <section aria-label="Paycheck" className="space-y-3 rounded-xl bg-paycheck-band px-4 py-5 text-paycheck-ink">
-      <h1 className="text-2xl font-semibold tracking-tight">Paycheck</h1>
+      <div className="flex items-center gap-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Paycheck</h1>
+        <HelpButton screen="paycheck" />
+      </div>
       <p className="text-sm">
         This shows your budget one pay period at a time. It needs to know when you are paid: in Setup, give an Income
         row how often it pays and a first payday.

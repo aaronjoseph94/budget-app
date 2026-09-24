@@ -1,5 +1,6 @@
 import { hashOf, isBuilt, type Screen } from '../nav.js'
 import { Icon, type IconName } from '../components/ui/icons.js'
+import { HelpButton } from '../help/HelpButton.js'
 
 interface Item {
   readonly screen: Screen
@@ -52,7 +53,10 @@ export function MoreScreen() {
   const groups = MORE_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => isBuilt(i.screen)) })).filter((g) => g.items.length > 0)
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-semibold tracking-tight">More</h1>
+      <div className="flex items-center gap-1">
+        <h1 className="text-2xl font-semibold tracking-tight">More</h1>
+        <HelpButton screen="more" />
+      </div>
       {groups.map((group) => (
         <section key={group.title} aria-labelledby={idOf(group.title)} className="space-y-2">
           <h2 id={idOf(group.title)} className="px-1 text-sm font-medium text-muted-foreground">

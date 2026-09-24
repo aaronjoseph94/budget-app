@@ -5,6 +5,7 @@ import { formatBasisPoints, formatCents } from '../format.js'
 import { hashOf } from '../nav.js'
 import { Card, CardContent, CardTitle } from '../components/ui/card.js'
 import { Icon } from '../components/ui/icons.js'
+import { HelpButton } from '../help/HelpButton.js'
 
 /**
  * The Coach, first version (plan §2.3, A05): the flight card. The day's
@@ -17,7 +18,10 @@ import { Icon } from '../components/ui/icons.js'
 export function CoachScreen() {
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold tracking-tight">Coach</h1>
+      <div className="flex items-center gap-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Coach</h1>
+        <HelpButton screen="coach" />
+      </div>
       <FlightCard />
     </div>
   )

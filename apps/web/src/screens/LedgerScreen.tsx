@@ -11,6 +11,7 @@ import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
+import { HelpButton } from '../help/HelpButton.js'
 
 /** All transactions: everything that reached the ledger, a month at a time. */
 export function LedgerScreen() {
@@ -69,7 +70,10 @@ export function LedgerScreen() {
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
           {/* More's name for it: one screen, one name. */}
-          <h1 className="text-2xl font-semibold tracking-tight">All transactions</h1>
+          <div className="flex items-center gap-1">
+            <h1 className="text-2xl font-semibold tracking-tight">All transactions</h1>
+            <HelpButton screen="ledger" />
+          </div>
           <p className="text-sm text-muted-foreground">
             {formatMonthTitle(month)}
           </p>

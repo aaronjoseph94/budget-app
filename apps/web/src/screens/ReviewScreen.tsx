@@ -23,6 +23,7 @@ import { Input, NativeSelect } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { cn } from '../lib/cn.js'
 import { navigate } from '../nav.js'
+import { HelpButton } from '../help/HelpButton.js'
 
 const NEW_CATEGORY = '__new__'
 
@@ -178,7 +179,10 @@ export function ReviewScreen() {
   return (
     <div className="space-y-4">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Review</h1>
+        <div className="flex items-center gap-1">
+          <h1 className="text-2xl font-semibold tracking-tight">Review</h1>
+          <HelpButton screen="review" />
+        </div>
         <p className="text-sm text-muted-foreground">
           {rows === null ? 'Loading…' : total === 0 ? 'Nothing waiting.' : `${total} waiting for a category.`} Nothing reaches your
           budget until you approve it.

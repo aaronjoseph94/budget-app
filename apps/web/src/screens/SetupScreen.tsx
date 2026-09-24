@@ -20,6 +20,7 @@ import { Icon } from '../components/ui/icons.js'
 import { navigate } from '../nav.js'
 import { PlanFields, PlanHeadings, TotalTile, useMonthlyAmounts, type MonthlyAmounts } from './SetupPlans.js'
 import { PayFields, PayHeadings, usePaySchedules, type PaySchedules } from './SetupPay.js'
+import { HelpButton } from '../help/HelpButton.js'
 
 interface ListCard {
   readonly kind: CategoryKind
@@ -232,7 +233,10 @@ function NameBand() {
       >
         ‹ More
       </button>
-      <h1 className="font-serif text-4xl italic">Start here!</h1>
+      <div className="flex items-center gap-1">
+        <h1 className="font-serif text-4xl italic">Start here!</h1>
+        <HelpButton screen="setup" />
+      </div>
       <label className="mt-4 flex items-baseline gap-3 text-setup-band-ink">
         <span className="shrink-0 text-sm italic">My name is</span>
         <input

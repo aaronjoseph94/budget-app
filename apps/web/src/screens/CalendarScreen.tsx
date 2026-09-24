@@ -11,6 +11,7 @@ import { Icon } from '../components/ui/icons.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
 import { CompactGrid, MonthGrid, WEEKDAYS } from './CalendarGrid.js'
+import { HelpButton } from '../help/HelpButton.js'
 
 /**
  * The workbook's Bill Calendar (S15c): a month's bills, debts and subscriptions on
@@ -73,7 +74,10 @@ export function CalendarScreen({ month }: { month: string | null }) {
     <div className="space-y-4">
       <header className="-mx-4 flex flex-wrap items-center justify-between gap-x-2 gap-y-3 bg-calendar-band px-4 py-4 md:mx-0 md:rounded-xl">
         <div>
-          <MonthTitle>{formatMonthTitle(start)}</MonthTitle>
+          <div className="flex items-center gap-1">
+            <MonthTitle>{formatMonthTitle(start)}</MonthTitle>
+            <HelpButton screen="calendar" />
+          </div>
           <p className="mt-1 text-sm font-medium text-calendar-pill-ink">Bill calendar</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
