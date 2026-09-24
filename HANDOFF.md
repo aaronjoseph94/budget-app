@@ -81,7 +81,11 @@ savings kept by transfers, pay periods from the pay schedule).
 Supabase project ref: `bnodrfghxbavlopxkgju`. More detail for each step is
 in `docs/setup.md`.
 
-**Step 1 — paste the database updates, before anything else.** Supabase
+**Step 1 — done 2026-09-24.** The owner pasted `0003` to `0014` ("the
+pasting to supabase is done"). Kept below as the record, and for rebuilding
+the project from scratch.
+
+Supabase
 dashboard → **SQL Editor** → **New query**. Open the first file below on
 GitHub (branch `main-tnlcto`, folder `supabase/migrations`), copy all of it,
 paste, press **Run**, and wait for "Success. No rows returned." Then a new

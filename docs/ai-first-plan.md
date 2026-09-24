@@ -14,7 +14,7 @@ This plan was made from three independent designs, each led by one concern (safe
 - **Reports.** The month in review, trends, shops and subscriptions, and your spending habits, with Save as PDF and a CSV download.
 - **Last month, everywhere.** Month, Week, Paycheck, Year, Savings and Debts show what you did at the same point last month.
 - **Help that doesn't leave you lost.** A **?** beside every screen's title, a Getting started guide one step at a time, and a One-time updates page that checks what is installed and has Copy buttons.
-- **After the push you do three things, about 15 minutes, once:** paste three database updates, paste the AI helper, paste a free Gemini key (§10). If HANDOFF's step 1 (the twelve updates `0003` to `0014`) is not done yet, it still comes first, before anything is merged into `main`; Help → One-time updates shows which are left.
+- **After the push you do three things, about 15 minutes, once:** paste three database updates, paste the AI helper, paste a free Gemini key (§10). HANDOFF's step 1 (the twelve updates `0003` to `0014`) is done: the owner pasted them on 2026-09-24. Help → One-time updates shows which of the new ones are left.
 - **One thing moves.** Week leaves the phone's bottom bar for a **Month · Week · Pay · Year** switch at the top of the Month. It is still one tap away.
 
 ---
@@ -502,7 +502,7 @@ One step per screen: a bar ("Step 3 of 9 · about 2 minutes"), a large title, on
 
 ## 10. Migrations, and what the owner does after the push
 
-0001 and 0002 are applied to the hosted project (`docs/setup.md`, 2026-09-22). 0003–0014 are HANDOFF's step 1, which the owner does before `main-tnlcto` is merged into `main`; nothing in this repository records that they are applied yet. None of 0001–0014 changes. This phase adds three, forward-only, one per capability so each can be missing on its own without breaking anything else. Every table enables RLS and adds the `user_id = auth.uid()` policy in the same file.
+0001 and 0002 were applied to the hosted project on 2026-09-22, and 0003–0014 on 2026-09-24, when the owner wrote "the pasting to supabase is done" (`docs/setup.md`). None of 0001–0014 changes. This phase adds three, forward-only, one per capability so each can be missing on its own without breaking anything else. Every table enables RLS and adds the `user_id = auth.uid()` policy in the same file.
 
 ### 10.1 What each one adds
 
@@ -532,7 +532,7 @@ One step per screen: a bar ("Step 3 of 9 · about 2 minutes"), a large title, on
 
 ### 10.2 What the owner does after the push
 
-**First, if it is not done yet: HANDOFF's step 1.** The twelve updates `0003` to `0014` go in before `main-tnlcto` is merged into `main`, exactly as HANDOFF says, because the app already needs them. `0001` and `0002` are in: do not run them again. One-time updates (A06) shows which of these are still missing; they are copied from GitHub as HANDOFF says, because the app's Copy buttons carry only `0015` on.
+**Already done: HANDOFF's step 1.** The owner pasted `0003` to `0014` on 2026-09-24, and `0001` and `0002` before that: do not run them again. One-time updates (A06) shows which of these are still missing; they are copied from GitHub as HANDOFF says, because the app's Copy buttons carry only `0015` on.
 
 **Then three things, in this order, about 15 minutes, once. Easiest on a computer.** Until they are done, everything that worked before still works, and the new screens use the app's own words. In the app, **Help → One-time updates** checks each step and has Copy buttons, so there is no need to open GitHub.
 
@@ -546,7 +546,7 @@ Then **Check again** on One-time updates says "All done".
 
 ### 10.3 Why pushing before pasting is safe
 
-`main` deploys itself when pushed (HANDOFF step 2). Nothing in the first load reads a table from 0015–0017, every new read fails soft on its own, and a missing helper is a 404 that becomes one quiet line (§3.10). A28 proves it by walking every screen with each piece missing in turn. This covers only the three new updates: the app already needs 0003–0014, so HANDOFF's rule stands that they are pasted before `main-tnlcto` is merged into `main`.
+`main` deploys itself when pushed (HANDOFF step 2). Nothing in the first load reads a table from 0015–0017, every new read fails soft on its own, and a missing helper is a 404 that becomes one quiet line (§3.10). A28 proves it by walking every screen with each piece missing in turn. This covers only the three new updates; 0003–0014 are already in (2026-09-24).
 
 ---
 
@@ -849,7 +849,7 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 
 **Owner items:** 10, 5, 9, 8 · **Depends on:** A27 and every earlier slice · **Migrations:** none · **Commits:** about 3
 - **Do:** `./scripts/gates.sh full` GREEN on a clean tree, every coverage floor met (`savings-coach`, `report-export` and `supabase/functions` included). A mutation list, each seen RED then restored: the digit rule, the direction check, the origin check, the limit, the additional data, the same-days window, history start, the `ai_notes` check. A real-browser click-through in the harness with a fake database and a fake AI: first sign-in, Getting started, the key, a statement, Review with suggestions, Coach, the check-in, Forecast, Reports, Ask, Help; then again with AI off, the helper missing, each of 0015–0017 missing, and every service resting; at 320 and 390 px, light and dark; no console errors.
-- **Hand over:** HANDOFF rewritten: what is new; that 0003–0014 (its current step 1) still come first unless the owner has said they are in; §10.2's three steps; that `main` deploys itself and every new screen fails soft until they are done; what the owner will notice (§2.10: Week off the phone bar, the wide bar's changes, the Coach tab); how to check each screen. `docs/setup.md` gains the AI section; Help's One-time updates and Start here final; CONSTRAINTS.md's measured counts (121 golden unchanged, the total higher); ROADMAP's markers; NOTICED updated.
+- **Hand over:** HANDOFF rewritten: what is new; that 0003–0014 are in (the owner, 2026-09-24); §10.2's three steps; that `main` deploys itself and every new screen fails soft until they are done; what the owner will notice (§2.10: Week off the phone bar, the wide bar's changes, the Coach tab); how to check each screen. `docs/setup.md` gains the AI section; Help's One-time updates and Start here final; CONSTRAINTS.md's measured counts (121 golden unchanged, the total higher); ROADMAP's markers; NOTICED updated.
 - **Acceptance:** `./scripts/gates.sh full` prints `status=GREEN` on a clean tree, with every coverage floor met; the golden count is still 121 and the total number of tests is not lower than CONSTRAINTS.md's measured count; each item on the mutation list was seen RED and restored; the click-through passes in every state listed, at 320 and 390 px, light and dark, with no console errors; HANDOFF's steps match §10.2; `git status --short` prints nothing. The push to `main` is then the orchestrator's step.
 
 ---

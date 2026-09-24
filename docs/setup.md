@@ -7,10 +7,11 @@ found again by hitting the same wall twice.
 ## Supabase: database migrations, in order
 
 Run each file in `supabase/migrations/` once, in filename order, in
-**SQL Editor → New query → paste → Run**. `0001` and `0002` are already
-applied to the hosted project (2026-09-22); start at `0003` and go to
-`0014`, the highest file there is. Each ends in "Success. No rows
-returned." Running one twice is refused rather than applied twice.
+**SQL Editor → New query → paste → Run**. `0001` and `0002` were applied
+to the hosted project on 2026-09-22, and `0003` to `0014` on 2026-09-24
+(the owner: "the pasting to supabase is done"). Anything newer starts at
+`0015`. Each ends in "Success. No rows returned." Running one twice is
+refused rather than applied twice.
 
 | File | What it adds |
 |---|---|
