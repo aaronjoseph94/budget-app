@@ -124,8 +124,9 @@ describe('Shell', () => {
     fireEvent.click(within(await screen.findByRole('list')).getByRole('button', { name: /^Bill calendar/ }))
     expect(window.location.hash).toBe('#/calendar')
     go('/calendar')
+    // Fetched on first use now (PERF-3), so its heading is waited for too.
     expect(await screen.findByText('Bill calendar')).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'September 2026' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'September 2026' })).toBeTruthy()
     const desktopBar = screen.getAllByRole('navigation', { name: 'Screens' })[0]!
     expect(within(desktopBar).getByRole('button', { name: 'Calendar' }).getAttribute('aria-current')).toBe('page')
     expect(within(phoneBar()).getByRole('button', { name: 'More' }).getAttribute('aria-current')).toBe('page')

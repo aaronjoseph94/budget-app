@@ -4,26 +4,28 @@ import { createSupabase } from './supabase.js'
 import { NotConfigured, SignIn, useSession } from './auth.js'
 import { AppDataProvider, useAppData } from './app-data.js'
 import { navigate, useAddress, type Screen } from './nav.js'
-import { CalendarScreen } from './screens/CalendarScreen.js'
-import { DebtsScreen } from './screens/DebtsScreen.js'
 import { MonthScreen } from './screens/MonthScreen.js'
 import { MoreScreen } from './screens/MoreScreen.js'
-import { PaycheckScreen } from './screens/PaycheckScreen.js'
-import { SavingsScreen } from './screens/SavingsScreen.js'
-import { WeekScreen } from './screens/WeekScreen.js'
-import { ReviewScreen } from './screens/ReviewScreen.js'
-import { AddScreen } from './screens/AddScreen.js'
-import { LedgerScreen } from './screens/LedgerScreen.js'
-import { SettingsScreen } from './screens/SettingsScreen.js'
-import { SetupScreen } from './screens/SetupScreen.js'
 import { displayNameOf } from './profile.js'
 import { Alert } from './components/ui/feedback.js'
 import { Button } from './components/ui/button.js'
 import { Icon, type IconName } from './components/ui/icons.js'
 import { cn } from './lib/cn.js'
 
-// Its own chunk, fetched the first time the Year opens: Month opens first
-// (decision 1) and should not wait for twelve months' tables and charts.
+// Each screen but the Month (and More, a list of links) is its own chunk,
+// fetched the first time it opens. The Month opens first (decision 1), and
+// it waited for every other screen's code: 214 KB gzipped, most of it
+// unused on the Month (PERF-3). Add carries the statement readers with it.
+const AddScreen = lazy(() => import('./screens/AddScreen.js').then((m) => ({ default: m.AddScreen })))
+const CalendarScreen = lazy(() => import('./screens/CalendarScreen.js').then((m) => ({ default: m.CalendarScreen })))
+const DebtsScreen = lazy(() => import('./screens/DebtsScreen.js').then((m) => ({ default: m.DebtsScreen })))
+const LedgerScreen = lazy(() => import('./screens/LedgerScreen.js').then((m) => ({ default: m.LedgerScreen })))
+const PaycheckScreen = lazy(() => import('./screens/PaycheckScreen.js').then((m) => ({ default: m.PaycheckScreen })))
+const ReviewScreen = lazy(() => import('./screens/ReviewScreen.js').then((m) => ({ default: m.ReviewScreen })))
+const SavingsScreen = lazy(() => import('./screens/SavingsScreen.js').then((m) => ({ default: m.SavingsScreen })))
+const SettingsScreen = lazy(() => import('./screens/SettingsScreen.js').then((m) => ({ default: m.SettingsScreen })))
+const SetupScreen = lazy(() => import('./screens/SetupScreen.js').then((m) => ({ default: m.SetupScreen })))
+const WeekScreen = lazy(() => import('./screens/WeekScreen.js').then((m) => ({ default: m.WeekScreen })))
 const YearScreen = lazy(() => import('./screens/YearScreen.js').then((m) => ({ default: m.YearScreen })))
 
 export function App() {
@@ -218,10 +220,10 @@ export function Shell() {
   )
 }
 
-/** The screen the address names. */
+/** The screen the address names, each but the Month fetched on first use. */
 function Screens({ screen, period }: { screen: Screen; period: string | null }) {
   return (
-    <>
+    <Suspense fallback={<p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>}>
       {screen === 'month' ? <MonthScreen month={period} /> : null}
       {screen === 'week' ? <WeekScreen /> : null}
       {screen === 'paycheck' ? <PaycheckScreen day={period} /> : null}
@@ -234,12 +236,8 @@ function Screens({ screen, period }: { screen: Screen; period: string | null }) 
       {screen === 'setup' ? <SetupScreen /> : null}
       {screen === 'savings' ? <SavingsScreen /> : null}
       {screen === 'debts' ? <DebtsScreen /> : null}
-      {screen === 'year' ? (
-        <Suspense fallback={<p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>}>
-          <YearScreen start={period} />
-        </Suspense>
-      ) : null}
-    </>
+      {screen === 'year' ? <YearScreen start={period} /> : null}
+    </Suspense>
   )
 }
 
