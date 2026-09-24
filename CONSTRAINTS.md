@@ -54,11 +54,21 @@ whether a commit is clean.
 | RLS coverage | `pg_tables WHERE NOT rowsecurity` returns 0; every public table has an all-commands `user_id = auth.uid()` policy (`pg_policies`); policies isolate | `scripts/verify-migrations.sh` | CI |
 | Dependencies | Nothing high or above | `pnpm audit --audit-level high` | CI |
 | Web first load | The JavaScript a phone loads before the first screen (the entry and the chunks it preloads) ≤200 KB gzipped | `node scripts/check-bundle.mjs` | CI |
+| Brand | The workbook vendor's name is in no tracked file's text or path, in any letter case | `git grep -niI -e "w[i]nky"` + `git ls-files` | every edit |
 
 The web first-load row replaced the pending "≤700 KB gzipped" entry-bundle
 row on 2026-09-24, tighter: the entry had grown from 192.83 to 214.62 KB
 gzipped with nothing firing (PERF-8), and splitting the screens out brought
 it to 180.7. Verified by lowering the budget below that and observing FAIL.
+
+The brand row was added on 2026-09-24, when the owner asked for the
+workbook vendor's name to go from everything in the repository. It checks
+the files as they stand, not history: commit messages and older versions of
+files are rewritten separately. The pattern writes the name's second letter
+as a character class, so `gates.sh` cannot match itself. A git grep that
+errors is `RED`, not clean. Verified by staging a file with the name in
+capitals, and another with it only in its file name, and observing `RED`
+each time.
 
 Verified to bite: injecting `Date.now()` and `toFixed()` into `packages/core`
 turns the gate run `RED`. A gate never seen to fail has not been tested.

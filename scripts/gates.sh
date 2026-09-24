@@ -37,6 +37,25 @@ gate purity  depcruise npx depcruise --config .dependency-cruiser.cjs packages a
 gate secrets gitleaks  gitleaks dir --redact --no-banner .
 gate golden  vitest    npx vitest run
 
+# The owner asked (2026-09-24) for the workbook vendor's name to go from
+# everything in the repository. Its second letter is a character class here,
+# so this file cannot match its own pattern; -i is every letter case, and -I
+# skips binaries. A git grep that fails (exit 2 or more) is not "none found".
+no_brand() {
+  local found=0 rc
+  git grep -n -I -i -e 'w[i]nky'
+  rc=$?
+  case $rc in
+    0) found=1 ;;
+    1) ;;
+    *) echo "git grep failed with exit $rc"; return 2 ;;
+  esac
+  # A file or folder named with it has no line to match, so paths too.
+  if git ls-files | grep -i -e 'w[i]nky'; then found=1; fi
+  [ "$found" -eq 0 ]
+}
+gate brand   git       no_brand
+
 if [ "$LEVEL" = "full" ]; then
   # The history scan still earns its place: it catches a secret committed
   # earlier, which a working-tree scan cannot see once the file is deleted.

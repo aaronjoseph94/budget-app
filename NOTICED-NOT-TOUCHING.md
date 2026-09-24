@@ -1653,3 +1653,22 @@ larger than the fix commits around them; the audit rated them low.
 
 **To settle:** one slice each, with the existing screen tests as the
 check that nothing moved.
+
+---
+
+## N64 — The brand gate checks the files, not history
+
+**Seen:** 2026-09-24, adding the `brand` gate (owner's item 4).
+
+`gates.sh`'s `brand` gate fails when the workbook vendor's name is in a
+tracked file's text or path. It cannot see commit messages or the older
+versions of files in history, where the name still is until those
+commits are rewritten, and `-I` skips binary files (none holds it today:
+a search that reads binaries as text finds nothing).
+
+**Why not fixed here:** rewriting history is a separate step outside this
+slice, and a history check added before it would turn every gate run red.
+
+**To settle:** once history is rewritten, add a full-level check over
+`git log --all --format=%B` and `git log --all -p`, seen failing on a
+scratch branch first, so the name cannot come back through a message.
