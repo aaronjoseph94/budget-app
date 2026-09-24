@@ -6,6 +6,7 @@ import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { NativeSelect } from '../components/ui/form.js'
 import { PaycheckPeriod } from './PaycheckPeriod.js'
+import { PeriodSwitch } from './PeriodSwitch.js'
 
 /**
  * The workbook's Paycheck Budget (S15b): the pay period of an income source with a
@@ -49,6 +50,8 @@ export function PaycheckScreen({ day }: { day: string | null }) {
 
   return (
     <div className="space-y-4">
+      {/* First, so it is there while the schedule loads, fails or is missing. */}
+      <PeriodSwitch current="paycheck" />
       {error !== null ? <Alert tone="error" title="Could not load when you are paid">{error}</Alert> : null}
       {/* A first load that failed is said above the screen, by App, as on the Month. */}
       {schedules === null && error === null && (version > 0 || loadError === null) ? (

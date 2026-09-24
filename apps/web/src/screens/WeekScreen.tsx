@@ -20,6 +20,7 @@ import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 import { navigate } from '../nav.js'
 import { WeekBlocks } from './WeekBlocks.js'
+import { PeriodSwitch } from './PeriodSwitch.js'
 import { GoalCard, NoGoal } from './WeekGoal.js'
 
 /**
@@ -122,6 +123,7 @@ export function WeekScreen({ monday }: { monday: string | null }) {
 
   return (
     <div className="space-y-4">
+      <PeriodSwitch current="week" />
       <header className="-mx-4 flex flex-wrap items-center justify-between gap-2 bg-title-band px-4 py-4 md:mx-0 md:rounded-xl">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{isThisWeek ? 'This week' : 'Week of'}</h1>
