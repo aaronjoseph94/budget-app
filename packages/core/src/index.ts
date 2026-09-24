@@ -174,12 +174,15 @@ export { historyStart, type HistoryStart, type HistoryStartInput } from './histo
 
 export {
   comparisonWindow,
+  debtBalanceChange,
   periodComparison,
   type BlockChange,
   type Change,
   type ComparisonWindow,
   type ComparisonWindowInput,
   type ComparedPeriod,
+  type DebtBalanceChange,
+  type DebtBalanceChangeInput,
   type DateWindow,
   type PeriodComparison,
   type PeriodComparisonInput,

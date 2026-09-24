@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { isoDate } from '@budget/money-primitives'
-import { periodComparison, type PeriodComparisonInput } from '../src/compare.js'
+import { debtBalanceChange, periodComparison, type PeriodComparisonInput } from '../src/compare.js'
+import { debtPlan } from '../src/debt-plan.js'
 import type { PeriodCategory } from '../src/period-sheet.js'
 
 /** Suite tests for F25 and F26 over a week, a pay period and a Year, worked by hand. */
@@ -93,5 +94,30 @@ describe('periodComparison for a Year (F25, F26)', () => {
     expect(
       periodComparison({ ...BASE, historyStart: d('2026-08-08'), period: 'year', startMonth: d('2026-01-01'), entries: [] }),
     ).toMatchObject({ status: 'before_records', historyStart: '2026-08-08' })
+  })
+})
+
+describe('debtBalanceChange (F25, F26)', () => {
+  const debt = (name: string, startMonth: string, startingBalanceCents: number, minimumPaymentCents: number) => ({
+    name, startMonth: d(startMonth), startingBalanceCents, minimumPaymentCents, aprBasisPoints: 0,
+  })
+  const plan = debtPlan({
+    debts: [debt('Car', '2026-01-01', 500000, 15000), debt('Loan', '2026-10-01', 90000, 30000), debt('Card', '2026-01-01', 20000, 10000)],
+    extraPayments: [],
+  })
+
+  it('sets each scheduled balance at the end of this month against the end of last month', () => {
+    const c = debtBalanceChange({ amortization: plan.amortization!, asOf: d('2026-09-24') })
+    expect(c.monthAgo).toBe('2026-08-01')
+    // At no interest the car is 500,000 − 15,000 a month: 365,000 after
+    // September, 380,000 after August. 15,000 × 10,000 ÷ 380,000 = 394.7.
+    expect(c.debts[0]).toEqual({
+      name: 'Car',
+      change: { nowCents: 365000, beforeCents: 380000, changeCents: -15000, changeBp: -395, direction: 'less', meaning: 'good' },
+    })
+    // Not started: its starting balance on both sides. Paid off in February: 0 against 0, no percentage.
+    expect(c.debts[1]!.change).toMatchObject({ nowCents: 90000, beforeCents: 90000, direction: 'same', meaning: 'neutral' })
+    expect(c.debts[2]!.change).toMatchObject({ nowCents: 0, beforeCents: 0, changeBp: null, direction: 'same' })
+    expect(c.total).toMatchObject({ nowCents: 455000, beforeCents: 470000, changeCents: -15000, meaning: 'good' })
   })
 })

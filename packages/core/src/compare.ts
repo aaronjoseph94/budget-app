@@ -20,6 +20,8 @@ import {
   periodSheet,
   plansInEffect,
 } from './period-sheet.js'
+import type { AmortizeOutput } from './debt.js'
+import { debtStatus } from './debt-status.js'
 import type { PlanHistoryRow } from './plans.js'
 import { type PaySchedule, payPeriod, shiftPayPeriod } from './pay-period.js'
 import { monthBounds, shiftMonth, weekBounds } from './week.js'
@@ -282,6 +284,39 @@ function added(list: readonly PeriodSheet[]): Actuals {
 
 function missing(categoryId: string): never {
   throw new RangeError(`Category ${categoryId} is missing from part of a window`)
+}
+
+export interface DebtBalanceChangeInput {
+  readonly amortization: AmortizeOutput
+  /** Today. */
+  readonly asOf: IsoDate
+}
+
+export interface DebtBalanceChange {
+  /** The month compared with, by its first day: the one before asOf's. */
+  readonly monthAgo: IsoDate
+  /** Every debt's balance added (F22's Current Debt Total), now against a month ago. */
+  readonly total: Change
+  /** In the schedule's order. */
+  readonly debts: readonly { readonly name: string; readonly change: Change }[]
+}
+
+/**
+ * F25 for Debts: the balance each schedule gives at the end of asOf's month
+ * (F22) against the end of the month before. It is worked out from the
+ * typed debts, not the records, so history start does not bound it. A
+ * balance going down is good.
+ */
+export function debtBalanceChange(input: DebtBalanceChangeInput): DebtBalanceChange {
+  const monthAgo = shiftMonth(input.asOf, -1)
+  const now = debtStatus({ amortization: input.amortization, asOf: input.asOf })
+  const before = debtStatus({ amortization: input.amortization, asOf: monthAgo })
+  return {
+    monthAgo,
+    total: change(now.totals.balanceCents, before.totals.balanceCents, false),
+    // debtStatus keeps the schedule's order on both sides.
+    debts: now.debts.map((d, i) => ({ name: d.name, change: change(d.balanceCents, before.debts[i]!.balanceCents, false) })),
+  }
 }
 
 /** F26. `moreIsGood` is true on Income and Savings. */
