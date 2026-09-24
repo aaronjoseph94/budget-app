@@ -1,21 +1,21 @@
-# Workbook in the app: the build plan (revised)
+# The workbook's views in the app: the build plan (revised)
 
-**Status: built (2026-09-23).** Every slice in §8 from S0 to S17 is on branch `main-tnlcto`, with migrations 0005–0014; S18 (50/30/20) was not chosen by the owner (§9a) and is not built. What the owner still has to do, and the questions still open, are in `HANDOFF.md`. The owner's answers are in §9a, and they amend the tables below where marked. Written from the owner's copy of the "Ultimate Annual Budget" (Workbook) workbook, which is never committed (CLAUDE.md). Every cached value cited below was re-read from that file's cached Excel values; the fixtures in §5.3 must be transcribed from it again, each with a header naming sheet and range. Branch `main` at `b90086e` when written.
+**Status: built (2026-09-23).** Every slice in §8 from S0 to S17 is on branch `main-tnlcto`, with migrations 0005–0014; S18 (50/30/20) was not chosen by the owner (§9a) and is not built. What the owner still has to do, and the questions still open, are in `HANDOFF.md`. The owner's answers are in §9a, and they amend the tables below where marked. Written from the owner's copy of the "Ultimate Annual Budget" workbook, which is never committed (CLAUDE.md). Every cached value cited below was re-read from that file's cached Excel values; the fixtures in §5.3 must be transcribed from it again, each with a header naming sheet and range. Branch `main` at `b90086e` when written.
 
 **The short version, for the owner:**
-- **Month screen.** It looks and works like Workbook's Jan–Dec tabs. It is one screen, and arrows change the month.
-- **Year screen.** It combines Workbook's Annual Budget and Home tabs. You choose the month it starts from, as in Workbook.
-- **Setup screen.** It combines Workbook's START HERE and Bills tabs. The lists keep Workbook's names: Income, Savings, Bills, Debts, Subscriptions and Variable expenses.
-- **Your statement fills them in.** The Rogers statement fills the Month and Year screens once you have told the app which Workbook list each shop belongs to. You do that once per shop.
+- **Month screen.** It looks and works like the workbook's Jan–Dec tabs. It is one screen, and arrows change the month.
+- **Year screen.** It combines the workbook's Annual Budget and Home tabs. You choose the month it starts from, as in the workbook.
+- **Setup screen.** It combines the workbook's START HERE and Bills tabs. The lists keep the workbook's names: Income, Savings, Bills, Debts, Subscriptions and Variable expenses.
+- **Your statement fills them in.** The Rogers statement fills the Month and Year screens once you have told the app which workbook list each shop belongs to. You do that once per shop.
 - **Card payments don't count.** "PAYMENT, THANK YOU" never counts as spending or income. Card interest and fees go to "Card interest & fees" (decision 14).
 - **Three times you paste SQL.** Database changes arrive in three batches. You paste each batch into Supabase once, and the screens that need it wait until you say it worked.
-- **When you first see it.** Slice S5b is the first time you see a Workbook month filled from your statement.
+- **When you first see it.** Slice S5b is the first time you see a workbook month filled from your statement.
 
 ---
 
-## 1. What Workbook is
+## 1. What the workbook is
 
-Workbook is a chain of typed lists and lookups.
+The workbook is a chain of typed lists and lookups.
 
 - **START HERE** holds your name (I3) and six fixed-size name lists: 7 income sources (B8:B14), 8 savings funds (H7:H14), 23 bills (B18:B40), 23 debts (D18:D40), 23 subscriptions (F18:F40) and 24 variable expenses (H17:H40).
   - Every other tab reads those names by cell position.
@@ -48,15 +48,15 @@ Workbook is a chain of typed lists and lookups.
 | Workbook tab | Becomes in the app | Slice | Notes |
 |---|---|---|---|
 | Home | Top of the **Year** screen ("year at a glance"), drawn in Home's palette (§6.6). It shows the greeting, income/expenses/savings totals and pie, "Left over", biggest expense, top-3 doughnuts and best savings month. The savings-goals chart and debt chart come later. | S13–S14 (+S16, S17) | Its `TODAY()` window (Hidden!M18/O20/P20) becomes an explicit `asOf`. The 15 flattened scorecards (Chart1…Chart37 PNGs) have no formula, so each value is matched to a Hidden cell by value. The 11 native charts keep their sources. **Not reproduced under decision 2's defaults:** the net-worth tile ($191, Chart14 at L9 ← Hidden!Q51 = 'Net Worth'!C6), the 50/30/20 goal-vs-actual bars (Hidden!P31:S33), and the three spending-group bars (Hidden!J86:K91, from Spending Tracker's own groups). |
-| START HERE | **Setup** screen: your name plus the six lists under Workbook's own headings, plus one app-only list, "Not spending" | S2a, S2b | Rows are keyed by id, not cell position, so renaming never orphans old rows. There are no 7/8/23/24-slot limits (D11). Income start date and frequency (C8:E14) are not built; only Bill Calendar reads them. |
+| START HERE | **Setup** screen: your name plus the six lists under the workbook's own headings, plus one app-only list, "Not spending" | S2a, S2b | Rows are keyed by id, not cell position, so renaming never orphans old rows. There are no 7/8/23/24-slot limits (D11). Income start date and frequency (C8:E14) are not built; only Bill Calendar reads them. |
 | Bills | Inside **Setup**: "Day paid" and "Monthly amount" on every Bills, Debts and Subscriptions row, effective from the month you set them (D13), plus the three total tiles | S9 | The Variable Bills log (O:R) is not a separate log. A real charge or a typed payment in that category *is* the log entry. §3.4 explains how planned and real amounts combine. |
-| Transactions | The **ledger** (`transactions`, already exists), filled by statement, photo and typed entry | exists | Workbook's three logs (Transactions!B:E, G:I, K:M) become one signed ledger (D3, whose sheet citation S0 corrects). A row's list decides which block it feeds. Workbook's Notes column has no counterpart yet (§10). |
+| Transactions | The **ledger** (`transactions`, already exists), filled by statement, photo and typed entry | exists | The workbook's three logs (Transactions!B:E, G:I, K:M) become one signed ledger (D3, whose sheet citation S0 corrects). A row's list decides which block it feeds. The workbook's Notes column has no counterpart yet (§10). |
 | Jan … Dec | **One Month screen** with ‹ › | S4–S12 | This is exactly the roadmap's own "one month view with a period selector". |
-| Weekly Budget | The existing **Week** screen, rebuilt as Workbook blocks on the same engine as Month | S15 | The "/wk?" option (monthly amount ÷ 4.333) is not built. Weeks stay Monday–Sunday (D14). |
-| Paycheck Budget | **Paycheck** screen (owner chose it, §9a): the Month blocks over one pay period, found from the pay schedule of an Income row | S15b | Workbook types both dates (Paycheck!D6/D7) and halves a monthly bill with a fixed ÷2 (Paycheck!E22 `=IF(F22, E50 / 2, D50)`) whatever the pay frequency in START HERE!E8. How the period and the split are found is formula question F15; on 2026-09-23 the owner chose B, the period from the pay schedule and a monthly bill divided by the pay frequency. |
+| Weekly Budget | The existing **Week** screen, rebuilt as workbook blocks on the same engine as Month | S15 | The "/wk?" option (monthly amount ÷ 4.333) is not built. Weeks stay Monday–Sunday (D14). |
+| Paycheck Budget | **Paycheck** screen (owner chose it, §9a): the Month blocks over one pay period, found from the pay schedule of an Income row | S15b | The workbook types both dates (Paycheck!D6/D7) and halves a monthly bill with a fixed ÷2 (Paycheck!E22 `=IF(F22, E50 / 2, D50)`) whatever the pay frequency in START HERE!E8. How the period and the split are found is formula question F15; on 2026-09-23 the owner chose B, the period from the pay schedule and a monthly bill divided by the pay frequency. |
 | Annual Budget | **Year** screen plus `yearSheet`, starting at a month you choose | S13, S14 | Its arithmetic mistakes are fixed (decision 9). It is always read in one year (D10). |
-| Bill Calendar | **Bill calendar** screen (owner chose it, §9a): a Sunday-first month grid of bills due, charges paid and paydays, with week and month totals | S15c | Due days exist from S9. Paydays need a pay schedule per Income row (first pay date and Weekly / Bi-weekly / Monthly, START HERE!C8:E14), added in Sitting B. Workbook's own calendar bugs are fixed under decision 9 (Bills!P7:Q44 range typo on Sundays, 5-bills-a-day cap, days 29–31 skipped). |
-| 503020 | **Not built** (owner did not choose it, §9a) | — | Tags would be keyed by category. Workbook's tags (H12:H58) are positional, next to a `FILTER`-compacted list, so they drift when a list changes. |
+| Bill Calendar | **Bill calendar** screen (owner chose it, §9a): a Sunday-first month grid of bills due, charges paid and paydays, with week and month totals | S15c | Due days exist from S9. Paydays need a pay schedule per Income row (first pay date and Weekly / Bi-weekly / Monthly, START HERE!C8:E14), added in Sitting B. The workbook's own calendar bugs are fixed under decision 9 (Bills!P7:Q44 range typo on Sundays, 5-bills-a-day cap, days 29–31 skipped). |
+| 503020 | **Not built** (owner did not choose it, §9a) | — | Tags would be keyed by category. The workbook's tags (H12:H58) are positional, next to a `FILTER`-compacted list, so they drift when a list changes. |
 | Savings | **Savings** screen: `savings_goals` (exists) linked to a Savings-list category, plus `savingsFundPlan` | S16 | Seven fund cards become any number. |
 | Debt Calculator | **Debts** screen. `amortize()` is already golden-verified. | S17 (roadmap Phase 7) | Needs tables and an as-of status function. |
 | Spending Tracker | Its 12-month grid of block totals (rows 17–27) becomes part of Year. Its second taxonomy is **not built**: 12 fixed groups in E31:E125 ("Home & Utilities", "Groceries", …). | S13, S14 | That taxonomy is a second list you would maintain only to feed Home's three group bars. Year shows your own top categories instead. |
@@ -70,17 +70,17 @@ Workbook is a chain of typed lists and lookups.
 | Roadmap said | Now | Why |
 |---|---|---|
 | Twelve month tabs become one month view with a selector | Built as exactly that (S5b) | No conflict. |
-| "Weekly is the primary lens" (ROADMAP; CAPABILITY-MAP: "the user thinks in weeks") | Your call (decision 1). Recommended: Month opens first, Week one tap away. | Both files record weekly-first as how you think. You have since asked for Workbook, whose money lands on month tabs, so decision 1 asks you instead of assuming either way. |
+| "Weekly is the primary lens" (ROADMAP; CAPABILITY-MAP: "the user thinks in weeks") | Your call (decision 1). Recommended: Month opens first, Week one tap away. | Both files record weekly-first as how you think. You have since asked for the workbook, whose money lands on month tabs, so decision 1 asks you instead of assuming either way. |
 | Paycheck view "superseded" because weekly is primary | Built (S15b) | The owner asked for it (§9a). |
 | 50/30/20 demoted to a report | Not built | The owner did not choose it (§9a). |
-| "The workbook is no longer the specification" | For the look and behaviour of the Workbook views you choose, it is again. For its arithmetic mistakes and the deferred tabs, it is not. | You asked for Workbook. |
-| Phase 3 savings coach is next | Moves behind S1–S15 | You asked for Workbook first. The coach will read the same `monthSheet` numbers, so nothing is wasted. |
-| Phases 5–7 come after the coach | Parts of them move ahead of Phase 3: bills and recurring amounts from Phase 5 (not the calendar, reminders or forecast), charts from Phase 6 (not Sankey or export), savings funds and the debt screen from Phase 7 (not net worth or retirement) | The Workbook views need them. |
+| "The workbook is no longer the specification" | For the look and behaviour of the workbook views you choose, it is again. For its arithmetic mistakes and the deferred tabs, it is not. | You asked for the workbook. |
+| Phase 3 savings coach is next | Moves behind S1–S15 | You asked for the workbook views first. The coach will read the same `monthSheet` numbers, so nothing is wasted. |
+| Phases 5–7 come after the coach | Parts of them move ahead of Phase 3: bills and recurring amounts from Phase 5 (not the calendar, reminders or forecast), charts from Phase 6 (not Sankey or export), savings funds and the debt screen from Phase 7 (not net worth or retirement) | The workbook views need them. |
 | Net worth and retirement deferred | Still deferred | Unchanged. The 222-number count strengthens the deferral. |
 
-## 3. How imported transactions fill in Workbook
+## 3. How imported transactions fill the workbook views
 
-### 3.1 One Rogers row to one Workbook cell
+### 3.1 One Rogers row to one workbook cell
 
 The example row is `Aug 7  Aug 10  LAVA GRILL RED DEER AB  31.45` (docs/formula-decisions.md F1).
 
@@ -89,14 +89,14 @@ The example row is `Aug 7  Aug 10  LAVA GRILL RED DEER AB  31.45` (docs/formula-
 | 1 | Add → Statement; `packages/statement-parsers/src/pdf/*`, `formats/rogers.ts` | The date is **Aug 7**, the transaction date (F1). The amount is **−3145** cents, negated (F2). The raw merchant text is kept, and so is the statement period (`readPeriod`). |
 | 2 | `reconcileStatement` (core) | Parsed rows must exactly equal the statement's printed purchases, payments and balance equation, or the import is refused. |
 | 3 | `save_import` RPC (0004; the version from migration 0007 also records the statement period) | The dedupe hash drops rows already in the ledger or the queue. The rest become pending `ingest_candidates`. A candidate whose normalised merchant **exactly** matches a `merchant_rules` row is auto-approved and posted. |
-| 4 | Review screen → `approve_candidate` | First sighting only: you pick "Restaurants" from a picker grouped by Workbook list. The row posts to `transactions`, and the rule LAVA GRILL → Restaurants is learned. |
+| 4 | Review screen → `approve_candidate` | First sighting only: you pick "Restaurants" from a picker grouped by workbook list. The row posts to `transactions`, and the rule LAVA GRILL → Restaurants is learned. |
 | 5 | Month screen → `monthSheet` (core) | The screen reads the ledger for 2026-08-01..31. The read is paged with an exact count and refuses to show a partial month (today's `listTransactions` stops silently at `.limit(2000)`). It also reads categories (with their list), budgets and planned amounts. Restaurants is in Variable expenses, so the charge lands in **Variable expenses → Restaurants → Actual $31.45**. Remaining becomes budget − 31.45, and Spent rises. This is Jan!U22's rule (`SUMIFS` by category, date ≥ first of month and ≤ `EOMONTH`), keyed by category id instead of name. |
 
 Nothing is stored per month. Renaming a category, moving it to another list or re-filing a row changes every month on the next read (CLAUDE.md: never persist a derived money value).
 
-### 3.2 Workbook's six lists become category `kind`
+### 3.2 The workbook's six lists become category `kind`
 
-| START HERE list (Workbook heading) | `kind` | Month block | Actual is | Budget column |
+| START HERE list (workbook heading) | `kind` | Month block | Actual is | Budget column |
 |---|---|---|---|---|
 | Income, "Source" (B8:B14) | `income` | Income | money in (+) | "Goal" (Jan!O10:O16) |
 | Savings (H7:H14; month tabs show H7:H13) | `savings` | Savings | money moved to savings | "Goal" (T10:T16). Difference = Actual − Goal (V10). |
@@ -112,8 +112,8 @@ Nothing is stored per month. Renaming a category, moving it to another list or r
 |---|---|---|---|
 | Purchase (LAVA GRILL 31.45) | −3145 | First time: one tap. After that: the learned rule. | Variable expenses → its category |
 | Subscription charged to the card | − | The rule files it to a Subscriptions-list category | Subscriptions. It replaces that month's planned amount (§3.4). |
-| **PAYMENT, THANK YOU −100.00** | +10000 | One tap → "Card payments" (Not spending). The rule is learned, so later ones file themselves. | In no block, no total, not income, not 50/30/20. Footnote: "Paid to your card: $100.00, not counted; what it paid for already is." This departs from Workbook, whose sample counts a $200 card payment in Debts (Bills!O7:R7, "Paid off my balance!"), so it is recorded as D9. |
-| Refund or return | + | The shop's own rule files it to the same category (rules match the merchant, not the sign) | It nets against that category in that month. It is never income, because income is the `income` kind only. A refund with no purchase that month shows as a negative Actual with its minus sign. Workbook's `"$"#,##0.00;;` format would hide that row (D8). |
+| **PAYMENT, THANK YOU −100.00** | +10000 | One tap → "Card payments" (Not spending). The rule is learned, so later ones file themselves. | In no block, no total, not income, not 50/30/20. Footnote: "Paid to your card: $100.00, not counted; what it paid for already is." This departs from the workbook, whose sample counts a $200 card payment in Debts (Bills!O7:R7, "Paid off my balance!"), so it is recorded as D9. |
+| Refund or return | + | The shop's own rule files it to the same category (rules match the merchant, not the sign) | It nets against that category in that month. It is never income, because income is the `income` kind only. A refund with no purchase that month shows as a negative Actual with its minus sign. The workbook's `"$"#,##0.00;;` format would hide that row (D8). |
 | Interest or annual fee | − | One tap → "Card interest & fees", a Variable-expenses category (decision 14). The rule is learned. | Variable expenses; counted in Spent. |
 
 Money that never appears on the card:
@@ -121,7 +121,7 @@ Money that never appears on the card:
 - Pay is typed as "received" in an Income category (Add → Type it already supports "received").
 - Moves to the flight fund are typed in a Savings category.
 
-**Why card interest is not a Debts row.** In Workbook, the Debts Actual means *payments you make* (Bills!H7 plus the log). If the Rogers card were a Debts row with a Monthly amount, two things would go wrong:
+**Why card interest is not a Debts row.** In the workbook, the Debts Actual means *payments you make* (Bills!H7 plus the log). If the Rogers card were a Debts row with a Monthly amount, two things would go wrong:
 - The planned payment would count in Spent every month, on top of the purchases in Variable expenses that it pays for. That is the double count §3.3 removes for "PAYMENT, THANK YOU".
 - Under D5, one $4.12 interest charge would replace the planned $50, so one row would hold two different kinds of number.
 
@@ -129,9 +129,9 @@ The schema cannot tell which category is "the card", so this is prevented three 
 
 ### 3.4 Recurring bills next to real statement rows, without double counting
 
-Workbook's rule is Jan!E22 = `Bills!D7 + SUMIFS(Bills!Q:Q, Bills!P:P, C22, Bills!O:O, in month)`. That is the fixed Monthly Amount **plus** every logged payment. Workbook's own sample depends on this: Credit Card 1 shows $50 fixed plus a $200 payment. With imports, the same rule doubles every card-paid bill: Netflix set up at $17.99 plus the $17.99 statement charge makes $35.98.
+The workbook's rule is Jan!E22 = `Bills!D7 + SUMIFS(Bills!Q:Q, Bills!P:P, C22, Bills!O:O, in month)`. That is the fixed Monthly Amount **plus** every logged payment. The workbook's own sample depends on this: Credit Card 1 shows $50 fixed plus a $200 payment. With imports, the same rule doubles every card-paid bill: Netflix set up at $17.99 plus the $17.99 statement charge makes $35.98.
 
-**Recommended rule (decision 3; recorded as divergence D5 and formula decision F3).** Workbook's own cell notes support it. Bills!Q5 says the log "is for Bills that have changing amounts each month … OR are paid at various times". So the author expected a bill to be either fixed or logged, not both.
+**Recommended rule (decision 3; recorded as divergence D5 and formula decision F3).** The workbook's own cell notes support it. Bills!Q5 says the log "is for Bills that have changing amounts each month … OR are paid at various times". So the author expected a bill to be either fixed or logged, not both.
 
 | Situation in the window | Actual | Label |
 |---|---|---|
@@ -139,8 +139,8 @@ Workbook's rule is Jan!E22 = `Bills!D7 + SUMIFS(Bills!Q:Q, Bills!P:P, C22, Bills
 | No real row, a planned amount is in effect for that month, and the due day falls in the window (always true for a whole month) | the planned amount | "planned" |
 | Neither | $0 | — |
 
-- **Planned amounts have start dates (D13).** A Monthly amount applies from the month you set it and every month after, until you change or stop it. Raising rent from $1,600 to $1,700 in October therefore never rewrites September. A bill set up today does not appear in earlier months. Workbook has one amount for every month, which a one-year workbook can afford and an app holding years of history cannot.
-- **A blank due day** counts for a whole month but never inside a Week window. Workbook does the same: its day match runs `REGEXMATCH` against an empty string (Weekly!D50). Setup nudges you: "add a day paid so this shows in weeks".
+- **Planned amounts have start dates (D13).** A Monthly amount applies from the month you set it and every month after, until you change or stop it. Raising rent from $1,600 to $1,700 in October therefore never rewrites September. A bill set up today does not appear in earlier months. The workbook has one amount for every month, which a one-year spreadsheet can afford and an app holding years of history cannot.
+- **A blank due day** counts for a whole month but never inside a Week window. The workbook does the same: its day match runs `REGEXMATCH` against an empty string (Weekly!D50). Setup nudges you: "add a day paid so this shows in weeks".
 - **Golden values are unaffected.** Every Jan–Dec month-tab golden value is the same under both rules, because the sample never has a fixed amount and a real payment for the same bill in the same 2026 month. The only 2026 log row is Student Loan $650 on 2026-02-10, and Student Loan has no Monthly amount (Bills!H10 is blank).
 - **Where the rules differ.** Those cells are listed in §5.4 and left out of the fixtures.
 - **What it costs.** A typed *extra* debt payment replaces the planned payment instead of adding to it (see §10).
@@ -152,7 +152,7 @@ Workbook's rule is Jan!E22 = `Bills!D7 + SUMIFS(Bills!Q:Q, Bills!P:P, C22, Bills
 - Pay and savings transfers, which you type (you are the reviewer).
 - Planned bill amounts, budgets and (decision 6) each month's starting balance.
 
-**Why the review queue stays:** a charge's category decides which Workbook block and which totals it lands in. Only an exact match you have already taught the app may make that decision without you (CLAUDE.md invariant 3).
+**Why the review queue stays:** a charge's category decides which workbook block and which totals it lands in. Only an exact match you have already taught the app may make that decision without you (CLAUDE.md invariant 3).
 
 ## 4. Data model changes
 
@@ -200,10 +200,10 @@ What is *not* stored:
 - **Why not copy values forward.** The earlier draft copied the old value into the next month. That copy went stale when an earlier month changed "from this month on". This way, editing January "from this month on" later still reaches March.
 - **Goals.** Income goals and savings month goals use the same table.
 
-Why this fits Workbook:
-- Workbook has twelve independent typed budgets (Jan!D22:T44 … Dec). The sample's author filled only January: goals O10:O14 (4500, 600, 1200, 4100, 9000), T10 3000, D22 800, J22 150, O22 17.99 and T23 800. February–December budgets are typed 0 or left blank. (The starting balance D9 is the exception, typed 1000 on every tab.)
+Why this fits the workbook:
+- The workbook has twelve independent typed budgets (Jan!D22:T44 … Dec). The sample's author filled only January: goals O10:O14 (4500, 600, 1200, 4100, 9000), T10 3000, D22 800, J22 150, O22 17.99 and T23 800. February–December budgets are typed 0 or left blank. (The starting balance D9 is the exception, typed 1000 on every tab.)
 - So retyping twelve times does not happen in practice.
-- Carry-forward keeps Workbook's month-by-month freedom and keeps its property that editing October never rewrites January (D12).
+- Carry-forward keeps the workbook's month-by-month freedom and keeps its property that editing October never rewrites January (D12).
 - The sample is expressible exactly: `'onward'` rows at 2026-01 hold January's values, and `'onward'` rows at 2026-02 hold 0.
 
 ## 5. Engine (`packages/core`)
@@ -245,7 +245,7 @@ These are the formula decisions (F3–F14) that S0 records before any code:
   - For a whole month they count regardless of due day, because the month tabs ignore Bills!B.
   - For a partial window they count only if the due day falls inside it (Weekly!D50 `REGEXMATCH`).
   - A blank due day never matches a partial window.
-  - Days 29–31 clamp to the month's last day. This is D6, because Workbook silently drops them in short months.
+  - Days 29–31 clamp to the month's last day. This is D6, because the workbook silently drops them in short months.
 - **F9 — Rounding.** A savings monthly contribution rounds up to the cent.
 - **F10 — Which months count planned amounts.**
   - Annual gates them at its typed "today": `IF(... <= 'Annual Budget'!$D$7 ...)` in Hidden!O4.
@@ -260,7 +260,7 @@ These are the formula decisions (F3–F14) that S0 records before any code:
   - Under decision 15 A: D15 := D9 − D11 − D13 (income − expenses − savings), shown as **"Left over"** so it is not confused with the Month's budget-remaining "Left to spend". D20 := D18 + D9 − D11 − D13.
 - **F13 — 50/30/20 shares.** They round half-up to a basis point.
 - **F14 — Year span.** The Year covers 12 months from a chosen start month (Annual!D6; I11 `=DATE(YEAR(I10),MONTH(I10)+1,DAY(I10))`), not a calendar year.
-- **Workbook's arithmetic mistakes are fixed (D7).** These fixes apply only if you agree to decision 9:
+- **The workbook's arithmetic mistakes are fixed (D7).** These fixes apply only if you agree to decision 9:
   - Annual!P9/Q9 `SUM(P10:P36)` runs into the Subscriptions card.
   - J9/V9/W9 sum only seven months (J10:J16).
   - D15/D20 read the blank O6/U6 (F12).
@@ -294,7 +294,7 @@ J9 and V9 pass whether or not the seven-month mistake is fixed, because the Augu
 
 | Cells | Cached value | Why |
 |---|---|---|
-| Paycheck Budget!L22, L21, J19, K50, **L50**; D11, D15 | 250 (each); 1135, 465 | Workbook's fixed + real rule ($50 + $200). Under D5 the value is 200. |
+| Paycheck Budget!L22, L21, J19, K50, **L50**; D11, D15 | 250 (each); 1135, 465 | The workbook's fixed + real rule ($50 + $200). Under D5 the value is 200. |
 | Annual Budget!K29, K30, H27, Q10; Hidden!Q4; Bill Calendar!J3, Q20 | 550, 350, 550, 1167.99, 350; 1167.99, 150 | The same rule applied to January 2025 |
 | **Annual Budget!Q11** | 867.99 | Cross-year: W31 is February **2026** spending (Feb!U21 = 0). Reading the sample in one year gives 1223.99, because February 2025 has $356 of spending (Transactions!B10:D12). |
 | **Annual Budget!K9, W9, W30** | 0, 0, 0 | Cross-year. A correct-year reading of the sample gives 2600, 2000 and 235. Under F11's fixture (no Transactions rows) these zeros would pass any engine. |
@@ -305,7 +305,7 @@ J9 and V9 pass whether or not the seven-month mistake is fixed, because the Augu
 | Everything driven by `TODAY()`: Hidden!P23, P25, P27, Q33:S33, P38:R40, O22:O116; Home top-3 and annual cards; Debt Calculator H9, B10, E20, I495:I496 | — | Date-dependent (CLAUDE.md) |
 | Home's 15 flattened scorecards | — | They are images and have no cell |
 | Transactions-driven month-tab cells (Jan..Dec P10:P16, U10:U16, U22:U44) | 0 | Trivial zeros. They are kept only as hand-written negative tests. |
-| Savings!Z15 | 0 | Workbook shows $0 when dates are missing. The app returns "no dates yet" instead (CONSTRAINTS floor: no silent 0; D15). |
+| Savings!Z15 | 0 | The workbook shows $0 when dates are missing. The app returns "no dates yet" instead (CONSTRAINTS floor: no silent 0; D15). |
 
 ### 5.5 The 2026-months-versus-2025-transactions problem
 
@@ -329,7 +329,7 @@ J9 and V9 pass whether or not the seven-month mistake is fixed, because the Augu
 - **Phone bottom bar:** **Month** · Week · **Add** (centre, as now) · Review (with badge) · More.
 - **More:** Year, Setup, Savings, Debts (once built), All transactions (today's Ledger), Settings.
 - **Desktop top bar:** Month · Week · Year · Review · Add · Setup · More.
-- **Home.** Workbook's Home becomes the top of **Year**, including the greeting "Hi, <name>!" (Home!C4 `=B26`). There is no separate Home screen.
+- **Home.** The workbook's Home becomes the top of **Year**, including the greeting "Hi, <name>!" (Home!C4 `=B26`). There is no separate Home screen.
 - **Addresses.** URLs gain the period, e.g. `#/month/2026-09` and `#/year/2026-01` (the start month, F14), extending the hand-rolled `nav.ts`. Refreshing, the back gesture and reopening from the home screen then land on the same month.
 - **Stack note.** CLAUDE.md and ADR 0001 name TanStack Router/Query and vite-plugin-pwa, but the app uses none of them and has no service worker. S0 records the decision to keep extending `nav.ts` in ADR 0003, and flags the out-of-date stack line in `NOTICED-NOT-TOUCHING.md` (changing CLAUDE.md is yours to approve).
 
@@ -353,8 +353,8 @@ J9 and V9 pass whether or not the seven-month mistake is fixed, because the Augu
  Month   Week   (+)   Review 12   More
 ```
 
-- **Block order on the phone** is Summary → Variable expenses → Bills → Subscriptions → Debts → Income → Savings → Charts. The block every statement changes sits above the fold. Desktop keeps Workbook's exact arrangement.
-- **Rows.** Rows with no budget and no Actual collapse behind "Show N empty". A zero Actual on a budgeted row stays blank, as Workbook's `;;` format does. Negatives show their minus sign (D8). Numbers use tabular digits in the system face; Comfortaa has none (N15), so it is for standalone totals only. Row cells carry no "$"; band totals do (N32).
+- **Block order on the phone** is Summary → Variable expenses → Bills → Subscriptions → Debts → Income → Savings → Charts. The block every statement changes sits above the fold. Desktop keeps the workbook's exact arrangement.
+- **Rows.** Rows with no budget and no Actual collapse behind "Show N empty". A zero Actual on a budgeted row stays blank, as the workbook's `;;` format does. Negatives show their minus sign (D8). Numbers use tabular digits in the system face; Comfortaa has none (N15), so it is for standalone totals only. Row cells carry no "$"; band totals do (N32).
 - **Tapping a row** opens that category's charges for the month. Merchant text goes through `IngestedText` and is never rendered as markup. The sheet also offers "Move to…" (S6) and budget editing (S8).
 
 ### 6.3 Month on desktop (≥1280 px, two columns from 768 px; Month and Year widen from `max-w-3xl` to about 1280 px)
@@ -373,7 +373,7 @@ Tablets (768 px) show two columns.
   - Added later: the savings-goals chart (S16) and the debt chart (S17).
   - Not shown under decision 2's defaults: the net-worth tile, the 50/30/20 bars and the three spending-group bars.
 - **Phone tables.** Below the cards, a segmented control (Income · Expenses · Savings · Bills · Debts · Subscriptions · Variable) switches one 12-row table (month | budget or goal | actual).
-- **Desktop.** Workbook's layout: a left totals panel, three top cards, a chart row and four bottom cards on Annual's cream, with a #456464 header.
+- **Desktop.** The workbook's layout: a left totals panel, three top cards, a chart row and four bottom cards on Annual's cream, with a #456464 header.
 - **Year charts (S14b).**
   - A stacked column of monthly income and expense Actuals (Annual K10:K21 #D7EEEB, Q10:Q21 #F9D7D2).
   - An income/expenses/savings pie (#D7EEEB/#F9D7D2/#F7EAA9).
@@ -381,16 +381,16 @@ Tablets (768 px) show two columns.
   - Home's pie and top-3 doughnuts.
 
 ### 6.5 Setup (START HERE plus Bills)
-- **Header.** A #2B5D6A band with the title **"Start here!" in an italic serif** (`ui-serif` italic, which is New York on iPhone), white (contrast 7.3:1). The visible Workbook heading is an italic-serif image (image17.png); START HERE!B2 is an empty cell formatted Caveat. Next to it sits a "My name is ___" field (START HERE!I3, Helvetica Neue 13 italic #F3F9FA).
-- **Cards.** A #F3F3F3 canvas holds white cards under Workbook's headings:
+- **Header.** A #2B5D6A band with the title **"Start here!" in an italic serif** (`ui-serif` italic, which is New York on iPhone), white (contrast 7.3:1). The visible workbook heading is an italic-serif image (image17.png); START HERE!B2 is an empty cell formatted Caveat. Next to it sits a "My name is ___" field (START HERE!I3, Helvetica Neue 13 italic #F3F9FA).
+- **Cards.** A #F3F3F3 canvas holds white cards under the workbook's headings:
   - Income (column "Source")
   - Savings
   - Recurring expenses: Bills, Debts, Subscriptions
   - Variable expenses
   - A seventh card, "Not spending", is app-only.
 - **Rows.** Each row can be renamed inline, reordered, or moved to another list. Creating a category anywhere in the app asks which list it belongs to (S2a).
-- **Bills, Debts and Subscriptions** rows add "Day paid" and "Monthly amount (from <this month> on)" (S9). Under each card sits a total tile (Workbook's Bills!D32, H32, L32), shown to the cent (D8). Workbook's `"$"#,##0` would show Netflix's 17.99 as "$18".
-- **Hints.** Short help comes from Workbook's own cell notes. For example, Bills!B5's note reads "Type the DAY of each month this repeat bill is paid!" (B5 itself is the "Day Paid" heading), and START HERE!H17's note reads "What transactions have varied amounts?".
+- **Bills, Debts and Subscriptions** rows add "Day paid" and "Monthly amount (from <this month> on)" (S9). Under each card sits a total tile (the workbook's Bills!D32, H32, L32), shown to the cent (D8). The workbook's `"$"#,##0` would show Netflix's 17.99 as "$18".
+- **Hints.** Short help comes from the workbook's own cell notes. For example, Bills!B5's note reads "Type the DAY of each month this repeat bill is paid!" (B5 itself is the "Day Paid" heading), and START HERE!H17's note reads "What transactions have varied amounts?".
 - **Messages.** Setup has its own failure messages. Today `describeWriteFailure` (format.ts) would say "the numbers did not add up" for a refused CHECK (23514) and "no longer exists" when deleting a category still in use (23503). Setup says instead "that list can't have a monthly amount", "remove the monthly amount first" or "this category still has charges — move them first".
 
 ### 6.6 Visual design system
@@ -399,7 +399,7 @@ Each Month group gets a set of tokens. **Ink** is used for all text and numbers.
 
 | Token set | band | header | total row | ink | accent | rule | Workbook cells |
 |---|---|---|---|---|---|---|---|
-| `income` | #EFF9F8 | #F6FDFD | #D7EEEB | #4F6E69 (Workbook #5B7A75, 4.36 → 5.20) | #9ABDB7 | #CCE2DF | Jan!M5:P16 |
+| `income` | #EFF9F8 | #F6FDFD | #D7EEEB | #4F6E69 (the workbook's #5B7A75, 4.36 → 5.20) | #9ABDB7 | #CCE2DF | Jan!M5:P16 |
 | `savings` | #FFF6C8 | #FFFBE8 | #FFF2B0 | #7C5512 | #FADA6A | #FFEB8B | Jan!R5:V16 |
 | `owed` (bill, debt, subscription) | #FCDAD6 | #FFE9E6 | #F8D7D2 | #A63428 | #FAAAA1 | #FFC7C1 | Jan!B17:P44 |
 | `variable` | #FEE4D4 | #FFEFE6 | #FADECE | #91452D | #FDBC9A | #F3A68E | Jan!R17:V44 |
@@ -417,7 +417,7 @@ Other surfaces:
 - **Spending doughnut.** 22 slices in 21 distinct steps from #FFE3DE to #4C0B02 (#841809 repeats), plus #FFF3EB (Jan chart13).
 - **Income chart.** A stacked column with Goal as the first series (#CCE2DF) and Actual stacked on it (#9ABDB7) (chart12). The app draws Actual over a Goal track instead, a display-only divergence (D8).
 
-**Contrast** (measured, WCAG). Decision 10 A keeps Workbook's fills and replaces every failing text colour, not only the block inks:
+**Contrast** (measured, WCAG). Decision 10 A keeps the workbook's fills and replaces every failing text colour, not only the block inks:
 
 | Element | Workbook | Ratio | App | Ratio |
 |---|---|---|---|---|
@@ -443,11 +443,11 @@ Mapping onto the existing shadcn tokens in `apps/web/src/index.css`:
 
 **Type.**
 - **Month title.** Caveat 47 bold (Jan!B3), a handwritten face.
-- **Italic serif.** Workbook's heading images ("Start Here!", "Savings Goals") are an italic serif. The Setup, Savings and Year page titles use `ui-serif` italic, which needs no download. Caveat is not used for Setup.
+- **Italic serif.** The workbook's heading images ("Start Here!", "Savings Goals") are an italic serif. The Setup, Savings and Year page titles use `ui-serif` italic, which needs no download. Caveat is not used for Setup.
 - **Big standalone numbers** use Comfortaa. Columns of amounts use the system face with tabular digits, which Comfortaa lacks (N15). Body text stays the system sans, which is close to Helvetica Neue.
 - **Fonts are self-hosted.** Caveat and Comfortaa are under the SIL Open Font License. They ship as latin-subset woff2 files in `apps/web/public/fonts`: static files, not npm dependencies, and no request goes to Google. The app has no service worker, so they are cached by the browser like any file. The app does not work offline yet.
 
-**Dark mode.** Workbook has none, and the app follows the phone's setting today. Each group gets a dark variant: the same hue, with the band at about 15% lightness and the ink at about 85%.
+**Dark mode.** The workbook has none, and the app follows the phone's setting today. Each group gets a dark variant: the same hue, with the band at about 15% lightness and the ink at about 85%.
 
 **Charts** come from the `chart-specs` package in CAPABILITY-MAP: pure functions returning SVG strings, with no chart library.
 - Percentages come from core as `shareBp` (invariant 1).
@@ -456,7 +456,7 @@ Mapping onto the existing shadcn tokens in `apps/web/src/index.css`:
 
 ## 7. Seeding
 
-- **One button.** A "Start from Workbook's list" button appears in Setup when you have few categories. It does one bulk insert, with no migration, and skips names that already exist. The Workbook names are placeholders for you to rename, in START HERE row order:
+- **One button.** A "Use the starter list" button appears in Setup when you have few categories. It does one bulk insert, with no migration, and skips names that already exist. The workbook's names are placeholders for you to rename, in START HERE row order:
   - Income: Income 1, Income 2, Side Hustle, Freelance Work, Donations (B8:B12)
   - Savings: your existing goal's name (for example "Flight training"), then Emergency Fund, Travel Fund, Down Payment, Car Repair Fund (H7:H10)
   - Bills: Rent, Electricity Bill, Water Bill, Gas Bill, Phone, Car Insurance, Gym Membership (B18:B24)
@@ -464,7 +464,7 @@ Mapping onto the existing shadcn tokens in `apps/web/src/index.css`:
   - Subscriptions: Netflix, Spotify, Dropbox (F18:F20)
   - Variable expenses: Restaurants, Groceries, Clothing, Gas, Movie Theater, Game Night (H17:H22), plus the app-only **Card interest & fees**
   - Not spending (app-only): **Card payments**
-- **What carries over from Workbook:** the list structure, headings and order, the names as placeholders, and the look (palette, fonts, the block layout), plus a few help sentences from Workbook's cell notes.
+- **What carries over from the workbook:** the list structure, headings and order, the names as placeholders, and the look (palette, fonts, the block layout), plus a few help sentences from the workbook's cell notes.
 - **What does not carry over:** any amount. The sample owner's budgets, bills, balances, debts and transactions are the template's sample. That sample lives only inside the golden fixtures and is never shown to you. Also left behind: the slot limits, Spending Tracker's 12 extra groups, and the 503020 tags.
 - **Your existing categories** keep their names and start in Variable expenses until you move them.
 
@@ -486,35 +486,35 @@ Line counts below are estimates.
 | P2 | Tests that bite (HANDOFF §5 item 4) | — | Pin the exact dedupe digest; a test that fails if `parsed` is recomputed from accepted + rejected | — | Nothing | 80 |
 | P3 | React Testing Library (decision 12) | — | — | Fake Supabase client; `.tsx` measured by coverage | Nothing | 150 + lockfile |
 | **Sitting A** | 0005 `category_kinds`, 0006 `recategorise`, 0007 `statement_periods`, each its own commit with its schema-assertion additions | ✓ | — | — | **You paste 0003–0007 once.** | tests ~100 each |
-| S1 | Workbook's look | — | — | Tokens, self-hosted fonts, Caveat month title, readable inks | The app in Workbook's colours and handwritten titles | 150 |
-| S2a | Lists in the data layer | uses 0005 | — | Categories load with their list. Every "new category" asks which list. Review and Add pickers are grouped by list. | Pickers grouped under Workbook's headings | 250 |
-| S2b | Setup screen | — | — | Setup (from Settings for now): six lists plus Not spending; rename, reorder, move; Setup messages | Your categories sorted into Workbook's lists | 280 |
-| S3a | Starter lists | — | — | "Start from Workbook's list" button | Workbook's names ready to rename, plus Card payments and Card interest & fees | 150 |
+| S1 | The workbook's look | — | — | Tokens, self-hosted fonts, Caveat month title, readable inks | The app in the workbook's colours and handwritten titles | 150 |
+| S2a | Lists in the data layer | uses 0005 | — | Categories load with their list. Every "new category" asks which list. Review and Add pickers are grouped by list. | Pickers grouped under the workbook's headings | 250 |
+| S2b | Setup screen | — | — | Setup (from Settings for now): six lists plus Not spending; rename, reorder, move; Setup messages | Your categories sorted into the workbook's lists | 280 |
+| S3a | Starter lists | — | — | "Use the starter list" button | The workbook's names ready to rename, plus Card payments and Card interest & fees | 150 |
 | S3b | Week counts by list | — | `weeklySummary` by kind (hand-derived tests) | — | Card payments and savings moves stop showing as spending or money in on Week | 200 |
-| S4a | Period engine: spending, income, savings | — | `periodSheet` over real rows; `workbook-period` part 1 | — | Nothing new. This proves the numbers against Workbook before any screen shows them. | 280 |
+| S4a | Period engine: spending, income, savings | — | `periodSheet` over real rows; `workbook-period` part 1 | — | Nothing new. This proves the numbers against the workbook before any screen shows them. | 280 |
 | S4b | Period engine: bills, debts, subscriptions; transfers; `monthSheet` | — | `workbook-period` part 2; `importedThrough` | — | Nothing new (proof step) | 220 |
 | S4c | Statement period and whole-month reads | uses 0007 | — | The import records the statement period. Ledger reads page with an exact count and refuse a partial read. | Nothing visible | 180 |
 | S5a | Navigation | — | — | Month · Week · Add · Review · More; period addresses | The new bottom bar | 200 |
-| **S5b ★** | **First Workbook month filled from your statement** | — | — | Month screen: title, ‹ ›, six blocks with Actuals, card-payment footnote, review banner, "Statement imported up to" | **Your Rogers charges in Workbook's month blocks** | 290 |
+| **S5b ★** | **First workbook month filled from your statement** | — | — | Month screen: title, ‹ ›, six blocks with Actuals, card-payment footnote, review banner, "Statement imported up to" | **Your Rogers charges in the workbook's month blocks** | 290 |
 | S6 | Fix a row from the month | uses 0006 | — | Tap a row, see its charges, "Move to…" | Correct a mis-filed charge where you see it | 220 |
 | **Sitting B** | `category_budgets`, `category_plans`, plus `month_balances` if decision 6 = B | ✓ | — | — | **You paste these once.** | tests ~100 each |
 | S7 | Budget engine | — | Resolution (`'only'` over `'onward'`), Remaining, Difference, Left to spend; `workbook-month` part 1 plus hand-derived multi-row tests | — | Nothing new (proof step) | 280 |
-| S8 | Budgets on the month, shown and typed | uses budgets | — | Budgeted and Goal columns. Tap a cell: "from this month on" or "just this month". | Workbook's budget columns, typed the way you would on a month tab | 280 |
-| S9 | Bills set-up | uses plans | `billsTotals`; `workbook-bills` | Setup: Day paid and Monthly amount (from a month on), three total tiles | Workbook's Bills tab | 250 |
+| S8 | Budgets on the month, shown and typed | uses budgets | — | Budgeted and Goal columns. Tap a cell: "from this month on" or "just this month". | The workbook's budget columns, typed the way you would on a month tab | 280 |
+| S9 | Bills set-up | uses plans | `billsTotals`; `workbook-bills` | Setup: Day paid and Monthly amount (from a month on), three total tiles | The workbook's Bills tab | 250 |
 | S10 | Planned versus real | — | D5 rule, Spent; `workbook-month` part 2 | "planned" label, Total spent | Rent counted every month without a statement line; card-paid bills counted once | 250 |
-| S11 | Summary card | uses `month_balances` | Ending balance; `workbook-month` part 3 | Workbook's four-number card and a typed start balance | Workbook's summary | 220 |
+| S11 | Summary card | uses `month_balances` | Ending balance; `workbook-month` part 3 | The workbook's four-number card and a typed start balance | The workbook's summary | 220 |
 | S12a | Chart package | — | `chart-specs` scaffolding, its vitest project, coverage, eslint and depcruise rules; deny-by-default boundaries | — | Nothing | 150 |
-| S12b | Month charts | — | `shareBp` from core | Income bars, variable-expenses doughnut | Workbook's chart panel | 280 |
+| S12b | Month charts | — | `shareBp` from core | Income bars, variable-expenses doughnut | The workbook's chart panel | 280 |
 | S13a | Year engine: months | — | `yearSheet` rows, gate, totals, balances; `workbook-year` part 1 | — | Nothing new (proof step) | 280 |
 | S13b | Year engine: at a glance | — | Biggest, top 3, best savings month, Left over; `workbook-year` part 2 | — | Nothing new (proof step) | 250 |
-| S14a | Year screen | — | — | Start-month picker, at a glance in Home's palette, twelve-month tables | Workbook's Annual Budget and Home | 290 |
-| S14b | Year charts | — | — | Annual's three charts; Home's pie and top-3 doughnuts | Workbook's Year charts | 250 |
-| S15 | Week in Workbook's shape | — | Week on `periodSheet`; `workbook-week` | Week screen as Workbook blocks | Workbook's Weekly Budget | 250 |
-| S15b | Paycheck | uses `pay_schedules` | `payPeriod` (engine) after F15 is answered; Paycheck window over `periodSheet`; golden from Paycheck Budget cells that hold under D5 (§5.4) | Paycheck screen, lavender band (#F1F3FF) | Workbook's Paycheck Budget | 2 slices |
-| S15c | Bill calendar | uses `pay_schedules`, plans | `billCalendar` (engine): day grid, bills by due day with real charges replacing plans (D5), paydays, week and month totals; golden from Bill Calendar cells that hold under D5 | Calendar screen | Workbook's Bill Calendar | 2 slices |
+| S14a | Year screen | — | — | Start-month picker, at a glance in Home's palette, twelve-month tables | The workbook's Annual Budget and Home | 290 |
+| S14b | Year charts | — | — | Annual's three charts; Home's pie and top-3 doughnuts | The workbook's Annual and Home charts | 250 |
+| S15 | Week in the workbook's shape | — | Week on `periodSheet`; `workbook-week` | Week screen as workbook blocks | The workbook's Weekly Budget | 250 |
+| S15b | Paycheck | uses `pay_schedules` | `payPeriod` (engine) after F15 is answered; Paycheck window over `periodSheet`; golden from Paycheck Budget cells that hold under D5 (§5.4) | Paycheck screen, lavender band (#F1F3FF) | The workbook's Paycheck Budget | 2 slices |
+| S15c | Bill calendar | uses `pay_schedules`, plans | `billCalendar` (engine): day grid, bills by due day with real charges replacing plans (D5), paydays, week and month totals; golden from Bill Calendar cells that hold under D5 | Calendar screen | The workbook's Bill Calendar | 2 slices |
 | **Sitting C** | `savings_funds` (and later `debts`) | ✓ | — | — | **You paste once for each.** | tests |
-| S16a/b | Savings funds | uses `savings_funds` | `savingsFundPlan`, `monthsBetween`; `workbook-savings` | Yellow fund cards | Workbook's Savings tab with your flight fund | 280 × 2 |
-| S17 | Debts | uses `debts` | `debtStatus`; extended debt fixture | Debt cards and doughnuts | Workbook's Debt Calculator | 2–3 slices |
+| S16a/b | Savings funds | uses `savings_funds` | `savingsFundPlan`, `monthsBetween`; `workbook-savings` | Yellow fund cards | The workbook's Savings tab with your flight fund | 280 × 2 |
+| S17 | Debts | uses `debts` | `debtStatus`; extended debt fixture | Debt cards and doughnuts | The workbook's Debt Calculator | 2–3 slices |
 | ~~S18~~ | ~~50/30/20~~ | — | — | — | Not chosen (§9a) | — |
 
 ## 9a. The owner's answers (2026-09-22)
@@ -533,16 +533,16 @@ done "unless you say otherwise", and they did not object.
 | 6 | **B — type the starting bank balance once a month** | Owner chose |
 | 7 | **B — type it once, then recorded transfers add to it** | Owner chose (asked 2026-09-23) |
 | 8 | **A — pay is typed** | Stated to the owner; no objection |
-| 9 | **A — Workbook's arithmetic mistakes are fixed and recorded** | Stated to the owner; no objection |
-| 10 | **A — Workbook's fills, darker readable text** | Stated to the owner; no objection |
-| 11 | **A — Workbook's names as placeholders** | Stated to the owner; no objection |
+| 9 | **A — the workbook's arithmetic mistakes are fixed and recorded** | Stated to the owner; no objection |
+| 10 | **A — the workbook's fills, darker readable text** | Stated to the owner; no objection |
+| 11 | **A — the workbook's names as placeholders** | Stated to the owner; no objection |
 | 12 | **Yes — React Testing Library**, each package in its own commit | Stated to the owner as "unless you say no"; no objection |
-| 13 | **A — Workbook first** | Follows from the owner's request |
+| 13 | **A — the workbook views first** | Follows from the owner's request |
 | 14 | **A — "Card interest & fees" under Variable expenses** | Stated to the owner; no objection |
 | 15 | **A — "Left over"** | Falls under decision 9 |
 
 **New open question, F15 (Paycheck), to put to the owner at S15b before any code.**
-Workbook's Paycheck tab takes a typed start and end date and halves a monthly bill
+The workbook's Paycheck tab takes a typed start and end date and halves a monthly bill
 with a fixed ÷2 that ignores the pay frequency (Paycheck!E22; START HERE!E8).
 Options: A — copy it (typed dates, ÷2); B — find the period from the Income
 row's pay schedule and divide by the pay frequency (4.333 / 2.1667 / 1);
@@ -554,38 +554,38 @@ recorded in F15). The rounding rule is settled with the Paycheck engine.
 
 | # | Question | Options | Recommended | Needed by |
 |---|---|---|---|---|
-| 1 | Which screen opens first? Workbook's first tab is Home, a year dashboard. Its month tabs are where your money lands. | A: Month · B: Week (as today) · C: Year (Workbook's Home is at its top) | **A.** Your statement fills the month first. The bar becomes Month · Week · Add · Review · More. | S5a |
-| 2 | Which Workbook tabs do you want? | Tick any | **Build:** Month, Setup and Bills, Year and Home, Week, Savings, Debts. **Skip for now:** Paycheck, Net Worth, Financial Freedom, Bill Calendar, 50/30/20, Spending Tracker's 12 extra groups. If you skip them, Home loses its net-worth tile, 50/30/20 bars and three spending-group bars. | S0 |
-| 3 | A bill is set up at $17.99 and your statement shows the $17.99 charge. What should the month show? | A: $17.99, the real charge replaces the plan · B: $35.98, Workbook adds both | **A.** Workbook's own note on Bills!Q5 treats the log as being for bills without a fixed amount. | S10 |
-| 4 | Paying off your Rogers card ("PAYMENT, THANK YOU") | A: not spending and not income; shown as a note · B: counted as a debt payment, as Workbook's sample does, which double-counts what you bought | **A** (recorded as D9) | S3a |
+| 1 | Which screen opens first? The workbook's first tab is Home, a year dashboard. Its month tabs are where your money lands. | A: Month · B: Week (as today) · C: Year (the workbook's Home is at its top) | **A.** Your statement fills the month first. The bar becomes Month · Week · Add · Review · More. | S5a |
+| 2 | Which workbook tabs do you want? | Tick any | **Build:** Month, Setup and Bills, Year and Home, Week, Savings, Debts. **Skip for now:** Paycheck, Net Worth, Financial Freedom, Bill Calendar, 50/30/20, Spending Tracker's 12 extra groups. If you skip them, Home loses its net-worth tile, 50/30/20 bars and three spending-group bars. | S0 |
+| 3 | A bill is set up at $17.99 and your statement shows the $17.99 charge. What should the month show? | A: $17.99, the real charge replaces the plan · B: $35.98, the workbook adds both | **A.** The workbook's own note on Bills!Q5 treats the log as being for bills without a fixed amount. | S10 |
+| 4 | Paying off your Rogers card ("PAYMENT, THANK YOU") | A: not spending and not income; shown as a note · B: counted as a debt payment, as the workbook's sample does, which double-counts what you bought | **A** (recorded as D9) | S3a |
 | 5 | When you change a budget, how far should it apply? | A: this month and later months · B: this month only (both remain on offer) | **A** as the default | S8 |
-| 6 | Type your starting bank balance each month to see Workbook's projected month-end balance (Jan!D9/D15) and the Year's starting and ending balance? | A: not for now · B: yes, one number a month, as in Workbook | **B.** Rent counts from its planned amount and pay is typed (decision 8), so the projection is meaningful. Like Workbook's, it treats card purchases as money already gone. | S11 |
-| 7 | Savings fund balance | A: you type it, as Workbook and the app do today · B: type it once, then transfers you record add to it | **B** (recorded as D16) | S16 |
+| 6 | Type your starting bank balance each month to see the workbook's projected month-end balance (Jan!D9/D15) and the Year's starting and ending balance? | A: not for now · B: yes, one number a month, as in the workbook | **B.** Rent counts from its planned amount and pay is typed (decision 8), so the projection is meaningful. Like the workbook's, it treats card purchases as money already gone. | S11 |
+| 7 | Savings fund balance | A: you type it, as the workbook and the app do today · B: type it once, then transfers you record add to it | **B** (recorded as D16) | S16 |
 | 8 | How your pay gets in | A: type each paycheque (Add → Type it → received) · B: set expected pay once and count it automatically | **A.** An assumed paycheque can hide a missed one. | S7 |
-| 9 | Workbook has a few arithmetic mistakes (listed in §5.2) | A: fix them, recorded · B: copy them | **A** | S9 |
-| 10 | Colours | A: Workbook's fills with darker, readable text (§6.6 table) · B: Workbook's exact pale text | **A** | S1 |
-| 11 | Start with Workbook's example names to rename, or with empty lists? | A: Workbook's names · B: empty | **A** | S3a |
+| 9 | The workbook has a few arithmetic mistakes (listed in §5.2) | A: fix them, recorded · B: copy them | **A** | S9 |
+| 10 | Colours | A: the workbook's fills with darker, readable text (§6.6 table) · B: the workbook's exact pale text | **A** | S1 |
+| 11 | Start with the workbook's example names to rename, or with empty lists? | A: the workbook's names · B: empty | **A** | S3a |
 | 12 | Can I add one testing tool (React Testing Library) so the new screens are checked automatically? Project rules say I must ask before adding one. | Yes or no | **Yes** | P3 |
-| 13 | Workbook screens before the savings coach? | A: Workbook first · B: coach first | **A.** It is what you asked for. | S0 |
-| 14 | Where do Rogers interest and fees go? | A: Variable expenses, as "Card interest & fees" · B: a Debts row with no monthly amount | **A.** Workbook's Debts column means payments you make. Interest is a charge, and a monthly amount on the card's row would count your purchases twice. | S3a |
-| 15 | Workbook's Year "Left To Spend" box reads an empty cell. What should Year show? | A: income − spending − savings, called "Left over" · B: Workbook's literal result (income − spending; savings ignored) · C: leave the box off | **A.** The Month's "Left to spend" keeps its own meaning (budget remaining). | S13b |
+| 13 | Workbook views before the savings coach? | A: workbook views first · B: coach first | **A.** It is what you asked for. | S0 |
+| 14 | Where do Rogers interest and fees go? | A: Variable expenses, as "Card interest & fees" · B: a Debts row with no monthly amount | **A.** The workbook's Debts column means payments you make. Interest is a charge, and a monthly amount on the card's row would count your purchases twice. | S3a |
+| 15 | The workbook's Annual "Left To Spend" box reads an empty cell. What should Year show? | A: income − spending − savings, called "Left over" · B: the workbook's literal result (income − spending; savings ignored) · C: leave the box off | **A.** The Month's "Left to spend" keeps its own meaning (budget remaining). | S13b |
 
 ## 10. Risks and open questions
 
 1. **Money outside the card is invisible.** Only the card is imported. Rent, pay and savings moves are planned or typed, so a month is only as complete as Setup plus your typing. The import path could later take a bank CSV (the `card_csv` path already exists). The card payment would then appear on both statements, and both would be filed as transfers.
 2. **Statement periods are not calendar months.** A statement runs Aug 8 – Sep 7 (F1), so a month is incomplete until the next statement is imported. The Month screen shows "Statement imported up to Sep 7", taken from the statement period (0007), so a low total is not mistaken for low spending.
 3. **The cost of rule D5.** A typed *extra* debt payment replaces the planned payment instead of adding to it. The workaround is to type the regular payment as well. Revisit if it bothers you.
-4. **Yearly bills.** Workbook's note on Bills!D5 suggests entering a yearly bill as a monthly amount ($100/year = $8.34/mo). If that bill is also charged once a year on the card, the charge month shows $100 and the other eleven show $8.34, so the year counts it about twice. For a card-charged yearly bill, leave the monthly amount blank.
-5. **The first import is about 80 taps** (HANDOFF §4). Workbook's lists add a list choice per *category*, not per row.
+4. **Yearly bills.** The workbook's note on Bills!D5 suggests entering a yearly bill as a monthly amount ($100/year = $8.34/mo). If that bill is also charged once a year on the card, the charge month shows $100 and the other eleven show $8.34, so the year counts it about twice. For a card-charged yearly bill, leave the monthly amount blank.
+5. **The first import is about 80 taps** (HANDOFF §4). The workbook's lists add a list choice per *category*, not per row.
 6. **Migrations and deploys.** 0003 and 0004 are still unapplied, and everything after depends on them. `main` deploys itself, so code that reads a new column is held until you confirm each sitting. A-B-C is three sittings. Running `db push` from CI would remove them, but it would put a database credential in GitHub; that is not proposed now.
 7. **Screens are untested** (N5). `.tsx` files are unmeasured by coverage, and about fifteen new screen commits would widen that gap. That is why P3 (decision 12) comes before S5b.
 8. **Month-level oracles are indirect.** They come from typed-window tabs and Paycheck's "Actual This Month" block (§5.5). The optional second Google export closes the gap for spending, income and savings rows.
 9. **Scope.** S1–S15 delay the coach (roadmap Phase 3) and pull parts of Phases 5–7 ahead of it. The roadmap says so in S0, not by staying silent.
 10. **Bundle size.** It is already 606 KB (N7). Fonts ship as static files, charts are hand-built SVG, and Year and Setup should be code-split.
-11. **Unique names.** A name can live in one list only (D11). Workbook resolves a name that appears in several recurring lists to the first match (Bills!T7's `COUNTIF` chain). Changing a list is refused while a category has a monthly amount in effect; Setup says "remove the monthly amount first".
+11. **Unique names.** A name can live in one list only (D11). The workbook resolves a name that appears in several recurring lists to the first match (Bills!T7's `COUNTIF` chain). Changing a list is refused while a category has a monthly amount in effect; Setup says "remove the monthly amount first".
 12. **Card balance and accounts.** The Rogers statement already prints its New Balance, which reconciliation parses, so it could feed the Debts screen with no typing. Typed pay and savings moves currently land in the single "Main Card" account (`app-data.tsx`). A "Bank / cash" account must exist before any per-account figure is built. Both are settled at S17.
 13. **Open: final-month interest.** The Debt Calculator's final-month handling must be settled before any payment-column golden test (S17). The workbook forgives interest in that month; the engine charges it.
-14. **Open: notes.** Workbook has a Notes column (Transactions!E, Bills!R). Typed entries already carry a description. A note on imported rows needs a `transactions.memo` column. It is not scheduled until you ask for it.
+14. **Open: notes.** The workbook has a Notes column (Transactions!E, Bills!R). Typed entries already carry a description. A note on imported rows needs a `transactions.memo` column. It is not scheduled until you ask for it.
 15. **Pre-existing gaps.** P1 and P2 close HANDOFF §5 items 2 and 4 before S5b, and S12a closes item 5. Items 3 and 6–11 stay open: receipt accuracy, CSV column guessing, the bidi guard in Postgres, the bucket, the bundle, typed-plus-imported duplicates, and the `posted_on` name.
 
 ## Critique points not taken (or taken only in part)
@@ -593,7 +593,7 @@ recorded in F15). The rounding rule is settled with the Paycheck engine.
 - **Fidelity 1, assert Annual!K9 = 0, W9 = 0, W30 = 0.** Not taken. Under the fixture F11 needs (no Transactions rows), those zeros hold for any engine, including one that ignores the ledger. They are listed in §5.4 with their correct-year values (2600, 2000, 235). The rest of the point is taken: Q11 is dropped, F11 is recorded, and the J9 coincidence is covered by a hand-derived test.
 - **Fidelity 4, "15 flattened chart images, not six".** Taken with a correction. Home does have 15 flattened scorecard images, including the $191 net-worth tile. But the pie, the debt, savings and top-3 charts, the 50/30/20 bars and the group bars the critique lists are 11 *native* charts whose Hidden sources are intact (checked with `ws._charts`). The plan now says both.
 - **Fidelity 11, re-exporting would make Jan!K22 and K24 differ under D5.** Only K22 differs (250 versus 200). K24 is Car Loan (`=Bills!H9+SUMIFS(…)`), and Bills!H9 is blank, so both rules give 100. The rest of the point is taken: a second export, keeping this file as the oracle.
-- **Fidelity 18, the Notes column needs a memo field.** The notes are verified (Transactions!E7, Bills!R7). The memo is recorded as open item 14, not scheduled, because typed entries already carry a description and no Workbook figure depends on notes.
+- **Fidelity 18, the Notes column needs a memo field.** The notes are verified (Transactions!E7, Bills!R7). The memo is recorded as open item 14, not scheduled, because typed entries already carry a description and no workbook figure depends on notes.
 - **Engineering 1, "add a CHECK that forbids a monthly amount on the card's category".** Not taken as a CHECK. The schema has no link from a category to a card or account, so no constraint can say which category is "the card's". It is handled by decision 14, the seed, and the Setup warning. The rest of the point (the double count, the D-entry) is taken.
 - **Engineering 2, "or repair the CLI history and run `db push` from CI".** Not taken for now. It would put a production database credential into CI, which is a bigger trust change than three manual sittings. The split-and-hold part of the point is taken.
 - **Engineering 8, "an engine that sums only the first row passes all of S7".** Taken, with one correction: Jan!O9 = 19400 already sums five typed goals (O10:O14), so S7 had one multi-row cached sum. The added subtraction cells and hand-derived tests are still needed.
