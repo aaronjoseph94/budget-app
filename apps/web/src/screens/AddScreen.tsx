@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { applySignConvention, type AcceptedRow } from '@budget/statement-parsers'
 import { isoDate } from '@budget/core'
 import { parseMoneyInput, useAppData } from '../app-data.js'
@@ -339,17 +339,27 @@ function TypedEntry() {
   const [newKind, setNewKind] = useState<CategoryKind | ''>('variable')
   const [busy, setBusy] = useState(false)
   const [outcome, setOutcome] = useState<Outcome | null>(null)
+  const [tried, setTried] = useState(0)
+  const amountError = useId()
 
   const cents = parseMoneyInput(amount)
   const creating = categoryId === '__new__'
-  const ready =
-    cents !== null &&
-    cents > 0 &&
-    merchant.trim().length > 0 &&
-    (creating ? newCategory.trim().length > 0 && newKind !== '' : categoryId !== '')
+  const needed = [
+    cents === null || cents <= 0 ? 'an amount' : null,
+    merchant.trim().length === 0 ? 'what it was' : null,
+    // The browser checked these while it validated the form; now this does.
+    !/^\d{4}-\d{2}-\d{2}$/.test(date) || date > todayIso() ? 'a date no later than today' : null,
+    creating && newCategory.trim().length === 0 ? "the new category's name" : null,
+    creating && newKind === '' ? 'which list it goes on' : null,
+    !creating && categoryId === '' ? 'a category' : null,
+  ].filter((n): n is string => n !== null)
+  const ready = needed.length === 0
 
   const submit = async () => {
-    if (!ready || cents === null || accountId === null) return
+    // Add stays pressable, and says what is missing, rather than sitting
+    // greyed out with no reason given (FE-8).
+    if (!ready) return setTried((n) => n + 1)
+    if (cents === null || accountId === null) return
     setBusy(true)
     setOutcome(null)
     try {
@@ -367,6 +377,7 @@ function TypedEntry() {
         categoryId: category,
       })
       setOutcome({ ok: true, message: `Added ${formatCents(cents)} — ${merchant.trim()}.` })
+      setTried(0)
       setAmount('')
       setMerchant('')
       setNewCategory('')
@@ -382,8 +393,11 @@ function TypedEntry() {
   return (
     <Card>
       <CardContent className="space-y-4 pt-5">
+        {/* noValidate: the browser's own bubble would stop the press before
+          StillNeeded can say, in words kept on the page, what is missing. */}
         <form
           className="space-y-4"
+          noValidate
           onSubmit={(e) => {
             e.preventDefault()
             void submit()
@@ -421,8 +435,16 @@ function TypedEntry() {
               </label>
             ))}
           </fieldset>
+          <p className="text-xs text-muted-foreground">Every field is needed.</p>
           <Field label="Amount">
-            <Input inputMode="decimal" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+            <Input
+              inputMode="decimal"
+              placeholder="0.00"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              required
+              {...notMoney(amount, cents, amountError)}
+            />
           </Field>
           <Field label="What was it?">
             <Input placeholder="e.g. Farmers market" value={merchant} maxLength={120} onChange={(e) => setMerchant(e.target.value)} required />
@@ -449,12 +471,11 @@ function TypedEntry() {
               </Field>
             </div>
           ) : null}
-          {amount.trim().length > 0 && cents === null ? (
-            <p className="text-sm text-spend">That amount is not a number of dollars and cents.</p>
-          ) : null}
-          <Button type="submit" size="lg" className="w-full" disabled={!ready || busy}>
+          <NotMoney amount={amount} cents={cents} id={amountError} />
+          <Button type="submit" size="lg" className="w-full" disabled={busy}>
             {busy ? 'Adding…' : 'Add'}
           </Button>
+          {tried > 0 && !ready ? <StillNeeded key={tried} needed={needed} /> : null}
           {outcome !== null ? <Alert tone={outcome.ok ? 'success' : 'error'}>{outcome.message}</Alert> : null}
           <p className="text-xs text-muted-foreground">
             {/* Pay and savings moves are typed (decision 8), so not "for cash" alone. */}
@@ -464,6 +485,32 @@ function TypedEntry() {
         </form>
       </CardContent>
     </Card>
+  )
+}
+
+/** An amount typed that is not money marks its field, and the message says why (FE-8). */
+function notMoney(amount: string, cents: number | null, id: string) {
+  return amount.trim().length > 0 && cents === null ? { 'aria-invalid': true, 'aria-describedby': id } : {}
+}
+
+function NotMoney({ amount, cents, id }: { amount: string; cents: number | null; id: string }) {
+  if (amount.trim().length === 0 || cents !== null) return null
+  return (
+    <p id={id} className="text-sm text-spend">
+      That amount is not a number of dollars and cents.
+    </p>
+  )
+}
+
+/** What a form still needs, focused as it appears so it is read out; re-keyed on each press. */
+function StillNeeded({ needed }: { needed: readonly string[] }) {
+  const own = useRef<HTMLParagraphElement>(null)
+  useEffect(() => own.current?.focus(), [])
+  const list = needed.length === 1 ? needed[0] : `${needed.slice(0, -1).join(', ')} and ${needed.at(-1)}`
+  return (
+    <p ref={own} role="alert" tabIndex={-1} className="text-sm text-spend outline-none">
+      Still needed: {list}.
+    </p>
   )
 }
 
@@ -488,6 +535,7 @@ function PhotoEntry() {
   const [date, setDate] = useState('')
   const [busy, setBusy] = useState(false)
   const [outcome, setOutcome] = useState<Outcome | null>(null)
+  const amountError = useId()
 
   const cents = parseMoneyInput(amount)
   const ready = cents !== null && cents > 0 && merchant.trim().length > 0 && /^\d{4}-\d{2}-\d{2}$/.test(date)
@@ -615,15 +663,20 @@ function PhotoEntry() {
               </Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Total spent">
-                  <Input inputMode="decimal" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+                  <Input
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    required
+                    {...notMoney(amount, cents, amountError)}
+                  />
                 </Field>
                 <Field label="Date">
                   <Input type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} required />
                 </Field>
               </div>
-              {amount.trim().length > 0 && cents === null ? (
-                <p className="text-sm text-spend">That amount is not a number of dollars and cents.</p>
-              ) : null}
+              <NotMoney amount={amount} cents={cents} id={amountError} />
               <Button type="submit" size="lg" className="w-full" disabled={!ready || busy}>
                 {busy ? 'Sending…' : 'Send to review'}
               </Button>

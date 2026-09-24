@@ -90,5 +90,11 @@ describe('focus after signing in fails', () => {
 
     const reason = await screen.findByRole('alert')
     await waitFor(() => expect(document.activeElement).toBe(reason))
+    // And tied to both fields, which are marked as the ones refused (FE-8).
+    for (const name of ['Email address', 'Password']) {
+      const field = screen.getByLabelText(name)
+      expect(field.getAttribute('aria-invalid')).toBe('true')
+      expect(field.getAttribute('aria-describedby')).toBe(reason.id)
+    }
   })
 })

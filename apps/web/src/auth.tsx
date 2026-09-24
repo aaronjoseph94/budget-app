@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import type { SupabaseClient } from './supabase.js'
 import { Button, Card, Label } from './ui.js'
@@ -73,6 +73,7 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
   // The Sign in button is disabled while it works, which drops focus to the
   // page; a failure puts it on the reason, which is then read out (FE-6).
   const reason = useRef<HTMLParagraphElement>(null)
+  const reasonId = useId()
   useEffect(() => {
     if (attempt.kind === 'failed') reason.current?.focus()
   }, [attempt])
@@ -103,6 +104,8 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
   }
 
   const busy = attempt.kind === 'working'
+  // Both fields are named by the refusal: Supabase will not say which was wrong.
+  const refused = attempt.kind === 'failed' ? { 'aria-invalid': true, 'aria-describedby': reasonId } : {}
 
   return (
     <div className="mx-auto flex min-h-full w-full max-w-md flex-col justify-center px-4 py-12">
@@ -142,6 +145,7 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
+                {...refused}
                 className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground"
               />
             </label>
@@ -155,6 +159,7 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  {...refused}
                   className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground"
                 />
               </label>
@@ -177,7 +182,7 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
             </div>
 
             {attempt.kind === 'failed' ? (
-              <p ref={reason} role="alert" tabIndex={-1} className="mt-3 text-sm text-spend outline-none">
+              <p ref={reason} id={reasonId} role="alert" tabIndex={-1} className="mt-3 text-sm text-spend outline-none">
                 {attempt.message}
               </p>
             ) : null}

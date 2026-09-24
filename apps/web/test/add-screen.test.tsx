@@ -115,3 +115,38 @@ describe('AddScreen, which way the money went (FE-2)', () => {
     expect(within(spent.closest('label') as HTMLElement).queryByTestId('chosen')).toBeNull()
   })
 })
+
+describe('AddScreen, telling what is wrong or missing (FE-8)', () => {
+  it('ties the amount message to the amount field', async () => {
+    renderScreen(<AddScreen />, seeded())
+    fireEvent.click(await screen.findByRole('tab', { name: /Type it/ }))
+    const amount = screen.getByLabelText(/^Amount/)
+    expect(amount.getAttribute('aria-invalid')).toBeNull()
+    fireEvent.change(amount, { target: { value: 'twelve' } })
+
+    expect(amount.getAttribute('aria-invalid')).toBe('true')
+    expect(document.getElementById(amount.getAttribute('aria-describedby') ?? '')?.textContent).toBe(
+      'That amount is not a number of dollars and cents.',
+    )
+  })
+
+  it('keeps Add pressable, and says what is still needed when it is pressed too soon', async () => {
+    const fake = seeded()
+    renderScreen(<AddScreen />, fake)
+    fireEvent.click(await screen.findByRole('tab', { name: /Type it/ }))
+    expect(screen.getByText('Every field is needed.')).toBeTruthy()
+    fireEvent.change(screen.getByLabelText(/^What was it/), { target: { value: 'Farmers market' } })
+    const add = screen.getByRole<HTMLButtonElement>('button', { name: 'Add' })
+    expect(add.disabled).toBe(false)
+    fireEvent.click(add)
+
+    const missing = await screen.findByRole('alert')
+    expect(missing.textContent).toBe('Still needed: an amount and a category.')
+    expect(document.activeElement).toBe(missing)
+    expect(fake.rpcCalls).toEqual([])
+
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '' } })
+    fireEvent.click(add)
+    expect((await screen.findByRole('alert')).textContent).toBe('Still needed: an amount, a date no later than today and a category.')
+  })
+})

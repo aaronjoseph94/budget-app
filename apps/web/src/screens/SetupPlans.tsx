@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { billsTotals, isoDate, resolvePlans, type BillsTotals, type ResolvedPlan } from '@budget/core'
 import { parseMoneyInput, useAppData } from '../app-data.js'
 import { listPlanHistory, setPlan, type Category, type PlanRow } from '../ledger.js'
@@ -188,6 +188,10 @@ export function PlanFields({
     setWas(shown)
   }
   const [problem, setProblem] = useState<string | null>(null)
+  const problemId = useId()
+  // The message, tied to the field it is about and marking it (FE-8).
+  const about = (help: string) =>
+    problem === help ? { 'aria-invalid': true, 'aria-describedby': problemId } : {}
   const queue = useRef<Promise<unknown>>(Promise.resolve())
   const monthName = formatMonthTitle(month).split(' ')[0]
 
@@ -241,6 +245,7 @@ export function PlanFields({
           maxLength={2}
           aria-label={`Day paid for ${row.name}`}
           placeholder="Day"
+          {...about(DAY_HELP)}
           value={day}
           onChange={(e) => setDay(e.target.value)}
           onBlur={() => commit('day')}
@@ -258,6 +263,7 @@ export function PlanFields({
               inputMode="decimal"
               aria-label={`Monthly amount for ${row.name}, from ${monthName} on`}
               placeholder="None"
+              {...about(AMOUNT_HELP)}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               onBlur={() => commit('amount')}
@@ -281,7 +287,7 @@ export function PlanFields({
         </div>
       </div>
       {problem !== null ? (
-        <p role="alert" className="mt-1 text-xs text-destructive">
+        <p id={problemId} role="alert" className="mt-1 text-xs text-destructive">
           {problem}
         </p>
       ) : null}

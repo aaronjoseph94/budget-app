@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { isoDate } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { listPaySchedules, removePaySchedule, setPaySchedule, type Category, type PayFrequency, type PayScheduleRow } from '../ledger.js'
@@ -99,6 +99,9 @@ export function PayFields({
     setWas(shown)
   }
   const [problem, setProblem] = useState<string | null>(null)
+  const problemId = useId()
+  // Every message here is about the pair, so both fields carry it (FE-8).
+  const refused = problem === null ? {} : { 'aria-invalid': true, 'aria-describedby': problemId }
   const queue = useRef<Promise<unknown>>(Promise.resolve())
 
   const commit = (nextFrequency: string, nextDate: string) => {
@@ -131,6 +134,7 @@ export function PayFields({
       <div className="grid grid-cols-[7.5rem_minmax(0,1fr)] items-center gap-2">
         <NativeSelect
           aria-label={`How often ${row.name} pays`}
+          {...refused}
           value={frequency}
           onChange={(e) => {
             setFrequency(e.target.value)
@@ -151,6 +155,7 @@ export function PayFields({
             size="sm"
             type="date"
             aria-label={`First payday for ${row.name}`}
+            {...refused}
             value={date}
             onChange={(e) => setDate(e.target.value)}
             onBlur={() => commit(frequency, date)}
@@ -174,7 +179,7 @@ export function PayFields({
         </div>
       </div>
       {problem !== null ? (
-        <p role="alert" className="mt-1 text-xs text-destructive">
+        <p id={problemId} role="alert" className="mt-1 text-xs text-destructive">
           {problem}
         </p>
       ) : null}

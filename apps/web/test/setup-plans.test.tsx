@@ -261,6 +261,9 @@ describe('SetupScreen, day paid and monthly amount', () => {
       const day = await type('Bills', 'Day paid for Rent', typed)
       expect((await card('Bills')).getByRole('alert').textContent).toBe('Type the day of the month it is paid, 1 to 31, or leave it blank.')
       expect(day.value).toBe('1')
+      // Tied to the field it is about, so a screen reader reads it there (FE-8).
+      expect(day.getAttribute('aria-invalid')).toBe('true')
+      expect(document.getElementById(day.getAttribute('aria-describedby') ?? '')?.textContent).toMatch(/^Type the day of the month/)
     }
     for (const typed of ['-5', 'about 20']) {
       const amount = await type('Bills', 'Monthly amount for Rent, from September on', typed)
