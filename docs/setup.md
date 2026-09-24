@@ -88,9 +88,16 @@ without it. Chosen in docs/adr/0002-gemini-free-tier-for-receipts.md.
 3. **Add the key.** **Edge Functions → Secrets → Add new secret**: name
    `GEMINI_API_KEY`, value the key from step 1.
 
-If a photo ever reports that the model has been retired, add a second secret,
-`GEMINI_MODEL`, set to a current model name from Google's list (for example
-`gemini-2.5-flash`). No redeploy is needed for secrets.
+The function uses `gemini-3.5-flash-lite`, Google's fast, low-cost model
+for reading documents, on the free tier. If a photo ever reports that the
+model has been retired, add a second secret, `GEMINI_MODEL`, set to a current
+model name from Google's list (for example `gemini-3.1-flash-lite`). No
+redeploy is needed for secrets.
+
+If you pasted `read-receipt` before 2026-09-24, paste its new version the
+same way (step 2): the old one used `gemini-2.5-flash`, which Google has
+listed for shutdown around 16–20 October 2026. If you set `GEMINI_MODEL` to
+`gemini-2.5-flash` yourself, delete that secret too.
 
 The key is a password to your Google account's quota. It goes only in that
 Supabase secret — never in the app, never in this repository.

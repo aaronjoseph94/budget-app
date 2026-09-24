@@ -29,7 +29,11 @@ import { z } from 'npm:zod@4.6.5'
 // never point the key at another server (CLAUDE.md: endpoints are a hardcoded
 // allowlist, never supplied by a model or a database).
 const HOST = 'https://generativelanguage.googleapis.com/v1beta/models/'
-const DEFAULT_MODEL = 'gemini-2.5-flash'
+// Flash-Lite: Google's model for fast, cheap extraction, on the free tier.
+// Moved off gemini-2.5-flash on 2026-09-24, which Google has listed for
+// shutdown around 16-20 October 2026 and no longer offers to new keys
+// (ADR 0002's dated note). The GEMINI_MODEL secret still overrides it.
+const DEFAULT_MODEL = 'gemini-3.5-flash-lite'
 const MODEL_NAME = /^gemini-[a-z0-9.-]{1,40}$/
 
 // Browsers allowed to call this: the Cloudflare and Netlify sites and a local

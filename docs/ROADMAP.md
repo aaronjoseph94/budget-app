@@ -154,7 +154,8 @@ volume is the reason an outage is an inconvenience rather than an outage.
 failover across five services, daily limits and cooldowns (ADR 0004), and
 every AI surface has the app's own words underneath. One listed model,
 `gemini-2.5-flash`, is due to be shut down in October 2026, which is why
-`read-receipt` moves off it first.)*
+`read-receipt` moves off it first; it now defaults to
+`gemini-3.5-flash-lite`.)*
 
 **Thin history.** *(added 2026-09-24)* The owner's records start on
 8 August 2026. Baselines, trends and forecast ranges need three to six

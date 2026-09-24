@@ -115,7 +115,7 @@ describe('read-receipt calls one fixed host and passes on only the reply text', 
     expect([res.status, body]).toEqual([200, { ok: true, reply: REPLY }])
     expect(calls).toHaveLength(1)
     const [call] = calls
-    expect(call?.url).toBe('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent')
+    expect(call?.url).toBe('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent')
     expect(call?.init.method).toBe('POST')
     expect(call?.init.headers).toEqual({ 'Content-Type': 'application/json', 'x-goog-api-key': KEY })
     const sent = JSON.parse(String(call?.init.body))
