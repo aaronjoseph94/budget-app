@@ -194,6 +194,15 @@ export {
 } from './notable.js'
 
 export {
+  budgetStanding,
+  categoryPace,
+  type BudgetStanding,
+  type BudgetStandingInput,
+  type CategoryPace,
+  type CategoryPaceInput,
+} from './pace.js'
+
+export {
   comparisonWindow,
   debtBalanceChange,
   periodComparison,
