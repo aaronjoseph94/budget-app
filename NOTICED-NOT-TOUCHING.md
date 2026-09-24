@@ -230,8 +230,8 @@ commit.
 
 **Seen:** 2026-09-22, writing formula decision F7.
 
-Workbook treats a blank Jan!D9 as $0 and still shows an ending balance (Jan!D15
-`=D9+N5-D11-S5`). The Workbook plan (§5.2, F7) has the engine return no ending
+The workbook treats a blank Jan!D9 as $0 and still shows an ending balance (Jan!D15
+`=D9+N5-D11-S5`). The workbook views plan (§5.2, F7) has the engine return no ending
 balance instead. That departs from the workbook, and CLAUDE.md says every
 deliberate divergence gets a dated entry, but the plan numbers only D5–D16 and
 does not list this one.
@@ -254,11 +254,11 @@ one: it was never asked of the owner, nor told to them. F7 now cites it.
 "next" (the coach). Phase 1 is marked built, and its "Ends with" is said
 to wait on the owner applying the migrations, which is still true.
 
-**Seen:** 2026-09-22, updating `docs/ROADMAP.md` for the Workbook plan.
+**Seen:** 2026-09-22, updating `docs/ROADMAP.md` for the workbook views plan.
 
 Phase 0 is marked done and Phase 1 "← next", but statement import, the review
 queue, learned merchant rules, the Week screen and photo reading are all
-built. With the Workbook views now also marked next, the page has two "next"
+built. With the workbook views now also marked next, the page has two "next"
 phases.
 
 **Why not fixed here:** marking a phase done is a claim about its "Ends with"
@@ -279,7 +279,7 @@ pasted (HANDOFF.md), so the gap this describes never reaches the live site.
 
 **Seen:** 2026-09-22, writing migration 0005.
 
-0005 drops the default on `categories.kind`, as the Workbook plan requires, so
+0005 drops the default on `categories.kind`, as the workbook views plan requires, so
 an insert without a list is refused with 23502. `ensureNamed` in
 `apps/web/src/ledger.ts` inserts `{ user_id, name }` only, and the not-null
 check fires before the unique check it relies on, so between pasting 0005 and
@@ -365,7 +365,7 @@ Leave the text unstored unless the owner finds row numbers too hard to use.
 **Settled:** §6.2 and §6.6 now say columns use the system face with
 tabular digits, and Comfortaa is for standalone totals.
 
-**Seen:** 2026-09-22, S1 (Workbook's look).
+**Seen:** 2026-09-22, S1 (the workbook's look).
 
 §6.6 says big numbers use Comfortaa, and §6.2 says the Month rows' numbers
 use tabular digits. Comfortaa cannot do both: the Google Fonts subset carries
@@ -470,7 +470,7 @@ Settings → Weekly budgets lists every category with a budget field. Since
 S3b, `weeklySummary` sums budgets over bills, debts, subscriptions and
 variable expenses only, so a limit typed on an Income, Savings or Not
 spending category is stored and then ignored by Week, with nothing on
-screen saying so. After "Start from Workbook's list" that is 10 of the 31
+screen saying so. After "Use the starter list" that is 10 of the 31
 names (the goal's makes 11), and the card is 30-odd rows long.
 
 **Why not fixed here:** S3b is the engine and the Week screen; which
@@ -478,7 +478,7 @@ categories Settings shows is a Settings change, and S5a moves Settings
 under More anyway.
 
 **To settle:** in Settings, show the budget field only for spending lists,
-grouped under Workbook's headings as the pickers are (`CategoryOptions`), and
+grouped under the workbook's headings as the pickers are (`CategoryOptions`), and
 leave any stored limit on the other lists untouched.
 
 **Settled:** Settings lists weekly budgets for Bills, Debts, Subscriptions
@@ -554,7 +554,7 @@ part 3 (seen failing first); with no start typed there is no ending balance
 zero in its block, half-up (F17), so a row refunds took below zero has none
 rather than a slice. The income bars' Actual against Goal is `goalBars`
 beside it: both in basis points of the largest, one scale for every row.
-Hand-derived tests, seen failing first; Workbook prints no share to replay.
+Hand-derived tests, seen failing first; the workbook prints no share to replay.
 
 ---
 
@@ -755,7 +755,7 @@ a balance that may be stored.
 **Seen:** 2026-09-23, S7 (the budget engine).
 
 `docs/ROADMAP.md`'s table of workbook features says the twelve month tabs
-are "To be built that way in the Workbook plan (S5b); not built yet". S5b
+are "To be built that way in the workbook views plan (S5b); not built yet". S5b
 built the Month screen, and S7 its budgets in the engine.
 
 **Why not fixed here:** S7 is engine work, and ROADMAP's other markers are
@@ -818,7 +818,7 @@ in, dated.
 
 ---
 
-## N32 — The plan puts Workbook's four-across Month at 1024px; S8 moved it to 1280px *(settled 2026-09-23, completion pass)*
+## N32 — The plan puts the workbook's four-across Month at 1024px; S8 moved it to 1280px *(settled 2026-09-23, completion pass)*
 
 **Settled:** §6.3 now says ≥1280 px, two columns from 768 px, and §6.2
 that row cells carry no "$" while band totals do.
@@ -944,7 +944,7 @@ and it repeats whenever it drifts back. Within one month nothing is
 counted twice, which is what decision 3 asked about.
 
 **Why not fixed here:** S10 builds the rule the owner chose, and the
-workbook has no answer: Workbook adds fixed and logged amounts (F3), which is
+workbook has no answer: it adds fixed and logged amounts (F3), which is
 worse. Deciding which month a late charge belongs to changes a number the
 owner would see, so it is theirs to choose.
 
@@ -968,15 +968,15 @@ said to them; D17 (N37 item 1) is theirs to keep or change.
 **Seen:** 2026-09-23, S11 (the summary card).
 
 1. **D17 was never put to the owner.** With no starting balance typed, the
-   Month shows no End of month, where Workbook counts from $0. It is recorded
+   Month shows no End of month, where the workbook counts from $0. It is recorded
    as an engineering default, stated to no one. CLAUDE.md lists a
    deliberate divergence under "Ask first".
 2. **End of month reads low until pay is typed.** Planned bills count in
    full for the whole month (F8, F10), and pay counts only once it is typed
    (decision 8). Partway through a month, before payday, End of month can
-   show below zero. Workbook's D15 reads the income typed so far (Jan!N5) and
+   show below zero. The workbook's D15 reads the income typed so far (Jan!N5) and
    behaves the same.
-3. **A negative End of month is not highlighted.** Workbook's pink marks only
+3. **A negative End of month is not highlighted.** The workbook's pink marks only
    a negative Left to spend (Jan!D13:E14), so an overdrawn End of month
    shows its minus sign in the card's normal colour.
 
@@ -985,7 +985,7 @@ number. The first is a question for the owner; the second and third are
 things to explain.
 
 **To settle:** tell the owner once, and ask whether they want D17 kept
-(no End of month until Start is typed) or Workbook's $0 start. If they want
+(no End of month until Start is typed) or the workbook's $0 start. If they want
 an overdrawn End of month to stand out, that is a display-only divergence
 and needs its own D-entry.
 
@@ -995,7 +995,7 @@ and needs its own D-entry.
 
 **Seen:** 2026-09-23, S12b (the Month's charts).
 
-Workbook colours its spending doughnut by row (Jan chart13, points idx 0–22),
+The workbook colours its spending doughnut by row (Jan chart13, points idx 0–22),
 palest first, and the app copies that. The starter list puts Restaurants
 and Groceries first, so the two categories most people spend most on get
 the two palest colours, #FFE3DE and #F9D8D3, close to each other and to
@@ -1005,12 +1005,12 @@ its amount and share, so nothing is unreadable, but the ring looks washed
 out, where a chart's neighbouring colours would usually be set clearly
 apart.
 
-**Why not fixed here:** the plan asks for Workbook's fills (§6.6; decision
+**Why not fixed here:** the plan asks for the workbook's fills (§6.6; decision
 10), and giving the rows other steps of the scale is a change of look the
 owner has not asked for. CLAUDE.md puts a deliberate divergence under Ask
 first.
 
-**To settle:** show the owner the ring and ask. A — keep Workbook's colours
+**To settle:** show the owner the ring and ask. A — keep the workbook's colours
 by row. B — spread the same scale over the list's length (eight categories
 take every third step, #FFE3DE to #4C0B02), still one colour per row, with
 a D-entry. C — colour by spending rank; not recommended, as a category's
@@ -1123,16 +1123,16 @@ said to them.
 
 **Seen:** 2026-09-23, S14.
 
-1. **The Year opens on this calendar year, from January.** Workbook's Annual
+1. **The Year opens on this calendar year, from January.** The workbook's Annual
    has whatever start month was last typed; the app has no stored start,
    so a bare `#/year` is January of this year. The picker changes it, and
    the address keeps it.
 2. **Best savings month with nothing saved shows the first month at
-   $0.00**, as F18 decided, following Workbook's January. It could read as a
+   $0.00**, as F18 decided, following the workbook's January. It could read as a
    real "best" month.
 3. **Annual's column chart stacks expenses on income** (chart40, F19), so a
    column's height is income plus expenses, which means nothing on its own.
-   The plan asked for Workbook's stack.
+   The plan asked for the workbook's stack.
 
 **Why not fixed here:** each follows the plan or a recorded decision; none
 is a wrong number, but the owner would notice them.
@@ -1152,7 +1152,7 @@ The Week now reads `weekSheet`, and nothing else called `weeklySummary`
 kept equivalent, because what it computes is not what the Week now shows.
 It totals one budget over every spending list with a share used, and
 counts a row with no known category as "uncategorised"; `weekSheet` gives
-Workbook's per-block totals and F5's Left to spend, and refuses a row it
+the workbook's per-block totals and F5's Left to spend, and refuses a row it
 cannot file, as the Month does. `weekBounds`, `shiftWeek`, `monthBounds`,
 `shiftMonth` and `SPENDING_LISTS` in the same file are all still used.
 
@@ -1172,7 +1172,7 @@ question for the owner, with A (not shown) in use. Still open.
 
 **Seen:** 2026-09-23, S15.
 
-Workbook's Weekly Budget types a starting balance (D9, sample 1000) and shows
+The workbook's Weekly Budget types a starting balance (D9, sample 1000) and shows
 an Ending Balance (D15 `=D9+P6-D11-V6`). The app stores starting balances
 per month only (0010), so the Week's summary shows Spent and Left to spend
 and leaves both balances off. The engine takes a start and would give the
@@ -1187,7 +1187,7 @@ the week; C: type one per week, which needs a migration.
 **To settle:** record the owner's answer in docs/formula-decisions.md, then
 build it.
 
-**Updated 2026-09-23, S15b:** the Paycheck view is the same. Workbook's
+**Updated 2026-09-23, S15b:** the Paycheck view is the same. The workbook's
 Paycheck Budget types a start (D9, sample 1000) and shows an Ending Balance
 (D15 `=D9+P6-D11-V6`, cached 465); the view shows Spent and Left to spend
 only, and the same three options apply to a pay period. One answer should
@@ -1202,7 +1202,7 @@ cover both.
 - **Tapping a row opens nothing.** The Month's charges sheet (with "Move
   to…") names its month; the Week has no sheet of its own, so a mis-filed
   charge seen on the Week is moved from the Month.
-- **No charts.** Workbook's Weekly Budget has the Month's two (chart36, an
+- **No charts.** The workbook's Weekly Budget has the Month's two (chart36, an
   income stack, and chart37, the Variable doughnut); `MonthCharts` words its
   empty states "this month". The flight goal stands in their place.
 - **No address for a week.** `#/week` always opens this week; a refresh or
@@ -1221,7 +1221,7 @@ them on the Week, and add `#/week/YYYY-MM-DD` (the Monday) to `nav.ts`.
 **Seen:** 2026-09-23, S15.
 
 The Week reads each category's weekly budget as its Budgeted, or on Income
-and Savings its Goal, as Workbook's Weekly Budget types Q10:Q16 and W10:W16.
+and Savings its Goal, as the workbook's Weekly Budget types Q10:Q16 and W10:W16.
 It can be typed in the row on the Week. Settings → Weekly budgets still
 lists the four spending lists only (N19). So a weekly limit stored on an
 Income or Savings category before S15, which N19 left "kept and not
@@ -1241,7 +1241,7 @@ drop the weekly budgets card from Settings now the Week types them.
 
 - **Tapping a row opens nothing,** as on the Week (N46): the Month's
   charges sheet names its month.
-- **No charts.** Workbook's Paycheck Budget has the Month's two (chart38, the
+- **No charts.** The workbook's Paycheck Budget has the Month's two (chart38, the
   income stack, and chart39, the Variable doughnut); the card that says
   how a period's share is found stands in their place.
 - **No review line.** The Month and the Week say how many charges wait for
@@ -1292,7 +1292,7 @@ to `workbook-bill-calendar`.
 
 **Seen:** 2026-09-23, S15c, re-reading Bill Calendar!C8:O38.
 
-F15's last bullet ("Before the first payday") says Workbook's Bill Calendar
+F15's last bullet ("Before the first payday") says the workbook's Bill Calendar
 "is not consistent here: its bi-weekly paydays go back before START
 HERE!C8, and its weekly and monthly ones do not". Every one of the 42
 payday cells filters all three frequencies on `'START HERE'!C8:C44 <=
@@ -1300,7 +1300,7 @@ DATE(…)`, so none runs back. The Paycheck view's choice to run back (F15)
 is unaffected; its stated reason is not quite right.
 
 The two screens now differ: the Bill Calendar shows no payday before the
-first pay date, as Workbook does (F20), while Paycheck steps back past it
+first pay date, as the workbook does (F20), while Paycheck steps back past it
 into periods the same schedule gives. Nothing adds up differently; a
 payday pill is a name, never an amount.
 
@@ -1349,7 +1349,7 @@ one way to open a row's charges; give Year an icon of its own.
 - **Removing a fund's category is refused (23503)**, and Setup says it
   "still has charges filed under it", which is wrong for a category whose
   only tie is a fund.
-- **A start date after the goal date is not refused.** Workbook shows `#NUM!`
+- **A start date after the goal date is not refused.** The workbook shows `#NUM!`
   in Months Remaining and $0 as the Monthly Contribution (Savings!V14,
   Z14). Refusing it in the schema would be a divergence nobody chose.
 - **`balance_as_of` must move with `saved_cents`.** Retyping a linked
@@ -1399,7 +1399,7 @@ question for the owner, with A (the schedule only) in use. Still open.
 
 **Seen:** 2026-09-23, writing migration 0014 (Sitting C).
 
-Workbook's Debt Calculator takes each debt's name from START HERE's Debts list
+The workbook's Debt Calculator takes each debt's name from START HERE's Debts list
 (H6 = `'START HERE'!D18`) but reads no charges: its balances come from the
 schedule alone. 0014 keeps a debt's own name and no category link. A link
 would show none of the payments on the debt most likely to be entered, a
@@ -1407,23 +1407,23 @@ card paid off from the bank, because that card is deliberately not a
 Debts-list row (plan §3.3, decision 14).
 
 Two things 0014 chose beyond the sheet: each debt has its own start month
-(Workbook has one, D6), and an extra payment is kept against a calendar month,
+(the workbook has one, D6), and an extra payment is kept against a calendar month,
 not a schedule row number. When every debt shares a start month, the
-schedule is the same as Workbook's.
+schedule is the same as the workbook's.
 
 **Why not fixed here:** whether a recorded payment should move a debt's
 balance changes a number the owner would see, and has not been asked. For
 savings the owner chose that it should (D16); nobody has asked for debts.
 
 **To settle:** at S17, before `debtStatus`, ask: A — balances from the
-schedule only, as Workbook; B — link a debt to a Debts-list category and let
+schedule only, as the workbook; B — link a debt to a Debts-list category and let
 recorded payments replace the schedule's; C — link it only to show recorded
 payments beside the schedule. B or C needs a migration adding a nullable
 `category_id` (no backfill); A needs nothing.
 
 **Still open at S17 (2026-09-23).** The owner could not be asked during
 S17. The Debts screen reads balances from the schedule alone, which is A
-and is Workbook's own behaviour (F22), so nothing departs from the workbook
+and is the workbook's own behaviour (F22), so nothing departs from the workbook
 while the question waits; B or C can still be added without a backfill.
 
 ---
@@ -1432,18 +1432,18 @@ while the question waits; B or C can still be added without a backfill.
 
 **Seen:** 2026-09-23, writing formula decision F21 (S16).
 
-Workbook counts a fund's months from its typed Start Date to its Goal Date
+The workbook counts a fund's months from its typed Start Date to its Goal Date
 (Savings!V14), not from today, and divides what is still needed by that
 fixed count (Z14). With the balance now kept by transfers (D16), each
 transfer lowers the monthly figure: a fund needing $1,867 over 21 months
 asks $88.91 a month, and after ten months of that it asks about $47, though
-only 11 months are left. Workbook does the same each time its current amount
+only 11 months are left. The workbook does the same each time its current amount
 is retyped. The app copies it (F21).
 
 **Why not fixed here:** the formula is not ambiguous, and counting from
 today instead would be a divergence the owner has not chosen.
 
-**To settle:** tell the owner, and ask: A — keep Workbook's (months from the
+**To settle:** tell the owner, and ask: A — keep the workbook's (months from the
 start date); B — months from today to the goal date, so the figure is what
 the rest of the goal needs each remaining month; C — keep the start date,
 but divide what was needed on the start date. B or C is a D-entry and a
@@ -1457,7 +1457,7 @@ change to `savingsFundPlan` only.
 
 - **A fund past its goal, with both dates, shows a negative monthly
   contribution** (for example -$1.66), beside "goal reached". That is what
-  Workbook's Savings!Z14 `=IFERROR((F14-J14)/V14, 0)` gives too, and
+  Savings!Z14 `=IFERROR((F14-J14)/V14, 0)` gives too, and
   `savingsFundPlan` copies it on purpose (F21, its tests pin -250), but a
   minus sign on "what to save each month" reads oddly.
 - **A goal whose category moved off Savings, then linked to another fund,**
@@ -1471,7 +1471,7 @@ change to `savingsFundPlan` only.
 the owner; the second needs a rule for what a re-linked goal's balance
 should be.
 
-**To settle:** ask the owner, for the first: A — keep Workbook's negative
+**To settle:** ask the owner, for the first: A — keep the workbook's negative
 figure; B — show no monthly figure once the goal is reached and say "goal
 reached, nothing more to save" (a D-entry and a `savingsFundPlan` status).
 For the second, have linking a goal that already has a `balance_as_of`
@@ -1488,7 +1488,7 @@ Plan §10 item 12 says the statement already prints its New Balance, which
 reconciliation parses, so it could feed the Debts screen with no typing,
 and that this and a "Bank / cash" account were "settled at S17". S17 did
 neither: a debt is typed (starting balance, minimum, APR, start month),
-as Workbook's are, and typed pay and savings still land in "Main Card".
+as the workbook's are, and typed pay and savings still land in "Main Card".
 
 **Why not fixed here:** feeding a statement balance into a debt changes
 what its balance means (a schedule from a typed start, F22, against the
@@ -1510,7 +1510,7 @@ said to them.
 
 1. **"Paid this month"** on the summary is the schedule's payments for
    this month (the Debt Calculator's E column), not what was recorded;
-   Workbook's E18 shows the first month's instead.
+   the workbook's E18 shows the first month's instead.
 2. **The Year's debt chart shows today's balances** whichever year is
    shown, as its savings chart does, and as Home's H9 reads TODAY().
 3. **Snowball and avalanche spend the same monthly amount** as the
@@ -1643,7 +1643,7 @@ fix, and a major version is worth its own commit and run.
    and MonthScreen about 600. Splitting them moves every line, far over
    one commit's 300, and is best done as its own slices, a section at a
    time behind a barrel.
-4. **CR-10.** The Month's tests that assert class names check Workbook's
+4. **CR-10.** The Month's tests that assert class names check the workbook's
    colours (the overspent pill, the pink Left to spend), which are the
    specification there; the Week's loading test and Settings' invalid
    budget test now query roles and messages.
