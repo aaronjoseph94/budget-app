@@ -22,7 +22,7 @@ describe('SettingsScreen, adding a category', () => {
   })
 })
 
-describe('SettingsScreen, budgets and the goal', () => {
+describe('SettingsScreen, weekly budgets', () => {
   it('offers a weekly budget only on the lists the Week counts, under their headings (N19)', async () => {
     const cat = (id: string, name: string, kind: Category['kind'], weekly_budget_cents: number | null = null): Category => ({
       id, name, kind, sort_order: 0, weekly_budget_cents,
@@ -92,41 +92,33 @@ describe('SettingsScreen, budgets and the goal', () => {
     fireEvent.change(field, { target: { value: '40' } })
     expect(field.getAttribute('aria-invalid')).toBeNull()
   })
-
-  it('saves the goal as typed', async () => {
-    const fake = createFakeSupabase()
-    renderScreen(<SettingsScreen />, fake)
-
-    fireEvent.change(await screen.findByLabelText('Name'), { target: { value: 'Flight fund' } })
-    fireEvent.change(screen.getByLabelText('Target ($)'), { target: { value: '12000' } })
-    fireEvent.change(screen.getByLabelText(/^Saved so far/), { target: { value: '500' } })
-    fireEvent.change(screen.getByLabelText(/^Target date/), { target: { value: '2027-06-01' } })
-    fireEvent.change(screen.getByLabelText(/^Cost per hour/), { target: { value: '' } })
-    fireEvent.change(screen.getByLabelText('Called'), { target: { value: '' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save goal' }))
-
-    expect(await screen.findByText('Saved.')).toBeTruthy()
-    expect(fake.tables.savings_goals).toMatchObject([
-      { name: 'Flight fund', target_cents: 1200000, saved_cents: 50000, target_date: '2027-06-01', unit_cost_cents: null, unit_label: null },
-    ])
-  })
 })
 
-describe('SettingsScreen, a goal that is a fund', () => {
-  it('sends its editing to Savings, where its balance is kept with its day (N52)', async () => {
-    const fake = createFakeSupabase({
-      categories: [{ id: 'f', name: 'Flight fund', kind: 'savings', sort_order: 0, weekly_budget_cents: null }],
-      savings_goals: [{
-        id: 'g1', name: 'Flight training', target_cents: 3_000_000, saved_cents: 845_000, target_date: null,
-        unit_cost_cents: null, unit_label: null, category_id: 'f', start_date: null, balance_as_of: '2026-03-01',
-      }],
-    })
+// The goals moved to Savings (G1): this card says where, and names the main
+// goal, and the goal Settings once saved is left exactly as it was.
+describe('SettingsScreen, your savings goals', () => {
+  const goal = (id: string, name: string, more: Record<string, unknown> = {}) => ({
+    id, name, target_cents: 3_000_000, saved_cents: 845_000, target_date: null, unit_cost_cents: 27_500, unit_label: 'flight time', ...more,
+  })
+
+  it('names the main goal, and opens Savings, where every goal is kept', async () => {
+    const fake = createFakeSupabase({ savings_goals: [goal('g1', 'Flight training'), goal('g2', 'Travel', { sort_order: 1 })] })
+    const before = JSON.stringify(fake.tables.savings_goals)
     renderScreen(<SettingsScreen />, fake)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Edit it on Savings' }))
-    expect(window.location.hash).toBe('#/savings')
-    expect(screen.getByText(/Flight training is now the goal of your Flight fund savings fund/)).toBeTruthy()
+    expect(await screen.findByText('2 goals. Your main goal is Flight training, which the Coach and the Week show.')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Save goal' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Open Savings' }))
+    expect(window.location.hash).toBe('#/savings')
+    expect(JSON.stringify(fake.tables.savings_goals)).toBe(before)
+  })
+
+  it('says when there is none yet, or none active', async () => {
+    renderScreen(<SettingsScreen />, createFakeSupabase())
+    expect(await screen.findByText('None yet. Add one on Savings: flight training, a trip, a rainy-day fund.')).toBeTruthy()
+    cleanup()
+    renderScreen(<SettingsScreen />, createFakeSupabase({ savings_goals: [goal('g1', 'House', { status: 'paused' })] }))
+    expect(await screen.findByText('One goal, none of them active. Resume one on Savings.')).toBeTruthy()
   })
 })
 

@@ -40,7 +40,7 @@ describe('heading levels', () => {
   it.each([
     // Each with the last heading it draws once everything it reads is in.
     ['week', 'This week', 'Flight training'],
-    ['settings', 'Settings', 'Your goal'],
+    ['settings', 'Settings', 'Your savings goals'],
     ['month', 'September 2026', 'Savings'],
     ['savings', 'Savings goals', 'Flight fund'],
   ])('never skip one on %s', async (route, title, last) => {

@@ -1138,42 +1138,6 @@ function goalNumbers(g: ListedGoalRow): ListedGoalRow {
   }
 }
 
-export interface GoalInput {
-  readonly name: string
-  readonly targetCents: number
-  readonly savedCents: number
-  readonly targetDate: string | null
-  readonly unitCostCents: number | null
-  readonly unitLabel: string | null
-}
-
-/**
- * Create the goal, or update it by id.
- *
- * By id, not by name: upserting on (user_id, name) meant renaming the goal
- * created a second one, and the week screen went on showing the first.
- */
-export async function saveGoal(
-  supabase: SupabaseClient,
-  userId: string,
-  goal: GoalInput,
-  existingId: string | null,
-): Promise<void> {
-  const row = {
-    name: goal.name,
-    target_cents: goal.targetCents,
-    saved_cents: goal.savedCents,
-    target_date: goal.targetDate,
-    unit_cost_cents: goal.unitCostCents,
-    unit_label: goal.unitLabel,
-  }
-  const { error } =
-    existingId === null
-      ? await supabase.from('savings_goals').insert({ user_id: userId, ...row })
-      : await supabase.from('savings_goals').update(row).eq('id', existingId)
-  if (error !== null) fail(error)
-}
-
 // ---------------------------------------------------------------------------
 // Savings funds (migration 0013)
 // ---------------------------------------------------------------------------
