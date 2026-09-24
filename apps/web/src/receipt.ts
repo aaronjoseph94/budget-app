@@ -49,13 +49,22 @@ async function toJpegBase64(file: File): Promise<string | null> {
     const ctx = canvas.getContext('2d')
     if (ctx === null) return null
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.85)
-    return dataUrl.slice(dataUrl.indexOf(',') + 1)
+    // toBlob encodes off the main thread; toDataURL did it in place, and a
+    // 12-megapixel photo held the page still for about 300 ms (PERF-9).
+    const jpeg = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85))
+    return jpeg === null ? null : base64Of(new Uint8Array(await jpeg.arrayBuffer()))
   } catch {
     return null
   } finally {
     URL.revokeObjectURL(url)
   }
+}
+
+/** Bytes as base64, a slice at a time: one call with every byte overruns the argument limit. */
+function base64Of(bytes: Uint8Array): string {
+  let text = ''
+  for (let at = 0; at < bytes.length; at += 0x8000) text += String.fromCharCode(...bytes.subarray(at, at + 0x8000))
+  return btoa(text)
 }
 
 export async function readReceipt(supabase: SupabaseClient, file: File): Promise<ReceiptRead> {
