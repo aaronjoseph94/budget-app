@@ -4,6 +4,7 @@ import { hashOf } from '../nav.js'
 import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { ArticleBody, HelpText } from '../help/ArticleBody.js'
+import { UpdatesPanel } from '../help/UpdatesPanel.js'
 
 /**
  * Help (plan §8.2): `#/help` lists every article with a search box, and
@@ -77,6 +78,8 @@ function ArticlePage({ article }: { article: Article }) {
         </a>
         <h1 className="text-2xl font-semibold tracking-tight">{article.title}</h1>
       </header>
+      {/* What is in comes first: it is what the owner opened this page to learn. */}
+      {article.id === 'updates' ? <UpdatesPanel /> : null}
       <ArticleBody article={article} />
       <section aria-labelledby="help-done" className="space-y-1 rounded-xl border bg-card p-4 shadow-sm">
         <h2 id="help-done" className="font-semibold">

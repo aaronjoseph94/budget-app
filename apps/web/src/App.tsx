@@ -178,9 +178,16 @@ export function Shell() {
               <Alert tone="error" title="Could not load your data">
                 {loadError}
               </Alert>
-              <Button variant="outline" onClick={() => void refresh()}>
-                Try again
-              </Button>
+              <div className="flex flex-wrap items-center gap-x-4">
+                <Button variant="outline" onClick={() => void refresh()}>
+                  Try again
+                </Button>
+                {screen === 'help' ? null : (
+                  <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+                    Check the one-time updates
+                  </a>
+                )}
+              </div>
             </div>
           ) : null}
           {/* No screen until the shared data is read: before then an empty
@@ -190,7 +197,9 @@ export function Shell() {
               Loading…
             </p>
           ) : null}
-          {status !== 'ready' ? null : <Screens screen={screen} param={param} />}
+          {/* Help needs none of it, and is where a missing one-time update is
+            found, so it still opens when the first read failed. */}
+          {status === 'ready' || (status === 'failed' && screen === 'help') ? <Screens screen={screen} param={param} /> : null}
         </main>
 
         {/* Phones: a bottom tab bar within thumb reach, clear of the home indicator. */}
