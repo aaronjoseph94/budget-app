@@ -23,3 +23,4 @@ export {
   type WatchTemplate,
 } from './templates.js'
 export { dayLine, type DayLine } from './line.js'
+export { rankCards, type Card, type CardAction, type RankCardsInput } from './rank.js'
