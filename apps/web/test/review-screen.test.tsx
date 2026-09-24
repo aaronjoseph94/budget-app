@@ -401,21 +401,32 @@ describe('ReviewScreen, a long queue (PERF-1)', () => {
 describe('ReviewScreen, what an approval asks the server (PERF-2)', () => {
   it('reads the queue once and its size once, and writes nothing but the approval', async () => {
     const fake = seeded()
-    renderScreen(<ReviewScreen />, fake)
-    const coffee = await row('SQ *LITWARE COFFEE')
-    fireEvent.change(coffee.getByRole('combobox', { name: 'Category' }), { target: { value: 'c2' } })
     const asked: string[] = []
     fake.server.hold = (target) => {
       asked.push(target)
       return null
     }
+    const count = (from: number, table: string) => asked.slice(from).filter((t) => t === table).length
+    renderScreen(<ReviewScreen />, fake)
+    const coffee = await row('SQ *LITWARE COFFEE')
+    // Opening reads the queue twice (on mounting, and once the app's data
+    // has loaded) and its size once. Every one of those asked, nothing
+    // from opening is left to be counted as the approval's.
+    await waitFor(() => expect([count(0, 'ingest_candidates'), count(0, 'merchant_rules'), count(0, 'ingest_unreadable_lines')]).toEqual([3, 2, 2]))
+    const opened = asked.length
+
+    fireEvent.change(coffee.getByRole('combobox', { name: 'Category' }), { target: { value: 'c2' } })
     fireEvent.click(coffee.getByRole('button', { name: /Approve/ }))
+    // Arrives with the approval's re-read, and only with a re-read begun
+    // after it: once it shows, that re-read has been answered.
+    fake.tables.ingest_candidates.push({ id: 'p9', posted_on: '2026-03-12', amount_cents: -500, merchant: 'LATE SHOP', merchant_raw: 'LATE SHOP', status: 'pending' })
+    await screen.findByText('LATE SHOP')
 
     // The queue again, and its size for the tab's count: two reads, not the
     // three it took when the queue was read before and after the refresh.
-    await waitFor(() => expect(asked.filter((t) => t === 'ingest_candidates')).toHaveLength(2))
-    await waitFor(() => expect(asked.filter((t) => t === 'ingest_unreadable_lines')).toHaveLength(1))
-    expect(asked.filter((t) => t.startsWith('POST') || t === 'accounts')).toEqual([])
+    expect(count(opened, 'ingest_candidates')).toBe(2)
+    expect(count(opened, 'ingest_unreadable_lines')).toBe(1)
+    expect(asked.slice(opened).filter((t) => t.startsWith('POST') || t === 'accounts')).toEqual([])
     expect(fake.rpcCalls.map((c) => c.name)).toEqual(['approve_candidate'])
   })
 })
