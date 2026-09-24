@@ -3,7 +3,7 @@
  * workbook, whose Savings tab has no order of goals and no main goal (D28).
  */
 import { describe, expect, it } from 'vitest'
-import { goalAtEnd, moveGoal, orderGoals, type GoalStatus } from '../src/goals.js'
+import { goalAtEnd, goalsProgress, moveGoal, orderGoals, type GoalStatus } from '../src/goals.js'
 
 const goal = (id: string, sortOrder: number, createdAt: string, status: GoalStatus = 'active') => ({
   id,
@@ -119,5 +119,72 @@ describe('goalAtEnd', () => {
 
   it('starts the first goal at 0', () => {
     expect(goalAtEnd({ goals: [] })).toEqual({ sortOrder: 0 })
+  })
+})
+
+describe('goalsProgress', () => {
+  const amounts = (id: string, targetCents: number, savedCents: number, unitCostCents: number | null = null) => ({
+    id,
+    targetCents,
+    savedCents,
+    unitCostCents,
+  })
+  const one = (g: ReturnType<typeof amounts>) => goalsProgress({ goals: [g] }).goals[0]!
+
+  // F45's worked example: 12,650.00 of 30,000.00 is 42.1666…%, 4,217 bp
+  // half-up; 12,650.00 × 60 ÷ 275.00 = 2,760 min, 46 h; 30,000.00 × 60 ÷
+  // 275.00 = 6,545.45… min, 6,545, 109 h.
+  it('gives a goal with a cost per hour its bar, what is left and its hours', () => {
+    expect(one(amounts('flight', 3_000_000, 1_265_000, 27_500))).toEqual({
+      id: 'flight',
+      savedCents: 1_265_000,
+      targetCents: 3_000_000,
+      remainingCents: 1_735_000,
+      progressBp: 4217,
+      targetMet: false,
+      empty: false,
+      hours: { saved: 46, target: 109 },
+    })
+  })
+
+  it('gives a goal in dollars no hours', () => {
+    expect(one(amounts('emergency', 100_000, 15_000))).toMatchObject({ progressBp: 1500, remainingCents: 85_000, hours: null })
+  })
+
+  it('gives every goal its own figures, in the order given', () => {
+    const { goals } = goalsProgress({ goals: [amounts('b', 20_000, 5_000), amounts('a', 10_000, 10_000)] })
+    expect(goals.map((g) => [g.id, g.progressBp, g.targetMet])).toEqual([
+      ['b', 2500, false],
+      ['a', 10_000, true],
+    ])
+  })
+
+  it('fills the bar and leaves nothing to go at or past the target', () => {
+    expect(one(amounts('car', 80_000, 85_000))).toMatchObject({ progressBp: 10_000, remainingCents: 0, targetMet: true, empty: false })
+  })
+
+  // Half-up to a basis point, as F17 rounds: 1 of 20,000 is 0.5 bp, 1 of 30,000 is 0.33 bp.
+  it('rounds the bar half-up to a basis point', () => {
+    expect(one(amounts('a', 20_000, 1)).progressBp).toBe(1)
+    expect(one(amounts('b', 30_000, 1)).progressBp).toBe(0)
+  })
+
+  it('counts nothing saved as empty, with 0 h of the hours the target buys', () => {
+    expect(one(amounts('flight', 3_000_000, 0, 27_500))).toMatchObject({ progressBp: 0, empty: true, hours: { saved: 0, target: 109 } })
+  })
+
+  // A fund with more taken out than put in (D16): -50.00 buys no hours, and
+  // the whole target plus the 50.00 is still to go.
+  it('draws no bar and no hours when less than nothing is saved', () => {
+    expect(one(amounts('flight', 3_000_000, -5_000, 27_500))).toMatchObject({
+      progressBp: 0,
+      remainingCents: 3_005_000,
+      empty: true,
+      hours: null,
+    })
+  })
+
+  it('refuses a target of zero, which no goal can have (0004)', () => {
+    expect(() => goalsProgress({ goals: [amounts('zero', 0, 0)] })).toThrow(RangeError)
   })
 })
