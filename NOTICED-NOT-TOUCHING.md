@@ -1753,3 +1753,40 @@ Month, not a comparison on these five screens.
 **To settle:** when A27 reviews the Month, draw its strip with
 `CompareLine` (a `dates` that writes "By 24 Sep") and read through
 `useEarlier`, keeping `month-compare.test.tsx` green unchanged.
+
+---
+
+## N69 — The one-time update messages still name a file and "the setup guide"
+
+**Seen:** 2026-09-24, building A06's One-time updates.
+
+`format.ts` still says, for example, "Budgets need a database update that
+has not been applied yet (0008 in the setup guide)". Help → One-time
+updates now checks each of these and names the next file, but these
+messages do not link there.
+
+**Why not fixed here:** rewording them is A27's (plan §8.2, "Every 'needs a
+one-time update' line in the app links here"), and their tests pin the
+wording.
+
+**To settle:** in A27, reword each to "Needs a one-time update" with a link
+to `#/help/updates`, and update the tests that pin the old sentences.
+
+---
+
+## N70 — One-time updates links to the repository by name
+
+**Seen:** 2026-09-24, building A06.
+
+The next file's link is
+`https://github.com/aaronjoseph94/budget-app/blob/main/supabase/migrations/<file>`,
+written into `apps/web/src/help/UpdatesPanel.tsx`. A renamed or moved
+repository breaks the link (the check itself still works).
+
+**Why not fixed here:** A09's Copy buttons serve 0015 on from the site
+itself; 0003 to 0014 have no such copy yet.
+
+**To settle:** when A09 adds `setup-files.ts`, consider serving 0003–0014
+the same way and dropping the GitHub link, or keep it and note the name in
+HANDOFF.
+

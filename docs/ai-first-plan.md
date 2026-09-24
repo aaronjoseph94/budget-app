@@ -680,6 +680,16 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **Tests:** every article has the full pattern; search; an unknown topic opens the index; a markup string in an article shows as text; each probe state from the fake (PGRST205, 42P01, PGRST202, all present).
 - **Acceptance:** every screen has an article, reached from its **?**; plain language, one action per step, each with "You're done when…" and "Stuck?"; articles render as text, never markup; each probe state (table missing, function missing, all present) shows its own line and next step.
 
+- **Changed while building (2026-09-24).** Each decided by the engineer under the owner's 2026-09-24 instruction to proceed without questions.
+  - **The screen each article belongs to is `SCREEN_HELP`** (`apps/web/src/help/screen-help.ts`), not a field on the article, so the ? carries no article text into the first load; a test holds every built screen to a written article. Month, Week, Pay and Year share one article; the Bill calendar and Settings open Budgets and bills; More and Setup open Start here; All transactions opens "Why does a number look wrong?". The Coach has its own article, for what it does today, although the slice's list left it out, since every screen needs one.
+  - **"An unknown topic opens the index"** means a committed topic whose article is not written yet (such as `forecast`): it opens the list with a line saying so. An address that is not a committed topic still opens the Month, as ADR 0006 says.
+  - **The codes and words articles carry a list of terms** beside their steps (an optional `terms` field), since a glossary is read by looking a word up.
+  - **The ? sits with the header's buttons on the Month and the Bill calendar,** as §2.2's sketch draws it: beside their large script title it broke "September 2026" onto two lines at 320 px. Everywhere else it is beside the title.
+  - **The probes check columns too.** 0005, 0007 and 0013 add columns, not tables or functions, so each is proven by reading its column (42703 means missing). A function is called with the nil id, which 0006's and 0012's functions refuse as not found before writing, so no check changes anything. Any other answer, a dropped connection included, is "could not check", never "missing".
+  - **Help opens even when the app's first read failed,** and that failure's alert links to One-time updates: the first read needs 0005 among others, so without this a missing update left the owner nowhere to learn why.
+  - **The next file links to GitHub** (`aaronjoseph94/budget-app`, branch `main`), since the Copy buttons carry only 0015 on (A09).
+  - **First load:** 187.44 KB gzipped before the slice, 187.75 KB after (the ? on the Month; the sheet and the articles load when it is pressed).
+
 ### A07: Coach cards in the app's own words
 
 **Owner items:** 2, 7, 9 · **Depends on:** A03, A05, A06 · **Migrations:** none · **Commits:** about 6
