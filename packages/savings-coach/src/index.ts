@@ -9,14 +9,17 @@
  */
 export { renderSegments, type RenderSegmentsInput, type RenderSegmentsOutput, type Segment } from './segments.js'
 export {
+  LINE_TEMPLATES,
   PLAIN_TEMPLATES,
   TONES,
   WATCH_TEMPLATES,
   cardTemplateKey,
   slotsOf,
   type CardTemplateKey,
+  type LineKey,
   type Template,
   type Tone,
   type WatchKey,
   type WatchTemplate,
 } from './templates.js'
+export { dayLine, type DayLine } from './line.js'

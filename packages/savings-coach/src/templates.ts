@@ -112,6 +112,36 @@ export const PLAIN_TEMPLATES: Readonly<Record<Exclude<CardTemplateKey, WatchKey>
   },
 }
 
+/** The day's line, from this month's summary or, without one, this week's. */
+export type LineKey = `${'month' | 'week'}_${Fact['meaning']}`
+
+export const LINE_TEMPLATES: Readonly<Record<LineKey, Tones<string>>> = {
+  month_good: {
+    cheerleader: 'You’ve spent {{A.change}} than by this day last month. Nice going!',
+    straight: 'You’ve spent {{A.change}} than by this day last month.',
+  },
+  month_watch: {
+    cheerleader: 'You’ve spent {{A.change}} than by this day last month. There’s still time to ease off.',
+    straight: 'You’ve spent {{A.change}} than by this day last month. Ease off for the rest of it.',
+  },
+  month_info: {
+    cheerleader: 'Your spending is {{A.change}} as by this day last month. Steady does it!',
+    straight: 'Your spending is {{A.change}} as by this day last month.',
+  },
+  week_good: {
+    cheerleader: 'You’ve spent {{A.change}} this week than by this day last week. Nice going!',
+    straight: 'You’ve spent {{A.change}} this week than by this day last week.',
+  },
+  week_watch: {
+    cheerleader: 'You’ve spent {{A.change}} this week than by this day last week. There’s still time to ease off.',
+    straight: 'You’ve spent {{A.change}} this week than by this day last week. Ease off for the rest of it.',
+  },
+  week_info: {
+    cheerleader: 'Your spending this week is {{A.change}} as by this day last week. Steady does it!',
+    straight: 'Your spending this week is {{A.change}} as by this day last week.',
+  },
+}
+
 /** Which card template a fact is worded by; null for a kind that is never a card. */
 export function cardTemplateKey(fact: Fact): CardTemplateKey | null {
   switch (fact.kind) {

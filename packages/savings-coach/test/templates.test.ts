@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  LINE_TEMPLATES,
   PLAIN_TEMPLATES,
   TONES,
   WATCH_TEMPLATES,
@@ -63,6 +64,9 @@ describe('the app’s own templates', () => {
         for (const [part, text, limit] of parts) expect(breaksTextRule(text, limit), `${key} ${tone} ${part}`).toBeNull()
       }
     }
+    for (const [key, tones] of Object.entries(LINE_TEMPLATES)) {
+      for (const tone of TONES) expect(breaksTextRule(tones[tone], 200), `${key} ${tone}`).toBeNull()
+    }
   })
 
   it('name only the slots their kind of fact has', () => {
@@ -74,6 +78,12 @@ describe('the app’s own templates', () => {
         for (const text of [t.title, t.body, 'tryThis' in t ? t.tryThis : '']) {
           expect(renderSegments({ text, slots: { A: slotsOf(fact) } }).ok, `${key} ${tone}: ${text}`).toBe(true)
         }
+      }
+    }
+    for (const kind of ['month', 'week']) {
+      const summary = factOf(`summary:${kind}`)
+      for (const [key, tones] of Object.entries(LINE_TEMPLATES).filter(([k]) => k.startsWith(kind))) {
+        for (const tone of TONES) expect(renderSegments({ text: tones[tone], slots: { A: slotsOf(summary) } }).ok, key).toBe(true)
       }
     }
   })
