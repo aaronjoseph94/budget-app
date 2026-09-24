@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { PeriodRow } from '@budget/core'
 import { parseMoneyInput, useAppData } from '../app-data.js'
 import { setBudget } from '../ledger.js'
-import { formatCents, formatForInput, formatMonthTitle } from '../format.js'
+import { formatCents, formatForInput, formatMonthName } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Input } from '../components/ui/form.js'
@@ -43,7 +43,7 @@ export function BudgetEditor({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const lower = word.toLowerCase()
-  const monthName = formatMonthTitle(month).split(' ')[0]
+  const monthName = formatMonthName(month)
   const open = useRef(true)
   useEffect(() => {
     open.current = true

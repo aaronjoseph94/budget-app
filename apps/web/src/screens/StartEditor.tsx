@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { parseMoneyInput, useAppData } from '../app-data.js'
 import { setMonthBalance } from '../ledger.js'
-import { formatCents, formatForInput, formatMonthTitle } from '../format.js'
+import { formatCents, formatForInput, formatMonthName } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Input } from '../components/ui/form.js'
@@ -42,7 +42,7 @@ export function StartEditor({
   const [overdrawn, setOverdrawn] = useState(shown.startsWith('-'))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const monthName = formatMonthTitle(month).split(' ')[0]
+  const monthName = formatMonthName(month)
   const open = useRef(true)
   useEffect(() => {
     open.current = true

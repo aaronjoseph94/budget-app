@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import type { YearSheet } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { navigate } from '../nav.js'
-import { formatCents, formatMonthTitle, formatShare } from '../format.js'
+import { formatCents, formatMonthName, formatMonthTitle, formatShare } from '../format.js'
 import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
 import { useFunds } from '../funds.js'
@@ -22,7 +22,7 @@ import { DebtsChart, SavingsGoalsChart, TopRing, YearPie } from './YearCharts.js
 export function YearGlance({ sheet, wide }: { sheet: YearSheet; wide: boolean }) {
   const { displayName } = useAppData()
   const { atAGlance, startingBalanceCents: start, endingBalanceCents: end } = sheet
-  const startMonth = formatMonthTitle(sheet.startMonth).split(' ')[0]
+  const startMonth = formatMonthName(sheet.startMonth)
   const best = atAGlance.bestSavingsMonth
   const funds = useFunds()
   const debts = useDebts()

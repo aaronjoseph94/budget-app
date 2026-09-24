@@ -12,7 +12,7 @@ import {
 } from '../ledger.js'
 import { navigate } from '../nav.js'
 import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
-import { MONTH_NAMES, formatAmount, formatCents, formatMonthTitle, formatShortMonth, todayIso } from '../format.js'
+import { formatAmount, formatCents, formatMonthName, formatMonthTitle, formatShortMonth, MONTH_NAMES, todayIso } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
@@ -373,7 +373,7 @@ function YearTotals({ sheet, thisMonth }: { sheet: YearSheet; thisMonth: string 
           className="mt-3 text-left text-xs text-summary-label underline underline-offset-4"
           onClick={() => navigate('month', sheet.startMonth.slice(0, 7))}
         >
-          Type {formatMonthTitle(sheet.startMonth).split(' ')[0]}&rsquo;s starting balance on the Month to see these
+          Type {formatMonthName(sheet.startMonth)}&rsquo;s starting balance on the Month to see these
         </button>
       ) : null}
     </section>

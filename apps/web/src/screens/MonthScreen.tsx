@@ -15,7 +15,7 @@ import {
 import { LIST_HEADING } from '../lists.js'
 import { navigate } from '../nav.js'
 import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
-import { formatAmount, formatCents, formatIsoDate, formatMagnitude, formatMonthTitle, todayIso } from '../format.js'
+import { formatAmount, formatCents, formatIsoDate, formatMagnitude, formatMonthName, formatMonthTitle, todayIso } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
@@ -297,7 +297,7 @@ function ReviewBanner({
         {pendingHere > 0 ? (
           <>
             <span className="font-medium">
-              Not filed yet: {pendingHere} from {formatMonthTitle(month).split(' ')[0]} waiting for review
+              Not filed yet: {pendingHere} from {formatMonthName(month)} waiting for review
             </span>{' '}
             <span className="text-muted-foreground">— not counted below</span>
           </>

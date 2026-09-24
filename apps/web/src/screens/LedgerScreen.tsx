@@ -2,7 +2,7 @@ import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { isoDate, monthBounds, shiftMonth, summariseImport } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { deleteTransaction, listTransactions, type LedgerRow } from '../ledger.js'
-import { formatCents, formatIsoDate, todayIso } from '../format.js'
+import { formatCents, formatIsoDate, formatMonthTitle, todayIso } from '../format.js'
 import { IngestedText } from '../ui.js'
 import { Card } from '../components/ui/card.js'
 import { Alert, Badge, Empty } from '../components/ui/feedback.js'
@@ -11,8 +11,6 @@ import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
-
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
 /** All transactions: everything that reached the ledger, a month at a time. */
 export function LedgerScreen() {
@@ -55,7 +53,6 @@ export function LedgerScreen() {
   }, [visible])
 
   const isCurrent = shiftMonth(isoDate(todayIso()), 0) === month
-  const [year, monthNumber] = month.split('-')
 
   const remove = async (id: string) => {
     setConfirming(null)
@@ -74,7 +71,7 @@ export function LedgerScreen() {
           {/* More's name for it: one screen, one name. */}
           <h1 className="text-2xl font-semibold tracking-tight">All transactions</h1>
           <p className="text-sm text-muted-foreground">
-            {MONTHS[Number(monthNumber) - 1]} {year}
+            {formatMonthTitle(month)}
           </p>
         </div>
         <div className="flex gap-1">

@@ -47,6 +47,21 @@ export function formatMonthTitle(isoDate: string): string {
 }
 
 /**
+ * `2026-09-01` as `September`, where the year is plain from the screen.
+ * The screens used to cut it from formatMonthTitle at its space (CR-9).
+ */
+export function formatMonthName(isoDate: string): string {
+  return MONTH_NAMES[Number(isoDate.split('-')[1]) - 1] ?? isoDate
+}
+
+/** `2026-09-03` as `3 Sep`: a day in a list whose year is plain. */
+export function formatDayMonth(isoDate: string): string {
+  const [, month, day] = isoDate.split('-')
+  const name = MONTHS[Number(month) - 1]
+  return day === undefined || name === undefined ? isoDate : `${Number(day)} ${name}`
+}
+
+/**
  * A rejection code as a sentence a person can act on.
  *
  * CLAUDE.md requires every ingestion failure to reach the review queue with a

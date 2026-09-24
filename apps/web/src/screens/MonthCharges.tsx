@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useAppData } from '../app-data.js'
 import { recategoriseTransaction, type LedgerRow } from '../ledger.js'
 import { CategoryOptions } from '../lists.js'
-import { formatCents, formatIsoDate, formatMonthTitle } from '../format.js'
+import { formatCents, formatIsoDate, formatMonthName, formatMonthTitle } from '../format.js'
 import { IngestedText } from '../ui.js'
 import { Sheet } from '../components/ui/sheet.js'
 import { Alert } from '../components/ui/feedback.js'
@@ -79,7 +79,7 @@ export function MonthCharges({
       ) : null}
       {charges.length === 0 ? (
         <p className="px-4 py-6 text-center text-sm text-muted-foreground">
-          No charges filed here in {monthName.split(' ')[0]}.
+          No charges filed here in {formatMonthName(month)}.
           {basis === 'planned'
             ? ' The amount above is its monthly amount from Setup. A charge filed here counts instead.'
             : null}

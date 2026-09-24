@@ -18,6 +18,8 @@ import {
   formatIsoDate,
   formatMagnitude,
   formatMonthTitle,
+  formatMonthName,
+  formatDayMonth,
   localDateOf,
   todayIso,
 } from '../src/format.js'
@@ -325,5 +327,21 @@ describe('describeBalanceFailure', () => {
     }
     expect(describeBalanceFailure('save', { code: '28000' })).toBe(describeWriteFailure({ code: '28000' }))
     expect(describeBalanceFailure('save', null)).toBe(describeWriteFailure(null))
+  })
+})
+
+describe('formatMonthName and formatDayMonth (CR-9)', () => {
+  // One place for a month on its own and a day without its year, where the
+  // screens split the title at its space or cut the year off with a pattern.
+  it('names the month alone', () => {
+    expect(formatMonthName('2026-09-01')).toBe('September')
+    expect(formatMonthName('2026-01-31')).toBe('January')
+    expect(formatMonthName('not a date')).toBe('not a date')
+  })
+
+  it('gives a day and short month, without the year', () => {
+    expect(formatDayMonth('2026-09-03')).toBe('3 Sep')
+    expect(formatDayMonth('2026-12-25')).toBe('25 Dec')
+    expect(formatDayMonth('2026-13-01')).toBe('2026-13-01')
   })
 })

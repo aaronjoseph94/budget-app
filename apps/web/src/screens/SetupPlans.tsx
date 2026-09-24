@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { billsTotals, isoDate, resolvePlans, type BillsTotals, type ResolvedPlan } from '@budget/core'
 import { parseMoneyInput, useAppData } from '../app-data.js'
 import { listPlanHistory, setPlan, type Category, type PlanRow } from '../ledger.js'
-import { formatCents, formatForInput, formatMonthTitle } from '../format.js'
+import { formatCents, formatForInput, formatMonthName } from '../format.js'
 import { Button } from '../components/ui/button.js'
 import { Input } from '../components/ui/form.js'
 import { Figure } from '../components/ui/type.js'
@@ -97,7 +97,7 @@ export function useMonthlyAmounts(month: string): MonthlyAmounts {
  * monthly share as well would count it about twice in the year.
  */
 export function PlanHeadings({ month }: { month: string }) {
-  const monthName = formatMonthTitle(month).split(' ')[0]
+  const monthName = formatMonthName(month)
   return (
     <div className="mt-2 space-y-1 border-t border-owed-rule pt-2">
       <p className="grid grid-cols-[4.5rem_1fr] gap-2 text-xs font-medium text-owed-ink" aria-hidden="true">
@@ -193,7 +193,7 @@ export function PlanFields({
   const about = (help: string) =>
     problem === help ? { 'aria-invalid': true, 'aria-describedby': problemId } : {}
   const queue = useRef<Promise<unknown>>(Promise.resolve())
-  const monthName = formatMonthTitle(month).split(' ')[0]
+  const monthName = formatMonthName(month)
 
   const save = (cents: number | null, dueDay: number | null, note: string) => {
     setProblem(null)

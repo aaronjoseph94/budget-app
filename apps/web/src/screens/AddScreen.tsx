@@ -6,7 +6,7 @@ import { addTypedTransaction, ensureCategory, saveImport } from '../ledger.js'
 import { ImportScreen, type SaveRequest } from '../ImportScreen.js'
 import { readStatementPdf, type PdfImport } from '../pdf-import.js'
 import { readReceipt } from '../receipt.js'
-import { formatCents, formatIsoDate, todayIso } from '../format.js'
+import { formatCents, formatDayMonth, formatIsoDate, todayIso } from '../format.js'
 import { IngestedText } from '../ui.js'
 import { atEndOf, CategoryOptions, ListSelect, LISTS_FOR, type CategoryKind } from '../lists.js'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card.js'
@@ -319,7 +319,7 @@ function PreviewList({ rows }: { rows: readonly AcceptedRow[] }) {
       <ul className="divide-y">
         {rows.map((row) => (
           <li key={row.line} className="flex items-baseline gap-3 px-4 py-2.5 text-sm">
-            <span className="tnum w-14 shrink-0 text-xs text-muted-foreground">{formatIsoDate(row.postedOn).replace(/ \d{4}$/, '')}</span>
+            <span className="tnum w-14 shrink-0 text-xs text-muted-foreground">{formatDayMonth(row.postedOn)}</span>
             <span className="min-w-0 flex-1 truncate">
               <IngestedText>{row.merchantRaw}</IngestedText>
             </span>

@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react'
 import type { PeriodSheet } from '@budget/core'
-import { formatCents, formatMonthTitle } from '../format.js'
+import { formatCents, formatMonthName } from '../format.js'
 import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
 import { useReturnFocus } from '../lib/return-focus.js'
@@ -52,7 +52,7 @@ export function MonthSummary({
           <button
             type="button"
             ref={opener}
-            aria-label={`Starting balance for ${formatMonthTitle(month).split(' ')[0]}, ${start === null ? 'none typed' : formatCents(start)}`}
+            aria-label={`Starting balance for ${formatMonthName(month)}, ${start === null ? 'none typed' : formatCents(start)}`}
             aria-expanded={editing}
             onClick={() => {
               setNote(null)
