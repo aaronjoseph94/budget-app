@@ -172,6 +172,8 @@ export {
 
 export { historyStart, type HistoryStart, type HistoryStartInput } from './history.js'
 
+export { mad, median, quantile, type QuantileInput, type StatsInput } from './stats.js'
+
 export {
   comparisonWindow,
   debtBalanceChange,
