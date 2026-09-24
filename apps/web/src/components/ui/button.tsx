@@ -29,7 +29,7 @@ export function Button({ variant = 'default', size = 'default', className, type 
       type={type}
       className={cn(
         'inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors',
-        'outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
+        'outline-none focus-visible:ring-[3px] focus-visible:ring-ring',
         // A finger needs 44px whatever size was asked for (FE-1). A mouse keeps
         // the compact sizes, so the desktop's four-across Month does not grow.
         'pointer-coarse:min-h-11 pointer-coarse:min-w-11',

@@ -13,7 +13,7 @@ import { cn } from '../../lib/cn.js'
 const FIELD =
   'flex w-full rounded-md border border-input bg-card py-2 text-base shadow-xs transition-colors ' +
   'placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] ' +
-  'focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 pointer-coarse:min-h-11'
+  'focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 pointer-coarse:min-h-11'
 
 export function Input({
   className,

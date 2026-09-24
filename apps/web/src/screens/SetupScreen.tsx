@@ -427,7 +427,7 @@ function CategoryRow({
             // Back to the stored name; leaving the field then saves nothing.
             if (e.key === 'Escape') setText(row.name)
           }}
-          className="min-w-0 flex-1 rounded-md bg-transparent px-1 py-1.5 text-sm outline-none pointer-coarse:min-h-11 focus-visible:ring-2 focus-visible:ring-ring/50"
+          className="min-w-0 flex-1 rounded-md bg-transparent px-1 py-1.5 text-sm outline-none pointer-coarse:min-h-11 focus-visible:ring-2 focus-visible:ring-ring"
         />
         <Button variant="ghost" size="icon" aria-label={`Move ${row.name} up`} disabled={list[0]?.id === row.id} onClick={() => step('up')}>
           <Icon name="up" />

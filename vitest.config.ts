@@ -12,7 +12,9 @@ export default defineConfig({
       // Split by extension: a .tsx test renders a component and needs a DOM,
       // a .ts test checks plain functions and keeps Node's faster, stricter
       // environment, where reaching for `window` by accident is an error.
-      { test: { name: 'app', root: './apps/web', include: ['test/**/*.test.ts'], environment: 'node' } },
+      // vitest empties every stylesheet a test imports, `?raw` included; the
+      // contrast test reads the colour tokens out of this one.
+      { test: { name: 'app', root: './apps/web', include: ['test/**/*.test.ts'], environment: 'node', css: { include: [/index\.css/] } } },
       { test: { name: 'app-dom', root: './apps/web', include: ['test/**/*.test.tsx'], environment: 'jsdom' } },
     ],
     coverage: {
