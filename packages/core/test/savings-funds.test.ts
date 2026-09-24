@@ -97,6 +97,8 @@ describe('savingsFunds', () => {
       ['g-none', 2_000, 80_000],
       ['g-moved', 2_000, 80_000],
     ])
+    // Drawn as a fund's card is (G1): the typed amount, and nothing moved in.
+    expect(out.unlinked[1]).toMatchObject({ goalCents: 100_000, balanceCents: 20_000, transfersCents: 0, reached: false })
   })
 
   it('refuses a linked goal with no typed day, which 0013 does too', () => {

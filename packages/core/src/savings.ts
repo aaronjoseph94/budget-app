@@ -177,9 +177,11 @@ export interface SavingsFunds {
   readonly funds: readonly SavingsFund[]
   /**
    * Goals on no fund: never linked, or linked to a category since moved off
-   * Savings (N52). Their typed amount is their balance; no transfer is read.
+   * Savings (N52). Their typed amount is their balance; no transfer is read,
+   * so nothing has moved in. Shaped as a fund's figures, so Savings draws
+   * every goal's card the same way (G1).
    */
-  readonly unlinked: readonly (FundProgress & { readonly goalId: string; readonly plan: SavingsFundPlan })[]
+  readonly unlinked: readonly FundFigures[]
 }
 
 /** Every savings fund's figures on `asOf`: the workbook's Savings tab, one card per fund. */
@@ -215,8 +217,11 @@ export function savingsFunds(input: SavingsFundsInput): SavingsFunds {
   })
   const unlinked = input.goals
     .filter((g) => g.categoryId === null || !fundIds.has(g.categoryId))
-    .map((g) => ({
+    .map((g): FundFigures => ({
       goalId: g.id,
+      goalCents: cents(g.goalCents),
+      balanceCents: cents(g.typedCents),
+      transfersCents: ZERO_CENTS,
       ...fundProgress({ goalCents: g.goalCents, balanceCents: g.typedCents }),
       plan: planFor(g, cents(g.typedCents)),
     }))

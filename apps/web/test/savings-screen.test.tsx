@@ -62,7 +62,7 @@ afterEach(() => {
 })
 
 describe('SavingsScreen', () => {
-  it("gives every Savings-list fund a card in the list's order, and no other list one", async () => {
+  it('gives every goal, then every Savings-list fund with no goal, a card, and no other list one', async () => {
     renderScreen(<SavingsScreen />, seeded())
     await card('Flight training')
     const names = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label'))

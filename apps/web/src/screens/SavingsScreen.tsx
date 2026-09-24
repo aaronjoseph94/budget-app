@@ -15,20 +15,22 @@ import { categoriesForCore, entriesForCore } from '../sheet-input.js'
 import { CompareLine } from './CompareLine.js'
 import { useAppData } from '../app-data.js'
 import { useFunds } from '../funds.js'
-import { linkFund, type FundRow } from '../ledger.js'
+import { linkFund, type FundRow, type ListedGoalRow } from '../ledger.js'
 import { navigate } from '../nav.js'
 import { formatBasisPoints, formatCents, formatIsoDate, todayIso } from '../format.js'
 import { FundEditor } from './FundEditor.js'
-import { Alert } from '../components/ui/feedback.js'
+import { Alert, Badge } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Figure } from '../components/ui/type.js'
 import { HelpButton } from '../help/HelpButton.js'
 
 /**
- * The workbook's Savings tab (S16): a yellow card for every fund on the Savings
- * list, in the list's order (Savings!C4 = START HERE!H7…), each with its
- * goal, what is in it, the amount needed and, from its dates, what to save
- * each month ("How To Reach These Goals", rows 14–20).
+ * The workbook's Savings tab (S16): a yellow card for every goal, with what
+ * is in it, the amount needed and, from its dates, what to save each month
+ * ("How To Reach These Goals", rows 14–20). The goals come in the owner's
+ * order, the main goal first (F45); then each Savings-list fund with no goal
+ * yet, in the list's order (Savings!C4 = START HERE!H7…); then, folded away,
+ * the goals paused or reached (D28).
  *
  * Every figure is packages/core's (savingsFunds): the balance typed once and
  * kept by transfers since (D16), the plan (F21, with D15 and D22 saying why
@@ -36,7 +38,7 @@ import { HelpButton } from '../help/HelpButton.js'
  */
 export function SavingsScreen() {
   const state = useFunds()
-  const { supabase, refresh, categories } = useAppData()
+  const { supabase, refresh, categories, goals, mainGoal } = useAppData()
   const comparison = useSavedThisMonth(categories)
   const [editing, setEditing] = useState<string | null>(null)
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null)
@@ -46,6 +48,29 @@ export function SavingsScreen() {
   // each can become a fund's goal, keeping what was typed in it.
   const unlinked = ready === null ? [] : ready.goals.filter((g) => ready.funds.unlinked.some((u) => u.goalId === g.id))
   const shown = ready?.funds.funds.find((f) => f.categoryId === editing) ?? null
+  const active = goals.filter((g) => g.status === 'active')
+  const folded = goals.filter((g) => g.status !== 'active')
+  const withoutGoal = ready === null ? [] : ready.funds.funds.filter((f) => f.figures === null)
+  // Marked only when there is more than one to lead; a paused or reached goal says which it is.
+  const badge = (goal: ListedGoalRow) =>
+    goal.status === 'paused' ? (
+      <Badge variant="outline">Paused</Badge>
+    ) : goal.status === 'reached' ? (
+      <Badge variant="outline">Reached{goal.reached_on === null ? '' : ` ${formatIsoDate(goal.reached_on)}`}</Badge>
+    ) : active.length > 1 && goal.id === mainGoal?.id ? (
+      <Badge>Main goal</Badge>
+    ) : null
+  const cardOf = (goal: ListedGoalRow) => {
+    const row = ready?.goals.find((g) => g.id === goal.id)
+    const fund = ready?.funds.funds.find((f) => f.figures?.goalId === goal.id)
+    const loose = ready?.funds.unlinked.find((u) => u.goalId === goal.id)
+    if (row !== undefined && fund !== undefined) {
+      return <FundCard fund={fund} goal={row} comparison={comparison} badge={badge(goal)} onEdit={() => setEditing(fund.categoryId)} />
+    }
+    if (row !== undefined && loose !== undefined) return <LooseGoalCard goal={row} figures={loose} badge={badge(goal)} />
+    // Saved a moment ago, and the funds not read again yet.
+    return <p className="rounded-xl border bg-card p-4 text-sm shadow-sm">{goal.name}: loading…</p>
+  }
 
   const link = async (goal: FundRow, fund: SavingsFund) => {
     setNotice(null)
@@ -77,32 +102,53 @@ export function SavingsScreen() {
           <CompareLine comparison={comparison} label="Compared with last month" earlier="last month" pick={(c) => c.summary.saved} word="saved" />
         </div>
       )}
-      {state.status === 'ready' ? (
-        state.funds.funds.length === 0 ? (
-          <div className="rounded-xl border bg-card p-4 text-sm shadow-sm">
-            <p>Your Savings list has no funds yet. Each fund on it gets a card here.</p>
-            <Button variant="outline" size="sm" className="mt-3" onClick={() => navigate('setup')}>
-              Add funds in Setup
-            </Button>
-          </div>
-        ) : (
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {state.funds.funds.map((fund) => (
-              <li key={fund.categoryId}>
-                <FundCard fund={fund} goal={goalOf(fund)} comparison={comparison} onEdit={() => setEditing(fund.categoryId)}>
-                  {fund.figures === null
-                    ? unlinked.map((g) => (
+      {state.status === 'ready' && state.funds.funds.length === 0 && goals.length === 0 ? (
+        <div className="rounded-xl border bg-card p-4 text-sm shadow-sm">
+          <p>Your Savings list has no funds yet. Each fund on it gets a card here.</p>
+          <Button variant="outline" size="sm" className="mt-3" onClick={() => navigate('setup')}>
+            Add funds in Setup
+          </Button>
+        </div>
+      ) : null}
+      {ready === null ? null : (
+        <>
+          {active.length === 0 ? null : (
+            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {active.map((goal) => (
+                <li key={goal.id}>{cardOf(goal)}</li>
+              ))}
+            </ul>
+          )}
+          {withoutGoal.length === 0 ? null : (
+            <div className="space-y-2">
+              <h2 className="text-sm font-medium">Funds with no goal yet</h2>
+              <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {withoutGoal.map((fund) => (
+                  <li key={fund.categoryId}>
+                    <FundCard fund={fund} goal={goalOf(fund)} comparison={comparison} onEdit={() => setEditing(fund.categoryId)}>
+                      {unlinked.map((g) => (
                         <Button key={g.id} variant="outline" size="sm" className="mr-2" onClick={() => void link(g, fund)}>
                           Use “{g.name}” for this fund
                         </Button>
-                      ))
-                    : null}
-                </FundCard>
-              </li>
-            ))}
-          </ul>
-        )
-      ) : null}
+                      ))}
+                    </FundCard>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {folded.length === 0 ? null : (
+            <details className="rounded-xl border bg-card px-4 shadow-sm">
+              <summary className="flex min-h-11 cursor-pointer items-center font-medium">Reached and paused ({folded.length})</summary>
+              <ul className="grid gap-4 pb-4 sm:grid-cols-2 lg:grid-cols-3">
+                {folded.map((goal) => (
+                  <li key={goal.id}>{cardOf(goal)}</li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </>
+      )}
       {shown !== null ? (
         <FundEditor
           key={shown.categoryId}
@@ -124,21 +170,23 @@ function FundCard({
   fund,
   goal,
   comparison,
+  badge = null,
   onEdit,
-  children,
+  children = null,
 }: {
   fund: SavingsFund
   goal: FundRow | null
   comparison: PeriodComparison | 'failed' | null
+  badge?: ReactNode
   onEdit: () => void
-  children: ReactNode
+  children?: ReactNode
 }) {
   const row = comparison === null || comparison === 'failed' || comparison.status !== 'compared' ? null : comparison
   const mine = row?.blocks.savings.rows.find((r) => r.categoryId === fund.categoryId) ?? null
   const f = fund.figures
   return (
-    <section aria-label={fund.name} className="overflow-hidden rounded-xl border border-savings-rule bg-card text-savings-ink shadow-sm">
-      <h2 className="break-words bg-savings-title px-4 py-2 font-title text-3xl font-bold [overflow-wrap:anywhere]">{fund.name}</h2>
+    <section aria-label={fund.name} className={CARD}>
+      <Title name={fund.name} badge={badge} />
       {f === null || goal === null ? (
         <div className="space-y-3 px-4 py-4 text-sm">
           <p>No goal yet.</p>
@@ -151,25 +199,7 @@ function FundCard({
         </div>
       ) : (
         <div className="space-y-3 px-4 py-4">
-          <p>
-            <Figure className="text-3xl font-bold">{formatCents(f.balanceCents)}</Figure>
-            <span className="tnum text-sm"> saved of {formatCents(f.goalCents)}</span>
-          </p>
-          <Bar figures={f} />
-          <div className="rounded-lg bg-savings-needed px-3 py-2">
-            <p className="text-xs font-medium">Amount needed{f.reached ? ' · goal reached' : ''}</p>
-            <Figure className="text-2xl font-bold">{formatCents(f.plan.amountNeededCents)}</Figure>
-          </div>
-          <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
-            <Item label="Start date">{goal.start_date === null ? 'Not set' : formatIsoDate(goal.start_date)}</Item>
-            <Item label="Goal date">{goal.target_date === null ? 'Not set' : formatIsoDate(goal.target_date)}</Item>
-            <Item label="Months remaining">{f.plan.monthsRemaining === null ? '—' : String(f.plan.monthsRemaining)}</Item>
-            <Item label="Monthly contribution">
-              {f.plan.monthlyContributionCents === null ? '—' : <span className="tnum font-semibold">{formatCents(f.plan.monthlyContributionCents)}</span>}
-            </Item>
-          </dl>
-          {f.plan.status === 'planned' ? null : <p className="text-sm">{WHY_NO_MONTHLY[f.plan.status]}</p>}
-          <Kept figures={f} goal={goal} />
+          <GoalFigures figures={f} goal={goal} />
           {/* This fund's line only when there is one; the card above says why when there is not. */}
           {row === null || mine === null ? null : (
             <CompareLine
@@ -186,6 +216,62 @@ function FundCard({
         </div>
       )}
     </section>
+  )
+}
+
+const CARD = 'overflow-hidden rounded-xl border border-savings-rule bg-card text-savings-ink shadow-sm'
+
+function Title({ name, badge }: { name: string; badge: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-savings-title px-4 py-2">
+      <h2 className="min-w-0 break-words font-title text-3xl font-bold [overflow-wrap:anywhere]">{name}</h2>
+      {badge}
+    </div>
+  )
+}
+
+/**
+ * A goal on no fund: saved in Settings before there were funds, or its fund
+ * moved off the Savings list (N52). What was typed is its balance, and no
+ * transfer counts until it is a fund's goal. Labelled apart from a fund of
+ * the same name, which can take it.
+ */
+function LooseGoalCard({ goal, figures, badge }: { goal: FundRow; figures: FundFigures; badge: ReactNode }) {
+  return (
+    <section aria-label={`${goal.name}, on no fund`} className={CARD}>
+      <Title name={goal.name} badge={badge} />
+      <div className="space-y-3 px-4 py-4">
+        <p className="text-sm">On no savings fund yet, so money moved to savings does not count toward it.</p>
+        <GoalFigures figures={figures} goal={goal} />
+      </div>
+    </section>
+  )
+}
+
+/** What a goal holds, what it needs, its dates and what to save a month: the workbook's card. */
+function GoalFigures({ figures: f, goal }: { figures: FundFigures; goal: FundRow }) {
+  return (
+    <>
+      <p>
+        <Figure className="text-3xl font-bold">{formatCents(f.balanceCents)}</Figure>
+        <span className="tnum text-sm"> saved of {formatCents(f.goalCents)}</span>
+      </p>
+      <Bar figures={f} />
+      <div className="rounded-lg bg-savings-needed px-3 py-2">
+        <p className="text-xs font-medium">Amount needed{f.reached ? ' · goal reached' : ''}</p>
+        <Figure className="text-2xl font-bold">{formatCents(f.plan.amountNeededCents)}</Figure>
+      </div>
+      <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+        <Item label="Start date">{goal.start_date === null ? 'Not set' : formatIsoDate(goal.start_date)}</Item>
+        <Item label="Goal date">{goal.target_date === null ? 'Not set' : formatIsoDate(goal.target_date)}</Item>
+        <Item label="Months remaining">{f.plan.monthsRemaining === null ? '—' : String(f.plan.monthsRemaining)}</Item>
+        <Item label="Monthly contribution">
+          {f.plan.monthlyContributionCents === null ? '—' : <span className="tnum font-semibold">{formatCents(f.plan.monthlyContributionCents)}</span>}
+        </Item>
+      </dl>
+      {f.plan.status === 'planned' ? null : <p className="text-sm">{WHY_NO_MONTHLY[f.plan.status]}</p>}
+      <Kept figures={f} goal={goal} />
+    </>
   )
 }
 
