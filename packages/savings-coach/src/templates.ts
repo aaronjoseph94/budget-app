@@ -1,0 +1,135 @@
+/**
+ * The Coach in the app's own words (plan §2.3, ADR 0005 §4, §9).
+ *
+ * One template per kind of fact, in each tone: Cheerleader, the default,
+ * leads with the win and never shames; Straight talker says it plainly.
+ * Every figure is a blank the app fills from the engine, `{{A.change}}`, so
+ * these words hold no digit and pass the same text rule a model's must. A
+ * card that says to watch something always carries one thing to try: a
+ * bare "you overspent" helps nobody.
+ */
+import type { Fact } from '@budget/core'
+
+export type Tone = 'cheerleader' | 'straight'
+export const TONES: readonly Tone[] = ['cheerleader', 'straight']
+
+export interface Template {
+  readonly title: string
+  readonly body: string
+}
+
+/** A card that asks the owner to watch something, with the one thing to try. */
+export interface WatchTemplate extends Template {
+  readonly tryThis: string
+}
+
+export type CardTemplateKey = 'stale_data' | 'rows_waiting' | 'change_down' | WatchKey
+export type WatchKey = 'change_up' | 'over_budget' | 'near_budget' | 'budget_pace'
+
+type Tones<T> = Readonly<Record<Tone, T>>
+
+export const WATCH_TEMPLATES: Readonly<Record<WatchKey, Tones<WatchTemplate>>> = {
+  change_up: {
+    cheerleader: {
+      title: '{{A.name}} is running ahead',
+      body: 'You’ve spent {{A.change}} on {{A.name}} than by this day in {{A.before_month}}.',
+      tryThis: 'One thing to try: give it a lighter week, and the month evens out.',
+    },
+    straight: {
+      title: '{{A.name}} is up',
+      body: '{{A.name}}: {{A.change}} than by this day in {{A.before_month}}.',
+      tryThis: 'Try this: set a weekly limit for it and check it on Sunday.',
+    },
+  },
+  over_budget: {
+    cheerleader: {
+      title: '{{A.name}} is past its budget',
+      body: '{{A.actual}} spent against a budget of {{A.budget}}, so {{A.over}} over.',
+      tryThis: 'One thing to try: pause it for the rest of the month, or raise the budget if it was set too low.',
+    },
+    straight: {
+      title: '{{A.name}} is over budget',
+      body: '{{A.over}} over its budget of {{A.budget}}.',
+      tryThis: 'Try this: stop spending on it until the month ends, or set a budget you can keep.',
+    },
+  },
+  near_budget: {
+    cheerleader: {
+      title: '{{A.name}} is nearly used up',
+      body: '{{A.left}} left of {{A.budget}} for {{A.name}} this month.',
+      tryThis: 'One thing to try: decide what the rest is for before you spend it.',
+    },
+    straight: {
+      title: '{{A.name}} is almost at budget',
+      body: '{{A.left}} left of {{A.budget}}.',
+      tryThis: 'Try this: plan the rest of the month’s spending on it now.',
+    },
+  },
+  budget_pace: {
+    cheerleader: {
+      title: '{{A.name}} is heading over',
+      body: 'At this pace, {{A.name}} ends the month near {{A.pace}}, over its budget of {{A.budget}}.',
+      tryThis: 'One thing to try: a few lighter days now keeps it under.',
+    },
+    straight: {
+      title: '{{A.name}} is on pace to go over',
+      body: 'Heading for {{A.pace}} against a budget of {{A.budget}}.',
+      tryThis: 'Try this: cut back on it for the next week.',
+    },
+  },
+}
+
+export const PLAIN_TEMPLATES: Readonly<Record<Exclude<CardTemplateKey, WatchKey>, Tones<Template>>> = {
+  stale_data: {
+    cheerleader: {
+      title: 'Time for a fresh statement',
+      body: 'Your last statement ends on {{A.through}}, {{A.days}} days ago. Import the new one for fresh advice.',
+    },
+    straight: {
+      title: 'Your records are out of date',
+      body: 'Your statements end on {{A.through}}. Import the new one, or this advice is out of date too.',
+    },
+  },
+  rows_waiting: {
+    cheerleader: {
+      title: 'Charges waiting for you',
+      body: 'Waiting in Review: {{A.count}}. Each one counts as soon as you file it.',
+    },
+    straight: {
+      title: 'Review has charges waiting',
+      body: 'Waiting in Review: {{A.count}}. None of them is counted until you file it.',
+    },
+  },
+  change_down: {
+    cheerleader: {
+      title: 'Nice work on {{A.name}}',
+      body: 'You’ve spent {{A.change}} on {{A.name}} than by this day in {{A.before_month}}. Keep it going!',
+    },
+    straight: {
+      title: '{{A.name}} is down',
+      body: '{{A.name}}: {{A.change}} than by this day in {{A.before_month}}.',
+    },
+  },
+}
+
+/** Which card template a fact is worded by; null for a kind that is never a card. */
+export function cardTemplateKey(fact: Fact): CardTemplateKey | null {
+  switch (fact.kind) {
+    case 'stale_data':
+    case 'rows_waiting':
+    case 'over_budget':
+    case 'near_budget':
+    case 'budget_pace':
+      return fact.kind
+    case 'category_change':
+      return fact.direction === 'up' ? 'change_up' : 'change_down'
+    case 'month_so_far':
+    case 'week_so_far':
+      return null
+  }
+}
+
+/** The slots a template may name on a fact: its figures, and its subject's name. */
+export function slotsOf(fact: Fact): readonly string[] {
+  return ['name', ...Object.keys(fact.figures)]
+}

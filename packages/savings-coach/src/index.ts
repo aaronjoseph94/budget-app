@@ -8,3 +8,15 @@
  * Coach may say is testable without a network (ADR 0005).
  */
 export { renderSegments, type RenderSegmentsInput, type RenderSegmentsOutput, type Segment } from './segments.js'
+export {
+  PLAIN_TEMPLATES,
+  TONES,
+  WATCH_TEMPLATES,
+  cardTemplateKey,
+  slotsOf,
+  type CardTemplateKey,
+  type Template,
+  type Tone,
+  type WatchKey,
+  type WatchTemplate,
+} from './templates.js'
