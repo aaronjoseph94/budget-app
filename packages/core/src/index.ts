@@ -170,6 +170,15 @@ export {
   type WeeklySummaryInput,
 } from './week.js'
 
+export { historyStart, type HistoryStart, type HistoryStartInput } from './history.js'
+
+export {
+  comparisonWindow,
+  type ComparisonWindow,
+  type ComparisonWindowInput,
+  type DateWindow,
+} from './compare.js'
+
 /**
  * Date validation, re-exported so the app can make an IsoDate without importing
  * money-primitives — which apps/web may not do as a value, so that its money
