@@ -171,7 +171,10 @@ shared CI runner, and a gate that fails at random gets ignored. It is
 measured instead, once, and recorded here. On 2026-09-24, in vitest on the
 build container, `monthSheet` and `periodComparison` together over 5,000
 transactions in 40 categories across nine months took 2.4 ms (median of
-20 runs; slowest 4.4 ms), against the row's 50 ms. The row moves up if a
+20 runs; slowest 4.4 ms), against the row's 50 ms. The Coach's
+`factsDigest` over 5,000 transactions in 40 categories across nine months
+took 9.1 ms, and 10.4 ms (median of 20; slowest 20.9 ms) when re-run in
+review. The row moves up if a
 deterministic measure is found, such as counting passes over the ledger.
 
 ## Check classes

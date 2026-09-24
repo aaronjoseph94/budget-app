@@ -39,8 +39,10 @@ function slotText(fact: Fact, slot: string): string {
 
 /**
  * `text` with each blank filled from `facts`, by letter. Words that name a
- * fact or slot they were not given draw nothing: the caller shows the app's
- * own words instead (ADR 0005 §4).
+ * fact or slot they were not given draw nothing rather than a sentence with
+ * a hole in it. The app's own templates are tested to name only slots their
+ * facts have; falling back to them when a model's words fail is A12's
+ * (ADR 0005 §4).
  */
 export function CoachText({ text, facts }: { text: string; facts: Readonly<Record<string, Fact>> }) {
   const slots = Object.fromEntries(Object.entries(facts).map(([letter, fact]) => [letter, slotsOf(fact)]))

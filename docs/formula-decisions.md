@@ -1084,7 +1084,9 @@ questions (plan §2.3, §11; built in slice A07).
   double charges), become cards. The summaries are the coach line, not
   cards.
 - **The digest keeps at most 12 facts:** stale data, waiting rows, the two
-  summaries, then the rest by impact, largest first, ties by key.
+  summaries, then the rest: notable facts before the others, each group by
+  impact, largest first, ties by key. So a notable fact is never cut to
+  make room for one that could not become a card.
 - **The day's rotation** (`dailyIndex`, for picking among equals without
   randomness): the days from 1 January 1970 to `asOf`, modulo the count.
 
