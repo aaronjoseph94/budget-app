@@ -42,8 +42,8 @@ function FlightCard() {
 
   const savedCents = goalSavedCents(goal, funds)
   const { percentCompleteBasisPoints: bp } = goalProgress({ name: goal.name, targetCents: goal.target_cents, savedCents })
-  // Whole hours of each, by the same conversion (F33). Nothing saved yet, or
-  // more taken out than put in, has no hours to show.
+  // Whole hours of each, by the same conversion (F33). Nothing saved yet is
+  // 0 h; a fund with more taken out than put in has no hours to show.
   const hours =
     goal.unit_cost_cents === null || savedCents < 0
       ? null

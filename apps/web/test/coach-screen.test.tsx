@@ -80,6 +80,28 @@ describe('the Coach’s flight card', () => {
     expect(screen.queryByRole('alert')).toBeNull()
   })
 
+  // Hand-derived: nothing typed at the end of 1 September and 50.00 moved out
+  // of the fund on the 5th (D16) is -50.00, which buys no hours.
+  it('shows no hours when more has been taken out of the fund than put in', async () => {
+    const fake = withGoal(0)
+    fake.tables.categories.push({ id: 'c4', name: 'Flight fund', kind: 'savings', sort_order: 0, weekly_budget_cents: null })
+    fake.tables.transactions.push({ id: 't9', posted_on: '2026-09-05', amount_cents: 5_000, merchant_raw: 'FROM FLIGHT FUND', category_id: 'c4', source: 'typed' })
+    Object.assign(fake.tables.savings_goals[0]!, { category_id: 'c4', start_date: null, balance_as_of: '2026-09-01' })
+    go('/coach')
+    renderScreen(<Shell />, fake)
+
+    expect(await screen.findByText(para('-$50.00 saved of $30,000.00'))).toBeTruthy()
+    expect(screen.queryByText(/ h of /)).toBeNull()
+  })
+
+  it('shows 0 h when nothing is saved yet', async () => {
+    go('/coach')
+    renderScreen(<Shell />, withGoal(0))
+
+    expect(await screen.findByText(para('0 h of 109 hof flight time'))).toBeTruthy()
+    expect(screen.getByText(para('$0.00 saved of $30,000.00'))).toBeTruthy()
+  })
+
   it('shows no hours for a goal with no hourly cost', async () => {
     go('/coach')
     renderScreen(<Shell />, withGoal(1_265_000, null))
