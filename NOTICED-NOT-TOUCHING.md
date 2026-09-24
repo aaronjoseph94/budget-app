@@ -1790,3 +1790,20 @@ itself; 0003 to 0014 have no such copy yet.
 the same way and dropping the GitHub link, or keep it and note the name in
 HANDOFF.
 
+
+---
+
+## N71 — A card's title reads oddly when a category's name is plural
+
+**Seen:** 2026-09-24, building A07, in the preview harness.
+
+The Coach's templates put the category's name where a subject goes:
+"Groceries is running ahead", "Restaurants is past its budget". The name is
+the owner's own text, so the templates cannot know whether it is plural.
+
+**Why not fixed here:** it is wording, not a figure, and every rewording
+must still pass ADR 0005's text rule; the AI's words (A12) will replace
+these in most places.
+
+**To settle:** reword the titles so the name is never the verb's subject
+("Running ahead: Groceries"), or let the owner mark a list name as plural.
