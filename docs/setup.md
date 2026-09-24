@@ -18,7 +18,7 @@ returned." Running one twice is refused rather than applied twice.
 | `0002_unreadable_lines.sql` | A record of statement lines that could not be read |
 | `0003_save_import_atomically.sql` | Saving an import as one transaction |
 | `0004_one_path_into_the_ledger.sql` | Approval, rules that learn, budgets, the goal, PDF imports |
-| `0005_category_kinds.sql` | Which of Workbook's lists each category is on. Your existing categories go under Variable expenses until the Setup screen lets you move them |
+| `0005_category_kinds.sql` | Which of the workbook's lists each category is on. Your existing categories go under Variable expenses until the Setup screen lets you move them |
 | `0006_recategorise.sql` | Moving a charge that is already saved to a different category |
 | `0007_statement_periods.sql` | Remembering which dates each imported statement covered |
 | `0008_category_budgets.sql` | The budgets and goals you type on a month, "from this month on" or "just this month". Needed by the Month as soon as this branch is merged |

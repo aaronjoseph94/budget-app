@@ -1,6 +1,6 @@
 # Handoff — read this first
 
-Rewritten 2026-09-23, when the Workbook build (`docs/workbook-views-plan.md`) was
+Rewritten 2026-09-23, when the workbook views build (`docs/workbook-views-plan.md`) was
 finished on branch `main-tnlcto`. It tells the owner and the next agent what
 exists, what the owner has to do before using it, how to check it worked,
 what is still open, and what is left to build.
@@ -42,7 +42,7 @@ or delete a test to make a check pass.
 pnpm monorepo: Vite + React 19 + TypeScript + Tailwind v4, Supabase
 (Postgres, auth, one Edge Function), Vitest. **Everything below is on
 branch `main-tnlcto`.** Branch `main` is what the live site deploys, and it
-has none of the Workbook screens until `main-tnlcto` is merged into it (§3).
+has none of the workbook screens until `main-tnlcto` is merged into it (§3).
 
 **The app, screen by screen** (phone bar: Month · Week · Add · Review ·
 More; a wide screen puts them all on the top bar):
@@ -67,7 +67,7 @@ workbook's own cached values (121 golden tests); the charts are drawn by
 `packages/chart-specs`; the statement readers are in
 `packages/statement-parsers`; the database is `supabase/migrations/0001` to
 `0014`. Decisions are recorded in `docs/formula-decisions.md` (F1–F23) and
-`docs/divergences.md` (every place the app departs from Workbook, and why).
+`docs/divergences.md` (every place the app departs from the workbook, and why).
 
 Key decisions, already made by the owner (do not reopen): dates are the
 purchase date (F1); receipt photos use Gemini's free tier
@@ -91,7 +91,7 @@ query for the next file. **One at a time, in this order, all twelve:**
 |---|---|---|
 | 1 | `0003_save_import_atomically.sql` | Saving an import in one go |
 | 2 | `0004_one_path_into_the_ledger.sql` | Approving, rules that learn, budgets, the goal, PDF imports |
-| 3 | `0005_category_kinds.sql` | Which of Workbook's lists each category is on |
+| 3 | `0005_category_kinds.sql` | Which of the workbook's lists each category is on |
 | 4 | `0006_recategorise.sql` | Moving a saved charge to another category |
 | 5 | `0007_statement_periods.sql` | The dates each statement covered |
 | 6 | `0008_category_budgets.sql` | Budgets and goals typed on the Month |
@@ -159,7 +159,7 @@ means that file from Step 1 was missed.
 
 1. **Sign in** with the password from Step 5. The **Month** opens on this
    month and, with no lists yet, says "Start in Setup".
-2. **Setup.** Type your name. Press **Start from Workbook's list**: Workbook's
+2. **Setup.** Type your name. Press **Use the starter list**: the workbook's
    names appear under Income, Savings, Bills, Debts, Subscriptions and
    Variable expenses, plus Card payments under Not spending. Rename or
    remove what does not fit. On your pay row pick how often it pays and the
@@ -199,15 +199,15 @@ means that file from Step 1 was missed.
 Each has a default already in use, so nothing waits on the answer. Answer
 any of them and the next agent records it and builds it.
 
-1. **Week and Paycheck: starting and ending balance (N45).** Workbook's Weekly
+1. **Week and Paycheck: starting and ending balance (N45).** The workbook's Weekly
    and Paycheck tabs show a starting and an ending bank balance. The app
    stores a starting balance per month only. **In use: A — not shown.**
    B — work each week's start out from the month's typed start and that
    month's rows before the week. C — type a start for every week (needs a
    database update).
-2. **Do payments you record move a debt's balance? (N53)** Workbook's Debt
+2. **Do payments you record move a debt's balance? (N53)** The workbook's Debt
    Calculator takes balances from its payoff schedule alone. **In use:
-   A — the schedule only, as in Workbook.** B — link a debt to a Debts-list
+   A — the schedule only, as in the workbook.** B — link a debt to a Debts-list
    category and let recorded payments replace the schedule's. C — show
    recorded payments beside the schedule without changing it. B or C
    needs a database update.
@@ -215,19 +215,19 @@ any of them and the next agent records it and builds it.
    default, told here so it is not a surprise. **In use: each category's
    real total over the Year's months, a real charge replacing a planned
    bill, planned bills counted only from the month they were set up and
-   only up to this month.** Workbook instead counts twelve times each monthly
+   only up to this month.** The workbook instead counts twelve times each monthly
    amount plus everything logged, so a bill set up in October counts all
-   year and a card-paid bill counts twice. Say if you want Workbook's measure,
+   year and a card-paid bill counts twice. Say if you want the workbook's measure,
    or planned bills counted for the whole year.
 
-Things to know, which follow Workbook or a recorded choice (details in the
+Things to know, which follow the workbook or a recorded choice (details in the
 N-entries named): with no starting balance typed there is no End of month,
-where Workbook counts from $0 (D17, N37; say if you would rather have
-Workbook's $0); End of month reads low until pay is typed (N37); a negative
-End of month shows its minus sign but is not coloured, as Workbook colours
+where the workbook counts from $0 (D17, N37; say if you would rather have
+the workbook's $0); End of month reads low until pay is typed (N37); a negative
+End of month shows its minus sign but is not coloured, as the workbook colours
 only Left to spend (N37); the Year opens on January of this year (N43);
 "Best savings month" with nothing saved shows January at $0.00 (N43); the
-Year's column chart stacks expenses on top of income, as Workbook's does, so
+Year's column chart stacks expenses on top of income, as the workbook's does, so
 a column's full height means nothing on its own (N43); Debts' "Paid this
 month" is what the payoff schedule pays, not what you recorded (N57); the
 Year's debt chart shows today's balances (N57); snowball and avalanche

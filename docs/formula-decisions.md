@@ -78,11 +78,10 @@ against a printed total is how a sign error cancels itself out and passes.
 
 ---
 
-## How the Workbook entries below were settled
+## How the entries below for the workbook views were settled
 
-F3 to F15 come from the Workbook plan (`docs/workbook-views-plan.md` §5.2, answered in
-§9a). "The workbook" and "Workbook" are the same file. Each entry says which of
-three ways it was settled, and only that:
+F3 to F15 come from the workbook views plan (`docs/workbook-views-plan.md` §5.2, answered in
+§9a). Each entry says which of three ways it was settled, and only that:
 
 - **Owner chose** — put to the account holder as a question, and answered.
 - **Stated to the owner, no objection** — told to the account holder as what
@@ -98,7 +97,7 @@ its cached results.
 
 ## F3 — A planned bill amount next to a real charge in the same month
 
-**Decided 2026-09-22 by the account holder (Workbook plan decision 3).**
+**Decided 2026-09-22 by the account holder (workbook views plan decision 3).**
 
 ```
 Jan!E22   =Bills!D7+SUMIFS(Bills!Q:Q,Bills!P:P,C22,Bills!O:O,">="&DATE(YEAR($B$3),MONTH($B$3),1),Bills!O:O,"<="&EOMONTH($B$3,0))   [800]
@@ -108,14 +107,14 @@ Bills!Q5  note: "Remember this column is for Bills that have changing amounts
 ```
 
 A bill's month Actual is its fixed Monthly Amount **plus** every payment
-logged for it that month. Workbook's own sample depends on it: Credit Card 1 is
+logged for it that month. The workbook's own sample depends on it: Credit Card 1 is
 $50 fixed plus a $200 logged payment (Paycheck Budget!L50 [250]).
 
 **Options put to the user**
 
 - **A — the real charge replaces the plan.** Netflix set up at $17.99 with a
   $17.99 statement charge shows $17.99.
-- **B — add both, as Workbook does.** The same month shows $35.98.
+- **B — add both, as the workbook does.** The same month shows $35.98.
 
 **Chosen: A.** For a bill, debt or subscription category in a window: if any
 real ledger row falls in it, the Actual is the sum of those rows and the
@@ -170,7 +169,7 @@ Weekly Budget!D13  =Y21        [65]
 Actual for each Variable-expenses row, summed. Bills, debts, subscriptions and
 savings do not enter it.
 
-**The empty budget.** In Workbook a row with a blank budget still subtracts its
+**The empty budget.** In the workbook a row with a blank budget still subtracts its
 Actual (`T22-U22` reads a blank as 0), so unbudgeted spending lowers Left to
 spend. The engine does the same, but as a named branch that cites F5, not as a
 `?? 0` fallback, which the CONSTRAINTS.md floor forbids. The alternative —
@@ -188,7 +187,7 @@ Jan!V10  =U10-T10   [-3000]   (Actual − Goal, Savings)
 Jan!V22  =T22-U22             (Budget − Actual, Variable expenses)
 ```
 
-**Chosen:** kept as Workbook has it. Savings Difference is Actual − Goal, so
+**Chosen:** kept as the workbook has it. Savings Difference is Actual − Goal, so
 saving less than the goal is negative; Remaining on a spending row is Budget −
 Actual, so overspending is negative. The two columns have opposite signs by
 design, and in both a negative number is the bad one.
@@ -211,7 +210,7 @@ Jan!D9             1000   note: "Type in the Bank Balance you started the month 
 savings are not spending. The ending balance is start + income − spent −
 saved.
 
-**Where it differs.** Workbook treats a blank D9 as $0 and still shows an ending
+**Where it differs.** The workbook treats a blank D9 as $0 and still shows an ending
 balance. The engine returns no ending balance when no starting balance is typed
 for that month, because a projection from an invented $0 is a wrong number
 that looks right. Recorded as divergence D17 (N9).
@@ -241,10 +240,10 @@ quotes undone.
   day, because the month tabs never read Bills!B.
 - **A partial window** (a week, a pay period) counts a planned amount only if
   its due day is one of the window's days, as Weekly!D50's `regexmatch` does.
-- **A blank due day** never matches a partial window: Workbook's match runs
+- **A blank due day** never matches a partial window: the workbook's match runs
   against an empty string. Setup will prompt for a day paid.
 - **Days 29, 30 and 31** count on the month's last day in a shorter month.
-  Workbook silently drops them, because those days do not exist in the window it
+  The workbook silently drops them, because those days do not exist in the window it
   lists. Recorded as D6.
 
 ---
@@ -258,7 +257,7 @@ Savings!Z14  =IFERROR((F14-J14)/V14, 0)   [88.9047619]   format "$"#,##0
 Savings!Z14  note: "This is your new monthly goal!"
 ```
 
-Workbook keeps the full fraction and displays it rounded to the dollar ($89).
+The workbook keeps the full fraction and displays it rounded to the dollar ($89).
 Money in the app is whole cents, so the fraction has to go somewhere.
 
 **Options considered**
@@ -267,7 +266,7 @@ Money in the app is whole cents, so the fraction has to go somewhere.
   goal on time.
 - **B — round half-up to the cent** ($88.90). Can fall a few cents short by
   the goal date.
-- **C — Workbook's whole dollars** ($89). Hides cents the rest of the app shows.
+- **C — the workbook's whole dollars** ($89). Hides cents the rest of the app shows.
 
 **Chosen: A.** A monthly goal exists to reach the target; the rounding should
 never be the reason it is missed. The golden value is Savings!Z14 → 8891
@@ -292,7 +291,7 @@ Annual Budget adds a month's fixed bill, debt and subscription amounts only up
 to its typed "today" (D7). The month tabs, and Spending Tracker rows 17–27,
 never gate: December shows its planned bills in January.
 
-**Chosen:** both, each where Workbook has it. The Year screen gates planned
+**Chosen:** both, each where the workbook has it. The Year screen gates planned
 amounts at `asOf` and so shows the year to date, as Annual does (Annual!E34
 [800] for May counts; E35 [0] for June does not). A future month opened on the
 Month screen still shows its planned bills, as a month tab does.
@@ -329,7 +328,7 @@ itself always reads one year (D10).
 ## F12 — The Year's "Left To Spend" and "Ending Balance" boxes
 
 **Decided 2026-09-22 under plan decision 9, which was stated to the owner
-with no objection.** Decision 9 is "Workbook's arithmetic mistakes are fixed and
+with no objection.** Decision 9 is "the workbook's arithmetic mistakes are fixed and
 recorded". This entry is plan decision 15, which falls under it; decision 15
 and its options below were not put to the owner on their own, so the owner
 did not choose "Left over".
@@ -347,7 +346,7 @@ ignored, and the ending balance never includes the starting balance.
 **Options**
 
 - **A — income − expenses − savings, called "Left over".**
-- **B — Workbook's literal result:** income − expenses, savings ignored.
+- **B — the workbook's literal result:** income − expenses, savings ignored.
 - **C — leave the box off.**
 
 **Chosen: A.** D15 becomes D9 − D11 − D13, shown as **"Left over"** so it is
@@ -367,7 +366,7 @@ the 50/30/20 view (plan decision 2), so nothing uses this until they do.
 ```
 
 **Chosen:** a share is held in basis points, rounded half-up (G7 → 9412, I7 →
-588). Workbook displays whole percent; basis points keep two more places without
+588). The workbook displays whole percent; basis points keep two more places without
 a float.
 
 ---
@@ -400,14 +399,14 @@ Paycheck Budget!E22  =IF(F22, E50 / 2, D50)   [800]          F22  FALSE
 START HERE!C8        2025-01-10 (first pay date)             E8   Bi-weekly
 ```
 
-Workbook's Paycheck tab takes a typed start and end date. A tick box (F22) halves
+The workbook's Paycheck tab takes a typed start and end date. A tick box (F22) halves
 a bill's monthly amount with a fixed ÷2, whatever pay frequency START HERE!E8
 says; unticked, it counts the bill only if its due day falls in the window
 (F8).
 
 **Options put to the owner**
 
-- **A — copy Workbook.** Type both dates; halve a monthly bill with ÷2.
+- **A — copy the workbook.** Type both dates; halve a monthly bill with ÷2.
 - **B — find the period from the Income row's pay schedule**, and divide a
   monthly bill by the pay frequency: 4.333 weekly, 2.1667 bi-weekly, 1 monthly.
 - **C — find the period from the pay schedule**, and divide a monthly bill by
@@ -428,7 +427,7 @@ bill is divided by the pay frequency.
   exactly (52 ÷ 12 and 26 ÷ 12). The example given with the question was
   $1,600 rent, about $738 a bi-weekly period. It replaces F8's due-day rule on
   this screen: the share counts in every period, whatever the day paid, as
-  Workbook's ticked Split does. Real rows in the period count as they are, and
+  the workbook's ticked Split does. Real rows in the period count as they are, and
   a bill with one shows it instead of its share (F3, D5).
 
 A split that divides money also needs a rounding rule, and B does not give
@@ -440,7 +439,7 @@ one. These are engineering defaults, recorded 2026-09-23 (S15b):
   nearest cent. Each row rounds on its own and a block adds the rounded
   rows, so a total can be a cent or two away from the monthly total divided.
 - **Budgets and goals.** The month's budgets and goals, as the Month
-  resolves them (D12), are split the same way. Workbook types a separate set per
+  resolves them (D12), are split the same way. The workbook types a separate set per
   period on the Paycheck tab (D22:W44, Q10:Q16, W10:W16); the app stores none,
   and a budget the owner already typed per month is the one they meant.
 - **Which month's amounts.** The month the payday starting the period falls
@@ -449,7 +448,7 @@ one. These are engineering defaults, recorded 2026-09-23 (S15b):
   from the start date alone (`DATE(YEAR($D$6),MONTH($D$6),1)`).
 - **Before the first payday.** The schedule runs back as well as forward, so
   stepping back past the first pay date shows the periods the same schedule
-  gives. Workbook's Bill Calendar is not consistent here: its bi-weekly paydays
+  gives. The workbook's Bill Calendar is not consistent here: its bi-weekly paydays
   go back before START HERE!C8, and its weekly and monthly ones do not.
 
 ---
@@ -469,7 +468,7 @@ Jan!M8:P8                       Income Streams · Goal · Actual   (no Differenc
 ```
 
 A budget or goal can be missing: never typed, or typed as "no budget" from a
-month on (D12). Workbook reads a blank as 0 in every formula, so it has no
+month on (D12). The workbook reads a blank as 0 in every formula, so it has no
 missing case. The engine keeps "no budget" apart from $0, and so has to say
 what each column shows without one.
 
@@ -481,15 +480,15 @@ what each column shows without one.
 - **Savings.** Difference is Actual − Goal (F6); with no goal it is what was
   saved, as V11 reads a blank goal. The rows then add up to V9, which stays
   total saved − total goals.
-- **Bills, Debts and Subscriptions.** Workbook has no Remaining column here. The
+- **Bills, Debts and Subscriptions.** The workbook has no Remaining column here. The
   app's is Budget − Actual where a budget is set, and empty where none is:
   0 − Actual would show every unbudgeted bill, Rent included, as overspent by
-  its whole amount. These lists get no Remaining total, as Workbook has none.
+  its whole amount. These lists get no Remaining total, as the workbook has none.
 - **Income.** Goal and Actual, with their totals (O9, P9), and no
-  difference, as Workbook has.
+  difference, as the workbook has.
 - **Budget totals** (D21, J21, O21, T21, O9, T9) add the budgets that are set;
   a row with none adds nothing, as `SUM` skips a blank, and a list with none
-  totals $0, as Workbook shows.
+  totals $0, as the workbook shows.
 
 The row itself always keeps its missing budget, so a screen can tell "no
 budget" from "$0". Each branch that reads a missing value as 0 is written out
@@ -512,7 +511,7 @@ Jan chart12  stacked columns      Goal Jan!$O$10:$O$16   Actual Jan!$P$10:$P$16
              one value axis, overlap 100
 ```
 
-Workbook's doughnut sizes each Variable-expenses row by its Actual against the
+The workbook's doughnut sizes each Variable-expenses row by its Actual against the
 others, and its income chart draws every Goal and Actual on one value axis.
 Neither prints a number, and the cached sample has every U22:U44 at 0 and
 U45 empty, so the doughnut is empty and there is no share to copy. The charts' geometry is
@@ -570,7 +569,7 @@ Hidden!I60:K60  =QUERY('Annual Budget'!U10:X21, "SELECT U,V,W ORDER BY W DESC LI
                 [2025-01, 3000, 0]
 ```
 
-Workbook's Home ranks each category by a third measure of a year: twelve
+The workbook's Home ranks each category by a third measure of a year: twelve
 times its monthly amount, whatever month it started, plus the logged
 payments and transactions of today's calendar year. A bill both planned and
 logged counts twice, and a bill set up in October counts twelve months. The
@@ -583,7 +582,7 @@ top 3's cached values depend on today's date, so none is a golden value
   Variable expenses category's Actual over the Year's twelve months, counted
   as the month rows count it: a real charge replaces the plan (D5), a plan
   counts from its month (D13) and only up to asOf (F10).
-- **B — Workbook's measure:** twelve times the monthly amount, plus the rows of
+- **B — the workbook's measure:** twelve times the monthly amount, plus the rows of
   asOf's calendar year.
 - **C — A, with every month's planned amounts counted**, a projection of the
   whole Year.
@@ -595,15 +594,15 @@ a whole shown nowhere. A is the only reading in which the top 3 agree with
 the Year around them.
 
 - **Top 3.** Categories with a Year Actual above zero, highest first. Equal
-  amounts keep Workbook's list order (Hidden!B3:B95: Variable expenses, Bills,
+  amounts keep the workbook's list order (Hidden!B3:B95: Variable expenses, Bills,
   Debts, Subscriptions), then Setup's row order. `shareBp` is the amount
   over the sum of every category's Year Actual above zero, half-up (F17),
-  which is Workbook's doughnut: the category against its "Other Expenses".
+  which is the workbook's doughnut: the category against its "Other Expenses".
 - **Biggest expense** is the first of the top 3, and none when nothing was
   spent.
 - **Best savings month** is the month with the largest Savings Actual, the
   earliest of equals, as QUERY keeps row order; with nothing saved it is the
-  first month at $0, as Workbook shows January. Its goal comes with it (J60).
+  first month at $0, as the workbook shows January. Its goal comes with it (J60).
   Home's red "↓ −$90" beneath it subtracts two date serials and shows the
   difference as dollars; it has no meaning to carry over and is not built.
 
@@ -644,26 +643,26 @@ geometry is arithmetic on money, which invariant 1 puts in `packages/core`.
   negative Left over would give parts that add to more than the whole.
 - **C — draw chart40 as a clustered column.** Its stack adds income to
   expenses, a height that means nothing, but the plan (§6.4) asks for
-  Workbook's stack, so A keeps it.
+  the workbook's stack, so A keeps it.
 
 **Chosen: A.**
 
 - **Stacked column** (chart40): each month's column is its income Actual
-  with its expense Actual stacked on it, as Workbook stacks them. A part at or
+  with its expense Actual stacked on it, as the workbook stacks them. A part at or
   below zero is not drawn. Core gives each drawn part where it starts and
   ends, in basis points of the tallest column, half-up, so parts meet
   exactly and no column passes the top.
 - **Pie** (chart41, Home chart3): Income, Expenses and Savings Actuals over
   the twelve months (the Year's totals, D7), each over those of the three
-  above zero, half-up. Workbook's pie mixes money in with money out; so does
+  above zero, half-up. The workbook's pie mixes money in with money out; so does
   this, as the plan asks.
 - **Clustered column** (chart42): Goal and Actual for Income, Savings,
   Variable expenses, Bills, Debts and Subscriptions over twelve months, on
   one scale, the largest Goal or Actual, as `goalBars` (F17) draws the
-  Month's income. Workbook's J9, V9 and W9 add seven months (D7); these add
+  Month's income. The workbook's J9, V9 and W9 add seven months (D7); these add
   twelve.
 - **Top-3 doughnuts** (Home chart9–11): each row's `shareBp` from F18, the
-  rest of the ring the track, as Workbook's "Other Expenses" is.
+  rest of the ring the track, as the workbook's "Other Expenses" is.
 
 **What the owner would see.** The charts' shapes. The numbers written
 beside them are the Year's own.
@@ -699,29 +698,29 @@ month a total of the weeks.
   those rows on its own date, and its monthly amount is not shown that
   month. With none, its monthly amount in effect that month (D13) shows on
   its due day. So Credit Card 1 in January 2025 shows $200 on the 5th and
-  nothing on the 14th, where Workbook shows both: Q20 is 100, not **150**, and
+  nothing on the 14th, where the workbook shows both: Q20 is 100, not **150**, and
   J3 1,117.99, not **1,167.99**. The month's total is therefore the Month's
   Bills + Debts + Subscriptions Actuals for the same month, except as below.
 - **A monthly amount with no day paid** is on no day and in no total, as in
-  Workbook (a blank B7 equals no day). The screen lists it under the calendar
+  the workbook (a blank B7 equals no day). The screen lists it under the calendar
   as having no day paid, so it is not lost. The Month still counts it (F8):
   a whole month counts every plan.
 - **Paydays** come from the pay schedules of categories on Income only
-  (N27), on each payday from the first pay date on, as Workbook's `C <= date`
+  (N27), on each payday from the first pay date on, as the workbook's `C <= date`
   asks; before the first pay date there are none. Weekly and bi-weekly ones
   fall every 7 or 14 days, monthly ones on the first pay date's day of each
   month (D21 for a day the month lacks). A payday shows the income source's
-  name and never an amount, as Workbook does.
-- **A real row is shown as Workbook shows a payment**, positive when money
+  name and never an amount, as the workbook does.
+- **A real row is shown as the workbook shows a payment**, positive when money
   went out (D3), each row by itself; a refund shows with its minus sign
   (D8). Rows on other lists are not on the calendar.
 - **Weeks** hold only the days of the month; a week total adds its days'
   amounts (Q8), and the month total its weeks (J3). The calendar has as many
-  weeks as the month touches, four to six; Workbook always draws six bands and
+  weeks as the month touches, four to six; the workbook always draws six bands and
   leaves the spare ones blank (Q38 **0**).
-- **Order within a day** is Workbook's stack, Bills then Debts then
+- **Order within a day** is the workbook's stack, Bills then Debts then
   Subscriptions, each in Setup's order. A real charge takes its bill's
-  place in that stack; Workbook lists its logged payments after every monthly
+  place in that stack; the workbook lists its logged payments after every monthly
   amount, in the log's order (H9's `{…; Bills!P7:Q30}` comes last). Only the
   order on the day differs, never an amount or a total.
 
@@ -755,16 +754,16 @@ Savings!Z14  =IFERROR((F14-J14)/V14, 0)                         [88.9047619]
   today, as V14 is, so it does not count down as time passes.
 - **Monthly contribution** is the amount needed over the months remaining,
   rounded up to the cent (F9). The current amount in it is the fund's
-  balance on the day it is read (D16), where Workbook's J14 is whatever was
+  balance on the day it is read (D16), where the workbook's J14 is whatever was
   last typed in B5.
 - **No dates** gives no months and no contribution (D15). **A goal date
   before the start date, or in the start date's own month**, gives no
   contribution (D22); the months are shown as 0 in the second case, as V14
   shows them, and not at all in the first, where V14 shows `#NUM!`.
 
-**What the owner would see.** Workbook's figure, to the cent. Because the
+**What the owner would see.** The workbook's figure, to the cent. Because the
 months are counted from the start date, the monthly figure goes down as the
-fund fills, not up as the goal date nears; that is also what Workbook does
+fund fills, not up as the goal date nears; that is also what the workbook does
 each time its current amount is retyped (NOTICED N54).
 
 ---
@@ -775,7 +774,7 @@ each time its current amount is retyped (NOTICED N54).
 explicit day instead of today.** The final month's interest is D24 (owner
 chose). Whether recorded payments move a debt's balance is not decided
 (NOTICED N53); until it is, balances come from the schedule alone, as
-Workbook's do.
+the workbook's do.
 
 ```
 Debt Calculator!H9    =INDEX(J26:J496, MATCH(EOMONTH(TODAY(),-1)+1, $C$26:$C496))  [11356.30966]
@@ -790,27 +789,27 @@ Debt Calculator!D27   =SUM(J26, O26, … DP26)   [20958]   E26 =SUM(I26 …)+SUM
 - **The day.** `debtStatus` takes `asOf` and finds the schedule row of
   `asOf`'s month, as H9 finds the row of today's month. The balance is that
   row's closing balance, so the month's payment counts as made from its
-  first day, as in Workbook. The cached H9 was worked out in September 2026,
+  first day, as in the workbook. The cached H9 was worked out in September 2026,
   month 19 of the sample; the golden test asserts month 19 by its index,
   never by today (CLAUDE.md).
 - **Paid** is the starting balance less the balance (I495), net of
-  interest. Workbook's goes below zero for a debt whose interest outruns its
+  interest. The workbook's goes below zero for a debt whose interest outruns its
   minimum; `amortize` refuses such a debt and says which, so here it never
   does. **Remaining** is the balance itself (I496).
 - **Progress** is paid over the starting balance, E20, in basis points,
   half-up as F13 and F17 round. With no starting balance at all (no debts,
   or every one typed as 0) there is no progress, where E20 divides by 0.
 - **Before a debt's start month** its balance is its starting balance and
-  nothing is paid; Workbook's MATCH finds no row there and shows `#N/A`. After
+  nothing is paid; the workbook's MATCH finds no row there and shows `#N/A`. After
   its last payment, its balance is 0.
 - **Totals.** Starting (D26), the balance (B10), paid, progress (E20), this
   month's payments with extras (E column) and the balances this month
   started from (D column: the prior month's closing balances).
 - **Start months.** Each debt keeps its own start month (0014); when every
-  debt shares one, as all of Workbook's do, this is the workbook exactly. The
+  debt shares one, as all of the sample's do, this is the workbook exactly. The
   debt-free date is the latest payoff month among them (B14).
 
-**What the owner would see.** Workbook's figures, at whichever month the
+**What the owner would see.** The workbook's figures, at whichever month the
 screen reads, with the cents of D1 and the final-month interest of D24.
 
 ---

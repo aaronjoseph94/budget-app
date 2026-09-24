@@ -77,31 +77,31 @@ section first said: "Weekly is the primary lens. The workbook is month-first
 with a weekly tab bolted on; the user thinks in weeks. Weekly is the default
 screen and the unit limits, streaks, and goals are expressed in. Monthly is the
 summary view." Since then the owner asked for the app to look and work like
-their Workbook workbook, whose money lands on month tabs, and when asked which
+their workbook, whose money lands on month tabs, and when asked which
 screen should open first they chose Month (`docs/workbook-views-plan.md` §9a, decision
 1). Weekly limits and streaks, when the coach is built, are still weekly.
 
 Slices 1 and 2 of the original order are built (the Week screen; statement
 import into the review queue), and most of 3: photo capture and a typed-entry
 form, but not natural-language entry. The rest now runs in the
-Workbook plan's order (§8), ahead of the coach (§9a, decision 13):
+workbook views plan's order (§8), ahead of the coach (§9a, decision 13):
 
 1. Pre-work: unreadable statement lines shown in Review, dedupe tests that
    bite, React Testing Library for the screens
 2. Schema sitting A: category lists (`kind`), recategorising a posted row,
    statement periods
-3. Workbook's look; categories sorted into Workbook's lists; the Setup screen;
+3. The workbook's look; categories sorted into the workbook's lists; the Setup screen;
    starter lists; Week counts by list
 4. The period engine, proven against the workbook before any screen shows it
 5. Navigation (Month · Week · Add · Review · More, with period addresses), then
-   **the first Workbook month filled from a statement**, then fixing a row from
+   **the first workbook month filled from a statement**, then fixing a row from
    the month
 6. Schema sitting B: budgets, planned bills, monthly starting balances, pay
    schedules
 7. Budgets on the month; bills set-up; planned versus real; the summary card
 8. `chart-specs` and the month charts
-9. The Year engine and screen, including Workbook's Home at its top
-10. Week in Workbook's shape; Paycheck; Bill Calendar
+9. The Year engine and screen, including the workbook's Home at its top
+10. Week in the workbook's shape; Paycheck; Bill Calendar
 11. Schema sitting C: savings funds, then debts. Savings funds; Debts
 12. Savings coach: weekly limits, the streak grid, interrogation, goal tradeoffs
 13. Natural-language entry, the unbuilt rest of the original slice 3

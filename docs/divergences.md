@@ -156,9 +156,9 @@ module owns this normalization and it is the tokenizer.
 
 ---
 
-## How the Workbook entries below were settled
+## How the entries below for the workbook views were settled
 
-D5 to D16 come from the Workbook plan (`docs/workbook-views-plan.md`, answered in §9a);
+D5 to D16 come from the workbook views plan (`docs/workbook-views-plan.md`, answered in §9a);
 D17 onward were found while building it.
 Each says how it was settled: **owner chose** (asked, and answered),
 **stated to the owner, no objection** (told what would be done unless they
@@ -184,9 +184,9 @@ ledger row in the window, its Actual is those rows and the planned amount is
 ignored. Only with no real row does the planned amount count, labelled
 "planned". The same sample would show 200.
 
-**Why.** With imported statements Workbook's rule counts every card-paid bill
+**Why.** With imported statements the workbook's rule counts every card-paid bill
 twice: Netflix set up at $17.99 plus its $17.99 statement line makes $35.98.
-Workbook's own note on Bills!Q5 says the log is for bills "that have changing
+The workbook's own note on Bills!Q5 says the log is for bills "that have changing
 amounts each month … OR are paid at various times", so its author expected a
 bill to be fixed or logged, not both.
 
@@ -217,7 +217,7 @@ look $1,600 cheaper than it is, with nothing on screen to say so.
 
 ---
 
-## D7 — Workbook's arithmetic mistakes are fixed
+## D7 — The workbook's arithmetic mistakes are fixed
 
 **Date:** 2026-09-22
 **Sheet / cells:** Annual Budget!P9, Q9, J9, V9, W9, D15, D20; Bills!H36
@@ -267,11 +267,11 @@ totals round to the dollar: L32 holds **17.99** and shows "$18". The income
 chart stacks Actual on top of Goal.
 
 **Chosen behaviour.** A negative Actual, Difference or Remaining shows its
-minus sign. A zero Actual on a budgeted row stays blank, as in Workbook. Totals
+minus sign. A zero Actual on a budgeted row stays blank, as in the workbook. Totals
 show cents. The income chart draws Actual over a Goal track.
 
 *Added 2026-09-23, S12b:* the income chart is a named horizontal bar per
-income row that has a goal or money in. Workbook's columns are numbered 1 to 7,
+income row that has a goal or money in. The workbook's columns are numbered 1 to 7,
 one per row slot, and print their scale in the chart's own background colour,
 so neither says whose bar is whose. Each bar keeps chart12's colours (#CCE2DF
 track, #9ABDB7 Actual) and its single scale (F17).
@@ -374,7 +374,7 @@ Nothing is copied forward.
 
 **Why.** Twelve retyped budgets a year, forever, is the work the app exists to
 remove. Resolving on read, instead of copying values into later months, keeps
-Workbook's property that editing October never rewrites January, and lets a
+the workbook's property that editing October never rewrites January, and lets a
 later "from this month on" edit to January still reach March. The sample is
 expressible exactly, so golden values hold.
 
@@ -454,7 +454,7 @@ while the Transactions log records a $2,000 transfer into it (K7:M7).
 
 **Chosen behaviour.** Type the balance once; each savings transfer recorded
 in the app after that adds to it. The alternative (option A) was to type it
-every time, as Workbook and the app do today.
+every time, as the workbook and the app do today.
 
 **Why.** A balance that has to be retyped goes stale, and the transfers are
 already recorded for the Month's Savings block.
@@ -525,7 +525,7 @@ budgets and goals are split the same way. Real rows count as they are.
 
 **Why.** The owner chose it (F15, option B). What it changes: typed dates
 no longer have to be retyped every payday, and a fixed ÷ 2 no longer
-misstates a bill for anyone not paid exactly twice a month. Workbook's own
+misstates a bill for anyone not paid exactly twice a month. The workbook's own
 START HERE already asks for the first pay date and frequency.
 
 **What it costs.** The Paycheck cells that depend on the typed budgets, the
@@ -538,7 +538,7 @@ fixture; `workbook-paycheck`'s `$semantics` lists them.
 
 **Date:** 2026-09-23
 **Sheet / cells:** Bill Calendar!B9 (the first week's Sunday)
-**Settled:** stated to the owner, no objection (plan decision 9, "Workbook's
+**Settled:** stated to the owner, no objection (plan decision 9, "the workbook's
 arithmetic mistakes are fixed")
 
 **Workbook behaviour.** Every day's bill formula filters Bills!P7:Q30 by
@@ -625,7 +625,7 @@ money path.
 Hidden!J77:J83 (`=Savings!F14`, the goal: 2000, 20000) and K77:K83
 (`=SUM(Savings!F14-Savings!J14)`, the amount needed: 1867, 16000); its
 heading image's legend reads "Goal Amount" and "Current Balance"
-**Settled:** stated to the owner, no objection (plan decision 9, Workbook's
+**Settled:** stated to the owner, no objection (plan decision 9, the workbook's
 mistakes fixed)
 
 **Workbook behaviour.** Each column stacks the goal on the amount still
@@ -636,7 +636,7 @@ Emergency Fund's $133 of $2,000 fills 51.7%.
 **Chosen behaviour.** Each fund is a bar: what is saved (#EBD15C) over a
 track as long as its goal (#FEEA8D), the saved part in basis points of the
 goal from packages/core, so an empty fund draws nothing and a full one the
-whole track. Each fund is on its own scale, as each of Workbook's columns is.
+whole track. Each fund is on its own scale, as each of the workbook's columns is.
 
 **Why.** The legend says the chart shows the current balance against the
 goal; the series it plots cannot show that, since half a column is drawn
@@ -667,19 +667,19 @@ Card 2's last month pays **122.7263215** (M48) and Credit Card 1's
 accrues on the prior balance, and the payment is that balance plus its
 interest. The Student Loan's month 12 charges $3.18 at 12% and pays
 **$321.22**, so that month's total payments are **$646.22**. Credit Card 2
-pays $124.29 ($1.53 of interest; $1.56 more than Workbook's, with D1's cents)
+pays $124.29 ($1.53 of interest; $1.56 more than the workbook's, with D1's cents)
 and Credit Card 1 pays $22.32.
 
 **Why.** A lender charges interest on the days a balance is owed, including
 the last month's. Leaving it off makes the plan a few dollars cheaper than
 the real payoff and the last payment too small to clear the debt.
 
-**The effect.** For Workbook's sample: $4.80 more interest across the four
+**The effect.** For the workbook's sample: $4.80 more interest across the four
 debts, on their final payments only. Every payoff month and the debt-free
 date are unchanged (D1's table stands), and so are the golden cells, all
 from months where no debt ends: E26 775, E28 825, D27 20958. One case can
 move a payoff by a month: a prior balance at or under the minimum that
-interest lifts over it. Workbook clears it that month; the engine leaves the
+interest lifts over it. The workbook clears it that month; the engine leaves the
 few cents of interest for the next.
 
 ---
@@ -691,7 +691,7 @@ few cents of interest for the next.
 (`='Debt Calculator'!H9`, the balance this month, #9171D7) on
 Hidden!K69:K73 (`='Debt Calculator'!J18`, the starting balance, #C8B6EB);
 the Debt Calculator's doughnuts (I495:I496 per debt, 23 pastel pairs)
-**Settled:** stated to the owner, no objection (plan decision 9, Workbook's
+**Settled:** stated to the owner, no objection (plan decision 9, the workbook's
 mistakes fixed), as D23 was for the savings chart beside it.
 
 **Workbook behaviour.** Each debt's column stacks the balance left on top of
