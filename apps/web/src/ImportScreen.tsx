@@ -38,119 +38,146 @@ export function ImportScreen({ fileName, text, onReset, onSave, saving = false, 
   }
 
   return (
-    <div>
-        <div className="space-y-6">
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <Label>File</Label>
-              <div className="truncate text-sm font-medium">{fileName}</div>
-            </div>
-            <Button variant="outline" onClick={reset}>
-              Choose another
-            </Button>
-          </div>
-
-          <ColumnMapping mapping={mapping} />
-
-          {result !== null && summary !== null ? (
-            <>
-              <Card>
-                <div className="grid grid-cols-2 divide-x divide-border sm:grid-cols-4">
-                  <Stat label="Would import" value={String(result.accepted.length)} />
-                  <Stat label="Needs a look" value={String(result.rejected.length)} />
-                  <Stat label="Money out" value={formatCents(summary.outflowCents)} tone="spend" />
-                  <Stat label="Money in" value={formatCents(summary.inflowCents)} tone="income" />
-                </div>
-              </Card>
-
-              {result.rejected.length > 0 ? (
-                <Card className="p-4">
-                  <Label>{result.rejected.length} rows would not be imported</Label>
-                  <ul className="mt-3 space-y-2">
-                    {result.rejected.map((r) => (
-                      <li key={r.line} className="flex gap-3 text-sm">
-                        <span className="tnum shrink-0 text-muted-foreground">Line {r.line}</span>
-                        <span>{describeReason(r.reason)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </Card>
-              ) : null}
-
-              <Card className="overflow-hidden">
-                <div className="border-b border-border px-4 py-3">
-                  <Label>{result.accepted.length} transactions</Label>
-                </div>
-                <ul className="divide-y divide-border">
-                  {result.accepted.map((row) => (
-                    <li key={`${row.line}`} className="flex items-baseline gap-3 px-4 py-3">
-                      <span className="tnum w-28 shrink-0 text-sm text-muted-foreground">
-                        {formatIsoDate(row.postedOn)}
-                      </span>
-                      <span className="min-w-0 flex-1 text-sm">
-                        <IngestedText>{row.merchantRaw}</IngestedText>
-                      </span>
-                      <span
-                        className={`tnum shrink-0 text-sm font-medium ${
-                          row.amountCents < 0 ? 'text-spend' : 'text-income'
-                        }`}
-                      >
-                        {formatCents(row.amountCents)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-
-                <div className="flex flex-col items-center gap-2">
-                  {/*
-                    Saveable when ANYTHING was read, readable or not. It used to
-                    require at least one accepted row, so a file where every row
-                    failed — a wrong date format, say — could not be saved at
-                    all, and its failures were never recorded anywhere. That is
-                    precisely the import most worth keeping a record of, and
-                    CLAUDE.md requires every ingestion failure to reach the
-                    review queue rather than ending on a screen that is about
-                    to be navigated away from.
-                  */}
-                  <Button
-                    disabled={saving || result.parsed === 0}
-                    onClick={() => {
-                      void onSave({
-                        accepted: result.accepted,
-                        rejected: result.rejected,
-                        parsed: result.parsed,
-                        source: 'card_csv',
-                      })
-                    }}
-                  >
-                    {saving
-                      ? 'Saving…'
-                      : result.accepted.length === 0
-                        ? `Record ${result.rejected.length} unreadable rows`
-                        : `Send ${result.accepted.length} to the review queue`}
-                  </Button>
-                  {outcome !== null ? (
-                    <p
-                      className={`text-sm ${outcome.ok ? 'text-income' : 'text-spend'}`}
-                      role={outcome.ok ? undefined : 'alert'}
-                    >
-                      {outcome.message}
-                    </p>
-                  ) : null}
-                  <p className="text-xs text-muted-foreground">
-                    Nothing reaches your ledger until you approve it.
-                  </p>
-                </div>
-
-              <p className="text-center text-xs text-muted-foreground">
-                {result.parsed} rows read · {result.accepted.length} readable ·{' '}
-                {result.rejected.length} not · {result.blankSkipped} blank lines skipped
-              </p>
-            </>
-          ) : null}
+    <div className="space-y-6">
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <Label>File</Label>
+          <div className="truncate text-sm font-medium">{fileName}</div>
         </div>
+        <Button variant="outline" onClick={reset}>
+          Choose another
+        </Button>
+      </div>
+
+      <ColumnMapping mapping={mapping} />
+
+      {result !== null && summary !== null ? (
+        <>
+          <ReadRows result={result} summary={summary} />
+          <SaveFooter result={result} onSave={onSave} saving={saving} outcome={outcome} />
+        </>
+      ) : null}
     </div>
+  )
+}
+
+type Mapping = ReturnType<typeof useCsvMapping>
+
+/** What the mapping reads: the counts, the rows it could not read and why, and every row it could (FE-19). */
+function ReadRows({ result, summary }: { result: NonNullable<Mapping['result']>; summary: NonNullable<Mapping['summary']> }) {
+  return (
+    <>
+      <Card>
+        <div className="grid grid-cols-2 divide-x divide-border sm:grid-cols-4">
+          <Stat label="Would import" value={String(result.accepted.length)} />
+          <Stat label="Needs a look" value={String(result.rejected.length)} />
+          <Stat label="Money out" value={formatCents(summary.outflowCents)} tone="spend" />
+          <Stat label="Money in" value={formatCents(summary.inflowCents)} tone="income" />
+        </div>
+      </Card>
+
+      {result.rejected.length > 0 ? (
+        <Card className="p-4">
+          <Label>{result.rejected.length} rows would not be imported</Label>
+          <ul className="mt-3 space-y-2">
+            {result.rejected.map((r) => (
+              <li key={r.line} className="flex gap-3 text-sm">
+                <span className="tnum shrink-0 text-muted-foreground">Line {r.line}</span>
+                <span>{describeReason(r.reason)}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
+
+      <Card className="overflow-hidden">
+        <div className="border-b border-border px-4 py-3">
+          <Label>{result.accepted.length} transactions</Label>
+        </div>
+        <ul className="divide-y divide-border">
+          {result.accepted.map((row) => (
+            <li key={`${row.line}`} className="flex items-baseline gap-3 px-4 py-3">
+              <span className="tnum w-28 shrink-0 text-sm text-muted-foreground">
+                {formatIsoDate(row.postedOn)}
+              </span>
+              <span className="min-w-0 flex-1 text-sm">
+                <IngestedText>{row.merchantRaw}</IngestedText>
+              </span>
+              <span
+                className={`tnum shrink-0 text-sm font-medium ${
+                  row.amountCents < 0 ? 'text-spend' : 'text-income'
+                }`}
+              >
+                {formatCents(row.amountCents)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </Card>
+    </>
+  )
+}
+
+/** Sending what was read to Review, and what came of it (FE-19). */
+function SaveFooter({
+  result,
+  onSave,
+  saving,
+  outcome,
+}: {
+  result: NonNullable<Mapping['result']>
+  onSave: ImportScreenProps['onSave']
+  saving: boolean
+  outcome: { readonly ok: boolean; readonly message: string } | null
+}) {
+  return (
+    <>
+      <div className="flex flex-col items-center gap-2">
+        {/*
+          Saveable when ANYTHING was read, readable or not. It used to
+          require at least one accepted row, so a file where every row
+          failed — a wrong date format, say — could not be saved at
+          all, and its failures were never recorded anywhere. That is
+          precisely the import most worth keeping a record of, and
+          CLAUDE.md requires every ingestion failure to reach the
+          review queue rather than ending on a screen that is about
+          to be navigated away from.
+        */}
+        <Button
+          disabled={saving || result.parsed === 0}
+          onClick={() => {
+            void onSave({
+              accepted: result.accepted,
+              rejected: result.rejected,
+              parsed: result.parsed,
+              source: 'card_csv',
+            })
+          }}
+        >
+          {saving
+            ? 'Saving…'
+            : result.accepted.length === 0
+              ? `Record ${result.rejected.length} unreadable rows`
+              : `Send ${result.accepted.length} to the review queue`}
+        </Button>
+        {outcome !== null ? (
+          <p
+            className={`text-sm ${outcome.ok ? 'text-income' : 'text-spend'}`}
+            role={outcome.ok ? undefined : 'alert'}
+          >
+            {outcome.message}
+          </p>
+        ) : null}
+        <p className="text-xs text-muted-foreground">
+          Nothing reaches your ledger until you approve it.
+        </p>
+      </div>
+
+      <p className="text-center text-xs text-muted-foreground">
+        {result.parsed} rows read · {result.accepted.length} readable ·{' '}
+        {result.rejected.length} not · {result.blankSkipped} blank lines skipped
+      </p>
+    </>
   )
 }
 
@@ -159,7 +186,7 @@ export function ImportScreen({ fileName, text, onReset, onSave, saving = false, 
  * instead, or which column is which, the date format and how amounts are
  * signed, each proposed and each the owner's to change (FE-19).
  */
-function ColumnMapping({ mapping }: { mapping: ReturnType<typeof useCsvMapping> }) {
+function ColumnMapping({ mapping }: { mapping: Mapping }) {
   const { delimiter, setDelimiter, choose, tokenized, analysis, dateIndex, merchantIndex, amountIndex, signKind, dateFormat, ambiguousDate } =
     mapping
   return (
