@@ -64,7 +64,24 @@ export const ARTICLES: readonly Article[] = [
     done: 'the Month shows Start, Spent, Left to spend and End of month, and Review says "Nothing waiting."',
     stuck:
       'Do the steps you can and skip the rest. Every screen works with what it has, and says what it is missing in one line.',
-    related: ['statements', 'review', 'budgets'],
+    related: ['statements', 'review', 'budgets', 'updates'],
+  },
+  {
+    id: 'updates',
+    title: 'One-time updates',
+    summary:
+      'Some parts of the app need a one-time update pasted into Supabase, where your budget is kept online. This page checks which are in and names the next one. About 2 minutes each, easiest on a computer.',
+    steps: [
+      'Open Supabase in a new tab and choose your project.',
+      'Press **SQL Editor**, then **New query**.',
+      'Open the file this page names next on GitHub, and copy all of it.',
+      'Paste it into the new query and press **Run**.',
+      'Wait until it says Success, then press **Check again** on this page.',
+    ],
+    done: 'this page says "All done".',
+    stuck:
+      'If Supabase says anything other than Success, stop there: nothing is lost, and the message names the line. A file already pasted is refused rather than applied twice, so pasting one again does no harm.',
+    related: ['start', 'codes'],
   },
   {
     id: 'periods',
@@ -82,7 +99,7 @@ export const ARTICLES: readonly Article[] = [
     done: 'you can move between the four views and step back to last month.',
     stuck:
       'Pay needs to know when you are paid: set **Paid** and **First payday** on an Income row in Setup. On a phone, the Week is in the switch, not the bottom bar.',
-    related: ['budgets'],
+    related: ['comparisons', 'budgets', 'wrong-number'],
   },
   {
     id: 'statements',
@@ -99,7 +116,7 @@ export const ARTICLES: readonly Article[] = [
     done: 'Review lists the new rows, and a statement you bring in again adds nothing twice.',
     stuck:
       'If the app says it could not read the file, try the other format your bank offers (PDF or CSV). Lines it could not read wait at the bottom of Review with the reason.',
-    related: ['review', 'add'],
+    related: ['review', 'add', 'wrong-number'],
   },
   {
     id: 'review',
@@ -116,7 +133,7 @@ export const ARTICLES: readonly Article[] = [
     done: 'Review says "Nothing waiting." A shop you approved once is filed the same way next time, without waiting.',
     stuck:
       'If a shop keeps landing in the wrong place, move one of its charges from the Month with **Move to…** and leave **Always file** ticked.',
-    related: ['statements', 'add'],
+    related: ['statements', 'add', 'wrong-number'],
   },
   {
     id: 'add',
@@ -132,7 +149,7 @@ export const ARTICLES: readonly Article[] = [
     done: 'a photo waits in Review, and a typed entry shows on the Month on its date.',
     stuck:
       'Reading a photo needs the receipt reader set up (see One-time updates). You can always type the receipt instead.',
-    related: ['statements', 'review'],
+    related: ['statements', 'review', 'updates'],
   },
   {
     id: 'budgets',
@@ -150,7 +167,7 @@ export const ARTICLES: readonly Article[] = [
     done: 'each row on the Month shows Budgeted, Actual and Left, and the Bill calendar shows your bills on their days.',
     stuck:
       'A bill with no charge yet this month counts its planned amount. When the real charge comes in, it takes the planned amount’s place, so it is never counted twice.',
-    related: ['periods', 'start'],
+    related: ['periods', 'wrong-number', 'start'],
   },
   {
     id: 'savings',
@@ -167,7 +184,131 @@ export const ARTICLES: readonly Article[] = [
     done: 'the fund’s card shows what is saved, what is left, and what to save a month to get there.',
     stuck:
       'If the saved amount looks low, check that each move into the fund was recorded under that fund, and not as spending.',
-    related: ['budgets'],
+    related: ['coach', 'comparisons', 'budgets'],
+  },
+  {
+    id: 'debts',
+    title: 'Debts',
+    summary:
+      'The loans and card balances you are paying down, and when each is paid off. These are separate from the Month’s Debts list, which counts each month’s payments.',
+    steps: [
+      'Open **More**, then **Debts**.',
+      'Press **Add a debt**.',
+      'Type its starting balance, the month beside it, its minimum payment and its APR.',
+      'Press **Save debt**.',
+      'Read **Ways to pay it off** to see how much sooner Snowball or Avalanche finishes than minimums only.',
+    ],
+    done: 'each debt shows when it is paid off, and the summary shows the date you are debt-free.',
+    stuck:
+      'An estimate is fine: the balance is as of the month beside it. Tap a debt to fix a figure or add an extra payment.',
+    related: ['budgets', 'comparisons'],
+  },
+  {
+    id: 'coach',
+    title: 'What the Coach does, and never does',
+    summary:
+      'The Coach shows how far your flight fund has come, in hours of flying. More of it arrives over the next updates.',
+    steps: [
+      'Open **Coach**.',
+      'Read the flight card: the hours saved, of the hours your goal buys.',
+      'To change the goal, open **More**, then **Savings**, and press **Edit goal**.',
+    ],
+    done: 'the flight card shows your hours and what is saved of the target.',
+    stuck:
+      'The Coach never moves money and never changes a budget without your tap, and every figure it shows comes from your own records. If it says there is no goal yet, press **Set a goal**.',
+    related: ['savings', 'comparisons'],
+  },
+  {
+    id: 'comparisons',
+    title: 'Comparisons with last month',
+    summary:
+      'Each view shows what you did at the same point last time: this month against the same days of last month, this week against last week.',
+    steps: [
+      'On the **Month**, read the line under the summary: what you had spent by today, and by the same day last month.',
+      'Tap the **vs** choice beside **Last column** to swap each row’s Left for its change since last month.',
+      'Tap **Left** to swap it back.',
+      'On the **Week**, **Pay**, **Year**, **Savings** and **Debts**, read the line comparing with the time before.',
+    ],
+    done: 'you can see, row by row, what went up and what went down.',
+    stuck:
+      'A comparison needs records from last time. If it says your records start later, bring in the statement before that date on **Add**.',
+    related: ['periods', 'statements', 'wrong-number'],
+  },
+  {
+    id: 'wrong-number',
+    title: 'Why does a number look wrong?',
+    summary:
+      'Almost always one of six things: a statement not brought in yet, rows waiting in Review, no starting balance, card payments, a planned bill, or a charge counted twice.',
+    steps: [
+      'Open **Review** and approve anything waiting, because a waiting row is not counted yet.',
+      'Open **Add** and bring in your latest statement if the last one ended a while ago.',
+      'On the **Month**, check that **Start** shows the balance your bank showed on the 1st.',
+      'Tap the row that looks wrong to see each charge behind it.',
+      'If one charge is there twice, typed once and imported once, open **More**, then **All transactions**, and remove the typed one.',
+    ],
+    done: 'each row’s charges add up to what you expected.',
+    stuck:
+      'Card payments sit on Not spending and never count as spending, because the purchases on the card already did. A bill counts its planned amount until the real charge comes in, then the charge takes its place.',
+    related: ['review', 'budgets', 'statements'],
+  },
+  {
+    id: 'codes',
+    title: 'Messages with a code in brackets',
+    summary:
+      'When something does not work, the app says what happened, then a code in brackets such as (code 42501). The code is for looking it up.',
+    steps: [
+      'Read the sentence before the brackets: it says what happened.',
+      'Do what it says, such as pressing **Try again**.',
+      'If the code is in the list below, follow what it says there.',
+      'If it keeps happening, take a screenshot with the code showing.',
+    ],
+    done: 'what you were doing works without a message.',
+    stuck: 'Nothing is lost when a message shows: a change that fails is not saved half way.',
+    related: ['updates', 'wrong-number'],
+    terms: [
+      { term: 'PGRST205, 42P01, PGRST202, 42703', meaning: 'A one-time update is missing. Open Help, then One-time updates.' },
+      { term: '42501', meaning: 'Something was changed on another device, or your sign-in needs refreshing. Sign out and back in.' },
+      { term: '28000, PGRST301', meaning: 'You were signed out. Sign in again; nothing was saved.' },
+      { term: '23505', meaning: 'You already have one with that name, so nothing was added.' },
+      { term: '23514, 23503', meaning: 'A rule your lists follow stopped the change, so nothing was saved.' },
+      { term: 'unknown, or no code', meaning: 'The app could not reach the internet. Check your connection and try again.' },
+    ],
+  },
+  {
+    id: 'iphone',
+    title: 'Put it on your iPhone',
+    summary: 'Open the app from your home screen like any other app. About 1 minute.',
+    steps: [
+      'Open the app’s address in **Safari**.',
+      'Tap **Share**, the square with an arrow.',
+      'Scroll down and tap **Add to Home Screen**.',
+      'Tap **Add**.',
+    ],
+    done: 'the app’s icon is on your home screen and opens full screen.',
+    stuck: 'It has to be Safari. If Add to Home Screen is missing, tap **Edit Actions** at the bottom of the Share list and add it.',
+    related: ['start'],
+  },
+  {
+    id: 'words',
+    title: 'Words the app uses',
+    summary: 'The words on the screens, in plain terms.',
+    steps: ['Find the word in the list below.', 'Tap **?** beside a screen’s title to read how that screen uses it.'],
+    done: 'the word on the screen makes sense.',
+    stuck: 'If a word is not here, open **Help** and search for it.',
+    related: ['periods', 'wrong-number'],
+    terms: [
+      { term: 'Start', meaning: 'The balance your bank showed on the 1st of the month, as you typed it.' },
+      { term: 'Spent', meaning: 'Everything that went out this month, with each bill counted even before its charge arrives.' },
+      { term: 'Left to spend', meaning: 'What your Variable expenses budgets allow that is not spent yet.' },
+      { term: 'End of month', meaning: 'Start, plus what came in, less what was spent and saved.' },
+      { term: 'Budgeted, Actual, Left', meaning: 'What you planned, what happened, and the difference.' },
+      { term: 'Planned', meaning: 'A bill’s monthly amount, counted until its real charge comes in.' },
+      { term: 'Not spending', meaning: 'Money that moves but is not spent, such as paying off your card.' },
+      { term: 'Pay period', meaning: 'From one payday to the day before the next.' },
+      { term: 'Fund', meaning: 'A savings category that money is moved into, with a goal.' },
+      { term: 'Review', meaning: 'Where new rows wait for you to approve them.' },
+      { term: 'One-time update', meaning: 'Something pasted into Supabase once, so a new part of the app has somewhere to keep its figures.' },
+    ],
   },
 ]
 
