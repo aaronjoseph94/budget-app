@@ -33,7 +33,7 @@ refresh returns to this week.
 | Question | Options | Chosen |
 |---|---|---|
 | What leaves the phone bar for the Coach | Week; Review; Add | **Week** |
-| How the Week stays close | An item in More; **a switch under the title** | The switch |
+| How the Week stays close | An item in More; **a switch at the top of the screen** | The switch |
 | The switch's items | Month · Week · Year; **Month · Week · Pay · Year** | Four |
 | More | One long list; **four groups** | Groups |
 | The address's second segment | A second field per kind; **one `param`, read per screen** | One `param` |
@@ -49,12 +49,13 @@ thumb reach.
 Review · Add · More. Paycheck and Year are in the switch; the Bill calendar
 and Setup are in More.
 
-**A switch, Month · Week · Pay · Year,** sits under the title of those four
-screens, as four links to their own addresses. Each opens that view as it
-opens from anywhere else (this month, this week, this pay period, this
+**A switch, Month · Week · Pay · Year,** sits at the top of those four
+screens, above the title band, so the Paycheck shows it while its schedule
+loads, fails or is missing. It is four links to their own addresses. Each
+opens that view as it opens from anywhere else (this month, this week, this pay period, this
 year); a switch is one tap to the other view, not a way to carry a date
 across views, which would need rules for which week a month means. Four
-segments are about 72 px each at 320 px and 44 px tall.
+segments are about 68 px each at 320 px and 44 px tall.
 
 **The Bill calendar** gets a calendar button in the Month's header, and an
 item in More.
@@ -97,10 +98,12 @@ on the Week and Savings, else the amount typed.
 
 ## Why
 
-- **The Week is what the owner uses least of the four views on a phone**:
-  the Month opens first and holds the same blocks, and the Coach is the new
-  thing the owner asked for. Review cannot move: it is the one human step
-  every imported row waits for. Add cannot move: it is the most used action.
+- **The Week is the tab that can move with the least lost**: the Month
+  opens first and holds the same blocks, and the Coach is part of the
+  AI-first app the owner asked for. Nothing records how often the owner
+  opens the Week; if it is often, see Revisit below. Review cannot move:
+  it is the one human step every imported row waits for. Add cannot move:
+  it is how anything typed or photographed gets in.
 - **A switch keeps the Week one tap from the Month**, which a More item
   would not (two taps, and hidden). It also gives the Paycheck and Year a
   place on a phone that is not More.
@@ -115,7 +118,7 @@ on the Week and Savings, else the amount typed.
 ## Consequences
 
 **The owner will notice:** Week leaves the phone's bottom bar for the
-switch under the Month's title; on a wide screen, Paycheck and Year move into
+switch at the top of the Month; on a wide screen, Paycheck and Year move into
 that switch, and the Bill calendar and Setup into More; a new Coach tab.
 HANDOFF says so when it is rewritten (A28).
 

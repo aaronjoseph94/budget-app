@@ -16,7 +16,7 @@ const VIEWS: readonly { screen: Screen; label: string }[] = [
  * Each is a link to that view's bare address, so it opens as it does from
  * anywhere else (this month, this week, this pay period, this year): a
  * month has no one week or pay period to carry across. Four segments are
- * about 72px each at 320px; at large text sizes the row scrolls inside its
+ * about 68px each at 320px; at large text sizes the row scrolls inside its
  * own box rather than the page sideways.
  */
 export function PeriodSwitch({ current }: { current: 'month' | 'week' | 'paycheck' | 'year' }) {
