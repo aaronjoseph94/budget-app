@@ -12,7 +12,7 @@ import { WhySheet } from './WhySheet.js'
  * until the AI's arrive (A12). Which facts become cards, and in what order,
  * is savings-coach's; every figure is the engine's; this draws them.
  * Nothing is dismissed yet: ✕ arrives with the table that keeps a
- * dismissal on every device (0016, A17).
+ * dismissal on every device (0017, A17).
  */
 const NOTHING_DISMISSED: ReadonlySet<string> = new Set()
 const TONE = 'cheerleader'

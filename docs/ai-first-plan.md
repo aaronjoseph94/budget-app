@@ -10,11 +10,12 @@ This plan was made from three independent designs, each led by one concern (safe
 - **A Coach tab, next to Month.** It shows how far the flight fund has come in hours of flying, what changed since last month, what to trim and how many weeks sooner that gets you flying, and a money quote or tip that fits. On Sundays there is a short check-in.
 - **The AI writes the words. Your own numbers write every figure.** For the Coach, the forecast and the reports, the AI is never sent your amounts or balances: it writes around blanks that the app fills from your real figures. A receipt photo, and what you type into Just type it or Ask, are sent as they are (§3.6). If the AI is off, busy or out of free uses, you see the same card in the app's own words. Nothing breaks.
 - **Free Google Gemini first.** In AI settings: **Get a free key**, paste it, **Save & test**. If you already added a Gemini key for receipt photos, it is used as soon as the AI helper is pasted, with no key to paste. Other free services (Groq, OpenRouter) and paid ones (OpenAI, Anthropic) can be added. Paid ones are used only if you switch them on.
+- **More than one savings goal** (you asked for this later the same day). On Savings, **Add a goal**; choose which one is your main goal, and pause or finish the others. Flight training stays your main goal, in hours of flying, until you choose another.
 - **Forecast.** "Safe to spend $31 a day", where the month is heading, the tightest day in the next 30, when you will be flying, and the next three months.
 - **Reports.** The month in review, trends, shops and subscriptions, and your spending habits, with Save as PDF and a CSV download.
 - **Last month, everywhere.** Month, Week, Paycheck, Year, Savings and Debts show what you did at the same point last month.
 - **Help that doesn't leave you lost.** A **?** beside every screen's title, a Getting started guide one step at a time, and a One-time updates page that checks what is installed and has Copy buttons.
-- **After the push you do three things, about 15 minutes, once:** paste three database updates, paste the AI helper, paste a free Gemini key (§10). HANDOFF's step 1 (the twelve updates `0003` to `0014`) is done: the owner pasted them on 2026-09-24. Help → One-time updates shows which of the new ones are left.
+- **After the push you do three things, about 15 minutes, once:** paste four database updates, paste the AI helper, paste a free Gemini key (§10). HANDOFF's step 1 (the twelve updates `0003` to `0014`) is done: the owner pasted them on 2026-09-24. Help → One-time updates shows which of the new ones are left.
 - **One thing moves.** Week leaves the phone's bottom bar for a **Month · Week · Pay · Year** switch at the top of the Month. It is still one tap away.
 
 ---
@@ -34,6 +35,8 @@ The owner's instructions of 2026-09-24, verbatim (numbering theirs; the workbook
 > 9. Ensure its mobile friendly.
 > 10. Test everything and push to github main
 
+Later the same day the owner added: "I also want the ability to add other goals for saving not just flight... make sure to add that". Slice G1 (§13) builds it.
+
 **Item 2's question, answered.** Today the app uses AI in one place: reading a receipt photo, through the `read-receipt` function, which has not been deployed yet. After this plan it uses AI in sixteen places (§3.11), all through one helper, and every one of them still works with AI switched off.
 
 **Where each item is answered:**
@@ -41,7 +44,7 @@ The owner's instructions of 2026-09-24, verbatim (numbering theirs; the workbook
 | Item | Where in this plan | Slices (§13) |
 |---|---|---|
 | 1. Proceed without questions; make a list first | This document is the list; every choice is labelled | A01 |
-| 2. AI first; free Gemini; paid optional | §3, §4, ADR 0004, ADR 0005 | A02, A07–A12, A17, A20–A25 |
+| 2. AI first; free Gemini; paid optional | §3, §4, ADR 0004, ADR 0005 | A02, A07–A12, A17, A20–A25; G1 (goals the coach can speak of) |
 | 3. Forecasting | §5 | A13, A14 |
 | 4. The brand out of every push | Rewriting history is done outside these slices. The `brand` gate already keeps it out of every tracked file (CONSTRAINTS.md, N64) | — |
 | 5. Help and setup | §8 | A06, A25, A28 |
@@ -131,7 +134,7 @@ On a phone, 390 px wide. The figures are illustrative; every one comes from the 
  [ Ask anything about your money…                            ✨ ]
 ```
 
-Every figure in these lines, the "3" of "3 weeks" and "August" included, is a blank the app filled from the engine. The AI's own words hold no digit and no number word, so it can write "a few nights" but never "two dinners" (ADR 0005).
+The hero card is the main goal (G1); the other active goals sit under it as a short list, each with its bar and saved of target. Every figure in these lines, the "3" of "3 weeks" and "August" included, is a blank the app filled from the engine. The AI's own words hold no digit and no number word, so it can write "a few nights" but never "two dinners" (ADR 0005).
 
 - **At most three insight cards,** ranked by how much money each is about. A stale-data card ("Your last statement ends 18 days ago: import the new one for fresh advice") always comes first when it applies, because a stale ledger makes a coach confidently wrong (`docs/ideas/insights.md`).
 - **Each card has one action** (See charges, Set a budget, Open goal, Add it as a bill), **✕** to dismiss, and **Why am I seeing this?**, which lists the engine figures behind it. A dismissed card does not come back for the same cause, on any device.
@@ -141,7 +144,7 @@ Every figure in these lines, the "3" of "3 weeks" and "August" included, is a bl
 
 ### 2.4 The Sunday check-in (`#/coach/checkin`)
 
-From Sunday the Coach tab shows a dot. The check-in is one screen: last week's recap and a win; one thing to try; a line on the flight goal; up to three questions about last week's biggest discretionary charges ("Was Sushi Place, $84.20, planned?" with **Planned**, **Impulse** and **Needed**); and a one-tap commitment ("Keep Dining out under $60.00 next week?"), which writes that category's weekly budget through the Week's existing save. Answers are kept (0016) and become the "how much of it was impulse" fact the coach can cite. It works with AI off, with the same sections in the app's own words.
+From Sunday the Coach tab shows a dot. The check-in is one screen: last week's recap and a win; one thing to try; a line on the flight goal; up to three questions about last week's biggest discretionary charges ("Was Sushi Place, $84.20, planned?" with **Planned**, **Impulse** and **Needed**); and a one-tap commitment ("Keep Dining out under $60.00 next week?"), which writes that category's weekly budget through the Week's existing save. Answers are kept (0017) and become the "how much of it was impulse" fact the coach can cite. It works with AI off, with the same sections in the app's own words.
 
 ### 2.5 Forecast (`#/forecast`)
 
@@ -182,7 +185,7 @@ A question box on the Coach, an **Ask about this** in every help sheet, and an i
 
 ### 2.10 The other screens, and what the whole-app review fixes
 
-- **Week, Paycheck and Year** show last week, the last pay period and the previous twelve months beside their totals. **Savings** shows saved this month against last. **Debts** shows the schedule's balance against a month ago.
+- **Week, Paycheck and Year** show last week, the last pay period and the previous twelve months beside their totals. **Savings** shows saved this month against last, and holds every goal: **Add a goal**, the main goal, reorder, pause and mark reached (G1). **Debts** shows the schedule's balance against a month ago.
 - **Rows that open nothing today will open their charges** on the Week, Paycheck and the Bill calendar (N46, N48, N51), and so will a charge filed under Not spending (N26).
 - **A list of learned shops, with Forget,** in Settings (N17).
 - **Every "needs a database update (00NN…)" message** says instead "Needs a one-time update" and links to Help → One-time updates.
@@ -215,7 +218,7 @@ A question box on the Coach, an **Ask about this** in every help sheet, and an i
 - **Tasks carry data, never prompts.** Each task's system prompt, JSON schema and output limit live in the function, and the app sends only the task's data, each field bounded by zod: a label of at most 40 characters, a typed entry or question of at most 300, at most 24 facts, 6 quote ids, 40 rows and 200 categories, and an image of at most 6 MB of base64. The helper cannot be used as a general-purpose proxy.
 - **The reply comes back as text.** The app parses it with zod in `packages/schema` (the "model responses" boundary), as `receipt.ts` does now. The helper only checks that the text is a JSON object, to decide whether to try the next service.
 - **Logs** carry the action, task, service, outcome code and counts only. A test spies on `console` and fails if a key, a prompt, a payload value or a reply appears.
-- **Codes the app turns into sentences:** `not_signed_in`, `origin_not_allowed`, `bad_request`, `ai_off`, `not_set_up`, `needs_update` (0015 missing), `limit_reached`, `all_resting` (every service rate-limited or cooling down), `all_failed`, `key_rejected`, `keys_locked`.
+- **Codes the app turns into sentences:** `not_signed_in`, `origin_not_allowed`, `bad_request`, `ai_off`, `not_set_up`, `needs_update` (0016 missing), `limit_reached`, `all_resting` (every service rate-limited or cooling down), `all_failed`, `key_rejected`, `keys_locked`.
 
 ### 3.3 The services, and the allowlist
 
@@ -301,19 +304,20 @@ Free services may use what they are sent to improve their products, and people m
 
 ### 3.9 Nothing reaches the ledger without a tap
 
-- **Review suggestions** are written as `category_source = 'model'` on pending rows only, by a guarded function (0017). 0004's CHECK still refuses approving a row as `model`. **Approve** records `user` and learns the shop as today. **Approve these 12** calls `approve_candidate` once per row, each a conditional write, after one confirmation.
+- **Review suggestions** are written as `category_source = 'model'` on pending rows only, by a guarded function (0018). 0004's CHECK still refuses approving a row as `model`. **Approve** records `user` and learns the shop as today. **Approve these 12** calls `approve_candidate` once per row, each a conditional write, after one confirmation.
 - **Just type it and receipts** only fill the Add form, and the owner presses **Save**. A quick-add amount must appear, word for word after normalising, in what the owner typed. The receipt path stays form, then Review.
 - **The check-in's commitment** writes a weekly budget only when tapped.
 
 ### 3.10 Failing soft
 
-Nothing in the app's first load reads a new table. `AppDataProvider.refresh()` loads with one `Promise.all`, so a missing table there would fail the whole app; every AI and coach read is its own, and fails on its own. Every optional panel on the Month sits inside an error boundary, so an engine error hides that panel with one line and never takes the Month down.
+Nothing in the app's first load needs a new table or column. `AppDataProvider.refresh()` loads with one `Promise.all`, so a missing table there would fail the whole app; every AI and coach read is its own, and fails on its own. The one new read there, G1's goals, asks for 0015's columns and, when they are missing (42703), reads the goals as before. Every optional panel on the Month sits inside an error boundary, so an engine error hides that panel with one line and never takes the Month down.
 
 | Missing | What still works | What says "Needs a one-time update → Help" |
 |---|---|---|
-| 0015 | Everything, including the Coach in the app's own words, Forecast, Reports and comparisons | AI settings; AI words (the app's own are shown) |
-| 0016 | AI works, uncached; the Coach works | ✕ on cards is hidden; the check-in's answers |
-| 0017 | Review works as today | the suggestions |
+| 0015 | Everything; adding, editing and showing goals work as before, the oldest active goal leading | choosing a main goal, reordering, pausing and marking a goal reached |
+| 0016 | Everything, including the Coach in the app's own words, Forecast, Reports and comparisons | AI settings; AI words (the app's own are shown) |
+| 0017 | AI works, uncached; the Coach works | ✕ on cards is hidden; the check-in's answers |
+| 0018 | Review works as today | the suggestions |
 | The `ai` helper (a 404) | Everything, in the app's own words; receipts fall back to `read-receipt` | AI settings; AI words |
 | No key and no secret | Everything, in the app's own words | "Turn on free AI (2 minutes)" |
 | The limit reached, or every service resting | Everything, in the app's own words | "AI is resting until tomorrow: showing the app's own words" |
@@ -337,7 +341,7 @@ Each has its grounding and what the owner sees without AI. "Pack" is the one dai
 | 11 | Subscription and unusual-charge alerts | Coach, Reports → Shops | "Spotify went up: $11.99 → $12.99", "Possible double charge at …" | detectors (F38, F39) | template | the pack |
 | 12 | Ask | `#/ask`, Coach, every help sheet | an answer card with the engine's figure | the AI picks a fixed intent; `answerQuery` in core computes the answer | question chips answered by core | per question |
 | 13 | Help answers | Ask, help sheets | "How do I…" opens the matching article | the AI picks a committed topic id | search over the articles | within Ask |
-| 14 | Review suggestions | Review | "✨ Suggested: Groceries", picked, Approve still a tap | the AI picks an offered category alias; stored as `model` (0017) | "You filed a similar shop under…" (not stored) | 1–3 per statement |
+| 14 | Review suggestions | Review | "✨ Suggested: Groceries", picked, Approve still a tap | the AI picks an offered category alias; stored as `model` (0018) | "You filed a similar shop under…" (not stored) | 1–3 per statement |
 | 15 | Just type it | Add | the form fills from "coffee 4.50 yesterday" | a parser first; the AI only for what it could not fill; the amount must be in the owner's words | the parser alone | 0–5 a day |
 | 16 | Receipts with failover | Add → Photo | the form fills from the photo | the `receipt` task on services that read images; the existing receipt zod | `read-receipt`, then typing it | per photo |
 
@@ -444,7 +448,7 @@ One step per screen: a bar ("Step 3 of 9 · about 2 minutes"), a large title, on
 | 2 | Your lists (the starter list button) | a spending category exists |
 | 3 | When you're paid | an Income category has a pay schedule |
 | 4 | Your bills | a bill, debt or subscription has a monthly amount |
-| 5 | Your flight goal ($30,000 at $275 an hour, and what is saved so far) | a savings goal with a target exists |
+| 5 | Your goals: the flight goal first ($30,000 at $275 an hour, and what is saved so far), and **Add a goal** for any other (G1) | a savings goal with a target exists |
 | 6 | Your first statement, and filing it | an import exists and Review is empty |
 | 7 | This month's starting balance, with starter budgets offered | this month's balance is typed |
 | 8 | Turn on free AI | the AI helper answers and a Gemini key or the secret works |
@@ -453,7 +457,7 @@ One step per screen: a bar ("Step 3 of 9 · about 2 minutes"), a large title, on
 - **Progress comes from `setupProgress` in core,** which takes one yes, no or "can't check yet" per step and returns the steps in order, how many are done and the next one. A step whose read failed shows "can't check yet", never "done".
 - **Do this later** moves a step to the end. The choice, and a hand-ticked step 9, are kept in the sign-in's `user_metadata`, as the name already is (`profile.ts`), so they follow the owner to another device with no migration.
 - **Step 7 offers starter budgets (F43):** each spending category's usual month, rounded up to $5, each written only when **Accept** is tapped.
-- **Step 8 is honest about time.** If the AI helper or 0015 is not in yet, it first walks through One-time updates (§8.2): "about 15 minutes, once, easiest on a computer". The key itself then takes under 2 minutes on an iPhone. If the `GEMINI_API_KEY` secret already works, the step is already done.
+- **Step 8 is honest about time.** If the AI helper or 0016 is not in yet, it first walks through One-time updates (§8.2): "about 15 minutes, once, easiest on a computer". The key itself then takes under 2 minutes on an iPhone. If the `GEMINI_API_KEY` secret already works, the step is already done.
 - **Finishing** shows a small paper-plane celebration (none under reduced motion) and "Your coach is ready", then the Coach.
 - **The Month's empty state and the first sign-in** open Getting started. More and Settings show "Getting started: 5 of 9 done" until it is finished.
 
@@ -461,12 +465,12 @@ One step per screen: a bar ("Step 3 of 9 · about 2 minutes"), a large title, on
 
 - **Articles are committed data** (`apps/web/src/help/articles.ts`: id, title, summary, steps, "You're done when…", "Stuck?", the screen it belongs to, related ids). They are drawn as text and lists, never markup, and a search box filters titles and text.
 - **Each article follows one pattern:** one line on what it is, numbered steps with the exact button names in bold, "You're done when…", and "Stuck?".
-- **The topics:** Start here (Getting started's progress) · One-time updates · Month, Week, Pay and Year · Bring in a statement · Why things wait in Review · Add: type it, a photo, just type it · Budgets and bills · Savings and your flight goal · Debts · What the Coach does, and never does · The Sunday check-in · How the forecast works · Two month-end figures · Reports and trends · Comparisons with last month · Ask · Turn on free AI · More AI services, paid ones too · What the AI sees · Why the AI sometimes rests · Why does a number look wrong? (a statement not imported yet, rows waiting in Review, no starting balance, card payments not counted, planned against real, typed and imported twice) · Messages with a code in brackets · Put it on your iPhone · Words the app uses.
+- **The topics:** Start here (Getting started's progress) · One-time updates · Month, Week, Pay and Year · Bring in a statement · Why things wait in Review · Add: type it, a photo, just type it · Budgets and bills · Savings and your goals · Add a savings goal (G1) · Debts · What the Coach does, and never does · The Sunday check-in · How the forecast works · Two month-end figures · Reports and trends · Comparisons with last month · Ask · Turn on free AI · More AI services, paid ones too · What the AI sees · Why the AI sometimes rests · Why does a number look wrong? (a statement not imported yet, rows waiting in Review, no starting balance, card payments not counted, planned against real, typed and imported twice) · Messages with a code in brackets · Put it on your iPhone · Words the app uses.
 - **The ? beside every title** opens that screen's article in a bottom sheet, with **Show me** and **Ask about this**.
 
 **One-time updates (`#/help/updates`, ADR 0007)** checks what is actually there and shows only what is left:
-- It probes each table and function from 0005 to 0017 (an empty read or call; PGRST205 or 42P01 means a table is missing, PGRST202 a function), sends the AI helper `ping` (a 404 means it is not deployed), and reads the key status. It shows "3 of 4 installed", a ✓ or ✗ on each, and the exact next file. When 0005 is missing it starts the list at 0003, HANDOFF's first, and says that a file already pasted is refused rather than applied twice, so a repeat does no harm.
-- **Copy buttons** fetch `/setup/0015_ai_foundation.sql` and the rest, and `/setup/ai-function.ts`. A small Vite plugin, `apps/web/setup-files.ts`, using Node's `fs` and no new dependency, copies those committed files into the build, and serves them in dev. It copies only migrations from 0015 on and the `ai` helper's source, never anything from the environment. A test checks that each served file is byte for byte the committed one. The files are public on the site; they hold no secret (gitleaks scans them where they are committed), and reading the schema gives nobody access, because row-level security does.
+- It probes each table and function from 0005 to 0018 (an empty read or call; PGRST205 or 42P01 means a table is missing, PGRST202 a function), sends the AI helper `ping` (a 404 means it is not deployed), and reads the key status. It shows "3 of 4 installed", a ✓ or ✗ on each, and the exact next file. When 0005 is missing it starts the list at 0003, HANDOFF's first, and says that a file already pasted is refused rather than applied twice, so a repeat does no harm.
+- **Copy buttons** fetch `/setup/0015_savings_goals_order.sql` and the rest, and `/setup/ai-function.ts`. A small Vite plugin, `apps/web/setup-files.ts`, using Node's `fs` and no new dependency, copies those committed files into the build, and serves them in dev. It copies only migrations from 0015 on and the `ai` helper's source, never anything from the environment. A test checks that each served file is byte for byte the committed one. The files are public on the site; they hold no secret (gitleaks scans them where they are committed), and reading the schema gives nobody access, because row-level security does.
 - Each step has the exact Supabase clicks (§10.2), then **Check again**. With nothing left it says "All done".
 - **Every "needs a one-time update" line in the app links here,** and the old messages that name a migration number ("0008 in the setup guide") are reworded to point here (A27).
 
@@ -502,11 +506,14 @@ One step per screen: a bar ("Step 3 of 9 · about 2 minutes"), a large title, on
 
 ## 10. Migrations, and what the owner does after the push
 
-0001 and 0002 were applied to the hosted project on 2026-09-22, and 0003–0014 on 2026-09-24, when the owner wrote "the pasting to supabase is done" (`docs/setup.md`). None of 0001–0014 changes. This phase adds three, forward-only, one per capability so each can be missing on its own without breaking anything else. Every table enables RLS and adds the `user_id = auth.uid()` policy in the same file.
+0001 and 0002 were applied to the hosted project on 2026-09-22, and 0003–0014 on 2026-09-24, when the owner wrote "the pasting to supabase is done" (`docs/setup.md`). None of 0001–0014 changes. This phase adds four, forward-only, one per capability (0015 is G1's savings goals, added after the plan was written) so each can be missing on its own without breaking anything else. Every table enables RLS and adds the `user_id = auth.uid()` policy in the same file.
 
 ### 10.1 What each one adds
 
-**`0015_ai_foundation.sql`** (A09; the service-role functions' bodies filled by A10 and A11)
+**`0015_savings_goals_order.sql`** (G1)
+- `savings_goals` gains `sort_order int not null default 0`, `status goal_status not null default 'active'` (an enum: active, paused, reached) and `reached_on date`, with a CHECK that `reached_on` is set exactly when the goal is reached. Nothing is backfilled: every goal already there is active at position 0, which is F45's order by when each was made, so the main goal is the one the app showed before. RLS already covers the table (0004).
+
+**`0016_ai_foundation.sql`** (A09; the service-role functions' bodies filled by A10 and A11)
 - `ai_provider`, an enum: gemini, groq, openrouter, openai, anthropic.
 - `ai_settings`, one row per user, which the browser reads and writes: `enabled` (default true), `provider_order ai_provider[]` (no repeats), `models jsonb` (a model per service; the helper re-checks each against its list), `daily_cap` (10–150, default 40), `allow_paid` (default false), `tone` (`cheerleader` or `straight`, default `cheerleader`), `share_shop_names` (default true).
 - `ai_provider_keys (user_id, provider, ciphertext, iv, kek_id, key_v, key_hint, status, model, tested_at, updated_at)`, primary key `(user_id, provider)`. `key_hint` is at most 4 characters and `status` is ok, busy, rejected or locked. It has the policy, then `revoke all … from anon, authenticated`, so the browser cannot select, insert, update or delete a row, not even its own.
@@ -516,14 +523,14 @@ One step per screen: a bar ("Step 3 of 9 · about 2 minutes"), a large title, on
 - **Functions for the browser**, SECURITY DEFINER with `search_path` pinned (the browser has no grant on the table they read), each `revoke all … from public, anon` then `grant execute … to authenticated`, and each acting only on rows where `user_id = auth.uid()`, taking no user id: `ai_key_status()` (service, hint, status, model, tested date; never ciphertext) and `ai_key_forget(p_provider)` (deletes the caller's key for that service, and nobody else's).
 - `supabase/local-stub.sql` gains a `service_role` role, as Supabase has, so the schema gate can prove each grant and each refusal.
 
-**`0016_coach_memory.sql`** (A12)
+**`0017_coach_memory.sql`** (A12)
 - `ai_text_is_clean(jsonb)`, IMMUTABLE: false when the text holds an ASCII digit, a fullwidth digit (U+FF10–FF19), an Arabic-Indic digit (U+0660–0669, U+06F0–06F9), a Devanagari digit (U+0966–096F), `$`, `＄`, `%`, `％`, `€`, `£`, `¥`, `¢` or `₹`. It is the backstop; the app's rule (ADR 0005) is wider and runs first. `scripts/verify-migrations.sh` creates its throwaway database as UTF-8 (`initdb -E UTF8 --locale=C`), as Supabase's is, so these ranges mean characters.
 - `ai_notes (id, user_id, surface, scope, facts_sig, prompt_v, body, card_sigs, fact_keys, provider, model, created_at)`: `surface` is daily, checkin or report; `scope` like `day:2026-09-24`; `facts_sig` 64 hex characters; `body jsonb` passes `ai_text_is_clean` and is at most 8 KB; unique `(user_id, surface, scope, facts_sig)`. A trigger keeps each user's newest 30 rows per surface; its function is an ordinary invoker one, so row-level security limits it to the inserting user's rows. The browser writes its own rows after checking the words.
 - `insight_dismissals (user_id, insight_key, dismissed_at)`, primary key `(user_id, insight_key)`; the key is the cause, such as `subscription_price_up:<shop>:2026-09`.
 - `transactions` gains a unique constraint on `(id, user_id)`. It is additive and cannot fail on existing rows, because `id` is already unique. It lets the next table name a charge and its owner together.
 - `coach_answers (user_id, transaction_id, answer, asked_week, answered_at)`: `answer` is planned, impulse or needed; primary key `(user_id, transaction_id)`; foreign key `(transaction_id, user_id)` to `transactions (id, user_id)`, on delete cascade, so an answer can never name another person's charge.
 
-**`0017_category_suggestions.sql`** (A21)
+**`0018_category_suggestions.sql`** (A21)
 - `suggest_candidate_categories(p jsonb) returns integer`, SECURITY DEFINER, `search_path` pinned, at most 200 items of `{candidate, category}`. It sets `category_id` and `category_source = 'model'` only on the caller's candidates that are pending with no category or a model's, and only to the caller's categories that are not on Not spending. It returns how many it set. It never touches a row the owner or a learned rule filled.
 - `clear_candidate_suggestion(p_candidate uuid)`, SECURITY DEFINER, `search_path` pinned: puts a suggestion back to none, only on the caller's own candidate (`user_id = auth.uid()`) that is pending with `category_source = 'model'`; any other row is left alone and it returns false.
 - Both are revoked from public and anon and granted to authenticated, and both join the schema gate's anon-execute list. The gate also proves each refuses another user's candidate.
@@ -536,7 +543,7 @@ One step per screen: a bar ("Step 3 of 9 · about 2 minutes"), a large title, on
 
 **Then three things, in this order, about 15 minutes, once. Easiest on a computer.** Until they are done, everything that worked before still works, and the new screens use the app's own words. In the app, **Help → One-time updates** checks each step and has Copy buttons, so there is no need to open GitHub.
 
-1. **Paste the three new database updates, one at a time, after `0014`.** Supabase → **SQL Editor** → **New query**. In the app, Help → One-time updates → **Copy** beside `0015_ai_foundation.sql`. Paste, press **Run**, and wait for "Success. No rows returned." Then a new query for `0016_coach_memory.sql`, then one for `0017_category_suggestions.sql`. If one says anything other than "Success", stop there. Nothing is lost, and the message says which line.
+1. **Paste the four new database updates, one at a time, after `0014`.** Supabase → **SQL Editor** → **New query**. In the app, Help → One-time updates → **Copy** beside `0015_savings_goals_order.sql`. Paste, press **Run**, and wait for "Success. No rows returned." Then a new query for `0016_ai_foundation.sql`, then `0017_coach_memory.sql`, then `0018_category_suggestions.sql`. If one says anything other than "Success", stop there. Nothing is lost, and the message says which line.
 2. **Paste the AI helper.** Supabase → **Edge Functions** → **Deploy a new function** → **Via Editor**. Name it exactly `ai`. In the app, **Copy** beside "The AI helper", paste it over everything in the editor, keep **Enforce JWT verification** on, and press **Deploy**. There are no new secrets: `GEMINI_API_KEY` and `EXTRA_ORIGINS` are reused if you set them for receipt photos.
 3. **Turn on free AI.** In the app: More → **AI settings** → **Get a free key**. Google AI Studio opens in a new tab: **Create API key**, copy it, come back, paste it, and press **Save & test**. You should see "Works · key ending …abcd". If you set `GEMINI_API_KEY` for receipts earlier, the screen already says "AI is on" and there is nothing to paste.
 
@@ -546,7 +553,7 @@ Then **Check again** on One-time updates says "All done".
 
 ### 10.3 Why pushing before pasting is safe
 
-`main` deploys itself when pushed (HANDOFF step 2). Nothing in the first load reads a table from 0015–0017, every new read fails soft on its own, and a missing helper is a 404 that becomes one quiet line (§3.10). A28 proves it by walking every screen with each piece missing in turn. This covers only the three new updates; 0003–0014 are already in (2026-09-24).
+`main` deploys itself when pushed (HANDOFF step 2). Nothing in the first load needs anything from 0015–0018 (G1's goals read falls back to the columns before 0015), every new read fails soft on its own, and a missing helper is a 404 that becomes one quiet line (§3.10). A28 proves it by walking every screen with each piece missing in turn. This covers only the four new updates; 0003–0014 are already in (2026-09-24).
 
 ---
 
@@ -587,8 +594,8 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **ADR 0006** (A05): navigation for an AI-first app, extending ADR 0003.
 - **ADR 0007** (A09): one-time updates copied from inside the app.
 - **ADR 0002** gains a dated note (A02): its default model moves, and its "switching provider is one file" line now means the `ai` helper.
-- **Formula decisions F24–F44** (§11), each in its slice before code.
-- **Divergences:** **D26** (A03): the workbook's views gain comparisons with the previous period, and the Month's third column can show them; the workbook shows none, and its figures do not change. **D27** (A07, A13): the Month gains a coach line above its summary and a labelled forecast line inside it. Any slice that changes a workbook figure adds the next D-number.
+- **Formula decisions F24–F44** (§11), each in its slice before code, and **F45** (G1): the goals' order, the main goal, paused and reached, and progress in hours or dollars.
+- **Divergences:** **D26** (A03): the workbook's views gain comparisons with the previous period, and the Month's third column can show them; the workbook shows none, and its figures do not change. **D27** (A07, A13): the Month gains a coach line above its summary and a labelled forecast line inside it. **D28** (G1): Savings holds many goals in the owner's order, one the main goal, reached and paused ones folded away. Any slice that changes a workbook figure adds the next D-number.
 - **CONSTRAINTS.md, Enforced:** Edge Functions type-checked, linted, boundary-checked and tested, coverage 80/80/75 (A02); the browser holds no provider host or service key (A09); model text carries no numbers (A12). **Pending:** the mobile sweep at 320 px, activated by a Playwright dev dependency (A26). **Extraction accuracy** stays pending, with the reason in its own commit (A02): no labelled receipts exist, the owner's cannot be committed, and invented ones would measure nothing about the real model. **Engine speed** stays pending, with the reason (A07): a wall-clock assertion is not deterministic in CI, so it is measured once and recorded instead.
 - **CAPABILITY-MAP.md and docs/ROADMAP.md** (with this plan).
 - **NOTICED-NOT-TOUCHING.md:** retire `read-receipt` once the helper is live; the Excel workbook and the Sankey still unbuilt; anything a slice sees outside itself.
@@ -697,7 +704,7 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **`packages/savings-coach`,** created in its own configuration commit: package, tsconfig reference, vitest project, coverage 80/80/75, depcruise allowed lines (it may import core's values, and schema and money-primitives as types only; the app may import it), and an eslint purity block like chart-specs' (no clock, randomness, DOM, zod, `crypto` or `@supabase`).
 - **Engine** (`packages/core`): `stats.ts` (`median`, `quantile` by nearest rank, `mad`, on integers), `usualMonth` and `notableBand` (F27), `categoryPace` (F28), `factsDigest` version 1 (the summary comparisons, category changes, over or near budget, budget pace, stale data, rows waiting in Review), `impactScore` (F44), `dailyIndex`.
 - **savings-coach:** `templates.ts` (a template per kind of fact, Cheerleader and Straight talker, every watch template carrying one thing to try), `segments.ts` (`renderSegments`: text into `{text}` and `{fact, slot}` parts, never markup), `rank.ts` (at most 3 cards, one per category, at most 2 "watch", a win when there is one, stale data first, dismissed causes left out).
-- **Screens:** the Coach gains the day's line and up to three cards, each with its action and **Why am I seeing this?** (a sheet listing the engine figures). ✕ is hidden until A17, which stores dismissals in 0016's `insight_dismissals`. The Month gains the coach line: a lazy strip inside an error boundary, drawn after the Month, built from the two months the Month already reads (§2.2). The Coach loads up to 13 months itself, off the Month's path.
+- **Screens:** the Coach gains the day's line and up to three cards, each with its action and **Why am I seeing this?** (a sheet listing the engine figures). ✕ is hidden until A17, which stores dismissals in 0017's `insight_dismissals`. The Month gains the coach line: a lazy strip inside an error boundary, drawn after the Month, built from the two months the Month already reads (§2.2). The Coach loads up to 13 months itself, off the Month's path.
 - **Tests:** `packages/core/test/stats.test.ts`, `notable.test.ts`, `pace.test.ts`, `digest.test.ts` (stable ids, kinds, at most 12 facts, no UUID in any label); `packages/savings-coach/test/templates.test.ts` (with its blanks removed, no template holds a digit, a currency or percent sign, a number word other than "one", or markup: ADR 0005 §4's rules 1–5, checked by the test itself, because `ModelProse` arrives in A12), `segments.test.ts` (`<img …>` stays text; an unknown blank is refused), `rank.test.ts`; `apps/web/test/coach-cards.test.tsx`; a Month test where the digest throws, and the Month still shows.
 - **Acceptance:** the Coach is fully useful with no migration, no helper and no key; figures from core only; first load recorded, the strip outside it.
 - **Changed while building (2026-09-24).** Each decided by the engineer under the owner's 2026-09-24 instruction to proceed without questions.
@@ -709,13 +716,25 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
   - **The stats helpers** (`median`, `quantile`, `mad`) take one input object, as every core function does, and return the number itself (or none), rather than an object holding one number.
   - **A win in the last place gives way to stale data and Review:** when those two hold two of the three places, the biggest thing to watch keeps the one left, since a win cannot outweigh the only warning.
   - **Actions in version 1** are Import a statement, Open Review and See the Month. Set a budget, Open goal and Add it as a bill arrive with the facts that need them (A08, A17). The Month opens on its own month; a card cannot yet open one row's charges, which the Month keeps in screen state.
-  - **The tone is Cheerleader** until AI settings can store a choice (A11, 0015). Both tones' templates are written and tested.
+  - **The tone is Cheerleader** until AI settings can store a choice (A11, 0016). Both tones' templates are written and tested.
   - **The status line reads "In the app's own words, from your records."** rather than "turn on free AI (2 minutes)", because AI settings is not built yet (A09, A10); a line pointing at nothing would leave the owner lost.
   - **Helpers not named in the plan:** `evidenceOf`, `changeSize`, `budgetStanding` (core); `cardWords`, `dayLine` and `slotsOf` (savings-coach); `ErrorBoundary` (app). Extra tests: `packages/core/test/impact.test.ts`, `packages/savings-coach/test/line.test.ts`, and `apps/web/test/month-coach-line.test.tsx`, which holds the Month's throwing-digest test.
   - **The Month's line** shows only on this month, since it speaks of today, and sits under the Review banner, above the statement line and the summary. It carries no ✨, being the app's own words.
   - **Engine speed,** measured once (CONSTRAINTS.md): the Month's recompute over 5,000 transactions 2.4 ms; the digest 9.1 ms.
   - **First load:** 187.75 KB gzipped before the slice, 188.22 KB after (the line's loader and the error boundary, and `completeMonths` in a module the Month already loads); the line and the Coach are their own chunks.
   - **Help:** the Coach's article now covers the line, the cards and "Why am I seeing this?".
+
+### G1: Savings goals, plural: add, choose a main goal, reorder, pause and finish
+
+**Owner items:** 2, 3, 5, 8, and the owner's later request of 2026-09-24 ("I also want the ability to add other goals for saving not just flight... make sure to add that") · **Depends on:** A07 · **Migrations:** `0015_savings_goals_order.sql` · **Commits:** about 6
+- **Why:** `savings_goals` already allows many goals (0004, a unique name) and 0013 links each to a Savings-list fund, but the app treats one goal as *the* goal: Settings edits one (`getGoal`, `saveGoal`), and the Coach's flight card, the Week's goal card and `app-data` load one. There is no obvious way to add another.
+- **Records first:** F45 (the order, the main goal, paused and reached, progress in hours or dollars); D28 (Savings in the owner's order, one main goal).
+- **Migration:** 0015 as §10.1, with schema assertions for each refusal, and its probe on One-time updates. Fail soft: with 0015 missing, adding, editing and showing goals work as today, and only choosing a main goal, reordering, pausing and marking reached say "needs a one-time update".
+- **Engine** (`packages/core/src/goals.ts`): `orderGoals` (active in order, the main goal first; paused; reached), `moveGoal` (up, down, or first among the active goals), `goalsProgress` (every goal's saved, remaining, bar and hours, from goal.ts, the fund balances of D16 and F17's rounding). Nothing flight-specific in a name; each takes a list, so the digest (A08) and the forecasts (A13, A14) can take every goal.
+- **Screens:** Savings: **Add a goal** (a bottom sheet, 390 px first: name, target, target date and saved so far optional, and **Show progress in** dollars or hours with their cost), which makes the Savings-list fund and the goal together, or uses a Savings fund of that name, so recorded transfers count; each goal's card with **Make main goal**, **Move up**, **Move down**, **Pause** or **Resume**, **Mark as reached** (a small celebration line, no motion), **Edit** and **Remove** (only when nothing would be lost, otherwise it says why); reached and paused goals in a folded **Reached and paused** group. Coach: the hero card is the main goal (hours when it has a cost per hour), with the other active goals listed under it. Week: the main goal, and "N other goals" linking to Savings. Settings: **Your savings goals**, linking to Savings. `app-data` reads every goal once and gives the list and the main goal. Help: "Add a savings goal", and every article that said "the goal".
+- **Tests:** `packages/core/test/goals.test.ts` (order, main goal, moves, progress), seen failing first; `apps/web/test/savings-goals.test.tsx` (add makes the fund and the goal; make main; reorder; pause; reached; remove refused; 42703 on 0015's columns); the Coach's list; the Week's link; the owner's one existing goal shown unchanged; 320 px with no sideways scroll.
+- **Acceptance:** a second and third goal can be added from Savings in one sheet each, and their transfers count; exactly one main goal drives the Coach's hero card and the Week's card; nothing about the existing flight-training goal changes; a missing 0015 fails soft to today's behaviour; every figure from core; 320 px clean.
+- **Later slices build on it:** A08's flight date, levers and milestones, A13's savings still planned and A14's what-ifs take the goals from `orderGoals` and their progress from `goalsProgress`, the main goal where one goal is shown. A25's step 5 says "your goals".
 
 ### A08: What to cut, when you'll fly, and a quote that fits
 
@@ -729,14 +748,14 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 
 ### A09: The AI helper, installed
 
-**Owner items:** 2, 5, 8 · **Depends on:** A02, A06 · **Migrations:** `0015_ai_foundation.sql` · **Commits:** about 6
+**Owner items:** 2, 5, 8 · **Depends on:** A02, A06 · **Migrations:** `0016_ai_foundation.sql` · **Commits:** about 6
 - **Records first:** ADR 0007 (one-time updates copied from inside the app).
-- **Migration:** 0015 as §10.1, with `local-stub.sql`'s `service_role` and the schema gate's assertions, each seen failing once. The function bodies A10 and A11 need land here, as SQL, with their assertions.
-- **Helper** (`supabase/functions/ai/index.ts`): the env parse, CORS and origins, identity from `/auth/v1/user`, the database helper (the root in `apikey`, and as a bearer only when it is a legacy JWT), `ping`, and `status` (sources, hints and statuses; `needs_update` when 0015 is missing). `packages/schema` gains `AiProvider` and the request union's types, and a contract test holds the helper's zod request schema to them.
+- **Migration:** 0016 as §10.1, with `local-stub.sql`'s `service_role` and the schema gate's assertions, each seen failing once. The function bodies A10 and A11 need land here, as SQL, with their assertions.
+- **Helper** (`supabase/functions/ai/index.ts`): the env parse, CORS and origins, identity from `/auth/v1/user`, the database helper (the root in `apikey`, and as a bearer only when it is a legacy JWT), `ping`, and `status` (sources, hints and statuses; `needs_update` when 0016 is missing). `packages/schema` gains `AiProvider` and the request union's types, and a contract test holds the helper's zod request schema to them.
 - **App:** `apps/web/src/ai/client.ts` maps every failure to a state (`not_deployed` for a 404, `unreachable`, `needs_update`, `not_set_up`, `off`, `limit_reached`, `all_resting`, `all_failed`), each with a sentence and a link. `apps/web/test/fake-supabase.ts` answers `functions/v1/ai`. `#/ai` (lazy) shows the status sentence, or "The AI helper isn't installed yet → One-time updates".
-- **One-time updates** gains the 0015 and helper probes, and the **Copy** buttons with the `setup-files.ts` Vite plugin.
+- **One-time updates** gains the 0016 and helper probes, and the **Copy** buttons with the `setup-files.ts` Vite plugin.
 - **Guards:** a static test that no provider API host (`generativelanguage.googleapis.com`, `api.groq.com`, `openrouter.ai/api`, `api.openai.com`, `api.anthropic.com`) and no `SERVICE_ROLE` appears in `apps/web/src`, and that the built JavaScript holds neither (`/setup/` files excluded, since they are the helper's source); `apps/web/test/headers.test.ts` already holds `connect-src` to `'self'` and the Supabase project (SEC-1), and this slice leaves it so: the helper is reached on the project's own address. CONSTRAINTS.md's Enforced "browser holds no provider host or service key" row.
-- **Tests:** `supabase/functions/test/ai-identity.test.ts` (no bearer gives 401; a forged `user_id` in the body is ignored; an `sb_secret_` root never sent as a bearer; a legacy JWT root sent as both); `ai-status.test.ts` (the Gemini secret shows as `secret`; no ciphertext in any reply); `apps/web/test/ai-client.test.ts` (each state); `ai-settings.test.tsx` (not installed; 0015 missing); `setup-files.test.ts` (served bytes equal the committed file; nothing outside the list served).
+- **Tests:** `supabase/functions/test/ai-identity.test.ts` (no bearer gives 401; a forged `user_id` in the body is ignored; an `sb_secret_` root never sent as a bearer; a legacy JWT root sent as both); `ai-status.test.ts` (the Gemini secret shows as `secret`; no ciphertext in any reply); `apps/web/test/ai-client.test.ts` (each state); `ai-settings.test.tsx` (not installed; 0016 missing); `setup-files.test.ts` (served bytes equal the committed file; nothing outside the list served).
 - **Acceptance:** AI settings shows a true status in every state; the rest of the app is unaffected in every state.
 
 ### A10: Paste a free Gemini key
@@ -751,14 +770,14 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 
 **Owner items:** 2 · **Depends on:** A10 · **Migrations:** none · **Commits:** about 6
 - **Helper:** the OpenAI-compatible and Anthropic adapters (§3.3, each re-checked against its provider's current reference at build); the `run` action with the `test` task; the router: the owner's order, paid services only with **Use paid services** on, rested services skipped, `ai_usage_claim` before every attempt, token estimates and per-request budgets, 20 s attempts (30 s for a receipt) inside a 100 s deadline, at most 3 attempts, cooldowns written by `ai_note_outcome` (§3.5), and `all_resting` or `all_failed` with the list of what was tried.
-- **Screen:** the other four services' cards, **Try in this order**, **Use paid services**, **Daily limit** and "Today: N of 40"; coach tone (**Cheerleader** or **Straight talker**, which the app's own templates follow from then on) and **Share shop names with the AI**, both kept in `ai_settings` (0015; with it missing, Cheerleader and sharing on).
+- **Screen:** the other four services' cards, **Try in this order**, **Use paid services**, **Daily limit** and "Today: N of 40"; coach tone (**Cheerleader** or **Straight talker**, which the app's own templates follow from then on) and **Share shop names with the AI**, both kept in `ai_settings` (0016; with it missing, Cheerleader and sharing on).
 - **Tests:** `ai-adapters.test.ts` (each request's exact URL, headers and body: the schema's place, no `temperature` where refused, `effort` only on `claude-sonnet-5`); `ai-router.test.ts` (a 429 then success on the next; a 401 marks the key and moves on; a timeout, made with a fetch that never resolves and an abort, never a longer timeout; the deadline stops a third attempt that would not fit; a paid service skipped with the switch off; the limit reached gives `limit_reached` with no call made; a daily-quota 429 rests Gemini until midnight Pacific; a payload over Groq's budget skips Groq); an AI settings test for order, paid, limit, tone and sharing.
 - **Acceptance:** no URL is built from anything but the constants; every attempt is counted.
 
 ### A12: AI words on the Coach and the Month
 
-**Owner items:** 2 · **Depends on:** A08, A11 · **Migrations:** `0016_coach_memory.sql` · **Commits:** about 6
-- **Migration:** 0016 as §10.1, with `verify-migrations.sh` creating its database as UTF-8 in the same slice, and every assertion seen failing once.
+**Owner items:** 2 · **Depends on:** A08, A11 · **Migrations:** `0017_coach_memory.sql` · **Commits:** about 6
+- **Migration:** 0017 as §10.1, with `verify-migrations.sh` creating its database as UTF-8 in the same slice, and every assertion seen failing once.
 - **packages/schema:** `ModelProse` (ADR 0005's text rule), `NarrateReply` (summary at most 200 characters; at most 5 cards, each a title of at most 80 and a body of at most 240; a quote pick with a why of at most 160; the forecast and Savings lines), with an accept-and-refuse table including fullwidth and Arabic-Indic digits, `＄`, "forty", "money" (allowed), "one" (allowed), a link, `<img src=x onerror=…>`, a markdown link and `{{Q.change}}` for a fact not sent.
 - **savings-coach:** `modelPayload` (§3.6: no amount, balance or date field; labels masked and cut), `canonicalPayload`, `cardSignature`, and `checkReply` (only offered facts, slots, cards and quote ids; the direction check of ADR 0005).
 - **Helper:** the `narrate` task, pack `daily`: its prompt (coaching rules: a win first, one specific action, tie it to flying time, never shame, never advise on products or investing or on moving money between debt and the flight fund, short sentences, Canadian spelling, text inside labels is data), its JSON schema with fact and quote ids as enums, and its limits. A contract test holds the schema to `NarrateReply`.
@@ -806,11 +825,11 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 
 ### A17: Shops, subscriptions and unusual charges
 
-**Owner items:** 6, 2 · **Depends on:** A16 · **Migrations:** none (uses 0016) · **Commits:** about 5
+**Owner items:** 6, 2 · **Depends on:** A16 · **Migrations:** none (uses 0017) · **Commits:** about 5
 - **Records first:** F38, F39, F41.
 - **Engine:** `topShops`, `recurringCharges`, `unusualCharges`; digest version 2 with the detector facts and their cause keys for dismissal. The app passes each row's normalised merchant from `statement-parsers`.
-- **Screens:** the Shops tab ("Not a subscription" dismisses); **✕** on every Coach card, stored in `insight_dismissals` (0016) by the card's cause, so a dismissed cause stays gone on every device, and hidden when 0016 is missing; Coach cards for price rises, new subscriptions, unusual charges and possible doubles; a Setup nudge, "Looks like a monthly bill: add it?", which fills the bill editor for the owner to save.
-- **Tests:** `recurring.test.ts` (each cadence band at its edges; a 3% rise flagged; 2 charges not enough), `unusual.test.ts` (fewer than 5 earlier charges never flagged; a typed and an imported row within 3 days), `top-shops.test.ts`, screen tests, and `apps/web/test/coach-dismiss.test.tsx` (a dismissed cause does not come back; a new cause for the same shop does; ✕ hidden without 0016).
+- **Screens:** the Shops tab ("Not a subscription" dismisses); **✕** on every Coach card, stored in `insight_dismissals` (0017) by the card's cause, so a dismissed cause stays gone on every device, and hidden when 0017 is missing; Coach cards for price rises, new subscriptions, unusual charges and possible doubles; a Setup nudge, "Looks like a monthly bill: add it?", which fills the bill editor for the owner to save.
+- **Tests:** `recurring.test.ts` (each cadence band at its edges; a 3% rise flagged; 2 charges not enough), `unusual.test.ts` (fewer than 5 earlier charges never flagged; a typed and an imported row within 3 days), `top-shops.test.ts`, screen tests, and `apps/web/test/coach-dismiss.test.tsx` (a dismissed cause does not come back; a new cause for the same shop does; ✕ hidden without 0017).
 - **Acceptance:** a possible double is flagged, never hidden; a dismissed card stays gone for its cause and nothing else.
 
 ### A18: Habits: the spending grid, streaks and personal bests
@@ -832,22 +851,22 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 
 ### A20: The Sunday check-in
 
-**Owner items:** 2 · **Depends on:** A12 · **Migrations:** none (uses 0016) · **Commits:** about 4
+**Owner items:** 2 · **Depends on:** A12 · **Migrations:** none (uses 0017) · **Commits:** about 4
 - **Records first:** F42.
 - **Engine:** `weeklyRecap`, `questionsToAsk`, `suggestedWeeklyLimit`, `impulseShare`.
 - **Helper:** the `narrate` task's `checkin` pack.
-- **Screens:** `#/coach/checkin` (§2.4); the Coach tab's dot from Sunday; answers written to `coach_answers`; the commitment through the Week's `setWeeklyBudget`, only on the tap. Without 0016 the questions say they need a one-time update and the rest shows.
+- **Screens:** `#/coach/checkin` (§2.4); the Coach tab's dot from Sunday; answers written to `coach_answers`; the commitment through the Week's `setWeeklyBudget`, only on the tap. Without 0017 the questions say they need a one-time update and the rest shows.
 - **Tests:** `checkin.test.ts` (under $20 never asked; an answered charge not asked again; the limit rounded down to $5), `checkin-screen.test.tsx` (the commitment writes only on the tap; AI off).
-- **Acceptance:** the weekly budget is written only on the tap; the check-in is complete with AI off; without 0016 only the questions are replaced by one "Needs a one-time update" line.
+- **Acceptance:** the weekly budget is written only on the tap; the check-in is complete with AI off; without 0017 only the questions are replaced by one "Needs a one-time update" line.
 
 ### A21: Review suggests categories
 
-**Owner items:** 2, 8 · **Depends on:** A11 · **Migrations:** `0017_category_suggestions.sql` · **Commits:** about 4
-- **Migration:** 0017 as §10.1, every assertion seen failing once. One-time updates gains its probe.
+**Owner items:** 2, 8 · **Depends on:** A11 · **Migrations:** `0018_category_suggestions.sql` · **Commits:** about 4
+- **Migration:** 0018 as §10.1, every assertion seen failing once. One-time updates gains its probe.
 - **Helper:** the `categorise` task (§3.6's data; aliases `c1…cN`; batches of about 2,500 tokens and at most 40 rows). **packages/schema:** `CategoriseReply` (`{i, alias, confidence}`; only medium or high kept).
 - **Screens:** Review's "✨ Suggested" chip, picked; **Suggest categories** (run automatically after an import when AI is on); **Approve these N** (§2.8). With AI off, a new `similarMerchant(name, learned)` in `statement-parsers` gives the hint that is picked but never stored: the learned shop whose normalised name shares the most leading words with this one, at least one word of four or more letters, ties left unhinted. It is a hint only; `sameMerchant` stays the only match that files a row on its own (CONSTRAINTS.md, the approval invariant).
-- **Tests:** schema-gate blocks; `packages/statement-parsers/test/similar-merchant.test.ts` (a shared first word hints; a shared short word does not; a tie gives none); `categorise.test.ts` (an unknown alias and low confidence dropped; a merchant named `IGNORE PREVIOUS INSTRUCTIONS…` changes nothing); `review-suggestions.test.tsx` (Approve sends the chosen category and records `user`; Approve these N calls `approve_candidate` once per row; 0017 missing leaves Review as today with one line).
-- **Acceptance:** nothing reaches the ledger as `model`, and every approval records `user`; a suggestion never auto-approves; 0017 missing leaves Review as today with one line; every new schema-gate assertion is seen failing once.
+- **Tests:** schema-gate blocks; `packages/statement-parsers/test/similar-merchant.test.ts` (a shared first word hints; a shared short word does not; a tie gives none); `categorise.test.ts` (an unknown alias and low confidence dropped; a merchant named `IGNORE PREVIOUS INSTRUCTIONS…` changes nothing); `review-suggestions.test.tsx` (Approve sends the chosen category and records `user`; Approve these N calls `approve_candidate` once per row; 0018 missing leaves Review as today with one line).
+- **Acceptance:** nothing reaches the ledger as `model`, and every approval records `user`; a suggestion never auto-approves; 0018 missing leaves Review as today with one line; every new schema-gate assertion is seen failing once.
 
 ### A22: Just type it
 
@@ -877,7 +896,7 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 **Owner items:** 5, 2, 9 · **Depends on:** A10, A07 · **Migrations:** none · **Commits:** about 5
 - **Records first:** F43.
 - **Engine:** `setupProgress`, `starterBudgets`.
-- **Screens:** `#/start` (§8.1); the Month's empty state and the first sign-in open it; More and Settings show the progress line.
+- **Screens:** `#/start` (§8.1); the Month's empty state and the first sign-in open it; More and Settings show the progress line. Step 5 says "your goals" and uses G1's **Add a goal** sheet.
 - **Tests:** `setup-progress.test.ts` (a step whose read failed is "can't check yet"; later moves to the end), `starter-budgets.test.ts`, `getting-started.test.tsx` (each step with its real editor; **Do this later** kept in `user_metadata`; the AI step walks One-time updates when the helper is missing; completable with AI off).
 - **Acceptance:** every "done" is read from data, never stored; a failed read shows "can't check yet"; the guide can be finished with AI off; a starter budget is written only on **Accept**; each step works at 320 px.
 
@@ -898,7 +917,7 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 ### A28: Everything tested, clicked through, and handed over (owner item 10)
 
 **Owner items:** 10, 5, 9, 8 · **Depends on:** A27 and every earlier slice · **Migrations:** none · **Commits:** about 3
-- **Do:** `./scripts/gates.sh full` GREEN on a clean tree, every coverage floor met (`savings-coach`, `report-export` and `supabase/functions` included). A mutation list, each seen RED then restored: the digit rule, the direction check, the origin check, the limit, the additional data, the same-days window, history start, the `ai_notes` check. A real-browser click-through in the harness with a fake database and a fake AI: first sign-in, Getting started, the key, a statement, Review with suggestions, Coach, the check-in, Forecast, Reports, Ask, Help; then again with AI off, the helper missing, each of 0015–0017 missing, and every service resting; at 320 and 390 px, light and dark; no console errors.
+- **Do:** `./scripts/gates.sh full` GREEN on a clean tree, every coverage floor met (`savings-coach`, `report-export` and `supabase/functions` included). A mutation list, each seen RED then restored: the digit rule, the direction check, the origin check, the limit, the additional data, the same-days window, history start, the `ai_notes` check. A real-browser click-through in the harness with a fake database and a fake AI: first sign-in, Getting started, the key, a statement, Review with suggestions, Coach, the check-in, Forecast, Reports, Ask, Help; then again with AI off, the helper missing, each of 0015–0018 missing, and every service resting; at 320 and 390 px, light and dark; no console errors.
 - **Hand over:** HANDOFF rewritten: what is new; that 0003–0014 are in (the owner, 2026-09-24); §10.2's three steps; that `main` deploys itself and every new screen fails soft until they are done; what the owner will notice (§2.10: Week off the phone bar, the wide bar's changes, the Coach tab); how to check each screen. `docs/setup.md` gains the AI section; Help's One-time updates and Start here final; CONSTRAINTS.md's measured counts (121 golden unchanged, the total higher); ROADMAP's markers; NOTICED updated.
 - **Acceptance:** `./scripts/gates.sh full` prints `status=GREEN` on a clean tree, with every coverage floor met; the golden count is still 121 and the total number of tests is not lower than CONSTRAINTS.md's measured count; each item on the mutation list was seen RED and restored; the click-through passes in every state listed, at 320 and 390 px, light and dark, with no console errors; HANDOFF's steps match §10.2; `git status --short` prints nothing. The push to `main` is then the orchestrator's step.
 
@@ -921,7 +940,7 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **Supabase's header rules for its new secret keys** are handled and tested against fakes, but nothing has run against the hosted project from here.
 - **Week leaves the phone bar,** which the owner will notice. It is one tap away, `#/week` still works, and HANDOFF says so.
 - **The copied setup files are public on the site.** They hold no secret, and row-level security is what protects the data, not the schema being unknown.
-- **Scope:** 28 slices, about 110 commits. Comparisons and the Coach come early so value shows before the AI plumbing is finished, and every slice leaves the app usable.
+- **Scope:** 29 slices (G1 added on the owner's later request), about 116 commits. Comparisons and the Coach come early so value shows before the AI plumbing is finished, and every slice leaves the app usable.
 
 ---
 
@@ -956,7 +975,7 @@ The three designs are named by what led them: **grounded** (safety), **delight**
 | Goal pace | The last 8 weeks (delight); months, at p25, median and p75 (reliable) | Months | Payday transfers make weeks lumpy |
 | Pay still due | Goal less received (grounded); the schedule and usual pay (reliable) | The schedule first, the goal as fallback | Setup asks for the schedule; the goal is often blank |
 | History | Not handled (grounded, delight); `historyStart` (reliable) | `historyStart`, from the first statement period | Months before the records would read as $0 and invent "huge increases" |
-| Migrations | Two (grounded); three (delight, reliable) | Three | Each capability can be missing alone, and the probes can say which |
+| Migrations | Two (grounded); three (delight, reliable) | Three, and G1's for goals first (0015) | Each capability can be missing alone, and the probes can say which |
 | Export | None (grounded, delight); print (reliable) | Print, plus a CSV in `report-export` | No dependency; the owner's data is never trapped; N4 is settled where it belongs |
 | An AI note on every comparison | Yes (delight) | No: chips only | The owner's judge: too much for a non-engineer, and too many calls |
 | The Month's coach line | Loaded with the Month (delight, reliable) | Loaded after the Month draws | The 200 KB first-load gate, with 17.66 KB of room |
