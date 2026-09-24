@@ -174,9 +174,15 @@ export { historyStart, type HistoryStart, type HistoryStartInput } from './histo
 
 export {
   comparisonWindow,
+  periodComparison,
+  type BlockChange,
+  type Change,
   type ComparisonWindow,
   type ComparisonWindowInput,
   type DateWindow,
+  type PeriodComparison,
+  type PeriodComparisonInput,
+  type RowChange,
 } from './compare.js'
 
 /**

@@ -453,8 +453,11 @@ export function monthSheet(input: MonthSheetInput): PeriodSheet {
   return periodSheet({ ...rest, budgets, plans, from: start, to: end })
 }
 
-/** The monthly amounts in effect in the month holding `asOf` (D13), on the lists that have them. */
-function plansInEffect(
+/**
+ * The monthly amounts in effect in the month holding `asOf` (D13), on the lists that have them.
+ * Exported for compare.ts, which builds each side of a comparison the same way; not from the package.
+ */
+export function plansInEffect(
   categories: readonly PeriodCategory[],
   planHistory: readonly PlanHistoryRow[],
   asOf: IsoDate,
