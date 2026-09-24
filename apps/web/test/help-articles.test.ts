@@ -68,6 +68,16 @@ describe('Help articles', () => {
     }
   })
 
+  // G1: goals are many, one of them the main goal, and each is added on Savings.
+  it('speaks of your goals, never of the one flight fund, and says how to add one', () => {
+    for (const a of ARTICLES) {
+      const text = [a.title, a.summary, a.done, a.stuck, ...a.steps, ...(a.terms ?? []).flatMap((t) => [t.term, t.meaning])].join(' ')
+      expect(text, a.id).not.toMatch(/flight (card|fund|goal)/i)
+    }
+    expect(articleFor('goals')?.steps).toContain('Press **Add a goal**.')
+    expect(articleFor('savings')?.related).toContain('goals')
+  })
+
   it('finds no article for a topic not written yet', () => {
     expect(articleFor('start')?.title).toBe('Start here')
     expect(articleFor('nowhere')).toBeUndefined()

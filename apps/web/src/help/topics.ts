@@ -15,6 +15,7 @@ export const HELP_TOPICS = [
   'add',
   'budgets',
   'savings',
+  'goals',
   'debts',
   'coach',
   'checkin',

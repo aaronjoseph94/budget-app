@@ -171,20 +171,39 @@ export const ARTICLES: readonly Article[] = [
   },
   {
     id: 'savings',
-    title: 'Savings and your flight goal',
+    title: 'Savings and your goals',
     summary:
-      'Each savings fund is a category on your Savings list. Money you move into it counts toward its goal.',
+      'Each goal has a fund, a category on your Savings list, and money you move into the fund counts toward the goal. Your main goal is the one the Coach and the Week show.',
     steps: [
-      'Open **More**, then **Setup**, and add a fund on the Savings list.',
       'Open **More**, then **Savings**.',
-      'Press **Set a goal** on the fund and type its target and what is saved so far.',
-      'Press **Save goal**.',
-      'Each time you move money into the fund, record it on **Add** under **Type it**, filed under that fund.',
+      'Read each goal’s card: what is saved, what is left, and what to save a month to get there.',
+      'Press **Make main goal** on the goal you want the Coach and the Week to show.',
+      'Press the up and down arrows on a goal to put your goals in the order you like.',
+      'Press **Pause** on a goal you are putting aside, or **Mark as reached** when it is done.',
+      'Each time you move money into a fund, record it on **Add** under **Type it**, filed under that fund.',
     ],
-    done: 'the fund’s card shows what is saved, what is left, and what to save a month to get there.',
+    done: 'your main goal is first on Savings, and the Coach and the Week show it.',
     stuck:
-      'If the saved amount looks low, check that each move into the fund was recorded under that fund, and not as spending.',
-    related: ['coach', 'comparisons', 'budgets'],
+      'If the saved amount looks low, check that each move into the fund was recorded under that fund, and not as spending. Paused and reached goals are folded away under Reached and paused, at the bottom of Savings, where Resume brings one back.',
+    related: ['goals', 'coach', 'comparisons', 'budgets'],
+  },
+  {
+    id: 'goals',
+    title: 'Add a savings goal',
+    summary:
+      'Save for anything, not only flying: a trip, a car, a rainy-day fund. Each goal gets its own fund on your Savings list. About 2 minutes.',
+    steps: [
+      'Open **More**, then **Savings**.',
+      'Press **Add a goal**.',
+      'Type the goal’s name and its target.',
+      'Type what is saved already and a target date, if you have them.',
+      'Under **Show progress in**, choose **Dollars**, or **Hours** with what an hour costs.',
+      'Press **Add goal**.',
+    ],
+    done: 'the goal has its own card on Savings, and its fund is on your Savings list.',
+    stuck:
+      'A name already used on another list, such as Bills, cannot be a goal’s fund: use another name, or move that category to Savings in Setup. Money you move into the fund after today adds to the goal. Nothing breaks if you stop part way.',
+    related: ['savings', 'coach'],
   },
   {
     id: 'debts',
@@ -207,11 +226,11 @@ export const ARTICLES: readonly Article[] = [
     id: 'coach',
     title: 'What the Coach does, and never does',
     summary:
-      'The Coach reads your own records and tells you, in plain words, how the month is going, what changed, and how far your flight fund has come.',
+      'The Coach reads your own records and tells you, in plain words, how the month is going, what changed, and how far your savings goals have come.',
     steps: [
       'Open **Coach**.',
       'Read the line at the top: how your spending compares with the same days last month, or last week.',
-      'Read the flight card: the hours saved, of the hours your goal buys.',
+      'Read your main goal’s card: what is saved, in hours when the goal has a cost an hour, with your other goals under it.',
       'Read the cards under it: at most three, the most important first, each with one thing to try.',
       'Press a card’s button, such as **See the Month** or **Import a statement**, to act on it.',
       'Press **Why am I seeing this?** to see the figures behind a card.',
@@ -219,7 +238,7 @@ export const ARTICLES: readonly Article[] = [
     done: 'you have read the line and the cards, and you know why each one is there.',
     stuck:
       'The Coach never moves money and never changes a budget without your tap, and every figure comes from your own records. A category shows only when it moves more than it usually does, so a quiet month has no cards. With little history it compares with less, and says how many months it rests on. The same line sits at the top of the **Month**; tap it to come here.',
-    related: ['savings', 'comparisons', 'statements'],
+    related: ['savings', 'goals', 'comparisons', 'statements'],
   },
   {
     id: 'comparisons',
@@ -309,6 +328,7 @@ export const ARTICLES: readonly Article[] = [
       { term: 'Not spending', meaning: 'Money that moves but is not spent, such as paying off your card.' },
       { term: 'Pay period', meaning: 'From one payday to the day before the next.' },
       { term: 'Fund', meaning: 'A savings category that money is moved into, with a goal.' },
+      { term: 'Main goal', meaning: 'The savings goal the Coach and the Week show. You choose it on Savings.' },
       { term: 'Review', meaning: 'Where new rows wait for you to approve them.' },
       { term: 'One-time update', meaning: 'Something pasted into Supabase once, so a new part of the app has somewhere to keep its figures.' },
     ],
