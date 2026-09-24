@@ -435,8 +435,9 @@ function CategoryRow({
         <Button variant="ghost" size="icon" aria-label={`Move ${row.name} down`} disabled={list.at(-1)?.id === row.id} onClick={() => step('down')}>
           <Icon name="down" />
         </Button>
-        {/* A native picker under an icon: on a phone it opens the system wheel. */}
-        <span className="relative inline-flex size-10 shrink-0 items-center pointer-coarse:size-11 justify-center rounded-md text-muted-foreground hover:bg-accent">
+        {/* A native picker under an icon: on a phone it opens the system wheel.
+          The picker is invisible, so its focus is drawn on the icon (FE-3). */}
+        <span className="relative inline-flex size-10 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring pointer-coarse:size-11">
           <Icon name="move" className="size-4" />
           <select
             aria-label={`Move ${row.name} to another list`}

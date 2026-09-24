@@ -302,6 +302,8 @@ function FilePicker({ onFile }: { onFile: (file: File) => void }) {
       }}
       className={cn(
         'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed bg-card px-6 py-12 text-center transition-colors',
+        // The input inside is hidden, so its focus is drawn on the label (FE-3).
+        'has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring',
         over ? 'border-primary bg-accent' : 'border-border',
       )}
     >
@@ -554,7 +556,7 @@ function PhotoEntry() {
 
   if (state.kind === 'none') {
     return (
-      <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed bg-card px-6 py-12 text-center">
+      <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed bg-card px-6 py-12 text-center has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring">
         <span className="rounded-full bg-muted p-3">
           <Icon name="camera" />
         </span>
