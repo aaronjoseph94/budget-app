@@ -9,7 +9,7 @@
  *
  * Kept out of the first load: the ? beside each title and the Help screen
  * load this file when opened. Which article each screen's ? opens is
- * `SCREEN_HELP` in topics.ts, so the button itself carries no article text.
+ * `SCREEN_HELP` in screen-help.ts, so the button itself carries no article text.
  */
 import type { HelpTopic } from './topics.js'
 
@@ -266,7 +266,7 @@ export const ARTICLES: readonly Article[] = [
     stuck: 'Nothing is lost when a message shows: a change that fails is not saved half way.',
     related: ['updates', 'wrong-number'],
     terms: [
-      { term: 'PGRST205, 42P01, PGRST202, 42703', meaning: 'A one-time update is missing. Open Help, then One-time updates.' },
+      { term: 'PGRST205, 42P01, PGRST202, 42883, 42703', meaning: 'A one-time update is missing. Open Help, then One-time updates.' },
       { term: '42501', meaning: 'Something was changed on another device, or your sign-in needs refreshing. Sign out and back in.' },
       { term: '28000, PGRST301', meaning: 'You were signed out. Sign in again; nothing was saved.' },
       { term: '23505', meaning: 'You already have one with that name, so nothing was added.' },
