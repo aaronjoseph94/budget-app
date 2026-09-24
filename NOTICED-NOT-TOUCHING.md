@@ -1672,3 +1672,28 @@ slice, and a history check added before it would turn every gate run red.
 **To settle:** once history is rewritten, add a full-level check over
 `git log --all --format=%B` and `git log --all -p`, seen failing on a
 scratch branch first, so the name cannot come back through a message.
+
+---
+
+## N65 — Gemini 3.5 Flash-Lite ignores temperature; the plan's adapter settings assume it does not
+
+**Seen:** 2026-09-24, moving `read-receipt` to `gemini-3.5-flash-lite` (A02).
+
+Google's documentation for 3.5 Flash-Lite, found by search, says a custom
+`temperature`, `topK` or `topP` is ignored, and that `thinking_level` and a
+response schema are how its output is steadied; it defaults to minimal
+thinking for extraction. The plan's §3.3 gives Gemini "temperature 0.2 (0
+for `categorise`, `quick_add` and `receipt`)" and "thinking at its lowest
+setting where the model has one (the field is checked at build)".
+`read-receipt` keeps `temperature: 0`, because A02 promised its request
+byte for byte apart from the model and an ignored field is harmless, and
+its reply is still held by `responseSchema` and zod.
+
+**Why not fixed here:** the Gemini adapter is A10's, and its settings are
+A11's `ai-adapters.test.ts` to pin.
+
+**To settle:** when A10 builds the Gemini adapter, re-check the current
+generation-config reference, drop `temperature` for models that ignore it,
+set the thinking level by the field Google documents, and pin the exact
+body in the adapter test. `read-receipt` can follow when it is next
+changed, or retire (§12).
