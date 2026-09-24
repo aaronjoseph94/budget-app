@@ -205,6 +205,16 @@ export {
 export { dailyIndex, impactScore, type ImpactScore, type ImpactScoreInput } from './impact.js'
 
 export {
+  DIGEST_VERSION,
+  factsDigest,
+  type Fact,
+  type FactKind,
+  type FactsDigest,
+  type FactsDigestInput,
+  type Figure,
+} from './digest.js'
+
+export {
   comparisonWindow,
   debtBalanceChange,
   periodComparison,
