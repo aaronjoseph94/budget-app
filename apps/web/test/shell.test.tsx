@@ -40,7 +40,7 @@ describe('Shell', () => {
     expect(within(phoneBar()).getByRole('button', { name: 'Month' }).getAttribute('aria-current')).toBe('page')
   })
 
-  it('gives every tab on the desktop bar an icon of its own, which is all a tablet shows of it', async () => {
+  it('gives every tab on the desktop bar an icon of its own', async () => {
     renderScreen(<Shell />, createFakeSupabase())
     await screen.findByRole('heading', { name: 'September 2026' })
 

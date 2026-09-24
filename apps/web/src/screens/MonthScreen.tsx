@@ -461,7 +461,7 @@ export function Block({
                           e.stopPropagation()
                           onOpen(r.categoryId)
                         }}
-                        className="break-words rounded-sm text-left underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+                        className="break-words rounded-sm text-left underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:-my-2 pointer-coarse:flex pointer-coarse:min-h-11 pointer-coarse:w-full pointer-coarse:items-center"
                       >
                         {r.name}
                       </button>
@@ -483,7 +483,9 @@ export function Block({
                           onEditStart?.()
                           setEditing(r.categoryId)
                         }}
-                        className="rounded-sm underline decoration-dotted underline-offset-4 outline-none hover:decoration-solid focus-visible:ring-2 focus-visible:ring-ring"
+                        // A finger gets the whole cell, 44px tall, not the
+                        // 14px pencil or the amount's own width (FE-1).
+                        className="rounded-sm underline decoration-dotted underline-offset-4 outline-none hover:decoration-solid focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:-my-2 pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:w-full pointer-coarse:min-w-11 pointer-coarse:items-center pointer-coarse:justify-end"
                       >
                         {r.budgetCents === null ? (
                           <Icon name="pencil" className="inline size-3.5 opacity-60" />
@@ -546,7 +548,7 @@ export function Block({
           type="button"
           aria-expanded={showEmpty}
           onClick={() => setShowEmpty((v) => !v)}
-          className={cn('w-full border-t px-4 py-2 text-left text-xs font-medium', tone.rule, tone.ink)}
+          className={cn('w-full border-t px-4 py-2 text-left text-xs font-medium pointer-coarse:min-h-11', tone.rule, tone.ink)}
         >
           {showEmpty ? 'Hide empty' : `Show ${empty} empty`}
         </button>

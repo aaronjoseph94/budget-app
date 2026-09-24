@@ -55,7 +55,7 @@ export function MonthSummary({
               onUnsaved(null)
               setEditing(true)
             }}
-            className="rounded-sm text-left underline decoration-dotted underline-offset-4 outline-none hover:decoration-solid focus-visible:ring-2 focus-visible:ring-ring"
+            className="rounded-sm text-left underline decoration-dotted underline-offset-4 outline-none hover:decoration-solid focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-11"
           >
             {start === null ? <Waiting>Type your starting bank balance</Waiting> : <Figure>{formatCents(start)}</Figure>}
           </button>

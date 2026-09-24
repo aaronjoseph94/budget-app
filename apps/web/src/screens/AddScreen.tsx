@@ -47,7 +47,7 @@ export function AddScreen() {
             aria-selected={mode === m}
             onClick={() => setMode(m)}
             className={cn(
-              'flex items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition-colors',
+              'flex min-h-11 items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition-colors',
               mode === m ? 'bg-card shadow-sm' : 'text-muted-foreground',
             )}
           >

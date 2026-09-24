@@ -228,7 +228,7 @@ function NameBand() {
       <button
         type="button"
         onClick={() => navigate('more')}
-        className="-ml-1 mb-2 rounded px-1 text-sm text-setup-band-ink/90 outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+        className="-ml-1 mb-2 rounded px-1 text-sm text-setup-band-ink/90 outline-none pointer-coarse:min-h-11 pointer-coarse:min-w-11 focus-visible:ring-2 focus-visible:ring-white/70"
       >
         ‹ More
       </button>
@@ -247,7 +247,7 @@ function NameBand() {
           onKeyDown={(e) => {
             if (e.key === 'Enter') e.currentTarget.blur()
           }}
-          className="min-w-0 flex-1 border-b border-white/80 bg-transparent pb-1 italic text-setup-band-ink outline-none placeholder:text-setup-band-ink/60 focus-visible:border-white"
+          className="min-w-0 flex-1 border-b border-white/80 bg-transparent pb-1 italic pointer-coarse:min-h-11 text-setup-band-ink outline-none placeholder:text-setup-band-ink/60 focus-visible:border-white"
           placeholder="your first name"
         />
         {state === 'saved' ? <Icon name="check" className="size-4 shrink-0" aria-label="Saved" /> : null}
@@ -427,16 +427,16 @@ function CategoryRow({
             // Back to the stored name; leaving the field then saves nothing.
             if (e.key === 'Escape') setText(row.name)
           }}
-          className="min-w-0 flex-1 rounded-md bg-transparent px-1 py-1.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          className="min-w-0 flex-1 rounded-md bg-transparent px-1 py-1.5 text-sm outline-none pointer-coarse:min-h-11 focus-visible:ring-2 focus-visible:ring-ring/50"
         />
-        <Button variant="ghost" size="icon" className="size-9" aria-label={`Move ${row.name} up`} disabled={list[0]?.id === row.id} onClick={() => step('up')}>
+        <Button variant="ghost" size="icon" aria-label={`Move ${row.name} up`} disabled={list[0]?.id === row.id} onClick={() => step('up')}>
           <Icon name="up" />
         </Button>
-        <Button variant="ghost" size="icon" className="size-9" aria-label={`Move ${row.name} down`} disabled={list.at(-1)?.id === row.id} onClick={() => step('down')}>
+        <Button variant="ghost" size="icon" aria-label={`Move ${row.name} down`} disabled={list.at(-1)?.id === row.id} onClick={() => step('down')}>
           <Icon name="down" />
         </Button>
         {/* A native picker under an icon: on a phone it opens the system wheel. */}
-        <span className="relative inline-flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent">
+        <span className="relative inline-flex size-10 shrink-0 items-center pointer-coarse:size-11 justify-center rounded-md text-muted-foreground hover:bg-accent">
           <Icon name="move" className="size-4" />
           <select
             aria-label={`Move ${row.name} to another list`}
@@ -460,7 +460,7 @@ function CategoryRow({
         <Button
           variant="ghost"
           size="icon"
-          className="size-9 text-muted-foreground"
+          className="text-muted-foreground"
           aria-label={`Remove ${row.name}`}
           onClick={() => void write(() => removeCategory(supabase, row.id))}
         >

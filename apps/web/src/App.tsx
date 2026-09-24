@@ -114,16 +114,22 @@ export function Shell() {
                   aria-current={active ? 'page' : undefined}
                   aria-label={labelOf(t, pendingTotal)}
                   className={cn(
-                    'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                    'relative flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5 rounded-md px-1.5 text-[11px] font-medium transition-colors',
+                    'xl:flex-row xl:gap-2 xl:px-3 xl:text-sm',
                     active ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
                   )}
                 >
                   <Icon name={t.icon} className="size-4" />
-                  {/* A tablet's 768 has room for the icons only, and each keeps
-                    its name as its label; eleven with their words need about
-                    1,040px beside the name, so the words come back from 1280px. */}
-                  <span className="hidden xl:inline">{t.label}</span>
-                  {t.screen === 'review' && pendingTotal > 0 ? <Count n={pendingTotal} /> : null}
+                  {/* A tablet's 768 once showed the icons alone, 40x28 and
+                    unnamed to the eye (FE-1). Each keeps its word now, small
+                    and under its icon, as the phone's bar has it, 44px tall;
+                    from 1280px there is room to set them beside the icons. */}
+                  <span>{t.label}</span>
+                  {t.screen === 'review' && pendingTotal > 0 ? (
+                    <span className="absolute -right-1 top-0 xl:static">
+                      <Count n={pendingTotal} />
+                    </span>
+                  ) : null}
                 </button>
               )
             })}

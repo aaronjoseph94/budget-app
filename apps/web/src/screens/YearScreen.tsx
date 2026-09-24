@@ -148,7 +148,7 @@ export function YearScreen({ start: address }: { start: string | null }) {
                     aria-pressed={group === g.key}
                     onClick={() => setGroup(g.key)}
                     className={cn(
-                      'rounded-full border px-2 py-1.5 text-xs font-medium',
+                      'rounded-full border px-2 py-1.5 text-xs font-medium pointer-coarse:min-h-11',
                       group === g.key ? 'border-year-header bg-year-header text-year-header-ink' : 'bg-card',
                     )}
                   >
@@ -186,7 +186,7 @@ function StartPicker({ start, today }: { start: string; today: string }) {
   const thisYear = Number(today.slice(0, 4))
   const from = Math.min(thisYear - 5, Number(year))
   const years = Array.from({ length: Math.max(thisYear + 1, Number(year)) - from + 1 }, (_, i) => String(from + i))
-  const select = 'rounded-md border bg-card px-2 py-1.5'
+  const select = 'rounded-md border bg-card px-2 py-1.5 pointer-coarse:min-h-11'
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm">
       <span className="font-medium">Starts in</span>
