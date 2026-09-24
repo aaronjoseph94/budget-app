@@ -109,6 +109,13 @@ to text cells only.
 
 ## N5 — The coverage gate does not measure the app's screens *(settled 2026-09-23, completion pass)*
 
+**Updated 2026-09-24, frontend audit (CR-6):** All transactions' delete
+(and a refused delete), its month arrows and search, the PDF preview's
+reconciliation gate, a CSV import through save_import with counts that
+balance, and a receipt photo the phone cannot open now have tests. The
+fake still answers no `functions.invoke`, so a receipt actually read by
+Gemini is still untested.
+
 **Settled:** the app as a whole measured 86.6% lines, 88.9% functions and
 91.1% branches once S5–S17 and the completion pass had given the screens
 tests, so its floor is now CONSTRAINTS.md's 80/80/75, like every other
@@ -176,7 +183,14 @@ environment, which cannot reach Supabase.
 
 ---
 
-## N7 — The app bundle is 606 KB *(updated 2026-09-23, completion pass)*
+## N7 — The app bundle is 606 KB *(settled 2026-09-24, frontend audit)*
+
+**Settled:** every screen but the Month and More is its own chunk
+(PERF-3), and the first load, the entry and the chunks it preloads, is
+180.7 KB gzipped against 214.62 before. The PDF reader goes with Add's
+chunk. `scripts/check-bundle.mjs`, in the full gates, fails above 200 KB
+(PERF-8). What is left of the size is react-dom, supabase-js and zod:
+see N60.
 
 **Now:** 758.20 kB (213.15 kB gzipped) in the entry, with the Year in a
 chunk of its own (21.02 kB). Still mostly supabase-js and the PDF reader;
@@ -1033,6 +1047,11 @@ entry, for the reason above.
 Bill calendar, Savings, Debts, all in the entry) the entry is 758.20 kB
 (213.15 kB gzipped) and the Year chunk 21.02 kB (6.58 kB). Still open.
 
+**Updated 2026-09-24, frontend audit:** the bundle gate now exists
+(PERF-8), measuring the first load at 200 KB gzipped; the other screens
+left the entry (PERF-3). CONSTRAINTS.md's pending row is now only "chart
+code out of the entry chunk", for the reason above. Still open.
+
 ---
 
 ## N40 — HANDOFF §5 still lists items 1, 2 and 4 as open *(settled 2026-09-23, completion pass)*
@@ -1502,3 +1521,134 @@ said to them.
 decision; none is a wrong number, but the owner would notice them.
 
 **To settle:** tell the owner once.
+
+---
+
+## N58 — What the frontend audit left of text enlarged to 200% (FE-17)
+
+**Seen:** 2026-09-24, fixing FE-17.
+
+With the phone's text at 200%, at 390px, Setup still scrolls 130px
+sideways, the Year 126, the Bill calendar 55 and the Week 12; at 320 the
+Month's title alone is 55px too wide. The Month, Review, All
+transactions, Savings, Debts, Paycheck, Settings and Add no longer do.
+
+**Why not fixed here:** what is left is layout inside each screen (Setup's
+amount grid, the Year's glance cards, a calendar row's amount, a Week
+block) that needs a look at each screen's normal-size layout too, one
+screen at a time; the audit rated it low.
+
+**To settle:** measure with the root font at 200% (the preview's
+`zoom.mjs` does it) and let each offender wrap or shrink, checking the
+same screen at normal size.
+
+---
+
+## N59 — The Month title font has no size-matched fallback (PERF-6)
+
+**Seen:** 2026-09-24, fixing PERF-6.
+
+Caveat is now preloaded with the page. The other half of the finding, a
+`@font-face` fallback with `size-adjust`, `ascent-override` and
+`descent-override` matched to Caveat, is not done: the numbers depend on
+the fallback face the owner's phone actually shows (iOS has Bradley
+Hand; others fall to `cursive`), which cannot be measured here, and a
+guess would move the title as much as it saves.
+
+**To settle:** measure Caveat against the phone's fallback in Safari and
+add the fallback face; re-measure CLS on the Month.
+
+---
+
+## N60 — What else would shrink the first load (PERF-3)
+
+**Seen:** 2026-09-24, fixing PERF-3.
+
+After the screens were split out the first load is 180.7 KB gzipped.
+Two savings the audit named are not taken:
+
+1. **zod/mini.** Full zod is in the first load, reached through
+   `lists.tsx` (CategoryKindSchema) and `@budget/statement-parsers`'
+   shared schema, not only `env.ts`. Moving the browser's parsers to
+   `zod/mini` changes the schema package every boundary uses, which is a
+   slice of its own.
+2. **supabase-js's realtime and storage code** (about 82 KB minified) is
+   never called. Using `@supabase/postgrest-js` and `auth-js` directly is
+   a dependency change, which needs the owner's say (CLAUDE.md).
+
+**To settle:** each in its own change, re-measured with
+`node scripts/check-bundle.mjs`; lower its budget after each.
+
+---
+
+## N61 — Things from the frontend audit that need the owner or a host setting
+
+**Seen:** 2026-09-24.
+
+1. **axe in the screen tests.** The audit asked for axe checks as
+   regression tests. axe-core is not a dependency, and adding one needs
+   the owner's approval, so the fixes are pinned by role and structure
+   tests instead (headings, landmarks, description lists, live region)
+   and were checked in the preview. *To settle:* ask; if yes, add
+   axe-core in its own commit and an axe pass per screen.
+2. **Field monitoring (PERF-8).** web-vitals would report the owner's
+   real LCP, INP and CLS; it is a new dependency. The synthetic budget
+   is in place.
+3. **Cloudflare's PNPM_VERSION (SEC-6).** package.json now names pnpm
+   10.33.0, which CI and netlify.toml follow; Cloudflare Pages takes
+   PNPM_VERSION from its dashboard (HANDOFF step 3 says `10`). *To
+   settle:* set it to `10.33.0` there.
+4. **zod's eval probe under the CSP (SEC-1).** zod tries `Function('')`
+   once as it builds its first object schema, falls back when the CSP
+   refuses it, and the browser reports the refusal on each launch.
+   Nothing breaks. zod's `jitless` setting would stop the probe, but it
+   must be set before `@budget/schema` builds its schemas, which the
+   bundler evaluates first. *To settle:* with N60's zod/mini change, or a
+   first script that sets zod's global config.
+
+---
+
+## N62 — vitest's moderate advisory, deferred (SEC-8)
+
+**Seen:** 2026-09-24, from the frontend audit.
+
+`pnpm audit` reports GHSA-82fw-gwwq-j7x9 (moderate) in vitest and
+@vitest/mocker below 4.1.11; `pnpm audit --prod` reports nothing, so
+nothing reaches the browser, and the gate (`--audit-level high`) is
+right to stay green. The fix is vitest 4, a major upgrade of the test
+runner and its coverage plugin with its own configuration changes.
+
+**Why not fixed here:** a dependency change of its own, not a frontend
+fix, and a major version is worth its own commit and run.
+
+**Review by:** 2026-12-31, or sooner if the advisory is raised to high.
+
+---
+
+## N63 — Duplication and file size the audit found, not refactored (CR-2, CR-3, CR-8, CR-10)
+
+**Seen:** 2026-09-24, from the frontend audit.
+
+1. **CR-3.** Month, Week, Paycheck, Calendar and Year each repeat about
+   40 lines of load-guard-compute (version 0, a `live` flag, keying by
+   period start), and six editors repeat an open-ref save skeleton. The
+   drift the audit found (DebtExtras dropping a late refusal) is fixed
+   (CR-4); the shared `usePeriodLoad` and `useSaveAfterClose` are not
+   written.
+2. **CR-2's summaries.** The Week's and Paycheck's Spent / Left to spend
+   panels are near copies in different colours and words; the six
+   blocks, imported-through line and transfers note are shared now.
+3. **CR-8.** `ledger.ts` is 1,292 lines in eleven sections, AddScreen
+   and MonthScreen about 600. Splitting them moves every line, far over
+   one commit's 300, and is best done as its own slices, a section at a
+   time behind a barrel.
+4. **CR-10.** The Month's tests that assert class names check Workbook's
+   colours (the overspent pill, the pink Left to spend), which are the
+   specification there; the Week's loading test and Settings' invalid
+   budget test now query roles and messages.
+
+**Why not fixed here:** refactors with no change anyone would see, each
+larger than the fix commits around them; the audit rated them low.
+
+**To settle:** one slice each, with the existing screen tests as the
+check that nothing moved.
