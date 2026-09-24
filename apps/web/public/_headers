@@ -11,8 +11,16 @@
 # VITE_SUPABASE_URL, or every request is refused; test/headers.test.ts
 # checks it against netlify.toml. Styles allow 'unsafe-inline' for the
 # style attributes React and the charts write, never for scripts.
+#
+# HSTS keeps the browser on https for a year once it has been there, which
+# *.pages.dev gets from its preloaded domain but the owner's own domain does
+# not (SEC-2). The Permissions-Policy turns off what the app never asks for:
+# a receipt photo comes through a file input, which opens the camera without
+# the camera permission, so camera=() costs nothing.
 /*
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: no-referrer
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://bnodrfghxbavlopxkgju.supabase.co; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; manifest-src 'self'

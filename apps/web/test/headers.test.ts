@@ -33,3 +33,16 @@ describe('Content-Security-Policy (SEC-1)', () => {
     expect(header(netlify, 'Content-Security-Policy')).toBe(csp)
   })
 })
+
+describe('the rest of the headers', () => {
+  it('keeps the browser on https for a year, own domain included (SEC-2)', () => {
+    expect(header(cloudflare, 'Strict-Transport-Security')).toBe('max-age=31536000; includeSubDomains')
+    expect(header(netlify, 'Strict-Transport-Security')).toBe('max-age=31536000; includeSubDomains')
+  })
+
+  it('turns off the device features the app never asks for (SEC-2)', () => {
+    const policy = header(cloudflare, 'Permissions-Policy')
+    expect(policy).toBe('camera=(), microphone=(), geolocation=(), payment=(), usb=()')
+    expect(header(netlify, 'Permissions-Policy')).toBe(policy)
+  })
+})
