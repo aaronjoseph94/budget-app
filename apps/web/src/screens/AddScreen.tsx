@@ -387,23 +387,38 @@ function TypedEntry() {
             void submit()
           }}
         >
-          <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+          {/* Radios, not two buttons: this decides the sign written to the
+            ledger, so a screen reader must hear which is chosen, and the eye
+            must see more than the card fill, which is 1.08:1 on the track (FE-2). */}
+          <fieldset className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+            <legend className="sr-only">Money out or in</legend>
             {(['spent', 'received'] as const).map((d) => (
-              <button
+              <label
                 key={d}
-                type="button"
-                onClick={() => {
-                  setDirection(d)
-                  // Each way starts on its likeliest list; a list the other
-                  // way offered may not be on offer here.
-                  setNewKind(d === 'spent' ? 'variable' : 'income')
-                }}
-                className={cn('rounded-md py-1.5 text-sm font-medium', direction === d ? 'bg-card shadow-sm' : 'text-muted-foreground')}
+                className={cn(
+                  'flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-md border-2 text-sm font-medium',
+                  'has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring',
+                  direction === d ? 'border-primary bg-card text-foreground shadow-sm' : 'border-transparent text-muted-foreground',
+                )}
               >
+                <input
+                  type="radio"
+                  name="direction"
+                  value={d}
+                  className="sr-only"
+                  checked={direction === d}
+                  onChange={() => {
+                    setDirection(d)
+                    // Each way starts on its likeliest list; a list the other
+                    // way offered may not be on offer here.
+                    setNewKind(d === 'spent' ? 'variable' : 'income')
+                  }}
+                />
+                {direction === d ? <Icon name="check" className="size-4" data-testid="chosen" /> : null}
                 {d === 'spent' ? 'I spent' : 'I received'}
-              </button>
+              </label>
             ))}
-          </div>
+          </fieldset>
           <Field label="Amount">
             <Input inputMode="decimal" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} required />
           </Field>

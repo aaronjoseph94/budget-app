@@ -15,7 +15,7 @@ function seeded(): FakeSupabase {
 /** Open Type it and fill in everything but the category. */
 async function typeOne(direction: 'I spent' | 'I received', amount: string, what: string) {
   fireEvent.click(await screen.findByRole('tab', { name: /Type it/ }))
-  fireEvent.click(screen.getByRole('button', { name: direction }))
+  fireEvent.click(screen.getByRole('radio', { name: direction }))
   fireEvent.change(screen.getByLabelText('Amount'), { target: { value: amount } })
   fireEvent.change(screen.getByLabelText('What was it?'), { target: { value: what } })
   fireEvent.change(await screen.findByRole('combobox', { name: 'Category' }), { target: { value: '__new__' } })
@@ -91,7 +91,27 @@ describe('AddScreen, typing one in with a new category', () => {
     renderScreen(<AddScreen />, seeded())
 
     await typeOne('I received', '5', 'Refund')
-    fireEvent.click(screen.getByRole('button', { name: 'I spent' }))
+    fireEvent.click(screen.getByRole('radio', { name: 'I spent' }))
     expect(screen.getByRole<HTMLSelectElement>('combobox', { name: 'Which list' }).value).toBe('variable')
+  })
+})
+
+describe('AddScreen, which way the money went (FE-2)', () => {
+  // It decides the sign written to the ledger, so a screen reader must hear
+  // which is chosen, and the eye must see it by more than a fill colour.
+  it('is a pair of radios, one checked, and says which with a mark as well as a colour', async () => {
+    renderScreen(<AddScreen />, seeded())
+    fireEvent.click(await screen.findByRole('tab', { name: /Type it/ }))
+
+    const group = screen.getByRole('group', { name: 'Money out or in' })
+    const spent = within(group).getByRole<HTMLInputElement>('radio', { name: 'I spent' })
+    const received = within(group).getByRole<HTMLInputElement>('radio', { name: 'I received' })
+    expect([spent.checked, received.checked]).toEqual([true, false])
+    expect(within(spent.closest('label') as HTMLElement).queryByTestId('chosen')).not.toBeNull()
+
+    fireEvent.click(received)
+    expect([spent.checked, received.checked]).toEqual([false, true])
+    expect(within(received.closest('label') as HTMLElement).queryByTestId('chosen')).not.toBeNull()
+    expect(within(spent.closest('label') as HTMLElement).queryByTestId('chosen')).toBeNull()
   })
 })
