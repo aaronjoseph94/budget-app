@@ -12,7 +12,10 @@ import {
 } from '@budget/statement-parsers'
 import { summariseImport } from '@budget/core'
 import type { ImportRequest } from './ledger.js'
-import { Button, Card, IngestedText, Label, Select, Stat } from './ui.js'
+import { IngestedText, Label, Stat } from './ui.js'
+import { Button } from './components/ui/button.js'
+import { Card } from './components/ui/card.js'
+import { OptionSelect } from './components/ui/form.js'
 
 import { describeFailure, describeReason, formatCents, formatIsoDate } from './format.js'
 
@@ -39,7 +42,7 @@ export interface ImportScreenProps {
   readonly fileName: string
   readonly text: string
   readonly onReset: () => void
-  readonly onSave?: (result: SaveRequest) => Promise<void>
+  readonly onSave: (result: SaveRequest) => Promise<void>
   readonly saving?: boolean
   readonly outcome?: { readonly ok: boolean; readonly message: string } | null
 }
@@ -141,14 +144,13 @@ export function ImportScreen({ fileName, text, onReset, onSave, saving = false, 
 
   return (
     <div>
-      {(
         <div className="space-y-6">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
               <Label>File</Label>
               <div className="truncate text-sm font-medium">{fileName}</div>
             </div>
-            <Button variant="quiet" onClick={reset}>
+            <Button variant="outline" onClick={reset}>
               Choose another
             </Button>
           </div>
@@ -166,7 +168,7 @@ export function ImportScreen({ fileName, text, onReset, onSave, saving = false, 
                 If your bank separates columns with something other than a comma, change it below.
               </p>
               <div className="mt-3 max-w-xs">
-                <Select
+                <OptionSelect
                   label="Column separator"
                   value={delimiter}
                   options={DELIMITERS.map((d) => ({ value: d.value as string, label: d.label }))}
@@ -180,37 +182,37 @@ export function ImportScreen({ fileName, text, onReset, onSave, saving = false, 
             <Card className="p-4">
               <Label>What the file looks like</Label>
               <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <Select
+                <OptionSelect
                   label="Column separator"
                   value={delimiter}
                   options={DELIMITERS.map((d) => ({ value: d.value as string, label: d.label }))}
                   onChange={setDelimiter}
                 />
-                <Select
+                <OptionSelect
                   label="Date column"
                   value={dateIndex}
                   options={analysis.columns.map((c) => ({ value: c.index, label: columnName(c) }))}
                   onChange={(v) => choose('dateIndex', v)}
                 />
-                <Select
+                <OptionSelect
                   label="Description column"
                   value={merchantIndex}
                   options={analysis.columns.map((c) => ({ value: c.index, label: columnName(c) }))}
                   onChange={(v) => choose('merchantIndex', v)}
                 />
-                <Select
+                <OptionSelect
                   label="Amount column"
                   value={amountIndex}
                   options={analysis.columns.map((c) => ({ value: c.index, label: columnName(c) }))}
                   onChange={(v) => choose('amountIndex', v)}
                 />
-                <Select
+                <OptionSelect
                   label="Date format"
                   value={dateFormat}
                   options={DATE_FORMATS.map((f) => ({ value: f, label: f }))}
                   onChange={(v) => choose('dateFormat', v)}
                 />
-                <Select
+                <OptionSelect
                   label="How amounts are written"
                   value={signKind}
                   options={[
@@ -281,7 +283,6 @@ export function ImportScreen({ fileName, text, onReset, onSave, saving = false, 
                 </ul>
               </Card>
 
-              {onSave !== undefined ? (
                 <div className="flex flex-col items-center gap-2">
                   {/*
                     Saveable when ANYTHING was read, readable or not. It used to
@@ -322,7 +323,6 @@ export function ImportScreen({ fileName, text, onReset, onSave, saving = false, 
                     Nothing reaches your ledger until you approve it.
                   </p>
                 </div>
-              ) : null}
 
               <p className="text-center text-xs text-muted-foreground">
                 {result.parsed} rows read · {result.accepted.length} readable ·{' '}
@@ -331,7 +331,6 @@ export function ImportScreen({ fileName, text, onReset, onSave, saving = false, 
             </>
           ) : null}
         </div>
-      )}
     </div>
   )
 }

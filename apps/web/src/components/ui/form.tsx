@@ -57,3 +57,39 @@ export function Field({ label, hint, children }: { label: string; hint?: ReactNo
     </label>
   )
 }
+
+/**
+ * A labelled picker over typed options: the value handed back is the
+ * option's own, a number stays a number. Moved here from the old ui.tsx
+ * kit, whose Button and Card were only shims over these components (CR-11).
+ */
+export function OptionSelect<T extends string | number>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string
+  value: T
+  options: readonly { readonly value: T; readonly label: string }[]
+  onChange: (value: T) => void
+}) {
+  return (
+    <label className="flex flex-col gap-2">
+      <span className="text-sm font-medium">{label}</span>
+      <NativeSelect
+        value={String(value)}
+        onChange={(e) => {
+          const picked = options.find((o) => String(o.value) === e.target.value)
+          if (picked !== undefined) onChange(picked.value)
+        }}
+      >
+        {options.map((o) => (
+          <option key={String(o.value)} value={String(o.value)}>
+            {o.label}
+          </option>
+        ))}
+      </NativeSelect>
+    </label>
+  )
+}

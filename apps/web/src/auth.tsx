@@ -1,7 +1,9 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import type { SupabaseClient } from './supabase.js'
-import { Button, Card, Label } from './ui.js'
+import { Label } from './ui.js'
+import { Button } from './components/ui/button.js'
+import { Card } from './components/ui/card.js'
 
 export type SessionState =
   | { readonly status: 'loading' }
@@ -126,7 +128,7 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
               this same browser, and you are in.
             </p>
             <div className="mt-4">
-              <Button variant="quiet" onClick={() => setAttempt({ kind: 'idle' })}>
+              <Button variant="outline" onClick={() => setAttempt({ kind: 'idle' })}>
                 Back
               </Button>
             </div>
