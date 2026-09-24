@@ -84,7 +84,8 @@ export function AddScreen() {
               mode === m ? 'bg-card shadow-sm' : 'text-muted-foreground',
             )}
           >
-            <Icon name={m === 'statement' ? 'file' : m === 'photo' ? 'camera' : 'pencil'} className="size-4" />
+            {/* shrink-0: at 320px "Statement" filled its tab and squeezed its icon to 9px (DT-6). */}
+            <Icon name={m === 'statement' ? 'file' : m === 'photo' ? 'camera' : 'pencil'} className="size-4 shrink-0" />
             {m === 'statement' ? 'Statement' : m === 'photo' ? 'Photo' : 'Type it'}
           </button>
         ))}
