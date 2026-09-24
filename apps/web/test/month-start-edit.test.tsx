@@ -129,7 +129,7 @@ describe('Typing the starting balance on the Month', () => {
     })
     moved.server.hold = (target) => (target === 'POST month_balances' ? answered : null)
     function Routed() {
-      return <MonthScreen month={useAddress().period} />
+      return <MonthScreen month={useAddress().param} />
     }
     window.location.hash = '/month/2026-09'
     renderScreen(<Routed />, moved)

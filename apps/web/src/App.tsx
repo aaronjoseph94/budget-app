@@ -93,7 +93,7 @@ function tabOf(screen: Screen, tabs: readonly Tab[]): Screen {
 }
 
 export function Shell() {
-  const { screen, period } = useAddress()
+  const { screen, param } = useAddress()
   const { pendingTotal, loadError, status, refresh } = useAppData()
   // Month, Week, Paycheck and Year widen on a desktop to take the workbook's four
   // columns (§6.3, §6.4), and the Bill Calendar to give its seven room for names.
@@ -129,7 +129,7 @@ export function Shell() {
                 return (
                   <a
                     key={t.screen}
-                    href={hashOf({ screen: t.screen, period: null })}
+                    href={hashOf({ screen: t.screen, param: null })}
                     aria-current={active ? 'page' : undefined}
                     aria-label={labelOf(t, pendingTotal)}
                     className={cn(
@@ -174,7 +174,7 @@ export function Shell() {
               Loading…
             </p>
           ) : null}
-          {status !== 'ready' ? null : <Screens screen={screen} period={period} />}
+          {status !== 'ready' ? null : <Screens screen={screen} param={param} />}
         </main>
 
         {/* Phones: a bottom tab bar within thumb reach, clear of the home indicator. */}
@@ -188,7 +188,7 @@ export function Shell() {
               return (
                 <a
                   key={t.screen}
-                  href={hashOf({ screen: t.screen, period: null })}
+                  href={hashOf({ screen: t.screen, param: null })}
                   aria-current={active ? 'page' : undefined}
                   aria-label={labelOf(t, pendingTotal)}
                   className={cn(
@@ -223,13 +223,13 @@ export function Shell() {
 }
 
 /** The screen the address names, each but the Month fetched on first use. */
-function Screens({ screen, period }: { screen: Screen; period: string | null }) {
+function Screens({ screen, param }: { screen: Screen; param: string | null }) {
   return (
     <Suspense fallback={<p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>}>
-      {screen === 'month' ? <MonthScreen month={period} /> : null}
+      {screen === 'month' ? <MonthScreen month={param} /> : null}
       {screen === 'week' ? <WeekScreen /> : null}
-      {screen === 'paycheck' ? <PaycheckScreen day={period} /> : null}
-      {screen === 'calendar' ? <CalendarScreen month={period} /> : null}
+      {screen === 'paycheck' ? <PaycheckScreen day={param} /> : null}
+      {screen === 'calendar' ? <CalendarScreen month={param} /> : null}
       {screen === 'review' ? <ReviewScreen /> : null}
       {screen === 'add' ? <AddScreen /> : null}
       {screen === 'more' ? <MoreScreen /> : null}
@@ -238,7 +238,8 @@ function Screens({ screen, period }: { screen: Screen; period: string | null }) 
       {screen === 'setup' ? <SetupScreen /> : null}
       {screen === 'savings' ? <SavingsScreen /> : null}
       {screen === 'debts' ? <DebtsScreen /> : null}
-      {screen === 'year' ? <YearScreen start={period} /> : null}
+      {screen === 'year' ? <YearScreen start={param} /> : null}
+      {NOT_YET.has(screen) ? <NotYet name={SCREEN_NAME[screen]} /> : null}
     </Suspense>
   )
 }
@@ -258,6 +259,33 @@ const SCREEN_NAME: Record<Screen, string> = {
   calendar: 'Bill calendar',
   savings: 'Savings',
   debts: 'Debts',
+  coach: 'Coach',
+  forecast: 'Forecast',
+  reports: 'Reports',
+  ask: 'Ask',
+  help: 'Help',
+  start: 'Getting started',
+  ai: 'AI settings',
+}
+
+/**
+ * Screens whose address already reads (ADR 0006) but whose slice has not
+ * landed. Each slice takes its screen out of this set as it adds it, and the
+ * bars and More leave these out, so only a typed or kept address reaches one.
+ */
+const NOT_YET: ReadonlySet<Screen> = new Set(['coach', 'forecast', 'reports', 'ask', 'help', 'start', 'ai'])
+
+/** One line, and the way back, for an address that is ahead of the app. */
+function NotYet({ name }: { name: string }) {
+  return (
+    <div className="space-y-3 py-8">
+      <h1 className="text-2xl font-semibold tracking-tight">{name}</h1>
+      <p className="text-muted-foreground">{name} is on its way. Everything else works as before.</p>
+      <a href={hashOf({ screen: 'month', param: null })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+        Open the Month
+      </a>
+    </div>
+  )
 }
 
 /**

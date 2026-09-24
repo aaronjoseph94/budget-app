@@ -22,7 +22,7 @@ export function MoreScreen() {
           <li key={item.screen}>
             {/* A link to the screen's address, so it can open in a new tab (FE-20). */}
             <a
-              href={hashOf({ screen: item.screen, period: null })}
+              href={hashOf({ screen: item.screen, param: null })}
               className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-accent"
             >
               <Icon name={item.icon} className="size-5 text-muted-foreground" />

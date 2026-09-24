@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { HOME, hashOf, readAddress, restoreAddress } from '../src/nav.js'
+import { HELP_TOPICS } from '../src/help/topics.js'
 
 afterEach(() => {
   window.location.hash = ''
@@ -7,44 +8,83 @@ afterEach(() => {
 
 describe('readAddress', () => {
   it('reads a screen, and a month on the Month screen', () => {
-    expect(readAddress('#/month/2026-09')).toEqual({ screen: 'month', period: '2026-09' })
-    expect(readAddress('#/month')).toEqual({ screen: 'month', period: null })
-    expect(readAddress('#/review')).toEqual({ screen: 'review', period: null })
-    expect(readAddress('#/ledger')).toEqual({ screen: 'ledger', period: null })
+    expect(readAddress('#/month/2026-09')).toEqual({ screen: 'month', param: '2026-09' })
+    expect(readAddress('#/month')).toEqual({ screen: 'month', param: null })
+    expect(readAddress('#/review')).toEqual({ screen: 'review', param: null })
+    expect(readAddress('#/ledger')).toEqual({ screen: 'ledger', param: null })
   })
 
   it('reads the Year and its start month', () => {
-    expect(readAddress('#/year/2026-01')).toEqual({ screen: 'year', period: '2026-01' })
-    expect(readAddress('#/year')).toEqual({ screen: 'year', period: null })
-    expect(readAddress('#/year/2026-13')).toEqual({ screen: HOME, period: null })
+    expect(readAddress('#/year/2026-01')).toEqual({ screen: 'year', param: '2026-01' })
+    expect(readAddress('#/year')).toEqual({ screen: 'year', param: null })
+    expect(readAddress('#/year/2026-13')).toEqual({ screen: HOME, param: null })
   })
 
   it('reads the month on the Bill Calendar, and only a month', () => {
-    expect(readAddress('#/calendar/2026-09')).toEqual({ screen: 'calendar', period: '2026-09' })
-    expect(readAddress('#/calendar')).toEqual({ screen: 'calendar', period: null })
+    expect(readAddress('#/calendar/2026-09')).toEqual({ screen: 'calendar', param: '2026-09' })
+    expect(readAddress('#/calendar')).toEqual({ screen: 'calendar', param: null })
     for (const hash of ['#/calendar/2026-13', '#/calendar/2026-09-11', '#/calendar/2026-9']) {
-      expect(readAddress(hash), hash).toEqual({ screen: HOME, period: null })
+      expect(readAddress(hash), hash).toEqual({ screen: HOME, param: null })
     }
   })
 
   it('reads Savings and Debts, which have no period', () => {
-    expect(readAddress('#/savings')).toEqual({ screen: 'savings', period: null })
-    expect(readAddress('#/savings/2026-09')).toEqual({ screen: HOME, period: null })
-    expect(readAddress('#/debts')).toEqual({ screen: 'debts', period: null })
-    expect(readAddress('#/debts/2026-09')).toEqual({ screen: HOME, period: null })
+    expect(readAddress('#/savings')).toEqual({ screen: 'savings', param: null })
+    expect(readAddress('#/savings/2026-09')).toEqual({ screen: HOME, param: null })
+    expect(readAddress('#/debts')).toEqual({ screen: 'debts', param: null })
+    expect(readAddress('#/debts/2026-09')).toEqual({ screen: HOME, param: null })
   })
 
   it('reads a day of a pay period on Paycheck, and only a real one', () => {
-    expect(readAddress('#/paycheck/2026-09-11')).toEqual({ screen: 'paycheck', period: '2026-09-11' })
-    expect(readAddress('#/paycheck')).toEqual({ screen: 'paycheck', period: null })
+    expect(readAddress('#/paycheck/2026-09-11')).toEqual({ screen: 'paycheck', param: '2026-09-11' })
+    expect(readAddress('#/paycheck')).toEqual({ screen: 'paycheck', param: null })
     for (const hash of ['#/paycheck/2026-02-30', '#/paycheck/2026-09', '#/paycheck/2026-9-11', '#/month/2026-09-11']) {
-      expect(readAddress(hash), hash).toEqual({ screen: HOME, period: null })
+      expect(readAddress(hash), hash).toEqual({ screen: HOME, param: null })
+    }
+  })
+
+  it('reads the Coach, and its check-in as the one thing under it (ADR 0006)', () => {
+    expect(readAddress('#/coach')).toEqual({ screen: 'coach', param: null })
+    expect(readAddress('#/coach/checkin')).toEqual({ screen: 'coach', param: 'checkin' })
+    for (const hash of ['#/coach/check-in', '#/coach/2026-09', '#/coach/checkin/2026-09-21', '#/checkin']) {
+      expect(readAddress(hash), hash).toEqual({ screen: HOME, param: null })
+    }
+  })
+
+  it('reads the new screens that take nothing after their name', () => {
+    for (const screen of ['forecast', 'ask', 'help', 'start', 'ai'] as const) {
+      expect(readAddress(`#/${screen}`)).toEqual({ screen, param: null })
+      expect(readAddress(`#/${screen}/2026-09`), screen).toEqual({ screen: HOME, param: null })
+    }
+  })
+
+  it('reads a report by its month, and only a month', () => {
+    expect(readAddress('#/reports/2026-08')).toEqual({ screen: 'reports', param: '2026-08' })
+    expect(readAddress('#/reports')).toEqual({ screen: 'reports', param: null })
+    for (const hash of ['#/reports/2026-13', '#/reports/2026-08-01', '#/reports/overview']) {
+      expect(readAddress(hash), hash).toEqual({ screen: HOME, param: null })
+    }
+  })
+
+  it('reads a help topic only when it is one of the committed ones', () => {
+    for (const topic of HELP_TOPICS) expect(readAddress(`#/help/${topic}`)).toEqual({ screen: 'help', param: topic })
+    for (const hash of ['#/help/nowhere', '#/help/Updates', '#/help/updates/more', '#/help/2026-09']) {
+      expect(readAddress(hash), hash).toEqual({ screen: HOME, param: null })
+    }
+  })
+
+  it('reads a week by its Monday, and still opens this week at #/week (N46)', () => {
+    expect(readAddress('#/week')).toEqual({ screen: 'week', param: null })
+    expect(readAddress('#/week/2026-09-21')).toEqual({ screen: 'week', param: '2026-09-21' })
+    // A Tuesday, a day that does not exist, a month, and a third segment.
+    for (const hash of ['#/week/2026-09-22', '#/week/2026-02-30', '#/week/2026-09', '#/week/2026-09-21/2026-09-28']) {
+      expect(readAddress(hash), hash).toEqual({ screen: HOME, param: null })
     }
   })
 
   it('opens the home screen when there is no address', () => {
-    expect(readAddress('')).toEqual({ screen: HOME, period: null })
-    expect(readAddress('#/')).toEqual({ screen: HOME, period: null })
+    expect(readAddress('')).toEqual({ screen: HOME, param: null })
+    expect(readAddress('#/')).toEqual({ screen: HOME, param: null })
   })
 
   it('opens the home screen rather than guess at an address it cannot read in full', () => {
@@ -60,12 +100,15 @@ describe('readAddress', () => {
       '#/nowhere',
       '#/Month',
     ]) {
-      expect(readAddress(hash), hash).toEqual({ screen: HOME, period: null })
+      expect(readAddress(hash), hash).toEqual({ screen: HOME, param: null })
     }
   })
 
   it('writes back what it reads', () => {
-    for (const hash of ['#/month/2026-09', '#/month', '#/settings', '#/year/2025-04', '#/paycheck/2026-09-11', '#/calendar/2026-02']) expect(hashOf(readAddress(hash))).toBe(hash)
+    for (const hash of [
+      '#/month/2026-09', '#/month', '#/settings', '#/year/2025-04', '#/paycheck/2026-09-11', '#/calendar/2026-02',
+      '#/coach', '#/coach/checkin', '#/forecast', '#/reports/2026-08', '#/ask', '#/help', '#/help/updates', '#/start', '#/ai', '#/week/2026-09-21',
+    ]) expect(hashOf(readAddress(hash))).toBe(hash)
   })
 })
 

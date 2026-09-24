@@ -46,7 +46,7 @@ function refusedLate(fake: FakeSupabase): () => void {
 }
 
 function Routed() {
-  return <MonthScreen month={useAddress().period} />
+  return <MonthScreen month={useAddress().param} />
 }
 
 async function edit(fake: FakeSupabase, month = '2026-09') {

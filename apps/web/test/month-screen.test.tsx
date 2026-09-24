@@ -504,7 +504,7 @@ describe("MonthScreen before the app's first load (N35)", () => {
 
 describe('MonthScreen while another month loads', () => {
   function Routed() {
-    return <MonthScreen month={useAddress().period} />
+    return <MonthScreen month={useAddress().param} />
   }
 
   it("never shows one month's rows or review count under the next month's title", async () => {

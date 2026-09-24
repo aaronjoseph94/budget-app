@@ -1,21 +1,25 @@
 /**
- * Which screen is showing, and which month or pay period, kept in the URL's
- * #hash.
+ * Which screen is showing, and which month, week, pay period or help topic,
+ * kept in the URL's #hash.
  *
  * The hash rather than state so that a refresh, the phone's back gesture and
  * reopening the app from the iPhone home screen land where the user was,
  * month included: `#/month/2026-09` (ADR 0003). A router library would add a
- * dependency for a handful of fixed destinations with at most one period
- * each; this is the whole of what they need.
+ * dependency for a handful of fixed destinations with at most one param
+ * each; this is the whole of what they need (ADR 0006 extends it).
  *
  * Reading a period out of an address is parsing, not arithmetic, so it lives
  * here. Stepping one back or forward is `shiftMonth` or `shiftPayPeriod` in
  * packages/core.
  */
 import { useMemo, useSyncExternalStore } from 'react'
-import { isoDate } from '@budget/core'
+import { isoDate, weekBounds } from '@budget/core'
+import { HELP_TOPICS } from './help/topics.js'
 
-export const SCREENS = ['month', 'week', 'review', 'add', 'more', 'ledger', 'settings', 'setup', 'year', 'paycheck', 'calendar', 'savings', 'debts'] as const
+export const SCREENS = [
+  'month', 'week', 'review', 'add', 'more', 'ledger', 'settings', 'setup', 'year', 'paycheck', 'calendar', 'savings', 'debts',
+  'coach', 'forecast', 'reports', 'ask', 'help', 'start', 'ai',
+] as const
 export type Screen = (typeof SCREENS)[number]
 
 /** What a bare or unreadable address opens: Month first (plan §9a, decision 1). */
@@ -24,16 +28,18 @@ export const HOME: Screen = 'month'
 export interface Address {
   readonly screen: Screen
   /**
-   * `YYYY-MM`: the month on the Month screen and the Bill Calendar
-   * (`#/calendar/2026-09`), the start month on the Year (`#/year/2026-01`,
-   * F14). `YYYY-MM-DD` on Paycheck: a day of the pay
-   * period, its payday when the arrows wrote it (`#/paycheck/2026-09-11`).
-   * Null for the screen's own default, and on every other screen.
+   * What the screen is showing, read by a rule of its own (ADR 0006):
+   * `YYYY-MM` on the Month, the Bill Calendar and Reports (`#/reports/2026-08`)
+   * and the start month on the Year (`#/year/2026-01`, F14); a real day of a
+   * pay period on Paycheck (`#/paycheck/2026-09-11`); a Monday on the Week
+   * (`#/week/2026-09-21`); a committed topic id on Help (`#/help/updates`);
+   * `checkin` on the Coach. Null for the screen's own default, and on every
+   * other screen.
    */
-  readonly period: string | null
+  readonly param: string | null
 }
 
-const DEFAULT: Address = { screen: HOME, period: null }
+const DEFAULT: Address = { screen: HOME, param: null }
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/
 
 /** A real calendar day: `2026-02-30` is refused, not rolled into March. */
@@ -45,22 +51,35 @@ function isDay(text: string): boolean {
   }
 }
 
+/** The rule each screen that takes a param reads it by; a screen not here takes none. */
+const PARAM: Partial<Record<Screen, (param: string) => boolean>> = {
+  month: (p) => MONTH.test(p),
+  year: (p) => MONTH.test(p),
+  calendar: (p) => MONTH.test(p),
+  reports: (p) => MONTH.test(p),
+  paycheck: isDay,
+  // A week is named by its Monday, so each week has one address.
+  week: (p) => isDay(p) && weekBounds(isoDate(p)).start === p,
+  help: (p) => HELP_TOPICS.some((t) => t === p),
+  coach: (p) => p === 'checkin',
+}
+
 /**
  * An address as the app reads it. Anything it cannot read in full (an
- * unknown screen, `2026-13`, `2026-9`, a period on a screen that has none,
- * a third segment) opens HOME rather than a guess at what was meant.
+ * unknown screen, `2026-13`, `2026-9`, a Tuesday on the Week, a topic that
+ * is not committed, a param on a screen that has none, a third segment)
+ * opens HOME rather than a guess at what was meant.
  */
 export function readAddress(hash: string): Address {
-  const [name = '', period, ...rest] = hash.replace(/^#\/?/, '').split('/')
+  const [name = '', param, ...rest] = hash.replace(/^#\/?/, '').split('/')
   const screen = SCREENS.find((s) => s === name)
   if (screen === undefined || rest.length > 0) return DEFAULT
-  if (period === undefined) return { screen, period: null }
-  if ((screen === 'month' || screen === 'year' || screen === 'calendar') && MONTH.test(period)) return { screen, period }
-  return screen === 'paycheck' && isDay(period) ? { screen, period } : DEFAULT
+  if (param === undefined) return { screen, param: null }
+  return PARAM[screen]?.(param) === true ? { screen, param } : DEFAULT
 }
 
 export function hashOf(address: Address): string {
-  return address.period === null ? `#/${address.screen}` : `#/${address.screen}/${address.period}`
+  return address.param === null ? `#/${address.screen}` : `#/${address.screen}/${address.param}`
 }
 
 function subscribe(onChange: () => void): () => void {
@@ -75,9 +94,9 @@ export function useAddress(): Address {
   return useMemo(() => readAddress(hash), [hash])
 }
 
-/** Go to a screen; `period` only for the Month, Year and Bill Calendar (`YYYY-MM`) and Paycheck (`YYYY-MM-DD`). */
-export function navigate(screen: Screen, period: string | null = null): void {
-  const hash = hashOf({ screen, period })
+/** Go to a screen, with a param only where its rule above reads one. */
+export function navigate(screen: Screen, param: string | null = null): void {
+  const hash = hashOf({ screen, param })
   if (window.location.hash !== hash) window.location.hash = hash.slice(1)
   window.scrollTo({ top: 0 })
 }

@@ -250,3 +250,15 @@ describe('Shell, its screens as links (FE-20)', () => {
     expect(more.getByRole('link', { name: /^Bill calendar/ }).getAttribute('href')).toBe('#/calendar')
   })
 })
+
+describe('Shell, an address ahead of the app (ADR 0006)', () => {
+  it('opens a screen not built yet as one line with the way back to the Month, and names it in the title', async () => {
+    go('/forecast')
+    renderScreen(<Shell />, createFakeSupabase())
+
+    expect(await screen.findByRole('heading', { name: 'Forecast' })).toBeTruthy()
+    expect(screen.getByText('Forecast is on its way. Everything else works as before.')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Open the Month' }).getAttribute('href')).toBe('#/month')
+    expect(document.title).toBe('Forecast · Budget')
+  })
+})

@@ -197,7 +197,7 @@ describe('CalendarScreen', () => {
 
 describe('CalendarScreen while another month loads', () => {
   function Routed() {
-    return <CalendarScreen month={useAddress().period} />
+    return <CalendarScreen month={useAddress().param} />
   }
 
   it("never shows one month's bills under the next month's title", async () => {
