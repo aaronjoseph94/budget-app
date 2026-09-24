@@ -134,7 +134,13 @@ export function ReviewScreen() {
     // Outside the try: the action has already succeeded, and a refresh that
     // fails afterwards must not be reported as the action failing. load() and
     // refresh() each report their own errors.
-    if (done) await Promise.all([load(), refresh()])
+    // refresh() moves `version` on, and that reloads the queue; reloading it
+    // here as well read it twice per approval (PERF-2). It is off the list at
+    // once, so a refresh that fails does not leave it showing.
+    if (done) {
+      setRows((now) => now?.filter((r) => r.id !== row.id) ?? null)
+      await refresh()
+    }
     said.current?.focus()
   }
 

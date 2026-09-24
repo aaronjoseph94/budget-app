@@ -321,24 +321,24 @@ describe('ReviewScreen, lines an import could not read', () => {
       return released
     }
 
-    // Removing a charge re-reads the screen twice: once itself, and once for
-    // the app's refresh. Both are held.
+    // Removing a charge re-reads the screen once, through the app's refresh
+    // (PERF-2). It is held.
     fireEvent.click(coffee.getByRole('button', { name: 'Not a real transaction — remove' }))
-    await waitFor(() => expect(held).toBe(2))
+    await waitFor(() => expect(held).toBe(1))
     const dismiss = section.getByRole('button', { name: 'Dismiss row 11' })
     expect(dismiss).toHaveProperty('disabled', false)
 
     fireEvent.click(dismiss)
     await screen.findByRole('region', { name: '3 lines could not be read' })
 
-    // The two older reads now answer, with row 11 still in them. Each goes on
-    // to read its imports; once both have, give the screen a turn to apply them.
+    // The older read now answers, with row 11 still in it. It goes on to
+    // read its imports; once it has, give the screen a turn to apply it.
     let answered = 0
     fake.server.afterRead = (table) => {
       if (table === 'ingest_batches') answered += 1
     }
     release()
-    await waitFor(() => expect(answered).toBe(2))
+    await waitFor(() => expect(answered).toBe(1))
     await act(() => new Promise((resolve) => setTimeout(resolve, 0)))
 
     expect(screen.getByRole('region', { name: '3 lines could not be read' })).toBeTruthy()
@@ -395,5 +395,27 @@ describe('ReviewScreen, a long queue (PERF-1)', () => {
     expect(screen.getAllByRole('combobox', { name: 'Category' })).toHaveLength(60)
     expect(screen.queryByRole('button', { name: /^Show the/ })).toBeNull()
     expect(screen.queryByText(/^Showing the oldest/)).toBeNull()
+  })
+})
+
+describe('ReviewScreen, what an approval asks the server (PERF-2)', () => {
+  it('reads the queue once and its size once, and writes nothing but the approval', async () => {
+    const fake = seeded()
+    renderScreen(<ReviewScreen />, fake)
+    const coffee = await row('SQ *LITWARE COFFEE')
+    fireEvent.change(coffee.getByRole('combobox', { name: 'Category' }), { target: { value: 'c2' } })
+    const asked: string[] = []
+    fake.server.hold = (target) => {
+      asked.push(target)
+      return null
+    }
+    fireEvent.click(coffee.getByRole('button', { name: /Approve/ }))
+
+    // The queue again, and its size for the tab's count: two reads, not the
+    // three it took when the queue was read before and after the refresh.
+    await waitFor(() => expect(asked.filter((t) => t === 'ingest_candidates')).toHaveLength(2))
+    await waitFor(() => expect(asked.filter((t) => t === 'ingest_unreadable_lines')).toHaveLength(1))
+    expect(asked.filter((t) => t.startsWith('POST') || t === 'accounts')).toEqual([])
+    expect(fake.rpcCalls.map((c) => c.name)).toEqual(['approve_candidate'])
   })
 })
