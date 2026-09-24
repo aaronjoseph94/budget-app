@@ -59,6 +59,19 @@ describe('the shared load, reading every savings goal (F45)', () => {
     await said('ready: Flight training · Flight training, Travel · needs 0015')
   })
 
+  // A goal's id is a random uuid, so while every goal shares place 0 only
+  // when each was made keeps the oldest, the owner's flight goal, first.
+  it('leads with the oldest whatever the ids, with 0015 in or not', async () => {
+    const seed = () => ({ savings_goals: [goal('f-flight', 'Flight training'), goal('a-travel', 'Travel')] })
+    renderScreen(<Goals />, createFakeSupabase(seed()))
+    await said('ready: Flight training · Flight training, Travel · ordered')
+    cleanup()
+    const fake = createFakeSupabase(seed())
+    fake.server.lacks = { savings_goals: ['sort_order', 'status', 'reached_on'] }
+    renderScreen(<Goals />, fake)
+    await said('ready: Flight training · Flight training, Travel · needs 0015')
+  })
+
   it('still fails the first load on any other refusal of the goals', async () => {
     const fake = createFakeSupabase({ savings_goals: [goal('g1', 'Flight training')] })
     fake.fail('savings_goals', 'PGRST301')
