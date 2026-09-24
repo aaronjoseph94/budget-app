@@ -1,23 +1,24 @@
-import { goalProgress, timeEquivalent } from '@budget/core'
+import { goalsProgress } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { goalSavedCents, useFunds } from '../funds.js'
 import { formatBasisPoints, formatCents } from '../format.js'
 import { hashOf } from '../nav.js'
 import { Card, CardContent, CardTitle } from '../components/ui/card.js'
+import { Progress } from '../components/ui/feedback.js'
 import { Icon } from '../components/ui/icons.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { CoachCards, DayLine } from '../coach/CoachCards.js'
 import { useCoachFacts } from '../coach/facts.js'
 
 /**
- * The Coach (plan §2.3): the day's line, the flight card, and up to three
- * cards on what changed, each with one action and "Why am I seeing this?"
- * (A07). What to cut and the quote arrive with A08, the AI's words with A12.
+ * The Coach (plan §2.3): the day's line, the main goal's card with the
+ * other goals under it (G1), and up to three cards on what changed, each
+ * with one action and "Why am I seeing this?" (A07). What to cut and the quote arrive with A08, the AI's words with A12.
  *
  * It needs no one-time update, no AI helper and no key: the facts are
  * packages/core's digest of a year of the owner's own records, read here
- * off the Month's path, and the words are the app's own. The flight card
- * reads the goal and the funds Savings reads. This screen formats figures;
+ * off the Month's path, and the words are the app's own. The goals' card
+ * reads the goals and the funds Savings reads. This screen formats figures;
  * it never computes one.
  */
 export function CoachScreen() {
@@ -31,60 +32,95 @@ export function CoachScreen() {
       </div>
       <p className="text-xs text-muted-foreground">In the app’s own words, from your records.</p>
       {facts === null ? null : <DayLine facts={facts} className="text-lg font-medium leading-snug" />}
-      <FlightCard />
+      <GoalsCard />
       <CoachCards digest={digest} />
     </div>
   )
 }
 
-function FlightCard() {
-  const { mainGoal: goal } = useAppData()
+/**
+ * The main goal (F45), large, with the other active goals listed under it.
+ * A goal with a cost an hour shows its hours, as flight training does; one
+ * without is in dollars. Saved is the fund's kept balance (D16), and every
+ * figure is core's goalsProgress.
+ */
+function GoalsCard() {
+  const { goals, mainGoal } = useAppData()
   const funds = useFunds()
-  if (goal === null) {
+  if (mainGoal === null) {
     return (
       <Card>
         <CardContent className="space-y-2 pt-5 text-sm">
-          <p className="font-medium">No goal yet.</p>
-          <p className="text-muted-foreground">Set what you are saving for, and the Coach shows how far you have come.</p>
-          <a href={hashOf({ screen: 'settings', param: null })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
-            Set a goal
+          <p className="font-medium">{goals.length === 0 ? 'No goal yet.' : 'No active goal.'}</p>
+          <p className="text-muted-foreground">
+            {goals.length === 0
+              ? 'Add what you are saving for, and the Coach shows how far you have come.'
+              : 'Your goals are paused or reached. Resume one, or add another, and the Coach shows it here.'}
+          </p>
+          <a href={hashOf({ screen: 'savings', param: null })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+            {goals.length === 0 ? 'Add a goal' : 'Open Savings'}
           </a>
         </CardContent>
       </Card>
     )
   }
 
-  const savedCents = goalSavedCents(goal, funds)
-  const { percentCompleteBasisPoints: bp } = goalProgress({ name: goal.name, targetCents: goal.target_cents, savedCents })
-  // Whole hours of each, by the same conversion (F33). Nothing saved yet is
-  // 0 h; a fund with more taken out than put in has no hours to show.
-  const hours =
-    goal.unit_cost_cents === null || savedCents < 0
-      ? null
-      : { saved: timeEquivalent(savedCents, goal.unit_cost_cents).hours, target: timeEquivalent(goal.target_cents, goal.unit_cost_cents).hours }
-
+  const active = goals.filter((g) => g.status === 'active')
+  const { goals: figures } = goalsProgress({
+    goals: active.map((g) => ({ id: g.id, targetCents: g.target_cents, savedCents: goalSavedCents(g, funds), unitCostCents: g.unit_cost_cents })),
+  })
+  const [main, ...others] = figures
+  if (main === undefined) return null
   return (
     <Card>
       <div className="flex items-center gap-2 p-5 pb-3">
-        <Icon name="plane" className="size-4 text-muted-foreground" />
-        <CardTitle as="h2">{goal.name}</CardTitle>
+        <Icon name={mainGoal.unit_cost_cents === null ? 'piggy' : 'plane'} className="size-4 text-muted-foreground" />
+        <CardTitle as="h2">{mainGoal.name}</CardTitle>
       </div>
-      <CardContent className="flex items-center gap-4">
-        <Ring basisPoints={bp} />
-        <div className="min-w-0 space-y-1">
-          {hours !== null ? (
-            <p>
-              <span className="tnum text-2xl font-bold">
-                {hours.saved} h of {hours.target} h
-              </span>
-              <span className="block text-sm text-muted-foreground">of {goal.unit_label ?? 'your goal'}</span>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-4">
+          <Ring basisPoints={main.progressBp} />
+          <div className="min-w-0 space-y-1">
+            {main.hours !== null ? (
+              <p>
+                <span className="tnum text-2xl font-bold">
+                  {main.hours.saved} h of {main.hours.target} h
+                </span>
+                <span className="block text-sm text-muted-foreground">of {mainGoal.unit_label ?? 'your goal'}</span>
+              </p>
+            ) : null}
+            <p className="text-sm">
+              <span className="tnum font-medium">{formatCents(main.savedCents)}</span>
+              <span className="text-muted-foreground"> saved of {formatCents(main.targetCents)}</span>
             </p>
-          ) : null}
-          <p className="text-sm">
-            <span className="tnum font-medium">{formatCents(savedCents)}</span>
-            <span className="text-muted-foreground"> saved of {formatCents(goal.target_cents)}</span>
-          </p>
+          </div>
         </div>
+        {others.length === 0 ? null : (
+          <div className="border-t pt-3">
+            <h3 className="text-sm font-medium">Your other goals</h3>
+            <ul className="mt-2 space-y-3">
+              {others.map((f) => {
+                const name = active.find((g) => g.id === f.id)?.name
+                return (
+                  <li key={f.id} className="space-y-1">
+                    <p className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
+                      <span className="min-w-0 truncate font-medium" title={name}>
+                        {name}
+                      </span>
+                      <span className="tnum whitespace-nowrap text-muted-foreground">
+                        {formatCents(f.savedCents)} of {formatCents(f.targetCents)}
+                      </span>
+                    </p>
+                    <Progress basisPoints={f.progressBp} />
+                  </li>
+                )
+              })}
+            </ul>
+            <a href={hashOf({ screen: 'savings', param: null })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+              All your goals on Savings
+            </a>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

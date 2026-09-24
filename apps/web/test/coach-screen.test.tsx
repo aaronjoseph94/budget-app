@@ -1,4 +1,4 @@
-import { act, cleanup, screen } from '@testing-library/react'
+import { act, cleanup, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
@@ -110,12 +110,13 @@ describe('the Coach’s flight card', () => {
     expect(screen.queryByText(/ h of /)).toBeNull()
   })
 
-  it('offers to set a goal when there is none', async () => {
+  // Goals are added on Savings now (G1), not in Settings.
+  it('offers to add a goal when there is none', async () => {
     go('/coach')
     renderScreen(<Shell />, createFakeSupabase())
 
     expect(await screen.findByText('No goal yet.')).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Set a goal' }).getAttribute('href')).toBe('#/settings')
+    expect(screen.getByRole('link', { name: 'Add a goal' }).getAttribute('href')).toBe('#/savings')
   })
 
   it('opens the check-in address as one line until the check-in is built', async () => {
@@ -124,5 +125,56 @@ describe('the Coach’s flight card', () => {
 
     expect(await screen.findByText('The Sunday check-in is on its way. Everything else works as before.')).toBeTruthy()
     expect(screen.queryByRole('heading', { name: 'Flight training' })).toBeNull()
+  })
+})
+
+describe('the Coach’s goals, more than one (G1)', () => {
+  const other = (id: string, name: string, more: Record<string, unknown>) => ({
+    id, name, target_cents: 100_000, saved_cents: 15_000, target_date: null, unit_cost_cents: null, unit_label: null, ...more,
+  })
+
+  // Hand-derived: Travel $150.00 of $1,000.00 is 1,500 bp, a bar 15% long.
+  it('leads with the main goal, and lists the other active goals under it with their bars', async () => {
+    const fake = withGoal(1_265_000)
+    fake.tables.savings_goals.push(other('g2', 'Travel', { sort_order: 1 }), other('g3', 'House', { status: 'paused' }))
+    go('/coach')
+    renderScreen(<Shell />, fake)
+
+    expect(await screen.findByRole('heading', { name: 'Flight training', level: 2 })).toBeTruthy()
+    expect(screen.getByText(para('46 h of 109 hof flight time'))).toBeTruthy()
+    const list = screen.getByRole('heading', { name: 'Your other goals', level: 3 }).parentElement!
+    expect([...list.querySelectorAll('li')].map((li) => li.querySelector('p')?.textContent)).toEqual(['Travel$150.00 of $1,000.00'])
+    expect((list.querySelector('[role=presentation] > div') as HTMLElement).style.width).toBe('15%')
+    expect(within(list).getByRole('link', { name: 'All your goals on Savings' }).getAttribute('href')).toBe('#/savings')
+  })
+
+  it('shows the goal made main instead, in dollars when it has no cost an hour', async () => {
+    const fake = withGoal(1_265_000)
+    fake.tables.savings_goals[0] = { ...fake.tables.savings_goals[0]!, sort_order: 1 }
+    fake.tables.savings_goals.push(other('g2', 'Travel', { sort_order: 0 }))
+    go('/coach')
+    renderScreen(<Shell />, fake)
+
+    expect(await screen.findByRole('heading', { name: 'Travel', level: 2 })).toBeTruthy()
+    expect(screen.getByText(para('$150.00 saved of $1,000.00'))).toBeTruthy()
+    expect(screen.queryByText(/ h of /)).toBeNull()
+    expect(screen.getByText('Flight training')).toBeTruthy()
+  })
+
+  it('says when no goal is active, and where to resume one', async () => {
+    const fake = withGoal(1_265_000)
+    fake.tables.savings_goals[0] = { ...fake.tables.savings_goals[0]!, status: 'reached', reached_on: '2026-09-01' }
+    go('/coach')
+    renderScreen(<Shell />, fake)
+
+    expect(await screen.findByText('No active goal.')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Open Savings' }).getAttribute('href')).toBe('#/savings')
+  })
+
+  it('shows the owner’s one goal with nothing listed under it', async () => {
+    go('/coach')
+    renderScreen(<Shell />, withGoal(1_265_000))
+    await screen.findByRole('heading', { name: 'Flight training', level: 2 })
+    expect(screen.queryByRole('heading', { name: 'Your other goals' })).toBeNull()
   })
 })
