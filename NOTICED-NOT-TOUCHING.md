@@ -1697,3 +1697,23 @@ generation-config reference, drop `temperature` for models that ignore it,
 set the thinking level by the field Google documents, and pin the exact
 body in the adapter test. `read-receipt` can follow when it is next
 changed, or retire (§12).
+
+---
+
+## N66 — At 320px the Month's tables already scroll inside their cards
+
+**Seen:** 2026-09-24, checking A03's change column at 320px in the preview.
+
+The page never scrolls sideways, but with Left showing, the Variable
+expenses table is 18px wider than its card (304 of 286), Savings 9px and
+Bills 12px, so each scrolls inside its own box and the last column starts
+cut off. The change column adds up to 4px on those, and 10px on Income,
+which had no third column before.
+
+**Why not fixed here:** it is the blocks' padding and column widths on
+every screen that draws them (Month, Week, Paycheck), not the comparison;
+the plan's §9 already calls for a 12px gutter below 360px.
+
+**To settle:** in A26's mobile sweep, take the table's outer padding to
+12px below 360px and let the Category column wrap sooner, then check the
+Month, Week and Paycheck at 320px in both of the Month's column modes.

@@ -631,6 +631,13 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **Screens:** the Month reads last month's rows in the same range read; `MonthSummary`'s strip (§2.2); the **Left | vs Aug 1–24** switch on every block (remembered on this device, localStorage in try/catch); block total chips; "Last month (same days): $X" in `MonthCharges`. With the earlier window outside the records, the strip says what to import.
 - **Tests:** `packages/core/test/compare.test.ts` (24 Sep against 1–24 Aug; 31 Mar against 1–28 Feb; a past month whole; a bill due on the 28th counted only from the 28th on both sides; before of $0 gives no percentage; 99 cents is "same"; a window before history start gives none); `apps/web/test/month-compare.test.tsx` (the strip names both figures; the switch swaps the column; a failed earlier read hides the strip and the Month still shows).
 - **Acceptance:** every figure from `periodComparison`; no fourth column at 320 px; the golden tests untouched; first load recorded.
+- **Changed while building (2026-09-24).** Each decided by the engineer under the owner's 2026-09-24 instruction to proceed without questions.
+  - **Last month is read beside the month, not in the same range read.** The plan asked for both "in the same range read" and for "a failed earlier read" to hide the strip while the Month still shows; with one read, a failure takes the month with it, so both cannot hold. Last month's rows and where the records start are read in parallel with the month; if they fail, the summary card says so in one line and every block still shows.
+  - **One switch for all six blocks,** above them, labelled "Last column: Left | vs 1 – 24 Aug", rather than a switch on each block: six switches that always move together read as six settings. A month already over reads "vs July"; with nothing to compare, the switch is not offered.
+  - **Block chips show only a change of $1 or more,** as F27 says of chips, so a quiet list carries no "about the same" chip.
+  - **A row with nothing this month but something last month** is not folded behind "Show N empty" while the change column shows.
+  - **The strip's wording:** "By 24 Sep: $X spent · by 24 Aug: $Y", then "▼ $160.00 less (14%)". Before the records it reads "Your records start on 8 Aug. Import the statement before that to compare with August."
+  - **Help:** no Help section exists yet, so the "Comparisons with last month" article is left to A06, which already lists it.
 
 ### A04: Comparisons on the Week, Paycheck, Year, Savings and Debts
 
