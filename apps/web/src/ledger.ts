@@ -1280,6 +1280,46 @@ export async function saveFund(
   if (error !== null) throw new Error(describeFundFailure('save', error))
 }
 
+/** A goal as the Add a goal sheet types it (G1). */
+export interface NewGoal {
+  readonly name: string
+  readonly targetCents: number
+  readonly savedCents: number
+  readonly targetDate: string | null
+  readonly startDate: string | null
+  readonly unitCostCents: number | null
+  readonly unitLabel: string | null
+  /** Today: the day what is saved is true, at its end (D16). */
+  readonly asOf: string
+  /** After every other goal (F45); null before 0015, which has no place to write. */
+  readonly sortOrder: number | null
+}
+
+/**
+ * Add a goal with its fund (G1): the Savings-list category of that name,
+ * made at the bottom of the list when there is none, as Setup adds a row,
+ * then the goal linked to it with what is saved true as of today, so money
+ * moved in later adds to it (D16). Two writes, not one: a fund made and its
+ * goal refused leaves an empty Savings row, which trying again links.
+ */
+export async function addGoal(supabase: SupabaseClient, userId: string, fund: NewCategory, goal: NewGoal): Promise<void> {
+  const category = await ensureCategory(supabase, userId, fund)
+  const { error } = await supabase.from('savings_goals').insert({
+    user_id: userId,
+    name: goal.name,
+    target_cents: goal.targetCents,
+    saved_cents: goal.savedCents,
+    target_date: goal.targetDate,
+    start_date: goal.startDate,
+    unit_cost_cents: goal.unitCostCents,
+    unit_label: goal.unitLabel,
+    category_id: category.id,
+    balance_as_of: goal.asOf,
+    ...(goal.sortOrder === null ? {} : { sort_order: goal.sortOrder }),
+  })
+  if (error !== null) throw new Error(describeFundFailure('save', error))
+}
+
 /**
  * Make a goal on no fund the fund for `categoryId`, its typed amount true as
  * of `asOf`: transfers already recorded are taken to be in it, and later

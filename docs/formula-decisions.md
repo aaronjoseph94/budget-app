@@ -1149,6 +1149,12 @@ to follow (D28).
   target buys, each by `timeEquivalent` (minutes rounded half-up, whole
   hours), the rule A05's flight card uses. A balance below $0 has no hours.
   With no cost per hour, progress is in dollars only.
+- **A goal added on Savings** starts with what is typed as saved already,
+  true at the end of the day it is added (D16), and, when a target date is
+  typed, a start date of that same day, so its card shows the months left
+  and what to save each month (F21) rather than "no dates yet". With no
+  target date it has no start date either, as the workbook's Travel Fund
+  has none (D15).
 - **Remove** is only for a goal with nothing saved (saved at or below $0).
   A goal holding money would lose the record of its balance, so its card
   says so and offers Pause or Mark as reached instead. Removing a goal

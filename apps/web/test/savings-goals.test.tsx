@@ -223,3 +223,71 @@ describe('Savings, removing a goal (G1)', () => {
     await waitFor(() => expect(fake.tables.savings_goals.map((g) => g.id)).toEqual(['g1', 'g2']))
   })
 })
+
+describe('Savings, adding a goal (G1)', () => {
+  const type = (label: RegExp, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } })
+  const add = async (fields: Readonly<Record<string, string>>) => {
+    fireEvent.click(await screen.findByRole('button', { name: 'Add a goal' }))
+    expect(screen.getByRole('dialog', { name: 'Add a goal' })).toBeTruthy()
+    for (const [label, value] of Object.entries(fields)) type(new RegExp(`^${label}`), value)
+    fireEvent.click(screen.getByRole('button', { name: 'Add goal' }))
+  }
+
+  // The acceptance: added in one sheet, its fund made, and money moved in afterwards counted.
+  it('makes the goal and its fund together, and counts money moved in after today', async () => {
+    const fake = seeded()
+    renderScreen(<SavingsScreen />, fake)
+    await add({ Name: 'Emergency', 'Target \\(\\$\\)': '5000', 'Saved already': '200', 'Target date': '2027-09-01' })
+    expect(await screen.findByText('Emergency is added, with its fund on your Savings list. Money you move into it after today adds to it.')).toBeTruthy()
+    const made = fake.tables.categories.find((c) => c.name === 'Emergency')
+    expect(made).toMatchObject({ kind: 'savings', sort_order: 4 })
+    expect(fake.tables.savings_goals[2]).toMatchObject({
+      name: 'Emergency', category_id: made?.id, target_cents: 500_000, saved_cents: 20_000,
+      target_date: '2027-09-01', start_date: '2026-09-23', balance_as_of: '2026-09-23', sort_order: 2,
+    })
+    // Two days on, $50.00 moved in on the 24th adds to what was typed.
+    cleanup()
+    vi.setSystemTime(new Date(2026, 8, 25, 12))
+    fake.tables.transactions.push({ id: 't9', posted_on: '2026-09-24', amount_cents: -5_000, merchant_raw: 'TO SAVINGS', category_id: made!.id, source: 'typed' })
+    renderScreen(<SavingsScreen />, fake)
+    expect((await screen.findByRole('region', { name: 'Emergency' })).textContent).toContain('$250.00 saved of $5,000.00')
+    expect(regions().slice(0, 3)).toEqual(['Travel', 'Flight training', 'Emergency'])
+  })
+
+  it('uses the Savings fund of that name when it has no goal, rather than making another', async () => {
+    const fake = seeded()
+    renderScreen(<SavingsScreen />, fake)
+    await add({ Name: 'House', 'Target \\(\\$\\)': '40000' })
+    await screen.findByText(/^House is added/)
+    expect(fake.tables.categories.filter((c) => c.name === 'House')).toHaveLength(1)
+    expect(fake.tables.savings_goals[2]).toMatchObject({ name: 'House', category_id: 'house', saved_cents: 0, target_date: null, start_date: null })
+  })
+
+  it('says why before writing anything: a name on another list, a goal already there, a target that is not money', async () => {
+    const fake = seeded()
+    fake.tables.categories.push({ id: 'food', name: 'Groceries', kind: 'variable', sort_order: 0, weekly_budget_cents: null })
+    renderScreen(<SavingsScreen />, fake)
+    await add({ Name: 'Groceries', 'Target \\(\\$\\)': '100' })
+    expect(screen.getByText('Groceries is on your Variable expenses list. Use another name, or move it to Savings in Setup.')).toBeTruthy()
+    type(/^Name/, 'Travel')
+    fireEvent.click(screen.getByRole('button', { name: 'Add goal' }))
+    expect(screen.getByText('You already have a goal called Travel. Edit it on its card, or use another name.')).toBeTruthy()
+    type(/^Name/, 'Boat')
+    type(/^Target \(\$\)/, '0')
+    fireEvent.click(screen.getByRole('button', { name: 'Add goal' }))
+    expect(screen.getByText('Type the target as an amount above zero, like 2000 or 2,000.00.')).toBeTruthy()
+    expect(fake.tables.savings_goals).toHaveLength(2)
+    expect(fake.tables.categories).toHaveLength(5)
+  })
+
+  // Fail soft: before 0015 there is no place to write, and a goal is added as before.
+  it('adds a goal before 0015 without a place, which the database would refuse', async () => {
+    const fake = seeded()
+    fake.server.lacks = { savings_goals: ['sort_order', 'status', 'reached_on'] }
+    renderScreen(<SavingsScreen />, fake)
+    await add({ Name: 'Emergency', 'Target \\(\\$\\)': '5000' })
+    expect(await screen.findByText(/^Emergency is added/)).toBeTruthy()
+    expect(fake.tables.savings_goals[2]).toMatchObject({ name: 'Emergency', target_cents: 500_000 })
+    expect('sort_order' in fake.tables.savings_goals[2]!).toBe(false)
+  })
+})

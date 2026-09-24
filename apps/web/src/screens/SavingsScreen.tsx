@@ -19,9 +19,11 @@ import { linkFund, type FundRow, type ListedGoalRow } from '../ledger.js'
 import { hashOf, navigate } from '../nav.js'
 import { formatBasisPoints, formatCents, formatIsoDate, todayIso } from '../format.js'
 import { FundEditor } from './FundEditor.js'
+import { AddGoalSheet } from './AddGoalSheet.js'
 import { GoalActions } from './GoalActions.js'
 import { Alert, Badge } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
+import { Icon } from '../components/ui/icons.js'
 import { Figure } from '../components/ui/type.js'
 import { HelpButton } from '../help/HelpButton.js'
 
@@ -42,6 +44,7 @@ export function SavingsScreen() {
   const { supabase, refresh, categories, goals, mainGoal, goalsOrdered } = useAppData()
   const comparison = useSavedThisMonth(categories)
   const [editing, setEditing] = useState<string | null>(null)
+  const [adding, setAdding] = useState(false)
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null)
   const ready = state.status === 'ready' ? state : null
   const goalOf = (fund: SavingsFund) => ready?.goals.find((g) => g.id === fund.figures?.goalId) ?? null
@@ -124,6 +127,9 @@ export function SavingsScreen() {
       ) : null}
       {ready === null ? null : (
         <>
+          <Button className="w-full sm:w-auto" onClick={() => setAdding(true)}>
+            <Icon name="plus" /> Add a goal
+          </Button>
           {goalsOrdered || goals.length === 0 ? null : (
             <p className="text-sm">
               Choosing your main goal, moving goals, and pausing or finishing one need a one-time update.{' '}
@@ -169,6 +175,17 @@ export function SavingsScreen() {
           )}
         </>
       )}
+      {adding && ready !== null ? (
+        <AddGoalSheet
+          goalOnFund={new Set(ready.funds.funds.flatMap((f) => (f.figures === null ? [] : [f.categoryId])))}
+          onClose={() => setAdding(false)}
+          onSaved={(text) => {
+            setAdding(false)
+            setNotice({ ok: true, text })
+          }}
+          onFailedAfterClose={(text) => setNotice({ ok: false, text })}
+        />
+      ) : null}
       {shown !== null ? (
         <FundEditor
           key={shown.categoryId}
