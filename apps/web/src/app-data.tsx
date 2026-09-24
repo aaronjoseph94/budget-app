@@ -77,18 +77,22 @@ export function AppDataProvider({
   // write: an older answer holds the categories as they were before the
   // save, and showing it would wipe a budget that is stored (CR-1).
   const latest = useRef(0)
+  // The account does not change within a session, so it is read once, not
+  // on every refresh after every save (PERF-2).
+  const account = useRef<Promise<{ readonly id: string }> | null>(null)
 
   const refresh = useCallback(async () => {
     const mine = ++latest.current
     try {
-      const [account, cats, g, pending] = await Promise.all([
-        ensureAccount(supabase, userId, DEFAULT_ACCOUNT),
+      account.current ??= ensureAccount(supabase, userId, DEFAULT_ACCOUNT)
+      const [resolved, cats, g, pending] = await Promise.all([
+        account.current,
         listCategories(supabase),
         getGoal(supabase),
         listPending(supabase, 1),
       ])
       if (mine !== latest.current) return
-      setAccountId(account.id)
+      setAccountId(resolved.id)
       setCategories(cats)
       setGoal(g)
       setPendingTotal(pending.total)
@@ -96,6 +100,8 @@ export function AppDataProvider({
       setStatus('ready')
       setVersion((v) => v + 1)
     } catch (cause) {
+      // Asked again next time: a failed lookup is not an answer.
+      account.current = null
       if (mine !== latest.current) return
       setLoadError(cause instanceof Error ? cause.message : 'Could not load your data.')
       setStatus((s) => (s === 'ready' ? s : 'failed'))

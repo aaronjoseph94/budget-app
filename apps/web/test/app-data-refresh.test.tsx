@@ -49,3 +49,25 @@ describe('AppData refresh, answered out of order (CR-1)', () => {
     expect(restaurants.value).toBe('200.00')
   })
 })
+
+describe('AppData refresh, what it asks the server (DT-1, PERF-2)', () => {
+  it('reads the account once, and never writes it when it is there', async () => {
+    const fake = createFakeSupabase()
+    const asked: string[] = []
+    fake.server.hold = (target) => {
+      asked.push(target)
+      return null
+    }
+    const data: { current: AppData | null } = { current: null }
+    renderScreen(<Probe into={data} />, fake)
+    await waitFor(() => expect(data.current?.accountId).toBe('a1'))
+    await act(async () => {
+      await data.current?.refresh()
+      await data.current?.refresh()
+    })
+
+    // Each refresh tried to create it, was refused with 409 (a console
+    // error on the hosted app), and read it back: one read per refresh.
+    expect(asked.filter((t) => t.includes('accounts'))).toEqual(['accounts'])
+  })
+})

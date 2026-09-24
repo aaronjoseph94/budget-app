@@ -451,8 +451,19 @@ async function ensureNamed(
   return found as Named
 }
 
-export const ensureAccount = (supabase: SupabaseClient, userId: string, name: string) =>
-  ensureNamed(supabase, 'accounts', userId, name, {})
+/**
+ * The card account, found by name, and created only when it is not there.
+ *
+ * Looked up first, unlike ensureNamed: it exists on every launch but the
+ * first, and inserting first had the database refuse a write, 409, each
+ * time, which the browser logs as an error (DT-1). The insert that follows
+ * a miss is ensureNamed's, so two first launches at once are still safe.
+ */
+export async function ensureAccount(supabase: SupabaseClient, userId: string, name: string): Promise<Named> {
+  const { data, error } = await supabase.from('accounts').select('*').eq('name', name).maybeSingle()
+  if (error !== null) fail(error)
+  return data === null ? ensureNamed(supabase, 'accounts', userId, name, {}) : (data as Named)
+}
 
 export interface NewCategory {
   readonly name: string
