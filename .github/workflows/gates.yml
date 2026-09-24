@@ -30,9 +30,10 @@ jobs:
           # action those steps invoke, could pick it up.
           persist-credentials: false
 
+      # No version here: it reads packageManager in package.json, and names
+      # one pnpm for CI, the session and the hosts (SEC-6). Given both, it
+      # refuses to run.
       - uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - uses: actions/setup-node@v4
         with:

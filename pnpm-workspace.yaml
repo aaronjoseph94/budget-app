@@ -6,3 +6,7 @@ packages:
 # bootstrap install is quiet and a future warning means something new.
 ignoredBuiltDependencies:
   - esbuild
+# Fail closed: a new dependency that wants to run an install script stops
+# the install until it is named here, allowed or ignored, rather than
+# passing with a warning no one reads (SEC-6). pnpm 10's default is false.
+strictDepBuilds: true
