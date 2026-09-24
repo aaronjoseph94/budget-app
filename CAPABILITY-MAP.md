@@ -13,14 +13,24 @@ Dependency arrows point one way only.
 | `calc-engine` | All arithmetic: budget rollups, debt amortization, future value, 50/30/20, cash-flow forecast, net worth. Pure functions, no I/O, no ambient clock. | `money-primitives`, `golden-verification` |
 | `chart-specs` | Chart layout and SVG generation as pure functions: Sankey flows, the contribution grid, category bars, trend lines. No React, no DOM. | `money-primitives`, `calc-engine` |
 | `schema-contracts` | Every zod schema and the DB row types. The executed contract between client, Edge Functions, and Postgres. | `money-primitives` |
-| `persistence-schema` | Migrations, RLS policies, the dedupe unique index, private Storage bucket policies, seed fixtures. | `schema-contracts` |
+| `persistence-schema` | Migrations, RLS policies, the dedupe unique index, private Storage bucket policies, seed fixtures. From 0015, the AI tables and the functions only the AI helper may call. | `schema-contracts` |
 | `statement-parsers` | Deterministic CSV/XLSX parsing, merchant normalization, the dedupe hash. Bytes in, validated rows out. | `money-primitives`, `schema-contracts` |
-| `llm-providers` | One interface over GLM / Gemini / Qwen / DeepSeek / Ollama, the failover router, the hardcoded endpoint allowlist, prompt templates paired with their schemas. | `schema-contracts` |
+| `llm-providers` | One interface over Gemini, Groq and OpenRouter (free) and OpenAI and Anthropic (paid): the hardcoded endpoint and model allowlist, the failover router with its daily limits and cooldowns, each task's prompt paired with its JSON schema, and the encryption of pasted keys. Realised as the `ai` Edge Function, one pasteable file, beside `read-receipt` (ADR 0004). | `schema-contracts` (held to it by contract tests; the file imports only zod), `persistence-schema` |
 | `ingest-pipeline` | The candidate lifecycle: creation, merchant-rule lookup and learning, review-queue state machine, guarded promotion to `transactions`. | `schema-contracts`, `persistence-schema`, `statement-parsers`, `llm-providers` |
-| `savings-coach` | Weekly limits and streaks, savings-capacity analysis, goal tracking and tradeoff conversion, the spend-interrogation loop and the answers it learns from, and the surfacing of insights: ranking, dismissal state, cadence and narration. The behavioural layer; every number it shows and every detector that fires comes from `calc-engine`. | `calc-engine`, `schema-contracts`, `persistence-schema`, `ingest-pipeline`, `llm-providers` |
-| `report-export` | Excel workbook and PDF report generation. Formats engine output and embeds `chart-specs` SVG; computes nothing. Dynamically imported, runs on the client. | `calc-engine`, `chart-specs`, `schema-contracts` |
+| `savings-coach` | Weekly limits and streaks, savings-capacity analysis, goal tracking and tradeoff conversion, the spend-interrogation loop and the answers it learns from, and the surfacing of insights: ranking, dismissal state, cadence and narration. The behavioural layer; every number it shows and every detector that fires comes from `calc-engine`. Realised as `packages/savings-coach`: templates and tones, the blank renderer, card ranking, the quotes and tips library, the AI's brief and its signatures, the check of a model's reply, Ask's intents, the check-in's rules (ADR 0005). | `calc-engine`, `schema-contracts` (types), `money-primitives` (types) |
+| `report-export` | Excel workbook and PDF report generation. Formats engine output and embeds `chart-specs` SVG; computes nothing. Dynamically imported, runs on the client. Realised in part as `packages/report-export`: a month as CSV, with the formula guard (N4); the PDF is the browser's print of Reports. The Excel workbook is not built. | none for the CSV writer, which takes rows of text; `calc-engine`, `chart-specs`, `schema-contracts` once the Excel workbook is built |
 | `reminders-scheduler` | pg_cron bill reminders plus the heartbeat row that proves the job is still firing. | `persistence-schema`, `calc-engine` |
-| `app-client` | Vite + React PWA: hash navigation (ADR 0003), magic-link auth, the Supabase data layer, design tokens, and every screen. Renders engine output. Computes nothing. | `calc-engine`, `schema-contracts`, `ingest-pipeline` |
+| `app-client` | Vite + React PWA: hash navigation (ADR 0003, ADR 0006), magic-link auth, the Supabase data layer, design tokens, every screen, and the Help and Getting started content. Renders engine output. Computes nothing. Reaches `llm-providers` only by `supabase.functions.invoke('ai')`. | `calc-engine`, `chart-specs`, `schema-contracts`, `ingest-pipeline`, `savings-coach`, `report-export` (loaded when used) |
+
+*Changed 2026-09-24* (`docs/ai-first-plan.md`, decided by the engineer under
+the owner's 2026-09-24 instruction to proceed without questions):
+`llm-providers` first named GLM, Qwen, DeepSeek and Ollama; the providers
+are now the five the owner's instruction approved (ADR 0004).
+`savings-coach` first depended on `persistence-schema`, `ingest-pipeline`
+and `llm-providers`; as a package it does no reading, writing or calling,
+so those arrows now start at `app-client`, which reads and writes the
+coach's tables and calls the helper. `app-client` always drew
+`chart-specs`' charts; the arrow was missing.
 
 **Build order**
 
@@ -67,6 +77,21 @@ not. See docs/ideas/export.md.
 **`app-client` is one module, not several**, because splitting screens from the
 data layer would produce a task list rather than a boundary.
 
+**`llm-providers` is one file, not a package** (2026-09-24). The owner deploys
+it by pasting it into the Supabase dashboard, which takes one file, so it
+imports nothing but zod and cannot import `schema-contracts`. Contract tests
+hold its request and reply schemas to `schema-contracts` instead, and
+`depcruise` checks it imports nothing else. It is the only code that holds a
+provider key, so it is under every gate like a package (ADR 0004).
+
+**`savings-coach` is pure, like `chart-specs`** (2026-09-24). It turns
+`calc-engine`'s facts into cards, templates and the AI's brief, and checks a
+model's reply against what was offered, with no I/O, clock, randomness or
+zod; the app reads, writes, hashes and calls. That keeps every rule about
+what the AI may say testable without a network, and keeps the arrow from
+the coach to the engine one way: the coach may call the engine, never the
+reverse (ADR 0005).
+
 ## Slice order for delivery
 
 Modules are the dependency structure, not the delivery plan. Work ships as
@@ -110,6 +135,15 @@ workbook views plan's order (§8), ahead of the coach (§9a, decision 13):
 16. Export: Excel workbook and PDF report, with the same figures as the screen
 
 Net worth, retirement and 50/30/20 are not scheduled (docs/ROADMAP.md).
+
+**The AI-first phase** *(added 2026-09-24)*. The owner's list of 2026-09-24
+asks for the app to be AI first, with forecasting, reports and trends,
+comparisons with last month, Help and a fuller setup. `docs/ai-first-plan.md`
+builds items 12 (the coach, with the check-in), 13 (natural-language entry),
+14 in part (the forecast; not the reminders) and 16 in part (Save as PDF and
+CSV; not the Excel workbook) of the list above, in its own order (§13,
+slices A01–A28), each slice a schema, engine and screen change together.
+The Sankey (15) and the due reminders stay unbuilt.
 
 Slices 1–2 of the original order were what replaced the spreadsheet's daily
 use. Everything after is addition, not replacement.
