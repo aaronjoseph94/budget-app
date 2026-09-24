@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SetupScreen } from '../src/screens/SetupScreen.js'
 import type { Category, PlanRow } from '../src/ledger.js'
@@ -124,15 +124,19 @@ describe('SetupScreen, reading monthly amounts', () => {
     // The lists are held back on the first load, so until they arrive every
     // amount names a category the screen has not been given yet.
     let release = () => {}
+    const asked: string[] = []
     fake.server.hold = (table) => {
-      if (table !== 'categories') return null
-      fake.server.hold = null
+      asked.push(table)
+      if (table !== 'categories' || asked.filter((t) => t === 'categories').length > 1) return null
       return new Promise<void>((resolve) => (release = resolve))
     }
     renderScreen(<SetupScreen />, fake)
 
-    // Long enough for any read begun with the screen to be answered and shown.
-    await act(() => new Promise((resolve) => setTimeout(resolve, 50)))
+    // Every other read of the first load is in, and none of the amounts was
+    // asked for: nothing is read, or said, until the lists arrive. Waited on
+    // what was asked, not on a stretch of time, which a slow run outlasts.
+    await waitFor(() => expect(asked).toEqual(expect.arrayContaining(['categories', 'savings_goals', 'ingest_candidates'])))
+    expect(asked).not.toContain('category_plans')
     expect(screen.queryByRole('alert')).toBeNull()
     release()
     await waitFor(async () => expect(await tile('Bills total', 'Bills')).toBe('$1,685.00'))
