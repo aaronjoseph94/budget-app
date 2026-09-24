@@ -61,7 +61,7 @@ async function toJpegBase64(file: File): Promise<string | null> {
 }
 
 /** Bytes as base64, a slice at a time: one call with every byte overruns the argument limit. */
-function base64Of(bytes: Uint8Array): string {
+export function base64Of(bytes: Uint8Array): string {
   let text = ''
   for (let at = 0; at < bytes.length; at += 0x8000) text += String.fromCharCode(...bytes.subarray(at, at + 0x8000))
   return btoa(text)

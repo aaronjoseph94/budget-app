@@ -10,6 +10,9 @@ import { Button } from '../components/ui/button.js'
 import { NativeSelect } from '../components/ui/form.js'
 import { cn } from '../lib/cn.js'
 
+/** Charges drawn before "Show all" (PERF-4). */
+const FIRST = 30
+
 /**
  * One Month row opened: the charges filed under that category in the month
  * (plan §6.2). The Actual is the engine's, passed in from monthSheet; the
@@ -27,8 +30,6 @@ import { cn } from '../lib/cn.js'
  * where that came from, or its Actual would stand over "No charges" with
  * nothing to explain it.
  */
-const FIRST = 30
-
 export function MonthCharges({
   categoryId,
   name,
