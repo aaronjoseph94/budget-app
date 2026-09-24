@@ -395,3 +395,258 @@ The workbook has no forecasts, so each rule below is a new formula decision (§1
 - **Coach cards and Reports** throughout.
 - The previous window's rows come in the same read as the current one. If that read fails, the comparisons hide with one line and the screen still shows.
 - The workbook shows no comparisons, so adding them to its views is divergence **D26**, written by A03. The workbook's own figures do not change, and the golden tests do not move.
+
+---
+
+## 7. Reports and trends
+
+**The engine** (`packages/core`, hand-derived tests, each rule in §11):
+- `monthlyTotals`: each complete month's Income, Spent and Saved, from `monthSheet`, inside the records.
+- `savingsRate` (F36): saved over income, in basis points, half-up; none when income is $0.
+- `biggestMovers` (F36): the categories furthest from their usual month, beyond the notable band, three up and three down.
+- `categoryTrends` and `trendLabel` (F37).
+- `topShops` (F41), `recurringCharges` (F38), `unusualCharges` (F39).
+- `spendingGrid`, `weekdayPattern`, `streaks`, `personalBest` (F40).
+- A shop is grouped by the normalised merchant `statement-parsers` already makes. The app passes that key in as data, so core still imports only `money-primitives`.
+
+**New charts** in `packages/chart-specs`, each a pure function returning an SVG string on an integer grid, every label escaped through `el`, with a text list of the same figures beside it:
+- `balanceLine`: the 30-day line, with the tightest day marked.
+- `rangeBar`: the month-end range against today.
+- `trendLines`, with a `sparkline` form for a row.
+- `pairedBars`: this month against last, by category.
+- `heatGrid`: the spending grid.
+- The weekday pattern reuses the existing `bars`.
+- Chart heights and positions come to the chart in basis points from core, so no chart divides money.
+
+**The screen** is §2.6: four tabs, Overview first, in its own chunk. The report narrative is the `report` pack, asked for once per complete month and cached. The current month is marked "so far".
+
+**Save and download (`report-export`, realised in part).**
+- **Save as PDF:** a print stylesheet on Reports. The browser's own print makes the PDF, so nothing new is loaded and nothing leaves the phone.
+- **Download CSV:** the month's transactions and the Overview's table, written by a new `packages/report-export`, loaded only when tapped. A text cell starting with `=`, `+`, `-`, `@`, a tab or a carriage return gets a leading apostrophe, so a spreadsheet never runs a shop's name as a formula (N4). Amounts are written by the app's formatter as plain `1234.56`.
+- **The Excel workbook with charts stays unbuilt.** It needs a library, which is a dependency to ask about first. The Sankey stays unbuilt too.
+
+---
+
+## 8. Help and Setup
+
+**Writing rules for everything in this section:** one action per step; the exact button name in bold; the time it takes ("about 2 minutes"); "Nothing breaks if you stop here"; no engineering words. A migration is a "one-time update", the Edge Function is "the AI helper", Gemini and the others are "AI services", and a key is explained once as "a password the service gives you for the app to use".
+
+### 8.1 Getting started (`#/start`)
+
+One step per screen: a bar ("Step 3 of 9 · about 2 minutes"), a large title, one sentence on why it matters, the real control on the screen (the existing Setup, pay, bill, goal and balance editors, reused), and **Continue** or **Do this later**.
+
+| # | Step | Done when (read from the data, never stored) |
+|---|---|---|
+| 1 | Your name | a name is saved |
+| 2 | Your lists (the starter list button) | a spending category exists |
+| 3 | When you're paid | an Income category has a pay schedule |
+| 4 | Your bills | a bill, debt or subscription has a monthly amount |
+| 5 | Your flight goal ($30,000 at $275 an hour, and what is saved so far) | a savings goal with a target exists |
+| 6 | Your first statement, and filing it | an import exists and Review is empty |
+| 7 | This month's starting balance, with starter budgets offered | this month's balance is typed |
+| 8 | Turn on free AI | the AI helper answers and a Gemini key or the secret works |
+| 9 | Put it on your iPhone (optional) | the app is open from the home screen, or ticked by hand |
+
+- **Progress comes from `setupProgress` in core,** which takes one yes, no or "can't check yet" per step and returns the steps in order, how many are done and the next one. A step whose read failed shows "can't check yet", never "done".
+- **Do this later** moves a step to the end. The choice, and a hand-ticked step 9, are kept in the sign-in's `user_metadata`, as the name already is (`profile.ts`), so they follow the owner to another device with no migration.
+- **Step 7 offers starter budgets (F43):** each spending category's usual month, rounded up to $5, each written only when **Accept** is tapped.
+- **Step 8 is honest about time.** If the AI helper or 0015 is not in yet, it first walks through One-time updates (§8.2): "about 15 minutes, once, easiest on a computer". The key itself then takes under 2 minutes on an iPhone. If the `GEMINI_API_KEY` secret already works, the step is already done.
+- **Finishing** shows a small paper-plane celebration (none under reduced motion) and "Your coach is ready", then the Coach.
+- **The Month's empty state and the first sign-in** open Getting started. More and Settings show "Getting started: 5 of 9 done" until it is finished.
+
+### 8.2 Help (`#/help`, `#/help/<topic>`)
+
+- **Articles are committed data** (`apps/web/src/help/articles.ts`: id, title, summary, steps, "You're done when…", "Stuck?", the screen it belongs to, related ids). They are drawn as text and lists, never markup, and a search box filters titles and text.
+- **Each article follows one pattern:** one line on what it is, numbered steps with the exact button names in bold, "You're done when…", and "Stuck?".
+- **The topics:** Start here (Getting started's progress) · One-time updates · Month, Week, Pay and Year · Bring in a statement · Why things wait in Review · Add: type it, a photo, just type it · Budgets and bills · Savings and your flight goal · Debts · What the Coach does, and never does · The Sunday check-in · How the forecast works · Two month-end figures · Reports and trends · Comparisons with last month · Ask · Turn on free AI · More AI services, paid ones too · What the AI sees · Why the AI sometimes rests · Why does a number look wrong? (a statement not imported yet, rows waiting in Review, no starting balance, card payments not counted, planned against real, typed and imported twice) · Messages with a code in brackets · Put it on your iPhone · Words the app uses.
+- **The ? beside every title** opens that screen's article in a bottom sheet, with **Show me** and **Ask about this**.
+
+**One-time updates (`#/help/updates`, ADR 0007)** checks what is actually there and shows only what is left:
+- It probes each table and function from 0005 to 0017 (an empty read or call; PGRST205 or 42P01 means a table is missing, PGRST202 a function), sends the AI helper `ping` (a 404 means it is not deployed), and reads the key status. It shows "3 of 4 installed", a ✓ or ✗ on each, and the exact next file.
+- **Copy buttons** fetch `/setup/0015_ai_foundation.sql` and the rest, and `/setup/ai-function.ts`. A small Vite plugin, `apps/web/setup-files.ts`, using Node's `fs` and no new dependency, copies those committed files into the build, and serves them in dev. It copies only migrations from 0015 on and the `ai` helper's source, never anything from the environment. A test checks that each served file is byte for byte the committed one. The files are public on the site; they hold no secret (gitleaks scans them where they are committed), and reading the schema gives nobody access, because row-level security does.
+- Each step has the exact Supabase clicks (§10.2), then **Check again**. With nothing left it says "All done".
+- **Every "needs a one-time update" line in the app links here,** and the old messages that name a migration number ("0008 in the setup guide") are reworded to point here (A27).
+
+### 8.3 AI settings (`#/ai`)
+
+- **A sentence at the top** says what is true now: "AI is on, using free Google Gemini", "AI is on, using your receipts key", or "AI is off. Everything still works; the Coach uses the app's own words."
+- **Free Google Gemini (recommended),** three numbered steps: 1. **Get a free key** (opens https://aistudio.google.com/apikey in a new tab, `rel="noopener noreferrer"`), then **Create API key** and copy it. 2. Paste it (a password-style field with a Show toggle; autocomplete, autocapitalise and spellcheck off; 16 px text). 3. **Save & test**. The result: "Works · key ending …abcd", "Google says this key isn't valid: check you copied all of it", or "Busy right now: saved, and it will be tried again".
+- **More options, collapsed:** Groq (free), OpenRouter (free), OpenAI (paid) and Anthropic (paid), each with a get-a-key link, the same paste and test, one line on cost and privacy, **Check which models work**, and a model choice from the listed models the key can use. Then **Try in this order** with up and down buttons, **Use paid services** (off), **Daily limit** (40, from 10 to 150) with "Today: 7 of 40", coach tone, **Share shop names with the AI**, an on/off switch for AI, and **What the AI sees** (§3.6).
+- **Remove key** on each saved one. The key is never shown again; only "ending …abcd".
+
+---
+
+## 9. Mobile
+
+**Target:** designed at 390 px; must work at 320 px. Checked at 320, 375, 390, 430, 768 and 1280 px, light and dark, and with text at 200% (N58), in the preview harness's Chromium. WebKit cannot run here (N41), so HANDOFF asks the owner to look at the Month, the Coach and Forecast on the iPhone.
+
+**Rules for every new screen and every change:**
+- One column below 768 px, with a 16 px side gutter (12 px below 360 px) and no sideways page scroll. A wide table (Year, the three months ahead) scrolls inside its own box.
+- `min-w-0` on flex children. Amounts use tabular digits, do not wrap, and align right; names truncate with the full name in `title` and in the row's sheet.
+- Text inputs are 16 px so iOS does not zoom; amounts use `inputmode="decimal"`. Tap targets are at least 44 × 44 px. Nothing depends on hover.
+- The phone bar's five tabs are about 64 px each at 320 px, clear of the home indicator. The **Month · Week · Pay · Year** switch is four segments of about 72 px; at large text sizes it scrolls inside its own box with an edge fade, as the Reports tabs do.
+- Comparison chips wrap under their figures below 360 px. The Month's **vs last month** replaces Left rather than adding a column.
+- Bottom sheets (the existing sheet) hold help, "Why am I seeing this?" and the editors, inside the safe areas. The Ask box sits in the normal page flow and scrolls into view on focus; a fixed box would slide under the iOS keyboard.
+- Charts use a `viewBox` at 100% width with a minimum label size, and a text list beside them.
+- AI words that arrive late replace the app's own in an `aria-live="polite"` region, with a crossfade, or none under reduced motion.
+- Every new colour has a light and a dark token, the coach's sky-blue accent included, each checked at 4.5:1 or better.
+- A one-line banner, "You're offline: figures may be out of date", when a read fails for lack of a network.
+- Every new screen is its own chunk, and everything added to the Month (the strip, the switch, the coach line) is measured against the 200 KB first-load gate in the commit that adds it; the coach line and the forecast line load after the Month draws.
+
+**Checks:** a committed static test fails on an arbitrary width class wider than 320 px in `apps/web/src`. The harness sweep asserts `document.documentElement.scrollWidth <= innerWidth` on every screen at 320 and 390 px, that the bottom bar is visible and unobscured, and saves screenshots to the scratchpad's `shots/`, never the repo. It stays in the scratchpad until a Playwright dev dependency is approved, so CONSTRAINTS.md gains a Pending row naming it (A26).
+
+---
+
+## 10. Migrations, and what the owner does after the push
+
+0001–0014 are applied to the hosted project (as of 2026-09-24) and never change. This phase adds three, forward-only, one per capability so each can be missing on its own without breaking anything else. Every table enables RLS and adds the `user_id = auth.uid()` policy in the same file.
+
+### 10.1 What each one adds
+
+**`0015_ai_foundation.sql`** (A09; the service-role functions' bodies filled by A10 and A11)
+- `ai_provider`, an enum: gemini, groq, openrouter, openai, anthropic.
+- `ai_settings`, one row per user, which the browser reads and writes: `enabled` (default true), `provider_order ai_provider[]` (no repeats), `models jsonb` (a model per service; the helper re-checks each against its list), `daily_cap` (10–150, default 40), `allow_paid` (default false), `tone` (`cheerleader` or `straight`, default `cheerleader`), `share_shop_names` (default true).
+- `ai_provider_keys (user_id, provider, ciphertext, iv, kek_id, key_v, key_hint, status, model, tested_at, updated_at)`, primary key `(user_id, provider)`. `key_hint` is at most 4 characters and `status` is ok, busy, rejected or locked. It has the policy, then `revoke all … from anon, authenticated`, so the browser cannot select, insert, update or delete a row, not even its own.
+- `ai_usage (user_id, day, provider, model, task, attempts, tokens_est, ok)`. The browser can read it (for "Today: 7 of 40"), not write it.
+- `ai_provider_state (user_id, provider, model, cooldown_until, last_code, updated_at)`. Read only, as above.
+- **Functions for the helper alone**, SECURITY DEFINER with `search_path` pinned, each `revoke all … from public, anon, authenticated` then `grant execute … to service_role`, each taking an explicit `p_user`: `ai_context_for` (settings, the key ciphertexts, today's use and the cooldowns in one call), `ai_key_put`, `ai_key_mark`, `ai_usage_claim` (one statement: insert, or update where every limit still has room, returning whether the attempt may go; the total limit is read from `ai_settings`), and `ai_note_outcome` (records a code and a cooldown).
+- **Functions for the browser**, granted to `authenticated` only: `ai_key_status()` (service, hint, status, model, tested date; never ciphertext) and `ai_key_forget(p_provider)`.
+- `supabase/local-stub.sql` gains a `service_role` role, as Supabase has, so the schema gate can prove each grant and each refusal.
+
+**`0016_coach_memory.sql`** (A12)
+- `ai_text_is_clean(jsonb)`, IMMUTABLE: false when the text holds an ASCII digit, a fullwidth digit (U+FF10–FF19), an Arabic-Indic digit (U+0660–0669, U+06F0–06F9), a Devanagari digit (U+0966–096F), `$`, `＄`, `%`, `％`, `€`, `£`, `¥`, `¢` or `₹`. It is the backstop; the app's rule (ADR 0005) is wider and runs first. `scripts/verify-migrations.sh` creates its throwaway database as UTF-8 (`initdb -E UTF8 --locale=C`), as Supabase's is, so these ranges mean characters.
+- `ai_notes (id, user_id, surface, scope, facts_sig, prompt_v, body, card_sigs, fact_keys, provider, model, created_at)`: `surface` is daily, checkin or report; `scope` like `day:2026-09-24`; `facts_sig` 64 hex characters; `body jsonb` passes `ai_text_is_clean` and is at most 8 KB; unique `(user_id, surface, scope, facts_sig)`. A trigger keeps each user's newest 30 rows per surface. The browser writes its own rows after checking the words.
+- `insight_dismissals (user_id, insight_key, dismissed_at)`, primary key `(user_id, insight_key)`; the key is the cause, such as `subscription_price_up:<shop>:2026-09`.
+- `transactions` gains a unique constraint on `(id, user_id)`. It is additive and cannot fail on existing rows, because `id` is already unique. It lets the next table name a charge and its owner together.
+- `coach_answers (user_id, transaction_id, answer, asked_week, answered_at)`: `answer` is planned, impulse or needed; primary key `(user_id, transaction_id)`; foreign key `(transaction_id, user_id)` to `transactions (id, user_id)`, on delete cascade, so an answer can never name another person's charge.
+
+**`0017_category_suggestions.sql`** (A21)
+- `suggest_candidate_categories(p jsonb) returns integer`, SECURITY DEFINER, `search_path` pinned, at most 200 items of `{candidate, category}`. It sets `category_id` and `category_source = 'model'` only on the caller's candidates that are pending with no category or a model's, and only to the caller's categories that are not on Not spending. It returns how many it set. It never touches a row the owner or a learned rule filled.
+- `clear_candidate_suggestion(p_candidate uuid)`: puts a pending suggestion back to none.
+- Both are revoked from public and anon and granted to authenticated, and both join the schema gate's anon-execute list.
+
+**The schema gate** (`supabase/tests/schema-assertions.sql`) attempts every refusal, and each assertion is seen to fail once by deleting what it proves: the browser selecting or writing `ai_provider_keys`; the browser writing `ai_usage` or `ai_provider_state`; anon or authenticated running a helper-only function; `ai_usage_claim` past a limit; `ai_key_status` returning ciphertext or another user's row; an `ai_notes` body holding `$412`, `2026`, a fullwidth digit, an Arabic-Indic digit or `＄`, while `{{A.change}}` passes; a `coach_answers` row naming another user's charge; a suggestion on an approved, user-filled or rule-filled row, on another user's category or on Not spending; approving as `model` (0004, again); RLS isolating two users on every new table.
+
+### 10.2 What the owner does after the push
+
+**Three things, in this order, about 15 minutes, once. Easiest on a computer.** Until they are done, everything that worked before still works, and the new screens use the app's own words. In the app, **Help → One-time updates** checks each step and has Copy buttons, so there is no need to open GitHub.
+
+1. **Paste the three database updates, one at a time.** Supabase → **SQL Editor** → **New query**. In the app, Help → One-time updates → **Copy** beside `0015_ai_foundation.sql`. Paste, press **Run**, and wait for "Success. No rows returned." Then a new query for `0016_coach_memory.sql`, then one for `0017_category_suggestions.sql`. 0001–0014 are already in: do not run them again. If one says anything other than "Success", stop there. Nothing is lost, and the message names the line.
+2. **Paste the AI helper.** Supabase → **Edge Functions** → **Deploy a new function** → **Via Editor**. Name it exactly `ai`. In the app, **Copy** beside "The AI helper", paste it over everything in the editor, keep **Enforce JWT verification** on, and press **Deploy**. There are no new secrets: `GEMINI_API_KEY` and `EXTRA_ORIGINS` are reused if you set them for receipt photos.
+3. **Turn on free AI.** In the app: More → **AI settings** → **Get a free key**. Google AI Studio opens in a new tab: **Create API key**, copy it, come back, paste it, and press **Save & test**. You should see "Works · key ending …abcd". If you set `GEMINI_API_KEY` for receipts earlier, the screen already says "AI is on" and there is nothing to paste.
+
+Then **Check again** on One-time updates says "All done".
+
+**Optional:** if you deployed `read-receipt` earlier, paste its new version the same way. It moves off a Google model that stops working in mid-October. The AI helper reads receipts itself, so this matters only as a fallback.
+
+### 10.3 Why pushing before pasting is safe
+
+`main` deploys itself when pushed (HANDOFF step 2). Nothing in the first load reads a table from 0015–0017, every new read fails soft on its own, and a missing helper is a 404 that becomes one quiet line (§3.10). A28 proves it by walking every screen with each piece missing in turn.
+
+---
+
+## 11. Formula decisions this phase adds (F24–F44)
+
+None has a workbook cell, so each is an engineering default, labelled "Decided by the engineer under the owner's 2026-09-24 instruction to proceed without questions", with hand-derived tests. **The slice named transcribes each into `docs/formula-decisions.md`, with a worked example, before its code.** Money is integer cents throughout; "half-up" is the rounding `money-primitives` already defines.
+
+| F | Rule | Slice |
+|---|---|---|
+| F24 | **History start.** The earliest statement period's start; with no statement, the earliest ledger date. A window that starts before it is not compared or used as a baseline. A **complete month** lies wholly between history start and the start of `asOf`'s month. **Evidence:** thin with 0–2 complete months, some with 3–5, solid with 6 or more | A03 |
+| F25 | **Comparison windows.** A month running on day d: days 1..d against days 1..min(d, last month's length). A past month: whole against whole. A week: Monday to `asOf`'s weekday against the same days of the week before. A pay period: its start to `asOf` against the previous period's start plus the same number of days, capped at its end. A Year: against the twelve months before. Both sides through `periodSheet` (F8) | A03 |
+| F26 | **A change.** `change = now − before`. `changeBp = change × 10000 ÷ |before|`, half-up; none when before is 0. Under 100 cents either way is "same". Meaning by list: on Bills, Debts, Subscriptions and Variable, up is "watch"; on Income and Savings, up is "good". A change slot is drawn as the amount and its direction word ("$40.00 more", "$40.00 less", "about the same") | A03 |
+| F27 | **Usual month and the notable band.** Usual = the median of a category's totals over up to 6 most recent complete months (F24). MAD = the median of each month's distance from it. Band = max(2500, 15% of usual half-up, 3 × MAD) with 3 or more complete months, else max(2500, 25% of usual). For a window of d days in a month of D, the band is scaled by d ÷ D, half-up, never below 2500. The summary's totals (this month and this week against the same days before) use max(2500, 15% of the earlier figure), so the Month can size them from the two months it reads. **Size:** slight under the band, clear from 1 to under 2 bands, big from 2 bands | A07 |
+| F28 | **Category pace.** From day 7 of the current month: `actual × D ÷ d`, half-up; none before day 7 or for a past month. Over budget by `pace − budget` when a budget is set and that is above 0 | A07 |
+| F29 | **Pay still due.** For each Income category with a schedule (on Income, per N27): paydays after `asOf` this month × its usual pay (the median of its last 3 receipts inside the records). With no receipt, the monthly goal ÷ paydays in the month (F15's `payShare`). With a goal and no schedule, max(0, goal − received). With neither, none, and the forecast says pay is not included | A13 |
+| F30 | **The month's end.** Variable still to come, per scenario: pace (from day 7) gives max(0, pace − actual); each of up to 6 complete months i gives `(D − d) × V_i ÷ D_i`, half-up. End = start + income received + pay still due − Spent (F7, planned bills counted) − variable still to come − saved − savings still planned (Σ max(0, goal − saved) over Savings rows). The range is the minimum, median and maximum of the scenarios, each rounded half-up to 1000 cents. Rough (one "about" figure, the median) before day 7 or under 3 complete months; nothing before day 7 with no complete month. No balance without a typed start (D17); the projected Spent still shows | A13 |
+| F31 | **Safe to spend.** Available = start + income received + pay still due − Spent − saved − savings still planned. Per day = available ÷ (D − d + 1), rounded down to the cent, when available is above 0; else 0, "nothing left to spend safely this month". None without a typed start | A13 |
+| F32 | **The next 30 days.** Today's balance = start + income received to date − real spending to date − saved to date. Each day after `asOf` for 30 days: paydays × usual pay (F29); each Bills, Debts or Subscriptions plan on its due day (F8, D6 for days 29–31), unless a real charge already replaced it this month (D5); a plan past its day with no charge counts tomorrow as "due, not seen yet"; a daily variable amount = real variable spending over the last min(90, days of records) days ÷ those days, half-up, only with 14 days or more. Gives the line, the lowest day and balance, and bills due in the next 7 days. Savings not yet moved are left out, and the card says so | A13 |
+| F33 | **Flight date and milestones.** Monthly contributions into the goal fund's category over up to 6 complete months; p25, median and p75 by nearest rank; weekly = monthly × 12 ÷ 52, half-up; each to a date by `projectGoal`. Under 3 months: the median only, rough. All zero: "no date at your current pace", with the top lever. Hours saved = `timeEquivalent` at the goal's hourly rate, whole hours; a milestone when the hours cross a multiple of 5 since the last complete week | A08 |
+| F34 | **Levers.** For each Variable category with a usual month (F27): 10% and 25% of it, and "your best month" (usual − its lowest complete month, when that is at least 500 cents), each rounded half-up to 500 cents. Weekly = monthly × 12 ÷ 52, half-up. Weeks sooner = ⌈remaining ÷ pace⌉ − ⌈remaining ÷ (pace + weekly)⌉ at the median pace (F33); with no pace, "gets you there in ⌈remaining ÷ weekly⌉ weeks". Flying time per month by `timeEquivalent`. At most two categories offered, one lever each, the 25% by default | A08 |
+| F35 | **The next three months.** Per month: pay (paydays × usual pay, else the goal); every Bills, Debts and Subscriptions plan in effect (D13); variable spending as p25, median and p75 of complete months' Variable totals (under 3 months, the median only, rough); savings goals in effect (D12). Net = pay − bills − variable − savings. With a typed start, balances chain from F30's median, low with low and high with high, labelled best and worst case | A14 |
+| F36 | **Month totals, savings rate, movers.** Totals from `monthSheet`. Savings rate = saved × 10000 ÷ income, half-up; none when income is 0. Movers: categories whose month differs from their usual (F27, the month itself left out) by at least the band; three largest up and three down | A15 |
+| F37 | **Trend label.** Needs 4 or more complete months. Over the last up to 6: "rising steadily" when at least 75% of month-to-month pairs rise and last − first exceeds the band; "falling steadily" the mirror; else "no clear trend". Under 4: "not enough months yet", naming the month it becomes possible | A16 |
+| F38 | **Recurring charges.** The same shop, 3 or more charges, every gap in one band: 6–8 days (weekly), 12–16 (fortnightly), 26–35 (monthly) or 350–380 (yearly); each amount within max(100 cents, 10%) of their median. Next date = last + the median gap. A year's cost = median × 52, 26, 12 or 1. A price change: the latest differs from the one before by at least 50 cents and 2%. New: the first charge in the series is within the last 100 days | A17 |
+| F39 | **Unusual charges.** One charge at least max(5000 cents, 3 × the category's median charge over the last 90 days of records), where the category has 5 or more earlier charges. A new shop at 10,000 cents or more, after 60 days of records. A possible double charge: the same shop and amount within 3 days, two different rows. A typed row and an imported row of the same amount within 3 days: "may be counted twice". Each is flagged, never hidden; duplicates are the dedupe hash's job | A17 |
+| F40 | **Habits.** The grid: each day of up to 26 weeks inside the records, Variable spending against a daily allowance (the Variable list's weekly budgets ÷ 7, half-up; with none, the median daily Variable spend), in 5 levels: none, up to half, up to all, up to one and a half, more. Weekday pattern: average Variable spend per weekday over up to 12 complete weeks, needing 4. Streak: complete weeks in a row with Variable spending at or under its weekly budgets (`weekSheet`). Personal best: a category's last complete month is its lowest, with 3 or more complete months | A18 |
+| F41 | **Top shops.** Net spending by shop in the window against the same-days window before (F25); the top 10 by amount; shops new this month | A17 |
+| F42 | **The check-in.** Questions: last week's (Monday to Sunday) Variable charges of 2000 cents or more with no answer, the largest 3. Suggested limit, for the Variable category that cost most last week: min(last week's actual, its usual month × 12 ÷ 52), rounded down to 500 cents, at least 500. Impulse share: impulse answers ÷ answers over 8 weeks, in basis points, half-up | A20 |
+| F43 | **Starter budgets.** For each spending category with a complete month: the median of up to its 3 latest, rounded up to 500 cents. Written only on **Accept**, as "from this month on" (D12) | A25 |
+| F44 | **Impact, for ranking.** A fact's monthly effect: a change scaled to a whole month (`change × D ÷ d`, half-up), a lever's monthly saving, a subscription's monthly cost, an unusual charge's amount. Impact = effect × evidence weight (thin 1, some 2, solid 3). Stale data (the latest statement ends more than 10 days before `asOf`) always ranks first; rows waiting in Review second. Only notable facts, and the kinds that are always notable (stale data, waiting rows, milestones, price rises, possible doubles), become cards | A07 |
+
+---
+
+## 12. Records this phase writes
+
+- **ADR 0004** (with this plan): the AI services, the allowlist, keys and failover, with the owner's approvals quoted.
+- **ADR 0005** (with this plan): grounded AI text, the placeholder and facts rule, checking, the cache, the quotes library.
+- **ADR 0006** (A05): navigation for an AI-first app, extending ADR 0003.
+- **ADR 0007** (A09): one-time updates copied from inside the app.
+- **ADR 0002** gains a dated note (A02): its default model moves, and its "switching provider is one file" line now means the `ai` helper.
+- **Formula decisions F24–F44** (§11), each in its slice before code.
+- **Divergences:** **D26** (A03): the workbook's views gain comparisons with the previous period, and the Month's third column can show them; the workbook shows none, and its figures do not change. **D27** (A07, A13): the Month gains a coach line above its summary and a labelled forecast line inside it. Any slice that changes a workbook figure adds the next D-number.
+- **CONSTRAINTS.md, Enforced:** Edge Functions type-checked, linted, boundary-checked and tested, coverage 80/80/75 (A02); the browser holds no provider host or service key (A09); model text carries no numbers (A12). **Pending:** the mobile sweep at 320 px, activated by a Playwright dev dependency (A26). **Extraction accuracy** stays pending, with the reason in its own commit (A02): no labelled receipts exist, the owner's cannot be committed, and invented ones would measure nothing about the real model. **Engine speed** stays pending, with the reason (A07): a wall-clock assertion is not deterministic in CI, so it is measured once and recorded instead.
+- **CAPABILITY-MAP.md and docs/ROADMAP.md** (with this plan).
+- **NOTICED-NOT-TOUCHING.md:** retire `read-receipt` once the helper is live; the Excel workbook and the Sankey still unbuilt; anything a slice sees outside itself.
+
+---
+
+## 13. The slices
+
+**Rules for every slice** (CLAUDE.md, CONSTRAINTS.md and the orchestrator's rules; not repeated below):
+- Before every commit, `./scripts/gates.sh full` prints `status=GREEN`, and the working tree holds exactly that commit's change. One logical change per commit, at most 300 changed lines excluding the lockfile and migrations; test and fixture lines count. Never weaken, skip or remove a gate, lower a threshold, or delete or skip a test.
+- Formula decisions are written before the code. Engine tests are hand-derived, written first and seen failing; every test that is not golden is also seen to fail against a deliberate mutation, named in the commit body. No `toBeCloseTo`, snapshots or mocks in `packages/core`. The 121 golden tests do not change, and the total must not fall.
+- Every new core function takes one plain input object with an explicit `asOf` and returns one plain output object. Screens format; they never compute.
+- Every new screen is a lazy chunk. A commit that adds to the Month records the first-load size from `scripts/check-bundle.mjs` in its body.
+- Screen tests are deterministic: they await what was asked for, never a timer. A flaky test is a race to find.
+- Every screen change is looked at in the scratchpad preview harness at 320 and 390 px, with `scrollWidth <= innerWidth` checked, and at 1280 px.
+- Each slice adds its Help article, or its part of one, in the same slice.
+- The brand word appears nowhere: code, tests, fixtures, docs, file names or commit messages.
+- Anything seen outside the slice goes into `NOTICED-NOT-TOUCHING.md`.
+
+### A01: The plan and its records
+
+**Owner items:** 1, 2, 3, 5, 6, 7, 8, 9 · **Depends on:** nothing · **Migrations:** none · **Commits:** 9 (docs only)
+- **Goal:** this plan (`docs/ai-first-plan.md`), ADR 0004 and ADR 0005, CAPABILITY-MAP.md's new rows and arrows, and docs/ROADMAP.md saying this phase realises the coach and the reports.
+- **Acceptance:** every choice labelled; ADR 0004 quotes the owner's approvals; the brand word nowhere; each commit at most 300 lines; gates GREEN.
+
+### A02: Edge Functions under the gates, and receipts off a retiring model
+
+**Owner items:** 2, 8, 10 · **Depends on:** A01 · **Migrations:** none · **Commits:** about 4 · **Why first:** `read-receipt` holds a provider key and no gate executes it today, and its default model is due to be shut down around 16 October 2026.
+- **Build:** `supabase/functions` becomes a private workspace package, `@budget/functions` (zod at the version the web app already uses: no new dependency, said in the commit body). It gets a `tsconfig.json` with a small `deno-env.d.ts` (declaring `Deno.env.get` and `Deno.serve`) and a path alias from `npm:zod@4.6.5` to the workspace's zod, referenced from the root `tsconfig.json`; a vitest project `functions` with the same alias; `supabase/functions/**/index.ts` in the coverage include, held at 80/80/75; `supabase/functions` added to the `purity` gate's depcruise command in `gates.sh`, with allowed lines (the source imports zod alone; tests may import `vitest` and `packages/schema`); and an eslint block that allows `console` only inside each file's one `log(code, counts)` helper.
+- **`read-receipt`** exports `handle(req, env, fetchFn)` and calls `Deno.serve` only when `Deno` exists. Its behaviour does not change, except `DEFAULT_MODEL` becomes `gemini-3.5-flash-lite` (re-verified at build; if that id cannot be confirmed, the confirmed Flash-Lite id). `docs/setup.md`'s `GEMINI_MODEL` example and ADR 0002 (a dated note) say so.
+- **CONSTRAINTS.md:** the Enforced "Edge Functions" row; in its own commit, why Extraction accuracy stays pending (§12).
+- **Tests:** `supabase/functions/test/read-receipt.test.ts`: a foreign origin, a missing bearer, a bad body and a bad `GEMINI_MODEL` refused; no key gives `not_configured`; 429, 404 and 5xx mapped; only the reply text passed on; the image, prompt and reply never logged; the file has no relative import, so it can still be pasted.
+- **Acceptance:** each new gate is seen RED once (a type error, a lint error, a forbidden import, the tests deleted for coverage) and GREEN after; the outbound request is byte for byte as before apart from the model.
+
+### A03: Last month beside this month, on the Month
+
+**Owner items:** 7, 9 · **Depends on:** A01 · **Migrations:** none · **Commits:** about 4
+- **Records first:** F24, F25, F26; D26.
+- **Engine** (`packages/core/src/history.ts`, `compare.ts`): `historyStart`, `comparisonWindow`, `periodComparison` (per block and row: now, before, change, `changeBp` or none, direction, meaning).
+- **Screens:** the Month reads last month's rows in the same range read; `MonthSummary`'s strip (§2.2); the **Left | vs Aug 1–24** switch on every block (remembered on this device, localStorage in try/catch); block total chips; "Last month (same days): $X" in `MonthCharges`. With the earlier window outside the records, the strip says what to import.
+- **Tests:** `packages/core/test/compare.test.ts` (24 Sep against 1–24 Aug; 31 Mar against 1–28 Feb; a past month whole; a bill due on the 28th counted only from the 28th on both sides; before of $0 gives no percentage; 99 cents is "same"; a window before history start gives none); `apps/web/test/month-compare.test.tsx` (the strip names both figures; the switch swaps the column; a failed earlier read hides the strip and the Month still shows).
+- **Acceptance:** every figure from `periodComparison`; no fourth column at 320 px; the golden tests untouched; first load recorded.
+
+### A04: Comparisons on the Week, Paycheck, Year, Savings and Debts
+
+**Owner items:** 7 · **Depends on:** A03 · **Migrations:** none · **Commits:** about 3
+- **Screens:** Week against last week to the same weekday; Paycheck against the previous period by day offset; Year against the twelve months before, and "vs last year" on its glance cards, only inside the records; Savings, saved this month against last; Debts, the schedule's balance against a month ago.
+- **Tests:** one screen test each, including a Year whose earlier window lies before the records (no comparison).
+- **Acceptance:** all figures from core; each screen's earlier read failing hides only its comparison.
+
+### A05: Navigation for an AI-first app, and the Coach's flight card
+
+**Owner items:** 2, 8, 9 · **Depends on:** A01 · **Migrations:** none · **Commits:** about 4
+- **Records first:** ADR 0006 (the bars, the switch, More's groups, the addresses; Month still opens first; the owner will notice Week moving).
+- **Build:** `nav.ts`'s `period` becomes a `param` (a month, a day or a help topic id, per screen), with the new screens of §2.1; the phone bar Month · Coach · Add · Review · More; the wide bar of §2.1; the **Month · Week · Pay · Year** switch on those four screens; More in its four groups; `#/week` and `#/week/<Monday>` both open the Week.
+- **Coach screen** (lazy), first version: the flight card from existing core only (`goalProgress`, `timeEquivalent`): the ring, "46 h of 109 h", saved of target. The rest of the Coach arrives in A07 and A08.
+- **Tests:** `apps/web/test/nav.test.ts` (every new address, a bad topic, a bad param, a third segment); the shell's bars at phone and wide widths; the switch on each of the four screens; More's groups; the flight card from the fake database.
+- **Acceptance:** Month opens first; Week is one tap from the Month; 320 px has no sideways scroll; first load recorded.
+
+### A06: Help, the ? on every screen, and One-time updates
+
+**Owner items:** 5, 8, 9 · **Depends on:** A05 · **Migrations:** none · **Commits:** about 5
+- **Build:** `apps/web/src/help/articles.ts` with the pattern of §8.2 and the articles for everything built so far (Start here, One-time updates, Month · Week · Pay · Year, Bring in a statement, Review, Add, Budgets and bills, Savings and your flight goal, Debts, Comparisons with last month, Why does a number look wrong?, Messages with a code in brackets, Put it on your iPhone, Words the app uses); `#/help` and `#/help/<topic>` (lazy) with search; the ? sheet on every screen, with **Show me** (Ask about this arrives in A24).
+- **One-time updates:** the live probes of §8.2 for 0005–0014 (0015 on join as their slices land), ✓ and ✗, the next step, **Check again**.
+- **Tests:** every article has the full pattern; search; an unknown topic opens the index; a markup string in an article shows as text; each probe state from the fake (PGRST205, 42P01, PGRST202, all present).
+- **Acceptance:** every screen has an article; plain language, one action per step.
