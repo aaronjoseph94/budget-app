@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { WeekScreen } from '../src/screens/WeekScreen.js'
+import { WeekScreen as Week } from '../src/screens/WeekScreen.js'
+import { useAddress } from '../src/nav.js'
 import type { Category, LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
@@ -29,15 +30,22 @@ function seeded(periodStart = '2026-07-01'): FakeSupabase {
 const line = async () => within(await screen.findByRole('group', { name: 'Compared with last week' }))
 const text = (s: string) => (_: string, el: Element | null) => el?.tagName === 'P' && el.textContent === s
 
+/** The Week as App renders it, its Monday read from the address the arrows write. */
+function WeekScreen() {
+  return <Week monday={useAddress().param} />
+}
+
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(TODAY)
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
 })
 
 afterEach(() => {
   cleanup()
   vi.useRealTimers()
   vi.restoreAllMocks()
+  window.location.hash = ''
 })
 
 describe('the Week beside last week (D26)', () => {
@@ -54,6 +62,8 @@ describe('the Week beside last week (D26)', () => {
     await line()
 
     fireEvent.click(screen.getByRole('button', { name: 'Previous week' }))
+    // The arrow writes the address, and the week follows it on hashchange.
+    await screen.findByRole('heading', { name: 'Week of' })
 
     // 14–20 Sep: 65.00 + 90.00; 7–13 Sep: 12.00.
     expect((await line()).getByText(text('14 – 20 Sep: $155.00 spent · 7 – 13 Sep: $12.00'))).toBeTruthy()

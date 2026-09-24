@@ -227,7 +227,7 @@ function Screens({ screen, param }: { screen: Screen; param: string | null }) {
   return (
     <Suspense fallback={<p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>}>
       {screen === 'month' ? <MonthScreen month={param} /> : null}
-      {screen === 'week' ? <WeekScreen /> : null}
+      {screen === 'week' ? <WeekScreen monday={param} /> : null}
       {screen === 'paycheck' ? <PaycheckScreen day={param} /> : null}
       {screen === 'calendar' ? <CalendarScreen month={param} /> : null}
       {screen === 'review' ? <ReviewScreen /> : null}

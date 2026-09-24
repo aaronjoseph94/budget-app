@@ -30,11 +30,16 @@ import { GoalCard, NoGoal } from './WeekGoal.js'
  * the monthly amounts typed up to its last month and each category's weekly
  * budget; goalProgress and timeEquivalent for the goal. This screen formats
  * them. Nothing unreviewed is in it.
+ *
+ * `monday` is the week the address names (`#/week/2026-09-21`, ADR 0006),
+ * or null for this week. The arrows write the week they land on into the
+ * address, as the Month's do, so a refresh or the back gesture returns to it.
  */
-export function WeekScreen() {
+export function WeekScreen({ monday }: { monday: string | null }) {
   const { supabase, categories, goal, pendingTotal, loadError, version } = useAppData()
   const today = isoDate(todayIso())
-  const [asOf, setAsOf] = useState(today)
+  // This week counts its days left from today, not its Monday.
+  const asOf = monday === null || monday === weekBounds(today).start ? today : isoDate(monday)
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [error, setError] = useState<string | null>(null)
   // A weekly budget refused after its editor closed, kept until another opens.
@@ -108,10 +113,11 @@ export function WeekScreen() {
   }, [here, earlier, categories, bounds.start, today])
 
   const isThisWeek = weekBounds(today).start === bounds.start
-  // Back on this week, its days left count from today again, not its Monday.
+  // Back on this week, the address is the bare #/week again, so it keeps
+  // meaning "this week" when it is reopened next week.
   const step = (weeks: number) => {
     const next = shiftWeek(bounds.start, weeks)
-    setAsOf(weekBounds(next).start === weekBounds(today).start ? today : next)
+    navigate('week', next === weekBounds(today).start ? null : next)
   }
 
   return (

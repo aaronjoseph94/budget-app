@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { WeekScreen } from '../src/screens/WeekScreen.js'
+import { WeekScreen as Week } from '../src/screens/WeekScreen.js'
+import { useAddress } from '../src/nav.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 
@@ -36,9 +37,15 @@ const cells = async (block: string, row: string) =>
     .getAllByRole('cell')
     .map((c) => c.textContent)
 
+/** The Week as App renders it, its Monday read from the address the arrows write. */
+function WeekScreen() {
+  return <Week monday={useAddress().param} />
+}
+
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(TODAY)
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
 })
 
 afterEach(() => {
@@ -80,6 +87,21 @@ describe('WeekScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Week of' })).toBeTruthy()
     await waitFor(async () => expect(await summary('Spent')).toBe('$99.99'))
     expect(screen.queryByText(/days left/)).toBeNull()
+  })
+
+  it('opens the week its address names, and writes each step into the address (ADR 0006)', async () => {
+    window.location.hash = '/week/2026-03-02'
+    renderScreen(<WeekScreen />, seeded())
+
+    expect(await screen.findByRole('heading', { name: 'Week of' })).toBeTruthy()
+    await waitFor(async () => expect(await summary('Spent')).toBe('$99.99'))
+
+    // Back on this week the address is bare again, so it still means this week next week.
+    fireEvent.click(screen.getByRole('button', { name: 'Next week' }))
+    expect(window.location.hash).toBe('#/week')
+    expect(await screen.findByRole('heading', { name: 'This week' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Previous week' }))
+    expect(window.location.hash).toBe('#/week/2026-03-02')
   })
 
   // Hand-derived: Left is 10.00 − 64.12 and 60.00 − 66.00, 60.12 below zero.
