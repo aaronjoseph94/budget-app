@@ -375,3 +375,25 @@ describe('ReviewScreen, lines an import could not read', () => {
     expect(screen.queryByRole('region')).toBeNull()
   })
 })
+
+describe('ReviewScreen, a long queue (PERF-1)', () => {
+  // Every card carries a category picker, and 240 of them froze the screen
+  // for over a second, so the oldest 25 are drawn, and more on request.
+  it('draws the oldest 25, and 25 more each time it is asked', async () => {
+    const pending = Array.from({ length: 60 }, (_, i) => ({
+      id: `q${i}`, posted_on: '2026-03-09', amount_cents: -(100 + i), merchant: `SHOP ${i}`, merchant_raw: `SHOP ${i}`, status: 'pending',
+    }))
+    renderScreen(<ReviewScreen />, createFakeSupabase({ ingest_candidates: pending }))
+
+    await screen.findByText('SHOP 0')
+    expect(screen.getAllByRole('combobox', { name: 'Category' })).toHaveLength(25)
+    expect(screen.getByText('Showing the oldest 25 of 60.')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show the next 25' }))
+    expect(screen.getAllByRole('combobox', { name: 'Category' })).toHaveLength(50)
+    fireEvent.click(screen.getByRole('button', { name: 'Show the last 10' }))
+    expect(screen.getAllByRole('combobox', { name: 'Category' })).toHaveLength(60)
+    expect(screen.queryByRole('button', { name: /^Show the/ })).toBeNull()
+    expect(screen.queryByText(/^Showing the oldest/)).toBeNull()
+  })
+})

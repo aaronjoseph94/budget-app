@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useAppData } from '../app-data.js'
 import {
   approveCandidate,
@@ -25,6 +25,13 @@ import { cn } from '../lib/cn.js'
 import { navigate } from '../nav.js'
 
 const NEW_CATEGORY = '__new__'
+
+/**
+ * Cards drawn at a time. Each carries a picker of every category, and all
+ * 240 of a first import's queue took over a second to draw on a phone, and
+ * again after every approval (PERF-1). The oldest come first, as before.
+ */
+const PAGE = 25
 
 /** A category being made while filing a row: its name and the list it goes on. */
 interface NewName {
@@ -57,6 +64,7 @@ export function ReviewScreen() {
   // had just failed.
   const [loadError, setLoadError] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
+  const [drawn, setDrawn] = useState(PAGE)
   // Which read is the latest. A read started before a dismissal can answer
   // after the one started after it, and would put the dismissed line back.
   const reads = useRef(0)
@@ -125,6 +133,17 @@ export function ReviewScreen() {
     if (done) await Promise.all([load(), refresh()])
   }
 
+  // The cards are memoised, so they take callbacks that never change and
+  // reach the latest act through a ref: one card busy or picked redraws
+  // that card, not every card in the queue.
+  const latest = useRef(act)
+  useLayoutEffect(() => {
+    latest.current = act
+  })
+  const onPick = useCallback((rowId: string, id: string) => setPicked((p) => ({ ...p, [rowId]: id })), [])
+  const onApprove = useCallback((row: PendingCandidate, created?: NewName) => void latest.current(row, 'approve', created), [])
+  const onReject = useCallback((row: PendingCandidate) => void latest.current(row, 'reject'), [])
+
   // Every Dismiss waits until the list has been read again, so the line
   // tapped is off the screen before another can be tapped in its place.
   const dismiss = async (lineId: string) => {
@@ -174,7 +193,7 @@ export function ReviewScreen() {
       ) : null}
 
       <ul className="space-y-3">
-        {(rows ?? []).map((row) => (
+        {(rows ?? []).slice(0, drawn).map((row) => (
           <ReviewRow
             key={row.id}
             row={row}
@@ -182,16 +201,22 @@ export function ReviewScreen() {
             suggested={picked[row.id] === undefined && rules.has(row.merchant)}
             categories={categories}
             busy={busy === row.id}
-            onPick={(id) => setPicked((p) => ({ ...p, [row.id]: id }))}
-            onApprove={(created) => void act(row, 'approve', created)}
-            onReject={() => void act(row, 'reject')}
+            onPick={onPick}
+            onApprove={onApprove}
+            onReject={onReject}
           />
         ))}
       </ul>
 
-      {rows !== null && total > rows.length ? (
+      {rows !== null && rows.length > drawn ? (
+        <Button variant="outline" className="w-full" onClick={() => setDrawn((n) => n + PAGE)}>
+          {rows.length - drawn > PAGE ? `Show the next ${PAGE}` : `Show the last ${rows.length - drawn}`}
+        </Button>
+      ) : null}
+      {rows !== null && total > Math.min(drawn, rows.length) ? (
         <p className="text-center text-xs text-muted-foreground">
-          Showing the oldest {rows.length} of {total}. Approve some and the rest will load.
+          Showing the oldest {Math.min(drawn, rows.length)} of {total}.
+          {rows.length < total ? ' Approve some and the rest will load.' : ''}
         </p>
       ) : null}
 
@@ -202,7 +227,7 @@ export function ReviewScreen() {
   )
 }
 
-function ReviewRow({
+const ReviewRow = memo(function ReviewRow({
   row,
   categoryId,
   suggested,
@@ -217,9 +242,9 @@ function ReviewRow({
   suggested: boolean
   categories: readonly Category[]
   busy: boolean
-  onPick: (id: string) => void
-  onApprove: (created?: NewName) => void
-  onReject: () => void
+  onPick: (rowId: string, id: string) => void
+  onApprove: (row: PendingCandidate, created?: NewName) => void
+  onReject: (row: PendingCandidate) => void
 }) {
   const [newName, setNewName] = useState('')
   // A charge most likely belongs in Variable expenses. Money in could be a
@@ -248,7 +273,7 @@ function ReviewRow({
             <NativeSelect
               aria-label="Category"
               value={categoryId}
-              onChange={(e) => onPick(e.target.value)}
+              onChange={(e) => onPick(row.id, e.target.value)}
               disabled={busy}
             >
               <option value="">Choose a category…</option>
@@ -275,11 +300,11 @@ function ReviewRow({
             <Button
               className="flex-1 sm:flex-none"
               disabled={!ready || busy}
-              onClick={() => onApprove(creating && newKind !== '' ? { name: newName.trim(), kind: newKind } : undefined)}
+              onClick={() => onApprove(row, creating && newKind !== '' ? { name: newName.trim(), kind: newKind } : undefined)}
             >
               <Icon name="check" /> Approve
             </Button>
-            <Button variant="outline" size="icon" aria-label="Not a real transaction — remove" disabled={busy} onClick={onReject}>
+            <Button variant="outline" size="icon" aria-label="Not a real transaction — remove" disabled={busy} onClick={() => onReject(row)}>
               <Icon name="x" />
             </Button>
           </div>
@@ -295,7 +320,7 @@ function ReviewRow({
       </Card>
     </li>
   )
-}
+})
 
 const SOURCE: Record<IngestSource, string> = {
   card_csv: 'Card statement (CSV)',
