@@ -1,6 +1,6 @@
 # Roadmap
 
-Last revised: 2026-09-23 (the workbook views are built)
+Last revised: 2026-09-24 (the AI-first phase is planned: `docs/ai-first-plan.md`)
 
 ## What this project is
 
@@ -18,6 +18,13 @@ and applies pressure toward $30,000 of flight training.**
 
 Everything below is judged against that sentence. A feature that does not serve
 it is deferred, however faithfully it reproduces a workbook sheet.
+
+**AI first (the owner, 2026-09-24).** "AI must be the bedrock of this budget
+app... The whole product should be Ai first." The sentence above stands; AI
+is how the app tells that truth and applies that pressure, on every screen.
+The model writes the words and the engine writes every number (ADR 0005), so
+the workbook's arithmetic stays the oracle and every screen still works with
+AI switched off.
 
 ## What is deferred, and why
 
@@ -56,6 +63,9 @@ which is where all the value is concentrated.
 | **Snowball / avalanche** | The workbook never rolls a cleared debt's payment forward, so it reports 2034. Redirecting that money is worth years — the single largest number this app can move. |
 | **Sankey** | The only chart that shows what is left over as its own band, next to what was spent. |
 | **Excel + PDF export** | Data is never trapped. Also the answer to "can I trust this?" — every figure is exportable and checkable. |
+| **AI in every screen** *(2026-09-24)* | The owner's ask. A coach that words the engine's findings, forecasts, reports, Ask, suggestions in Review and typed entry in plain language, on Google Gemini's free tier first (ADR 0004). It never supplies a number (ADR 0005). |
+| **Forecasting and comparisons** *(2026-09-24)* | The owner's ask. "Am I going to make it this month?" and "what did I do last month?" are the two questions a monthly sheet cannot answer. |
+| **Help and Getting started** *(2026-09-24)* | The owner's ask: setup "without feeling overwhelmed or lost". |
 
 ## Phases
 
@@ -86,20 +96,36 @@ funds and the debt screen from Phase 7 (not net worth or retirement).
 The coach is not wasted by waiting: it will read the same month figures.
 Ends with: the owner's statement filling the workbook's month, year and setup views.
 
-**Phase 3 — The coach** ← *next (moved behind the workbook views)*
+**The AI-first phase** ← *next (the owner's list of 2026-09-24; `docs/ai-first-plan.md`)*
+Realises the coach (Phase 3) and the reports (Phase 6), with the forecast
+from Phase 5 and the provider interface, failover and natural-language entry
+from Phase 4. The AI helper and five AI services, free Gemini first (ADR
+0004); the Coach tab, its cards in the engine's figures and the AI's words
+(ADR 0005), what to cut in weeks sooner to flying, the Sunday check-in with
+its questions and one-tap weekly limit, and money quotes from a verified
+library; comparisons with last month on every period screen; the Forecast;
+Reports with trends, shops, subscriptions, habits, Save as PDF and a CSV;
+suggestions in Review, "just type it" and receipts through the helper; Ask;
+Help, One-time updates and Getting started; a mobile pass, a critical
+review of the whole app, and a full test pass. Not in it: the due reminders,
+the Sankey, the Excel workbook.
+Ends with: a Coach that argues with the owner in plain words, every figure
+from the engine, on a free AI tier, and a report worth showing someone.
+
+**Phase 3 — The coach** *(realised by the AI-first phase)*
 Weekly limits, proven-floor targets, savings capacity, interrogation loop,
 tradeoff framing in flight hours, goal tracking.
 Ends with: a Sunday check-in that argues with the user.
 
-**Phase 4 — Photos and natural language** *(photos and typed entry built, the receipt function not yet deployed; natural language not built)*
+**Phase 4 — Photos and natural language** *(photos and typed entry built, the receipt function not yet deployed; natural language, the provider interface and failover realised by the AI-first phase)*
 Provider interface, the picker, failover, receipt capture, typed entry.
 Ends with: three ways in, one review queue.
 
-**Phase 5 — Commitments** *(bills, recurring amounts and the Bill calendar built; reminders and the forecast not)*
+**Phase 5 — Commitments** *(bills, recurring amounts and the Bill calendar built; the forecast realised by the AI-first phase; reminders not)*
 Bills, recurring, the calendar, due reminders, forecast.
 Ends with: nothing is a surprise.
 
-**Phase 6 — Seeing it** *(the Month and Year charts built; Sankey, reports and export not)*
+**Phase 6 — Seeing it** *(the Month and Year charts built; reports, trends, Save as PDF and CSV realised by the AI-first phase; the Sankey and the Excel workbook not)*
 Sankey, charts, reports, Excel and PDF export.
 Ends with: a report worth showing someone.
 
@@ -117,8 +143,20 @@ ever knew what the UI was.
 
 **The debt-versus-goal split is unresolved.** The user has debt and a $30,000
 goal, and every dollar goes to one or the other. The coach cannot advise on the
-split until real balances exist. Open question for Phase 3.
+split until real balances exist. Open question for Phase 3. *(2026-09-24: the
+AI-first phase does not settle it. The coach reports the debt-free date and
+the flight date side by side and never advises moving money between them.)*
 
 **Free-tier LLM churn.** Providers change terms and limits without notice. The
 provider interface is the mitigation; the deterministic path handling ~99% of
 volume is the reason an outage is an inconvenience rather than an outage.
+*(2026-09-24: the interface is the `ai` helper, with a fixed list of models,
+failover across five services, daily limits and cooldowns (ADR 0004), and
+every AI surface has the app's own words underneath. One listed model,
+`gemini-2.5-flash`, is due to be shut down in October 2026, which is why
+`read-receipt` moves off it first.)*
+
+**Thin history.** *(added 2026-09-24)* The owner's records start on
+8 August 2026. Baselines, trends and forecast ranges need three to six
+complete months, so until about November they say "not enough months yet"
+or "rough" rather than inventing a figure (`docs/ai-first-plan.md` F24).
