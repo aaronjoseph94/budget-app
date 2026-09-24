@@ -739,3 +739,14 @@ golden tests.
 **Why.** The owner asked for it. The same-days figures are not the Month's
 Spent (F25), so they are named as their own figures rather than set under
 Spent.
+
+**Extended 2026-09-24 (plan slice A04),** decided by the engineer under the
+same instruction. The Week, Paycheck, Year, Savings and Debts views gain the
+same kind of line: this week against last week to the same weekday, this pay
+period against the last by the same number of days, the Year against a year
+earlier ("vs last year" on its glance cards, only where the records reach),
+each fund's saving this month against last month's same days, and each
+debt's scheduled balance against a month ago (F25). The workbook's Weekly
+Budget, Paycheck Budget, Annual Budget, Savings and Debt Calculator tabs
+show none of this. **Their own figures do not change,** and neither do the
+golden tests.

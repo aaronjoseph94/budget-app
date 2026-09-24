@@ -901,10 +901,43 @@ against 1–29 Feb. August 2026 viewed on 24 Sep: 1–31 Aug against 1–31 Jul.
 A rent of $800 due on the 28th, in September viewed on 24 Sep, counts on
 neither side; viewed on 28 Sep, on both.
 
-**Recorded now, built in A04:** a week, Monday to `asOf`'s weekday against
-the same weekdays of the week before; a pay period, its start to `asOf`
-against the previous period's start plus the same number of days, capped at
-its end; a Year, against the twelve months before.
+**Chosen, for the other screens** (built in plan slice A04, 2026-09-24;
+decided by the engineer under the owner's 2026-09-24 instruction to proceed
+without questions). Each follows the month's three cases: a period still
+running is set against the same days of the one before, a period already
+over whole against whole, and one not begun is not compared. Every earlier
+window is checked against history start (F24).
+
+- **A week** (Monday to Sunday, D14): Monday to `asOf` against the same
+  weekdays a week earlier.
+- **A pay period** (F15): its payday to `asOf` against the previous payday
+  plus the same number of days, capped at that period's last day. Each side
+  counts the monthly amounts of its own payday's month as a pay period's
+  share, whatever their due day, as the Paycheck does (F15, D18).
+- **A Year** (F14's twelve months): its first day to `asOf` against the same
+  days a year earlier; a Year already over against the twelve months before
+  it. A day the earlier year lacks (29 February) ends on its month's last
+  day, as a month's window does. Each side is counted month by month, each
+  month with its own amounts (D13), so a planned bill counts only on its due
+  day in a month still running (F8). That is why the Year names the
+  comparison's figures on their own rather than setting them under its
+  totals, which count this month's planned bills whole (F10).
+- **Savings:** saved this month is the Savings block's Actual, for each fund
+  and in total, over the month's windows above.
+- **Debts:** the balance each debt's schedule gives at the end of `asOf`'s
+  month (F22) against the end of the month before. It comes from the typed
+  debts, not the records, so history start does not bound it. Less is
+  "good". Before a debt's start month both are its starting balance.
+
+**Worked examples.** On Thursday 24 Sep 2026: the week 21–24 Sep against
+14–17 Sep. Paid every two weeks from Friday 18 Sep: 18–24 Sep (six days on)
+against 4–10 Sep. Paid monthly on the 1st, on 31 Mar 2027: 1–31 Mar against
+1 Feb plus 30 days, capped at 28 Feb. The Year January to December 2026 on
+24 Sep 2026: 1 Jan–24 Sep 2026 against 1 Jan–24 Sep 2025; with records from
+8 Aug 2026 that earlier window lies before them, so nothing is compared. A
+Year from March 2027 on 29 Feb 2028: 1 Mar 2027–29 Feb 2028 against 1 Mar
+2026–28 Feb 2027. A debt at $5,000.00 after August's payment and $4,850.00
+after September's, on 24 Sep: "$150.00 less" than a month ago.
 
 ---
 
