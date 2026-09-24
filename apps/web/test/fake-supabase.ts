@@ -40,8 +40,8 @@ export interface FakeTables {
   merchant_rules: { readonly match_merchant: string; readonly category_id: string }[]
   /** A goal from before 0013 may leave out its fund's columns; they read as null. */
   savings_goals: (GoalRow & Partial<Pick<FundRow, 'category_id' | 'start_date' | 'balance_as_of'>> & { readonly user_id?: string })[]
-  /** `period_end` only for a statement with a period (0007). */
-  ingest_batches: (UnreadableBatch & { readonly period_end?: string | null })[]
+  /** `period_start` and `period_end` only for a statement with a period (0007). */
+  ingest_batches: (UnreadableBatch & { readonly period_start?: string | null; readonly period_end?: string | null })[]
   /** `dismissed_at` once dismissed (0012); absent reads as null, still waiting. */
   ingest_unreadable_lines: (UnreadableLine & { readonly dismissed_at?: string | null })[]
   /** Budgets and goals as typed (0008); `user_id` as the app writes it. */
@@ -89,9 +89,12 @@ export interface FakeSupabase {
    * still carries the rows as they were when the read was asked, so a test
    * can make a read begun earlier arrive after one begun later. A write is
    * asked as `POST <table>` once it is stored, or refused, so its answer can
-   * arrive late.
+   * arrive late. `refuse` is asked before a read is answered, with its
+   * query, and a code it returns fails that read alone, so a test can fail
+   * one of two reads of the same table.
    */
   readonly server: {
+    refuse: ((table: string, query: URLSearchParams) => string | null) | null
     maxRows: number | null
     afterRead: ((table: string) => void) | null
     hold: ((table: string) => Promise<void> | null) | null
@@ -129,7 +132,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     dismiss_unreadable_line: null,
   }
   const failures = new Map<string, string>()
-  const server: FakeSupabase['server'] = { maxRows: null, afterRead: null, hold: null }
+  const server: FakeSupabase['server'] = { refuse: null, maxRows: null, afterRead: null, hold: null }
   const user = { id: 'u1', email: 'you@example.com', user_metadata: {} as Record<string, unknown> }
   let nextId = 1
 
@@ -377,6 +380,8 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       return new Response(null, { status: 204 })
     }
     if (method !== 'GET') return pgError('FAKE_UNSUPPORTED_METHOD', 501)
+    const refused = server.refuse?.(target, url.searchParams)
+    if (refused !== undefined && refused !== null) return pgError(refused)
 
     let rows = table.filter(matches)
     const order = url.searchParams.get('order')

@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { isoDate, monthBounds, monthSheet, shiftMonth, type PeriodBlock, type PeriodSheet } from '@budget/core'
+import {
+  historyStart,
+  isoDate,
+  monthBounds,
+  monthSheet,
+  periodComparison,
+  shiftMonth,
+  type PeriodBlock,
+  type PeriodComparison,
+  type PeriodSheet,
+} from '@budget/core'
 import { useAppData } from '../app-data.js'
 import {
   countPendingBetween,
@@ -8,6 +18,7 @@ import {
   listBudgetHistory,
   listPlanHistory,
   listTransactions,
+  readRecordsStart,
   type BudgetRow,
   type LedgerRow,
   type PlanRow,
@@ -78,6 +89,22 @@ export function MonthScreen({ month }: { month: string | null }) {
     }
   }, [supabase, start, end, version])
 
+  // Last month's rows and where the records start, for the comparison
+  // (F24, F25). Read beside the month rather than inside its read, so a
+  // failure here costs the comparison alone and the month still shows.
+  const [earlier, setEarlier] = useState<Earlier | null>(null)
+  useEffect(() => {
+    if (version === 0) return
+    let live = true
+    const last = monthBounds(shiftMonth(start, -1))
+    Promise.all([listTransactions(supabase, { from: last.start, to: last.end }), readRecordsStart(supabase)])
+      .then(([rows, records]) => live && setEarlier({ start, rows, ...records }))
+      .catch(() => live && setEarlier({ start, failed: true }))
+    return () => {
+      live = false
+    }
+  }, [supabase, start, version])
+
   // A month's rows only ever fill that month: while the next one loads, the
   // screen waits rather than show last month's charges under this title.
   const here = loaded !== null && loaded.start === start ? loaded : null
@@ -102,6 +129,29 @@ export function MonthScreen({ month }: { month: string | null }) {
       return 'A charge, a budget or a monthly amount this month names a category that did not load, so the month is not shown. Reload to try again.'
     }
   }, [here, categories, start])
+  // Null while either read is out; 'failed' hides the comparison with one line.
+  const comparison = useMemo((): PeriodComparison | 'failed' | null => {
+    const before = earlier !== null && earlier.start === start ? earlier : null
+    if (here === null || before === null) return null
+    if ('failed' in before) return 'failed'
+    try {
+      return periodComparison({
+        month: start,
+        asOf: isoDate(todayIso()),
+        historyStart: historyStart({
+          statementPeriodStarts: before.statementStarts.map((d) => isoDate(d)),
+          entryDates: before.entryDates.map((d) => isoDate(d)),
+        }).start,
+        categories: categoriesForCore(categories),
+        budgetHistory: budgetsForCore(here.budgets),
+        planHistory: plansForCore(here.plans),
+        entries: entriesForCore([...here.rows, ...before.rows]),
+      })
+    } catch {
+      // As the month's own sheet: a row naming a category that did not load.
+      return 'failed'
+    }
+  }, [here, earlier, categories, start])
   // Categories with their own "just this month" value in this month, which a
   // "from this month on" edit here must replace too (setBudget).
   const ownOnly = new Set(
@@ -187,7 +237,7 @@ export function MonthScreen({ month }: { month: string | null }) {
             three columns of amounts, and two columns hold them. The page is
             in phone order, which is the order a screen reader follows. */}
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <MonthSummary sheet={sheet} month={start} onUnsaved={setStartUnsaved} />
+            <MonthSummary sheet={sheet} month={start} comparison={comparison} onUnsaved={setStartUnsaved} />
             <PeriodBlocks blocks={sheet.blocks} {...blockProps} />
             <MonthCharts sheet={sheet} className="order-7 md:col-span-2 xl:order-1 xl:col-span-1" />
           </div>
@@ -251,6 +301,17 @@ interface Loaded {
   /** The starting balance typed for this month, or null when none was. */
   readonly balance: number | null
 }
+
+/** Last month's ledger and where the records start, or that they did not load. */
+type Earlier =
+  | {
+      readonly start: string
+      /** The whole of last month; core keeps the days it compares. */
+      readonly rows: readonly LedgerRow[]
+      readonly statementStarts: readonly string[]
+      readonly entryDates: readonly string[]
+    }
+  | { readonly start: string; readonly failed: true }
 
 /**
  * Where charges not filed yet live on the Month: one line at the top, with

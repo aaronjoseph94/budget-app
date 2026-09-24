@@ -339,6 +339,31 @@ export async function latestStatementEnd(supabase: SupabaseClient): Promise<read
 }
 
 /**
+ * What F24's history start is taken from: the first day of the earliest
+ * statement period (0007), and the earliest ledger date for when no statement
+ * has one. One row each; which counts is core's to say (historyStart).
+ */
+export async function readRecordsStart(
+  supabase: SupabaseClient,
+): Promise<{ readonly statementStarts: readonly string[]; readonly entryDates: readonly string[] }> {
+  const [batches, entries] = await Promise.all([
+    supabase
+      .from('ingest_batches')
+      .select('period_start')
+      .not('period_start', 'is', null)
+      .order('period_start', { ascending: true })
+      .limit(1),
+    supabase.from('transactions').select('posted_on').order('posted_on', { ascending: true }).limit(1),
+  ])
+  if (batches.error !== null) fail(batches.error)
+  if (entries.error !== null) fail(entries.error)
+  return {
+    statementStarts: ((batches.data ?? []) as { period_start: string }[]).map((b) => b.period_start),
+    entryDates: ((entries.data ?? []) as { posted_on: string }[]).map((t) => t.posted_on),
+  }
+}
+
+/**
  * How many charges dated in a range still wait for review. A count, from the
  * database, so it is right however long the queue is; nothing else about them
  * is read, because nothing unreviewed is counted in a month (invariant 3).

@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react'
-import type { PeriodSheet } from '@budget/core'
-import { formatCents, formatMonthName } from '../format.js'
+import type { PeriodComparison, PeriodSheet } from '@budget/core'
+import { formatBasisPoints, formatCents, formatChange, formatDayMonth, formatMonthName } from '../format.js'
 import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
 import { useReturnFocus } from '../lib/return-focus.js'
@@ -23,15 +23,23 @@ import { StartEditor } from './StartEditor.js'
  * format) in an ink that can be read on it. The workbook marks nothing else on the
  * card, so a negative End of month keeps the card's colour and shows its
  * minus sign (D8).
+ *
+ * Under the four, last month beside this one (D26): both same-days figures,
+ * both dates and the change, every one of them periodComparison's. Never a
+ * change under Spent: a same-days window counts a planned bill only on its
+ * due day (F8), and Spent counts it all month (F25).
  */
 export function MonthSummary({
   sheet,
   month,
+  comparison,
   onUnsaved,
 }: {
   sheet: PeriodSheet
   /** The month's first day. */
   month: string
+  /** Null while it loads; 'failed' when last month could not be read. */
+  comparison: PeriodComparison | 'failed' | null
   onUnsaved: (message: string | null) => void
 }) {
   const { startingBalanceCents: start, spentCents, leftToSpendCents: left, endingBalanceCents: end } = sheet.summary
@@ -83,6 +91,7 @@ export function MonthSummary({
           {end === null ? <Waiting>Shown once Start is typed</Waiting> : <Figure>{formatCents(end)}</Figure>}
         </Entry>
       </dl>
+      <LastMonth comparison={comparison} />
       {editing ? (
         <StartEditor
           month={month}
@@ -118,4 +127,54 @@ function Entry({ label, hint = null, children }: { label: string; hint?: string 
 /** Words where a number will be, in the body face at body size so they never read as one. */
 function Waiting({ children }: { children: ReactNode }) {
   return <span className="block pt-1 text-sm font-medium leading-snug">{children}</span>
+}
+
+/**
+ * The comparison strip. A running month names its days ("By 24 Sep"), a month
+ * already over names both months. With the earlier days before the records
+ * (F24) it says what would make a comparison possible.
+ */
+function LastMonth({ comparison }: { comparison: PeriodComparison | 'failed' | null }) {
+  if (comparison === null || (comparison !== 'failed' && comparison.status === 'not_started')) return null
+  const line = (children: ReactNode) => (
+    <div role="group" aria-label="Compared with last month" className="mt-3 border-t border-summary-label/30 pt-3 text-sm text-summary-value">
+      {children}
+    </div>
+  )
+  if (comparison === 'failed') {
+    return line(<p className="text-summary-label">Last month did not load, so there is no comparison. Reload to try again.</p>)
+  }
+  const earlierMonth = formatMonthName(comparison.before.from)
+  if (comparison.status === 'before_records') {
+    return line(
+      <p className="text-summary-label">
+        {comparison.historyStart === null
+          ? `Import a statement to compare with ${earlierMonth}.`
+          : `Your records start on ${formatDayMonth(comparison.historyStart)}. Import the statement before that to compare with ${earlierMonth}.`}
+      </p>,
+    )
+  }
+  const { spent } = comparison.summary
+  const [now, before] = comparison.sameDays
+    ? [`By ${formatDayMonth(comparison.now.to)}`, `by ${formatDayMonth(comparison.before.to)}`]
+    : [formatMonthName(comparison.now.from), formatMonthName(comparison.before.from)]
+  return line(
+    <>
+      <p>
+        {now}: <span className="tnum font-semibold">{formatCents(spent.nowCents)}</span> spent · {before}:{' '}
+        <span className="tnum font-semibold">{formatCents(spent.beforeCents)}</span>
+      </p>
+      <p className="mt-0.5 font-medium">
+        {spent.direction === 'same' ? (
+          'About the same'
+        ) : (
+          <>
+            <span aria-hidden="true">{spent.direction === 'more' ? '▲ ' : '▼ '}</span>
+            {formatChange(spent)}
+            {spent.changeBp === null ? '' : ` (${formatBasisPoints(Math.abs(spent.changeBp))})`}
+          </>
+        )}
+      </p>
+    </>,
+  )
 }

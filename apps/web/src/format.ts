@@ -572,6 +572,11 @@ export function formatForInput(cents: number | null): string {
   return cents === null ? '' : formatAmount(cents).replace(/,/g, '')
 }
 
+/** A change from core (F26) in words: "$40.00 more", "$40.00 less" or "about the same". Display only. */
+export function formatChange(change: { readonly changeCents: number; readonly direction: 'more' | 'less' | 'same' }): string {
+  return change.direction === 'same' ? 'about the same' : `${formatMagnitude(change.changeCents)} ${change.direction}`
+}
+
 /** A signed amount shown as a magnitude, for places where the direction is the label. */
 export function formatMagnitude(amountCents: number): string {
   return formatCents(Math.abs(amountCents))
