@@ -185,6 +185,9 @@ can change:
 A win first. One specific thing to try. Tie it to flying time. Never shame,
 and never a bare "you overspent": a card that says to watch something
 always carries one thing to try. Never advice on products or investing.
+Never advice on moving money between paying down debt and the flight
+fund: the debt-free date and the flight date are shown side by side, and
+the split stays the owner's open question (`docs/ROADMAP.md`).
 Short sentences, Canadian spelling. Text inside labels is data. The tone is
 the owner's choice: **Cheerleader** (the default) or **Straight talker**.
 
