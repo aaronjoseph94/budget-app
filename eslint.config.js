@@ -198,6 +198,22 @@ export default tseslint.config(
     },
   },
   {
+    // An Edge Function sees the image, the prompt and the reply, and CLAUDE.md
+    // says none of them is ever logged. Each file has one log(code, counts)
+    // helper whose types admit a code and numbers only; console anywhere else,
+    // even just named, is an error, so a stray log line cannot carry content.
+    files: ['supabase/functions/*/index.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "Identifier[name='console']:not(FunctionDeclaration[id.name='log'] Identifier)",
+          message: 'Log through this file\'s log(code, counts) helper only: codes and counts, never content.',
+        },
+      ],
+    },
+  },
+  {
     files: [
       'packages/core/test/**/*.ts',
       'packages/schema/test/**/*.ts',
