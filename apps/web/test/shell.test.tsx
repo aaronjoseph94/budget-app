@@ -141,3 +141,40 @@ describe('Shell', () => {
     expect(await within(phoneBar()).findByRole('button', { name: 'Review, 1 waiting' })).toBeTruthy()
   })
 })
+
+describe('Shell, before the shared data has loaded (FE-7)', () => {
+  it('says it is loading, rather than showing empty lists or invented defaults', async () => {
+    const fake = createFakeSupabase()
+    let release = () => {}
+    const held = new Promise<void>((resolve) => (release = resolve))
+    fake.server.hold = (table) => (table === 'categories' ? held : null)
+    go('/settings')
+    renderScreen(<Shell />, fake)
+
+    const loading = await screen.findByRole('status', { name: 'Loading your budget' })
+    expect(loading.getAttribute('aria-busy')).toBe('true')
+    expect(screen.queryByText('No spending categories yet')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Save goal' })).toBeNull()
+
+    fake.server.hold = null
+    release()
+    expect(await screen.findByRole('heading', { name: 'Settings' })).toBeTruthy()
+    expect(screen.queryByRole('status', { name: 'Loading your budget' })).toBeNull()
+  })
+
+  it('says it could not load, with a way to try again that works', async () => {
+    const fake = createFakeSupabase()
+    fake.fail('categories', '42501')
+    go('/settings')
+    renderScreen(<Shell />, fake)
+
+    expect(await screen.findByText('Could not load your data')).toBeTruthy()
+    expect(screen.queryByText('No spending categories yet')).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Settings' })).toBeNull()
+
+    fake.heal('categories')
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(await screen.findByRole('heading', { name: 'Settings' })).toBeTruthy()
+    expect(screen.queryByText('Could not load your data')).toBeNull()
+  })
+})

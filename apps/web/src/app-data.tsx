@@ -31,6 +31,14 @@ export interface AppData {
   readonly goal: GoalRow | null
   readonly pendingTotal: number
   readonly loadError: string | null
+  /**
+   * Whether the data above has been read yet. Until it is 'ready', an empty
+   * `categories` and a null `goal` mean "not read", not "none": a screen
+   * shown then said "Nothing here yet" and offered a made-up goal to save
+   * (FE-7). 'failed' is a first read that failed; a later failure keeps
+   * what was read and is 'ready' with a `loadError`.
+   */
+  readonly status: 'loading' | 'ready' | 'failed'
   /** Reload the shared data; bump `version` so screens reload theirs too. */
   readonly refresh: () => Promise<void>
   readonly version: number
@@ -62,6 +70,7 @@ export function AppDataProvider({
   const [goal, setGoal] = useState<GoalRow | null>(null)
   const [pendingTotal, setPendingTotal] = useState(0)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [status, setStatus] = useState<AppData['status']>('loading')
   const [version, setVersion] = useState(0)
   // Every editor refreshes after it saves, so two refreshes can be in flight
   // at once, and the older one can be answered last. Only the newest may
@@ -84,10 +93,12 @@ export function AppDataProvider({
       setGoal(g)
       setPendingTotal(pending.total)
       setLoadError(null)
+      setStatus('ready')
       setVersion((v) => v + 1)
     } catch (cause) {
       if (mine !== latest.current) return
       setLoadError(cause instanceof Error ? cause.message : 'Could not load your data.')
+      setStatus((s) => (s === 'ready' ? s : 'failed'))
     }
   }, [supabase, userId])
 
@@ -97,7 +108,7 @@ export function AppDataProvider({
 
   return (
     <Context.Provider
-      value={{ supabase, userId, email, displayName, accountId, categories, goal, pendingTotal, loadError, refresh, version }}
+      value={{ supabase, userId, email, displayName, accountId, categories, goal, pendingTotal, loadError, status, refresh, version }}
     >
       {children}
     </Context.Provider>

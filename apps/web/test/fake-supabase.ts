@@ -74,6 +74,8 @@ export interface FakeSupabase {
    * or only one method on a table, e.g. `fail('PATCH categories', '23514')`.
    */
   fail(target: string, code: string): void
+  /** Stop failing what `fail` named: the server has come back. */
+  heal(target: string): void
   /** The signed-in user as the auth server holds it, `user_metadata` included. */
   readonly user: { id: string; email: string; user_metadata: Record<string, unknown> }
   /** Give the client a session, which `auth.updateUser` needs. `fail('auth/user', …)` makes updates fail. */
@@ -430,5 +432,5 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     if (error !== null) throw error
   }
 
-  return { client, tables, rpcCalls, rpcReplies, fail: (t, code) => void failures.set(t, code), user, signIn, server }
+  return { client, tables, rpcCalls, rpcReplies, fail: (t, code) => void failures.set(t, code), heal: (t) => void failures.delete(t), user, signIn, server }
 }

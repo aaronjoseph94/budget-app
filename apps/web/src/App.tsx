@@ -18,6 +18,7 @@ import { SettingsScreen } from './screens/SettingsScreen.js'
 import { SetupScreen } from './screens/SetupScreen.js'
 import { displayNameOf } from './profile.js'
 import { Alert } from './components/ui/feedback.js'
+import { Button } from './components/ui/button.js'
 import { Icon, type IconName } from './components/ui/icons.js'
 import { cn } from './lib/cn.js'
 
@@ -90,7 +91,7 @@ function tabOf(screen: Screen, tabs: readonly Tab[]): Screen {
 
 export function Shell() {
   const { screen, period } = useAddress()
-  const { pendingTotal, loadError } = useAppData()
+  const { pendingTotal, loadError, status, refresh } = useAppData()
   // Month, Week, Paycheck and Year widen on a desktop to take Workbook's four
   // columns (§6.3, §6.4), and the Bill Calendar to give its seven room for names.
   const wide = screen === 'month' || screen === 'week' || screen === 'paycheck' || screen === 'year' || screen === 'calendar'
@@ -139,29 +140,23 @@ export function Shell() {
 
       <main className={cn('pt-screen pb-safe mx-auto w-full px-4 md:pb-12', width)}>
         {loadError !== null ? (
-          <div className="mb-4">
+          <div className="mb-4 space-y-2">
             <Alert tone="error" title="Could not load your data">
               {loadError}
             </Alert>
+            <Button variant="outline" onClick={() => void refresh()}>
+              Try again
+            </Button>
           </div>
         ) : null}
-        {screen === 'month' ? <MonthScreen month={period} /> : null}
-        {screen === 'week' ? <WeekScreen /> : null}
-        {screen === 'paycheck' ? <PaycheckScreen day={period} /> : null}
-        {screen === 'calendar' ? <CalendarScreen month={period} /> : null}
-        {screen === 'review' ? <ReviewScreen /> : null}
-        {screen === 'add' ? <AddScreen /> : null}
-        {screen === 'more' ? <MoreScreen /> : null}
-        {screen === 'ledger' ? <LedgerScreen /> : null}
-        {screen === 'settings' ? <SettingsScreen /> : null}
-        {screen === 'setup' ? <SetupScreen /> : null}
-        {screen === 'savings' ? <SavingsScreen /> : null}
-        {screen === 'debts' ? <DebtsScreen /> : null}
-        {screen === 'year' ? (
-          <Suspense fallback={<p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>}>
-            <YearScreen start={period} />
-          </Suspense>
+        {/* No screen until the shared data is read: before then an empty
+          list means "not read yet", and screens showed it as "none" (FE-7). */}
+        {status === 'loading' ? (
+          <p role="status" aria-busy="true" aria-label="Loading your budget" className="py-16 text-center text-sm text-muted-foreground">
+            Loading…
+          </p>
         ) : null}
+        {status !== 'ready' ? null : <Screens screen={screen} period={period} />}
       </main>
 
       {/* Phones: a bottom tab bar within thumb reach, clear of the home indicator. */}
@@ -206,6 +201,31 @@ export function Shell() {
         </div>
       </nav>
     </div>
+  )
+}
+
+/** The screen the address names. */
+function Screens({ screen, period }: { screen: Screen; period: string | null }) {
+  return (
+    <>
+      {screen === 'month' ? <MonthScreen month={period} /> : null}
+      {screen === 'week' ? <WeekScreen /> : null}
+      {screen === 'paycheck' ? <PaycheckScreen day={period} /> : null}
+      {screen === 'calendar' ? <CalendarScreen month={period} /> : null}
+      {screen === 'review' ? <ReviewScreen /> : null}
+      {screen === 'add' ? <AddScreen /> : null}
+      {screen === 'more' ? <MoreScreen /> : null}
+      {screen === 'ledger' ? <LedgerScreen /> : null}
+      {screen === 'settings' ? <SettingsScreen /> : null}
+      {screen === 'setup' ? <SetupScreen /> : null}
+      {screen === 'savings' ? <SavingsScreen /> : null}
+      {screen === 'debts' ? <DebtsScreen /> : null}
+      {screen === 'year' ? (
+        <Suspense fallback={<p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>}>
+          <YearScreen start={period} />
+        </Suspense>
+      ) : null}
+    </>
   )
 }
 
