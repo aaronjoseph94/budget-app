@@ -22,7 +22,7 @@ export function SettingsScreen() {
       </header>
       <Card>
         <CardHeader>
-          <CardTitle>Your lists</CardTitle>
+          <CardTitle as="h2">Your lists</CardTitle>
           <CardDescription>Your name, and which of Workbook's lists each category is on.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -35,7 +35,7 @@ export function SettingsScreen() {
       <Goal />
       <Card>
         <CardHeader>
-          <CardTitle>Account</CardTitle>
+          <CardTitle as="h2">Account</CardTitle>
           <CardDescription>{email}</CardDescription>
         </CardHeader>
         <CardContent>
@@ -73,7 +73,7 @@ function BudgetsCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Weekly budgets</CardTitle>
+        <CardTitle as="h2">Weekly budgets</CardTitle>
         <CardDescription>
           A limit per category, per week, on the lists the Week counts as spending. Leave one blank for no limit.
         </CardDescription>
@@ -190,7 +190,7 @@ function Goal() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle as="h2" className="flex items-center gap-2">
           <Icon name="plane" className="size-4" /> Your goal
         </CardTitle>
         <CardDescription>
@@ -252,7 +252,7 @@ function GoalForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle as="h2" className="flex items-center gap-2">
           <Icon name="plane" className="size-4" /> Your goal
         </CardTitle>
         <CardDescription>What you are saving toward. Shown on the week screen.</CardDescription>

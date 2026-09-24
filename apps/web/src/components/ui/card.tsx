@@ -10,8 +10,12 @@ export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElemen
   return <div className={cn('flex flex-col gap-1 p-5 pb-3', className)} {...props} />
 }
 
-export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
-  return <h3 className={cn('text-base font-semibold leading-none tracking-tight', className)} {...props} />
+/**
+ * A card's heading, an h3 unless told otherwise. A card straight under a
+ * screen's h1 takes `as="h2"`, or its screen's outline skips a level (FE-12).
+ */
+export function CardTitle({ className, as: Heading = 'h3', ...props }: HTMLAttributes<HTMLHeadingElement> & { as?: 'h2' | 'h3' }) {
+  return <Heading className={cn('text-base font-semibold leading-none tracking-tight', className)} {...props} />
 }
 
 export function CardDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {

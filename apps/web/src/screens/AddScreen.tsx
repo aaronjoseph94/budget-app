@@ -194,7 +194,7 @@ function PdfPreview({
           <CardDescription>
             Statement · {formatIsoDate(period.from)} – {formatIsoDate(period.to)}
           </CardDescription>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle as="h2" className="flex items-center gap-2">
             {accepted.length} transactions
             {rec.balances ? (
               <Badge variant="income">

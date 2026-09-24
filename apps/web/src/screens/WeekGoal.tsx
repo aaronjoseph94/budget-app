@@ -41,7 +41,7 @@ export function GoalCard({ weekSpentCents, asOf }: { weekSpentCents: number; asO
       <div className="flex items-center justify-between gap-2 p-5 pb-3">
         <div className="flex items-center gap-2">
           <Icon name="plane" className="size-4 text-muted-foreground" />
-          <CardTitle>{goal.name}</CardTitle>
+          <CardTitle as="h2">{goal.name}</CardTitle>
         </div>
         <Badge variant="outline">{formatBasisPoints(progress.percentCompleteBasisPoints)}</Badge>
       </div>
