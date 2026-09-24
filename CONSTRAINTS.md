@@ -1,6 +1,6 @@
 # Constraints
 
-Last reviewed: 2026-09-21
+Last reviewed: 2026-09-24
 
 This file is the project's quality bar.
 
@@ -53,6 +53,12 @@ whether a commit is clean.
 | Migration replay | Applies cleanly to an empty database | `scripts/verify-migrations.sh` | CI |
 | RLS coverage | `pg_tables WHERE NOT rowsecurity` returns 0; every public table has an all-commands `user_id = auth.uid()` policy (`pg_policies`); policies isolate | `scripts/verify-migrations.sh` | CI |
 | Dependencies | Nothing high or above | `pnpm audit --audit-level high` | CI |
+| Web first load | The JavaScript a phone loads before the first screen (the entry and the chunks it preloads) ≤200 KB gzipped | `node scripts/check-bundle.mjs` | CI |
+
+The web first-load row replaced the pending "≤700 KB gzipped" entry-bundle
+row on 2026-09-24, tighter: the entry had grown from 192.83 to 214.62 KB
+gzipped with nothing firing (PERF-8), and splitting the screens out brought
+it to 180.7. Verified by lowering the budget below that and observing FAIL.
 
 Verified to bite: injecting `Date.now()` and `toFixed()` into `packages/core`
 turns the gate run `RED`. A gate never seen to fail has not been tested.
@@ -117,7 +123,7 @@ the command to actually run.
 |---|---|---|
 | Extraction accuracy | ≥90% zod-valid, ≥98% exact amounts over ≥20 labeled samples; no live provider calls in CI | `llm-providers` |
 | Ingest idempotency | Re-import yields 0 new rows; double-approve yields 1 transaction | `ingest-pipeline` |
-| Web entry bundle | ≤700 KB gzipped, ≤115% of baseline; SheetJS and charts out of the entry chunk | `app-client` |
+| Web entry charts | Chart code out of the entry chunk (N39: the Month draws its charts on every open, so this is still open) | a lazy MonthCharts, measured |
 | Engine speed | Full recompute over 5,000 transactions ≤50 ms | `calc-engine` rollups |
 | Feedback loop | `gates.sh fast` ≤5s · full ≤90s · CI ≤5 min | CI setup |
 

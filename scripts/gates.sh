@@ -46,6 +46,9 @@ if [ "$LEVEL" = "full" ]; then
   gate schema   psql     ./scripts/verify-migrations.sh
   gate coverage vitest   npx vitest run --coverage
   gate deps     pnpm     pnpm audit --audit-level high
+  # Builds the web app into a temporary folder and fails when the JavaScript
+  # a phone loads before the first screen is over budget (CONSTRAINTS.md).
+  gate bundle   node     node scripts/check-bundle.mjs
 fi
 
 STATUS=GREEN
