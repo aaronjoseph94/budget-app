@@ -109,6 +109,16 @@ module.exports = {
       to: { path: '^apps/' },
     },
     {
+      name: 'functions-stay-pasteable',
+      severity: 'error',
+      comment:
+        'Each Edge Function is pasted into the Supabase dashboard as one file, so it may ' +
+        'import zod by its pinned URL and nothing else: not a sibling, not a package. An ' +
+        'import that works here would be missing there, and the function would not start.',
+      from: { path: '^supabase/functions/[^/]+/index\\.ts$' },
+      to: { pathNot: 'node_modules/zod/' },
+    },
+    {
       name: 'no-unresolvable',
       severity: 'error',
       comment:
@@ -165,6 +175,15 @@ module.exports = {
         ],
       },
     },
+    // The Edge Functions: zod alone in the source (the rule above says why).
+    // Their tests may read the function, vitest, Node's own modules, and the
+    // app's parser for what a function passes on, so the two cannot drift.
+    { from: { path: '^supabase/functions/[^/]+/index\\.ts$' }, to: { path: 'node_modules/zod/' } },
+    {
+      from: { path: '^supabase/functions/test/' },
+      to: { path: ['^supabase/functions/[^/]+/index\\.ts$', 'node_modules/vitest/', '^packages/schema/src/'] },
+    },
+    { from: { path: '^supabase/functions/test/' }, to: { dependencyTypes: ['core'] } },
     // Build configuration beside the app: Vite and its plugins, never the app.
     {
       from: { path: '^apps/web/[^/]+\\.ts$' },
@@ -174,6 +193,7 @@ module.exports = {
   options: {
     doNotFollow: { path: 'node_modules' },
     tsConfig: { fileName: 'tsconfig.base.json' },
+    webpackConfig: { fileName: '.dependency-cruiser.resolve.cjs' },
     tsPreCompilationDeps: true,
     // Generated declaration output. It mirrors src, so leaving it in means
     // every rule is evaluated twice and every violation reported twice — and
@@ -182,7 +202,7 @@ module.exports = {
     // folders: unanchored, it also dropped every import that resolves into a
     // library's dist/ — supabase-js, vitest, vite — so those arrows were
     // invisible to every rule, and a package importing one read as clean.
-    exclude: { path: '^(packages|apps)/[^/]+/(dist|dist-types|coverage)/' },
+    exclude: { path: '^(packages|apps|supabase)/[^/]+/(dist|dist-types|coverage)/' },
     // vite and its plugins are ESM-only and describe themselves with an
     // `exports` map. Without the import condition, resolution falls back to a
     // `main` that is not there and vite.config.ts reads as unresolvable —
