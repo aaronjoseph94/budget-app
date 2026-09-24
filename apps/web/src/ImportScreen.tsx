@@ -29,22 +29,8 @@ export interface ImportScreenProps {
 
 /** A CSV export: preview the column mapping, then send to the review queue. */
 export function ImportScreen({ fileName, text, onReset, onSave, saving = false, outcome = null }: ImportScreenProps) {
-  const {
-    delimiter,
-    setDelimiter,
-    choose,
-    clear,
-    tokenized,
-    analysis,
-    dateIndex,
-    merchantIndex,
-    amountIndex,
-    signKind,
-    dateFormat,
-    result,
-    summary,
-    ambiguousDate,
-  } = useCsvMapping(text)
+  const mapping = useCsvMapping(text)
+  const { clear, result, summary } = mapping
 
   const reset = () => {
     clear()
@@ -64,83 +50,7 @@ export function ImportScreen({ fileName, text, onReset, onSave, saving = false, 
             </Button>
           </div>
 
-          {!tokenized.ok ? (
-            <Card className="border-spend/40 p-4">
-              <Label>This file could not be read</Label>
-              <p className="mt-2 text-sm">
-                {describeFailure(
-                  tokenized.failure.kind,
-                  'line' in tokenized.failure ? tokenized.failure.line : undefined,
-                )}
-              </p>
-              <p className="mt-3 text-sm text-muted-foreground">
-                If your bank separates columns with something other than a comma, change it below.
-              </p>
-              <div className="mt-3 max-w-xs">
-                <OptionSelect
-                  label="Column separator"
-                  value={delimiter}
-                  options={DELIMITERS.map((d) => ({ value: d.value as string, label: d.label }))}
-                  onChange={setDelimiter}
-                />
-              </div>
-            </Card>
-          ) : null}
-
-          {analysis !== null ? (
-            <Card className="p-4">
-              <Label>What the file looks like</Label>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <OptionSelect
-                  label="Column separator"
-                  value={delimiter}
-                  options={DELIMITERS.map((d) => ({ value: d.value as string, label: d.label }))}
-                  onChange={setDelimiter}
-                />
-                <OptionSelect
-                  label="Date column"
-                  value={dateIndex}
-                  options={analysis.columns.map((c) => ({ value: c.index, label: columnName(c) }))}
-                  onChange={(v) => choose('dateIndex', v)}
-                />
-                <OptionSelect
-                  label="Description column"
-                  value={merchantIndex}
-                  options={analysis.columns.map((c) => ({ value: c.index, label: columnName(c) }))}
-                  onChange={(v) => choose('merchantIndex', v)}
-                />
-                <OptionSelect
-                  label="Amount column"
-                  value={amountIndex}
-                  options={analysis.columns.map((c) => ({ value: c.index, label: columnName(c) }))}
-                  onChange={(v) => choose('amountIndex', v)}
-                />
-                <OptionSelect
-                  label="Date format"
-                  value={dateFormat}
-                  options={DATE_FORMATS.map((f) => ({ value: f, label: f }))}
-                  onChange={(v) => choose('dateFormat', v)}
-                />
-                <OptionSelect
-                  label="How amounts are written"
-                  value={signKind}
-                  options={[
-                    { value: 'signed' as const, label: 'Purchases are negative' },
-                    { value: 'debit_positive' as const, label: 'Purchases are positive' },
-                  ]}
-                  onChange={(v) => choose('signKind', v)}
-                />
-              </div>
-
-              {ambiguousDate !== null ? (
-                <p className="mt-4 rounded-lg border border-border bg-muted p-3 text-sm">
-                  <strong className="font-medium">Which way round are these dates?</strong> Every
-                  day in this file is 12 or lower, so <code>03/04</code> could be 3 April or 4
-                  March. Nothing in the file settles it — please choose the format your bank uses.
-                </p>
-              ) : null}
-            </Card>
-          ) : null}
+          <ColumnMapping mapping={mapping} />
 
           {result !== null && summary !== null ? (
             <>
@@ -241,6 +151,97 @@ export function ImportScreen({ fileName, text, onReset, onSave, saving = false, 
           ) : null}
         </div>
     </div>
+  )
+}
+
+/**
+ * The file's shape: why it could not be read, with the separator to try
+ * instead, or which column is which, the date format and how amounts are
+ * signed, each proposed and each the owner's to change (FE-19).
+ */
+function ColumnMapping({ mapping }: { mapping: ReturnType<typeof useCsvMapping> }) {
+  const { delimiter, setDelimiter, choose, tokenized, analysis, dateIndex, merchantIndex, amountIndex, signKind, dateFormat, ambiguousDate } =
+    mapping
+  return (
+    <>
+      {!tokenized.ok ? (
+        <Card className="border-spend/40 p-4">
+          <Label>This file could not be read</Label>
+          <p className="mt-2 text-sm">
+            {describeFailure(
+              tokenized.failure.kind,
+              'line' in tokenized.failure ? tokenized.failure.line : undefined,
+            )}
+          </p>
+          <p className="mt-3 text-sm text-muted-foreground">
+            If your bank separates columns with something other than a comma, change it below.
+          </p>
+          <div className="mt-3 max-w-xs">
+            <OptionSelect
+              label="Column separator"
+              value={delimiter}
+              options={DELIMITERS.map((d) => ({ value: d.value as string, label: d.label }))}
+              onChange={setDelimiter}
+            />
+          </div>
+        </Card>
+      ) : null}
+
+      {analysis !== null ? (
+        <Card className="p-4">
+          <Label>What the file looks like</Label>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <OptionSelect
+              label="Column separator"
+              value={delimiter}
+              options={DELIMITERS.map((d) => ({ value: d.value as string, label: d.label }))}
+              onChange={setDelimiter}
+            />
+            <OptionSelect
+              label="Date column"
+              value={dateIndex}
+              options={analysis.columns.map((c) => ({ value: c.index, label: columnName(c) }))}
+              onChange={(v) => choose('dateIndex', v)}
+            />
+            <OptionSelect
+              label="Description column"
+              value={merchantIndex}
+              options={analysis.columns.map((c) => ({ value: c.index, label: columnName(c) }))}
+              onChange={(v) => choose('merchantIndex', v)}
+            />
+            <OptionSelect
+              label="Amount column"
+              value={amountIndex}
+              options={analysis.columns.map((c) => ({ value: c.index, label: columnName(c) }))}
+              onChange={(v) => choose('amountIndex', v)}
+            />
+            <OptionSelect
+              label="Date format"
+              value={dateFormat}
+              options={DATE_FORMATS.map((f) => ({ value: f, label: f }))}
+              onChange={(v) => choose('dateFormat', v)}
+            />
+            <OptionSelect
+              label="How amounts are written"
+              value={signKind}
+              options={[
+                { value: 'signed' as const, label: 'Purchases are negative' },
+                { value: 'debit_positive' as const, label: 'Purchases are positive' },
+              ]}
+              onChange={(v) => choose('signKind', v)}
+            />
+          </div>
+
+          {ambiguousDate !== null ? (
+            <p className="mt-4 rounded-lg border border-border bg-muted p-3 text-sm">
+              <strong className="font-medium">Which way round are these dates?</strong> Every
+              day in this file is 12 or lower, so <code>03/04</code> could be 3 April or 4
+              March. Nothing in the file settles it — please choose the format your bank uses.
+            </p>
+          ) : null}
+        </Card>
+      ) : null}
+    </>
   )
 }
 
