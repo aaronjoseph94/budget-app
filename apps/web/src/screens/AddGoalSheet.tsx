@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { goalAtEnd } from '@budget/core'
 import { parseMoneyInput, placedGoal, useAppData } from '../app-data.js'
-import { addGoal } from '../ledger.js'
+import { addGoal } from '../goal-writes.js'
 import { atEndOf, LIST_HEADING } from '../lists.js'
 import { todayIso } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'

@@ -20,7 +20,6 @@ import {
   describeBudgetFailure,
   describeDebtFailure,
   describeFundFailure,
-  describeGoalFailure,
   describeMoveFailure,
   describePlanFailure,
   describeScheduleFailure,
@@ -1080,53 +1079,6 @@ export async function listGoals(supabase: SupabaseClient): Promise<GoalsRead> {
   }
 }
 
-/**
- * Write goals' places, as core's moveGoal worked them out (0015). One goal
- * at a time, as Setup writes a list's order: a failure part-way leaves a
- * valid order that is simply not the one asked for, and the screen reloads
- * to show what is stored.
- */
-export async function setGoalPlaces(
-  supabase: SupabaseClient,
-  changes: readonly { readonly id: string; readonly sortOrder: number }[],
-): Promise<void> {
-  for (const change of changes) {
-    const { error } = await supabase.from('savings_goals').update({ sort_order: change.sortOrder }).eq('id', change.id)
-    if (error !== null) throw new Error(describeGoalFailure(error))
-  }
-}
-
-/** A goal paused, reached on a day, or back among the active goals at a place (F45). */
-export type GoalStateChange =
-  | { readonly status: 'paused' }
-  | { readonly status: 'reached'; readonly on: string }
-  | { readonly status: 'active'; readonly sortOrder: number }
-
-/**
- * Pause, resume or mark a goal reached (0015). The reached day is written
- * with the state and cleared with it, as 0015's CHECK requires; a resumed
- * goal takes the place core gave it, after every other.
- */
-export async function setGoalState(supabase: SupabaseClient, goalId: string, change: GoalStateChange): Promise<void> {
-  const row =
-    change.status === 'reached'
-      ? { status: change.status, reached_on: change.on }
-      : change.status === 'paused'
-        ? { status: change.status, reached_on: null }
-        : { status: change.status, reached_on: null, sort_order: change.sortOrder }
-  const { error } = await supabase.from('savings_goals').update(row).eq('id', goalId)
-  if (error !== null) throw new Error(describeGoalFailure(error))
-}
-
-/**
- * Remove a goal: the screen offers it only with nothing saved (F45). Its
- * fund's category stays on the Savings list, with every charge under it.
- */
-export async function removeGoal(supabase: SupabaseClient, goalId: string): Promise<void> {
-  const { error } = await supabase.from('savings_goals').delete().eq('id', goalId)
-  if (error !== null) throw new Error(describeGoalFailure(error))
-}
-
 /** bigint columns arrive as numbers or strings, so each is made a number. */
 function goalNumbers(g: ListedGoalRow): ListedGoalRow {
   return {
@@ -1247,61 +1199,6 @@ export async function saveFund(
           .from('savings_goals')
           .insert({ user_id: target.userId, name: target.name, category_id: target.categoryId, ...row })
       : await supabase.from('savings_goals').update(row).eq('id', target.goalId)
-  if (error !== null) throw new Error(describeFundFailure('save', error))
-}
-
-/**
- * Make a goal on no fund a fund's goal (G1): the Savings-list category of its
- * name, made at the bottom of the list when there is none, then linked as
- * linkFund links one, so money moved in after today adds to it (D16).
- */
-export async function makeGoalAFund(
-  supabase: SupabaseClient,
-  userId: string,
-  fund: NewCategory,
-  link: { readonly goalId: string; readonly asOf: string },
-): Promise<void> {
-  const category = await ensureCategory(supabase, userId, fund)
-  await linkFund(supabase, { goalId: link.goalId, categoryId: category.id, asOf: link.asOf })
-}
-
-/** A goal as the Add a goal sheet types it (G1). */
-export interface NewGoal {
-  readonly name: string
-  readonly targetCents: number
-  readonly savedCents: number
-  readonly targetDate: string | null
-  readonly startDate: string | null
-  readonly unitCostCents: number | null
-  readonly unitLabel: string | null
-  /** Today: the day what is saved is true, at its end (D16). */
-  readonly asOf: string
-  /** After every other goal (F45); null before 0015, which has no place to write. */
-  readonly sortOrder: number | null
-}
-
-/**
- * Add a goal with its fund (G1): the Savings-list category of that name,
- * made at the bottom of the list when there is none, as Setup adds a row,
- * then the goal linked to it with what is saved true as of today, so money
- * moved in later adds to it (D16). Two writes, not one: a fund made and its
- * goal refused leaves an empty Savings row, which trying again links.
- */
-export async function addGoal(supabase: SupabaseClient, userId: string, fund: NewCategory, goal: NewGoal): Promise<void> {
-  const category = await ensureCategory(supabase, userId, fund)
-  const { error } = await supabase.from('savings_goals').insert({
-    user_id: userId,
-    name: goal.name,
-    target_cents: goal.targetCents,
-    saved_cents: goal.savedCents,
-    target_date: goal.targetDate,
-    start_date: goal.startDate,
-    unit_cost_cents: goal.unitCostCents,
-    unit_label: goal.unitLabel,
-    category_id: category.id,
-    balance_as_of: goal.asOf,
-    ...(goal.sortOrder === null ? {} : { sort_order: goal.sortOrder }),
-  })
   if (error !== null) throw new Error(describeFundFailure('save', error))
 }
 
