@@ -2,7 +2,7 @@
  * A pay period, found from an income source's pay schedule, and a monthly
  * amount's share of one (formula decision F15, option B; D18).
  *
- * Workbook's Paycheck Budget types its start and end (D6, D7) and halves a
+ * The workbook's Paycheck Budget types its start and end (D6, D7) and halves a
  * monthly bill with a fixed ÷ 2 (E22 `=IF(F22, E50 / 2, D50)`), never reading
  * the first pay date and frequency START HERE asks for (C8:C14, E8:E14). The
  * owner chose to find the period from those instead, and to divide by how

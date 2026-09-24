@@ -3,7 +3,7 @@ import { isoDate } from '@budget/money-primitives'
 import { billsTotals, resolvePlans, type BillsCategory, type PlanHistoryRow } from '../src/plans.js'
 
 /**
- * Suite tests, worked by hand. Workbook has one Monthly Amount for every month
+ * Suite tests, worked by hand. The workbook has one Monthly Amount for every month
  * (Bills!D7:D29, H7:H29, L7:L29), so no cached cell shows an amount changing,
  * stopping or starting again; those are the app's (D13), and are checked here.
  */

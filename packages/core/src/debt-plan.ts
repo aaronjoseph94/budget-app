@@ -2,13 +2,13 @@
  * The debts as the app keeps them (0014), amortized: each from its own start
  * month, each extra payment against the calendar month it is paid in.
  *
- * Workbook has one Start Date for every debt (Debt Calculator!D6) and types an
+ * The workbook has one Start Date for every debt (Debt Calculator!D6) and types an
  * extra against a schedule row (I26:I494). 0014 keeps a start month per
  * debt and an extra against a month, so a loan taken out later needs no
  * other debt retyped, and an extra paid in March stays in March if a start
  * month moves. This turns them into amortize()'s terms: one schedule per
  * debt, its extras numbered from its own start month. When every debt
- * shares a start month, as all of Workbook's do, it is amortize() over them all.
+ * shares a start month, as all of the sample's do, it is amortize() over them all.
  *
  * The debt-free date is the last month any debt is paid in (B14, EDATE of the
  * start by the most months). A debt whose minimum never clears its interest

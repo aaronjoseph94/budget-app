@@ -12,9 +12,9 @@ export const IngestSourceSchema = z.enum(['card_csv', 'card_xlsx', 'card_pdf', '
 export type IngestSource = z.infer<typeof IngestSourceSchema>
 
 /**
- * Which of Workbook's lists a category is on (migration 0005).
+ * Which of the workbook's lists a category is on (migration 0005).
  *
- * The first six are the lists on Workbook's START HERE tab; `transfer` is the
+ * The first six are the lists on the workbook's START HERE tab; `transfer` is the
  * app's own "Not spending", for money that only moves, like paying off the
  * card. The list decides which month block a charge lands in, so it is stored
  * with the category, never guessed from its name (docs/workbook-views-plan.md §3.2).

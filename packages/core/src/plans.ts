@@ -1,8 +1,8 @@
 /**
  * Which monthly amount is in effect in a month, from every one typed, and
- * Workbook's Bills totals from them.
+ * the workbook's Bills totals from them.
  *
- * Workbook gives each bill, debt and subscription one Day Paid and one Monthly
+ * The workbook gives each bill, debt and subscription one Day Paid and one Monthly
  * Amount (Bills!B/D, F/H, J/L 7:29), and every month tab reads that one
  * amount, past months included (Jan!E22 and Dec!E22 are both Bills!D7). An
  * app holding years of history cannot: raising the rent in October would
@@ -32,7 +32,7 @@ export interface PlanHistoryRow {
   readonly effectiveMonth: IsoDate
   /** Null is "stopped from this month", not $0. */
   readonly plannedCents: number | null
-  /** Workbook's Day Paid, 1–31; null when none was typed. */
+  /** The workbook's Day Paid, 1–31; null when none was typed. */
   readonly dueDay: number | null
 }
 
@@ -95,7 +95,7 @@ export function resolvePlans(input: ResolvePlansInput): ResolvePlansOutput {
 }
 
 /**
- * Workbook's Bills tab totals, in a month (D13): the tiles under its three cards
+ * The workbook's Bills tab totals, in a month (D13): the tiles under its three cards
  * and the "Fixed Monthly Bills" tile under them.
  *
  * Excel semantics (docs/divergences.md):
@@ -104,10 +104,10 @@ export function resolvePlans(input: ResolvePlansInput): ResolvePlansOutput {
  *   Monthly Amount on the card, a blank adding nothing. Here, every amount in
  *   effect that month on a category on that list now; a stopped one adds
  *   nothing, and so does a month before any was set, which is a real $0.
- * - D7, `Bills!H36 =SUM(D32,H32,G46)`: G46 is an empty cell, so Workbook's
+ * - D7, `Bills!H36 =SUM(D32,H32,G46)`: G46 is an empty cell, so the workbook's
  *   "Fixed Monthly Bills" drops the subscriptions (850 where the three tiles
  *   make 867.99). The app adds all three.
- * - D8: Workbook shows the tiles in whole dollars (`"$"#,##0`, so 17.99 reads
+ * - D8: the workbook shows the tiles in whole dollars (`"$"#,##0`, so 17.99 reads
  *   $18). The totals here keep their cents; the screen shows them.
  *
  * A category counts on the list it is on now. 0009 lets a category move off

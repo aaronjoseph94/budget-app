@@ -3,7 +3,7 @@ import { isoDate } from '@budget/money-primitives'
 import { fundBalance, fundProgress, savingsFunds, type FundGoal } from '../src/savings.js'
 
 /**
- * Suite, not External: Workbook types every balance and reads no transfer
+ * Suite, not External: the workbook types every balance and reads no transfer
  * (Savings!B5), so D16's kept balance has no cached value to replay. Worked
  * by hand from invented rows; money into savings is a negative ledger row (D3).
  */

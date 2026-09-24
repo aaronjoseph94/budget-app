@@ -4,7 +4,7 @@ import { resolveBudgets, type BudgetHistoryRow } from '../src/budgets.js'
 import { monthSheet } from '../src/period-sheet.js'
 
 /**
- * Suite tests, worked by hand. Workbook's sample types one value per month and
+ * Suite tests, worked by hand. The workbook's sample types one value per month and
  * never "just this month" (workbook-month part 1), so the cases here are the
  * ones no cached cell reaches: an 'only' row among 'onward' rows, an earlier
  * month edited later, and a typed "no budget" (D12).

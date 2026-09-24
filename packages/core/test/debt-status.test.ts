@@ -4,7 +4,7 @@ import { amortize } from '../src/debt.js'
 import { debtStatus } from '../src/debt-status.js'
 
 /**
- * Hand-derived (Suite, not External): the edges of F22 that Workbook's cached
+ * Hand-derived (Suite, not External): the edges of F22 that the workbook's cached
  * values never reach.
  */
 const on = (asOf: string, debts: Parameters<typeof amortize>[0]['debts'], extras: Parameters<typeof amortize>[0]['extraPayments'] = []) =>
@@ -40,7 +40,7 @@ describe('debtStatus (F22)', () => {
     expect(d).toMatchObject({ month: 18, openingBalanceCents: 0, paymentCents: 0, balanceCents: 0, paidCents: 30_000 })
   })
 
-  it("adds the debts into Workbook's summary card, with an extra in its month", () => {
+  it("adds the debts into the workbook's summary card, with an extra in its month", () => {
     const car = { name: 'Car', startingBalanceCents: 5_000, minimumPaymentCents: 2_500, aprBasisPoints: 0 }
     const s = on('2026-02-01', [loan, car], [{ debtName: 'Loan', month: 2, amountCents: 1_000 }])
     // Loan month 2: 20,200 − 11,000 = 9,200. Car: 2,500 → 0.

@@ -6,7 +6,7 @@ import type { PlannedDebt } from '../src/debt-plan.js'
 import { payoffStrategies } from '../src/debt-strategy.js'
 
 /**
- * Hand-derived (Suite, not External): Workbook cannot roll a payment (D2), so
+ * Hand-derived (Suite, not External): the workbook cannot roll a payment (D2), so
  * no cached value checks these. Each case is worked month by month below.
  */
 const month = (m: string) => isoDate(`2026-${m}-01`)
@@ -30,7 +30,7 @@ describe('payoffStrategies (F23)', () => {
   //   Apr, 108 → 10,913, paid. 500 + 305 + 108 = 913.
   const three = [debt('Z', 10_000, 10_000), debt('X', 60_000, 10_000, 1_200), debt('Y', 30_000, 10_000)]
 
-  it('pays only minimums on the flat plan, as Workbook does', () => {
+  it('pays only minimums on the flat plan, as the workbook does', () => {
     const { flat } = plans(three)
     expect(flat).toEqual({ debtFreeDate: '2026-07-01', totalInterestCents: 1_555, paidOffIn: expect.any(Array) })
     expect(months(flat)).toEqual({ Z: '01', X: '07', Y: '03' })
@@ -97,7 +97,7 @@ describe('payoffStrategies (F23)', () => {
     expect(months(s.snowball)).toEqual({ A: '01', B: '02' })
   })
 
-  it("gives the golden debt-free date on the flat plan, which is Workbook's", () => {
+  it("gives the golden debt-free date on the flat plan, which is the workbook's", () => {
     const golden = loadGolden<AmortizeInput, { debtFreeDate: string }>('debt-payoff')
     const start = isoDate(golden.input.startDate)
     const s = payoffStrategies({

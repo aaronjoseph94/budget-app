@@ -93,7 +93,7 @@ describe('appendToLists', () => {
     expect(rows).toEqual([row('Phone', 'bill', 0)])
   })
 
-  // The goal's name can be one of Workbook's own; it is added once.
+  // The goal's name can be one of the workbook's own; it is added once.
   it('adds a name asked for twice only once', () => {
     const { rows } = appendToLists({
       existing: [],

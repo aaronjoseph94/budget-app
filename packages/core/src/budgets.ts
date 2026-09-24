@@ -1,7 +1,7 @@
 /**
  * Which budget or goal is in effect in a month, from what was typed and how.
  *
- * Workbook types twelve separate sets of budgets and goals, one per month tab
+ * The workbook types twelve separate sets of budgets and goals, one per month tab
  * (Jan..Dec D22:D44, J22:J44, O22:O44, T22:T44, O10:O16, T10:T16), and its
  * sample fills only January: February to December are typed 0 or left blank.
  * Retyping twelve months a year is the work the app exists to remove, so it
@@ -19,7 +19,7 @@
  * Nothing is copied into later months. A copy would go stale the moment an
  * earlier month was edited "from this month on"; resolving on every read
  * lets that edit reach each later month not given a value of its own, and
- * keeps Workbook's property that editing October never rewrites January.
+ * keeps the workbook's property that editing October never rewrites January.
  *
  * Income goals and savings goals are the same kind of number, and resolve
  * the same way.

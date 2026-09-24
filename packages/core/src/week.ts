@@ -5,7 +5,7 @@
  * cannot filter; docs/ROADMAP.md makes weekly the primary lens as a new
  * capability. Tests are therefore worked by hand rather than golden-replayed.
  *
- * No screen reads weeklySummary since S15: the Week is Workbook's Weekly Budget,
+ * No screen reads weeklySummary since S15: the Week is the workbook's Weekly Budget,
  * from weekSheet in period-sheet.ts. It is kept, not removed, because what it
  * gives (one budget over every spending list, the share of it used, rows
  * with no category) is not what weekSheet gives, so its tests could not move
@@ -17,7 +17,7 @@
  * category's spending is NET of refunds within the week — a $30 return on a
  * $45 purchase is $15 spent, not $45 spent and $30 of income.
  *
- * Which of Workbook's lists a category is on decides what its rows are (Workbook
+ * Which of the workbook's lists a category is on decides what its rows are (the workbook
  * plan §5.1, S3b). Bills, debts, subscriptions and variable expenses are
  * spending, netted and signed as the Month will be, so a week with only a
  * return shows negative spending instead of vanishing. Money in is the Income
@@ -44,7 +44,7 @@ export interface LedgerEntry {
   readonly categoryId: string | null
 }
 
-/** Workbook's lists (migration 0005's category_kind), as core names them. */
+/** The workbook's lists (migration 0005's category_kind), as core names them. */
 export type CategoryKind = 'income' | 'savings' | 'bill' | 'debt' | 'subscription' | 'variable' | 'transfer'
 
 /**

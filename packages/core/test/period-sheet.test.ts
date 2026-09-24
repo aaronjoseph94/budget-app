@@ -4,7 +4,7 @@ import { monthSheet, periodSheet, weekSheet, type PeriodCategory, type PeriodEnt
 import { resolvePlans } from '../src/plans.js'
 
 /**
- * Suite tests, worked by hand from the invented rows below. Workbook's cached
+ * Suite tests, worked by hand from the invented rows below. The workbook's cached
  * cells each hold one row (workbook-period part 1), so an engine that summed only
  * the first row would pass them; these catch that, and the cases no cached
  * cell reaches (plan §5.3).
@@ -385,7 +385,7 @@ describe('periodSheet summary (suite)', () => {
     ).toBe(5_000)
   })
 
-  it('with no budgets at all, is minus the Variable spend, as Workbook shows a tab left blank', () => {
+  it('with no budgets at all, is minus the Variable spend, as the workbook shows a tab left blank', () => {
     expect(summary([]).leftToSpendCents).toBe(-13_000)
   })
 
@@ -512,7 +512,7 @@ describe('periodSheet budgets, Remaining and Difference (suite)', () => {
     expect([variable, bill, debt, subscription, income, savings].map((b) => b.budgetTotalCents)).toEqual([
       10_000, 115_000, 10_000, 1_200, 280_000, 40_000,
     ])
-    // V21 = T21 − U21 and V9 = U9 − T9 once each blank reads as Workbook reads it.
+    // V21 = T21 − U21 and V9 = U9 − T9 once each blank reads as the workbook reads it.
     expect(variable.remainingTotalCents).toBe(10_000 - 13_000)
     expect(savings.differenceTotalCents).toBe(33_000 - 40_000)
     expect(s.summary.leftToSpendCents).toBe(variable.remainingTotalCents)

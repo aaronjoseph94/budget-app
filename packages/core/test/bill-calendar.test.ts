@@ -7,7 +7,7 @@ import type { PlanHistoryRow } from '../src/plans.js'
 /**
  * Suite, not External: the workbook caches one month, January 2025, which
  * workbook-bill-calendar replays. The other shapes of month, and every rule
- * Workbook's January does not exercise, are worked by hand below from F20.
+ * the workbook's January does not exercise, are worked by hand below from F20.
  */
 
 /** A month with nothing in it, but its grid. */
@@ -18,7 +18,7 @@ const grid = (calendar: BillCalendar) => calendar.weeks.map((w) => w.days.map((d
 
 describe('billCalendar, the grid', () => {
   it('starts a month whose 1st is a Sunday in the first place, and needs only four weeks for a 28-day one', () => {
-    // 1 February 2026 is a Sunday: Workbook's B9 typo (D19) would have hidden its rent.
+    // 1 February 2026 is a Sunday: the workbook's B9 typo (D19) would have hidden its rent.
     expect(grid(bare('2026-02-14'))).toEqual([
       [1, 2, 3, 4, 5, 6, 7],
       [8, 9, 10, 11, 12, 13, 14],
@@ -109,11 +109,11 @@ describe('billCalendar, what is due', () => {
     expect(listed(calendar)).toContain('28: Rent 160000 planned')
   })
 
-  it('holds every bill on a day, in list order, not Workbook’s five (D20)', () => {
+  it('holds every bill on a day, in list order, not the workbook’s five (D20)', () => {
     const many = Array.from({ length: 7 }, (_, i): PeriodCategory => ({ id: `b${i}`, name: `Bill ${i}`, kind: i < 3 ? 'subscription' : 'bill', sortOrder: 6 - i }))
     const calendar = billCalendar({ month: isoDate('2026-03-01'), categories: many, planHistory: many.map((c) => plan(c.id, 100, 1)), entries: [], paySchedules: [] })
     expect(calendar.weeks[0]?.days[0]?.bills.map((b) => b.name)).toEqual(['Bill 6', 'Bill 5', 'Bill 4', 'Bill 3', 'Bill 2', 'Bill 1', 'Bill 0'])
-    // 1 March 2026 is a Sunday, the day Workbook's B9 typo emptied (D19).
+    // 1 March 2026 is a Sunday, the day the workbook's B9 typo emptied (D19).
     expect(calendar.weeks[0]?.totalCents).toBe(700)
   })
 
@@ -138,7 +138,7 @@ describe('billCalendar, what is due', () => {
     expect(listed(calendar)).toEqual(['1: Car loan 30000 planned', '9: Streamly 1799 planned', '15: Power 9000 planned', '30: Rent 160000 planned'])
   })
 
-  it('stacks a day as Workbook does, Bills then Debts then Subscriptions, whatever their places in Setup', () => {
+  it('stacks a day as the workbook does, Bills then Debts then Subscriptions, whatever their places in Setup', () => {
     const lists: PeriodCategory[] = [
       { id: 's', name: 'Alpha sub', kind: 'subscription', sortOrder: 0 },
       { id: 'd', name: 'Mid debt', kind: 'debt', sortOrder: 0 },
@@ -176,7 +176,7 @@ describe('billCalendar, paydays', () => {
     expect(paydays('2026-04-01', schedule)).toEqual(['30: Day job'])
   })
 
-  it('names every source paid on a day, in Setup’s order, not Workbook’s first one (D20)', () => {
+  it('names every source paid on a day, in Setup’s order, not the workbook’s first one (D20)', () => {
     expect(paydays('2026-10-01', [pays('job', '2026-10-15', 'monthly'), pays('side', '2026-10-01', 'biweekly')])).toEqual([
       '1: Side work',
       '15: Side work, Day job',

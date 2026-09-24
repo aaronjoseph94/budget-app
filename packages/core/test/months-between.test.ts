@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { isoDate, monthsBetween } from '@budget/money-primitives'
 
 /**
- * Suite, not External: DATEDIF "M" worked by hand. Workbook's one cached month
+ * Suite, not External: DATEDIF "M" worked by hand. The workbook's one cached month
  * count (Savings!V14 = 21) is asserted through savingsFundPlan in the
  * workbook-savings golden; these pin the edges the sample never reaches.
  * Lives with core's tests because money-primitives has no test project of

@@ -14,11 +14,11 @@ const loan: PlannedDebt = { name: 'Loan', startMonth: month('2026-01'), starting
 const car: PlannedDebt = { name: 'Car', startMonth: month('2026-06'), startingBalanceCents: 5_000, minimumPaymentCents: 2_500, aprBasisPoints: 0 }
 
 describe('debtPlan', () => {
-  it("is amortize() when every debt shares a start month, as Workbook's do", () => {
+  it("is amortize() when every debt shares a start month, as the workbook's debts do", () => {
     const start = isoDate(golden.input.startDate)
     const plan = debtPlan({
       debts: golden.input.debts.map((d) => ({ ...d, startMonth: start })),
-      // Workbook's I28, month 3 of a March start, is May.
+      // The workbook's I28, month 3 of a March start, is May.
       extraPayments: [{ debtName: 'Credit Card 1', month: month('2025-05'), amountCents: 5_000 }],
     })
     expect(plan.neverPaidOff).toEqual([])

@@ -6,7 +6,7 @@ import type { PlanHistoryRow } from '../src/plans.js'
 import { yearSheet, type YearSheetInput } from '../src/year-sheet.js'
 
 /**
- * Suite tests, worked by hand from the invented rows below. Workbook's sample
+ * Suite tests, worked by hand from the invented rows below. The workbook's sample
  * types goals in January only, so its seven-month totals (D7) and Annual's
  * cached cells cannot tell a fixed total from a broken one; these can.
  */
@@ -29,7 +29,7 @@ const year = (over: Partial<YearSheetInput>) =>
   })
 
 describe('yearSheet totals (suite, D7)', () => {
-  it('adds all twelve months, where Workbook adds the first seven (Annual Budget!J9, V9, W9)', () => {
+  it('adds all twelve months, where the workbook adds the first seven (Annual Budget!J9, V9, W9)', () => {
     const s = year({
       budgetHistory: [budget('pay', '2026-01-01', 100_000), budget('pay', '2026-08-01', 20_000), budget('fund', '2026-12-01', 5_000)],
       entries: [row('2026-02-10', -3_000, 'fund'), row('2026-10-10', -4_000, 'fund')],
@@ -39,7 +39,7 @@ describe('yearSheet totals (suite, D7)', () => {
     expect(s.totals.savings.actualCents).toBe(7_000)
   })
 
-  it('totals expenses once, where Workbook runs on into the Subscriptions card (Annual Budget!P9, Q9)', () => {
+  it('totals expenses once, where the workbook runs on into the Subscriptions card (Annual Budget!P9, Q9)', () => {
     const s = year({
       budgetHistory: [budget('rent', '2026-03-01', 90_000), budget('music', '2026-03-01', 1_000)],
       entries: [row('2026-03-05', -1_000, 'music'), row('2026-04-05', -2_500, 'food'), row('2026-04-06', 500, 'food')],
@@ -150,7 +150,7 @@ describe('yearSheet Left over and at a glance (suite, F12, F18)', () => {
     expect(s.atAGlance.biggest).toEqual({ categoryId: 'loan', name: 'loan', kind: 'debt', amountCents: 50_000, shareBp: 6_173 })
   })
 
-  it("breaks a tie by Workbook's list order, then Setup's row order (Hidden!B3:B95)", () => {
+  it("breaks a tie by the workbook's list order, then Setup's row order (Hidden!B3:B95)", () => {
     const s = year({
       categories: CATS,
       asOf: isoDate('2026-01-31'),

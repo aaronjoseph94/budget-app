@@ -1,7 +1,7 @@
 /**
- * Snowball and avalanche: the payoff plans Workbook cannot make (D2, F23).
+ * Snowball and avalanche: the payoff plans the workbook cannot make (D2, F23).
  *
- * Workbook pays each debt only its own minimum, for its whole life (amortize,
+ * The workbook pays each debt only its own minimum, for its whole life (amortize,
  * the "flat" plan here). Its Hidden Debt ACCELERATOR (CL:DH) was meant to
  * roll a cleared debt's payment into the next and never worked: every cell
  * is 0 or FALSE. So nothing here has a cached value; the tests are

@@ -1,6 +1,6 @@
 /**
- * Workbook's Annual Budget: twelve month rows from a chosen start month, each
- * one Workbook month tab's block totals, and the year's totals beside them.
+ * The workbook's Annual Budget: twelve month rows from a chosen start month, each
+ * one month tab's block totals, and the year's totals beside them.
  *
  * Each row is monthSheet over that month, so the Year counts a charge, a
  * refund, a planned bill and a budget exactly as the Month does; nothing here
@@ -34,17 +34,17 @@
  * - The balances. `Annual Budget!D18 =D44`: the start month's typed balance
  *   (Jan!D9 through Hidden!J18), null when none was typed (D17). The ending
  *   balance is F12's `D20 := D18 + D9 − D11 − D13`, start + income − expenses −
- *   savings over the twelve months, where Workbook's `=D9+O6-D11-U6` reads two
+ *   savings over the twelve months, where the workbook's `=D9+O6-D11-U6` reads two
  *   blank cells and never adds the start.
  * - F12, Left over. `Annual Budget!D15`, labelled "Left To Spend", is the same
  *   `=D9+O6-D11-U6`. Under decision 15 it is income − expenses − savings,
  *   named "Left over" so it is never taken for the Month's budget remaining
  *   (F5). Below zero when the Year spent and saved more than came in.
- * - F18, at a glance (Home). Workbook ranks categories by twelve times their
+ * - F18, at a glance (Home). The workbook ranks categories by twelve times their
  *   monthly amount plus today's calendar year of rows (Hidden!O73, P38:Q40).
  *   Here the top 3 are the Bills, Debts, Subscriptions and Variable expenses
  *   categories with the largest Year Actual, counted as the rows count it;
- *   equals keep Workbook's list order (Hidden!B3:B95), and a share is of every
+ *   equals keep the workbook's list order (Hidden!B3:B95), and a share is of every
  *   category above zero, half-up (F17). The best savings month is the one
  *   that saved most, the earliest of equals, as `Hidden!I60`'s QUERY keeps
  *   row order.
@@ -81,7 +81,7 @@ export interface YearSheetInput {
   readonly startingBalances: readonly StartingBalance[]
 }
 
-/** One group's figures. On Income and Savings the budget is Workbook's Goal. */
+/** One group's figures. On Income and Savings the budget is the workbook's Goal. */
 export interface YearFigure {
   readonly budgetCents: Cents
   readonly actualCents: Cents
@@ -141,7 +141,7 @@ export interface YearSheet {
   readonly atAGlance: AtAGlance
 }
 
-/** Workbook's master list order, Hidden!B3:B95, which its QUERY keeps for equal amounts. */
+/** The workbook's master list order, Hidden!B3:B95, which its QUERY keeps for equal amounts. */
 const RANKED = ['variable', 'bill', 'debt', 'subscription'] as const
 
 export function yearSheet(input: YearSheetInput): YearSheet {
@@ -212,7 +212,7 @@ export function yearSheet(input: YearSheetInput): YearSheet {
 /**
  * F18: each spending category's Year Actual, the twelve month rows' Actuals
  * added, ranked. Every sheet lists the same categories, so the first gives
- * the order equals keep: list by Workbook's master order, then row order.
+ * the order equals keep: list by the workbook's master order, then row order.
  */
 function topExpenses(sheets: readonly PeriodSheet[]): Pick<AtAGlance, 'biggest' | 'top3'> {
   const spent = RANKED.flatMap((kind) =>

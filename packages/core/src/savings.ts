@@ -1,5 +1,5 @@
 /**
- * Workbook's Savings tab: what each fund still needs, and what to put in it a
+ * The workbook's Savings tab: what each fund still needs, and what to put in it a
  * month to get there by its goal date.
  *
  * Excel semantics (docs/formula-decisions.md F21, F9; divergences D15, D22):
@@ -11,7 +11,7 @@
  *   goal date. From the start date, not from today, so it never reads a
  *   clock; `monthsBetween` is DATEDIF.
  * - Monthly contribution. `Z14 =IFERROR((F14-J14)/V14, 0)`: the amount
- *   needed over the months, which Workbook keeps as a fraction (88.9047619) and
+ *   needed over the months, which the workbook keeps as a fraction (88.9047619) and
  *   the app rounds up to the cent (F9), so saving it every month reaches the
  *   goal on time.
  * - Where IFERROR shows $0 the engine returns no contribution and says why:
@@ -173,7 +173,7 @@ export interface SavingsFund {
 }
 
 export interface SavingsFunds {
-  /** One per Savings-list category, in the list's order: Workbook's cards (Savings!C4 = START HERE!H7…). */
+  /** One per Savings-list category, in the list's order: the workbook's cards (Savings!C4 = START HERE!H7…). */
   readonly funds: readonly SavingsFund[]
   /**
    * Goals on no fund: never linked, or linked to a category since moved off
@@ -182,7 +182,7 @@ export interface SavingsFunds {
   readonly unlinked: readonly (FundProgress & { readonly goalId: string; readonly plan: SavingsFundPlan })[]
 }
 
-/** Every savings fund's figures on `asOf`: Workbook's Savings tab, one card per fund. */
+/** Every savings fund's figures on `asOf`: the workbook's Savings tab, one card per fund. */
 export function savingsFunds(input: SavingsFundsInput): SavingsFunds {
   const onSavings = input.categories
     .filter((c) => c.kind === 'savings')

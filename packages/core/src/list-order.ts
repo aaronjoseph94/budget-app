@@ -1,7 +1,7 @@
 /**
- * Where a row sits in one of Workbook's lists.
+ * Where a row sits in one of the workbook's lists.
  *
- * `categories.sort_order` is Workbook's row order on START HERE (migration
+ * `categories.sort_order` is the workbook's row order on START HERE (migration
  * 0005), and the app sorts each list by it, then by name. Working out a new
  * position is a small sum, and invariant 1 keeps every sum out of the UI, so
  * the screens ask here and only write what comes back. No money passes
@@ -18,7 +18,7 @@ export interface EndOfListOutput {
 }
 
 /**
- * The position for a row added to the bottom of a list, as Workbook fills the
+ * The position for a row added to the bottom of a list, as the workbook fills the
  * next empty slot. After the highest position rather than at the count,
  * because a list loses rows to other lists and keeps the gaps.
  */

@@ -46,7 +46,7 @@ export interface GoalBarsOutput {
 }
 
 /**
- * Workbook's income chart (Jan chart12): each row's Goal and Actual on one
+ * The workbook's income chart (Jan chart12): each row's Goal and Actual on one
  * scale, the largest of them all, so a $400 goal draws shorter than a
  * $5,700 one. An Actual beyond its Goal runs past its track.
  */

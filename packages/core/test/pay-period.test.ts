@@ -3,7 +3,7 @@ import { isoDate } from '@budget/money-primitives'
 import { payPeriod, payShare, shiftPayPeriod, type PayFrequency } from '../src/pay-period.js'
 
 /**
- * Suite, not External: Workbook's Paycheck tab types its dates and never reads
+ * Suite, not External: the workbook's Paycheck tab types its dates and never reads
  * a pay schedule (D18), so no cached cell holds a period found from one or a
  * share split by frequency. Every value is worked by hand below, from F15.
  */

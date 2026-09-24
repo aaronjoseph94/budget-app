@@ -1,7 +1,7 @@
 /**
- * One Workbook month tab, or its Weekly and Paycheck copies, over any window.
+ * A month tab of the workbook, or its Weekly and Paycheck copies, over any window.
  *
- * Workbook fills each block of a month tab with a SUMIFS by category name over a
+ * The workbook fills each block of a month tab with a SUMIFS by category name over a
  * date window. This does the same by category id, for whatever window it is
  * given, so the Month, the Week and a pay period share one set of rules
  * (docs/workbook-views-plan.md §5.1). Nothing here is stored: the screen asks again on
@@ -18,17 +18,17 @@
  *   summed; a row with no budget still subtracts its Actual.
  * - F6, the savings sign. `Jan!V10 =U10-T10`: Difference is Actual − Goal, the
  *   opposite sign to a spending row's Remaining, and kept that way.
- * - F16, a missing budget or goal. Workbook reads a blank as 0 everywhere. Where
+ * - F16, a missing budget or goal. The workbook reads a blank as 0 everywhere. Where
  *   it has the column the engine does too, as a named branch: a Variable row
  *   with no budget subtracts its whole Actual (V22), and a fund with no goal
  *   shows what was saved (V11), so each column still adds up to its total
- *   (V21, V9). Bills, debts and subscriptions have no Remaining in Workbook; the
+ *   (V21, V9). Bills, debts and subscriptions have no Remaining in the workbook; the
  *   app's is Budget − Actual where a budget is set and null where none is.
  *   Income has Goal and Actual only (M8:P16). A budget total (D21, J21, O21,
  *   T21, O9, T9) adds the budgets set, as SUM skips a blank.
  * - F7, Spent and the ending balance. `Jan!D11 =SUM(C19,I19,N19,S19)`: Bills
  *   + Debts + Subscriptions + Variable expenses, never savings. `Jan!D15
- *   =D9+N5-D11-S5`: the typed start + income − spent − saved. Workbook reads a
+ *   =D9+N5-D11-S5`: the typed start + income − spent − saved. The workbook reads a
  *   blank D9 as $0 and still projects from it; here no start typed is no
  *   ending balance (D17), since one counted from a $0 nobody typed is wrong
  *   by the whole bank balance and looks right.
@@ -62,7 +62,7 @@
  * the rent from October leaves September as it was.
  *
  * Card payments (the Not spending list) are in no block and no total; their
- * net is reported alone so the screen can say what was left out (D9). Workbook
+ * net is reported alone so the screen can say what was left out (D9). The workbook
  * has no counterpart. Nor has `importedThrough`, the latest statement period
  * end, which says how far a month's card rows can be trusted (migration 0007):
  * taken from the statement, not the latest row, so cash typed today cannot
@@ -72,11 +72,11 @@
  * Remaining and Difference by workbook-month part 1, planned against real by
  * part 2, through the plan history a month resolves, and F7's ending balance
  * by part 3. weekSheet, the Week, by workbook-week; paycheckSheet, the Paycheck
- * view, by workbook-paycheck, in the cells F15 B leaves as Workbook has them.
+ * view, by workbook-paycheck, in the cells F15 B leaves as the workbook has them.
  *
- * Signs (D3). The ledger is one signed column, outflows negative. Workbook writes
+ * Signs (D3). The ledger is one signed column, outflows negative. The workbook writes
  * every amount positive and knows its direction from the log it sits in, so
- * an Actual here is shown as Workbook shows it: money spent or saved is the
+ * an Actual here is shown as the workbook shows it: money spent or saved is the
  * negated net of its rows, money received is the net as it stands. A refund
  * nets against its category in the same window and can take it below zero,
  * and that minus sign is kept (D8).
@@ -92,7 +92,7 @@ export interface PeriodCategory {
   readonly id: string
   readonly name: string
   readonly kind: CategoryKind
-  /** Workbook's row order on START HERE (migration 0005). */
+  /** The workbook's row order on START HERE (migration 0005). */
   readonly sortOrder: number
 }
 
@@ -125,7 +125,7 @@ export interface PeriodPlan {
   readonly month?: IsoDate
   /**
    * Already a pay period's share of the month (F15): it counts in the window
-   * whatever its due day, as Workbook's ticked Split does, in place of F8.
+   * whatever its due day, as the workbook's ticked Split does, in place of F8.
    */
   readonly spread?: true
 }
@@ -162,7 +162,7 @@ export interface PeriodRow {
   readonly name: string
   /** Budgeted, or on Income and Savings the Goal. Null is no budget, not $0. */
   readonly budgetCents: Cents | null
-  /** As Workbook shows it: spent, received or saved, positive; below zero after refunds. */
+  /** As the workbook shows it: spent, received or saved, positive; below zero after refunds. */
   readonly actualCents: Cents
   /** What made the Actual: ledger rows, a bill's planned amount (F3), or nothing. */
   readonly basis: 'real' | 'planned' | 'none'
@@ -405,7 +405,7 @@ function remaining(kind: CategoryKind, budget: Cents | null, actual: Cents): Cen
     // The row itself keeps its null budget.
     return budget === null ? subCents(ZERO_CENTS, actual) : subCents(budget, actual)
   }
-  // F16: Workbook has no Remaining on these lists. With no budget there is
+  // F16: the workbook has no Remaining on these lists. With no budget there is
   // nothing to compare, and 0 − Actual would show Rent as overspent.
   if (OWED.has(kind)) return budget === null ? null : subCents(budget, actual)
   return null
@@ -441,7 +441,7 @@ function dueInWindow(day: number, from: IsoDate, to: IsoDate, month: IsoDate | u
 }
 
 /**
- * One Workbook month tab: periodSheet over the calendar month holding `asOf`,
+ * One of the workbook's month tabs: periodSheet over the calendar month holding `asOf`,
  * with the budgets and goals (D12) and the monthly amounts (D13) in effect
  * that month.
  */
@@ -497,7 +497,7 @@ export interface WeekSheet extends PeriodSheet {
 }
 
 /**
- * Workbook's Weekly Budget: periodSheet over the Monday-to-Sunday week holding
+ * The workbook's Weekly Budget: periodSheet over the Monday-to-Sunday week holding
  * `asOf` (D14), not a typed start, so weeks can be stepped through. A bill's
  * planned amount counts only on its due day (F8), at the amount in effect in
  * the month that day is in (D13), so a week across a month end is given
@@ -533,7 +533,7 @@ export interface PaycheckSheet extends PeriodSheet {
 }
 
 /**
- * Workbook's Paycheck Budget under F15 B (D18): periodSheet over the pay period
+ * The workbook's Paycheck Budget under F15 B (D18): periodSheet over the pay period
  * holding `asOf`, found from the schedule rather than typed. Each monthly
  * amount and each budget and goal in effect in the payday's month (as
  * Paycheck!E50 reads $D$6's) counts as its share of a period, × 12 ÷ paydays

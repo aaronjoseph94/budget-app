@@ -4,7 +4,7 @@ import { periodSheet, type PeriodCategory, type PeriodEntry, type PeriodPlan } f
 import { goalBars, partShares, shareOf, stackedColumns } from '../src/shares.js'
 
 /**
- * Suite tests, worked by hand. Workbook's charts print no number and the
+ * Suite tests, worked by hand. The workbook's charts print no number and the
  * sample's doughnut is empty (F17), so there is no cached share to replay.
  */
 

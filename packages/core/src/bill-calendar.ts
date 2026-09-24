@@ -1,8 +1,8 @@
 /**
- * Workbook's Bill Calendar: one month, Sunday first, with what is due each day,
+ * The workbook's Bill Calendar: one month, Sunday first, with what is due each day,
  * who is paid that day, and a total for each week and for the month.
  *
- * Workbook types a month (Bill Calendar!G3) and lays its days out under the
+ * The workbook types a month (Bill Calendar!G3) and lays its days out under the
  * weekday headings B6:N6, "S U N D A Y" first: day 1 under G3's weekday
  * (H8), each day one to the right of the one before (J8), a new week band
  * every seven (B14), and nothing past the month's last day (L32 is 31 in
@@ -18,24 +18,24 @@
  * - D5, planned against real. A bill, debt or subscription with any real
  *   row in the month shows each row on its own date, and its monthly amount
  *   is not shown that month (owner's decision 3). With none, the amount in
- *   effect that month (D13) shows on its due day. Workbook shows both.
+ *   effect that month (D13) shows on its due day. The workbook shows both.
  * - A monthly amount with no day paid is on no day and in no total, as a
  *   blank Bills!B7 matches no day; it is returned as `undated`, so the
  *   screen can say so.
  * - D6 and D21: a due day the month lacks shows on its last day, and so
  *   does a monthly payday (EDATE's clamp, as payPeriod counts one).
- * - D19 and D20: every day reads the same bills (Workbook's B9 reads a wrongly
- *   sized range), and holds all of them and every payday (Workbook's day holds
+ * - D19 and D20: every day reads the same bills (the workbook's B9 reads a wrongly
+ *   sized range), and holds all of them and every payday (the workbook's day holds
  *   five bills and one payday name).
  * - Paydays: an Income category's schedule, from its first pay date on
  *   (`C <= date`), every 7 or 14 days, or monthly on the first pay date's
  *   day, named and never with an amount. A schedule left on a category
  *   moved off Income pays nobody (N27).
  * - Q8, a week's total, adds its days; J3, the month's, adds its weeks. The
- *   calendar has as many weeks as the month touches, four to six; Workbook
+ *   calendar has as many weeks as the month touches, four to six; the workbook
  *   always draws six bands and leaves the spare ones blank.
  *
- * Signs (D3): a real row is shown as Workbook shows a payment, positive when
+ * Signs (D3): a real row is shown as the workbook shows a payment, positive when
  * money went out, and a refund keeps its minus sign (D8).
  */
 import { type Cents, type IsoDate, ZERO_CENTS, addMonths, cents, daysBetween, sumCents } from '@budget/money-primitives'
@@ -104,7 +104,7 @@ export interface BillCalendar {
   readonly undated: readonly CalendarBill[]
 }
 
-/** Workbook's own first Sunday: Bill Calendar!B14 is 5 January 2025. */
+/** The workbook's own first Sunday: Bill Calendar!B14 is 5 January 2025. */
 const A_SUNDAY = '2025-01-05' as IsoDate
 const LIST_ORDER: Readonly<Record<OwedKind, number>> = { bill: 0, debt: 1, subscription: 2 }
 
@@ -116,9 +116,9 @@ export function billCalendar(input: BillCalendarInput): BillCalendar {
   const { start, end } = monthBounds(input.month)
   const last = Number(end.slice(8))
   const known = new Map(input.categories.map((c) => [c.id, c]))
-  // Workbook's stack within a day (H9): Bills, then Debts, then Subscriptions,
+  // The workbook's stack within a day (H9): Bills, then Debts, then Subscriptions,
   // each in Setup's order; paydays in Income's. A real charge sits in its
-  // bill's place, where Workbook puts logged payments after every plan (F20).
+  // bill's place, where the workbook puts logged payments after every plan (F20).
   const inOrder = [...input.categories].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
   const owed = inOrder
     .flatMap((c) => (isOwed(c.kind) ? [{ ...c, kind: c.kind }] : []))

@@ -6,10 +6,10 @@
  *
  *   - H9 `=INDEX(J26:J496, MATCH(EOMONTH(TODAY(),-1)+1, C26:C496))`: the
  *     closing balance of the schedule row for the month `asOf` falls in, so
- *     that month's payment counts as made from its first day. Workbook reads
+ *     that month's payment counts as made from its first day. The workbook reads
  *     today; this reads `asOf`, and never a clock.
  *   - I495 `=J18-H9` ("Balance Paid") is the starting balance less that
- *     balance, net of interest. In Workbook it goes below zero for a debt
+ *     balance, net of interest. In the workbook it goes below zero for a debt
  *     whose interest outruns its payment; amortize() refuses such a debt,
  *     so here it never does. I496 `=H9` ("Remaining Balance") is the
  *     balance itself.
@@ -19,8 +19,8 @@
  *   - D27 `=SUM(J26, O26, …)` is what a month started from: the prior
  *     row's closing balances. E26 `=SUM(I26 …)+SUM(H26 …)` is the month's
  *     payments with extras. The final month's payment includes its
- *     interest (D24), where Workbook's H column shows the prior balance.
- *   - Before a debt's start month MATCH finds no row and Workbook shows #N/A;
+ *     interest (D24), where the workbook's H column shows the prior balance.
+ *   - Before a debt's start month MATCH finds no row and the workbook shows #N/A;
  *     here the debt stands at its starting balance, nothing paid. After its
  *     last payment it stands at 0.
  */
