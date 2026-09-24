@@ -1717,3 +1717,39 @@ the plan's §9 already calls for a 12px gutter below 360px.
 **To settle:** in A26's mobile sweep, take the table's outer padding to
 12px below 360px and let the Category column wrap sooner, then check the
 Month, Week and Paycheck at 320px in both of the Month's column modes.
+
+---
+
+## N67 — At 320px the Debts summary breaks its total mid-number
+
+**Seen:** 2026-09-24, checking A04's line on Debts at 320px in the preview.
+
+"Current debt total" sits in a two-column grid beside the ring, and a
+five-figure total such as $19,993.36 wraps inside the number ("$19,9" then
+"93.36"). The page does not scroll sideways. The new "End of August" line
+spans the card and is not affected.
+
+**Why not fixed here:** it is the summary's grid, drawn before this slice.
+
+**To settle:** in A26's mobile sweep, keep figures whole (`whitespace-nowrap`
+on the figure, or the ring under the grid below 360px) and check Debts at
+320px with a six-figure total.
+
+---
+
+## N68 — The Month draws its comparison line with its own copy
+
+**Seen:** 2026-09-24, building A04.
+
+A04 added `CompareLine` for the Week, Paycheck, Year and Savings, and
+`useEarlier` for their reads. The Month's summary still has its own
+`LastMonth` and its own read of last month, written in A03 before either
+existed; they say the same things in the same words.
+
+**Why not fixed here:** the Month's strip names "By 24 Sep" rather than a
+date range, and its tests pin that wording; moving it is a change to the
+Month, not a comparison on these five screens.
+
+**To settle:** when A27 reviews the Month, draw its strip with
+`CompareLine` (a `dates` that writes "By 24 Sep") and read through
+`useEarlier`, keeping `month-compare.test.tsx` green unchanged.

@@ -645,6 +645,13 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **Screens:** Week against last week to the same weekday; Paycheck against the previous period by day offset; Year against the twelve months before, and "vs last year" on its glance cards, only inside the records; Savings, saved this month against last; Debts, the schedule's balance against a month ago.
 - **Tests:** one screen test each, including a Year whose earlier window lies before the records (no comparison).
 - **Acceptance:** all figures from core; each screen's earlier read failing hides only its comparison.
+- **Changed while building (2026-09-24).** Each decided by the engineer under the owner's 2026-09-24 instruction to proceed without questions.
+  - **Core did change,** although the slice listed no engine work: "all figures from core" needed `comparisonWindow` and `periodComparison` to take a week, a pay period and a Year, and a new `debtBalanceChange` for Debts. F25 records each rule before its code. `periodComparison` no longer takes budgets, which it never read.
+  - **A Year still running is set against the same days a year earlier,** not the whole twelve months before, as the month is (F25). The owner's records start on 8 August 2026, so today the Year's card says what to import and shows no figure.
+  - **"vs last year" is one glance card** with Income, Spent and Saved, rather than a line on each card: the other cards (biggest expense, top 3, best savings month, balances) count the Year's whole months, and a same-days figure beside each would read as their change.
+  - **Savings reads last month and this month to today in one read,** beside the funds, and shows a "Saved this month" card as well as a line on each fund.
+  - **Debts has no earlier read:** a month ago comes from the same schedule, so "an earlier read failing" cannot happen there; a debt never paid off has no schedule and no line.
+  - **Help:** as in A03, no Help section exists yet; A06's "Comparisons with last month" article covers these screens.
 
 ### A05: Navigation for an AI-first app, and the Coach's flight card
 
