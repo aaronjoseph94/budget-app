@@ -7,7 +7,7 @@
  * renders.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { orderGoals } from '@budget/core'
+import { orderGoals, type PlacedGoal } from '@budget/core'
 import { US_AMOUNT_FORMAT, parseAmountToCents } from '@budget/statement-parsers'
 import {
   ensureAccount,
@@ -145,10 +145,14 @@ export function AppDataProvider({
   )
 }
 
+/** A goal as core places it (F45), carrying its row so what comes back can be drawn. */
+export function placedGoal(row: ListedGoalRow): PlacedGoal & { readonly row: ListedGoalRow } {
+  return { id: row.id, sortOrder: row.sort_order, status: row.status, createdAt: row.created_at, row }
+}
+
 /** The goals as core orders them (F45), carried whole so every screen reads the same rows. */
 function goalsInOrder(rows: readonly ListedGoalRow[]): { readonly goals: readonly ListedGoalRow[]; readonly main: ListedGoalRow | null } {
-  const placed = rows.map((row) => ({ id: row.id, sortOrder: row.sort_order, status: row.status, createdAt: row.created_at, row }))
-  const { active, paused, reached, main } = orderGoals({ goals: placed })
+  const { active, paused, reached, main } = orderGoals({ goals: rows.map(placedGoal) })
   return { goals: [...active, ...paused, ...reached].map((g) => g.row), main: main === null ? null : main.row }
 }
 

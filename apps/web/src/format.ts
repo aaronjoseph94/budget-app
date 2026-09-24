@@ -463,6 +463,26 @@ export function describeFundFailure(action: FundAction, error: WriteError | null
     : `Your savings funds could not be read, so they are not shown. Try again. (code ${code})`
 }
 
+/**
+ * Why a goal could not be moved, made main, paused, resumed or marked
+ * reached (0015). Before 0015 is pasted a write naming its columns is
+ * PGRST204 (42703 from Postgres); the screen offers none of these then, so
+ * it was pasted and taken out, or another device is ahead. 23514 is 0015's
+ * CHECK on the reached day, which the app always writes with the state, so
+ * the goal changed elsewhere first.
+ */
+const GOAL_FAILURES: Readonly<Record<string, string>> = {
+  PGRST204: 'Choosing your main goal, moving, pausing and reaching goals need a one-time update. Nothing was saved.',
+  '42703': 'Choosing your main goal, moving, pausing and reaching goals need a one-time update. Nothing was saved.',
+  '23514': 'That goal changed on another device. It now shows as it is stored. Nothing was saved.',
+}
+
+export function describeGoalFailure(error: WriteError | null | undefined): string {
+  const code = typeof error?.code === 'string' ? error.code : ''
+  const body = GOAL_FAILURES[code]
+  return body === undefined ? describeWriteFailure(error) : `${body} (code ${code})`
+}
+
 /** What the Debts screen was doing when a request failed. */
 export type DebtAction = 'read' | 'save' | 'extra'
 

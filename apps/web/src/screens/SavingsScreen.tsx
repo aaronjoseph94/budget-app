@@ -16,9 +16,10 @@ import { CompareLine } from './CompareLine.js'
 import { useAppData } from '../app-data.js'
 import { useFunds } from '../funds.js'
 import { linkFund, type FundRow, type ListedGoalRow } from '../ledger.js'
-import { navigate } from '../nav.js'
+import { hashOf, navigate } from '../nav.js'
 import { formatBasisPoints, formatCents, formatIsoDate, todayIso } from '../format.js'
 import { FundEditor } from './FundEditor.js'
+import { GoalActions } from './GoalActions.js'
 import { Alert, Badge } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Figure } from '../components/ui/type.js'
@@ -38,7 +39,7 @@ import { HelpButton } from '../help/HelpButton.js'
  */
 export function SavingsScreen() {
   const state = useFunds()
-  const { supabase, refresh, categories, goals, mainGoal } = useAppData()
+  const { supabase, refresh, categories, goals, mainGoal, goalsOrdered } = useAppData()
   const comparison = useSavedThisMonth(categories)
   const [editing, setEditing] = useState<string | null>(null)
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null)
@@ -64,10 +65,12 @@ export function SavingsScreen() {
     const row = ready?.goals.find((g) => g.id === goal.id)
     const fund = ready?.funds.funds.find((f) => f.figures?.goalId === goal.id)
     const loose = ready?.funds.unlinked.find((u) => u.goalId === goal.id)
+    const edit = fund === undefined ? null : () => setEditing(fund.categoryId)
+    const actions = <GoalActions goal={goal} onEdit={edit} onNotice={setNotice} />
     if (row !== undefined && fund !== undefined) {
-      return <FundCard fund={fund} goal={row} comparison={comparison} badge={badge(goal)} onEdit={() => setEditing(fund.categoryId)} />
+      return <FundCard fund={fund} goal={row} comparison={comparison} badge={badge(goal)} actions={actions} onEdit={() => setEditing(fund.categoryId)} />
     }
-    if (row !== undefined && loose !== undefined) return <LooseGoalCard goal={row} figures={loose} badge={badge(goal)} />
+    if (row !== undefined && loose !== undefined) return <LooseGoalCard goal={row} figures={loose} badge={badge(goal)} actions={actions} />
     // Saved a moment ago, and the funds not read again yet.
     return <p className="rounded-xl border bg-card p-4 text-sm shadow-sm">{goal.name}: loading…</p>
   }
@@ -112,6 +115,14 @@ export function SavingsScreen() {
       ) : null}
       {ready === null ? null : (
         <>
+          {goalsOrdered || goals.length === 0 ? null : (
+            <p className="text-sm">
+              Choosing your main goal, moving goals, and pausing or finishing one need a one-time update.{' '}
+              <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+                See One-time updates
+              </a>
+            </p>
+          )}
           {active.length === 0 ? null : (
             <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {active.map((goal) => (
@@ -171,6 +182,7 @@ function FundCard({
   goal,
   comparison,
   badge = null,
+  actions = null,
   onEdit,
   children = null,
 }: {
@@ -178,6 +190,8 @@ function FundCard({
   goal: FundRow | null
   comparison: PeriodComparison | 'failed' | null
   badge?: ReactNode
+  /** A goal's buttons; with none, Edit goal alone. */
+  actions?: ReactNode
   onEdit: () => void
   children?: ReactNode
 }) {
@@ -210,9 +224,11 @@ function FundCard({
               word="saved"
             />
           )}
-          <Button variant="outline" size="sm" onClick={onEdit}>
-            Edit goal
-          </Button>
+          {actions ?? (
+            <Button variant="outline" size="sm" onClick={onEdit}>
+              Edit goal
+            </Button>
+          )}
         </div>
       )}
     </section>
@@ -236,13 +252,14 @@ function Title({ name, badge }: { name: string; badge: ReactNode }) {
  * transfer counts until it is a fund's goal. Labelled apart from a fund of
  * the same name, which can take it.
  */
-function LooseGoalCard({ goal, figures, badge }: { goal: FundRow; figures: FundFigures; badge: ReactNode }) {
+function LooseGoalCard({ goal, figures, badge, actions }: { goal: FundRow; figures: FundFigures; badge: ReactNode; actions: ReactNode }) {
   return (
     <section aria-label={`${goal.name}, on no fund`} className={CARD}>
       <Title name={goal.name} badge={badge} />
       <div className="space-y-3 px-4 py-4">
         <p className="text-sm">On no savings fund yet, so money moved to savings does not count toward it.</p>
         <GoalFigures figures={figures} goal={goal} />
+        {actions}
       </div>
     </section>
   )

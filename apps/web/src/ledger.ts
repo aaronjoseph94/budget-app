@@ -20,6 +20,7 @@ import {
   describeBudgetFailure,
   describeDebtFailure,
   describeFundFailure,
+  describeGoalFailure,
   describeMoveFailure,
   describePlanFailure,
   describeScheduleFailure,
@@ -1076,6 +1077,22 @@ export async function listGoals(supabase: SupabaseClient): Promise<GoalsRead> {
   return {
     goals: rows.map((g) => goalNumbers({ ...g, sort_order: 0, status: 'active', reached_on: null })),
     ordered: false,
+  }
+}
+
+/**
+ * Write goals' places, as core's moveGoal worked them out (0015). One goal
+ * at a time, as Setup writes a list's order: a failure part-way leaves a
+ * valid order that is simply not the one asked for, and the screen reloads
+ * to show what is stored.
+ */
+export async function setGoalPlaces(
+  supabase: SupabaseClient,
+  changes: readonly { readonly id: string; readonly sortOrder: number }[],
+): Promise<void> {
+  for (const change of changes) {
+    const { error } = await supabase.from('savings_goals').update({ sort_order: change.sortOrder }).eq('id', change.id)
+    if (error !== null) throw new Error(describeGoalFailure(error))
   }
 }
 

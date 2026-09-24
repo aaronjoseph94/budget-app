@@ -1,4 +1,4 @@
-import { cleanup, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SavingsScreen } from '../src/screens/SavingsScreen.js'
 import type { Category } from '../src/ledger.js'
@@ -86,5 +86,48 @@ describe('Savings, with more than one goal (G1)', () => {
     expect(flight.textContent).toContain('$2,500.00 saved of $30,000.00')
     expect(screen.queryByText('Main goal')).toBeNull()
     expect(screen.queryByText(/^Reached and paused/)).toBeNull()
+  })
+})
+
+describe('Savings, choosing the main goal and the order (G1)', () => {
+  const places = (fake: FakeSupabase) => fake.tables.savings_goals.map((g) => [g.id, g.sort_order])
+
+  it('makes the last goal the main one, putting it first and the others after it', async () => {
+    const fake = seeded()
+    fake.tables.savings_goals.push(goal('g3', 'House', 'house', { sort_order: 2 }))
+    renderScreen(<SavingsScreen />, fake)
+    fireEvent.click(within(await screen.findByRole('region', { name: 'House' })).getByRole('button', { name: 'Make main goal' }))
+    expect(await screen.findByText('House is now your main goal. The Coach and the Week show it.')).toBeTruthy()
+    expect(places(fake)).toEqual([['g1', 2], ['g2', 1], ['g3', 0]])
+    await waitFor(() => expect(regions().slice(0, 3)).toEqual(['House', 'Travel', 'Flight training']))
+    expect(within(screen.getByRole('region', { name: 'House' })).getByText('Main goal')).toBeTruthy()
+    expect(within(screen.getByRole('region', { name: 'House' })).queryByRole('button', { name: 'Make main goal' })).toBeNull()
+  })
+
+  it('moves a goal down among the active goals, and never past either end', async () => {
+    const fake = seeded()
+    renderScreen(<SavingsScreen />, fake)
+    const button = async (name: string) => within(await screen.findByRole('region', { name: 'Travel' })).getByRole<HTMLButtonElement>('button', { name })
+    expect((await button('Move Travel up')).disabled).toBe(true)
+    fireEvent.click(await button('Move Travel down'))
+    await waitFor(() => expect(regions().slice(0, 2)).toEqual(['Flight training', 'Travel']))
+    expect(places(fake)).toEqual([['g1', 0], ['g2', 1]])
+    await waitFor(async () => expect((await button('Move Travel down')).disabled).toBe(true))
+  })
+
+  // Fail soft: 0015's columns are not there (42703), so the goals come in the
+  // order they were made, the oldest leading, and only Edit is offered.
+  it('before 0015, shows the goals as before with Edit alone, and says once why the rest wait', async () => {
+    const fake = seeded()
+    fake.server.lacks = { savings_goals: ['sort_order', 'status', 'reached_on'] }
+    renderScreen(<SavingsScreen />, fake)
+    const flight = await screen.findByRole('region', { name: 'Flight training' })
+    expect(regions()).toEqual(['Flight training', 'Travel', 'House', 'Car'])
+    expect(within(flight).getByText('Main goal')).toBeTruthy()
+    expect(screen.getByText(/pausing or finishing one need a one-time update/)).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'See One-time updates' }).getAttribute('href')).toBe('#/help/updates')
+    expect(screen.queryByRole('button', { name: 'Make main goal' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Move / })).toBeNull()
+    expect(within(flight).getByRole('button', { name: 'Edit goal' })).toBeTruthy()
   })
 })
