@@ -80,7 +80,10 @@ data layer would produce a task list rather than a boundary.
 
 **`llm-providers` is one file, not a package** (2026-09-24). The owner deploys
 it by pasting it into the Supabase dashboard, which takes one file, so it
-imports nothing but zod and cannot import `schema-contracts`. Contract tests
+imports nothing but zod and cannot import `schema-contracts`. The
+`supabase/functions` folder is a private workspace package,
+`@budget/functions`, only so that the gates can compile and test each file;
+nothing imports it. Contract tests
 hold its request and reply schemas to `schema-contracts` instead, and
 `depcruise` checks it imports nothing else. It is the only code that holds a
 provider key, so it is under every gate like a package (ADR 0004).

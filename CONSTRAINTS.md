@@ -54,12 +54,23 @@ whether a commit is clean.
 | RLS coverage | `pg_tables WHERE NOT rowsecurity` returns 0; every public table has an all-commands `user_id = auth.uid()` policy (`pg_policies`); policies isolate | `scripts/verify-migrations.sh` | CI |
 | Dependencies | Nothing high or above | `pnpm audit --audit-level high` | CI |
 | Web first load | The JavaScript a phone loads before the first screen (the entry and the chunks it preloads) ≤200 KB gzipped | `node scripts/check-bundle.mjs` | CI |
+| Edge Functions | Every `supabase/functions/*/index.ts` type-checks; imports zod alone, so it can be pasted as one file (its tests: the function, vitest, Node and `packages/schema`); uses `console` only inside its one `log(code, counts)` helper; and is tested to ≥80% lines and functions, ≥75% branches | `tsc --build` + `depcruise` + `eslint` + `vitest run --coverage` | every edit (coverage: CI) |
 | Brand | The workbook vendor's name is in no tracked file's text or path, in any letter case | `git grep -niI -e "w[i]nky"` + `git ls-files` | every edit |
 
 The web first-load row replaced the pending "≤700 KB gzipped" entry-bundle
 row on 2026-09-24, tighter: the entry had grown from 192.83 to 214.62 KB
 gzipped with nothing firing (PERF-8), and splitting the screens out brought
 it to 180.7. Verified by lowering the budget below that and observing FAIL.
+
+The Edge Functions row was added on 2026-09-24. `read-receipt` holds a
+provider key and no gate had ever compiled, linted or run it; the folder is
+now a private workspace package, `@budget/functions`, so every gate reaches
+it, while each function still imports zod by Deno's pinned URL
+(`npm:zod@4.6.5`), aliased to the package's own zod for `tsc`, vitest and
+`depcruise`. Each part was seen `RED` once: a type error in the function
+(`tsc`), `console.error` outside the log helper (`eslint`), the function
+importing `packages/schema` and its test importing the engine (`depcruise`),
+and its tests moved away (coverage at 0% against 80).
 
 The brand row was added on 2026-09-24, when the owner asked for the
 workbook vendor's name to go from everything in the repository. It checks
