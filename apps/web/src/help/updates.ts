@@ -30,7 +30,7 @@ export interface Update {
 
 const NIL = '00000000-0000-0000-0000-000000000000'
 
-/** 0005 to 0014, each with what it adds; 0015 on join as their slices land. */
+/** 0005 to 0015, each with what it adds; 0016 on join as their slices land. */
 export const UPDATES: readonly Update[] = [
   { file: '0005_category_kinds.sql', adds: 'Which list each category is on', checks: [{ kind: 'column', table: 'categories', column: 'kind' }] },
   {
@@ -56,6 +56,11 @@ export const UPDATES: readonly Update[] = [
       { kind: 'table', table: 'debts' },
       { kind: 'table', table: 'debt_extra_payments' },
     ],
+  },
+  {
+    file: '0015_savings_goals_order.sql',
+    adds: 'Your main savings goal, their order, and pausing or finishing one',
+    checks: [{ kind: 'column', table: 'savings_goals', column: 'sort_order' }],
   },
 ]
 

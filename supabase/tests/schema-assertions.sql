@@ -1467,6 +1467,89 @@ end $$;
 
 reset role;
 
+-- ---------------------------------------------------------------------------
+-- 0015: a goal's place, and whether it is active, paused or reached
+-- ---------------------------------------------------------------------------
+set role app_user;
+set request.jwt.claim.sub = '33333333-3333-4333-8333-333333333333';
+
+-- A goal already stored comes out active at position 0, as every goal
+-- already there does, so the order is when each was made and the main goal
+-- is the one the app showed before.
+do $$
+declare
+  legacy record;
+begin
+  select sort_order, status, reached_on into legacy
+    from public.savings_goals where id = 'dddddddd-0000-4000-8000-000000000300';
+  if legacy is null or legacy.sort_order <> 0 or legacy.status <> 'active' or legacy.reached_on is not null then
+    raise exception 'BACKFILL: a goal from before 0015 came out as %', legacy;
+  end if;
+end $$;
+
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+
+do $$
+declare
+  u    uuid := '11111111-1111-4111-8111-111111111111';
+  them uuid := '22222222-2222-4222-8222-222222222222';
+  goal uuid;
+  n    int;
+begin
+  insert into public.savings_goals (user_id, name, target_cents)
+    values (u, 'House', 4000000) returning id into goal;
+
+  -- Reached says when; nothing else carries a reached day.
+  begin
+    update public.savings_goals set status = 'reached' where id = goal;
+    raise exception 'NOT REFUSED: a goal marked reached on no day';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.savings_goals set reached_on = '2026-09-24' where id = goal;
+    raise exception 'NOT REFUSED: an active goal with a reached day';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.savings_goals set status = 'paused', reached_on = '2026-09-24' where id = goal;
+    raise exception 'NOT REFUSED: a paused goal with a reached day';
+  exception when check_violation then null;
+  end;
+
+  -- Only the three states the app knows, and always a place.
+  begin
+    update public.savings_goals set status = 'finished' where id = goal;
+    raise exception 'NOT REFUSED: a status that is not active, paused or reached';
+  exception when invalid_text_representation then null;
+  end;
+  begin
+    update public.savings_goals set sort_order = null where id = goal;
+    raise exception 'NOT REFUSED: a goal with no place';
+  exception when not_null_violation then null;
+  end;
+
+  -- What the app writes: reached with its day, resumed at the end with the
+  -- day cleared, then paused.
+  update public.savings_goals set status = 'reached', reached_on = '2026-09-24' where id = goal;
+  update public.savings_goals set status = 'active', reached_on = null, sort_order = 2 where id = goal;
+  update public.savings_goals set status = 'paused' where id = goal;
+
+  -- 0004's policy covers the new columns: another user moves nothing.
+  perform set_config('request.jwt.claim.sub', them::text, false);
+  update public.savings_goals set status = 'active', sort_order = 0 where id = goal;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'RLS LEAK: another user changed % goals', n; end if;
+  perform set_config('request.jwt.claim.sub', u::text, false);
+  if (select status from public.savings_goals where id = goal) <> 'paused' then
+    raise exception 'RLS LEAK: another user''s write reached a goal';
+  end if;
+
+  delete from public.savings_goals where id = goal;
+  raise notice 'a goal has a place, and is active, paused, or reached on a day';
+end $$;
+
+reset role;
+
 -- The anonymous role — anyone holding the published key — cannot call any of
 -- these at all. Every SECURITY DEFINER function the browser calls is listed:
 -- one left off can lose its revoke with this check still green, as 0004's

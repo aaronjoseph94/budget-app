@@ -29,6 +29,7 @@ refused rather than applied twice.
 | `0012_dismiss_unreadable_lines.sql` | Dismissing a statement line the app could not read. Needed by Review as soon as this branch is merged |
 | `0013_savings_funds.sql` | Linking a savings goal to one of your Savings-list funds, with the date saving started and the date the amount you typed was true, so transfers you record after it can add to it. Your existing goal keeps working as it is. Needed by the Savings screen, and by the Year's savings chart |
 | `0014_debts.sql` | Your debts for the Debt Calculator: each one's starting balance, minimum payment, interest rate and start month, and any extra payments by month. Needed by the Debts screen, and by the Year's debt chart |
+| `0015_savings_goals_order.sql` | Which of your savings goals is the main one (the one the Coach and the Week show), the order Savings lists them in, and pausing a goal or marking it reached. Your goals stay as they are: the oldest leads until you choose another. Without it, goals are added, edited and shown as before, and only those choices wait |
 
 **Paste them in number order, all of them, before `main-tnlcto` is merged
 into `main`.** `main` deploys itself, and the app on this branch already

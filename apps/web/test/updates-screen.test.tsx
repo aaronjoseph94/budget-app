@@ -30,7 +30,7 @@ describe('One-time updates', () => {
   it('says all done, with a ✓ on each, when everything is in', async () => {
     await open(createFakeSupabase(), 'All done')
     expect(row('0005_category_kinds.sql')).toBe('✓In: 0005_category_kinds.sqlWhich list each category is on')
-    expect(screen.getAllByText('✓')).toHaveLength(10)
+    expect(screen.getAllByText('✓')).toHaveLength(11)
     expect(screen.queryByText(/^Next: paste/)).toBeNull()
     expect(screen.getByRole('button', { name: 'Check again' })).toBeTruthy()
   })
@@ -38,7 +38,7 @@ describe('One-time updates', () => {
   it('names a table not there (PGRST205) as the next file to paste, with where to find it', async () => {
     const fake = createFakeSupabase()
     fake.fail('category_budgets', 'PGRST205')
-    await open(fake, '9 of 10 in')
+    await open(fake, '10 of 11 in')
     expect(row('0008_category_budgets.sql')).toContain('✗Not in yet: ')
     expect(screen.getByText(/^Next: paste/).textContent).toBe(
       'Next: paste 0008_category_budgets.sql, then each file after it in number order, one at a time.',
@@ -51,7 +51,7 @@ describe('One-time updates', () => {
   it('reads 42P01 from an older server as a table not there', async () => {
     const fake = createFakeSupabase()
     fake.fail('debts', '42P01')
-    await open(fake, '9 of 10 in')
+    await open(fake, '10 of 11 in')
     expect(row('0014_debts.sql')).toContain('Not in yet')
     expect(screen.getByText(/^Next: paste/).textContent).toContain('0014_debts.sql')
   })
@@ -59,7 +59,7 @@ describe('One-time updates', () => {
   it('reads PGRST202 as a function not there', async () => {
     const fake = createFakeSupabase()
     delete fake.rpcReplies['dismiss_unreadable_line']
-    await open(fake, '9 of 10 in')
+    await open(fake, '10 of 11 in')
     expect(row('0012_dismiss_unreadable_lines.sql')).toContain('Not in yet')
     expect(screen.getByText(/^Next: paste/).textContent).toContain('0012_dismiss_unreadable_lines.sql')
   })
@@ -67,7 +67,7 @@ describe('One-time updates', () => {
   it('still opens when 0005 is missing and the app cannot load, and starts at 0003', async () => {
     const fake = createFakeSupabase()
     fake.server.refuse = (table, query) => (table === 'categories' && query.get('select')?.includes('kind') === true ? '42703' : null)
-    await open(fake, '9 of 10 in')
+    await open(fake, '10 of 11 in')
     expect(screen.getByText('Could not load your data')).toBeTruthy()
     // Already here, so the alert does not send the owner here again.
     expect(screen.queryByRole('link', { name: 'Check the one-time updates' })).toBeNull()
@@ -78,7 +78,7 @@ describe('One-time updates', () => {
   it('says it could not check, and to check again, rather than calling anything missing', async () => {
     const fake = createFakeSupabase()
     fake.fail('month_balances', 'PGRST301')
-    await open(fake, '9 of 10 in')
+    await open(fake, '10 of 11 in')
     expect(row('0010_month_balances.sql')).toContain('?Could not check: ')
     expect(screen.getByText('Some could not be checked. Check your connection, then press Check again.')).toBeTruthy()
   })
@@ -86,7 +86,7 @@ describe('One-time updates', () => {
   it('checks again when asked, and shows what is in now', async () => {
     const fake = createFakeSupabase()
     fake.fail('pay_schedules', 'PGRST205')
-    await open(fake, '9 of 10 in')
+    await open(fake, '10 of 11 in')
     fake.heal('pay_schedules')
     fireEvent.click(screen.getByRole('button', { name: 'Check again' }))
     expect(await screen.findByRole('heading', { level: 2, name: 'All done' })).toBeTruthy()

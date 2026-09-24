@@ -9,7 +9,7 @@ describe('checking the one-time updates', () => {
   it('finds each one in when everything it adds answers', async () => {
     const fake = createFakeSupabase()
     const checked = await checkUpdates(fake.client)
-    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014'])
+    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015'])
     expect(missing(checked)).toEqual([])
     expect(nextStep(checked)).toEqual({ kind: 'done' })
   })
@@ -38,6 +38,16 @@ describe('checking the one-time updates', () => {
     const checked = await checkUpdates(fake.client)
     expect(stateOf(checked, '0005')).toBe('missing')
     expect(nextStep(checked)).toEqual({ kind: 'paste', file: FIRST_FILE, fromStart: true })
+  })
+
+  // G1's update adds columns to a table that is already there, so it is
+  // proven by reading one of them, as 0013's is.
+  it('reads 42703 on a goal’s place as 0015 not in yet, after everything before it', async () => {
+    const fake = createFakeSupabase()
+    fake.server.refuse = (table, query) => (table === 'savings_goals' && query.get('select') === 'sort_order' ? '42703' : null)
+    const checked = await checkUpdates(fake.client)
+    expect(missing(checked)).toEqual([['0015', 'missing']])
+    expect(nextStep(checked)).toEqual({ kind: 'paste', file: '0015_savings_goals_order.sql', fromStart: false })
   })
 
   it('says it could not check, never "missing", when the answer is something else', async () => {
