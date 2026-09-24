@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
-import { isoDate, monthBounds, shiftMonth, yearSheet, type YearGroups, type YearSheet } from '@budget/core'
+import {
+  isoDate,
+  monthBounds,
+  periodComparison,
+  shiftMonth,
+  yearSheet,
+  type PeriodComparison,
+  type YearGroups,
+  type YearSheet,
+} from '@budget/core'
 import { useAppData } from '../app-data.js'
+import { useEarlier } from '../earlier.js'
 import {
   getMonthBalance,
   listBudgetHistory,
@@ -83,6 +93,28 @@ export function YearScreen({ start: address }: { start: string | null }) {
   }, [here, categories, start, today])
   const thisMonth = monthBounds(isoDate(today)).start
 
+  // The twelve months before, for "vs last year" (F25, D26). Read on its
+  // own, so if it fails only the comparison goes.
+  const earlier = useEarlier({ from: shiftMonth(start, -12), to: monthBounds(shiftMonth(start, -1)).end })
+  const comparison = useMemo((): PeriodComparison | 'failed' | null => {
+    if (here === null || earlier === null) return null
+    if (earlier === 'failed') return 'failed'
+    try {
+      return periodComparison({
+        period: 'year',
+        startMonth: start,
+        asOf: isoDate(today),
+        historyStart: earlier.historyStart === null ? null : isoDate(earlier.historyStart),
+        categories: categoriesForCore(categories),
+        planHistory: plansForCore(here.plans),
+        entries: entriesForCore([...here.rows, ...earlier.rows]),
+      })
+    } catch {
+      // As the Year's own sheet: a row naming a category that did not load.
+      return 'failed'
+    }
+  }, [here, earlier, categories, start, today])
+
   return (
     <div className="space-y-4">
       <header className="-mx-4 bg-year-header px-4 py-4 text-year-header-ink md:mx-0 md:rounded-xl">
@@ -122,7 +154,7 @@ export function YearScreen({ start: address }: { start: string | null }) {
 
       {sheet !== null && typeof sheet !== 'string' ? (
         <>
-          <YearGlance sheet={sheet} wide={wide} />
+          <YearGlance sheet={sheet} wide={wide} comparison={comparison} />
           {wide ? (
             // Annual's own arrangement on its cream: the totals panel and
             // Income, Expenses and Savings across the top (A6:X21), then

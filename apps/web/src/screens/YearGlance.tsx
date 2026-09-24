@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react'
-import type { YearSheet } from '@budget/core'
+import type { Change, PeriodComparison, YearSheet } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { navigate } from '../nav.js'
-import { formatCents, formatMonthName, formatMonthTitle, formatShare } from '../format.js'
+import { formatBasisPoints, formatCents, formatChange, formatIsoDate, formatMonthName, formatMonthTitle, formatShare } from '../format.js'
 import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
 import { useFunds } from '../funds.js'
 import { useDebts } from '../debts.js'
+import { CompareLine } from './CompareLine.js'
 import { DebtsChart, SavingsGoalsChart, TopRing, YearPie } from './YearCharts.js'
 
 /**
@@ -19,7 +20,16 @@ import { DebtsChart, SavingsGoalsChart, TopRing, YearPie } from './YearCharts.js
  * on the Month is what is left of a budget. Balances need the start month's
  * balance typed on the Month (D17), and say so until it is.
  */
-export function YearGlance({ sheet, wide }: { sheet: YearSheet; wide: boolean }) {
+export function YearGlance({
+  sheet,
+  wide,
+  comparison = null,
+}: {
+  sheet: YearSheet
+  wide: boolean
+  /** The same days a year earlier (D26); null while it loads. */
+  comparison?: PeriodComparison | 'failed' | null
+}) {
   const { displayName } = useAppData()
   const { atAGlance, startingBalanceCents: start, endingBalanceCents: end } = sheet
   const startMonth = formatMonthName(sheet.startMonth)
@@ -46,6 +56,7 @@ export function YearGlance({ sheet, wide }: { sheet: YearSheet; wide: boolean })
         <h3 className="mb-2 text-xs font-medium text-muted-foreground">Annual totals</h3>
         <YearPie sheet={sheet} palette="home" />
       </Card>
+      <VsLastYear comparison={comparison} />
       {/* On a desktop these are Annual's left panel, beside the tables. */}
       {wide ? null : (
         <Card>
@@ -161,6 +172,54 @@ function Amount({
         {cents === null ? <span className="text-sm font-medium">Not yet</span> : <Figure>{formatCents(cents)}</Figure>}
       </dd>
       {hint === null ? null : <dd className="text-xs text-muted-foreground">{hint}</dd>}
+    </div>
+  )
+}
+
+/**
+ * "vs last year" (D26, F25): Income, Spent and Saved over the Year's days so
+ * far against the same days a year earlier, every figure periodComparison's.
+ * They are the comparison's own figures, named with their dates, never set
+ * under the Year's totals, which count this month's planned bills whole
+ * (F10). Only inside the records (F24): otherwise the card says what to
+ * import, and when the year before could not be read, says so in one line.
+ */
+function VsLastYear({ comparison }: { comparison: PeriodComparison | 'failed' | null }) {
+  if (comparison === null || (comparison !== 'failed' && comparison.status === 'not_started')) return null
+  const range = (w: { from: string; to: string }) => `${formatIsoDate(w.from)} – ${formatIsoDate(w.to)}`
+  return (
+    <Card className="sm:col-span-2">
+      <h3 className="text-xs font-medium text-muted-foreground">vs last year</h3>
+      {comparison === 'failed' || comparison.status === 'before_records' ? (
+        <CompareLine comparison={comparison} label="Compared with last year" earlier="last year" day={formatIsoDate} />
+      ) : (
+        <div role="group" aria-label="Compared with last year" className="mt-1 text-sm">
+          <p>
+            <span className="inline-block">{range(comparison.now)}</span>{' '}
+            <span className="inline-block">against {range(comparison.before)}</span>
+          </p>
+          <dl className="mt-2 space-y-1.5">
+            <Versus label="Income" change={comparison.summary.income} />
+            <Versus label="Spent" change={comparison.summary.spent} />
+            <Versus label="Saved" change={comparison.summary.saved} />
+          </dl>
+        </div>
+      )}
+    </Card>
+  )
+}
+
+/** One figure now, then, and the change in words. */
+function Versus({ label, change }: { label: string; change: Change }) {
+  return (
+    <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+      <dt className="font-medium">{label}</dt>
+      <dd className="tnum text-right">
+        <span className="font-semibold">{formatCents(change.nowCents)}</span> · was {formatCents(change.beforeCents)} ·{' '}
+        {change.direction === 'same'
+          ? 'about the same'
+          : `${formatChange(change)}${change.changeBp === null ? '' : ` (${formatBasisPoints(Math.abs(change.changeBp))})`}`}
+      </dd>
     </div>
   )
 }

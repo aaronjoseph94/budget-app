@@ -20,6 +20,7 @@ export function CompareLine({
   pick = (c) => c.summary.spent,
   word = 'spent',
   dates = (w) => formatDateRange(w.from, w.to),
+  day = formatDayMonth,
 }: {
   /** Null while it loads; 'failed' when the earlier window could not be read. */
   comparison: PeriodComparison | 'failed' | null
@@ -29,6 +30,8 @@ export function CompareLine({
   pick?: (c: Extract<PeriodComparison, { status: 'compared' }>) => Change
   word?: string
   dates?: (w: DateWindow) => string
+  /** How the day the records start is written; the Year adds its year. */
+  day?: (isoDate: string) => string
 }) {
   if (comparison === null || (comparison !== 'failed' && comparison.status === 'not_started')) return null
   const line = (children: ReactNode) => (
@@ -44,7 +47,7 @@ export function CompareLine({
       <p>
         {comparison.historyStart === null
           ? `Import a statement to compare with ${earlier}.`
-          : `Your records start on ${formatDayMonth(comparison.historyStart)}. Import the statement before that to compare with ${earlier}.`}
+          : `Your records start on ${day(comparison.historyStart)}. Import the statement before that to compare with ${earlier}.`}
       </p>,
     )
   }
