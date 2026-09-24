@@ -117,18 +117,26 @@ export function GoalActions({
       </div>
     </div>
   )
-  const row = (buttons: ReactNode) => (
+  // Editing and placing on the first line, pausing, finishing and removing
+  // on the second, so each line reads as one kind of thing at 320px too.
+  const rows = (first: ReactNode, second: ReactNode = null) => (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        {buttons}
-        {remove}
+        {first}
+        {second === null ? remove : null}
       </div>
+      {second === null ? null : (
+        <div className="flex flex-wrap items-center gap-2">
+          {second}
+          {remove}
+        </div>
+      )}
       {removal}
     </div>
   )
-  if (!goalsOrdered) return row(edit)
+  if (!goalsOrdered) return rows(edit)
   if (goal.status !== 'active') {
-    return row(
+    return rows(
       <>
         {edit}
         <Button
@@ -145,7 +153,7 @@ export function GoalActions({
       </>,
     )
   }
-  return row(
+  return rows(
     <>
       {edit}
       {mainGoal?.id === goal.id ? null : (
@@ -174,6 +182,8 @@ export function GoalActions({
           </Button>
         </span>
       )}
+    </>,
+    <>
       <Button
         variant="outline"
         size="sm"

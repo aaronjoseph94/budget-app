@@ -129,7 +129,7 @@ export function SavingsScreen() {
           <h1 className="font-serif text-4xl italic">Savings goals</h1>
           <HelpButton screen="savings" />
         </div>
-        <p className="mt-1 text-sm">What each fund needs, and what to put in it each month to get there by its date.</p>
+        <p className="mt-1 text-sm">Your goals: what each needs, and what to put in it each month to get there by its date.</p>
       </header>
       {state.status === 'loading' ? <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p> : null}
       {notice !== null ? <Alert tone={notice.ok ? 'success' : 'error'}>{notice.text}</Alert> : null}
