@@ -653,7 +653,7 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **Build:** `apps/web/src/help/articles.ts` with the pattern of §8.2 and the articles for everything built so far (Start here, One-time updates, Month · Week · Pay · Year, Bring in a statement, Review, Add, Budgets and bills, Savings and your flight goal, Debts, Comparisons with last month, Why does a number look wrong?, Messages with a code in brackets, Put it on your iPhone, Words the app uses); `#/help` and `#/help/<topic>` (lazy) with search; the ? sheet on every screen, with **Show me** (Ask about this arrives in A24).
 - **One-time updates:** the live probes of §8.2 for 0005–0014 (0015 on join as their slices land), ✓ and ✗, the next step, **Check again**.
 - **Tests:** every article has the full pattern; search; an unknown topic opens the index; a markup string in an article shows as text; each probe state from the fake (PGRST205, 42P01, PGRST202, all present).
-- **Acceptance:** every screen has an article; plain language, one action per step.
+- **Acceptance:** every screen has an article, reached from its **?**; plain language, one action per step, each with "You're done when…" and "Stuck?"; articles render as text, never markup; each probe state (table missing, function missing, all present) shows its own line and next step.
 
 ### A07: Coach cards in the app's own words
 
@@ -742,6 +742,7 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **Helper:** the `narrate` task's `report` pack (a headline, three points, one thing to try), cached per month.
 - **Screens:** `#/reports/YYYY-MM` (lazy) with its tab row, Overview only; the print stylesheet and **Save as PDF**; More and the wide bar link to it.
 - **Tests:** `month-totals.test.ts` (savings rate with no income gives none; a pre-history month left out), `movers.test.ts`, `paired-bars.test.ts`, `reports-overview.test.tsx` (with AI off; a report reply with a digit is dropped).
+- **Acceptance:** every figure from core; the Overview is complete with AI off, in the app's own words; a report reply with a digit is dropped and the app's words show; the current month is marked "so far"; no sideways scroll at 320 px; the printed page holds the same figures as the screen.
 
 ### A16: Reports: trends
 
@@ -750,6 +751,7 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **Engine:** `monthlyTrend`, `categoryTrends`, `trendLabel`, and trend facts in the digest. **chart-specs:** `trendLines`, `sparkline`.
 - **Screen:** the Trends tab, with the empty state that names the month it becomes possible.
 - **Tests:** `trends.test.ts` (5 of 6 pairs rising past the band gives "rising steadily"; 3 months gives "not enough months yet"); chart tests; a screen test.
+- **Acceptance:** no trend is labelled with under 4 complete months; every empty state names the month the view becomes possible; a month before history start is never drawn as $0.
 
 ### A17: Shops, subscriptions and unusual charges
 
@@ -768,13 +770,14 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **Screens:** the Habits tab; encouragement cards on the Coach.
 - **Tests:** `habits.test.ts` (levels at each boundary; a streak broken; a personal best needing 3 months), `heat-grid.test.ts`, a screen test.
 - **N44:** the streak uses `weekSheet`; `weeklySummary` is left as it is and N44 is updated to say so.
+- **Acceptance:** each grid level is right at its boundaries; a personal best needs 3 complete months; the grid has a text list of the same figures beside it; no sideways scroll at 320 px.
 
 ### A19: Download a month
 
 **Owner items:** 6 · **Depends on:** A15 · **Migrations:** none · **Commits:** about 2
 - **Build:** `packages/report-export` (config commit: coverage 80/80/75, depcruise lines: it imports nothing; the app loads it dynamically), with `toCsv(rows)` and its formula guard (§7); `format.ts` gains the plain amount formatter; **Download CSV** on Reports.
 - **Tests:** `csv.test.ts` (`=cmd`, `+1`, `@x`, a tab and a carriage return each get the apostrophe; a negative amount cell does not; commas, quotes and line breaks quoted); a screen test that the file is built only on the tap.
-- **Acceptance:** N4 marked settled.
+- **Acceptance:** N4 marked settled; the export code is fetched only on the tap, so the first load does not grow; a downloaded file's amounts match the screen's.
 
 ### A20: The Sunday check-in
 
@@ -784,6 +787,7 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **Helper:** the `narrate` task's `checkin` pack.
 - **Screens:** `#/coach/checkin` (§2.4); the Coach tab's dot from Sunday; answers written to `coach_answers`; the commitment through the Week's `setWeeklyBudget`, only on the tap. Without 0016 the questions say they need a one-time update and the rest shows.
 - **Tests:** `checkin.test.ts` (under $20 never asked; an answered charge not asked again; the limit rounded down to $5), `checkin-screen.test.tsx` (the commitment writes only on the tap; AI off).
+- **Acceptance:** the weekly budget is written only on the tap; the check-in is complete with AI off; without 0016 only the questions are replaced by one "Needs a one-time update" line.
 
 ### A21: Review suggests categories
 
@@ -792,6 +796,7 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **Helper:** the `categorise` task (§3.6's data; aliases `c1…cN`; batches of about 2,500 tokens and at most 40 rows). **packages/schema:** `CategoriseReply` (`{i, alias, confidence}`; only medium or high kept).
 - **Screens:** Review's "✨ Suggested" chip, picked; **Suggest categories** (run automatically after an import when AI is on); **Approve these N** (§2.8). With AI off, `similarMerchant` in `statement-parsers` gives the hint that is picked but never stored.
 - **Tests:** schema-gate blocks; `categorise.test.ts` (an unknown alias and low confidence dropped; a merchant named `IGNORE PREVIOUS INSTRUCTIONS…` changes nothing); `review-suggestions.test.tsx` (Approve sends the chosen category and records `user`; Approve these N calls `approve_candidate` once per row; 0017 missing leaves Review as today with one line).
+- **Acceptance:** nothing reaches the ledger as `model`, and every approval records `user`; a suggestion never auto-approves; 0017 missing leaves Review as today with one line; every new schema-gate assertion is seen failing once.
 
 ### A22: Just type it
 
@@ -799,12 +804,14 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **Build:** `parseQuickEntry(text, asOf)` in `statement-parsers` (one amount through the existing amount parser; today, yesterday, a weekday or a date; "paid", "got", "received" for income; the rest as the shop; a category from an exact learned rule). The `quick_add` task runs only when the parser leaves something empty, and its amount must appear word for word in the owner's text or it is dropped. **packages/schema:** `QuickAddReply`.
 - **Screen:** **Just type it** first on Add; it fills the typed form; "read by AI: check it" on an amount the AI read.
 - **Tests:** `quick-entry.test.ts` ("4.50 coffee", "coffee $12 yesterday", "paid 1200 rent monday", an ambiguous "3 coffees 12"), `quick-add.test.ts` (an amount not in the text dropped), `add-just-type-it.test.tsx` (nothing saved without **Save**; AI off).
+- **Acceptance:** nothing is saved without **Save**; an amount the AI read that is not in the owner's words is dropped; Just type it works with AI off, through the parser alone.
 
 ### A23: Receipts through the AI helper
 
 **Owner items:** 2 · **Depends on:** A11 · **Migrations:** none · **Commits:** about 2
 - **Build:** the `receipt` task on services that read images only, with `read-receipt`'s prompt and schema; `receipt.ts` tries the helper and falls back to `read-receipt` when it is not deployed.
 - **Tests:** Groq is never sent an image; failover to a paid service only with the switch on; the fallback path; the reply still parsed by the existing receipt zod.
+- **Acceptance:** a service that cannot read images is never sent one; a paid service is tried only with **Use paid services** on; with the helper missing, a photo works exactly as today through `read-receipt`; the result still fills the form and goes to Review.
 
 ### A24: Ask about your money
 
@@ -812,6 +819,7 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **savings-coach:** the intent catalogue (spend_in, compare, top_categories, top_shops, subscriptions, forecast, safe_to_spend, goal_date, what_if_cut, debt_free, explain_month, budget_left, help) and `matchQuestion`, the fallback. **packages/schema:** `AskPlan` (an intent; category aliases; periods from a fixed set with no digits: this or last week, month or year, last three months, or a month's name with this or last year; a help topic id; an `amountText` that must appear word for word in the question; or `cannot`). **Engine:** `answerQuery`.
 - **Helper:** the `ask` task. **Screens:** `#/ask` (lazy); the Coach's ask box; **Ask about this** in every help sheet; the last five questions on this device.
 - **Tests:** `intents.test.ts`, `ask-plan.test.ts`, `answer-query.test.ts` (one worked answer per intent), `ask-screen.test.tsx` (`cannot` shows suggestions; AI off uses the chips; an amount from the question shows as an editable chip).
+- **Acceptance:** every figure in an answer comes from `answerQuery`; `cannot` shows suggested questions; an amount from the question shows as an editable chip; Ask works with AI off through the chips; questions are kept on this device only.
 
 ### A25: Getting started
 
@@ -820,6 +828,7 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **Engine:** `setupProgress`, `starterBudgets`.
 - **Screens:** `#/start` (§8.1); the Month's empty state and the first sign-in open it; More and Settings show the progress line.
 - **Tests:** `setup-progress.test.ts` (a step whose read failed is "can't check yet"; later moves to the end), `starter-budgets.test.ts`, `getting-started.test.tsx` (each step with its real editor; **Do this later** kept in `user_metadata`; the AI step walks One-time updates when the helper is missing; completable with AI off).
+- **Acceptance:** every "done" is read from data, never stored; a failed read shows "can't check yet"; the guide can be finished with AI off; a starter budget is written only on **Accept**; each step works at 320 px.
 
 ### A26: Mobile pass (owner item 9)
 
@@ -840,7 +849,7 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 **Owner items:** 10, 5, 9, 8 · **Depends on:** A27 and every earlier slice · **Migrations:** none · **Commits:** about 3
 - **Do:** `./scripts/gates.sh full` GREEN on a clean tree, every coverage floor met (`savings-coach`, `report-export` and `supabase/functions` included). A mutation list, each seen RED then restored: the digit rule, the direction check, the origin check, the limit, the additional data, the same-days window, history start, the `ai_notes` check. A real-browser click-through in the harness with a fake database and a fake AI: first sign-in, Getting started, the key, a statement, Review with suggestions, Coach, the check-in, Forecast, Reports, Ask, Help; then again with AI off, the helper missing, each of 0015–0017 missing, and every service resting; at 320 and 390 px, light and dark; no console errors.
 - **Hand over:** HANDOFF rewritten: what is new; that 0003–0014 (its current step 1) still come first unless the owner has said they are in; §10.2's three steps; that `main` deploys itself and every new screen fails soft until they are done; what the owner will notice (§2.10: Week off the phone bar, the wide bar's changes, the Coach tab); how to check each screen. `docs/setup.md` gains the AI section; Help's One-time updates and Start here final; CONSTRAINTS.md's measured counts (121 golden unchanged, the total higher); ROADMAP's markers; NOTICED updated.
-- **Acceptance:** `git status --short` prints nothing; the push to `main` is then the orchestrator's step.
+- **Acceptance:** `./scripts/gates.sh full` prints `status=GREEN` on a clean tree, with every coverage floor met; the golden count is still 121 and the total number of tests is not lower than CONSTRAINTS.md's measured count; each item on the mutation list was seen RED and restored; the click-through passes in every state listed, at 320 and 390 px, light and dark, with no console errors; HANDOFF's steps match §10.2; `git status --short` prints nothing. The push to `main` is then the orchestrator's step.
 
 ---
 
