@@ -132,6 +132,12 @@ importers:
         specifier: workspace:*
         version: link:../schema
 
+  supabase/functions:
+    dependencies:
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+
 packages:
 
   '@ampproject/remapping@2.3.0':

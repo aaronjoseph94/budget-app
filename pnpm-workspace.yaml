@@ -1,6 +1,9 @@
 packages:
   - 'packages/*'
   - 'apps/*'
+  # The Edge Functions, so the gates can type-check and test them against
+  # the same zod the app uses. The owner still pastes each index.ts alone.
+  - 'supabase/functions'
 # esbuild ships a prebuilt binary as an optional dependency, so its install
 # script has nothing left to do. Declared rather than left unanswered, so the
 # bootstrap install is quiet and a future warning means something new.

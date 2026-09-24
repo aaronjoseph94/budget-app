@@ -7,6 +7,7 @@
     { "path": "./packages/chart-specs" },
     { "path": "./packages/schema" },
     { "path": "./packages/statement-parsers" },
-    { "path": "./apps/web" }
+    { "path": "./apps/web" },
+    { "path": "./supabase/functions" }
   ]
 }

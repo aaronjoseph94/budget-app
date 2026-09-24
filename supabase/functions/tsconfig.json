@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": ".",
+    // Request, Response and fetch: web types, which Deno and Node share.
+    "lib": ["ES2023", "DOM"],
+    // Each function imports zod the way Deno does, pinned in its own URL, so
+    // it can be pasted into the dashboard as one file. Here that name means
+    // this package's zod, the version the web app uses.
+    "paths": { "npm:zod@4.6.5": ["./node_modules/zod"] }
+  },
+  "include": ["deno-env.d.ts", "*/index.ts", "test/**/*"]
+}
