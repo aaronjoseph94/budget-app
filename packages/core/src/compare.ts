@@ -10,9 +10,16 @@
  * the start of the records (F24), because a month missing from them is not
  * a month of $0.
  */
-import { type Cents, type IsoDate, addDays, addMonths, daysBetween, subCents } from '@budget/money-primitives'
-import { type BudgetHistoryRow, resolveBudgets } from './budgets.js'
-import { type PeriodCategory, type PeriodEntry, type PeriodSheet, periodSheet, plansInEffect } from './period-sheet.js'
+import { type Cents, type IsoDate, addDays, addMonths, daysBetween, subCents, sumCents } from '@budget/money-primitives'
+import {
+  type PeriodCategory,
+  type PeriodEntry,
+  type PeriodPlan,
+  type PeriodSheet,
+  payPlans,
+  periodSheet,
+  plansInEffect,
+} from './period-sheet.js'
 import type { PlanHistoryRow } from './plans.js'
 import { type PaySchedule, payPeriod, shiftPayPeriod } from './pay-period.js'
 import { monthBounds, shiftMonth, weekBounds } from './week.js'
@@ -139,17 +146,9 @@ export interface BlockChange {
 
 type BlockKind = keyof PeriodSheet['blocks']
 
-export interface PeriodComparisonInput {
-  /** Any day of the month shown. */
-  readonly month: IsoDate
-  /** Today. */
-  readonly asOf: IsoDate
-  /** From historyStart. */
-  readonly historyStart: IsoDate | null
+export type PeriodComparisonInput = ComparisonWindowInput & {
   readonly categories: readonly PeriodCategory[]
-  /** Every budget and goal typed up to the month shown; each side resolves its own (D12). */
-  readonly budgetHistory: readonly BudgetHistoryRow[]
-  /** Every monthly amount typed up to the month shown; each side resolves its own (D13). */
+  /** Every monthly amount typed up to the period shown; each month resolves its own (D13). */
   readonly planHistory: readonly PlanHistoryRow[]
   /** Ledger rows for both windows; any others are left out by the windows. */
   readonly entries: readonly PeriodEntry[]
@@ -172,26 +171,18 @@ const MORE_IS_GOOD: ReadonlySet<BlockKind> = new Set(['income', 'savings'])
 const KINDS: readonly BlockKind[] = ['income', 'savings', 'variable', 'bill', 'debt', 'subscription']
 
 /**
- * F25 and F26 for a month: each window through periodSheet with its own
- * month's budgets and monthly amounts, so a planned bill counts on its due day
- * on both sides (F8), and each figure set against its twin.
+ * F25 and F26: each window through periodSheet, and each figure set against
+ * its twin. A month, week or Year is counted month by month, each month
+ * with its own monthly amounts, so a planned bill counts on its due day on
+ * both sides (F8, D13). A pay period is counted as the Paycheck counts it,
+ * each side with its own payday month's shares (F15). Only Actuals are
+ * compared, so no budget is read.
  */
 export function periodComparison(input: PeriodComparisonInput): PeriodComparison {
-  const window = comparisonWindow({ period: 'month', month: input.month, asOf: input.asOf, historyStart: input.historyStart })
+  const window = comparisonWindow(input)
   if (window.status !== 'compared') return window
-  const sheet = ({ from, to }: DateWindow): PeriodSheet =>
-    periodSheet({
-      from,
-      to,
-      categories: input.categories,
-      budgets: resolveBudgets({ asOf: from, history: input.budgetHistory }).budgets,
-      plans: plansInEffect(input.categories, input.planHistory, from),
-      entries: input.entries,
-      statementPeriodEnds: [],
-      startingBalanceCents: null,
-    })
-  const now = sheet(window.now)
-  const before = sheet(window.before)
+  const now = added(sheets(input, window.now))
+  const before = added(sheets(input, window.before))
   const blocks = Object.fromEntries(
     KINDS.map((kind): [BlockKind, BlockChange] => {
       const earlier = new Map(before.blocks[kind].rows.map((r) => [r.categoryId, r.actualCents]))
@@ -222,6 +213,75 @@ export function periodComparison(input: PeriodComparisonInput): PeriodComparison
     },
     blocks,
   }
+}
+
+/** One window's sheets: one per month it touches, or the pay period's one. */
+function sheets(input: PeriodComparisonInput, window: DateWindow): PeriodSheet[] {
+  const sheet = (from: IsoDate, to: IsoDate, plans: readonly PeriodPlan[]): PeriodSheet =>
+    periodSheet({
+      from,
+      to,
+      categories: input.categories,
+      budgets: [],
+      plans,
+      entries: input.entries,
+      statementPeriodEnds: [],
+      startingBalanceCents: null,
+    })
+  if (input.period === 'pay') {
+    // Each window starts on a payday, whose month's shares it counts (F15).
+    const month = monthBounds(window.from).start
+    return [sheet(window.from, window.to, payPlans(input.categories, input.planHistory, month, input.schedule.frequency))]
+  }
+  const out: PeriodSheet[] = []
+  for (let month = monthBounds(window.from).start; month <= window.to; month = shiftMonth(month, 1)) {
+    const end = monthBounds(month).end
+    out.push(
+      sheet(
+        month < window.from ? window.from : month,
+        end > window.to ? window.to : end,
+        plansInEffect(input.categories, input.planHistory, month),
+      ),
+    )
+  }
+  return out
+}
+
+/** The Actuals a comparison reads, added across a window's sheets. */
+interface Actuals {
+  readonly summary: { readonly spentCents: Cents; readonly incomeCents: Cents; readonly savedCents: Cents }
+  readonly blocks: Readonly<
+    Record<BlockKind, { readonly actualTotalCents: Cents; readonly rows: readonly { readonly categoryId: string; readonly actualCents: Cents }[] }>
+  >
+}
+
+function added(list: readonly PeriodSheet[]): Actuals {
+  const sum = (pick: (s: PeriodSheet) => Cents): Cents => sumCents(list.map(pick))
+  // Every sheet lists the same categories in the same order: the first gives it.
+  const first = list[0]!
+  return {
+    summary: {
+      spentCents: sum((s) => s.summary.spentCents),
+      incomeCents: sum((s) => s.summary.incomeCents),
+      savedCents: sum((s) => s.summary.savedCents),
+    },
+    blocks: Object.fromEntries(
+      KINDS.map((kind): [BlockKind, Actuals['blocks'][BlockKind]] => [
+        kind,
+        {
+          actualTotalCents: sum((s) => s.blocks[kind].actualTotalCents),
+          rows: first.blocks[kind].rows.map((r) => ({
+            categoryId: r.categoryId,
+            actualCents: sum((s) => s.blocks[kind].rows.find((x) => x.categoryId === r.categoryId)?.actualCents ?? missing(r.categoryId)),
+          })),
+        },
+      ]),
+    ) as Actuals['blocks'],
+  }
+}
+
+function missing(categoryId: string): never {
+  throw new RangeError(`Category ${categoryId} is missing from part of a window`)
 }
 
 /** F26. `moreIsGood` is true on Income and Savings. */

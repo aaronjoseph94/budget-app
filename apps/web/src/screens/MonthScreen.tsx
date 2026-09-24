@@ -148,6 +148,7 @@ export function MonthScreen({ month }: { month: string | null }) {
     if ('failed' in before) return 'failed'
     try {
       return periodComparison({
+        period: 'month',
         month: start,
         asOf: isoDate(todayIso()),
         historyStart: historyStart({
@@ -155,7 +156,6 @@ export function MonthScreen({ month }: { month: string | null }) {
           entryDates: before.entryDates.map((d) => isoDate(d)),
         }).start,
         categories: categoriesForCore(categories),
-        budgetHistory: budgetsForCore(here.budgets),
         planHistory: plansForCore(here.plans),
         entries: entriesForCore([...here.rows, ...before.rows]),
       })

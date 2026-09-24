@@ -73,12 +73,13 @@ const rent = (effectiveMonth: string, plannedCents: number) => ({
   plannedCents,
   dueDay: 28,
 })
-const INPUT: PeriodComparisonInput = {
+type MonthInput = Extract<PeriodComparisonInput, { readonly period: 'month' }>
+const INPUT: MonthInput = {
+  period: 'month',
   month: isoDate('2026-09-01'),
   asOf: isoDate('2026-09-24'),
   historyStart: EARLY,
   categories: [cat('food', 'variable'), cat('gifts', 'variable', 1), cat('rent', 'bill'), cat('pay', 'income'), cat('fund', 'savings')],
-  budgetHistory: [],
   planHistory: [rent('2026-01-01', 80000)],
   entries: [
     entry('2026-07-10', -100000, 'food'),
@@ -96,7 +97,7 @@ const INPUT: PeriodComparisonInput = {
     entry('2026-09-26', -7000, 'food'),
   ],
 }
-const compared = (input: Partial<PeriodComparisonInput> = {}) => {
+const compared = (input: Partial<MonthInput> = {}) => {
   const c = periodComparison({ ...INPUT, ...input })
   if (c.status !== 'compared') throw new Error(`expected a comparison, got ${c.status}`)
   return c

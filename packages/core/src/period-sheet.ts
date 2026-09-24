@@ -553,9 +553,27 @@ export function paycheckSheet(input: PaycheckSheetInput): PaycheckSheet {
     categoryId: b.categoryId,
     budgetCents: share(b.budgetCents),
   }))
-  const plans = plansInEffect(rest.categories, planHistory, month).map(
-    (p): PeriodPlan => ({ ...p, plannedCents: share(p.plannedCents), spread: true }),
-  )
+  const plans = payPlans(rest.categories, planHistory, month, schedule.frequency)
   const sheet = periodSheet({ ...rest, budgets, plans, from: start, to: end })
   return { ...sheet, month, paydaysAYear: PAYDAYS_A_YEAR[schedule.frequency] }
+}
+
+/**
+ * The monthly amounts in effect in `month`, each as a pay period's share
+ * that counts whatever its due day (F15). Exported for compare.ts, whose
+ * pay periods count them as the Paycheck does; not from the package.
+ */
+export function payPlans(
+  categories: readonly PeriodCategory[],
+  planHistory: readonly PlanHistoryRow[],
+  month: IsoDate,
+  frequency: PaySchedule['frequency'],
+): PeriodPlan[] {
+  return plansInEffect(categories, planHistory, month).map(
+    (p): PeriodPlan => ({
+      ...p,
+      plannedCents: p.plannedCents === null ? null : payShare({ monthlyCents: p.plannedCents, frequency }),
+      spread: true,
+    }),
+  )
 }
