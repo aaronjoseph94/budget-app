@@ -1,5 +1,16 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { isoDate, monthBounds, paycheckSheet, payPeriod, shiftPayPeriod, type PaycheckSheet, type PaySchedule } from '@budget/core'
+import {
+  isoDate,
+  monthBounds,
+  paycheckSheet,
+  payPeriod,
+  periodComparison,
+  shiftPayPeriod,
+  type PaycheckSheet,
+  type PayPeriod,
+  type PaySchedule,
+  type PeriodComparison,
+} from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { latestStatementEnd, listBudgetHistory, listPlanHistory, listTransactions } from '../ledger.js'
 import type { BudgetRow, Category, LedgerRow, PayScheduleRow, PlanRow } from '../ledger.js'
@@ -11,6 +22,8 @@ import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
+import { useEarlier } from '../earlier.js'
+import { CompareLine } from './CompareLine.js'
 import { ImportedThrough, PeriodBlocks, TransfersNote } from './MonthScreen.js'
 import { FREQUENCY_WORD } from './SetupPay.js'
 
@@ -93,6 +106,30 @@ export function PaycheckPeriod({
     }
   }, [here, categories, start, schedule])
 
+  // The period before, by the same number of days while this one runs (F25,
+  // D26). Read on its own, so if it fails only the comparison goes.
+  const previous: PayPeriod = shiftPayPeriod({ schedule, asOf: start, periods: -1 })
+  const earlier = useEarlier({ from: previous.start, to: previous.end })
+  const comparison = useMemo((): PeriodComparison | 'failed' | null => {
+    if (here === null || earlier === null) return null
+    if (earlier === 'failed') return 'failed'
+    try {
+      return periodComparison({
+        period: 'pay',
+        schedule,
+        day: start,
+        asOf: today,
+        historyStart: earlier.historyStart === null ? null : isoDate(earlier.historyStart),
+        categories: categoriesForCore(categories),
+        planHistory: plansForCore(here.plans),
+        entries: entriesForCore([...here.rows, ...earlier.rows]),
+      })
+    } catch {
+      // As the period's own sheet: a row naming a category that did not load.
+      return 'failed'
+    }
+  }, [here, earlier, categories, start, schedule, today])
+
   return (
     <>
       <header className="-mx-4 flex flex-wrap items-center justify-between gap-2 bg-paycheck-band px-4 py-4 text-paycheck-ink md:mx-0 md:rounded-xl">
@@ -122,7 +159,7 @@ export function PaycheckPeriod({
         <>
           <ImportedThrough through={sheet.importedThrough} />
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Summary sheet={sheet} />
+            <Summary sheet={sheet} comparison={comparison} />
             {/* Where the workbook's chart well stands (I3:M18): the owner was told a
               share is about $738 of $1,600 rent, and this says how it is found. */}
             <section
@@ -157,9 +194,10 @@ interface Loaded {
 /**
  * Paycheck Budget's lavender summary panel (D9:D15): Money Spent and Left to
  * Spend, both core's. Its Starting and Ending Balance are not shown, as on
- * the Week: no balance is typed for a period (D17, N45).
+ * the Week: no balance is typed for a period (D17, N45). Under them, the
+ * period before by the same number of days (D26).
  */
-function Summary({ sheet }: { sheet: PaycheckSheet }) {
+function Summary({ sheet, comparison }: { sheet: PaycheckSheet; comparison: PeriodComparison | 'failed' | null }) {
   const { spentCents, leftToSpendCents: left } = sheet.summary
   const noBudgets = sheet.blocks.variable.rows.every((r) => r.budgetCents === null)
   return (
@@ -183,6 +221,7 @@ function Summary({ sheet }: { sheet: PaycheckSheet }) {
           {noBudgets ? <dd className="mt-0.5 text-xs">No budgets on Variable expenses yet. They are typed on the Month.</dd> : null}
         </div>
       </dl>
+      <CompareLine comparison={comparison} label="Compared with the last pay period" earlier="the last pay period" />
     </section>
   )
 }
