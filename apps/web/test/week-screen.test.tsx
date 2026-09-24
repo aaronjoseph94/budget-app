@@ -163,6 +163,8 @@ describe('WeekScreen', () => {
     expect(screen.getByText('of $30,000.00 · $21,550.00 to go')).toBeTruthy()
     expect(screen.getByText('$10,775.00')).toBeTruthy()
     expect(await screen.findByText('28 min')).toBeTruthy()
+    // The owner's one goal: nothing else to point to (G1).
+    expect(screen.queryByRole('link', { name: /other goal/ })).toBeNull()
   })
 
   // Hand-derived: 8,450.00 typed at the end of 1 March, and 200.00 moved in
@@ -181,12 +183,44 @@ describe('WeekScreen', () => {
     expect(screen.getByText('of $30,000.00 · $21,350.00 to go')).toBeTruthy()
   })
 
-  it('without a goal, offers to set one where the goal would be', async () => {
+  // Goals are added on Savings now (G1), not in Settings.
+  it('without a goal, offers to add one where the goal would be', async () => {
     vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
     renderScreen(<WeekScreen />, seeded())
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Set a goal' }))
-    expect(window.location.hash).toBe('#/settings')
+    fireEvent.click(await screen.findByRole('button', { name: 'Add a goal' }))
+    expect(window.location.hash).toBe('#/savings')
+  })
+
+  it('shows the main goal, with how many others there are, and none that is paused (G1)', async () => {
+    const fake = seeded()
+    const goal = (id: string, name: string, more: Record<string, unknown>) => ({
+      id, name, target_cents: 100_000, saved_cents: 15_000, target_date: null, unit_cost_cents: null, unit_label: null, ...more,
+    })
+    fake.tables.savings_goals.push(
+      goal('g1', 'Flight training', { sort_order: 1, unit_cost_cents: 27_500, unit_label: 'flight time' }),
+      goal('g2', 'Travel', { sort_order: 0 }),
+      goal('g3', 'House', { sort_order: 2 }),
+      goal('g4', 'Car', { status: 'paused' }),
+    )
+    renderScreen(<WeekScreen />, fake)
+
+    expect(await screen.findByRole('heading', { name: 'Travel' })).toBeTruthy()
+    expect(screen.getByText('of $1,000.00 · $850.00 to go')).toBeTruthy()
+    expect(screen.getByRole('link', { name: '2 other goals' }).getAttribute('href')).toBe('#/savings')
+  })
+
+  it('says when no goal is active, and where to resume one', async () => {
+    vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
+    const fake = seeded()
+    fake.tables.savings_goals.push({
+      id: 'g1', name: 'Flight training', target_cents: 3_000_000, saved_cents: 0, target_date: null, unit_cost_cents: null, unit_label: null, status: 'paused',
+    })
+    renderScreen(<WeekScreen />, fake)
+
+    expect(await screen.findByText(/^No active savings goal\./)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Resume or add one' }))
+    expect(window.location.hash).toBe('#/savings')
   })
 
   it('without budgets, shows the spend and the money in', async () => {

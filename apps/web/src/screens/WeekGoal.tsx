@@ -5,19 +5,22 @@ import { formatBasisPoints, formatCents } from '../format.js'
 import { Card, CardContent, CardTitle } from '../components/ui/card.js'
 import { Badge, Progress } from '../components/ui/feedback.js'
 import { Icon } from '../components/ui/icons.js'
-import { navigate } from '../nav.js'
+import { hashOf, navigate } from '../nav.js'
 
 /**
- * The flight goal on the Week: how far along it is, what each week needs to
- * reach it by its date, and the week's spending as time towards it. Every
+ * The main goal on the Week (F45): how far along it is, what each week needs
+ * to reach it by its date, and, for a goal with a cost an hour, the week's
+ * spending as time towards it; then how many other goals there are, which
+ * Savings lists. Every
  * figure is packages/core's (goalProgress, requiredWeeklyContribution,
  * timeEquivalent). On a desktop it stands where Weekly Budget has its chart
  * well, beside the summary.
  */
 export function GoalCard({ weekSpentCents, asOf }: { weekSpentCents: number; asOf: string }) {
-  const { mainGoal: goal } = useAppData()
+  const { mainGoal: goal, goals } = useAppData()
   const funds = useFunds()
   if (goal === null) return null
+  const others = goals.filter((g) => g.status === 'active' && g.id !== goal.id).length
   const savedCents = goalSavedCents(goal, funds)
   const saving = {
     name: goal.name,
@@ -37,7 +40,7 @@ export function GoalCard({ weekSpentCents, asOf }: { weekSpentCents: number; asO
     <Card className="order-0 xl:order-1">
       <div className="flex items-center justify-between gap-2 p-5 pb-3">
         <div className="flex items-center gap-2">
-          <Icon name="plane" className="size-4 text-muted-foreground" />
+          <Icon name={goal.unit_cost_cents === null ? 'piggy' : 'plane'} className="size-4 text-muted-foreground" />
           <CardTitle as="h2">{goal.name}</CardTitle>
         </div>
         <Badge variant="outline">{formatBasisPoints(progress.percentCompleteBasisPoints)}</Badge>
@@ -63,19 +66,29 @@ export function GoalCard({ weekSpentCents, asOf }: { weekSpentCents: number; asO
             of {goal.unit_label ?? 'your goal'}.
           </p>
         ) : null}
+        {others === 0 ? null : (
+          <a href={hashOf({ screen: 'savings', param: null })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+            {others === 1 ? '1 other goal' : `${others} other goals`}
+          </a>
+        )}
       </CardContent>
     </Card>
   )
 }
 
-/** Where the goal stands when there is none: a way to set one, which also keeps the Week's cards in their places. */
+/**
+ * Where the goal stands when none leads: a way to add one, or to resume one
+ * paused or reached, on Savings, which also keeps the Week's cards in their
+ * places.
+ */
 export function NoGoal() {
+  const { goals } = useAppData()
   return (
     <Card className="order-0 xl:order-1">
       <CardContent className="pt-5 text-sm text-muted-foreground">
-        No savings goal yet.{' '}
-        <button type="button" className="font-medium text-foreground underline underline-offset-4" onClick={() => navigate('settings')}>
-          Set a goal
+        {goals.length === 0 ? 'No savings goal yet.' : 'No active savings goal.'}{' '}
+        <button type="button" className="font-medium text-foreground underline underline-offset-4" onClick={() => navigate('savings')}>
+          {goals.length === 0 ? 'Add a goal' : 'Resume or add one'}
         </button>{' '}
         to see what each week needs to reach it.
       </CardContent>
