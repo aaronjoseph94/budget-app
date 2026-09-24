@@ -1251,6 +1251,9 @@ export interface FundEdit {
   readonly asOf: string
   readonly startDate: string | null
   readonly goalDate: string | null
+  /** What an hour costs and what the hours are of; both null for a goal in dollars (F45). */
+  readonly unitCostCents: number | null
+  readonly unitLabel: string | null
 }
 
 /**
@@ -1270,6 +1273,8 @@ export async function saveFund(
     balance_as_of: edit.asOf,
     start_date: edit.startDate,
     target_date: edit.goalDate,
+    unit_cost_cents: edit.unitCostCents,
+    unit_label: edit.unitLabel,
   }
   const { error } =
     target.goalId === null

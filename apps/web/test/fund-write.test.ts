@@ -14,6 +14,8 @@ const edit = (over: Partial<FundEdit> = {}): FundEdit => ({
   asOf: '2026-09-23',
   startDate: '2026-01-08',
   goalDate: '2027-10-08',
+  unitCostCents: null,
+  unitLabel: null,
   ...over,
 })
 

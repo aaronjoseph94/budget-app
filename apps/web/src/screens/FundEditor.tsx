@@ -7,11 +7,13 @@ import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Field, Input } from '../components/ui/form.js'
 import { Sheet } from '../components/ui/sheet.js'
+import { GoalUnitFields, readUnit, unitText } from './GoalUnitFields.js'
 
 /**
  * A fund's goal, typed where the workbook types it: the Goal Amount and Current
  * Amount on its card (Savings!B7, B5) and its Start and Goal Dates (N14,
- * R14). What is saved is typed as what the fund holds today, and filled in
+ * R14); and whether its progress shows in dollars or in hours (F45). What
+ * is saved is typed as what the fund holds today, and filled in
  * with the balance core kept (D16); saving writes it with today as its day,
  * so transfers already counted are never counted again and later ones add
  * to it (N52). After a save the app's data is refreshed, which re-reads the
@@ -37,6 +39,7 @@ export function FundEditor({
   const [saved, setSaved] = useState(formatForInput(fund.figures === null ? null : fund.figures.balanceCents))
   const [start, setStart] = useState(goal?.start_date ?? '')
   const [end, setEnd] = useState(goal?.target_date ?? '')
+  const [unit, setUnit] = useState(unitText(goal))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const open = useRef(true)
@@ -58,13 +61,18 @@ export function FundEditor({
       setError('Type what is saved as an amount, like 150 or 150.00, or leave it empty for nothing yet.')
       return
     }
+    const inUnit = readUnit(unit)
+    if ('problem' in inUnit) {
+      setError(inUnit.problem)
+      return
+    }
     setBusy(true)
     setError(null)
     try {
       await saveFund(
         supabase,
         { userId, categoryId: fund.categoryId, name: fund.name, goalId: goal === null ? null : goal.id },
-        { goalCents, savedCents, asOf: todayIso(), startDate: start === '' ? null : start, goalDate: end === '' ? null : end },
+        { goalCents, savedCents, asOf: todayIso(), startDate: start === '' ? null : start, goalDate: end === '' ? null : end, ...inUnit },
       )
       onSaved(`${fund.name}'s goal is saved.`)
       await refresh()
@@ -105,6 +113,7 @@ export function FundEditor({
             <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
           </Field>
         </div>
+        <GoalUnitFields unit={unit} onChange={setUnit} />
         {error !== null ? <Alert tone="error">{error}</Alert> : null}
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onClose}>

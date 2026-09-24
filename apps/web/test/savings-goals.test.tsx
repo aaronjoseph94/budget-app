@@ -291,3 +291,40 @@ describe('Savings, adding a goal (G1)', () => {
     expect('sort_order' in fake.tables.savings_goals[2]!).toBe(false)
   })
 })
+
+describe('Savings, showing a goal in dollars or in hours (G1, F45)', () => {
+  const type = (label: RegExp, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } })
+
+  // Hand-derived: $900.00 at $45.00 an hour, nothing saved, is 20 hours to go.
+  it('adds a goal counted in hours of something, at what an hour costs', async () => {
+    const fake = seeded()
+    renderScreen(<SavingsScreen />, fake)
+    fireEvent.click(await screen.findByRole('button', { name: 'Add a goal' }))
+    expect(screen.getByRole<HTMLInputElement>('radio', { name: 'Dollars' }).checked).toBe(true)
+    type(/^Name/, 'Guitar')
+    type(/^Target \(\$\)/, '900')
+    fireEvent.click(screen.getByRole('radio', { name: 'Hours' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add goal' }))
+    expect(screen.getByText('Type what an hour costs, like 275 or 275.00.')).toBeTruthy()
+    type(/^Cost of an hour/, '45')
+    type(/^Hours of/, 'guitar lessons')
+    fireEvent.click(screen.getByRole('button', { name: 'Add goal' }))
+    await screen.findByText(/^Guitar is added/)
+    expect(fake.tables.savings_goals[2]).toMatchObject({ name: 'Guitar', unit_cost_cents: 4_500, unit_label: 'guitar lessons' })
+    await waitFor(async () => expect((await screen.findByRole('region', { name: 'Guitar' })).textContent).toContain('About 20 hours of guitar lessons to go.'))
+  })
+
+  it('edits a goal from hours back to dollars', async () => {
+    const fake = seeded()
+    renderScreen(<SavingsScreen />, fake)
+    fireEvent.click(within(await screen.findByRole('region', { name: 'Flight training' })).getByRole('button', { name: 'Edit goal' }))
+    expect(screen.getByRole<HTMLInputElement>('radio', { name: 'Hours' }).checked).toBe(true)
+    expect(screen.getByLabelText<HTMLInputElement>(/^Cost of an hour/).value).toBe('275.00')
+    expect(screen.getByLabelText<HTMLInputElement>(/^Hours of/).value).toBe('flight time')
+    fireEvent.click(screen.getByRole('radio', { name: 'Dollars' }))
+    expect(screen.queryByLabelText(/^Cost of an hour/)).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Save goal' }))
+    await screen.findByText("Flight training's goal is saved.")
+    expect(fake.tables.savings_goals[0]).toMatchObject({ unit_cost_cents: null, unit_label: null })
+  })
+})

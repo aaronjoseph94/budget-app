@@ -8,10 +8,12 @@ import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Field, Input } from '../components/ui/form.js'
 import { Sheet } from '../components/ui/sheet.js'
+import { GoalUnitFields, readUnit, unitText } from './GoalUnitFields.js'
 
 /**
- * Add a savings goal (G1): its name, target, what is saved already and,
- * if wanted, a date. Saving makes the goal's fund, a Savings-list category
+ * Add a savings goal (G1): its name, target, what is saved already, if
+ * wanted a date, and whether to show its progress in dollars or in hours
+ * of something (F45). Saving makes the goal's fund, a Savings-list category
  * of the same name at the bottom of the list, or uses the Savings fund of
  * that name when there is one without a goal, and links the goal to it with
  * what is saved true as of today, so money moved into it from tomorrow on
@@ -35,6 +37,7 @@ export function AddGoalSheet({
   const [target, setTarget] = useState('')
   const [saved, setSaved] = useState('')
   const [date, setDate] = useState('')
+  const [unit, setUnit] = useState(unitText(null))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const open = useRef(true)
@@ -49,6 +52,7 @@ export function AddGoalSheet({
     const named = name.trim()
     const targetCents = parseMoneyInput(target)
     const savedCents = saved.trim() === '' ? parseMoneyInput('0') : parseMoneyInput(saved)
+    const inUnit = readUnit(unit)
     // Said before anything is written, in the words of what went wrong.
     const taken = categories.find((c) => c.name === named)
     const problem =
@@ -62,8 +66,10 @@ export function AddGoalSheet({
               ? 'Type the target as an amount above zero, like 2000 or 2,000.00.'
               : savedCents === null || savedCents < 0
                 ? 'Type what is saved as an amount, like 150 or 150.00, or leave it empty for nothing yet.'
-                : null
-    if (problem !== null || targetCents === null || savedCents === null) {
+                : 'problem' in inUnit
+                  ? inUnit.problem
+                  : null
+    if (problem !== null || targetCents === null || savedCents === null || 'problem' in inUnit) {
       setError(problem)
       return
     }
@@ -78,8 +84,7 @@ export function AddGoalSheet({
         // Saving for it starts the day it is added, so its card can say what
         // a month needs (F21); with no date there is nothing to divide by.
         startDate: date === '' ? null : todayIso(),
-        unitCostCents: null,
-        unitLabel: null,
+        ...inUnit,
         asOf: todayIso(),
         sortOrder: goalsOrdered ? goalAtEnd({ goals: goals.map(placedGoal) }).sortOrder : null,
       })
@@ -119,6 +124,7 @@ export function AddGoalSheet({
         <Field label="Target date" hint="Optional. With a date, the card shows what to save each month to get there.">
           <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </Field>
+        <GoalUnitFields unit={unit} onChange={setUnit} />
         {error !== null ? <Alert tone="error">{error}</Alert> : null}
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onClose}>
