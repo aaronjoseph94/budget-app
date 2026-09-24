@@ -12,6 +12,7 @@
     "@budget/chart-specs": "workspace:*",
     "@budget/core": "workspace:*",
     "@budget/money-primitives": "workspace:*",
+    "@budget/savings-coach": "workspace:*",
     "@budget/schema": "workspace:*",
     "@budget/statement-parsers": "workspace:*",
     "@supabase/supabase-js": "^2.117.0",

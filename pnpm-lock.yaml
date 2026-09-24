@@ -41,6 +41,9 @@ importers:
       '@budget/money-primitives':
         specifier: workspace:*
         version: link:../../packages/money-primitives
+      '@budget/savings-coach':
+        specifier: workspace:*
+        version: link:../../packages/savings-coach
       '@budget/schema':
         specifier: workspace:*
         version: link:../../packages/schema

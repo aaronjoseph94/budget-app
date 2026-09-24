@@ -6,23 +6,35 @@ import { hashOf } from '../nav.js'
 import { Card, CardContent, CardTitle } from '../components/ui/card.js'
 import { Icon } from '../components/ui/icons.js'
 import { HelpButton } from '../help/HelpButton.js'
+import { DayLine } from '../coach/CoachCards.js'
+import { useCoachFacts } from '../coach/facts.js'
 
 /**
- * The Coach, first version (plan §2.3, A05): the flight card. The day's
- * line, the cards, what to cut and the quote arrive with A07 and A08.
+ * The Coach (plan §2.3): the day's line and the flight card (A07); the
+ * cards on what changed follow. What to cut and the quote arrive with A08,
+ * the AI's words with A12.
  *
- * It reads nothing new: the goal from the app's first load, and the funds
- * Savings already reads. Every figure is packages/core's (goalProgress,
- * timeEquivalent); this screen formats them.
+ * It needs no one-time update, no AI helper and no key: the facts are
+ * packages/core's digest of a year of the owner's own records, read here
+ * off the Month's path, and the words are the app's own. The flight card
+ * reads the goal and the funds Savings reads. This screen formats figures;
+ * it never computes one.
  */
 export function CoachScreen() {
+  const digest = useCoachFacts()
+  const facts = digest === null || digest === 'failed' ? null : digest.facts
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Coach</h1>
         <HelpButton screen="coach" />
       </div>
+      <p className="text-xs text-muted-foreground">In the app’s own words, from your records.</p>
+      {facts === null ? null : <DayLine facts={facts} className="text-lg font-medium leading-snug" />}
       <FlightCard />
+      {digest === 'failed' ? (
+        <p className="text-sm text-muted-foreground">Your insights did not load. Reload to try again; everything else still works.</p>
+      ) : null}
     </div>
   )
 }

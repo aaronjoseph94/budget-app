@@ -15,6 +15,7 @@
     { "path": "../../packages/schema" },
     { "path": "../../packages/statement-parsers" },
     { "path": "../../packages/core" },
-    { "path": "../../packages/chart-specs" }
+    { "path": "../../packages/chart-specs" },
+    { "path": "../../packages/savings-coach" }
   ]
 }
