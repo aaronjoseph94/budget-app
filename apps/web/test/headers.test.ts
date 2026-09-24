@@ -45,4 +45,12 @@ describe('the rest of the headers', () => {
     expect(policy).toBe('camera=(), microphone=(), geolocation=(), payment=(), usb=()')
     expect(header(netlify, 'Permissions-Policy')).toBe(policy)
   })
+
+  it('lets a hashed build file be kept for a year, and the page itself never (PERF-7)', () => {
+    const assets = cloudflare.slice(cloudflare.indexOf('/assets/*'))
+    expect(header(assets, 'Cache-Control')).toBe('public, max-age=31536000, immutable')
+    const block = netlify.slice(netlify.indexOf('for = "/assets/*"'))
+    expect(header(block, 'Cache-Control')).toBe('public, max-age=31536000, immutable')
+    expect(header(cloudflare.slice(0, cloudflare.indexOf('/assets/*')), 'Cache-Control')).toBeNull()
+  })
 })
