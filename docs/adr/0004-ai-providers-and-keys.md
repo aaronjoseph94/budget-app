@@ -54,7 +54,7 @@ And from ADR 0002, when the owner chose Gemini's free tier for receipts:
 
 | Ask-first item (CLAUDE.md) | Covered by | What it allows |
 |---|---|---|
-| Adding an LLM provider | Items 1 and 2 | Google Gemini (free, first); Groq and OpenRouter (free); OpenAI and Anthropic (paid) |
+| Adding an LLM provider | Items 1 and 2 | Free models "like google Gemini" first, and paid ones. The five services are the engineer's choice under that instruction: Google Gemini (free, first); Groq and OpenRouter (free); OpenAI and Anthropic (paid) |
 | Sending unredacted financial content to a hosted provider | Item 2, with ADR 0002's acceptance of the free-tier trade-off | What each task sends, in "What each service is sent" below |
 | Removing the brand from history | Item 4 | Carried out outside this ADR's code; recorded here so the instruction's three approvals are in one place |
 

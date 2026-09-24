@@ -8,8 +8,8 @@ This plan was made from three independent designs, each led by one concern (safe
 
 **The short version, for the owner:**
 - **A Coach tab, next to Month.** It shows how far the flight fund has come in hours of flying, what changed since last month, what to trim and how many weeks sooner that gets you flying, and a money quote or tip that fits. On Sundays there is a short check-in.
-- **The AI writes the words. Your own numbers write every figure.** When it writes, the AI is never sent your amounts or balances. It writes around blanks that the app fills from your real figures. If the AI is off, busy or out of free uses, you see the same card in the app's own words. Nothing breaks.
-- **Free Google Gemini first.** In AI settings: **Get a free key**, paste it, **Save & test**. If you already added a Gemini key for receipt photos, it is used with no step at all. Other free services (Groq, OpenRouter) and paid ones (OpenAI, Anthropic) can be added. Paid ones are used only if you switch them on.
+- **The AI writes the words. Your own numbers write every figure.** For the Coach, the forecast and the reports, the AI is never sent your amounts or balances: it writes around blanks that the app fills from your real figures. A receipt photo, and what you type into Just type it or Ask, are sent as they are (§3.6). If the AI is off, busy or out of free uses, you see the same card in the app's own words. Nothing breaks.
+- **Free Google Gemini first.** In AI settings: **Get a free key**, paste it, **Save & test**. If you already added a Gemini key for receipt photos, it is used as soon as the AI helper is pasted, with no key to paste. Other free services (Groq, OpenRouter) and paid ones (OpenAI, Anthropic) can be added. Paid ones are used only if you switch them on.
 - **Forecast.** "Safe to spend $31 a day", where the month is heading, the tightest day in the next 30, when you will be flying, and the next three months.
 - **Reports.** The month in review, trends, shops and subscriptions, and your spending habits, with Save as PDF and a CSV download.
 - **Last month, everywhere.** Month, Week, Paycheck, Year, Savings and Debts show what you did at the same point last month.
@@ -52,8 +52,8 @@ The owner's instructions of 2026-09-24, verbatim (numbering theirs; the workbook
 | 10. Test everything; push to main | §13's rules; A28 | A28 |
 
 **What the instruction approves that CLAUDE.md would otherwise ask first.** ADR 0004 records each one with the owner's words:
-- **Adding LLM providers:** free Google Gemini first, the other free tiers (Groq, OpenRouter), and paid OpenAI and Anthropic.
-- **Sending financial content to them.** The owner accepted the privacy trade-off for Gemini's free tier in ADR 0002 ("I don't care about privacy... use Gemini free tier."), and the 2026-09-24 instruction asks for the other providers.
+- **Adding LLM providers:** the owner asked for free models "like google Gemini" and "the ability to add paid models". Which services is the engineer's choice under that instruction: Gemini first, Groq and OpenRouter (free), OpenAI and Anthropic (paid).
+- **Sending financial content to them.** The owner accepted the privacy trade-off for Gemini's free tier in ADR 0002 ("I don't care about privacy... use Gemini free tier."), and the 2026-09-24 instruction asks for AI insights into spending, which cannot be given without sending some of it. The other free services carry the same trade-off, and each one's card in AI settings says so before a key is pasted.
 - **Removing the brand from history** (item 4).
 
 Nothing else on CLAUDE.md's "Ask first" list is covered. **No new npm dependency is planned.** WebCrypto, `fetch`, zod (already present) and hand-written SVG charts cover everything. If a builder finds one unavoidable, it gets its own commit with the reason in the body, and a line in the ADR it serves.
@@ -847,7 +847,7 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **The research was second-hand.** Direct fetches of the providers' pages were blocked, so model ids and limits come from search results. The allowlist is one constant, each adapter is re-checked at build, and **Check which models work** shows at run time what each key can use.
 - **A model is due to be shut down around 16 October 2026** (`gemini-2.5-flash`, `read-receipt`'s default today). A02 moves it first.
 - **Free tiers change without notice.** Google cut free quotas in December 2025, and Groq dropped a model family from its free tier in August 2026. Soft limits, cooldowns, failover and the app's own words for everything keep the app working.
-- **Privacy.** Free tiers may keep what they are sent and people may read it. The owner accepted this (ADR 0002, ADR 0004). The packs send no amounts, labels are masked, Review sends a size band not an amount, shop names can be switched off, and paid services are offered.
+- **Privacy.** Free tiers may keep what they are sent and people may read it. The owner accepted this for Gemini's free tier (ADR 0002) and asked for free models; the other free services' cards say the same before a key is pasted (ADR 0004). The packs send no amounts, labels are masked, Review sends a size band not an amount, shop names can be switched off, and paid services are offered.
 - **A Supabase key change locks saved keys.** Detected (`locked`), explained, and survivable: the Gemini secret and other services keep working; `AI_KEYS_ROOT` is the documented way to make keys survive a change.
 - **The strict text rule will drop some good sentences,** more often from small free models. Each card falls back on its own, and drop reasons are counted as codes so the prompts can be tuned.
 - **The AI can still choose the wrong tone around a correct number.** The direction word travels with the figure and contradicting sentences are dropped, but the wording itself is not proven.

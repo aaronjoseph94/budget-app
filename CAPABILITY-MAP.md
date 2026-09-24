@@ -25,7 +25,8 @@ Dependency arrows point one way only.
 *Changed 2026-09-24* (`docs/ai-first-plan.md`, decided by the engineer under
 the owner's 2026-09-24 instruction to proceed without questions):
 `llm-providers` first named GLM, Qwen, DeepSeek and Ollama; the providers
-are now the five the owner's instruction approved (ADR 0004).
+are now five chosen under the owner's instruction, which asks for free
+models like Gemini and the ability to add paid ones (ADR 0004).
 `savings-coach` first depended on `persistence-schema`, `ingest-pipeline`
 and `llm-providers`; as a package it does no reading, writing or calling,
 so those arrows now start at `app-client`, which reads and writes the
