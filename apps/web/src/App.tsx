@@ -3,7 +3,7 @@ import { readEnv } from './env.js'
 import { createSupabase } from './supabase.js'
 import { NotConfigured, SignIn, useSession } from './auth.js'
 import { AppDataProvider, useAppData } from './app-data.js'
-import { hashOf, useAddress, type Screen } from './nav.js'
+import { hashOf, isBuilt, useAddress, type Screen } from './nav.js'
 import { MonthScreen } from './screens/MonthScreen.js'
 import { MoreScreen } from './screens/MoreScreen.js'
 import { displayNameOf } from './profile.js'
@@ -57,30 +57,37 @@ function Configured({ env }: { env: Parameters<typeof createSupabase>[0] }) {
   )
 }
 
-/** Phones: Month first, Add in the centre within thumb reach (plan §6.1). */
+/**
+ * Phones: Month first, Add in the centre within thumb reach. The Coach has
+ * the Week's old place; the Week is in the Month's switch (ADR 0006).
+ */
 const PHONE_TABS: readonly Tab[] = [
   { screen: 'month', label: 'Month', icon: 'calendar' },
-  { screen: 'week', label: 'Week', icon: 'week' },
+  { screen: 'coach', label: 'Coach', icon: 'sparkles' },
   { screen: 'add', label: 'Add', icon: 'plus' },
   { screen: 'review', label: 'Review', icon: 'inbox' },
   { screen: 'more', label: 'More', icon: 'menu' },
 ]
 
-/** Wide screens have room for Paycheck, the Bill calendar, Year, Savings, Debts and Setup on the bar itself (§6.1). */
-const DESKTOP_TABS: readonly Tab[] = [
-  { screen: 'month', label: 'Month', icon: 'calendar' },
-  { screen: 'week', label: 'Week', icon: 'week' },
-  { screen: 'paycheck', label: 'Paycheck', icon: 'wallet' },
-  // Not "Bills": that is a list and a Month block; this is the Bill calendar.
-  { screen: 'calendar', label: 'Calendar', icon: 'bills' },
-  { screen: 'year', label: 'Year', icon: 'year' },
-  { screen: 'savings', label: 'Savings', icon: 'piggy' },
-  { screen: 'debts', label: 'Debts', icon: 'card' },
-  { screen: 'review', label: 'Review', icon: 'inbox' },
-  { screen: 'add', label: 'Add', icon: 'plus' },
-  { screen: 'setup', label: 'Setup', icon: 'list' },
-  { screen: 'more', label: 'More', icon: 'menu' },
-]
+/**
+ * Wide screens: the Coach, Forecast and Reports beside the views. Paycheck
+ * and Year are in the switch; the Bill calendar and Setup in More (ADR 0006).
+ * A screen not built yet keeps its place here and shows when it lands.
+ */
+const DESKTOP_TABS: readonly Tab[] = (
+  [
+    { screen: 'month', label: 'Month', icon: 'calendar' },
+    { screen: 'week', label: 'Week', icon: 'week' },
+    { screen: 'coach', label: 'Coach', icon: 'sparkles' },
+    { screen: 'forecast', label: 'Forecast', icon: 'trend' },
+    { screen: 'reports', label: 'Reports', icon: 'report' },
+    { screen: 'savings', label: 'Savings', icon: 'piggy' },
+    { screen: 'debts', label: 'Debts', icon: 'card' },
+    { screen: 'review', label: 'Review', icon: 'inbox' },
+    { screen: 'add', label: 'Add', icon: 'plus' },
+    { screen: 'more', label: 'More', icon: 'menu' },
+  ] as const
+).filter((t) => isBuilt(t.screen))
 
 interface Tab {
   readonly screen: Screen
@@ -88,9 +95,16 @@ interface Tab {
   readonly icon: IconName
 }
 
-/** The screens reached through More light the More tab while they show. */
+/** The views reached from the Month's switch. */
+const SWITCHED: ReadonlySet<Screen> = new Set(['week', 'paycheck', 'year'])
+
+/**
+ * The tab lit while a screen shows: its own; the Month for a view reached
+ * through the Month's switch; More for everything reached through More.
+ */
 function tabOf(screen: Screen, tabs: readonly Tab[]): Screen {
-  return tabs.some((t) => t.screen === screen) ? screen : 'more'
+  if (tabs.some((t) => t.screen === screen)) return screen
+  return SWITCHED.has(screen) ? 'month' : 'more'
 }
 
 export function Shell() {
@@ -106,7 +120,7 @@ export function Shell() {
   return (
     <AnnounceProvider>
       <div className="min-h-full">
-        {/* Past the eleven tabs of the desktop bar, in one key (FE-10). Focus
+        {/* Past the desktop bar's tabs, in one key (FE-10). Focus
           is moved by hand: following the link would set the address to
           #main, which the app reads as a request for the Month. */}
         <a
@@ -243,7 +257,7 @@ function Screens({ screen, param }: { screen: Screen; param: string | null }) {
       {screen === 'coach' && param === null ? <CoachScreen /> : null}
       {/* The check-in arrives with A20; its address already reads. */}
       {screen === 'coach' && param !== null ? <NotYet name="The Sunday check-in" /> : null}
-      {NOT_YET.has(screen) ? <NotYet name={SCREEN_NAME[screen]} /> : null}
+      {isBuilt(screen) ? null : <NotYet name={SCREEN_NAME[screen]} />}
     </Suspense>
   )
 }
@@ -271,13 +285,6 @@ const SCREEN_NAME: Record<Screen, string> = {
   start: 'Getting started',
   ai: 'AI settings',
 }
-
-/**
- * Screens whose address already reads (ADR 0006) but whose slice has not
- * landed. Each slice takes its screen out of this set as it adds it, and the
- * bars and More leave these out, so only a typed or kept address reaches one.
- */
-const NOT_YET: ReadonlySet<Screen> = new Set(['forecast', 'reports', 'ask', 'help', 'start', 'ai'])
 
 /** One line, and the way back, for an address that is ahead of the app. */
 function NotYet({ name }: { name: string }) {

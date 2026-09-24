@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
+import { MORE_GROUPS } from '../src/screens/MoreScreen.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 
@@ -16,6 +17,10 @@ function go(hash: string) {
 
 /** The phone's bottom bar comes after the desktop one. */
 const phoneBar = () => screen.getAllByRole('navigation', { name: 'Screens' })[1]!
+const deskBar = () => screen.getAllByRole('navigation', { name: 'Screens' })[0]!
+/** An item in one of More's groups, once More is showing. */
+const moreItem = async (group: string, name: string) =>
+  within(await screen.findByRole('region', { name: group })).getByRole('link', { name: new RegExp(`^${name}`) })
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
@@ -33,12 +38,12 @@ afterEach(() => {
 // jsdom does not follow a link's hash when it is clicked, so these check
 // the address each link names and then go there, as the browser would.
 describe('Shell', () => {
-  it('opens on this month, with Month, Week, Add, Review and More on the phone bar', async () => {
+  it('opens on this month, with Month, Coach, Add, Review and More on the phone bar (ADR 0006)', async () => {
     renderScreen(<Shell />, createFakeSupabase())
 
     expect(await screen.findByRole('heading', { name: 'September 2026' })).toBeTruthy()
     const labels = within(phoneBar()).getAllByRole('link').map((b) => b.textContent)
-    expect(labels).toEqual(['Month', 'Week', 'Add', 'Review', 'More'])
+    expect(labels).toEqual(['Month', 'Coach', 'Add', 'Review', 'More'])
     expect(within(phoneBar()).getByRole('link', { name: 'Month' }).getAttribute('aria-current')).toBe('page')
   })
 
@@ -66,65 +71,94 @@ describe('Shell', () => {
     expect(window.location.hash).toBe('#/month/2026-01')
   })
 
-  it('keeps Paycheck, the Bill calendar, Year, Savings, Debts, Setup, All transactions and Settings under More, and lights More while they show', async () => {
+  it('puts the Coach on the wide bar beside the views, and Paycheck, Year, the Bill calendar and Setup elsewhere', async () => {
+    go('/coach')
+    renderScreen(<Shell />, createFakeSupabase())
+    await screen.findByRole('heading', { name: 'Coach', level: 1 })
+
+    // Forecast and Reports join between Coach and Savings when they are built.
+    expect(within(deskBar()).getAllByRole('link').map((b) => b.textContent)).toEqual([
+      'Month', 'Week', 'Coach', 'Savings', 'Debts', 'Review', 'Add', 'More',
+    ])
+    expect(within(deskBar()).getByRole('link', { name: 'Coach' }).getAttribute('aria-current')).toBe('page')
+    expect(within(phoneBar()).getByRole('link', { name: 'Coach' }).getAttribute('aria-current')).toBe('page')
+  })
+
+  it('lights the Month on a phone for a view reached through its switch, and the Week on a wide screen', async () => {
+    go('/week')
+    renderScreen(<Shell />, createFakeSupabase())
+    await screen.findByRole('heading', { name: 'This week' })
+    expect(within(phoneBar()).getByRole('link', { name: 'Month' }).getAttribute('aria-current')).toBe('page')
+    expect(within(deskBar()).getByRole('link', { name: 'Week' }).getAttribute('aria-current')).toBe('page')
+  })
+
+  it('groups More by what it is for, lists only what is built, and lights More while its screens show', async () => {
     renderScreen(<Shell />, createFakeSupabase())
     expect(within(phoneBar()).getByRole('link', { name: 'More' }).getAttribute('href')).toBe('#/more')
     go('/more')
 
-    const items = (await screen.findAllByRole('listitem')).map((li) => li.querySelector('.font-medium')?.textContent)
-    expect(items).toEqual(['Paycheck', 'Bill calendar', 'Year', 'Savings', 'Debts', 'Setup', 'All transactions', 'Settings'])
+    await screen.findByRole('heading', { name: 'More' })
+    const groups = screen.getAllByRole('region').map((g) => [
+      within(g).getByRole('heading').textContent,
+      within(g).getAllByRole('listitem').map((li) => li.querySelector('.font-medium')?.textContent),
+    ])
+    // Understand (Reports, Ask) appears when Reports lands.
+    expect(groups).toEqual([
+      ['Plan', ['Paycheck', 'Bill calendar', 'Year', 'Savings', 'Debts']],
+      ['Set up and help', ['Setup', 'Settings']],
+      ['Records', ['All transactions']],
+    ])
+    expect(MORE_GROUPS.map((g) => [g.title, g.items.map((i) => i.label)])).toEqual([
+      ['Plan', ['Paycheck', 'Bill calendar', 'Year', 'Savings', 'Debts', 'Forecast']],
+      ['Understand', ['Reports', 'Ask']],
+      ['Set up and help', ['Getting started', 'Setup', 'AI settings', 'Settings', 'Help']],
+      ['Records', ['All transactions']],
+    ])
 
-    expect(screen.getByRole('link', { name: /All transactions/ }).getAttribute('href')).toBe('#/ledger')
+    expect((await moreItem('Records', 'All transactions')).getAttribute('href')).toBe('#/ledger')
     go('/ledger')
     expect(within(phoneBar()).getByRole('link', { name: 'More' }).getAttribute('aria-current')).toBe('page')
   })
 
-  it('opens the Year, fetched on first use, from More on a phone and from the bar on a desktop', async () => {
+  it('opens the Year, fetched on first use, from More, and lights the Month while it shows', async () => {
     renderScreen(<Shell />, createFakeSupabase())
     go('/more')
-    expect(within(await screen.findByRole('list')).getByRole('link', { name: /^Year/ }).getAttribute('href')).toBe('#/year')
+    expect((await moreItem('Plan', 'Year')).getAttribute('href')).toBe('#/year')
     go('/year')
     expect(await screen.findByRole('heading', { name: 'Year' })).toBeTruthy()
-    expect(within(phoneBar()).getByRole('link', { name: 'More' }).getAttribute('aria-current')).toBe('page')
-    const desktopBar = screen.getAllByRole('navigation', { name: 'Screens' })[0]!
-    expect(within(desktopBar).getAllByRole('link').map((b) => b.textContent)).toEqual([
-      'Month', 'Week', 'Paycheck', 'Calendar', 'Year', 'Savings', 'Debts', 'Review', 'Add', 'Setup', 'More',
-    ])
-    expect(within(desktopBar).getByRole('link', { name: 'Year' }).getAttribute('aria-current')).toBe('page')
+    expect(within(phoneBar()).getByRole('link', { name: 'Month' }).getAttribute('aria-current')).toBe('page')
+    expect(within(deskBar()).getByRole('link', { name: 'Month' }).getAttribute('aria-current')).toBe('page')
   })
 
   it('opens Savings from More on a phone, and from the bar on a desktop', async () => {
     renderScreen(<Shell />, createFakeSupabase())
     go('/more')
-    expect(within(await screen.findByRole('list')).getByRole('link', { name: /^Savings/ }).getAttribute('href')).toBe('#/savings')
+    expect((await moreItem('Plan', 'Savings')).getAttribute('href')).toBe('#/savings')
     go('/savings')
     expect(await screen.findByRole('heading', { name: 'Savings goals' })).toBeTruthy()
-    const desktopBar = screen.getAllByRole('navigation', { name: 'Screens' })[0]!
-    expect(within(desktopBar).getByRole('link', { name: 'Savings' }).getAttribute('aria-current')).toBe('page')
+    expect(within(deskBar()).getByRole('link', { name: 'Savings' }).getAttribute('aria-current')).toBe('page')
     expect(within(phoneBar()).getByRole('link', { name: 'More' }).getAttribute('aria-current')).toBe('page')
   })
 
   it('opens Debts from More on a phone, and from the bar on a desktop', async () => {
     renderScreen(<Shell />, createFakeSupabase())
     go('/more')
-    expect(within(await screen.findByRole('list')).getByRole('link', { name: /^Debts/ }).getAttribute('href')).toBe('#/debts')
+    expect((await moreItem('Plan', 'Debts')).getAttribute('href')).toBe('#/debts')
     go('/debts')
     expect(await screen.findByRole('heading', { name: 'Debt payoff' })).toBeTruthy()
-    const desktopBar = screen.getAllByRole('navigation', { name: 'Screens' })[0]!
-    expect(within(desktopBar).getByRole('link', { name: 'Debts' }).getAttribute('aria-current')).toBe('page')
+    expect(within(deskBar()).getByRole('link', { name: 'Debts' }).getAttribute('aria-current')).toBe('page')
     expect(within(phoneBar()).getByRole('link', { name: 'More' }).getAttribute('aria-current')).toBe('page')
   })
 
-  it('opens the Bill calendar from More on a phone, and from the bar on a desktop, at this month', async () => {
+  it('opens the Bill calendar from More, at this month, and lights More while it shows', async () => {
     renderScreen(<Shell />, createFakeSupabase())
     go('/more')
-    expect(within(await screen.findByRole('list')).getByRole('link', { name: /^Bill calendar/ }).getAttribute('href')).toBe('#/calendar')
+    expect((await moreItem('Plan', 'Bill calendar')).getAttribute('href')).toBe('#/calendar')
     go('/calendar')
     // Fetched on first use now (PERF-3), so its heading is waited for too.
     expect(await screen.findByText('Bill calendar')).toBeTruthy()
     expect(await screen.findByRole('heading', { name: 'September 2026' })).toBeTruthy()
-    const desktopBar = screen.getAllByRole('navigation', { name: 'Screens' })[0]!
-    expect(within(desktopBar).getByRole('link', { name: 'Calendar' }).getAttribute('aria-current')).toBe('page')
+    expect(within(deskBar()).getByRole('link', { name: 'More' }).getAttribute('aria-current')).toBe('page')
     expect(within(phoneBar()).getByRole('link', { name: 'More' }).getAttribute('aria-current')).toBe('page')
   })
 
@@ -240,14 +274,14 @@ describe('Shell, its screens as links (FE-20)', () => {
     renderScreen(<Shell />, createFakeSupabase())
     await screen.findByRole('heading', { name: 'September 2026' })
     expect(within(phoneBar()).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual([
-      '#/month', '#/week', '#/add', '#/review', '#/more',
+      '#/month', '#/coach', '#/add', '#/review', '#/more',
     ])
-    const desk = screen.getAllByRole('navigation', { name: 'Screens' })[0]!
-    expect(within(desk).getAllByRole('link')).toHaveLength(11)
+    expect(within(deskBar()).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual([
+      '#/month', '#/week', '#/coach', '#/savings', '#/debts', '#/review', '#/add', '#/more',
+    ])
 
     go('/more')
-    const more = within(await screen.findByRole('list'))
-    expect(more.getByRole('link', { name: /^Bill calendar/ }).getAttribute('href')).toBe('#/calendar')
+    expect((await moreItem('Plan', 'Bill calendar')).getAttribute('href')).toBe('#/calendar')
   })
 })
 
