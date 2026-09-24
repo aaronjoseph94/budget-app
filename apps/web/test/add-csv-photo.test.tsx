@@ -88,3 +88,35 @@ describe('AddScreen, a receipt photo', () => {
     expect((fake.rpcCalls[0]?.args.p_rows as { amount_cents: number }[])[0]?.amount_cents).toBe(-1250)
   })
 })
+
+describe('AddScreen, a file the phone cannot read (CR-7)', () => {
+  afterEach(cleanup)
+
+  it('says so and offers another, rather than sitting on Reading…', async () => {
+    renderScreen(<AddScreen />, createFakeSupabase())
+    await screen.findByText('Choose a statement')
+    // A file in iCloud that is not on the phone rejects when it is read.
+    const file = new File([''], 'statement.csv', { type: 'text/csv' })
+    Object.defineProperty(file, 'text', { value: () => Promise.reject(new Error('NotReadableError')) })
+    pick('Choose a statement', file)
+
+    expect(await screen.findByText('This file could not be read. Nothing was imported.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Choose another file' }))
+    expect(await screen.findByText('Choose a statement')).toBeTruthy()
+  })
+
+  it('says to wait when the account has not loaded yet, rather than doing nothing', async () => {
+    const fake = createFakeSupabase()
+    fake.server.hold = (table) => (table === 'accounts' ? new Promise<void>(() => undefined) : null)
+    renderScreen(<AddScreen />, fake)
+    fireEvent.click(await screen.findByRole('tab', { name: /Type it/ }))
+    fireEvent.change(screen.getByLabelText(/^Amount/), { target: { value: '5' } })
+    fireEvent.change(screen.getByLabelText(/^What was it/), { target: { value: 'Coffee' } })
+    fireEvent.change(screen.getByRole('combobox', { name: 'Category' }), { target: { value: '__new__' } })
+    fireEvent.change(screen.getByLabelText('New category name'), { target: { value: 'Treats' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+
+    expect(await screen.findByText('Still loading your account. Try again in a moment; nothing was saved.')).toBeTruthy()
+    expect(fake.rpcCalls).toEqual([])
+  })
+})

@@ -25,6 +25,9 @@ type Loaded =
   | { readonly kind: 'pdf'; readonly name: string; readonly result: PdfImport }
   | { readonly kind: 'wrong'; readonly name: string; readonly message: string }
 
+/** A save pressed before the account has loaded; it used to do nothing, without a word (CR-7). */
+const NO_ACCOUNT = 'Still loading your account. Try again in a moment; nothing was saved.'
+
 interface Outcome {
   readonly ok: boolean
   readonly message: string
@@ -113,16 +116,23 @@ function StatementImport() {
     }
     setLoaded({ kind: 'reading', name: file.name })
     const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name)
-    if (isPdf) {
-      const result = await readStatementPdf(new Uint8Array(await file.arrayBuffer()))
-      setLoaded({ kind: 'pdf', name: file.name, result })
-    } else {
-      setLoaded({ kind: 'csv', name: file.name, text: await file.text() })
+    // A phone can refuse to read a file it only lists (one in iCloud, not
+    // downloaded), and a reader can throw; either left the screen on
+    // "Reading…" with no way back (CR-7).
+    try {
+      if (isPdf) {
+        const result = await readStatementPdf(new Uint8Array(await file.arrayBuffer()))
+        setLoaded({ kind: 'pdf', name: file.name, result })
+      } else {
+        setLoaded({ kind: 'csv', name: file.name, text: await file.text() })
+      }
+    } catch {
+      setLoaded({ kind: 'wrong', name: file.name, message: 'This file could not be read. Nothing was imported.' })
     }
   }
 
   const save = async (request: SaveRequest) => {
-    if (accountId === null) return
+    if (accountId === null) return setOutcome({ ok: false, message: NO_ACCOUNT })
     setSaving(true)
     setOutcome(null)
     try {
@@ -395,7 +405,8 @@ function TypedEntry() {
     // Add stays pressable, and says what is missing, rather than sitting
     // greyed out with no reason given (FE-8).
     if (!ready) return setTried((n) => n + 1)
-    if (cents === null || accountId === null) return
+    if (accountId === null) return setOutcome({ ok: false, message: NO_ACCOUNT })
+    if (cents === null) return
     setBusy(true)
     setOutcome(null)
     try {
@@ -601,7 +612,8 @@ function PhotoEntry() {
   }
 
   const send = async () => {
-    if (!ready || cents === null || accountId === null) return
+    if (accountId === null) return setOutcome({ ok: false, message: NO_ACCOUNT })
+    if (!ready || cents === null) return
     setBusy(true)
     setOutcome(null)
     try {
