@@ -30,14 +30,16 @@ afterEach(() => {
   window.location.hash = ''
 })
 
+// jsdom does not follow a link's hash when it is clicked, so these check
+// the address each link names and then go there, as the browser would.
 describe('Shell', () => {
   it('opens on this month, with Month, Week, Add, Review and More on the phone bar', async () => {
     renderScreen(<Shell />, createFakeSupabase())
 
     expect(await screen.findByRole('heading', { name: 'September 2026' })).toBeTruthy()
-    const labels = within(phoneBar()).getAllByRole('button').map((b) => b.textContent)
+    const labels = within(phoneBar()).getAllByRole('link').map((b) => b.textContent)
     expect(labels).toEqual(['Month', 'Week', 'Add', 'Review', 'More'])
-    expect(within(phoneBar()).getByRole('button', { name: 'Month' }).getAttribute('aria-current')).toBe('page')
+    expect(within(phoneBar()).getByRole('link', { name: 'Month' }).getAttribute('aria-current')).toBe('page')
   })
 
   it('gives every tab on the desktop bar an icon of its own', async () => {
@@ -45,7 +47,7 @@ describe('Shell', () => {
     await screen.findByRole('heading', { name: 'September 2026' })
 
     const desk = screen.getAllByRole('navigation', { name: 'Screens' })[0]!
-    const drawn = within(desk).getAllByRole('button').map((b) => b.querySelector('svg')?.innerHTML)
+    const drawn = within(desk).getAllByRole('link').map((b) => b.querySelector('svg')?.innerHTML)
     expect(new Set(drawn).size).toBe(drawn.length)
   })
 
@@ -66,70 +68,64 @@ describe('Shell', () => {
 
   it('keeps Paycheck, the Bill calendar, Year, Savings, Debts, Setup, All transactions and Settings under More, and lights More while they show', async () => {
     renderScreen(<Shell />, createFakeSupabase())
-    fireEvent.click(within(phoneBar()).getByRole('button', { name: 'More' }))
-    expect(window.location.hash).toBe('#/more')
+    expect(within(phoneBar()).getByRole('link', { name: 'More' }).getAttribute('href')).toBe('#/more')
     go('/more')
 
     const items = (await screen.findAllByRole('listitem')).map((li) => li.querySelector('.font-medium')?.textContent)
     expect(items).toEqual(['Paycheck', 'Bill calendar', 'Year', 'Savings', 'Debts', 'Setup', 'All transactions', 'Settings'])
 
-    fireEvent.click(screen.getByRole('button', { name: /All transactions/ }))
-    expect(window.location.hash).toBe('#/ledger')
+    expect(screen.getByRole('link', { name: /All transactions/ }).getAttribute('href')).toBe('#/ledger')
     go('/ledger')
-    expect(within(phoneBar()).getByRole('button', { name: 'More' }).getAttribute('aria-current')).toBe('page')
+    expect(within(phoneBar()).getByRole('link', { name: 'More' }).getAttribute('aria-current')).toBe('page')
   })
 
   it('opens the Year, fetched on first use, from More on a phone and from the bar on a desktop', async () => {
     renderScreen(<Shell />, createFakeSupabase())
     go('/more')
-    fireEvent.click(within(await screen.findByRole('list')).getByRole('button', { name: /^Year/ }))
-    expect(window.location.hash).toBe('#/year')
+    expect(within(await screen.findByRole('list')).getByRole('link', { name: /^Year/ }).getAttribute('href')).toBe('#/year')
     go('/year')
     expect(await screen.findByRole('heading', { name: 'Year' })).toBeTruthy()
-    expect(within(phoneBar()).getByRole('button', { name: 'More' }).getAttribute('aria-current')).toBe('page')
+    expect(within(phoneBar()).getByRole('link', { name: 'More' }).getAttribute('aria-current')).toBe('page')
     const desktopBar = screen.getAllByRole('navigation', { name: 'Screens' })[0]!
-    expect(within(desktopBar).getAllByRole('button').map((b) => b.textContent)).toEqual([
+    expect(within(desktopBar).getAllByRole('link').map((b) => b.textContent)).toEqual([
       'Month', 'Week', 'Paycheck', 'Calendar', 'Year', 'Savings', 'Debts', 'Review', 'Add', 'Setup', 'More',
     ])
-    expect(within(desktopBar).getByRole('button', { name: 'Year' }).getAttribute('aria-current')).toBe('page')
+    expect(within(desktopBar).getByRole('link', { name: 'Year' }).getAttribute('aria-current')).toBe('page')
   })
 
   it('opens Savings from More on a phone, and from the bar on a desktop', async () => {
     renderScreen(<Shell />, createFakeSupabase())
     go('/more')
-    fireEvent.click(within(await screen.findByRole('list')).getByRole('button', { name: /^Savings/ }))
-    expect(window.location.hash).toBe('#/savings')
+    expect(within(await screen.findByRole('list')).getByRole('link', { name: /^Savings/ }).getAttribute('href')).toBe('#/savings')
     go('/savings')
     expect(await screen.findByRole('heading', { name: 'Savings goals' })).toBeTruthy()
     const desktopBar = screen.getAllByRole('navigation', { name: 'Screens' })[0]!
-    expect(within(desktopBar).getByRole('button', { name: 'Savings' }).getAttribute('aria-current')).toBe('page')
-    expect(within(phoneBar()).getByRole('button', { name: 'More' }).getAttribute('aria-current')).toBe('page')
+    expect(within(desktopBar).getByRole('link', { name: 'Savings' }).getAttribute('aria-current')).toBe('page')
+    expect(within(phoneBar()).getByRole('link', { name: 'More' }).getAttribute('aria-current')).toBe('page')
   })
 
   it('opens Debts from More on a phone, and from the bar on a desktop', async () => {
     renderScreen(<Shell />, createFakeSupabase())
     go('/more')
-    fireEvent.click(within(await screen.findByRole('list')).getByRole('button', { name: /^Debts/ }))
-    expect(window.location.hash).toBe('#/debts')
+    expect(within(await screen.findByRole('list')).getByRole('link', { name: /^Debts/ }).getAttribute('href')).toBe('#/debts')
     go('/debts')
     expect(await screen.findByRole('heading', { name: 'Debt payoff' })).toBeTruthy()
     const desktopBar = screen.getAllByRole('navigation', { name: 'Screens' })[0]!
-    expect(within(desktopBar).getByRole('button', { name: 'Debts' }).getAttribute('aria-current')).toBe('page')
-    expect(within(phoneBar()).getByRole('button', { name: 'More' }).getAttribute('aria-current')).toBe('page')
+    expect(within(desktopBar).getByRole('link', { name: 'Debts' }).getAttribute('aria-current')).toBe('page')
+    expect(within(phoneBar()).getByRole('link', { name: 'More' }).getAttribute('aria-current')).toBe('page')
   })
 
   it('opens the Bill calendar from More on a phone, and from the bar on a desktop, at this month', async () => {
     renderScreen(<Shell />, createFakeSupabase())
     go('/more')
-    fireEvent.click(within(await screen.findByRole('list')).getByRole('button', { name: /^Bill calendar/ }))
-    expect(window.location.hash).toBe('#/calendar')
+    expect(within(await screen.findByRole('list')).getByRole('link', { name: /^Bill calendar/ }).getAttribute('href')).toBe('#/calendar')
     go('/calendar')
     // Fetched on first use now (PERF-3), so its heading is waited for too.
     expect(await screen.findByText('Bill calendar')).toBeTruthy()
     expect(await screen.findByRole('heading', { name: 'September 2026' })).toBeTruthy()
     const desktopBar = screen.getAllByRole('navigation', { name: 'Screens' })[0]!
-    expect(within(desktopBar).getByRole('button', { name: 'Calendar' }).getAttribute('aria-current')).toBe('page')
-    expect(within(phoneBar()).getByRole('button', { name: 'More' }).getAttribute('aria-current')).toBe('page')
+    expect(within(desktopBar).getByRole('link', { name: 'Calendar' }).getAttribute('aria-current')).toBe('page')
+    expect(within(phoneBar()).getByRole('link', { name: 'More' }).getAttribute('aria-current')).toBe('page')
   })
 
   it('shows the review count on the Review tab', async () => {
@@ -139,7 +135,7 @@ describe('Shell', () => {
       ],
     })
     renderScreen(<Shell />, fake)
-    expect(await within(phoneBar()).findByRole('button', { name: 'Review, 1 waiting' })).toBeTruthy()
+    expect(await within(phoneBar()).findByRole('link', { name: 'Review, 1 waiting' })).toBeTruthy()
   })
 })
 
@@ -202,7 +198,6 @@ describe('Shell, telling a screen reader the screen changed (FE-13)', () => {
     // Opening the app leaves focus where the browser put it.
     expect(document.activeElement).toBe(document.body)
 
-    fireEvent.click(within(phoneBar()).getByRole('button', { name: 'Review' }))
     go('/review')
     expect(document.title).toBe('Review · Budget')
     expect(document.activeElement).toBe(screen.getByRole('main'))
@@ -237,5 +232,21 @@ describe('Shell, reading out what an action did (FE-16)', () => {
     fireEvent.click(screen.getByRole('button', { name: /Approve/ }))
     await waitFor(() => expect(region.textContent).toMatch(/^Added\. Future charges from this merchant/))
     expect(screen.getByTestId('announcer')).toBe(region)
+  })
+})
+
+describe('Shell, its screens as links (FE-20)', () => {
+  it('gives every tab and every More item the address it opens, so it can be opened in a new tab', async () => {
+    renderScreen(<Shell />, createFakeSupabase())
+    await screen.findByRole('heading', { name: 'September 2026' })
+    expect(within(phoneBar()).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual([
+      '#/month', '#/week', '#/add', '#/review', '#/more',
+    ])
+    const desk = screen.getAllByRole('navigation', { name: 'Screens' })[0]!
+    expect(within(desk).getAllByRole('link')).toHaveLength(11)
+
+    go('/more')
+    const more = within(await screen.findByRole('list'))
+    expect(more.getByRole('link', { name: /^Bill calendar/ }).getAttribute('href')).toBe('#/calendar')
   })
 })

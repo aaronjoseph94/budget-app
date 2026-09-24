@@ -1,4 +1,4 @@
-import { navigate, type Screen } from '../nav.js'
+import { hashOf, type Screen } from '../nav.js'
 import { Icon, type IconName } from '../components/ui/icons.js'
 
 /** What the phone's bottom bar has no room for (plan §6.1). */
@@ -20,9 +20,9 @@ export function MoreScreen() {
       <ul className="divide-y overflow-hidden rounded-xl border bg-card shadow-sm">
         {ITEMS.map((item) => (
           <li key={item.screen}>
-            <button
-              type="button"
-              onClick={() => navigate(item.screen)}
+            {/* A link to the screen's address, so it can open in a new tab (FE-20). */}
+            <a
+              href={hashOf({ screen: item.screen, period: null })}
               className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-accent"
             >
               <Icon name={item.icon} className="size-5 text-muted-foreground" />
@@ -31,7 +31,7 @@ export function MoreScreen() {
                 <span className="block text-sm text-muted-foreground">{item.hint}</span>
               </span>
               <Icon name="chevronRight" className="size-4 text-muted-foreground" />
-            </button>
+            </a>
           </li>
         ))}
       </ul>

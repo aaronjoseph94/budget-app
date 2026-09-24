@@ -3,7 +3,7 @@ import { readEnv } from './env.js'
 import { createSupabase } from './supabase.js'
 import { NotConfigured, SignIn, useSession } from './auth.js'
 import { AppDataProvider, useAppData } from './app-data.js'
-import { navigate, useAddress, type Screen } from './nav.js'
+import { hashOf, useAddress, type Screen } from './nav.js'
 import { MonthScreen } from './screens/MonthScreen.js'
 import { MoreScreen } from './screens/MoreScreen.js'
 import { displayNameOf } from './profile.js'
@@ -127,10 +127,9 @@ export function Shell() {
               {DESKTOP_TABS.map((t) => {
                 const active = tabOf(screen, DESKTOP_TABS) === t.screen
                 return (
-                  <button
+                  <a
                     key={t.screen}
-                    type="button"
-                    onClick={() => navigate(t.screen)}
+                    href={hashOf({ screen: t.screen, period: null })}
                     aria-current={active ? 'page' : undefined}
                     aria-label={labelOf(t, pendingTotal)}
                     className={cn(
@@ -150,7 +149,7 @@ export function Shell() {
                         <Count n={pendingTotal} />
                       </span>
                     ) : null}
-                  </button>
+                  </a>
                 )
               })}
             </nav>
@@ -187,10 +186,9 @@ export function Shell() {
             {PHONE_TABS.map((t) => {
               const active = tabOf(screen, PHONE_TABS) === t.screen
               return (
-                <button
+                <a
                   key={t.screen}
-                  type="button"
-                  onClick={() => navigate(t.screen)}
+                  href={hashOf({ screen: t.screen, period: null })}
                   aria-current={active ? 'page' : undefined}
                   aria-label={labelOf(t, pendingTotal)}
                   className={cn(
@@ -214,7 +212,7 @@ export function Shell() {
                       <Count n={pendingTotal} />
                     </span>
                   ) : null}
-                </button>
+                </a>
               )
             })}
           </div>
@@ -273,7 +271,12 @@ function useAnnounceScreen(screen: Screen, main: { readonly current: HTMLElement
   const shown = useRef<Screen | null>(null)
   useEffect(() => {
     document.title = `${SCREEN_NAME[screen]} · Budget`
-    if (shown.current !== null && shown.current !== screen) main.current?.focus({ preventScroll: true })
+    if (shown.current !== null && shown.current !== screen) {
+      // The tabs are links now (FE-20), so the scroll navigate() gave them
+      // happens here, for however the screen was reached.
+      window.scrollTo({ top: 0 })
+      main.current?.focus({ preventScroll: true })
+    }
     shown.current = screen
   }, [screen, main])
 }
