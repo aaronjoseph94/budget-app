@@ -5,7 +5,7 @@
  * the review queue. Each screen loads its own rows. Nothing derived is held
  * here — every total is recomputed by packages/core when a screen renders.
  */
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { US_AMOUNT_FORMAT, parseAmountToCents } from '@budget/statement-parsers'
 import {
   ensureAccount,
@@ -63,8 +63,14 @@ export function AppDataProvider({
   const [pendingTotal, setPendingTotal] = useState(0)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [version, setVersion] = useState(0)
+  // Every editor refreshes after it saves, so two refreshes can be in flight
+  // at once, and the older one can be answered last. Only the newest may
+  // write: an older answer holds the categories as they were before the
+  // save, and showing it would wipe a budget that is stored (CR-1).
+  const latest = useRef(0)
 
   const refresh = useCallback(async () => {
+    const mine = ++latest.current
     try {
       const [account, cats, g, pending] = await Promise.all([
         ensureAccount(supabase, userId, DEFAULT_ACCOUNT),
@@ -72,6 +78,7 @@ export function AppDataProvider({
         getGoal(supabase),
         listPending(supabase, 1),
       ])
+      if (mine !== latest.current) return
       setAccountId(account.id)
       setCategories(cats)
       setGoal(g)
@@ -79,6 +86,7 @@ export function AppDataProvider({
       setLoadError(null)
       setVersion((v) => v + 1)
     } catch (cause) {
+      if (mine !== latest.current) return
       setLoadError(cause instanceof Error ? cause.message : 'Could not load your data.')
     }
   }, [supabase, userId])
