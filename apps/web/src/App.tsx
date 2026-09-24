@@ -21,6 +21,7 @@ const AddScreen = lazy(() => import('./screens/AddScreen.js').then((m) => ({ def
 const CalendarScreen = lazy(() => import('./screens/CalendarScreen.js').then((m) => ({ default: m.CalendarScreen })))
 const CoachScreen = lazy(() => import('./screens/CoachScreen.js').then((m) => ({ default: m.CoachScreen })))
 const DebtsScreen = lazy(() => import('./screens/DebtsScreen.js').then((m) => ({ default: m.DebtsScreen })))
+const HelpScreen = lazy(() => import('./screens/HelpScreen.js').then((m) => ({ default: m.HelpScreen })))
 const LedgerScreen = lazy(() => import('./screens/LedgerScreen.js').then((m) => ({ default: m.LedgerScreen })))
 const PaycheckScreen = lazy(() => import('./screens/PaycheckScreen.js').then((m) => ({ default: m.PaycheckScreen })))
 const ReviewScreen = lazy(() => import('./screens/ReviewScreen.js').then((m) => ({ default: m.ReviewScreen })))
@@ -254,6 +255,7 @@ function Screens({ screen, param }: { screen: Screen; param: string | null }) {
       {screen === 'savings' ? <SavingsScreen /> : null}
       {screen === 'debts' ? <DebtsScreen /> : null}
       {screen === 'year' ? <YearScreen start={param} /> : null}
+      {screen === 'help' ? <HelpScreen topic={param} /> : null}
       {screen === 'coach' && param === null ? <CoachScreen /> : null}
       {/* The check-in arrives with A20; its address already reads. */}
       {screen === 'coach' && param !== null ? <NotYet name="The Sunday check-in" /> : null}

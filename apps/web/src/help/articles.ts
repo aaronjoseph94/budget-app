@@ -312,6 +312,24 @@ export const ARTICLES: readonly Article[] = [
   },
 ]
 
+/**
+ * The articles holding every word of `query`, in any letter case, anywhere
+ * in their text; all of them for an empty query. Every word must match, so
+ * "starting balance" finds the articles about it rather than every one
+ * that says "starting".
+ */
+export function searchArticles(query: string): readonly Article[] {
+  const words = query.toLowerCase().split(/\s+/).filter((w) => w !== '')
+  if (words.length === 0) return ARTICLES
+  return ARTICLES.filter((a) => {
+    const text = [a.title, a.summary, a.done, a.stuck, ...a.steps, ...(a.terms ?? []).flatMap((t) => [t.term, t.meaning])]
+      .join(' ')
+      .replaceAll('**', '')
+      .toLowerCase()
+    return words.every((w) => text.includes(w))
+  })
+}
+
 /** The article with this id, or undefined for a topic not written yet. */
 export function articleFor(id: string): Article | undefined {
   return ARTICLES.find((a) => a.id === id)
