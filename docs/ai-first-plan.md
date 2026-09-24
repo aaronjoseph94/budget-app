@@ -858,3 +858,85 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **Week leaves the phone bar,** which the owner will notice. It is one tap away, `#/week` still works, and HANDOFF says so.
 - **The copied setup files are public on the site.** They hold no secret, and row-level security is what protects the data, not the schema being unknown.
 - **Scope:** 28 slices, about 110 commits. Comparisons and the Coach come early so value shows before the AI plumbing is finished, and every slice leaves the app usable.
+
+---
+
+## 15. Where the designs disagreed, and what was chosen
+
+The three designs are named by what led them: **grounded** (safety), **delight** (the owner's experience) and **reliable** (free-tier reality). Each choice is Decided by the engineer under the owner's 2026-09-24 instruction to proceed without questions.
+
+| Question | The designs said | Chosen | Why |
+|---|---|---|---|
+| Which design leads | The engineering judge preferred grounded; the owner's judge preferred delight | Grounded's architecture and safety; delight's screens, tone, Help and Setup; reliable's budgeting and honesty | Both judges asked for exactly this mix in their grafts, and neither verdict argued against it |
+| How a blank is written | `{{fact.id}}` (grounded), `[[A.slot]]` (delight), `{{A}}` (reliable) | `{{A.slot}}` | Letters and slot names are digit-free, so the database can refuse every digit; a fact has several slots (name, now, before, change) |
+| Amounts in the AI's brief | Formatted values (grounded, reliable); none (delight) | None, for the packs | Less is kept by free tiers, and the brief's hash becomes the qualitative signature by construction. The test checks that no amount, balance or date field is sent, and labels are masked, because real shop names hold store numbers |
+| The cache key | A hash of the exact payload (grounded) | A signature with no cents, and cards reused one at a time (reliable) | With the exact payload, every cent changes the key and free calls run out |
+| The direction of a change | Direction in the figure (grounded); a word-list check (reliable) | Both | The figure carries "more" or "less", and a sentence that contradicts it is dropped |
+| Daily limits | 60 (grounded), 300 (delight), 40 (reliable) | 40 by default, 10–150, a limit per task and a soft limit per service, claimed atomically per attempt | The owner's judge asked for 60 or fewer; the free tiers' reported limits are about 20–500 a day |
+| Time per request | 20 s (grounded), 3 × 25 s (delight), up to 5 × 25 s (reliable) | 3 attempts, 20 s each (30 s for a receipt), in a 100 s deadline | Stays inside the free plan's 150 s wall clock |
+| Finding models | From each service's own list, by pattern (delight); a fixed list (grounded, reliable) | A fixed list; a service's list is only intersected with it | CLAUDE.md's hardcoded allowlist; a listed id never reaches a URL |
+| OpenRouter's model | Named free models (grounded); the `openrouter/free` router (reliable) | The router | The named free models change often |
+| Groq's JSON | Strict schema (grounded); `json_object` (delight, reliable) | `json_object`, zod deciding | Strict schemas are reported to be ignored on `gpt-oss-120b` |
+| Paid defaults | Sonnet (delight); the cheapest (grounded, reliable) | The cheapest, and paid off until switched on | A paid key must not be drained by a fallback the owner did not choose |
+| Tones | Three, including "Drill sergeant" (delight) | Cheerleader (default) and Straight talker | The coach idea doc rules out guilt-based nagging |
+| How the helper writes | PostgREST table writes (delight); service-role-only functions (grounded, reliable) | Functions, granted to `service_role` alone, taking `p_user` | Every grant can be asserted; the browser has no path to a key |
+| The encryption root | The service key (grounded, delight); an optional `AI_KEYS_ROOT` first (reliable) | Include `AI_KEYS_ROOT` as optional | It lets keys survive a Supabase key change, and it is not an owner step |
+| The period switch | Three items (grounded); four (delight, reliable) | Month · Week · Pay · Year | Four fit 320 px at about 72 px each; at large text they scroll in their own box |
+| The coach package | `packages/coach` (grounded) | `packages/savings-coach` | CAPABILITY-MAP's module ids are stable |
+| Trends | Its own screen (reliable); a Reports tab (delight) | A tab, of four, not six | The owner's judge found three places to look, and six tabs, too many |
+| Getting started | At the top of Setup (reliable); its own screen (grounded, delight) | Its own screen, one step at a time, editors inline | One step per screen is what keeps a non-engineer from feeling lost |
+| "Do this later" | This device (grounded); a table (reliable); the sign-in's metadata (delight) | The sign-in's metadata | It follows the owner to another device and needs no migration |
+| Comparing the Month | A change under Spent (delight, reliable); both figures named (grounded) | Both figures named | A same-days window counts a bill on its due day (F8); Spent counts it all month |
+| A month-end forecast on the Month | A second figure (grounded); a labelled line under F7 (reliable) | A labelled line, ⓘ and a Help article | The Month must never show two unlabelled month-end figures |
+| The month-end method | Pace and budget (grounded); trailing rates (delight); earlier months as scenarios (reliable) | Earlier months as scenarios, plus pace from the 7th, as a range | Honest with little history, and never a single invented point |
+| Goal pace | The last 8 weeks (delight); months, at p25, median and p75 (reliable) | Months | Payday transfers make weeks lumpy |
+| Pay still due | Goal less received (grounded); the schedule and usual pay (reliable) | The schedule first, the goal as fallback | Setup asks for the schedule; the goal is often blank |
+| History | Not handled (grounded, delight); `historyStart` (reliable) | `historyStart`, from the first statement period | Months before the records would read as $0 and invent "huge increases" |
+| Migrations | Two (grounded); three (delight, reliable) | Three | Each capability can be missing alone, and the probes can say which |
+| Export | None (grounded, delight); print (reliable) | Print, plus a CSV in `report-export` | No dependency; the owner's data is never trapped; N4 is settled where it belongs |
+| An AI note on every comparison | Yes (delight) | No: chips only | The owner's judge: too much for a non-engineer, and too many calls |
+| The Month's coach line | Loaded with the Month (delight, reliable) | Loaded after the Month draws | The 200 KB first-load gate, with 17.66 KB of room |
+| Review's brief | Amounts (reliable); none (delight) | A size band | Enough to tell a snack from a tank of fuel, without the amount |
+| Where the hash is made | In the coach package (grounded) | In the app, with WebCrypto | `savings-coach` stays pure, like `chart-specs` |
+| Push, then paste | Not addressed (grounded) | Safe by design, proven in A28 | `main` deploys itself when pushed |
+
+---
+
+## 16. What the judges said must be fixed, and where it is
+
+**The engineering judge:**
+- Rebased on the current branch (N7 settled, screens lazy, the 200 KB gate): the status line, §9, §13's rules, A07, A12, A13.
+- A Unicode-safe number rule (NFKC, `\p{N}`, `\p{Sc}`, word boundaries, "one" allowed, a SQL backstop, fullwidth and Arabic-Indic fixtures): ADR 0005, §10.1, A12.
+- No `temperature` or `top_p` where refused; thinking cannot cut the JSON short; refusals and length stops fail over: §3.3, A11.
+- A deadline of about 110 s, at most three attempts: §3.5 (100 s).
+- Payloads budgeted in tokens; a service skipped when a payload would exceed its budget: §3.5, A11.
+- `gemini-2.5-flash` off the list and off `read-receipt`; every id unverified until listed: §3.3, A02.
+- Service-only functions revoked from public, anon and authenticated, granted to `service_role`; the stub role; every grant asserted; `sb_secret_` never a bearer: §3.4, §10.1, A09.
+- The functions really under the gates, each seen RED once: A02.
+- `packages/savings-coach`, and the map's rows and arrows: A07, CAPABILITY-MAP.md.
+- Extraction accuracy and Engine speed: §12, A02, A07.
+- The forecast reconciled with F7: §2.2, §5, A13.
+- Vertical slices: §13; each engine slice lands with its screen, and each helper slice ends in AI settings.
+- An explicit final step, and HANDOFF's plain words: A28, §10.3.
+- Quick-add amounts word for word in the owner's text: §3.9, A22.
+- The direction word in the figure, and contradictions dropped: §3.7, ADR 0005.
+- Limits claimed atomically, per attempt, on the Pacific day: §3.5, ADR 0004.
+- The brand: §13's rules; the history check waits for the rewrite (N64).
+- Static guards (hosts, `SERVICE_ROLE`, the CSP): A09.
+- The quote library verified at commit, "often attributed" honest, ids only from the AI, no product advice: §4.
+- Every choice labelled; Week's move flagged; the golden count unchanged: throughout, A05, A28.
+
+**The owner's judge:**
+- Rebased, and everything new on the Month kept under the gate by loading it after: §2.2, §9.
+- Off `gemini-2.5-flash` first: A02.
+- A hardcoded list per service, only intersected: §3.3.
+- No "zero digits in the payload" test; no amount, balance or date field sent, labels masked: §3.6, A12.
+- `historyStart` everywhere: F24, §5, §6.
+- Lower limits, batched words, no note on every comparison, paid only by opt-in: §3.5, §6.
+- Trimmed for a non-engineer: one coach line and chips on the Month, Left by default; at most three cards and one quote; Reports opens on Overview; Forecast leads with a sentence and safe to spend; Cheerleader by default; no bare "you overspent": §2.
+- Honest setup time, with Copy buttons, exact clicks, **Check again**, and the secret reused: §8.1, §10.2.
+- AI and coach tables never read in `AppDataProvider.refresh()`: §3.10.
+- The `/setup/` files limited to 0015 on and the helper's source, nothing from the environment: §8.2.
+- **Approve these N** as one conditional write per row, recording `user`: §3.9, A21.
+- `coach_answers`' owner guard decided now (a composite foreign key): §10.1.
+- No brand word anywhere: §13's rules.
