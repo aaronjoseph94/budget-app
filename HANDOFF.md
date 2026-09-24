@@ -54,7 +54,7 @@ More; a wide screen puts them all on the top bar):
 | Paycheck | The same blocks for one pay period, found from your pay schedule | Paycheck Budget |
 | Bill calendar | Each bill on the day it is due, paydays, and each week's total | Bill Calendar |
 | Year | Twelve months from any start month, Home's "at a glance" cards and charts | Annual Budget, Home |
-| Savings | Every savings goal in your order, the main one first: what is saved, what is left, what to save a month; Add a goal, pause, mark reached (needs `0015`) | Savings |
+| Savings | Every savings goal in your order, the main one first: what is saved, what is left, what to save a month; Add a goal. Choosing the main goal, moving, pausing and marking reached need `0015` | Savings |
 | Debts | One card per debt, when it is paid off, and minimums against snowball and avalanche | Debt Calculator |
 | Setup | Your name, the six lists, when each income pays, each bill's day and monthly amount | START HERE, Bills |
 | Add | A Rogers statement PDF (or a CSV), a receipt photo, or one entry typed by hand (cash, pay, savings moves) | Transactions |
