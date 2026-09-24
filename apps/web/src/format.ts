@@ -160,7 +160,7 @@ export type SetupAction = 'add' | 'rename' | 'move' | 'reorder' | 'remove'
  *
  * describeWriteFailure is worded for imports: a refused CHECK (23514) reads
  * "the numbers did not add up", and a category still in use (23503) reads
- * "no longer exists". Neither is true here (docs/workbook-plan.md §6.5). The
+ * "no longer exists". Neither is true here (docs/workbook-views-plan.md §6.5). The
  * code decides the sentence together with what was being done. Anything not
  * listed falls back to the import wording, which covers the connection and
  * sign-in failures that can happen anywhere.

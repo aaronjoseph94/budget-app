@@ -9,7 +9,7 @@ is no longer the specification — **with one exception, added 2026-09-22.** The
 owner asked for the app to look and work like their Workbook workbook (the same
 28-sheet file), so for the look and behaviour of the Workbook views they chose it
 is the specification again: Month, Setup and Bills, Year and Home, Week,
-Paycheck, Bill Calendar, Savings and Debts (`docs/workbook-plan.md`). It is still
+Paycheck, Bill Calendar, Savings and Debts (`docs/workbook-views-plan.md`). It is still
 not the specification for its arithmetic mistakes (divergence D7) or for the
 tabs that stay deferred below.
 
@@ -78,7 +78,7 @@ the contribution grid. Ends with: the real answer to "how am I doing this week".
 
 **Workbook views** ✅ *built 2026-09-23 (owner's answer, 2026-09-22: ahead of the coach)*
 Month, Setup and Bills, Year and Home, Week in Workbook's shape, Paycheck, Bill
-Calendar, Savings funds, Debts — in the order of `docs/workbook-plan.md` §8.
+Calendar, Savings funds, Debts — in the order of `docs/workbook-views-plan.md` §8.
 Pulls forward from later phases only what these need: bills and recurring
 amounts from Phase 5 (not reminders or the forecast; the Bill Calendar screen
 is a Workbook view), charts from Phase 6 (not the Sankey or export), savings

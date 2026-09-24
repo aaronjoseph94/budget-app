@@ -1271,7 +1271,7 @@ and goes in its own commit, transcribed from the workbook.
 
 **Seen:** 2026-09-23, S15c, re-reading Bill Calendar against the workbook.
 
-`docs/workbook-plan.md` §5.4 lists "Bill Calendar!J3, Q14 | 1167.99, 200"
+`docs/workbook-views-plan.md` §5.4 lists "Bill Calendar!J3, Q14 | 1167.99, 200"
 among the cells D5 changes. Q14 is the week of 5–11 January 2025: its only
 entry is Credit Card 1's logged $200 on the 5th (B15:C15), which D5 keeps,
 so Q14 is 200 under both rules. The week D5 changes is the next one, Q20

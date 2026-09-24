@@ -4,7 +4,7 @@
  * Workbook fills each block of a month tab with a SUMIFS by category name over a
  * date window. This does the same by category id, for whatever window it is
  * given, so the Month, the Week and a pay period share one set of rules
- * (docs/workbook-plan.md §5.1). Nothing here is stored: the screen asks again on
+ * (docs/workbook-views-plan.md §5.1). Nothing here is stored: the screen asks again on
  * every read (CLAUDE.md, never persist a derived money value).
  *
  * Excel semantics (docs/formula-decisions.md):

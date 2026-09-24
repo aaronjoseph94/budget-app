@@ -158,7 +158,7 @@ module owns this normalization and it is the tokenizer.
 
 ## How the Workbook entries below were settled
 
-D5 to D16 come from the Workbook plan (`docs/workbook-plan.md`, answered in §9a);
+D5 to D16 come from the Workbook plan (`docs/workbook-views-plan.md`, answered in §9a);
 D17 onward were found while building it.
 Each says how it was settled: **owner chose** (asked, and answered),
 **stated to the owner, no objection** (told what would be done unless they

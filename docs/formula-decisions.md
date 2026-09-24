@@ -80,7 +80,7 @@ against a printed total is how a sign error cancels itself out and passes.
 
 ## How the Workbook entries below were settled
 
-F3 to F15 come from the Workbook plan (`docs/workbook-plan.md` §5.2, answered in
+F3 to F15 come from the Workbook plan (`docs/workbook-views-plan.md` §5.2, answered in
 §9a). "The workbook" and "Workbook" are the same file. Each entry says which of
 three ways it was settled, and only that:
 

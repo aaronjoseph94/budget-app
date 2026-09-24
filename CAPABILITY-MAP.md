@@ -78,7 +78,7 @@ with a weekly tab bolted on; the user thinks in weeks. Weekly is the default
 screen and the unit limits, streaks, and goals are expressed in. Monthly is the
 summary view." Since then the owner asked for the app to look and work like
 their Workbook workbook, whose money lands on month tabs, and when asked which
-screen should open first they chose Month (`docs/workbook-plan.md` §9a, decision
+screen should open first they chose Month (`docs/workbook-views-plan.md` §9a, decision
 1). Weekly limits and streaks, when the coach is built, are still weekly.
 
 Slices 1 and 2 of the original order are built (the Week screen; statement

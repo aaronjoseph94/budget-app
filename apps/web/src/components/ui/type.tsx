@@ -2,7 +2,7 @@ import type { HTMLAttributes, ReactNode } from 'react'
 import { cn } from '../../lib/cn.js'
 
 /**
- * Workbook's two display styles (workbook-plan 6.6).
+ * Workbook's two display styles (plan §6.6).
  *
  * The month title is Caveat bold, as on Jan!B3, in the darker sea-glass ink
  * that stays readable on the title band; Workbook's own #ABBFBD there is 1.87 to

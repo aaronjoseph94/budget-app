@@ -17,7 +17,7 @@ export type IngestSource = z.infer<typeof IngestSourceSchema>
  * The first six are the lists on Workbook's START HERE tab; `transfer` is the
  * app's own "Not spending", for money that only moves, like paying off the
  * card. The list decides which month block a charge lands in, so it is stored
- * with the category, never guessed from its name (docs/workbook-plan.md §3.2).
+ * with the category, never guessed from its name (docs/workbook-views-plan.md §3.2).
  * In the order the app shows them, which is START HERE's.
  */
 export const CategoryKindSchema = z.enum([

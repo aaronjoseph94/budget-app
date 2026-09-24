@@ -2,7 +2,7 @@
  * Your name, as Workbook's START HERE!I3 holds it ("My name is ___").
  *
  * Kept in the Supabase sign-in's own `user_metadata` rather than a table
- * (docs/workbook-plan.md §4): it is one short string about the person, and
+ * (docs/workbook-views-plan.md §4): it is one short string about the person, and
  * supabase-js updates it with `auth.updateUser({ data })`, which merges the
  * keys it is given into what is there. It is not financial data, but it is
  * still never logged.

@@ -1,6 +1,6 @@
 # Handoff — read this first
 
-Rewritten 2026-09-23, when the Workbook build (`docs/workbook-plan.md`) was
+Rewritten 2026-09-23, when the Workbook build (`docs/workbook-views-plan.md`) was
 finished on branch `main-tnlcto`. It tells the owner and the next agent what
 exists, what the owner has to do before using it, how to check it worked,
 what is still open, and what is left to build.
@@ -72,7 +72,7 @@ workbook's own cached values (121 golden tests); the charts are drawn by
 Key decisions, already made by the owner (do not reopen): dates are the
 purchase date (F1); receipt photos use Gemini's free tier
 (`docs/adr/0002-gemini-free-tier-for-receipts.md`); the answers in
-`docs/workbook-plan.md` §9a (Month first, a real charge replaces a planned
+`docs/workbook-views-plan.md` §9a (Month first, a real charge replaces a planned
 bill, card payments are not spending, a starting balance typed each month,
 savings kept by transfers, pay periods from the pay schedule).
 
@@ -265,7 +265,7 @@ Details in `NOTICED-NOT-TOUCHING.md`; each entry says what would settle it.
    CLAUDE.md's stack line names three libraries the app does not use (N8,
    the owner's file).
 9. **Not built, by the owner's choice:** 50/30/20, Net Worth, Financial
-   Freedom, the Spending Tracker's extra groups (`docs/workbook-plan.md` §9a).
+   Freedom, the Spending Tracker's extra groups (`docs/workbook-views-plan.md` §9a).
 
 ## 7. Things to know about how this code is written
 

@@ -30,7 +30,7 @@
 /*
  * shadcn/ui design tokens, on the "zinc" base as shadcn ships it for
  * Tailwind v4, with Workbook's colours in place of zinc where Workbook has one
- * (workbook-plan 6.6). The component files in src/components/ui are shadcn's
+ * (plan §6.6). The component files in src/components/ui are shadcn's
  * copy-paste components adapted to this app, and read only these names.
  *
  * Two additions shadcn does not have, because a budget needs them: `spend`

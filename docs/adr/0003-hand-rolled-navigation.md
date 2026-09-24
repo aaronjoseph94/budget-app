@@ -22,7 +22,7 @@ TanStack Query for server state. The app was built without either, and
   screen loads its own rows. Nothing derived is held; every total is computed
   by `packages/core` when the screen renders.
 
-The Workbook plan (`docs/workbook-plan.md` §6.1) needs more of navigation than five
+The Workbook plan (`docs/workbook-views-plan.md` §6.1) needs more of navigation than five
 names. A month or year has to be part of the address — `#/month/2026-09`,
 `#/year/2026-01` (the start month, formula decision F14) — so that a refresh
 or the back gesture returns to the same month. Today the Week screen keeps its
