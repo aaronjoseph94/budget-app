@@ -15,7 +15,8 @@ import { categoriesForCore, entriesForCore } from '../sheet-input.js'
 import { CompareLine } from './CompareLine.js'
 import { useAppData } from '../app-data.js'
 import { useFunds } from '../funds.js'
-import { linkFund, type FundRow, type ListedGoalRow } from '../ledger.js'
+import { linkFund, makeGoalAFund, type FundRow, type ListedGoalRow } from '../ledger.js'
+import { atEndOf, LIST_HEADING } from '../lists.js'
 import { hashOf, navigate } from '../nav.js'
 import { formatBasisPoints, formatCents, formatIsoDate, todayIso } from '../format.js'
 import { FundEditor } from './FundEditor.js'
@@ -41,9 +42,11 @@ import { HelpButton } from '../help/HelpButton.js'
  */
 export function SavingsScreen() {
   const state = useFunds()
-  const { supabase, refresh, categories, goals, mainGoal, goalsOrdered } = useAppData()
+  const { supabase, userId, refresh, categories, goals, mainGoal, goalsOrdered } = useAppData()
   const comparison = useSavedThisMonth(categories)
   const [editing, setEditing] = useState<string | null>(null)
+  // A goal on no fund, edited by its own id: it has no fund to name it by.
+  const [editingLoose, setEditingLoose] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null)
   const ready = state.status === 'ready' ? state : null
@@ -52,6 +55,8 @@ export function SavingsScreen() {
   // each can become a fund's goal, keeping what was typed in it.
   const unlinked = ready === null ? [] : ready.goals.filter((g) => ready.funds.unlinked.some((u) => u.goalId === g.id))
   const shown = ready?.funds.funds.find((f) => f.categoryId === editing) ?? null
+  const looseRow = ready?.goals.find((g) => g.id === editingLoose)
+  const looseFigures = ready?.funds.unlinked.find((u) => u.goalId === editingLoose)
   const active = goals.filter((g) => g.status === 'active')
   const folded = goals.filter((g) => g.status !== 'active')
   const withoutGoal = ready === null ? [] : ready.funds.funds.filter((f) => f.figures === null)
@@ -75,16 +80,35 @@ export function SavingsScreen() {
           goal={goal}
           saved={figures}
           onFund={fund !== undefined}
-          onEdit={fund === undefined ? null : () => setEditing(fund.categoryId)}
+          onEdit={fund === undefined ? () => setEditingLoose(goal.id) : () => setEditing(fund.categoryId)}
           onNotice={setNotice}
         />
       )
     if (row !== undefined && fund !== undefined) {
       return <FundCard fund={fund} goal={row} comparison={comparison} badge={badge(goal)} actions={actions} onEdit={() => setEditing(fund.categoryId)} />
     }
-    if (row !== undefined && loose !== undefined) return <LooseGoalCard goal={row} figures={loose} badge={badge(goal)} actions={actions} />
+    if (row !== undefined && loose !== undefined) {
+      return <LooseGoalCard goal={row} figures={loose} badge={badge(goal)} actions={actions} onMakeFund={() => void makeFund(row)} />
+    }
     // Saved a moment ago, and the funds not read again yet.
     return <p className="rounded-xl border bg-card p-4 text-sm shadow-sm">{goal.name}: loading…</p>
+  }
+
+  // A goal on no fund gets the Savings fund of its name, made when there is none.
+  const makeFund = async (goal: FundRow) => {
+    setNotice(null)
+    const taken = categories.find((c) => c.name === goal.name)
+    if (taken !== undefined && taken.kind !== 'savings') {
+      setNotice({ ok: false, text: `${goal.name} is on your ${LIST_HEADING[taken.kind]} list. Move it to Savings in Setup, then press Make it a fund again.` })
+      return
+    }
+    try {
+      await makeGoalAFund(supabase, userId, atEndOf(categories, goal.name, 'savings'), { goalId: goal.id, asOf: todayIso() })
+      setNotice({ ok: true, text: `${goal.name} is now a fund on your Savings list. Money you move into it after today adds to it.` })
+      await refresh()
+    } catch (cause) {
+      setNotice({ ok: false, text: cause instanceof Error ? cause.message : 'Could not make it a fund. Nothing was saved.' })
+    }
   }
 
   const link = async (goal: FundRow, fund: SavingsFund) => {
@@ -186,6 +210,19 @@ export function SavingsScreen() {
           onFailedAfterClose={(text) => setNotice({ ok: false, text })}
         />
       ) : null}
+      {looseRow !== undefined && looseFigures !== undefined ? (
+        <FundEditor
+          key={looseRow.id}
+          fund={{ categoryId: null, name: looseRow.name, figures: looseFigures }}
+          goal={looseRow}
+          onClose={() => setEditingLoose(null)}
+          onSaved={(text) => {
+            setEditingLoose(null)
+            setNotice({ ok: true, text })
+          }}
+          onFailedAfterClose={(text) => setNotice({ ok: false, text })}
+        />
+      ) : null}
       {shown !== null ? (
         <FundEditor
           key={shown.categoryId}
@@ -278,12 +315,27 @@ function Title({ name, badge }: { name: string; badge: ReactNode }) {
  * transfer counts until it is a fund's goal. Labelled apart from a fund of
  * the same name, which can take it.
  */
-function LooseGoalCard({ goal, figures, badge, actions }: { goal: FundRow; figures: FundFigures; badge: ReactNode; actions: ReactNode }) {
+function LooseGoalCard({
+  goal,
+  figures,
+  badge,
+  actions,
+  onMakeFund,
+}: {
+  goal: FundRow
+  figures: FundFigures
+  badge: ReactNode
+  actions: ReactNode
+  onMakeFund: () => void
+}) {
   return (
     <section aria-label={`${goal.name}, on no fund`} className={CARD}>
       <Title name={goal.name} badge={badge} />
       <div className="space-y-3 px-4 py-4">
         <p className="text-sm">On no savings fund yet, so money moved to savings does not count toward it.</p>
+        <Button variant="outline" size="sm" onClick={onMakeFund}>
+          Make it a fund
+        </Button>
         <GoalFigures figures={figures} goal={goal} />
         {actions}
       </div>

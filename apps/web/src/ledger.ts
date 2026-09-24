@@ -1264,7 +1264,8 @@ export interface FundEdit {
  */
 export async function saveFund(
   supabase: SupabaseClient,
-  target: { readonly userId: string; readonly categoryId: string; readonly name: string; readonly goalId: string | null },
+  /** A goal on no fund has no category; it is only ever edited, never made, here. */
+  target: { readonly userId: string; readonly categoryId: string | null; readonly name: string; readonly goalId: string | null },
   edit: FundEdit,
 ): Promise<void> {
   const row = {
@@ -1283,6 +1284,21 @@ export async function saveFund(
           .insert({ user_id: target.userId, name: target.name, category_id: target.categoryId, ...row })
       : await supabase.from('savings_goals').update(row).eq('id', target.goalId)
   if (error !== null) throw new Error(describeFundFailure('save', error))
+}
+
+/**
+ * Make a goal on no fund a fund's goal (G1): the Savings-list category of its
+ * name, made at the bottom of the list when there is none, then linked as
+ * linkFund links one, so money moved in after today adds to it (D16).
+ */
+export async function makeGoalAFund(
+  supabase: SupabaseClient,
+  userId: string,
+  fund: NewCategory,
+  link: { readonly goalId: string; readonly asOf: string },
+): Promise<void> {
+  const category = await ensureCategory(supabase, userId, fund)
+  await linkFund(supabase, { goalId: link.goalId, categoryId: category.id, asOf: link.asOf })
 }
 
 /** A goal as the Add a goal sheet types it (G1). */

@@ -27,7 +27,8 @@ export function FundEditor({
   onSaved,
   onFailedAfterClose,
 }: {
-  fund: SavingsFund
+  /** The fund the goal is for, or, for a goal on no fund, its name and figures with no category. */
+  fund: Pick<SavingsFund, 'name' | 'figures'> & { readonly categoryId: string | null }
   /** The fund's goal, or null to set one. */
   goal: FundRow | null
   onClose: () => void
@@ -100,7 +101,10 @@ export function FundEditor({
           <Field label="Goal ($)">
             <Input inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} />
           </Field>
-          <Field label="Saved today ($)" hint="Money moved in after today adds to it.">
+          <Field
+            label="Saved today ($)"
+            hint={fund.categoryId === null ? 'Update this when you move money in.' : 'Money moved in after today adds to it.'}
+          >
             <Input inputMode="decimal" value={saved} onChange={(e) => setSaved(e.target.value)} />
           </Field>
         </div>

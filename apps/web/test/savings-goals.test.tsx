@@ -328,3 +328,50 @@ describe('Savings, showing a goal in dollars or in hours (G1, F45)', () => {
     expect(fake.tables.savings_goals[0]).toMatchObject({ unit_cost_cents: null, unit_label: null })
   })
 })
+
+describe('Savings, a goal on no fund (G1)', () => {
+  // The flight goal as Settings saved it before there were funds, and no Savings fund of its name.
+  function looseFlight(): FakeSupabase {
+    const fake = seeded()
+    fake.tables.categories.splice(1, 1)
+    fake.tables.savings_goals.splice(0, 1, goal('g1', 'Flight training', null, { target_cents: 3_000_000, saved_cents: 250_000 }))
+    return fake
+  }
+  const loose = () => screen.findByRole('region', { name: 'Flight training, on no fund' })
+
+  it('edits it here, where Settings did, keeping it on no fund', async () => {
+    const fake = looseFlight()
+    renderScreen(<SavingsScreen />, fake)
+    fireEvent.click(within(await loose()).getByRole('button', { name: 'Edit goal' }))
+    expect(screen.getByRole('dialog', { name: "Flight training's goal" })).toBeTruthy()
+    expect(screen.getByLabelText<HTMLInputElement>(/^Saved today/).value).toBe('2500.00')
+    expect(screen.getByText('Update this when you move money in.')).toBeTruthy()
+    fireEvent.change(screen.getByLabelText(/^Goal \(\$\)/), { target: { value: '32000' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save goal' }))
+    await screen.findByText("Flight training's goal is saved.")
+    expect(fake.tables.savings_goals[0]).toMatchObject({ target_cents: 3_200_000, saved_cents: 250_000, category_id: null })
+  })
+
+  it('makes it a fund on the Savings list, so money moved in after today counts', async () => {
+    const fake = looseFlight()
+    renderScreen(<SavingsScreen />, fake)
+    fireEvent.click(within(await loose()).getByRole('button', { name: 'Make it a fund' }))
+    expect(await screen.findByText('Flight training is now a fund on your Savings list. Money you move into it after today adds to it.')).toBeTruthy()
+    const made = fake.tables.categories.find((c) => c.name === 'Flight training')
+    expect(made).toMatchObject({ kind: 'savings', sort_order: 4 })
+    expect(fake.tables.savings_goals[0]).toMatchObject({ category_id: made!.id, balance_as_of: '2026-09-23', saved_cents: 250_000 })
+    expect(await screen.findByRole('region', { name: 'Flight training' })).toBeTruthy()
+  })
+
+  it('says so, and makes nothing, when its name is on another list', async () => {
+    const fake = looseFlight()
+    fake.tables.categories.push({ id: 'lessons', name: 'Flight training', kind: 'variable', sort_order: 0, weekly_budget_cents: null })
+    renderScreen(<SavingsScreen />, fake)
+    fireEvent.click(within(await loose()).getByRole('button', { name: 'Make it a fund' }))
+    expect(
+      screen.getByText('Flight training is on your Variable expenses list. Move it to Savings in Setup, then press Make it a fund again.'),
+    ).toBeTruthy()
+    expect(fake.tables.savings_goals[0]).toMatchObject({ category_id: null })
+    expect(fake.tables.categories).toHaveLength(4)
+  })
+})
