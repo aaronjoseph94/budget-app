@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   historyStart,
   isoDate,
@@ -51,6 +51,10 @@ import { MonthCharges } from './MonthCharges.js'
 import { MonthCharts } from './MonthCharts.js'
 import { MonthSummary } from './MonthSummary.js'
 import { HelpButton } from '../help/HelpButton.js'
+import { ErrorBoundary } from '../components/ErrorBoundary.js'
+
+// The coach line is its own chunk, fetched once the Month has drawn (D27).
+const MonthCoachLine = lazy(() => import('./MonthCoachLine.js'))
 
 /**
  * One of the workbook's month tabs (plan §6.2, §6.3). `month` is the address's `YYYY-MM`,
@@ -64,7 +68,7 @@ import { HelpButton } from '../help/HelpButton.js'
  * in it.
  */
 export function MonthScreen({ month }: { month: string | null }) {
-  const { supabase, categories, pendingTotal, loadError, version } = useAppData()
+  const { supabase, categories, pendingTotal, loadError, status, version } = useAppData()
   const { start, end } = monthBounds(isoDate(month === null ? todayIso() : `${month}-01`))
   const step = (months: number) => navigate('month', shiftMonth(start, months).slice(0, 7))
   const [loaded, setLoaded] = useState<Loaded | null>(null)
@@ -174,6 +178,26 @@ export function MonthScreen({ month }: { month: string | null }) {
     writeThird(next)
   }
   const compared = comparison !== null && comparison !== 'failed' && comparison.status === 'compared' ? comparison : null
+  // The coach line speaks of today, so only on this month, and only from
+  // the two months already read: never a read of its own (D27).
+  const today = todayIso()
+  const lastMonth = earlier !== null && earlier.start === start && !('failed' in earlier) ? earlier : null
+  const coachRead = useMemo(
+    () =>
+      here === null || lastMonth === null || monthBounds(isoDate(today)).start !== start
+        ? null
+        : {
+            asOf: today,
+            readFrom: shiftMonth(start, -1),
+            rows: [...here.rows, ...lastMonth.rows],
+            budgets: here.budgets,
+            plans: here.plans,
+            statementEnds: here.ends,
+            records: { statementStarts: lastMonth.statementStarts, entryDates: lastMonth.entryDates },
+            pending: status === 'ready' ? pendingTotal : null,
+          },
+    [here, lastMonth, start, today, status, pendingTotal],
+  )
   const vsLabel =
     compared === null
       ? null
@@ -266,6 +290,13 @@ export function MonthScreen({ month }: { month: string | null }) {
 
       {sheet !== null && typeof sheet !== 'string' ? (
         <>
+          {coachRead === null ? null : (
+            <ErrorBoundary key={start}>
+              <Suspense fallback={null}>
+                <MonthCoachLine read={coachRead} categories={categories} />
+              </Suspense>
+            </ErrorBoundary>
+          )}
           <ImportedThrough through={sheet.importedThrough} />
           {/* Phones: the block every statement changes first, and the charts
             last (§6.2). Four columns on a desktop in the workbook's own arrangement,
