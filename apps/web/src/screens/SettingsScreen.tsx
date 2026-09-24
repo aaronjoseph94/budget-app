@@ -209,7 +209,9 @@ function GoalsCard() {
           {goals.length === 0
             ? 'None yet. Add one on Savings: flight training, a trip, a rainy-day fund.'
             : mainGoal === null
-              ? `${count}, none of them active. Resume one on Savings.`
+              ? goals.length === 1
+                ? 'Your one goal is paused or reached. Resume it on Savings.'
+                : `Your ${goals.length} goals are all paused or reached. Resume one on Savings.`
               : `${count}. Your main goal is ${mainGoal.name}, which the Coach and the Week show.`}
         </CardDescription>
       </CardHeader>

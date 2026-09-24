@@ -118,7 +118,13 @@ describe('SettingsScreen, your savings goals', () => {
     expect(await screen.findByText('None yet. Add one on Savings: flight training, a trip, a rainy-day fund.')).toBeTruthy()
     cleanup()
     renderScreen(<SettingsScreen />, createFakeSupabase({ savings_goals: [goal('g1', 'House', { status: 'paused' })] }))
-    expect(await screen.findByText('One goal, none of them active. Resume one on Savings.')).toBeTruthy()
+    expect(await screen.findByText('Your one goal is paused or reached. Resume it on Savings.')).toBeTruthy()
+    cleanup()
+    renderScreen(
+      <SettingsScreen />,
+      createFakeSupabase({ savings_goals: [goal('g1', 'House', { status: 'paused' }), goal('g2', 'Car', { status: 'reached', reached_on: '2026-09-01' })] }),
+    )
+    expect(await screen.findByText('Your 2 goals are all paused or reached. Resume one on Savings.')).toBeTruthy()
   })
 })
 

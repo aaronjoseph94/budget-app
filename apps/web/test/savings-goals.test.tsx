@@ -377,6 +377,15 @@ describe('Savings, a goal on no fund (G1)', () => {
     expect(fake.tables.savings_goals[0]).toMatchObject({ category_id: null })
     expect(fake.tables.categories).toHaveLength(4)
   })
+
+  // It has no fund, so pausing it says nothing about money moved into one.
+  it('pauses it without speaking of a fund it does not have', async () => {
+    const fake = looseFlight()
+    renderScreen(<SavingsScreen />, fake)
+    fireEvent.click(within(await loose()).getByRole('button', { name: 'Pause' }))
+    expect(await screen.findByText('Flight training is paused. Resume it under Reached and paused. Travel is your main goal now.')).toBeTruthy()
+    expect(fake.tables.savings_goals[0]).toMatchObject({ status: 'paused', category_id: null })
+  })
 })
 
 describe('Savings, a goal written where 0015 has gone (G1)', () => {

@@ -190,7 +190,11 @@ export function GoalActions({
         size="sm"
         disabled={busy}
         onClick={() =>
-          void state({ status: 'paused' }, `${goal.name} is paused. Money moved into its fund still counts; resume it under Reached and paused.${handover}`)
+          void state(
+            { status: 'paused' },
+            // A goal on no fund has no transfers to keep counting.
+            `${goal.name} is paused. ${onFund ? 'Money moved into its fund still counts; resume' : 'Resume'} it under Reached and paused.${handover}`,
+          )
         }
       >
         Pause
