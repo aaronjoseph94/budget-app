@@ -107,3 +107,91 @@ describe('factsDigest, version 1', () => {
     for (const fact of factsDigest(base).facts) expect(fact.subject.label).not.toMatch(uuid)
   })
 })
+
+/**
+ * F27's worked example on 24 September 2026: records from March, Dining out
+ * $300, $420, $360, $510, $390 and $450 from March to August ($307.60 of
+ * August's by the 24th) and $520.00 by 24 September. Groceries $400.00 every
+ * month on the 12th, on a $400.00 budget, and $360.00 by 24 September.
+ */
+const MONTHS = ['03', '04', '05', '06', '07', '08']
+const history: FactsDigestInput = {
+  ...base,
+  historyStart: d('2026-03-01'),
+  readFrom: d('2025-09-01'),
+  budgetHistory: [{ categoryId: GROCERIES, month: d('2026-03-01'), applies: 'onward', budgetCents: 40_000 }],
+  entries: [
+    ...[30_000, 42_000, 36_000, 51_000, 39_000].map((v, i) => spend(`2026-${MONTHS[i]}-10`, v, DINING)),
+    spend('2026-08-10', 30_760, DINING),
+    spend('2026-08-28', 14_240, DINING),
+    spend('2026-09-05', 52_000, DINING),
+    ...MONTHS.map((m) => spend(`2026-${m}-12`, 40_000, GROCERIES)),
+    spend('2026-09-10', 36_000, GROCERIES),
+  ],
+  latestStatementEnd: d('2026-09-20'),
+  pendingCount: 0,
+}
+
+describe('factsDigest, version 1: categories', () => {
+  it('ranks notable facts by impact, then the rest, after the summaries', () => {
+    expect(factsDigest(history).facts.map((f) => f.key)).toEqual([
+      'summary:month',
+      'summary:week',
+      `cat:${DINING}:change`,
+      `cat:${GROCERIES}:near_budget`,
+      `cat:${GROCERIES}:change`,
+      `cat:${GROCERIES}:pace`,
+    ])
+    expect(factsDigest(history).completeMonths).toBe(6)
+  })
+
+  it('sets a Variable row against the same days last month, sized by its usual month', () => {
+    // $520.00 against $307.60: $212.40 more; band $108.00 (F27), so clear; impact 79,650 (F44).
+    expect(factsDigest(history).facts[2]).toEqual({
+      key: `cat:${DINING}:change`, kind: 'category_change', subject: { type: 'category', id: DINING, label: 'Dining out' },
+      direction: 'up', size: 'clear', evidence: 'solid', meaning: 'watch', notable: true,
+      figures: {
+        now: { unit: 'cents', value: 52_000 }, before: { unit: 'cents', value: 30_760 },
+        change: { unit: 'change', value: 21_240, direction: 'more' }, usual: { unit: 'cents', value: 40_500 },
+        before_month: { unit: 'month', value: '2026-08-01' }, months: { unit: 'count', value: 6 },
+      },
+      impact: 79_650, cause: `category_change:${DINING}:2026-09-01:up`,
+    })
+    // Groceries $360.00 against $400.00: band max($25, $60, 0) × 24 ÷ 30 = $48.00, and $40.00 is slight.
+    expect(factsDigest(history).facts[4]).toMatchObject({ direction: 'down', size: 'slight', meaning: 'good', notable: false, impact: 15_000 })
+  })
+
+  it('says a budget is nearly used, and where the pace is heading (F28)', () => {
+    const facts = factsDigest(history).facts
+    expect(facts[3]).toMatchObject({
+      kind: 'near_budget', evidence: 'solid', meaning: 'watch', notable: true, impact: 12_000,
+      figures: { actual: { value: 36_000 }, budget: { value: 40_000 }, left: { value: 4_000 } },
+      cause: `near_budget:${GROCERIES}:2026-09-01`,
+    })
+    // $450.00 is $50.00 over, under the $60.00 line: said, but not a card.
+    expect(facts[5]).toMatchObject({ kind: 'budget_pace', evidence: 'some', notable: false, impact: 10_000, figures: { pace: { value: 45_000 }, over: { value: 5_000 } } })
+  })
+
+  it('says a budget is passed, with no pace beside it', () => {
+    const over = { ...history, entries: [...history.entries.slice(0, -1), spend('2026-09-10', 43_000, GROCERIES)] }
+    const kinds = factsDigest(over).facts.filter((f) => f.subject.id === GROCERIES).map((f) => f.kind)
+    expect(kinds).toEqual(['over_budget', 'category_change'])
+    expect(factsDigest(over).facts.find((f) => f.kind === 'over_budget')).toMatchObject({ notable: true, figures: { over: { value: 3_000 } } })
+  })
+
+  it('takes the usual month only from months that were read', () => {
+    // Read from August: one complete month, so the usual month is August's $450.00, thin:
+    // band max($25, 25% of $450.00) × 24 ÷ 30 = $90.00, and $212.40 is big.
+    expect(factsDigest({ ...history, readFrom: d('2026-08-01') }).facts.find((f) => f.key === `cat:${DINING}:change`)).toMatchObject({
+      size: 'big', evidence: 'thin', impact: 26_550, figures: { usual: { value: 45_000 }, months: { value: 1 } },
+    })
+  })
+
+  it('keeps at most 12 facts, the summaries first', () => {
+    const many = Array.from({ length: 20 }, (_, i) => ({ id: `v${i}`, name: `Shop ${String.fromCharCode(65 + i)}`, kind: 'variable' as const, sortOrder: i }))
+    const input = { ...history, categories: many, budgetHistory: [], entries: many.flatMap((c, i) => [spend('2026-08-05', 1_000, c.id), spend('2026-09-05', 5_000 + i, c.id)]) }
+    const facts = factsDigest(input).facts
+    expect(facts).toHaveLength(12)
+    expect(facts[0]!.key).toBe('summary:month')
+  })
+})
