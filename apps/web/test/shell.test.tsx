@@ -193,3 +193,27 @@ describe('Shell, skipping the screens bar (FE-10)', () => {
     expect(window.location.hash).toBe('#/week')
   })
 })
+
+describe('Shell, telling a screen reader the screen changed (FE-13)', () => {
+  it('names each screen in the title, and moves focus to it when another is chosen', async () => {
+    renderScreen(<Shell />, createFakeSupabase())
+    await screen.findByRole('heading', { name: 'September 2026' })
+    expect(document.title).toBe('Month · Budget')
+    // Opening the app leaves focus where the browser put it.
+    expect(document.activeElement).toBe(document.body)
+
+    fireEvent.click(within(phoneBar()).getByRole('button', { name: 'Review' }))
+    go('/review')
+    expect(document.title).toBe('Review · Budget')
+    expect(document.activeElement).toBe(screen.getByRole('main'))
+
+    // A month stepped on the same screen keeps focus on the arrow pressed.
+    go('/month')
+    fireEvent.click(await screen.findByRole('button', { name: 'Previous month' }))
+    const arrow = screen.getByRole('button', { name: 'Previous month' })
+    arrow.focus()
+    go('/month/2026-08')
+    expect(await screen.findByRole('heading', { name: 'August 2026' })).toBeTruthy()
+    expect(document.activeElement).toBe(arrow)
+  })
+})

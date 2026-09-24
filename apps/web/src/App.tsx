@@ -1,4 +1,4 @@
-import { Suspense, lazy, useMemo, useRef } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useRef } from 'react'
 import { readEnv } from './env.js'
 import { createSupabase } from './supabase.js'
 import { NotConfigured, SignIn, useSession } from './auth.js'
@@ -99,6 +99,7 @@ export function Shell() {
   const wide = screen === 'month' || screen === 'week' || screen === 'paycheck' || screen === 'year' || screen === 'calendar'
   const width = wide ? 'max-w-3xl lg:max-w-7xl' : 'max-w-3xl'
   const main = useRef<HTMLElement>(null)
+  useAnnounceScreen(screen, main)
 
   return (
     <div className="min-h-full">
@@ -239,6 +240,39 @@ function Screens({ screen, period }: { screen: Screen; period: string | null }) 
       {screen === 'year' ? <YearScreen start={period} /> : null}
     </Suspense>
   )
+}
+
+/** Each screen's name, as its tab or More names it. */
+const SCREEN_NAME: Record<Screen, string> = {
+  month: 'Month',
+  week: 'Week',
+  review: 'Review',
+  add: 'Add',
+  more: 'More',
+  ledger: 'All transactions',
+  settings: 'Settings',
+  setup: 'Setup',
+  year: 'Year',
+  paycheck: 'Paycheck',
+  calendar: 'Bill calendar',
+  savings: 'Savings',
+  debts: 'Debts',
+}
+
+/**
+ * A screen changed only its hash, so the page kept the title "Budget" and
+ * focus stayed on the tab pressed: a screen reader said nothing had
+ * happened (FE-13). The title now names the screen, and choosing another
+ * screen moves focus to it, where a screen reader starts reading. Opening
+ * the app, and stepping a month on the same screen, leave focus alone.
+ */
+function useAnnounceScreen(screen: Screen, main: { readonly current: HTMLElement | null }): void {
+  const shown = useRef<Screen | null>(null)
+  useEffect(() => {
+    document.title = `${SCREEN_NAME[screen]} · Budget`
+    if (shown.current !== null && shown.current !== screen) main.current?.focus({ preventScroll: true })
+    shown.current = screen
+  }, [screen, main])
 }
 
 /** "Review, 3 waiting" to a screen reader, rather than the badge read as "Review3". */
