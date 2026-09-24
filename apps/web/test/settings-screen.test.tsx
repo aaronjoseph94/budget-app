@@ -76,10 +76,21 @@ describe('SettingsScreen, budgets and the goal', () => {
     renderScreen(<SettingsScreen />, fake)
 
     const field = await screen.findByRole('textbox', { name: 'Weekly budget for Groceries' })
+    // Said in words, on the field, as the Week's editor says it (CR-5).
+    const said = () => document.getElementById(field.getAttribute('aria-describedby') ?? '')?.textContent
     fireEvent.change(field, { target: { value: 'lots' } })
     fireEvent.blur(field)
-    await waitFor(() => expect(screen.getByRole('textbox', { name: 'Weekly budget for Groceries' }).className).toContain('border-destructive'))
+    expect((await screen.findByRole('alert')).textContent).toBe('Type the weekly budget as an amount, like 150 or 150.00.')
+    expect(field.getAttribute('aria-invalid')).toBe('true')
+    expect(said()).toBe('Type the weekly budget as an amount, like 150 or 150.00.')
+
+    fireEvent.change(field, { target: { value: '-5' } })
+    fireEvent.blur(field)
+    expect(await screen.findByText('A weekly budget cannot be below zero.')).toBeTruthy()
     expect(fake.tables.categories[0]?.weekly_budget_cents).toBeNull()
+
+    fireEvent.change(field, { target: { value: '40' } })
+    expect(field.getAttribute('aria-invalid')).toBeNull()
   })
 
   it('saves the goal as typed', async () => {

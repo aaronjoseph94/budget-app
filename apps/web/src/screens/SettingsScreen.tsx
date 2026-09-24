@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { SPENDING_LISTS } from '@budget/core'
-import { parseMoneyInput, useAppData } from '../app-data.js'
+import { parseMoneyInput, readBudgetInput, useAppData } from '../app-data.js'
 import { ensureCategory, saveGoal, setWeeklyBudget, type Category } from '../ledger.js'
 import { formatForInput } from '../format.js'
 import { atEndOf, groupByList, ListSelect, type CategoryKind } from '../lists.js'
@@ -122,7 +122,11 @@ const refreshHint = 'Budgets save when you leave the field.'
 function BudgetRow({ category, onError }: { category: Category; onError: (m: string | null) => void }) {
   const { supabase, refresh } = useAppData()
   const [text, setText] = useState(formatForInput(category.weekly_budget_cents))
-  const [state, setState] = useState<'idle' | 'saved' | 'invalid'>('idle')
+  const [state, setState] = useState<'idle' | 'saved'>('idle')
+  // What is wrong with what was typed, said on the field as the Week's
+  // editor says it; a red border alone told a screen reader nothing (CR-5).
+  const [problem, setProblem] = useState<string | null>(null)
+  const problemId = useId()
 
   // Follow the stored budget when it changes, during render rather than in an
   // effect: a mount effect can run after the first keystroke and wipe it.
@@ -133,11 +137,12 @@ function BudgetRow({ category, onError }: { category: Category; onError: (m: str
   }
 
   const commit = async () => {
-    const cents = text.trim() === '' ? null : parseMoneyInput(text)
-    if (text.trim() !== '' && cents === null) {
-      setState('invalid')
+    const typed = text.trim() === '' ? null : readBudgetInput(text, 'weekly budget')
+    if (typed !== null && 'problem' in typed) {
+      setProblem(typed.problem)
       return
     }
+    const cents = typed === null ? null : typed.cents
     if (cents === category.weekly_budget_cents) return
     try {
       await setWeeklyBudget(supabase, category.id, cents)
@@ -150,7 +155,7 @@ function BudgetRow({ category, onError }: { category: Category; onError: (m: str
   }
 
   return (
-    <li className="flex items-center gap-3 px-3 py-2">
+    <li className="flex flex-wrap items-center gap-3 px-3 py-2">
       <span className="min-w-0 flex-1 truncate text-sm font-medium">{category.name}</span>
       {state === 'saved' ? <Icon name="check" className="size-4 text-income" /> : null}
       <div className="relative w-32">
@@ -161,15 +166,23 @@ function BudgetRow({ category, onError }: { category: Category; onError: (m: str
           placeholder="No limit"
           size="sm"
           inset
-          className={`text-right ${state === 'invalid' ? 'border-destructive' : ''}`}
+          className={`text-right ${problem !== null ? 'border-destructive' : ''}`}
+          aria-invalid={problem !== null ? true : undefined}
+          aria-describedby={problem !== null ? problemId : undefined}
           value={text}
           onChange={(e) => {
             setText(e.target.value)
             setState('idle')
+            setProblem(null)
           }}
           onBlur={() => void commit()}
         />
       </div>
+      {problem !== null ? (
+        <p id={problemId} role="alert" className="w-full text-xs text-destructive">
+          {problem}
+        </p>
+      ) : null}
     </li>
   )
 }

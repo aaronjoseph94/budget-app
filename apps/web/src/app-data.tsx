@@ -137,6 +137,20 @@ export function parseMoneyInput(text: string): Cents | null {
 }
 
 /**
+ * A weekly budget or goal as typed, or the sentence saying why it is not
+ * one. The Week's editor and Settings both read budgets through this, so
+ * they refuse the same things in the same words (CR-5). `word` is what the
+ * field holds, e.g. "weekly budget". An empty field is the caller's to
+ * read: Settings takes it as no budget.
+ */
+export function readBudgetInput(text: string, word: string): { readonly cents: Cents } | { readonly problem: string } {
+  const cents = parseMoneyInput(text)
+  if (cents === null) return { problem: `Type the ${word} as an amount, like 150 or 150.00.` }
+  if (cents < 0) return { problem: `A ${word} cannot be below zero.` }
+  return { cents }
+}
+
+/**
  * A percentage typed by a person, as hundredths of a percent — "19.99" or
  * "19.99%" is 1999 — or null if it is not one. Hundredths of a percent are
  * read exactly as cents are read from dollars, so it is the same parser.

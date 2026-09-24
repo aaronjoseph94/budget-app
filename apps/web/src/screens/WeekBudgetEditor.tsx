@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { PeriodRow } from '@budget/core'
-import { parseMoneyInput, useAppData } from '../app-data.js'
+import { readBudgetInput, useAppData } from '../app-data.js'
 import { setWeeklyBudget } from '../ledger.js'
 import { formatCents, formatForInput } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
@@ -44,15 +44,12 @@ export function WeekBudgetEditor({
   }, [])
 
   const save = async (clear: boolean) => {
-    const cents = clear ? null : parseMoneyInput(text)
-    if (!clear && cents === null) {
-      setError(`Type the ${lower} as an amount, like 150 or 150.00.`)
+    const typed = clear ? null : readBudgetInput(text, lower)
+    if (typed !== null && 'problem' in typed) {
+      setError(typed.problem)
       return
     }
-    if (cents !== null && cents < 0) {
-      setError(`A ${lower} cannot be below zero.`)
-      return
-    }
+    const cents = typed === null ? null : typed.cents
     setBusy(true)
     setError(null)
     try {
