@@ -1,0 +1,94 @@
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { SignIn } from '../src/auth.js'
+import { MonthScreen } from '../src/screens/MonthScreen.js'
+import { ReviewScreen } from '../src/screens/ReviewScreen.js'
+import type { Category } from '../src/ledger.js'
+import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
+import { renderScreen } from './render-screen.js'
+
+/**
+ * Where keyboard focus goes when what held it goes away (FE-6). Left alone
+ * it falls to <body>, and a keyboard or screen-reader user starts again from
+ * the top of the page.
+ */
+
+const cat = (id: string, name: string, kind: Category['kind']): Category => ({ id, name, kind, sort_order: 0, weekly_budget_cents: null })
+
+function month(): FakeSupabase {
+  return createFakeSupabase({
+    categories: [cat('groceries', 'Groceries', 'variable')],
+    transactions: [
+      { id: 't1', posted_on: '2026-09-02', amount_cents: -10000, merchant_raw: 'SYNTHETIC MARKET', category_id: 'groceries', source: 'card_pdf' },
+    ],
+  })
+}
+
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date(2026, 8, 23, 12))
+})
+
+afterEach(() => {
+  cleanup()
+  vi.useRealTimers()
+})
+
+describe('focus after an editor in a row closes', () => {
+  it('goes back to the budget button when Escape closes the editor', async () => {
+    renderScreen(<MonthScreen month="2026-09" />, month())
+    fireEvent.click(await screen.findByRole('button', { name: /^Budget for Groceries, / }))
+    const field = screen.getByRole('textbox', { name: /^Budget for Groceries in / })
+    fireEvent.keyDown(field, { key: 'Escape' })
+
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: /^Budget for Groceries, / }))
+  })
+
+  it('goes back to the budget button once a budget is saved', async () => {
+    renderScreen(<MonthScreen month="2026-09" />, month())
+    fireEvent.click(await screen.findByRole('button', { name: /^Budget for Groceries, / }))
+    fireEvent.change(screen.getByRole('textbox', { name: /^Budget for Groceries in / }), { target: { value: '300' } })
+    fireEvent.click(screen.getByRole('button', { name: /^Save/ }))
+
+    const opener = await screen.findByRole('button', { name: 'Budget for Groceries, $300.00' })
+    await waitFor(() => expect(document.activeElement).toBe(opener))
+  })
+
+  it('goes back to the starting balance when its editor is cancelled', async () => {
+    renderScreen(<MonthScreen month="2026-09" />, month())
+    fireEvent.click(await screen.findByRole('button', { name: /^Starting balance for September, / }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: /^Starting balance for September, / }))
+  })
+})
+
+describe('focus after a review card is filed', () => {
+  it('moves to the message saying what happened, not to the page', async () => {
+    const fake = createFakeSupabase({
+      categories: [cat('c1', 'Groceries', 'variable')],
+      ingest_candidates: [
+        { id: 'p1', posted_on: '2026-09-09', amount_cents: -1349, merchant: 'LITWARE COFFEE', merchant_raw: 'LITWARE COFFEE', status: 'pending' },
+      ],
+    })
+    renderScreen(<ReviewScreen />, fake)
+    fireEvent.change(await screen.findByRole('combobox', { name: 'Category' }), { target: { value: 'c1' } })
+    fireEvent.click(screen.getByRole('button', { name: /Approve/ }))
+
+    const said = await screen.findByText(/^Added\./)
+    await waitFor(() => expect(document.activeElement).toBe(said.closest('[tabindex="-1"]')))
+  })
+})
+
+describe('focus after signing in fails', () => {
+  it('moves to the reason it failed', async () => {
+    const fake = createFakeSupabase()
+    render(<SignIn supabase={fake.client} />)
+    fireEvent.change(screen.getByLabelText('Email address'), { target: { value: 'you@example.com' } })
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'wrong' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+
+    const reason = await screen.findByRole('alert')
+    await waitFor(() => expect(document.activeElement).toBe(reason))
+  })
+})

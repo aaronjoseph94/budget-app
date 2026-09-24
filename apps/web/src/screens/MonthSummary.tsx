@@ -1,8 +1,9 @@
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import type { PeriodSheet } from '@budget/core'
 import { formatCents, formatMonthTitle } from '../format.js'
 import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
+import { useReturnFocus } from '../lib/return-focus.js'
 import { StartEditor } from './StartEditor.js'
 
 /**
@@ -36,6 +37,8 @@ export function MonthSummary({
   const { startingBalanceCents: start, spentCents, leftToSpendCents: left, endingBalanceCents: end } = sheet.summary
   const noBudgets = sheet.blocks.variable.rows.every((r) => r.budgetCents === null)
   const [editing, setEditing] = useState(false)
+  const opener = useRef<HTMLButtonElement>(null)
+  useReturnFocus(editing ? true : null, () => opener.current)
   const [note, setNote] = useState<string | null>(null)
   return (
     <section
@@ -48,6 +51,7 @@ export function MonthSummary({
         <Entry label="Start">
           <button
             type="button"
+            ref={opener}
             aria-label={`Starting balance for ${formatMonthTitle(month).split(' ')[0]}, ${start === null ? 'none typed' : formatCents(start)}`}
             aria-expanded={editing}
             onClick={() => {

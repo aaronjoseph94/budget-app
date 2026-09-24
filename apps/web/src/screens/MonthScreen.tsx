@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { isoDate, monthBounds, monthSheet, shiftMonth, type PeriodBlock, type PeriodSheet } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import {
@@ -21,6 +21,7 @@ import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
+import { useReturnFocus } from '../lib/return-focus.js'
 import { BudgetEditor } from './BudgetEditor.js'
 import { MonthCharges } from './MonthCharges.js'
 import { MonthCharts } from './MonthCharts.js'
@@ -390,6 +391,8 @@ export function Block({
   // The row whose budget is being typed, and what the last save did.
   const [editing, setEditing] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
+  const openers = useRef(new Map<string, HTMLButtonElement>())
+  useReturnFocus(editing, (id) => openers.current.get(id))
   const tone = TONE[kind]
   const columns = COLUMNS[kind]
   const word = columns.budget === 'Goal' ? 'Goal' : 'Budget'
@@ -475,6 +478,10 @@ export function Block({
                     ) : (
                       <button
                         type="button"
+                        ref={(el) => {
+                          if (el === null) openers.current.delete(r.categoryId)
+                          else openers.current.set(r.categoryId, el)
+                        }}
                         aria-label={`${word} for ${r.name}, ${r.budgetCents === null ? 'none set' : formatCents(r.budgetCents)}`}
                         aria-expanded={editing === r.categoryId}
                         onClick={(e) => {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import type { SupabaseClient } from './supabase.js'
 import { Button, Card, Label } from './ui.js'
@@ -70,6 +70,12 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [attempt, setAttempt] = useState<Attempt>({ kind: 'idle' })
+  // The Sign in button is disabled while it works, which drops focus to the
+  // page; a failure puts it on the reason, which is then read out (FE-6).
+  const reason = useRef<HTMLParagraphElement>(null)
+  useEffect(() => {
+    if (attempt.kind === 'failed') reason.current?.focus()
+  }, [attempt])
 
   const submit = async () => {
     const address = email.trim()
@@ -171,7 +177,9 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
             </div>
 
             {attempt.kind === 'failed' ? (
-              <p className="mt-3 text-sm text-spend">{attempt.message}</p>
+              <p ref={reason} role="alert" tabIndex={-1} className="mt-3 text-sm text-spend outline-none">
+                {attempt.message}
+              </p>
             ) : null}
 
             {method === 'link' ? (

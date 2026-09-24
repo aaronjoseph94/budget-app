@@ -68,6 +68,10 @@ export function ReviewScreen() {
   // Which read is the latest. A read started before a dismissal can answer
   // after the one started after it, and would put the dismissed line back.
   const reads = useRef(0)
+  // What the last action did. The card acted on is gone, or its button was
+  // disabled while it ran, so focus had fallen to the page; it goes here
+  // instead, which also reads out what happened (FE-6).
+  const said = useRef<HTMLDivElement>(null)
 
   const load = useCallback(async () => {
     const read = ++reads.current
@@ -131,6 +135,7 @@ export function ReviewScreen() {
     // fails afterwards must not be reported as the action failing. load() and
     // refresh() each report their own errors.
     if (done) await Promise.all([load(), refresh()])
+    said.current?.focus()
   }
 
   // The cards are memoised, so they take callbacks that never change and
@@ -161,6 +166,7 @@ export function ReviewScreen() {
     // As in act: it has already succeeded, and load() reports its own errors.
     await load()
     setBusy(null)
+    said.current?.focus()
   }
 
   return (
@@ -173,10 +179,12 @@ export function ReviewScreen() {
         </p>
       </header>
 
-      {note !== null ? <Alert tone="success">{note}</Alert> : null}
-      {/* Errors sit above the list and do NOT replace it: a single failure used
-          to swap the whole queue for an error card until the page was reloaded. */}
-      {(error ?? loadError) !== null ? <Alert tone="error" title="That did not work">{error ?? loadError}</Alert> : null}
+      <div ref={said} tabIndex={-1} className="space-y-4 outline-none empty:hidden">
+        {note !== null ? <Alert tone="success">{note}</Alert> : null}
+        {/* Errors sit above the list and do NOT replace it: a single failure used
+            to swap the whole queue for an error card until the page was reloaded. */}
+        {(error ?? loadError) !== null ? <Alert tone="error" title="That did not work">{error ?? loadError}</Alert> : null}
+      </div>
 
       {rows !== null && rows.length === 0 && unreadable?.total === 0 ? (
         <Card>
