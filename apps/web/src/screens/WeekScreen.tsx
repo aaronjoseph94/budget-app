@@ -1,8 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
-import { isoDate, monthBounds, shiftWeek, weekBounds, weekSheet, type WeekSheet } from '@budget/core'
+import {
+  isoDate,
+  monthBounds,
+  periodComparison,
+  shiftWeek,
+  weekBounds,
+  weekSheet,
+  type PeriodComparison,
+  type WeekSheet,
+} from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { latestStatementEnd, listPlanHistory, listTransactions, type LedgerRow, type PlanRow } from '../ledger.js'
-import { entriesForCore, plansForCore, weekCategoriesForCore } from '../sheet-input.js'
+import { categoriesForCore, entriesForCore, plansForCore, weekCategoriesForCore } from '../sheet-input.js'
+import { useEarlier } from '../earlier.js'
 import { formatDateRange, todayIso } from '../format.js'
 import { Card, CardContent } from '../components/ui/card.js'
 import { Alert } from '../components/ui/feedback.js'
@@ -75,6 +85,28 @@ export function WeekScreen() {
   }, [here, categories, asOf])
   const sheet = typeof week === 'string' ? null : week
 
+  // Last week, to the same weekday while this one runs (F25, D26). Read on
+  // its own, so if it fails only the comparison goes.
+  const earlier = useEarlier({ from: shiftWeek(bounds.start, -1), to: shiftWeek(bounds.end, -1) })
+  const comparison = useMemo((): PeriodComparison | 'failed' | null => {
+    if (here === null || earlier === null) return null
+    if (earlier === 'failed') return 'failed'
+    try {
+      return periodComparison({
+        period: 'week',
+        week: bounds.start,
+        asOf: today,
+        historyStart: earlier.historyStart === null ? null : isoDate(earlier.historyStart),
+        categories: categoriesForCore(categories),
+        planHistory: plansForCore(here.plans),
+        entries: entriesForCore([...here.rows, ...earlier.rows]),
+      })
+    } catch {
+      // As the week's own sheet: a row naming a category that did not load.
+      return 'failed'
+    }
+  }, [here, earlier, categories, bounds.start, today])
+
   const isThisWeek = weekBounds(today).start === bounds.start
   // Back on this week, its days left count from today again, not its Monday.
   const step = (weeks: number) => {
@@ -128,6 +160,7 @@ export function WeekScreen() {
       {sheet !== null ? (
         <WeekBlocks
           sheet={sheet}
+          comparison={comparison}
           aside={goal !== null ? <GoalCard weekSpentCents={sheet.summary.spentCents} asOf={asOf} /> : <NoGoal />}
           onUnsaved={setUnsaved}
         />

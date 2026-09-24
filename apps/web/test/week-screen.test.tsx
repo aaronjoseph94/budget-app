@@ -263,8 +263,9 @@ describe('WeekScreen', () => {
     renderScreen(<WeekScreen />, fake)
     expect((await screen.findAllByText('$130.12')).length).toBeGreaterThan(0)
 
-    let release = () => {}
-    fake.server.hold = (table) => (table === 'transactions' ? new Promise<void>((resolve) => (release = resolve)) : null)
+    // Every read of the ledger is held: the week's own, and last week's for the comparison.
+    const held: (() => void)[] = []
+    fake.server.hold = (table) => (table === 'transactions' ? new Promise<void>((resolve) => held.push(resolve)) : null)
     fireEvent.click(screen.getByRole('button', { name: 'Previous week' }))
 
     expect(await screen.findByRole('heading', { name: 'Week of' })).toBeTruthy()
@@ -272,7 +273,7 @@ describe('WeekScreen', () => {
     expect(screen.queryByText('Spent')).toBeNull()
 
     fake.server.hold = null
-    release()
+    held.forEach((release) => release())
     expect((await screen.findAllByText('$99.99')).length).toBeGreaterThan(0)
   })
 

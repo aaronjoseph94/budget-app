@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react'
-import type { PeriodRow, WeekSheet } from '@budget/core'
+import type { PeriodComparison, PeriodRow, WeekSheet } from '@budget/core'
 import { formatCents } from '../format.js'
 import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
 import { ImportedThrough, PeriodBlocks, TransfersNote, type EditorDone } from './MonthScreen.js'
 import { WeekBudgetEditor } from './WeekBudgetEditor.js'
+import { CompareLine } from './CompareLine.js'
 
 /**
  * The workbook's Weekly Budget laid out as the Month lays out a month tab (plan
@@ -18,10 +19,13 @@ import { WeekBudgetEditor } from './WeekBudgetEditor.js'
  */
 export function WeekBlocks({
   sheet,
+  comparison = null,
   aside,
   onUnsaved,
 }: {
   sheet: WeekSheet
+  /** Last week beside this one (D26); null while it loads, or where none is shown. */
+  comparison?: PeriodComparison | 'failed' | null
   aside: ReactNode
   /** A budget refused after its editor closed, or null as another opens. */
   onUnsaved: (message: string | null) => void
@@ -36,7 +40,7 @@ export function WeekBlocks({
     <>
       <ImportedThrough through={sheet.importedThrough} />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <WeekSummary sheet={sheet} />
+        <WeekSummary sheet={sheet} comparison={comparison} />
         {aside}
         <PeriodBlocks blocks={sheet.blocks} {...blockProps} />
       </div>
@@ -50,9 +54,10 @@ export function WeekBlocks({
  * (D11, D13), both core's. Its Starting and Ending Balance (D9, D15) are
  * not shown: no balance is typed for a week, and core gives no ending
  * balance without a start (D17). A negative Left to spend takes the
- * Month's pink, as the workbook's D13:F14 format marks it.
+ * Month's pink, as the workbook's D13:F14 format marks it. Under them, last
+ * week to the same weekday (D26), as the Month's card ends with last month.
  */
-function WeekSummary({ sheet }: { sheet: WeekSheet }) {
+function WeekSummary({ sheet, comparison }: { sheet: WeekSheet; comparison: PeriodComparison | 'failed' | null }) {
   const { spentCents, leftToSpendCents: left } = sheet.summary
   const noBudgets = sheet.blocks.variable.rows.every((r) => r.budgetCents === null)
   return (
@@ -77,6 +82,9 @@ function WeekSummary({ sheet }: { sheet: WeekSheet }) {
           ) : null}
         </div>
       </dl>
+      <div className="text-summary-value">
+        <CompareLine comparison={comparison} label="Compared with last week" earlier="last week" />
+      </div>
     </section>
   )
 }

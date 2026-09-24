@@ -1,0 +1,81 @@
+import type { ReactNode } from 'react'
+import type { Change, DateWindow, PeriodComparison } from '@budget/core'
+import { formatBasisPoints, formatCents, formatChange, formatDateRange, formatDayMonth } from '../format.js'
+
+/**
+ * One period beside the one before it (D26, F25): both figures, both windows
+ * and the change in words, every figure periodComparison's. Never set under
+ * the screen's own Spent: a same-days window counts a planned bill only on
+ * its due day (F8), so the two can differ, and each names its own days.
+ *
+ * `earlier` names the period before in words ("last week"). With the earlier
+ * days before the records (F24) the line says what would make a comparison
+ * possible; when they could not be read, it says so in one line and the
+ * screen around it still shows.
+ */
+export function CompareLine({
+  comparison,
+  label,
+  earlier,
+  pick = (c) => c.summary.spent,
+  word = 'spent',
+  dates = (w) => formatDateRange(w.from, w.to),
+}: {
+  /** Null while it loads; 'failed' when the earlier window could not be read. */
+  comparison: PeriodComparison | 'failed' | null
+  /** The group's name for a screen reader: "Compared with last week". */
+  label: string
+  earlier: string
+  pick?: (c: Extract<PeriodComparison, { status: 'compared' }>) => Change
+  word?: string
+  dates?: (w: DateWindow) => string
+}) {
+  if (comparison === null || (comparison !== 'failed' && comparison.status === 'not_started')) return null
+  const line = (children: ReactNode) => (
+    <div role="group" aria-label={label} className="mt-3 border-t border-current/20 pt-3 text-sm">
+      {children}
+    </div>
+  )
+  if (comparison === 'failed') {
+    return line(<p>{sentence(earlier)} did not load, so there is no comparison. Reload to try again.</p>)
+  }
+  if (comparison.status === 'before_records') {
+    return line(
+      <p>
+        {comparison.historyStart === null
+          ? `Import a statement to compare with ${earlier}.`
+          : `Your records start on ${formatDayMonth(comparison.historyStart)}. Import the statement before that to compare with ${earlier}.`}
+      </p>,
+    )
+  }
+  const c = pick(comparison)
+  return line(
+    <>
+      {/* Each side kept whole where it fits, so a date range never breaks from its figure. */}
+      <p>
+        <span className="inline-block">
+          {dates(comparison.now)}: <span className="tnum font-semibold">{formatCents(c.nowCents)}</span> {word} ·
+        </span>{' '}
+        <span className="inline-block">
+          {dates(comparison.before)}: <span className="tnum font-semibold">{formatCents(c.beforeCents)}</span>
+        </span>
+      </p>
+      <p className="mt-0.5 font-medium">
+        {c.direction === 'same' ? (
+          'About the same'
+        ) : (
+          <>
+            <span aria-hidden="true">{c.direction === 'more' ? '▲ ' : '▼ '}</span>
+            {formatChange(c)}
+            {c.changeBp === null ? '' : ` (${formatBasisPoints(Math.abs(c.changeBp))})`}
+          </>
+        )}
+      </p>
+    </>,
+  )
+}
+
+/** "last week" as the start of a sentence. Display only. */
+function sentence(words: string): string {
+  return words.charAt(0).toUpperCase() + words.slice(1)
+}
