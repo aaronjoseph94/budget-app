@@ -71,9 +71,11 @@ the summary's facts.
 
 ### 4. The text rule
 
-`ModelProse` in `packages/schema` applies to every string a model writes and
-to every template the app ships, so the app's own words and the AI's pass
-the same test and go through the same drawing:
+`ModelProse` in `packages/schema` applies rules 1 to 7 to every string a
+model writes and to every template the app ships, so the app's own words
+and the AI's pass the same test and go through the same drawing. Rules 8
+and 9 need to know which facts were offered, so `checkReply` in
+`packages/savings-coach` applies them to each reply:
 
 1. NFKC-normalise the text.
 2. Remove the well-formed blanks. A `{` or `}` left over fails.

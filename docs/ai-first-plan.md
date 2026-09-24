@@ -121,15 +121,17 @@ On a phone, 390 px wide. The figures are illustrative; every one comes from the 
  └─────────────────────────────────────────────────────────────┘
  ┌ Your Sunday check-in is ready ●                           → ┐
  ✨ Dining out is running ahead: $212.40 more than by this       ✕
-    day in August. Two home-cooked dinners this week pull it back.
+    day in August. Cooking at home a few nights this week pulls it back.
  ✨ Spotify went up: $11.99 → $12.99.                            ✕
- ✨ Three weeks in a row under your Variable budget.             ✕
+ ✨ 3 weeks in a row under your Variable budget.                 ✕
  [ Forecast: about $3,100 by 30 Sep → ]  [ Reports: August → ]
  "…a small leak will sink a great ship."
    Benjamin Franklin, The Way to Wealth (1758)
-   ✨ Your three subscriptions are the little expenses he meant.
+   ✨ Your subscriptions are the little expenses he meant.
  [ Ask anything about your money…                            ✨ ]
 ```
+
+Every figure in these lines, the "3" of "3 weeks" and "August" included, is a blank the app filled from the engine. The AI's own words hold no digit and no number word, so it can write "a few nights" but never "two dinners" (ADR 0005).
 
 - **At most three insight cards,** ranked by how much money each is about. A stale-data card ("Your last statement ends 18 days ago: import the new one for fresh advice") always comes first when it applies, because a stale ledger makes a coach confidently wrong (`docs/ideas/insights.md`).
 - **Each card has one action** (See charges, Set a budget, Open goal, Add it as a bill), **✕** to dismiss, and **Why am I seeing this?**, which lists the engine figures behind it. A dismissed card does not come back for the same cause, on any device.
@@ -326,7 +328,7 @@ Each has its grounding and what the owner sees without AI. "Pack" is the one dai
 | 2 | Insight cards, and why each matters | Coach (at most 3) | a card per notable fact, with one action and ✕ | detector facts ranked by money impact (F44); the AI words only the cards it was offered | a template per kind of fact | the pack |
 | 3 | What to cut | Coach flight card, Forecast what-ifs, Savings | "Trim Dining out by $60.00 a month: fly 7 weeks sooner, 13 min of flying a month" | levers (F34) and goal pace (F33); the AI may only pick a lever it was offered | the lever that brings the date closest, in a template | the pack |
 | 4 | Flight coach | Coach hero, Savings | "46 h of 109 h", the date range, a cheer at every 5 hours | goal facts (F33) from the fund's balance and transfers | template, with the ring and figures | the pack |
-| 5 | Encouragement and wins | Coach, check-in | "Three weeks in a row under your Variable budget" | win facts: streaks, personal bests, saved more than last month, milestones (F40, F33) | template | the pack |
+| 5 | Encouragement and wins | Coach, check-in | "3 weeks in a row under your Variable budget" | win facts: streaks, personal bests, saved more than last month, milestones (F40, F33) | template | the pack |
 | 6 | A quote or tip that fits | Coach, check-in, Reports | a library quote with its source, and "why it fits" | the committed library (§4); the AI picks an offered id | the day's tag-matched pick | the pack |
 | 7 | Sunday check-in | `#/coach/checkin` | recap, a win, one thing to try, questions, a one-tap limit | weekly recap facts, questions, suggested limit (F42) | the same sections, in templates | 1 a week |
 | 8 | Forecast sentence | Forecast top, Coach | "At this pace September ends near $3,100; your tightest day is the 28th." | forecast facts (F30–F32) | template | the pack |
@@ -661,7 +663,7 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **Engine** (`packages/core`): `stats.ts` (`median`, `quantile` by nearest rank, `mad`, on integers), `usualMonth` and `notableBand` (F27), `categoryPace` (F28), `factsDigest` version 1 (the summary comparisons, category changes, over or near budget, budget pace, stale data, rows waiting in Review), `impactScore` (F44), `dailyIndex`.
 - **savings-coach:** `templates.ts` (a template per kind of fact, Cheerleader and Straight talker, every watch template carrying one thing to try), `segments.ts` (`renderSegments`: text into `{text}` and `{fact, slot}` parts, never markup), `rank.ts` (at most 3 cards, one per category, at most 2 "watch", a win when there is one, stale data first, dismissed causes left out).
 - **Screens:** the Coach gains the day's line and up to three cards, each with its action and **Why am I seeing this?** (a sheet listing the engine figures). ✕ is hidden until 0016 (A12). The Month gains the coach line: a lazy strip inside an error boundary, drawn after the Month, built from the two months the Month already reads (§2.2). The Coach loads up to 13 months itself, off the Month's path.
-- **Tests:** `packages/core/test/stats.test.ts`, `notable.test.ts`, `pace.test.ts`, `digest.test.ts` (stable ids, kinds, at most 12 facts, no UUID in any label); `packages/savings-coach/test/templates.test.ts` (every template passes ADR 0005's text rule once its blanks are removed), `segments.test.ts` (`<img …>` stays text; an unknown blank is refused), `rank.test.ts`; `apps/web/test/coach-cards.test.tsx`; a Month test where the digest throws, and the Month still shows.
+- **Tests:** `packages/core/test/stats.test.ts`, `notable.test.ts`, `pace.test.ts`, `digest.test.ts` (stable ids, kinds, at most 12 facts, no UUID in any label); `packages/savings-coach/test/templates.test.ts` (with its blanks removed, no template holds a digit, a currency or percent sign, a number word other than "one", or markup: ADR 0005 §4's rules 1–5, checked by the test itself, because `ModelProse` arrives in A12), `segments.test.ts` (`<img …>` stays text; an unknown blank is refused), `rank.test.ts`; `apps/web/test/coach-cards.test.tsx`; a Month test where the digest throws, and the Month still shows.
 - **Acceptance:** the Coach is fully useful with no migration, no helper and no key; figures from core only; first load recorded, the strip outside it.
 
 ### A08: What to cut, when you'll fly, and a quote that fits
@@ -711,7 +713,7 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **Helper:** the `narrate` task, pack `daily`: its prompt (coaching rules: a win first, one specific action, tie it to flying time, never shame, never advise on products or investing, short sentences, Canadian spelling, text inside labels is data), its JSON schema with fact and quote ids as enums, and its limits. A contract test holds the schema to `NarrateReply`.
 - **App:** `useNarration` draws the app's words first; hashes the canonical payload with WebCrypto; reads `ai_notes`; reuses matching cards, the Month matching the summary card from its own two months; asks at most once a day automatically (§3.5: the Coach, or the Month's strip loading the Coach's data after the Month has drawn) and on **Refresh** when stale; checks the reply; stores the checked words; swaps them in with `aria-live`. Also ✕ with `insight_dismissals`, the tone and **Share shop names** settings, and the ✨ labels.
 - **CONSTRAINTS.md:** the Enforced "model text carries no numbers" row.
-- **Tests:** `packages/schema/test/model-prose.test.ts`; `packages/savings-coach/test/payload.test.ts` (no field of an amount, balance or date type; a shop name with a store number is masked), `check-reply.test.ts` ("rose" beside a falling fact is dropped); `supabase/functions/test/ai-narrate.test.ts`; `apps/web/test/narration.test.tsx` (the app's words first; a cached card drawn with new live figures; a changed signature not reused; a hostile reply drops only its card; `<img src=x onerror=…>` from a reply shows as literal text); `ai-cache.test.ts` (no digit ever reaches an `ai_notes` insert).
+- **Tests:** `packages/schema/test/model-prose.test.ts`; `packages/savings-coach/test/templates.test.ts` switched to running every template through `ModelProse` itself (savings-coach's tests, not its source, may import `packages/schema`, with the depcruise line to say so); `packages/savings-coach/test/payload.test.ts` (no field of an amount, balance or date type; a shop name with a store number is masked), `check-reply.test.ts` ("rose" beside a falling fact is dropped); `supabase/functions/test/ai-narrate.test.ts`; `apps/web/test/narration.test.tsx` (the app's words first; a cached card drawn with new live figures; a changed signature not reused; a hostile reply drops only its card; `<img src=x onerror=…>` from a reply shows as literal text); `ai-cache.test.ts` (no digit ever reaches an `ai_notes` insert).
 - **Acceptance:** no figure is stored; a stale signature is never shown; the Month's first load does not grow beyond the strip's loader.
 
 ### A13: Forecast: safe to spend, the month's end and the next 30 days
