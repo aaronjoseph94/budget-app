@@ -59,6 +59,27 @@ describe('the Week beside last week (D26)', () => {
     expect((await line()).getByText(text('14 – 20 Sep: $155.00 spent · 7 – 13 Sep: $12.00'))).toBeTruthy()
   })
 
+  it('never sets a new week against the week before’s read while its own is still loading', async () => {
+    const fake = seeded()
+    renderScreen(<WeekScreen />, fake)
+    await line()
+
+    // Hold only the read of the week before 14–20 Sep. `refuse` is asked just before `hold`, with the query.
+    let asked: string[] = []
+    let release = () => {}
+    fake.server.refuse = (_, query) => ((asked = query.getAll('posted_on')), null)
+    fake.server.hold = (table) =>
+      table === 'transactions' && asked.includes('gte.2026-09-07') ? new Promise<void>((resolve) => (release = resolve)) : null
+    fireEvent.click(screen.getByRole('button', { name: 'Previous week' }))
+
+    await screen.findByText((_, el) => el?.tagName === 'DD' && el.textContent === '$155.00')
+    expect(screen.queryByRole('group', { name: 'Compared with last week' })).toBeNull()
+
+    fake.server.hold = null
+    release()
+    expect((await line()).getByText(text('14 – 20 Sep: $155.00 spent · 7 – 13 Sep: $12.00'))).toBeTruthy()
+  })
+
   it('says which statement to import when last week starts before the records (F24)', async () => {
     renderScreen(<WeekScreen />, seeded('2026-09-15'))
 
