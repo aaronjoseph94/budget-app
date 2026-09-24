@@ -59,7 +59,7 @@ describe('DebtsScreen', () => {
   it("shows a debt's balance today, its figures and the month it is paid off", async () => {
     renderScreen(<DebtsScreen />, seeded())
     expect(lines(await screen.findByRole('region', { name: 'Loan' }))).toEqual([
-      'Loan', 'Balance today',
+      'Loan', 'Balance today', '▼ $98.98 less (97%) than at the end of August',
       'Starting balance', '$300.00', 'APR', '12%', 'Minimum payment', '$100.00', 'Paid off in', 'October 2026',
     ])
     expect(within(screen.getByRole('region', { name: 'Loan' })).getByText('$3.02')).toBeTruthy()

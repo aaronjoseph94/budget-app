@@ -1,9 +1,9 @@
 import { useId, useMemo, useState, type ReactNode } from 'react'
-import { endOfList, type DebtStanding, type DebtStatus } from '@budget/core'
+import { debtBalanceChange, endOfList, isoDate, type Change, type DebtBalanceChange, type DebtStanding, type DebtStatus } from '@budget/core'
 import { debtRing } from '@budget/chart-specs'
 import { useDebts } from '../debts.js'
 import type { DebtRow } from '../ledger.js'
-import { formatBasisPoints, formatCents, formatMonthTitle, formatRate } from '../format.js'
+import { formatBasisPoints, formatCents, formatChange, formatMonthName, formatMonthTitle, formatRate } from '../format.js'
 import { DebtEditor } from './DebtEditor.js'
 import { DebtStrategies } from './DebtStrategies.js'
 import { Alert } from '../components/ui/feedback.js'
@@ -28,6 +28,16 @@ export function DebtsScreen() {
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null)
   const ready = state.status === 'ready' ? state.debts : null
   const shown = editing === 'new' ? null : (ready?.rows.find((r) => r.id === editing) ?? null)
+  // Each balance against a month ago (F25, D26), from the same schedule, so
+  // there is no second read to fail; should core refuse it, only the lines go.
+  const vs = useMemo((): DebtBalanceChange | null => {
+    if (ready === null || ready.plan.amortization === null) return null
+    try {
+      return debtBalanceChange({ amortization: ready.plan.amortization, asOf: isoDate(ready.asOf) })
+    } catch {
+      return null
+    }
+  }, [ready])
   return (
     <div className="-mx-4 space-y-4 bg-debt-page px-4 pb-6 text-debt-ink md:mx-0 md:rounded-xl">
       <header className="-mx-4 bg-debt-banner px-4 py-5 md:rounded-t-xl">
@@ -58,6 +68,7 @@ export function DebtsScreen() {
               status={state.debts.status}
               debtFree={state.debts.plan.amortization.debtFreeDate}
               leftOut={state.debts.plan.neverPaidOff}
+              vs={vs}
             />
           )}
           {state.debts.rows.length === 0 ? (
@@ -69,6 +80,8 @@ export function DebtsScreen() {
                   <DebtCard
                     row={row}
                     standing={state.debts.status?.debts.find((d) => d.name === row.name) ?? null}
+                    vs={vs?.debts.find((d) => d.name === row.name)?.change ?? null}
+                    monthAgo={vs?.monthAgo ?? null}
                     onEdit={() => setEditing(row.id)}
                   />
                 </li>
@@ -109,7 +122,17 @@ export function DebtsScreen() {
  * A debt that is never paid off has no schedule, so the totals leave it
  * out, and say so.
  */
-function Summary({ status, debtFree, leftOut }: { status: DebtStatus; debtFree: string; leftOut: readonly string[] }) {
+function Summary({
+  status,
+  debtFree,
+  leftOut,
+  vs,
+}: {
+  status: DebtStatus
+  debtFree: string
+  leftOut: readonly string[]
+  vs: DebtBalanceChange | null
+}) {
   const t = status.totals
   return (
     <section aria-label="Debt summary" className="grid grid-cols-[1fr_auto] gap-4 rounded-xl bg-card p-4 shadow-sm">
@@ -131,6 +154,17 @@ function Summary({ status, debtFree, leftOut }: { status: DebtStatus; debtFree: 
         </Stat>
       </dl>
       <Ring label="All debts" paidBp={t.progressBp ?? 10_000} className="w-24" />
+      {vs === null ? null : (
+        <div role="group" aria-label="Compared with a month ago" className="col-span-2 border-t border-current/20 pt-3 text-sm">
+          {/* The total now is Current debt total, above; this names the one it is set against. */}
+          <p>
+            End of {formatMonthName(vs.monthAgo)}: <span className="tnum font-semibold">{formatCents(vs.total.beforeCents)}</span>
+          </p>
+          <p className="mt-0.5 font-medium">
+            <ChangeWords change={vs.total} />
+          </p>
+        </div>
+      )}
       {leftOut.length > 0 ? (
         <p className="col-span-2 text-xs">Not in these totals, because they are never paid off: {leftOut.join(', ')}.</p>
       ) : null}
@@ -138,7 +172,20 @@ function Summary({ status, debtFree, leftOut }: { status: DebtStatus; debtFree: 
   )
 }
 
-function DebtCard({ row, standing, onEdit }: { row: DebtRow; standing: DebtStanding | null; onEdit: () => void }) {
+function DebtCard({
+  row,
+  standing,
+  vs,
+  monthAgo,
+  onEdit,
+}: {
+  row: DebtRow
+  standing: DebtStanding | null
+  /** This debt's balance against a month ago; null for one never paid off. */
+  vs: Change | null
+  monthAgo: string | null
+  onEdit: () => void
+}) {
   return (
     <section aria-label={row.name} className="overflow-hidden rounded-xl bg-card shadow-sm">
       <h2 className="break-words px-4 pt-3 font-title text-3xl font-bold [overflow-wrap:anywhere]">{row.name}</h2>
@@ -151,6 +198,17 @@ function DebtCard({ row, standing, onEdit }: { row: DebtRow; standing: DebtStand
           {standing !== null && standing.month === null ? (
             <p className="text-xs">Starts {formatMonthTitle(row.start_date)}</p>
           ) : null}
+          {vs === null || monthAgo === null ? null : (
+            <p className="text-xs">
+              {vs.direction === 'same' ? (
+                `About the same as at the end of ${formatMonthName(monthAgo)}`
+              ) : (
+                <>
+                  <ChangeWords change={vs} /> than at the end of {formatMonthName(monthAgo)}
+                </>
+              )}
+            </p>
+          )}
         </div>
         {standing === null ? null : <Ring label={row.name} paidBp={standing.progressBp ?? 10_000} className="w-20" />}
       </div>
@@ -202,5 +260,17 @@ function Stat({ label, children }: { label: string; children: ReactNode }) {
       <dt className="text-xs text-debt-label">{label}</dt>
       <dd>{children}</dd>
     </div>
+  )
+}
+
+/** A change from core in words, with a marker the eye can find and a reader skips (F26). */
+function ChangeWords({ change }: { change: Change }) {
+  if (change.direction === 'same') return <>About the same</>
+  return (
+    <>
+      <span aria-hidden="true">{change.direction === 'more' ? '▲ ' : '▼ '}</span>
+      {formatChange(change)}
+      {change.changeBp === null ? '' : ` (${formatBasisPoints(Math.abs(change.changeBp))})`}
+    </>
   )
 }
