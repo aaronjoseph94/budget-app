@@ -650,3 +650,211 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **One-time updates:** the live probes of §8.2 for 0005–0014 (0015 on join as their slices land), ✓ and ✗, the next step, **Check again**.
 - **Tests:** every article has the full pattern; search; an unknown topic opens the index; a markup string in an article shows as text; each probe state from the fake (PGRST205, 42P01, PGRST202, all present).
 - **Acceptance:** every screen has an article; plain language, one action per step.
+
+### A07: Coach cards in the app's own words
+
+**Owner items:** 2, 7, 9 · **Depends on:** A03, A05, A06 · **Migrations:** none · **Commits:** about 6
+- **Records first:** F27, F28, F44; D27 (the coach line); CONSTRAINTS' Engine speed reason (§12).
+- **`packages/savings-coach`,** created in its own configuration commit: package, tsconfig reference, vitest project, coverage 80/80/75, depcruise allowed lines (it may import core's values, and schema and money-primitives as types only; the app may import it), and an eslint purity block like chart-specs' (no clock, randomness, DOM, zod, `crypto` or `@supabase`).
+- **Engine** (`packages/core`): `stats.ts` (`median`, `quantile` by nearest rank, `mad`, on integers), `usualMonth` and `notableBand` (F27), `categoryPace` (F28), `factsDigest` version 1 (the summary comparisons, category changes, over or near budget, budget pace, stale data, rows waiting in Review), `impactScore` (F44), `dailyIndex`.
+- **savings-coach:** `templates.ts` (a template per kind of fact, Cheerleader and Straight talker, every watch template carrying one thing to try), `segments.ts` (`renderSegments`: text into `{text}` and `{fact, slot}` parts, never markup), `rank.ts` (at most 3 cards, one per category, at most 2 "watch", a win when there is one, stale data first, dismissed causes left out).
+- **Screens:** the Coach gains the day's line and up to three cards, each with its action and **Why am I seeing this?** (a sheet listing the engine figures). ✕ is hidden until 0016 (A12). The Month gains the coach line: a lazy strip inside an error boundary, drawn after the Month, built from the two months the Month already reads (§2.2). The Coach loads up to 13 months itself, off the Month's path.
+- **Tests:** `packages/core/test/stats.test.ts`, `notable.test.ts`, `pace.test.ts`, `digest.test.ts` (stable ids, kinds, at most 12 facts, no UUID in any label); `packages/savings-coach/test/templates.test.ts` (every template passes ADR 0005's text rule once its blanks are removed), `segments.test.ts` (`<img …>` stays text; an unknown blank is refused), `rank.test.ts`; `apps/web/test/coach-cards.test.tsx`; a Month test where the digest throws, and the Month still shows.
+- **Acceptance:** the Coach is fully useful with no migration, no helper and no key; figures from core only; first load recorded, the strip outside it.
+
+### A08: What to cut, when you'll fly, and a quote that fits
+
+**Owner items:** 2, 3 · **Depends on:** A07 · **Migrations:** none · **Commits:** about 4
+- **Records first:** F33, F34.
+- **Engine:** `goalForecast` (F33, the date range and the weekly amount needed), `goalMilestones`, `goalLevers` (F34), and win facts (saved more than last month, a milestone) in the digest.
+- **savings-coach:** `library.ts` with the entries of §4, each re-verified at commit with its `sourceUrls`, and `pickQuote(tags, asOf, recentIds)`.
+- **Screens:** the Coach's flight card gains the date range with its evidence chip, the top lever and **What if…** (to Forecast from A14; until then, to the Savings screen); the quote card; the Savings flight card's lever line; each Variable charge in a row's sheet shows its flying time.
+- **Tests:** `packages/core/test/goal-forecast.test.ts` (under 3 months gives one rough date; all zero gives "no date" and a lever), `levers.test.ts` (a worked example of weeks sooner; the best-month lever needs 500 cents), `packages/savings-coach/test/library.test.ts` (ids unique, lowercase and digit-free; every `wrote` or `said` has a title and year; every `often_attributed` has a note; at least one https source; text at most 400 characters; tags from the set), `pick-quote.test.ts`.
+- **Acceptance:** the quote's text and author always come from the library; an entry that could not be verified is not in it.
+
+### A09: The AI helper, installed
+
+**Owner items:** 2, 5, 8 · **Depends on:** A02, A06 · **Migrations:** `0015_ai_foundation.sql` · **Commits:** about 6
+- **Records first:** ADR 0007 (one-time updates copied from inside the app).
+- **Migration:** 0015 as §10.1, with `local-stub.sql`'s `service_role` and the schema gate's assertions, each seen failing once. The function bodies A10 and A11 need land here, as SQL, with their assertions.
+- **Helper** (`supabase/functions/ai/index.ts`): the env parse, CORS and origins, identity from `/auth/v1/user`, the database helper (the root in `apikey`, and as a bearer only when it is a legacy JWT), `ping`, and `status` (sources, hints and statuses; `needs_update` when 0015 is missing). `packages/schema` gains `AiProvider` and the request union's types, and a contract test holds the helper's zod request schema to them.
+- **App:** `apps/web/src/ai/client.ts` maps every failure to a state (`not_deployed` for a 404, `unreachable`, `needs_update`, `not_set_up`, `off`, `limit_reached`, `all_resting`, `all_failed`), each with a sentence and a link. `apps/web/test/fake-supabase.ts` answers `functions/v1/ai`. `#/ai` (lazy) shows the status sentence, or "The AI helper isn't installed yet → One-time updates".
+- **One-time updates** gains the 0015 and helper probes, and the **Copy** buttons with the `setup-files.ts` Vite plugin.
+- **Guards:** a static test that no provider API host (`generativelanguage.googleapis.com`, `api.groq.com`, `openrouter.ai/api`, `api.openai.com`, `api.anthropic.com`) and no `SERVICE_ROLE` appears in `apps/web/src`, and that the built JavaScript holds neither (`/setup/` files excluded, since they are the helper's source); `test/headers.test.ts` extended to hold `connect-src` to `'self'` and the Supabase project. CONSTRAINTS.md's Enforced "browser holds no provider host or service key" row.
+- **Tests:** `supabase/functions/test/ai-identity.test.ts` (no bearer gives 401; a forged `user_id` in the body is ignored; an `sb_secret_` root never sent as a bearer; a legacy JWT root sent as both); `ai-status.test.ts` (the Gemini secret shows as `secret`; no ciphertext in any reply); `apps/web/test/ai-client.test.ts` (each state); `ai-settings.test.tsx` (not installed; 0015 missing); `setup-files.test.ts` (served bytes equal the committed file; nothing outside the list served).
+- **Acceptance:** AI settings shows a true status in every state; the rest of the app is unaffected in every state.
+
+### A10: Paste a free Gemini key
+
+**Owner items:** 2, 5 · **Depends on:** A09 · **Migrations:** none · **Commits:** about 4
+- **Helper:** the allowlist constant with the Gemini entries; the Gemini adapter; encryption (§3.4) with `kek_id` and the `locked` state; `save_key`, `test_key` (also **Check which models work**) and `forget_key`.
+- **Screen:** the free Gemini card's three steps (§8.3), **Remove key**, "Already on" when the secret works, and the model choice from the listed models the key can use.
+- **Tests:** `supabase/functions/test/ai-crypto.test.ts` (round trip; another user's or service's additional data fails; the `kek_id` picks the right root; a changed root gives `locked`, not an error), `ai-keys.test.ts` (a rejected key is not stored; a busy one is; the key appears in no response or log; a model not on the list falls back; a listed model the service does not offer is shown unavailable), `apps/web/test/ai-settings-gemini.test.tsx` (the field is empty after sending and no key text is anywhere in the DOM; each result sentence). Test keys are obviously fake (`test-not-a-real-key-0001`), so gitleaks stays green without an allowlist.
+- **Acceptance:** the whole flow works against the fake; the key round-trips and is never readable back.
+
+### A11: More services, failover and a daily limit
+
+**Owner items:** 2 · **Depends on:** A10 · **Migrations:** none · **Commits:** about 5
+- **Helper:** the OpenAI-compatible and Anthropic adapters (§3.3, each re-checked against its provider's current reference at build); the `run` action with the `test` task; the router: the owner's order, paid services only with **Use paid services** on, rested services skipped, `ai_usage_claim` before every attempt, token estimates and per-request budgets, 20 s attempts (30 s for a receipt) inside a 100 s deadline, at most 3 attempts, cooldowns written by `ai_note_outcome` (§3.5), and `all_resting` or `all_failed` with the list of what was tried.
+- **Screen:** the other four services' cards, **Try in this order**, **Use paid services**, **Daily limit** and "Today: N of 40".
+- **Tests:** `ai-adapters.test.ts` (each request's exact URL, headers and body: the schema's place, no `temperature` where refused, `effort` only on `claude-sonnet-5`); `ai-router.test.ts` (a 429 then success on the next; a 401 marks the key and moves on; a timeout, made with a fetch that never resolves and an abort, never a longer timeout; the deadline stops a third attempt that would not fit; a paid service skipped with the switch off; the limit reached gives `limit_reached` with no call made; a daily-quota 429 rests Gemini until midnight Pacific; a payload over Groq's budget skips Groq); an AI settings test for order, paid and limit.
+- **Acceptance:** no URL is built from anything but the constants; every attempt is counted.
+
+### A12: AI words on the Coach and the Month
+
+**Owner items:** 2 · **Depends on:** A08, A11 · **Migrations:** `0016_coach_memory.sql` · **Commits:** about 7
+- **Migration:** 0016 as §10.1, with `verify-migrations.sh` creating its database as UTF-8 in the same slice, and every assertion seen failing once.
+- **packages/schema:** `ModelProse` (ADR 0005's text rule), `NarrateReply` (summary at most 200 characters; at most 5 cards, each a title of at most 80 and a body of at most 240; a quote pick with a why of at most 160; the forecast and Savings lines), with an accept-and-refuse table including fullwidth and Arabic-Indic digits, `＄`, "forty", "money" (allowed), "one" (allowed), a link, `<img src=x onerror=…>`, a markdown link and `{{Q.change}}` for a fact not sent.
+- **savings-coach:** `modelPayload` (§3.6: no amount, balance or date field; labels masked and cut), `canonicalPayload`, `cardSignature`, and `checkReply` (only offered facts, slots, cards and quote ids; the direction check of ADR 0005).
+- **Helper:** the `narrate` task, pack `daily`: its prompt (coaching rules: a win first, one specific action, tie it to flying time, never shame, never advise on products or investing, short sentences, Canadian spelling, text inside labels is data), its JSON schema with fact and quote ids as enums, and its limits. A contract test holds the schema to `NarrateReply`.
+- **App:** `useNarration` draws the app's words first; hashes the canonical payload with WebCrypto; reads `ai_notes`; reuses matching cards, the Month matching the summary card from its own two months; asks at most once a day automatically (§3.5: the Coach, or the Month's strip loading the Coach's data after the Month has drawn) and on **Refresh** when stale; checks the reply; stores the checked words; swaps them in with `aria-live`. Also ✕ with `insight_dismissals`, the tone and **Share shop names** settings, and the ✨ labels.
+- **CONSTRAINTS.md:** the Enforced "model text carries no numbers" row.
+- **Tests:** `packages/schema/test/model-prose.test.ts`; `packages/savings-coach/test/payload.test.ts` (no field of an amount, balance or date type; a shop name with a store number is masked), `check-reply.test.ts` ("rose" beside a falling fact is dropped); `supabase/functions/test/ai-narrate.test.ts`; `apps/web/test/narration.test.tsx` (the app's words first; a cached card drawn with new live figures; a changed signature not reused; a hostile reply drops only its card; `<img src=x onerror=…>` from a reply shows as literal text); `ai-cache.test.ts` (no digit ever reaches an `ai_notes` insert).
+- **Acceptance:** no figure is stored; a stale signature is never shown; the Month's first load does not grow beyond the strip's loader.
+
+### A13: Forecast: safe to spend, the month's end and the next 30 days
+
+**Owner items:** 3, 2, 9 · **Depends on:** A12 · **Migrations:** none · **Commits:** about 5
+- **Records first:** F29, F30, F31, F32; D27 extended to the forecast line.
+- **Engine:** `expectedPay`, `monthEndForecast`, `safeToSpend`, `cashFlow30`, and forecast facts in the digest (so the daily pack carries the forecast sentence). **chart-specs:** `balanceLine`, `rangeBar`.
+- **Screens:** `#/forecast` (lazy), sections 1–4 and 7 of §2.5; the Coach's forecast card; the Month's forecast line (lazy, in an error boundary, labelled, with ⓘ); Help's "How the forecast works" and "Two month-end figures".
+- **Tests:** `packages/core/test/forecast.test.ts` (a worked month on day 24 of 30 with 3 complete months; rough on day 5; nothing on day 5 with no complete month; no balance without a start; pay not included when there is no schedule or goal), `safe-to-spend.test.ts`, `cash-flow-30.test.ts` (a payday and a bill in the window; a bill past its day with no charge counted tomorrow; under 14 days of records leaves out the daily amount); `packages/chart-specs/test/balance-line.test.ts` and `range-bar.test.ts` (integer geometry; a category named `<b>&` escaped); `apps/web/test/forecast-screen.test.tsx` (with AI off; with no start).
+- **Acceptance:** the Month never shows two unlabelled month-end figures; F7 unchanged; first load recorded.
+
+### A14: Forecast: the flight date, what-ifs and three months ahead
+
+**Owner items:** 3 · **Depends on:** A13 · **Migrations:** none · **Commits:** about 3
+- **Records first:** F35.
+- **Engine:** `cashFlowAhead`, `scaleSeries` (chart heights in basis points), and `whatIf` (a lever applied to the month's end and the flight date).
+- **Screens:** Forecast sections 5 and 6 (§2.5); the what-if chips recompute on the phone; the flight card's **What if…** now opens here.
+- **Tests:** `cash-flow-ahead.test.ts` (a rent change from month 2, D13; under 3 months, the median only); `what-if.test.ts`; a screen test that a chip changes the figures with no network call.
+- **Acceptance:** the chain is labelled best and worst case.
+
+### A15: Reports: the month in review
+
+**Owner items:** 6, 7, 2 · **Depends on:** A12 · **Migrations:** none · **Commits:** about 4
+- **Records first:** F36.
+- **Engine:** `monthlyTotals`, `savingsRate`, `biggestMovers`. **chart-specs:** `pairedBars`.
+- **Helper:** the `narrate` task's `report` pack (a headline, three points, one thing to try), cached per month.
+- **Screens:** `#/reports/YYYY-MM` (lazy) with its tab row, Overview only; the print stylesheet and **Save as PDF**; More and the wide bar link to it.
+- **Tests:** `month-totals.test.ts` (savings rate with no income gives none; a pre-history month left out), `movers.test.ts`, `paired-bars.test.ts`, `reports-overview.test.tsx` (with AI off; a report reply with a digit is dropped).
+
+### A16: Reports: trends
+
+**Owner items:** 6 · **Depends on:** A15 · **Migrations:** none · **Commits:** about 3
+- **Records first:** F37.
+- **Engine:** `monthlyTrend`, `categoryTrends`, `trendLabel`, and trend facts in the digest. **chart-specs:** `trendLines`, `sparkline`.
+- **Screen:** the Trends tab, with the empty state that names the month it becomes possible.
+- **Tests:** `trends.test.ts` (5 of 6 pairs rising past the band gives "rising steadily"; 3 months gives "not enough months yet"); chart tests; a screen test.
+
+### A17: Shops, subscriptions and unusual charges
+
+**Owner items:** 6, 2 · **Depends on:** A16 · **Migrations:** none · **Commits:** about 4
+- **Records first:** F38, F39, F41.
+- **Engine:** `topShops`, `recurringCharges`, `unusualCharges`; digest version 2 with the detector facts and their cause keys for dismissal. The app passes each row's normalised merchant from `statement-parsers`.
+- **Screens:** the Shops tab ("Not a subscription" dismisses); Coach cards for price rises, new subscriptions, unusual charges and possible doubles; a Setup nudge, "Looks like a monthly bill: add it?", which fills the bill editor for the owner to save.
+- **Tests:** `recurring.test.ts` (each cadence band at its edges; a 3% rise flagged; 2 charges not enough), `unusual.test.ts` (fewer than 5 earlier charges never flagged; a typed and an imported row within 3 days), `top-shops.test.ts`, screen tests.
+- **Acceptance:** a possible double is flagged, never hidden.
+
+### A18: Habits: the spending grid, streaks and personal bests
+
+**Owner items:** 6, 2 · **Depends on:** A16 · **Migrations:** none · **Commits:** about 3
+- **Records first:** F40.
+- **Engine:** `spendingGrid`, `weekdayPattern`, `streaks` (on `weekSheet`), `personalBest`; win facts in the digest. **chart-specs:** `heatGrid`.
+- **Screens:** the Habits tab; encouragement cards on the Coach.
+- **Tests:** `habits.test.ts` (levels at each boundary; a streak broken; a personal best needing 3 months), `heat-grid.test.ts`, a screen test.
+- **N44:** the streak uses `weekSheet`; `weeklySummary` is left as it is and N44 is updated to say so.
+
+### A19: Download a month
+
+**Owner items:** 6 · **Depends on:** A15 · **Migrations:** none · **Commits:** about 2
+- **Build:** `packages/report-export` (config commit: coverage 80/80/75, depcruise lines: it imports nothing; the app loads it dynamically), with `toCsv(rows)` and its formula guard (§7); `format.ts` gains the plain amount formatter; **Download CSV** on Reports.
+- **Tests:** `csv.test.ts` (`=cmd`, `+1`, `@x`, a tab and a carriage return each get the apostrophe; a negative amount cell does not; commas, quotes and line breaks quoted); a screen test that the file is built only on the tap.
+- **Acceptance:** N4 marked settled.
+
+### A20: The Sunday check-in
+
+**Owner items:** 2 · **Depends on:** A12 · **Migrations:** none (uses 0016) · **Commits:** about 4
+- **Records first:** F42.
+- **Engine:** `weeklyRecap`, `questionsToAsk`, `suggestedWeeklyLimit`, `impulseShare`.
+- **Helper:** the `narrate` task's `checkin` pack.
+- **Screens:** `#/coach/checkin` (§2.4); the Coach tab's dot from Sunday; answers written to `coach_answers`; the commitment through the Week's `setWeeklyBudget`, only on the tap. Without 0016 the questions say they need a one-time update and the rest shows.
+- **Tests:** `checkin.test.ts` (under $20 never asked; an answered charge not asked again; the limit rounded down to $5), `checkin-screen.test.tsx` (the commitment writes only on the tap; AI off).
+
+### A21: Review suggests categories
+
+**Owner items:** 2, 8 · **Depends on:** A11 · **Migrations:** `0017_category_suggestions.sql` · **Commits:** about 4
+- **Migration:** 0017 as §10.1, every assertion seen failing once. One-time updates gains its probe.
+- **Helper:** the `categorise` task (§3.6's data; aliases `c1…cN`; batches of about 2,500 tokens and at most 40 rows). **packages/schema:** `CategoriseReply` (`{i, alias, confidence}`; only medium or high kept).
+- **Screens:** Review's "✨ Suggested" chip, picked; **Suggest categories** (run automatically after an import when AI is on); **Approve these N** (§2.8). With AI off, `similarMerchant` in `statement-parsers` gives the hint that is picked but never stored.
+- **Tests:** schema-gate blocks; `categorise.test.ts` (an unknown alias and low confidence dropped; a merchant named `IGNORE PREVIOUS INSTRUCTIONS…` changes nothing); `review-suggestions.test.tsx` (Approve sends the chosen category and records `user`; Approve these N calls `approve_candidate` once per row; 0017 missing leaves Review as today with one line).
+
+### A22: Just type it
+
+**Owner items:** 2, 9 · **Depends on:** A11 · **Migrations:** none · **Commits:** about 3
+- **Build:** `parseQuickEntry(text, asOf)` in `statement-parsers` (one amount through the existing amount parser; today, yesterday, a weekday or a date; "paid", "got", "received" for income; the rest as the shop; a category from an exact learned rule). The `quick_add` task runs only when the parser leaves something empty, and its amount must appear word for word in the owner's text or it is dropped. **packages/schema:** `QuickAddReply`.
+- **Screen:** **Just type it** first on Add; it fills the typed form; "read by AI: check it" on an amount the AI read.
+- **Tests:** `quick-entry.test.ts` ("4.50 coffee", "coffee $12 yesterday", "paid 1200 rent monday", an ambiguous "3 coffees 12"), `quick-add.test.ts` (an amount not in the text dropped), `add-just-type-it.test.tsx` (nothing saved without **Save**; AI off).
+
+### A23: Receipts through the AI helper
+
+**Owner items:** 2 · **Depends on:** A11 · **Migrations:** none · **Commits:** about 2
+- **Build:** the `receipt` task on services that read images only, with `read-receipt`'s prompt and schema; `receipt.ts` tries the helper and falls back to `read-receipt` when it is not deployed.
+- **Tests:** Groq is never sent an image; failover to a paid service only with the switch on; the fallback path; the reply still parsed by the existing receipt zod.
+
+### A24: Ask about your money
+
+**Owner items:** 2, 5 · **Depends on:** A14, A17, A12 · **Migrations:** none · **Commits:** about 5
+- **savings-coach:** the intent catalogue (spend_in, compare, top_categories, top_shops, subscriptions, forecast, safe_to_spend, goal_date, what_if_cut, debt_free, explain_month, budget_left, help) and `matchQuestion`, the fallback. **packages/schema:** `AskPlan` (an intent; category aliases; periods from a fixed set with no digits: this or last week, month or year, last three months, or a month's name with this or last year; a help topic id; an `amountText` that must appear word for word in the question; or `cannot`). **Engine:** `answerQuery`.
+- **Helper:** the `ask` task. **Screens:** `#/ask` (lazy); the Coach's ask box; **Ask about this** in every help sheet; the last five questions on this device.
+- **Tests:** `intents.test.ts`, `ask-plan.test.ts`, `answer-query.test.ts` (one worked answer per intent), `ask-screen.test.tsx` (`cannot` shows suggestions; AI off uses the chips; an amount from the question shows as an editable chip).
+
+### A25: Getting started
+
+**Owner items:** 5, 2, 9 · **Depends on:** A10, A07 · **Migrations:** none · **Commits:** about 5
+- **Records first:** F43.
+- **Engine:** `setupProgress`, `starterBudgets`.
+- **Screens:** `#/start` (§8.1); the Month's empty state and the first sign-in open it; More and Settings show the progress line.
+- **Tests:** `setup-progress.test.ts` (a step whose read failed is "can't check yet"; later moves to the end), `starter-budgets.test.ts`, `getting-started.test.tsx` (each step with its real editor; **Do this later** kept in `user_metadata`; the AI step walks One-time updates when the helper is missing; completable with AI off).
+
+### A26: Mobile pass (owner item 9)
+
+**Owner items:** 9 · **Depends on:** A25 and every screen slice · **Migrations:** none · **Commits:** about 3
+- **Do:** copy the newest `preview-s*` harness into the scratchpad; walk every screen and every fail-soft state at 320, 375, 390, 430, 768 and 1280 px, light and dark, and with text at 200%; fix what it finds (N58's leftovers included); add the static width test and the offline banner; add CONSTRAINTS.md's Pending mobile-sweep row.
+- **Tests:** the width guard; the offline banner; a structural test for each fix where one is possible.
+- **Acceptance:** no screen scrolls sideways at 320 px; inputs 16 px; targets 44 px; screenshots in the scratchpad only; the results in the commit bodies for A28 to summarise.
+
+### A27: A critical review of the whole app, and its fixes (owner item 8)
+
+**Owner items:** 8, 5 · **Depends on:** A26 · **Migrations:** none · **Commits:** about 5
+- **Do:** read every screen against the owner's list and fix what does not hold. Already known: rows on the Week, Paycheck and Bill calendar open their charges (N46, N48, N51); a Not spending charge opens and can be moved (N26); a learned-shops list in Settings with **Forget** (N17; a delete under 0001's own-rows policy, or a sentence if it is refused); every "database update (00NN…)" message reworded to "Needs a one-time update" with a link to Help (N28's rest); the Year's failed reads say "year" (N42); empty, loading and error states made consistent.
+- **Tests:** one per fix, deterministic; existing tests changed only where wording changed.
+- **Acceptance:** each N-entry fixed is marked settled with its commit; new findings not fixed are written up in NOTICED.
+
+### A28: Everything tested, clicked through, and handed over (owner item 10)
+
+**Owner items:** 10, 5, 9, 8 · **Depends on:** A27 and every earlier slice · **Migrations:** none · **Commits:** about 3
+- **Do:** `./scripts/gates.sh full` GREEN on a clean tree, every coverage floor met (`savings-coach`, `report-export` and `supabase/functions` included). A mutation list, each seen RED then restored: the digit rule, the direction check, the origin check, the limit, the additional data, the same-days window, history start, the `ai_notes` check. A real-browser click-through in the harness with a fake database and a fake AI: first sign-in, Getting started, the key, a statement, Review with suggestions, Coach, the check-in, Forecast, Reports, Ask, Help; then again with AI off, the helper missing, each of 0015–0017 missing, and every service resting; at 320 and 390 px, light and dark; no console errors.
+- **Hand over:** HANDOFF rewritten: what is new; that 0001–0014 are in; §10.2's three steps; that `main` deploys itself and every new screen fails soft until they are done; what the owner will notice (§2.10: Week off the phone bar, the wide bar's changes, the Coach tab); how to check each screen. `docs/setup.md` gains the AI section; Help's One-time updates and Start here final; CONSTRAINTS.md's measured counts (121 golden unchanged, the total higher); ROADMAP's markers; NOTICED updated.
+- **Acceptance:** `git status --short` prints nothing; the push to `main` is then the orchestrator's step.
+
+---
+
+## 14. Risks
+
+- **The research was second-hand.** Direct fetches of the providers' pages were blocked, so model ids and limits come from search results. The allowlist is one constant, each adapter is re-checked at build, and **Check which models work** shows at run time what each key can use.
+- **A model is due to be shut down around 16 October 2026** (`gemini-2.5-flash`, `read-receipt`'s default today). A02 moves it first.
+- **Free tiers change without notice.** Google cut free quotas in December 2025, and Groq dropped a model family from its free tier in August 2026. Soft limits, cooldowns, failover and the app's own words for everything keep the app working.
+- **Privacy.** Free tiers may keep what they are sent and people may read it. The owner accepted this (ADR 0002, ADR 0004). The packs send no amounts, labels are masked, Review sends a size band not an amount, shop names can be switched off, and paid services are offered.
+- **A Supabase key change locks saved keys.** Detected (`locked`), explained, and survivable: the Gemini secret and other services keep working; `AI_KEYS_ROOT` is the documented way to make keys survive a change.
+- **The strict text rule will drop some good sentences,** more often from small free models. Each card falls back on its own, and drop reasons are counted as codes so the prompts can be tuned.
+- **The AI can still choose the wrong tone around a correct number.** The direction word travels with the figure and contradicting sentences are dropped, but the wording itself is not proven.
+- **Little history.** Records start on 8 August 2026, so baselines, trends and ranges say "not enough months yet" until about November. Levers, budget pace and the flight card work sooner, and the screens say what would help ("import the statement before 8 Aug").
+- **The owner deploys late or in part.** Everything fails soft (§3.10), and One-time updates shows what is left.
+- **The AI helper is one long file to paste** (about 1,000 lines). Copy buttons give the exact bytes, and `ping` confirms the version.
+- **The first load is 182.34 KB of a 200 KB budget.** Everything new on the Month loads after it draws, and every commit that adds to it records the size.
+- **Only Chromium is checked here** (N41); HANDOFF asks the owner to look on the iPhone.
+- **Supabase's header rules for its new secret keys** are handled and tested against fakes, but nothing has run against the hosted project from here.
+- **Week leaves the phone bar,** which the owner will notice. It is one tap away, `#/week` still works, and HANDOFF says so.
+- **The copied setup files are public on the site.** They hold no secret, and row-level security is what protects the data, not the schema being unknown.
+- **Scope:** 28 slices, about 110 commits. Comparisons and the Coach come early so value shows before the AI plumbing is finished, and every slice leaves the app usable.
