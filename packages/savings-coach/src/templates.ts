@@ -6,7 +6,9 @@
  * Every figure is a blank the app fills from the engine, `{{A.change}}`, so
  * these words hold no digit and pass the same text rule a model's must. A
  * card that says to watch something always carries one thing to try: a
- * bare "you overspent" helps nobody.
+ * bare "you overspent" helps nobody. A category's name is the owner's own
+ * text and may be plural ("Groceries"), so no title makes it the subject
+ * of "is": the name follows a colon instead.
  */
 import type { Fact } from '@budget/core'
 
@@ -31,48 +33,48 @@ type Tones<T> = Readonly<Record<Tone, T>>
 export const WATCH_TEMPLATES: Readonly<Record<WatchKey, Tones<WatchTemplate>>> = {
   change_up: {
     cheerleader: {
-      title: '{{A.name}} is running ahead',
+      title: 'Running ahead: {{A.name}}',
       body: 'You’ve spent {{A.change}} on {{A.name}} than by this day in {{A.before_month}}.',
       tryThis: 'One thing to try: give it a lighter week, and the month evens out.',
     },
     straight: {
-      title: '{{A.name}} is up',
+      title: 'Up on last month: {{A.name}}',
       body: '{{A.name}}: {{A.change}} than by this day in {{A.before_month}}.',
       tryThis: 'Try this: set a weekly limit for it and check it on Sunday.',
     },
   },
   over_budget: {
     cheerleader: {
-      title: '{{A.name}} is past its budget',
+      title: 'Past the budget: {{A.name}}',
       body: '{{A.actual}} spent against a budget of {{A.budget}}, so {{A.over}} over.',
       tryThis: 'One thing to try: pause it for the rest of the month, or raise the budget if it was set too low.',
     },
     straight: {
-      title: '{{A.name}} is over budget',
+      title: 'Over budget: {{A.name}}',
       body: '{{A.over}} over its budget of {{A.budget}}.',
       tryThis: 'Try this: stop spending on it until the month ends, or set a budget you can keep.',
     },
   },
   near_budget: {
     cheerleader: {
-      title: '{{A.name}} is nearly used up',
+      title: 'Budget nearly used: {{A.name}}',
       body: '{{A.left}} left of {{A.budget}} for {{A.name}} this month.',
       tryThis: 'One thing to try: decide what the rest is for before you spend it.',
     },
     straight: {
-      title: '{{A.name}} is almost at budget',
+      title: 'Almost at budget: {{A.name}}',
       body: '{{A.left}} left of {{A.budget}}.',
       tryThis: 'Try this: plan the rest of the month’s spending on it now.',
     },
   },
   budget_pace: {
     cheerleader: {
-      title: '{{A.name}} is heading over',
-      body: 'At this pace, {{A.name}} ends the month near {{A.pace}}, over its budget of {{A.budget}}.',
+      title: 'Heading over budget: {{A.name}}',
+      body: 'At this pace, the month ends with {{A.name}} near {{A.pace}}, over its budget of {{A.budget}}.',
       tryThis: 'One thing to try: a few lighter days now keeps it under.',
     },
     straight: {
-      title: '{{A.name}} is on pace to go over',
+      title: 'On pace to go over: {{A.name}}',
       body: 'Heading for {{A.pace}} against a budget of {{A.budget}}.',
       tryThis: 'Try this: cut back on it for the next week.',
     },
@@ -106,7 +108,7 @@ export const PLAIN_TEMPLATES: Readonly<Record<Exclude<CardTemplateKey, WatchKey>
       body: 'You’ve spent {{A.change}} on {{A.name}} than by this day in {{A.before_month}}. Keep it going!',
     },
     straight: {
-      title: '{{A.name}} is down',
+      title: 'Down on last month: {{A.name}}',
       body: '{{A.name}}: {{A.change}} than by this day in {{A.before_month}}.',
     },
   },

@@ -1793,7 +1793,7 @@ HANDOFF.
 
 ---
 
-## N71 — A card's title reads oddly when a category's name is plural
+## N71 — A card's title reads oddly when a category's name is plural *(settled 2026-09-24, A07 review)*
 
 **Seen:** 2026-09-24, building A07, in the preview harness.
 
@@ -1807,3 +1807,9 @@ these in most places.
 
 **To settle:** reword the titles so the name is never the verb's subject
 ("Running ahead: Groceries"), or let the owner mark a list name as plural.
+
+**Settled:** the titles were reworded before A07 was pushed, so the name
+follows a colon ("Running ahead: Groceries") and is never the subject of
+"is"; the pace card's body says "the month ends with Groceries near …".
+`packages/savings-coach/test/templates.test.ts` fails if a template puts
+the name before a singular verb again.

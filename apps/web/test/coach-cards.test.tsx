@@ -80,7 +80,7 @@ describe('the Coach, in the app’s own words', () => {
     expect(cards.map((c) => within(c).getByRole('heading').textContent)).toEqual([
       'Time for a fresh statement',
       'Charges waiting for you',
-      'Dining out is running ahead',
+      'Running ahead: Dining out',
     ])
     expect(within(cards[0]!).getByText(whole('P', 'Your last statement ends on 7 Sep, 17 days ago. Import the new one for fresh advice.'))).toBeTruthy()
     expect(within(cards[1]!).getByText(whole('P', 'Waiting in Review: 2. Each one counts as soon as you file it.'))).toBeTruthy()
@@ -94,7 +94,7 @@ describe('the Coach, in the app’s own words', () => {
   it('lists the engine’s figures behind a card in “Why am I seeing this?”', async () => {
     go('/coach')
     renderScreen(<Shell />, seeded())
-    const card = (await screen.findByRole('heading', { name: 'Dining out is running ahead' })).closest('li')!
+    const card = (await screen.findByRole('heading', { name: 'Running ahead: Dining out' })).closest('li')!
     fireEvent.click(within(card).getByRole('button', { name: 'Why am I seeing this?' }))
 
     const sheet = within(screen.getByRole('dialog', { name: 'Why am I seeing this?' }))
@@ -130,7 +130,7 @@ describe('the Coach, in the app’s own words', () => {
   it('draws a name that looks like markup as the characters it is', async () => {
     go('/coach')
     const { container } = renderScreen(<Shell />, seeded('<img src=x onerror=alert(1)>'))
-    expect(await screen.findByRole('heading', { name: '<img src=x onerror=alert(1)> is running ahead' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Running ahead: <img src=x onerror=alert(1)>' })).toBeTruthy()
     expect(container.querySelector('img')).toBeNull()
   })
 

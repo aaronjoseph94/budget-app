@@ -89,6 +89,12 @@ describe('the app’s own templates', () => {
     }
   })
 
+  it('never make a category’s name the subject of a singular verb, since it may be plural', () => {
+    // "Groceries is running ahead" reads wrong; "Running ahead: Groceries" does not (N71).
+    const texts = Object.values(CARDS).flatMap((tones) => TONES.flatMap((tone) => Object.values(tones[tone]) as string[]))
+    for (const text of texts) expect(text, text).not.toMatch(/\{\{A\.name\}\} (is|was|has|ends|goes)\b/)
+  })
+
   it('give every card that asks to watch something one thing to try', () => {
     for (const tones of Object.values(WATCH_TEMPLATES)) {
       for (const tone of TONES) expect(tones[tone].tryThis).toMatch(/^(One thing to try|Try this): \S/)
