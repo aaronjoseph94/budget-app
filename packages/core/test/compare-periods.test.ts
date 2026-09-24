@@ -90,6 +90,28 @@ describe('periodComparison for a Year (F25, F26)', () => {
     expect(c.summary.spent).toMatchObject({ nowCents: 640000, beforeCents: 562500 })
   })
 
+  it('adds every month of a window, in Income and in each block’s total', () => {
+    // No January row on either side, so a window counted by its first month alone reads $0.
+    const c = compared({
+      ...BASE,
+      categories: [...BASE.categories, cat('pay', 'income')],
+      planHistory: [],
+      period: 'year',
+      startMonth: d('2026-01-01'),
+      entries: [
+        entry('2026-02-15', 200000, 'pay'),
+        entry('2026-07-15', 100000, 'pay'),
+        entry('2026-03-05', -1000, 'food'),
+        entry('2026-05-05', -2000, 'food'),
+        entry('2025-03-15', 150000, 'pay'),
+        entry('2025-06-01', -500, 'food'),
+      ],
+    })
+    expect(c.summary.income).toMatchObject({ nowCents: 300000, beforeCents: 150000, meaning: 'good' })
+    expect(c.blocks.variable.total).toMatchObject({ nowCents: 3000, beforeCents: 500 })
+    expect(c.blocks.income.total).toMatchObject({ nowCents: 300000, beforeCents: 150000 })
+  })
+
   it('compares nothing when the year before lies before the records', () => {
     expect(
       periodComparison({ ...BASE, historyStart: d('2026-08-08'), period: 'year', startMonth: d('2026-01-01'), entries: [] }),
