@@ -140,7 +140,7 @@ export function YearScreen({ start: address }: { start: string | null }) {
             </div>
           ) : (
             <>
-              <div role="group" aria-label="Table" className="grid grid-cols-4 gap-1.5">
+              <div role="group" aria-label="Table" className="flex flex-wrap gap-1.5">
                 {GROUPS.map((g) => (
                   <button
                     key={g.key}
@@ -148,7 +148,7 @@ export function YearScreen({ start: address }: { start: string | null }) {
                     aria-pressed={group === g.key}
                     onClick={() => setGroup(g.key)}
                     className={cn(
-                      'rounded-full border px-2 py-1.5 text-xs font-medium pointer-coarse:min-h-11',
+                      'rounded-full border px-3 py-1.5 text-xs font-medium pointer-coarse:min-h-11',
                       group === g.key ? 'border-year-header bg-year-header text-year-header-ink' : 'bg-card',
                     )}
                   >
