@@ -206,11 +206,10 @@ export function MonthScreen({ month }: { month: string | null }) {
     <div className="space-y-4">
       <PeriodSwitch current="month" />
       <header className="-mx-4 flex flex-wrap items-center justify-between gap-2 bg-title-band px-4 py-4 md:mx-0 md:rounded-xl">
+        <MonthTitle>{formatMonthTitle(start)}</MonthTitle>
+        {/* The ? sits with the header's buttons, as in the plan's sketch: beside
+          the title it broke "September 2026" onto two lines at 320px. */}
         <div className="flex items-center gap-1">
-          <MonthTitle>{formatMonthTitle(start)}</MonthTitle>
-          <HelpButton screen="month" />
-        </div>
-        <div className="flex gap-1">
           {/* The Bill calendar left the wide bar for More (ADR 0006); from the Month it is one tap, at this month. */}
           <Button variant="outline" size="icon" aria-label="Bill calendar" onClick={() => navigate('calendar', start.slice(0, 7))}>
             <Icon name="bills" />
@@ -221,6 +220,7 @@ export function MonthScreen({ month }: { month: string | null }) {
           <Button variant="outline" size="icon" aria-label="Next month" onClick={() => step(1)}>
             <Icon name="chevronRight" />
           </Button>
+          <HelpButton screen="month" />
         </div>
       </header>
 

@@ -74,10 +74,7 @@ export function CalendarScreen({ month }: { month: string | null }) {
     <div className="space-y-4">
       <header className="-mx-4 flex flex-wrap items-center justify-between gap-x-2 gap-y-3 bg-calendar-band px-4 py-4 md:mx-0 md:rounded-xl">
         <div>
-          <div className="flex items-center gap-1">
-            <MonthTitle>{formatMonthTitle(start)}</MonthTitle>
-            <HelpButton screen="calendar" />
-          </div>
+          <MonthTitle>{formatMonthTitle(start)}</MonthTitle>
           <p className="mt-1 text-sm font-medium text-calendar-pill-ink">Bill calendar</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -96,6 +93,8 @@ export function CalendarScreen({ month }: { month: string | null }) {
           <Button variant="outline" size="icon" aria-label="Next month" onClick={() => step(1)}>
             <Icon name="chevronRight" />
           </Button>
+          {/* With the buttons, as on the Month, so the title keeps its line. */}
+          <HelpButton screen="calendar" />
         </div>
       </header>
 
