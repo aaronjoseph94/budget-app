@@ -1118,6 +1118,15 @@ export async function setGoalState(supabase: SupabaseClient, goalId: string, cha
   if (error !== null) throw new Error(describeGoalFailure(error))
 }
 
+/**
+ * Remove a goal: the screen offers it only with nothing saved (F45). Its
+ * fund's category stays on the Savings list, with every charge under it.
+ */
+export async function removeGoal(supabase: SupabaseClient, goalId: string): Promise<void> {
+  const { error } = await supabase.from('savings_goals').delete().eq('id', goalId)
+  if (error !== null) throw new Error(describeGoalFailure(error))
+}
+
 /** bigint columns arrive as numbers or strings, so each is made a number. */
 function goalNumbers(g: ListedGoalRow): ListedGoalRow {
   return {

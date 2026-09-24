@@ -65,8 +65,17 @@ export function SavingsScreen() {
     const row = ready?.goals.find((g) => g.id === goal.id)
     const fund = ready?.funds.funds.find((f) => f.figures?.goalId === goal.id)
     const loose = ready?.funds.unlinked.find((u) => u.goalId === goal.id)
-    const edit = fund === undefined ? null : () => setEditing(fund.categoryId)
-    const actions = <GoalActions goal={goal} onEdit={edit} onNotice={setNotice} />
+    const figures = fund?.figures ?? loose
+    const actions =
+      figures === undefined || figures === null ? null : (
+        <GoalActions
+          goal={goal}
+          saved={figures}
+          onFund={fund !== undefined}
+          onEdit={fund === undefined ? null : () => setEditing(fund.categoryId)}
+          onNotice={setNotice}
+        />
+      )
     if (row !== undefined && fund !== undefined) {
       return <FundCard fund={fund} goal={row} comparison={comparison} badge={badge(goal)} actions={actions} onEdit={() => setEditing(fund.categoryId)} />
     }

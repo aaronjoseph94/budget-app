@@ -1,8 +1,8 @@
-import { useState } from 'react'
-import { goalAtEnd, moveGoal } from '@budget/core'
+import { useState, type ReactNode } from 'react'
+import { goalAtEnd, goalsProgress, moveGoal } from '@budget/core'
 import { placedGoal, useAppData } from '../app-data.js'
-import { setGoalPlaces, setGoalState, type GoalStateChange, type ListedGoalRow } from '../ledger.js'
-import { todayIso } from '../format.js'
+import { removeGoal, setGoalPlaces, setGoalState, type GoalStateChange, type ListedGoalRow } from '../ledger.js'
+import { formatCents, todayIso } from '../format.js'
 import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 
@@ -14,22 +14,32 @@ export interface Notice {
 /**
  * What can be done with one goal on Savings (F45): edit it, make it the main
  * goal, move it up or down among the active goals, pause it, mark it
- * reached, or resume it. Every place comes from core (moveGoal, goalAtEnd);
- * this writes what comes back and reloads. Before 0015 only Edit is
- * offered, and the screen says once, above the goals, why the rest wait.
+ * reached, resume it, or remove it when nothing is saved in it. Every place
+ * comes from core (moveGoal, goalAtEnd), and whether it holds money
+ * (goalsProgress); this writes what comes back and reloads. Before 0015
+ * only Edit and Remove are offered, and the screen says once, above the
+ * goals, why the rest wait.
  */
 export function GoalActions({
   goal,
+  saved,
+  onFund,
   onEdit,
   onNotice,
 }: {
   goal: ListedGoalRow
+  /** Its target and balance, as its card shows them (D16). */
+  saved: { readonly goalCents: number; readonly balanceCents: number }
+  /** Whether it is a Savings-list fund's goal, which stays when the goal goes. */
+  onFund: boolean
   /** Null where this goal cannot be edited here. */
   onEdit: (() => void) | null
   onNotice: (notice: Notice) => void
 }) {
   const { supabase, goals, mainGoal, goalsOrdered, refresh } = useAppData()
   const [busy, setBusy] = useState(false)
+  const [removing, setRemoving] = useState(false)
+  const [progress] = goalsProgress({ goals: [{ id: goal.id, targetCents: saved.goalCents, savedCents: saved.balanceCents, unitCostCents: null }] }).goals
   const active = goals.filter((g) => g.status === 'active')
   const at = active.findIndex((g) => g.id === goal.id)
 
@@ -71,10 +81,55 @@ export function GoalActions({
         Edit goal
       </Button>
     )
-  if (!goalsOrdered) return edit
-  if (goal.status !== 'active') {
-    return (
+  const remove = (
+    <Button variant="ghost" size="sm" disabled={busy} onClick={() => setRemoving((open) => !open)}>
+      <Icon name="trash" /> Remove
+    </Button>
+  )
+  // F45: only a goal with nothing saved goes; one holding money says why not.
+  const removal = !removing ? null : progress === undefined || !progress.empty ? (
+    <p role="alert" className="rounded-lg border px-3 py-2 text-sm">
+      {goal.name} holds {formatCents(saved.balanceCents)}, so removing it would lose the record of that balance. Pause it or mark it
+      reached instead. If that money is gone, edit the goal to say nothing is saved, then remove it.
+    </p>
+  ) : (
+    <div className="space-y-2 rounded-lg border px-3 py-2 text-sm">
+      <p>
+        Remove {goal.name}?{onFund ? ' Its fund stays on your Savings list, with everything filed under it.' : ''}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="destructive"
+          size="sm"
+          disabled={busy}
+          onClick={() =>
+            void write(
+              () => removeGoal(supabase, goal.id),
+              `Removed ${goal.name}.${onFund ? ' Its fund stays on your Savings list; remove it in Setup if you no longer need it.' : ''}`,
+            )
+          }
+        >
+          Remove goal
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => setRemoving(false)}>
+          Keep it
+        </Button>
+      </div>
+    </div>
+  )
+  const row = (buttons: ReactNode) => (
+    <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
+        {buttons}
+        {remove}
+      </div>
+      {removal}
+    </div>
+  )
+  if (!goalsOrdered) return row(edit)
+  if (goal.status !== 'active') {
+    return row(
+      <>
         {edit}
         <Button
           variant="outline"
@@ -87,11 +142,11 @@ export function GoalActions({
           Resume
         </Button>
         {goal.status === 'paused' ? reach : null}
-      </div>
+      </>,
     )
   }
-  return (
-    <div className="flex flex-wrap items-center gap-2">
+  return row(
+    <>
       {edit}
       {mainGoal?.id === goal.id ? null : (
         <Button
@@ -130,6 +185,6 @@ export function GoalActions({
         Pause
       </Button>
       {reach}
-    </div>
+    </>,
   )
 }

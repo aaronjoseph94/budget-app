@@ -180,3 +180,46 @@ describe('Savings, pausing, finishing and resuming a goal (G1)', () => {
     await waitFor(() => expect(stored(fake, 'g4')).toMatchObject({ status: 'active', reached_on: null, sort_order: 7 }))
   })
 })
+
+describe('Savings, removing a goal (G1)', () => {
+  it('refuses to remove a goal holding money, and says why and what to do instead', async () => {
+    const fake = seeded()
+    renderScreen(<SavingsScreen />, fake)
+    const travel = await screen.findByRole('region', { name: 'Travel' })
+    fireEvent.click(within(travel).getByRole('button', { name: 'Remove' }))
+    expect(within(travel).getByRole('alert').textContent).toBe(
+      'Travel holds $100.00, so removing it would lose the record of that balance. Pause it or mark it reached instead. If that money is gone, edit the goal to say nothing is saved, then remove it.',
+    )
+    expect(within(travel).queryByRole('button', { name: 'Remove goal' })).toBeNull()
+    expect(fake.tables.savings_goals).toHaveLength(2)
+  })
+
+  it('removes a goal with nothing saved after one confirmation, and keeps its fund', async () => {
+    const fake = seeded()
+    fake.tables.savings_goals.push(goal('g3', 'House', 'house', { sort_order: 2, saved_cents: 0 }))
+    renderScreen(<SavingsScreen />, fake)
+    const house = await screen.findByRole('region', { name: 'House' })
+    fireEvent.click(within(house).getByRole('button', { name: 'Remove' }))
+    expect(within(house).getByText('Remove House? Its fund stays on your Savings list, with everything filed under it.')).toBeTruthy()
+    fireEvent.click(within(house).getByRole('button', { name: 'Keep it' }))
+    expect(within(house).queryByRole('button', { name: 'Remove goal' })).toBeNull()
+    fireEvent.click(within(house).getByRole('button', { name: 'Remove' }))
+    fireEvent.click(within(house).getByRole('button', { name: 'Remove goal' }))
+    expect(await screen.findByText('Removed House. Its fund stays on your Savings list; remove it in Setup if you no longer need it.')).toBeTruthy()
+    expect(fake.tables.savings_goals.map((g) => g.id)).toEqual(['g1', 'g2'])
+    expect(fake.tables.categories.map((c) => c.id)).toContain('house')
+    await waitFor(() => expect(regions()).toEqual(['Travel', 'Flight training', 'House', 'Car']))
+    expect(within(screen.getByRole('region', { name: 'House' })).getByRole('button', { name: 'Set a goal' })).toBeTruthy()
+  })
+
+  it('still removes an empty goal before 0015, which a delete does not need', async () => {
+    const fake = seeded()
+    fake.tables.savings_goals.push(goal('g3', 'House', 'house', { saved_cents: 0 }))
+    fake.server.lacks = { savings_goals: ['sort_order', 'status', 'reached_on'] }
+    renderScreen(<SavingsScreen />, fake)
+    const house = await screen.findByRole('region', { name: 'House' })
+    fireEvent.click(within(house).getByRole('button', { name: 'Remove' }))
+    fireEvent.click(within(house).getByRole('button', { name: 'Remove goal' }))
+    await waitFor(() => expect(fake.tables.savings_goals.map((g) => g.id)).toEqual(['g1', 'g2']))
+  })
+})
