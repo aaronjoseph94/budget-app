@@ -1,8 +1,8 @@
 -- 0013_savings_funds.sql
 --
--- A savings goal becomes one of Workbook's savings funds.
+-- A savings goal becomes one of the workbook's savings funds.
 --
--- Workbook's Savings tab gives every fund on the START HERE Savings list a card
+-- The workbook's Savings tab gives every fund on the START HERE Savings list a card
 -- (Savings!C4 = 'START HERE'!H7) and a row in "How To Reach These Goals",
 -- with a typed Start Date (N14) beside the Goal Date (R14) that
 -- savings_goals.target_date already holds. So a goal names the Savings-list
@@ -26,7 +26,7 @@ begin;
 alter table public.savings_goals
   -- The Savings-list category whose transfers fill this fund.
   add column category_id    uuid,
-  -- Savings!N14. With target_date (R14) it gives Workbook's Months Remaining.
+  -- Savings!N14. With target_date (R14) it gives the workbook's Months Remaining.
   add column start_date     date,
   -- The day saved_cents was typed as true, at the end of that day: transfers
   -- dated after it add to the balance, and ones on or before it are already

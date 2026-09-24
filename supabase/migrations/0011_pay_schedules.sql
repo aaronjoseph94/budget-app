@@ -2,7 +2,7 @@
 --
 -- When each income source pays.
 --
--- Workbook's START HERE tab gives every income source a first pay date (C8:C14)
+-- The workbook's START HERE tab gives every income source a first pay date (C8:C14)
 -- and a frequency picked from "Weekly, Bi-weekly, Monthly" (E8:E14). The
 -- owner chose to have the Paycheck view find its pay period from these, and
 -- to split a monthly bill by the pay frequency (F15, option B). The Bill

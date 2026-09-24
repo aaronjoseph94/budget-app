@@ -463,7 +463,7 @@ end $$;
 reset role;
 
 -- ---------------------------------------------------------------------------
--- 0005: every category belongs to one of Workbook's lists
+-- 0005: every category belongs to one of the workbook's lists
 -- ---------------------------------------------------------------------------
 do $$
 declare
@@ -1044,10 +1044,10 @@ begin
   exception when unique_violation then null;
   end;
 
-  -- Weekly, bi-weekly or monthly, as Workbook's dropdown offers; nothing else.
+  -- Weekly, bi-weekly or monthly, as the workbook's dropdown offers; nothing else.
   begin
     update public.pay_schedules set frequency = 'daily' where category_id = pay;
-    raise exception 'NOT REFUSED: a pay frequency Workbook does not offer';
+    raise exception 'NOT REFUSED: a pay frequency the workbook does not offer';
   exception when invalid_text_representation then null;
   end;
 
@@ -1324,7 +1324,7 @@ declare
   gone   uuid;
   n      int;
 begin
-  -- A debt as Workbook's calculator takes it: balance, minimum, APR, start month.
+  -- A debt as the workbook's calculator takes it: balance, minimum, APR, start month.
   insert into public.debts
     (user_id, name, starting_balance_cents, minimum_payment_cents, apr_basis_points, start_date, sort_order)
     values (u, 'Car Loan', 500000, 45000, 1200, '2026-03-01', 0)
@@ -1462,7 +1462,7 @@ begin
     raise exception 'a removed debt left its extra payments behind';
   end if;
 
-  raise notice 'a debt is typed as Workbook''s calculator takes it, with extras in or after its start month';
+  raise notice 'a debt is typed as the workbook''s calculator takes it, with extras in or after its start month';
 end $$;
 
 reset role;

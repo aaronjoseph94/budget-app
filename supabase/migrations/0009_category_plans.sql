@@ -2,9 +2,9 @@
 --
 -- A bill's monthly amount and the day it is paid.
 --
--- Workbook's Bills tab gives each bill, debt and subscription a Day Paid and a
+-- The workbook's Bills tab gives each bill, debt and subscription a Day Paid and a
 -- Monthly Amount (Bills!B/D, F/H, J/L), and every month tab counts that amount
--- when no real charge replaces it (D5). Workbook has one amount for all twelve
+-- when no real charge replaces it (D5). The workbook has one amount for all twelve
 -- tabs. An app holding years of history cannot: raising the rent in October
 -- would rewrite last January. So an amount applies from a month onward, until
 -- a later row changes or stops it (D13), and packages/core resolves which one
@@ -23,7 +23,7 @@ create table public.category_plans (
   -- Null from a month means "stopped": no amount from then on, until a later
   -- row sets one again. A missing row could not say that.
   planned_cents    bigint,
-  -- Workbook's Day Paid. Blank counts in a whole month but never in a week or a
+  -- The workbook's Day Paid. Blank counts in a whole month but never in a week or a
   -- pay period (F8); 29–31 fall on a short month's last day (D6).
   due_day          smallint,
   created_at       timestamptz not null default now(),
@@ -54,7 +54,7 @@ create policy category_plans_own_rows on public.category_plans
 -- On any other list the amount would be counted nowhere, or counted twice: a
 -- planned Groceries figure beside the real grocery charges. Both triggers
 -- raise check_violation (23514), which Setup turns into its own sentence
--- (docs/workbook-plan.md §6.5; NOTICED N18).
+-- (docs/workbook-views-plan.md §6.5; NOTICED N18).
 --
 -- Neither function is SECURITY DEFINER. Each runs as the caller, under RLS,
 -- and reads only rows the caller owns; a trigger function cannot be called
@@ -96,7 +96,7 @@ create trigger category_plans_only_on_recurring
 -- effect on a category already moved to Variable expenses. A plan stopped in
 -- the past does not hold the category; its history stays, and counts only
 -- while the category is on a list that reads plans. Moving between Bills,
--- Debts and Subscriptions is refused too, as D11 says: Workbook keeps each list's
+-- Debts and Subscriptions is refused too, as D11 says: the workbook keeps each list's
 -- amounts in its own columns.
 --
 -- The month is the database's (UTC). Near midnight on a month's last day it is

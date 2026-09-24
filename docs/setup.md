@@ -57,6 +57,22 @@ with a code in brackets. Picking an existing category keeps working.
 The app expects all of them. A missing one shows up as an import or approval
 that fails with a code in brackets.
 
+**Comments reworded on 2026-09-24.** The comments in `0005`, `0007` to
+`0011`, `0013` and `0014` named the workbook's vendor, and on 2026-09-24
+they were reworded to say "the workbook", because the owner asked for
+that name to go from everything pushed ("remove any mention of … from
+any and all github pushes including previous ones"). Only the text after
+`--` changed, never the SQL, so the database a file builds is the same
+either way. **If you have not pasted a file yet, paste it as the steps
+above say**; the new wording changes nothing. **If you pasted it before
+2026-09-24, do not paste it again**: your database already matches, and
+keeps none of the old wording, which is harmless in any case. None of
+the reworded comments was inside a function, and Postgres throws away
+every other comment when it runs a file. Applying every migration to an
+empty database before and after the change, and dumping the schema each
+time, gives byte-identical files. The old wording may still be in the SQL
+Editor's history of what you pasted.
+
 ## Receipt photos: Gemini (optional)
 
 Needed only for the Photo option on the Add screen. Everything else works

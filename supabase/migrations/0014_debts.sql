@@ -1,6 +1,6 @@
 -- 0014_debts.sql
 --
--- Workbook's Debt Calculator: each debt's typed figures, and extra payments.
+-- The workbook's Debt Calculator: each debt's typed figures, and extra payments.
 --
 -- For each debt the calculator takes a Starting Balance, a Minimum Payment
 -- and an APR (Debt Calculator J18:J20), and a Start Date the balance is as of
@@ -11,12 +11,12 @@
 --
 -- Two choices go beyond the sheet:
 --
--- - The start month is per debt, not one for the whole calculator. Workbook's
+-- - The start month is per debt, not one for the whole calculator. The workbook's
 --   single D6 means a loan taken out next year would need every other
 --   debt's balance retyped as of the new date. When every debt shares a
---   start month, as all of Workbook's do, the schedule is the same.
+--   start month, as all of the sample's do, the schedule is the same.
 -- - An extra payment is kept against a calendar month, not a month number.
---   Workbook's month 3 is "the third row", which moves if D6 changes; money
+--   The workbook's month 3 is "the third row", which moves if D6 changes; money
 --   paid in March was paid in March. Core turns the month into amortize()'s
 --   month number from the debt's start month.
 --
@@ -42,7 +42,7 @@ create table public.debts (
   minimum_payment_cents   bigint not null,
   -- J20 in hundredths of a percent: 5% is 500, 19.99% is 1999.
   apr_basis_points        integer not null,
-  -- The month the starting balance is as of, named by its first day. Workbook
+  -- The month the starting balance is as of, named by its first day. The workbook
   -- snaps D6 to the first of its month (C26); so does this.
   start_date              date not null,
   -- Order on the Debts screen, as START HERE's Debts list gives the cards'.
@@ -75,7 +75,7 @@ create table public.debt_extra_payments (
   created_at   timestamptz not null default now(),
   constraint debt_extra_payments_month_is_first_day check (extract(day from month) = 1),
   constraint debt_extra_payments_positive check (amount_cents > 0),
-  -- One cell per debt per month, as Workbook has, and the conflict target the
+  -- One cell per debt per month, as the workbook has, and the conflict target the
   -- app upserts on.
   unique (user_id, debt_id, month),
   -- So an extra can never name another user's debt. An extra is part of its

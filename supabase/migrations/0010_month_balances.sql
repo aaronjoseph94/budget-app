@@ -2,7 +2,7 @@
 --
 -- The bank balance a month started with, as the owner typed it.
 --
--- Workbook asks for it on every month tab (Jan!D9, note: "Type in the Bank
+-- The workbook asks for it on every month tab (Jan!D9, note: "Type in the Bank
 -- Balance you started the month with!") and projects the month's ending
 -- balance from it (Jan!D15). The owner chose to type it once a month (plan
 -- decision 6, option B).

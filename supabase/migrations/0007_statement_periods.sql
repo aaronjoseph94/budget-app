@@ -5,7 +5,7 @@
 -- The Month screen will say "Statement imported up to Sep 7". That date has to
 -- come from the statement itself. Taken from the latest row in the ledger
 -- instead, a coffee typed by hand today would move it forward and claim a
--- statement had been read that never was (docs/workbook-plan.md §4).
+-- statement had been read that never was (docs/workbook-views-plan.md §4).
 --
 -- Forward-only: 0001–0006 are applied and are not edited.
 

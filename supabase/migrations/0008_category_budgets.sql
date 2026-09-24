@@ -2,11 +2,11 @@
 --
 -- The budgets and goals typed on a month.
 --
--- Workbook's month tabs each have their own typed Budgeted column for Bills,
+-- The workbook's month tabs each have their own typed Budgeted column for Bills,
 -- Debts, Subscriptions and Variable expenses (Jan!D22:D44, J22:J44, O22:O44,
 -- T22:T44) and a Goal column for Income and Savings (O10:O16, T10:T16). This
 -- is where the app keeps them. Income goals and savings goals are the same
--- kind of number, so they share the table (docs/workbook-plan.md §4).
+-- kind of number, so they share the table (docs/workbook-views-plan.md §4).
 --
 -- What is stored is what the owner meant when they typed it, not a copy per
 -- month (D12). "From this month on" writes an 'onward' row for that month;
