@@ -160,7 +160,7 @@ builds the site from GitHub on every push, like Netlify did.
 | Name | Value |
 |---|---|
 | `NODE_VERSION` | `22` |
-| `PNPM_VERSION` | `10` |
+| `PNPM_VERSION` | `10.33.0`, as `packageManager` in package.json |
 | `VITE_SUPABASE_URL` | `https://bnodrfghxbavlopxkgju.supabase.co` |
 | `VITE_SUPABASE_ANON_KEY` | the publishable key — the same value as in `netlify.toml` |
 

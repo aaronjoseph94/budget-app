@@ -1596,8 +1596,9 @@ Two savings the audit named are not taken:
    is in place.
 3. **Cloudflare's PNPM_VERSION (SEC-6).** package.json now names pnpm
    10.33.0, which CI and netlify.toml follow; Cloudflare Pages takes
-   PNPM_VERSION from its dashboard (HANDOFF step 3 says `10`). *To
-   settle:* set it to `10.33.0` there.
+   PNPM_VERSION from its dashboard. HANDOFF step 3 and docs/setup.md
+   now say `10.33.0`. *To settle:* if the Pages project was already made
+   with `10`, change it there.
 4. **zod's eval probe under the CSP (SEC-1).** zod tries `Function('')`
    once as it builds its first object schema, falls back when the CSP
    refuses it, and the browser reports the refusal on each launch.

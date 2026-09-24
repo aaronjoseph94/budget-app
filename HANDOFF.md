@@ -120,7 +120,7 @@ Create → Pages → Connect to Git →** `aaronjoseph94/budget-app`. Project na
 `aaron-budget-app`, production branch `main`, framework preset None, build
 command `pnpm --filter @budget/app-client build`, output directory
 `apps/web/dist`. Environment variables: `NODE_VERSION` = `22`,
-`PNPM_VERSION` = `10`, `VITE_SUPABASE_URL` =
+`PNPM_VERSION` = `10.33.0` (as `packageManager` in package.json), `VITE_SUPABASE_URL` =
 `https://bnodrfghxbavlopxkgju.supabase.co`, `VITE_SUPABASE_ANON_KEY` = the
 publishable key in `netlify.toml` (public by design). Then in Supabase →
 **Authentication → URL Configuration**: Site URL
