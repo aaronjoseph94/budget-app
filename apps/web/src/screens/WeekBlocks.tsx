@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
 import type { PeriodRow, WeekSheet } from '@budget/core'
-import { formatCents, formatIsoDate, formatMagnitude } from '../format.js'
+import { formatCents } from '../format.js'
 import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
-import { Block, type EditorDone } from './MonthScreen.js'
+import { ImportedThrough, PeriodBlocks, TransfersNote, type EditorDone } from './MonthScreen.js'
 import { WeekBudgetEditor } from './WeekBudgetEditor.js'
 
 /**
@@ -34,29 +34,13 @@ export function WeekBlocks({
   }
   return (
     <>
-      <p className="text-sm text-muted-foreground">
-        {sheet.importedThrough === null
-          ? 'No statement imported yet.'
-          : `Statement imported up to ${formatIsoDate(sheet.importedThrough)}`}
-      </p>
+      <ImportedThrough through={sheet.importedThrough} />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <WeekSummary sheet={sheet} />
         {aside}
-        <Block kind="variable" block={sheet.blocks.variable} {...blockProps} className="order-1 xl:order-7" />
-        <Block kind="bill" block={sheet.blocks.bill} {...blockProps} className="order-2 xl:order-4" />
-        <Block kind="subscription" block={sheet.blocks.subscription} {...blockProps} className="order-3 xl:order-6" />
-        <Block kind="debt" block={sheet.blocks.debt} {...blockProps} className="order-4 xl:order-5" />
-        <Block kind="income" block={sheet.blocks.income} {...blockProps} className="order-5 xl:order-2" />
-        <Block kind="savings" block={sheet.blocks.savings} {...blockProps} className="order-6 xl:order-3" />
+        <PeriodBlocks blocks={sheet.blocks} {...blockProps} />
       </div>
-      {/* Left out of every block and total above, so said out loud (D9). */}
-      {sheet.transfersCents !== 0 ? (
-        <p className="text-sm text-muted-foreground">
-          {sheet.transfersCents > 0 ? 'Paid to your card: ' : 'Moved out, not spending: '}
-          <span className="tnum">{formatMagnitude(sheet.transfersCents)}</span> — not counted.
-          {sheet.transfersCents > 0 ? ' What it paid for is already in the blocks above.' : ''}
-        </p>
-      ) : null}
+      <TransfersNote cents={sheet.transfersCents} />
     </>
   )
 }

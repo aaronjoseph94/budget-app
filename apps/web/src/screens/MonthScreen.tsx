@@ -179,11 +179,7 @@ export function MonthScreen({ month }: { month: string | null }) {
 
       {sheet !== null && typeof sheet !== 'string' ? (
         <>
-          <p className="text-sm text-muted-foreground">
-            {sheet.importedThrough === null
-              ? 'No statement imported yet.'
-              : `Statement imported up to ${formatIsoDate(sheet.importedThrough)}`}
-          </p>
+          <ImportedThrough through={sheet.importedThrough} />
           {/* Phones: the block every statement changes first, and the charts
             last (§6.2). Four columns on a desktop in Workbook's own arrangement,
             Jan!B3:V44 (§6.3), the charts second on the top row as Workbook's
@@ -192,22 +188,10 @@ export function MonthScreen({ month }: { month: string | null }) {
             in phone order, which is the order a screen reader follows. */}
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <MonthSummary sheet={sheet} month={start} onUnsaved={setStartUnsaved} />
-            <Block kind="variable" block={sheet.blocks.variable} {...blockProps} className="order-1 xl:order-7" />
-            <Block kind="bill" block={sheet.blocks.bill} {...blockProps} className="order-2 xl:order-4" />
-            <Block kind="subscription" block={sheet.blocks.subscription} {...blockProps} className="order-3 xl:order-6" />
-            <Block kind="debt" block={sheet.blocks.debt} {...blockProps} className="order-4 xl:order-5" />
-            <Block kind="income" block={sheet.blocks.income} {...blockProps} className="order-5 xl:order-2" />
-            <Block kind="savings" block={sheet.blocks.savings} {...blockProps} className="order-6 xl:order-3" />
+            <PeriodBlocks blocks={sheet.blocks} {...blockProps} />
             <MonthCharts sheet={sheet} className="order-7 md:col-span-2 xl:order-1 xl:col-span-1" />
           </div>
-          {/* Left out of every block and total above, so said out loud (D9). */}
-          {sheet.transfersCents !== 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {sheet.transfersCents > 0 ? 'Paid to your card: ' : 'Moved out, not spending: '}
-              <span className="tnum">{formatMagnitude(sheet.transfersCents)}</span> — not counted.
-              {sheet.transfersCents > 0 ? ' What it paid for is already in the blocks above.' : ''}
-            </p>
-          ) : null}
+          <TransfersNote cents={sheet.transfersCents} />
           {here !== null && opened !== null ? (
             <OpenedRow sheet={sheet} rows={here.rows} categoryId={opened} month={start} onClose={() => setOpened(null)} />
           ) : null}
@@ -561,6 +545,48 @@ export function Block({
         </button>
       ) : null}
     </section>
+  )
+}
+
+/**
+ * The six blocks in Workbook's order, as the Month, the Week and Paycheck all
+ * lay them out: phone order first, which a screen reader follows, and
+ * Workbook's four-across arrangement from 1280px (CR-2: each had its own copy).
+ */
+export function PeriodBlocks({
+  blocks,
+  ...blockProps
+}: { blocks: PeriodSheet['blocks'] } & Omit<Parameters<typeof Block>[0], 'kind' | 'block' | 'className'>) {
+  return (
+    <>
+      <Block kind="variable" block={blocks.variable} {...blockProps} className="order-1 xl:order-7" />
+      <Block kind="bill" block={blocks.bill} {...blockProps} className="order-2 xl:order-4" />
+      <Block kind="subscription" block={blocks.subscription} {...blockProps} className="order-3 xl:order-6" />
+      <Block kind="debt" block={blocks.debt} {...blockProps} className="order-4 xl:order-5" />
+      <Block kind="income" block={blocks.income} {...blockProps} className="order-5 xl:order-2" />
+      <Block kind="savings" block={blocks.savings} {...blockProps} className="order-6 xl:order-3" />
+    </>
+  )
+}
+
+/** Where the statements end, above a period's blocks. */
+export function ImportedThrough({ through }: { through: string | null }) {
+  return (
+    <p className="text-sm text-muted-foreground">
+      {through === null ? 'No statement imported yet.' : `Statement imported up to ${formatIsoDate(through)}`}
+    </p>
+  )
+}
+
+/** Left out of every block and total above, so said out loud (D9). Nothing when there is none. */
+export function TransfersNote({ cents }: { cents: number }) {
+  if (cents === 0) return null
+  return (
+    <p className="text-sm text-muted-foreground">
+      {cents > 0 ? 'Paid to your card: ' : 'Moved out, not spending: '}
+      <span className="tnum">{formatMagnitude(cents)}</span> — not counted.
+      {cents > 0 ? ' What it paid for is already in the blocks above.' : ''}
+    </p>
   )
 }
 

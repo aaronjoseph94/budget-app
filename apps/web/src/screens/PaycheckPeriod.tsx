@@ -4,14 +4,14 @@ import { useAppData } from '../app-data.js'
 import { latestStatementEnd, listBudgetHistory, listPlanHistory, listTransactions } from '../ledger.js'
 import type { BudgetRow, Category, LedgerRow, PayScheduleRow, PlanRow } from '../ledger.js'
 import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
-import { formatCents, formatDateRange, formatIsoDate, formatMagnitude, formatMonthTitle, todayIso } from '../format.js'
+import { formatCents, formatDateRange, formatMonthTitle, todayIso } from '../format.js'
 import { navigate } from '../nav.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
-import { Block } from './MonthScreen.js'
+import { ImportedThrough, PeriodBlocks, TransfersNote } from './MonthScreen.js'
 import { FREQUENCY_WORD } from './SetupPay.js'
 
 /** In words, how a monthly amount is shared across this pay (F15). */
@@ -120,11 +120,7 @@ export function PaycheckPeriod({
 
       {sheet !== null && typeof sheet !== 'string' ? (
         <>
-          <p className="text-sm text-muted-foreground">
-            {sheet.importedThrough === null
-              ? 'No statement imported yet.'
-              : `Statement imported up to ${formatIsoDate(sheet.importedThrough)}`}
-          </p>
+          <ImportedThrough through={sheet.importedThrough} />
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <Summary sheet={sheet} />
             {/* Where Workbook's chart well stands (I3:M18): the owner was told a
@@ -140,21 +136,9 @@ export function PaycheckPeriod({
               </p>
               <p className="text-muted-foreground">Budgets and goals are typed on the Month.</p>
             </section>
-            <Block kind="variable" block={sheet.blocks.variable} className="order-1 xl:order-7" />
-            <Block kind="bill" block={sheet.blocks.bill} className="order-2 xl:order-4" />
-            <Block kind="subscription" block={sheet.blocks.subscription} className="order-3 xl:order-6" />
-            <Block kind="debt" block={sheet.blocks.debt} className="order-4 xl:order-5" />
-            <Block kind="income" block={sheet.blocks.income} className="order-5 xl:order-2" />
-            <Block kind="savings" block={sheet.blocks.savings} className="order-6 xl:order-3" />
+            <PeriodBlocks blocks={sheet.blocks} />
           </div>
-          {/* Left out of every block and total above, so said out loud (D9). */}
-          {sheet.transfersCents !== 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {sheet.transfersCents > 0 ? 'Paid to your card: ' : 'Moved out, not spending: '}
-              <span className="tnum">{formatMagnitude(sheet.transfersCents)}</span> — not counted.
-              {sheet.transfersCents > 0 ? ' What it paid for is already in the blocks above.' : ''}
-            </p>
-          ) : null}
+          <TransfersNote cents={sheet.transfersCents} />
         </>
       ) : null}
     </>
