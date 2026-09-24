@@ -375,3 +375,21 @@ describe('Savings, a goal on no fund (G1)', () => {
     expect(fake.tables.categories).toHaveLength(4)
   })
 })
+
+describe('Savings, a goal written where 0015 has gone (G1)', () => {
+  // Read with 0015, then written as if it were not there: another device,
+  // or the update taken out. PostgREST refuses a column it does not know.
+  it('says the change needs a one-time update, saves nothing, and shows the goals as before', async () => {
+    const fake = seeded()
+    renderScreen(<SavingsScreen />, fake)
+    const travel = await screen.findByRole('region', { name: 'Travel' })
+    fake.server.lacks = { savings_goals: ['sort_order', 'status', 'reached_on'] }
+    fireEvent.click(within(travel).getByRole('button', { name: 'Pause' }))
+    expect(
+      await screen.findByText('Choosing your main goal, moving, pausing and reaching goals need a one-time update. Nothing was saved. (code PGRST204)'),
+    ).toBeTruthy()
+    expect(fake.tables.savings_goals[1]).not.toHaveProperty('status')
+    expect(await screen.findByText(/pausing or finishing one need a one-time update/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Pause' })).toBeNull()
+  })
+})
