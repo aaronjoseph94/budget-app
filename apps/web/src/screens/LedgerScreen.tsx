@@ -66,7 +66,7 @@ export function LedgerScreen() {
 
   return (
     <div className="space-y-4">
-      <header className="flex items-center justify-between gap-2">
+      <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
           {/* More's name for it: one screen, one name. */}
           <h1 className="text-2xl font-semibold tracking-tight">All transactions</h1>
@@ -126,7 +126,7 @@ export function LedgerScreen() {
           <Card className="overflow-hidden">
             <ul className="divide-y">
               {items.map((r) => (
-                <li key={r.id} className="flex items-center gap-3 px-4 py-3">
+                <li key={r.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">
                       <IngestedText>{r.merchant_raw}</IngestedText>

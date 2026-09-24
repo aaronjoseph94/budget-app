@@ -84,7 +84,7 @@ export function WeekScreen() {
 
   return (
     <div className="space-y-4">
-      <header className="-mx-4 flex items-center justify-between gap-2 bg-title-band px-4 py-4 md:mx-0 md:rounded-xl">
+      <header className="-mx-4 flex flex-wrap items-center justify-between gap-2 bg-title-band px-4 py-4 md:mx-0 md:rounded-xl">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{isThisWeek ? 'This week' : 'Week of'}</h1>
           <p className="text-sm text-muted-foreground">

@@ -125,7 +125,7 @@ export function MonthScreen({ month }: { month: string | null }) {
 
   return (
     <div className="space-y-4">
-      <header className="-mx-4 flex items-center justify-between gap-2 bg-title-band px-4 py-4 md:mx-0 md:rounded-xl">
+      <header className="-mx-4 flex flex-wrap items-center justify-between gap-2 bg-title-band px-4 py-4 md:mx-0 md:rounded-xl">
         <MonthTitle>{formatMonthTitle(start)}</MonthTitle>
         <div className="flex gap-1">
           <Button variant="outline" size="icon" aria-label="Previous month" onClick={() => step(-1)}>

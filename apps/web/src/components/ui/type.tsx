@@ -23,5 +23,7 @@ export function MonthTitle({ children }: { children: ReactNode }) {
  * here still holds for the system face shown while Comfortaa loads.
  */
 export function Figure({ className, ...props }: HTMLAttributes<HTMLSpanElement>) {
-  return <span className={cn('font-numbers tnum', className)} {...props} />
+  // May break inside the number, and only when it cannot fit its box at all:
+  // with text enlarged to 200% a total ran out of its card instead (FE-17).
+  return <span className={cn('font-numbers tnum [overflow-wrap:anywhere]', className)} {...props} />
 }

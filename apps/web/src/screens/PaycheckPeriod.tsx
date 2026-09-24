@@ -95,7 +95,7 @@ export function PaycheckPeriod({
 
   return (
     <>
-      <header className="-mx-4 flex items-center justify-between gap-2 bg-paycheck-band px-4 py-4 text-paycheck-ink md:mx-0 md:rounded-xl">
+      <header className="-mx-4 flex flex-wrap items-center justify-between gap-2 bg-paycheck-band px-4 py-4 text-paycheck-ink md:mx-0 md:rounded-xl">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
             {payPeriod({ schedule, asOf: today }).start === start ? 'This pay period' : 'Pay period'}

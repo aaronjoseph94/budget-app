@@ -388,7 +388,7 @@ function UnreadableLines({
                 .map((line) => {
                   const where = `${batch.source === 'card_pdf' ? 'Row' : 'Line'} ${line.source_line}`
                   return (
-                    <li key={line.id} className={cn('flex items-start gap-3 text-sm', busy === line.id && 'opacity-60')}>
+                    <li key={line.id} className={cn('flex flex-wrap items-start gap-3 text-sm', busy === line.id && 'opacity-60')}>
                       <span className="tnum w-16 shrink-0 text-muted-foreground">{where}</span>
                       <span className="flex-1">{describeReason(line.reason)}</span>
                       <Button

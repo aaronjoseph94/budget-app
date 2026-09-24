@@ -76,7 +76,7 @@ export function CalendarScreen({ month }: { month: string | null }) {
           <MonthTitle>{formatMonthTitle(start)}</MonthTitle>
           <p className="mt-1 text-sm font-medium text-calendar-pill-ink">Bill calendar</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {calendar !== null && typeof calendar !== 'string' ? (
             // Named on the pill, not only to a screen reader: Workbook's J3 sits
             // under its own heading, and a bare figure in the band said nothing.

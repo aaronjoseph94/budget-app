@@ -41,6 +41,6 @@ describe('Figure', () => {
   it('adds only its face, leaving size and colour to the caller', () => {
     const el = render(<Figure className="text-4xl text-income">$248.31</Figure>)
     const figure = within(el).getByText('$248.31')
-    expect([...figure.classList]).toEqual(['font-numbers', 'tnum', 'text-4xl', 'text-income'])
+    expect([...figure.classList]).toEqual(['font-numbers', 'tnum', '[overflow-wrap:anywhere]', 'text-4xl', 'text-income'])
   })
 })
