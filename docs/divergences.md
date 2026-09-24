@@ -709,3 +709,33 @@ debt colours mean one thing wherever they appear.
 
 **Why.** A stack of two amounts that are not parts of one whole means
 nothing on its own: the chart could never show a debt shrinking.
+
+---
+
+## D26 — The Month compares itself with last month
+
+**Date:** 2026-09-24
+**Sheet / cells:** every month tab, Jan!B3:V44, which holds one month and
+refers to no other; formula decisions F24, F25, F26
+**Settled:** Decided by the engineer under the owner's 2026-09-24
+instruction to proceed without questions, in answer to that instruction's
+item 7 ("Intelligently add comparisons to the previous month where possible
+so I can see what I did last month").
+
+**Workbook behaviour.** A month tab shows its own figures only. Nothing on
+it says what the month before looked like.
+
+**Chosen behaviour.** The Month's summary card gains a line naming this
+month's spending and last month's over the same days, with both dates and
+the change in words. Each block's third column (Left, or Difference on
+Savings, and none on Income) can be switched to the change against those
+same days, remembered on this device, with the block's own total change
+beside its heading. A row's charges say what it came to over the same days
+last month. Left stays the default. Where the earlier days lie before the
+records (F24), nothing is compared and the card says which statement to
+import. **The workbook's own figures do not change,** and neither do the
+golden tests.
+
+**Why.** The owner asked for it. The same-days figures are not the Month's
+Spent (F25), so they are named as their own figures rather than set under
+Spent.

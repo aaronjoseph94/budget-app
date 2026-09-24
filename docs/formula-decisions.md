@@ -838,3 +838,99 @@ tests are hand-derived.
   rolled money. The flat plan is `amortize` itself, and the tests check that
   it gives the golden debt-free date.
 - **Shown** side by side: each plan's debt-free date and its total interest.
+
+---
+
+## F24 — Where the records start (history start)
+
+**Decided 2026-09-24. Engineering default. Not from the workbook,** which
+never compares one period with another. Decided by the engineer under the
+owner's 2026-09-24 instruction to proceed without questions
+(`docs/ai-first-plan.md` §6, §11).
+
+**Chosen.**
+
+- **History start** is the earliest first day of any imported statement's
+  period (`ingest_batches.period_start`, 0007). With no statement that has a
+  period, it is the earliest date in the ledger. With neither, there is none.
+- **A statement wins over an earlier typed row.** Card charges are most of
+  the spending, so a month is only whole from the first statement on. A
+  coffee typed before it would otherwise open a month holding one coffee,
+  and every comparison with it would read as a huge rise.
+- **A window that starts before history start is never compared or used as
+  a baseline.** A month before the records is missing, not $0.
+- **For later slices, recorded now:** a *complete month* lies wholly between
+  history start and the first day of `asOf`'s month; the evidence is *thin*
+  with 0–2 complete months, *some* with 3–5, *solid* with 6 or more.
+
+**Worked example.** Statements for 8 Aug – 7 Sep and 8 Sep – 7 Oct 2026, and
+cash typed on 2 Aug. History start is 8 Aug. On 24 Sep the earlier window,
+1–24 Aug, starts on 1 Aug, before it, so the Month compares nothing and says
+"Import the statement before 8 Aug to compare with August". On 10 Oct the
+earlier window, 1–10 Sep, is inside the records and is compared.
+
+---
+
+## F25 — Which days are compared (comparison windows)
+
+**Decided 2026-09-24. Engineering default. Not from the workbook.** Decided
+by the engineer under the owner's 2026-09-24 instruction to proceed without
+questions.
+
+**Chosen, for a month** (built in plan slice A03):
+
+- **The month running** (the month holding `asOf`, on its day *d*): days
+  1..*d* of it, against days 1..min(*d*, last month's length) of the month
+  before. Like for like: a month two-thirds through is never set against a
+  whole one.
+- **A month already over:** the whole month against the whole month before.
+- **A month not started yet:** no comparison. Nothing has happened in it.
+- **Both sides go through `periodSheet`,** each with its own month's budgets
+  (D12) and monthly amounts (D13), so F8 applies to each side the same way:
+  a partial window counts a planned bill only on its due day, and a due day
+  of 29–31 counts on a short month's last day (D6).
+- **Consequence, said on screen:** a same-days figure is not the Month's
+  Spent, which counts every planned bill for the whole month. So the Month
+  names both same-days figures and both windows, and never puts a change
+  under Spent.
+
+**Worked examples.** On 24 Sep 2026: 1–24 Sep against 1–24 Aug. On 31 Mar
+2027: 1–31 Mar against 1–28 Feb (February has no later days, so the earlier
+window ends with its month rather than running into March). On 30 Mar 2028:
+against 1–29 Feb. August 2026 viewed on 24 Sep: 1–31 Aug against 1–31 Jul.
+A rent of $800 due on the 28th, in September viewed on 24 Sep, counts on
+neither side; viewed on 28 Sep, on both.
+
+**Recorded now, built in A04:** a week, Monday to `asOf`'s weekday against
+the same weekdays of the week before; a pay period, its start to `asOf`
+against the previous period's start plus the same number of days, capped at
+its end; a Year, against the twelve months before.
+
+---
+
+## F26 — A change, its percentage and its direction
+
+**Decided 2026-09-24. Engineering default. Not from the workbook.** Decided
+by the engineer under the owner's 2026-09-24 instruction to proceed without
+questions.
+
+**Chosen.**
+
+- **Change** = now − before, on the Actuals as the Month shows them (spent,
+  received or saved, positive), in cents.
+- **Percentage,** in basis points: |change| × 10000 ÷ |before|, rounded
+  half-up, carrying the change's sign, so a rise and a fall of the same
+  size read the same. **None when before is $0:** the amount shows, a
+  percentage never does.
+- **Direction:** under 100 cents either way is *same*; otherwise *more* or
+  *less*.
+- **Meaning, by list:** on Variable expenses, Bills, Debts and
+  Subscriptions (and Spent), *more* is "watch" and *less* is "good"; on
+  Income and Savings, *more* is "good" and *less* is "watch"; *same* means
+  nothing. Every change is written in words, never shown by colour alone.
+- **Words:** "$40.00 more", "$40.00 less", "about the same".
+
+**Worked examples.** Spent 1–24 Aug $1,180.00, 1–24 Sep $1,020.00: change
+−16000 cents; 16000 × 10000 ÷ 118000 = 1355.93, so −1356 bp, "$160.00 less",
+shown as 14%; good. Before $0.00, now $25.00: change 2500, no percentage.
+Before $10.00, now $10.99: change 99, *same*, "about the same".
