@@ -279,10 +279,11 @@ describe('WeekScreen', () => {
   it('stops showing the loading card when the first load fails, which the app says above the screen', async () => {
     const fake = seeded()
     fake.fail('categories', '42501')
-    const { container } = renderScreen(<WeekScreen />, fake)
+    renderScreen(<WeekScreen />, fake)
 
-    expect(container.querySelector('.animate-pulse')).not.toBeNull()
-    await waitFor(() => expect(container.querySelector('.animate-pulse')).toBeNull())
+    // Found as a screen reader finds it, not by its animation class (CR-10).
+    expect(screen.getByRole('status', { name: 'Loading this week' })).toBeTruthy()
+    await waitFor(() => expect(screen.queryByRole('status', { name: 'Loading this week' })).toBeNull())
     expect(screen.queryByText('$130.12')).toBeNull()
   })
 })

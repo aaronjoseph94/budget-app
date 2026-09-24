@@ -144,9 +144,10 @@ interface Loaded {
   readonly ends: readonly string[]
 }
 
+/** A busy status, so a screen reader is told the week is loading, as the eye is (CR-10). */
 function SkeletonCard() {
   return (
-    <Card className="animate-pulse">
+    <Card role="status" aria-label="Loading this week" aria-busy="true" className="animate-pulse">
       <CardContent className="space-y-3 pt-5">
         <div className="h-4 w-16 rounded bg-muted" />
         <div className="h-9 w-40 rounded bg-muted" />
