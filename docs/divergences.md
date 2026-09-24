@@ -750,3 +750,32 @@ debt's scheduled balance against a month ago (F25). The workbook's Weekly
 Budget, Paycheck Budget, Annual Budget, Savings and Debt Calculator tabs
 show none of this. **Their own figures do not change,** and neither do the
 golden tests.
+
+---
+
+## D27 — The Month gains a coach line
+
+**Date:** 2026-09-24
+**Sheet / cells:** every month tab, Jan!B3:V44; formula decisions F25,
+F26, F27, F44
+**Settled:** Decided by the engineer under the owner's 2026-09-24
+instruction to proceed without questions, in answer to that instruction's
+item 2 ("AI must be the bedrock of this budget app... giving me insights
+into spending").
+
+**Workbook behaviour.** A month tab holds its own figures and no sentence
+about them.
+
+**Chosen behaviour.** When the Month shows the current month, one line sits
+above its summary: the day's line from the Coach, such as "You've spent
+$160.00 less than by this day last month", in the app's own words until the
+AI's arrive (plan slice A12). Tapping it opens the Coach. It is made only
+from the two months the Month already reads (this month's same days against
+last month's, or this week's against last week's), so it is the same line
+the Coach shows. It loads after the Month has drawn, in its own error
+boundary: if it fails, it is simply not there. **The workbook's own figures
+do not change,** and neither do the golden tests. Plan slice A13 extends
+this entry with the Month's labelled forecast line.
+
+**Why.** The owner asked for insight into spending "in as many places as
+possible", and the Month opens first.

@@ -967,3 +967,129 @@ questions.
 −16000 cents; 16000 × 10000 ÷ 118000 = 1355.93, so −1356 bp, "$160.00 less",
 shown as 14%; good. Before $0.00, now $25.00: change 2500, no percentage.
 Before $10.00, now $10.99: change 99, *same*, "about the same".
+
+---
+
+## F27 — A category's usual month, and when a change is worth a card
+
+**Decided 2026-09-24. Engineering default. Not from the workbook,** which
+keeps no history across months. Decided by the engineer under the owner's
+2026-09-24 instruction to proceed without questions
+(`docs/ai-first-plan.md` §6, §11; built in slice A07).
+
+**Chosen.**
+
+- **Median** of a list of whole cents: the middle value once sorted; with
+  an even count, the two middle values added and halved, half-up on the
+  magnitude with the sign kept (as F26 rounds). None for an empty list.
+- **Quantile by nearest rank:** for a share `p` in basis points, the value
+  at rank ⌈p × n ÷ 10000⌉ (at least 1) of the list sorted ascending. No
+  averaging between ranks, so every quantile is a month that happened.
+- **Usual month:** the median of a category's totals over up to its **6
+  most recent complete months** (F24). A month outside what was read is not
+  complete either: the Coach reads twelve months back, the Month only last
+  month, and a month neither read is missing, not $0.
+- **MAD** (median absolute deviation): the median of each of those months'
+  distance from the usual month.
+- **The band,** for a whole month: with 3 or more complete months,
+  max(2500, 15% of the usual month half-up, 3 × MAD); with 1 or 2,
+  max(2500, 25% of the usual month half-up). With none, there is no band
+  and no category change is reported.
+- **For a window of d days in a month of D,** the band is scaled by d ÷ D,
+  half-up, and never below 2500.
+- **The summary's band** (this month and this week against the same days
+  before, F25) is max(2500, 15% of the earlier figure, half-up). It needs
+  only the two windows, so the Month can size it from the two months it
+  already reads and get the Coach's answer.
+- **Size:** under one band is *slight*; from one band to under two is
+  *clear*; two bands or more is *big*. A change is **notable**, and can
+  become a card, when it is clear or big.
+- **Which change, in digest version 1:** a Variable expenses row's Actual
+  over days 1..d of this month against the same days of last month (F25),
+  the figure the Month's "vs" column shows, so the Coach and the Month
+  agree. Bills, Debts and Subscriptions wait for the price-rise detector
+  (F38): a change there is a bill moving, not a habit.
+- **Evidence** (F24) is counted from the complete months the change's band
+  used. A summary compares two windows and uses no baseline, so its
+  evidence is *thin* by definition, on the Month and on the Coach alike.
+
+**Worked example.** Dining out's six complete months, March to August:
+$300, $420, $360, $510, $390 and $450. Sorted, the middle two are $390 and
+$420, so the usual month is $405.00. The distances are $105, $15, $45,
+$105, $15 and $45; their median is $45.00, the MAD. The band is
+max($25.00, $60.75, $135.00) = $135.00. On 24 September (d = 24, D = 30)
+it is $135.00 × 24 ÷ 30 = $108.00. Dining out 1–24 September $520.00
+against 1–24 August $307.60 is $212.40 more: 1.97 bands, *clear*, so a
+card. The Month's summary on the same day, $1,020.00 against $1,180.00:
+the band is max($25.00, $177.00) = $177.00, and $160.00 less is *slight*.
+The coach line still says it; it is not a card.
+
+---
+
+## F28 — A category's pace this month
+
+**Decided 2026-09-24. Engineering default. Not from the workbook.** Decided
+by the engineer under the owner's 2026-09-24 instruction to proceed without
+questions (plan §5, §11; built in slice A07).
+
+**Chosen.**
+
+- **From day 7 of the current month,** a category's Actual so far scaled to
+  the whole month: `actual × D ÷ d`, half-up on the magnitude. Before day 7
+  there is too little to scale (a week's groceries would read as a month's
+  four times over), and a past month has its real total, so neither has a
+  pace.
+- **Over budget by** `pace − budget`, when a budget is set and that is above
+  0; otherwise none.
+- **Over and near budget, in the digest,** on Variable expenses with a
+  budget above $0: *over* when the Actual is above the budget, by
+  `actual − budget`; *near* when the Actual is at least 90% of the budget
+  and not above it (`actual × 10000 ≥ 9000 × budget`), with `budget −
+  actual` left. A category over its budget is not also near it, and has no
+  pace fact: it is already there.
+- **Notable:** over budget by $1.00 or more (F26's "same"); near budget
+  always; a pace over budget by at least max(2500, 15% of the budget,
+  half-up), since a pace is an estimate and a few dollars over is noise.
+
+**Worked example.** On 24 September (d = 24, D = 30), Dining out $360.00 so
+far with a budget of $400.00: pace $360.00 × 30 ÷ 24 = $450.00, over by
+$50.00; the notable line is max($25.00, $60.00) = $60.00, so no card. It is
+also near budget: $360.00 is 90% of $400.00, with $40.00 left. On 6
+September, no pace. August viewed on 24 September: no pace.
+
+---
+
+## F44 — Impact, for ranking the Coach's cards
+
+**Decided 2026-09-24. Engineering default. Not from the workbook.** Decided
+by the engineer under the owner's 2026-09-24 instruction to proceed without
+questions (plan §2.3, §11; built in slice A07).
+
+**Chosen.**
+
+- **A fact's monthly effect,** in cents, always positive: a change scaled to
+  a whole month, `|change| × D ÷ d`, half-up; a pace over budget, `pace −
+  budget`; over budget, `actual − budget`; near budget, the `budget −
+  actual` left. Later slices add a lever's monthly saving, a subscription's
+  monthly cost and an unusual charge's amount.
+- **Impact** = effect × evidence weight: *thin* 1, *some* 2, *solid* 3.
+  A change's evidence is its history's (F27). Over and near budget set a
+  charge against the owner's own number, not an estimate, so they are
+  *solid*; a pace is an estimate from the days so far, so it is *some*.
+- **Always first:** stale data, when the latest statement ends more than 10
+  days before `asOf` (a stale ledger makes a coach confidently wrong); then
+  rows waiting in Review. Neither is ranked by money.
+- **Only notable facts** (F27, F28), and the kinds that are always notable
+  (stale data, waiting rows; later milestones, price rises and possible
+  double charges), become cards. The summaries are the coach line, not
+  cards.
+- **The digest keeps at most 12 facts:** stale data, waiting rows, the two
+  summaries, then the rest by impact, largest first, ties by key.
+- **The day's rotation** (`dailyIndex`, for picking among equals without
+  randomness): the days from 1 January 1970 to `asOf`, modulo the count.
+
+**Worked example.** On 24 September: Dining out $212.40 more than the same
+days of August, with 6 complete months: effect $212.40 × 30 ÷ 24 = $265.50,
+*solid*, impact 79650. Groceries over its $500.00 budget by $30.00: effect
+3000, *solid*, impact 9000. Dining out ranks first; a statement ending on
+6 September (18 days before) would rank above both.
