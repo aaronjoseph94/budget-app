@@ -4,16 +4,18 @@
  * The workbook's tabs each hold one period and refer to no other, so none of
  * this has a cached value; it is D26, and the tests are worked by hand.
  *
- * Like for like: a month still running is set against the same days of the
- * month before, never against a whole one, and a month already over against
- * the whole month before. Nothing is compared across the start of the records
- * (F24), because a month missing from them is not a month of $0.
+ * Like for like: a month, week, pay period or Year still running is set
+ * against the same days of the one before, never against a whole one, and
+ * one already over against the whole one before. Nothing is compared across
+ * the start of the records (F24), because a month missing from them is not
+ * a month of $0.
  */
-import { type Cents, type IsoDate, addDays, subCents } from '@budget/money-primitives'
+import { type Cents, type IsoDate, addDays, addMonths, daysBetween, subCents } from '@budget/money-primitives'
 import { type BudgetHistoryRow, resolveBudgets } from './budgets.js'
 import { type PeriodCategory, type PeriodEntry, type PeriodSheet, periodSheet, plansInEffect } from './period-sheet.js'
 import type { PlanHistoryRow } from './plans.js'
-import { monthBounds, shiftMonth } from './week.js'
+import { type PaySchedule, payPeriod, shiftPayPeriod } from './pay-period.js'
+import { monthBounds, shiftMonth, weekBounds } from './week.js'
 
 /** Both ends included, as periodSheet reads a window (F4). */
 export interface DateWindow {
@@ -21,12 +23,18 @@ export interface DateWindow {
   readonly to: IsoDate
 }
 
-export interface ComparisonWindowInput {
-  /** Only months so far; the week, the pay period and the Year join in plan slice A04. */
-  readonly period: 'month'
-  /** Any day of the month shown. */
-  readonly month: IsoDate
-  /** Today: which month is running, and on which day. */
+/** Which period is shown, named by any of its days (a Year by its first month). */
+export type ComparedPeriod =
+  | { readonly period: 'month'; readonly month: IsoDate }
+  /** Monday to Sunday (D14). */
+  | { readonly period: 'week'; readonly week: IsoDate }
+  /** The pay period holding `day`, from the income source's schedule (F15). */
+  | { readonly period: 'pay'; readonly schedule: PaySchedule; readonly day: IsoDate }
+  /** Twelve months from `startMonth` (F14). */
+  | { readonly period: 'year'; readonly startMonth: IsoDate }
+
+export type ComparisonWindowInput = ComparedPeriod & {
+  /** Today: which period is running, and how far into it. */
   readonly asOf: IsoDate
   /** From historyStart; null when there are no records. */
   readonly historyStart: IsoDate | null
@@ -35,12 +43,12 @@ export interface ComparisonWindowInput {
 export type ComparisonWindow =
   | {
       readonly status: 'compared'
-      /** True while the month runs: both windows stop at asOf's day of the month. */
+      /** True while the period runs: both windows stop as far in as asOf. */
       readonly sameDays: boolean
       readonly now: DateWindow
       readonly before: DateWindow
     }
-  /** The month has not begun, so there is nothing yet to compare. */
+  /** The period has not begun, so there is nothing yet to compare. */
   | { readonly status: 'not_started' }
   /** The earlier window starts before the records, so it is left out (F24). */
   | {
@@ -50,23 +58,59 @@ export type ComparisonWindow =
       readonly historyStart: IsoDate | null
     }
 
-/** F25, for a month. */
+interface Bounds {
+  readonly start: IsoDate
+  readonly end: IsoDate
+}
+
+/** The period shown, the one before it, and how far into that one asOf's day falls. */
+interface Spans {
+  readonly shown: Bounds
+  readonly previous: Bounds
+  /** The earlier window's last day while the period runs, before it is capped at that period's end. */
+  readonly sameDayBefore: IsoDate
+}
+
+function spans(input: ComparisonWindowInput): Spans {
+  const { asOf } = input
+  switch (input.period) {
+    case 'month': {
+      const shown = monthBounds(input.month)
+      const previous = monthBounds(shiftMonth(shown.start, -1))
+      // Days 1..d: a short month's window is capped at its end below.
+      return { shown, previous, sameDayBefore: addDays(previous.start, Number(asOf.slice(8)) - 1) }
+    }
+    case 'week': {
+      const shown = weekBounds(input.week)
+      return { shown, previous: weekBounds(addDays(shown.start, -7)), sameDayBefore: addDays(asOf, -7) }
+    }
+    case 'pay': {
+      const shown = payPeriod({ schedule: input.schedule, asOf: input.day })
+      const previous = shiftPayPeriod({ schedule: input.schedule, asOf: input.day, periods: -1 })
+      return { shown, previous, sameDayBefore: addDays(previous.start, daysBetween(shown.start, asOf)) }
+    }
+    case 'year': {
+      const start = monthBounds(input.startMonth).start
+      const shown = { start, end: monthBounds(shiftMonth(start, 11)).end }
+      const previous = { start: shiftMonth(start, -12), end: addDays(start, -1) }
+      // addMonths ends a 29 February the year before lacks on the 28th.
+      return { shown, previous, sameDayBefore: addMonths(asOf, -12) }
+    }
+  }
+}
+
+/** F25: a period against the one before it, like for like, inside the records (F24). */
 export function comparisonWindow(input: ComparisonWindowInput): ComparisonWindow {
-  const shown = monthBounds(input.month)
-  const running = monthBounds(input.asOf)
-  if (shown.start > running.start) return { status: 'not_started' }
-  const previous = monthBounds(shiftMonth(shown.start, -1))
-  const sameDays = shown.start === running.start
-  const day = Number(input.asOf.slice(8))
-  const now = { from: shown.start, to: sameDays ? input.asOf : shown.end }
-  // Days 1..min(d, its length): a short month's window ends with the month
-  // rather than running on into the next.
-  const lastDay = Number(previous.end.slice(8))
-  const before = { from: previous.start, to: sameDays ? addDays(previous.start, Math.min(day, lastDay) - 1) : previous.end }
+  const { shown, previous, sameDayBefore } = spans(input)
+  if (shown.start > input.asOf) return { status: 'not_started' }
+  const running = input.asOf <= shown.end
+  const now = { from: shown.start, to: running ? input.asOf : shown.end }
+  // The earlier window ends with its period rather than running on into the next.
+  const before = { from: previous.start, to: running && sameDayBefore < previous.end ? sameDayBefore : previous.end }
   if (input.historyStart === null || before.from < input.historyStart) {
     return { status: 'before_records', now, before, historyStart: input.historyStart }
   }
-  return { status: 'compared', sameDays, now, before }
+  return { status: 'compared', sameDays: running, now, before }
 }
 
 /** F26: one figure now and before, and what the difference means. */

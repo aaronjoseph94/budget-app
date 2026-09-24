@@ -179,6 +179,7 @@ export {
   type Change,
   type ComparisonWindow,
   type ComparisonWindowInput,
+  type ComparedPeriod,
   type DateWindow,
   type PeriodComparison,
   type PeriodComparisonInput,
