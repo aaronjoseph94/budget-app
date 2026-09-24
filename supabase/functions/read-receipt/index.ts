@@ -18,7 +18,9 @@
 // amount or a merchant (CLAUDE.md).
 //
 // Self-contained on purpose, so it can be pasted into the Supabase dashboard's
-// function editor as a single file.
+// function editor as a single file: its only import is zod, pinned in the URL.
+// It exports `handle` so the gates can test it with a fake fetch, and serves
+// only when it runs under Deno.
 
 import { z } from 'npm:zod@4.6.5'
 
@@ -35,15 +37,30 @@ const MODEL_NAME = /^gemini-[a-z0-9.-]{1,40}$/
 // different name, is added with the EXTRA_ORIGINS secret (comma-separated,
 // full origins like https://budget.example.com) — no code change or redeploy.
 // Each must be an exact https origin; anything else in the setting is ignored.
-const ORIGINS = new Set([
+const ORIGINS = [
   'https://aaron-budget-app.pages.dev',
   'https://aaron-budget-app.netlify.app',
   'http://localhost:5173',
-  ...(Deno.env.get('EXTRA_ORIGINS') ?? '')
-    .split(',')
-    .map((o) => o.trim())
-    .filter((o) => /^https:\/\/[a-z0-9.-]+(:\d+)?$/.test(o)),
-])
+]
+
+// The secrets this function reads, parsed at the "env loading" boundary.
+// Every one is optional: a missing key is the not_configured reply, not a crash.
+const EnvSchema = z.object({
+  GEMINI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().optional(),
+  EXTRA_ORIGINS: z.string().optional(),
+})
+type Env = z.infer<typeof EnvSchema>
+
+function allowedOrigins(env: Env): Set<string> {
+  return new Set([
+    ...ORIGINS,
+    ...(env.EXTRA_ORIGINS ?? '')
+      .split(',')
+      .map((o) => o.trim())
+      .filter((o) => /^https:\/\/[a-z0-9.-]+(:\d+)?$/.test(o)),
+  ])
+}
 
 // A phone photo, resized by the app to at most 1600px, is well under 1 MB.
 // Base64 adds a third. Six million characters leaves room and stops abuse.
@@ -73,8 +90,8 @@ const RESPONSE_SCHEMA = {
   required: ['readable', 'merchant', 'total', 'date'],
 }
 
-function cors(origin: string | null): Record<string, string> {
-  if (origin === null || !ORIGINS.has(origin)) return {}
+function cors(origin: string | null, origins: Set<string>): Record<string, string> {
+  if (origin === null || !origins.has(origin)) return {}
   return {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -83,45 +100,63 @@ function cors(origin: string | null): Record<string, string> {
   }
 }
 
-function reply(status: number, body: unknown, origin: string | null): Response {
+function reply(status: number, body: unknown, origin: string | null, origins: Set<string>): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 'Content-Type': 'application/json', ...cors(origin) },
+    headers: { 'Content-Type': 'application/json', ...cors(origin, origins) },
   })
 }
 
-Deno.serve(async (req) => {
+// The one place this file writes a log line, and all it can say: a fixed
+// code and numbers. Never the image, the prompt, the reply, an amount or a
+// merchant (CLAUDE.md); the types leave no room for them.
+type LogCode = 'provider_unreachable' | 'provider_status'
+function log(code: LogCode, counts: Record<string, number> = {}): void {
+  console.log(JSON.stringify({ fn: 'read-receipt', code, ...counts }))
+}
+
+export async function handle(
+  req: Request,
+  rawEnv: Readonly<Record<string, string | undefined>>,
+  fetchFn: typeof fetch,
+): Promise<Response> {
   const origin = req.headers.get('origin')
-  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(origin) })
-  if (req.method !== 'POST') return reply(405, { ok: false, code: 'method_not_allowed' }, origin)
+  // Secrets zod cannot read count as unset, which ends in not_configured.
+  const parsedEnv = EnvSchema.safeParse(rawEnv)
+  const env: Env = parsedEnv.success ? parsedEnv.data : {}
+  const origins = allowedOrigins(env)
+  const send = (status: number, body: unknown) => reply(status, body, origin, origins)
+
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(origin, origins) })
+  if (req.method !== 'POST') return send(405, { ok: false, code: 'method_not_allowed' })
   // A browser page on any other site is refused before the key is spent. The
   // browser would already hide the answer from it, but not the cost of asking.
-  if (origin !== null && !ORIGINS.has(origin)) return reply(403, { ok: false, code: 'origin_not_allowed' }, origin)
+  if (origin !== null && !origins.has(origin)) return send(403, { ok: false, code: 'origin_not_allowed' })
 
   // Supabase verifies the user's token before this runs (keep "Enforce JWT
   // verification" on). This is a second check that one was sent at all.
   if (!req.headers.get('authorization')?.startsWith('Bearer ')) {
-    return reply(401, { ok: false, code: 'not_signed_in' }, origin)
+    return send(401, { ok: false, code: 'not_signed_in' })
   }
 
-  const key = Deno.env.get('GEMINI_API_KEY')
-  if (key === undefined || key === '') return reply(503, { ok: false, code: 'not_configured' }, origin)
+  const key = env.GEMINI_API_KEY
+  if (key === undefined || key === '') return send(503, { ok: false, code: 'not_configured' })
 
-  const model = Deno.env.get('GEMINI_MODEL') ?? DEFAULT_MODEL
-  if (!MODEL_NAME.test(model)) return reply(503, { ok: false, code: 'not_configured' }, origin)
+  const model = env.GEMINI_MODEL ?? DEFAULT_MODEL
+  if (!MODEL_NAME.test(model)) return send(503, { ok: false, code: 'not_configured' })
 
   let body: z.infer<typeof RequestSchema>
   try {
     const parsed = RequestSchema.safeParse(await req.json())
-    if (!parsed.success) return reply(400, { ok: false, code: 'bad_request' }, origin)
+    if (!parsed.success) return send(400, { ok: false, code: 'bad_request' })
     body = parsed.data
   } catch {
-    return reply(400, { ok: false, code: 'bad_request' }, origin)
+    return send(400, { ok: false, code: 'bad_request' })
   }
 
   let upstream: Response
   try {
-    upstream = await fetch(`${HOST}${model}:generateContent`, {
+    upstream = await fetchFn(`${HOST}${model}:generateContent`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify({
@@ -139,14 +174,14 @@ Deno.serve(async (req) => {
       }),
     })
   } catch {
-    console.log('read-receipt: provider unreachable')
-    return reply(502, { ok: false, code: 'provider_unreachable' }, origin)
+    log('provider_unreachable')
+    return send(502, { ok: false, code: 'provider_unreachable' })
   }
 
-  if (upstream.status === 429) return reply(429, { ok: false, code: 'rate_limited' }, origin)
+  if (upstream.status === 429) return send(429, { ok: false, code: 'rate_limited' })
   if (!upstream.ok) {
-    console.log(`read-receipt: provider status ${upstream.status}`)
-    return reply(502, { ok: false, code: upstream.status === 404 ? 'model_not_found' : 'provider_error' }, origin)
+    log('provider_status', { status: upstream.status })
+    return send(502, { ok: false, code: upstream.status === 404 ? 'model_not_found' : 'provider_error' })
   }
 
   // Only the reply text is passed on. Everything else Gemini returns — safety
@@ -158,6 +193,22 @@ Deno.serve(async (req) => {
   } catch {
     text = undefined
   }
-  if (typeof text !== 'string') return reply(502, { ok: false, code: 'provider_error' }, origin)
-  return reply(200, { ok: true, reply: text }, origin)
-})
+  if (typeof text !== 'string') return send(502, { ok: false, code: 'provider_error' })
+  return send(200, { ok: true, reply: text })
+}
+
+// Only the names this function reads are handed over, so no other secret in
+// the project, the service key included, is ever in reach of the handler.
+if (typeof Deno !== 'undefined') {
+  Deno.serve((req) =>
+    handle(
+      req,
+      {
+        GEMINI_API_KEY: Deno.env.get('GEMINI_API_KEY'),
+        GEMINI_MODEL: Deno.env.get('GEMINI_MODEL'),
+        EXTRA_ORIGINS: Deno.env.get('EXTRA_ORIGINS'),
+      },
+      fetch,
+    ),
+  )
+}

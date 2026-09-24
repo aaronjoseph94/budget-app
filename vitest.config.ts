@@ -16,13 +16,20 @@ export default defineConfig({
       // contrast test reads the colour tokens out of this one.
       { test: { name: 'app', root: './apps/web', include: ['test/**/*.test.ts'], environment: 'node', css: { include: [/index\.css/] } } },
       { test: { name: 'app-dom', root: './apps/web', include: ['test/**/*.test.tsx'], environment: 'jsdom' } },
+      // The Edge Functions import zod by Deno's pinned URL so each can be
+      // pasted alone; here that name is the package's own zod, as in its
+      // tsconfig.
+      {
+        test: { name: 'functions', root: './supabase/functions' },
+        resolve: { alias: { 'npm:zod@4.6.5': 'zod' } },
+      },
     ],
     coverage: {
       provider: 'v8',
       // Source only. `tsc --build` emits a parallel copy of every module into
       // dist/, which no test imports; counting it reported 36% overall while
       // the code the tests actually exercise was above 90%.
-      include: ['packages/*/src/**/*.ts', 'apps/*/src/**/*.{ts,tsx}'],
+      include: ['packages/*/src/**/*.ts', 'apps/*/src/**/*.{ts,tsx}', 'supabase/functions/**/index.ts'],
       exclude: ['**/dist/**'],
       reporter: ['text-summary'],
       // Aggregated per module rather than per file, because a barrel that only
@@ -34,6 +41,8 @@ export default defineConfig({
         'packages/statement-parsers/src/**': { lines: 80, functions: 80, branches: 75 },
         'packages/golden-verification/src/**': { lines: 80, functions: 80, branches: 75 },
         'packages/chart-specs/src/**': { lines: 80, functions: 80, branches: 75 },
+        // The code that holds a provider key is held to the same bar.
+        'supabase/functions/**': { lines: 80, functions: 80, branches: 75 },
         // The app as a whole, .tsx included, now held to the bar every module
         // has (N5): measured 86.6 / 88.9 / 91.1 on 2026-09-23 once every
         // screen had tests. The files held to their own figures below keep
