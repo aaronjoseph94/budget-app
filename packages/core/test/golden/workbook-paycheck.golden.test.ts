@@ -39,7 +39,7 @@ function read(sheet: PeriodSheet, c: Cell): unknown {
   return row === undefined ? undefined : field(row)
 }
 
-describe("the Paycheck view replays Workbook's Paycheck Budget (workbook-paycheck)", () => {
+describe("the Paycheck view replays the workbook's Paycheck Budget (workbook-paycheck)", () => {
   const sheet = paycheckSheet({
     asOf: isoDate(golden.input.asOf),
     schedule: { ...golden.input.schedule, firstPayDate: isoDate(golden.input.schedule.firstPayDate) },

@@ -1,13 +1,13 @@
 {
   "$provenance": {
-    "sourceWorkbook": "Ultimate Annual Budget (\"Workbook\"), the owner's copy, Google Sheets export (not committed)",
+    "sourceWorkbook": "Ultimate Annual Budget, the owner's copy, Google Sheets export (not committed)",
     "sourceSheet": "Jan; Feb; Weekly Budget; Paycheck Budget",
     "cells": {"windows": "Jan!B3 (=D7); Weekly Budget!D6:D7; Paycheck Budget!D6:D7", "expected": "Jan!D21, J21, O21, T21, O9, T9, V9, V10, V21, V23; Weekly Budget!Y22; Paycheck Budget!Y10", "budgetHistory": "Jan!D22, J22, O22, T22:T23, O10:O14, T10; Feb!D22, J22, O22, T22:T23, O10:O14, T10", "budgets": "Weekly Budget!W22; Paycheck Budget!W10", "entries": "Transactions!B7:D7, K7:M7", "categories": "START HERE!B8:B12, H7:H10, B18, D18, F18, H17:H18"},
     "extractedOn": "2026-09-23",
-    "note": "Workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S7, workbook-month part 1: budget and goal totals, Remaining and Difference. Jan!D13, Weekly Budget!D13 and Paycheck Budget!D13 are asserted by workbook-month-summary and not repeated here."
+    "note": "The workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S7, workbook-month part 1: budget and goal totals, Remaining and Difference. Jan!D13, Weekly Budget!D13 and Paycheck Budget!D13 are asserted by workbook-month-summary and not repeated here."
   },
   "$semantics": {
-    "budgetHistory": "D12. Every Budgeted and Goal cell typed on Jan is an 'onward' row at 2026-01. Feb!D22, J22, O22, T22, O10 and T10 are typed 0, and T23 and O11:O14 are blank; each is an 'onward' row at 2026-02 holding 0, which is what Workbook's sums read a blank as, so January's values do not carry into February. Jan's other Budgeted and Goal cells are blank and have no row. Nothing asserted here is after January: the February rows are there to be left out of it.",
+    "budgetHistory": "D12. Every Budgeted and Goal cell typed on Jan is an 'onward' row at 2026-01. Feb!D22, J22, O22, T22, O10 and T10 are typed 0, and T23 and O11:O14 are blank; each is an 'onward' row at 2026-02 holding 0, which is what the workbook's sums read a blank as, so January's values do not carry into February. Jan's other Budgeted and Goal cells are blank and have no row. Nothing asserted here is after January: the February rows are there to be left out of it.",
     "budgets": "Weekly Budget and Paycheck Budget type their own budgets for their window; those are passed as already resolved.",
     "totals": "D21, J21, O21, T21 (=SUM(x22:x45)) and O9, T9 (=SUM(x10:x16)) add the typed budgets and goals of a list; a blank adds nothing.",
     "remaining": "Jan!V23 =T23-U23; Jan!V21 =SUM(V22:V45); Weekly Budget!Y22 =W22-X22 subtracts a real Actual (150 - 85).",

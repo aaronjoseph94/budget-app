@@ -7,7 +7,7 @@ import { resolvePlans, type PlanHistoryRow } from '../../src/plans.js'
 
 /**
  * External check: budget and goal totals, Remaining and Difference, each a
- * cached value from the Workbook workbook. January's cells come through
+ * cached value from the workbook. January's cells come through
  * monthSheet from the typed budgets as history, February's typed zeros
  * included, so resolution is replayed too. January's Actuals are all 0 (plan
  * §5.5), so Weekly Budget and Paycheck Budget supply the two cells that
@@ -50,7 +50,7 @@ function valueOf(sheet: PeriodSheet, c: Cell): number | null {
   return c.field === 'remainingCents' ? row!.remainingCents : row!.differenceCents
 }
 
-describe('budgets, goals, Remaining and Difference replay Workbook (workbook-month part 1)', () => {
+describe('budgets, goals, Remaining and Difference replay the workbook (workbook-month part 1)', () => {
   const shared = {
     categories: golden.input.categories,
     entries: golden.input.entries.map((e) => ({ ...e, postedOn: isoDate(e.postedOn) })),
@@ -74,7 +74,7 @@ describe('budgets, goals, Remaining and Difference replay Workbook (workbook-mon
 })
 
 /**
- * Part 2: planned versus real (F3, D5, F8). Each month resolves Workbook's
+ * Part 2: planned versus real (F3, D5, F8). Each month resolves the workbook's
  * Monthly Amounts from history, as the Month does; Weekly Budget, a window
  * inside one month, is given that month's.
  */
@@ -98,7 +98,7 @@ interface Part2Input extends Input {
 
 const part2 = loadGolden<Part2Input, Part2Case[]>('workbook-month-part2')
 
-describe('planned and real Actuals replay Workbook (workbook-month part 2)', () => {
+describe('planned and real Actuals replay the workbook (workbook-month part 2)', () => {
   const planHistory = part2.input.planHistory.map((p) => ({ ...p, effectiveMonth: isoDate(p.effectiveMonth) }))
   const shared = {
     categories: part2.input.categories,
@@ -142,7 +142,7 @@ interface Part3Case {
 
 const part3 = loadGolden<Part2Input, Part3Case[]>('workbook-month-part3')
 
-describe('the ending balance replays Workbook (workbook-month part 3)', () => {
+describe('the ending balance replays the workbook (workbook-month part 3)', () => {
   const planHistory = part3.input.planHistory.map((p) => ({ ...p, effectiveMonth: isoDate(p.effectiveMonth) }))
   const shared = {
     categories: part3.input.categories,

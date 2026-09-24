@@ -1,10 +1,10 @@
 {
   "$provenance": {
-    "sourceWorkbook": "Ultimate Annual Budget (\"Workbook\"), the owner's copy, Google Sheets export (not committed)",
+    "sourceWorkbook": "Ultimate Annual Budget, the owner's copy, Google Sheets export (not committed)",
     "sourceSheet": "Jan; Feb; Dec; Weekly Budget; Paycheck Budget",
     "cells": {"windows": "Jan!B3, Feb!B3, Dec!B3; Weekly Budget!D6:D7; Paycheck Budget!D6:D7", "expected": "Jan!D11, D13; Feb!D11; Dec!D11; Weekly Budget!D11, D13; Paycheck Budget!D13", "budgets": "Jan!T22:T23; Weekly Budget!W22; Paycheck Budget!W22", "entries": "Transactions!B7:D12, G7:I7, K7:M7; Bills!O7:Q9", "plans": "Bills!B7:D7, F7:H7, J7:L7", "categories": "START HERE!B8:B12, H7:H10, B18:B24, D18:D21, F18:F20, H17:H22"},
     "extractedOn": "2026-09-23",
-    "note": "Workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). The summary card's Spent (F7) and Left to spend (F5)."
+    "note": "The workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). The summary card's Spent (F7) and Left to spend (F5)."
   },
   "$semantics": {
     "spent": "F7: D11 =SUM(C19,I19,N19,S19) on a month tab, =SUM(C19,J19,P19,V19) on Weekly: Bills + Debts + Subscriptions + Variable, never savings. Weekly's window holds the $2,000 Emergency Fund move, so 108500 proves savings are left out.",

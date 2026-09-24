@@ -1,10 +1,10 @@
 {
   "$provenance": {
-    "sourceWorkbook": "Ultimate Annual Budget (\"Workbook\"), the owner's copy, Google Sheets export (not committed)",
+    "sourceWorkbook": "Ultimate Annual Budget, the owner's copy, Google Sheets export (not committed)",
     "sourceSheet": "Savings",
     "cells": {"expected": "Savings!B9, F9, V14, Z14", "departures": "Savings!Z15", "funds": "Savings!B5, B7 (card 1), F5, F7 (card 2); F14 =SUM(B7), J14 =SUM(B5), F15 =SUM(F7), J15 =SUM(F5)", "dates": "Savings!N14, R14; N15 and R15 are blank"},
     "extractedOn": "2026-09-23",
-    "note": "Workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S16, workbook-savings: the first two fund cards and their rows of \"How To Reach These Goals\"."
+    "note": "The workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S16, workbook-savings: the first two fund cards and their rows of \"How To Reach These Goals\"."
   },
   "$semantics": {
     "amountNeeded": "B9 =SUM(B7-B5) and F9 =SUM(F7-F5): the goal less the current amount, with no floor (F21).",

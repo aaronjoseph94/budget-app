@@ -4,7 +4,7 @@ import { isoDate } from '@budget/money-primitives'
 import { billsTotals, type BillsCategory, type BillsTotals, type PlanHistoryRow } from '../../src/plans.js'
 
 /**
- * External check: the total tiles under Workbook's Bills, Debts and
+ * External check: the total tiles under the workbook's Bills, Debts and
  * Subscriptions cards, each a cached value from the workbook, reached from
  * the typed Monthly Amounts as history (D13) in the first and last month tabs
  * that read them. Then the one tile the app deliberately does not copy.
@@ -35,7 +35,7 @@ const golden = loadGolden<Input, Case[], { departures: Departure[] }>('workbook-
 const planHistory = golden.input.planHistory.map((p) => ({ ...p, effectiveMonth: isoDate(p.effectiveMonth) }))
 const totalsIn = (month: string) => billsTotals({ month: isoDate(month), categories: golden.input.categories, planHistory })
 
-describe("Setup's totals replay Workbook's Bills tiles (workbook-bills)", () => {
+describe("Setup's totals replay the workbook's Bills tiles (workbook-bills)", () => {
   for (const c of golden.expected) {
     const totals = totalsIn(c.month)
     it.each(c.cells)(`${c.window} → $cell = $cents`, (cell) => {
@@ -49,7 +49,7 @@ describe('the all-fixed total departs from Bills!H36 on purpose (D7)', () => {
     const h36 = golden.departures.find((d) => d.cell === 'Bills!H36')
     expect(h36?.divergence).toBe('D7')
     const totals = totalsIn('2026-01-01')
-    // D32 + H32 + L32 as cached: 800 + 50 + 17.99, where Workbook shows 850.
+    // D32 + H32 + L32 as cached: 800 + 50 + 17.99, where the workbook shows 850.
     expect(totals.allFixedCents).toBe(80_000 + 5_000 + 1_799)
     expect(totals.allFixedCents).not.toBe(h36?.cachedCents)
   })

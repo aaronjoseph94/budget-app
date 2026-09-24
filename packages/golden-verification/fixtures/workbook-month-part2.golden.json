@@ -1,17 +1,17 @@
 {
   "$provenance": {
-    "sourceWorkbook": "Ultimate Annual Budget (\"Workbook\"), the owner's copy, Google Sheets export (not committed)",
+    "sourceWorkbook": "Ultimate Annual Budget, the owner's copy, Google Sheets export (not committed)",
     "sourceSheet": "Jan; Feb; Mar; Weekly Budget; Paycheck Budget",
     "cells": {"windows": "Jan!B3, Feb!B3, Mar!B3 (=D7); Weekly Budget!D6:D7; Paycheck Budget!D6 (its \"Actual This Month\" block, E48, reads DATE(YEAR($D$6),MONTH($D$6),1)..EOMONTH($D$6,0))", "expected": "Jan!E21, K21, P21; Feb!K21; Mar!K21; Weekly Budget!E22, L22; Paycheck Budget!E50, R50", "planHistory": "Bills!B7:D7, F7:H7, J7:L7 (Day Paid, name, Monthly Amount); every other Monthly Amount in D8:D29, H8:H29, L8:L29 is blank", "entries": "Bills!O7:Q9 (the Variable Bills log)", "categories": "START HERE!B18, D18, D20:D21, F18, as Bills!C7, G7, G9:G10, K7 read them"},
     "extractedOn": "2026-09-23",
-    "note": "Workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S10, workbook-month part 2: planned versus real on a month."
+    "note": "The workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S10, workbook-month part 2: planned versus real on a month."
   },
   "$semantics": {
-    "planHistory": "D13. Workbook has one Monthly Amount for every month: Jan!E22, Dec!E22 and Paycheck Budget!E50 all read Bills!D7. Each is typed here as a row from 2025-01, the month of Paycheck Budget!D6, the earliest month an asserted cell reads it in, and every case resolves it from that history.",
+    "planHistory": "D13. The workbook has one Monthly Amount for every month: Jan!E22, Dec!E22 and Paycheck Budget!E50 all read Bills!D7. Each is typed here as a row from 2025-01, the month of Paycheck Budget!D6, the earliest month an asserted cell reads it in, and every case resolves it from that history.",
     "actuals": "F3/D5 and F8. Jan!E21, K21, P21 =SUM(x22:x45) over rows each =Bills!<Monthly Amount>+SUMIFS(Bills!Q:Q, ..., the month). A month with no real row for a bill counts its planned amount. Feb!K21 700 is Credit Card 1's planned 50 plus Student Loan's logged 650, which has no plan. Jan!K21 is 50, not 250: the $200 dated 2025-01-05 is in another year (D10). Weekly Budget!E22 =IF(F22, E50 / 4.333, D50) and L22 =IF(M22, L50 / 4.333, K50), with F22 and M22 unticked, so D50 and K50: E22 counts Rent's plan, its due day 1 being in 2025-01-01..07; L22 is the real $200 in the window, Credit Card 1's due day 14 being outside it.",
-    "signs": "D3: logged payments are positive in Bills!Q and negated in the ledger. Each Actual is as Workbook shows it, positive.",
+    "signs": "D3: logged payments are positive in Bills!Q and negated in the ledger. Each Actual is as the workbook shows it, positive.",
     "not repeated": "Jan!D11, Feb!D11 and Dec!D11 are in plan section 5.3's list for this part, but workbook-month-summary has asserted them since S5b, over the same Monthly Amounts now resolved from history; they are not asserted twice.",
-    "left out": "Plan section 5.4. Paycheck Budget!L50 (250), in the same Actual This Month block as E50 and R50, and K50, L22, L21, J19, D11, D15: Workbook adds Credit Card 1's $200 to its $50 plan, where D5 replaces the plan, so under D5 each would differ. Weekly Budget!E50, L50, R50 read the blank $E$6. The month tabs' Transactions-driven cells (U22:U44, P10:P16, U10:U16) are 0 for any engine, the sample's rows being dated 2025. The other cells section 5.4 lists are on sheets this fixture does not read.",
+    "left out": "Plan section 5.4. Paycheck Budget!L50 (250), in the same Actual This Month block as E50 and R50, and K50, L22, L21, J19, D11, D15: the workbook adds Credit Card 1's $200 to its $50 plan, where D5 replaces the plan, so under D5 each would differ. Weekly Budget!E50, L50, R50 read the blank $E$6. The month tabs' Transactions-driven cells (U22:U44, P10:P16, U10:U16) are 0 for any engine, the sample's rows being dated 2025. The other cells section 5.4 lists are on sheets this fixture does not read.",
     "merchants": "The engine takes no merchant text; Bills!R (Notes) is not transcribed. Ids are synthetic."
   },
   "input": {

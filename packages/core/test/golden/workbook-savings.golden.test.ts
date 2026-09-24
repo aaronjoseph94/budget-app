@@ -4,7 +4,7 @@ import { isoDate } from '@budget/money-primitives'
 import { savingsFundPlan, type SavingsFundPlan } from '../../src/savings.js'
 
 /**
- * External check: Workbook's first two savings funds, each figure a cached value
+ * External check: the workbook's first two savings funds, each figure a cached value
  * from the Savings tab, reached from its typed goal, current amount and
  * dates. Then the one cell the app deliberately does not copy.
  */
@@ -43,14 +43,14 @@ function planOf(name: string): SavingsFundPlan {
   })
 }
 
-describe("savingsFundPlan replays Workbook's Savings tab (workbook-savings)", () => {
+describe("savingsFundPlan replays the workbook's Savings tab (workbook-savings)", () => {
   it.each(golden.expected)('$fund: $cell = $value', (c) => {
     expect(planOf(c.fund)[c.field]).toBe(c.value)
   })
 })
 
 describe('a fund with no dates departs from Savings!Z15 on purpose (D15)', () => {
-  it('has no monthly contribution, where Workbook shows $0', () => {
+  it('has no monthly contribution, where the workbook shows $0', () => {
     const z15 = golden.departures.find((d) => d.cell === 'Savings!Z15')
     expect(z15?.divergence).toBe('D15')
     const plan = planOf('Travel Fund')

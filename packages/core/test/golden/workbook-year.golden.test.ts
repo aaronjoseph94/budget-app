@@ -8,7 +8,7 @@ import { yearSheet, type YearSheet } from '../../src/year-sheet.js'
 
 /**
  * External check: Annual Budget's month rows, totals and starting balance,
- * each a cached value from the Workbook workbook, transcribed under F11 (the
+ * each a cached value from the workbook, transcribed under F11 (the
  * fixture's $semantics says how). The Year gates planned amounts at its asOf,
  * Annual's typed Current Month (F10).
  */

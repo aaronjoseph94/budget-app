@@ -11,7 +11,7 @@ import {
 } from '../../src/period-sheet.js'
 
 /**
- * External check: every expected number is a cached value from the Workbook
+ * External check: every expected number is a cached value from the
  * workbook. Part 1 is Weekly Budget and Paycheck Budget, whose windows run
  * over the Transactions sample (plan §5.5 (a)). Part 2 is the bill and debt
  * blocks over the Bills log and monthly amounts: a pay period, Paycheck's
@@ -47,7 +47,7 @@ function actualOf(sheet: PeriodSheet, cell: Cell): number {
   return row!.actualCents
 }
 
-describe('periodSheet replays Workbook over a typed window (workbook-period part 1)', () => {
+describe('periodSheet replays the workbook over a typed window (workbook-period part 1)', () => {
   for (const c of golden.expected) {
     const sheet = periodSheet({
       from: isoDate(c.from),
@@ -79,14 +79,14 @@ interface Input2 extends Input {
 
 const part2 = loadGolden<Input2, MonthCase[]>('workbook-period-part2')
 
-describe('bills, debts and subscriptions replay Workbook (workbook-period part 2)', () => {
+describe('bills, debts and subscriptions replay the workbook (workbook-period part 2)', () => {
   const shared = {
     categories: part2.input.categories,
     entries: part2.input.entries.map((e) => ({ ...e, postedOn: isoDate(e.postedOn) })),
     statementPeriodEnds: [],
     startingBalanceCents: null,
   }
-  // Workbook's one Monthly Amount serves every month, so each month has it from its own first day.
+  // The workbook's one Monthly Amount serves every month, so each month has it from its own first day.
   const planHistory = (asOf: string) => part2.input.plans.map((p) => ({ ...p, effectiveMonth: isoDate(asOf) }))
   for (const c of part2.expected) {
     const sheet =

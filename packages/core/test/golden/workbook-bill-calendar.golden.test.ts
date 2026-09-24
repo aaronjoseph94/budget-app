@@ -37,7 +37,7 @@ function dayAt(calendar: BillCalendar, p: Omit<Place, 'cell'>) {
   return week === undefined ? undefined : week.days[p.weekday]
 }
 
-describe("the Bill Calendar replays Workbook's Bill Calendar (workbook-bill-calendar)", () => {
+describe("the Bill Calendar replays the workbook's Bill Calendar (workbook-bill-calendar)", () => {
   const calendar = billCalendar({
     month: isoDate(golden.input.month),
     categories: golden.input.categories,
@@ -57,7 +57,7 @@ describe("the Bill Calendar replays Workbook's Bill Calendar (workbook-bill-cale
     expect(day?.bills.map((b) => ({ name: b.name, cents: b.amountCents }))).toEqual(c.items)
   })
 
-  it('has paydays in exactly the cells Workbook names one (C8:O38)', () => {
+  it('has paydays in exactly the cells the workbook names one (C8:O38)', () => {
     const found = calendar.weeks.flatMap((w, week) =>
       w.days.flatMap((d, weekday) => (d === null ? [] : d.paydays.map((p) => ({ week, weekday, name: p.name })))),
     )

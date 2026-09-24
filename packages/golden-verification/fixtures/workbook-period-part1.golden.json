@@ -1,16 +1,16 @@
 {
   "$provenance": {
-    "sourceWorkbook": "Ultimate Annual Budget (\"Workbook\"), the owner's copy, Google Sheets export (not committed)",
+    "sourceWorkbook": "Ultimate Annual Budget, the owner's copy, Google Sheets export (not committed)",
     "sourceSheet": "Weekly Budget; Paycheck Budget",
     "cells": {"windows": "Weekly Budget!D6:D7; Paycheck Budget!D6:D7", "expected": "Weekly Budget!X22, X21, R10, X10; Paycheck Budget!X21, R10, X10", "entries": "Transactions!B7:D12 (spending), G7:I7 (income), K7:M7 (savings)", "categories": "START HERE!B8:B12 (income), H7:H10 (savings), H17:H22 (variable)"},
     "extractedOn": "2026-09-23",
-    "note": "Workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S4a, workbook-period part 1."
+    "note": "The workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S4a, workbook-period part 1."
   },
   "$semantics": {
     "window": "F4: from and to are D6 and D7 of the sheet, both days included, dates only.",
     "signs": "D3: Transactions amounts are positive in every log; the ledger negates spending (B:D) and savings (K:M) and keeps income (G:I) positive.",
-    "actual": "actualCents is as Workbook shows it: money spent, received or saved, positive. A null categoryId asserts the block total (row 21 for Variable, SUM(X22:X45)).",
-    "categories": "Ids are synthetic; names and order are START HERE row order. Workbook matches by name, the app by id.",
+    "actual": "actualCents is as the workbook shows it: money spent, received or saved, positive. A null categoryId asserts the block total (row 21 for Variable, SUM(X22:X45)).",
+    "categories": "Ids are synthetic; names and order are START HERE row order. The workbook matches by name, the app by id.",
     "merchants": "The engine takes no merchant text, so none is carried. Transactions!E (Notes) is not transcribed.",
     "endExclusion": "Paycheck Budget!X21 is 85, not 185: Clothing on 2025-01-17 falls after D7 (2025-01-14) and is left out."
   },

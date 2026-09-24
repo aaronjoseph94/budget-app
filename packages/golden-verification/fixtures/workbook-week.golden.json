@@ -1,15 +1,15 @@
 {
   "$provenance": {
-    "sourceWorkbook": "Ultimate Annual Budget (\"Workbook\"), the owner's copy, Google Sheets export (not committed)",
+    "sourceWorkbook": "Ultimate Annual Budget, the owner's copy, Google Sheets export (not committed)",
     "sourceSheet": "Weekly Budget",
     "cells": {"window": "Weekly Budget!D6:D7", "expected": "Weekly Budget!D11, Y10, Y9, Q9, W21, K21", "weeklyBudgets": "Weekly Budget!Q10:Q14, W10, D22, K22, Q22, W22; every other cell in Q10:Q16, W10:W16, D22:D44, K22:K44, Q22:Q44 and W22:W44 is blank", "entries": "Transactions!B7:D12, G7:I7, K7:M7; Bills!O7:Q9", "planHistory": "Bills!B7:D7, F7:H7, J7:L7", "categories": "START HERE!B8:B12, H7:H10, B18:B24, D18:D21, F18:F20, H17:H22, as Weekly Budget!P10:P14, V10:V13, C22:C28, J22:J25, P22:P24, V22:V27 read them"},
     "extractedOn": "2026-09-23",
-    "note": "Workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S15: the Week on the Month's engine, with weekly budgets."
+    "note": "The workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S15: the Week on the Month's engine, with weekly budgets."
   },
   "$semantics": {
-    "window": "D14. Workbook's week is the typed D6 (Wednesday 2025-01-01) to D7 =D6+6 (Tuesday 01-07). The app's week holding D6 runs Monday 2024-12-30 to Sunday 2025-01-05. Every asserted cell is the same over both: the rows in Workbook's window (Transactions!B7, G7, K7 on 01-01; Bills!O7 on 01-05) are all in the app's, no Transactions or Bills-log row is dated 2024-12-30, 12-31, 2025-01-06 or 01-07, and of the Days Paid (1, 14, 23) only the 1st falls in either window, and in both. Budget and goal cells do not depend on the window.",
+    "window": "D14. The workbook's week is the typed D6 (Wednesday 2025-01-01) to D7 =D6+6 (Tuesday 01-07). The app's week holding D6 runs Monday 2024-12-30 to Sunday 2025-01-05. Every asserted cell is the same over both: the rows in the workbook's window (Transactions!B7, G7, K7 on 01-01; Bills!O7 on 01-05) are all in the app's, no Transactions or Bills-log row is dated 2024-12-30, 12-31, 2025-01-06 or 01-07, and of the Days Paid (1, 14, 23) only the 1st falls in either window, and in both. Budget and goal cells do not depend on the window.",
     "weeklyBudgets": "Weekly Budget's typed Budgeted and Goal cells become each category's weekly budget (categories.weekly_budget_cents): one value for every week. A blank cell is no budget (null); Q22's typed 0 is a budget of 0.",
-    "planHistory": "D13, as in workbook-month part 2: Workbook's one Monthly Amount is typed as a row from 2025-01. The week's December days have no amount in effect, and none is due in them.",
+    "planHistory": "D13, as in workbook-month part 2: the workbook's one Monthly Amount is typed as a row from 2025-01. The week's December days have no amount in effect, and none is due in them.",
     "actuals": "F3/D5 and F8, as in workbook-month part 2: Weekly Budget!E22 counts Rent's plan (due day 1 in the window), L22 the real $200 (Credit Card 1's due day 14 is outside it).",
     "cells": "D11 =SUM(C19,J19,P19,V19): Bills + Debts + Subscriptions + Variable (F7), the $2,000 Emergency Fund move left out. Y10 =X10-W10 and Y9 =SUM(Y10:Y16): Difference is Actual - Goal (F6), a fund with no goal adding nothing (F16). Q9 =SUM(Q10:Q16), five typed goals. W21 =SUM(W22:W45) and K21 =SUM(K22:K45): budget totals.",
     "signs": "D3: spending, savings and logged payments are negated in the ledger; income stays positive.",

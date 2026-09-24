@@ -7,7 +7,7 @@ import { weekSheet, type PeriodEntry, type PeriodSheet, type WeekCategory } from
 /**
  * External check: Weekly Budget's cached cells, replayed through the Week the
  * app shows, Monday to Sunday (D14), with each category's weekly budget as
- * its Budgeted or Goal cell. The fixture's $semantics says why Workbook's
+ * its Budgeted or Goal cell. The fixture's $semantics says why the workbook's
  * Wednesday-to-Tuesday window gives the same cells.
  */
 
@@ -38,7 +38,7 @@ function read(sheet: PeriodSheet, c: Cell): unknown {
   return row === undefined ? undefined : field(row)
 }
 
-describe("the Week replays Workbook's Weekly Budget (workbook-week)", () => {
+describe("the Week replays the workbook's Weekly Budget (workbook-week)", () => {
   const sheet = weekSheet({
     asOf: isoDate(golden.input.asOf),
     categories: golden.input.categories,

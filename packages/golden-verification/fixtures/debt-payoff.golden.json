@@ -26,7 +26,7 @@
     "monthsToPayoff": "payoffMonthIndex - 1. The workbook reports 110 while the balance reaches zero at month index 111.",
     "debtFreeDate": "EDATE(startDate, max(monthsToPayoff)) across all debts.",
     "roundingDivergence": "Excel retains sub-cent fractions; this engine rounds to whole cents each month (ROUND_HALF_UP on accrued interest). See docs/divergences.md.",
-    "status": "debtStatus reads the schedule row of asOf's month, as H9 reads today's (F22). Month 19 (2026-09-01) is the month the cached H9 (11356.30966) and M9 (557.2168436) were worked out in; it is asserted by its index against the schedule rows, never through H9. E37 (643.0350271, the Student Loan's final month) is left out: D24 charges the interest Workbook forgives."
+    "status": "debtStatus reads the schedule row of asOf's month, as H9 reads today's (F22). Month 19 (2026-09-01) is the month the cached H9 (11356.30966) and M9 (557.2168436) were worked out in; it is asserted by its index against the schedule rows, never through H9. E37 (643.0350271, the Student Loan's final month) is left out: D24 charges the interest the workbook forgives."
   },
   "input": {
     "startDate": "2025-03-01",

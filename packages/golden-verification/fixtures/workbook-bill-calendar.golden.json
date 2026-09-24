@@ -1,18 +1,18 @@
 {
   "$provenance": {
-    "sourceWorkbook": "Ultimate Annual Budget (\"Workbook\"), the owner's copy, Google Sheets export (not committed)",
+    "sourceWorkbook": "Ultimate Annual Budget, the owner's copy, Google Sheets export (not committed)",
     "sourceSheet": "Bill Calendar",
     "cells": {"month": "Bill Calendar!G3", "expected": "Bill Calendar!B8, H8, N8, B14, L32, N32; H9:I13, B15:C19, H21:I25, J27:K31; C8:O38 (paydays M14, M26); Q8, Q26, Q32", "planHistory": "Bills!B7:D7, F7:H7, J7:L7", "entries": "Bills!O7:Q9; Transactions!B7:D7", "paySchedules": "START HERE!B8, C8, E8", "categories": "START HERE!B8, B18, D18, D20, D21, F18, H17"},
     "extractedOn": "2026-09-23",
-    "note": "Workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S15c: the Bill Calendar under D5 (F20)."
+    "note": "The workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S15c: the Bill Calendar under D5 (F20)."
   },
   "$semantics": {
     "grid": "Sunday first (B6). A cell names its week (0 is rows 8-13, 1 is rows 14-19, ...) and weekday (0 Sunday, B:C, to 6 Saturday, N:O). A day cell's cached number is that date's day of the month; B8 and N32 are blank, so those places hold no day.",
     "items": "A day's bill cells (five rows of name and amount under its number) are asserted whole: the list is every name and amount shown there, in order. H9:I13 holds Rent 800 alone, although the ledger here also holds Transactions!B7, Restaurants $85 on 2025-01-01: the calendar reads Bills only, and a Variable-expenses row is on no day.",
     "paydays": "Every payday cell C8:O38 is blank except M14 and M26 (Income 1, bi-weekly from START HERE!C8, 2025-01-10). The expected list is all of them.",
-    "left out": "J3 (1167.99) and Q20 (150): Workbook adds Credit Card 1's $50 monthly amount on the 14th (F21:G21) to its logged $200 on the 5th, and D5 shows the $200 only, so those are 1117.99, 100 and a blank F21. Q14 (200) holds under D5, but plan §5.4 lists it among the cells D5 changes (where Q20 is meant, NOTICED N49), so it is left out until that is confirmed; B15:C19 asserts the same $200 on the 5th. Q38 (0) is Workbook's sixth, empty band, which the app does not draw (F20).",
-    "planHistory": "D13, as in workbook-week: Workbook's one Monthly Amount is typed as a row from 2025-01.",
-    "signs": "D3: logged payments and spending are negated in the ledger; the calendar shows them as Workbook does, positive.",
+    "left out": "J3 (1167.99) and Q20 (150): the workbook adds Credit Card 1's $50 monthly amount on the 14th (F21:G21) to its logged $200 on the 5th, and D5 shows the $200 only, so those are 1117.99, 100 and a blank F21. Q14 (200) holds under D5, but plan §5.4 lists it among the cells D5 changes (where Q20 is meant, NOTICED N49), so it is left out until that is confirmed; B15:C19 asserts the same $200 on the 5th. Q38 (0) is the workbook's sixth, empty band, which the app does not draw (F20).",
+    "planHistory": "D13, as in workbook-week: the workbook's one Monthly Amount is typed as a row from 2025-01.",
+    "signs": "D3: logged payments and spending are negated in the ledger; the calendar shows them as the workbook does, positive.",
     "outside": "Bills!O9:Q9, Student Loan $650 on 2026-02-10, is in the ledger and in no January 2025 cell.",
     "merchants": "The engine takes no merchant text. Ids are synthetic."
   },

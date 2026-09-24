@@ -1,17 +1,17 @@
 {
   "$provenance": {
-    "sourceWorkbook": "Ultimate Annual Budget (\"Workbook\"), the owner's copy, Google Sheets export (not committed)",
+    "sourceWorkbook": "Ultimate Annual Budget, the owner's copy, Google Sheets export (not committed)",
     "sourceSheet": "Jan; Feb; Weekly Budget",
     "cells": {"windows": "Jan!B3, Feb!B3 (=D7); Weekly Budget!D6:D7", "expected": "Jan!D15, Feb!D15, Weekly Budget!D15", "starts": "Jan!D9, Feb!D9, Weekly Budget!D9", "planHistory": "Bills!B7:D7, F7:H7, J7:L7 (Day Paid, name, Monthly Amount); every other Monthly Amount in D8:D29, H8:H29, L8:L29 is blank", "entries": "Transactions!B7:D12, G7:I7, K7:M7; Bills!O7:Q9", "categories": "START HERE!B8, H7, B18, D18, D20:D21, F18, H17:H22"},
     "extractedOn": "2026-09-23",
-    "note": "Workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S11, workbook-month part 3: the summary card's ending balance."
+    "note": "The workbook's sample data, not the owner's. Read with openpyxl data_only=True (cached values). Plan S11, workbook-month part 3: the summary card's ending balance."
   },
   "$semantics": {
     "endingBalance": "F7: D15 =D9+N5-D11-S5 on a month tab, =D9+P6-D11-V6 on Weekly: start + income - spent - saved. The month tabs' income and savings are 0 (N5, S5), their rows being dated 2025 (plan section 5.5), so Jan and Feb prove the start less Spent, Feb's below zero. Weekly's window holds the $2,600 pay (P6) and the $2,000 moved to the Emergency Fund (V6), so 515 proves income is added and savings taken off.",
     "starts": "D9 is typed 1000 on every tab. With none typed the engine gives no ending balance (D17); no cached cell can show that, so it is a hand-written test.",
-    "planHistory": "D13. Workbook's one Monthly Amount serves every tab; each is typed here as a row from 2025-01, the month of Weekly Budget!D6, and every case resolves it from that history, as in workbook-month part 2.",
+    "planHistory": "D13. The workbook's one Monthly Amount serves every tab; each is typed here as a row from 2025-01, the month of Weekly Budget!D6, and every case resolves it from that history, as in workbook-month part 2.",
     "signs": "D3: spending, savings and logged payments are negated in the ledger; income stays positive.",
-    "left out": "Paycheck Budget!D15 (465): Workbook adds Credit Card 1's $200 to its $50 plan, where D5 replaces the plan (plan section 5.4). Dec!D15 (132.01) repeats Jan's inputs.",
+    "left out": "Paycheck Budget!D15 (465): the workbook adds Credit Card 1's $200 to its $50 plan, where D5 replaces the plan (plan section 5.4). Dec!D15 (132.01) repeats Jan's inputs.",
     "merchants": "The engine takes no merchant text; no Notes column is transcribed. Ids are synthetic."
   },
   "input": {
