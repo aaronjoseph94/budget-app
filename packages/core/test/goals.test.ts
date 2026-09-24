@@ -3,7 +3,8 @@
  * workbook, whose Savings tab has no order of goals and no main goal (D28).
  */
 import { describe, expect, it } from 'vitest'
-import { goalAtEnd, goalsProgress, moveGoal, orderGoals, type GoalStatus } from '../src/goals.js'
+import { goalsProgress } from '../src/goals-progress.js'
+import { goalAtEnd, moveGoal, orderGoals, type GoalStatus } from '../src/goals.js'
 
 const goal = (id: string, sortOrder: number, createdAt: string, status: GoalStatus = 'active') => ({
   id,

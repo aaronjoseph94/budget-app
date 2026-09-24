@@ -21,14 +21,9 @@ export type { SavingsGoal, GoalProgress, GoalProjection, TimeEquivalent } from '
 
 export {
   goalAtEnd,
-  goalsProgress,
   moveGoal,
   orderGoals,
-  type GoalAmounts,
   type GoalAtEndInput,
-  type GoalFigures,
-  type GoalsProgressInput,
-  type GoalsProgressOutput,
   type GoalStatus,
   type MoveGoalInput,
   type MoveGoalOutput,
@@ -36,6 +31,13 @@ export {
   type OrderedGoals,
   type PlacedGoal,
 } from './goals.js'
+export {
+  goalsProgress,
+  type GoalAmounts,
+  type GoalFigures,
+  type GoalsProgressInput,
+  type GoalsProgressOutput,
+} from './goals-progress.js'
 
 export {
   fundBalance,
