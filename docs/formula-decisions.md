@@ -1095,3 +1095,78 @@ days of August, with 6 complete months: effect $212.40 × 30 ÷ 24 = $265.50,
 *solid*, impact 79650. Groceries over its $500.00 budget by $30.00: effect
 3000, *solid*, impact 9000. Dining out ranks first; a statement ending on
 6 September (18 days before) would rank above both.
+
+---
+
+## F45 — Savings goals: their order, the main goal, paused and reached, and progress in hours or dollars
+
+**Decided 2026-09-24. Engineering default. Not from the workbook.** The
+request for more than one goal is the owner's (2026-09-24: "I also want the
+ability to add other goals for saving not just flight... make sure to add
+that"). Every rule below is decided by the engineer under the owner's
+2026-09-24 instruction to proceed without questions (plan slice G1). The
+workbook's Savings tab has funds, not goals in an order, so there is no cell
+to follow (D28).
+
+**Chosen.**
+
+- **Order.** Each goal has a position (0015's `sort_order`). Goals are
+  ordered by position, then by when each was made (`created_at`), then by
+  id, so goals sharing a position keep the order they were made in. Every
+  goal from before 0015 has position 0. A new goal goes after every other:
+  the highest position plus 1, as `endOfList` places a row.
+- **Moving** a goal up or down swaps it with its neighbour among the active
+  goals, and numbers the active goals 0, 1, 2… in the new order
+  (`moveInList`); only the positions that change are written. Paused and
+  reached goals keep theirs.
+- **The main goal** is the first active goal in that order: the one the
+  Coach's hero card and the Week's goal card show. With no active goal
+  there is none, and those cards say so. **Make main goal** moves a goal to
+  the first place among the active goals and numbers them again. On the day
+  0015 is pasted every goal is at position 0, so the main goal is the
+  oldest, which is the goal the Week, the Coach and Settings showed before
+  (`getGoal` read the oldest).
+- **Active, paused and reached.** *Active* goals are listed in order, can be
+  the main goal, and are the Coach's list. A *paused* goal keeps every
+  figure, and its fund still counts money moved into it (D16), but it is
+  not the main goal, not on the Coach or the Week, and sits folded under
+  **Reached and paused**. *Reached* is the owner's mark that a goal is
+  done, with the day it was marked (`reached_on`, the `asOf` of the tap);
+  otherwise it is kept as a paused goal is. Saving the whole target does
+  not mark a goal reached by itself: the card says the target is met, and
+  the owner marks it. **Resume** puts a paused or reached goal back among
+  the active goals at the end, never straight back to main, and clears
+  `reached_on`.
+- **Progress, for every goal.** Saved is the fund's balance kept by
+  transfers when the goal is a fund's (D16), and otherwise the amount
+  typed. Remaining is target − saved, never below $0. The bar is saved of
+  target in basis points, half-up (F17's rounding): 0 at or below $0, and
+  10,000 at or past the target. The target is met when saved is at or above
+  it.
+- **Hours or dollars.** A goal may have a cost per hour and a name for what
+  the hours are of: the flight goal's is $275.00 of flight time. With one,
+  its progress also reads as whole hours saved of the whole hours the
+  target buys, each by `timeEquivalent` (minutes rounded half-up, whole
+  hours), the rule A05's flight card uses. A balance below $0 has no hours.
+  With no cost per hour, progress is in dollars only.
+- **Remove** is only for a goal with nothing saved (saved at or below $0).
+  A goal holding money would lose the record of its balance, so its card
+  says so and offers Pause or Mark as reached instead. Removing a goal
+  leaves its fund on the Savings list, and every charge filed under it.
+- **Before 0015 is pasted,** every goal reads as active at position 0,
+  which is what 0015 makes of them, so the order and the main goal are the
+  same before and after; nothing that changes a position or a status is
+  offered until it is in.
+
+**Worked example.** Flight training (made 1 March, position 0, active),
+Emergency (made 3 September, position 0, active) and House (made
+20 September, position 0, paused). Active, in order: Flight training,
+Emergency; paused: House. Main goal: Flight training. **Move up** on
+Emergency numbers the active goals Emergency 0, Flight training 1, and only
+Flight training's position is written; Emergency is now the main goal.
+**Resume** on House puts it at max(0, 1, 0) + 1 = 2, after Flight training.
+Emergency with $150.00 of $1,000.00: 1,500 bp, $850.00 to go. Flight
+training with $12,650.00 of $30,000.00 at $275.00 an hour: 4,217 bp
+(42.1666…% half-up), $17,350.00 to go, 12,650.00 × 60 ÷ 275.00 = 2,760
+minutes, 46 h, of 30,000.00 × 60 ÷ 275.00 = 6,545.45…, 6,545 minutes,
+109 h.

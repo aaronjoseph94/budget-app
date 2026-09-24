@@ -779,3 +779,41 @@ this entry with the Month's labelled forecast line.
 
 **Why.** The owner asked for insight into spending "in as many places as
 possible", and the Month opens first.
+
+---
+
+## D28 — Savings holds many goals, in the owner's order, one of them the main goal
+
+**Date:** 2026-09-24
+**Sheet / cells:** Savings!C4 `='START HERE'!H7`, K4 `='START HERE'!H9`,
+S4 `='START HERE'!H11` (one card per fund on START HERE's Savings list, in
+the list's order), and "How To Reach These Goals", rows 14–20; formula
+decision F45
+**Settled:** the owner asked for more goals than flight training on
+2026-09-24 ("I also want the ability to add other goals for saving not just
+flight... make sure to add that"); how they are shown is decided by the
+engineer under the owner's 2026-09-24 instruction to proceed without
+questions.
+
+**Workbook behaviour.** The Savings tab gives each fund on START HERE's
+Savings list a card, in the list's order, with its goal, current amount,
+amount needed, months remaining and monthly contribution. No fund leads,
+none is paused or finished, and a fund is added only by typing it on START
+HERE.
+
+**Chosen behaviour.** Savings lists your goals in the order you choose
+(F45), the main goal first, then the Savings-list funds with no goal yet,
+then, folded away, the goals you paused or marked reached. **Add a goal**
+on Savings adds its fund to the bottom of the Savings list, as Setup adds a
+row, or uses the Savings fund of that name if there is one. The main goal
+is the one the Coach and the Week show. **Each fund's own figures do not
+change** (goal, what is saved, amount needed, months remaining, monthly
+contribution: F21, D15, D16, D22), nor does the Month's Savings block, which
+still lists every Savings-list category in the list's order, nor the golden
+tests.
+
+**Why.** The owner asked for other goals besides flying, and with more than
+one goal the Coach and the Week need to know which one to show. The list's
+order is kept where the workbook shows it (the Month); the goals' order is the
+owner's own, because which goal matters most is not where a fund happens to
+sit on a list.
