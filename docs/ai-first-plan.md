@@ -610,7 +610,7 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 
 ### A01: The plan and its records
 
-**Owner items:** 1, 2, 3, 5, 6, 7, 8, 9 · **Depends on:** nothing · **Migrations:** none · **Commits:** 9 (docs only)
+**Owner items:** 1, 2, 3, 5, 6, 7, 8, 9 · **Depends on:** nothing · **Migrations:** none · **Commits:** docs only, each at most 300 lines; done with this plan and its review, so it is the one slice not held to about six
 - **Goal:** this plan (`docs/ai-first-plan.md`), ADR 0004 and ADR 0005, CAPABILITY-MAP.md's new rows and arrows, and docs/ROADMAP.md saying this phase realises the coach and the reports.
 - **Acceptance:** every choice labelled; ADR 0004 quotes the owner's approvals; the brand word nowhere; each commit at most 300 lines; gates GREEN.
 
