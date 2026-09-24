@@ -8,7 +8,7 @@ import { formatCents, formatMonthTitle } from '../format.js'
  * figure is core's (payoffStrategies); Workbook cannot check the last two.
  */
 const PLANS: readonly { key: PayoffStrategy; name: string; how: string }[] = [
-  { key: 'flat', name: 'Minimums only', how: 'Each debt pays its own minimum until it is paid off, as Workbook plans it.' },
+  { key: 'flat', name: 'Minimums only', how: 'Each debt pays its own minimum until it is paid off.' },
   { key: 'snowball', name: 'Snowball', how: 'When a debt is paid off, its payment goes to the smallest balance left.' },
   { key: 'avalanche', name: 'Avalanche', how: 'When a debt is paid off, its payment goes to the highest APR left.' },
 ]

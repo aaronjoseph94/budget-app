@@ -558,7 +558,7 @@ describe('MonthScreen, on a first run', () => {
     renderScreen(<MonthScreen month={null} />, createFakeSupabase())
 
     const start = await screen.findByRole('region', { name: 'Start here' })
-    expect(start.textContent).toContain("Start in Setup: Workbook's lists, when you are paid, and your bills.")
+    expect(start.textContent).toContain('Start in Setup: your lists, when you are paid, and your bills.')
     fireEvent.click(within(start).getByRole('button', { name: 'Open Setup' }))
     expect(window.location.hash).toBe('#/setup')
   })

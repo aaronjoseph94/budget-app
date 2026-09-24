@@ -23,7 +23,7 @@ export function SettingsScreen() {
       <Card>
         <CardHeader>
           <CardTitle as="h2">Your lists</CardTitle>
-          <CardDescription>Your name, and which of Workbook's lists each category is on.</CardDescription>
+          <CardDescription>Your name, and which list each category is on.</CardDescription>
         </CardHeader>
         <CardContent>
           <Button variant="outline" onClick={() => navigate('setup')}>

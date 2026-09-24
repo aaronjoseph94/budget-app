@@ -142,13 +142,13 @@ function AmountsProblem({ amounts }: { amounts: MonthlyAmounts }) {
 }
 
 /**
- * Below this many categories, Setup offers Workbook's names. Workbook's list is 31
+ * Below this many categories, Setup offers the starter names. The starter list is 31
  * names, so once it has been added the offer is gone; someone who has
  * already built lists of their own is not asked.
  */
 const FEW_CATEGORIES = 20
 
-/** "Start from Workbook's list": every list filled with names to rename (plan §7). */
+/** "Use the starter list": every list filled with names to rename (plan §7). */
 function StarterCard({ onAdded }: { onAdded: (count: number) => void }) {
   const { supabase, userId, categories, goal, refresh } = useAppData()
   const [busy, setBusy] = useState(false)
@@ -171,9 +171,9 @@ function StarterCard({ onAdded }: { onAdded: (count: number) => void }) {
   }
 
   return (
-    <section aria-label="Start from Workbook's list" className="rounded-xl bg-card px-4 py-4 shadow-sm">
+    <section aria-label="Starter list" className="rounded-xl bg-card px-4 py-4 shadow-sm">
       <p className="text-sm">
-        Fill your lists with Workbook&apos;s example names — Rent, Groceries, Netflix and the rest — plus Card payments and
+        Fill your lists with example names — Rent, Groceries, Netflix and the rest — plus Card payments and
         Card interest &amp; fees for your statement. Names you already have stay as they are.
       </p>
       {message !== null ? (
@@ -182,7 +182,7 @@ function StarterCard({ onAdded }: { onAdded: (count: number) => void }) {
         </div>
       ) : null}
       <Button className="mt-3" disabled={busy} onClick={() => void start()}>
-        Start from Workbook&apos;s list
+        Use the starter list
       </Button>
     </section>
   )
@@ -191,10 +191,10 @@ function StarterCard({ onAdded }: { onAdded: (count: number) => void }) {
 /** What the starter button did, and that the names are only placeholders. */
 function StarterAdded({ count }: { count: number }) {
   if (count === 0) {
-    return <Alert tone="success">Everything on Workbook&apos;s list is already here, so nothing was added.</Alert>
+    return <Alert tone="success">Everything on the starter list is already here, so nothing was added.</Alert>
   }
   return (
-    <Alert tone="success" title={`Added ${count} of Workbook's example ${count === 1 ? 'name' : 'names'}`}>
+    <Alert tone="success" title={`Added ${count} example ${count === 1 ? 'name' : 'names'}`}>
       They are placeholders. Rename each one to your own, move any to another list, and remove the ones you don&apos;t
       need. None of them has an amount.
     </Alert>

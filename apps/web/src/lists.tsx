@@ -60,7 +60,7 @@ export function atEndOf(
 }
 
 /**
- * Workbook's example names, for Setup's "Start from Workbook's list" (plan §7).
+ * The workbook's example names, for Setup's "Use the starter list" (plan §7).
  * They are placeholders to rename: START HERE's rows in its own order
  * (Income B8:B12, Savings H7:H10, Bills B18:B24, Debts D18:D21,
  * Subscriptions F18:F20, Variable H17:H22), plus the app's two rows a card

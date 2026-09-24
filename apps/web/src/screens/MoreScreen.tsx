@@ -8,7 +8,7 @@ const ITEMS: readonly { screen: Screen; label: string; hint: string; icon: IconN
   { screen: 'year', label: 'Year', hint: 'Twelve months at a glance, from any month', icon: 'year' },
   { screen: 'savings', label: 'Savings', hint: 'Each fund, what it needs, and what to save a month', icon: 'piggy' },
   { screen: 'debts', label: 'Debts', hint: 'Each loan and card balance, and when it is paid off', icon: 'card' },
-  { screen: 'setup', label: 'Setup', hint: "Your name, and Workbook's lists", icon: 'list' },
+  { screen: 'setup', label: 'Setup', hint: 'Your name, and your lists', icon: 'list' },
   { screen: 'ledger', label: 'All transactions', hint: 'Every approved charge and payment', icon: 'file' },
   { screen: 'settings', label: 'Settings', hint: 'Weekly budgets, your goal, signing out', icon: 'settings' },
 ]

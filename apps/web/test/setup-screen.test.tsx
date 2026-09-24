@@ -219,10 +219,10 @@ describe('SetupScreen, your name', () => {
   })
 })
 
-describe("SetupScreen, starting from Workbook's list", () => {
-  const start = async () => fireEvent.click(await screen.findByRole('button', { name: "Start from Workbook's list" }))
+describe('SetupScreen, starting from the starter list', () => {
+  const start = async () => fireEvent.click(await screen.findByRole('button', { name: 'Use the starter list' }))
 
-  it("adds Workbook's names under each list, after yours, your goal first on Savings", async () => {
+  it('adds the starter names under each list, after yours, your goal first on Savings', async () => {
     const fake = seeded()
     fake.tables.savings_goals.push({
       id: 'g1', name: 'Flight training', target_cents: 3_000_000, saved_cents: 0,
@@ -231,8 +231,8 @@ describe("SetupScreen, starting from Workbook's list", () => {
     renderScreen(<SetupScreen />, fake)
     await start()
 
-    // 31 of Workbook's names and the goal, less the five already here.
-    expect(await screen.findByText("Added 27 of Workbook's example names")).toBeTruthy()
+    // 31 starter names and the goal, less the five already here.
+    expect(await screen.findByText('Added 27 example names')).toBeTruthy()
     expect(screen.getByText(/^They are placeholders\. Rename each one/)).toBeTruthy()
     expect(await namesOn('Savings')).toEqual(['Flight training', 'Emergency Fund', 'Travel Fund', 'Down Payment', 'Car Repair Fund'])
     expect(await namesOn('Income')).toEqual(['Pay', 'Income 1', 'Income 2', 'Side Hustle', 'Freelance Work', 'Donations'])
@@ -244,18 +244,18 @@ describe("SetupScreen, starting from Workbook's list", () => {
     ])
     expect(await namesOn('Not spending')).toEqual(['Card payments'])
     // 33 categories now, so the offer is gone and the message stays.
-    expect(screen.queryByRole('button', { name: "Start from Workbook's list" })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Use the starter list' })).toBeNull()
     expect(fake.tables.categories).toHaveLength(33)
   })
 
-  it('adds each name once when pressed twice, and without a goal starts Savings with Workbook', async () => {
+  it('adds each name once when pressed twice, and without a goal starts Savings with the starter names', async () => {
     const fake = seeded()
     renderScreen(<SetupScreen />, fake)
-    const button = await screen.findByRole('button', { name: "Start from Workbook's list" })
+    const button = await screen.findByRole('button', { name: 'Use the starter list' })
     fireEvent.click(button)
     fireEvent.click(button)
 
-    expect(await screen.findByText("Added 26 of Workbook's example names")).toBeTruthy()
+    expect(await screen.findByText('Added 26 example names')).toBeTruthy()
     expect(fake.tables.categories).toHaveLength(32)
     expect(screen.queryByRole('alert')).toBeNull()
     expect(await namesOn('Savings')).toEqual(['Emergency Fund', 'Travel Fund', 'Down Payment', 'Car Repair Fund'])
@@ -267,10 +267,10 @@ describe("SetupScreen, starting from Workbook's list", () => {
     })
     renderScreen(<SetupScreen />, fake)
     // Before the first load every account reads as empty; not offered then either.
-    expect(screen.queryByRole('button', { name: "Start from Workbook's list" })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Use the starter list' })).toBeNull()
 
     await waitFor(async () => expect(await namesOn('Variable expenses')).toHaveLength(20))
-    expect(screen.queryByRole('button', { name: "Start from Workbook's list" })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Use the starter list' })).toBeNull()
   })
 
   it('says so when the names could not be added, and adds none', async () => {
@@ -279,7 +279,7 @@ describe("SetupScreen, starting from Workbook's list", () => {
     renderScreen(<SetupScreen />, fake)
     await start()
 
-    const card = within(screen.getByRole('region', { name: "Start from Workbook's list" }))
+    const card = within(screen.getByRole('region', { name: 'Starter list' }))
     expect(await card.findByText(/\(code 42501\)$/)).toBeTruthy()
     expect(fake.tables.categories).toHaveLength(6)
   })
