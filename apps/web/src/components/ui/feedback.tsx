@@ -1,5 +1,6 @@
-import type { HTMLAttributes, ReactNode } from 'react'
+import { useEffect, useRef, type HTMLAttributes, type ReactNode } from 'react'
 import { cn } from '../../lib/cn.js'
+import { useAnnounce } from './announce.js'
 
 /** shadcn/ui Badge. */
 const BADGE = {
@@ -45,7 +46,11 @@ export function Progress({ basisPoints, tone = 'default' }: { basisPoints: numbe
   )
 }
 
-/** shadcn/ui Alert. `role="alert"` on failures so a screen reader announces them. */
+/**
+ * shadcn/ui Alert. `role="alert"` on failures so a screen reader announces
+ * them. A success is said through the app's one status region, when there
+ * is one, rather than as a status that arrives already full (FE-16).
+ */
 export function Alert({
   tone = 'default',
   title,
@@ -55,6 +60,14 @@ export function Alert({
   title?: string
   children?: ReactNode
 }) {
+  const own = useRef<HTMLDivElement>(null)
+  const announce = useAnnounce()
+  const says = tone === 'success' && announce !== null
+  // Its words as shown, read once they are on screen, and again if they change.
+  const words = typeof children === 'string' ? children : null
+  useEffect(() => {
+    if (says) announce(own.current?.textContent ?? '')
+  }, [says, announce, title, words])
   const look =
     tone === 'error'
       ? 'border-destructive/40 bg-destructive/5 text-destructive'
@@ -62,7 +75,7 @@ export function Alert({
         ? 'border-income/40 bg-income/5'
         : 'bg-card'
   return (
-    <div role={tone === 'error' ? 'alert' : 'status'} className={cn('rounded-lg border px-4 py-3 text-sm', look)}>
+    <div ref={own} role={tone === 'error' ? 'alert' : says ? undefined : 'status'} className={cn('rounded-lg border px-4 py-3 text-sm', look)}>
       {title !== undefined ? <p className="font-medium">{title}</p> : null}
       {children !== undefined ? <div className={cn(title !== undefined && 'mt-1', tone === 'error' ? '' : 'text-muted-foreground')}>{children}</div> : null}
     </div>

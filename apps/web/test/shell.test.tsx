@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import { createFakeSupabase } from './fake-supabase.js'
@@ -215,5 +215,27 @@ describe('Shell, telling a screen reader the screen changed (FE-13)', () => {
     go('/month/2026-08')
     expect(await screen.findByRole('heading', { name: 'August 2026' })).toBeTruthy()
     expect(document.activeElement).toBe(arrow)
+  })
+})
+
+describe('Shell, reading out what an action did (FE-16)', () => {
+  it('keeps one polite status region from the start, and writes a success message into it', async () => {
+    const fake = createFakeSupabase({
+      categories: [{ id: 'c1', name: 'Groceries', kind: 'variable', sort_order: 0, weekly_budget_cents: null }],
+      ingest_candidates: [
+        { id: 'p1', posted_on: '2026-09-09', amount_cents: -1349, merchant: 'LITWARE COFFEE', merchant_raw: 'LITWARE COFFEE', status: 'pending' },
+      ],
+    })
+    go('/review')
+    renderScreen(<Shell />, fake)
+    // There before any message, so a message written into it is announced;
+    // a region that arrives already holding its words often is not.
+    const region = screen.getByTestId('announcer')
+    expect([region.getAttribute('role'), region.getAttribute('aria-live'), region.textContent]).toEqual(['status', 'polite', ''])
+
+    fireEvent.change(await screen.findByRole('combobox', { name: 'Category' }), { target: { value: 'c1' } })
+    fireEvent.click(screen.getByRole('button', { name: /Approve/ }))
+    await waitFor(() => expect(region.textContent).toMatch(/^Added\. Future charges from this merchant/))
+    expect(screen.getByTestId('announcer')).toBe(region)
   })
 })

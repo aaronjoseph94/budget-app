@@ -9,6 +9,7 @@ import { MoreScreen } from './screens/MoreScreen.js'
 import { displayNameOf } from './profile.js'
 import { Alert } from './components/ui/feedback.js'
 import { Button } from './components/ui/button.js'
+import { AnnounceProvider } from './components/ui/announce.js'
 import { Icon, type IconName } from './components/ui/icons.js'
 import { cn } from './lib/cn.js'
 
@@ -102,28 +103,89 @@ export function Shell() {
   useAnnounceScreen(screen, main)
 
   return (
-    <div className="min-h-full">
-      {/* Past the eleven tabs of the desktop bar, in one key (FE-10). Focus
-        is moved by hand: following the link would set the address to
-        #main, which the app reads as a request for the Month. */}
-      <a
-        href="#main"
-        onClick={(e) => {
-          e.preventDefault()
-          main.current?.focus()
-        }}
-        className="sr-only rounded-md bg-primary text-sm font-medium text-primary-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-30 focus:px-4 focus:py-3"
-      >
-        Skip to content
-      </a>
-      <header className="safe-top sticky top-0 z-20 hidden border-b bg-background/85 backdrop-blur md:block">
-        {/* The bar takes the wide width on every screen: a narrow screen's
-          768 held nine tabs' words only by running past its edge. */}
-        <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 lg:max-w-7xl">
-          <span className="font-semibold tracking-tight">Budget</span>
-          <nav aria-label="Screens" className="flex gap-1">
-            {DESKTOP_TABS.map((t) => {
-              const active = tabOf(screen, DESKTOP_TABS) === t.screen
+    <AnnounceProvider>
+      <div className="min-h-full">
+        {/* Past the eleven tabs of the desktop bar, in one key (FE-10). Focus
+          is moved by hand: following the link would set the address to
+          #main, which the app reads as a request for the Month. */}
+        <a
+          href="#main"
+          onClick={(e) => {
+            e.preventDefault()
+            main.current?.focus()
+          }}
+          className="sr-only rounded-md bg-primary text-sm font-medium text-primary-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-30 focus:px-4 focus:py-3"
+        >
+          Skip to content
+        </a>
+        <header className="safe-top sticky top-0 z-20 hidden border-b bg-background/85 backdrop-blur md:block">
+          {/* The bar takes the wide width on every screen: a narrow screen's
+            768 held nine tabs' words only by running past its edge. */}
+          <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 lg:max-w-7xl">
+            <span className="font-semibold tracking-tight">Budget</span>
+            <nav aria-label="Screens" className="flex gap-1">
+              {DESKTOP_TABS.map((t) => {
+                const active = tabOf(screen, DESKTOP_TABS) === t.screen
+                return (
+                  <button
+                    key={t.screen}
+                    type="button"
+                    onClick={() => navigate(t.screen)}
+                    aria-current={active ? 'page' : undefined}
+                    aria-label={labelOf(t, pendingTotal)}
+                    className={cn(
+                      'relative flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5 rounded-md px-1.5 text-[11px] font-medium transition-colors',
+                      'xl:flex-row xl:gap-2 xl:px-3 xl:text-sm',
+                      active ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    <Icon name={t.icon} className="size-4" />
+                    {/* A tablet's 768 once showed the icons alone, 40x28 and
+                      unnamed to the eye (FE-1). Each keeps its word now, small
+                      and under its icon, as the phone's bar has it, 44px tall;
+                      from 1280px there is room to set them beside the icons. */}
+                    <span>{t.label}</span>
+                    {t.screen === 'review' && pendingTotal > 0 ? (
+                      <span className="absolute -right-1 top-0 xl:static">
+                        <Count n={pendingTotal} />
+                      </span>
+                    ) : null}
+                  </button>
+                )
+              })}
+            </nav>
+          </div>
+        </header>
+
+        <main ref={main} id="main" tabIndex={-1} className={cn('pt-screen pb-safe mx-auto w-full px-4 outline-none md:pb-12', width)}>
+          {loadError !== null ? (
+            <div className="mb-4 space-y-2">
+              <Alert tone="error" title="Could not load your data">
+                {loadError}
+              </Alert>
+              <Button variant="outline" onClick={() => void refresh()}>
+                Try again
+              </Button>
+            </div>
+          ) : null}
+          {/* No screen until the shared data is read: before then an empty
+            list means "not read yet", and screens showed it as "none" (FE-7). */}
+          {status === 'loading' ? (
+            <p role="status" aria-busy="true" aria-label="Loading your budget" className="py-16 text-center text-sm text-muted-foreground">
+              Loading…
+            </p>
+          ) : null}
+          {status !== 'ready' ? null : <Screens screen={screen} period={period} />}
+        </main>
+
+        {/* Phones: a bottom tab bar within thumb reach, clear of the home indicator. */}
+        <nav
+          aria-label="Screens"
+          className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t bg-background/90 backdrop-blur md:hidden"
+        >
+          <div className="mx-auto grid max-w-md grid-cols-5">
+            {PHONE_TABS.map((t) => {
+              const active = tabOf(screen, PHONE_TABS) === t.screen
               return (
                 <button
                   key={t.screen}
@@ -132,92 +194,33 @@ export function Shell() {
                   aria-current={active ? 'page' : undefined}
                   aria-label={labelOf(t, pendingTotal)}
                   className={cn(
-                    'relative flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5 rounded-md px-1.5 text-[11px] font-medium transition-colors',
-                    'xl:flex-row xl:gap-2 xl:px-3 xl:text-sm',
-                    active ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
+                    'relative flex flex-col items-center gap-0.5 pb-1.5 pt-2 text-[11px] font-medium transition-colors',
+                    active ? 'text-foreground' : 'text-muted-foreground',
                   )}
                 >
-                  <Icon name={t.icon} className="size-4" />
-                  {/* A tablet's 768 once showed the icons alone, 40x28 and
-                    unnamed to the eye (FE-1). Each keeps its word now, small
-                    and under its icon, as the phone's bar has it, 44px tall;
-                    from 1280px there is room to set them beside the icons. */}
-                  <span>{t.label}</span>
+                  {/* Every icon sits in the same 32px box, so the labels line up. */}
+                  <span
+                    className={cn(
+                      'flex size-8 items-center justify-center rounded-full',
+                      t.screen === 'add' &&
+                        (active ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground'),
+                    )}
+                  >
+                    <Icon name={t.icon} className={t.screen === 'add' ? 'size-5' : 'size-6'} />
+                  </span>
+                  {t.label}
                   {t.screen === 'review' && pendingTotal > 0 ? (
-                    <span className="absolute -right-1 top-0 xl:static">
+                    <span className="absolute right-[22%] top-1">
                       <Count n={pendingTotal} />
                     </span>
                   ) : null}
                 </button>
               )
             })}
-          </nav>
-        </div>
-      </header>
-
-      <main ref={main} id="main" tabIndex={-1} className={cn('pt-screen pb-safe mx-auto w-full px-4 outline-none md:pb-12', width)}>
-        {loadError !== null ? (
-          <div className="mb-4 space-y-2">
-            <Alert tone="error" title="Could not load your data">
-              {loadError}
-            </Alert>
-            <Button variant="outline" onClick={() => void refresh()}>
-              Try again
-            </Button>
           </div>
-        ) : null}
-        {/* No screen until the shared data is read: before then an empty
-          list means "not read yet", and screens showed it as "none" (FE-7). */}
-        {status === 'loading' ? (
-          <p role="status" aria-busy="true" aria-label="Loading your budget" className="py-16 text-center text-sm text-muted-foreground">
-            Loading…
-          </p>
-        ) : null}
-        {status !== 'ready' ? null : <Screens screen={screen} period={period} />}
-      </main>
-
-      {/* Phones: a bottom tab bar within thumb reach, clear of the home indicator. */}
-      <nav
-        aria-label="Screens"
-        className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t bg-background/90 backdrop-blur md:hidden"
-      >
-        <div className="mx-auto grid max-w-md grid-cols-5">
-          {PHONE_TABS.map((t) => {
-            const active = tabOf(screen, PHONE_TABS) === t.screen
-            return (
-              <button
-                key={t.screen}
-                type="button"
-                onClick={() => navigate(t.screen)}
-                aria-current={active ? 'page' : undefined}
-                aria-label={labelOf(t, pendingTotal)}
-                className={cn(
-                  'relative flex flex-col items-center gap-0.5 pb-1.5 pt-2 text-[11px] font-medium transition-colors',
-                  active ? 'text-foreground' : 'text-muted-foreground',
-                )}
-              >
-                {/* Every icon sits in the same 32px box, so the labels line up. */}
-                <span
-                  className={cn(
-                    'flex size-8 items-center justify-center rounded-full',
-                    t.screen === 'add' &&
-                      (active ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground'),
-                  )}
-                >
-                  <Icon name={t.icon} className={t.screen === 'add' ? 'size-5' : 'size-6'} />
-                </span>
-                {t.label}
-                {t.screen === 'review' && pendingTotal > 0 ? (
-                  <span className="absolute right-[22%] top-1">
-                    <Count n={pendingTotal} />
-                  </span>
-                ) : null}
-              </button>
-            )
-          })}
-        </div>
-      </nav>
-    </div>
+        </nav>
+      </div>
+    </AnnounceProvider>
   )
 }
 
