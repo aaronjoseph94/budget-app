@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import { applySignConvention, type AcceptedRow } from '@budget/statement-parsers'
 import { isoDate } from '@budget/core'
 import { parseMoneyInput, useAppData } from '../app-data.js'
@@ -30,22 +30,55 @@ interface Outcome {
   readonly message: string
 }
 
+const MODES = ['statement', 'photo', 'typed'] as const
+
+/**
+ * The three ways in, as a tab list: one stop in the tab order, moved along
+ * with the arrow keys, Home and End, each tab naming the panel it shows
+ * (FE-15). Choosing follows focus, as there is nothing slow to load.
+ */
 export function AddScreen() {
   const [mode, setMode] = useState<Mode>('statement')
+  const ids = useId()
+  const tabs = useRef<(HTMLButtonElement | null)[]>([])
+  const choose = (m: Mode) => {
+    setMode(m)
+    tabs.current[MODES.indexOf(m)]?.focus()
+  }
+  const onKey = (e: KeyboardEvent<HTMLButtonElement>) => {
+    const at = MODES.indexOf(mode)
+    const to =
+      e.key === 'ArrowRight' ? (at + 1) % MODES.length
+      : e.key === 'ArrowLeft' ? (at + MODES.length - 1) % MODES.length
+      : e.key === 'Home' ? 0
+      : e.key === 'End' ? MODES.length - 1
+      : null
+    const next = to === null ? undefined : MODES[to]
+    if (next === undefined) return
+    e.preventDefault()
+    choose(next)
+  }
   return (
     <div className="space-y-4">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Add</h1>
         <p className="text-sm text-muted-foreground">A statement from your bank, a receipt photo, or one by hand: cash, pay or a move to savings.</p>
       </header>
-      <div role="tablist" className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
-        {(['statement', 'photo', 'typed'] as const).map((m) => (
+      <div role="tablist" aria-label="How to add" className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
+        {MODES.map((m, i) => (
           <button
             key={m}
+            ref={(el) => {
+              tabs.current[i] = el
+            }}
+            id={`${ids}-${m}`}
             role="tab"
             type="button"
             aria-selected={mode === m}
+            aria-controls={`${ids}-panel`}
+            tabIndex={mode === m ? 0 : -1}
             onClick={() => setMode(m)}
+            onKeyDown={onKey}
             className={cn(
               'flex min-h-11 items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition-colors',
               mode === m ? 'bg-card shadow-sm' : 'text-muted-foreground',
@@ -56,7 +89,9 @@ export function AddScreen() {
           </button>
         ))}
       </div>
-      {mode === 'statement' ? <StatementImport /> : mode === 'photo' ? <PhotoEntry /> : <TypedEntry />}
+      <div role="tabpanel" id={`${ids}-panel`} aria-labelledby={`${ids}-${mode}`}>
+        {mode === 'statement' ? <StatementImport /> : mode === 'photo' ? <PhotoEntry /> : <TypedEntry />}
+      </div>
     </div>
   )
 }
