@@ -1,5 +1,18 @@
-import { useState, type ReactNode } from 'react'
-import { goalProgress, type FundFigures, type SavingsFund, type SavingsFundPlan } from '@budget/core'
+import { useMemo, useState, type ReactNode } from 'react'
+import {
+  goalProgress,
+  isoDate,
+  monthBounds,
+  periodComparison,
+  shiftMonth,
+  type FundFigures,
+  type PeriodComparison,
+  type SavingsFund,
+  type SavingsFundPlan,
+} from '@budget/core'
+import { useEarlier } from '../earlier.js'
+import { categoriesForCore, entriesForCore } from '../sheet-input.js'
+import { CompareLine } from './CompareLine.js'
 import { useAppData } from '../app-data.js'
 import { useFunds } from '../funds.js'
 import { linkFund, type FundRow } from '../ledger.js'
@@ -22,7 +35,8 @@ import { Figure } from '../components/ui/type.js'
  */
 export function SavingsScreen() {
   const state = useFunds()
-  const { supabase, refresh } = useAppData()
+  const { supabase, refresh, categories } = useAppData()
+  const comparison = useSavedThisMonth(categories)
   const [editing, setEditing] = useState<string | null>(null)
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null)
   const ready = state.status === 'ready' ? state : null
@@ -52,6 +66,13 @@ export function SavingsScreen() {
       {state.status === 'loading' ? <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p> : null}
       {notice !== null ? <Alert tone={notice.ok ? 'success' : 'error'}>{notice.text}</Alert> : null}
       {state.status === 'failed' ? <Alert tone="error" title="Could not load your savings funds">{state.message}</Alert> : null}
+      {comparison === null ? null : (
+        // A card but not a region: the regions on this screen are the funds.
+        <div className="rounded-xl border bg-card p-4 text-sm shadow-sm">
+          <h2 className="font-medium">Saved this month</h2>
+          <CompareLine comparison={comparison} label="Compared with last month" earlier="last month" pick={(c) => c.summary.saved} word="saved" />
+        </div>
+      )}
       {state.status === 'ready' ? (
         state.funds.funds.length === 0 ? (
           <div className="rounded-xl border bg-card p-4 text-sm shadow-sm">
@@ -64,7 +85,7 @@ export function SavingsScreen() {
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {state.funds.funds.map((fund) => (
               <li key={fund.categoryId}>
-                <FundCard fund={fund} goal={goalOf(fund)} onEdit={() => setEditing(fund.categoryId)}>
+                <FundCard fund={fund} goal={goalOf(fund)} comparison={comparison} onEdit={() => setEditing(fund.categoryId)}>
                   {fund.figures === null
                     ? unlinked.map((g) => (
                         <Button key={g.id} variant="outline" size="sm" className="mr-2" onClick={() => void link(g, fund)}>
@@ -95,7 +116,21 @@ export function SavingsScreen() {
   )
 }
 
-function FundCard({ fund, goal, onEdit, children }: { fund: SavingsFund; goal: FundRow | null; onEdit: () => void; children: ReactNode }) {
+function FundCard({
+  fund,
+  goal,
+  comparison,
+  onEdit,
+  children,
+}: {
+  fund: SavingsFund
+  goal: FundRow | null
+  comparison: PeriodComparison | 'failed' | null
+  onEdit: () => void
+  children: ReactNode
+}) {
+  const row = comparison === null || comparison === 'failed' || comparison.status !== 'compared' ? null : comparison
+  const mine = row?.blocks.savings.rows.find((r) => r.categoryId === fund.categoryId) ?? null
   const f = fund.figures
   return (
     <section aria-label={fund.name} className="overflow-hidden rounded-xl border border-savings-rule bg-card text-savings-ink shadow-sm">
@@ -131,6 +166,16 @@ function FundCard({ fund, goal, onEdit, children }: { fund: SavingsFund; goal: F
           </dl>
           {f.plan.status === 'planned' ? null : <p className="text-sm">{WHY_NO_MONTHLY[f.plan.status]}</p>}
           <Kept figures={f} goal={goal} />
+          {/* This fund's line only when there is one; the card above says why when there is not. */}
+          {row === null || mine === null ? null : (
+            <CompareLine
+              comparison={row}
+              label={`${fund.name} compared with last month`}
+              earlier="last month"
+              pick={() => mine}
+              word="saved"
+            />
+          )}
           <Button variant="outline" size="sm" onClick={onEdit}>
             Edit goal
           </Button>
@@ -194,4 +239,34 @@ function Item({ label, children }: { label: string; children: ReactNode }) {
       <dd>{children}</dd>
     </div>
   )
+}
+
+
+/**
+ * Saved this month against the same days last month (F25, D26): the Savings
+ * block's Actual, in total and for each fund, from periodComparison. Last
+ * month and this month to today are read together, beside the funds, so if
+ * the read fails only the comparison goes. Only Actuals are compared, and
+ * no fund has a monthly amount, so no plans are read.
+ */
+function useSavedThisMonth(categories: Parameters<typeof categoriesForCore>[0]): PeriodComparison | 'failed' | null {
+  const today = isoDate(todayIso())
+  const month = monthBounds(today).start
+  const read = useEarlier({ from: shiftMonth(month, -1), to: today })
+  return useMemo(() => {
+    if (read === null || read === 'failed') return read
+    try {
+      return periodComparison({
+        period: 'month',
+        month,
+        asOf: today,
+        historyStart: read.historyStart === null ? null : isoDate(read.historyStart),
+        categories: categoriesForCore(categories),
+        planHistory: [],
+        entries: entriesForCore(read.rows),
+      })
+    } catch {
+      return 'failed'
+    }
+  }, [read, categories, month, today])
 }
