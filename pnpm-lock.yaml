@@ -114,6 +114,15 @@ importers:
 
   packages/money-primitives: {}
 
+  packages/savings-coach:
+    dependencies:
+      '@budget/core':
+        specifier: workspace:*
+        version: link:../core
+      '@budget/money-primitives':
+        specifier: workspace:*
+        version: link:../money-primitives
+
   packages/schema:
     dependencies:
       '@budget/money-primitives':

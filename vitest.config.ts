@@ -9,6 +9,7 @@ export default defineConfig({
       { test: { name: 'parsers', root: './packages/statement-parsers' } },
       { test: { name: 'golden', root: './packages/golden-verification' } },
       { test: { name: 'charts', root: './packages/chart-specs' } },
+      { test: { name: 'coach', root: './packages/savings-coach' } },
       // Split by extension: a .tsx test renders a component and needs a DOM,
       // a .ts test checks plain functions and keeps Node's faster, stricter
       // environment, where reaching for `window` by accident is an error.
@@ -41,6 +42,7 @@ export default defineConfig({
         'packages/statement-parsers/src/**': { lines: 80, functions: 80, branches: 75 },
         'packages/golden-verification/src/**': { lines: 80, functions: 80, branches: 75 },
         'packages/chart-specs/src/**': { lines: 80, functions: 80, branches: 75 },
+        'packages/savings-coach/src/**': { lines: 80, functions: 80, branches: 75 },
         // The code that holds a provider key is held to the same bar.
         'supabase/functions/**': { lines: 80, functions: 80, branches: 75 },
         // The app as a whole, .tsx included, now held to the bar every module

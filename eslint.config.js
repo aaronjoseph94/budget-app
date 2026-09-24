@@ -160,6 +160,49 @@ export default tseslint.config(
     },
   },
   {
+    // savings-coach is pure as chart-specs is (CAPABILITY-MAP.md): the same
+    // facts must give the same cards on the phone and in a test, which a
+    // clock, randomness or a network would break. It may call the engine,
+    // whose figures it words; schema and money-primitives it may name as
+    // types only, so no sum and no parse happens here. The app hashes, reads
+    // and writes; zod parses at the boundaries only.
+    files: ['packages/savings-coach/src/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...NO_AMBIENT_STATE.map((rule) => ({ ...rule, message: rule.message.replace('packages/core', 'savings-coach') })),
+        ...NO_FLOAT_MONEY,
+      ],
+      'no-restricted-globals': [
+        'error',
+        ...['window', 'document', 'navigator', 'crypto', 'fetch', 'localStorage', 'DOMParser'].map((name) => ({
+          name,
+          message: 'savings-coach is pure: the app reads, writes, hashes and calls.',
+        })),
+      ],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            { group: ['react', 'react-*'], message: 'savings-coach returns words and cards, not components.' },
+            { group: ['@supabase/*'], message: 'savings-coach is pure: no database.' },
+            { group: ['node:*', 'fs', 'path', 'os', 'crypto'], message: 'savings-coach is pure: no I/O and no hashing.' },
+            { group: ['zod'], message: 'savings-coach takes validated values; zod parses at the boundaries only.' },
+            {
+              group: ['@budget/schema', '@budget/money-primitives'],
+              allowTypeImports: true,
+              message: 'savings-coach may name these types, never call them: the engine does the arithmetic.',
+            },
+            {
+              group: ['@budget/statement-parsers', '@budget/golden-verification', '@budget/chart-specs'],
+              message: 'savings-coach may depend on the engine, and on schema and money-primitives as types only.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // Text a person typed or a statement carried is never markup (CLAUDE.md).
     // The one string the app may put into the page as markup is a chart from
     // chart-specs, which escapes as it builds; components/ui/chart.tsx is the
@@ -219,6 +262,7 @@ export default tseslint.config(
       'packages/schema/test/**/*.ts',
       'packages/statement-parsers/test/**/*.ts',
       'packages/chart-specs/test/**/*.ts',
+      'packages/savings-coach/test/**/*.ts',
     ],
     rules: { 'no-restricted-syntax': ['error', ...NO_WEAK_ASSERTIONS] },
   },

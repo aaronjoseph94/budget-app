@@ -69,6 +69,19 @@ module.exports = {
       },
     },
     {
+      name: 'coach-words-what-the-engine-computed',
+      severity: 'error',
+      comment:
+        'savings-coach turns the engine\'s facts into words and cards. It may call the ' +
+        'engine; it may name schema\'s and money-primitives\' types, never call them, so ' +
+        'no sum, parse or rounding happens here; and it may reach nothing else (ADR 0005).',
+      from: { path: '^packages/savings-coach/src' },
+      to: {
+        pathNot: ['^packages/savings-coach/src', '^packages/core/src'],
+        dependencyTypesNot: ['type-only'],
+      },
+    },
+    {
       name: 'app-uses-package-entry-points-only',
       severity: 'error',
       comment:
@@ -164,13 +177,18 @@ module.exports = {
     },
     { from: { path: '^packages/chart-specs/' }, to: { path: '^packages/money-primitives/src/' } },
     { from: { path: '^packages/chart-specs/' }, to: { path: '^packages/core/src/', dependencyTypes: ['type-only'] } },
+    { from: { path: '^packages/savings-coach/' }, to: { path: '^packages/core/src/' } },
+    {
+      from: { path: '^packages/savings-coach/' },
+      to: { path: ['^packages/(schema|money-primitives)/src/'], dependencyTypes: ['type-only'] },
+    },
     // The app, and the libraries its package.json names. Which of the
     // packages' exports it may use is the forbidden rules' business above.
     {
       from: { path: '^apps/web/(src|test)/' },
       to: {
         path: [
-          '^packages/(money-primitives|core|schema|statement-parsers|chart-specs)/src/',
+          '^packages/(money-primitives|core|schema|statement-parsers|chart-specs|savings-coach)/src/',
           'node_modules/(react|react-dom|zod|@supabase/supabase-js)/',
         ],
       },
