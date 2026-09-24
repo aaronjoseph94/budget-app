@@ -19,6 +19,7 @@ import { cn } from './lib/cn.js'
 // unused on the Month (PERF-3). Add carries the statement readers with it.
 const AddScreen = lazy(() => import('./screens/AddScreen.js').then((m) => ({ default: m.AddScreen })))
 const CalendarScreen = lazy(() => import('./screens/CalendarScreen.js').then((m) => ({ default: m.CalendarScreen })))
+const CoachScreen = lazy(() => import('./screens/CoachScreen.js').then((m) => ({ default: m.CoachScreen })))
 const DebtsScreen = lazy(() => import('./screens/DebtsScreen.js').then((m) => ({ default: m.DebtsScreen })))
 const LedgerScreen = lazy(() => import('./screens/LedgerScreen.js').then((m) => ({ default: m.LedgerScreen })))
 const PaycheckScreen = lazy(() => import('./screens/PaycheckScreen.js').then((m) => ({ default: m.PaycheckScreen })))
@@ -239,6 +240,9 @@ function Screens({ screen, param }: { screen: Screen; param: string | null }) {
       {screen === 'savings' ? <SavingsScreen /> : null}
       {screen === 'debts' ? <DebtsScreen /> : null}
       {screen === 'year' ? <YearScreen start={param} /> : null}
+      {screen === 'coach' && param === null ? <CoachScreen /> : null}
+      {/* The check-in arrives with A20; its address already reads. */}
+      {screen === 'coach' && param !== null ? <NotYet name="The Sunday check-in" /> : null}
       {NOT_YET.has(screen) ? <NotYet name={SCREEN_NAME[screen]} /> : null}
     </Suspense>
   )
@@ -273,7 +277,7 @@ const SCREEN_NAME: Record<Screen, string> = {
  * landed. Each slice takes its screen out of this set as it adds it, and the
  * bars and More leave these out, so only a typed or kept address reaches one.
  */
-const NOT_YET: ReadonlySet<Screen> = new Set(['coach', 'forecast', 'reports', 'ask', 'help', 'start', 'ai'])
+const NOT_YET: ReadonlySet<Screen> = new Set(['forecast', 'reports', 'ask', 'help', 'start', 'ai'])
 
 /** One line, and the way back, for an address that is ahead of the app. */
 function NotYet({ name }: { name: string }) {

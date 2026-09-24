@@ -70,3 +70,14 @@ export function useFunds(): FundsState {
     }
   }, [loaded, error, categories])
 }
+
+/**
+ * What the goal has saved: the balance its fund's transfers keep when the
+ * goal is a savings fund's (D16), as Savings shows it; on no fund, or while
+ * the funds load or cannot be read, the amount typed. The Week's goal card
+ * and the Coach's flight card say the same figure.
+ */
+export function goalSavedCents(goal: { readonly id: string; readonly saved_cents: number }, funds: FundsState): number {
+  const kept = funds.status === 'ready' ? funds.funds.funds.find((f) => f.figures?.goalId === goal.id)?.figures : undefined
+  return kept === undefined || kept === null ? goal.saved_cents : kept.balanceCents
+}

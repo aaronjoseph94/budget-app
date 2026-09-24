@@ -1,6 +1,6 @@
 import { goalProgress, isoDate, requiredWeeklyContribution, timeEquivalent } from '@budget/core'
 import { useAppData } from '../app-data.js'
-import { useFunds } from '../funds.js'
+import { goalSavedCents, useFunds } from '../funds.js'
 import { formatBasisPoints, formatCents } from '../format.js'
 import { Card, CardContent, CardTitle } from '../components/ui/card.js'
 import { Badge, Progress } from '../components/ui/feedback.js'
@@ -18,10 +18,7 @@ export function GoalCard({ weekSpentCents, asOf }: { weekSpentCents: number; asO
   const { goal } = useAppData()
   const funds = useFunds()
   if (goal === null) return null
-  // A goal that is a savings fund's has the balance its transfers keep (D16),
-  // as on Savings; one on no fund, or before the funds load, what was typed.
-  const kept = funds.status === 'ready' ? funds.funds.funds.find((f) => f.figures?.goalId === goal.id)?.figures : undefined
-  const savedCents = kept === undefined || kept === null ? goal.saved_cents : kept.balanceCents
+  const savedCents = goalSavedCents(goal, funds)
   const saving = {
     name: goal.name,
     targetCents: goal.target_cents,
