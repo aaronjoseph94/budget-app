@@ -131,3 +131,52 @@ describe('Savings, choosing the main goal and the order (G1)', () => {
     expect(within(flight).getByRole('button', { name: 'Edit goal' })).toBeTruthy()
   })
 })
+
+describe('Savings, pausing, finishing and resuming a goal (G1)', () => {
+  const stored = (fake: FakeSupabase, id: string) => fake.tables.savings_goals.find((g) => g.id === id)
+  const folded = async () => (await screen.findByText(/^Reached and paused/)).closest('details')!
+
+  it('pauses the main goal: it folds away, and the next goal leads', async () => {
+    const fake = seeded()
+    renderScreen(<SavingsScreen />, fake)
+    fireEvent.click(within(await screen.findByRole('region', { name: 'Travel' })).getByRole('button', { name: 'Pause' }))
+    expect(
+      await screen.findByText(
+        'Travel is paused. Money moved into its fund still counts; resume it under Reached and paused. Flight training is your main goal now.',
+      ),
+    ).toBeTruthy()
+    expect(stored(fake, 'g2')).toMatchObject({ status: 'paused', reached_on: null })
+    await waitFor(async () => expect(within(await folded()).getByRole('region', { name: 'Travel' })).toBeTruthy())
+    expect(screen.queryByText('Main goal')).toBeNull()
+  })
+
+  it('marks a goal reached on the day, with a word of celebration and no motion', async () => {
+    const fake = seeded()
+    renderScreen(<SavingsScreen />, fake)
+    fireEvent.click(within(await screen.findByRole('region', { name: 'Flight training' })).getByRole('button', { name: 'Mark as reached' }))
+    expect(await screen.findByText('You reached Flight training. Well done! It is kept under Reached and paused.')).toBeTruthy()
+    expect(stored(fake, 'g1')).toMatchObject({ status: 'reached', reached_on: '2026-09-23' })
+    const flight = await waitFor(async () => within(await folded()).getByRole('region', { name: 'Flight training' }))
+    expect(within(flight).getByText('Reached 23 Sep 2026')).toBeTruthy()
+  })
+
+  it('resumes a paused or reached goal after every other, clearing its reached day', async () => {
+    const fake = seeded()
+    fake.tables.savings_goals.push(
+      goal('g3', 'House', 'house', { sort_order: 0, status: 'paused' }),
+      goal('g4', 'Car', 'car', { sort_order: 5, status: 'reached', reached_on: '2026-09-01' }),
+    )
+    renderScreen(<SavingsScreen />, fake)
+    const house = within(await folded()).getByRole('region', { name: 'House' })
+    expect(within(house).getByRole('button', { name: 'Mark as reached' })).toBeTruthy()
+    fireEvent.click(within(house).getByRole('button', { name: 'Resume' }))
+    expect(await screen.findByText('House is back among your goals, at the end.')).toBeTruthy()
+    // After every goal's place, the reached Car's 5 included.
+    expect(stored(fake, 'g3')).toMatchObject({ status: 'active', reached_on: null, sort_order: 6 })
+    await waitFor(() => expect(regions().slice(0, 3)).toEqual(['Travel', 'Flight training', 'House']))
+    const car = within(await folded()).getByRole('region', { name: 'Car' })
+    expect(within(car).queryByRole('button', { name: 'Mark as reached' })).toBeNull()
+    fireEvent.click(within(car).getByRole('button', { name: 'Resume' }))
+    await waitFor(() => expect(stored(fake, 'g4')).toMatchObject({ status: 'active', reached_on: null, sort_order: 7 }))
+  })
+})

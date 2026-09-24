@@ -1096,6 +1096,28 @@ export async function setGoalPlaces(
   }
 }
 
+/** A goal paused, reached on a day, or back among the active goals at a place (F45). */
+export type GoalStateChange =
+  | { readonly status: 'paused' }
+  | { readonly status: 'reached'; readonly on: string }
+  | { readonly status: 'active'; readonly sortOrder: number }
+
+/**
+ * Pause, resume or mark a goal reached (0015). The reached day is written
+ * with the state and cleared with it, as 0015's CHECK requires; a resumed
+ * goal takes the place core gave it, after every other.
+ */
+export async function setGoalState(supabase: SupabaseClient, goalId: string, change: GoalStateChange): Promise<void> {
+  const row =
+    change.status === 'reached'
+      ? { status: change.status, reached_on: change.on }
+      : change.status === 'paused'
+        ? { status: change.status, reached_on: null }
+        : { status: change.status, reached_on: null, sort_order: change.sortOrder }
+  const { error } = await supabase.from('savings_goals').update(row).eq('id', goalId)
+  if (error !== null) throw new Error(describeGoalFailure(error))
+}
+
 /** bigint columns arrive as numbers or strings, so each is made a number. */
 function goalNumbers(g: ListedGoalRow): ListedGoalRow {
   return {
