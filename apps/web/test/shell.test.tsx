@@ -178,3 +178,17 @@ describe('Shell, before the shared data has loaded (FE-7)', () => {
     expect(screen.queryByText('Could not load your data')).toBeNull()
   })
 })
+
+describe('Shell, skipping the screens bar (FE-10)', () => {
+  it('starts with a link that takes focus past the bar to the screen, and keeps the address', async () => {
+    go('/week')
+    const { container } = renderScreen(<Shell />, createFakeSupabase())
+    await screen.findByRole('main')
+
+    const skip = container.querySelector('a, button')
+    expect(skip?.textContent).toBe('Skip to content')
+    fireEvent.click(skip!)
+    expect(document.activeElement).toBe(screen.getByRole('main'))
+    expect(window.location.hash).toBe('#/week')
+  })
+})

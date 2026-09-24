@@ -1,4 +1,4 @@
-import { Suspense, lazy, useMemo } from 'react'
+import { Suspense, lazy, useMemo, useRef } from 'react'
 import { readEnv } from './env.js'
 import { createSupabase } from './supabase.js'
 import { NotConfigured, SignIn, useSession } from './auth.js'
@@ -96,9 +96,23 @@ export function Shell() {
   // columns (§6.3, §6.4), and the Bill Calendar to give its seven room for names.
   const wide = screen === 'month' || screen === 'week' || screen === 'paycheck' || screen === 'year' || screen === 'calendar'
   const width = wide ? 'max-w-3xl lg:max-w-7xl' : 'max-w-3xl'
+  const main = useRef<HTMLElement>(null)
 
   return (
     <div className="min-h-full">
+      {/* Past the eleven tabs of the desktop bar, in one key (FE-10). Focus
+        is moved by hand: following the link would set the address to
+        #main, which the app reads as a request for the Month. */}
+      <a
+        href="#main"
+        onClick={(e) => {
+          e.preventDefault()
+          main.current?.focus()
+        }}
+        className="sr-only rounded-md bg-primary text-sm font-medium text-primary-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-30 focus:px-4 focus:py-3"
+      >
+        Skip to content
+      </a>
       <header className="safe-top sticky top-0 z-20 hidden border-b bg-background/85 backdrop-blur md:block">
         {/* The bar takes the wide width on every screen: a narrow screen's
           768 held nine tabs' words only by running past its edge. */}
@@ -138,7 +152,7 @@ export function Shell() {
         </div>
       </header>
 
-      <main className={cn('pt-screen pb-safe mx-auto w-full px-4 md:pb-12', width)}>
+      <main ref={main} id="main" tabIndex={-1} className={cn('pt-screen pb-safe mx-auto w-full px-4 outline-none md:pb-12', width)}>
         {loadError !== null ? (
           <div className="mb-4 space-y-2">
             <Alert tone="error" title="Could not load your data">
