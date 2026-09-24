@@ -9,7 +9,7 @@ describe('frame', () => {
     const svg = frame(chart, 1_575, [el('g', {})])
     expect(svg).toBe(
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3000 1575" width="300" height="158" role="img"' +
-        ' aria-labelledby="spend-title" aria-describedby="spend-desc" class="workbook-chart"' +
+        ' aria-labelledby="spend-title" aria-describedby="spend-desc" class="spec-chart"' +
         ' font-family="ui-sans-serif, system-ui, sans-serif" font-size="120">' +
         '<title id="spend-title">Fun &amp; &lt;Games&gt; by week</title>' +
         '<desc id="spend-desc">Where &quot;it&quot; went.</desc><g/></svg>',

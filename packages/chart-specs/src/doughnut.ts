@@ -17,7 +17,7 @@ import { WIDTH, type ChartFrame, fit, frame, lengthOf, textUnits } from './frame
 import { type SvgMarkup, type SvgNode, el } from './svg.js'
 
 /** Jan chart13's point colours, idx 0–22, as the workbook stores them. #841809 is there twice. */
-export const WORKBOOK_CORAL = [
+export const CORAL_SCALE = [
   '#FFE3DE', '#F9D8D3', '#FFB8AE', '#FCAFA5', '#F2A095', '#F49285', '#ED8779', '#EB7C6D',
   '#EA7363', '#E06655', '#D55B4A', '#CF513F', '#BF412F', '#B73826', '#B22F1D', '#A12514',
   '#911E0E', '#841809', '#841809', '#6F1306', '#620F03', '#4C0B02', '#FFF3EB',
@@ -51,7 +51,7 @@ const SWATCH = 100
 export function coralFor(listIndex: number): string {
   if (!Number.isInteger(listIndex) || listIndex < 0)
     throw new RangeError(`A list position must be a whole number from 0, received ${listIndex}`)
-  return WORKBOOK_CORAL[listIndex % WORKBOOK_CORAL.length]!
+  return CORAL_SCALE[listIndex % CORAL_SCALE.length]!
 }
 
 export function spendingDoughnut(input: DoughnutInput): SvgMarkup {

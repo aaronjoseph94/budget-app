@@ -67,7 +67,7 @@ export function atEndOf(
  * statement needs from its first import. No amount comes with them; the
  * sample's figures are the template's, not yours.
  */
-const WORKBOOK_STARTER: readonly { readonly name: string; readonly kind: CategoryKind }[] = [
+const STARTER_NAMES: readonly { readonly name: string; readonly kind: CategoryKind }[] = [
   ...['Income 1', 'Income 2', 'Side Hustle', 'Freelance Work', 'Donations'].map((name) => ({ name, kind: 'income' as const })),
   ...['Emergency Fund', 'Travel Fund', 'Down Payment', 'Car Repair Fund'].map((name) => ({ name, kind: 'savings' as const })),
   ...['Rent', 'Electricity Bill', 'Water Bill', 'Gas Bill', 'Phone', 'Car Insurance', 'Gym Membership'].map((name) => ({
@@ -91,7 +91,7 @@ const WORKBOOK_STARTER: readonly { readonly name: string; readonly kind: Categor
  * savings funds sit on.
  */
 export function starterList(goalName: string | null): readonly { readonly name: string; readonly kind: CategoryKind }[] {
-  return goalName === null ? WORKBOOK_STARTER : [{ name: goalName, kind: 'savings' }, ...WORKBOOK_STARTER]
+  return goalName === null ? STARTER_NAMES : [{ name: goalName, kind: 'savings' }, ...STARTER_NAMES]
 }
 
 /**

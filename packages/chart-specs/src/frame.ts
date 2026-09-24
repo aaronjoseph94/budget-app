@@ -54,7 +54,7 @@ export function frame(chart: ChartFrame, height: number, children: readonly SvgC
         role: 'img',
         'aria-labelledby': `${chart.id}-title`,
         'aria-describedby': `${chart.id}-desc`,
-        class: 'workbook-chart',
+        class: 'spec-chart',
         'font-family': 'ui-sans-serif, system-ui, sans-serif',
         'font-size': FONT,
       },

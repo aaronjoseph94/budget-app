@@ -424,60 +424,60 @@
  * outrank them on the page, so a chart follows the block tokens above into
  * dark mode. In light mode each token is the same colour as the attribute.
  */
-.workbook-chart {
+.spec-chart {
   display: block;
   width: 100%;
   height: auto;
 }
-.workbook-chart .chart-income-goal {
+.spec-chart .chart-income-goal {
   fill: var(--income-rule);
 }
-.workbook-chart .chart-income-actual {
+.spec-chart .chart-income-actual {
   fill: var(--income-accent);
 }
-.workbook-chart .chart-income-ink {
+.spec-chart .chart-income-ink {
   fill: var(--income-ink);
 }
-.workbook-chart .chart-variable-ink {
+.spec-chart .chart-variable-ink {
   fill: var(--variable-ink);
 }
-.workbook-chart .chart-variable-track {
+.spec-chart .chart-variable-track {
   fill: var(--variable-header);
 }
-.workbook-chart .chart-owed-ink {
+.spec-chart .chart-owed-ink {
   fill: var(--owed-ink);
 }
-.workbook-chart .chart-savings-ink {
+.spec-chart .chart-savings-ink {
   fill: var(--savings-ink);
 }
-.workbook-chart .chart-savings-goal {
+.spec-chart .chart-savings-goal {
   fill: var(--savings-chart-goal);
 }
-.workbook-chart .chart-savings-saved {
+.spec-chart .chart-savings-saved {
   fill: var(--savings-chart-saved);
 }
-.workbook-chart .chart-debt-ink {
+.spec-chart .chart-debt-ink {
   fill: var(--debt-ink);
 }
-.workbook-chart .chart-debt-left {
+.spec-chart .chart-debt-left {
   fill: var(--debt-left);
 }
-.workbook-chart .chart-debt-paid {
+.spec-chart .chart-debt-paid {
   fill: var(--debt-paid);
 }
-.workbook-chart .chart-home-ink {
+.spec-chart .chart-home-ink {
   fill: var(--home-ink);
 }
-.workbook-chart .chart-year-ink {
+.spec-chart .chart-year-ink {
   fill: var(--year-chart-ink);
 }
-.workbook-chart .chart-year-rule {
+.spec-chart .chart-year-rule {
   stroke: var(--year-chart-rule);
 }
-.workbook-chart .chart-ring-track {
+.spec-chart .chart-ring-track {
   fill: var(--home-track);
 }
-.workbook-chart .chart-surface-gap {
+.spec-chart .chart-surface-gap {
   stroke: var(--card);
 }
 

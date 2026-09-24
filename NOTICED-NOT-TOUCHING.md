@@ -1084,7 +1084,7 @@ owner to look at the ring on the iPhone. Still unchecked in WebKit.
 
 The charts scale to their card with `width: 100%; height: auto` on an
 inline SVG that carries its own width, height and viewBox (index.css,
-`.workbook-chart`). S12b's screenshots at 390, 1024 and 1280px were taken in
+`.spec-chart`). S12b's screenshots at 390, 1024 and 1280px were taken in
 Chromium, the only browser here. The owner's iPhone uses WebKit, which has
 handled `height: auto` on inline SVG differently in the past, so the ring
 could draw squashed or with a gap under it there.
@@ -1094,7 +1094,7 @@ for a problem not seen could break the browser that was checked.
 
 **To settle:** open the Month on the iPhone (or in Safari) at a month with
 spending, and look at the ring and the income bars. If either is the wrong
-shape, give `.workbook-chart` an explicit `aspect-ratio` from the viewBox.
+shape, give `.spec-chart` an explicit `aspect-ratio` from the viewBox.
 
 ---
 
