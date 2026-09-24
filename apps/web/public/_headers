@@ -1,7 +1,18 @@
-# Cloudflare Pages reads this file from the build output. The same three
-# headers netlify.toml sets, so the site is protected identically on either:
-# no framing (clickjacking), no MIME sniffing, and no referrer sent onward.
+# Cloudflare Pages reads this file from the build output. The same headers
+# netlify.toml sets, so the site is protected identically on either: no
+# framing (clickjacking), no MIME sniffing, and no referrer sent onward.
+#
+# The Content-Security-Policy is the second wall behind "text from a
+# statement or a model is never markup" (SEC-1). The session token lives in
+# localStorage, which a static host cannot move into an httpOnly cookie, so
+# a script that ever got into the page could read it; this lets no script
+# run but the site's own files, and lets the page talk to the Supabase
+# project named here and nowhere else. It must name the same project as
+# VITE_SUPABASE_URL, or every request is refused; test/headers.test.ts
+# checks it against netlify.toml. Styles allow 'unsafe-inline' for the
+# style attributes React and the charts write, never for scripts.
 /*
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: no-referrer
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://bnodrfghxbavlopxkgju.supabase.co; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; manifest-src 'self'
