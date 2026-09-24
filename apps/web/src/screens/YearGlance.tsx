@@ -49,12 +49,12 @@ export function YearGlance({ sheet, wide }: { sheet: YearSheet; wide: boolean })
       {/* On a desktop these are Annual's left panel, beside the tables. */}
       {wide ? null : (
         <Card>
-          <dl className="space-y-2">
-            <Amount label="Left over" cents={sheet.leftOverCents} hint="Income, less expenses and savings" />
-            <div className="grid grid-cols-2 gap-2">
-              <Amount label="Starting balance" cents={start} />
-              <Amount label="Ending balance" cents={end} />
-            </div>
+          {/* The grid is the list itself: a <div> of pairs inside the <dl>
+            was one level too deep for a screen reader to pair them (FE-11). */}
+          <dl className="grid grid-cols-2 gap-2">
+            <Amount label="Left over" cents={sheet.leftOverCents} hint="Income, less expenses and savings" className="col-span-2" />
+            <Amount label="Starting balance" cents={start} />
+            <Amount label="Ending balance" cents={end} />
           </dl>
           {start === null ? (
             <button
@@ -143,9 +143,19 @@ function Card({ className, children }: { className?: string; children: ReactNode
 }
 
 /** One label and its amount; a balance with no start typed has none (D17). */
-function Amount({ label, cents, hint = null }: { label: string; cents: number | null; hint?: string | null }) {
+function Amount({
+  label,
+  cents,
+  hint = null,
+  className,
+}: {
+  label: string
+  cents: number | null
+  hint?: string | null
+  className?: string
+}) {
   return (
-    <div>
+    <div className={className}>
       <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
       <dd className="text-lg font-bold">
         {cents === null ? <span className="text-sm font-medium">Not yet</span> : <Figure>{formatCents(cents)}</Figure>}

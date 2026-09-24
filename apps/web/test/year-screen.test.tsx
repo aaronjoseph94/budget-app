@@ -168,6 +168,14 @@ describe('YearScreen', () => {
     expect([said('Left over'), said('Starting balance'), said('Ending balance')]).toEqual([
       '-$12,550.00', '$1,000.00', '-$11,550.00',
     ])
+    // A valid list, so a screen reader pairs each figure with its name
+    // (FE-11): only groups of <dt> and <dd> directly inside the <dl>.
+    for (const dl of glance.getByText('Left over').closest('section')!.querySelectorAll('dl')) {
+      for (const item of dl.children) {
+        expect(item.tagName).toBe('DIV')
+        expect([...item.children].every((c) => c.tagName === 'DT' || c.tagName === 'DD')).toBe(true)
+      }
+    }
     expect(said('Biggest expense')).toBe('Rent$14,400.00')
     expect(said('Best savings month')).toBe('March 2026$500.00')
     // 14,400 of 14,550 is 9,897 bp; 150 of it 103 bp. Each has Home's ring
