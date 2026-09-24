@@ -5,6 +5,7 @@ import {
   TONES,
   WATCH_TEMPLATES,
   cardTemplateKey,
+  cardWords,
   renderSegments,
   slotsOf,
   type CardTemplateKey,
@@ -92,6 +93,8 @@ describe('the app’s own templates', () => {
     for (const tones of Object.values(WATCH_TEMPLATES)) {
       for (const tone of TONES) expect(tones[tone].tryThis).toMatch(/^(One thing to try|Try this): \S/)
     }
+    expect(cardWords('near_budget', 'straight')).toEqual(WATCH_TEMPLATES.near_budget.straight)
+    expect(cardWords('change_down', 'cheerleader')).toEqual({ ...PLAIN_TEMPLATES.change_down.cheerleader, tryThis: null })
   })
 
   it('have a card template for every kind but the summaries, which are the day’s line', () => {

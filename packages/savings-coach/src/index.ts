@@ -14,6 +14,7 @@ export {
   TONES,
   WATCH_TEMPLATES,
   cardTemplateKey,
+  cardWords,
   slotsOf,
   type CardTemplateKey,
   type LineKey,

@@ -159,6 +159,13 @@ export function cardTemplateKey(fact: Fact): CardTemplateKey | null {
   }
 }
 
+/** A card's words in a tone: its title and body, and the one thing to try when it asks to watch. */
+export function cardWords(key: CardTemplateKey, tone: Tone): Template & { readonly tryThis: string | null } {
+  if (key in WATCH_TEMPLATES) return WATCH_TEMPLATES[key as WatchKey][tone]
+  const plain = PLAIN_TEMPLATES[key as Exclude<CardTemplateKey, WatchKey>][tone]
+  return { ...plain, tryThis: null }
+}
+
 /** The slots a template may name on a fact: its figures, and its subject's name. */
 export function slotsOf(fact: Fact): readonly string[] {
   return ['name', ...Object.keys(fact.figures)]
