@@ -54,13 +54,13 @@ More; a wide screen puts them all on the top bar):
 | Paycheck | The same blocks for one pay period, found from your pay schedule | Paycheck Budget |
 | Bill calendar | Each bill on the day it is due, paydays, and each week's total | Bill Calendar |
 | Year | Twelve months from any start month, Home's "at a glance" cards and charts | Annual Budget, Home |
-| Savings | One card per savings fund: goal, what is saved, what to save a month | Savings |
+| Savings | Every savings goal in your order, the main one first: what is saved, what is left, what to save a month; Add a goal, pause, mark reached (needs `0015`) | Savings |
 | Debts | One card per debt, when it is paid off, and minimums against snowball and avalanche | Debt Calculator |
 | Setup | Your name, the six lists, when each income pays, each bill's day and monthly amount | START HERE, Bills |
 | Add | A Rogers statement PDF (or a CSV), a receipt photo, or one entry typed by hand (cash, pay, savings moves) | Transactions |
 | Review | Every imported row waits here for a category, and every line the reader could not read | — |
 | All transactions | Every approved row, a month at a time, with search and remove | — |
-| Settings | Weekly budgets, the goal's hours, sign out | — |
+| Settings | Weekly budgets, where your savings goals are, sign out | — |
 
 **Underneath:** all arithmetic is in `packages/core`, checked against the
 workbook's own cached values (121 golden tests); the charts are drawn by
@@ -187,12 +187,12 @@ means that file from Step 1 was missed.
 7. **Week, Paycheck, Bill calendar, Year** (More on a phone): the same
    charges in a week, a pay period, a calendar and twelve months. A weekly
    budget is typed in the Week's row.
-8. **Savings.** Pick a fund → **Set a goal**. Transfers typed to that fund
+8. **Savings.** **Add a goal**, or pick a fund → **Set a goal**. Transfers typed to that fund
    afterwards add to it.
 9. **Debts.** **Add a debt**: balance, month, minimum, rate. The card shows
    when it is paid off, and the three ways to pay compare.
 10. **All transactions** and **Settings** (More): every approved row;
-    weekly budgets, the goal's hours, sign out.
+    weekly budgets, where your savings goals are, sign out.
 11. **Add → Photo** (after Step 4): a cash receipt fills the form; it goes
     to Review like everything else.
 12. **iPhone:** open the Month and look at the ring chart. If it is

@@ -1390,6 +1390,12 @@ would take its place. To settle: give Setup's remove a 23503 sentence that
 names a savings goal, and let the owner choose the Week's goal (or show
 the fund whose unit is hours).
 
+**Settled in part, G1 (2026-09-24):** the owner now chooses the main goal
+on Savings (0015, F45), and the Week, the Coach and Settings show it;
+before 0015 it is the oldest, as before. Settings no longer edits any
+goal (N55's second point, in part). Still open: Setup's sentence when a
+category a goal names cannot be removed (23503).
+
 ---
 
 ## N53 — A debt names no Debts-list category, so its payments are not read
@@ -1813,3 +1819,36 @@ follows a colon ("Running ahead: Groceries") and is never the subject of
 "is"; the pace card's body says "the month ends with Groceries near …".
 `packages/savings-coach/test/templates.test.ts` fails if a template puts
 the name before a singular verb again.
+
+---
+
+## N72 — Before 0013, a savings goal cannot be added or edited anywhere
+
+**Seen:** 2026-09-24, building G1.
+
+Settings' goal form wrote only 0004's columns, so it worked before 0013.
+G1 moved every goal to Savings, whose funds read needs 0013's columns;
+without them Savings says so and shows no goal, and Settings points there.
+The owner pasted 0013 on 2026-09-24, so this reaches nobody today.
+
+**Why not fixed here:** it matters only for a database rebuilt from
+scratch with 0013 left out, which HANDOFF's steps do not do.
+
+**To settle:** if it is ever needed, let Savings show goals from the shared
+load when the funds read meets 42703, with Add a goal writing no fund.
+
+---
+
+## N73 — The Coach's digest does not speak of goals yet
+
+**Seen:** 2026-09-24, building G1.
+
+G1 gives core list-shaped goal functions (`orderGoals`, `goalsProgress`),
+and the Coach's card shows every active goal, but `factsDigest` takes no
+goals, so no card or line speaks of one ("Emergency is halfway").
+
+**Why not fixed here:** goal facts (milestones, pace, levers) are A08's
+(F33, F34), which the plan already builds on these functions.
+
+**To settle:** in A08, give the digest the goals from `orderGoals` and
+their progress from `goalsProgress`, the main goal's first.
