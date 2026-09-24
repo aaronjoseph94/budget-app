@@ -6,13 +6,13 @@ import { hashOf } from '../nav.js'
 import { Card, CardContent, CardTitle } from '../components/ui/card.js'
 import { Icon } from '../components/ui/icons.js'
 import { HelpButton } from '../help/HelpButton.js'
-import { DayLine } from '../coach/CoachCards.js'
+import { CoachCards, DayLine } from '../coach/CoachCards.js'
 import { useCoachFacts } from '../coach/facts.js'
 
 /**
- * The Coach (plan §2.3): the day's line and the flight card (A07); the
- * cards on what changed follow. What to cut and the quote arrive with A08,
- * the AI's words with A12.
+ * The Coach (plan §2.3): the day's line, the flight card, and up to three
+ * cards on what changed, each with one action (A07). What to cut and the
+ * quote arrive with A08, the AI's words with A12.
  *
  * It needs no one-time update, no AI helper and no key: the facts are
  * packages/core's digest of a year of the owner's own records, read here
@@ -32,9 +32,7 @@ export function CoachScreen() {
       <p className="text-xs text-muted-foreground">In the app’s own words, from your records.</p>
       {facts === null ? null : <DayLine facts={facts} className="text-lg font-medium leading-snug" />}
       <FlightCard />
-      {digest === 'failed' ? (
-        <p className="text-sm text-muted-foreground">Your insights did not load. Reload to try again; everything else still works.</p>
-      ) : null}
+      <CoachCards digest={digest} />
     </div>
   )
 }

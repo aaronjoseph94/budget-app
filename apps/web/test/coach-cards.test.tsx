@@ -1,4 +1,4 @@
-import { act, cleanup, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import type { Category, LedgerRow } from '../src/ledger.js'
@@ -37,6 +37,15 @@ function seeded(name = 'Dining out'): FakeSupabase {
   })
 }
 
+/** The records with nothing to speak of: a fresh statement, nothing waiting, every month alike. */
+function quiet(): FakeSupabase {
+  const fake = seeded()
+  fake.tables.ingest_candidates.length = 0
+  Object.assign(fake.tables.ingest_batches[0]!, { period_end: '2026-09-20' })
+  fake.tables.transactions.splice(fake.tables.transactions.findIndex((t) => t.id === 'd09'), 1, tx('d09', '2026-09-03', -30_000, 'dining'))
+  return fake
+}
+
 function go(hash: string) {
   act(() => {
     window.location.hash = hash
@@ -61,15 +70,50 @@ afterEach(() => {
 })
 
 describe('the Coach, in the app’s own words', () => {
-  it('says how this month is going against the same days last month, with no AI, key or one-time update', async () => {
+  it('shows the day’s line, then stale data, Review and the biggest change, each with one action, with no AI, key or one-time update', async () => {
     go('/coach')
     renderScreen(<Shell />, seeded())
 
     expect(await screen.findByText(whole('P', 'You’ve spent $300.00 more than by this day last month. There’s still time to ease off.'))).toBeTruthy()
     expect(screen.getByText('In the app’s own words, from your records.')).toBeTruthy()
+    const cards = within(screen.getByRole('region', { name: 'Insights' })).getAllByRole('listitem')
+    expect(cards.map((c) => within(c).getByRole('heading').textContent)).toEqual([
+      'Time for a fresh statement',
+      'Charges waiting for you',
+      'Dining out is running ahead',
+    ])
+    expect(within(cards[0]!).getByText(whole('P', 'Your last statement ends on 7 Sep, 17 days ago. Import the new one for fresh advice.'))).toBeTruthy()
+    expect(within(cards[1]!).getByText(whole('P', 'Waiting in Review: 2. Each one counts as soon as you file it.'))).toBeTruthy()
+    expect(within(cards[2]!).getByText(whole('P', 'You’ve spent $300.00 more on Dining out than by this day in August.'))).toBeTruthy()
+    expect(within(cards[2]!).getByText('One thing to try: give it a lighter week, and the month evens out.')).toBeTruthy()
+    expect(cards.map((c) => within(c).getAllByRole('button')[0]!.textContent)).toEqual(['Import a statement', 'Open Review', 'See the Month'])
+    // ✕ waits for the table that keeps a dismissal (0016).
+    expect(screen.queryByRole('button', { name: /dismiss/i })).toBeNull()
   })
 
-  it('keeps the flight card when the records cannot be read, with one line for the rest', async () => {
+  it('opens what a card’s action names', async () => {
+    go('/coach')
+    renderScreen(<Shell />, seeded())
+    fireEvent.click(await screen.findByRole('button', { name: 'Import a statement' }))
+    expect(window.location.hash).toBe('#/add')
+  })
+
+  it('says so when nothing needs attention, and that the month is steady', async () => {
+    go('/coach')
+    renderScreen(<Shell />, quiet())
+
+    expect(await screen.findByText(/^Nothing needs your attention today\./)).toBeTruthy()
+    expect(screen.getByText(whole('P', 'Your spending is about the same as by this day last month. Steady does it!'))).toBeTruthy()
+  })
+
+  it('draws a name that looks like markup as the characters it is', async () => {
+    go('/coach')
+    const { container } = renderScreen(<Shell />, seeded('<img src=x onerror=alert(1)>'))
+    expect(await screen.findByRole('heading', { name: '<img src=x onerror=alert(1)> is running ahead' })).toBeTruthy()
+    expect(container.querySelector('img')).toBeNull()
+  })
+
+  it('keeps the flight card when the records cannot be read, with one line for the cards', async () => {
     const fake = seeded()
     fake.tables.savings_goals.push({ id: 'g1', name: 'Flight training', target_cents: 3_000_000, saved_cents: 1_265_000, target_date: null, unit_cost_cents: 27_500, unit_label: 'flight time' })
     fake.fail('ingest_batches', '42P01')
@@ -78,6 +122,6 @@ describe('the Coach, in the app’s own words', () => {
 
     expect(await screen.findByText('Your insights did not load. Reload to try again; everything else still works.')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Flight training' })).toBeTruthy()
-    expect(screen.queryByText(/than by this day/)).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Insights' })).toBeNull()
   })
 })
