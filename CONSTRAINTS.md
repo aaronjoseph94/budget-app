@@ -142,11 +142,25 @@ the command to actually run.
 
 | Dimension | Rule | Activated by |
 |---|---|---|
-| Extraction accuracy | ≥90% zod-valid, ≥98% exact amounts over ≥20 labeled samples; no live provider calls in CI | `llm-providers` |
+| Extraction accuracy | ≥90% zod-valid, ≥98% exact amounts over ≥20 labeled samples; no live provider calls in CI | `llm-providers`, and 20 labelled receipts that may be committed (see below) |
 | Ingest idempotency | Re-import yields 0 new rows; double-approve yields 1 transaction | `ingest-pipeline` |
 | Web entry charts | Chart code out of the entry chunk (N39: the Month draws its charts on every open, so this is still open) | a lazy MonthCharts, measured |
 | Engine speed | Full recompute over 5,000 transactions ≤50 ms | `calc-engine` rollups |
 | Feedback loop | `gates.sh fast` ≤5s · full ≤90s · CI ≤5 min | CI setup |
+
+**Why Extraction accuracy stays pending** (2026-09-24). `llm-providers`
+exists now, as `read-receipt` and, from plan A09, the `ai` helper, so the
+module named as its trigger is here, and the row still cannot run. It
+measures a real model reading real receipts, and none can be committed: no
+labelled receipts exist; the owner's own receipts and statements must never
+enter the repository (CLAUDE.md); and receipts invented here would measure
+nothing about the real model, only how well it reads what this code chose
+to draw. CI also makes no live provider calls, so the only honest version
+is a recorded set of real model replies to redacted receipts, replayed
+through `parseReceiptReply`. What is checked meanwhile is the part that
+does not need the model: every reply is parsed by zod before use, and
+whatever it reads waits in Review. The row moves up when the owner supplies
+20 receipts that may be kept, redacted, as fixtures.
 
 ## Check classes
 
