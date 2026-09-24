@@ -207,16 +207,19 @@ export const ARTICLES: readonly Article[] = [
     id: 'coach',
     title: 'What the Coach does, and never does',
     summary:
-      'The Coach shows how far your flight fund has come, in hours of flying. More of it arrives over the next updates.',
+      'The Coach reads your own records and tells you, in plain words, how the month is going, what changed, and how far your flight fund has come.',
     steps: [
       'Open **Coach**.',
+      'Read the line at the top: how your spending compares with the same days last month, or last week.',
       'Read the flight card: the hours saved, of the hours your goal buys.',
-      'To change the goal, open **More**, then **Savings**, and press **Edit goal**.',
+      'Read the cards under it: at most three, the most important first, each with one thing to try.',
+      'Press a card’s button, such as **See the Month** or **Import a statement**, to act on it.',
+      'Press **Why am I seeing this?** to see the figures behind a card.',
     ],
-    done: 'the flight card shows your hours and what is saved of the target.',
+    done: 'you have read the line and the cards, and you know why each one is there.',
     stuck:
-      'The Coach never moves money and never changes a budget without your tap, and every figure it shows comes from your own records. If it says there is no goal yet, press **Set a goal**.',
-    related: ['savings', 'comparisons'],
+      'The Coach never moves money and never changes a budget without your tap, and every figure comes from your own records. A category shows only when it moves more than it usually does, so a quiet month has no cards. With little history it compares with less, and says how many months it rests on. The same line sits at the top of the **Month**; tap it to come here.',
+    related: ['savings', 'comparisons', 'statements'],
   },
   {
     id: 'comparisons',
