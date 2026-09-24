@@ -49,13 +49,29 @@ function seeded(): FakeSupabase {
 
 const rowOf = (merchant: string) => within(screen.getByText(merchant).closest('li') as HTMLElement)
 
+/**
+ * Open the screen and wait until its rows are the ones it keeps: it reads
+ * the month on mounting and again once the app's first load is in, and a
+ * row found from the first read is gone for a moment while the second runs.
+ */
+async function open(fake: FakeSupabase) {
+  let reads = 0
+  fake.server.hold = (target) => {
+    if (target === 'transactions') reads += 1
+    return null
+  }
+  renderScreen(<LedgerScreen />, fake)
+  await waitFor(() => expect(reads).toBe(2))
+  await screen.findByText('CORNER MARKET')
+  fake.server.hold = null
+}
+
 // The one place a ledger row is deleted, so what it removes is money
 // records, and a refusal must never read as done (CR-6).
 describe('LedgerScreen, removing a transaction', () => {
   it('asks once more, then removes only that row', async () => {
     const fake = seeded()
-    renderScreen(<LedgerScreen />, fake)
-    await screen.findByText('CORNER MARKET')
+    await open(fake)
 
     fireEvent.click(rowOf('CORNER MARKET').getByRole('button', { name: 'Remove this transaction' }))
     expect(fake.tables.transactions).toHaveLength(3)
@@ -69,8 +85,7 @@ describe('LedgerScreen, removing a transaction', () => {
   it('says why when the removal is refused, and keeps the row', async () => {
     const fake = seeded()
     fake.fail('DELETE transactions', '42501')
-    renderScreen(<LedgerScreen />, fake)
-    await screen.findByText('CORNER MARKET')
+    await open(fake)
 
     fireEvent.click(rowOf('CORNER MARKET').getByRole('button', { name: 'Remove this transaction' }))
     fireEvent.click(rowOf('CORNER MARKET').getByRole('button', { name: 'Remove' }))
@@ -83,8 +98,7 @@ describe('LedgerScreen, removing a transaction', () => {
 
 describe('LedgerScreen, finding a transaction', () => {
   it('steps back a month, and not past this one', async () => {
-    renderScreen(<LedgerScreen />, seeded())
-    await screen.findByText('CORNER MARKET')
+    await open(seeded())
     expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Next month' }).disabled).toBe(true)
 
     fireEvent.click(screen.getByRole('button', { name: 'Previous month' }))
@@ -95,8 +109,7 @@ describe('LedgerScreen, finding a transaction', () => {
   })
 
   it('narrows the month to a merchant or a category typed in the search', async () => {
-    renderScreen(<LedgerScreen />, seeded())
-    await screen.findByText('CORNER MARKET')
+    await open(seeded())
     const search = screen.getByPlaceholderText('Search merchant or category')
 
     fireEvent.change(search, { target: { value: 'litware' } })
