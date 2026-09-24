@@ -162,6 +162,18 @@ does not need the model: every reply is parsed by zod before use, and
 whatever it reads waits in Review. The row moves up when the owner supplies
 20 receipts that may be kept, redacted, as fixtures.
 
+**Why Engine speed stays pending** (2026-09-24). Its trigger, rollups over
+the ledger, exists: the Month recomputes `monthSheet` and
+`periodComparison` on every open, and the Coach's digest (plan A07) reads a
+year. It still cannot be an enforced row, because a wall-clock limit is not
+deterministic: the same code passes on an idle machine and fails on a
+shared CI runner, and a gate that fails at random gets ignored. It is
+measured instead, once, and recorded here. On 2026-09-24, in vitest on the
+build container, `monthSheet` and `periodComparison` together over 5,000
+transactions in 40 categories across nine months took 2.4 ms (median of
+20 runs; slowest 4.4 ms), against the row's 50 ms. The row moves up if a
+deterministic measure is found, such as counting passes over the ledger.
+
 ## Check classes
 
 Not every check is worth the same. Ranked by whether the agent can make it pass
