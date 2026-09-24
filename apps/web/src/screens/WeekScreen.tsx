@@ -38,7 +38,7 @@ import { HelpButton } from '../help/HelpButton.js'
  * address, as the Month's do, so a refresh or the back gesture returns to it.
  */
 export function WeekScreen({ monday }: { monday: string | null }) {
-  const { supabase, categories, goal, pendingTotal, loadError, version } = useAppData()
+  const { supabase, categories, mainGoal, pendingTotal, loadError, version } = useAppData()
   const today = isoDate(todayIso())
   // This week counts its days left from today, not its Monday.
   const asOf = monday === null || monday === weekBounds(today).start ? today : isoDate(monday)
@@ -173,7 +173,7 @@ export function WeekScreen({ monday }: { monday: string | null }) {
         <WeekBlocks
           sheet={sheet}
           comparison={comparison}
-          aside={goal !== null ? <GoalCard weekSpentCents={sheet.summary.spentCents} asOf={asOf} /> : <NoGoal />}
+          aside={mainGoal !== null ? <GoalCard weekSpentCents={sheet.summary.spentCents} asOf={asOf} /> : <NoGoal />}
           onUnsaved={setUnsaved}
         />
       ) : null}

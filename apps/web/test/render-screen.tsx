@@ -5,7 +5,7 @@ import type { FakeSupabase } from './fake-supabase.js'
 
 /**
  * Render a screen the way App does: inside the real AppDataProvider, which
- * loads the account, categories, goal and queue size through the fake client.
+ * loads the account, categories, goals and queue size through the fake client.
  * Nothing the screen reads is handed to it directly, so a test also covers
  * the provider's own loading.
  */

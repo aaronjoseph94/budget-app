@@ -1,19 +1,21 @@
 /**
  * What every screen needs, loaded once and refreshed after any write.
  *
- * Deliberately small: the account, the categories, the goal and the size of
- * the review queue. Each screen loads its own rows. Nothing derived is held
- * here — every total is recomputed by packages/core when a screen renders.
+ * Deliberately small: the account, the categories, the savings goals and the
+ * size of the review queue. Each screen loads its own rows. Nothing derived
+ * is held here — every total is recomputed by packages/core when a screen
+ * renders.
  */
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { orderGoals } from '@budget/core'
 import { US_AMOUNT_FORMAT, parseAmountToCents } from '@budget/statement-parsers'
 import {
   ensureAccount,
-  getGoal,
   listCategories,
+  listGoals,
   listPending,
   type Category,
-  type GoalRow,
+  type ListedGoalRow,
 } from './ledger.js'
 import type { Cents } from '@budget/money-primitives'
 import type { SupabaseClient } from './supabase.js'
@@ -28,12 +30,17 @@ export interface AppData {
   readonly displayName: string
   readonly accountId: string | null
   readonly categories: readonly Category[]
-  readonly goal: GoalRow | null
+  /** Every savings goal in the owner's order (F45): the active ones, main first, then paused, then reached. */
+  readonly goals: readonly ListedGoalRow[]
+  /** The first active goal, which the Coach and the Week show; null when none is active. */
+  readonly mainGoal: ListedGoalRow | null
+  /** Whether 0015 is in: without it, choosing the main goal, moving, pausing and reaching one wait for it. */
+  readonly goalsOrdered: boolean
   readonly pendingTotal: number
   readonly loadError: string | null
   /**
    * Whether the data above has been read yet. Until it is 'ready', an empty
-   * `categories` and a null `goal` mean "not read", not "none": a screen
+   * `categories` and no `mainGoal` mean "not read", not "none": a screen
    * shown then said "Nothing here yet" and offered a made-up goal to save
    * (FE-7). 'failed' is a first read that failed; a later failure keeps
    * what was read and is 'ready' with a `loadError`.
@@ -67,7 +74,7 @@ export function AppDataProvider({
 }) {
   const [accountId, setAccountId] = useState<string | null>(null)
   const [categories, setCategories] = useState<readonly Category[]>([])
-  const [goal, setGoal] = useState<GoalRow | null>(null)
+  const [goals, setGoals] = useState<{ readonly rows: readonly ListedGoalRow[]; readonly ordered: boolean }>({ rows: [], ordered: true })
   const [pendingTotal, setPendingTotal] = useState(0)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [status, setStatus] = useState<AppData['status']>('loading')
@@ -85,16 +92,16 @@ export function AppDataProvider({
     const mine = ++latest.current
     try {
       account.current ??= ensureAccount(supabase, userId, DEFAULT_ACCOUNT)
-      const [resolved, cats, g, pending] = await Promise.all([
+      const [resolved, cats, read, pending] = await Promise.all([
         account.current,
         listCategories(supabase),
-        getGoal(supabase),
+        listGoals(supabase),
         listPending(supabase, 1),
       ])
       if (mine !== latest.current) return
       setAccountId(resolved.id)
       setCategories(cats)
-      setGoal(g)
+      setGoals({ rows: read.goals, ordered: read.ordered })
       setPendingTotal(pending.total)
       setLoadError(null)
       setStatus('ready')
@@ -112,13 +119,37 @@ export function AppDataProvider({
     void refresh()
   }, [refresh])
 
+  const inOrder = useMemo(() => goalsInOrder(goals.rows), [goals.rows])
+
   return (
     <Context.Provider
-      value={{ supabase, userId, email, displayName, accountId, categories, goal, pendingTotal, loadError, status, refresh, version }}
+      value={{
+        supabase,
+        userId,
+        email,
+        displayName,
+        accountId,
+        categories,
+        goals: inOrder.goals,
+        mainGoal: inOrder.main,
+        goalsOrdered: goals.ordered,
+        pendingTotal,
+        loadError,
+        status,
+        refresh,
+        version,
+      }}
     >
       {children}
     </Context.Provider>
   )
+}
+
+/** The goals as core orders them (F45), carried whole so every screen reads the same rows. */
+function goalsInOrder(rows: readonly ListedGoalRow[]): { readonly goals: readonly ListedGoalRow[]; readonly main: ListedGoalRow | null } {
+  const placed = rows.map((row) => ({ id: row.id, sortOrder: row.sort_order, status: row.status, createdAt: row.created_at, row }))
+  const { active, paused, reached, main } = orderGoals({ goals: placed })
+  return { goals: [...active, ...paused, ...reached].map((g) => g.row), main: main === null ? null : main.row }
 }
 
 /**

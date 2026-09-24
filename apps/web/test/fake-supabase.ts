@@ -20,6 +20,7 @@ import type {
   FundRow,
   GoalRow,
   LedgerRow,
+  ListedGoalRow,
   MonthBalanceRow,
   NamedRow,
   PayScheduleRow,
@@ -38,8 +39,14 @@ export interface FakeTables {
   transactions: LedgerRow[]
   ingest_candidates: (PendingCandidate & { readonly status: string })[]
   merchant_rules: { readonly match_merchant: string; readonly category_id: string }[]
-  /** A goal from before 0013 may leave out its fund's columns; they read as null. */
-  savings_goals: (GoalRow & Partial<Pick<FundRow, 'category_id' | 'start_date' | 'balance_as_of'>> & { readonly user_id?: string })[]
+  /**
+   * A goal from before 0013 may leave out its fund's columns; they read as
+   * null. One may leave out when it was made and 0015's columns too; they
+   * read as the database fills them in (see `server.lacks`).
+   */
+  savings_goals: (GoalRow &
+    Partial<Pick<FundRow, 'category_id' | 'start_date' | 'balance_as_of'>> &
+    Partial<Pick<ListedGoalRow, 'created_at' | 'sort_order' | 'status' | 'reached_on'>> & { readonly user_id?: string })[]
   /** `period_start` and `period_end` only for a statement with a period (0007). */
   ingest_batches: (UnreadableBatch & { readonly period_start?: string | null; readonly period_end?: string | null })[]
   /** `dismissed_at` once dismissed (0012); absent reads as null, still waiting. */
@@ -98,6 +105,13 @@ export interface FakeSupabase {
     maxRows: number | null
     afterRead: ((table: string) => void) | null
     hold: ((table: string) => Promise<void> | null) | null
+    /**
+     * Columns a table does not have yet, as before the update that adds
+     * them, e.g. `{ savings_goals: ['sort_order', 'status', 'reached_on'] }`
+     * before 0015. A read naming one is refused with 42703 and a write
+     * naming one with PGRST204, as Postgres and PostgREST refuse each.
+     */
+    lacks: Readonly<Record<string, readonly string[]>>
   }
 }
 
@@ -132,7 +146,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     dismiss_unreadable_line: null,
   }
   const failures = new Map<string, string>()
-  const server: FakeSupabase['server'] = { refuse: null, maxRows: null, afterRead: null, hold: null }
+  const server: FakeSupabase['server'] = { refuse: null, maxRows: null, afterRead: null, hold: null, lacks: {} }
   const user = { id: 'u1', email: 'you@example.com', user_metadata: {} as Record<string, unknown> }
   let nextId = 1
 
@@ -181,6 +195,8 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     const kind = fund === null ? null : tables.categories.find((c) => c.id === fund)?.kind
     if (kind !== undefined && kind !== null && kind !== 'savings') return pgError('23514')
     if (Number(row.target_cents) <= 0 || (row.saved_cents !== undefined && Number(row.saved_cents) < 0)) return pgError('23514')
+    // 0015: a reached goal says when, and no other goal carries a day.
+    if (((row.status ?? 'active') === 'reached') !== ((row.reached_on ?? null) !== null)) return pgError('23514')
     if (fund !== null && (row.balance_as_of ?? null) === null) return pgError('23514')
     if (others.some((o) => o.name === row.name || (fund !== null && o.category_id === fund))) return pgError('23505', 409)
     if (kind === undefined) return pgError('23503', 409)
@@ -240,6 +256,8 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
 
     if (!(target in tables)) return pgError('42P01', 404)
     const table = tables[target as keyof FakeTables] as Row[]
+    const lacked = new Set(server.lacks[target] ?? [])
+    const names = (fields: Row) => Object.keys(fields).some((column) => lacked.has(column))
     const wantsObject = headers.get('accept')?.startsWith('application/vnd.pgrst.object+json') === true
 
     if (method === 'POST') {
@@ -253,6 +271,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       const conflict = merge ? (url.searchParams.get('on_conflict')?.split(',') ?? []) : []
       const added: Row[] = []
       for (const fields of Array.isArray(body) ? body : [body]) {
+        if (names(fields)) return pgError('PGRST204')
         const row: Row = { id: `new-${nextId++}`, ...fields }
         // What the database refuses, in the order it checks: NOT NULL before
         // UNIQUE. Since 0005 a category has no default list (N11).
@@ -335,6 +354,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
 
     if (method === 'PATCH' || method === 'DELETE') {
       const body = method === 'PATCH' ? (JSON.parse(String(init?.body)) as Row) : {}
+      if (names(body)) return pgError('PGRST204')
       // ON DELETE RESTRICT, as 0001 declares for everything that files under a category.
       const inUse = (id: unknown) =>
         tables.transactions.some((t) => t.category_id === id) || tables.merchant_rules.some((m) => m.category_id === id)
@@ -382,8 +402,23 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     if (method !== 'GET') return pgError('FAKE_UNSUPPORTED_METHOD', 501)
     const refused = server.refuse?.(target, url.searchParams)
     if (refused !== undefined && refused !== null) return pgError(refused)
+    const asked = [url.searchParams.get('select') ?? '', url.searchParams.get('order') ?? ''].join(',')
+    if (asked.split(',').some((term) => lacked.has(term.trim().split('.')[0] ?? ''))) return pgError('42703')
 
-    let rows = table.filter(matches)
+    // What 0004 and 0015 fill in for a goal written without them: when it
+    // was made, in the order the rows were added, place 0 and active. A
+    // column the table lacks is not filled in.
+    const filled =
+      target === 'savings_goals'
+        ? table.map((r, i) => ({
+            ...Object.fromEntries(
+              Object.entries({ created_at: new Date(Date.UTC(2026, 0, 1, 0, 0, i)).toISOString(), sort_order: 0, status: 'active', reached_on: null })
+                .filter(([column]) => !lacked.has(column)),
+            ),
+            ...r,
+          }))
+        : table
+    let rows = filled.filter(matches)
     const order = url.searchParams.get('order')
     if (order !== null) {
       // `order=a.asc,b.asc`: by the first column, then the next on a tie.

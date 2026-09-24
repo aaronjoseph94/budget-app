@@ -151,7 +151,7 @@ const FEW_CATEGORIES = 20
 
 /** "Use the starter list": every list filled with names to rename (plan §7). */
 function StarterCard({ onAdded }: { onAdded: (count: number) => void }) {
-  const { supabase, userId, categories, goal, refresh } = useAppData()
+  const { supabase, userId, categories, mainGoal, refresh } = useAppData()
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
 
@@ -160,7 +160,7 @@ function StarterCard({ onAdded }: { onAdded: (count: number) => void }) {
     setMessage(null)
     const { rows } = appendToLists({
       existing: categories.map((c) => ({ name: c.name, kind: c.kind, sortOrder: c.sort_order })),
-      wanted: starterList(goal === null ? null : goal.name),
+      wanted: starterList(mainGoal === null ? null : mainGoal.name),
     })
     try {
       onAdded(await addCategories(supabase, userId, rows))

@@ -199,7 +199,7 @@ function BudgetRow({ category, onError }: { category: Category; onError: (m: str
  * they cannot be read (0013 not applied), the form is as it was.
  */
 function Goal() {
-  const { goal } = useAppData()
+  const { mainGoal: goal } = useAppData()
   const funds = useFunds()
   const fund =
     goal === null || funds.status !== 'ready' ? undefined : funds.funds.funds.find((f) => f.figures?.goalId === goal.id)
@@ -224,7 +224,7 @@ function Goal() {
 }
 
 function GoalForm() {
-  const { supabase, userId, goal, refresh } = useAppData()
+  const { supabase, userId, mainGoal: goal, refresh } = useAppData()
   const [name, setName] = useState(goal?.name ?? 'Flight training')
   const [target, setTarget] = useState(goal === null ? '30000' : formatForInput(goal.target_cents))
   const [saved, setSaved] = useState(goal === null ? '0' : formatForInput(goal.saved_cents))

@@ -38,7 +38,7 @@ export function CoachScreen() {
 }
 
 function FlightCard() {
-  const { goal } = useAppData()
+  const { mainGoal: goal } = useAppData()
   const funds = useFunds()
   if (goal === null) {
     return (

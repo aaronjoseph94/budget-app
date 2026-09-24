@@ -31,6 +31,7 @@ import {
   type ScheduleAction,
   type WriteError,
 } from './format.js'
+import type { GoalStatus } from '@budget/core'
 import { LIST_HEADING, type CategoryKind } from './lists.js'
 import type { SupabaseClient } from './supabase.js'
 
@@ -1018,7 +1019,7 @@ export async function setMonthBalance(supabase: SupabaseClient, edit: BalanceEdi
 }
 
 // ---------------------------------------------------------------------------
-// The goal
+// The goals
 // ---------------------------------------------------------------------------
 
 export interface GoalRow {
@@ -1031,21 +1032,61 @@ export interface GoalRow {
   readonly unit_label: string | null
 }
 
-export async function getGoal(supabase: SupabaseClient): Promise<GoalRow | null> {
-  const { data, error } = await supabase
+/** A goal with its place and state (0015), as the app lists every goal. */
+export interface ListedGoalRow extends GoalRow {
+  /** When it was made (0004); breaks a tie in place (F45). */
+  readonly created_at: string
+  readonly sort_order: number
+  readonly status: GoalStatus
+  /** The day it was marked reached; null unless it is. */
+  readonly reached_on: string | null
+}
+
+export interface GoalsRead {
+  readonly goals: readonly ListedGoalRow[]
+  /**
+   * Whether 0015 is in. Before it, every goal reads as active at place 0,
+   * which is what 0015 makes of each, and nothing that places a goal or
+   * changes its state can be saved.
+   */
+  readonly ordered: boolean
+}
+
+/**
+ * Every goal, read whole: a handful, as the one goal read before them was.
+ * 0015's columns are asked for; when they are not there yet (42703) the
+ * goals are read as before it, so a missing update never takes the first
+ * load down, and the goal that leads is still the oldest (F45).
+ */
+export async function listGoals(supabase: SupabaseClient): Promise<GoalsRead> {
+  const placed = await supabase
     .from('savings_goals')
-    .select('id, name, target_cents, saved_cents, target_date, unit_cost_cents, unit_label')
+    .select('id, name, target_cents, saved_cents, target_date, unit_cost_cents, unit_label, created_at, sort_order, status, reached_on')
     .order('created_at')
-    .limit(1)
-    .maybeSingle()
-  if (error !== null) fail(error)
-  if (data === null) return null
-  const g = data as GoalRow
+    .order('id')
+  if (placed.error === null) return { goals: ((placed.data ?? []) as ListedGoalRow[]).map(goalNumbers), ordered: true }
+  if (placed.error.code !== '42703') fail(placed.error)
+  const before = await supabase
+    .from('savings_goals')
+    .select('id, name, target_cents, saved_cents, target_date, unit_cost_cents, unit_label, created_at')
+    .order('created_at')
+    .order('id')
+  if (before.error !== null) fail(before.error)
+  const rows = (before.data ?? []) as (GoalRow & { readonly created_at: string })[]
+  return {
+    goals: rows.map((g) => goalNumbers({ ...g, sort_order: 0, status: 'active', reached_on: null })),
+    ordered: false,
+  }
+}
+
+/** bigint columns arrive as numbers or strings, so each is made a number. */
+function goalNumbers(g: ListedGoalRow): ListedGoalRow {
   return {
     ...g,
     target_cents: Number(g.target_cents),
     saved_cents: Number(g.saved_cents),
     unit_cost_cents: g.unit_cost_cents === null ? null : Number(g.unit_cost_cents),
+    sort_order: Number(g.sort_order),
   }
 }
 

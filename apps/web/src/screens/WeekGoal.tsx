@@ -15,7 +15,7 @@ import { navigate } from '../nav.js'
  * well, beside the summary.
  */
 export function GoalCard({ weekSpentCents, asOf }: { weekSpentCents: number; asOf: string }) {
-  const { goal } = useAppData()
+  const { mainGoal: goal } = useAppData()
   const funds = useFunds()
   if (goal === null) return null
   const savedCents = goalSavedCents(goal, funds)
