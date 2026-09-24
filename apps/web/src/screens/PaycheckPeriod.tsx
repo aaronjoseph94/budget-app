@@ -22,7 +22,7 @@ const SHARE: Readonly<Record<PaySchedule['frequency'], string>> = {
 }
 
 /**
- * One pay period of Workbook's Paycheck Budget (S15b): the Month's blocks over
+ * One pay period of the workbook's Paycheck Budget (S15b): the Month's blocks over
  * the period holding `day`, found from an income source's pay schedule
  * rather than typed (F15 B, D18), or today's period when `day` is null. The
  * arrows write the payday they land on into the address.
@@ -123,7 +123,7 @@ export function PaycheckPeriod({
           <ImportedThrough through={sheet.importedThrough} />
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <Summary sheet={sheet} />
-            {/* Where Workbook's chart well stands (I3:M18): the owner was told a
+            {/* Where the workbook's chart well stands (I3:M18): the owner was told a
               share is about $738 of $1,600 rent, and this says how it is found. */}
             <section
               aria-label="How this period is counted"

@@ -1,10 +1,10 @@
 /**
- * Workbook's Variable-expenses doughnut (Jan chart13): one slice per category,
+ * The workbook's Variable-expenses doughnut (Jan chart13): one slice per category,
  * sized by its share of the month's spending, with a legend underneath.
  *
  * Colour follows the category's row on its list, as chart13's colours follow
  * the row (dPt idx 0–22), so a category keeps its colour whichever others
- * have spending. Workbook's 23 colours run from the palest coral to the darkest,
+ * have spending. The workbook's 23 colours run from the palest coral to the darkest,
  * then a near-white peach; the app has no 23-row limit (D11), so the 24th row
  * starts the scale again. Neighbouring steps are close, so slices are parted
  * by a gap in the card's colour and each is named in the legend: colour is
@@ -71,7 +71,7 @@ export function spendingDoughnut(input: DoughnutInput): SvgMarkup {
     }
     from = to
   }
-  // Nothing to share: the empty ring Workbook's chart draws with every Actual
+  // Nothing to share: the empty ring the workbook's chart draws with every Actual
   // at 0, in the list's paler band so it reads as waiting, not as a slice.
   const track = { d: ring(0, 10_000), 'fill-rule': 'evenodd', fill: '#FFEFE6', class: 'chart-variable-track' }
   const body = slices.length > 0 ? slices : [el('path', track)]

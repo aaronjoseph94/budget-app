@@ -402,7 +402,7 @@ export interface NamedRow {
 }
 
 export interface Category extends NamedRow {
-  /** Which of Workbook's lists it is on (migration 0005). */
+  /** Which of the workbook's lists it is on (migration 0005). */
   readonly kind: CategoryKind
   /** Its row within that list; the list sorts by this, then by name. */
   readonly sort_order: number
@@ -542,7 +542,7 @@ export async function listCategories(supabase: SupabaseClient): Promise<readonly
 
 /**
  * Rename a category where it stands. Rows are keyed by id, never by name, so
- * every charge already filed under it follows the new name (unlike Workbook,
+ * every charge already filed under it follows the new name (unlike the workbook,
  * where a renamed cell orphans the rows that typed the old one).
  */
 export async function renameCategory(supabase: SupabaseClient, categoryId: string, name: string): Promise<void> {
@@ -805,7 +805,7 @@ export interface PlanRow {
   readonly effective_month: string
   /** Null is "stopped from this month", which is not $0. */
   readonly planned_cents: number | null
-  /** Workbook's Day Paid, 1–31, or null when none was typed. */
+  /** The workbook's Day Paid, 1–31, or null when none was typed. */
   readonly due_day: number | null
 }
 
@@ -951,7 +951,7 @@ export interface MonthBalanceRow {
 
 /**
  * The starting balance typed for the month beginning `month`, or null when
- * none was (D17). That month's alone: Workbook has it typed on every tab
+ * none was (D17). That month's alone: the workbook has it typed on every tab
  * (Jan!D9), never carried from the month before.
  */
 export async function getMonthBalance(supabase: SupabaseClient, month: string): Promise<number | null> {
@@ -1283,7 +1283,7 @@ export async function removeDebt(supabase: SupabaseClient, debtId: string): Prom
   if (error !== null) throw new Error(describeDebtFailure('save', error))
 }
 
-/** Set a debt's extra payment for a month; one per debt a month, as Workbook has one cell. */
+/** Set a debt's extra payment for a month; one per debt a month, as the workbook has one cell. */
 export async function saveDebtExtra(
   supabase: SupabaseClient,
   extra: { readonly userId: string; readonly debtId: string; readonly month: string; readonly amountCents: number },

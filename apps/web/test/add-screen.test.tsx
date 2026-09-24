@@ -41,7 +41,7 @@ describe('AddScreen, what it is for', () => {
 })
 
 describe('AddScreen, typing one in with a new category', () => {
-  it("groups the category picker under Workbook's lists", async () => {
+  it("groups the category picker under the workbook's lists", async () => {
     renderScreen(<AddScreen />, seeded())
 
     fireEvent.click(await screen.findByRole('tab', { name: /Type it/ }))

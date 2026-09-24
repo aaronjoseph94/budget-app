@@ -86,7 +86,7 @@ describe('spendingDoughnut', () => {
 
 describe('coralFor', () => {
   // Jan chart13 colours by row: idx 0 the palest, 21 the darkest, 22 a peach.
-  it("takes Workbook's colour for the row, and starts again after the 23rd", () => {
+  it("takes the workbook's colour for the row, and starts again after the 23rd", () => {
     const expected = ['#FFE3DE', '#F9D8D3', '#841809', '#841809', '#4C0B02', '#FFF3EB', '#FFE3DE']
     expect([0, 1, 17, 18, 21, 22, 23].map(coralFor)).toEqual(expected)
     expect(() => coralFor(-1)).toThrow(RangeError)

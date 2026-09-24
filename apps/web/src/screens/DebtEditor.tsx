@@ -9,7 +9,7 @@ import { Sheet } from '../components/ui/sheet.js'
 import { DebtExtras } from './DebtExtras.js'
 
 /**
- * A debt, typed where Workbook types it: its Starting Balance, Minimum Payment
+ * A debt, typed where the workbook types it: its Starting Balance, Minimum Payment
  * and APR (Debt Calculator!J18:J20, with their cell notes as hints), the
  * month the balance is as of (D6, per debt in 0014), and below them its
  * extra payments (DebtExtras). A month is typed as a month, and stored as

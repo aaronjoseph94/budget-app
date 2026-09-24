@@ -6,7 +6,7 @@ import { SvgChart } from '../components/ui/chart.js'
 import { cn } from '../lib/cn.js'
 
 /**
- * Workbook's chart panel, Jan!H3:K18: the income chart (chart12) and the
+ * The workbook's chart panel, Jan!H3:K18: the income chart (chart12) and the
  * Variable-expenses doughnut (chart13), drawn by chart-specs from the month
  * core computed. Every length and angle is core's basis points (`goalBars`,
  * `shareBp`, F17); this screen only formats the amounts written beside them.

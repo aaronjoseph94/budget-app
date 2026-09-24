@@ -78,7 +78,7 @@ afterEach(() => {
 })
 
 describe('CalendarScreen', () => {
-  it("shows this month's title and, in Workbook's pill, what is due in it (J3)", async () => {
+  it("shows this month's title and, in the workbook's pill, what is due in it (J3)", async () => {
     renderScreen(<CalendarScreen month={null} />, seeded())
 
     expect(screen.getByRole('heading', { name: 'September 2026' })).toBeTruthy()
@@ -111,7 +111,7 @@ describe('CalendarScreen', () => {
     expect(screen.queryByText('Groceries')).toBeNull()
   })
 
-  it("draws Workbook's grid for a wide screen, Sunday first, with each week's total in its last column", async () => {
+  it("draws the workbook's grid for a wide screen, Sunday first, with each week's total in its last column", async () => {
     renderScreen(<CalendarScreen month="2026-09" />, seeded())
 
     const grid = await screen.findByRole('table', { name: /^Bills and paydays by day, with each week’s total\. Amounts in italics are planned/ })

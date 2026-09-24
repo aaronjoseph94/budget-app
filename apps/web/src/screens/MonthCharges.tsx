@@ -42,7 +42,7 @@ export function MonthCharges({
 }: {
   categoryId: string
   name: string
-  /** The Workbook list the category is on, e.g. "Variable expenses". */
+  /** The list the category is on, e.g. "Variable expenses". */
   heading: string
   /** The month's first day. */
   month: string
@@ -143,7 +143,7 @@ export function MonthCharges({
 }
 
 /**
- * Where one charge goes: a category picker under Workbook's headings, and
+ * Where one charge goes: a category picker under the workbook's headings, and
  * "Always file <shop> here", on by default, which also re-points the shop's
  * learned rule so the next statement files it in the new place. Off, only
  * this charge moves.

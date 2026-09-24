@@ -13,7 +13,7 @@ import { WeekBlocks } from './WeekBlocks.js'
 import { GoalCard, NoGoal } from './WeekGoal.js'
 
 /**
- * Workbook's Weekly Budget: the Month's summary and six blocks over the
+ * The workbook's Weekly Budget: the Month's summary and six blocks over the
  * Monday-to-Sunday week (D14), with the flight goal beside them.
  *
  * Every figure comes from packages/core: weekSheet over the week's ledger,

@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react'
 
 /**
  * Whether the screen is wide enough for a desktop layout: Tailwind's `lg`,
- * 1024px, where the Year takes Workbook's Annual arrangement (plan §6.4).
+ * 1024px, where the Year takes the workbook's Annual arrangement (plan §6.4).
  *
  * A screen whose phone and desktop layouts differ in what they hold, not
  * only where it sits, draws one of them rather than both with one hidden:

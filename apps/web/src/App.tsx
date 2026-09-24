@@ -95,7 +95,7 @@ function tabOf(screen: Screen, tabs: readonly Tab[]): Screen {
 export function Shell() {
   const { screen, period } = useAddress()
   const { pendingTotal, loadError, status, refresh } = useAppData()
-  // Month, Week, Paycheck and Year widen on a desktop to take Workbook's four
+  // Month, Week, Paycheck and Year widen on a desktop to take the workbook's four
   // columns (§6.3, §6.4), and the Bill Calendar to give its seven room for names.
   const wide = screen === 'month' || screen === 'week' || screen === 'paycheck' || screen === 'year' || screen === 'calendar'
   const width = wide ? 'max-w-3xl lg:max-w-7xl' : 'max-w-3xl'

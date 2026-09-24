@@ -2,10 +2,10 @@ import type { PayoffStrategies, PayoffStrategy } from '@budget/core'
 import { formatCents, formatMonthTitle } from '../format.js'
 
 /**
- * The debt-free month on three plans, side by side (D2, F23): Workbook's,
+ * The debt-free month on three plans, side by side (D2, F23): the workbook's,
  * each debt paying its own minimum for life, and the snowball and the
  * avalanche, which roll a cleared debt's payment into the next. Every
- * figure is core's (payoffStrategies); Workbook cannot check the last two.
+ * figure is core's (payoffStrategies); the workbook cannot check the last two.
  */
 const PLANS: readonly { key: PayoffStrategy; name: string; how: string }[] = [
   { key: 'flat', name: 'Minimums only', how: 'Each debt pays its own minimum until it is paid off.' },

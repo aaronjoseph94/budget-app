@@ -12,14 +12,14 @@ import { SvgChart } from '../components/ui/chart.js'
 import { Figure } from '../components/ui/type.js'
 
 /**
- * Workbook's Debt Calculator (S17): the summary card (Current Debt Total,
+ * The workbook's Debt Calculator (S17): the summary card (Current Debt Total,
  * Debt-Free By, the month's payments, Payoff Progress; B8:F21) and a card
  * for each debt with its balance today and its paid-against-left doughnut
  * (H6:K21), in the Debts screen's order.
  *
  * Every figure is packages/core's: the schedule (debtPlan), where each debt
  * stands today (debtStatus, F22), each doughnut's basis points. Balances
- * come from the schedule alone, as Workbook's do (N53). Names are plain text.
+ * come from the schedule alone, as the workbook's do (N53). Names are plain text.
  */
 export function DebtsScreen() {
   const state = useDebts()

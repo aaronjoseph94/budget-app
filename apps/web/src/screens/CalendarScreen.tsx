@@ -13,7 +13,7 @@ import { cn } from '../lib/cn.js'
 import { CompactGrid, MonthGrid, WEEKDAYS } from './CalendarGrid.js'
 
 /**
- * Workbook's Bill Calendar (S15c): a month's bills, debts and subscriptions on
+ * The workbook's Bill Calendar (S15c): a month's bills, debts and subscriptions on
  * the days they are due or were charged, who is paid which day, and a total
  * for each week and the month. `month` is the address's `YYYY-MM`, or null
  * for this month; the arrows step through shiftMonth, as the Month's do.
@@ -78,7 +78,7 @@ export function CalendarScreen({ month }: { month: string | null }) {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {calendar !== null && typeof calendar !== 'string' ? (
-            // Named on the pill, not only to a screen reader: Workbook's J3 sits
+            // Named on the pill, not only to a screen reader: the workbook's J3 sits
             // under its own heading, and a bare figure in the band said nothing.
             <p className="flex flex-col rounded-2xl bg-calendar-pill px-3 py-1 leading-tight text-calendar-pill-ink">
               <span className="text-[11px] font-medium">Due this month</span>
@@ -105,7 +105,7 @@ export function CalendarScreen({ month }: { month: string | null }) {
       {calendar !== null && typeof calendar !== 'string' ? (
         <>
           {/* Phones get the month as a picture with the list under it; a
-            wider screen has room for Workbook's grid, names and all. */}
+            wider screen has room for the workbook's grid, names and all. */}
           <CompactGrid calendar={calendar} className="md:hidden" />
           <MonthGrid calendar={calendar} className="hidden md:table" />
           <Agenda calendar={calendar} className="md:hidden" />
@@ -125,7 +125,7 @@ interface Loaded {
 
 /**
  * The calendar as a list, a week at a time: each day with something on it,
- * its bills and who is paid, and the week's total (Workbook's Q8).
+ * its bills and who is paid, and the week's total (the workbook's Q8).
  */
 export function Agenda({ calendar, className }: { calendar: BillCalendar; className?: string }) {
   return (

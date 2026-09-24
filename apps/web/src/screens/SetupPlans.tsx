@@ -8,7 +8,7 @@ import { Input } from '../components/ui/form.js'
 import { Figure } from '../components/ui/type.js'
 
 /**
- * Workbook's Bills tab, inside Setup (plan §6.5, S9): a day paid and a monthly
+ * The workbook's Bills tab, inside Setup (plan §6.5, S9): a day paid and a monthly
  * amount on every Bills, Debts and Subscriptions row, from this month on
  * (D13), and the totals under them.
  */
@@ -90,7 +90,7 @@ export function useMonthlyAmounts(month: string): MonthlyAmounts {
 }
 
 /**
- * The two columns' headings, and short help from Workbook's notes on them
+ * The two columns' headings, and short help from the workbook's notes on them
  * (Bills!B5 "Type the DAY of each month this repeat bill is paid!", D5 on a
  * yearly cost as a monthly one). The last sentence is the plan's (§10 item
  * 4): a yearly charge on the card replaces that month's amount (D5), so a
@@ -113,9 +113,9 @@ export function PlanHeadings({ month }: { month: string }) {
 }
 
 /**
- * One of Workbook's total tiles (Bills!D32, H32, L32 and H36): the label on the
+ * One of the workbook's total tiles (Bills!D32, H32, L32 and H36): the label on the
  * card's pink, the figure in Comfortaa beside it, from core's billsTotals.
- * To the cent (D8), where Workbook's "$"#,##0 shows Netflix's 17.99 as $18.
+ * To the cent (D8), where the workbook's "$"#,##0 shows Netflix's 17.99 as $18.
  */
 export function TotalTile({ label, cents }: { label: string; cents: number }) {
   return (

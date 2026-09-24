@@ -9,7 +9,7 @@ import { Input } from '../components/ui/form.js'
 import { cn } from '../lib/cn.js'
 
 /**
- * A budget or goal typed where Workbook types it, on the month (Jan!D22:T44,
+ * A budget or goal typed where the workbook types it, on the month (Jan!D22:T44,
  * O10:O16, T10:T16). "From this month on" is the default (decision 5): this
  * month and each later one until a month given its own. "Just this month"
  * changes this month alone. Clearing follows the same choice and stores "no

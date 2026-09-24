@@ -2,13 +2,13 @@
  * The Year's column charts, from Annual Budget's chart row:
  *
  * - chart40, "Monthly Income vs Expenses": a column a month, income Actual
- *   (#D7EEEB) with expense Actual (#F9D7D2) stacked on it, as Workbook stacks
+ *   (#D7EEEB) with expense Actual (#F9D7D2) stacked on it, as the workbook stacks
  *   them (F19).
  * - chart42, "Annual Totals": Goal (#517070) beside Actual (#E6E1CE) for
  *   Income, Savings and the four spending lists.
  *
  * Every length is basis points of one scale that core chose (`stackedColumns`,
- * `goalBars`, F19); this file only turns them into rectangles. Workbook's value
+ * `goalBars`, F19); this file only turns them into rectangles. The workbook's value
  * axis ("$"#,##0) is not drawn: every amount is in the chart's description,
  * each column's own title, and the tables beside it.
  */

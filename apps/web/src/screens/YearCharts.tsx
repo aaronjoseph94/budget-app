@@ -78,7 +78,7 @@ export function TopRing({ top, rank }: { top: TopExpense; rank: number }) {
 /**
  * Home's savings-goals chart (chart5, D23): each fund with a goal, its
  * balance today over a track as long as the goal, the bar's length core's
- * `fundProgress`. Funds with no goal are left out, as Workbook's empty slots
+ * `fundProgress`. Funds with no goal are left out, as the workbook's empty slots
  * draw nothing.
  */
 export function SavingsGoalsChart({ funds }: { funds: readonly SavingsFund[] }) {

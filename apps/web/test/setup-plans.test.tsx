@@ -6,9 +6,9 @@ import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 
 /**
- * Workbook's Bills tab inside Setup (S9): each Bills, Debts and Subscriptions
+ * The workbook's Bills tab inside Setup (S9): each Bills, Debts and Subscriptions
  * row's day paid and monthly amount, from this month on (D13). Today is fixed
- * at 23 September 2026, so "this month" is September. Names are Workbook's
+ * at 23 September 2026, so "this month" is September. Names are the workbook's
  * placeholders; amounts are invented.
  */
 
@@ -326,7 +326,7 @@ const tile = async (label: string, list?: string) => {
   return term.nextElementSibling?.textContent
 }
 
-describe("SetupScreen, Workbook's total tiles", () => {
+describe("SetupScreen, the workbook's total tiles", () => {
   it('totals each card and all three together, to the cent, for this month', async () => {
     const fake = seeded()
     fake.tables.categories.push(category('spotify', 'Spotify', 'subscription', 1))
@@ -337,7 +337,7 @@ describe("SetupScreen, Workbook's total tiles", () => {
     await waitFor(async () => expect(await tile('Bills total', 'Bills')).toBe('$1,685.00'))
     expect(await tile('Debts total', 'Debts')).toBe('$0.00')
     expect(await tile('Subscriptions total', 'Subscriptions')).toBe('$11.99')
-    // D7: Workbook's Bills!H36 would leave the subscriptions out, at $1,685.00.
+    // D7: the workbook's Bills!H36 would leave the subscriptions out, at $1,685.00.
     expect(await tile('Fixed monthly bills')).toBe('$1,696.99')
     expect(screen.getByText('Bills, debts and subscriptions together, in September 2026.')).toBeTruthy()
     expect((await card('Variable expenses')).queryByText(/ total$/)).toBeNull()

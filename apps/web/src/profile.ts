@@ -1,5 +1,5 @@
 /**
- * Your name, as Workbook's START HERE!I3 holds it ("My name is ___").
+ * Your name, as the workbook's START HERE!I3 holds it ("My name is ___").
  *
  * Kept in the Supabase sign-in's own `user_metadata` rather than a table
  * (docs/workbook-views-plan.md §4): it is one short string about the person, and

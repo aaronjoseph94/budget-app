@@ -8,7 +8,7 @@ import { NativeSelect } from '../components/ui/form.js'
 import { PaycheckPeriod } from './PaycheckPeriod.js'
 
 /**
- * Workbook's Paycheck Budget (S15b): the pay period of an income source with a
+ * The workbook's Paycheck Budget (S15b): the pay period of an income source with a
  * schedule (F15 B). `day` is the address's `YYYY-MM-DD`, or null for
  * today's period. With several sources on schedules, the owner picks which
  * one's paydays the periods follow; with none, the screen says where to set

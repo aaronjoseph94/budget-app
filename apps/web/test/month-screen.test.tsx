@@ -78,7 +78,7 @@ describe('MonthScreen blocks', () => {
   // Hand-derived. Variable: groceries 64.12 + 35.88 = 100.00, dining 25.00,
   // clothing −40.00: 85.00. Bills: phone 55.00. Income 2,500.00, savings 300.00.
   // No budgets, so each Variable row's Left is 0 − Actual (F5, F16).
-  it("fills Workbook's blocks from the month's rows, phone order first", async () => {
+  it("fills the workbook's blocks from the month's rows, phone order first", async () => {
     renderScreen(<MonthScreen month={null} />, seeded())
 
     expect(await screen.findByRole('heading', { name: 'September 2026' })).toBeTruthy()
@@ -177,7 +177,7 @@ function budgeted(): FakeSupabase {
 describe('MonthScreen budgets and goals', () => {
   // Hand-derived. Groceries 200.00 − 100.00; dining 20.00 − 25.00; clothing
   // no budget: 0 − (−40.00); gifts 0 − 0. Left to spend 100 − 5 + 40 = 135.00.
-  it("shows Workbook's columns from the budgets in effect this month, and Left to spend with them", async () => {
+  it("shows the workbook's columns from the budgets in effect this month, and Left to spend with them", async () => {
     renderScreen(<MonthScreen month="2026-09" />, budgeted())
     await screen.findByRole('region', { name: 'Variable expenses' })
 
@@ -231,7 +231,7 @@ describe('MonthScreen budgets and goals', () => {
     expect(summary.getByText('No budgets on Variable expenses yet.')).toBeTruthy()
   })
 
-  it("marks overspending with Workbook's pill and its minus sign, and a fund short of its goal with the sign alone", async () => {
+  it("marks overspending with the workbook's pill and its minus sign, and a fund short of its goal with the sign alone", async () => {
     renderScreen(<MonthScreen month="2026-09" />, budgeted())
     await screen.findByRole('region', { name: 'Variable expenses' })
 
@@ -353,7 +353,7 @@ describe('MonthScreen summary and notes', () => {
 
   // Hand-derived. From 2,400.00: + pay 2,500.00 − spent 140.00 − saved
   // 300.00 = 4,460.00 (F7). The 500.00 card payment is in none of it.
-  it("shows Workbook's four numbers in Workbook's order, End of month from the start typed for the month", async () => {
+  it("shows the workbook's four numbers in its order, End of month from the start typed for the month", async () => {
     const fake = seeded()
     fake.tables.month_balances.push(balance('m1', '2026-09-01', 240_000))
     renderScreen(<MonthScreen month="2026-09" />, fake)
@@ -376,7 +376,7 @@ describe('MonthScreen summary and notes', () => {
   })
 
   // −3,000.00 + 2,500.00 − 140.00 − 300.00 = −940.00.
-  it("marks a negative Left to spend in Workbook's pink, and an overdrawn start and end with their minus sign alone", async () => {
+  it("marks a negative Left to spend in the workbook's pink, and an overdrawn start and end with their minus sign alone", async () => {
     const fake = seeded()
     fake.tables.month_balances.push(balance('m1', '2026-09-01', -300_000))
     renderScreen(<MonthScreen month="2026-09" />, fake)
@@ -394,7 +394,7 @@ describe('MonthScreen summary and notes', () => {
     }
     cleanup()
 
-    // Workbook's rule is below zero (Jan!D13:E14, lessThan 0): exactly $0.00 left is not pink.
+    // The workbook's rule is below zero (Jan!D13:E14, lessThan 0): exactly $0.00 left is not pink.
     const even = seeded()
     even.tables.category_budgets.push(budget('b1', 'groceries', '2026-09-01', 'onward', 8500))
     renderScreen(<MonthScreen month="2026-09" />, even)

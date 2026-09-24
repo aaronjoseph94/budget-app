@@ -2,11 +2,11 @@ import type { BillCalendar, CalendarDay } from '@budget/core'
 import { formatAmount, formatCents } from '../format.js'
 import { cn } from '../lib/cn.js'
 
-/** Sunday first, as Workbook's B6:N6 are. */
+/** Sunday first, as the workbook's B6:N6 are. */
 export const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const
 
 /**
- * Workbook's Bill Calendar grid (B6:Q43), for a screen wide enough for names:
+ * The workbook's Bill Calendar grid (B6:Q43), for a screen wide enough for names:
  * seven day columns, Sunday first, and each week's total in the last column
  * (Q8). A day shows its number, a green pill for each income source paid
  * that day (C8), and every bill on it with its amount (B9:C13), all as
@@ -27,7 +27,7 @@ export function MonthGrid({ calendar, className }: { calendar: BillCalendar; cla
               scope="col"
               className="border border-calendar-rule px-1 py-2 text-[0.625rem] font-medium uppercase tracking-[0.1em] text-calendar-head xl:tracking-[0.25em]"
             >
-              {/* Workbook spells them out letter by letter ("S U N D A Y"); spacing does it here, so a screen reader still says the day. */}
+              {/* The workbook spells them out letter by letter ("S U N D A Y"); spacing does it here, so a screen reader still says the day. */}
               {name}
             </th>
           ))}

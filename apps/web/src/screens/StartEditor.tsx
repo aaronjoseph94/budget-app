@@ -7,7 +7,7 @@ import { Button } from '../components/ui/button.js'
 import { Input } from '../components/ui/form.js'
 
 /**
- * The bank balance a month started with, typed where Workbook types it (Jan!D9,
+ * The bank balance a month started with, typed where the workbook types it (Jan!D9,
  * note: "Type in the Bank Balance you started the month with!"), once a
  * month (decision 6). It is that month's alone: nothing is copied into the
  * next, whose start is what the bank shows then, not this month's projection.

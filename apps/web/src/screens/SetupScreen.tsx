@@ -23,15 +23,15 @@ import { PayFields, PayHeadings, usePaySchedules, type PaySchedules } from './Se
 
 interface ListCard {
   readonly kind: CategoryKind
-  /** The column heading Workbook puts on the card, emoji and all (START HERE row 7 and 17). */
+  /** The column heading the workbook puts on the card, emoji and all (START HERE row 7 and 17). */
   readonly header?: readonly [emoji: string, text: string]
-  /** Short help, from the note Workbook attaches to the card's heading cell. */
+  /** Short help, from the note the workbook attaches to the card's heading cell. */
   readonly hint: string
 }
 
 /**
  * START HERE's layout: section labels, and under each one its cards, in the
- * order Workbook has them. "Not spending" is the app's own and comes last.
+ * order the workbook has them. "Not spending" is the app's own and comes last.
  */
 const SECTIONS: readonly { readonly label: string; readonly cards: readonly ListCard[] }[] = [
   { label: 'Income', cards: [{ kind: 'income', header: ['💵', 'Source'], hint: 'What type of income do you receive?' }] },
@@ -43,7 +43,7 @@ const SECTIONS: readonly { readonly label: string; readonly cards: readonly List
       {
         kind: 'debt',
         header: ['💳', 'Debts'],
-        // Workbook's note (D17) invites every open credit line; the second
+        // The workbook's note (D17) invites every open credit line; the second
         // sentence is the plan's (§3.3), so the Rogers card is not put here.
         hint: 'What loans are you paying off from the bank? A card you pay off from your bank is not a monthly debt payment here — its purchases are already counted.',
       },
@@ -58,7 +58,7 @@ const SECTIONS: readonly { readonly label: string; readonly cards: readonly List
 ]
 
 /**
- * Setup: Workbook's START HERE tab. Your name, and every category under the
+ * Setup: the workbook's START HERE tab. Your name, and every category under the
  * list it belongs to, which decides where its charges are counted.
  */
 export function SetupScreen() {
@@ -67,7 +67,7 @@ export function SetupScreen() {
   // How many the starter button added, kept here so its message stays once
   // the button itself is gone.
   const [added, setAdded] = useState<number | null>(null)
-  // Monthly amounts are set from this month on (D13), as Workbook's Bills tab
+  // Monthly amounts are set from this month on (D13), as the workbook's Bills tab
   // sets one for every month.
   const month = monthBounds(isoDate(todayIso())).start
   const amounts = useMonthlyAmounts(month)
@@ -103,7 +103,7 @@ export function SetupScreen() {
   )
 }
 
-/** The lists with Workbook's Day Paid and Monthly Amount columns (Bills!B:D, F:H, J:L). */
+/** The lists with the workbook's Day Paid and Monthly Amount columns (Bills!B:D, F:H, J:L). */
 const RECURRING: ReadonlySet<CategoryKind> = new Set(['bill', 'debt', 'subscription'])
 
 /** The tile under each recurring card, and the total its list adds to (Bills!D32, H32, L32). */
@@ -114,8 +114,8 @@ const CARD_TOTAL: Readonly<Partial<Record<CategoryKind, { label: string; field: 
 }
 
 /**
- * Workbook's "Fixed Monthly Bills" tile (Bills!H36), under the three cards. It
- * adds all three lists: Workbook's formula reads an empty cell for the third
+ * The workbook's "Fixed Monthly Bills" tile (Bills!H36), under the three cards. It
+ * adds all three lists: the workbook's formula reads an empty cell for the third
  * and drops the subscriptions (D7), so the line under it says what is in it.
  */
 function FixedTotal({ amounts, month }: { amounts: MonthlyAmounts; month: string }) {

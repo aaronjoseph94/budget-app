@@ -146,7 +146,7 @@ describe('Moving a charge from the Month', () => {
     expect(fake.rpcCalls[0]?.args).toEqual({ p_transaction: 't1', p_category: 'card', p_learn: false })
   })
 
-  it("offers every other category under Workbook's headings, in list order", async () => {
+  it("offers every other category under the workbook's headings, in list order", async () => {
     const sheet = await startMoving(seeded(), 'CONTOSO MARKET')
     const picker = sheet.getByRole('combobox', { name: 'Move to' })
     const groups = [...picker.querySelectorAll('optgroup')].map((g) => [g.label, ...[...g.children].map((o) => o.textContent)])

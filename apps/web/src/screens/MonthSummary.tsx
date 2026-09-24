@@ -7,11 +7,11 @@ import { useReturnFocus } from '../lib/return-focus.js'
 import { StartEditor } from './StartEditor.js'
 
 /**
- * Workbook's summary card, Jan!B5:F16: Start, Spent, Left to spend and End of
- * month (D9, D11, D13, D15), each of them core's. Workbook's labels were
+ * The workbook's summary card, Jan!B5:F16: Start, Spent, Left to spend and End of
+ * month (D9, D11, D13, D15), each of them core's. The workbook's labels were
  * pictures that did not survive the export, so these name what its formulas
  * and its D9 note ("Type in the Bank Balance you started the month with!")
- * say each number is, in Workbook's order, two to a row as in the plan's sketch.
+ * say each number is, in the workbook's order, two to a row as in the plan's sketch.
  *
  * Start is the balance typed for this month (decision 6), and is typed by
  * tapping it. With none typed the card asks for it where the number would
@@ -19,8 +19,8 @@ import { StartEditor } from './StartEditor.js'
  * what it waits for. A save refused after its editor closed goes to
  * `onUnsaved`, which is cleared when the editor opens again.
  *
- * A negative Left to spend takes Workbook's pink (Jan!D13:E14's conditional
- * format) in an ink that can be read on it. Workbook marks nothing else on the
+ * A negative Left to spend takes the workbook's pink (Jan!D13:E14's conditional
+ * format) in an ink that can be read on it. The workbook marks nothing else on the
  * card, so a negative End of month keeps the card's colour and shows its
  * minus sign (D8).
  */
@@ -69,7 +69,7 @@ export function MonthSummary({
         </Entry>
         <Entry
           label="Left to spend"
-          // Workbook takes a blank budget as $0, so every dollar spent comes off
+          // The workbook takes a blank budget as $0, so every dollar spent comes off
           // (F5). Only Variable expenses count here, so the hint names them.
           hint={noBudgets ? 'No budgets on Variable expenses yet.' : null}
         >

@@ -8,9 +8,9 @@ import { Button } from '../components/ui/button.js'
 import { Input } from '../components/ui/form.js'
 
 /**
- * A weekly budget or goal, typed on the Week as Workbook types one on its
+ * A weekly budget or goal, typed on the Week as the workbook types one on its
  * Weekly Budget tab (D22:W44, Q10:Q16, W10:W16). It is one amount for every
- * week (`categories.weekly_budget_cents`), as Workbook's tab keeps one set, so
+ * week (`categories.weekly_budget_cents`), as the workbook's tab keeps one set, so
  * there is no "which weeks" choice as the Month's editor has. Clearing
  * stores no budget, never $0. The amount goes through the parser statements
  * use, and after a save the app's data is refreshed, which re-reads the

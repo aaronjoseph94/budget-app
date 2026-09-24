@@ -10,7 +10,7 @@ import { useDebts } from '../debts.js'
 import { DebtsChart, SavingsGoalsChart, TopRing, YearPie } from './YearCharts.js'
 
 /**
- * Workbook's Home, as the top of the Year (plan §2, §6.4): white cards on
+ * The workbook's Home, as the top of the Year (plan §2, §6.4): white cards on
  * Home's blue-grey canvas, each number core's (yearSheet, F12, F18).
  *
  * Home's cards read today's calendar year; these read the Year shown, so
@@ -31,7 +31,7 @@ export function YearGlance({ sheet, wide }: { sheet: YearSheet; wide: boolean })
       aria-label="Year at a glance"
       className="-mx-4 grid gap-3 bg-home-canvas p-4 sm:grid-cols-2 md:mx-0 md:rounded-xl lg:grid-cols-4"
     >
-      {/* Home!C4, the name typed on START HERE with Workbook's "!". */}
+      {/* Home!C4, the name typed on START HERE with the workbook's "!". */}
       <Card className="sm:col-span-2 lg:col-span-4">
         <h2 className="text-2xl text-home-ink">{displayName === '' ? 'Hi!' : `Hi, ${displayName}!`}</h2>
         {displayName === '' ? (

@@ -7,7 +7,7 @@ import { ImportedThrough, PeriodBlocks, TransfersNote, type EditorDone } from '.
 import { WeekBudgetEditor } from './WeekBudgetEditor.js'
 
 /**
- * Workbook's Weekly Budget laid out as the Month lays out a month tab (plan
+ * The workbook's Weekly Budget laid out as the Month lays out a month tab (plan
  * §6.2, §6.3): the summary, the six blocks, and the card-payment footnote,
  * every number weekSheet's. `aside` stands where the Month has its charts,
  * as Weekly Budget's own chart well (I3:M18) stands beside its summary.
@@ -50,7 +50,7 @@ export function WeekBlocks({
  * (D11, D13), both core's. Its Starting and Ending Balance (D9, D15) are
  * not shown: no balance is typed for a week, and core gives no ending
  * balance without a start (D17). A negative Left to spend takes the
- * Month's pink, as Workbook's D13:F14 format marks it.
+ * Month's pink, as the workbook's D13:F14 format marks it.
  */
 function WeekSummary({ sheet }: { sheet: WeekSheet }) {
   const { spentCents, leftToSpendCents: left } = sheet.summary
@@ -71,7 +71,7 @@ function WeekSummary({ sheet }: { sheet: WeekSheet }) {
               {formatCents(left)}
             </Figure>
           </dd>
-          {/* Workbook takes a blank budget as $0 (F5), and only Variable expenses count. */}
+          {/* The workbook takes a blank budget as $0 (F5), and only Variable expenses count. */}
           {noBudgets ? (
             <dd className="mt-0.5 text-xs text-summary-label">No weekly budgets on Variable expenses yet.</dd>
           ) : null}

@@ -28,7 +28,7 @@ import { MonthCharts } from './MonthCharts.js'
 import { MonthSummary } from './MonthSummary.js'
 
 /**
- * One Workbook month tab (plan §6.2, §6.3). `month` is the address's `YYYY-MM`,
+ * One of the workbook's month tabs (plan §6.2, §6.3). `month` is the address's `YYYY-MM`,
  * or null for this month; the arrows step through shiftMonth in packages/core
  * and write the month they land on into the address, so a refresh or the
  * back gesture returns to it.
@@ -181,8 +181,8 @@ export function MonthScreen({ month }: { month: string | null }) {
         <>
           <ImportedThrough through={sheet.importedThrough} />
           {/* Phones: the block every statement changes first, and the charts
-            last (§6.2). Four columns on a desktop in Workbook's own arrangement,
-            Jan!B3:V44 (§6.3), the charts second on the top row as Workbook's
+            last (§6.2). Four columns on a desktop in the workbook's own arrangement,
+            Jan!B3:V44 (§6.3), the charts second on the top row as the workbook's
             panel H3:K18 is, from 1280px: below that a card is too narrow for
             three columns of amounts, and two columns hold them. The page is
             in phone order, which is the order a screen reader follows. */}
@@ -297,7 +297,7 @@ function ReviewBanner({
 export type BlockKind = keyof PeriodSheet['blocks']
 const BLOCKS: readonly BlockKind[] = ['variable', 'bill', 'subscription', 'debt', 'income', 'savings']
 
-/** Workbook's colours per block (§6.6): Bills, Debts and Subscriptions share one set. Written out for Tailwind. */
+/** The workbook's colours per block (§6.6): Bills, Debts and Subscriptions share one set. Written out for Tailwind. */
 const TONE: Record<BlockKind, { band: string; header: string; ink: string; rule: string }> = {
   income: { band: 'bg-income-band', header: 'bg-income-header', ink: 'text-income-ink', rule: 'border-income-rule' },
   savings: {
@@ -318,11 +318,11 @@ const TONE: Record<BlockKind, { band: string; header: string; ink: string; rule:
 }
 
 /**
- * The columns on each list. Workbook's Variable expenses have Budgeted, Actual
+ * The columns on each list. The workbook's Variable expenses have Budgeted, Actual
  * and Remaining (Jan!R20:V20, "Left" here to fit a phone); its Bills, Debts
  * and Subscriptions have Budgeted and Actual only, and the app adds a Left
  * (F16). Goal, Actual and Difference on Savings (R8:V8), Goal and Actual on
- * Income (M8:P8), as Workbook has.
+ * Income (M8:P8), as the workbook has.
  */
 const COLUMNS: Record<BlockKind, { readonly budget: 'Budgeted' | 'Goal'; readonly third: 'Left' | 'Difference' | null }> = {
   income: { budget: 'Goal', third: null },
@@ -343,7 +343,7 @@ export interface EditorDone {
 
 /**
  * One block: its heading and "$Actual of $Budget" on the band, then a row
- * per category on the list with Workbook's columns. A row with no budget and
+ * per category on the list with the workbook's columns. A row with no budget and
  * nothing in the period folds behind "Show N empty". Cells leave out the "$",
  * as the plan's phone sketch does (§6.2): with it, three columns of amounts
  * do not fit a 360px phone or a desktop card.
@@ -413,7 +413,7 @@ export function Block({
         </p>
       ) : (
         // A table wider than its card scrolls rather than clip a column. On
-        // a desktop the four cards take Workbook's smaller table type.
+        // a desktop the four cards take the workbook's smaller table type.
         <div className="overflow-x-auto">
           <table className="w-full text-sm xl:text-xs">
             <thead className={cn(tone.header, tone.ink)}>
@@ -486,7 +486,7 @@ export function Block({
                       </button>
                     )}
                   </td>
-                  {/* A zero on a budgeted row stays blank, as Workbook's ";;" format
+                  {/* A zero on a budgeted row stays blank, as the workbook's ";;" format
                     leaves it. "planned" follows its amount, as in the plan's
                     §6.2 sketch, but on a line of its own: on the same line the
                     word widened the column past a four-across desktop card,
@@ -549,9 +549,9 @@ export function Block({
 }
 
 /**
- * The six blocks in Workbook's order, as the Month, the Week and Paycheck all
+ * The six blocks in the workbook's order, as the Month, the Week and Paycheck all
  * lay them out: phone order first, which a screen reader follows, and
- * Workbook's four-across arrangement from 1280px (CR-2: each had its own copy).
+ * the workbook's four-across arrangement from 1280px (CR-2: each had its own copy).
  */
 export function PeriodBlocks({
   blocks,
@@ -592,9 +592,9 @@ export function TransfersNote({ cents }: { cents: number }) {
 
 /**
  * A row's Left (Budget − Actual) or Difference (Actual − Goal), from core.
- * Overspent is Workbook's pill (Jan!V22:V44, cream on red), in the darker red
- * that makes its text readable, with the minus sign Workbook's format hid (D8).
- * A fund short of its goal keeps its minus sign without the pill, as Workbook
+ * Overspent is the workbook's pill (Jan!V22:V44, cream on red), in the darker red
+ * that makes its text readable, with the minus sign the workbook's format hid (D8).
+ * A fund short of its goal keeps its minus sign without the pill, as the workbook
  * marks only spending. Blank where core gives none, and on an empty row.
  */
 function Third({ row, column, empty }: { row: Row; column: 'Left' | 'Difference'; empty: boolean }) {

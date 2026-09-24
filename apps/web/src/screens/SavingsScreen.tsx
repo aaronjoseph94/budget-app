@@ -11,7 +11,7 @@ import { Button } from '../components/ui/button.js'
 import { Figure } from '../components/ui/type.js'
 
 /**
- * Workbook's Savings tab (S16): a yellow card for every fund on the Savings
+ * The workbook's Savings tab (S16): a yellow card for every fund on the Savings
  * list, in the list's order (Savings!C4 = START HERE!H7…), each with its
  * goal, what is in it, the amount needed and, from its dates, what to save
  * each month ("How To Reach These Goals", rows 14–20).
@@ -140,7 +140,7 @@ function FundCard({ fund, goal, onEdit, children }: { fund: SavingsFund; goal: F
   )
 }
 
-/** Why a fund has no monthly figure, where Workbook would show $0 (D15, D22). */
+/** Why a fund has no monthly figure, where the workbook would show $0 (D15, D22). */
 const WHY_NO_MONTHLY: Readonly<Record<Exclude<SavingsFundPlan['status'], 'planned'>, string>> = {
   'no-dates': 'No dates yet. Add a start date and a goal date to see what to save each month.',
   'goal-before-start': 'The goal date is before the start date, so there is no monthly figure.',

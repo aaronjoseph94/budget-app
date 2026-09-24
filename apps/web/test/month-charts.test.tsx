@@ -64,7 +64,7 @@ describe('MonthCharts', () => {
     renderScreen(<MonthScreen month="2026-09" />, seeded(MONTH))
 
     const doughnut = (await charts()).getByRole('img', { name: 'Variable expenses by category' })
-    // Groceries is the list's first row and takes Workbook's palest coral; the
+    // Groceries is the list's first row and takes the workbook's palest coral; the
     // oddly named one is its third row and takes the third step, though
     // Clothing between them has no slice (Jan chart13's colours by row).
     expect([...doughnut.querySelectorAll('path')].map((p) => p.getAttribute('fill'))).toEqual(['#FFE3DE', '#FFB8AE'])

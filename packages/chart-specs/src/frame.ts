@@ -7,8 +7,8 @@
  * can show and nothing needs a fraction (svg.ts refuses one). The app scales
  * the drawing to its card; text scales with it.
  *
- * Colours are Workbook's own, written as attributes, so an exported file looks
- * like the workbook with no stylesheet. Each mark also carries a `chart-…`
+ * Colours are the workbook's own, written as attributes, so an exported file
+ * looks like the workbook with no stylesheet. Each mark also carries a `chart-…`
  * class, which is how the app's dark mode repaints it (index.css): a CSS
  * rule outranks a presentation attribute.
  */

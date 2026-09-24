@@ -37,7 +37,7 @@ async function namesOn(list: string): Promise<string[]> {
 afterEach(cleanup)
 
 describe('SetupScreen, the lists', () => {
-  it("shows every list under Workbook's headings, each in its own order, then by name", async () => {
+  it("shows every list under the workbook's headings, each in its own order, then by name", async () => {
     renderScreen(<SetupScreen />, seeded())
 
     expect(screen.getByRole('heading', { level: 1, name: 'Start here!' })).toBeTruthy()

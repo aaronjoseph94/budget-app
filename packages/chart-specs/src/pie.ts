@@ -6,7 +6,7 @@
  * pie, F18's `shareBp` for a ring. Slices run clockwise from twelve o'clock
  * in the order given, as a spreadsheet pie draws its rows.
  *
- * The pie comes in two of Workbook's palettes, Annual's and Home's. Home's
+ * The pie comes in two of the workbook's palettes, Annual's and Home's. Home's
  * writes each percentage on its slice in #36976E, #D66375 or #FFD05C, and
  * the last is 1.5 to one on its peach; here those colours outline the
  * slices, and every percentage is in the legend in a readable ink

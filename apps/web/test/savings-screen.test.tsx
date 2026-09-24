@@ -88,7 +88,7 @@ describe('SavingsScreen', () => {
     expect(within(await card('Flight training')).getByText('$27,300.00')).toBeTruthy()
   })
 
-  it('says why there is no monthly figure, where Workbook shows $0 (D15), and when a goal is reached', async () => {
+  it('says why there is no monthly figure, where the workbook shows $0 (D15), and when a goal is reached', async () => {
     renderScreen(<SavingsScreen />, seeded())
     const travel = await card('Travel <b>fund</b>')
     expect(lines(travel)).toContain('Amount needed · goal reached')

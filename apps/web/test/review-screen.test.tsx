@@ -51,7 +51,7 @@ describe('ReviewScreen', () => {
     expect((await row('ADVENTURE WORKS REFUND')).getByText('$25.00')).toBeTruthy()
   })
 
-  it("groups the picker under Workbook's lists, each in its own order, then by name", async () => {
+  it("groups the picker under the workbook's lists, each in its own order, then by name", async () => {
     const fake = seeded()
     fake.tables.categories.push(
       { id: 'c3', name: 'Rent', kind: 'bill', sort_order: 1, weekly_budget_cents: null },

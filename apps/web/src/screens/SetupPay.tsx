@@ -46,7 +46,7 @@ export const FREQUENCY_WORD: Readonly<Record<PayFrequency, string>> = {
 }
 const FREQUENCIES: readonly PayFrequency[] = ['weekly', 'biweekly', 'monthly']
 
-/** The two columns' headings, and Workbook's note on them (START HERE!C7, E7), shortened. */
+/** The two columns' headings, and the workbook's note on them (START HERE!C7, E7), shortened. */
 export function PayHeadings() {
   return (
     <div className="mt-2 space-y-1 border-t border-income-rule pt-2">

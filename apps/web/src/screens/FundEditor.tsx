@@ -9,7 +9,7 @@ import { Field, Input } from '../components/ui/form.js'
 import { Sheet } from '../components/ui/sheet.js'
 
 /**
- * A fund's goal, typed where Workbook types it: the Goal Amount and Current
+ * A fund's goal, typed where the workbook types it: the Goal Amount and Current
  * Amount on its card (Savings!B7, B5) and its Start and Goal Dates (N14,
  * R14). What is saved is typed as what the fund holds today, and filled in
  * with the balance core kept (D16); saving writes it with today as its day,

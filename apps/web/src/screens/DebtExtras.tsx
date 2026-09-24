@@ -9,7 +9,7 @@ import { Field, Input } from '../components/ui/form.js'
 /**
  * A debt's one-off Extra Payments, each in the month it is paid (Debt
  * Calculator!I26:I494; I26's note: "Add any Extra Payments to this
- * column"). One a month, as Workbook has one cell: adding to a month that
+ * column"). One a month, as the workbook has one cell: adding to a month that
  * has one replaces its amount. After each write the app's data is
  * refreshed, which re-reads the debts, so the payoff month moves at once.
  * A write refused after the sheet has closed is handed to

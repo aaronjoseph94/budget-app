@@ -21,12 +21,12 @@ import { AnnualCharts } from './YearCharts.js'
 import { YearGlance } from './YearGlance.js'
 
 /**
- * Workbook's Annual Budget (plan §6.4): twelve months from a start month the
+ * The workbook's Annual Budget (plan §6.4): twelve months from a start month the
  * owner picks (Annual!D6), which the address holds as `#/year/YYYY-MM`.
- * With none it is this calendar year, from January, as Workbook's sample is.
+ * With none it is this calendar year, from January, as the workbook's sample is.
  * Today is Annual's Current Month (D7): a bill's planned amount counts up
  * to this month and not after (F10), and this month's row is marked as
- * Workbook's conditional format marks it.
+ * the workbook's conditional format marks it.
  *
  * Every number is yearSheet's, from packages/core, over the twelve months'
  * ledger, every budget and monthly amount typed up to the last of them, and
@@ -267,7 +267,7 @@ const TONE: Record<Tone, { band: string; header: string; total: string; ink: str
 
 /**
  * One card: its heading and Actual total on the band, then a row a month.
- * A zero stays blank, as Workbook's `"$"#,##0.00;;` leaves it, so a month the
+ * A zero stays blank, as the workbook's `"$"#,##0.00;;` leaves it, so a month the
  * gate has not reached reads as not yet rather than as $0; a negative keeps
  * its minus sign (D8). The totals row adds twelve months (D7).
  */
@@ -280,7 +280,7 @@ function YearTable({
   sheet: YearSheet
   group: GroupKey
   thisMonth: string
-  /** Four across a desktop: Workbook's smaller type, and months as `Sep 2026`. */
+  /** Four across a desktop: the workbook's smaller type, and months as `Sep 2026`. */
   compact?: boolean
 }) {
   const g = GROUPS.find((x) => x.key === group)!
@@ -342,7 +342,7 @@ function YearTable({
 /**
  * Annual's left panel (A6:F21): the start and current month, then the
  * year's totals, Left over (F12, decision 15) and the balances (D18, D20),
- * in the Month summary card's colours, which are Workbook's for both. Until
+ * in the Month summary card's colours, which are the workbook's for both. Until
  * the start month's balance is typed, it says where to type it.
  */
 function YearTotals({ sheet, thisMonth }: { sheet: YearSheet; thisMonth: string }) {

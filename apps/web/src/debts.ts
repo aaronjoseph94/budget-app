@@ -6,7 +6,7 @@
  * where each debt stands today (debtStatus, F22), and the three payoff plans
  * side by side (payoffStrategies, F23). This reads the rows and hands them
  * over. Balances are for today, as the Debt Calculator and Home show them,
- * and come from the schedule alone, as Workbook's do (NOTICED N53).
+ * and come from the schedule alone, as the workbook's do (NOTICED N53).
  */
 import { useEffect, useMemo, useState } from 'react'
 import {

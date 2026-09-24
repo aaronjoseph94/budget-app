@@ -1,9 +1,9 @@
 /**
- * Workbook's lists, as the app names and shows them.
+ * The workbook's lists, as the app names and shows them.
  *
  * A category's list (`kind`, migration 0005) decides which month block its
  * charges land in, so it is never guessed: every path that makes a category
- * says which list it goes on. The headings are Workbook's START HERE headings,
+ * says which list it goes on. The headings are the workbook's START HERE headings,
  * plus the app's own "Not spending" for money that only moves.
  */
 import { endOfList } from '@budget/core'
@@ -49,7 +49,7 @@ export function groupByList<T extends { readonly kind: CategoryKind }>(rows: rea
   return LISTS.map((kind) => ({ kind, heading: LIST_HEADING[kind], rows: rows.filter((r) => r.kind === kind) }))
 }
 
-/** A new category for the bottom of its list, where Workbook fills the next slot. */
+/** A new category for the bottom of its list, where the workbook fills the next slot. */
 export function atEndOf(
   categories: readonly { readonly kind: CategoryKind; readonly sort_order: number }[],
   name: string,
@@ -87,7 +87,7 @@ const STARTER_NAMES: readonly { readonly name: string; readonly kind: CategoryKi
 
 /**
  * The starter names, with your savings goal's name first on Savings when
- * there is one, so the goal you already track heads the list Workbook's
+ * there is one, so the goal you already track heads the list the workbook's
  * savings funds sit on.
  */
 export function starterList(goalName: string | null): readonly { readonly name: string; readonly kind: CategoryKind }[] {
@@ -132,7 +132,7 @@ export function ListSelect({
 }
 
 /**
- * A category picker's options, under Workbook's headings in START HERE order.
+ * A category picker's options, under the workbook's headings in START HERE order.
  * Lists with nothing on them are left out, so the picker shows only choices.
  */
 export function CategoryOptions({

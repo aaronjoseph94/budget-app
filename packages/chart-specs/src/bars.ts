@@ -1,5 +1,5 @@
 /**
- * Workbook's income chart (Jan chart12): Goal and Actual for each income row.
+ * The workbook's income chart (Jan chart12): Goal and Actual for each income row.
  *
  * chart12 stacks Actual on top of Goal in columns numbered 1 to 7. Here each
  * income row is a named horizontal bar, its Actual drawn over a track as long

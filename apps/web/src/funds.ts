@@ -4,7 +4,7 @@
  *
  * Every figure is core's: the balance kept by transfers (D16), the plan
  * (F21), the bar's basis points. This reads the rows and hands them over.
- * Balances are for today, as Workbook's Savings tab and Home show them.
+ * Balances are for today, as the workbook's Savings tab and Home show them.
  */
 import { useEffect, useMemo, useState } from 'react'
 import { isoDate, savingsFunds, type SavingsFunds } from '@budget/core'

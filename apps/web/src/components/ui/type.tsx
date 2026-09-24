@@ -2,10 +2,10 @@ import type { HTMLAttributes, ReactNode } from 'react'
 import { cn } from '../../lib/cn.js'
 
 /**
- * Workbook's two display styles (plan §6.6).
+ * The workbook's two display styles (plan §6.6).
  *
  * The month title is Caveat bold, as on Jan!B3, in the darker sea-glass ink
- * that stays readable on the title band; Workbook's own #ABBFBD there is 1.87 to
+ * that stays readable on the title band; the workbook's own #ABBFBD there is 1.87 to
  * one. It takes no className: its size, face and colour are the style, so a
  * caller has nothing to override (see lib/cn.ts).
  */
@@ -14,7 +14,7 @@ export function MonthTitle({ children }: { children: ReactNode }) {
 }
 
 /**
- * A big number in Comfortaa, as Workbook draws its totals.
+ * A big number in Comfortaa, as the workbook draws its totals.
  *
  * Size and colour belong to the caller, so this sets neither. Comfortaa has
  * no tabular figures (its 1 is narrower than its other digits, and it carries
