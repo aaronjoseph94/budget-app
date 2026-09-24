@@ -15,14 +15,20 @@ import type { SupabaseClient } from './supabase.js'
  * Why a goal could not be moved, made main, paused, resumed or marked
  * reached (0015). Before 0015 is pasted a write naming its columns is
  * PGRST204 (42703 from Postgres); the screen offers none of these then, so
- * it was pasted and taken out, or another device is ahead. 23514 is 0015's
- * CHECK on the reached day, which the app always writes with the state, so
- * the goal changed elsewhere first.
+ * it was pasted and taken out, or another device is ahead.
+ *
+ * 23514 is never 0015's CHECK on the reached day: every write here sends
+ * the state and its day together, and leaves a stored pair as it is. It is
+ * 0013's trigger, which refuses any change to a goal whose category has
+ * left the Savings list (N52), so that goal shows as on no fund. A move
+ * writes several goals one at a time, and may have written some before it,
+ * so this does not say nothing was saved; the screen reloads either way.
  */
 const GOAL_FAILURES: Readonly<Record<string, string>> = {
   PGRST204: 'Choosing your main goal, moving, pausing and reaching goals need a one-time update. Nothing was saved.',
   '42703': 'Choosing your main goal, moving, pausing and reaching goals need a one-time update. Nothing was saved.',
-  '23514': 'That goal changed on another device. It now shows as it is stored. Nothing was saved.',
+  '23514':
+    'A goal’s fund is no longer on your Savings list, so that goal cannot be changed. It may have been moved on another device. Move it back to Savings in Setup, then try again.',
 }
 
 function describeGoalFailure(error: WriteError | null | undefined): string {

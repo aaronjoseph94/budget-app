@@ -405,3 +405,22 @@ describe('Savings, a goal written where 0015 has gone (G1)', () => {
     expect(screen.queryByRole('button', { name: 'Pause' })).toBeNull()
   })
 })
+
+describe('Savings, a goal whose fund has left the Savings list (G1, N52)', () => {
+  // Flight training's category moved to Variable expenses on another device.
+  // Its goal now shows as on no fund, and 0013's trigger refuses any change
+  // to it (23514), which is not 0015's reached-day CHECK.
+  it('says the fund has left Savings and where to move it back, and changes nothing', async () => {
+    const fake = seeded()
+    fake.tables.categories[1] = { ...fake.tables.categories[1]!, kind: 'variable' }
+    renderScreen(<SavingsScreen />, fake)
+    const loose = await screen.findByRole('region', { name: 'Flight training, on no fund' })
+    fireEvent.click(within(loose).getByRole('button', { name: 'Pause' }))
+    expect(
+      await screen.findByText(
+        'A goal’s fund is no longer on your Savings list, so that goal cannot be changed. It may have been moved on another device. Move it back to Savings in Setup, then try again. (code 23514)',
+      ),
+    ).toBeTruthy()
+    expect(fake.tables.savings_goals[0]).not.toHaveProperty('status')
+  })
+})
