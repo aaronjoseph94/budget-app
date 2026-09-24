@@ -1,4 +1,4 @@
-import { cleanup, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MonthScreen } from '../src/screens/MonthScreen.js'
 import type { Category, LedgerRow } from '../src/ledger.js'
@@ -22,11 +22,12 @@ const batch = (id: string, period_start: string, period_end: string) => ({
  * Hand-derived. 1–24 Sep: groceries 900.00 + dining 120.00 = 1,020.00.
  * 1–24 Aug: groceries 1,000.00 + dining 180.00 = 1,180.00; the 30 Aug row is
  * after the 24th and left out. Change −160.00; 16,000 × 10,000 ÷ 118,000 =
- * 1,356 bp, shown as 14%. The statements start on 1 July, before August.
+ * 1,356 bp, shown as 14%. Pay 2,500.00 against 2,000.00. The statements
+ * start on 1 July, before August.
  */
 function seeded(periodStart = '2026-07-01'): FakeSupabase {
   return createFakeSupabase({
-    categories: [cat('groceries', 'Groceries', 'variable'), cat('dining', 'Dining out', 'variable')],
+    categories: [cat('groceries', 'Groceries', 'variable'), cat('dining', 'Dining out', 'variable'), cat('pay', 'Pay', 'income')],
     ingest_batches: [batch('b1', periodStart, '2026-09-20')],
     transactions: [
       tx('t1', '2026-09-03', -90000, 'groceries'),
@@ -34,6 +35,8 @@ function seeded(periodStart = '2026-07-01'): FakeSupabase {
       tx('t3', '2026-08-04', -100000, 'groceries'),
       tx('t4', '2026-08-20', -18000, 'dining'),
       tx('t5', '2026-08-30', -50000, 'dining'),
+      tx('t6', '2026-09-15', 250000, 'pay'),
+      tx('t7', '2026-08-14', 200000, 'pay'),
     ],
   })
 }
@@ -47,6 +50,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup()
+  window.localStorage.clear()
   vi.useRealTimers()
   vi.restoreAllMocks()
 })
@@ -88,5 +92,63 @@ describe('the Month beside last month (D26)', () => {
     expect(screen.queryByText(/by 24 Aug/)).toBeNull()
     expect(within(screen.getByRole('region', { name: 'Variable expenses' })).getByRole('rowheader', { name: 'Groceries' })).toBeTruthy()
     expect(screen.queryByRole('alert')).toBeNull()
+  })
+})
+
+const heads = (name: string) =>
+  within(screen.getByRole('region', { name })).getAllByRole('columnheader').map((h) => h.textContent)
+const cells = (name: string, row: string) =>
+  within(within(screen.getByRole('region', { name })).getByRole('rowheader', { name: row }).closest('tr')!)
+    .getAllByRole('cell')
+    .map((c) => c.textContent)
+
+describe("the Month's third column (D26)", () => {
+  it('swaps Left for the change against the same days, never adding a fourth column, and remembers it here', async () => {
+    renderScreen(<MonthScreen month="2026-09" />, seeded())
+
+    const choice = within(await screen.findByRole('group', { name: 'Last column' }))
+    expect(choice.getByRole('button', { name: 'Left' }).getAttribute('aria-pressed')).toBe('true')
+    expect(heads('Variable expenses')).toEqual(['Category', 'Budgeted', 'Actual', 'Left'])
+
+    fireEvent.click(choice.getByRole('button', { name: 'vs 1 – 24 Aug' }))
+    expect(heads('Variable expenses')).toEqual(['Category', 'Budgeted', 'Actual', 'vs 1 – 24 Aug'])
+    // 900.00 against 1,000.00, and 120.00 against 180.00.
+    expect(cells('Variable expenses', 'Groceries')).toEqual(['', '900.00', '-100.00 less'])
+    expect(cells('Variable expenses', 'Dining out')).toEqual(['', '120.00', '-60.00 less'])
+    // Income has no third column of its own, and gains only this one.
+    expect(heads('Income')).toEqual(['Category', 'Goal', 'Actual', 'vs 1 – 24 Aug'])
+    expect(cells('Income', 'Pay')).toEqual(['', '2,500.00', '+500.00 more'])
+
+    cleanup()
+    renderScreen(<MonthScreen month="2026-09" />, seeded())
+    await screen.findByRole('group', { name: 'Last column' })
+    expect(heads('Variable expenses')).toEqual(['Category', 'Budgeted', 'Actual', 'vs 1 – 24 Aug'])
+    fireEvent.click(screen.getByRole('button', { name: 'Left' }))
+    expect(cells('Variable expenses', 'Groceries')).toEqual(['', '900.00', '-900.00'])
+  })
+
+  it("puts each block's own change beside its total", async () => {
+    renderScreen(<MonthScreen month="2026-09" />, seeded())
+
+    await screen.findByRole('group', { name: 'Last column' })
+    const band = within(screen.getByRole('region', { name: 'Variable expenses' })).getByRole('heading').nextSibling
+    expect(band?.textContent).toBe('$1,020.00▼ $160.00 less than last month')
+  })
+
+  it('shows what a row came to over the same days last month in its charges', async () => {
+    renderScreen(<MonthScreen month="2026-09" />, seeded())
+
+    await screen.findByRole('group', { name: 'Last column' })
+    fireEvent.click(screen.getByRole('button', { name: 'Groceries' }))
+    const sheet = within(await screen.findByRole('dialog'))
+    expect(sheet.getByText((_, el) => el?.tagName === 'P' && el.textContent === 'Last month (same days): $1,000.00')).toBeTruthy()
+  })
+
+  it('offers no switch when there is nothing to compare', async () => {
+    renderScreen(<MonthScreen month="2026-09" />, seeded('2026-08-08'))
+
+    await screen.findByRole('group', { name: 'Compared with last month' })
+    expect(screen.queryByRole('group', { name: 'Last column' })).toBeNull()
+    expect(heads('Variable expenses')).toEqual(['Category', 'Budgeted', 'Actual', 'Left'])
   })
 })

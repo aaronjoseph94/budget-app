@@ -6,6 +6,8 @@ import {
   monthSheet,
   periodComparison,
   shiftMonth,
+  type BlockChange,
+  type RowChange,
   type PeriodBlock,
   type PeriodComparison,
   type PeriodSheet,
@@ -26,7 +28,17 @@ import {
 import { LIST_HEADING } from '../lists.js'
 import { navigate } from '../nav.js'
 import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
-import { formatAmount, formatCents, formatIsoDate, formatMagnitude, formatMonthName, formatMonthTitle, todayIso } from '../format.js'
+import {
+  formatAmount,
+  formatCents,
+  formatChange,
+  formatDateRange,
+  formatIsoDate,
+  formatMagnitude,
+  formatMonthName,
+  formatMonthTitle,
+  todayIso,
+} from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
@@ -152,12 +164,27 @@ export function MonthScreen({ month }: { month: string | null }) {
       return 'failed'
     }
   }, [here, earlier, categories, start])
+  // Left, or the change against the same days last month, in every block's
+  // third column: one choice for the whole Month, kept on this device.
+  const [third, setThird] = useState<ThirdColumn>(readThird)
+  const chooseThird = (next: ThirdColumn) => {
+    setThird(next)
+    writeThird(next)
+  }
+  const compared = comparison !== null && comparison !== 'failed' && comparison.status === 'compared' ? comparison : null
+  const vsLabel =
+    compared === null
+      ? null
+      : `vs ${compared.sameDays ? formatDateRange(compared.before.from, compared.before.to) : formatMonthName(compared.before.from)}`
   // Categories with their own "just this month" value in this month, which a
   // "from this month on" edit here must replace too (setBudget).
   const ownOnly = new Set(
     (here === null ? [] : here.budgets).filter((b) => b.applies === 'only' && b.month === start).map((b) => b.category_id),
   )
   const blockProps = {
+    compare:
+      compared === null || vsLabel === null || third === 'left' ? undefined : { label: vsLabel, blocks: compared.blocks },
+    chips: compared === null ? undefined : compared.blocks,
     onOpen: setOpened,
     onEditStart: () => setUnsaved(null),
     editor: (row: Row, word: BudgetWord, done: EditorDone) => (
@@ -238,12 +265,20 @@ export function MonthScreen({ month }: { month: string | null }) {
             in phone order, which is the order a screen reader follows. */}
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <MonthSummary sheet={sheet} month={start} comparison={comparison} onUnsaved={setStartUnsaved} />
+            {vsLabel === null ? null : <ThirdSwitch third={third} vsLabel={vsLabel} onChange={chooseThird} />}
             <PeriodBlocks blocks={sheet.blocks} {...blockProps} />
             <MonthCharts sheet={sheet} className="order-7 md:col-span-2 xl:order-1 xl:col-span-1" />
           </div>
           <TransfersNote cents={sheet.transfersCents} />
           {here !== null && opened !== null ? (
-            <OpenedRow sheet={sheet} rows={here.rows} categoryId={opened} month={start} onClose={() => setOpened(null)} />
+            <OpenedRow
+              sheet={sheet}
+              rows={here.rows}
+              categoryId={opened}
+              month={start}
+              compared={compared}
+              onClose={() => setOpened(null)}
+            />
           ) : null}
         </>
       ) : null}
@@ -261,17 +296,20 @@ function OpenedRow({
   rows,
   categoryId,
   month,
+  compared,
   onClose,
 }: {
   sheet: PeriodSheet
   rows: readonly LedgerRow[]
   categoryId: string
   month: string
+  compared: Extract<PeriodComparison, { status: 'compared' }> | null
   onClose: () => void
 }) {
   for (const kind of BLOCKS) {
     const row = sheet.blocks[kind].rows.find((r) => r.categoryId === categoryId)
     if (row === undefined) continue
+    const before = compared?.blocks[kind].rows.find((r) => r.categoryId === categoryId)
     return (
       <MonthCharges
         categoryId={categoryId}
@@ -281,6 +319,11 @@ function OpenedRow({
         actualCents={row.actualCents}
         basis={row.basis}
         charges={rows.filter((r) => r.category_id === categoryId)}
+        lastMonth={
+          compared === null || before === undefined
+            ? null
+            : { label: compared.sameDays ? 'Last month (same days)' : 'Last month', cents: before.beforeCents }
+        }
         onClose={onClose}
       />
     )
@@ -417,6 +460,8 @@ export interface EditorDone {
 export function Block({
   kind,
   block,
+  compare,
+  chips,
   onOpen,
   onEditStart,
   editor,
@@ -424,6 +469,10 @@ export function Block({
 }: {
   kind: BlockKind
   block: PeriodBlock
+  /** Given, the third column is each row's change against the earlier window, headed with `label` (D26). */
+  compare?: { readonly label: string; readonly blocks: Readonly<Record<BlockKind, BlockChange>> } | undefined
+  /** Given, the band shows the block's total change beside its total. */
+  chips?: Readonly<Record<BlockKind, BlockChange>> | undefined
   /** Opens a row's charges; without it a row is not a button. */
   onOpen?: (categoryId: string) => void
   /** Called as a budget editor opens, to clear what an earlier one left. */
@@ -442,7 +491,12 @@ export function Block({
   const columns = COLUMNS[kind]
   const word = columns.budget === 'Goal' ? 'Goal' : 'Budget'
   const heading = LIST_HEADING[kind]
-  const isEmpty = (r: Row) => r.basis === 'none' && r.budgetCents === null
+  const changes = compare === undefined ? null : new Map(compare.blocks[kind].rows.map((c) => [c.categoryId, c]))
+  const third = changes === null ? columns.third : 'vs'
+  // Beside last month, a row with nothing now but something then is not empty.
+  const isEmpty = (r: Row) =>
+    r.basis === 'none' && r.budgetCents === null && (changes === null || changes.get(r.categoryId)?.beforeCents === 0)
+  const total = chips?.[kind].total
   const empty = block.rows.filter(isEmpty).length
   const shown = showEmpty ? block.rows : block.rows.filter((r) => !isEmpty(r))
   // "of $0.00" would read as a budget of nothing, so the band names a budget
@@ -459,6 +513,14 @@ export function Block({
         <p>
           <Figure className="text-lg font-bold">{formatCents(block.actualTotalCents)}</Figure>
           {budgeted ? <span className="tnum text-sm"> of {formatCents(block.budgetTotalCents)}</span> : null}
+          {/* Under $1 is the same (F26), and a chip saying so on every quiet list is noise. */}
+          {total === undefined || total.direction === 'same' ? null : (
+            <span className="ml-2 whitespace-nowrap rounded-full bg-card/70 px-2 py-0.5 text-xs font-medium">
+              <span aria-hidden="true">{total.direction === 'more' ? '▲ ' : '▼ '}</span>
+              {formatChange(total)}
+              <span className="sr-only"> than last month</span>
+            </span>
+          )}
         </p>
       </div>
       {block.rows.length === 0 ? (
@@ -482,7 +544,7 @@ export function Block({
                 <th scope="col" className="py-1.5 pl-4 pr-1 text-left text-xs font-medium">
                   Category
                 </th>
-                {[columns.budget, 'Actual', ...(columns.third === null ? [] : [columns.third])].map((name) => (
+                {[columns.budget, 'Actual', ...(third === null ? [] : [third === 'vs' && compare !== undefined ? compare.label : third])].map((name) => (
                   <th key={name} scope="col" className="px-1 py-1.5 text-right text-xs font-medium last:pr-4">
                     {name}
                   </th>
@@ -563,16 +625,20 @@ export function Block({
                       <span className="block text-xs leading-none text-muted-foreground xl:text-[0.625rem]">planned</span>
                     ) : null}
                   </td>
-                  {columns.third === null ? null : (
+                  {third === null ? null : (
                     <td className="tnum whitespace-nowrap py-2 pl-1 pr-4 text-right">
-                      <Third row={r} column={columns.third} empty={isEmpty(r)} />
+                      {third === 'vs' ? (
+                        <VsCell change={changes?.get(r.categoryId)} empty={isEmpty(r)} />
+                      ) : (
+                        <Third row={r} column={third} empty={isEmpty(r)} />
+                      )}
                     </td>
                   )}
                 </tr>,
                 // The budget is typed in a row of its own, under the one tapped.
                 editor !== undefined && editing === r.categoryId ? (
                   <tr key={`${r.categoryId} budget`} className={cn('border-t', tone.rule)}>
-                    <td colSpan={columns.third === null ? 3 : 4} className="px-4 py-3">
+                    <td colSpan={third === null ? 3 : 4} className="px-4 py-3">
                       {editor(r, word, {
                         cancel: () => setEditing(null),
                         saved: (saved) => {
@@ -665,4 +731,84 @@ function Third({ row, column, empty }: { row: Row; column: 'Left' | 'Difference'
     return <span className="rounded-full bg-spend px-1.5 py-0.5 text-spend-foreground">{formatAmount(value)}</span>
   }
   return <>{formatAmount(value)}</>
+}
+
+/**
+ * A row's change against the same days last month, from periodComparison:
+ * signed, with its word for a screen reader, "same" under $1 (F26). The
+ * heading names the window, so the cell stays as narrow as Left.
+ */
+function VsCell({ change, empty }: { change: RowChange | undefined; empty: boolean }) {
+  if (change === undefined || empty) return null
+  if (change.direction === 'same') return <span className="text-muted-foreground">same</span>
+  return (
+    <>
+      {change.direction === 'more' ? '+' : ''}
+      {formatAmount(change.changeCents)}
+      <span className="sr-only"> {change.direction}</span>
+    </>
+  )
+}
+
+type ThirdColumn = 'left' | 'vs'
+const THIRD_KEY = 'budget.month.third'
+
+/** This device's choice; Left when none was made or storage cannot be read. */
+function readThird(): ThirdColumn {
+  try {
+    return window.localStorage.getItem(THIRD_KEY) === 'vs' ? 'vs' : 'left'
+  } catch {
+    return 'left'
+  }
+}
+
+function writeThird(next: ThirdColumn): void {
+  try {
+    window.localStorage.setItem(THIRD_KEY, next)
+  } catch {
+    // Storage blocked: the choice holds until the page is closed.
+  }
+}
+
+/**
+ * One switch for every block's third column, Left or the change against the
+ * earlier window. It replaces Left rather than adding a column, so a phone
+ * never has four (plan §9).
+ */
+function ThirdSwitch({
+  third,
+  vsLabel,
+  onChange,
+}: {
+  third: ThirdColumn
+  vsLabel: string
+  onChange: (next: ThirdColumn) => void
+}) {
+  const options: readonly { readonly key: ThirdColumn; readonly label: string }[] = [
+    { key: 'left', label: 'Left' },
+    { key: 'vs', label: vsLabel },
+  ]
+  return (
+    <div
+      role="group"
+      aria-label="Last column"
+      className="order-0 flex flex-wrap items-center gap-1.5 md:col-span-2 xl:col-span-4"
+    >
+      <span className="mr-1 text-xs font-medium text-muted-foreground">Last column</span>
+      {options.map((o) => (
+        <button
+          key={o.key}
+          type="button"
+          aria-pressed={third === o.key}
+          onClick={() => onChange(o.key)}
+          className={cn(
+            'rounded-full border px-3 py-1.5 text-xs font-medium pointer-coarse:min-h-11',
+            third === o.key ? 'border-primary bg-primary text-primary-foreground' : 'bg-card',
+          )}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  )
 }

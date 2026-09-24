@@ -29,6 +29,9 @@ const FIRST = 30
  * A bill with nothing filed shows its planned amount (D5); the sheet says
  * where that came from, or its Actual would stand over "No charges" with
  * nothing to explain it.
+ *
+ * `lastMonth` is what the category came to over the same days last month,
+ * from periodComparison (D26); null when there is no comparison.
  */
 export function MonthCharges({
   categoryId,
@@ -38,6 +41,7 @@ export function MonthCharges({
   actualCents,
   basis,
   charges,
+  lastMonth = null,
   onClose,
 }: {
   categoryId: string
@@ -50,6 +54,7 @@ export function MonthCharges({
   /** What made the Actual, from core: 'planned' is the monthly amount from Setup. */
   basis: 'real' | 'planned' | 'none'
   charges: readonly LedgerRow[]
+  lastMonth?: { readonly label: string; readonly cents: number } | null
   onClose: () => void
 }) {
   const monthName = formatMonthTitle(month)
@@ -71,6 +76,11 @@ export function MonthCharges({
       }
       onClose={onClose}
     >
+      {lastMonth === null ? null : (
+        <p className="border-b px-4 py-3 text-sm text-muted-foreground">
+          {lastMonth.label}: <span className="tnum font-medium text-foreground">{formatCents(lastMonth.cents)}</span>
+        </p>
+      )}
       {moved !== null ? (
         <div className="px-4 pt-3">
           <Alert tone="success">
