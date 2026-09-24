@@ -10,5 +10,8 @@
     // this package's zod, the version the web app uses.
     "paths": { "npm:zod@4.6.5": ["./node_modules/zod"] }
   },
-  "include": ["deno-env.d.ts", "*/index.ts", "test/**/*"]
+  "include": ["deno-env.d.ts", "*/index.ts", "test/**/*"],
+  // Tests only: the reply a function passes on is checked against the app's
+  // own parser for it. No function imports anything but zod.
+  "references": [{ "path": "../../packages/schema" }]
 }

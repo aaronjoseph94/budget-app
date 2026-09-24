@@ -1,4 +1,6 @@
-import { describe, expect, it, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { parseReceiptReply } from '@budget/schema'
 import { handle } from '../read-receipt/index.js'
 
 /**
@@ -130,6 +132,15 @@ describe('read-receipt calls one fixed host and passes on only the reply text', 
     expect(calls[0]?.url).toBe('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent')
   })
 
+  it('passes on a reply the app reads as a receipt, and nothing else Gemini sent', async () => {
+    const { body } = await run(request())
+    expect(Object.keys(body)).toEqual(['ok', 'reply'])
+    expect(parseReceiptReply(body.reply)).toEqual({
+      ok: true,
+      reading: { merchant: 'SYNTHETIC CAFE', total: '14.23', date: '2026-09-20' },
+    })
+  })
+
   it('maps the provider’s failures to codes', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined)
     const cases: [Respond, number, string][] = [
@@ -146,5 +157,37 @@ describe('read-receipt calls one fixed host and passes on only the reply text', 
       expect([res.status, body]).toEqual([status, { ok: false, code }])
     }
     vi.restoreAllMocks()
+  })
+})
+
+describe('read-receipt logs codes and counts only', () => {
+  const methods = ['log', 'info', 'warn', 'error', 'debug'] as const
+  let lines: string[] = []
+  beforeEach(() => {
+    lines = []
+    for (const m of methods) vi.spyOn(console, m).mockImplementation((...args) => void lines.push(args.map(String).join(' ')))
+  })
+  afterEach(() => vi.restoreAllMocks())
+
+  it('never logs the image, the prompt, the reply or the key, on any path', async () => {
+    const outcomes: Respond[] = [gemini(), () => new Response(REPLY, { status: 500 }), () => new Response(REPLY, { status: 404 }), () => Promise.reject(new TypeError(REPLY))]
+    for (const respond of outcomes) await run(request(), ENV, respond)
+    await run(request({ body: { image: IMAGE, mimeType: 'text/html' } }))
+
+    expect(lines.length).toBeGreaterThan(0)
+    for (const line of lines) {
+      for (const secret of ['SECRETIMAGEBYTES', 'SYNTHETIC CAFE', '14.23', 'Read this receipt', 'shopping receipts', KEY]) expect(line).not.toContain(secret)
+      const entry = JSON.parse(line)
+      expect(entry.fn).toBe('read-receipt')
+      for (const [name, value] of Object.entries(entry)) if (name !== 'fn' && name !== 'code') expect(typeof value).toBe('number')
+    }
+  })
+})
+
+describe('read-receipt can still be pasted as one file', () => {
+  it('imports zod by its pinned URL and nothing else, relative paths included', () => {
+    const source = readFileSync(new URL('../read-receipt/index.ts', import.meta.url), 'utf8')
+    const specifiers = [...source.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*)['"]([^'"]+)['"]/g)].map((m) => m[1])
+    expect(specifiers).toEqual(['npm:zod@4.6.5'])
   })
 })

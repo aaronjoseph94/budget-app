@@ -5,5 +5,8 @@
   "type": "module",
   "dependencies": {
     "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@budget/schema": "workspace:*"
   }
 }
