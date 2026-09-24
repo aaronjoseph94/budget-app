@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { isoDate, monthBounds, shiftMonth, summariseImport } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { deleteTransaction, listTransactions, type LedgerRow } from '../ledger.js'
@@ -36,11 +36,14 @@ export function LedgerScreen() {
   }, [supabase, bounds.start, bounds.end, version])
 
   const names = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories])
+  // The field shows each key at once; the month's rows are filtered and
+  // redrawn a moment behind it, so typing never waits for 300 rows (PERF-5).
+  const searched = useDeferredValue(query)
   const visible = useMemo(() => {
-    const q = query.trim().toLowerCase()
+    const q = searched.trim().toLowerCase()
     if (rows === null || q === '') return rows
     return rows.filter((r) => r.merchant_raw.toLowerCase().includes(q) || (names.get(r.category_id) ?? '').toLowerCase().includes(q))
-  }, [rows, query, names])
+  }, [rows, searched, names])
   const totals = useMemo(
     () => (visible === null ? null : summariseImport({ amountsCents: visible.map((r) => r.amount_cents) })),
     [visible],
@@ -121,7 +124,8 @@ export function LedgerScreen() {
       ) : null}
 
       {byDay.map(([day, items]) => (
-        <section key={day}>
+        // Days off screen skip layout and paint until scrolled to (PERF-5).
+        <section key={day} className="[contain-intrinsic-size:auto_12rem] [content-visibility:auto]">
           <h2 className="mb-1.5 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">{formatIsoDate(day)}</h2>
           <Card className="overflow-hidden">
             <ul className="divide-y">
