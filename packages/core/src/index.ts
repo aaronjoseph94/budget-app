@@ -202,6 +202,8 @@ export {
   type CategoryPaceInput,
 } from './pace.js'
 
+export { dailyIndex, impactScore, type ImpactScore, type ImpactScoreInput } from './impact.js'
+
 export {
   comparisonWindow,
   debtBalanceChange,
