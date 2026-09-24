@@ -122,8 +122,8 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
             <Label>Check your email</Label>
             <p className="mt-2 text-sm">
               A sign-in link is on its way to{' '}
-              <strong className="font-medium">{attempt.email}</strong>. Open it on this device and
-              you are in.
+              <strong className="font-medium">{attempt.email}</strong>. Open it on this device, in
+              this same browser, and you are in.
             </p>
             <div className="mt-4">
               <Button variant="quiet" onClick={() => setAttempt({ kind: 'idle' })}>

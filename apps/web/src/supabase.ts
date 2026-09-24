@@ -17,6 +17,11 @@ export function createSupabase(env: Env): SupabaseClient {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
+      // A sign-in link carries a one-time code, which only the browser that
+      // asked for it can exchange, not the tokens themselves in the address
+      // bar, as the implicit flow sent them (SEC-5). So a link opens only in
+      // the browser it was asked from; sign-in says so.
+      flowType: 'pkce',
     },
   })
 }
