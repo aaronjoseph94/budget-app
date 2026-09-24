@@ -152,3 +152,62 @@ describe("the Month's third column (D26)", () => {
     expect(heads('Variable expenses')).toEqual(['Category', 'Budgeted', 'Actual', 'Left'])
   })
 })
+
+describe('quiet and emptied rows beside last month (F26)', () => {
+  /**
+   * Hand-derived. Books: nothing by 24 Sep, 30.00 by 24 Aug. Stamps: nothing
+   * either side. Streaming: 10.00 both sides, so it and its block are the
+   * same. Groceries: 100.50 against 100.00, a change of 50 cents, under $1.
+   * Spent 1–24 Sep 110.50 against 1–24 Aug 140.00, less.
+   */
+  const quiet = () =>
+    createFakeSupabase({
+      categories: [
+        cat('groceries', 'Groceries', 'variable'),
+        cat('books', 'Books', 'variable'),
+        cat('stamps', 'Stamps', 'variable'),
+        cat('streaming', 'Streaming', 'subscription'),
+      ],
+      ingest_batches: [batch('b1', '2026-07-01', '2026-09-20')],
+      transactions: [
+        tx('t1', '2026-09-03', -10050, 'groceries'),
+        tx('t2', '2026-08-03', -10000, 'groceries'),
+        tx('t3', '2026-08-05', -3000, 'books'),
+        tx('t4', '2026-09-05', -1000, 'streaming'),
+        tx('t5', '2026-08-05', -1000, 'streaming'),
+      ],
+    })
+
+  it('keeps a row with nothing now but something then in view, and calls under $1 the same', async () => {
+    renderScreen(<MonthScreen month="2026-09" />, quiet())
+
+    fireEvent.click(within(await screen.findByRole('group', { name: 'Last column' })).getByRole('button', { name: 'vs 1 – 24 Aug' }))
+    expect(cells('Variable expenses', 'Books').at(-1)).toBe('-30.00 less')
+    expect(cells('Variable expenses', 'Groceries').at(-1)).toBe('same')
+    expect(cells('Subscriptions', 'Streaming').at(-1)).toBe('same')
+    // Stamps had nothing either side: folded, and blank once shown.
+    fireEvent.click(within(screen.getByRole('region', { name: 'Variable expenses' })).getByRole('button', { name: 'Show 1 empty' }))
+    expect(cells('Variable expenses', 'Stamps').at(-1)).toBe('')
+  })
+
+  it('puts no chip on a block whose total is the same', async () => {
+    renderScreen(<MonthScreen month="2026-09" />, quiet())
+
+    await screen.findByRole('group', { name: 'Last column' })
+    const band = within(screen.getByRole('region', { name: 'Subscriptions' })).getByRole('heading').nextSibling
+    expect(band?.textContent).toBe('$10.00')
+  })
+
+  it('says "About the same" on the summary for a change under $1', async () => {
+    const fake = createFakeSupabase({
+      categories: [cat('groceries', 'Groceries', 'variable')],
+      ingest_batches: [batch('b1', '2026-07-01', '2026-09-20')],
+      transactions: [tx('t1', '2026-09-03', -10050, 'groceries'), tx('t2', '2026-08-03', -10000, 'groceries')],
+    })
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+
+    const s = await strip()
+    expect(s.getByText((_, el) => el?.tagName === 'P' && el.textContent === 'By 24 Sep: $100.50 spent · by 24 Aug: $100.00')).toBeTruthy()
+    expect(s.getByText((_, el) => el?.tagName === 'P' && el.textContent === 'About the same')).toBeTruthy()
+  })
+})
