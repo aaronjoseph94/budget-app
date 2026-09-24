@@ -1,14 +1,17 @@
 #!/usr/bin/env node
 // The web build, measured: what a phone downloads before it can draw the
-// first screen.
+// first screen, and which build-time variables were compiled into it.
 //
 // 1. First-load JavaScript: the entry script and every chunk index.html
 //    preloads beside it, gzipped, must stay within BUDGET. The Month opens
 //    first (decision 1) and waits for all of it (PERF-3, PERF-8).
+// 2. Only the two public values may be compiled in. The build is run with a
+//    probe VITE_ variable that no code reads; finding its value in the
+//    output means every VITE_ variable in the environment ships (SEC-4).
 //
 // Built into a temporary folder, so the working tree is untouched.
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { gzipSync } from 'node:zlib'
@@ -16,6 +19,7 @@ import { gzipSync } from 'node:zlib'
 // Measured 186 KB after PERF-3 split the screens out; the skill's budget is
 // 200 KB, which leaves room for small growth and none for a regression.
 const BUDGET_KB = 200
+const PROBE = 'bundle-probe-value-that-must-not-ship'
 
 const out = mkdtempSync(join(tmpdir(), 'budget-bundle-'))
 try {
@@ -25,6 +29,7 @@ try {
       ...process.env,
       VITE_SUPABASE_URL: 'https://example.supabase.co',
       VITE_SUPABASE_ANON_KEY: 'placeholder-public-key-for-measuring',
+      VITE_BUNDLE_PROBE: PROBE,
     },
   })
 
@@ -35,6 +40,10 @@ try {
   for (const s of sizes) console.log(`  ${s.file.padEnd(40)} ${s.kb.toFixed(2)} KB gzipped`)
   console.log(`first-load JavaScript: ${total.toFixed(2)} KB gzipped (budget ${BUDGET_KB} KB)`)
 
+  const assets = join(out, 'assets')
+  const shipped = readdirSync(assets).filter((f) => f.endsWith('.js')).map((f) => readFileSync(join(assets, f), 'utf8')).join('\n')
+  const named = [...new Set(shipped.match(/VITE_[A-Z0-9_]+/g) ?? [])].filter((n) => n !== 'VITE_SUPABASE_URL' && n !== 'VITE_SUPABASE_ANON_KEY')
+
   let failed = false
   if (first.length === 0) {
     console.log('FAIL: no entry script found in index.html')
@@ -42,6 +51,10 @@ try {
   }
   if (total > BUDGET_KB) {
     console.log(`FAIL: first-load JavaScript is over budget by ${(total - BUDGET_KB).toFixed(2)} KB`)
+    failed = true
+  }
+  if (shipped.includes(PROBE) || named.length > 0) {
+    console.log(`FAIL: build-time variables shipped beyond the two public ones: ${named.join(', ') || PROBE}`)
     failed = true
   }
   process.exitCode = failed ? 1 : 0

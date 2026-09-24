@@ -27,13 +27,27 @@ export type EnvOutcome =
   | { readonly ok: false; readonly missing: readonly string[] }
 
 /**
+ * The two public values, read by name. Vite compiles in only what is named:
+ * passing `import.meta.env` whole put every VITE_ variable in the build
+ * environment into the bundle, read or not, so a key someone wrongly named
+ * VITE_ would have been published (SEC-4). scripts/check-bundle.mjs builds
+ * with a probe variable and fails if it ships.
+ */
+function publicValues(): Record<string, unknown> {
+  return {
+    VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
+    VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
+  }
+}
+
+/**
  * Reads the build-time environment.
  *
  * Returns an outcome rather than throwing, so an unconfigured build shows a
  * screen explaining what is missing instead of a blank page and a console
  * error. Names the variables and never their values.
  */
-export function readEnv(source: Record<string, unknown> = import.meta.env): EnvOutcome {
+export function readEnv(source: Record<string, unknown> = publicValues()): EnvOutcome {
   const parsed = EnvSchema.safeParse(source)
   if (parsed.success) return { ok: true, env: parsed.data }
   return {
