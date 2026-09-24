@@ -134,7 +134,7 @@ export function DebtEditor({
           </Button>
         </div>
       </form>
-      {row === null ? null : <DebtExtras row={row} extras={extras} />}
+      {row === null ? null : <DebtExtras row={row} extras={extras} onFailedAfterClose={onFailedAfterClose} />}
     </Sheet>
   )
 }

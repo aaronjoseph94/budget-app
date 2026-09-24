@@ -75,3 +75,25 @@ describe('DebtsScreen, extra payments', () => {
     expect(within(extras).getByText('$200.00')).toBeTruthy()
   })
 })
+
+describe('DebtsScreen, an extra payment refused after its sheet is closed (CR-4)', () => {
+  it('says so on the Debts screen, rather than losing it', async () => {
+    const fake = seeded()
+    fake.fail('POST debt_extra_payments', '42501')
+    let answer = (): void => undefined
+    const answered = new Promise<void>((resolve) => (answer = resolve))
+    fake.server.hold = (target) => (target === 'POST debt_extra_payments' ? answered : null)
+    renderScreen(<DebtsScreen />, fake)
+    await edit()
+    type(/^Month/, '2026-10')
+    type(/^Extra \(/, '50')
+    fireEvent.click(within(within(sheet()).getByRole('region', { name: 'Extra payments' })).getByRole('button', { name: 'Add' }))
+    fireEvent.click(within(sheet()).getByRole('button', { name: 'Cancel' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+
+    answer()
+    const said = await screen.findByText(/^Loan, extra payment for October 2026: /)
+    expect(said.textContent).toMatch(/Nothing was saved|42501/)
+    expect(fake.tables.debt_extra_payments.map((e) => e.month)).toEqual(['2026-08-01'])
+  })
+})

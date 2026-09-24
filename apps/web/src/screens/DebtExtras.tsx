@@ -12,8 +12,18 @@ import { Field, Input } from '../components/ui/form.js'
  * column"). One a month, as Workbook has one cell: adding to a month that
  * has one replaces its amount. After each write the app's data is
  * refreshed, which re-reads the debts, so the payoff month moves at once.
+ * A write refused after the sheet has closed is handed to
+ * `onFailedAfterClose`, as the debt's own save is, so it is never lost.
  */
-export function DebtExtras({ row, extras }: { row: DebtRow; extras: readonly DebtExtraRow[] }) {
+export function DebtExtras({
+  row,
+  extras,
+  onFailedAfterClose,
+}: {
+  row: DebtRow
+  extras: readonly DebtExtraRow[]
+  onFailedAfterClose: (message: string) => void
+}) {
   const { supabase, userId, refresh } = useAppData()
   const [month, setMonth] = useState(todayIso().slice(0, 7))
   const [amount, setAmount] = useState('')
@@ -27,14 +37,18 @@ export function DebtExtras({ row, extras }: { row: DebtRow; extras: readonly Deb
     }
   }, [])
 
-  const write = async (action: () => Promise<void>) => {
+  /** `what` names the write in a message shown after the sheet has closed. */
+  const write = async (action: () => Promise<void>, what: string) => {
     setBusy(true)
     setError(null)
     try {
       await action()
       await refresh()
     } catch (cause) {
-      if (open.current) setError(cause instanceof Error ? cause.message : 'Could not save the extra payment. Nothing was saved.')
+      const message = cause instanceof Error ? cause.message : 'Could not save the extra payment. Nothing was saved.'
+      // Dropped here once, while every other editor handed it on (CR-4).
+      if (open.current) setError(message)
+      else onFailedAfterClose(`${row.name}, ${what}: ${message}`)
     } finally {
       if (open.current) setBusy(false)
     }
@@ -50,7 +64,7 @@ export function DebtExtras({ row, extras }: { row: DebtRow; extras: readonly Deb
     void write(async () => {
       await saveDebtExtra(supabase, { userId, debtId: row.id, month: `${month}-01`, amountCents })
       if (open.current) setAmount('')
-    })
+    }, `extra payment for ${formatMonthTitle(`${month}-01`)}`)
   }
 
   return (
@@ -62,7 +76,7 @@ export function DebtExtras({ row, extras }: { row: DebtRow; extras: readonly Deb
           <li key={e.id} className="flex items-center gap-2">
             <span>{formatMonthTitle(e.month)}</span>
             <span className="tnum ml-auto">{formatCents(e.amount_cents)}</span>
-            <Button variant="outline" size="sm" disabled={busy} onClick={() => void write(() => removeDebtExtra(supabase, e.id))}>
+            <Button variant="outline" size="sm" disabled={busy} onClick={() => void write(() => removeDebtExtra(supabase, e.id), `removing the extra payment for ${formatMonthTitle(e.month)}`)}>
               Remove
             </Button>
           </li>
