@@ -661,6 +661,16 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **Coach screen** (lazy), first version: the flight card from existing core only (`goalProgress`, `timeEquivalent`): the ring, "46 h of 109 h", saved of target. The rest of the Coach arrives in A07 and A08.
 - **Tests:** the existing `apps/web/test/nav.test.tsx`, extended (every new address, a bad topic, a bad param, a third segment); the shell's bars at phone and wide widths; the switch on each of the four screens; More's groups; the flight card from the fake database.
 - **Acceptance:** Month opens first; Week is one tap from the Month; 320 px has no sideways scroll; first load recorded.
+- **Changed while building (2026-09-24).** Each decided by the engineer under the owner's 2026-09-24 instruction to proceed without questions.
+  - **Screens not built yet stay off the bars and More,** in their planned places, and show as their slices land; their addresses already read and open one line ("Forecast is on its way. Everything else works as before.") with a link to the Month. So the wide bar is Month · Week · Coach · Savings · Debts · Review · Add · More until A13 and A15, and More shows three groups until Reports gives Understand its first item. The full lists are committed (`DESKTOP_TABS`, `MORE_GROUPS`), and one set in `nav.ts` says what is built.
+  - **The switch sits above each title band, not under it,** so the Paycheck shows it while its schedule loads, fails or is missing. Each segment opens that view's own default (this month, this week, this pay period, this year): a month has no one week or pay period to carry across.
+  - **A view reached through the switch lights the Month tab on a phone** (it has no tab of its own there), not More.
+  - **The Week's arrows now write its Monday into the address** (N46's open point), and a bare `#/week` means this week, so it is written back when the arrows return to this week.
+  - **`#/coach/checkin` opens a one-line not-yet screen** until A20.
+  - **The flight card's saved amount** is the goal fund's balance when the goal is a fund's (D16), as on the Week and Savings, through one shared helper (`goalSavedCents`). Its hours are `timeEquivalent(...).hours` of the saved amount and of the target, the rule F33 writes down for A08.
+  - **The test file is `apps/web/test/nav.test.tsx`,** the name it already had, not `nav.test.ts`.
+  - **First load:** 185.13 KB gzipped before the slice, 187.03 KB after (the switch and the Bill calendar button are on the Month; the Coach is its own chunk).
+  - **Help:** no Help section exists yet; A06's "Month, Week, Pay and Year" article covers the switch and the Week's move.
 
 ### A06: Help, the ? on every screen, and One-time updates
 
