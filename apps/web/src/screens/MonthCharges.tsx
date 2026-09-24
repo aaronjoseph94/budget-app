@@ -27,6 +27,8 @@ import { cn } from '../lib/cn.js'
  * where that came from, or its Actual would stand over "No charges" with
  * nothing to explain it.
  */
+const FIRST = 30
+
 export function MonthCharges({
   categoryId,
   name,
@@ -52,6 +54,11 @@ export function MonthCharges({
   const monthName = formatMonthTitle(month)
   const [moving, setMoving] = useState<string | null>(null)
   const [moved, setMoved] = useState<{ readonly merchant: string; readonly to: string } | null>(null)
+  // The newest 30 (the month is read newest first), then all on request: a
+  // category with 208 charges, each with its Move to… button, took up to
+  // 232 ms to open on a phone (PERF-4).
+  const [all, setAll] = useState(false)
+  const shown = all ? charges : charges.slice(0, FIRST)
   return (
     <Sheet
       title={name}
@@ -79,7 +86,7 @@ export function MonthCharges({
         </p>
       ) : (
         <ul aria-label="Charges" className="divide-y">
-          {charges.map((c) => (
+          {shown.map((c) => (
             <li key={c.id} className="px-4 py-3">
               <div className="flex items-start gap-3">
                 <div className="min-w-0 flex-1">
@@ -123,6 +130,13 @@ export function MonthCharges({
           ))}
         </ul>
       )}
+      {shown.length < charges.length ? (
+        <div className="border-t p-4">
+          <Button variant="outline" className="w-full" onClick={() => setAll(true)}>
+            Show all {charges.length}
+          </Button>
+        </div>
+      ) : null}
     </Sheet>
   )
 }

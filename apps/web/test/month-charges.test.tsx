@@ -171,3 +171,22 @@ describe('Moving a charge from the Month', () => {
     expect(sheet.getByRole('button', { name: 'Move' }).hasAttribute('disabled')).toBe(false)
   })
 })
+
+describe('MonthCharges, a busy category (PERF-4)', () => {
+  // 208 charges in one category took up to 232 ms to open on a phone, every
+  // row with its own Move to… button, so the first 30 are drawn, then all.
+  it('draws 30 charges, and all of them on request', async () => {
+    const fake = seeded()
+    for (let i = 0; i < 40; i += 1) {
+      fake.tables.transactions.push(tx(`g${i}`, `2026-09-${String(1 + (i % 28)).padStart(2, '0')}`, -(100 + i), 'groceries', `SHOP ${i}`))
+    }
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+    await screen.findByRole('region', { name: 'Variable expenses' })
+    const sheet = openRow('Variable expenses', 'Groceries')
+
+    expect(sheet.getAllByRole('button', { name: /^Move to…/ })).toHaveLength(30)
+    fireEvent.click(sheet.getByRole('button', { name: 'Show all 42' }))
+    expect(sheet.getAllByRole('button', { name: /^Move to…/ })).toHaveLength(42)
+    expect(sheet.queryByRole('button', { name: /^Show all/ })).toBeNull()
+  })
+})
