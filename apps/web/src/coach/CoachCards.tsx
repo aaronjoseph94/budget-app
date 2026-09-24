@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import type { Fact, FactsDigest } from '@budget/core'
 import { cardWords, dayLine, rankCards, type Card as CoachCard, type CardAction } from '@budget/savings-coach'
 import { navigate } from '../nav.js'
 import { Button } from '../components/ui/button.js'
 import { Card } from '../components/ui/card.js'
 import { CoachText } from './words.js'
+import { WhySheet } from './WhySheet.js'
 
 /**
  * The day's line and up to three cards (plan §2.3), in the app's own words
@@ -65,6 +67,7 @@ const ACTION: Readonly<Record<CardAction, { readonly label: string; readonly go:
 }
 
 function InsightCard({ card }: { card: CoachCard }) {
+  const [why, setWhy] = useState(false)
   const facts = { A: card.fact }
   const words = cardWords(card.template, TONE)
   const action = ACTION[card.action]
@@ -85,7 +88,11 @@ function InsightCard({ card }: { card: CoachCard }) {
         <Button size="sm" variant="outline" onClick={action.go}>
           {action.label}
         </Button>
+        <Button size="sm" variant="link" aria-haspopup="dialog" onClick={() => setWhy(true)}>
+          Why am I seeing this?
+        </Button>
       </div>
+      {why ? <WhySheet fact={card.fact} title={words.title} onClose={() => setWhy(false)} /> : null}
     </Card>
   )
 }

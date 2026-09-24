@@ -91,6 +91,27 @@ describe('the Coach, in the app’s own words', () => {
     expect(screen.queryByRole('button', { name: /dismiss/i })).toBeNull()
   })
 
+  it('lists the engine’s figures behind a card in “Why am I seeing this?”', async () => {
+    go('/coach')
+    renderScreen(<Shell />, seeded())
+    const card = (await screen.findByRole('heading', { name: 'Dining out is running ahead' })).closest('li')!
+    fireEvent.click(within(card).getByRole('button', { name: 'Why am I seeing this?' }))
+
+    const sheet = within(screen.getByRole('dialog', { name: 'Why am I seeing this?' }))
+    const rows = sheet.getAllByRole('term').map((t) => [t.textContent, t.nextElementSibling?.textContent])
+    expect(rows).toEqual([
+      ['So far this month', '$600.00'],
+      ['Same days last month', '$300.00'],
+      ['The difference', '$300.00 more'],
+      ['Your usual month', '$300.00'],
+      ['Compared with', 'August'],
+      ['Complete months of records it rests on', '3'],
+    ])
+    expect(sheet.getByText('Worked out by the app from your own records. No AI was used.')).toBeTruthy()
+    fireEvent.click(sheet.getByRole('button', { name: 'Close' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
   it('opens what a card’s action names', async () => {
     go('/coach')
     renderScreen(<Shell />, seeded())

@@ -11,8 +11,8 @@ import { useCoachFacts } from '../coach/facts.js'
 
 /**
  * The Coach (plan §2.3): the day's line, the flight card, and up to three
- * cards on what changed, each with one action (A07). What to cut and the
- * quote arrive with A08, the AI's words with A12.
+ * cards on what changed, each with one action and "Why am I seeing this?"
+ * (A07). What to cut and the quote arrive with A08, the AI's words with A12.
  *
  * It needs no one-time update, no AI helper and no key: the facts are
  * packages/core's digest of a year of the owner's own records, read here
