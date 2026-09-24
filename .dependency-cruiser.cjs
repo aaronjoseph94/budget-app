@@ -133,6 +133,10 @@ module.exports = {
     // source never reads its tests.
     { from: { path: '^(packages|apps)/([^/]+)/src/' }, to: { path: '^$1/$2/src/' } },
     { from: { path: '^(packages|apps)/([^/]+)/test/' }, to: { path: '^$1/$2/(src|test|fixtures)/' } },
+    // The app's tests may read, as text, what the hosts serve beside the
+    // bundle: the headers each host sends are checked against each other and
+    // against the Supabase project the build names. Nothing that ships may.
+    { from: { path: '^apps/web/test/' }, to: { path: ['^apps/web/public/', '^netlify\\.toml$'] } },
     // Tests run under vitest, screens under Testing Library, and a test or
     // the fixture loader may read files; nothing that ships may.
     {
