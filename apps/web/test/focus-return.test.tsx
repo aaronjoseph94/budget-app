@@ -98,3 +98,10 @@ describe('focus after signing in fails', () => {
     }
   })
 })
+
+describe('the sign-in page (FE-14)', () => {
+  it('is a main landmark, so a screen reader can jump to it', () => {
+    render(<SignIn supabase={createFakeSupabase().client} />)
+    expect(screen.getByRole('main').textContent).toContain('Email address')
+  })
+})

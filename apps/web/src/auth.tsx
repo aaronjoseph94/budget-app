@@ -107,8 +107,10 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
   // Both fields are named by the refusal: Supabase will not say which was wrong.
   const refused = attempt.kind === 'failed' ? { 'aria-invalid': true, 'aria-describedby': reasonId } : {}
 
+  // <main>, as the signed-in app's screens are: a screen reader finds the
+  // page by its landmark, and axe flags a page without one (FE-14).
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-md flex-col justify-center px-4 py-12">
+    <main className="mx-auto flex min-h-full w-full max-w-md flex-col justify-center px-4 py-12">
       <h1 className="text-2xl font-semibold tracking-tight">Budget</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         Your statements and your spending, visible only to you.
@@ -196,7 +198,7 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
           </form>
         )}
       </Card>
-    </div>
+    </main>
   )
 }
 
@@ -213,7 +215,7 @@ export function NotConfigured({ missing }: { missing: readonly string[] }) {
   const hosted = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
 
   return (
-    <div className="mx-auto flex min-h-full w-full max-w-xl flex-col justify-center px-4 py-12">
+    <main className="mx-auto flex min-h-full w-full max-w-xl flex-col justify-center px-4 py-12">
       <Card className="p-5">
         <Label>Not configured</Label>
         <p className="mt-2 text-sm">
@@ -261,6 +263,6 @@ export function NotConfigured({ missing }: { missing: readonly string[] }) {
           belong here.
         </p>
       </Card>
-    </div>
+    </main>
   )
 }
