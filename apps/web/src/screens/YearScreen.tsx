@@ -186,7 +186,7 @@ function StartPicker({ start, today }: { start: string; today: string }) {
   const thisYear = Number(today.slice(0, 4))
   const from = Math.min(thisYear - 5, Number(year))
   const years = Array.from({ length: Math.max(thisYear + 1, Number(year)) - from + 1 }, (_, i) => String(from + i))
-  const select = 'rounded-md border bg-card px-2 py-1.5 pointer-coarse:min-h-11'
+  const select = 'rounded-md border border-input bg-card px-2 py-1.5 pointer-coarse:min-h-11'
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm">
       <span className="font-medium">Starts in</span>

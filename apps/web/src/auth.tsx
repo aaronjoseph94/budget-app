@@ -136,7 +136,7 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground"
+                className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground"
               />
             </label>
 
@@ -149,7 +149,7 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground"
+                  className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground"
                 />
               </label>
             ) : null}

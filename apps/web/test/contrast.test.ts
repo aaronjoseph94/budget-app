@@ -43,6 +43,11 @@ describe.each([
   it.each(['card', 'background', 'muted'])('draws the focus ring at 3:1 or more on --%s', (surface) => {
     expect(ratio(pick(scheme, 'ring'), pick(scheme, surface))).toBeGreaterThanOrEqual(3)
   })
+  // FE-5: a field's fill is the card it sits on, so its border is its only
+  // edge; at oklch(0.922) it was 1.25:1.
+  it.each(['card', 'background', 'muted'])('draws a field border at 3:1 or more on --%s', (surface) => {
+    expect(ratio(pick(scheme, 'input'), pick(scheme, surface))).toBeGreaterThanOrEqual(3)
+  })
 })
 
 describe('the focus ring', () => {
