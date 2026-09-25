@@ -10,6 +10,7 @@ import { HelpButton } from '../help/HelpButton.js'
 import { reportOf, useReportRead, type ReportFigures } from '../reports/read.js'
 import { MoversCard, PairsCard, TotalsCard } from '../reports/Overview.js'
 import { ReviewCard } from '../reports/ReviewCard.js'
+import { Failed } from '../reports/Failed.js'
 
 /**
  * Reports (plan §2.6, A15): a month in review, any month, the current one
@@ -73,19 +74,6 @@ export function ReportsScreen({ month }: { month: string | null }) {
         {typeof figures === 'object' ? <Overview {...figures} nameOf={nameOf} /> : null}
       </div>
     </div>
-  )
-}
-
-function Failed({ missingUpdate }: { missingUpdate: boolean }) {
-  return missingUpdate ? (
-    <p className="text-sm">
-      Reports need a one-time update.{' '}
-      <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
-        See One-time updates
-      </a>
-    </p>
-  ) : (
-    <p className="text-sm text-muted-foreground">This report did not load. Reload to try again; everything else still works.</p>
   )
 }
 
