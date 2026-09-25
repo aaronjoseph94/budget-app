@@ -1365,6 +1365,100 @@ an estimate: a milestone comes rarely, and the Coach should cheer it.
 
 ---
 
+## F35 — The next three months, and what-ifs
+
+**Decided 2026-09-25. Engineering default. Not from the workbook,** which
+has no forecast. Decided by the engineer under the owner's 2026-09-24
+instruction to proceed without questions (plan §5, §11; built in slice
+A14). The plan wrote the what-ifs for the flight goal; G1 made goals
+plural, so they hold for whichever active goal is chosen, the main goal
+first. The plan gives the what-if no number of its own, and F36 to F44
+are taken, so it is written here, beside the forecast it changes.
+
+**The three months** are the three calendar months after `asOf`'s month.
+For each:
+
+- **Pay.** Each Income source, in the list's order: with a pay schedule
+  and a usual pay (F29's median of its last 3 receipts, as of `asOf`),
+  its paydays in that month (`paydaysIn`, from its first pay date on) ×
+  its usual pay. Otherwise its Income Goal in effect that month (D12), the
+  whole goal, as the plan says ("else the goal"): a month has no receipt
+  yet to subtract. Otherwise it is *not counted* and named, or *idle* as
+  F29 says, and not named.
+- **Bills:** every Bills, Debts and Subscriptions amount in effect in that
+  month (D13, `billsTotals`' all-fixed total, D7). A change typed from a
+  later month (rent going up in November) counts from that month.
+- **Variable spending:** the Variable block's Actual in each of up to the
+  6 most recent complete months (F24), a month below $0 counted as $0 (as
+  F30 does); the **25th percentile, median and 75th percentile** (F27's
+  median, nearest rank for the others, F33), each rounded half-up to $10.
+  With 1 or 2 complete months, **the median only, rough**. With none,
+  nothing is forecast, and it says the day it becomes possible (the first
+  of the month after the first whole month, F33's rule).
+- **Savings:** each Savings row's goal in effect that month (D12), added
+  up.
+- **Net** = pay − bills − variable − savings, per variable figure, from
+  the unrounded variable figure, then rounded half-up to $10. The **worst
+  case** takes the 75th percentile's spending, the **best case** the 25th.
+- **Balances, with a typed start (D17):** each month's end chains from
+  F30's most likely end: worst = previous worst + worst net, and the same
+  for the middle and best, **every chain starting from F30's median**
+  (the plan: "chain from F30's median"; starting the worst case from F30's
+  low end was the other reading, and would add this month's spread to
+  three months of it). Kept unrounded along the chain and each month's
+  figure rounded half-up to $10. Labelled **best case** and **worst case**,
+  and "not a promise". Without a start, the nets still show.
+- **Heights** for the chart come from `scaleSeries` over every worst,
+  middle and best figure drawn, so the chart divides no money.
+
+**What if** (a lever of F34, or any saving a month *M*, applied to one
+goal):
+
+- **Weekly** = M × 12 ÷ 52, half-up (F34).
+- **This month's end:** the lever keeps `M × (D − d) ÷ D`, half-up, of the
+  days left (F30's days); each of F30's low, middle and high ends gains it
+  and is rounded to $10 again. The ends were already rounded to $10, so a
+  what-if end can differ from a from-scratch figure by up to $5, inside
+  the $10 the range is shown to. No end without a typed start or before
+  F30 has one.
+- **The goal's date:** each pace of F33 plus the weekly amount, turned
+  into a date by `projectGoal` (early from the high, middle from the
+  middle, late from the low; no late date when the low plus the lever is
+  still $0 or less). Rough stays rough: one date. **Weeks sooner** at the
+  middle pace (F34's formula). With no pace (no fund, too early, or none),
+  the lever alone: ⌈remaining ÷ weekly⌉ weeks. A goal whose target is met
+  has no date to move.
+- **Time a month** for a goal with a cost an hour, by `timeEquivalent`
+  (F34).
+- Worked on the phone from figures already loaded: a chip never reads or
+  asks anything.
+
+**Worked example.** 24 September 2026, as in F30: June, July and August
+complete. Pay bi-weekly from 5 June, usual $2,100.00: October's paydays
+are the 9th and 23rd, so $4,200.00, and November's and December's two
+each. Bills $1,340.00 (Rent $1,200.00, Phone $60.00, Internet $80.00);
+with Rent at $1,300.00 from November, $1,440.00 in November and December.
+Savings: the Flight fund's $500.00 goal. Variable: June $900.00, July
+$1,240.00, August $1,054.00: the 25th percentile rank ⌈0.25 × 3⌉ = 1,
+$900.00; the median $1,054.00 ($1,050); the 75th rank 3, $1,240.00.
+October's net: 4,200.00 − 1,340.00 − 500.00 − 1,054.00 = $1,306.00
+($1,310); worst $1,120.00, best $1,460.00. November's: $1,206.00 ($1,210),
+worst $1,020.00, best $1,360.00. From F30's $3,310: October ends $4,616.00
+($4,620), worst $4,430, best $4,770; November $5,822.00 ($5,820), worst
+$5,450, best $6,130; December $7,028.00 ($7,030), worst $6,470, best
+$7,490. With records from 1 August (August alone): rough, variable
+$1,050 each way, October's net $1,310 each way.
+
+**What if, worked:** Dining out's quarter, $100.00 a month (F34), on F30's
+example: it keeps 100.00 × 6 ÷ 30 = $20.00 this month, so the month ends
+$3,300 to $3,360, most likely $3,330. On Flight training (F33's example,
+$17,350.00 to go, paces $69.23, $103.85 and $115.38 a week), the lever is
+$23.08 a week: ⌈17,350.00 ÷ 138.46⌉ = 126 weeks (22 February 2029),
+⌈÷ 126.93⌉ = 137 (10 May 2029) and ⌈÷ 92.31⌉ = 188 (2 May 2030): 168 −
+137 = **31 weeks sooner**, and 22 minutes of flight time a month.
+
+---
+
 ## F44 — Impact, for ranking the Coach's cards
 
 **Decided 2026-09-24. Engineering default. Not from the workbook.** Decided
