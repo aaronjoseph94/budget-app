@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 /** A run's reply, either way, read field by field. The app reads none yet; its tasks arrive from A12. */
 type Answer = { ok: boolean; code?: string; provider?: string; model?: string; text?: string; tried?: { provider: string; model: string; result: string }[] }
-import { handle, sealKey } from '../ai/index.js'
+import { handle, route, sealKey } from '../ai/index.js'
 
 /**
  * `run` and its router (plan §3.5, ADR 0004): the owner's order, paid
@@ -25,9 +25,20 @@ const CHAT = {
   anthropic: 'https://api.anthropic.com/v1/messages',
 } as const
 type Service = keyof typeof CHAT
+const ALLOWED = new Set<string>([`${PROJECT}/auth/v1/user`, ...Object.values(CHAT)])
 // Gemini's address names the model; the others name it in the body.
 const serviceOf = (url: string): Service | undefined =>
   url.startsWith('https://generativelanguage.googleapis.com/v1beta/models/') ? 'gemini' : (Object.keys(CHAT) as Service[]).find((s) => CHAT[s] === url)
+
+/**
+ * Real turns of the event loop until `seen` holds. Opening a saved key is
+ * WebCrypto, which fake timers do not drive, so a test that moves the
+ * clock waits for each call to be made before it moves the clock again.
+ */
+async function until(seen: () => boolean) {
+  for (let i = 0; i < 1000 && !seen(); i++) await new Promise((r) => setImmediate(r))
+  expect(seen()).toBe(true)
+}
 
 const json = (body: unknown, status = 200, headers: Record<string, string> = {}) => new Response(JSON.stringify(body), { status, headers })
 const answers: Record<Service, () => Response> = {
@@ -37,6 +48,10 @@ const answers: Record<Service, () => Response> = {
   openai: () => json({ choices: [{ finish_reason: 'stop', message: { content: '{"ok":true}', refusal: null } }] }),
   anthropic: () => json({ stop_reason: 'end_turn', content: [{ type: 'text', text: '{"ok":true}' }] }),
 }
+/** A service that never answers until its call is given up on. */
+const silent = (init: RequestInit) =>
+  new Promise<Response>((_, reject) => init.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError'))))
+
 interface World {
   settings?: Record<string, unknown>
   saved?: readonly Service[]
@@ -130,6 +145,43 @@ describe('failing over, in the owner’s order', () => {
     const sent = r.calls.find((c) => c.url === CHAT.groq)
     expect(groq?.['p_tokens']).toBe(Math.ceil(new TextEncoder().encode(String(sent?.init.body)).length / 3))
   })
+
+  it('gives up on a service that never answers, with an abort, and asks the next', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    const { pending, calls } = await run({ saved: ['groq'], services: { gemini: silent, groq: answers.groq } })
+    await until(() => calls.some((c) => serviceOf(c.url) === 'gemini'))
+    await vi.advanceTimersByTimeAsync(20_000)
+    const res = await pending
+    const r = summary(res.status, await res.text(), calls)
+    expect(r.body).toMatchObject({ ok: true, provider: 'groq' })
+    expect(r.rpc('ai_note_outcome')[0]).toMatchObject({ p_provider: 'gemini', p_code: 'timeout', p_cooldown_until: null })
+  })
+
+  it('starts no attempt whose whole timeout would pass the deadline', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    // Signing in took 45 s; two silent services take 20 s each, leaving 15 s: too little for a third.
+    const { pending, calls } = await run({ saved: ['groq', 'openrouter'], authAfterMs: 45_000, services: { gemini: silent, groq: silent, openrouter: answers.openrouter } })
+    const asked = (service: Service) => () => calls.some((c) => serviceOf(c.url) === service)
+    await until(() => calls.length > 0)
+    await vi.advanceTimersByTimeAsync(45_000)
+    await until(asked('gemini'))
+    await vi.advanceTimersByTimeAsync(20_000)
+    await until(asked('groq'))
+    await vi.advanceTimersByTimeAsync(20_000)
+    const res = await pending
+    const r = summary(res.status, await res.text(), calls)
+    expect(r.services).toEqual(['gemini', 'groq'])
+    expect([r.status, r.body.code, r.body.tried]).toEqual([502, 'all_failed', [
+      { provider: 'gemini', model: 'gemini-3.5-flash-lite', result: 'timeout' },
+      { provider: 'groq', model: 'openai/gpt-oss-20b', result: 'timeout' },
+    ]])
+  })
+
+  it('makes at most three attempts', async () => {
+    const r = await ran({ saved: ['groq', 'openrouter', 'openai'], settings: { allow_paid: true } })
+    expect(r.services).toEqual(['gemini', 'groq', 'openrouter'])
+    expect(r.rpc('ai_usage_claim')).toHaveLength(3)
+  })
 })
 
 describe('paid services', () => {
@@ -137,6 +189,16 @@ describe('paid services', () => {
     const r = await ran({ saved: ['openai', 'anthropic'], services: { gemini: () => json({}, 500), openai: answers.openai } })
     expect(r.services).toEqual(['gemini'])
     expect(r.body.code).toBe('all_failed')
+  })
+
+  it('are asked, in order, once it is on', async () => {
+    const r = await ran({ saved: ['openai'], settings: { allow_paid: true }, services: { gemini: () => json({}, 500), openai: answers.openai } })
+    expect(r.body).toMatchObject({ ok: true, provider: 'openai', model: 'gpt-5-nano' })
+  })
+
+  it('with only a paid key and the switch off, AI is not set up', async () => {
+    const r = await ran({ saved: ['anthropic'] }, { ...ENV, GEMINI_API_KEY: undefined })
+    expect([r.status, r.body.code, r.services]).toEqual([409, 'not_set_up', []])
   })
 })
 
@@ -147,11 +209,46 @@ describe('limits and rests', () => {
       expect([cap, r.status, r.body.code, r.services]).toEqual([cap, 429, 'limit_reached', []])
     }
   })
+
+  it('rests Gemini until midnight Pacific when its free daily quota is spent', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(Date.parse('2026-09-25T17:00:00Z'))
+    const perDay = { error: { code: 429, details: [{ '@type': 'type.googleapis.com/google.rpc.QuotaFailure', violations: [{ quotaId: 'GenerateRequestsPerDayPerProjectPerModel-FreeTier' }] }] } }
+    const r = await ran({ services: { gemini: () => json(perDay, 429) } })
+    expect(r.rpc('ai_note_outcome')[0]).toMatchObject({ p_code: 'rate_limited', p_cooldown_until: '2026-09-26T07:00:00.000Z' })
+    expect(r.body.code).toBe('all_failed')
+  })
 })
 
 describe('when AI cannot run', () => {
   it('says ai_off when the owner switched AI off, and asks nothing', async () => {
     const r = await ran({ settings: { enabled: false } })
     expect([r.status, r.body.code, r.services]).toEqual([409, 'ai_off', []])
+  })
+
+  it('says needs_update when 0016’s claim is not there yet', async () => {
+    const { fetchFn } = await world()
+    const missing = (async (url: string | URL | Request, init?: RequestInit) =>
+      String(url).endsWith('ai_usage_claim') ? json({ code: 'PGRST202' }, 404) : fetchFn(url, init)) as typeof fetch
+    const [status, body] = await route(ENV, USER, 'test', { system: 's', data: {}, schema: {}, maxOutputTokens: 10 }, Date.now(), missing)
+    expect([status, body]).toEqual([503, { ok: false, code: 'needs_update', tried: [] }])
+  })
+})
+
+describe('what leaves the helper', () => {
+  it('reaches no address but the fixed ones, and logs no key, prompt or reply', async () => {
+    const all = await Promise.all([
+      ran({ saved: ['groq', 'openrouter', 'openai', 'anthropic'], settings: { allow_paid: true, provider_order: ['openai', 'anthropic', 'gemini'] } }),
+      ran({ saved: ['groq', 'openrouter'], services: { openrouter: answers.openrouter } }),
+    ])
+    for (const r of all) {
+      for (const c of r.calls) expect([c.url, ALLOWED.has(c.url) || c.url.startsWith(`${PROJECT}/rest/v1/rpc/`)]).toEqual([c.url, true])
+      expect(r.text).not.toMatch(/not-a-real|connection works/)
+    }
+    expect(lines.length).toBeGreaterThan(0)
+    for (const line of lines) {
+      expect(line).not.toMatch(/not-a-real|ok":true|connection/)
+      expect(Object.keys(JSON.parse(line) as object).every((k) => ['fn', 'code', 'attempts', 'tried'].includes(k))).toBe(true)
+    }
   })
 })
