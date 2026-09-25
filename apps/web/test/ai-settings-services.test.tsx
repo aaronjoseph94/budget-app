@@ -1,9 +1,10 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AiKeyReply } from '@budget/schema'
 import { Shell } from '../src/App.js'
 import { aiStatusReply, createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { warmScreen } from './warm-screen.js'
 
 /**
  * AI settings' other four services (plan §8.3, A11): Groq and OpenRouter
@@ -22,6 +23,8 @@ function go(hash: string) {
     window.dispatchEvent(new HashChangeEvent('hashchange'))
   })
 }
+
+beforeAll(() => warmScreen('#/ai', 'AI settings'))
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })

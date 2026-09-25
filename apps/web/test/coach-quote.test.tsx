@@ -1,8 +1,9 @@
 import { act, cleanup, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { warmScreen } from './warm-screen.js'
 
 /**
  * The Coach's quote (plan §2.3, §4), from the committed library. With the
@@ -37,6 +38,8 @@ async function quote() {
 function at(day: number) {
   vi.setSystemTime(new Date(2026, 8, day, 12))
 }
+
+beforeAll(() => warmScreen('#/coach', 'Coach'))
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })

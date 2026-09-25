@@ -3,6 +3,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { Shell } from '../src/App.js'
 import { EXAMPLE_TODAY, forecastFake } from './forecast-seed.js'
 import { renderScreen } from './render-screen.js'
+import { warmScreen } from './warm-screen.js'
 
 function go(hash: string) {
   act(() => {
@@ -14,27 +15,7 @@ function go(hash: string) {
 /** A paragraph whose whole text is `s`, however it is split into spans. */
 const para = (s: string) => (_: string, el: Element | null) => el?.tagName === 'P' && el.textContent === s
 
-// The Coach is a lazy chunk. Loaded here, before any test waits on the
-// screen, so the first test's wait is for the screen's reads alone and not
-// for the chunk being compiled cold, which on a busy machine took longer
-// than a find allows.
-beforeAll(async () => {
-  await import('../src/screens/CoachScreen.js')
-})
-
-// The Coach is a lazy screen. The first time a file renders it, it
-// suspends, React holds the revealed screen back for a moment, and the
-// code runs cold: about half a second, most of a find's one second, so
-// on a busy machine the first test lost the race. Rendered once here,
-// each test waits for the Coach's reads alone.
-beforeAll(async () => {
-  vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
-  go('/coach')
-  renderScreen(<Shell />, forecastFake())
-  await screen.findByRole('heading', { name: 'Coach' })
-  cleanup()
-  vi.restoreAllMocks()
-})
+beforeAll(() => warmScreen('#/coach', 'Coach'))
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })

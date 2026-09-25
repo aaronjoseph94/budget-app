@@ -1,8 +1,9 @@
 import { act, cleanup, screen, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import { EXAMPLE_TODAY, forecastFake } from './forecast-seed.js'
 import { renderScreen } from './render-screen.js'
+import { warmScreen } from './warm-screen.js'
 
 function go(hash: string) {
   act(() => {
@@ -15,6 +16,8 @@ function go(hash: string) {
 const whole = (tag: string, s: string) => (_: string, el: Element | null) => el?.tagName === tag && el.textContent === s
 /** The figure beside a label in a card's list. */
 const valueOf = (card: HTMLElement, label: string) => within(card).getByText(label).nextElementSibling?.textContent
+
+beforeAll(() => warmScreen('#/forecast', 'Forecast'))
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })

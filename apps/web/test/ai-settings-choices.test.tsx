@@ -1,8 +1,9 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import { aiStatusReply, createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { warmScreen } from './warm-screen.js'
 
 /**
  * AI settings' Try in this order, Use paid services and Daily limit (plan
@@ -19,6 +20,8 @@ function go(hash: string) {
     window.dispatchEvent(new HashChangeEvent('hashchange'))
   })
 }
+
+beforeAll(() => warmScreen('#/ai', 'AI settings'))
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })

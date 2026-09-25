@@ -1,8 +1,9 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { warmScreen } from './warm-screen.js'
 
 /**
  * AI settings' How the Coach talks (plan §8.3, A12): the tone and Share
@@ -15,6 +16,8 @@ function go(hash: string) {
     window.dispatchEvent(new HashChangeEvent('hashchange'))
   })
 }
+
+beforeAll(() => warmScreen('#/ai', 'AI settings'))
 
 beforeEach(() => {
   vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)

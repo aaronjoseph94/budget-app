@@ -2084,3 +2084,30 @@ sideways; the mobile pass (A26) walks every screen for exactly this.
 **To settle:** in A26, put the tightest day's name beside its point on
 the side the line is not going, and the Debts link on a line of its own.
 
+
+---
+
+## N87 — A file's first screen test pays for a cold start
+
+**Seen:** 2026-09-25, A14, when full gate runs went red while another
+test run shared the machine: the first test of `coach-forecast`,
+`ai-settings-choices` and `coach-dismiss` could not find what it waited
+for within a find's one second.
+
+**Why:** the first render of a lazy screen in a test file suspends on
+its chunk, React holds the revealed screen back for a moment, and the
+code runs cold. Rendering the Coach three times in one test took 566,
+66 and 53 ms to its heading. Importing the chunk first did not help,
+because React.lazy suspends on its own first render regardless.
+
+**Done here:** `apps/web/test/warm-screen.tsx` renders a screen once in
+a file's `beforeAll`, and the thirteen files whose first test waits on
+one lazy screen (the Coach, AI settings, Help, One-time updates and the
+Forecast) use it. No timeout was raised.
+
+**Left:** `help-button`, `heading-order`, `period-switch` and `shell`
+walk several screens, or test the shell's own loading, in their first
+test, so one warm screen would not cover them. None has failed yet.
+
+**To settle:** if one of them fails the same way, warm each screen its
+first test opens.

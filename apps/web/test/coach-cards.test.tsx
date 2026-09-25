@@ -1,9 +1,10 @@
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import type { Category, LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { warmScreen } from './warm-screen.js'
 
 // Thursday 24 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 24, 12)
@@ -55,6 +56,8 @@ function go(hash: string) {
 
 /** An element whose whole text is `s`, however it is split into spans. */
 const whole = (tag: string, s: string) => (_: string, el: Element | null) => el?.tagName === tag && el.textContent === s
+
+beforeAll(() => warmScreen('#/coach', 'Coach'))
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })

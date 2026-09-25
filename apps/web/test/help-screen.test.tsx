@@ -1,10 +1,11 @@
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import { ArticleBody } from '../src/help/ArticleBody.js'
 import { ARTICLES, type Article } from '../src/help/articles.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { warmScreen } from './warm-screen.js'
 
 function go(hash: string) {
   act(() => {
@@ -12,6 +13,8 @@ function go(hash: string) {
     window.dispatchEvent(new HashChangeEvent('hashchange'))
   })
 }
+
+beforeAll(() => warmScreen('#/help', 'Help'))
 
 beforeEach(() => {
   vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)

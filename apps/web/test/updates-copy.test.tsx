@@ -1,9 +1,10 @@
 import { readFileSync } from 'node:fs'
 import { act, cleanup, fireEvent, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { warmScreen } from './warm-screen.js'
 
 /**
  * One-time updates' Copy button (ADR 0007): the committed file, fetched
@@ -23,6 +24,8 @@ let asked: string[] = []
 const host = (path: string) => new Response(SITE[path] ?? '<!doctype html><title>Budget</title>')
 let site = host
 const writeText = vi.fn<(text: string) => Promise<void>>()
+
+beforeAll(() => warmScreen('#/help/updates', 'One-time updates'))
 
 beforeEach(() => {
   asked = []

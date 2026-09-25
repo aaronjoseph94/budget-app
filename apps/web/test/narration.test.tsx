@@ -1,10 +1,11 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NarrateDaily, NarrateReply } from '@budget/schema'
 import { Shell } from '../src/App.js'
 import type { Category, LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { warmScreen } from './warm-screen.js'
 
 /**
  * The Coach's words from the AI (plan A12): the app's own first, the AI's
@@ -76,6 +77,8 @@ function go(hash: string) {
     window.dispatchEvent(new HashChangeEvent('hashchange'))
   })
 }
+
+beforeAll(() => warmScreen('#/coach', 'Coach'))
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
