@@ -280,6 +280,25 @@ export const ARTICLES: readonly Article[] = [
     related: ['forecast', 'periods', 'wrong-number'],
   },
   {
+    id: 'reports',
+    title: 'Reports and trends',
+    summary:
+      'Reports reviews a month: what came in, what you spent and what you saved, against last month and your usual month, the categories that moved most, and a short review in words with one thing to try.',
+    steps: [
+      'Open **Reports** from **More**, or from the bar at the top on a wide screen.',
+      'Press **‹** or **›** to choose a month; this month is marked **So far** and set against the same days of last month.',
+      'Read **The month in review**: a headline, three points and one thing to try next month.',
+      'Read **Income, Spent and Saved**: each against last month and, once the month is over, against your usual month.',
+      'Read **Biggest changes**: the categories furthest from their usual month, up and down.',
+      'Read **This month and last, by category**: bars, and a list of the same figures under them.',
+      'Press **Save as PDF**, then choose **Save as PDF** where the print window asks for a printer, to keep a copy.',
+    ],
+    done: 'you know how the month went, what changed most, and one thing to try next month.',
+    stuck:
+      'Your usual month is the middle of up to six whole months of records before the one shown, so it needs a whole month of records first. A month your records start partway through says so, and has nothing before it to compare with. Only everyday spending (Variable expenses) can be a biggest change: a bill moving is not a habit. With free AI on, a month that is over is reviewed in the AI’s words (✨) once, and kept; the AI never sees your amounts, and every figure is still the app’s own. A month still running is always in the app’s own words. If it says Reports need a one-time update, see One-time updates. Trends, shops and habits are on their way.',
+    related: ['comparisons', 'coach', 'free-ai'],
+  },
+  {
     id: 'comparisons',
     title: 'Comparisons with last month',
     summary:

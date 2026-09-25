@@ -78,7 +78,7 @@ describe('Help', () => {
   })
 
   it('opens the list, saying so, for a topic whose article is not written yet', async () => {
-    go('/help/reports')
+    go('/help/ask')
     renderScreen(<Shell />, createFakeSupabase())
     await screen.findByRole('heading', { level: 1, name: 'Help' })
     expect(screen.getByText('That page is not written yet. Here is everything that is.').getAttribute('role')).toBe('status')
