@@ -24,3 +24,4 @@ export {
 export { rangeBar, type RangeBarInput } from './range-bar.js'
 export { balanceLine, type BalanceLineInput } from './balance-line.js'
 export { bandBars, type BandBarsInput, type BandColumn } from './band-bars.js'
+export { pairedBars, type PairedBar, type PairedBarsInput } from './paired-bars.js'
