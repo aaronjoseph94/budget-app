@@ -227,21 +227,21 @@ export const ARTICLES: readonly Article[] = [
     id: 'coach',
     title: 'What the Coach does, and never does',
     summary:
-      'The Coach reads your own records and tells you, in plain words, how the month is going, what changed, when you will reach your goals, and what to trim to get there sooner.',
+      'The Coach reads your own records and tells you, in plain words, how the month is going, what changed, when you will reach your goals, and what to trim to get there sooner. With free AI on, the AI writes the words; your own records write every figure.',
     steps: [
-      'Open **Coach**.',
+      'Open **Coach**, and read the small line under the title: it says whose words these are.',
       'Read the line at the top: how your spending compares with the same days last month, or last week.',
       'Read your main goal’s card: what is saved, and when you will get there at your own pace.',
-      'Read the line under the date: one thing to trim, and how many weeks sooner that gets you there.',
       'Read the cards under it: at most three, the most important first, each with one thing to try.',
       'Press a card’s button, such as **See the Month** or **See your goals**, to act on it.',
       'Press **Why am I seeing this?** to see the figures behind a card.',
-      'Read the quote or tip at the bottom, picked for what your day is about.',
+      'Press **✕** on a card you have seen enough of, and it stays gone until something new happens.',
+      'Press **Refresh the AI’s words** when it shows, to have today’s changes put in words.',
     ],
     done: 'you have read the line, your goal’s date and the cards, and you know why each one is there.',
     stuck:
-      'The Coach never moves money and never changes a budget without your tap, and every figure comes from your own records. The date comes from what you really moved into the goal’s fund in each whole month: with under three months it is one rough date, and before a whole month is in, it says when to check back. A goal on no fund has no date until you press **Make it a fund** on Savings. Every quote and tip comes from a book, a speech or a public page, checked when it was added, never written by AI, and the same one does not come back within two weeks on this device. A category shows only when it moves more than it usually does, so a quiet month has no cards. The same line sits at the top of the **Month**; tap it to come here.',
-    related: ['savings', 'goals', 'comparisons', 'statements'],
+      'Words marked ✨ were written by AI. The AI is never sent an amount, a balance or a date: it writes around blanks, and the app fills each blank with your own figure as it draws, so a figure is never the AI’s. A sentence that breaks the app’s rules is dropped, and that card shows the app’s own words. The AI is asked by itself at most once a day, and its words are kept and reused while what they say is still true. The Coach never moves money and never changes a budget without your tap. The date comes from what you really moved into the goal’s fund in each whole month: with under three months it is one rough date. A goal on no fund has no date until you press **Make it a fund** on Savings. Every quote and tip comes from a book, a speech or a public page, never written by AI; the AI may only pick one and say why it fits. A category shows only when it moves more than it usually does, so a quiet month has no cards. The same line sits at the top of the **Month**; tap it to come here.',
+    related: ['savings', 'goals', 'ai-sees', 'free-ai', 'comparisons'],
   },
   {
     id: 'comparisons',
@@ -294,6 +294,27 @@ export const ARTICLES: readonly Article[] = [
     stuck:
       'Free services may keep what they are sent, and people there may read it, as with Gemini’s free tier. A paid key does nothing until **Use paid services** is on, so nothing is billed by surprise. **Remove key** on a card deletes that key alone.',
     related: ['free-ai', 'ai-rests'],
+  },
+  {
+    id: 'ai-sees',
+    title: 'What the AI sees, and how the Coach talks',
+    summary:
+      'The AI is told what kind of thing changed, which way, and by a little or a lot, with your names for things. It is never told an amount, a balance or a date. You choose the Coach’s tone, and whether shop names are shared.',
+    steps: [
+      'Open **More**, then **AI settings**, and find **How the Coach talks**.',
+      'Choose **Cheerleader** for a win first and never a telling-off, or **Straight talker** for plain words.',
+      'Turn **Share shop names with the AI** off to have the AI told “a shop” instead of the name.',
+      'Open **Coach** to read today’s words in the tone you chose.',
+    ],
+    done: 'the Coach speaks in the tone you chose, and AI settings shows your choices.',
+    stuck:
+      'Free AI services may keep what they are sent, and people there may read it. That is why the Coach sends only kinds of change, directions and your names for things, with long numbers in a name hidden. If choosing a tone says it needs a one-time update, see **One-time updates**: until then the Coach cheers you on.',
+    related: ['coach', 'free-ai', 'updates'],
+    terms: [
+      { term: 'Sent for the Coach', meaning: 'what kind of change each is, up or down, a little or a lot, how many months of records it rests on, your category and goal names, and a short list of quotes.' },
+      { term: 'Never sent', meaning: 'an amount, a balance, a date, a card or account number, your name or your email.' },
+      { term: '✨', meaning: 'words written by AI from your numbers. Every figure in them is the app’s own.' },
+    ],
   },
   {
     id: 'ai-rests',

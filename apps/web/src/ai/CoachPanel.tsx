@@ -101,6 +101,9 @@ export function CoachPanel() {
               ? 'On: when the Coach speaks of a shop, the AI sees its name, with long numbers hidden. It never sees an amount or a date.'
               : 'Off: the AI is told “a shop” instead of the name. It never sees an amount or a date.'}
           </p>
+          <a href={hashOf({ screen: 'help', param: 'ai-sees' })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+            What the AI sees
+          </a>
         </>
       ) : null}
       <p aria-live="polite" className="text-base font-medium text-destructive">
