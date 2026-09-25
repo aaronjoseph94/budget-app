@@ -25,3 +25,4 @@ export {
 } from './templates.js'
 export { dayLine, type DayLine } from './line.js'
 export { rankCards, type Card, type CardAction, type RankCardsInput } from './rank.js'
+export { LIBRARY, LIBRARY_VERSION, QUOTE_TAGS, type LibraryEntry, type QuoteTag } from './library.js'
