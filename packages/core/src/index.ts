@@ -154,6 +154,7 @@ export {
 export type { MonthForecastInput } from './month-position.js'
 export { monthEndForecast, type MonthEndForecast, type Spread } from './month-end.js'
 export { safeToSpend, type SafeToSpend } from './safe-to-spend.js'
+export { scaleSeries, type ScaleSeriesInput, type ScaledSeries } from './scale.js'
 export { cashFlow30, type CashFlow30, type CashFlowBill, type CashFlowPay } from './cash-flow-30.js'
 
 export {
