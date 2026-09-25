@@ -4,10 +4,13 @@
 // browser (CLAUDE.md). ADR 0004 is the design: one helper for every task,
 // keys kept encrypted in 0016's ai_provider_keys, a hardcoded allowlist of
 // services, and failing over between them. This version answers `ping`,
-// which says the helper is deployed; the rest arrives a part at a time.
+// which says the helper is deployed, and `status`, which says what is set
+// up; the keys and the tasks arrive in later slices (plan A10, A11).
 //
 // Who is calling comes from Supabase's auth server, asked with the
-// caller's own token, never from the request body.
+// caller's own token, never from the request body. The database is reached
+// only through 0016's functions granted to service_role alone, each told
+// that user explicitly.
 //
 // Logs carry the action, a code and counts. Never a key, a token, a prompt,
 // a payload value or a reply (CLAUDE.md).
@@ -49,6 +52,7 @@ type Env = z.infer<typeof EnvSchema>
 // field, so no URL, host, user id or prompt can ride along (ADR 0004).
 export const RequestSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('ping') }).strict(),
+  z.object({ action: z.literal('status') }).strict(),
 ])
 type Request_ = z.infer<typeof RequestSchema>
 
@@ -57,6 +61,7 @@ type Code =
   | 'origin_not_allowed'
   | 'method_not_allowed'
   | 'bad_request'
+  | 'needs_update'
   | 'helper_error'
 
 const STATUS_OF: Readonly<Record<Code, number>> = {
@@ -64,6 +69,7 @@ const STATUS_OF: Readonly<Record<Code, number>> = {
   origin_not_allowed: 403,
   method_not_allowed: 405,
   bad_request: 400,
+  needs_update: 503,
   helper_error: 503,
 }
 
@@ -89,7 +95,7 @@ function cors(origin: string | null, origins: Set<string>): Record<string, strin
 
 // The one place this file writes a log line, and all it can say: a fixed
 // code and numbers. The types leave no room for anything else.
-type LogCode = 'auth_unreachable' | 'auth_status' | 'not_configured'
+type LogCode = 'auth_unreachable' | 'auth_status' | 'not_configured' | 'db_unreachable' | 'db_status' | 'db_shape'
 function log(code: LogCode, counts: Record<string, number> = {}): void {
   console.log(JSON.stringify({ fn: 'ai', code, ...counts }))
 }
@@ -126,6 +132,118 @@ async function whoIs(env: Env, bearer: string, fetchFn: typeof fetch): Promise<W
   const user: unknown = await res.json().catch(() => null)
   const id = typeof user === 'object' && user !== null && 'id' in user ? user.id : null
   return typeof id === 'string' && UUID.test(id) ? { user: id.toLowerCase() } : { code: 'not_signed_in' }
+}
+
+// The services, their tier and their models, the default first (ADR 0004's
+// allowlist; each service's host and paths join it with its adapter, A10
+// and A11). A model is only ever one of these: the owner's choice, when it
+// is on the list, or the list's first.
+const SERVICES = {
+  gemini: { tier: 'free', models: ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.5-flash'] },
+  groq: { tier: 'free', models: ['openai/gpt-oss-20b', 'openai/gpt-oss-120b'] },
+  openrouter: { tier: 'free', models: ['openrouter/free'] },
+  openai: { tier: 'paid', models: ['gpt-5-nano', 'gpt-5-mini'] },
+  anthropic: { tier: 'paid', models: ['claude-haiku-4-5', 'claude-sonnet-5'] },
+} as const
+type Provider = keyof typeof SERVICES
+const PROVIDERS = Object.keys(SERVICES) as readonly string[]
+const isProvider = (p: unknown): p is Provider => typeof p === 'string' && PROVIDERS.includes(p)
+
+function modelFor(provider: Provider, ...choices: readonly unknown[]): string {
+  const list: readonly string[] = SERVICES[provider].models
+  const chosen = choices.find((c): c is string => typeof c === 'string' && list.includes(c))
+  return chosen ?? list[0] ?? ''
+}
+
+/**
+ * The key the helper reaches the database with: the project's new secret
+ * key when it has one, else the legacy service_role key. It always goes in
+ * `apikey`. A legacy key is a three-part JWT and goes as the bearer too; a
+ * new `sb_secret_` key is not a JWT, and Supabase refuses one as a bearer.
+ */
+function databaseKey(env: Env): string | null {
+  let fresh: unknown = null
+  try {
+    const keys: unknown = JSON.parse(env.SUPABASE_SECRET_KEYS ?? 'null')
+    fresh = typeof keys === 'object' && keys !== null && 'default' in keys ? keys.default : null
+  } catch {
+    fresh = null
+  }
+  if (typeof fresh === 'string' && fresh !== '') return fresh
+  return env.SUPABASE_SERVICE_ROLE_KEY ?? null
+}
+
+const JWT = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/
+// What PostgREST and Postgres say when 0016's function is not there yet.
+const NOT_THERE = new Set(['PGRST202', '42883', 'PGRST205', '42P01'])
+
+/** One of 0016's service_role functions, for this user; or the code to answer with. */
+async function callDb(env: Env, fn: string, args: Record<string, unknown>, fetchFn: typeof fetch): Promise<{ data: unknown } | { code: Code }> {
+  const key = databaseKey(env)
+  if (env.SUPABASE_URL === undefined || key === null) {
+    log('not_configured')
+    return { code: 'helper_error' }
+  }
+  const headers: Record<string, string> = { apikey: key, 'Content-Type': 'application/json' }
+  if (JWT.test(key)) headers['Authorization'] = `Bearer ${key}`
+  let res: Response
+  try {
+    res = await fetchFn(`${env.SUPABASE_URL}/rest/v1/rpc/${fn}`, { method: 'POST', headers, body: JSON.stringify(args) })
+  } catch {
+    log('db_unreachable')
+    return { code: 'helper_error' }
+  }
+  const body: unknown = await res.json().catch(() => null)
+  if (res.ok) return { data: body }
+  const code = typeof body === 'object' && body !== null && 'code' in body ? body.code : null
+  if (typeof code === 'string' && NOT_THERE.has(code)) return { code: 'needs_update' }
+  log('db_status', { status: res.status })
+  return { code: 'helper_error' }
+}
+
+const obj = (v: unknown): Record<string, unknown> => (typeof v === 'object' && v !== null && !Array.isArray(v) ? (v as Record<string, unknown>) : {})
+const list = (v: unknown): readonly unknown[] => (Array.isArray(v) ? v : [])
+const HINT = /^[A-Za-z0-9_.:-]{1,4}$/
+const KEY_STATUSES: readonly unknown[] = ['ok', 'busy', 'rejected', 'locked']
+
+/**
+ * What is set up, from ai_context_for: each service's key source, its last
+ * four characters and last test, and the model it would use; today's calls
+ * against the owner's limit. Built field by field from what is needed, so
+ * a ciphertext, an IV or a root's id is never in the reply.
+ */
+function statusOf(env: Env, context: unknown): Record<string, unknown> | null {
+  const ctx = obj(context)
+  const settings = obj(ctx['settings'])
+  const models = obj(settings['models'])
+  const cap = settings['daily_cap']
+  if (typeof cap !== 'number' || !Array.isArray(ctx['keys']) || !Array.isArray(ctx['usage'])) return null
+  const saved = new Map(list(ctx['keys']).map(obj).filter((k) => isProvider(k['provider'])).map((k) => [k['provider'], k]))
+  const secret = env.GEMINI_API_KEY?.trim() ?? ''
+  const services = PROVIDERS.filter(isProvider).map((provider) => {
+    const key = saved.get(provider)
+    // A pasted key wins over the secret; each line below asks for it first.
+    const fromSecret = provider === 'gemini' && secret !== ''
+    const hint = key !== undefined ? key['key_hint'] : fromSecret ? secret.slice(-4) : null
+    return {
+      provider,
+      tier: SERVICES[provider].tier,
+      source: key !== undefined ? 'saved' : fromSecret ? 'secret' : 'none',
+      hint: typeof hint === 'string' && HINT.test(hint) ? hint : null,
+      status: key !== undefined && KEY_STATUSES.includes(key['status']) ? key['status'] : null,
+      model: modelFor(provider, models[provider], provider === 'gemini' ? env.GEMINI_MODEL : undefined),
+    }
+  })
+  // A count of calls, never money (ADR 0004).
+  const used = list(ctx['usage']).reduce<number>((n, u) => n + (Number(obj(u)['attempts']) || 0), 0)
+  return {
+    ok: true,
+    version: VERSION,
+    enabled: settings['enabled'] !== false,
+    allowPaid: settings['allow_paid'] === true,
+    services,
+    today: { used, cap },
+  }
 }
 
 export async function handle(
@@ -166,7 +284,15 @@ export async function handle(
 
   // Answered only for a signed-in caller, so the version is no one else's business.
   if (body.action === 'ping') return send(200, { ok: true, version: VERSION })
-  return fail('bad_request')
+
+  const context = await callDb(env, 'ai_context_for', { p_user: who.user }, fetchFn)
+  if ('code' in context) return fail(context.code)
+  const status = statusOf(env, context.data)
+  if (status === null) {
+    log('db_shape')
+    return fail('helper_error')
+  }
+  return send(200, status)
 }
 
 // Only the names this helper reads are handed over.

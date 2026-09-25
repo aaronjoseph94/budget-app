@@ -114,6 +114,39 @@ describe('the AI helper learns who is calling from the auth server', () => {
   })
 })
 
+describe('the AI helper reaches the database as itself, for the caller alone', () => {
+  const LEGACY = ['header', 'payload', 'signature'].join('.') // a legacy key's three-part shape, and nothing a scanner could take for one
+  const FRESH = 'sb_secret_notarealkey0001'
+  const context = { settings: { daily_cap: 40, models: {} }, keys: [], usage: [] }
+  const withDb: Respond = (url) => (url.endsWith('/auth/v1/user') ? signedIn(url) : new Response(JSON.stringify(context)))
+  const dbCall = async (env: Record<string, string | undefined>) => {
+    const { res, calls } = await run(request({ body: { action: 'status' } }), { ...ENV, ...env }, withDb)
+    expect(res.status).toBe(200)
+    const call = calls.find((c) => c.url === `${PROJECT}/rest/v1/rpc/ai_context_for`)
+    return { headers: new Headers(call?.init.headers), args: JSON.parse(String(call?.init.body)) as unknown }
+  }
+
+  it('asks for the user the auth server named, and no other', async () => {
+    expect((await dbCall({ SUPABASE_SERVICE_ROLE_KEY: LEGACY })).args).toEqual({ p_user: USER })
+  })
+
+  it('sends a legacy service_role JWT as the apikey and as the bearer', async () => {
+    const { headers } = await dbCall({ SUPABASE_SERVICE_ROLE_KEY: LEGACY })
+    expect([headers.get('apikey'), headers.get('authorization')]).toEqual([LEGACY, `Bearer ${LEGACY}`])
+  })
+
+  it('sends a new sb_secret_ key as the apikey only, never as a bearer, and prefers it', async () => {
+    const { headers } = await dbCall({ SUPABASE_SERVICE_ROLE_KEY: LEGACY, SUPABASE_SECRET_KEYS: JSON.stringify({ default: FRESH }) })
+    expect([headers.get('apikey'), headers.get('authorization')]).toEqual([FRESH, null])
+  })
+
+  it('falls back to the legacy key when the new keys cannot be read', async () => {
+    for (const keys of ['not json', '{"other":"sb_secret_x"}', '{"default":""}']) {
+      expect((await dbCall({ SUPABASE_SERVICE_ROLE_KEY: LEGACY, SUPABASE_SECRET_KEYS: keys })).headers.get('apikey')).toBe(LEGACY)
+    }
+  })
+})
+
 describe('the AI helper logs codes and counts only', () => {
   let lines: string[] = []
   beforeEach(() => {
