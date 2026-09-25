@@ -14,6 +14,11 @@
 // 4. The one-time updates under setup/ (ADR 0007) are exactly every
 //    migration from 0015 on and the AI helper, each byte for byte as
 //    committed: nothing more is published, and nothing is changed on the way.
+// 5. The JavaScript a browser runs names no AI service's API host and no
+//    service-role key: every AI call goes through the `ai` helper (ADR 0004).
+//    setup/ is left out, since it is the helper's own source, and is never
+//    run by the page; apps/web/test/no-provider-hosts.test.ts checks the
+//    app's source the same way.
 //
 // Built into a temporary folder, so the working tree is untouched.
 import { execFileSync } from 'node:child_process'
@@ -26,6 +31,7 @@ import { gzipSync } from 'node:zlib'
 // 200 KB, which leaves room for small growth and none for a regression.
 const BUDGET_KB = 200
 const PROBE = 'bundle-probe-value-that-must-not-ship'
+const PROVIDER_HOSTS = ['generativelanguage.googleapis.com', 'api.groq.com', 'openrouter.ai/api', 'api.openai.com', 'api.anthropic.com']
 
 const out = mkdtempSync(join(tmpdir(), 'budget-bundle-'))
 try {
@@ -67,6 +73,12 @@ try {
     console.log(`FAIL: build-time variables shipped beyond the two public ones: ${named.join(', ') || PROBE}`)
     failed = true
   }
+  const reached = PROVIDER_HOSTS.filter((host) => shipped.toLowerCase().includes(host))
+  if (reached.length > 0 || shipped.includes('SERVICE_ROLE')) {
+    console.log(`FAIL: the built JavaScript names ${[...reached, ...(shipped.includes('SERVICE_ROLE') ? ['SERVICE_ROLE'] : [])].join(', ')}`)
+    failed = true
+  }
+
   const migrations = join(import.meta.dirname, '..', 'supabase', 'migrations')
   const sources = new Map([
     ...readdirSync(migrations).filter((n) => /^\d{4}_[a-z0-9_]+\.sql$/.test(n) && n >= '0015').map((n) => [n, join(migrations, n)]),

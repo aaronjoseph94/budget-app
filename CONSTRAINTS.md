@@ -55,6 +55,7 @@ whether a commit is clean.
 | Dependencies | Nothing high or above | `pnpm audit --audit-level high` | CI |
 | Web first load | The JavaScript a phone loads before the first screen (the entry and the chunks it preloads) ≤200 KB gzipped | `node scripts/check-bundle.mjs` | CI |
 | Edge Functions | Every `supabase/functions/*/index.ts` type-checks; imports zod alone, so it can be pasted as one file (its tests: the function, vitest, Node and `packages/schema`); uses `console` only inside its one `log(code, counts)` helper; and is tested to ≥80% lines and functions, ≥75% branches | `tsc --build` + `depcruise` + `eslint` + `vitest run --coverage` | every edit (coverage: CI) |
+| Browser holds no AI key | No AI service's API host (`generativelanguage.googleapis.com`, `api.groq.com`, `openrouter.ai/api`, `api.openai.com`, `api.anthropic.com`) and no `SERVICE_ROLE` in `apps/web/src` or the built JavaScript (`/setup/` left out: it is the AI helper's own source, never run by the page); `connect-src` is `'self'` and the Supabase project alone | `vitest run` (`no-provider-hosts.test.ts`, `headers.test.ts`) + `node scripts/check-bundle.mjs` | every edit (bundle: CI) |
 | Brand | The workbook vendor's name is in no tracked file's text or path, in any letter case | `git grep -niI -e "w[i]nky"` + `git ls-files` | every edit |
 
 The web first-load row replaced the pending "≤700 KB gzipped" entry-bundle
@@ -71,6 +72,16 @@ it, while each function still imports zod by Deno's pinned URL
 (`tsc`), `console.error` outside the log helper (`eslint`), the function
 importing `packages/schema` and its test importing the engine (`depcruise`),
 and its tests moved away (coverage at 0% against 80).
+
+The "browser holds no AI key" row was added on 2026-09-25 (plan A09).
+Every AI call goes through the `ai` Edge Function on the Supabase
+project, so the page never needs a provider's address, and a key or its
+name in the browser's code would be a leak waiting for a mistake. Seen
+`RED` by planting `api.OpenAI.com` in a comment and
+`SUPABASE_SERVICE_ROLE_KEY` in a screen's source (the test), and
+`api.groq.com` and `SERVICE_ROLE` in strings the app ships (the bundle
+check). The lowercase word `service_role` stays allowed: sign-in tells
+the owner never to paste that key.
 
 The brand row was added on 2026-09-24, when the owner asked for the
 workbook vendor's name to go from everything in the repository. It checks
