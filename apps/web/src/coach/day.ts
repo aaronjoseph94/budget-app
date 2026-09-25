@@ -1,0 +1,57 @@
+/**
+ * What the Coach speaks of today, as one Day (plan §2.3, A12): the line,
+ * the cards, the active goals (main first) and the quote shortlist, all
+ * from core's digest of a year of records and savings-coach's ranking.
+ * The Coach draws it; the Month's line builds the very same Day in the
+ * background when the day's words have not been asked for yet, so both
+ * send one brief and share its words.
+ */
+import { useMemo } from 'react'
+import type { FactsDigest } from '@budget/core'
+import { useAppData } from '../app-data.js'
+import type { FundsState } from '../funds.js'
+import { todayIso } from '../format.js'
+import { todaysCards, todaysLine } from './CoachCards.js'
+import { useCoachFacts, type DigestRows } from './facts.js'
+import { goalsForCore } from './goals.js'
+import type { Day } from './narration.js'
+import { useQuotePick } from './QuoteCard.js'
+import { useCoachSettings } from './settings.js'
+
+export interface CoachDay {
+  readonly digest: FactsDigest | 'failed' | null
+  /** Null while the facts or the tone load. */
+  readonly day: Day | null
+  readonly pick: ReturnType<typeof useQuotePick>
+  readonly asOf: string
+}
+
+export function useCoachDay(read: DigestRows | 'failed' | null, funds: FundsState): CoachDay {
+  const { goals, mainGoal } = useAppData()
+  const coreGoals = useMemo(() => goalsForCore(goals, funds), [goals, funds])
+  const digest = useCoachFacts(read, coreGoals)
+  const tone = useCoachSettings()?.tone ?? null
+  const asOf = todayIso()
+  const facts = digest === null || digest === 'failed' ? null : digest.facts
+  // What today is about, for the quote: the cards, then the day's line.
+  // Which fact the line speaks of is the same in either tone.
+  const topFacts = useMemo(() => {
+    if (facts === null) return []
+    const line = todaysLine(facts, 'cheerleader')
+    return [...todaysCards(facts).map((c) => c.fact), ...(line === null ? [] : [line.fact])]
+  }, [facts])
+  const pick = useQuotePick(topFacts, mainGoal, asOf)
+  const day = useMemo((): Day | null => {
+    if (facts === null || tone === null) return null
+    return {
+      tone,
+      line: todaysLine(facts, tone),
+      cards: todaysCards(facts),
+      goals: goals
+        .filter((g) => g.status === 'active')
+        .map((g) => ({ id: g.id, name: g.name, main: g.id === mainGoal?.id, hasHours: g.unit_cost_cents !== null })),
+      quotes: pick.shortlist,
+    }
+  }, [facts, tone, goals, mainGoal, pick.shortlist])
+  return { digest, day, pick, asOf }
+}

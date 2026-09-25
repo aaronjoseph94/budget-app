@@ -2,20 +2,20 @@ import { useMemo } from 'react'
 import { goalsProgress } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { goalSavedCents, useFunds, type FundsState } from '../funds.js'
-import { formatBasisPoints, formatCents, todayIso } from '../format.js'
+import { formatBasisPoints, formatCents } from '../format.js'
 import { hashOf, navigate } from '../nav.js'
 import { Button } from '../components/ui/button.js'
 import { Card, CardContent, CardTitle } from '../components/ui/card.js'
 import { Progress } from '../components/ui/feedback.js'
 import { Icon } from '../components/ui/icons.js'
 import { HelpButton } from '../help/HelpButton.js'
-import { CoachCards, DayLine, Said, todaysCards, todaysLine } from '../coach/CoachCards.js'
+import { CoachCards, DayLine, Said } from '../coach/CoachCards.js'
 import { CoachStatus } from '../coach/CoachStatus.js'
-import type { Day, Words } from '../coach/narration.js'
+import { useCoachDay } from '../coach/day.js'
+import type { Words } from '../coach/narration.js'
 import { useNarration } from '../coach/use-narration.js'
-import { QuoteCard, useQuotePick } from '../coach/QuoteCard.js'
-import { useCoachFacts, useCoachRead } from '../coach/facts.js'
-import { useCoachSettings } from '../coach/settings.js'
+import { QuoteCard } from '../coach/QuoteCard.js'
+import { useCoachRead } from '../coach/facts.js'
 import { goalsForCore } from '../coach/goals.js'
 import { GoalLever } from '../coach/GoalLever.js'
 import { GoalPace, paceShort } from '../coach/GoalPace.js'
@@ -38,32 +38,10 @@ import type { ListedGoalRow } from '../ledger.js'
 export function CoachScreen() {
   const read = useCoachRead()
   const funds = useFunds()
-  const { goals, mainGoal } = useAppData()
+  const { goals } = useAppData()
   const coreGoals = useMemo(() => goalsForCore(goals, funds), [goals, funds])
-  const digest = useCoachFacts(read, coreGoals)
   const outlooks = useGoalOutlooks(read, coreGoals)
-  const tone = useCoachSettings()?.tone ?? null
-  const asOf = todayIso()
-  const facts = digest === null || digest === 'failed' ? null : digest.facts
-  // What today is about, for the quote: the cards, then the day's line.
-  // Which fact the line speaks of is the same in either tone.
-  const topFacts = useMemo(() => {
-    if (facts === null) return []
-    const line = todaysLine(facts, 'cheerleader')
-    return [...todaysCards(facts).map((c) => c.fact), ...(line === null ? [] : [line.fact])]
-  }, [facts])
-  const pick = useQuotePick(topFacts, mainGoal, asOf)
-  const day = useMemo((): Day | null => {
-    if (facts === null || tone === null) return null
-    const active = goals.filter((g) => g.status === 'active')
-    return {
-      tone,
-      line: todaysLine(facts, tone),
-      cards: todaysCards(facts),
-      goals: active.map((g) => ({ id: g.id, name: g.name, main: g.id === mainGoal?.id, hasHours: g.unit_cost_cents !== null })),
-      quotes: pick.shortlist,
-    }
-  }, [facts, tone, goals, mainGoal, pick.shortlist])
+  const { digest, day, pick, asOf } = useCoachDay(read, funds)
   const narrated = useNarration(day, asOf, true)
   const { narration } = narrated
   const quote = narration?.quote ?? null
