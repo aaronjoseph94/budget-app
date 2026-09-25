@@ -104,6 +104,7 @@ export async function askAi(supabase: SupabaseClient, request: AiRequest): Promi
   return { ok: false, view: viewOf(isCode(code) ? STATE_OF[code] : 'helper_error') }
 }
 
+const PROVIDERS: readonly unknown[] = AiProviderSchema.options
 const TIERS: readonly unknown[] = ['free', 'paid']
 const SOURCES: readonly unknown[] = ['saved', 'secret', 'none']
 const KEY_STATUSES: readonly unknown[] = ['ok', 'busy', 'rejected', 'locked', null]
@@ -111,12 +112,11 @@ const KEY_STATUSES: readonly unknown[] = ['ok', 'busy', 'rejected', 'locked', nu
 function serviceOf(v: unknown): AiServiceStatus | null {
   if (typeof v !== 'object' || v === null) return null
   const s = v as Record<string, unknown>
-  const provider = AiProviderSchema.safeParse(s['provider'])
   const hint = s['hint']
-  if (!provider.success || !TIERS.includes(s['tier']) || !SOURCES.includes(s['source']) || !KEY_STATUSES.includes(s['status'])) return null
+  if (!PROVIDERS.includes(s['provider']) || !TIERS.includes(s['tier']) || !SOURCES.includes(s['source']) || !KEY_STATUSES.includes(s['status'])) return null
   if (typeof s['model'] !== 'string' || (hint !== null && typeof hint !== 'string')) return null
   return {
-    provider: provider.data,
+    provider: s['provider'] as AiServiceStatus['provider'],
     tier: s['tier'] as AiServiceStatus['tier'],
     source: s['source'] as AiServiceStatus['source'],
     hint,
