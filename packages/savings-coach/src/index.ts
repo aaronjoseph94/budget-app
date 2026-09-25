@@ -51,3 +51,14 @@ export {
   type SentenceProblemInput,
 } from './check-reply.js'
 export { reportBrief, reportFacts, type ReportFact, type ReportFactKind, type ReportFacts, type ReviewedMonth } from './report.js'
+export {
+  REPORT_HEADLINES,
+  REPORT_TRY,
+  checkReportReply,
+  mergeReview,
+  reportWords,
+  type ReportCheckDrop,
+  type ReportWords,
+  type Review,
+  type ReviewPart,
+} from './report-words.js'
