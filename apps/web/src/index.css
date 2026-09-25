@@ -514,6 +514,19 @@
 .spec-chart .chart-report-before {
   fill: color-mix(in oklab, var(--primary) 50%, var(--card));
 }
+/* Trends (A16): each line in its list's colour, and its dot where a month stands alone. */
+.spec-chart .chart-trend-income {
+  stroke: var(--income-ink);
+}
+.spec-chart .chart-trend-spent {
+  stroke: var(--spend);
+}
+.spec-chart .chart-trend-saved {
+  stroke: var(--savings-ink);
+}
+.spec-chart .chart-trend-income-dot { fill: var(--income-ink); }
+.spec-chart .chart-trend-spent-dot { fill: var(--spend); }
+.spec-chart .chart-trend-saved-dot { fill: var(--savings-ink); }
 
 /*
  * Save as PDF (Reports, A15): the page as it is, less the bars and buttons,
