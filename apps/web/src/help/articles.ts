@@ -263,18 +263,18 @@ export const ARTICLES: readonly Article[] = [
     id: 'free-ai',
     title: 'Turn on free AI',
     summary:
-      'AI writes the Coach’s words for you, free with Google Gemini. Everything works without it, in the app’s own words. The first time takes about 15 minutes, once, easiest on a computer.',
+      'AI writes the Coach’s words for you, free with Google Gemini. Everything works without it, in the app’s own words. Pasting the key takes about 2 minutes, once the one-time updates are in.',
     steps: [
       'Open **More**, then **AI settings**, and read the sentence at the top.',
       'If it says the AI helper isn’t installed, or needs a one-time update, press **Open One-time updates** and do what it names next.',
-      'If you added a Gemini key for receipt photos, there is nothing more to do: AI settings says it is on, using your receipts key.',
-      'Otherwise, open Google AI Studio in a new tab and press **Create API key**, then copy the key.',
-      'In Supabase, open **Edge Functions**, then **Secrets**, and add it named **GEMINI_API_KEY**.',
-      'Come back to AI settings and press **Check again**.',
+      'If the Gemini card says **Already on**, you added a key for receipt photos and there is nothing more to do.',
+      'Otherwise press **Get a free key**, then **Create API key** in the Google AI Studio tab that opens, and copy the key.',
+      'Come back to AI settings, paste the key in the box, and press **Save & test**.',
+      'To pick another model, press **Check which models work** and choose one the key can use.',
     ],
-    done: 'AI settings says "AI is on".',
+    done: 'the Gemini card says "Works · key ending …" and the top says "AI is on".',
     stuck:
-      'Nothing breaks while AI is off: the Coach and every other screen use the app’s own words. A key is a password Google gives you for the app to use; AI settings only ever shows its last four characters.',
+      'If it says the key isn’t valid, copy it again from AI Studio, all of it. If Google is busy, the key is saved and tried again later. Nothing breaks while AI is off: the Coach and every other screen use the app’s own words. A key is a password Google gives you for the app to use; the app only ever shows its last four characters, and **Remove key** deletes it.',
     related: ['updates', 'coach'],
   },
   {

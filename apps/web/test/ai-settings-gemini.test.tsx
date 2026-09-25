@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AiKeyReply, AiServiceStatus } from '@budget/schema'
 import { Shell } from '../src/App.js'
@@ -7,7 +7,8 @@ import { renderScreen } from './render-screen.js'
 
 /**
  * AI settings' free Gemini card (plan §8.3, A10): get a key, paste it,
- * Save & test, and what each result says. The key is
+ * Save & test; Already on with the receipts key; Check which models work;
+ * Remove key; and a model from those the key can use. The key is
  * obviously fake, and must be nowhere on the page once it is sent.
  */
 
@@ -97,6 +98,7 @@ describe('the free Gemini card, with no key yet', () => {
     expect(document.body.innerHTML).not.toContain('real-key')
     // The page reads the helper again, so the top sentence follows.
     await screen.findByText('AI is on, using free Google Gemini.')
+    expect(card.getByRole('button', { name: 'Remove key' })).toBeTruthy()
   })
 
   it('points to One-time updates when the helper needs one, and the rest of the page stays', async () => {
@@ -107,5 +109,59 @@ describe('the free Gemini card, with no key yet', () => {
     await card.findByText('AI needs a one-time update. Everything else works. One-time updates shows which.')
     expect(card.getByRole('link', { name: 'Open One-time updates' }).getAttribute('href')).toBe('#/help/updates')
     expect(screen.getByRole('region', { name: 'AI services, in the order they are tried' })).toBeTruthy()
+  })
+})
+
+describe('the free Gemini card, with a key', () => {
+  it('says Already on with the receipts key, and checks which models work', async () => {
+    const fake = createFakeSupabase()
+    helper(fake, { source: 'secret', hint: '0002' }, () => reply(keyReply({ source: 'secret', hint: '0002' })))
+    const card = await open(fake)
+    expect(card.getByText(/Already on/).parentElement?.textContent).toContain('your receipts key ending …0002')
+    expect(card.queryByRole('button', { name: 'Remove key' })).toBeNull()
+    fireEvent.click(card.getByRole('button', { name: 'Check which models work' }))
+    await card.findByText('Works · your receipts key ending …0002')
+    expect(fake.functions.calls.filter((c) => c['action'] === 'test_key')).toEqual([{ action: 'test_key', provider: 'gemini' }])
+  })
+
+  it('offers only the models the key can use, and keeps the choice in ai_settings', async () => {
+    const fake = createFakeSupabase()
+    helper(fake, { source: 'saved', hint: '0001', status: 'ok' }, () => reply(keyReply()))
+    const card = await open(fake)
+    fireEvent.click(card.getByRole('button', { name: 'Check which models work' }))
+    const model = (await card.findByLabelText('Model')) as HTMLSelectElement
+    expect([...model.options].map((o) => [o.textContent, o.disabled])).toEqual([
+      ['gemini-3.5-flash-lite', false],
+      ['gemini-3.1-flash-lite', false],
+      ['gemini-3.5-flash (not available for this key)', true],
+    ])
+    fireEvent.change(model, { target: { value: 'gemini-3.1-flash-lite' } })
+    await waitFor(() => expect(fake.tables.ai_settings).toMatchObject([{ user_id: 'u1', models: { gemini: 'gemini-3.1-flash-lite' } }]))
+  })
+
+  it('says a locked key must be pasted again', async () => {
+    const fake = createFakeSupabase()
+    helper(fake, { source: 'saved', hint: '0001', status: 'locked' }, () => reply(keyReply({ status: 'locked', models: [] })))
+    const card = await open(fake)
+    fireEvent.click(card.getByRole('button', { name: 'Check which models work' }))
+    await card.findByText('Your saved key can’t be opened after a Supabase key change: paste it again')
+  })
+
+  it('removes the key through ai_key_forget, and says so', async () => {
+    const fake = createFakeSupabase()
+    fake.rpcReplies['ai_key_forget'] = true
+    helper(fake, { source: 'saved', hint: '0001', status: 'ok' }, () => reply(keyReply()))
+    const card = await open(fake)
+    fireEvent.click(card.getByRole('button', { name: 'Remove key' }))
+    await card.findByText('Key removed.')
+    expect(fake.rpcCalls.filter((c) => c.name === 'ai_key_forget').map((c) => c.args)).toEqual([{ p_provider: 'gemini' }])
+  })
+
+  it('says Remove key needs a one-time update when 0016’s function is not there', async () => {
+    const fake = createFakeSupabase()
+    helper(fake, { source: 'saved', hint: '0001', status: 'ok' }, () => reply(keyReply()))
+    const card = await open(fake)
+    fireEvent.click(card.getByRole('button', { name: 'Remove key' }))
+    await card.findByText('AI needs a one-time update. Everything else works. One-time updates shows which.')
   })
 })

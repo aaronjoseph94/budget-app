@@ -2,9 +2,9 @@ import { useId, useState, type FormEvent } from 'react'
 import type { AiServiceStatus } from '@budget/schema'
 import { useAppData } from '../app-data.js'
 import { Button } from '../components/ui/button.js'
-import { Input } from '../components/ui/form.js'
+import { Input, NativeSelect } from '../components/ui/form.js'
 import { hashOf } from '../nav.js'
-import { saveGeminiKey, type KeyResult } from './keys.js'
+import { chooseGeminiModel, forgetGeminiKey, saveGeminiKey, testGeminiKey, type KeyResult } from './keys.js'
 
 /** Where Google gives out free Gemini keys: a fixed address, opened in a new tab. */
 export const GET_A_KEY = 'https://aistudio.google.com/apikey'
@@ -19,11 +19,11 @@ export const GET_A_KEY = 'https://aistudio.google.com/apikey'
  * so the sentence at the top follows what happened here.
  */
 export function GeminiCard({ gemini, onChanged }: { readonly gemini: AiServiceStatus; readonly onChanged: () => void }) {
-  const { supabase } = useAppData()
+  const { supabase, userId } = useAppData()
   const [shown, setShown] = useState(false)
-  const [working, setWorking] = useState<null | 'save'>(null)
+  const [working, setWorking] = useState<null | 'save' | 'test' | 'forget' | 'model'>(null)
   const [result, setResult] = useState<KeyResult | null>(null)
-  const ids = { steps: useId(), key: useId() }
+  const ids = { steps: useId(), key: useId(), model: useId() }
 
   const run = async (step: NonNullable<typeof working>, act: () => Promise<KeyResult | null>) => {
     setWorking(step)
@@ -43,8 +43,22 @@ export function GeminiCard({ gemini, onChanged }: { readonly gemini: AiServiceSt
     void run('save', () => saveGeminiKey(supabase, pasted))
   }
 
+  const forget = () =>
+    void run('forget', async () => {
+      const gone = await forgetGeminiKey(supabase)
+      return gone === true ? { sentence: 'Key removed.', good: true, help: null, models: null } : gone
+    })
+
+  const choose = (model: string) =>
+    void run('model', async () =>
+      (await chooseGeminiModel(supabase, userId, model))
+        ? null
+        : { sentence: 'Couldn’t save that choice just now. Try again.', good: false, help: null, models: result?.models ?? null },
+    )
+
   const already = gemini.source === 'secret'
   const saved = gemini.source === 'saved'
+  const models = result?.models ?? null
 
   return (
     <section aria-labelledby="ai-gemini" className="space-y-4 rounded-xl border bg-card p-4 shadow-sm">
@@ -117,6 +131,33 @@ export function GeminiCard({ gemini, onChanged }: { readonly gemini: AiServiceSt
           </a>
         )}
       </div>
+      {already || saved ? (
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" className="min-h-11" disabled={working !== null} onClick={() => void run('test', () => testGeminiKey(supabase))}>
+            {working === 'test' ? 'Checking…' : 'Check which models work'}
+          </Button>
+          {saved ? (
+            <Button variant="outline" className="min-h-11" disabled={working !== null} onClick={forget}>
+              {working === 'forget' ? 'Removing…' : 'Remove key'}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+      {models === null || models.length === 0 ? null : (
+        <div className="space-y-2">
+          <label htmlFor={ids.model} className="block text-sm font-medium">
+            Model
+          </label>
+          <NativeSelect id={ids.model} value={gemini.model} disabled={working !== null} onChange={(e) => choose(e.target.value)}>
+            {models.map((m) => (
+              <option key={m.id} value={m.id} disabled={!m.listed}>
+                {m.listed ? m.id : `${m.id} (not available for this key)`}
+              </option>
+            ))}
+          </NativeSelect>
+          <p className="text-sm text-muted-foreground">The first on the list is the app’s everyday choice: quick, and the most free uses a day.</p>
+        </div>
+      )}
     </section>
   )
 }
