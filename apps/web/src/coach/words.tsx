@@ -8,8 +8,8 @@
  * more"), so no sentence can put "up" beside a fall.
  */
 import { Fragment } from 'react'
-import type { Fact, Figure } from '@budget/core'
-import { renderSegments, slotsOf } from '@budget/savings-coach'
+import type { Figure } from '@budget/core'
+import { renderSegments } from '@budget/savings-coach'
 import { formatBasisPoints, formatCents, formatChange, formatDayMonth, formatMonthName } from '../format.js'
 
 /** One figure as the owner reads it. */
@@ -32,12 +32,18 @@ export function figureText(figure: Figure): string {
   }
 }
 
-/** A blank's text: the subject's name, or one of the fact's figures. */
-function slotText(fact: Fact, slot: string): string {
-  if (slot === 'name') return fact.subject.label
-  const figure = fact.figures[slot]
-  // renderSegments has checked every slot against the fact's own.
-  if (figure === undefined) throw new RangeError(`No figure ${slot} on ${fact.key}`)
+/** What a blank can name: a fact, or a goal, which has a name and no figure. */
+export interface Named {
+  readonly subject: { readonly label: string }
+  readonly figures: Readonly<Record<string, Figure>>
+}
+
+/** A blank's text: the subject's name, or one of its figures. */
+function slotText(named: Named, slot: string): string {
+  if (slot === 'name') return named.subject.label
+  const figure = named.figures[slot]
+  // renderSegments has checked every slot against the named thing's own.
+  if (figure === undefined) throw new RangeError(`No figure ${slot}`)
   return figureText(figure)
 }
 
@@ -45,11 +51,11 @@ function slotText(fact: Fact, slot: string): string {
  * `text` with each blank filled from `facts`, by letter. Words that name a
  * fact or slot they were not given draw nothing rather than a sentence with
  * a hole in it. The app's own templates are tested to name only slots their
- * facts have; falling back to them when a model's words fail is A12's
+ * facts have, and a model's words are checked before they reach here
  * (ADR 0005 §4).
  */
-export function CoachText({ text, facts }: { text: string; facts: Readonly<Record<string, Fact>> }) {
-  const slots = Object.fromEntries(Object.entries(facts).map(([letter, fact]) => [letter, slotsOf(fact)]))
+export function CoachText({ text, facts }: { text: string; facts: Readonly<Record<string, Named>> }) {
+  const slots = Object.fromEntries(Object.entries(facts).map(([letter, named]) => [letter, ['name', ...Object.keys(named.figures)]]))
   const read = renderSegments({ text, slots })
   if (!read.ok) return null
   return (
