@@ -9,7 +9,8 @@
  * way of not getting words leaves the app's own in place, with a reason.
  *
  * At most one ask a day happens by itself: a note already kept for today,
- * from any device, or a mark on this one, means today's has been used;
+ * from any device, or a mark on this one, means today's has been used.
+ * Refresh asks again when today's facts have moved since the last words;
  * the helper's own limit (four daily packs a day) bounds every ask.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -30,6 +31,9 @@ export interface NarrationState {
   readonly view: AiView | null
   /** Which service wrote the AI's words shown. */
   readonly provider: AiProvider | null
+  /** Today's facts have moved since the last words were kept, and asking again could help. */
+  readonly canRefresh: boolean
+  readonly refresh: () => void
 }
 
 const ASKED_KEY = 'budget.coach.asked'
@@ -64,13 +68,14 @@ function ranOf(data: unknown): { provider: AiProvider; model: string; text: stri
 
 export function useNarration(day: Day | null, asOf: string, auto: boolean): NarrationState {
   const { supabase, userId } = useAppData()
-  const [state, setState] = useState<NarrationState>({ narration: null, status: 'loading', view: null, provider: null })
+  const [state, setState] = useState<Omit<NarrationState, 'refresh'>>({ narration: null, status: 'loading', view: null, provider: null, canRefresh: false })
+  const brief = useRef<{ payload: ModelPayload; signed: Signed } | null>(null)
   const run = useRef(0)
 
   const ask = useCallback(
     async (today: Day, payload: ModelPayload, signed: Signed, mine: number) => {
       markAsked(asOf)
-      setState((s) => ({ ...s, status: 'asking' }))
+      setState((s) => ({ ...s, status: 'asking', canRefresh: false }))
       const answer = await askAi(supabase, { action: 'run', task: 'narrate', pack: 'daily', data: payload.brief })
       if (mine !== run.current) return
       const ran = answer.ok ? ranOf(answer.data) : null
@@ -81,7 +86,7 @@ export function useNarration(day: Day | null, asOf: string, auto: boolean): Narr
         return
       }
       const checked = checkReply({ reply: parsed.reply, brief: payload.brief })
-      setState({ narration: fromReply(today, payload, checked.reply), status: 'ai', view: null, provider: ran.provider })
+      setState({ narration: fromReply(today, payload, checked.reply), status: 'ai', view: null, provider: ran.provider, canRefresh: false })
       // Kept for reuse; if 0017 is not in, the words still show today, uncached.
       await writeNote(supabase, userId, {
         scope: `day:${asOf}`, factsSig: signed.factsSig, body: checked.reply, cardSigs: sigsByLetter(payload, signed), factKeys: payload.keys,
@@ -94,21 +99,31 @@ export function useNarration(day: Day | null, asOf: string, auto: boolean): Narr
   useEffect(() => {
     if (day === null) return
     const mine = ++run.current
-    setState({ narration: ownWords(day), status: 'loading', view: null, provider: null })
+    brief.current = null
+    setState({ narration: ownWords(day), status: 'loading', view: null, provider: null, canRefresh: false })
     void (async () => {
       const payload = modelPayload({ tone: day.tone, line: day.line?.fact ?? null, cards: day.cards, goals: day.goals, quotes: day.quotes })
       const signed = await sign(day, payload)
       const read = await readNotes(supabase)
       if (mine !== run.current) return
+      brief.current = { payload, signed }
       const notes = read.ok ? read.notes : []
       const kept = reuse(day, signed, notes)
       const askedToday = askedHereToday(asOf) || notes.some((n) => n.scope === `day:${asOf}`)
       const worth = !kept.whole && kept.total > 0 && kept.uncovered * 2 > kept.total
-      setState({ narration: kept.narration, status: kept.provider === null ? 'own' : 'ai', view: null, provider: kept.provider })
+      // Refresh only once words have been kept: with none, there is nothing to be stale.
+      const canRefresh = !kept.whole && notes.length > 0
+      setState({ narration: kept.narration, status: kept.provider === null ? 'own' : 'ai', view: null, provider: kept.provider, canRefresh })
       if (auto && worth && !askedToday) await ask(day, payload, signed, mine)
     })()
     return () => void ++run.current
   }, [day, asOf, auto, supabase, ask])
 
-  return state
+  const refresh = useCallback(() => {
+    const signedBrief = brief.current
+    if (day === null || signedBrief === null) return
+    void ask(day, signedBrief.payload, signedBrief.signed, run.current)
+  }, [day, ask])
+
+  return { ...state, refresh }
 }

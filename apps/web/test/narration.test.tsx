@@ -1,4 +1,4 @@
-import { act, cleanup, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NarrateDaily, NarrateReply } from '@budget/schema'
 import { Shell } from '../src/App.js'
@@ -128,6 +128,67 @@ describe('the AI’s words on the Coach', () => {
     Object.assign(kept, { created_at: '2026-09-24T12:00:00Z' })
     renderScreen(<Shell />, fake)
     expect(await screen.findByText(whole('P', 'You spent $301.00 more on it than last month.'))).toBeTruthy()
+    expect(briefs).toHaveLength(1)
+  })
+
+  it('never shows words kept for claims that have changed, and offers Refresh instead of asking again today', async () => {
+    const fake = seeded()
+    const briefs = helper(fake)
+    renderScreen(<Shell />, fake)
+    await screen.findByText(whole('P', 'You spent $300.00 more on it than last month.'))
+    await waitFor(() => expect(fake.tables.ai_notes).toHaveLength(1))
+    cleanup()
+
+    // Straight talker: every part's claims are in a new tone, so none of the kept words fit.
+    fake.tables.ai_settings.push({ user_id: 'u1', tone: 'straight' })
+    renderScreen(<Shell />, fake)
+    const refresh = await screen.findByRole('button', { name: 'Refresh the AI’s words' })
+    expect(headings()).toEqual(['Your records are out of date', 'Review has charges waiting', 'Up on last month: Dining out'])
+    expect(briefs).toHaveLength(1)
+    fireEvent.click(refresh)
+    expect(await screen.findByText(whole('H2', '✨ Written by AI: Busy month for Dining out'))).toBeTruthy()
+    expect(briefs.map((b) => b.tone)).toEqual(['cheerleader', 'straight'])
+  })
+
+  it('drops only the card whose words break the rules, and a model’s markup never becomes markup', async () => {
+    const fake = seeded('<img src=x onerror=alert(1)>')
+    helper(fake, (b) =>
+      ok(
+        replyFor(b, (c) =>
+          // Review's card in markup (the text rule), Dining out's saying "fell" beside a rise (checkReply).
+          c.fact === b.cards[1] ? { ...c, title: '<img src=x onerror=alert()>' } : c.fact === b.cards[2] ? { ...c, body: `It fell: {{${c.fact}.change}}.` } : c,
+        ),
+      ),
+    )
+    renderScreen(<Shell />, fake)
+
+    expect(await screen.findByText(whole('P', '✨ Written by AI: Heads up: $300.00 more than by this day last month.'))).toBeTruthy()
+    expect(headings()).toEqual(['✨ Written by AI: A quick one', 'Charges waiting for you', 'Running ahead: <img src=x onerror=alert(1)>'])
+    // The owner's own name for a category is drawn as the characters it is.
+    expect(document.querySelector('img')).toBeNull()
+  })
+
+  it('shows the app’s own words, and says why, when the AI helper is not installed', async () => {
+    const fake = seeded()
+    fake.functions.ai = null
+    renderScreen(<Shell />, fake)
+
+    expect(await screen.findByText(/The AI helper isn’t installed yet/)).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Help: One-time updates' }).getAttribute('href')).toBe('#/help/updates')
+    expect(headings()).toEqual(['Time for a fresh statement', 'Charges waiting for you', 'Running ahead: Dining out'])
+  })
+
+  it('works uncached without 0017, asking once a day by itself', async () => {
+    const fake = seeded()
+    fake.fail('ai_notes', 'PGRST205')
+    const briefs = helper(fake)
+    renderScreen(<Shell />, fake)
+    expect(await screen.findByText(whole('H2', '✨ Written by AI: Busy month for Dining out'))).toBeTruthy()
+    cleanup()
+    renderScreen(<Shell />, fake)
+    // Settled on the app's own words, with nothing kept to reuse and today's ask already used.
+    expect(await screen.findByText('In the app’s own words, from your records.')).toBeTruthy()
+    expect(headings()).toEqual(['Time for a fresh statement', 'Charges waiting for you', 'Running ahead: Dining out'])
     expect(briefs).toHaveLength(1)
   })
 })

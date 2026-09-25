@@ -75,8 +75,8 @@ describe('the Coach, in the app’s own words', () => {
     renderScreen(<Shell />, seeded())
 
     expect(await screen.findByText(whole('P', 'You’ve spent $300.00 more than by this day last month. There’s still time to ease off.'))).toBeTruthy()
-    // No key anywhere: the helper turns the day's ask away, and the app's own words stay.
-    expect(await screen.findByText('In the app’s own words, from your records.')).toBeTruthy()
+    // No key anywhere: the helper turns the day's ask away, and the Coach says how to turn AI on.
+    expect(await screen.findByRole('link', { name: 'Turn on free AI (2 minutes)' })).toBeTruthy()
     const cards = within(screen.getByRole('region', { name: 'Insights' })).getAllByRole('listitem')
     expect(cards.map((c) => within(c).getByRole('heading').textContent)).toEqual([
       'Time for a fresh statement',
