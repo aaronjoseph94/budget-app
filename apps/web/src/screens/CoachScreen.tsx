@@ -1,6 +1,7 @@
+import { useMemo } from 'react'
 import { goalsProgress } from '@budget/core'
 import { useAppData } from '../app-data.js'
-import { goalSavedCents, useFunds } from '../funds.js'
+import { goalSavedCents, useFunds, type FundsState } from '../funds.js'
 import { formatBasisPoints, formatCents } from '../format.js'
 import { hashOf } from '../nav.js'
 import { Card, CardContent, CardTitle } from '../components/ui/card.js'
@@ -8,7 +9,8 @@ import { Progress } from '../components/ui/feedback.js'
 import { Icon } from '../components/ui/icons.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { CoachCards, DayLine } from '../coach/CoachCards.js'
-import { useCoachFacts } from '../coach/facts.js'
+import { useCoachFacts, useCoachRead } from '../coach/facts.js'
+import { goalsForCore } from '../coach/goals.js'
 
 /**
  * The Coach (plan §2.3): the day's line, the main goal's card with the
@@ -22,7 +24,11 @@ import { useCoachFacts } from '../coach/facts.js'
  * it never computes one.
  */
 export function CoachScreen() {
-  const digest = useCoachFacts()
+  const read = useCoachRead()
+  const funds = useFunds()
+  const { goals } = useAppData()
+  const coreGoals = useMemo(() => goalsForCore(goals, funds), [goals, funds])
+  const digest = useCoachFacts(read, coreGoals)
   const facts = digest === null || digest === 'failed' ? null : digest.facts
   return (
     <div className="space-y-4">
@@ -32,7 +38,7 @@ export function CoachScreen() {
       </div>
       <p className="text-xs text-muted-foreground">In the app’s own words, from your records.</p>
       {facts === null ? null : <DayLine facts={facts} className="text-lg font-medium leading-snug" />}
-      <GoalsCard />
+      <GoalsCard funds={funds} />
       <CoachCards digest={digest} />
     </div>
   )
@@ -44,9 +50,8 @@ export function CoachScreen() {
  * without is in dollars. Saved is the fund's kept balance (D16), and every
  * figure is core's goalsProgress.
  */
-function GoalsCard() {
+function GoalsCard({ funds }: { funds: FundsState }) {
   const { goals, mainGoal } = useAppData()
-  const funds = useFunds()
   if (mainGoal === null) {
     return (
       <Card>

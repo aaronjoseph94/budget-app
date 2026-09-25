@@ -3,13 +3,14 @@
  * handed to packages/core's factsDigest (plan A07).
  *
  * The Coach reads twelve months back itself, off the Month's path, so the
- * usual month has up to six complete months to stand on (F27). Nothing here
+ * usual month, a goal's pace and its levers have up to six complete months
+ * to stand on (F27, F33, F34); Savings reads the same year. Nothing here
  * adds or compares: which months are complete, what changed and what is
  * worth a card is core's to say. A failed read or an engine refusal fails
  * the cards alone; the flight card beside them still shows.
  */
 import { useEffect, useMemo, useState } from 'react'
-import { factsDigest, historyStart, isoDate, monthBounds, shiftMonth, type FactsDigest } from '@budget/core'
+import { factsDigest, historyStart, isoDate, monthBounds, shiftMonth, type DigestGoal, type FactsDigest } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { todayIso } from '../format.js'
 import {
@@ -39,15 +40,25 @@ export interface DigestRows {
   readonly pending: number | null
 }
 
-/** The rows, renamed for core, through factsDigest. Throws where the engine refuses a row. */
-export function digestOf(read: DigestRows, categories: readonly Category[]): FactsDigest {
+/** Where the records start (F24), from what was read. */
+export function historyOf(read: DigestRows): ReturnType<typeof historyStart>['start'] {
+  return historyStart({
+    statementPeriodStarts: read.records.statementStarts.map((d) => isoDate(d)),
+    entryDates: read.records.entryDates.map((d) => isoDate(d)),
+  }).start
+}
+
+/**
+ * The rows, renamed for core, through factsDigest. Throws where the engine
+ * refuses a row. The goals are the active ones, main first, whose
+ * milestones are cheered; the Month, which shows only the day's line, gives
+ * none.
+ */
+export function digestOf(read: DigestRows, categories: readonly Category[], goals: readonly DigestGoal[] = []): FactsDigest {
   const latest = read.statementEnds.map((e) => isoDate(e)).sort().at(-1) ?? null
   return factsDigest({
     asOf: isoDate(read.asOf),
-    historyStart: historyStart({
-      statementPeriodStarts: read.records.statementStarts.map((d) => isoDate(d)),
-      entryDates: read.records.entryDates.map((d) => isoDate(d)),
-    }).start,
+    historyStart: historyOf(read),
     readFrom: isoDate(read.readFrom),
     categories: categoriesForCore(categories),
     budgetHistory: budgetsForCore(read.budgets),
@@ -55,14 +66,17 @@ export function digestOf(read: DigestRows, categories: readonly Category[]): Fac
     entries: entriesForCore(read.rows),
     latestStatementEnd: latest,
     pendingCount: read.pending,
-    // The goals' milestones join the Coach's read with the goals themselves, next.
-    goals: [],
+    goals,
   })
 }
 
-/** Null while it loads; 'failed' when a read failed or the engine refused a row. */
-export function useCoachFacts(): FactsDigest | 'failed' | null {
-  const { supabase, categories, pendingTotal, status, version } = useAppData()
+/**
+ * A year of the owner's records, read for the Coach and Savings off the
+ * Month's path. Null while it loads; 'failed' when a read failed. The count
+ * waiting in Review is the shared load's, added by whoever digests it.
+ */
+export function useCoachRead(): DigestRows | 'failed' | null {
+  const { supabase, version } = useAppData()
   const [read, setRead] = useState<DigestRows | 'failed' | null>(null)
 
   useEffect(() => {
@@ -88,12 +102,23 @@ export function useCoachFacts(): FactsDigest | 'failed' | null {
     }
   }, [supabase, version])
 
+  return read
+}
+
+/**
+ * The Coach's facts. Null while the read or the goals load (goalsForCore
+ * waits for the funds); 'failed' when the read failed or the engine refused
+ * a row.
+ */
+export function useCoachFacts(read: DigestRows | 'failed' | null, goals: readonly DigestGoal[] | null): FactsDigest | 'failed' | null {
+  const { categories, pendingTotal, status } = useAppData()
   return useMemo(() => {
     if (read === null || read === 'failed') return read
+    if (goals === null) return null
     try {
-      return digestOf({ ...read, pending: status === 'ready' ? pendingTotal : null }, categories)
+      return digestOf({ ...read, pending: status === 'ready' ? pendingTotal : null }, categories, goals)
     } catch {
       return 'failed'
     }
-  }, [read, categories, pendingTotal, status])
+  }, [read, goals, categories, pendingTotal, status])
 }

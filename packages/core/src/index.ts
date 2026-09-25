@@ -238,6 +238,7 @@ export { dailyIndex, impactScore, type ImpactScore, type ImpactScoreInput } from
 export {
   DIGEST_VERSION,
   factsDigest,
+  type DigestGoal,
   type Fact,
   type FactKind,
   type FactsDigest,

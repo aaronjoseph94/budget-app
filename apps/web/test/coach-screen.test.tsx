@@ -1,4 +1,4 @@
-import { act, cleanup, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
@@ -176,5 +176,61 @@ describe('the Coach’s goals, more than one (G1)', () => {
     renderScreen(<Shell />, withGoal(1_265_000))
     await screen.findByRole('heading', { name: 'Flight training', level: 2 })
     expect(screen.queryByRole('heading', { name: 'Your other goals' })).toBeNull()
+  })
+})
+
+describe('the Coach’s wins (A08)', () => {
+  /**
+   * Hand-derived (F33): $12,000.00 typed on 1 September, $300.00 moved in on
+   * the 15th and $350.00 on the 21st, so $12,650.00 now, 46 h. On the eve of
+   * last week's Monday (13 Sep) it was $12,000.00: 2,618.18… minutes, 43 h.
+   * 45 hours passed.
+   */
+  function withMilestone(): FakeSupabase {
+    const fake = withGoal(1_200_000)
+    fake.tables.categories.push({ id: 'c4', name: 'Flight fund', kind: 'savings', sort_order: 0, weekly_budget_cents: null })
+    fake.tables.transactions.push(
+      { id: 't1', posted_on: '2026-09-15', amount_cents: -30_000, merchant_raw: 'TO FLIGHT FUND', category_id: 'c4', source: 'typed' },
+      { id: 't2', posted_on: '2026-09-21', amount_cents: -35_000, merchant_raw: 'TO FLIGHT FUND', category_id: 'c4', source: 'typed' },
+    )
+    Object.assign(fake.tables.savings_goals[0]!, { category_id: 'c4', start_date: null, balance_as_of: '2026-09-01' })
+    return fake
+  }
+
+  it('cheers a goal’s milestone in a card that opens the goals', async () => {
+    go('/coach')
+    renderScreen(<Shell />, withMilestone())
+
+    const card = (await screen.findByRole('heading', { name: 'Milestone: Flight training' })).closest('li')!
+    expect(within(card).getByText(para('You’ve now saved 45 hours toward it. Every step counts, so keep going!'))).toBeTruthy()
+    fireEvent.click(within(card).getByRole('button', { name: 'See your goals' }))
+    expect(window.location.hash).toBe('#/savings')
+  })
+
+  it('cheers nothing while no 5 hours were passed', async () => {
+    // $12,400.00 typed, only the 21st's $350.00 since: 2,705.45… minutes, 45 h,
+    // on the eve, and $12,750.00, 46 h, now. No 5 hours passed.
+    const fake = withMilestone()
+    fake.tables.transactions.splice(0, 1)
+    fake.tables.savings_goals[0] = { ...fake.tables.savings_goals[0]!, saved_cents: 1_240_000 }
+    go('/coach')
+    renderScreen(<Shell />, fake)
+
+    expect(await screen.findByText(/^Nothing needs your attention today\./)).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: /^Milestone/ })).toBeNull()
+  })
+
+  it('counts no move made before the day the fund’s balance was typed', async () => {
+    // $12,500.00 typed on 16 September, the 15th's $300.00 already in it, and
+    // $150.00 on the 21st: $12,650.00 now, 46 h. From the 16th, $12,500.00,
+    // 45.45… h, 45 h: no 5 hours passed. Counting the 15th would say 44 h.
+    const fake = withMilestone()
+    fake.tables.transactions[fake.tables.transactions.length - 1] = { ...fake.tables.transactions.at(-1)!, amount_cents: -15_000 }
+    Object.assign(fake.tables.savings_goals[0]!, { saved_cents: 1_250_000, balance_as_of: '2026-09-16' })
+    go('/coach')
+    renderScreen(<Shell />, fake)
+
+    expect(await screen.findByText(/^Nothing needs your attention today\./)).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: /^Milestone/ })).toBeNull()
   })
 })
