@@ -76,9 +76,9 @@ describe('Shell', () => {
     renderScreen(<Shell />, createFakeSupabase())
     await screen.findByRole('heading', { name: 'Coach', level: 1 })
 
-    // Forecast and Reports join between Coach and Savings when they are built.
+    // Reports joins between Forecast and Savings when it is built.
     expect(within(deskBar()).getAllByRole('link').map((b) => b.textContent)).toEqual([
-      'Month', 'Week', 'Coach', 'Savings', 'Debts', 'Review', 'Add', 'More',
+      'Month', 'Week', 'Coach', 'Forecast', 'Savings', 'Debts', 'Review', 'Add', 'More',
     ])
     expect(within(deskBar()).getByRole('link', { name: 'Coach' }).getAttribute('aria-current')).toBe('page')
     expect(within(phoneBar()).getByRole('link', { name: 'Coach' }).getAttribute('aria-current')).toBe('page')
@@ -104,7 +104,7 @@ describe('Shell', () => {
     ])
     // Understand (Reports, Ask) appears when Reports lands.
     expect(groups).toEqual([
-      ['Plan', ['Paycheck', 'Bill calendar', 'Year', 'Savings', 'Debts']],
+      ['Plan', ['Paycheck', 'Bill calendar', 'Year', 'Savings', 'Debts', 'Forecast']],
       ['Set up and help', ['Setup', 'AI settings', 'Settings', 'Help']],
       ['Records', ['All transactions']],
     ])
@@ -277,7 +277,7 @@ describe('Shell, its screens as links (FE-20)', () => {
       '#/month', '#/coach', '#/add', '#/review', '#/more',
     ])
     expect(within(deskBar()).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual([
-      '#/month', '#/week', '#/coach', '#/savings', '#/debts', '#/review', '#/add', '#/more',
+      '#/month', '#/week', '#/coach', '#/forecast', '#/savings', '#/debts', '#/review', '#/add', '#/more',
     ])
 
     go('/more')
@@ -287,12 +287,12 @@ describe('Shell, its screens as links (FE-20)', () => {
 
 describe('Shell, an address ahead of the app (ADR 0006)', () => {
   it('opens a screen not built yet as one line with the way back to the Month, and names it in the title', async () => {
-    go('/forecast')
+    go('/reports')
     renderScreen(<Shell />, createFakeSupabase())
 
-    expect(await screen.findByRole('heading', { name: 'Forecast' })).toBeTruthy()
-    expect(screen.getByText('Forecast is on its way. Everything else works as before.')).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Reports' })).toBeTruthy()
+    expect(screen.getByText('Reports is on its way. Everything else works as before.')).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Open the Month' }).getAttribute('href')).toBe('#/month')
-    expect(document.title).toBe('Forecast · Budget')
+    expect(document.title).toBe('Reports · Budget')
   })
 })

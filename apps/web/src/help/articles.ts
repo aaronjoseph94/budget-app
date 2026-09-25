@@ -244,6 +244,21 @@ export const ARTICLES: readonly Article[] = [
     related: ['savings', 'goals', 'ai-sees', 'free-ai', 'comparisons'],
   },
   {
+    id: 'forecast',
+    title: 'How the forecast works',
+    summary:
+      'The Forecast says where this month is heading and how much is safe to spend each day, worked out by the app from your own records, your planned bills and the pay still to come.',
+    steps: [
+      'Open **Forecast** from **More**, or press **Open the Forecast** on the Coach.',
+      'Read the sentence at the top: where the month is heading, in a few words.',
+      'Read **Safe to spend**: what you can spend each day, today included, once your bills and savings are counted.',
+    ],
+    done: 'you know what you can spend today and still end the month as planned.',
+    stuck:
+      'Safe to spend needs this month’s starting balance: type it on the **Month**, under **Start**. It counts your pay still to come from each income’s pay schedule, at what it usually pays; if it says pay is not counted, give that income a schedule or a goal in **Setup**. Savings you still plan to move this month are kept aside, so they are never counted as money to spend. If it says it needs a one-time update, see One-time updates.',
+    related: ['coach', 'budgets', 'updates'],
+  },
+  {
     id: 'comparisons',
     title: 'Comparisons with last month',
     summary:

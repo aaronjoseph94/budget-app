@@ -1,0 +1,123 @@
+import { useMemo, type ReactNode } from 'react'
+import type { SafeToSpend } from '@budget/core'
+import { useAppData } from '../app-data.js'
+import { useFunds } from '../funds.js'
+import { formatCents } from '../format.js'
+import { hashOf } from '../nav.js'
+import { Card, CardContent, CardTitle } from '../components/ui/card.js'
+import { HelpButton } from '../help/HelpButton.js'
+import { Said } from '../coach/CoachCards.js'
+import { useCoachDay } from '../coach/day.js'
+import { useCoachRead, type DigestRows } from '../coach/facts.js'
+import { useNarration } from '../coach/use-narration.js'
+import { forecastFigures, type ForecastFigures } from '../forecast/figures.js'
+
+/**
+ * The Forecast (plan §2.5, A13): one sentence, safe to spend, where the
+ * month ends with what is still to come, the next 30 days and the
+ * debt-free date. Every figure is packages/core's (F29 to F32), from the
+ * Coach's year read; the sentence is the Coach's forecast card's words,
+ * the AI's where kept ones still fit and the app's own otherwise, and
+ * this screen never asks the AI itself. It formats; it never computes.
+ */
+export function ForecastScreen() {
+  const read = useCoachRead()
+  const { categories } = useAppData()
+  const figures = useMemo((): ForecastFigures | 'failed' | 'missing_update' | null => {
+    if (read === null) return null
+    if (read === 'failed' || read.forecast === undefined) return 'failed'
+    if (read.forecast.status === 'failed') return read.forecast.missingUpdate ? 'missing_update' : 'failed'
+    try {
+      return forecastFigures(read, read.forecast, categories)
+    } catch {
+      return 'failed'
+    }
+  }, [read, categories])
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Forecast</h1>
+        <HelpButton screen="forecast" />
+      </div>
+      {figures === null ? <p className="text-sm text-muted-foreground">Working out your forecast…</p> : null}
+      {figures === 'missing_update' ? (
+        <p className="text-sm">
+          The forecast needs a one-time update.{' '}
+          <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+            See One-time updates
+          </a>
+        </p>
+      ) : null}
+      {figures === 'failed' ? <p className="text-sm text-muted-foreground">The forecast did not load. Reload to try again; everything else still works.</p> : null}
+      {typeof figures === 'object' && figures !== null && typeof read === 'object' && read !== null ? (
+        <>
+          <Sentence read={read} />
+          <SafeCard safe={figures.safe} names={namesOf(categories)} />
+        </>
+      ) : null}
+    </div>
+  )
+}
+
+function namesOf(categories: readonly { readonly id: string; readonly name: string }[]): (id: string) => string {
+  return (id) => categories.find((c) => c.id === id)?.name ?? 'an income source'
+}
+
+/** The Coach's forecast card's words, the AI's (✨) where kept ones still fit; nothing asked for here. */
+function Sentence({ read }: { read: DigestRows }) {
+  const funds = useFunds()
+  const { day, asOf } = useCoachDay(read, funds)
+  const { narration } = useNarration(day, asOf, false)
+  const card = day?.cards.find((c) => c.action === 'forecast')
+  const words = card === undefined ? undefined : narration?.cards.get(card.fact.key)
+  if (words === undefined) return null
+  return (
+    <p aria-live="polite" className="text-lg font-medium leading-snug [overflow-wrap:anywhere]">
+      <span key={words.body.ai ? 'ai' : 'own'} className={words.body.ai ? 'words-in' : undefined}>
+        <Said words={words.body} />
+      </span>
+    </p>
+  )
+}
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <Card>
+      <div className="p-5 pb-2">
+        <CardTitle as="h2">{title}</CardTitle>
+      </div>
+      <CardContent className="space-y-3 text-sm">{children}</CardContent>
+    </Card>
+  )
+}
+
+/** Safe to spend (F31): a day, over the days left with today, or why there is none. */
+function SafeCard({ safe, names }: { safe: SafeToSpend; names: (id: string) => string }) {
+  return (
+    <Section title="Safe to spend">
+      {safe.perDayCents === null ? (
+        <NoStart />
+      ) : (
+        <p>
+          <span className="tnum text-3xl font-bold">{formatCents(safe.perDayCents)}</span>
+          <span className="text-muted-foreground"> a day for {safe.days === 1 ? 'today' : `${safe.days} days, today included`}</span>
+        </p>
+      )}
+      {safe.status === 'nothing_left' ? <p>Nothing left to spend safely this month, once your bills and savings are counted.</p> : null}
+      {safe.payNotCounted.length === 0 ? null : (
+        <p className="text-muted-foreground">Pay from {safe.payNotCounted.map(names).join(' and ')} is not counted: give it a pay schedule or a goal in Setup.</p>
+      )}
+    </Section>
+  )
+}
+
+function NoStart() {
+  return (
+    <p>
+      Type this month’s starting balance to see where you’ll end.{' '}
+      <a href={hashOf({ screen: 'month', param: null })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+        Open the Month
+      </a>
+    </p>
+  )
+}

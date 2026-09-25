@@ -42,7 +42,7 @@ describe('Help', () => {
     const search = await screen.findByRole('searchbox', { name: 'Search help' })
 
     fireEvent.change(search, { target: { value: 'STARTING balance' } })
-    expect(titles()).toEqual(['Start here', 'Debts', 'Why does a number look wrong?'])
+    expect(titles()).toEqual(['Start here', 'Debts', 'How the forecast works', 'Why does a number look wrong?'])
     // A button's name counts as its words, without the stars around it.
     fireEvent.change(search, { target: { value: 'add to home screen' } })
     expect(titles()).toEqual(['Put it on your iPhone'])
@@ -75,7 +75,7 @@ describe('Help', () => {
   })
 
   it('opens the list, saying so, for a topic whose article is not written yet', async () => {
-    go('/help/forecast')
+    go('/help/reports')
     renderScreen(<Shell />, createFakeSupabase())
     await screen.findByRole('heading', { level: 1, name: 'Help' })
     expect(screen.getByText('That page is not written yet. Here is everything that is.').getAttribute('role')).toBe('status')
