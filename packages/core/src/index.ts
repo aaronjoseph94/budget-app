@@ -239,6 +239,8 @@ export {
   type Totals,
 } from './month-totals.js'
 
+export { biggestMovers, type BiggestMoversInput, type Mover, type MoverCategory } from './movers.js'
+
 export { mad, median, quantile, type QuantileInput, type StatsInput } from './stats.js'
 
 export {
