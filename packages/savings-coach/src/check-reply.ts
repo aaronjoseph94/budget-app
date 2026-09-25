@@ -44,6 +44,35 @@ const FALLING = word('fell|fall|falls|falling|fallen|down|lower|decrease|decreas
 /** A direction word straight after a change blank, which already carries one. */
 const REPEATED = /\{\{([A-Z]{1,2})\.change\}\}\s+(?:more|less|fewer|higher|lower)(?!\p{L})/iu
 
+export interface SentenceProblemInput {
+  readonly text: string
+  /** Each fact the text may name, by letter, with its slots. */
+  readonly slots: Readonly<Record<string, readonly string[]>>
+  /** Which way a lettered fact went, for the direction check. */
+  readonly directionOf: (letter: string) => string | undefined
+}
+
+/**
+ * Rules 8 and 9 on one text (ADR 0005 §4): why it fails, or null. A blank
+ * must name a fact and slot it was offered, and no sentence holding a
+ * change blank may say a rise beside a fall, or repeat the blank's own
+ * direction word. The daily pack and the month's review share it.
+ */
+export function sentenceProblem(input: SentenceProblemInput): CheckDropReason | null {
+  const { text, directionOf } = input
+  const read = renderSegments({ text, slots: input.slots })
+  if (!read.ok) return read.reason
+  if (REPEATED.test(text)) return 'direction'
+  const contradicts = text.split(/(?<=[.!?])\s+|\n/).some((sentence) =>
+    [...sentence.matchAll(/\{\{([A-Z]{1,2})\.change\}\}/g)].some((m) => {
+      const direction = directionOf(m[1]!)
+      const bare = sentence.replace(/\{\{[A-Z]{1,2}\.[a-z_]+\}\}/g, ' ')
+      return (direction === 'down' && RISING.test(bare)) || (direction === 'up' && FALLING.test(bare))
+    }),
+  )
+  return contradicts ? 'direction' : null
+}
+
 export function checkReply(input: CheckReplyInput): CheckedReply {
   const { brief, reply } = input
   const dropped: CheckDrop[] = []
@@ -58,21 +87,8 @@ export function checkReply(input: CheckReplyInput): CheckedReply {
     )
 
   /** Why the text fails, naming only `letters`, or null when it passes. */
-  const problem = (text: string, letters: readonly string[]): CheckDropReason | null => {
-    const read = renderSegments({ text, slots: slotsOf(letters) })
-    if (!read.ok) return read.reason
-    return contradicts(text) ? 'direction' : null
-  }
-  const contradicts = (text: string): boolean => {
-    if (REPEATED.test(text)) return true
-    return text.split(/(?<=[.!?])\s+|\n/).some((sentence) =>
-      [...sentence.matchAll(/\{\{([A-Z]{1,2})\.change\}\}/g)].some((m) => {
-        const direction = factOf.get(m[1]!)?.direction
-        const bare = sentence.replace(/\{\{[A-Z]{1,2}\.[a-z_]+\}\}/g, ' ')
-        return (direction === 'down' && RISING.test(bare)) || (direction === 'up' && FALLING.test(bare))
-      }),
-    )
-  }
+  const problem = (text: string, letters: readonly string[]): CheckDropReason | null =>
+    sentenceProblem({ text, slots: slotsOf(letters), directionOf: (letter) => factOf.get(letter)?.direction })
   /** The text, or null with its drop noted. */
   const keep = (part: CheckDrop['part'], text: string | null, letters: readonly string[]): string | null => {
     if (text === null) return null
