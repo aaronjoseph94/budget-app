@@ -1839,7 +1839,7 @@ load when the funds read meets 42703, with Add a goal writing no fund.
 
 ---
 
-## N73 — The Coach's digest does not speak of goals yet
+## N73 — The Coach's digest does not speak of goals yet *(settled 2026-09-25, A08)*
 
 **Seen:** 2026-09-24, building G1.
 
@@ -1852,3 +1852,70 @@ goals, so no card or line speaks of one ("Emergency is halfway").
 
 **To settle:** in A08, give the digest the goals from `orderGoals` and
 their progress from `goalsProgress`, the main goal's first.
+
+**Settled:** A08 gives the digest the active goals, main first, through
+`goalsForCore` (`apps/web/src/coach/goals.ts`): what each has saved as
+Savings shows it and the fund it is on. A milestone passed since last
+week began is a card (F33), and so is more saved than by this day last
+month. Goal pace and levers are shown on the goal cards rather than as
+digest facts; A12 adds them to the AI's pack if its words need them.
+
+---
+
+## N74 — requiredWeeklyContribution divides by a fraction of weeks
+
+**Seen:** 2026-09-25, building A08, which shows its figure ("To reach it
+by 30 Jun 2027: $426.17 a week").
+
+`packages/core/src/goal.ts` works it out as `Math.ceil(remaining ÷ (days
+÷ 7))`: `days ÷ 7` is a float, so a money figure passes through float
+division in the engine. It is rounded up to a whole cent, so no fraction
+reaches the screen, but at an exact boundary a float can land a hair
+above a whole cent and round up one cent too many. `ceil(remaining × 7 ÷
+days)` in integers gives the intended figure every time.
+
+**Why not fixed here:** the function is older than this slice and its own
+tests pin its figures; changing its arithmetic is its own change, worth
+its own test at a boundary.
+
+**To settle:** rewrite it in integers (BigInt, as `stats.ts` does), with
+a test where the float and the integer answers differ, seen failing
+first.
+
+---
+
+## N75 — The Coach and Savings each read a year of records
+
+**Seen:** 2026-09-25, building A08.
+
+`useCoachRead` reads twelve months of transactions, budgets, plans and
+statement dates. The Coach reads it for its cards, dates and levers, and
+Savings now reads it too for its lever lines, so opening one after the
+other reads the year twice. With the owner's records (about 80 rows a
+statement) this is small and each screen stays correct on its own.
+
+**Why not fixed here:** a shared cache is a data-layer change (TanStack
+Query is named in CLAUDE.md's stack but not used, N8), not this slice's.
+
+**To settle:** when reads are cached across screens, key the year's read
+by its month so both screens share one.
+
+---
+
+## N76 — A one-time-update link breaks its sentence at 390px
+
+**Seen:** 2026-09-25, in the preview harness: the Coach's "When you will
+get there needs a one-time update. See One-time updates" and Savings'
+older line of the same pattern.
+
+The link is `inline-flex min-h-11` so it is a 44px target, which puts it
+on a line of its own height and leaves a gap in the middle of the
+sentence when it wraps.
+
+**Why not fixed here:** the pattern is Savings' from G1 and Help's; one
+fix for all of them belongs to the mobile pass.
+
+**To settle:** in A26, give such links their 44px through padding on an
+inline element (or a full-width block link under the sentence), and
+check both screens at 320 and 390px.
+
