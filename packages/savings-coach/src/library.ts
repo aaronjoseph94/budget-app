@@ -14,8 +14,10 @@
  * Shakespeare, the Internet Archive, The Henry Ford, Quote Investigator, or
  * the author's own site; for a tip, the Government of Canada's pages too),
  * and `sourceUrls` holds the pages it found. A chapter is named only where
- * that page named it. A web page's year is the year it was checked. A line found only on quotation sites was left out:
- * Johnson's "Resolve not to be poor", Sethi's "spend extravagantly", "Big
+ * that page named it. A web page's year is the year it was checked. Two
+ * bylines were corrected in review before the library was first pushed
+ * (Quillen's column, Hamlet's edition), so it is still version 1. A line
+ * found only on quotation sites was left out: Johnson's "Resolve not to be poor", Sethi's "spend extravagantly", "Big
  * Hat, No Cattle" and "spend what is left after saving". "Compound interest
  * is the eighth wonder of the world" is left out because nothing shows
  * Einstein said it. The plan's "pay the smallest debt first" tip is left
@@ -179,7 +181,8 @@ export const LIBRARY: readonly LibraryEntry[] = [
     text: 'Americanism: Using money you haven’t earned to buy things you don’t need to impress people you don’t like.',
     by: 'Robert Quillen',
     attribution: 'wrote',
-    source: { title: 'Quillen’s Quips (a newspaper column)', year: 1928, locator: '4 June 1928' },
+    // Quote Investigator: his column "Paragraphs", Detroit Free Press, 4 June 1928, page 6.
+    source: { title: '“Paragraphs”, in The Detroit Free Press', year: 1928, locator: '4 June 1928, page 6' },
     sourceUrls: ['https://quoteinvestigator.com/2016/04/21/impress/'],
     note: 'Often credited to Will Rogers; Quote Investigator found it in Quillen’s column.',
     tags: ['impulse', 'debt', 'enough'],
@@ -190,7 +193,9 @@ export const LIBRARY: readonly LibraryEntry[] = [
     text: 'Neither a borrower nor a lender be;\nFor loan oft loses both itself and friend,\nAnd borrowing dulls the edge of husbandry.',
     by: 'William Shakespeare',
     attribution: 'wrote',
-    source: { title: 'Hamlet', year: 1603, locator: 'Act 1, Scene 3, Polonius' },
+    // "…nor a lender be" is the First Folio's reading (1623): the 1603 quarto
+    // names him Corambis, and the 1604 quarto has "boy" for "be".
+    source: { title: 'Hamlet', year: 1623, locator: 'Act 1, Scene 3, Polonius (First Folio)' },
     sourceUrls: ['https://shakespeare.mit.edu/hamlet/hamlet.1.3.html'],
     note: null,
     tags: ['debt'],
