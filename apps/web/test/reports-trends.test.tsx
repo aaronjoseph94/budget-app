@@ -49,6 +49,20 @@ describe('Reports, Trends (plan §2.6, A16)', () => {
     expect(screen.queryByText('So far')).toBeNull()
   })
 
+  it('sets each category against its usual month, steady ones first', async () => {
+    go('/reports')
+    renderScreen(<Shell />, trendsFake())
+    await openTrends()
+
+    const list = within(await card('Each category against its usual month')).getAllByRole('listitem')
+    expect(list.map((li) => li.querySelector('p')?.textContent)).toEqual(['Dining out', 'Books', 'Coffee'])
+    expect(within(list[0]!).getByText('Rising steadily')).toBeTruthy()
+    expect(within(list[0]!).getByText('Aug 2026 $450.00 · usual $360.00', { selector: 'p' })).toBeTruthy()
+    expect(within(list[0]!).getByRole('img', { name: 'Dining out, month by month' })).toBeTruthy()
+    expect(within(list[1]!).getByText('Falling steadily')).toBeTruthy()
+    expect(within(list[2]!).getByText('No clear trend')).toBeTruthy()
+  })
+
   it('shows twelve months with the ones before the records as gaps, never $0, and remembers the tab', async () => {
     go('/reports')
     renderScreen(<Shell />, trendsFake())
@@ -80,6 +94,8 @@ describe('Reports, Trends (plan §2.6, A16)', () => {
       ),
     ).toBeTruthy()
     expect(within(totals).queryByRole('img')).toBeNull()
+    const categories = await card('Each category against its usual month')
+    expect(within(categories).getByText(/No everyday spending .* Trends can be called from January 2027/)).toBeTruthy()
   })
 
   it('says in one line that a one-time update is missing, pointing to Help, and the Month still works', async () => {

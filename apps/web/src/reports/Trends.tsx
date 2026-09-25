@@ -6,9 +6,9 @@
  * A month with no records is a gap in the line and "No records" in the
  * list, never $0.
  */
-import { useMemo, useState } from 'react'
-import { trendLines } from '@budget/chart-specs'
-import type { MonthlyTrend, TrendLabel } from '@budget/core'
+import { useCallback, useMemo, useState } from 'react'
+import { sparkline, trendLines } from '@budget/chart-specs'
+import type { CategoryTrend, MonthlyTrend, TrendLabel } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { formatCents, formatMonthTitle, formatShortMonth } from '../format.js'
 import { SvgChart } from '../components/ui/chart.js'
@@ -42,6 +42,7 @@ export function TrendsPanel({ asOf }: { asOf: string }) {
       return 'failed' as const
     }
   }, [read, categories, months])
+  const nameOf = useCallback((id: string) => categories.find((c) => c.id === id)?.name ?? 'a category', [categories])
 
   return (
     <div className="space-y-4">
@@ -52,7 +53,7 @@ export function TrendsPanel({ asOf }: { asOf: string }) {
             type="button"
             aria-pressed={months === n}
             onClick={() => setMonths(n)}
-            className={cn('min-h-11 rounded-md px-4 text-sm font-medium', months === n ? 'bg-secondary' : 'hover:bg-secondary/60')}
+            className={cn('min-h-11 rounded-md border px-4 text-sm font-medium', months === n ? 'border-primary bg-primary text-primary-foreground' : 'hover:bg-secondary')}
           >
             {n} months
           </button>
@@ -61,7 +62,10 @@ export function TrendsPanel({ asOf }: { asOf: string }) {
       {figures === 'loading' ? <p className="text-sm text-muted-foreground">Working out your trends…</p> : null}
       {figures === 'failed' ? <Failed missingUpdate={read.status === 'failed' && read.missingUpdate} /> : null}
       {typeof figures === 'object' ? (
-        <TotalsTrend trend={figures.totals} />
+        <>
+          <TotalsTrend trend={figures.totals} />
+          <CategoryTrends months={figures.totals.months} trends={figures.categories} label={figures.totals.spent.label} nameOf={nameOf} />
+        </>
       ) : null}
     </div>
   )
@@ -97,7 +101,7 @@ function TotalsTrend({ trend }: { trend: MonthlyTrend }) {
               startText: formatShortMonth(months[0]!),
               endText: formatShortMonth(months[months.length - 1]!),
             })}
-            className="print:hidden"
+            className="max-w-xl print:hidden"
           />
           <dl className="divide-y">
             {lines.map((l) => (
@@ -123,4 +127,40 @@ function notYet(label: TrendLabel): string {
   return label.possibleFrom === null
     ? 'Bring in a statement or add a charge to begin; trends can be called once your records hold four whole months.'
     : `Trends can be called from ${formatMonthTitle(label.possibleFrom)}, when your records hold four whole months.`
+}
+
+function CategoryTrends(props: { months: readonly string[]; trends: readonly CategoryTrend[]; label: TrendLabel; nameOf: (id: string) => string }) {
+  const { months, trends, nameOf } = props
+  return (
+    <Section title="Each category against its usual month">
+      <p className="text-muted-foreground">Variable expenses, month by month. The dashed line is your usual month.</p>
+      {trends.length === 0 ? (
+        <p>No everyday spending (Variable expenses) in these months yet. {notYet(props.label)}</p>
+      ) : (
+        <ul className="divide-y">
+          {trends.map((t, i) => {
+            const last = t.points.findLastIndex((p) => p !== null)
+            const name = nameOf(t.categoryId)
+            const latest = `${formatShortMonth(months[last]!)} ${formatCents(t.points[last]!)}`
+            const usual = t.usualCents === null ? '' : ` · usual ${formatCents(t.usualCents)}`
+            return (
+              <li key={t.categoryId} className="flex items-center gap-3 py-2">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium [overflow-wrap:anywhere]">{name}</p>
+                  <p className={cn('text-muted-foreground', t.label.status === 'rising' && 'font-medium text-spend')}>{labelText(t.label)}</p>
+                  <p className="tnum text-muted-foreground">
+                    {latest}
+                    {usual}
+                  </p>
+                </div>
+                <div className="w-24 shrink-0">
+                  <SvgChart svg={sparkline({ id: `trend-${i}`, title: `${name}, month by month`, description: `${latest}${usual}`, pointsBp: t.pointsBp, usualBp: t.usualBp })} />
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </Section>
+  )
 }

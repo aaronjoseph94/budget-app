@@ -527,6 +527,14 @@
 .spec-chart .chart-trend-income-dot { fill: var(--income-ink); }
 .spec-chart .chart-trend-spent-dot { fill: var(--spend); }
 .spec-chart .chart-trend-saved-dot { fill: var(--savings-ink); }
+/* A category's sparkline: the bar's colour, its latest month dotted. */
+.spec-chart .chart-trend-line {
+  stroke: var(--primary);
+}
+.spec-chart .chart-trend-line-dot,
+.spec-chart .chart-trend-last {
+  fill: var(--primary);
+}
 
 /*
  * Save as PDF (Reports, A15): the page as it is, less the bars and buttons,
