@@ -74,9 +74,10 @@ export const ARTICLES: readonly Article[] = [
     steps: [
       'Open Supabase in a new tab and choose your project.',
       'Press **SQL Editor**, then **New query**.',
-      'Open the file this page names next on GitHub, and copy all of it.',
+      'On this page, press **Copy** beside the file it names next, or open that file on GitHub and copy all of it.',
       'Paste it into the new query and press **Run**.',
       'Wait until it says Success, then press **Check again** on this page.',
+      'When the next step is the AI helper, follow the clicks this page shows for it instead.',
     ],
     done: 'this page says "All done".',
     stuck:

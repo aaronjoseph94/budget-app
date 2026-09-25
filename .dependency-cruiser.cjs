@@ -211,7 +211,8 @@ module.exports = {
     // build time, with Node's fs; the config loads it, and its test checks
     // the bytes it serves against the files. Nothing that ships reaches it.
     { from: { path: '^apps/web/vite\\.config\\.ts$' }, to: { path: '^apps/web/setup-files\\.ts$' } },
-    { from: { path: '^apps/web/(setup-files\\.ts|test/setup-files\\.test\\.ts)$' }, to: { dependencyTypes: ['core'] } },
+    // So does the Copy button's test, which serves those same files.
+    { from: { path: '^apps/web/(setup-files\\.ts|test/setup-files\\.test\\.ts|test/updates-copy\\.test\\.tsx)$' }, to: { dependencyTypes: ['core'] } },
     { from: { path: '^apps/web/test/setup-files\\.test\\.ts$' }, to: { path: '^apps/web/setup-files\\.ts$' } },
   ],
   options: {

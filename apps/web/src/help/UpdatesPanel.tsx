@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAppData } from '../app-data.js'
 import { Button } from '../components/ui/button.js'
 import { cn } from '../lib/cn.js'
+import { CopyFile, isCopyable } from './CopyFile.js'
 import { FIRST_FILE, HELPER_FILE, checkUpdates, nextStep, type Checked } from './updates.js'
 
 /** Where each committed file can be opened and copied (HANDOFF §3, step 1). */
@@ -96,6 +97,7 @@ export function UpdatesPanel() {
               ) : null}
             </>
           )}
+          {next.kind === 'paste' && isCopyable(next.file) ? <CopyFile key={next.file} file={next.file} /> : null}
           {next.kind === 'paste' ? (
             <a
               href={sourceOf(next.file)}
