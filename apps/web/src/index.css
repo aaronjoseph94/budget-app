@@ -496,3 +496,19 @@
 .pt-screen {
   padding-top: calc(1.5rem + env(safe-area-inset-top));
 }
+
+/* Words that arrive late, such as the AI's replacing the app's own
+   (plan §9), fade in; with reduced motion they simply appear. */
+@keyframes words-in {
+  from {
+    opacity: 0;
+  }
+}
+.words-in {
+  animation: words-in 240ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .words-in {
+    animation: none;
+  }
+}

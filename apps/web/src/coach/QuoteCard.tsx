@@ -1,24 +1,31 @@
 import { useEffect, useMemo } from 'react'
 import { isoDate, shiftWeek, type Fact } from '@budget/core'
-import { pickQuote, quoteTags, type LibraryEntry } from '@budget/savings-coach'
+import { LIBRARY, pickQuote, quoteTags, type LibraryEntry } from '@budget/savings-coach'
 import type { ListedGoalRow } from '../ledger.js'
+import { Said } from './CoachCards.js'
+import type { Words } from './narration.js'
 
 /**
  * A quote or tip that fits today (plan §2.3, §4): from the committed
  * library only, chosen by savings-coach from what today's cards are about
  * and the main goal, never one this device showed in the last fortnight.
  * The words and the name are the library's, drawn as text; the AI may
- * later pick among the same shortlist and add a line on why it fits (A12).
+ * pick among the same shortlist and add a line on why it fits (A12).
  */
-export function QuoteCard({ facts, goal, asOf }: { facts: readonly Fact[]; goal: ListedGoalRow | null; asOf: string }) {
-  const entry = useMemo(() => {
+/** Today's shortlist and the app's own pick from it, from what today is about. */
+export function useQuotePick(facts: readonly Fact[], goal: ListedGoalRow | null, asOf: string): { readonly shortlist: readonly LibraryEntry[]; readonly entry: LibraryEntry | null } {
+  return useMemo(() => {
     const tags = quoteTags({
       facts,
       goal: goal === null ? null : { name: goal.name, unitLabel: goal.unit_label, hasHours: goal.unit_cost_cents !== null },
     })
-    return pickQuote({ tags, asOf: isoDate(asOf), recentIds: shownBefore(asOf) }).entry
+    const picked = pickQuote({ tags, asOf: isoDate(asOf), recentIds: shownBefore(asOf) })
+    return { shortlist: picked.shortlist.flatMap((id) => LIBRARY.filter((e) => e.id === id)), entry: picked.entry }
   }, [facts, goal, asOf])
+}
 
+/** The quote shown, and, when the AI chose it from today's shortlist, its line on why it fits (✨). */
+export function QuoteCard({ entry, why, asOf }: { entry: LibraryEntry | null; why: Words | null; asOf: string }) {
   useEffect(() => {
     if (entry !== null) remember(entry.id, asOf)
   }, [entry, asOf])
@@ -35,6 +42,11 @@ export function QuoteCard({ facts, goal, asOf }: { facts: readonly Fact[]; goal:
           <p>{byline(entry)}</p>
           {entry.note === null ? null : <p className="text-xs">{entry.note}</p>}
         </figcaption>
+        {why === null ? null : (
+          <p className="words-in text-sm [overflow-wrap:anywhere]">
+            <Said words={why} />
+          </p>
+        )}
       </figure>
     </section>
   )

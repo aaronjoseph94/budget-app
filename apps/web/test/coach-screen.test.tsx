@@ -148,6 +148,20 @@ describe('the Coach’s goals, more than one (G1)', () => {
     expect(within(list).getByRole('link', { name: 'All your goals on Savings' }).getAttribute('href')).toBe('#/savings')
   })
 
+  it('cheers the main goal on in the app’s own words, in the owner’s tone', async () => {
+    const fake = withGoal(1_265_000)
+    fake.tables.savings_goals.push(other('g2', 'Travel', { sort_order: 1 }))
+    go('/coach')
+    renderScreen(<Shell />, fake)
+    expect(await screen.findByText(para('Every lighter week brings Flight training closer. Keep going!'))).toBeTruthy()
+    cleanup()
+    const straight = withGoal(1_265_000)
+    straight.tables.ai_settings.push({ user_id: 'u1', tone: 'straight' })
+    renderScreen(<Shell />, straight)
+    expect(await screen.findByText(para('Each week you spend less moves Flight training closer.'))).toBeTruthy()
+    expect(screen.queryByText(/✨/)).toBeNull()
+  })
+
   it('shows the goal made main instead, in dollars when it has no cost an hour', async () => {
     const fake = withGoal(1_265_000)
     fake.tables.savings_goals[0] = { ...fake.tables.savings_goals[0]!, sort_order: 1 }

@@ -9,8 +9,9 @@ import { Card, CardContent, CardTitle } from '../components/ui/card.js'
 import { Progress } from '../components/ui/feedback.js'
 import { Icon } from '../components/ui/icons.js'
 import { HelpButton } from '../help/HelpButton.js'
-import { CoachCards, DayLine, todaysCards, todaysLine } from '../coach/CoachCards.js'
-import { QuoteCard } from '../coach/QuoteCard.js'
+import { CoachCards, DayLine, Said, todaysCards, todaysLine } from '../coach/CoachCards.js'
+import { ownWords, type Day, type Words } from '../coach/narration.js'
+import { QuoteCard, useQuotePick } from '../coach/QuoteCard.js'
 import { useCoachFacts, useCoachRead } from '../coach/facts.js'
 import { useCoachSettings } from '../coach/settings.js'
 import { goalsForCore } from '../coach/goals.js'
@@ -23,7 +24,8 @@ import type { ListedGoalRow } from '../ledger.js'
  * The Coach (plan §2.3): the day's line, the main goal's card with the
  * other goals under it (G1), and up to three cards on what changed, each
  * with one action and "Why am I seeing this?" (A07); each goal's date at
- * the owner's pace (A08). The AI's words arrive with A12.
+ * the owner's pace (A08); a line of encouragement for the goals, and each
+ * part's words chosen by coach/narration.ts (A12).
  *
  * It needs no one-time update, no AI helper and no key: the facts are
  * packages/core's digest of a year of the owner's own records, read here
@@ -39,14 +41,29 @@ export function CoachScreen() {
   const digest = useCoachFacts(read, coreGoals)
   const outlooks = useGoalOutlooks(read, coreGoals)
   const tone = useCoachSettings()?.tone ?? null
+  const asOf = todayIso()
   const facts = digest === null || digest === 'failed' ? null : digest.facts
   // What today is about, for the quote: the cards, then the day's line.
+  // Which fact the line speaks of is the same in either tone.
   const topFacts = useMemo(() => {
     if (facts === null) return []
-    // Which fact the line speaks of is the same in either tone.
     const line = todaysLine(facts, 'cheerleader')
     return [...todaysCards(facts).map((c) => c.fact), ...(line === null ? [] : [line.fact])]
   }, [facts])
+  const pick = useQuotePick(topFacts, mainGoal, asOf)
+  const day = useMemo((): Day | null => {
+    if (facts === null || tone === null) return null
+    const active = goals.filter((g) => g.status === 'active')
+    return {
+      tone,
+      line: todaysLine(facts, tone),
+      cards: todaysCards(facts),
+      goals: active.map((g) => ({ id: g.id, name: g.name, main: g.id === mainGoal?.id, hasHours: g.unit_cost_cents !== null })),
+      quotes: pick.shortlist,
+    }
+  }, [facts, tone, goals, mainGoal, pick.shortlist])
+  const narration = useMemo(() => (day === null ? null : ownWords(day)), [day])
+  const quote = narration?.quote ?? null
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-1">
@@ -54,11 +71,13 @@ export function CoachScreen() {
         <HelpButton screen="coach" />
       </div>
       <p className="text-xs text-muted-foreground">In the app’s own words, from your records.</p>
-      {facts === null || tone === null ? null : <DayLine facts={facts} tone={tone} className="text-lg font-medium leading-snug" />}
-      <GoalsCard funds={funds} outlooks={outlooks} />
-      <CoachCards digest={digest} tone={tone} />
+      <DayLine words={narration?.line ?? null} className="text-lg font-medium leading-snug" />
+      <GoalsCard funds={funds} outlooks={outlooks} words={narration?.goal ?? null} />
+      <CoachCards digest={digest} narration={narration} />
       {/* Picked once the facts are in, so the day's pick does not change under the owner. */}
-      {digest === null ? null : <QuoteCard facts={topFacts} goal={mainGoal} asOf={todayIso()} />}
+      {digest === null ? null : (
+        <QuoteCard entry={quote === null ? pick.entry : (pick.shortlist.find((e) => e.id === quote.id) ?? pick.entry)} why={quote?.why ?? null} asOf={asOf} />
+      )}
     </div>
   )
 }
@@ -69,7 +88,7 @@ export function CoachScreen() {
  * without is in dollars. Saved is the fund's kept balance (D16), and every
  * figure is core's goalsProgress.
  */
-function GoalsCard({ funds, outlooks }: { funds: FundsState; outlooks: Outlooks }) {
+function GoalsCard({ funds, outlooks, words }: { funds: FundsState; outlooks: Outlooks; words: Words | null }) {
   const { goals, mainGoal } = useAppData()
   if (mainGoal === null) {
     return (
@@ -119,6 +138,11 @@ function GoalsCard({ funds, outlooks }: { funds: FundsState; outlooks: Outlooks 
             </p>
           </div>
         </div>
+        {words === null ? null : (
+          <p className="words-in text-sm [overflow-wrap:anywhere]">
+            <Said words={words} />
+          </p>
+        )}
         <MainOutlook outlooks={outlooks} funds={funds} goal={mainGoal} />
         {others.length === 0 ? null : (
           <div className="border-t pt-3">

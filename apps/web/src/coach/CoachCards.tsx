@@ -1,18 +1,18 @@
 import { useState } from 'react'
 import type { Fact, FactsDigest } from '@budget/core'
-import { cardWords, dayLine, rankCards, type Card as CoachCard, type CardAction, type Tone } from '@budget/savings-coach'
+import { dayLine, rankCards, type Card as CoachCard, type CardAction, type Tone } from '@budget/savings-coach'
 import { navigate } from '../nav.js'
 import { Button } from '../components/ui/button.js'
 import { Card } from '../components/ui/card.js'
+import type { CardText, Narration, Words } from './narration.js'
 import { CoachText } from './words.js'
 import { WhySheet } from './WhySheet.js'
 
 /**
- * The day's line and up to three cards (plan §2.3), in the app's own words,
- * in the owner's tone (A12). Which facts become cards, and in what order,
- * is savings-coach's; every figure is the engine's; this draws them.
- * Nothing is dismissed yet: ✕ arrives with the table that keeps a
- * dismissal on every device (0017, A17).
+ * The day's line and up to three cards (plan §2.3). Which facts become
+ * cards, and in what order, is savings-coach's; which words each part
+ * gets, the app's own or the AI's, is narration.ts's; every figure is the
+ * engine's; this draws them. The AI's words carry ✨.
  */
 const NOTHING_DISMISSED: ReadonlySet<string> = new Set()
 
@@ -28,21 +28,41 @@ export function todaysLine(facts: readonly Fact[], tone: Tone): { readonly text:
   return line === null || fact === undefined ? null : { text: line.text, fact }
 }
 
-export function DayLine({ facts, tone, className }: { facts: readonly Fact[]; tone: Tone; className: string }) {
-  const line = todaysLine(facts, tone)
-  if (line === null) return null
+/** The AI's mark, said as words to a screen reader. */
+export function Sparkle({ words }: { words: Words }) {
+  if (!words.ai) return null
+  return (
+    <>
+      <span aria-hidden="true">✨ </span>
+      <span className="sr-only">Written by AI: </span>
+    </>
+  )
+}
+
+/** Words on screen, their figures filled from the engine as they are drawn. */
+export function Said({ words }: { words: Words }) {
+  return (
+    <>
+      <Sparkle words={words} />
+      <CoachText text={words.text} facts={words.names} />
+    </>
+  )
+}
+
+export function DayLine({ words, className }: { words: Words | null; className: string }) {
+  if (words === null) return null
   return (
     <p className={className}>
-      <CoachText text={line.text} facts={{ A: line.fact }} />
+      <Said words={words} />
     </p>
   )
 }
 
-export function CoachCards({ digest, tone }: { digest: FactsDigest | 'failed' | null; tone: Tone | null }) {
-  if (digest === null || tone === null) return <p className="text-sm text-muted-foreground">Working out today’s insights…</p>
+export function CoachCards({ digest, narration }: { digest: FactsDigest | 'failed' | null; narration: Narration | null }) {
   if (digest === 'failed') {
     return <p className="text-sm text-muted-foreground">Your insights did not load. Reload to try again; everything else still works.</p>
   }
+  if (digest === null || narration === null) return <p className="text-sm text-muted-foreground">Working out today’s insights…</p>
   const cards = todaysCards(digest.facts)
   return (
     <section aria-label="Insights" className="space-y-3">
@@ -53,11 +73,16 @@ export function CoachCards({ digest, tone }: { digest: FactsDigest | 'failed' | 
         </p>
       ) : (
         <ul className="space-y-3">
-          {cards.map((card) => (
-            <li key={card.fact.key}>
-              <InsightCard card={card} tone={tone} />
-            </li>
-          ))}
+          {cards.flatMap((card) => {
+            const text = narration.cards.get(card.fact.key)
+            return text === undefined
+              ? []
+              : [
+                  <li key={card.fact.key}>
+                    <InsightCard card={card} text={text} />
+                  </li>,
+                ]
+          })}
         </ul>
       )}
     </section>
@@ -71,22 +96,20 @@ const ACTION: Readonly<Record<CardAction, { readonly label: string; readonly go:
   goals: { label: 'See your goals', go: () => navigate('savings') },
 }
 
-function InsightCard({ card, tone }: { card: CoachCard; tone: Tone }) {
+function InsightCard({ card, text }: { card: CoachCard; text: CardText }) {
   const [why, setWhy] = useState(false)
-  const facts = { A: card.fact }
-  const words = cardWords(card.template, tone)
   const action = ACTION[card.action]
   return (
-    <Card className="space-y-2 p-4">
+    <Card className="words-in space-y-2 p-4">
       <h2 className="font-semibold [overflow-wrap:anywhere]">
-        <CoachText text={words.title} facts={facts} />
+        <Said words={text.title} />
       </h2>
-      <p className="text-sm">
-        <CoachText text={words.body} facts={facts} />
+      <p className="text-sm [overflow-wrap:anywhere]">
+        <CoachText text={text.body.text} facts={text.body.names} />
       </p>
-      {words.tryThis === null ? null : (
-        <p className="text-sm text-muted-foreground">
-          <CoachText text={words.tryThis} facts={facts} />
+      {text.tryThis === null ? null : (
+        <p className="text-sm text-muted-foreground [overflow-wrap:anywhere]">
+          <CoachText text={text.tryThis.text} facts={text.tryThis.names} />
         </p>
       )}
       <div className="flex flex-wrap items-center gap-2 pt-1">
@@ -97,7 +120,7 @@ function InsightCard({ card, tone }: { card: CoachCard; tone: Tone }) {
           Why am I seeing this?
         </Button>
       </div>
-      {why ? <WhySheet fact={card.fact} title={words.title} onClose={() => setWhy(false)} /> : null}
+      {why ? <WhySheet fact={card.fact} title={text.title} onClose={() => setWhy(false)} /> : null}
     </Card>
   )
 }
