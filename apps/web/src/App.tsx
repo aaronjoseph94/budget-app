@@ -17,6 +17,7 @@ import { cn } from './lib/cn.js'
 // fetched the first time it opens. The Month opens first (decision 1), and
 // it waited for every other screen's code: 214 KB gzipped, most of it
 // unused on the Month (PERF-3). Add carries the statement readers with it.
+const AiSettingsScreen = lazy(() => import('./screens/AiSettingsScreen.js').then((m) => ({ default: m.AiSettingsScreen })))
 const AddScreen = lazy(() => import('./screens/AddScreen.js').then((m) => ({ default: m.AddScreen })))
 const CalendarScreen = lazy(() => import('./screens/CalendarScreen.js').then((m) => ({ default: m.CalendarScreen })))
 const CoachScreen = lazy(() => import('./screens/CoachScreen.js').then((m) => ({ default: m.CoachScreen })))
@@ -265,6 +266,7 @@ function Screens({ screen, param }: { screen: Screen; param: string | null }) {
       {screen === 'debts' ? <DebtsScreen /> : null}
       {screen === 'year' ? <YearScreen start={param} /> : null}
       {screen === 'help' ? <HelpScreen topic={param} /> : null}
+      {screen === 'ai' ? <AiSettingsScreen /> : null}
       {screen === 'coach' && param === null ? <CoachScreen /> : null}
       {/* The check-in arrives with A20; its address already reads. */}
       {screen === 'coach' && param !== null ? <NotYet name="The Sunday check-in" /> : null}

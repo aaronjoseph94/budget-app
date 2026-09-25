@@ -105,7 +105,7 @@ describe('Shell', () => {
     // Understand (Reports, Ask) appears when Reports lands.
     expect(groups).toEqual([
       ['Plan', ['Paycheck', 'Bill calendar', 'Year', 'Savings', 'Debts']],
-      ['Set up and help', ['Setup', 'Settings', 'Help']],
+      ['Set up and help', ['Setup', 'AI settings', 'Settings', 'Help']],
       ['Records', ['All transactions']],
     ])
     expect(MORE_GROUPS.map((g) => [g.title, g.items.map((i) => i.label)])).toEqual([

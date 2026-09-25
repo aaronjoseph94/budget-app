@@ -259,6 +259,24 @@ export const ARTICLES: readonly Article[] = [
     related: ['periods', 'statements', 'wrong-number'],
   },
   {
+    id: 'free-ai',
+    title: 'Turn on free AI',
+    summary:
+      'AI writes the Coach’s words for you, free with Google Gemini. Everything works without it, in the app’s own words. The first time takes about 15 minutes, once, easiest on a computer.',
+    steps: [
+      'Open **More**, then **AI settings**, and read the sentence at the top.',
+      'If it says the AI helper isn’t installed, or needs a one-time update, press **Open One-time updates** and do what it names next.',
+      'If you added a Gemini key for receipt photos, there is nothing more to do: AI settings says it is on, using your receipts key.',
+      'Otherwise, open Google AI Studio in a new tab and press **Create API key**, then copy the key.',
+      'In Supabase, open **Edge Functions**, then **Secrets**, and add it named **GEMINI_API_KEY**.',
+      'Come back to AI settings and press **Check again**.',
+    ],
+    done: 'AI settings says "AI is on".',
+    stuck:
+      'Nothing breaks while AI is off: the Coach and every other screen use the app’s own words. A key is a password Google gives you for the app to use; AI settings only ever shows its last four characters.',
+    related: ['updates', 'coach'],
+  },
+  {
     id: 'wrong-number',
     title: 'Why does a number look wrong?',
     summary:
