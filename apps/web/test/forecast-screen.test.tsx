@@ -79,6 +79,43 @@ describe('the Forecast (plan §2.5, A13)', () => {
     expect(valueOf(card, 'Spent by the end of September')).toBe('about $2,390')
   })
 
+  it('walks the next 30 days to the tightest day, and lists the bills due this week', async () => {
+    go('/forecast')
+    renderScreen(<Shell />, forecastFake())
+
+    const card = (await screen.findByRole('heading', { name: 'The next 30 days' })).closest('div.rounded-xl') as HTMLElement
+    expect(within(card).getByText(whole('P', 'Today: $1,760.00. Tightest day ahead: 8 Oct, at $2,032.52.'))).toBeTruthy()
+    // The dot sits on 8 October's point, 14 days after today's.
+    const chart = within(card).getByRole('img', { name: 'The next 30 days' })
+    const points = (chart.querySelector('polyline')?.getAttribute('points') ?? '').split(' ').map((p) => p.split(',').map(Number))
+    const dot = chart.querySelector('circle')
+    expect(points).toHaveLength(31)
+    expect([Number(dot?.getAttribute('cx')), Number(dot?.getAttribute('cy'))]).toEqual(points[14])
+    expect(within(card).getByText('Counts $34.82 a day of everyday spending, your average over the last 90 days.')).toBeTruthy()
+    expect(within(card).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
+      '25 Sep InternetDue, not seen yet$80.00',
+      '28 Sep Phone$60.00',
+      '1 Oct Rent$1,200.00',
+    ])
+    expect(within(card).getByText('Leaves out $200.00 you still plan to move to savings this month.')).toBeTruthy()
+  })
+
+  it('gives the debt-free date from the payoff plan, and says so when it needs a one-time update', async () => {
+    const fake = forecastFake()
+    // $1,200.00 at no interest, $100.00 a month from September: paid off in August 2027.
+    fake.tables.debts.push({ id: 'd1', name: 'Car loan', starting_balance_cents: 120_000, minimum_payment_cents: 10_000, apr_basis_points: 0, start_date: '2026-09-01', sort_order: 0 })
+    go('/forecast')
+    renderScreen(<Shell />, fake)
+    expect(await screen.findByText(whole('P', 'Debt-free by August 2027, paying the minimums on your payoff plan. Open Debts'))).toBeTruthy()
+    cleanup()
+
+    const missing = forecastFake()
+    missing.fail('debts', '42P01')
+    renderScreen(<Shell />, missing)
+    expect(await screen.findByText(whole('P', 'Your debt-free date needs a one-time update. See One-time updates'))).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Safe to spend' })).toBeTruthy()
+  })
+
   it('says when to check back, before the 7th with no whole month of records', async () => {
     vi.setSystemTime(new Date(2026, 8, 5, 12))
     const fake = forecastFake()

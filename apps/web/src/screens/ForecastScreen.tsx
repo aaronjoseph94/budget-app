@@ -1,11 +1,10 @@
-import { useMemo, type ReactNode } from 'react'
+import { useMemo } from 'react'
 import { rangeBar } from '@budget/chart-specs'
 import type { MonthEndForecast, SafeToSpend } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { useFunds } from '../funds.js'
 import { formatCents, formatDayMonth, formatMonthName, formatWholeDollars } from '../format.js'
 import { hashOf } from '../nav.js'
-import { Card, CardContent, CardTitle } from '../components/ui/card.js'
 import { SvgChart } from '../components/ui/chart.js'
 import { Badge } from '../components/ui/feedback.js'
 import { HelpButton } from '../help/HelpButton.js'
@@ -14,6 +13,8 @@ import { useCoachDay } from '../coach/day.js'
 import { useCoachRead, type DigestRows } from '../coach/facts.js'
 import { useNarration } from '../coach/use-narration.js'
 import { forecastFigures, type ForecastFigures } from '../forecast/figures.js'
+import { NoStart, Row, Section } from '../forecast/parts.js'
+import { DebtFreeCard, NextDaysCard } from '../forecast/Ahead.js'
 
 /**
  * The Forecast (plan §2.5, A13): one sentence, safe to spend, where the
@@ -57,14 +58,17 @@ export function ForecastScreen() {
           <Sentence read={read} />
           <SafeCard safe={figures.safe} names={namesOf(categories)} />
           <MonthEndCard monthEnd={figures.monthEnd} figures={figures} month={read.asOf} />
+          <NextDaysCard flow={figures.flow} line={figures.line} asOf={read.asOf} names={namesOf(categories)} />
         </>
       ) : null}
+      {/* From the payoff plan alone, so it shows whatever became of the rest. */}
+      <DebtFreeCard />
     </div>
   )
 }
 
 function namesOf(categories: readonly { readonly id: string; readonly name: string }[]): (id: string) => string {
-  return (id) => categories.find((c) => c.id === id)?.name ?? 'an income source'
+  return (id) => categories.find((c) => c.id === id)?.name ?? 'a category'
 }
 
 /** The Coach's forecast card's words, the AI's (✨) where kept ones still fit; nothing asked for here. */
@@ -81,17 +85,6 @@ function Sentence({ read }: { read: DigestRows }) {
         <Said words={words.body} />
       </span>
     </p>
-  )
-}
-
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <Card>
-      <div className="p-5 pb-2">
-        <CardTitle as="h2">{title}</CardTitle>
-      </div>
-      <CardContent className="space-y-3 text-sm">{children}</CardContent>
-    </Card>
   )
 }
 
@@ -112,17 +105,6 @@ function SafeCard({ safe, names }: { safe: SafeToSpend; names: (id: string) => s
         <p className="text-muted-foreground">Pay from {safe.payNotCounted.map(names).join(' and ')} is not counted: give it a pay schedule or a goal in Setup.</p>
       )}
     </Section>
-  )
-}
-
-function NoStart() {
-  return (
-    <p>
-      Type this month’s starting balance to see where you’ll end.{' '}
-      <a href={hashOf({ screen: 'month', param: null })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
-        Open the Month
-      </a>
-    </p>
   )
 }
 
@@ -179,14 +161,5 @@ function MonthEndCard({ monthEnd, figures, month }: { monthEnd: MonthEndForecast
         <Row label={`Spent by the end of ${name}`} value={`about ${formatWholeDollars(spent.mid)}`} />
       </dl>
     </Section>
-  )
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3 py-2">
-      <dt className="min-w-0 text-muted-foreground">{label}</dt>
-      <dd className="tnum whitespace-nowrap font-medium">{value}</dd>
-    </div>
   )
 }
