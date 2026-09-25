@@ -5,7 +5,7 @@
 // keys kept encrypted in 0016's ai_provider_keys, a hardcoded allowlist of
 // services, and failing over between them. This version answers `ping`,
 // which says the helper is deployed, `status`, which says what is set up,
-// and `save_key`, which takes and checks a free Gemini key
+// and `save_key` and `test_key`, which take and check a free Gemini key
 // (plan A10); the tasks arrive in later slices (A11 on).
 //
 // Who is calling comes from Supabase's auth server, asked with the
@@ -63,6 +63,7 @@ export const RequestSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('ping') }).strict(),
   z.object({ action: z.literal('status') }).strict(),
   z.object({ action: z.literal('save_key'), provider: KeyProvider, key: z.string().regex(/^[A-Za-z0-9_.:-]{20,200}$/) }).strict(),
+  z.object({ action: z.literal('test_key'), provider: KeyProvider }).strict(),
 ])
 type Request_ = z.infer<typeof RequestSchema>
 
@@ -72,6 +73,7 @@ type Code =
   | 'method_not_allowed'
   | 'bad_request'
   | 'needs_update'
+  | 'not_set_up'
   | 'helper_error'
 
 const STATUS_OF: Readonly<Record<Code, number>> = {
@@ -80,6 +82,7 @@ const STATUS_OF: Readonly<Record<Code, number>> = {
   method_not_allowed: 405,
   bad_request: 400,
   needs_update: 503,
+  not_set_up: 409,
   helper_error: 503,
 }
 
@@ -526,6 +529,31 @@ async function saveKey(env: Env, user: string, key: string, fetchFn: typeof fetc
   return keyReply('saved', status, hint, listed)
 }
 
+/**
+ * Test the key the helper would use: the saved one, else the Gemini
+ * secret. This is also Check which models work. A saved key no root can
+ * open is marked locked, so AI settings asks for it again.
+ */
+async function testKey(env: Env, user: string, fetchFn: typeof fetch): Promise<Reply> {
+  const context = await callDb(env, 'ai_context_for', { p_user: user }, fetchFn)
+  if ('code' in context) return failed(context.code)
+  const saved = list(obj(context.data)['keys']).map(obj).find((k) => k['provider'] === 'gemini')
+  if (saved === undefined) {
+    const secret = env.GEMINI_API_KEY?.trim() ?? ''
+    if (secret === '') return failed('not_set_up')
+    const { outcome, listed } = await geminiModels(secret, fetchFn)
+    return keyReply('secret', keyStatusOf(outcome), secret.slice(-4), listed)
+  }
+  const hint = typeof saved['key_hint'] === 'string' ? saved['key_hint'] : null
+  const sealed = { ciphertext: String(saved['ciphertext']), iv: String(saved['iv']), kek_id: String(saved['kek_id']), key_v: Number(saved['key_v']) }
+  const key = await openKey(env, user, 'gemini', sealed)
+  const found = key === null ? { outcome: null, listed: [] } : await geminiModels(key, fetchFn)
+  const status = found.outcome === null ? 'locked' : keyStatusOf(found.outcome)
+  const mark = await callDb(env, 'ai_key_mark', { p_user: user, p_provider: 'gemini', p_status: status }, fetchFn)
+  if ('code' in mark) return failed(mark.code)
+  return keyReply('saved', status, hint, found.listed)
+}
+
 export async function handle(
   req: Request,
   rawEnv: Readonly<Record<string, string | undefined>>,
@@ -565,6 +593,7 @@ export async function handle(
   // Answered only for a signed-in caller, so the version is no one else's business.
   if (body.action === 'ping') return send(200, { ok: true, version: VERSION })
   if (body.action === 'save_key') return send(...(await saveKey(env, who.user, body.key, fetchFn)))
+  if (body.action === 'test_key') return send(...(await testKey(env, who.user, fetchFn)))
 
   const context = await callDb(env, 'ai_context_for', { p_user: who.user }, fetchFn)
   if ('code' in context) return fail(context.code)

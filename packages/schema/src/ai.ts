@@ -28,12 +28,13 @@ export type AiKeyProvider = 'gemini'
  * Every request the helper answers. It learns who is asking from the token,
  * never the body. A pasted key is 20 to 200 characters of letters, digits
  * and `_ . : -` (AI_KEY_SHAPE); `save_key` sends it once and nothing sends
- * it back.
+ * it back. `test_key` is also Check which models work.
  */
 export type AiRequest =
   | { readonly action: 'ping' }
   | { readonly action: 'status' }
   | { readonly action: 'save_key'; readonly provider: AiKeyProvider; readonly key: string }
+  | { readonly action: 'test_key'; readonly provider: AiKeyProvider }
 
 /** What the helper takes as a key, so the app can say "check you copied all of it" before sending. */
 export const AI_KEY_SHAPE = /^[A-Za-z0-9_.:-]{20,200}$/
@@ -106,7 +107,7 @@ export interface AiModelChoice {
 }
 
 /**
- * What `save_key` found. `source` is `none` when a pasted key
+ * What `save_key` or `test_key` found. `source` is `none` when a pasted key
  * was turned down and so not stored. `models` is every committed model,
  * ticked when the key can use it, and empty unless the test worked.
  */

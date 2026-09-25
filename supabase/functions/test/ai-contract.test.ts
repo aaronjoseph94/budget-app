@@ -15,6 +15,7 @@ describe('the helper and the app agree on what may be asked', () => {
       { action: 'ping' },
       { action: 'status' },
       { action: 'save_key', provider: 'gemini', key: 'test-not-a-real-key-0001' },
+      { action: 'test_key', provider: 'gemini' },
     ]
     for (const body of sent) expect(RequestSchema.safeParse(body).success).toBe(true)
     expect(RequestSchema.options.map((o) => o.shape.action.value)).toEqual(sent.map((b) => b.action))

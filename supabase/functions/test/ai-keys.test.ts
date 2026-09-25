@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AiKeyReply } from '@budget/schema'
-import { handle } from '../ai/index.js'
+import { handle, sealKey } from '../ai/index.js'
 
 /**
- * save_key (plan A10): a pasted key is tested on Gemini's list
+ * save_key and test_key (plan A10): a pasted key is tested on Gemini's list
  * endpoint, kept sealed only when it works or Google is busy, and never
  * sent back or logged. The fake answers the auth server, 0016's functions
  * and Google; the key is obviously not a real one.
@@ -14,6 +14,7 @@ const USER = '6f1c2d3e-4a5b-4c6d-8e7f-001122334455'
 const LEGACY = ['header', 'payload', 'signature'].join('.')
 const ENV = { SUPABASE_URL: PROJECT, SUPABASE_ANON_KEY: 'anon', SUPABASE_SERVICE_ROLE_KEY: LEGACY }
 const KEY = 'test-not-a-real-key-0001'
+const SECRET = 'test-not-a-real-secret-0002'
 const GOOGLE = 'https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000'
 
 const listing = () =>
@@ -60,6 +61,7 @@ async function ask(body: unknown, world: World = {}, env: Record<string, string 
   return { res, text, body: JSON.parse(text) as AiKeyReply & { code?: string }, calls, rpc }
 }
 const save = (world?: World, env?: Record<string, string | undefined>) => ask({ action: 'save_key', provider: 'gemini', key: KEY }, world, env)
+const test = (world?: World, env?: Record<string, string | undefined>) => ask({ action: 'test_key', provider: 'gemini' }, world, env)
 
 let lines: string[] = []
 beforeEach(() => {
@@ -125,10 +127,52 @@ describe('save_key', () => {
   })
 })
 
+describe('test_key, which is also Check which models work', () => {
+  const savedRow = async (env: Record<string, string | undefined> = ENV) => {
+    const sealed = await sealKey(env, USER, 'gemini', KEY)
+    return { provider: 'gemini', ...sealed, key_hint: '0001', status: 'busy', model: null }
+  }
+
+  it('opens the saved key, tests it, and marks what it found', async () => {
+    const { body, calls, rpc } = await test({ keys: [await savedRow()] })
+    expect(body).toMatchObject({ source: 'saved', status: 'ok', hint: '0001' })
+    expect(body.models.filter((m) => m.listed).map((m) => m.id)).toEqual(['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'])
+    expect(new Headers(calls.find((c) => c.url === GOOGLE)?.init.headers).get('x-goog-api-key')).toBe(KEY)
+    expect(rpc('ai_key_mark')).toEqual([{ p_user: USER, p_provider: 'gemini', p_status: 'ok' }])
+  })
+
+  it('marks a saved key rejected when Google now turns it down', async () => {
+    const { body, rpc } = await test({ keys: [await savedRow()], google: invalid })
+    expect(body).toMatchObject({ source: 'saved', status: 'rejected', models: [] })
+    expect(rpc('ai_key_mark')[0]).toMatchObject({ p_status: 'rejected' })
+  })
+
+  it('says locked, and asks Google nothing, when the root that sealed the key has changed', async () => {
+    const row = await savedRow({ SUPABASE_SERVICE_ROLE_KEY: ['header', 'payload', 'old'].join('.') })
+    const { res, body, calls, rpc } = await test({ keys: [row] })
+    expect([res.status, body.status, body.hint]).toEqual([200, 'locked', '0001'])
+    expect(calls.some((c) => c.url === GOOGLE)).toBe(false)
+    expect(rpc('ai_key_mark')[0]).toMatchObject({ p_status: 'locked' })
+  })
+
+  it('tests the Gemini secret when no key was pasted, and marks nothing', async () => {
+    const { body, calls, rpc } = await test({}, { ...ENV, GEMINI_API_KEY: SECRET })
+    expect(body).toMatchObject({ source: 'secret', status: 'ok', hint: '0002' })
+    expect(new Headers(calls.find((c) => c.url === GOOGLE)?.init.headers).get('x-goog-api-key')).toBe(SECRET)
+    expect(rpc('ai_key_mark')).toEqual([])
+  })
+
+  it('says not_set_up when there is neither a pasted key nor the secret', async () => {
+    const { res, body } = await test()
+    expect([res.status, body]).toEqual([409, { ok: false, code: 'not_set_up' }])
+  })
+})
+
 describe('a key goes one way', () => {
   it('appears in no reply and no log line, on any path', async () => {
     const replies = [
       await save(), await save({ google: invalid }), await save({ google: busy }),
+      await test({}, { ...ENV, GEMINI_API_KEY: SECRET }),
     ]
     for (const r of replies) expect(r.text).not.toMatch(/real-key|real-secret/)
     expect(lines.length).toBeGreaterThan(0)
