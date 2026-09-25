@@ -176,7 +176,7 @@ export const ARTICLES: readonly Article[] = [
       'Each goal has a fund, a category on your Savings list, and money you move into the fund counts toward the goal. Your main goal is the one the Coach and the Week show.',
     steps: [
       'Open **More**, then **Savings**.',
-      'Read each goal’s card: what is saved, what is left, and what to save a month to get there.',
+      'Read each goal’s card: what is saved, what is left, what to save a month, and one thing to trim to get there sooner.',
       'Press **Make main goal** on the goal you want the Coach and the Week to show.',
       'Press the up and down arrows on a goal to put your goals in the order you like.',
       'Press **Pause** on a goal you are putting aside, or **Mark as reached** when it is done.',
@@ -184,7 +184,7 @@ export const ARTICLES: readonly Article[] = [
     ],
     done: 'your main goal is first on Savings, and the Coach and the Week show it.',
     stuck:
-      'If the saved amount looks low, check that each move into the fund was recorded under that fund, and not as spending. Paused and reached goals are folded away under Reached and paused, at the bottom of Savings, where Resume brings one back.',
+      'If the saved amount looks low, check that each move into the fund was recorded under that fund, and not as spending. Paused and reached goals are folded away under Reached and paused, at the bottom of Savings, where Resume brings one back. When your main goal has a cost an hour, a spending charge opened from the Month also says what it cost in that goal’s time.',
     related: ['goals', 'coach', 'comparisons', 'budgets'],
   },
   {
@@ -226,18 +226,20 @@ export const ARTICLES: readonly Article[] = [
     id: 'coach',
     title: 'What the Coach does, and never does',
     summary:
-      'The Coach reads your own records and tells you, in plain words, how the month is going, what changed, and how far your savings goals have come.',
+      'The Coach reads your own records and tells you, in plain words, how the month is going, what changed, when you will reach your goals, and what to trim to get there sooner.',
     steps: [
       'Open **Coach**.',
       'Read the line at the top: how your spending compares with the same days last month, or last week.',
-      'Read your main goal’s card: what is saved, in hours when the goal has a cost an hour, with your other goals under it.',
+      'Read your main goal’s card: what is saved, and when you will get there at your own pace.',
+      'Read the line under the date: one thing to trim, and how many weeks sooner that gets you there.',
       'Read the cards under it: at most three, the most important first, each with one thing to try.',
-      'Press a card’s button, such as **See the Month** or **Import a statement**, to act on it.',
+      'Press a card’s button, such as **See the Month** or **See your goals**, to act on it.',
       'Press **Why am I seeing this?** to see the figures behind a card.',
+      'Read the quote or tip at the bottom, picked for what your day is about.',
     ],
-    done: 'you have read the line and the cards, and you know why each one is there.',
+    done: 'you have read the line, your goal’s date and the cards, and you know why each one is there.',
     stuck:
-      'The Coach never moves money and never changes a budget without your tap, and every figure comes from your own records. A category shows only when it moves more than it usually does, so a quiet month has no cards. With little history it compares with less, and says how many months it rests on. The same line sits at the top of the **Month**; tap it to come here.',
+      'The Coach never moves money and never changes a budget without your tap, and every figure comes from your own records. The date comes from what you really moved into the goal’s fund in each whole month: with under three months it is one rough date, and before a whole month is in, it says when to check back. A goal on no fund has no date until you press **Make it a fund** on Savings. Every quote and tip comes from a book, a speech or a public page, checked when it was added, never written by AI, and the same one does not come back within two weeks on this device. A category shows only when it moves more than it usually does, so a quiet month has no cards. The same line sits at the top of the **Month**; tap it to come here.',
     related: ['savings', 'goals', 'comparisons', 'statements'],
   },
   {

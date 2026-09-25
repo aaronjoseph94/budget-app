@@ -78,6 +78,14 @@ describe('Help articles', () => {
     expect(articleFor('savings')?.related).toContain('goals')
   })
 
+  // A08: the owner is told where the goal's date and the quotes come from.
+  it('says the Coach’s date is from what really moved in, and its quotes never from AI', () => {
+    const coach = articleFor('coach')
+    expect(coach?.stuck).toMatch(/what you really moved into the goal’s fund/)
+    expect(coach?.stuck).toMatch(/never written by AI/)
+    expect(articleFor('savings')?.steps.join(' ')).toMatch(/one thing to trim/)
+  })
+
   it('finds no article for a topic not written yet', () => {
     expect(articleFor('start')?.title).toBe('Start here')
     expect(articleFor('nowhere')).toBeUndefined()
