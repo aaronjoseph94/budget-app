@@ -21,7 +21,8 @@ import { MonthsAheadCard } from '../forecast/Months.js'
 /**
  * The Forecast (plan §2.5, A13, A14): one sentence, safe to spend, where
  * the month ends with what is still to come, the next 30 days, when each
- * goal is reached, the next three months and the debt-free date. Every figure is packages/core's
+ * goal is reached with its what-ifs, the next three months and the
+ * debt-free date. Every figure is packages/core's
  * (F29 to F35), from the Coach's year read; the sentence is the Coach's
  * forecast card's words, the AI's where kept ones still fit and the app's
  * own otherwise, and this screen never asks the AI itself. It formats; it
@@ -66,7 +67,7 @@ export function ForecastScreen() {
       ) : null}
       {/* The goals' dates need only the year's read, so they show when the month's forecast cannot. */}
       {typeof read === 'object' && read !== null ? (
-        <GoalsAheadCard read={read} />
+        <GoalsAheadCard read={read} end={typeof figures === 'object' && figures !== null ? figures.monthEnd.end : null} month={formatMonthName(read.asOf)} />
       ) : null}
       {typeof figures === 'object' && figures !== null ? <MonthsAheadCard ahead={figures.ahead} bars={figures.aheadBars} names={namesOf(categories)} /> : null}
       {/* From the payoff plan alone, so it shows whatever became of the rest. */}

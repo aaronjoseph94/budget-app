@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import type { Spread } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { useFunds } from '../funds.js'
 import { hashOf } from '../nav.js'
@@ -7,6 +8,7 @@ import type { DigestRows } from '../coach/facts.js'
 import { goalsForCore } from '../coach/goals.js'
 import { useGoalOutlooks } from '../coach/outlook.js'
 import { Section } from './parts.js'
+import { WhatIfPanel } from './WhatIf.js'
 
 /**
  * When each active goal is reached (F33), every active goal with the main
@@ -14,7 +16,7 @@ import { Section } from './parts.js'
  * pace are the Coach's (goalsForCore, useGoalOutlooks); without the funds'
  * read, one line says why and the rest of the Forecast shows.
  */
-export function GoalsAheadCard({ read }: { read: DigestRows }) {
+export function GoalsAheadCard({ read, end, month }: { read: DigestRows; end: Spread | null; month: string }) {
   const { goals } = useAppData()
   const funds = useFunds()
   const core = useMemo(() => goalsForCore(goals, funds), [goals, funds])
@@ -60,6 +62,7 @@ export function GoalsAheadCard({ read }: { read: DigestRows }) {
           </li>
         ))}
       </ul>
+      <WhatIfPanel goals={core} outlooks={outlooks.byGoal} end={end} month={month} asOf={read.asOf} />
     </Section>
   )
 }

@@ -41,7 +41,7 @@ describe('when you’ll reach your goals, on the Forecast (plan §2.5, A14)', ()
 
     const card = await goalsCard()
     expect(await within(card).findByText('At your pace: Aug 2029 – Jul 2031')).toBeTruthy()
-    expect(within(card).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(['Flight training', 'Emergency'])
+    expect(within(within(card).getByRole('list')).getAllByRole('heading').map((h) => h.textContent)).toEqual(['Flight training', 'Emergency'])
     expect(within(card).getByText('Most likely May 2030.')).toBeTruthy()
     expect(within(card).getByText('No date at your current pace: in a usual month, nothing is moved into it.')).toBeTruthy()
   })
