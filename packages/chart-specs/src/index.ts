@@ -22,3 +22,4 @@ export {
   type MonthColumn,
 } from './columns.js'
 export { rangeBar, type RangeBarInput } from './range-bar.js'
+export { balanceLine, type BalanceLineInput } from './balance-line.js'
