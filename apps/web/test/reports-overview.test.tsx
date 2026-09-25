@@ -1,4 +1,4 @@
-import { act, cleanup, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import { REPORT_TODAY, reportFake } from './report-seed.js'
@@ -103,5 +103,23 @@ describe('Reports, the Overview (plan §2.6, A15)', () => {
     fake.heal('category_plans')
     go('/month')
     expect(await screen.findByRole('heading', { name: 'September 2026' })).toBeTruthy()
+  })
+})
+
+describe('Save as PDF', () => {
+  it('prints the page as it is, less the bars and buttons, so the PDF holds the screen’s figures', async () => {
+    const print = vi.spyOn(window, 'print').mockImplementation(() => undefined)
+    go('/reports/2026-08')
+    renderScreen(<Shell />, reportFake())
+
+    const totals = await card('Income, Spent and Saved')
+    fireEvent.click(screen.getByRole('button', { name: 'Save as PDF' }))
+    expect(print).toHaveBeenCalledTimes(1)
+    // Nothing a figure sits in is left off the page; the bars, the tabs and the button are.
+    const hidden = [...document.querySelectorAll('.print\\:hidden')]
+    expect(hidden.some((el) => el.contains(totals))).toBe(false)
+    expect(hidden.some((el) => el.contains(screen.getByRole('heading', { level: 2, name: 'August 2026' })))).toBe(false)
+    for (const bar of screen.getAllByRole('navigation', { name: 'Screens' })) expect(bar.closest('.print\\:hidden')).not.toBeNull()
+    expect(screen.getByRole('button', { name: 'Save as PDF' }).classList.contains('print:hidden')).toBe(true)
   })
 })

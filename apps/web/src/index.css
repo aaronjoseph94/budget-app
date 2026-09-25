@@ -515,6 +515,20 @@
   fill: color-mix(in oklab, var(--primary) 50%, var(--card));
 }
 
+/*
+ * Save as PDF (Reports, A15): the page as it is, less the bars and buttons,
+ * which carry print:hidden. No room is kept for the bottom bar, and a card
+ * is not cut across two pages.
+ */
+@media print {
+  .pb-safe {
+    padding-bottom: 0;
+  }
+  main .rounded-xl {
+    break-inside: avoid;
+  }
+}
+
 /* Room for the bottom tab bar and the iPhone home indicator beneath it. */
 .pb-safe {
   padding-bottom: calc(5rem + env(safe-area-inset-bottom));

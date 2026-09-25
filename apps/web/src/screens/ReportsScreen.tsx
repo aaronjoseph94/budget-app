@@ -4,6 +4,7 @@ import { useAppData } from '../app-data.js'
 import { formatMonthTitle, todayIso } from '../format.js'
 import { hashOf } from '../nav.js'
 import { Badge } from '../components/ui/feedback.js'
+import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { reportOf, useReportRead, type ReportFigures } from '../reports/read.js'
@@ -14,7 +15,8 @@ import { ReviewCard } from '../reports/ReviewCard.js'
  * Reports (plan §2.6, A15): a month in review, any month, the current one
  * marked "so far". The tab row holds Overview alone until Trends, Shops and
  * Habits land (A16 to A18). Every figure is core's monthReport (F36); the
- * screen formats and never computes.
+ * screen formats and never computes. Save as PDF is the browser's own
+ * print, with the bars and buttons left off the page and the figures on it.
  */
 export function ReportsScreen({ month }: { month: string | null }) {
   const { categories } = useAppData()
@@ -40,13 +42,13 @@ export function ReportsScreen({ month }: { month: string | null }) {
         <h1 className="text-2xl font-semibold tracking-tight">Reports</h1>
         <HelpButton screen="reports" />
       </div>
-      <nav aria-label="Month" className="flex items-center gap-1 print:hidden">
-        <a href={hashOf({ screen: 'reports', param: step(-1) })} aria-label="Previous month" className="inline-flex size-11 items-center justify-center rounded-md hover:bg-secondary">
+      <nav aria-label="Month" className="flex items-center gap-1">
+        <a href={hashOf({ screen: 'reports', param: step(-1) })} aria-label="Previous month" className="inline-flex size-11 items-center justify-center rounded-md hover:bg-secondary print:invisible">
           <Icon name="chevronLeft" className="size-5" />
         </a>
         <h2 className="min-w-0 flex-1 text-center text-lg font-semibold">{formatMonthTitle(shown)}</h2>
         {shown < thisMonth ? (
-          <a href={hashOf({ screen: 'reports', param: step(1) })} aria-label="Next month" className="inline-flex size-11 items-center justify-center rounded-md hover:bg-secondary">
+          <a href={hashOf({ screen: 'reports', param: step(1) })} aria-label="Next month" className="inline-flex size-11 items-center justify-center rounded-md hover:bg-secondary print:invisible">
             <Icon name="chevronRight" className="size-5" />
           </a>
         ) : (
@@ -60,6 +62,10 @@ export function ReportsScreen({ month }: { month: string | null }) {
           </button>
         </div>
         {shown === thisMonth ? <Badge>So far</Badge> : null}
+        {/* The browser's own print makes the PDF: nothing is loaded and nothing leaves the phone. */}
+        <Button variant="outline" onClick={() => window.print()} className="print:hidden">
+          Save as PDF
+        </Button>
       </div>
       <div role="tabpanel" id="report-overview" aria-labelledby="report-tab-overview" className="space-y-4">
         {figures === 'loading' ? <p className="text-sm text-muted-foreground">Working out your month…</p> : null}

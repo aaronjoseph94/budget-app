@@ -137,7 +137,7 @@ export function Shell() {
         >
           Skip to content
         </a>
-        <header className="safe-top sticky top-0 z-20 hidden border-b bg-background/85 backdrop-blur md:block">
+        <header className="safe-top sticky top-0 z-20 hidden border-b bg-background/85 backdrop-blur md:block print:hidden">
           {/* The bar takes the wide width on every screen: a narrow screen's
             768 held nine tabs' words only by running past its edge. */}
           <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 lg:max-w-7xl">
@@ -208,7 +208,7 @@ export function Shell() {
         {/* Phones: a bottom tab bar within thumb reach, clear of the home indicator. */}
         <nav
           aria-label="Screens"
-          className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t bg-background/90 backdrop-blur md:hidden"
+          className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t bg-background/90 backdrop-blur md:hidden print:hidden"
         >
           <div className="mx-auto grid max-w-md grid-cols-5">
             {PHONE_TABS.map((t) => {
