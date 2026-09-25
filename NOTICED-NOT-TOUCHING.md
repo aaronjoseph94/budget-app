@@ -1954,7 +1954,7 @@ it, and One-time updates marks a helper answering with an older version
 (or none it can read) "An older copy", with the steps for pasting the new
 version over it.
 
-## N79 — Google advises against a low temperature on Gemini 3 models
+## N79 — Google advises against a low temperature on Gemini 3 models *(settled 2026-09-25, A11)*
 
 **Seen:** 2026-09-25, A10, while checking Gemini's request. Search
 results report Google's advice for the Gemini 3 family to keep
@@ -1969,6 +1969,8 @@ belong to the tasks, which arrive with `run` (A11) and the packs (A12).
 **To settle:** in A11, re-check Google's guidance, and either leave
 `temperature` out of Gemini 3 requests or record why each task's value
 stands, in the plan's A11 notes.
+
+**Settled:** A11 sends no service a temperature (plan A11's notes).
 
 ## N80 — AI settings shows the model choice only after a check
 
@@ -1985,3 +1987,31 @@ for a convenience, and a check costs no quota.
 ("Model: gemini-3.5-flash-lite · Check which models work to change it")
 in A11's service cards, or keep the last check's list on this device.
 
+## N81 — The coverage gate once read format.ts at 68% branches
+
+**Seen:** 2026-09-25, A11. One `./scripts/gates.sh full` run failed
+`coverage` with `apps/web/src/format.ts` at 68.18% branches against 75%;
+the same tree passed the next three runs at about 91%, with no test
+failing. A drop that size points at the coverage tool losing a worker's
+data, not at a path the tests take only sometimes.
+
+**Why not fixed here:** nothing in A11 touches `format.ts`, and one
+occurrence is too little to find the cause.
+
+**To settle:** if it recurs, keep the failing run's
+`coverage-final.json` and compare it with a passing one, file by file,
+to see whether whole test files' coverage went missing.
+
+## N82 — Use paid services looks like a tick box, not a switch
+
+**Seen:** 2026-09-25, A11, in the preview harness. The control has
+`role="switch"` and a 44 px label row, but draws as the browser's
+checkbox, which reads as "tick to agree" more than "on or off".
+
+**Why not fixed here:** the app has no switch component yet; one made
+for a single control would be a design decision for A26's mobile pass,
+which sees every screen at once.
+
+**To settle:** a small switch style in `components/ui/form.tsx`, used
+here and anywhere else an on/off choice appears (AI on/off, Share shop
+names, both A12).

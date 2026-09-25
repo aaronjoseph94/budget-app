@@ -256,6 +256,25 @@ here widens them.
   answers are intersected with the committed list, never added to it.
 - No new dependency: WebCrypto and `fetch`, in Deno and in Node's tests.
 
+## Note, 2026-09-25: built in slice A11
+
+Decided by the engineer under the owner's 2026-09-24 instruction to
+proceed without questions. The approvals above stand as quoted ("Include
+the ability to add paid models but mostly have an easy way to sync free
+LLM models like google Gemini (free)"); this adds the services they
+already cover and nothing more.
+
+- Groq, OpenRouter, OpenAI and Anthropic take pasted keys, each tested
+  on a fixed address that spends no quota, and each card says before a
+  key is pasted what the service may keep (free) or bill (paid).
+- The router follows the owner's order, asks a paid service only with
+  Use paid services on, claims every attempt with `ai_usage_claim`
+  before making it, notes every outcome with `ai_note_outcome`, and
+  makes at most three 20-second attempts inside 100 seconds.
+- No service is sent a temperature; each reply is held to the task's
+  closed JSON Schema, and a refusal or a length stop fails over.
+- No new dependency.
+
 ## Not yet met
 
 - CONSTRAINTS.md's **Extraction accuracy** row stays pending: it needs 20
