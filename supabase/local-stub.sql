@@ -43,3 +43,12 @@ grant usage on schema public, auth, storage to anon, authenticated;
 alter default privileges in schema public grant all on tables to anon, authenticated;
 alter default privileges in schema public grant all on functions to anon, authenticated;
 grant all on all tables in schema storage to authenticated;
+
+-- service_role is how the AI helper reaches the database (0016). As in
+-- Supabase, it bypasses row-level security and gets every default grant;
+-- 0016's functions are granted to it and to no other role, which the schema
+-- gate can only prove if the role is here to be granted to.
+do $$ begin create role service_role nologin bypassrls; exception when duplicate_object then null; end $$;
+grant usage on schema public, auth, storage to service_role;
+alter default privileges in schema public grant all on tables to service_role;
+alter default privileges in schema public grant all on functions to service_role;

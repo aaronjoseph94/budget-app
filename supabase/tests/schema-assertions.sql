@@ -1550,6 +1550,219 @@ end $$;
 
 reset role;
 
+-- ---------------------------------------------------------------------------
+-- 0016: the AI helper's tables, and the only doors to them
+-- ---------------------------------------------------------------------------
+-- A saved key each, today's use and a rest for the other user, written as
+-- the superuser: the browser can write none of them, which is asserted below.
+insert into public.ai_provider_keys (user_id, provider, ciphertext, iv, kek_id, key_hint) values
+  ('11111111-1111-4111-8111-111111111111', 'gemini', repeat('Q', 48), repeat('A', 16), '0123456789abcdef', 'abcd'),
+  ('22222222-2222-4222-8222-222222222222', 'gemini', repeat('R', 48), repeat('B', 16), '0123456789abcdef', 'wxyz');
+insert into public.ai_usage (user_id, day, provider, model, task, attempts) values
+  ('22222222-2222-4222-8222-222222222222', public.ai_today(), 'gemini', 'gemini-3.5-flash-lite', 'test', 1);
+insert into public.ai_provider_state (user_id, provider, model, cooldown_until, last_code) values
+  ('22222222-2222-4222-8222-222222222222', 'gemini', 'gemini-3.5-flash-lite', now() + interval '1 minute', 'rate_limited');
+
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+
+do $$
+declare
+  u    uuid := '11111111-1111-4111-8111-111111111111';
+  them uuid := '22222222-2222-4222-8222-222222222222';
+  s    public.ai_settings;
+  n    int;
+begin
+  -- A first save takes every default: on, the free services first, 40 a
+  -- day, paid services off, Cheerleader, shop names shared.
+  insert into public.ai_settings (user_id) values (u) returning * into s;
+  if not (s.enabled and s.provider_order = '{gemini,groq,openrouter,openai,anthropic}' and s.models = '{}'
+          and s.daily_cap = 40 and not s.allow_paid and s.tone = 'cheerleader' and s.share_shop_names) then
+    raise exception 'ai_settings came out as %', s;
+  end if;
+
+  begin
+    update public.ai_settings set daily_cap = 9 where user_id = u;
+    raise exception 'NOT REFUSED: a daily limit under 10';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.ai_settings set daily_cap = 151 where user_id = u;
+    raise exception 'NOT REFUSED: a daily limit over 150';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.ai_settings set tone = 'drill_sergeant' where user_id = u;
+    raise exception 'NOT REFUSED: a tone that is not Cheerleader or Straight talker';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.ai_settings set provider_order = '{gemini,groq,gemini}' where user_id = u;
+    raise exception 'NOT REFUSED: a service in the order twice';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.ai_settings set provider_order = array['gemini', null]::public.ai_provider[] where user_id = u;
+    raise exception 'NOT REFUSED: a blank in the order';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.ai_settings set models = '{"evil": "x"}' where user_id = u;
+    raise exception 'NOT REFUSED: a model for a service there is not';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.ai_settings set models = '{"gemini": 5}' where user_id = u;
+    raise exception 'NOT REFUSED: a model that is not a name';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.ai_settings set models = '{"gemini": "https://evil.example/x"}' where user_id = u;
+    raise exception 'NOT REFUSED: an address where a model goes';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.ai_settings set models = '["gemini-3.5-flash-lite"]' where user_id = u;
+    raise exception 'NOT REFUSED: models that are not one per service';
+  exception when check_violation then null;
+  end;
+  -- What the app will write.
+  update public.ai_settings
+     set provider_order = '{groq,gemini}', models = '{"gemini": "gemini-3.5-flash-lite", "groq": "openai/gpt-oss-20b"}',
+         daily_cap = 150, allow_paid = true, tone = 'straight', share_shop_names = false
+   where user_id = u;
+
+  begin
+    insert into public.ai_settings (user_id) values (them);
+    raise exception 'RLS: AI settings were written under another user''s id';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- Keys: not a row, not even the caller's own.
+  begin
+    perform 1 from public.ai_provider_keys;
+    raise exception 'NOT REFUSED: the browser read ai_provider_keys';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    insert into public.ai_provider_keys (user_id, provider, ciphertext, iv, kek_id, key_hint)
+      values (u, 'groq', repeat('Q', 48), repeat('A', 16), '0123456789abcdef', 'abcd');
+    raise exception 'NOT REFUSED: the browser wrote a key';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    update public.ai_provider_keys set status = 'ok';
+    raise exception 'NOT REFUSED: the browser changed a key';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    delete from public.ai_provider_keys;
+    raise exception 'NOT REFUSED: the browser deleted keys directly';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- Today's use and the rests: the caller's own read, none written. A
+  -- count the browser could lower would not be a limit.
+  select count(*) into n from public.ai_usage;
+  if n <> 0 then raise exception 'RLS LEAK: another user''s AI use was seen (% rows)', n; end if;
+  select count(*) into n from public.ai_provider_state;
+  if n <> 0 then raise exception 'RLS LEAK: another user''s resting services were seen (% rows)', n; end if;
+  begin
+    insert into public.ai_usage (user_id, day, provider, model, task) values (u, public.ai_today(), 'gemini', 'm', 'test');
+    raise exception 'NOT REFUSED: the browser wrote ai_usage';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    update public.ai_usage set attempts = 0;
+    raise exception 'NOT REFUSED: the browser changed ai_usage';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    delete from public.ai_usage;
+    raise exception 'NOT REFUSED: the browser deleted ai_usage';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    insert into public.ai_provider_state (user_id, provider, model, last_code) values (u, 'gemini', 'm', 'ok');
+    raise exception 'NOT REFUSED: the browser wrote ai_provider_state';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    update public.ai_provider_state set cooldown_until = null;
+    raise exception 'NOT REFUSED: the browser woke a resting service';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    delete from public.ai_provider_state;
+    raise exception 'NOT REFUSED: the browser deleted ai_provider_state';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- The helper's own functions are not the browser's to call.
+  begin
+    perform public.ai_context_for(them);
+    raise exception 'NOT REFUSED: the browser read another user''s AI context';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.ai_key_put(u, 'groq', repeat('Q', 48), repeat('A', 16), '0123456789abcdef', 1::smallint, 'abcd', 'ok', null);
+    raise exception 'NOT REFUSED: the browser saved a key through the helper''s function';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.ai_key_mark(u, 'gemini', 'ok');
+    raise exception 'NOT REFUSED: the browser marked a key';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.ai_usage_claim(u, 'gemini', 'm', 'test', 0, 10, null, null);
+    raise exception 'NOT REFUSED: the browser claimed a call';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.ai_note_outcome(u, 'gemini', 'm', 'test', 'ok', null);
+    raise exception 'NOT REFUSED: the browser noted an outcome';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- The status of the caller's own keys, and only theirs.
+  select count(*) into n from public.ai_key_status();
+  if n <> 1 or (select key_hint from public.ai_key_status()) <> 'abcd' then
+    raise exception 'ai_key_status showed % rows, or another user''s key', n;
+  end if;
+
+  -- Another user's settings and Remove key reach only their own.
+  perform set_config('request.jwt.claim.sub', them::text, false);
+  select count(*) into n from public.ai_settings;
+  if n <> 0 then raise exception 'RLS LEAK: another user saw % AI settings', n; end if;
+  update public.ai_settings set daily_cap = 10;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'RLS LEAK: another user changed % AI settings', n; end if;
+  if not public.ai_key_forget('gemini') then raise exception 'Remove key did not find the caller''s own key'; end if;
+  perform set_config('request.jwt.claim.sub', u::text, false);
+  if (select count(*) from public.ai_key_status()) <> 1 then
+    raise exception 'OWNERSHIP: another user''s Remove key took this user''s key';
+  end if;
+  if public.ai_key_forget('groq') then raise exception 'Remove key found a key that was never saved'; end if;
+  -- Two statements: within one, the count would read the key from before
+  -- the removal.
+  if not public.ai_key_forget('gemini') then raise exception 'Remove key did not find the caller''s own key'; end if;
+  if (select count(*) from public.ai_key_status()) <> 0 then raise exception 'Remove key left the caller''s own key'; end if;
+
+  raise notice 'AI settings are the owner''s own; keys, use and rests are out of the browser''s reach';
+end $$;
+
+reset role;
+
+-- What ai_key_status can ever return: never the ciphertext, the IV or
+-- which root locked the key.
+do $$
+begin
+  if pg_get_function_result('public.ai_key_status()'::regprocedure) ~ '\m(ciphertext|iv|kek_id)\M' then
+    raise exception 'ai_key_status returns key material: %', pg_get_function_result('public.ai_key_status()'::regprocedure);
+  end if;
+end $$;
+
 -- The anonymous role — anyone holding the published key — cannot call any of
 -- these at all. Every SECURITY DEFINER function the browser calls is listed:
 -- one left off can lose its revoke with this check still green, as 0004's
@@ -1563,8 +1776,36 @@ begin
      or has_function_privilege('anon', 'public.recategorise_transaction(uuid, uuid, boolean)', 'execute')
      or has_function_privilege('anon', 'public.save_import(uuid, public.ingest_source, integer, jsonb, jsonb, date, date)', 'execute')
      or has_function_privilege('anon', 'public.dismiss_unreadable_line(uuid)', 'execute')
+     or has_function_privilege('anon', 'public.ai_key_status()', 'execute')
+     or has_function_privilege('anon', 'public.ai_key_forget(public.ai_provider)', 'execute')
      or has_function_privilege('authenticated', 'public._post_candidate(uuid)', 'execute') then
     raise exception 'a SECURITY DEFINER function is callable by a role that must not call it';
   end if;
   raise notice 'no SECURITY DEFINER function is callable anonymously, and the poster is private';
+end $$;
+
+-- The AI helper's own functions (0016): the helper's role may call each,
+-- and neither the anonymous role nor a signed-in browser may call any. The
+-- explicit grant to service_role is belt and braces, since Supabase's
+-- default grants give it every function too; revoking it is what this
+-- catches.
+do $$
+declare
+  f text;
+begin
+  foreach f in array array[
+    'public.ai_context_for(uuid)',
+    'public.ai_key_put(uuid, public.ai_provider, text, text, text, smallint, text, text, text)',
+    'public.ai_key_mark(uuid, public.ai_provider, text, text)',
+    'public.ai_usage_claim(uuid, public.ai_provider, text, text, integer, integer, integer, integer)',
+    'public.ai_note_outcome(uuid, public.ai_provider, text, text, text, timestamptz)'
+  ] loop
+    if has_function_privilege('anon', f, 'execute') or has_function_privilege('authenticated', f, 'execute') then
+      raise exception 'the browser can call the helper''s function %', f;
+    end if;
+    if not has_function_privilege('service_role', f, 'execute') then
+      raise exception 'the helper cannot call its function %', f;
+    end if;
+  end loop;
+  raise notice 'only the helper can call the helper''s functions';
 end $$;
