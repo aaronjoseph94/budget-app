@@ -256,3 +256,57 @@ describe('factsDigest, version 1: wins', () => {
     })
   })
 })
+
+describe('factsDigest: trends (F37)', () => {
+  /**
+   * Friday 25 September 2026, records from 1 March: March to August are
+   * complete. Dining out is F37's, rising steadily; Groceries the mirror,
+   * falling; Coffee is F37's, with no clear trend.
+   */
+  const COFFEE = '5b4a3c2d-1e0f-4a9b-8c7d-6e5f4a3b2c1d'
+  const series = (id: string, dollars: readonly number[]) => dollars.map((v, i) => spend(`2026-0${3 + i}-12`, v * 100, id))
+  const trending: FactsDigestInput = {
+    ...base,
+    asOf: d('2026-09-25'),
+    historyStart: d('2026-03-01'),
+    readFrom: d('2026-03-01'),
+    categories: [...base.categories, { id: COFFEE, name: 'Coffee', kind: 'variable', sortOrder: 2 }],
+    entries: [
+      ...series(DINING, [300, 340, 330, 380, 420, 450]),
+      ...series(GROCERIES, [450, 420, 380, 330, 340, 300]),
+      ...series(COFFEE, [60, 62, 59, 61, 60, 63]),
+    ],
+    latestStatementEnd: null,
+    pendingCount: null,
+  }
+  const trendsOf = (input: FactsDigestInput) => factsDigest(input).facts.filter((f) => f.kind === 'category_trend')
+
+  it('says a category is rising steadily, one to watch, from its first month to its last', () => {
+    // $150.00 from first to last against a band of $135.00: clear, and worth $150.00 × 3 on six months.
+    expect(trendsOf(trending).find((f) => f.direction === 'up')).toEqual({
+      key: `cat:${DINING}:trend`, kind: 'category_trend', subject: { type: 'category', id: DINING, label: 'Dining out' },
+      direction: 'up', size: 'clear', evidence: 'solid', meaning: 'watch', notable: true,
+      figures: {
+        first: { unit: 'cents', value: 30_000 }, last: { unit: 'cents', value: 45_000 },
+        change: { unit: 'change', value: 15_000, direction: 'more' },
+        first_month: { unit: 'month', value: '2026-03-01' }, last_month: { unit: 'month', value: '2026-08-01' },
+        months: { unit: 'count', value: 6 }, usual: { unit: 'cents', value: 36_000 },
+      },
+      impact: 45_000, cause: `category_trend:${DINING}:2026-08-01:up`,
+    })
+  })
+
+  it('cheers one falling steadily, and says nothing of one with no clear trend', () => {
+    const trends = trendsOf(trending)
+    expect(trends.map((f) => [f.subject.label, f.direction, f.meaning])).toEqual([
+      ['Dining out', 'up', 'watch'],
+      ['Groceries', 'down', 'good'],
+    ])
+    expect(trends[1]!.figures['change']).toEqual({ unit: 'change', value: -15_000, direction: 'less' })
+  })
+
+  it('never names a trend on 3 complete months, or on months that were not read', () => {
+    expect(trendsOf({ ...trending, historyStart: d('2026-06-01') })).toEqual([])
+    expect(trendsOf({ ...trending, readFrom: d('2026-06-01') })).toEqual([])
+  })
+})

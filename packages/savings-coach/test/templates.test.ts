@@ -13,7 +13,7 @@ import {
 } from '../src/index.js'
 import type { Fact } from '@budget/core'
 import { proseProblem } from '@budget/schema'
-import { FACTS, WIN_FACTS, factOf, forecastOf } from './fixtures.js'
+import { FACTS, TREND_FACTS, WIN_FACTS, factOf, forecastOf } from './fixtures.js'
 
 /**
  * ADR 0005 §4's rules 1 to 7, as ModelProse applies them to a model's
@@ -28,6 +28,8 @@ const SAMPLE: Readonly<Record<CardTemplateKey, () => Fact>> = {
   rows_waiting: () => factOf('review:waiting'),
   change_up: () => factOf('cat:dining:change'),
   change_down: () => factOf('cat:groceries:change'),
+  trend_up: () => factOf('cat:dining:trend'),
+  trend_down: () => factOf('cat:groceries:trend'),
   over_budget: () => factOf('cat:fuel:over_budget'),
   near_budget: () => factOf('cat:fun:near_budget'),
   budget_pace: () => factOf('cat:fun:pace'),
@@ -94,9 +96,9 @@ describe('the app’s own templates', () => {
   })
 
   it('have a card template for every kind but the summaries, which are the day’s line', () => {
-    const kinds = new Set([...FACTS, ...WIN_FACTS].map((f) => f.kind))
-    expect(kinds.size).toBe(10)
-    for (const fact of [...FACTS, ...WIN_FACTS]) {
+    const kinds = new Set([...FACTS, ...WIN_FACTS, ...TREND_FACTS].map((f) => f.kind))
+    expect(kinds.size).toBe(11)
+    for (const fact of [...FACTS, ...WIN_FACTS, ...TREND_FACTS]) {
       const summary = fact.kind === 'month_so_far' || fact.kind === 'week_so_far'
       expect(cardTemplateKey(fact) === null, fact.key).toBe(summary)
     }

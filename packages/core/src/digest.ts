@@ -17,7 +17,9 @@
  * month, and a milestone passed on an active goal. They join version 1:
  * nothing reads the version until the AI's words are cached (plan A12).
  * Plan A13 adds the month's forecast (F30 to F32) beside the facts, never
- * ranked among them: the Coach gives it a card of its own.
+ * ranked among them: the Coach gives it a card of its own. Plan A16 adds
+ * each Variable category rising or falling steadily (F37). They join
+ * version 1 too: a new kind of fact changes no fact already made.
  */
 import { type Cents, type IsoDate, cents, daysBetween } from '@budget/money-primitives'
 import type { BudgetHistoryRow } from './budgets.js'
@@ -35,6 +37,7 @@ import { monthEndForecast } from './month-end.js'
 import type { MonthForecastInput } from './month-position.js'
 import { type PeriodCategory, type PeriodEntry, monthSheet } from './period-sheet.js'
 import type { PlanHistoryRow } from './plans.js'
+import { TREND_MONTHS, trendLabel } from './trends.js'
 import { monthBounds, weekBounds } from './week.js'
 
 export const DIGEST_VERSION = 1
@@ -87,6 +90,7 @@ export type FactKind =
   | 'saved_more'
   | 'goal_milestone'
   | 'month_forecast'
+  | 'category_trend'
 
 /** One figure a sentence can name by its slot. A change carries its direction word (ADR 0005 §5). */
 export type Figure =
@@ -144,7 +148,7 @@ const STALE_AFTER_DAYS = 10
 export function factsDigest(input: FactsDigestInput): FactsDigest {
   const history = completeMonths(input)
   const first: Fact[] = [...staleData(input), ...rowsWaiting(input), ...summaries(input)]
-  const rest = [...categoryChanges(input, history.months), ...budgets(input), ...savedMore(input), ...milestones(input)].sort(
+  const rest = [...categoryChanges(input, history.months), ...trends(input, history.months), ...budgets(input), ...savedMore(input), ...milestones(input)].sort(
     (a, b) => Number(b.notable) - Number(a.notable) || b.impact - a.impact || (a.key < b.key ? -1 : 1),
   )
   const forecast = input.forecast === undefined ? null : forecastFact({ ...input, ...input.forecast })
@@ -290,6 +294,49 @@ function categoryChanges(input: FactsDigestInput, months: readonly IsoDate[]): F
       },
     ]
   })
+}
+
+/**
+ * Each Variable category rising or falling steadily over up to its 6 most
+ * recent complete months (F37), always a card: rising is one to watch,
+ * falling a win. Worth the climb from first to last, a month's money, by
+ * the evidence of those months (F44).
+ */
+function trends(input: FactsDigestInput, months: readonly IsoDate[]): Fact[] {
+  if (months.length < TREND_MONTHS) return []
+  const recent = monthActuals({ ...input, months: months.slice(0, 6) }).months
+  return input.categories
+    .filter((c) => c.kind === 'variable')
+    .flatMap((c): Fact[] => {
+      const totals = recent.map((m) => ({ month: m.month, cents: m.actuals.get(c.id) ?? missing(c.id) }))
+      const label = trendLabel({ asOf: input.asOf, historyStart: input.historyStart, totals })
+      if (label.status !== 'rising' && label.status !== 'falling') return []
+      const up = label.status === 'rising'
+      const climb = cents(label.lastCents - label.firstCents)
+      return [
+        {
+          key: `cat:${c.id}:trend`,
+          kind: 'category_trend',
+          subject: category(c),
+          direction: up ? 'up' : 'down',
+          size: changeSize({ changeCents: climb, bandCents: label.bandCents }).size,
+          evidence: label.evidence,
+          meaning: up ? 'watch' : 'good',
+          notable: true,
+          figures: {
+            first: { unit: 'cents', value: label.firstCents },
+            last: { unit: 'cents', value: label.lastCents },
+            change: { unit: 'change', value: climb, direction: up ? 'more' : 'less' },
+            first_month: { unit: 'month', value: label.firstMonth },
+            last_month: { unit: 'month', value: label.lastMonth },
+            months: { unit: 'count', value: label.months },
+            usual: { unit: 'cents', value: label.usualCents },
+          },
+          impact: impactScore({ effect: 'monthly', monthlyCents: climb, evidence: label.evidence }).impact,
+          cause: `category_trend:${c.id}:${label.lastMonth}:${up ? 'up' : 'down'}`,
+        },
+      ]
+    })
 }
 
 /** Over, near and pace on each Variable budget this month (F28). */

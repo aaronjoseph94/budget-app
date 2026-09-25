@@ -73,6 +73,11 @@ describe('quoteTags', () => {
     expect(tags).toEqual(['small_leaks', 'impulse', 'over_budget', 'enough'])
   })
 
+  it('reads a steady rise as a leak and a habit, and a steady fall as a habit kept (F37)', () => {
+    expect(quoteTags({ facts: [factOf('cat:dining:trend')], goal: null })).toEqual(['small_leaks', 'habits'])
+    expect(quoteTags({ facts: [factOf('cat:groceries:trend')], goal: null })).toEqual(['habits', 'streaks'])
+  })
+
   it('adds the wins’ and the main goal’s, with hours and flight only where the goal has them', () => {
     const flight = { name: 'Flight training', unitLabel: 'flight time', hasHours: true }
     expect(quoteTags({ facts: [factOf('goal:g1:milestone'), factOf('summary:saved')], goal: flight })).toEqual([

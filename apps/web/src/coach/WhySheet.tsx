@@ -25,6 +25,10 @@ const LABEL: Readonly<Record<string, string>> = {
   days: 'Days since then',
   count: 'Waiting in Review',
   milestone: 'Milestone passed',
+  first: 'The first month read',
+  last: 'The last month read',
+  first_month: 'From',
+  last_month: 'To',
 }
 
 const REASON: Readonly<Partial<Record<Fact['kind'], string>>> = {
@@ -34,6 +38,8 @@ const REASON: Readonly<Partial<Record<Fact['kind'], string>>> = {
   budget_pace: 'It shows because, at the pace so far, the month would end well over the budget you set.',
   stale_data: 'It shows because your latest statement ends more than 10 days ago, so the Coach may be missing charges.',
   rows_waiting: 'It shows because charges waiting in Review are not counted anywhere until you file them.',
+  category_trend:
+    'It shows because it moved the same way in most of the last few whole months, and further than it usually swings. See Reports, Trends.',
   saved_more: 'It shows because more has gone into your savings than by this day last month.',
   goal_milestone:
     'It shows because your savings passed a milestone since last week began: every 5 hours for a goal with a cost an hour, or every tenth of the target.',
@@ -59,6 +65,7 @@ function labelOf(fact: Fact, slot: string): string {
   if (fact.kind === 'month_forecast') return FORECAST_LABEL[slot] ?? slot
   if (fact.kind === 'budget_pace' && slot === 'over') return 'Over budget at this pace by'
   if (fact.kind === 'saved_more' && slot === 'now') return 'Saved so far this month'
+  if (fact.kind === 'category_trend' && slot === 'change') return 'From the first month to the last'
   return LABEL[slot] ?? slot
 }
 

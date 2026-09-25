@@ -58,6 +58,8 @@ function tagsOf(fact: Fact): readonly QuoteTag[] {
       return fact.meaning === 'watch' ? ['small_leaks'] : fact.meaning === 'good' ? ['saving'] : ['habits']
     case 'category_change':
       return fact.direction === 'up' ? ['small_leaks', 'impulse'] : ['habits', 'streaks']
+    case 'category_trend':
+      return fact.direction === 'up' ? ['small_leaks', 'habits'] : ['habits', 'streaks']
     case 'over_budget':
       return ['over_budget', 'enough']
     case 'near_budget':

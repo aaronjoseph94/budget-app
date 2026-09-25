@@ -62,8 +62,26 @@ export const WINS: FactsDigestInput = {
 
 export const WIN_FACTS: readonly Fact[] = factsDigest(WINS).facts
 
+const series = (id: string, dollars: readonly number[]) => dollars.map((v, i) => spend(`2026-0${3 + i}-12`, v * 100, id))
+
+/**
+ * Trends (F37), records from March, so six whole months: Dining out rises
+ * steadily and Groceries falls steadily, each by $150.00 against a band of
+ * $135.00.
+ */
+export const TRENDS: FactsDigestInput = {
+  ...EVERY_KIND,
+  historyStart: d('2026-03-01'),
+  budgetHistory: [],
+  entries: [...series('dining', [300, 340, 330, 380, 420, 450]), ...series('groceries', [450, 420, 380, 330, 340, 300])],
+  latestStatementEnd: null,
+  pendingCount: 0,
+}
+
+export const TREND_FACTS: readonly Fact[] = factsDigest(TRENDS).facts.filter((f) => f.kind === 'category_trend')
+
 export function factOf(key: string): Fact {
-  const fact = [...FACTS, ...WIN_FACTS].find((f) => f.key === key)
+  const fact = [...FACTS, ...WIN_FACTS, ...TREND_FACTS].find((f) => f.key === key)
   if (fact === undefined) throw new Error(`The fixture has no fact ${key}`)
   return fact
 }

@@ -25,8 +25,17 @@ export interface WatchTemplate extends Template {
   readonly tryThis: string
 }
 
-export type CardTemplateKey = 'stale_data' | 'rows_waiting' | 'change_down' | 'saved_more' | 'goal_milestone' | 'forecast' | 'forecast_spent' | WatchKey
-export type WatchKey = 'change_up' | 'over_budget' | 'near_budget' | 'budget_pace' | 'forecast_watch'
+export type CardTemplateKey =
+  | 'stale_data'
+  | 'rows_waiting'
+  | 'change_down'
+  | 'trend_down'
+  | 'saved_more'
+  | 'goal_milestone'
+  | 'forecast'
+  | 'forecast_spent'
+  | WatchKey
+export type WatchKey = 'change_up' | 'trend_up' | 'over_budget' | 'near_budget' | 'budget_pace' | 'forecast_watch'
 
 type Tones<T> = Readonly<Record<Tone, T>>
 
@@ -79,6 +88,19 @@ export const WATCH_TEMPLATES: Readonly<Record<WatchKey, Tones<WatchTemplate>>> =
       tryThis: 'Try this: cut back on it for the next week.',
     },
   },
+  // Rising steadily over the last months (F37): a habit, not one dear month.
+  trend_up: {
+    cheerleader: {
+      title: 'Creeping up: {{A.name}}',
+      body: 'Month by month, {{A.name}} went from {{A.first}} in {{A.first_month}} to {{A.last}} in {{A.last_month}}.',
+      tryThis: 'One thing to try: aim for {{A.usual}}, your usual month, and it stops creeping.',
+    },
+    straight: {
+      title: 'Rising steadily: {{A.name}}',
+      body: '{{A.name}}: up from {{A.first}} in {{A.first_month}} to {{A.last}} in {{A.last_month}}.',
+      tryThis: 'Try this: set a budget of {{A.usual}} a month for it and check it on Sunday.',
+    },
+  },
   // The month would end below $0, or a day would run short (F30 to F32).
   forecast_watch: {
     cheerleader: {
@@ -123,6 +145,16 @@ export const PLAIN_TEMPLATES: Readonly<Record<Exclude<CardTemplateKey, WatchKey>
     straight: {
       title: 'Down on last month: {{A.name}}',
       body: '{{A.name}}: {{A.change}} than by this day in {{A.before_month}}.',
+    },
+  },
+  trend_down: {
+    cheerleader: {
+      title: 'Trending down: {{A.name}}',
+      body: 'Month by month, you brought {{A.name}} from {{A.first}} in {{A.first_month}} to {{A.last}} in {{A.last_month}}. Lovely work!',
+    },
+    straight: {
+      title: 'Falling steadily: {{A.name}}',
+      body: '{{A.name}}: down from {{A.first}} in {{A.first_month}} to {{A.last}} in {{A.last_month}}.',
     },
   },
   saved_more: {
@@ -220,6 +252,8 @@ export function cardTemplateKey(fact: Fact): CardTemplateKey | null {
       return fact.kind
     case 'category_change':
       return fact.direction === 'up' ? 'change_up' : 'change_down'
+    case 'category_trend':
+      return fact.direction === 'up' ? 'trend_up' : 'trend_down'
     case 'saved_more':
     case 'goal_milestone':
       return fact.kind
