@@ -47,3 +47,25 @@ export function forecastFake(start: number | null = 200_000): FakeSupabase {
     ingest_batches: [{ id: 'b1', source: 'card_pdf', created_at: '2026-09-21T12:00:00Z', period_start: '2026-06-01', period_end: '2026-09-20' }],
   })
 }
+
+/**
+ * The same, with two goals, worked by hand from F33 to F35. Flight
+ * training, $12,650.00 of $30,000.00 at $275.00 an hour, had $400.00,
+ * $500.00 and $300.00 moved in from June to August: $69.23, $92.31 and
+ * $115.38 a week, so 251, 188 and 151 weeks. Emergency, $520.00 of
+ * $1,000.00, had nothing moved in. Dining out's usual month is $1,054.00:
+ * a quarter is $265.00, a tenth $105.00 and its best month $155.00.
+ */
+export function forecastFakeWithGoals(): FakeSupabase {
+  const fake = forecastFake()
+  const move = (id: string, posted_on: string, dollars: number) =>
+    ({ id, posted_on, amount_cents: -dollars * 100, merchant_raw: 'SHOP', category_id: 'flight', source: 'typed' })
+  fake.tables.categories.push({ id: 'emerg', name: 'Emergency fund', kind: 'savings', sort_order: 1, weekly_budget_cents: null })
+  fake.tables.transactions.push(move('f1', '2026-06-15', 400), move('f2', '2026-07-15', 500), move('f3', '2026-08-15', 300))
+  const goal = { target_date: null, start_date: null, balance_as_of: '2026-09-20', status: 'active' as const, reached_on: null }
+  fake.tables.savings_goals.push(
+    { ...goal, id: 'g1', name: 'Flight training', target_cents: 3_000_000, saved_cents: 1_265_000, unit_cost_cents: 27_500, unit_label: 'flight time', category_id: 'flight', sort_order: 0 },
+    { ...goal, id: 'g2', name: 'Emergency', target_cents: 100_000, saved_cents: 52_000, unit_cost_cents: null, unit_label: null, category_id: 'emerg', sort_order: 1 },
+  )
+  return fake
+}
