@@ -1,6 +1,13 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
-import { AI_HELPER_VERSION, AI_KEY_SHAPE, AiProviderSchema, type AiRequest } from '@budget/schema'
+import { AI_HELPER_VERSION, AI_KEY_SHAPE, AiProviderSchema, type AiRequest, type NarrateDaily } from '@budget/schema'
 import { RequestSchema, VERSION } from '../ai/index.js'
+
+/** Readonly all the way down: the app's types are, and zod's output is not, which is no difference on the wire. */
+type Frozen<T> = T extends readonly (infer U)[] ? readonly Frozen<U>[] : T extends object ? { readonly [K in keyof T]: Frozen<T[K]> } : T
+
+/** A brief as the app builds one, cut to one fact. */
+const FACT = { id: 'A', kind: 'month_so_far', about: 'This month', direction: 'down', size: 'clear', evidence: 'thin', meaning: 'good', slots: ['change'] } as const
+const BRIEF: NarrateDaily = { tone: 'cheerleader', facts: [FACT], summary: 'A', cards: [], goals: [], quotes: [] }
 
 /**
  * The helper parses its requests with its own zod, since it is pasted as
@@ -9,14 +16,14 @@ import { RequestSchema, VERSION } from '../ai/index.js'
  */
 describe('the helper and the app agree on what may be asked', () => {
   it('takes exactly the requests packages/schema names', () => {
-    // The app's type is readonly throughout; zod's output is not, which is no difference on the wire.
-    expectTypeOf<Readonly<ReturnType<typeof RequestSchema.parse>>>().toEqualTypeOf<AiRequest>()
+    expectTypeOf<Frozen<ReturnType<typeof RequestSchema.parse>>>().toEqualTypeOf<Frozen<AiRequest>>()
     const sent: readonly AiRequest[] = [
       { action: 'ping' },
       { action: 'status' },
       { action: 'save_key', provider: 'gemini', key: 'test-not-a-real-key-0001' },
       { action: 'test_key', provider: 'gemini' },
       { action: 'run', task: 'test' },
+      { action: 'run', task: 'narrate', pack: 'daily', data: BRIEF },
     ]
     for (const provider of AiProviderSchema.options) {
       expect(RequestSchema.safeParse({ action: 'save_key', provider, key: 'test-not-a-real-key-0001' }).success).toBe(true)
@@ -24,6 +31,10 @@ describe('the helper and the app agree on what may be asked', () => {
     }
     for (const body of sent) expect(RequestSchema.safeParse(body).success).toBe(true)
     expect(RequestSchema.options.map((o) => o.shape.action.value)).toEqual(sent.map((b) => b.action))
+    // A brief with anything more than the app sends, or a figure where a word goes, is refused.
+    for (const data of [{ ...BRIEF, amount: 41200 }, { ...BRIEF, facts: [{ ...BRIEF.facts[0], value: 5 }] }, { ...BRIEF, summary: 'A1' }]) {
+      expect(RequestSchema.safeParse({ action: 'run', task: 'narrate', pack: 'daily', data }).success).toBe(false)
+    }
   })
 
   it('takes a key of exactly the shape the app checks before sending', () => {

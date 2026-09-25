@@ -12,6 +12,7 @@
  * an action nothing answers.
  */
 import { z } from 'zod'
+import type { NarrateDaily } from './narrate.js'
 
 /**
  * The AI services, in 0016's `ai_provider` enum order, which is also the
@@ -35,14 +36,16 @@ export type AiRequest =
   | { readonly action: 'status' }
   | { readonly action: 'save_key'; readonly provider: AiKeyProvider; readonly key: string }
   | { readonly action: 'test_key'; readonly provider: AiKeyProvider }
-  | { readonly action: 'run'; readonly task: AiTask }
+  | { readonly action: 'run'; readonly task: 'test' }
+  | { readonly action: 'run'; readonly task: 'narrate'; readonly pack: 'daily'; readonly data: NarrateDaily }
 
 /**
  * The tasks `run` takes. Each carries data, never a prompt: the prompt and
  * the reply's shape live in the helper. `test` checks the whole path on
- * whichever service answers first; each later task joins with its slice.
+ * whichever service answers first; `narrate` words the Coach's day from a
+ * brief with no figure in it (A12); each later task joins with its slice.
  */
-export type AiTask = 'test'
+export type AiTask = 'test' | 'narrate'
 
 /** What the helper takes as a key, so the app can say "check you copied all of it" before sending. */
 export const AI_KEY_SHAPE = /^[A-Za-z0-9_.:-]{20,200}$/
@@ -55,7 +58,7 @@ export type AiAction = AiRequest['action']
  * new version to be pasted over it. Bumped with every change to the
  * helper, as `YYYY-MM-DD.N`.
  */
-export const AI_HELPER_VERSION = '2026-09-25.3'
+export const AI_HELPER_VERSION = '2026-09-25.4'
 
 /**
  * Every failure the helper answers with, as a code the app turns into a
