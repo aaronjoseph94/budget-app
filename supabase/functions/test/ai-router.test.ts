@@ -147,6 +147,23 @@ describe('failing over, in the owner’s order', () => {
     expect(groq?.['p_tokens']).toBe(Math.ceil(new TextEncoder().encode(String(sent?.init.body)).length / 3))
   })
 
+  it('marks a saved key rejected on a 401 and moves on', async () => {
+    const r = await ran({ saved: ['groq', 'openrouter'], services: { gemini: () => json({}, 500), groq: () => json({}, 401), openrouter: answers.openrouter } })
+    expect(r.body).toMatchObject({ ok: true, provider: 'openrouter' })
+    expect(r.rpc('ai_key_mark')).toEqual([{ p_user: USER, p_provider: 'groq', p_status: 'rejected' }])
+  })
+
+  it('follows the owner’s order and chosen model, and passes over a key already turned down', async () => {
+    const r = await ran({
+      saved: ['groq', 'openrouter'], keyStatus: { groq: 'rejected' },
+      settings: { provider_order: ['openrouter', 'gemini'], models: { gemini: 'gemini-3.1-flash-lite' } },
+      services: { openrouter: () => json({}, 500) },
+    })
+    expect(r.services).toEqual(['openrouter', 'gemini'])
+    expect(r.calls.some((c) => c.url.endsWith('/gemini-3.1-flash-lite:generateContent'))).toBe(true)
+    expect(r.body).toMatchObject({ ok: false, code: 'all_failed' })
+  })
+
   it('gives up on a service that never answers, with an abort, and asks the next', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
     const { pending, calls, when } = await run({ saved: ['groq'], services: { gemini: silent, groq: answers.groq } })
@@ -211,6 +228,12 @@ describe('limits and rests', () => {
     }
   })
 
+  it('passes over a free service whose own limit is spent', async () => {
+    const r = await ran({ saved: ['groq'], claims: ['service_cap'], services: { groq: answers.groq } })
+    expect(r.body).toMatchObject({ ok: true, provider: 'groq' })
+    expect(r.services).toEqual(['groq'])
+  })
+
   it('rests Gemini until midnight Pacific when its free daily quota is spent', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(Date.parse('2026-09-25T17:00:00Z'))
@@ -219,12 +242,38 @@ describe('limits and rests', () => {
     expect(r.rpc('ai_note_outcome')[0]).toMatchObject({ p_code: 'rate_limited', p_cooldown_until: '2026-09-26T07:00:00.000Z' })
     expect(r.body.code).toBe('all_failed')
   })
+
+  it('skips a resting service without a call, and says all are resting when none is left', async () => {
+    const r = await ran({ saved: ['groq'], resting: [{ provider: 'gemini', model: 'gemini-3.5-flash-lite' }, { provider: 'groq', model: 'openai/gpt-oss-20b' }] })
+    expect([r.status, r.body.code, r.services, r.rpc('ai_usage_claim')]).toEqual([503, 'all_resting', [], []])
+    expect(r.body.tried?.map((t) => t.result)).toEqual(['resting', 'resting'])
+  })
+
+  it('passes over Groq when a request would go past its budget, without a claim', async () => {
+    const { fetchFn } = await world({ saved: ['groq'], settings: { provider_order: ['groq', 'gemini'] }, services: { gemini: answers.gemini } })
+    const big = { system: 'SYSTEM', data: { text: 'x'.repeat(16_000) }, schema: { type: 'object' }, maxOutputTokens: 400 }
+    const [status, body] = await route(ENV, USER, 'test', big, Date.now(), fetchFn)
+    expect([status, body]).toMatchObject([200, { ok: true, provider: 'gemini' }])
+    expect((body as Answer).tried).toBeUndefined()
+  })
 })
 
 describe('when AI cannot run', () => {
   it('says ai_off when the owner switched AI off, and asks nothing', async () => {
     const r = await ran({ settings: { enabled: false } })
     expect([r.status, r.body.code, r.services]).toEqual([409, 'ai_off', []])
+  })
+
+  it('says a key must be pasted again when the only key was turned down or cannot be opened', async () => {
+    const env = { ...ENV, GEMINI_API_KEY: undefined }
+    expect((await ran({ saved: ['groq'], keyStatus: { groq: 'rejected' } }, env)).body.code).toBe('key_rejected')
+    const other = { ...env, SUPABASE_SERVICE_ROLE_KEY: ['header', 'payload', 'changed'].join('.') }
+    const { calls, fetchFn } = await world({ saved: ['groq'] }, env)
+    const [, body] = await route(other, USER, 'test', { system: 's', data: {}, schema: {}, maxOutputTokens: 10 }, Date.now(), fetchFn)
+    expect(body).toMatchObject({ code: 'keys_locked' })
+    expect(calls.filter((c) => c.url.endsWith('ai_key_mark')).map((c) => JSON.parse(String(c.init.body)) as unknown)).toEqual([
+      { p_user: USER, p_provider: 'groq', p_status: 'locked' },
+    ])
   })
 
   it('says needs_update when 0016’s claim is not there yet', async () => {

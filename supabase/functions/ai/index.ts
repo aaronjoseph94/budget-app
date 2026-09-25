@@ -834,8 +834,10 @@ export async function route(env: Env, user: string, task: TaskName, ask: Ask, st
   const settings = obj(ctx['settings'])
   if (settings['enabled'] === false) return failed('ai_off')
   const models = obj(settings['models'])
+  const resting = list(ctx['resting']).map(obj)
   const { limit, ms } = TASKS[task]
   const tried: Tried[] = []
+  const keyTrouble = new Set<'rejected' | 'locked'>()
   let attempts = 0
   const end = (code: Code): Reply => {
     log(`run_${code}`, { attempts, tried: tried.length })
@@ -847,11 +849,30 @@ export async function route(env: Env, user: string, task: TaskName, ask: Ask, st
     if (SERVICES[provider].tier === 'paid' && settings['allow_paid'] !== true) continue
     const found = await keyFor(env, user, provider, ctx['keys'])
     if (found === null) continue
+    // A key its service turned down, or one no root opens, waits for the owner to paste or test it again.
+    if (found.status === 'rejected' || found.status === 'locked') {
+      keyTrouble.add(found.status)
+      continue
+    }
     const model = modelFor(provider, models[provider], provider === 'gemini' ? env.GEMINI_MODEL : undefined)
-    if (found.key === null) continue
+    if (found.key === null) {
+      keyTrouble.add('locked')
+      tried.push({ provider, model, result: 'locked' })
+      const mark = await callDb(env, 'ai_key_mark', { p_user: user, p_provider: provider, p_status: 'locked' }, fetchFn)
+      if ('code' in mark) return end(mark.code)
+      continue
+    }
+    if (resting.some((r) => r['provider'] === provider && r['model'] === model)) {
+      tried.push({ provider, model, result: 'resting' })
+      continue
+    }
     const built = chatRequest(provider, model, found.key, ask)
     const tokens = tokensOf(String(built.init.body))
     const limits = limitsOf(provider, model)
+    if (limits.perRequest !== null && tokens + replyTokens(provider, model, ask) > limits.perRequest) {
+      tried.push({ provider, model, result: 'over_budget' })
+      continue
+    }
     // An attempt starts only if its whole timeout fits in what is left.
     if (Date.now() - started + ms > DEADLINE_MS) break
 
@@ -866,6 +887,10 @@ export async function route(env: Env, user: string, task: TaskName, ask: Ask, st
     )
     if ('code' in claim) return end(claim.code)
     if (claim.data === 'daily_cap' || claim.data === 'task_cap') return end('limit_reached')
+    if (claim.data === 'service_cap') {
+      tried.push({ provider, model, result: 'service_cap' })
+      continue
+    }
     if (claim.data !== 'ok') return end('helper_error')
 
     attempts += 1
@@ -888,10 +913,17 @@ export async function route(env: Env, user: string, task: TaskName, ask: Ask, st
       log('run_ok', { attempts, tried: tried.length })
       return [200, { ok: true, provider, model, text: replied.text }]
     }
+    if (replied.outcome === 'rejected' && found.source === 'saved') {
+      const mark = await callDb(env, 'ai_key_mark', { p_user: user, p_provider: provider, p_status: 'rejected' }, fetchFn)
+      if ('code' in mark) return end(mark.code)
+    }
     tried.push({ provider, model, result: replied.outcome })
   }
 
   if (attempts > 0) return end('all_failed')
+  if (tried.some((t) => t.result !== 'locked')) return end('all_resting')
+  if (keyTrouble.has('locked')) return end('keys_locked')
+  if (keyTrouble.has('rejected')) return end('key_rejected')
   return end('not_set_up')
 }
 
