@@ -8,6 +8,7 @@ import { Icon } from '../components/ui/icons.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { reportOf, useReportRead, type ReportFigures } from '../reports/read.js'
 import { MoversCard, PairsCard, TotalsCard } from '../reports/Overview.js'
+import { ReviewCard } from '../reports/ReviewCard.js'
 
 /**
  * Reports (plan §2.6, A15): a month in review, any month, the current one
@@ -94,6 +95,7 @@ function Overview({ report, historyStart, nameOf }: ReportFigures & { nameOf: (i
   }
   return (
     <>
+      <ReviewCard report={report} nameOf={nameOf} />
       <TotalsCard report={report} historyStart={historyStart} />
       <MoversCard report={report} nameOf={nameOf} />
       <PairsCard report={report} nameOf={nameOf} />

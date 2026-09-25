@@ -59,7 +59,7 @@ function markAsked(asOf: string): void {
 }
 
 /** The helper's answer to a run, narrowed by hand: its own code talking, not a model (ai/client.ts). */
-function ranOf(data: unknown): { provider: AiProvider; model: string; text: string } | null {
+export function ranOf(data: unknown): { provider: AiProvider; model: string; text: string } | null {
   const d = typeof data === 'object' && data !== null ? (data as Record<string, unknown>) : {}
   const [provider, model, text] = [AiProviderSchema.safeParse(d['provider']), d['model'], d['text']]
   if (!provider.success || typeof model !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,79}$/.test(model) || typeof text !== 'string') return null
