@@ -230,6 +230,15 @@ export {
   type HistoryStartInput,
 } from './history.js'
 
+export {
+  monthlyTotals,
+  savingsRate,
+  type MonthTotals,
+  type MonthlyTotalsInput,
+  type SavingsRateInput,
+  type Totals,
+} from './month-totals.js'
+
 export { mad, median, quantile, type QuantileInput, type StatsInput } from './stats.js'
 
 export {
