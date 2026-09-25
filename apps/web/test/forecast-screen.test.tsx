@@ -100,13 +100,26 @@ describe('the Forecast (plan §2.5, A13)', () => {
     expect(within(card).getByText('Leaves out $200.00 you still plan to move to savings this month.')).toBeTruthy()
   })
 
+  it('names pay it cannot count, and says where to give it a schedule or a goal', async () => {
+    // Pay has paid, but with no schedule and no goal the app cannot tell when or how much (F29).
+    const fake = forecastFake()
+    fake.tables.pay_schedules.splice(0)
+    go('/forecast')
+    renderScreen(<Shell />, fake)
+
+    const safe = (await screen.findByRole('heading', { name: 'Safe to spend' })).closest('div.rounded-xl') as HTMLElement
+    expect(within(safe).getByText('Pay from Pay is not counted: give it a pay schedule in Setup, or a goal on the Month.')).toBeTruthy()
+    const days = screen.getByRole('heading', { name: 'The next 30 days' }).closest('div.rounded-xl') as HTMLElement
+    expect(within(days).getByText('Leaves out pay from Pay: the app can’t tell yet when it comes or how much.')).toBeTruthy()
+  })
+
   it('gives the debt-free date from the payoff plan, and says so when it needs a one-time update', async () => {
     const fake = forecastFake()
     // $1,200.00 at no interest, $100.00 a month from September: paid off in August 2027.
     fake.tables.debts.push({ id: 'd1', name: 'Car loan', starting_balance_cents: 120_000, minimum_payment_cents: 10_000, apr_basis_points: 0, start_date: '2026-09-01', sort_order: 0 })
     go('/forecast')
     renderScreen(<Shell />, fake)
-    expect(await screen.findByText(whole('P', 'Debt-free by August 2027, paying the minimums on your payoff plan. Open Debts'))).toBeTruthy()
+    expect(await screen.findByText(whole('P', 'Debt-free by August 2027 on your payoff plan. Open Debts'))).toBeTruthy()
     cleanup()
 
     const missing = forecastFake()

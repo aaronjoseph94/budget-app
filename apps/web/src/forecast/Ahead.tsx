@@ -68,8 +68,9 @@ export function NextDaysCard({ flow, line, asOf, names }: { flow: CashFlow30; li
       {flow.savingsNotMovedCents > 0 ? (
         <p className="text-muted-foreground">Leaves out {formatCents(flow.savingsNotMovedCents)} you still plan to move to savings this month.</p>
       ) : null}
+      {/* A source left out has no schedule, or a schedule with no receipt or goal to say what it pays (F29). */}
       {flow.payLeftOut.length === 0 ? null : (
-        <p className="text-muted-foreground">Leaves out pay from {flow.payLeftOut.map(names).join(' and ')}, which has no pay schedule.</p>
+        <p className="text-muted-foreground">Leaves out pay from {flow.payLeftOut.map(names).join(' and ')}: the app can’t tell yet when it comes or how much.</p>
       )}
     </Section>
   )
@@ -119,7 +120,7 @@ export function DebtFreeCard() {
             ? 'No debts on your payoff plan. '
             : state.neverPaidOff.length > 0 || state.date === null
               ? 'Not until every minimum covers its interest. '
-              : `Debt-free by ${formatMonthTitle(state.date)}, paying the minimums on your payoff plan. `}
+              : `Debt-free by ${formatMonthTitle(state.date)} on your payoff plan. `}
           {debts}
         </p>
       ) : null}
