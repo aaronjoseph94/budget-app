@@ -1059,6 +1059,110 @@ September, no pace. August viewed on 24 September: no pace.
 
 ---
 
+## F29 — Pay still due this month
+
+**Decided 2026-09-25. Engineering default. Not from the workbook,** which
+has no forecast of any kind. Decided by the engineer under the owner's
+2026-09-24 instruction to proceed without questions (plan §5, §11; built
+in slice A13).
+
+**Chosen.** For each category on the Income list, in the list's order:
+
+- **With a pay schedule** (0011; a schedule left on a category moved off
+  Income pays nobody, N27): its paydays after `asOf` and in `asOf`'s month,
+  counted from its first pay date on, as the Bill calendar counts them
+  (every 7 or 14 days, or monthly on the first pay date's day, a short
+  month paying on its last day: F15, D21). Each payday brings its **usual
+  pay**: the median (F27's) of its **last 3 receipts**, where a receipt is
+  one of its ledger rows above $0, dated inside the records (F24) and on or
+  before `asOf`; the latest by date, the larger first on the same day.
+  With no receipt yet, the month's Income Goal for it (D12) shared across
+  a pay period as the Paycheck shares it (F15's `payShare`: × 12 ÷ 52,
+  × 12 ÷ 26 or × 1). With neither, it brings nothing counted.
+- **With no schedule and a Goal:** `max(0, goal − received)`, where
+  received is its Income Actual this month. It has no day.
+- **With neither,** it is *not counted*, and the forecast says pay from it
+  is left out rather than treat it as $0.
+
+Pay still due is the sum of what each counted source brings. A source whose
+pay is not counted is named, so "pay not included" is never silent.
+
+**Where it departs from the plan.** The plan's no-receipt rule was "the
+monthly goal ÷ paydays in the month (F15's `payShare`)". Those are two
+different rules; `payShare` is chosen, because it is the share the Paycheck
+screen already shows for the same goal, and a two-payday month and a
+three-payday month then give each payday the same amount, as a salary does.
+
+**Worked example.** Thursday 24 September 2026 (the running example for
+F29 to F32). Pay is paid bi-weekly from 5 June 2026; its paydays are 11
+and 25 September, so one, the 25th, is still due. Its latest receipts:
+$2,080.00 on 14 August, $2,150.00 on 28 August and $2,100.00 on 11
+September; the median is $2,100.00, so pay still due is **$2,100.00**.
+With no receipt and a Goal of $4,550.00: $4,550.00 × 12 ÷ 26 = $2,100.00
+a payday. With no schedule, a Goal of $4,550.00 and $2,100.00 received:
+$2,450.00. With no schedule and no Goal: not counted.
+
+---
+
+## F30 — Where the month ends: a range, or one rough figure
+
+**Decided 2026-09-25. Engineering default. Not from the workbook.** Decided
+by the engineer under the owner's 2026-09-24 instruction to proceed without
+questions (plan §5, §11; built in slice A13).
+
+**Chosen.** On day *d* of a month of *D* days:
+
+- **Scenarios for Variable spending still to come.** From day 7, *this
+  month's pace*: the Variable block's Actual so far scaled to the month
+  (`actual × D ÷ d`, half-up, F28's scaling), less the Actual. And for each
+  of up to the **6 most recent complete months** *i* (F24): its Variable
+  Actual `V_i` over its `D_i` days, for the days left:
+  `(D − d) × V_i ÷ D_i`, half-up. A scenario below $0 (refunds) is $0.
+- **The end, per scenario:** `start + income received + pay still due (F29)
+  − Spent (F7, planned bills counted, F3) − variable still to come − saved −
+  savings still planned`, where savings still planned is
+  `Σ max(0, goal − actual)` over the Savings rows with a goal this month.
+- **The range** is the lowest, the median (F27's) and the highest of the
+  scenarios' ends, each **rounded half-up to $10** on the magnitude
+  (−$15.00 is −$20). Shown without cents.
+- **Rough.** Before day 7, or with fewer than 3 complete months, the
+  forecast is one "about" figure, the median, labelled rough, never an
+  invented range. Before day 7 with no complete month there is nothing to
+  go on: it says "check back on the 7th".
+- **No balance without a typed start (D17).** With none, the ending
+  balance is not forecast, and **the projected Spent** (Spent + variable
+  still to come, per scenario, rounded the same way) still shows.
+- **What is still to come** is shown beside it: pay still due, **bills not
+  charged yet** (the planned amounts in Bills, Debts and Subscriptions that
+  no real charge has replaced, D5; already inside Spent), Variable spending
+  still to come (the median scenario, rounded to $10), and savings still
+  planned.
+- **Evidence** (F24) is counted from the complete months used.
+
+**The Month's End of month does not change** (F7). The forecast adds pay
+still due, Variable spending still to come and savings still planned; the
+Month shows it on its own line, labelled "Forecast" (D27).
+
+**Worked example.** 24 September 2026, records from 1 June, so June, July
+and August are complete (*some*). Start $2,000.00. Received: $2,100.00 of
+pay on 11 September. Pay still due $2,100.00 (F29). Spent $2,180.00: Rent
+$1,200.00 paid on the 1st, Phone $60.00 due on the 28th and Internet $80.00
+due on the 20th, neither charged yet (planned, so $140.00 of bills not
+charged yet), and $840.00 of Variable expenses. Saved $300.00 into the
+Flight fund, whose goal this month is $500.00: $200.00 still planned.
+Before spending still to come: 2,000.00 + 2,100.00 + 2,100.00 − 2,180.00 −
+300.00 − 200.00 = $3,520.00. Scenarios: pace $840.00 × 30 ÷ 24 = $1,050.00,
+so $210.00 to come; June $900.00 over 30 days, 6 × 900.00 ÷ 30 = $180.00;
+July $1,240.00 over 31, $240.00; August $1,054.00 over 31, $204.00. Ends
+$3,280.00, $3,310.00, $3,316.00 and $3,340.00; the median is ($3,310.00 +
+$3,316.00) ÷ 2 = $3,313.00. **The range: $3,280 to $3,340, most likely
+$3,310.** Projected Spent: $2,360, $2,390 and $2,420. On 5 September with
+the same three months: rough, one figure from the months alone (25 days
+left: $750.00, $1,000.00 and $850.00; the median $850.00). On 5 September
+with records from 8 August: nothing, "check back on 7 Sep".
+
+---
+
 ## F33 — When each savings goal is reached at your pace, and its milestones
 
 **Decided 2026-09-25. Engineering default. Not from the workbook,** whose
