@@ -16,6 +16,7 @@ describe('the helper and the app agree on what may be asked', () => {
       { action: 'status' },
       { action: 'save_key', provider: 'gemini', key: 'test-not-a-real-key-0001' },
       { action: 'test_key', provider: 'gemini' },
+      { action: 'run', task: 'test' },
     ]
     for (const provider of AiProviderSchema.options) {
       expect(RequestSchema.safeParse({ action: 'save_key', provider, key: 'test-not-a-real-key-0001' }).success).toBe(true)

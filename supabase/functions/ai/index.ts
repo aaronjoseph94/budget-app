@@ -63,6 +63,8 @@ export const RequestSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('status') }).strict(),
   z.object({ action: z.literal('save_key'), provider: KeyProvider, key: z.string().regex(/^[A-Za-z0-9_.:-]{20,200}$/) }).strict(),
   z.object({ action: z.literal('test_key'), provider: KeyProvider }).strict(),
+  // One task. Only `test` so far; each later task joins with its prompt and data (A12 on).
+  z.object({ action: z.literal('run'), task: z.enum(['test']) }).strict(),
 ])
 type Request_ = z.infer<typeof RequestSchema>
 
@@ -74,6 +76,12 @@ type Code =
   | 'needs_update'
   | 'not_set_up'
   | 'helper_error'
+  | 'ai_off'
+  | 'limit_reached'
+  | 'all_resting'
+  | 'all_failed'
+  | 'key_rejected'
+  | 'keys_locked'
 
 const STATUS_OF: Readonly<Record<Code, number>> = {
   not_signed_in: 401,
@@ -83,6 +91,12 @@ const STATUS_OF: Readonly<Record<Code, number>> = {
   needs_update: 503,
   not_set_up: 409,
   helper_error: 503,
+  ai_off: 409,
+  limit_reached: 429,
+  all_resting: 503,
+  all_failed: 502,
+  key_rejected: 409,
+  keys_locked: 409,
 }
 
 function allowedOrigins(env: Env): Set<string> {
@@ -115,6 +129,8 @@ type LogCode =
   | 'db_status'
   | 'db_shape'
   | `key_${KeyStatus}`
+  | `attempt_${Outcome}`
+  | `run_${'ok' | Code}`
 function log(code: LogCode, counts: Record<string, number> = {}): void {
   console.log(JSON.stringify({ fn: 'ai', code, ...counts }))
 }
@@ -769,11 +785,122 @@ async function testKey(env: Env, user: string, provider: Provider, fetchFn: type
   return keyReply(provider, found.source, status, found.hint, test.listed)
 }
 
+// ---------------------------------------------------------------------------
+// Running a task (plan §3.5, ADR 0004): the owner's order, paid services
+// only when Use paid services is on, a resting service skipped without a
+// call, every attempt claimed in the database before it is made, at most
+// three attempts inside a 100-second deadline, and each outcome noted so
+// a busy service rests.
+// ---------------------------------------------------------------------------
+
+/** The helper's whole budget for one request, inside the free plan's 150-second wall clock. */
+const DEADLINE_MS = 100_000
+const MAX_ATTEMPTS = 3
+
+type TaskName = 'test'
+/** Each task's fixed prompt and reply shape, its limit a day, and how long one attempt may take. */
+const TASKS: Readonly<Record<TaskName, { readonly limit: number; readonly ms: number; readonly ask: Ask }>> = {
+  // Check the whole path works, on whichever service answers first; it spends one call.
+  test: {
+    limit: 10,
+    ms: ATTEMPT_MS,
+    ask: {
+      system: 'You check that a connection works. Reply with the JSON object {"ok": true} and nothing else.',
+      data: { check: 'connection' },
+      schema: { type: 'object', properties: { ok: { type: 'boolean' } }, required: ['ok'] },
+      maxOutputTokens: 50,
+    },
+  },
+}
+
+/** What happened on one service, as the owner's settings can say it: never a key, a prompt or a reply. */
+type Tried = { readonly provider: Provider; readonly model: string; readonly result: Outcome | 'resting' | 'over_budget' | 'service_cap' | 'locked' }
+
+/** The owner's order, then any service it leaves out, so a service is never lost to an older order. */
+function orderOf(stored: unknown): Provider[] {
+  const chosen = list(stored).filter(isProvider)
+  return [...new Set([...chosen, ...(PROVIDERS.filter(isProvider))])]
+}
+
+/**
+ * Run one task: the reply's text and the service that wrote it, or a code
+ * and what was tried. `started` is when the request arrived, so the
+ * deadline counts the time already spent on it.
+ */
+export async function route(env: Env, user: string, task: TaskName, ask: Ask, started: number, fetchFn: typeof fetch): Promise<Reply> {
+  const context = await callDb(env, 'ai_context_for', { p_user: user }, fetchFn)
+  if ('code' in context) return failed(context.code)
+  const ctx = obj(context.data)
+  const settings = obj(ctx['settings'])
+  if (settings['enabled'] === false) return failed('ai_off')
+  const models = obj(settings['models'])
+  const { limit, ms } = TASKS[task]
+  const tried: Tried[] = []
+  let attempts = 0
+  const end = (code: Code): Reply => {
+    log(`run_${code}`, { attempts, tried: tried.length })
+    return [STATUS_OF[code], { ok: false, code, tried }]
+  }
+
+  for (const provider of orderOf(settings['provider_order'])) {
+    if (attempts >= MAX_ATTEMPTS) break
+    if (SERVICES[provider].tier === 'paid' && settings['allow_paid'] !== true) continue
+    const found = await keyFor(env, user, provider, ctx['keys'])
+    if (found === null) continue
+    const model = modelFor(provider, models[provider], provider === 'gemini' ? env.GEMINI_MODEL : undefined)
+    if (found.key === null) continue
+    const built = chatRequest(provider, model, found.key, ask)
+    const tokens = tokensOf(String(built.init.body))
+    const limits = limitsOf(provider, model)
+    // An attempt starts only if its whole timeout fits in what is left.
+    if (Date.now() - started + ms > DEADLINE_MS) break
+
+    const claim = await callDb(
+      env,
+      'ai_usage_claim',
+      {
+        p_user: user, p_provider: provider, p_model: model, p_task: task, p_tokens: tokens,
+        p_task_limit: limit, p_service_limit: limits.calls, p_service_tokens: limits.tokens,
+      },
+      fetchFn,
+    )
+    if ('code' in claim) return end(claim.code)
+    if (claim.data === 'daily_cap' || claim.data === 'task_cap') return end('limit_reached')
+    if (claim.data !== 'ok') return end('helper_error')
+
+    attempts += 1
+    const res = await callService(fetchFn, built.url, built.init, ms)
+    const body: unknown = typeof res === 'string' ? null : await res.json().catch(() => null)
+    const replied = typeof res === 'string' ? { outcome: res, text: null } : chatReply(provider, res.status, body)
+    log(`attempt_${replied.outcome}`)
+    const until = restUntil(provider, replied.outcome, typeof res === 'string' ? null : res.headers, body, Date.now())
+    const noted = await callDb(
+      env,
+      'ai_note_outcome',
+      {
+        p_user: user, p_provider: provider, p_model: model, p_task: task, p_code: replied.outcome,
+        p_cooldown_until: until !== null && Number.isFinite(until) ? new Date(until).toISOString() : null,
+      },
+      fetchFn,
+    )
+    if ('code' in noted) return end(noted.code)
+    if (replied.outcome === 'ok' && replied.text !== null) {
+      log('run_ok', { attempts, tried: tried.length })
+      return [200, { ok: true, provider, model, text: replied.text }]
+    }
+    tried.push({ provider, model, result: replied.outcome })
+  }
+
+  if (attempts > 0) return end('all_failed')
+  return end('not_set_up')
+}
+
 export async function handle(
   req: Request,
   rawEnv: Readonly<Record<string, string | undefined>>,
   fetchFn: typeof fetch,
 ): Promise<Response> {
+  const started = Date.now()
   const origin = req.headers.get('origin')
   // Secrets zod cannot read count as unset, which ends in helper_error.
   const parsedEnv = EnvSchema.safeParse(rawEnv)
@@ -809,6 +936,7 @@ export async function handle(
   if (body.action === 'ping') return send(200, { ok: true, version: VERSION })
   if (body.action === 'save_key') return send(...(await saveKey(env, who.user, body.provider, body.key, fetchFn)))
   if (body.action === 'test_key') return send(...(await testKey(env, who.user, body.provider, fetchFn)))
+  if (body.action === 'run') return send(...(await route(env, who.user, body.task, TASKS[body.task].ask, started, fetchFn)))
 
   const context = await callDb(env, 'ai_context_for', { p_user: who.user }, fetchFn)
   if ('code' in context) return fail(context.code)

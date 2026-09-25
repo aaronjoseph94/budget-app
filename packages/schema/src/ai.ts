@@ -35,6 +35,14 @@ export type AiRequest =
   | { readonly action: 'status' }
   | { readonly action: 'save_key'; readonly provider: AiKeyProvider; readonly key: string }
   | { readonly action: 'test_key'; readonly provider: AiKeyProvider }
+  | { readonly action: 'run'; readonly task: AiTask }
+
+/**
+ * The tasks `run` takes. Each carries data, never a prompt: the prompt and
+ * the reply's shape live in the helper. `test` checks the whole path on
+ * whichever service answers first; each later task joins with its slice.
+ */
+export type AiTask = 'test'
 
 /** What the helper takes as a key, so the app can say "check you copied all of it" before sending. */
 export const AI_KEY_SHAPE = /^[A-Za-z0-9_.:-]{20,200}$/

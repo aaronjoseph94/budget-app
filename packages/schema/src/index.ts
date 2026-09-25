@@ -62,4 +62,5 @@ export {
   type AiRequest,
   type AiServiceStatus,
   type AiStatusReply,
+  type AiTask,
 } from './ai.js'
