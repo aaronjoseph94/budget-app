@@ -1459,6 +1459,87 @@ $23.08 a week: ⌈17,350.00 ÷ 138.46⌉ = 126 weeks (22 February 2029),
 
 ---
 
+## F36 — The month in review: totals, savings rate and the biggest changes
+
+**Decided 2026-09-25. Engineering default. Not from the workbook,** whose
+month tabs show one month and never review it against another. Decided by
+the engineer under the owner's 2026-09-24 instruction to proceed without
+questions (plan §7, §11; built in slice A15).
+
+**Which month, and how far.** Any month can be reviewed (`#/reports/2026-08`).
+
+- **So far:** the month holding `asOf`, over days 1..*d*.
+- **Complete:** a month before `asOf`'s that lies wholly inside the records
+  and what was read (F24), over the whole month.
+- **Partly recorded:** a month before `asOf`'s that the records start inside
+  (the owner's August 2026, from the 8th). It is reviewed over the whole
+  month, and says where the records start.
+- **Not started** (after `asOf`'s month) and **before the records** (ending
+  before history start) have nothing to review.
+
+**Totals.** Income, Spent and Saved over the reviewed days, through
+`periodSheet` with the month's own amounts in effect (D13), as F25 counts a
+window: a month that is over matches the Month's own figures (F7, planned
+bills counted); a month so far counts a planned bill only on its due day,
+as the Month's comparison strip does, so it is set like for like against
+last month. `monthlyTotals` gives each complete month's three whole-month
+totals, newest first.
+
+**Against last month** is F25 and F26 unchanged: a month so far against the
+same days of the month before, a month that is over against the whole month
+before; nothing when that window starts before the records (F24). Each change
+is sized by the summary's band (F27: max($25.00, 15% of last month's)).
+
+**Against your usual month:** the median (F27) of each total over up to the 6
+most recent complete months **before the reviewed month**, so a month's
+review reads the same whenever it is opened, and the month itself is left
+out. Shown only for a month that is over: a usual month is a whole month,
+and Income comes on paydays, so scaling it to days would mislead. Evidence
+(F24) is counted from those months.
+
+**Savings rate** = saved × 10,000 ÷ income, in basis points, half-up on the
+magnitude with the sign kept (F26's rounding); **none when income is $0 or
+less**, since a share of nothing, or of refunds, means nothing. Saved below
+$0 (money taken back out of savings) gives a rate below 0.
+
+**The biggest changes** (`biggestMovers`):
+
+- **Which categories:** Variable expenses only, as digest version 1 (F27): a
+  change on Bills, Debts or Subscriptions is a bill moving, not a habit, and
+  its price-rise detector is F38's.
+- **Against:** the category's usual month (F27) over up to 6 complete months
+  before the reviewed month. A category with none has no usual month and is
+  never a mover.
+- **A month so far** is set against its usual month scaled to the days,
+  `usual × d ÷ D`, half-up, with F27's band scaled the same way.
+- **A mover** differs from it by at least the band (clear or big, F27). The
+  three largest rises and the three largest falls, by the size of the
+  change, ties by the category's place on its list, then its id.
+
+**This month against last, by category** (the paired bars): each Variable
+expenses row with either side not $0, over the two windows compared above;
+the 8 with the largest of their two figures, ties by list order then id.
+Lengths are `scaleSeries` over $0 and each figure, a figure below $0 drawn
+as no bar (its amount still written), so the chart divides no money.
+
+**Worked example.** Thursday 24 September 2026, records from 1 February.
+**August, complete.** Income $4,200.00, Spent $3,150.00, Saved $500.00.
+Savings rate 50,000 × 10,000 ÷ 420,000 = 1,190.47…, **1,190 bp** (11.9%).
+July: Income $4,200.00, Spent $3,310.00, Saved $300.00: Spent $160.00 less,
+against a band of max($25.00, $496.50) = $496.50, *slight*. Usual month
+over February to July (6 months, *solid*): Spent $3,000, $3,100, $3,200,
+$3,250, $3,300 and $3,310, median ($3,200.00 + $3,250.00) ÷ 2 =
+**$3,225.00**. Dining out's six months before August are F27's six figures
+(usual month $405.00, band $135.00); August's $560.00 is $155.00 more,
+1.15 bands, *clear*, a rise. Coffee
+$62.00 against $60.00: $2.00, under $25.00, not a mover. **September so
+far**, day 24 of 30, with Dining out's usual month still $405.00: $400.00
+against $405.00 × 24 ÷ 30 =
+$324.00, band $108.00: $76.00 more, *slight*, not a mover. **No income:**
+a month with $0.00 in and $50.00 saved has no savings rate.
+
+---
+
 ## F44 — Impact, for ranking the Coach's cards
 
 **Decided 2026-09-24. Engineering default. Not from the workbook.** Decided
