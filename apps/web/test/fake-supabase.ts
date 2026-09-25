@@ -70,7 +70,15 @@ export interface FakeTables {
     readonly provider_order?: readonly string[]
     readonly allow_paid?: boolean
     readonly daily_cap?: number
+    readonly tone?: string
+    readonly share_shop_names?: boolean
   }[]
+  /** The AI's checked words (0017): blanks, never a figure. */
+  ai_notes: Row[]
+  /** Causes the owner dismissed on the Coach (0017). */
+  insight_dismissals: { readonly user_id?: string; readonly insight_key: string }[]
+  /** The check-in's answers (0017). */
+  coach_answers: Row[]
 }
 
 export interface RpcCall {
@@ -180,6 +188,9 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     debts: [],
     debt_extra_payments: [],
     ai_settings: [],
+    ai_notes: [],
+    insight_dismissals: [],
+    coach_answers: [],
     ...seed,
   }
   const rpcCalls: RpcCall[] = []

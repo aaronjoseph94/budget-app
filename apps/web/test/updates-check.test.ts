@@ -9,7 +9,7 @@ describe('checking the one-time updates', () => {
   it('finds each one in when everything it adds answers', async () => {
     const fake = createFakeSupabase()
     const checked = await checkUpdates(fake.client)
-    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', 'ai-f'])
+    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', 'ai-f'])
     expect(missing(checked)).toEqual([])
     expect(nextStep(checked)).toEqual({ kind: 'done' })
   })
@@ -57,6 +57,16 @@ describe('checking the one-time updates', () => {
     const checked = await checkUpdates(fake.client)
     expect(missing(checked)).toEqual([['0016', 'missing'], ['ai-f', 'missing']])
     expect(nextStep(checked)).toEqual({ kind: 'paste', file: '0016_ai_foundation.sql', fromStart: false })
+  })
+
+  // A12's update adds three tables; any one missing means it is not in.
+  it('reads PGRST205 on the Coach’s notes as 0017 not in yet, before the AI helper', async () => {
+    const fake = createFakeSupabase()
+    fake.fail('coach_answers', 'PGRST205')
+    fake.functions.ai = null
+    const checked = await checkUpdates(fake.client)
+    expect(missing(checked)).toEqual([['0017', 'missing'], ['ai-f', 'missing']])
+    expect(nextStep(checked)).toEqual({ kind: 'paste', file: '0017_coach_memory.sql', fromStart: false })
   })
 
   it('reads Supabase’s 404 for the AI helper as not installed, and any other failure as could not check', async () => {

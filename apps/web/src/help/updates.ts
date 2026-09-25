@@ -37,7 +37,7 @@ export interface Update {
 
 const NIL = '00000000-0000-0000-0000-000000000000'
 
-/** 0005 to 0016 and the AI helper, each with what it adds; 0017 on join as their slices land. */
+/** 0005 to 0017 and the AI helper, each with what it adds; 0018 joins with its slice. */
 export const UPDATES: readonly Update[] = [
   { file: '0005_category_kinds.sql', adds: 'Which list each category is on', checks: [{ kind: 'column', table: 'categories', column: 'kind' }] },
   {
@@ -74,6 +74,15 @@ export const UPDATES: readonly Update[] = [
     file: '0016_ai_foundation.sql',
     adds: 'Where AI keeps your settings, your keys and today’s use',
     checks: [{ kind: 'function', name: 'ai_key_status', args: {} }],
+  },
+  {
+    file: '0017_coach_memory.sql',
+    adds: 'Where the Coach keeps the AI’s words, what you dismissed and your check-in answers',
+    checks: [
+      { kind: 'table', table: 'ai_notes' },
+      { kind: 'table', table: 'insight_dismissals' },
+      { kind: 'table', table: 'coach_answers' },
+    ],
   },
   { file: HELPER_FILE, adds: 'The AI helper, which every AI feature goes through', checks: [{ kind: 'helper' }] },
 ]
