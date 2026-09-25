@@ -12,8 +12,8 @@
 import type { Fact } from '@budget/core'
 import { type CardTemplateKey, cardTemplateKey } from './templates.js'
 
-/** The card's one action: bring in a statement, open Review, or see the month. */
-export type CardAction = 'import' | 'review' | 'see_month'
+/** The card's one action: bring in a statement, open Review, see the month, or see the goals. */
+export type CardAction = 'import' | 'review' | 'see_month' | 'goals'
 
 export interface Card {
   readonly fact: Fact
@@ -76,5 +76,15 @@ function sharesCategory(fact: Fact, picked: readonly { readonly fact: Fact }[]):
 }
 
 function actionFor(fact: Fact): CardAction {
-  return fact.kind === 'stale_data' ? 'import' : fact.kind === 'rows_waiting' ? 'review' : 'see_month'
+  switch (fact.kind) {
+    case 'stale_data':
+      return 'import'
+    case 'rows_waiting':
+      return 'review'
+    case 'saved_more':
+    case 'goal_milestone':
+      return 'goals'
+    default:
+      return 'see_month'
+  }
 }

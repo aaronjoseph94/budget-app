@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { factsDigest } from '@budget/core'
 import { rankCards } from '../src/index.js'
-import { EVERY_KIND, FACTS, factOf } from './fixtures.js'
+import { EVERY_KIND, FACTS, WIN_FACTS, factOf } from './fixtures.js'
 
 const none = new Set<string>()
 const keys = (facts = FACTS, dismissed: ReadonlySet<string> = none) => rankCards({ facts, dismissed }).cards.map((c) => c.fact.key)
@@ -61,6 +61,20 @@ describe('rankCards', () => {
       ['change_up', 'see_month'],
     ])
     expect(rankCards({ facts: fresh, dismissed: none }).cards.map((c) => c.template)).toEqual(['change_up', 'change_down', 'budget_pace'])
+  })
+
+  it('cheers a milestone near the top, and sends both wins to the goals', () => {
+    // A milestone is worth one step of its goal, 5 hours at $275.00, solid (F34): it outranks Dining out.
+    const withWins = [...fresh, ...WIN_FACTS.filter((f) => f.notable)]
+    const cards = rankCards({ facts: withWins, dismissed: none }).cards
+    expect(cards.map((c) => [c.fact.key, c.template, c.action])).toEqual([
+      ['goal:g1:milestone', 'goal_milestone', 'goals'],
+      ['cat:dining:change', 'change_up', 'see_month'],
+      ['cat:groceries:change', 'change_down', 'see_month'],
+    ])
+    expect(rankCards({ facts: [factOf('summary:saved')], dismissed: none }).cards.map((c) => [c.template, c.action])).toEqual([
+      ['saved_more', 'goals'],
+    ])
   })
 
   it('ranks by impact whatever order the facts come in', () => {

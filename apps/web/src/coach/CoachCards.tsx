@@ -64,6 +64,7 @@ const ACTION: Readonly<Record<CardAction, { readonly label: string; readonly go:
   import: { label: 'Import a statement', go: () => navigate('add') },
   review: { label: 'Open Review', go: () => navigate('review') },
   see_month: { label: 'See the Month', go: () => navigate('month') },
+  goals: { label: 'See your goals', go: () => navigate('savings') },
 }
 
 function InsightCard({ card }: { card: CoachCard }) {

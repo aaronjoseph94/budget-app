@@ -10,7 +10,7 @@ import {
   slotsOf,
   type CardTemplateKey,
 } from '../src/index.js'
-import { FACTS, factOf } from './fixtures.js'
+import { FACTS, WIN_FACTS, factOf } from './fixtures.js'
 
 /**
  * ADR 0005 §4's rules 1 to 7, checked here by the test itself until
@@ -51,6 +51,8 @@ const SAMPLE: Readonly<Record<CardTemplateKey, string>> = {
   over_budget: 'cat:fuel:over_budget',
   near_budget: 'cat:fun:near_budget',
   budget_pace: 'cat:fun:pace',
+  saved_more: 'summary:saved',
+  goal_milestone: 'goal:g1:milestone',
 }
 
 const CARDS = { ...WATCH_TEMPLATES, ...PLAIN_TEMPLATES }
@@ -104,9 +106,9 @@ describe('the app’s own templates', () => {
   })
 
   it('have a card template for every kind but the summaries, which are the day’s line', () => {
-    const kinds = new Set(FACTS.map((f) => f.kind))
-    expect(kinds.size).toBe(8)
-    for (const fact of FACTS) {
+    const kinds = new Set([...FACTS, ...WIN_FACTS].map((f) => f.kind))
+    expect(kinds.size).toBe(10)
+    for (const fact of [...FACTS, ...WIN_FACTS]) {
       const summary = fact.kind === 'month_so_far' || fact.kind === 'week_so_far'
       expect(cardTemplateKey(fact) === null, fact.key).toBe(summary)
     }

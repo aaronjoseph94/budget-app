@@ -40,8 +40,30 @@ export const EVERY_KIND: FactsDigestInput = {
 
 export const FACTS: readonly Fact[] = factsDigest(EVERY_KIND).facts
 
+const moveIn = (postedOn: string, cents: number) => ({ postedOn: d(postedOn), amountCents: -cents, categoryId: 'fund' })
+
+/**
+ * The two wins (F33, F34), on the same day, records from August: $100.00
+ * moved into the flight fund by 24 August and $400.00 by 24 September, $300.00
+ * of it since last week began, so Flight training passed 45 hours.
+ */
+export const WINS: FactsDigestInput = {
+  ...EVERY_KIND,
+  historyStart: d('2026-08-01'),
+  categories: [{ id: 'fund', name: 'Flight fund', kind: 'savings', sortOrder: 0 }],
+  budgetHistory: [],
+  entries: [moveIn('2026-08-12', 10_000), moveIn('2026-09-02', 10_000), moveIn('2026-09-15', 15_000), moveIn('2026-09-16', 15_000)],
+  latestStatementEnd: null,
+  pendingCount: 0,
+  goals: [
+    { id: 'g1', name: 'Flight training', targetCents: 3_000_000, savedCents: 1_265_000, unitCostCents: 27_500, fundCategoryId: 'fund', typedOn: d('2026-09-01') },
+  ],
+}
+
+export const WIN_FACTS: readonly Fact[] = factsDigest(WINS).facts
+
 export function factOf(key: string): Fact {
-  const fact = FACTS.find((f) => f.key === key)
+  const fact = [...FACTS, ...WIN_FACTS].find((f) => f.key === key)
   if (fact === undefined) throw new Error(`The fixture has no fact ${key}`)
   return fact
 }

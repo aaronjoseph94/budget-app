@@ -25,7 +25,7 @@ export interface WatchTemplate extends Template {
   readonly tryThis: string
 }
 
-export type CardTemplateKey = 'stale_data' | 'rows_waiting' | 'change_down' | WatchKey
+export type CardTemplateKey = 'stale_data' | 'rows_waiting' | 'change_down' | 'saved_more' | 'goal_milestone' | WatchKey
 export type WatchKey = 'change_up' | 'over_budget' | 'near_budget' | 'budget_pace'
 
 type Tones<T> = Readonly<Record<Tone, T>>
@@ -112,6 +112,27 @@ export const PLAIN_TEMPLATES: Readonly<Record<Exclude<CardTemplateKey, WatchKey>
       body: '{{A.name}}: {{A.change}} than by this day in {{A.before_month}}.',
     },
   },
+  saved_more: {
+    cheerleader: {
+      title: 'You saved more this month',
+      body: 'You’ve put {{A.change}} into savings than by this day in {{A.before_month}}. Keep it up!',
+    },
+    straight: {
+      title: 'Saved more than last month',
+      body: 'Savings: {{A.change}} than by this day in {{A.before_month}}.',
+    },
+  },
+  // The milestone is hours of the goal's unit, or a share of its target.
+  goal_milestone: {
+    cheerleader: {
+      title: 'Milestone: {{A.name}}',
+      body: 'You’ve now saved {{A.milestone}} toward it. Every step counts, so keep going!',
+    },
+    straight: {
+      title: 'Milestone passed: {{A.name}}',
+      body: '{{A.milestone}} saved toward it, and counting.',
+    },
+  },
 }
 
 /** The day's line, from this month's summary or, without one, this week's. */
@@ -155,11 +176,11 @@ export function cardTemplateKey(fact: Fact): CardTemplateKey | null {
       return fact.kind
     case 'category_change':
       return fact.direction === 'up' ? 'change_up' : 'change_down'
-    case 'month_so_far':
-    case 'week_so_far':
-    // Worded as cards once their templates are written, in the next change.
     case 'saved_more':
     case 'goal_milestone':
+      return fact.kind
+    case 'month_so_far':
+    case 'week_so_far':
       return null
   }
 }
