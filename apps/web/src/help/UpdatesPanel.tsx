@@ -105,7 +105,7 @@ export function UpdatesPanel() {
               rel="noopener noreferrer"
               className="inline-flex min-h-11 items-center font-medium underline underline-offset-4"
             >
-              Open {next.file} on GitHub
+              Open {next.file === HELPER_FILE ? 'the AI helper' : next.file} on GitHub
             </a>
           ) : null}
         </div>

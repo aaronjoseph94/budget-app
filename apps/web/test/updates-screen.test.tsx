@@ -82,7 +82,7 @@ describe('One-time updates', () => {
     expect(row('ai-function.ts')).toBe('✗Not in yet: ai-function.tsThe AI helper, which every AI feature goes through')
     expect(screen.getByText('Next: install the AI helper. About 5 minutes, easiest on a computer.')).toBeTruthy()
     expect(screen.getByText('Name it exactly ai.')).toBeTruthy()
-    const link = screen.getByRole('link', { name: 'Open ai-function.ts on GitHub' })
+    const link = screen.getByRole('link', { name: 'Open the AI helper on GitHub' })
     expect(link.getAttribute('href')).toBe('https://github.com/aaronjoseph94/budget-app/blob/main/supabase/functions/ai/index.ts')
   })
 
