@@ -933,7 +933,7 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
   - **Tabs:** the tab row holds Overview alone, and remembering the last tab waits for a second tab (A16).
   - **Save as PDF** is the browser's print with the bars, the month arrows, the tabs and the button left off; the month's name, every card and every figure stay on the page. **Download CSV** stays A19's.
   - **Help:** "Reports and trends" is written.
-  - **Tests:** as planned, plus `month-report.test.ts`, `report-reply.test.ts`, `report.test.ts` and `report-words.test.ts` (savings-coach), `ai-report.test.ts`, `reports-read.test.tsx` and `reports-review.test.tsx`. Commits: 17 rather than about 4, each within 300 lines.
+  - **Tests:** as planned, except that the "with AI off" and "a report reply with a digit is dropped" cases are in `reports-review.test.tsx` beside the review's other screen tests, while `reports-overview.test.tsx` holds the figure cards, the fail-soft line and Save as PDF. Added: `month-report.test.ts`, `report-reply.test.ts`, `report.test.ts` and `report-words.test.ts` (savings-coach), `ai-report.test.ts`, `reports-read.test.tsx` and `reports-review.test.tsx`. Commits: 17 rather than about 4, each within 300 lines, and two from review.
   - **First load:** 187.80 KB gzipped before the slice, 187.95 KB after (the Reports tab on the wide bar, its address and the bars' print class); Reports is its own chunk.
   - **Seen in the preview harness** (copied from `preview-a14`) at 320, 390 and 1280 px, light and dark, with no sideways scroll and no console errors: August with the AI's words and with the app's own, and September so far. The month's name was kept on the printed page from it.
 
