@@ -43,3 +43,18 @@ export {
   type ReceiptOutcome,
   type ReceiptReading,
 } from './receipt.js'
+
+export {
+  AI_CODES,
+  AiProviderSchema,
+  type AiAction,
+  type AiCode,
+  type AiFailureReply,
+  type AiKeySource,
+  type AiKeyStatus,
+  type AiPingReply,
+  type AiProvider,
+  type AiRequest,
+  type AiServiceStatus,
+  type AiStatusReply,
+} from './ai.js'
