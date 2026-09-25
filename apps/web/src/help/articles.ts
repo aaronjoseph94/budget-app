@@ -262,6 +262,22 @@ export const ARTICLES: readonly Article[] = [
     related: ['coach', 'budgets', 'updates'],
   },
   {
+    id: 'month-end',
+    title: 'Two month-end figures',
+    summary:
+      'The Month shows two figures for where the month ends. End of month is your workbook’s: what has happened so far and your planned bills. Forecast adds what is still to come.',
+    steps: [
+      'On the **Month**, read **End of month**: your start, plus what came in, less what you spent with your planned bills counted, less what you saved.',
+      'Read the line under it marked **Forecast**: it adds your pay still due, your spending at your usual pace, and the savings you still plan to move.',
+      'Press **ⓘ** beside it for the difference in one line.',
+      'Press **Forecast** to open the whole forecast.',
+    ],
+    done: 'you know which figure counts only what has happened, and which one looks ahead.',
+    stuck:
+      'Both need this month’s starting balance, typed under **Start**; without it neither is shown. End of month stays as your workbook works it out, so it never moves because of a guess. The forecast shows only on this month, since it speaks of today.',
+    related: ['forecast', 'periods', 'wrong-number'],
+  },
+  {
     id: 'comparisons',
     title: 'Comparisons with last month',
     summary:

@@ -30,9 +30,9 @@ export interface ForecastFigures {
   readonly line: ScaledSeries | null
 }
 
-/** Throws where the engine refuses a row, for the screen to say so. */
-export function forecastFigures(read: DigestRows, rows: Extract<ForecastRows, { status: 'ready' }>, categories: readonly Category[]): ForecastFigures {
-  const input: MonthForecastInput = {
+/** The rows the Coach's year read gave, renamed for core's forecast. */
+export function forecastInput(read: DigestRows, rows: Extract<ForecastRows, { status: 'ready' }>, categories: readonly Category[]): MonthForecastInput {
+  return {
     asOf: isoDate(read.asOf),
     historyStart: historyOf(read),
     readFrom: isoDate(read.readFrom),
@@ -42,6 +42,11 @@ export function forecastFigures(read: DigestRows, rows: Extract<ForecastRows, { 
     entries: entriesForCore(read.rows),
     ...forecastOf(rows),
   }
+}
+
+/** Throws where the engine refuses a row, for the screen to say so. */
+export function forecastFigures(read: DigestRows, rows: Extract<ForecastRows, { status: 'ready' }>, categories: readonly Category[]): ForecastFigures {
+  const input = forecastInput(read, rows, categories)
   const monthEnd = monthEndForecast(input)
   const flow = cashFlow30(input)
   const { end } = monthEnd

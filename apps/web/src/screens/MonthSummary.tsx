@@ -33,6 +33,7 @@ export function MonthSummary({
   sheet,
   month,
   comparison,
+  forecast = null,
   onUnsaved,
 }: {
   sheet: PeriodSheet
@@ -40,6 +41,8 @@ export function MonthSummary({
   month: string
   /** Null while it loads; 'failed' when last month could not be read. */
   comparison: PeriodComparison | 'failed' | null
+  /** The labelled forecast line, loaded apart (D27); null where none is shown. */
+  forecast?: ReactNode
   onUnsaved: (message: string | null) => void
 }) {
   const { startingBalanceCents: start, spentCents, leftToSpendCents: left, endingBalanceCents: end } = sheet.summary
@@ -91,6 +94,7 @@ export function MonthSummary({
           {end === null ? <Waiting>Shown once Start is typed</Waiting> : <Figure>{formatCents(end)}</Figure>}
         </Entry>
       </dl>
+      {forecast}
       <LastMonth comparison={comparison} />
       {editing ? (
         <StartEditor

@@ -53,8 +53,9 @@ import { MonthSummary } from './MonthSummary.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { ErrorBoundary } from '../components/ErrorBoundary.js'
 
-// The coach line is its own chunk, fetched once the Month has drawn (D27).
+// The coach line and the forecast line are their own chunks, fetched once the Month has drawn (D27).
 const MonthCoachLine = lazy(() => import('./MonthCoachLine.js'))
+const MonthForecastLine = lazy(() => import('./MonthForecastLine.js'))
 
 /**
  * One of the workbook's month tabs (plan §6.2, §6.3). `month` is the address's `YYYY-MM`,
@@ -305,7 +306,22 @@ export function MonthScreen({ month }: { month: string | null }) {
             three columns of amounts, and two columns hold them. The page is
             in phone order, which is the order a screen reader follows. */}
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <MonthSummary sheet={sheet} month={start} comparison={comparison} onUnsaved={setStartUnsaved} />
+            <MonthSummary
+              sheet={sheet}
+              month={start}
+              comparison={comparison}
+              // This month only, and only with a start typed: no balance without one (D17).
+              forecast={
+                coachRead === null || sheet.summary.startingBalanceCents === null ? null : (
+                  <ErrorBoundary key={start}>
+                    <Suspense fallback={null}>
+                      <MonthForecastLine />
+                    </Suspense>
+                  </ErrorBoundary>
+                )
+              }
+              onUnsaved={setStartUnsaved}
+            />
             {vsLabel === null ? null : <ThirdSwitch third={third} vsLabel={vsLabel} onChange={chooseThird} />}
             <PeriodBlocks blocks={sheet.blocks} {...blockProps} />
             <MonthCharts sheet={sheet} className="order-7 md:col-span-2 xl:order-1 xl:col-span-1" />
