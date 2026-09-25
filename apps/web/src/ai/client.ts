@@ -12,7 +12,7 @@
  * CLAUDE.md keeps to its four boundaries. Nothing from a reply is ever
  * drawn as markup.
  */
-import { AI_CODES, type AiCode, type AiRequest, type AiStatusReply } from '@budget/schema'
+import { AI_CODES, AiProviderSchema, type AiCode, type AiRequest, type AiServiceStatus, type AiStatusReply } from '@budget/schema'
 import type { HelpTopic } from '../help/topics.js'
 import type { SupabaseClient } from '../supabase.js'
 
@@ -38,6 +38,14 @@ export interface AiView {
   readonly help: HelpTopic | null
   /** What the helper said is set up, when it could say. */
   readonly status: AiStatusReply | null
+}
+
+const NAMES: Readonly<Record<AiServiceStatus['provider'], string>> = {
+  gemini: 'free Google Gemini',
+  groq: 'free Groq',
+  openrouter: 'free OpenRouter',
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
 }
 
 const SAID: Readonly<Record<Exclude<AiState, 'on'>, { readonly sentence: string; readonly help: HelpTopic | null }>> = {
@@ -94,4 +102,68 @@ export async function askAi(supabase: SupabaseClient, request: AiRequest): Promi
   const body: unknown = await reply.json().catch(() => null)
   const code = typeof body === 'object' && body !== null && 'code' in body ? body.code : null
   return { ok: false, view: viewOf(isCode(code) ? STATE_OF[code] : 'helper_error') }
+}
+
+const TIERS: readonly unknown[] = ['free', 'paid']
+const SOURCES: readonly unknown[] = ['saved', 'secret', 'none']
+const KEY_STATUSES: readonly unknown[] = ['ok', 'busy', 'rejected', 'locked', null]
+
+function serviceOf(v: unknown): AiServiceStatus | null {
+  if (typeof v !== 'object' || v === null) return null
+  const s = v as Record<string, unknown>
+  const provider = AiProviderSchema.safeParse(s['provider'])
+  const hint = s['hint']
+  if (!provider.success || !TIERS.includes(s['tier']) || !SOURCES.includes(s['source']) || !KEY_STATUSES.includes(s['status'])) return null
+  if (typeof s['model'] !== 'string' || (hint !== null && typeof hint !== 'string')) return null
+  return {
+    provider: provider.data,
+    tier: s['tier'] as AiServiceStatus['tier'],
+    source: s['source'] as AiServiceStatus['source'],
+    hint,
+    status: s['status'] as AiServiceStatus['status'],
+    model: s['model'],
+  }
+}
+
+/** A status reply as the helper writes it, or null when it is not one. */
+export function statusOf(data: unknown): AiStatusReply | null {
+  if (typeof data !== 'object' || data === null) return null
+  const d = data as Record<string, unknown>
+  const today = d['today'] as Record<string, unknown> | null | undefined
+  const services = Array.isArray(d['services']) ? d['services'].map(serviceOf) : []
+  if (d['ok'] !== true || typeof d['version'] !== 'string' || services.length === 0 || services.includes(null)) return null
+  if (typeof today?.['used'] !== 'number' || typeof today['cap'] !== 'number') return null
+  return {
+    ok: true,
+    version: d['version'],
+    enabled: d['enabled'] === true,
+    allowPaid: d['allowPaid'] === true,
+    services: services.filter((s): s is AiServiceStatus => s !== null),
+    today: { used: today['used'], cap: today['cap'] },
+  }
+}
+
+/**
+ * What AI settings says at the top: whether AI is on, and with what. The
+ * first service in the helper's list with a key that has not failed its
+ * test is the one named; a paid one counts only with paid services on.
+ */
+export async function aiStatus(supabase: SupabaseClient): Promise<AiView> {
+  const answer = await askAi(supabase, { action: 'status' })
+  if (!answer.ok) return answer.view
+  const status = statusOf(answer.data)
+  if (status === null) return viewOf('helper_error')
+  if (!status.enabled) return viewOf('off', status)
+  const usable = status.services.filter(
+    (s) => s.source !== 'none' && (s.tier === 'free' || status.allowPaid) && s.status !== 'rejected' && s.status !== 'locked',
+  )
+  const first = usable[0]
+  if (first === undefined) {
+    const locked = status.services.some((s) => s.status === 'locked')
+    const rejected = status.services.some((s) => s.status === 'rejected')
+    return viewOf(locked ? 'keys_locked' : rejected ? 'key_rejected' : 'not_set_up', status)
+  }
+  if (status.today.used >= status.today.cap) return viewOf('limit_reached', status)
+  const using = first.source === 'secret' ? 'your receipts key' : NAMES[first.provider]
+  return { state: 'on', sentence: `AI is on, using ${using}.`, help: null, status }
 }
