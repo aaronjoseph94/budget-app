@@ -151,6 +151,9 @@ export {
   type PaySource,
 } from './expected-pay.js'
 
+export type { MonthForecastInput } from './month-position.js'
+export { safeToSpend, type SafeToSpend } from './safe-to-spend.js'
+
 export {
   PAYDAYS_A_YEAR,
   payPeriod,
