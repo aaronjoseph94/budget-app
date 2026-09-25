@@ -295,6 +295,40 @@ describe('when each goal is reached at your pace (A08, F33)', () => {
 
     expect(await screen.findByText(para('To reach it by 23 Sep 2028: $166.15 a week.'))).toBeTruthy()
   })
+
+  it('says in one line, pointing to Help, when the funds need a one-time update, and keeps the rest', async () => {
+    // Before 0013 the funds read meets 42703; the goal still shows at the amount typed.
+    const fake = paced()
+    fake.server.lacks = { savings_goals: ['category_id', 'start_date', 'balance_as_of'] }
+    go('/coach')
+    renderScreen(<Shell />, fake)
+
+    const link = await screen.findByRole('link', { name: 'See One-time updates' })
+    expect(link.getAttribute('href')).toBe('#/help/updates')
+    expect(screen.getByText(para('When you will get there needs a one-time update. See One-time updates'))).toBeTruthy()
+    expect(screen.getByText(para('$12,650.00 saved of $30,000.00'))).toBeTruthy()
+    expect(screen.queryByText(/on no fund|Make it a fund/i)).toBeNull()
+    expect(await screen.findByRole('region', { name: 'Insights' })).toBeTruthy()
+  })
+
+  it('still gives the date when the goals’ order needs its one-time update (0015)', async () => {
+    const fake = paced()
+    fake.server.lacks = { savings_goals: ['sort_order', 'status', 'reached_on'] }
+    go('/coach')
+    renderScreen(<Shell />, fake)
+
+    expect(await screen.findByText('At your pace: Aug 2029 – Jul 2031')).toBeTruthy()
+  })
+
+  it('says the date did not load when the funds read fails for another reason', async () => {
+    // Only the funds read, which alone asks for a goal's fund; the shared goals read still works.
+    const fake = paced()
+    fake.server.refuse = (table, query) => (table === 'savings_goals' && (query.get('select') ?? '').includes('category_id') ? '57014' : null)
+    go('/coach')
+    renderScreen(<Shell />, fake)
+
+    expect(await screen.findByText('When you will get there did not load. Reload to try again.')).toBeTruthy()
+  })
 })
 
 describe('what to trim on the Coach (A08, F34)', () => {

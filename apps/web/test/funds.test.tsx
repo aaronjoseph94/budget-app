@@ -83,7 +83,19 @@ describe('useFunds', () => {
     fake.fail('transactions', '42501')
     const { result } = renderFunds(fake)
     await waitFor(() => expect(result.current.status).toBe('failed'))
-    expect(result.current).toEqual({ status: 'failed', message: 'Your savings funds could not be read, so they are not shown. Try again. (code 42501)' })
+    expect(result.current).toEqual({
+      status: 'failed',
+      message: 'Your savings funds could not be read, so they are not shown. Try again. (code 42501)',
+      missingUpdate: false,
+    })
+  })
+
+  it('says when the read met a one-time update not yet pasted, so a screen can point to Help', async () => {
+    const fake = seeded()
+    fake.server.lacks = { savings_goals: ['category_id', 'start_date', 'balance_as_of'] }
+    const { result } = renderFunds(fake)
+    await waitFor(() => expect(result.current.status).toBe('failed'))
+    expect(result.current).toMatchObject({ missingUpdate: true, message: expect.stringMatching(/\(code 42703\)$/) })
   })
 
   it('says so when a goal on a fund has no typed day, which 0013 refuses', async () => {

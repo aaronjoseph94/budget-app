@@ -9,19 +9,20 @@
 import { useEffect, useMemo, useState } from 'react'
 import { isoDate, savingsFunds, type SavingsFunds } from '@budget/core'
 import { useAppData } from './app-data.js'
-import { listFundTransfers, listFunds, type FundRow, type LedgerRow } from './ledger.js'
+import { listFundTransfers, listFunds, needsOneTimeUpdate, type FundRow, type LedgerRow } from './ledger.js'
 import { categoriesForCore } from './sheet-input.js'
 import { todayIso } from './format.js'
 
 export type FundsState =
   | { readonly status: 'loading' }
-  | { readonly status: 'failed'; readonly message: string }
+  /** `missingUpdate` when the read met a one-time update not yet pasted (0013). */
+  | { readonly status: 'failed'; readonly message: string; readonly missingUpdate: boolean }
   | { readonly status: 'ready'; readonly asOf: string; readonly goals: readonly FundRow[]; readonly funds: SavingsFunds }
 
 export function useFunds(): FundsState {
   const { supabase, categories, version } = useAppData()
   const [loaded, setLoaded] = useState<{ asOf: string; goals: readonly FundRow[]; rows: readonly LedgerRow[] } | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<{ readonly message: string; readonly missingUpdate: boolean } | null>(null)
 
   useEffect(() => {
     // Nothing is read before the first load brings the categories (N35).
@@ -40,14 +41,17 @@ export function useFunds(): FundsState {
           from === undefined ? [] : await listFundTransfers(supabase, linked.map((l) => l.fund), { from, to: asOf })
         if (live) setLoaded({ asOf, goals, rows })
       })
-      .catch((e: unknown) => live && setError(e instanceof Error ? e.message : 'Could not load your savings funds.'))
+      .catch(
+        (e: unknown) =>
+          live && setError({ message: e instanceof Error ? e.message : 'Could not load your savings funds.', missingUpdate: needsOneTimeUpdate(e) }),
+      )
     return () => {
       live = false
     }
   }, [supabase, version])
 
   return useMemo((): FundsState => {
-    if (error !== null) return { status: 'failed', message: error }
+    if (error !== null) return { status: 'failed', ...error }
     if (loaded === null) return { status: 'loading' }
     try {
       const funds = savingsFunds({
@@ -66,7 +70,11 @@ export function useFunds(): FundsState {
       })
       return { status: 'ready', asOf: loaded.asOf, goals: loaded.goals, funds }
     } catch {
-      return { status: 'failed', message: 'A savings goal could not be read as the app expects, so your funds are not shown. Reload to try again.' }
+      return {
+        status: 'failed',
+        message: 'A savings goal could not be read as the app expects, so your funds are not shown. Reload to try again.',
+        missingUpdate: false,
+      }
     }
   }, [loaded, error, categories])
 }

@@ -116,7 +116,7 @@ function GoalsCard({ funds, outlooks }: { funds: FundsState; outlooks: Outlooks 
             </p>
           </div>
         </div>
-        <MainOutlook outlooks={outlooks} goal={mainGoal} />
+        <MainOutlook outlooks={outlooks} funds={funds} goal={mainGoal} />
         {others.length === 0 ? null : (
           <div className="border-t pt-3">
             <h3 className="text-sm font-medium">Your other goals</h3>
@@ -134,7 +134,7 @@ function GoalsCard({ funds, outlooks }: { funds: FundsState; outlooks: Outlooks 
                       </span>
                     </p>
                     <Progress basisPoints={f.progressBp} />
-                    {outlooks.status === 'ready' && outlooks.byGoal.has(f.id) ? (
+                    {funds.status !== 'failed' && outlooks.status === 'ready' && outlooks.byGoal.has(f.id) ? (
                       <p className="text-xs text-muted-foreground">{paceShort(outlooks.byGoal.get(f.id)!.forecast)}</p>
                     ) : null}
                   </li>
@@ -157,8 +157,21 @@ function GoalsCard({ funds, outlooks }: { funds: FundsState; outlooks: Outlooks 
  * opens Savings, where every goal's lever is, until Forecast's what-ifs
  * arrive (plan A14).
  */
-function MainOutlook({ outlooks, goal }: { outlooks: Outlooks; goal: ListedGoalRow }) {
+function MainOutlook({ outlooks, funds, goal }: { outlooks: Outlooks; funds: FundsState; goal: ListedGoalRow }) {
   const { categories } = useAppData()
+  // Without the funds, what moved into the goal is unknown: say why, never "on no fund".
+  if (funds.status === 'failed') {
+    return funds.missingUpdate ? (
+      <p className="text-sm">
+        When you will get there needs a one-time update.{' '}
+        <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+          See One-time updates
+        </a>
+      </p>
+    ) : (
+      <p className="text-sm text-muted-foreground">When you will get there did not load. Reload to try again.</p>
+    )
+  }
   if (outlooks.status === 'loading') return <p className="text-sm text-muted-foreground">Working out when you will get there…</p>
   if (outlooks.status === 'failed') {
     return <p className="text-sm text-muted-foreground">When you will get there did not load. Reload to try again.</p>

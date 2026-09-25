@@ -645,6 +645,27 @@ export interface LedgerRow {
  */
 const PAGE = 1000
 
+/**
+ * A read the database refused, with its code, so a screen can tell a
+ * one-time update not yet pasted from a lost connection. Its message is the
+ * sentence the read's own describer wrote.
+ */
+export class ReadRefused extends Error {
+  readonly code: string
+  constructor(message: string, code: string) {
+    super(message)
+    this.name = 'ReadRefused'
+    this.code = code
+  }
+}
+
+/** A table, column or function a one-time update adds, not there yet (Help → One-time updates). */
+const NOT_YET_PASTED: ReadonlySet<string> = new Set(['PGRST205', '42P01', '42703', 'PGRST204', 'PGRST202', '42883'])
+
+export function needsOneTimeUpdate(cause: unknown): boolean {
+  return cause instanceof ReadRefused && NOT_YET_PASTED.has(cause.code)
+}
+
 /** One page of a read, as supabase-js answers it. */
 interface Page {
   readonly data: readonly unknown[] | null
@@ -675,7 +696,7 @@ export async function readAll<T extends { readonly id: string }>(
   let expected: number | null = null
   do {
     const { data, error, count } = await page(rows.length, rows.length + PAGE - 1)
-    if (error !== null) throw new Error(failure.describe(error))
+    if (error !== null) throw new ReadRefused(failure.describe(error), typeof error.code === 'string' ? error.code : '')
     const got = (data ?? []) as T[]
     if (count === null || (expected !== null && count !== expected)) throw new Error(failure.changed)
     expected = count
