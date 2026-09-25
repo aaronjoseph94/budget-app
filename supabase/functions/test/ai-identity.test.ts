@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { VERSION, handle } from '../ai/index.js'
 
 /**
@@ -60,6 +61,12 @@ describe('the AI helper refuses before asking anyone', () => {
     expect([...get.calls, ...foreign.calls]).toHaveLength(0)
   })
 
+  it('takes an extra https origin from EXTRA_ORIGINS and ignores one that is not', async () => {
+    const env = { ...ENV, EXTRA_ORIGINS: ' https://budget.example.com , http://plain.example' }
+    expect((await run(request({ origin: 'https://budget.example.com' }), env)).res.status).toBe(200)
+    expect((await run(request({ origin: 'http://plain.example' }), env)).res.status).toBe(403)
+  })
+
   it('refuses a request with no bearer token with 401', async () => {
     for (const auth of [null, 'Basic abc', 'Bearer ', 'caller-token']) {
       const { res, body, calls } = await run(request({ auth }))
@@ -104,5 +111,33 @@ describe('the AI helper learns who is calling from the auth server', () => {
     const bad = await run(request(), { ...ENV, SUPABASE_URL: 'https://evil.example/path' })
     for (const r of [down, broken, unset, bad]) expect([r.res.status, r.body.code]).toEqual([503, 'helper_error'])
     expect([...unset.calls, ...bad.calls]).toHaveLength(0)
+  })
+})
+
+describe('the AI helper logs codes and counts only', () => {
+  let lines: string[] = []
+  beforeEach(() => {
+    lines = []
+    vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => void lines.push(args.map(String).join(' ')))
+  })
+  afterEach(() => vi.restoreAllMocks())
+
+  it('never logs the caller’s token or the public key, on any path', async () => {
+    await run(request(), ENV, () => new Response('{}', { status: 500 }))
+    await run(request(), ENV, () => Promise.reject(new Error('offline')))
+    await run(request(), { SUPABASE_URL: PROJECT })
+    expect(lines.length).toBeGreaterThan(0)
+    for (const line of lines) {
+      expect(line).not.toMatch(/SECRETTOKEN|anon-key/)
+      expect(Object.keys(JSON.parse(line) as object).sort()).toEqual(expect.arrayContaining(['code', 'fn']))
+    }
+  })
+})
+
+describe('the AI helper can be pasted as one file', () => {
+  it('imports zod by its pinned URL and nothing else, relative paths included', () => {
+    const source = readFileSync(new URL('../ai/index.ts', import.meta.url), 'utf8')
+    const specifiers = [...source.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*)['"]([^'"]+)['"]/g)].map((m) => m[1])
+    expect(specifiers).toEqual(['npm:zod@4.6.5'])
   })
 })
