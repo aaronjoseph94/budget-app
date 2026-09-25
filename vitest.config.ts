@@ -15,7 +15,20 @@ export default defineConfig({
       // environment, where reaching for `window` by accident is an error.
       // vitest empties every stylesheet a test imports, `?raw` included; the
       // contrast test reads the colour tokens out of this one.
-      { test: { name: 'app', root: './apps/web', include: ['test/**/*.test.ts'], environment: 'node', css: { include: [/index\.css/] } } },
+      // Transformed as the DOM tests are (web, not ssr): a source file both
+      // projects load was otherwise compiled two ways, and coverage kept one
+      // file map or the other depending on which process reported first, so
+      // format.ts's branches read 153 on one run and 112 on the next.
+      {
+        test: {
+          name: 'app',
+          root: './apps/web',
+          include: ['test/**/*.test.ts'],
+          environment: 'node',
+          testTransformMode: { web: ['**/!(setup-files).test.ts'] },
+          css: { include: [/index\.css/] },
+        },
+      },
       { test: { name: 'app-dom', root: './apps/web', include: ['test/**/*.test.tsx'], environment: 'jsdom' } },
       // The Edge Functions import zod by Deno's pinned URL so each can be
       // pasted alone; here that name is the package's own zod, as in its
