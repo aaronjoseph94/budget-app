@@ -21,7 +21,8 @@ import { type Evidence, completeMonths } from './history.js'
 import { impactScore } from './impact.js'
 import { changeSize, notableBand, usualMonth } from './notable.js'
 import { budgetStanding, categoryPace } from './pace.js'
-import { type PeriodCategory, type PeriodEntry, monthSheet, periodSheet } from './period-sheet.js'
+import { monthActuals } from './month-actuals.js'
+import { type PeriodCategory, type PeriodEntry, monthSheet } from './period-sheet.js'
 import type { PlanHistoryRow } from './plans.js'
 import { monthBounds, weekBounds } from './week.js'
 
@@ -210,20 +211,8 @@ function categoryChanges(input: FactsDigestInput, months: readonly IsoDate[]): F
   const { start, d, D } = dayOf(input.asOf)
   const compared = periodComparison({ ...input, period: 'month', month: start })
   if (compared.status !== 'compared' || months.length === 0) return []
-  // Each complete month's Variable Actuals, by category: the usual month's six at most.
-  const recent = months.slice(0, 6).map((month) => {
-    const { end } = monthBounds(month)
-    const sheet = periodSheet({
-      ...input,
-      from: month,
-      to: end,
-      budgets: [],
-      plans: [],
-      statementPeriodEnds: [],
-      startingBalanceCents: null,
-    })
-    return { month, rows: new Map(sheet.blocks.variable.rows.map((r) => [r.categoryId, r.actualCents])) }
-  })
+  // Each complete month's Actuals, by category: the usual month's six at most.
+  const recent = monthActuals({ ...input, months: months.slice(0, 6) }).months.map((m) => ({ month: m.month, rows: m.actuals }))
   const names = new Map(input.categories.map((c) => [c.id, c]))
   return compared.blocks.variable.rows.flatMap((row): Fact[] => {
     if (row.direction === 'same') return []
