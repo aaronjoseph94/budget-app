@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
-import { AI_KEY_SHAPE, AiProviderSchema, type AiRequest } from '@budget/schema'
-import { RequestSchema } from '../ai/index.js'
+import { AI_HELPER_VERSION, AI_KEY_SHAPE, AiProviderSchema, type AiRequest } from '@budget/schema'
+import { RequestSchema, VERSION } from '../ai/index.js'
 
 /**
  * The helper parses its requests with its own zod, since it is pasted as
@@ -26,6 +26,10 @@ describe('the helper and the app agree on what may be asked', () => {
       const helper = RequestSchema.safeParse({ action: 'save_key', provider: 'gemini', key }).success
       expect([key, helper]).toEqual([key, AI_KEY_SHAPE.test(key)])
     }
+  })
+
+  it('is the version the app expects, so One-time updates can tell an older copy', () => {
+    expect(VERSION).toBe(AI_HELPER_VERSION)
   })
 
   it('knows the same services as the database', () => {

@@ -17,9 +17,17 @@ const HELPER_STEPS = [
   'Keep Enforce JWT verification on, and press Deploy.',
 ]
 
+/** Pasting the helper's new version over an older copy (N78). */
+const HELPER_AGAIN_STEPS = [
+  'In Supabase, open Edge Functions, then the function named ai, then its code.',
+  'Paste the new version over everything in the editor.',
+  'Keep Enforce JWT verification on, and deploy it.',
+]
+
 const MARK = {
   in: { sign: '✓', said: 'In', tone: 'text-income' },
   missing: { sign: '✗', said: 'Not in yet', tone: 'text-spend' },
+  old: { sign: '✗', said: 'An older copy', tone: 'text-spend' },
   unknown: { sign: '?', said: 'Could not check', tone: 'text-muted-foreground' },
 } as const
 
@@ -52,6 +60,7 @@ export function UpdatesPanel() {
 
   const count = checked?.filter((c) => c.state === 'in').length
   const next = checked === null ? null : nextStep(checked)
+  const helperOld = checked?.some((c) => c.update.file === HELPER_FILE && c.state === 'old') === true
   return (
     <section aria-labelledby="updates-status" className="space-y-3 rounded-xl border bg-card p-4 shadow-sm">
       <h2 id="updates-status" className="font-semibold" aria-live="polite">
@@ -67,7 +76,10 @@ export function UpdatesPanel() {
               <span className="min-w-0">
                 <span className="sr-only">{MARK[c.state].said}: </span>
                 <span className="block font-mono text-xs [overflow-wrap:anywhere]">{c.update.file}</span>
-                <span className="block text-muted-foreground">{c.update.adds}</span>
+                <span className="block text-muted-foreground">
+                  {c.update.adds}
+                  {c.state === 'old' ? ': an older copy is in' : ''}
+                </span>
               </span>
             </li>
           ))}
@@ -79,9 +91,13 @@ export function UpdatesPanel() {
             <p>Some could not be checked. Check your connection, then press Check again.</p>
           ) : next.file === HELPER_FILE ? (
             <>
-              <p>Next: install the AI helper. About 5 minutes, easiest on a computer.</p>
+              <p>
+                {helperOld
+                  ? 'Next: paste the AI helper’s new version over the one you have. About 5 minutes, easiest on a computer.'
+                  : 'Next: install the AI helper. About 5 minutes, easiest on a computer.'}
+              </p>
               <ol className="list-decimal space-y-1 pl-5">
-                {HELPER_STEPS.map((step) => (
+                {(helperOld ? HELPER_AGAIN_STEPS : HELPER_STEPS).map((step) => (
                   <li key={step}>{step}</li>
                 ))}
               </ol>

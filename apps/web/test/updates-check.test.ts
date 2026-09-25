@@ -69,6 +69,19 @@ describe('checking the one-time updates', () => {
     expect(missing(await checkUpdates(fake.client))).toEqual([['ai-f', 'unknown']])
   })
 
+  it('asks for the helper’s new version when an older copy answers, and not for the same or a newer one', async () => {
+    const fake = createFakeSupabase()
+    for (const [version, state] of [
+      ['2026-09-25.1', 'old'], ['2026-09-24.9', 'old'], [undefined, 'old'], ['preview', 'old'],
+      ['2026-09-25.2', 'in'], ['2026-09-25.10', 'in'], ['2026-10-01.1', 'in'],
+    ] as const) {
+      fake.functions.ai = () => new Response(JSON.stringify({ ok: true, version }), { headers: { 'content-type': 'application/json' } })
+      const checked = await checkUpdates(fake.client)
+      expect([version, missing(checked)]).toEqual([version, state === 'old' ? [['ai-f', 'old']] : []])
+      if (state === 'old') expect(nextStep(checked)).toEqual({ kind: 'paste', file: HELPER_FILE, fromStart: false })
+    }
+  })
+
   it('says it could not check, never "missing", when the answer is something else', async () => {
     const fake = createFakeSupabase()
     fake.fail('month_balances', 'PGRST301')

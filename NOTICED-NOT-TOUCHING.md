@@ -1933,7 +1933,7 @@ spacing of this kind at once.
 empty (for example `empty:hidden` on a wrapper that stays mounted), and
 check at 320 and 390px.
 
-## N78 — Every AI surface still needs the helper's version checked
+## N78 — Every AI surface still needs the helper's version checked *(settled 2026-09-25, A10)*
 
 **Seen:** 2026-09-25, A09. `ping` returns the helper's `VERSION`, but One-
 time updates only asks whether it answers. An owner who pasted an older
@@ -1946,3 +1946,10 @@ yet to tell apart.
 **To settle:** when A10 adds its actions, have One-time updates compare
 the pinged version with the one the app expects and name the helper as
 the next step, "paste its new version", when it is older.
+
+**Settled:** 2026-09-25, A10, when the helper gained save_key and
+test_key (version `2026-09-25.2`). `packages/schema` holds
+`AI_HELPER_VERSION`, a contract test holds the helper's `VERSION` equal to
+it, and One-time updates marks a helper answering with an older version
+(or none it can read) "An older copy", with the steps for pasting the new
+version over it.

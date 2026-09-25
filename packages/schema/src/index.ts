@@ -46,6 +46,7 @@ export {
 
 export {
   AI_CODES,
+  AI_HELPER_VERSION,
   AI_KEY_SHAPE,
   AiProviderSchema,
   type AiAction,

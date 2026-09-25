@@ -14,6 +14,7 @@
  * as a dropped connection, is "could not check", never "missing": telling
  * the owner to paste something already in would be refused, and worry them.
  */
+import { AI_HELPER_VERSION } from '@budget/schema'
 import { askAi } from '../ai/client.js'
 import type { SupabaseClient } from '../supabase.js'
 
@@ -80,7 +81,8 @@ export const UPDATES: readonly Update[] = [
 /** What 0005's absence means: start where HANDOFF's list starts. */
 export const FIRST_FILE = '0003_save_import_atomically.sql'
 
-export type UpdateState = 'in' | 'missing' | 'unknown'
+/** `old`: the AI helper answers, but is a copy older than this app expects (N78). */
+export type UpdateState = 'in' | 'missing' | 'old' | 'unknown'
 
 export interface Checked {
   readonly update: Update
@@ -97,7 +99,9 @@ const MISSING: Readonly<Record<Check['kind'], ReadonlySet<string>>> = {
 async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateState> {
   if (check.kind === 'helper') {
     const answer = await askAi(supabase, { action: 'ping' })
-    return answer.ok ? 'in' : answer.view.state === 'not_deployed' ? 'missing' : 'unknown'
+    if (!answer.ok) return answer.view.state === 'not_deployed' ? 'missing' : 'unknown'
+    const version = typeof answer.data === 'object' && answer.data !== null && 'version' in answer.data ? answer.data.version : null
+    return isOlder(version) ? 'old' : 'in'
   }
   const { error } =
     check.kind === 'function'
@@ -110,12 +114,25 @@ async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateStat
   return check.kind === 'function' && code === '42501' ? 'in' : 'unknown'
 }
 
+/**
+ * Whether the helper's version is older than the app's. Versions are
+ * `YYYY-MM-DD.N`; one that is not in that shape is older, since every
+ * copy that ever shipped carries one.
+ */
+function isOlder(version: unknown): boolean {
+  const parts = (v: unknown) => (typeof v === 'string' ? /^(\d{4}-\d{2}-\d{2})\.(\d+)$/.exec(v) : null)
+  const have = parts(version)
+  const want = parts(AI_HELPER_VERSION)
+  if (have === null || want === null) return true
+  return have[1]! < want[1]! || (have[1] === want[1] && Number(have[2]) < Number(want[2]))
+}
+
 /** Every update's state, all asked at once. */
 export async function checkUpdates(supabase: SupabaseClient): Promise<Checked[]> {
   return Promise.all(
     UPDATES.map(async (update) => {
       const states = await Promise.all(update.checks.map((c) => probe(supabase, c)))
-      const state: UpdateState = states.includes('missing') ? 'missing' : states.includes('unknown') ? 'unknown' : 'in'
+      const state: UpdateState = states.includes('missing') ? 'missing' : states.includes('old') ? 'old' : states.includes('unknown') ? 'unknown' : 'in'
       return { update, state }
     }),
   )
@@ -133,7 +150,8 @@ export type NextStep =
  * without writing; one already in is refused, which does no harm.
  */
 export function nextStep(checked: readonly Checked[]): NextStep {
-  const first = checked.find((c) => c.state === 'missing')
+  // An older helper is pasted again, over itself, as one not in yet is.
+  const first = checked.find((c) => c.state === 'missing' || c.state === 'old')
   if (first !== undefined) {
     const fromStart = first.update === UPDATES[0]
     return { kind: 'paste', file: fromStart ? FIRST_FILE : first.update.file, fromStart }

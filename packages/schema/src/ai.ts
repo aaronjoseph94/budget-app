@@ -41,6 +41,15 @@ export const AI_KEY_SHAPE = /^[A-Za-z0-9_.:-]{20,200}$/
 export type AiAction = AiRequest['action']
 
 /**
+ * The helper's version this app expects (its `VERSION`, which `ping`
+ * returns; a contract test holds the two equal). A deployed copy older
+ * than this refuses the newer actions, so One-time updates asks for the
+ * new version to be pasted over it. Bumped with every change to the
+ * helper, as `YYYY-MM-DD.N`.
+ */
+export const AI_HELPER_VERSION = '2026-09-25.2'
+
+/**
  * Every failure the helper answers with, as a code the app turns into a
  * sentence (plan §3.2). Codes only, so each is safe to log. `helper_error`
  * is the helper's own trouble: a secret it needs is missing, or its

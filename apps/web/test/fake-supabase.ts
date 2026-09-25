@@ -30,7 +30,7 @@ import type {
   UnreadableLine,
 } from '../src/ledger.js'
 import type { SupabaseClient } from '../src/supabase.js'
-import type { AiStatusReply } from '@budget/schema'
+import { AI_HELPER_VERSION, type AiStatusReply } from '@budget/schema'
 
 type Row = Readonly<Record<string, unknown>>
 
@@ -189,7 +189,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
   const server: FakeSupabase['server'] = { refuse: null, maxRows: null, afterRead: null, hold: null, lacks: {} }
   const user = { id: 'u1', email: 'you@example.com', user_metadata: {} as Record<string, unknown> }
   const functions: FakeSupabase['functions'] = {
-    ai: (body) => (body['action'] === 'ping' ? json({ ok: true, version: 'test' }) : json(functions.aiStatus)),
+    ai: (body) => (body['action'] === 'ping' ? json({ ok: true, version: AI_HELPER_VERSION }) : json(functions.aiStatus)),
     aiStatus: aiStatusReply(),
     calls: [],
   }

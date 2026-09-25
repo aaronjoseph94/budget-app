@@ -86,6 +86,16 @@ describe('One-time updates', () => {
     expect(link.getAttribute('href')).toBe('https://github.com/aaronjoseph94/budget-app/blob/main/supabase/functions/ai/index.ts')
   })
 
+  it('asks for the helper’s new version over an older copy, with the clicks for replacing it', async () => {
+    const fake = createFakeSupabase()
+    fake.functions.ai = () => new Response(JSON.stringify({ ok: true, version: '2026-09-25.1' }), { headers: { 'content-type': 'application/json' } })
+    await open(fake, '12 of 13 in')
+    expect(row('ai-function.ts')).toBe('✗An older copy: ai-function.tsThe AI helper, which every AI feature goes through: an older copy is in')
+    expect(screen.getByText('Next: paste the AI helper’s new version over the one you have. About 5 minutes, easiest on a computer.')).toBeTruthy()
+    expect(screen.getByText('Paste the new version over everything in the editor.')).toBeTruthy()
+    expect(screen.queryByText('Name it exactly ai.')).toBeNull()
+  })
+
   it('says it could not check, and to check again, rather than calling anything missing', async () => {
     const fake = createFakeSupabase()
     fake.fail('month_balances', 'PGRST301')
