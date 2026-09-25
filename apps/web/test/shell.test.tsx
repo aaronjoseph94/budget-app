@@ -76,9 +76,8 @@ describe('Shell', () => {
     renderScreen(<Shell />, createFakeSupabase())
     await screen.findByRole('heading', { name: 'Coach', level: 1 })
 
-    // Reports joins between Forecast and Savings when it is built.
     expect(within(deskBar()).getAllByRole('link').map((b) => b.textContent)).toEqual([
-      'Month', 'Week', 'Coach', 'Forecast', 'Savings', 'Debts', 'Review', 'Add', 'More',
+      'Month', 'Week', 'Coach', 'Forecast', 'Reports', 'Savings', 'Debts', 'Review', 'Add', 'More',
     ])
     expect(within(deskBar()).getByRole('link', { name: 'Coach' }).getAttribute('aria-current')).toBe('page')
     expect(within(phoneBar()).getByRole('link', { name: 'Coach' }).getAttribute('aria-current')).toBe('page')
@@ -102,9 +101,10 @@ describe('Shell', () => {
       within(g).getByRole('heading').textContent,
       within(g).getAllByRole('listitem').map((li) => li.querySelector('.font-medium')?.textContent),
     ])
-    // Understand (Reports, Ask) appears when Reports lands.
+    // Ask joins Understand when it lands.
     expect(groups).toEqual([
       ['Plan', ['Paycheck', 'Bill calendar', 'Year', 'Savings', 'Debts', 'Forecast']],
+      ['Understand', ['Reports']],
       ['Set up and help', ['Setup', 'AI settings', 'Settings', 'Help']],
       ['Records', ['All transactions']],
     ])
@@ -277,7 +277,7 @@ describe('Shell, its screens as links (FE-20)', () => {
       '#/month', '#/coach', '#/add', '#/review', '#/more',
     ])
     expect(within(deskBar()).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual([
-      '#/month', '#/week', '#/coach', '#/forecast', '#/savings', '#/debts', '#/review', '#/add', '#/more',
+      '#/month', '#/week', '#/coach', '#/forecast', '#/reports', '#/savings', '#/debts', '#/review', '#/add', '#/more',
     ])
 
     go('/more')
@@ -287,12 +287,12 @@ describe('Shell, its screens as links (FE-20)', () => {
 
 describe('Shell, an address ahead of the app (ADR 0006)', () => {
   it('opens a screen not built yet as one line with the way back to the Month, and names it in the title', async () => {
-    go('/reports')
+    go('/ask')
     renderScreen(<Shell />, createFakeSupabase())
 
-    expect(await screen.findByRole('heading', { name: 'Reports' })).toBeTruthy()
-    expect(screen.getByText('Reports is on its way. Everything else works as before.')).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Ask' })).toBeTruthy()
+    expect(screen.getByText('Ask is on its way. Everything else works as before.')).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Open the Month' }).getAttribute('href')).toBe('#/month')
-    expect(document.title).toBe('Reports · Budget')
+    expect(document.title).toBe('Ask · Budget')
   })
 })
