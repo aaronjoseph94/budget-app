@@ -2,10 +2,19 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAppData } from '../app-data.js'
 import { Button } from '../components/ui/button.js'
 import { cn } from '../lib/cn.js'
-import { FIRST_FILE, checkUpdates, nextStep, type Checked } from './updates.js'
+import { FIRST_FILE, HELPER_FILE, checkUpdates, nextStep, type Checked } from './updates.js'
 
 /** Where each committed file can be opened and copied (HANDOFF §3, step 1). */
-const SOURCE = 'https://github.com/aaronjoseph94/budget-app/blob/main/supabase/migrations/'
+const REPO = 'https://github.com/aaronjoseph94/budget-app/blob/main/'
+const sourceOf = (file: string) => (file === HELPER_FILE ? `${REPO}supabase/functions/ai/index.ts` : `${REPO}supabase/migrations/${file}`)
+
+/** The exact clicks for the AI helper, which goes in the Edge Functions editor, not the SQL Editor (plan §10.2). */
+const HELPER_STEPS = [
+  'In Supabase, open Edge Functions, then Deploy a new function, then Via Editor.',
+  'Name it exactly ai.',
+  'Paste the helper over everything in the editor.',
+  'Keep Enforce JWT verification on, and press Deploy.',
+]
 
 const MARK = {
   in: { sign: '✓', said: 'In', tone: 'text-income' },
@@ -67,6 +76,15 @@ export function UpdatesPanel() {
         <div className="space-y-2 rounded-lg bg-muted p-3 text-sm">
           {next.kind === 'unknown' ? (
             <p>Some could not be checked. Check your connection, then press Check again.</p>
+          ) : next.file === HELPER_FILE ? (
+            <>
+              <p>Next: install the AI helper. About 5 minutes, easiest on a computer.</p>
+              <ol className="list-decimal space-y-1 pl-5">
+                {HELPER_STEPS.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+            </>
           ) : (
             <>
               <p>
@@ -76,16 +94,18 @@ export function UpdatesPanel() {
               {next.fromStart ? (
                 <p>{FIRST_FILE} is the first. A file already pasted is refused rather than applied twice, so that does no harm.</p>
               ) : null}
-              <a
-                href={`${SOURCE}${next.file}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex min-h-11 items-center font-medium underline underline-offset-4"
-              >
-                Open {next.file} on GitHub
-              </a>
             </>
           )}
+          {next.kind === 'paste' ? (
+            <a
+              href={sourceOf(next.file)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-11 items-center font-medium underline underline-offset-4"
+            >
+              Open {next.file} on GitHub
+            </a>
+          ) : null}
         </div>
       )}
       <Button variant="outline" disabled={busy} onClick={() => void check()}>

@@ -179,6 +179,8 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     reject_candidate: null,
     recategorise_transaction: null,
     dismiss_unreadable_line: null,
+    // 0016: the caller's saved AI keys, never their ciphertext. None by default.
+    ai_key_status: [],
   }
   const failures = new Map<string, string>()
   const server: FakeSupabase['server'] = { refuse: null, maxRows: null, afterRead: null, hold: null, lacks: {} }

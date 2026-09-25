@@ -14,12 +14,18 @@
  * as a dropped connection, is "could not check", never "missing": telling
  * the owner to paste something already in would be refused, and worry them.
  */
+import { askAi } from '../ai/client.js'
 import type { SupabaseClient } from '../supabase.js'
 
 type Check =
   | { readonly kind: 'table'; readonly table: string }
   | { readonly kind: 'column'; readonly table: string; readonly column: string }
   | { readonly kind: 'function'; readonly name: string; readonly args: Readonly<Record<string, unknown>> }
+  /** The AI helper answers `ping` once it is deployed; Supabase answers 404 until then. */
+  | { readonly kind: 'helper' }
+
+/** The AI helper's source, as One-time updates names it and /setup/ serves it (ADR 0007). */
+export const HELPER_FILE = 'ai-function.ts'
 
 export interface Update {
   readonly file: string
@@ -30,7 +36,7 @@ export interface Update {
 
 const NIL = '00000000-0000-0000-0000-000000000000'
 
-/** 0005 to 0015, each with what it adds; 0016 on join as their slices land. */
+/** 0005 to 0016 and the AI helper, each with what it adds; 0017 on join as their slices land. */
 export const UPDATES: readonly Update[] = [
   { file: '0005_category_kinds.sql', adds: 'Which list each category is on', checks: [{ kind: 'column', table: 'categories', column: 'kind' }] },
   {
@@ -62,6 +68,13 @@ export const UPDATES: readonly Update[] = [
     adds: 'Your main savings goal, their order, and pausing or finishing one',
     checks: [{ kind: 'column', table: 'savings_goals', column: 'sort_order' }],
   },
+  {
+    // ai_key_status is the one 0016 function the browser may call; it only reads.
+    file: '0016_ai_foundation.sql',
+    adds: 'Where AI keeps your settings, your keys and today’s use',
+    checks: [{ kind: 'function', name: 'ai_key_status', args: {} }],
+  },
+  { file: HELPER_FILE, adds: 'The AI helper, which every AI feature goes through', checks: [{ kind: 'helper' }] },
 ]
 
 /** What 0005's absence means: start where HANDOFF's list starts. */
@@ -78,9 +91,14 @@ const MISSING: Readonly<Record<Check['kind'], ReadonlySet<string>>> = {
   table: new Set(['PGRST205', '42P01']),
   column: new Set(['42703']),
   function: new Set(['PGRST202', '42883']),
+  helper: new Set(),
 }
 
 async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateState> {
+  if (check.kind === 'helper') {
+    const answer = await askAi(supabase, { action: 'ping' })
+    return answer.ok ? 'in' : answer.view.state === 'not_deployed' ? 'missing' : 'unknown'
+  }
   const { error } =
     check.kind === 'function'
       ? await supabase.rpc(check.name, check.args)

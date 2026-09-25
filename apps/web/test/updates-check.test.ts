@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FIRST_FILE, UPDATES, checkUpdates, nextStep, type Checked } from '../src/help/updates.js'
+import { FIRST_FILE, HELPER_FILE, UPDATES, checkUpdates, nextStep, type Checked } from '../src/help/updates.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 
 const stateOf = (checked: readonly Checked[], prefix: string) => checked.find((c) => c.update.file.startsWith(prefix))?.state
@@ -9,7 +9,7 @@ describe('checking the one-time updates', () => {
   it('finds each one in when everything it adds answers', async () => {
     const fake = createFakeSupabase()
     const checked = await checkUpdates(fake.client)
-    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015'])
+    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', 'ai-f'])
     expect(missing(checked)).toEqual([])
     expect(nextStep(checked)).toEqual({ kind: 'done' })
   })
@@ -50,6 +50,25 @@ describe('checking the one-time updates', () => {
     expect(nextStep(checked)).toEqual({ kind: 'paste', file: '0015_savings_goals_order.sql', fromStart: false })
   })
 
+  it('reads PGRST202 on ai_key_status as 0016 not in yet, and names it before the AI helper', async () => {
+    const fake = createFakeSupabase()
+    delete fake.rpcReplies['ai_key_status']
+    fake.functions.ai = null
+    const checked = await checkUpdates(fake.client)
+    expect(missing(checked)).toEqual([['0016', 'missing'], ['ai-f', 'missing']])
+    expect(nextStep(checked)).toEqual({ kind: 'paste', file: '0016_ai_foundation.sql', fromStart: false })
+  })
+
+  it('reads Supabase’s 404 for the AI helper as not installed, and any other failure as could not check', async () => {
+    const fake = createFakeSupabase()
+    fake.functions.ai = null
+    const checked = await checkUpdates(fake.client)
+    expect(missing(checked)).toEqual([['ai-f', 'missing']])
+    expect(nextStep(checked)).toEqual({ kind: 'paste', file: HELPER_FILE, fromStart: false })
+    fake.functions.ai = () => Promise.reject(new TypeError('Failed to fetch'))
+    expect(missing(await checkUpdates(fake.client))).toEqual([['ai-f', 'unknown']])
+  })
+
   it('says it could not check, never "missing", when the answer is something else', async () => {
     const fake = createFakeSupabase()
     fake.fail('month_balances', 'PGRST301')
@@ -77,7 +96,10 @@ describe('checking the one-time updates', () => {
     expect(fake.rpcCalls).toEqual([
       { name: 'recategorise_transaction', args: { p_transaction: nil, p_category: nil, p_learn: false } },
       { name: 'dismiss_unreadable_line', args: { p_line: nil } },
+      { name: 'ai_key_status', args: {} },
     ])
+    // The helper is only pinged.
+    expect(fake.functions.calls).toEqual([{ action: 'ping' }])
     expect(UPDATES.every((u) => u.adds.trim() !== '')).toBe(true)
   })
 })
