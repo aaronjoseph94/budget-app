@@ -42,3 +42,4 @@ export {
   type ModelPayloadInput,
   type PayloadGoal,
 } from './payload.js'
+export { checkReply, type CheckDrop, type CheckDropReason, type CheckReplyInput, type CheckedReply } from './check-reply.js'
