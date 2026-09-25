@@ -151,6 +151,10 @@ export function PairsCard({ report, nameOf }: { report: Reviewed; nameOf: (id: s
             })}
             className="mx-auto max-w-md"
           />
+          {/* The list has no key of its own, so it says which figure is which. */}
+          <p className="text-muted-foreground">
+            Each row: {sides.now}, then {sides.before}.
+          </p>
           <dl className="divide-y">
             {rows.map((r) => (
               <div key={r.categoryId} className="flex items-baseline justify-between gap-3 py-2">

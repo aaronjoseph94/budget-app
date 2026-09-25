@@ -67,6 +67,8 @@ describe('Reports, the Overview (plan §2.6, A15)', () => {
     expect(within(pairs).getByRole('img', { name: 'August against July, by category' })).toBeTruthy()
     const row = within(pairs).getByText('Dining out', { selector: 'dt' }).nextElementSibling
     expect(row?.textContent).toBe('$560.00 · $450.00')
+    // The list says which figure is which, since it has no key of its own.
+    expect(within(pairs).getByText('Each row: August, then July.')).toBeTruthy()
   })
 
   it('opens on this month, marked so far and set against the same days of last month', async () => {
