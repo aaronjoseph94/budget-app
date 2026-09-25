@@ -63,8 +63,14 @@ export interface FakeTables {
   /** Debts and their extra payments as typed (0014); `user_id` as the app writes it. */
   debts: (DebtRow & { readonly user_id?: string })[]
   debt_extra_payments: (DebtExtraRow & { readonly user_id?: string })[]
-  /** The owner's AI choices (0016); only what the app writes, `models` so far. */
-  ai_settings: { readonly user_id: string; readonly models: Readonly<Record<string, string>> }[]
+  /** The owner's AI choices (0016), as the app writes them. */
+  ai_settings: {
+    readonly user_id: string
+    readonly models?: Readonly<Record<string, string>>
+    readonly provider_order?: readonly string[]
+    readonly allow_paid?: boolean
+    readonly daily_cap?: number
+  }[]
 }
 
 export interface RpcCall {
