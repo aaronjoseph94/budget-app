@@ -61,7 +61,7 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
           ? 'Choosing the order, paid services and a daily limit needs a one-time update. '
           : 'Couldn’t load your AI choices just now. Check your connection and try again. '}
         {loaded.state === 'missing' ? (
-          <a href={hashOf({ screen: 'help', param: 'updates' })} className="font-medium underline underline-offset-4">
+          <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
             One-time updates
           </a>
         ) : null}
@@ -105,7 +105,8 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
               </span>
               <Button
                 variant="ghost"
-                className="size-11 shrink-0 p-0"
+                size="icon"
+                className="min-h-11 min-w-11 shrink-0 text-lg"
                 aria-label={`Move ${NAME[s.provider]} up`}
                 disabled={saving || i === 0}
                 onClick={() => void change({ ...choices, order: moved(choices.order, s.provider, -1) })}
@@ -114,7 +115,8 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
               </Button>
               <Button
                 variant="ghost"
-                className="size-11 shrink-0 p-0"
+                size="icon"
+                className="min-h-11 min-w-11 shrink-0 text-lg"
                 aria-label={`Move ${NAME[s.provider]} down`}
                 disabled={saving || i === services.length - 1}
                 onClick={() => void change({ ...choices, order: moved(choices.order, s.provider, 1) })}
@@ -128,10 +130,9 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
       </section>
 
       <section aria-label="Use paid services" className="space-y-1 rounded-xl border bg-card p-4 shadow-sm">
-        <div className="flex min-h-11 items-center gap-3">
-          <label htmlFor={ids.paid} className="flex-1 text-base font-medium">
-            Use paid services
-          </label>
+        {/* The whole row is the switch's label, so the target is the row's 44 px, not the box's. */}
+        <label htmlFor={ids.paid} className="flex min-h-11 cursor-pointer items-center gap-3">
+          <span className="flex-1 text-base font-medium">Use paid services</span>
           <input
             id={ids.paid}
             type="checkbox"
@@ -141,7 +142,7 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
             disabled={saving}
             onChange={(e) => void change({ ...choices, allowPaid: e.target.checked })}
           />
-        </div>
+        </label>
         <p className="text-sm text-muted-foreground">
           {choices.allowPaid
             ? 'On: OpenAI and Anthropic are asked, in the order above, when their key is saved. They bill you for each use.'

@@ -52,6 +52,8 @@ describe('Try in this order', () => {
     const order = await open(fake)
     expect((order.getByRole('button', { name: 'Move Google Gemini up' }) as HTMLButtonElement).disabled).toBe(true)
     expect((order.getByRole('button', { name: 'Move Anthropic down' }) as HTMLButtonElement).disabled).toBe(true)
+    // A finger's 44 px, with a mouse too: jsdom has no layout, so the classes that give it.
+    expect(order.getByRole('button', { name: 'Move Groq up' }).className).toMatch(/(^|\s)min-h-11\s(.*\s)?min-w-11(\s|$)/)
     fireEvent.click(order.getByRole('button', { name: 'Move Groq up' }))
     await waitFor(() => expect(fake.tables.ai_settings).toMatchObject([{ user_id: 'u1', provider_order: ['groq', 'gemini', 'openrouter', 'openai', 'anthropic'] }]))
     expect(names(order)).toEqual(['1. Groq', '2. Google Gemini', '3. OpenRouter', '4. OpenAI', '5. Anthropic'])
@@ -78,6 +80,7 @@ describe('Use paid services', () => {
     await open(fake)
     const paid = screen.getByRole('switch', { name: 'Use paid services' }) as HTMLInputElement
     expect(paid.checked).toBe(false)
+    expect(paid.closest('label')?.className).toMatch(/\bmin-h-11\b/)
     expect(screen.getByText('Off: OpenAI and Anthropic are never asked, even with a key saved, so nothing is billed.')).toBeTruthy()
     fireEvent.click(paid)
     await waitFor(() => expect(fake.tables.ai_settings).toMatchObject([{ user_id: 'u1', allow_paid: true, daily_cap: 40 }]))
@@ -122,6 +125,7 @@ describe('without the one-time update that holds these choices', () => {
       renderScreen(<Shell />, fake)
       const line = await screen.findByText(/^Choosing the order, paid services and a daily limit needs a one-time update\./)
       expect(within(line).getByRole('link', { name: 'One-time updates' }).getAttribute('href')).toBe('#/help/updates')
+      expect(within(line).getByRole('link', { name: 'One-time updates' }).className).toMatch(/\bmin-h-11\b/)
       expect(screen.getByRole('region', { name: 'Free Google Gemini' })).toBeTruthy()
       expect(screen.queryByRole('switch', { name: 'Use paid services' })).toBeNull()
       cleanup()
