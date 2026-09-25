@@ -40,6 +40,15 @@ export {
 } from './goals-progress.js'
 
 export {
+  goalForecast,
+  type ForecastGoal,
+  type GoalForecast,
+  type GoalForecastInput,
+  type GoalPace,
+  type Paces,
+} from './goal-forecast.js'
+
+export {
   fundBalance,
   fundProgress,
   savingsFundPlan,
