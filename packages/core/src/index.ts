@@ -241,6 +241,8 @@ export {
 
 export { biggestMovers, type BiggestMoversInput, type Mover, type MoverCategory } from './movers.js'
 
+export { TREND_MONTHS, trendLabel, type TrendLabel, type TrendLabelInput } from './trends.js'
+
 export {
   monthReport,
   type LastMonth,
