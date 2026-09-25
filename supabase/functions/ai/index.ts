@@ -393,6 +393,69 @@ export function chatRequest(provider: Provider, model: string, key: string, ask:
   return openAiRequest(provider, model, key, ask)
 }
 
+// ---------------------------------------------------------------------------
+// Staying inside free limits (plan §3.5). Each free service has soft limits
+// a day, per model, below the ones it reports, so the owner's other
+// services still have room when one runs out; a paid service counts toward
+// the owner's daily total only. Groq also refuses a request over its
+// tokens-a-minute limit outright, so a request over its budget is not sent.
+// ---------------------------------------------------------------------------
+
+type Limits = { readonly calls: number | null; readonly tokens: number | null; readonly perRequest: number | null }
+const NO_LIMITS: Limits = { calls: null, tokens: null, perRequest: null }
+
+/** A service and model's soft limits a day, and its budget for one request, in estimated tokens in and out. */
+export function limitsOf(provider: Provider, model: string): Limits {
+  if (provider === 'gemini') return { ...NO_LIMITS, calls: modelFor('gemini', model) === 'gemini-3.5-flash' ? 15 : 200 }
+  if (provider === 'groq') return { calls: 300, tokens: 150_000, perRequest: 6_000 }
+  if (provider === 'openrouter') return { ...NO_LIMITS, calls: 40 }
+  return NO_LIMITS
+}
+
+/** Tokens, estimated: a service's tokenizer is not at hand, and about three bytes of UTF-8 make a token. */
+export const tokensOf = (text: string): number => Math.ceil(new TextEncoder().encode(text).length / 3)
+
+/**
+ * The next midnight in the Pacific time zone, when the free services reset
+ * their daily quotas. Clocks change at 2 a.m., so the offset now is the
+ * offset at the coming midnight.
+ */
+export function nextPacificMidnight(now: number): number {
+  const format = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hourCycle: 'h23',
+  })
+  const parts = format.formatToParts(new Date(now))
+  // Every part is always there; a missing one would be NaN, never a guess.
+  const part = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((p) => p.type === type)?.value)
+  const [y, m, d] = [part('year'), part('month') - 1, part('day')]
+  const offset = Date.UTC(y, m, d, part('hour'), part('minute'), part('second')) - (now - (now % 1000))
+  return Date.UTC(y, m, d + 1) - offset
+}
+
+const MINUTE = 60_000
+/** A model a service no longer offers rests as long as 0016 lets a rest last, until another is chosen. */
+const MODEL_REST_MS = 25 * 60 * MINUTE
+
+/**
+ * How long a service rests after an answer (plan §3.5): a 429 for its
+ * Retry-After, or Google's own retry delay, or a minute; Gemini's daily
+ * free quota until midnight Pacific; a model it no longer offers for as
+ * long as a rest may last. Anything else does not rest it.
+ */
+export function restUntil(provider: Provider, outcome: Outcome, headers: Headers | null, body: unknown, now: number): number | null {
+  if (outcome === 'model_not_found') return now + MODEL_REST_MS
+  if (outcome !== 'rate_limited') return null
+  const details = list(obj(obj(body)['error'])['details']).map(obj)
+  const quotaIds = details.flatMap((d) => list(d['violations']).map((v) => String(obj(v)['quotaId'] ?? '')))
+  if (provider === 'gemini' && quotaIds.some((id) => /PerDay/i.test(id))) return nextPacificMidnight(now)
+  const after = headers?.get('retry-after')?.trim() ?? ''
+  if (/^\d{1,6}$/.test(after)) return now + Number(after) * 1000
+  const date = after === '' ? NaN : Date.parse(after)
+  if (date > now) return date
+  const delay = /^(\d{1,6}(?:\.\d+)?)s$/.exec(String(details.find((d) => String(d['@type']).endsWith('RetryInfo'))?.['retryDelay'] ?? ''))
+  return delay === null ? now + MINUTE : now + Math.ceil(Number(delay[1]) * 1000)
+}
+
 type Replied = { readonly outcome: Outcome; readonly text: string | null }
 
 /** The text when it is one JSON object; anything else is the service failing, so the next can be tried. */
