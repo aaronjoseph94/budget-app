@@ -128,6 +128,13 @@ describe('the AI helper reaches the database as itself, for the caller alone', (
 
   it('asks for the user the auth server named, and no other', async () => {
     expect((await dbCall({ SUPABASE_SERVICE_ROLE_KEY: LEGACY })).args).toEqual({ p_user: USER })
+    // A second caller is asked for as themselves, so no one id is built in.
+    const OTHER = '0a1b2c3d-4e5f-4a6b-8c7d-99aabbccddee'
+    const other: Respond = (url) =>
+      url.endsWith('/auth/v1/user') ? new Response(JSON.stringify({ id: OTHER.toUpperCase() })) : new Response(JSON.stringify(context))
+    const { calls } = await run(request({ body: { action: 'status' } }), { ...ENV, SUPABASE_SERVICE_ROLE_KEY: LEGACY }, other)
+    const call = calls.find((c) => c.url.endsWith('/rpc/ai_context_for'))
+    expect(JSON.parse(String(call?.init.body))).toEqual({ p_user: OTHER })
   })
 
   it('sends a legacy service_role JWT as the apikey and as the bearer', async () => {
