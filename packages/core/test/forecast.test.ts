@@ -48,6 +48,13 @@ describe('monthEndForecast (F30)', () => {
     expect(forecast).toMatchObject({ status: 'rough', completeMonths: 1, evidence: 'thin', end: { low: 331_000, mid: 331_000, high: 331_000 } })
   })
 
+  it('is still rough with two complete months, the most under three', () => {
+    // July and August: pace 210.00, July 240.00 and August 204.00; the median
+    // 210.00 gives 3,520.00 − 210.00 = 3,310.00, one figure.
+    const forecast = monthEndForecast({ ...example, historyStart: d('2026-07-01') })
+    expect(forecast).toMatchObject({ status: 'rough', completeMonths: 2, end: { low: 331_000, mid: 331_000, high: 331_000 } })
+  })
+
   it('says to check back on the 7th before then with no complete month', () => {
     const forecast = monthEndForecast(on('2026-09-05', { historyStart: d('2026-08-08') }))
     expect(forecast).toMatchObject({ status: 'too_early', checkBackOn: '2026-09-07', spent: null, end: null, variableToComeCents: null })

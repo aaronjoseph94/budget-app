@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { factsDigest, forecastFact } from '../src/index.js'
-import { d, example, on } from './forecast-example.js'
+import { FLIGHT, d, example, on } from './forecast-example.js'
 
 /** Suite tests: the forecast's facts for the Coach's words (plan A13), from F30 to F32's running example. */
 
@@ -43,6 +43,16 @@ describe('forecastFact', () => {
     // the tightest day 2,032.52 − 3,000.00, below $0.
     expect(forecastFact({ ...example, startingBalanceCents: -100_000 })?.meaning).toBe('watch')
     expect(forecastFact({ ...example, startingBalanceCents: -400_000 })?.meaning).toBe('watch')
+  })
+
+  it('asks to watch when the month would end below $0 though no day runs short', () => {
+    // A goal of $3,900.00 leaves $3,600.00 still to save: 3,520.00 − 3,400.00 =
+    // 120.00 available, so safe to spend is $17.14 a day, and the lowest end is
+    // 120.00 − 240.00 = −120.00. The 30 days leave savings out, so no day runs short.
+    const budgetHistory = [{ categoryId: FLIGHT, month: d('2026-06-01'), applies: 'onward' as const, budgetCents: 390_000 }]
+    const fact = forecastFact({ ...example, budgetHistory })
+    expect(fact?.figures).toMatchObject({ low: { unit: 'dollars', value: -12_000 }, safe_day: { unit: 'cents', value: 1_714 }, tightest: { unit: 'cents', value: 203_252 } })
+    expect(fact?.meaning).toBe('watch')
   })
 
   it('says nothing when it is too early to', () => {

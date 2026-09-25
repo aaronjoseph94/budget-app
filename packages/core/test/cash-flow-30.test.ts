@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { cashFlow30 } from '../src/index.js'
-import { NET, PAY, PHONE, RENT, d, example } from './forecast-example.js'
+import { DINING, NET, PAY, PHONE, RENT, d, example } from './forecast-example.js'
 
 /** Suite tests, worked by hand from F32 (docs/formula-decisions.md). */
 
@@ -70,6 +70,12 @@ describe('cashFlow30 (F32)', () => {
     expect(cashFlow30({ ...example, historyStart: d('2026-09-11') })).toMatchObject({ dailyVariableCents: 0, variableDays: 14 })
   })
 
+  it('counts refunds past what was spent as nothing spent a day, never money coming in', () => {
+    // From 11 September: a $50.00 refund and nothing spent, so $0.00 a day, not $3.57.
+    const refund = { postedOn: d('2026-09-20'), amountCents: 5_000, categoryId: DINING }
+    expect(cashFlow30({ ...example, historyStart: d('2026-09-11'), entries: [...example.entries, refund] }).dailyVariableCents).toBe(0)
+  })
+
   it('leaves a card payment out of today’s balance (D9), and takes the earliest of equal days', () => {
     // No pay, no bills and no daily amount: every day is today's 1,760.00, and
     // the tightest is the first. Paying $500.00 to the card is not spending.
@@ -101,6 +107,12 @@ describe('cashFlow30 (F32)', () => {
 
   it('leaves out pay with no day, and names it', () => {
     const flow = cashFlow30({ ...example, paySchedules: [] })
+    expect(flow).toMatchObject({ pay: [], payLeftOut: [PAY] })
+  })
+
+  it('names pay with a goal and no schedule too, which the month’s end counts but no day can hold', () => {
+    const goal = { categoryId: PAY, month: d('2026-09-01'), applies: 'onward' as const, budgetCents: 455_000 }
+    const flow = cashFlow30({ ...example, paySchedules: [], budgetHistory: [...example.budgetHistory, goal] })
     expect(flow).toMatchObject({ pay: [], payLeftOut: [PAY] })
   })
 })
