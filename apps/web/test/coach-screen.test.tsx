@@ -420,13 +420,13 @@ describe('what to trim on the Coach (A08, F34)', () => {
     return fake
   }
 
-  it('offers the top lever, in weeks sooner and flight time, and What if… opens Savings', async () => {
+  it('offers the top lever, in weeks sooner and flight time, and What if… opens the Forecast', async () => {
     go('/coach')
     renderScreen(<Shell />, withDining())
 
     expect(await screen.findByText('Trim Dining out by $100.00 a month to get there 31 weeks sooner. That’s 22 min of flight time a month.')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'What if…' }))
-    expect(window.location.hash).toBe('#/savings')
+    expect(window.location.hash).toBe('#/forecast')
   })
 
   it('says how long the lever alone takes when nothing is moved in', async () => {

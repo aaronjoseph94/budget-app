@@ -168,8 +168,7 @@ function GoalsCard({ funds, outlooks, words }: { funds: FundsState; outlooks: Ou
 /**
  * When the main goal is reached at the owner's pace (F33), or why that is
  * not shown, and the top lever that gets it there sooner (F34). What if…
- * opens Savings, where every goal's lever is, until Forecast's what-ifs
- * arrive (plan A14).
+ * opens the Forecast, whose what-ifs start on the main goal (plan A14).
  */
 function MainOutlook({ outlooks, funds, goal }: { outlooks: Outlooks; funds: FundsState; goal: ListedGoalRow }) {
   const { categories } = useAppData()
@@ -200,7 +199,7 @@ function MainOutlook({ outlooks, funds, goal }: { outlooks: Outlooks; funds: Fun
       {top === undefined || category === undefined ? null : (
         <div className="space-y-2 rounded-lg bg-muted/60 p-3">
           <GoalLever lever={top} categoryName={category.name} unitLabel={goal.unit_label} />
-          <Button variant="outline" size="sm" onClick={() => navigate('savings')}>
+          <Button variant="outline" size="sm" onClick={() => navigate('forecast')}>
             What if… <Icon name="chevronRight" className="size-4" />
           </Button>
         </div>

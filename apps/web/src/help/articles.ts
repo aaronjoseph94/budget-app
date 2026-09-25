@@ -247,18 +247,20 @@ export const ARTICLES: readonly Article[] = [
     id: 'forecast',
     title: 'How the forecast works',
     summary:
-      'The Forecast says where this month is heading and how much is safe to spend each day, worked out by the app from your own records, your planned bills and the pay still to come.',
+      'The Forecast says where this month is heading, how much is safe to spend each day, when you will reach each of your goals and how the next three months look, worked out by the app from your own records, your planned bills and the pay still to come.',
     steps: [
-      'Open **Forecast** from **More**, or press **Open the Forecast** on the Coach.',
-      'Read the sentence at the top: where the month is heading, in a few words.',
-      'Read **Safe to spend**: what you can spend each day, today included, once your bills and savings are counted.',
+      'Open **Forecast** from **More**, or press **Open the Forecast** or **What if…** on the Coach.',
+      'Read the sentence at the top, then **Safe to spend**: what you can spend each day, today included, once your bills and savings are counted.',
       'Read where the month ends: a range, or one rough figure early in the month or with little history, with what is still to come under it.',
       'Read **The next 30 days**: your balance day by day, the tightest day ahead, and the bills due this week.',
+      'Read **When you’ll reach your goals**: each goal’s date at your pace, your main goal first.',
+      'Under **What if…**, choose a goal and tap a choice such as **Dining out −25%** to see how much sooner you get there and where this month ends; nothing is saved.',
+      'Read **The next three months**: where each month ends, worst case to best case, and a table of what makes it up.',
       'Read **Debt-free**, the date on your payoff plan, and press **Open Debts** to change the plan.',
     ],
-    done: 'you know what you can spend today and still end the month as planned.',
+    done: 'you know what you can spend today, when you will reach your goals, and how the next few months look.',
     stuck:
-      'Safe to spend needs this month’s starting balance: type it on the **Month**, under **Start**. It counts your pay still to come from each income’s pay schedule, at what it usually pays; if it says pay is not counted, give that income a pay schedule in **Setup**, or a goal on the **Month**. Savings you still plan to move this month are kept aside, so they are never counted as money to spend. The month’s end is worked out from this month’s pace and each of up to six earlier whole months, rounded to $10: before the 7th, or with under three whole months of records, it is one rough figure, and with no whole month before the 7th it says when to check back. The next 30 days add each payday and each bill on its day, and your everyday spending at its average over the last 90 days once there are 14 days of records; a bill whose day has passed with no charge yet is counted tomorrow. If it says it needs a one-time update, see One-time updates.',
+      'Safe to spend needs this month’s starting balance: type it on the **Month**, under **Start**. It counts your pay still to come from each income’s pay schedule, at what it usually pays; if it says pay is not counted, give that income a pay schedule in **Setup**, or a goal on the **Month**. Savings you still plan to move this month are kept aside, so they are never counted as money to spend. The month’s end is worked out from this month’s pace and each of up to six earlier whole months, rounded to $10: before the 7th, or with under three whole months of records, it is one rough figure, and with no whole month before the 7th it says when to check back. The next 30 days add each payday and each bill on its day, and your everyday spending at its average over the last 90 days once there are 14 days of records; a bill whose day has passed with no charge yet is counted tomorrow. The next three months count your usual pay, the bills and savings set for each month (a change you typed for a later month counts from that month), and your everyday spending in a lighter, a usual and a heavier month you have really had; it is a guide, not a promise. Tap a what-if choice again to clear it. A goal’s date comes from what you have moved into its fund each month. If it says it needs a one-time update, see One-time updates.',
     related: ['coach', 'budgets', 'updates'],
   },
   {
