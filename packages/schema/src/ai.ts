@@ -21,8 +21,22 @@ import { z } from 'zod'
 export const AiProviderSchema = z.enum(['gemini', 'groq', 'openrouter', 'openai', 'anthropic'])
 export type AiProvider = z.infer<typeof AiProviderSchema>
 
-/** Every request the helper answers. It learns who is asking from the token, never the body. */
-export type AiRequest = { readonly action: 'ping' } | { readonly action: 'status' }
+/** The services a key can be pasted for so far; the others join with their adapters (A11). */
+export type AiKeyProvider = 'gemini'
+
+/**
+ * Every request the helper answers. It learns who is asking from the token,
+ * never the body. A pasted key is 20 to 200 characters of letters, digits
+ * and `_ . : -` (AI_KEY_SHAPE); `save_key` sends it once and nothing sends
+ * it back.
+ */
+export type AiRequest =
+  | { readonly action: 'ping' }
+  | { readonly action: 'status' }
+  | { readonly action: 'save_key'; readonly provider: AiKeyProvider; readonly key: string }
+
+/** What the helper takes as a key, so the app can say "check you copied all of it" before sending. */
+export const AI_KEY_SHAPE = /^[A-Za-z0-9_.:-]{20,200}$/
 export type AiAction = AiRequest['action']
 
 /**
@@ -83,4 +97,24 @@ export interface AiStatusReply {
 export interface AiFailureReply {
   readonly ok: false
   readonly code: AiCode
+}
+
+/** A model on the helper's committed list, and whether the key's service lists it for this key. */
+export interface AiModelChoice {
+  readonly id: string
+  readonly listed: boolean
+}
+
+/**
+ * What `save_key` found. `source` is `none` when a pasted key
+ * was turned down and so not stored. `models` is every committed model,
+ * ticked when the key can use it, and empty unless the test worked.
+ */
+export interface AiKeyReply {
+  readonly ok: true
+  readonly provider: AiKeyProvider
+  readonly source: AiKeySource
+  readonly status: AiKeyStatus
+  readonly hint: string | null
+  readonly models: readonly AiModelChoice[]
 }

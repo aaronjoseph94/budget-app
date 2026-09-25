@@ -46,12 +46,16 @@ export {
 
 export {
   AI_CODES,
+  AI_KEY_SHAPE,
   AiProviderSchema,
   type AiAction,
   type AiCode,
   type AiFailureReply,
+  type AiKeyProvider,
+  type AiKeyReply,
   type AiKeySource,
   type AiKeyStatus,
+  type AiModelChoice,
   type AiPingReply,
   type AiProvider,
   type AiRequest,

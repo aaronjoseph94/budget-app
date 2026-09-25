@@ -4,8 +4,9 @@
 // browser (CLAUDE.md). ADR 0004 is the design: one helper for every task,
 // keys kept encrypted in 0016's ai_provider_keys, a hardcoded allowlist of
 // services, and failing over between them. This version answers `ping`,
-// which says the helper is deployed, and `status`, which says what is set
-// up; the keys and the tasks arrive in later slices (plan A10, A11).
+// which says the helper is deployed, `status`, which says what is set up,
+// and `save_key`, which takes and checks a free Gemini key
+// (plan A10); the tasks arrive in later slices (A11 on).
 //
 // Who is calling comes from Supabase's auth server, asked with the
 // caller's own token, never from the request body. The database is reached
@@ -23,7 +24,7 @@
 import { z } from 'npm:zod@4.6.5'
 
 /** Which copy is deployed, so One-time updates can tell an old paste from this one. */
-export const VERSION = '2026-09-25.1'
+export const VERSION = '2026-09-25.2'
 
 // Browsers allowed to call this, as read-receipt's: the Cloudflare and
 // Netlify sites and a local dev server, plus exact https origins in the
@@ -53,9 +54,15 @@ type Env = z.infer<typeof EnvSchema>
 
 // Every body the helper takes, and nothing more: .strict() refuses any other
 // field, so no URL, host, user id or prompt can ride along (ADR 0004).
+// A key is 20 to 200 characters of what providers' keys are made of
+// (plan §3.2); anything else is refused before any service is asked.
+// Only Gemini takes a pasted key so far; the others join with their
+// adapters (A11).
+const KeyProvider = z.enum(['gemini'])
 export const RequestSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('ping') }).strict(),
   z.object({ action: z.literal('status') }).strict(),
+  z.object({ action: z.literal('save_key'), provider: KeyProvider, key: z.string().regex(/^[A-Za-z0-9_.:-]{20,200}$/) }).strict(),
 ])
 type Request_ = z.infer<typeof RequestSchema>
 
@@ -98,7 +105,14 @@ function cors(origin: string | null, origins: Set<string>): Record<string, strin
 
 // The one place this file writes a log line, and all it can say: a fixed
 // code and numbers. The types leave no room for anything else.
-type LogCode = 'auth_unreachable' | 'auth_status' | 'not_configured' | 'db_unreachable' | 'db_status' | 'db_shape'
+type LogCode =
+  | 'auth_unreachable'
+  | 'auth_status'
+  | 'not_configured'
+  | 'db_unreachable'
+  | 'db_status'
+  | 'db_shape'
+  | `key_${KeyStatus}`
 function log(code: LogCode, counts: Record<string, number> = {}): void {
   console.log(JSON.stringify({ fn: 'ai', code, ...counts }))
 }
@@ -466,6 +480,52 @@ function statusOf(env: Env, context: unknown): Record<string, unknown> | null {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Pasting, testing and checking a key (plan A10). A key is tested on the
+// service's list endpoint, which spends no quota, and kept only when it
+// works or the service is busy: a key the service turned down is never
+// stored. The reply names the key by its last four characters at most, and
+// the models on the committed list it can use.
+// ---------------------------------------------------------------------------
+
+type KeyStatus = 'ok' | 'busy' | 'rejected' | 'locked'
+const keyStatusOf = (outcome: Outcome): KeyStatus => (outcome === 'ok' ? 'ok' : outcome === 'rejected' ? 'rejected' : 'busy')
+
+type Reply = [status: number, body: unknown]
+const failed = (code: Code): Reply => [STATUS_OF[code], { ok: false, code }]
+
+/** What a test found, as the app reads it: every committed model, ticked when the key can use it. */
+function keyReply(source: 'saved' | 'secret' | 'none', status: KeyStatus, hint: string | null, listed: readonly string[]): Reply {
+  log(`key_${status}`)
+  const models = status === 'ok' ? SERVICES.gemini.models.map((id) => ({ id, listed: listed.includes(id) })) : []
+  return [200, { ok: true, provider: 'gemini', source, status, hint: hint !== null && HINT.test(hint) ? hint : null, models }]
+}
+
+async function saveKey(env: Env, user: string, key: string, fetchFn: typeof fetch): Promise<Reply> {
+  // Checked before Google is asked: a key that could not be sealed is not tested.
+  if (keyRoots(env).length === 0) {
+    log('not_configured')
+    return failed('helper_error')
+  }
+  const { outcome, listed } = await geminiModels(key, fetchFn)
+  const status = keyStatusOf(outcome)
+  if (status === 'rejected') return keyReply('none', status, null, [])
+  const sealed = await sealKey(env, user, 'gemini', key)
+  if (sealed === null) return failed('helper_error')
+  const hint = key.slice(-4)
+  const put = await callDb(
+    env,
+    'ai_key_put',
+    {
+      p_user: user, p_provider: 'gemini', p_ciphertext: sealed.ciphertext, p_iv: sealed.iv, p_kek_id: sealed.kek_id,
+      p_key_v: sealed.key_v, p_key_hint: hint, p_status: status, p_model: null,
+    },
+    fetchFn,
+  )
+  if ('code' in put) return failed(put.code)
+  return keyReply('saved', status, hint, listed)
+}
+
 export async function handle(
   req: Request,
   rawEnv: Readonly<Record<string, string | undefined>>,
@@ -504,6 +564,7 @@ export async function handle(
 
   // Answered only for a signed-in caller, so the version is no one else's business.
   if (body.action === 'ping') return send(200, { ok: true, version: VERSION })
+  if (body.action === 'save_key') return send(...(await saveKey(env, who.user, body.key, fetchFn)))
 
   const context = await callDb(env, 'ai_context_for', { p_user: who.user }, fetchFn)
   if ('code' in context) return fail(context.code)
