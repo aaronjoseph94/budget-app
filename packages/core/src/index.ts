@@ -152,6 +152,7 @@ export {
 } from './expected-pay.js'
 
 export type { MonthForecastInput } from './month-position.js'
+export { monthEndForecast, type MonthEndForecast, type Spread } from './month-end.js'
 export { safeToSpend, type SafeToSpend } from './safe-to-spend.js'
 
 export {
