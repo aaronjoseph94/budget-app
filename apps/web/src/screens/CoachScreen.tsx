@@ -10,7 +10,9 @@ import { Progress } from '../components/ui/feedback.js'
 import { Icon } from '../components/ui/icons.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { CoachCards, DayLine, Said, todaysCards, todaysLine } from '../coach/CoachCards.js'
-import { ownWords, type Day, type Words } from '../coach/narration.js'
+import { CoachStatus } from '../coach/CoachStatus.js'
+import type { Day, Words } from '../coach/narration.js'
+import { useNarration } from '../coach/use-narration.js'
 import { QuoteCard, useQuotePick } from '../coach/QuoteCard.js'
 import { useCoachFacts, useCoachRead } from '../coach/facts.js'
 import { useCoachSettings } from '../coach/settings.js'
@@ -62,7 +64,8 @@ export function CoachScreen() {
       quotes: pick.shortlist,
     }
   }, [facts, tone, goals, mainGoal, pick.shortlist])
-  const narration = useMemo(() => (day === null ? null : ownWords(day)), [day])
+  const narrated = useNarration(day, asOf, true)
+  const { narration } = narrated
   const quote = narration?.quote ?? null
   return (
     <div className="space-y-4">
@@ -70,7 +73,7 @@ export function CoachScreen() {
         <h1 className="text-2xl font-semibold tracking-tight">Coach</h1>
         <HelpButton screen="coach" />
       </div>
-      <p className="text-xs text-muted-foreground">In the app’s own words, from your records.</p>
+      <CoachStatus state={narrated} />
       <DayLine words={narration?.line ?? null} className="text-lg font-medium leading-snug" />
       <GoalsCard funds={funds} outlooks={outlooks} words={narration?.goal ?? null} />
       <CoachCards digest={digest} narration={narration} />

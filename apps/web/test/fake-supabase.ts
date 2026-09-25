@@ -126,8 +126,8 @@ export interface FakeSupabase {
   /**
    * The AI helper, `functions/v1/ai`. `ai` answers each request's body;
    * null is a helper never deployed, which Supabase answers with its own
-   * 404. By default it answers `ping`, and `status` with `aiStatus`. Every
-   * body sent is kept in `calls`.
+   * 404. By default it answers `ping`, `status` with `aiStatus`, and `run`
+   * as a helper with no key does. Every body sent is kept in `calls`.
    */
   readonly functions: {
     ai: ((body: Readonly<Record<string, unknown>>) => Response | Promise<Response>) | null
@@ -206,7 +206,13 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
   const server: FakeSupabase['server'] = { refuse: null, maxRows: null, afterRead: null, hold: null, lacks: {} }
   const user = { id: 'u1', email: 'you@example.com', user_metadata: {} as Record<string, unknown> }
   const functions: FakeSupabase['functions'] = {
-    ai: (body) => (body['action'] === 'ping' ? json({ ok: true, version: AI_HELPER_VERSION }) : json(functions.aiStatus)),
+    // With no key anywhere, a task is turned away as the helper would: not set up.
+    ai: (body) =>
+      body['action'] === 'ping'
+        ? json({ ok: true, version: AI_HELPER_VERSION })
+        : body['action'] === 'run'
+          ? json({ ok: false, code: 'not_set_up' }, 409)
+          : json(functions.aiStatus),
     aiStatus: aiStatusReply(),
     calls: [],
   }

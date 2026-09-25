@@ -1,0 +1,133 @@
+import { act, cleanup, screen, waitFor, within } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { NarrateDaily, NarrateReply } from '@budget/schema'
+import { Shell } from '../src/App.js'
+import type { Category, LedgerRow } from '../src/ledger.js'
+import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
+import { renderScreen } from './render-screen.js'
+
+/**
+ * The Coach's words from the AI (plan A12): the app's own first, the AI's
+ * swapped in once checked and kept, reused while their claims hold and
+ * drawn with today's figures, and never a figure of the AI's own. The
+ * records are coach-cards' (hand-derived there): the month is $300.00 up
+ * on 1–24 Aug; the cards are stale data, two rows in Review, and Dining
+ * out's rise of $300.00.
+ */
+const TODAY = new Date(2026, 8, 24, 12)
+const cat = (id: string, name: string): Category => ({ id, name, kind: 'variable', sort_order: 0, weekly_budget_cents: null })
+const tx = (id: string, posted_on: string, amount_cents: number, category_id: string): LedgerRow => ({
+  id, posted_on, amount_cents, merchant_raw: 'SYNTHETIC SHOP', category_id, source: 'card_pdf',
+})
+const pending = (id: string) => ({ id, posted_on: '2026-09-20', amount_cents: -1349, merchant: 'SYNTHETIC CAFE', merchant_raw: 'SYNTHETIC CAFE', status: 'pending' })
+
+function seeded(dining = 'Dining out'): FakeSupabase {
+  return createFakeSupabase({
+    categories: [cat('dining', dining), cat('groceries', 'Groceries')],
+    ingest_batches: [{ id: 'b1', source: 'card_pdf', created_at: '2026-09-08T12:00:00Z', period_start: '2026-06-01', period_end: '2026-09-07' }],
+    ingest_candidates: [pending('p1'), pending('p2')],
+    transactions: [
+      ...['06', '07', '08'].flatMap((m) => [tx(`d${m}`, `2026-${m}-10`, -30_000, 'dining'), tx(`g${m}`, `2026-${m}-12`, -40_000, 'groceries')]),
+      tx('d09', '2026-09-03', -60_000, 'dining'),
+      tx('g09', '2026-09-12', -40_000, 'groceries'),
+    ],
+  })
+}
+
+/** What a well-behaved model writes for a brief: each card by its own letter, figures only as blanks. */
+function replyFor(brief: NarrateDaily, over: (card: NarrateReply['cards'][number]) => NarrateReply['cards'][number] = (c) => c): NarrateReply {
+  const kindOf = (id: string) => brief.facts.find((f) => f.id === id)?.kind
+  return {
+    summary: `Heads up: {{${brief.summary}.change}} than by this day last month.`,
+    cards: brief.cards.map((id) =>
+      over({
+        fact: id,
+        title: kindOf(id) === 'category_change' ? `Busy month for {{${id}.name}}` : 'A quick one',
+        body: kindOf(id) === 'category_change' ? `You spent {{${id}.change}} on it than last month.` : 'Worth a look today.',
+        tryThis: kindOf(id) === 'category_change' ? 'One thing to try: cook at home a few nights.' : null,
+      }),
+    ),
+    goal: null,
+    quote: null,
+  }
+}
+
+type Answer = (brief: NarrateDaily) => Response | Promise<Response>
+const ok = (reply: NarrateReply) => new Response(JSON.stringify({ ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: JSON.stringify(reply) }), { headers: { 'content-type': 'application/json' } })
+
+/** The helper answering the daily pack with `answer`; every brief sent is kept. */
+function helper(fake: FakeSupabase, answer: Answer = (b) => ok(replyFor(b))): NarrateDaily[] {
+  const briefs: NarrateDaily[] = []
+  const fallback = fake.functions.ai!
+  fake.functions.ai = (body) => {
+    if (body['action'] !== 'run') return fallback(body)
+    briefs.push(body['data'] as NarrateDaily)
+    return answer(body['data'] as NarrateDaily)
+  }
+  return briefs
+}
+
+const whole = (tag: string, s: string) => (_: string, el: Element | null) => el?.tagName === tag && el.textContent === s
+const headings = () => within(screen.getByRole('region', { name: 'Insights' })).getAllByRole('heading').map((h) => h.textContent)
+
+function go(hash: string) {
+  act(() => {
+    window.location.hash = hash
+    window.dispatchEvent(new HashChangeEvent('hashchange'))
+  })
+}
+
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(TODAY)
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
+  window.localStorage.clear()
+  go('/coach')
+})
+
+afterEach(() => {
+  cleanup()
+  vi.useRealTimers()
+  vi.restoreAllMocks()
+  window.location.hash = ''
+})
+
+describe('the AI’s words on the Coach', () => {
+  it('draws the app’s own words first, then swaps in the AI’s, marked ✨, with every figure the app’s', async () => {
+    const fake = seeded()
+    let answer: (r: Response) => void = () => undefined
+    const briefs = helper(fake, () => new Promise<Response>((resolve) => (answer = resolve)))
+    renderScreen(<Shell />, fake)
+
+    expect(await screen.findByText(whole('P', 'You’ve spent $300.00 more than by this day last month. There’s still time to ease off.'))).toBeTruthy()
+    await screen.findByText('Asking the AI for today’s words. The app’s own show meanwhile.')
+    expect(headings()).toEqual(['Time for a fresh statement', 'Charges waiting for you', 'Running ahead: Dining out'])
+    // The brief names things and directions; the amounts are nowhere in it.
+    expect(JSON.stringify(briefs[0])).not.toMatch(/300|600|1000|700/)
+    answer(ok(replyFor(briefs[0]!)))
+
+    expect(await screen.findByText(whole('P', '✨ Written by AI: Heads up: $300.00 more than by this day last month.'))).toBeTruthy()
+    expect(headings()).toEqual(['✨ Written by AI: A quick one', '✨ Written by AI: A quick one', '✨ Written by AI: Busy month for Dining out'])
+    expect(screen.getByText(whole('P', 'You spent $300.00 more on it than last month.'))).toBeTruthy()
+    expect(screen.getByText('✨ Words by AI (free Google Gemini) from your numbers. Every figure is the app’s own.').getAttribute('aria-live')).toBe('polite')
+  })
+
+  it('keeps the checked words with no figure, and reuses them the next time, drawn with today’s figures', async () => {
+    const fake = seeded()
+    const briefs = helper(fake)
+    renderScreen(<Shell />, fake)
+    await screen.findByText(whole('P', 'You spent $300.00 more on it than last month.'))
+    await waitFor(() => expect(fake.tables.ai_notes).toHaveLength(1))
+    const kept = fake.tables.ai_notes[0]!
+    expect(kept).toMatchObject({ surface: 'daily', scope: 'day:2026-09-24', prompt_v: 1, provider: 'gemini' })
+    expect(JSON.stringify(kept['body'])).not.toMatch(/[\p{N}\p{Sc}%]/u)
+    cleanup()
+
+    // A dollar more at Dining out: the same claims, so the kept words, with the new figure, and no new ask.
+    Object.assign(fake.tables.transactions.find((t) => t.id === 'd09')!, { amount_cents: -60_100 })
+    Object.assign(kept, { created_at: '2026-09-24T12:00:00Z' })
+    renderScreen(<Shell />, fake)
+    expect(await screen.findByText(whole('P', 'You spent $301.00 more on it than last month.'))).toBeTruthy()
+    expect(briefs).toHaveLength(1)
+  })
+})
