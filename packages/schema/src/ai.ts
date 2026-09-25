@@ -21,8 +21,8 @@ import { z } from 'zod'
 export const AiProviderSchema = z.enum(['gemini', 'groq', 'openrouter', 'openai', 'anthropic'])
 export type AiProvider = z.infer<typeof AiProviderSchema>
 
-/** The services a key can be pasted for so far; the others join with their adapters (A11). */
-export type AiKeyProvider = 'gemini'
+/** The services a key can be pasted for: every one of them (A11). */
+export type AiKeyProvider = AiProvider
 
 /**
  * Every request the helper answers. It learns who is asking from the token,
@@ -47,7 +47,7 @@ export type AiAction = AiRequest['action']
  * new version to be pasted over it. Bumped with every change to the
  * helper, as `YYYY-MM-DD.N`.
  */
-export const AI_HELPER_VERSION = '2026-09-25.2'
+export const AI_HELPER_VERSION = '2026-09-25.3'
 
 /**
  * Every failure the helper answers with, as a code the app turns into a

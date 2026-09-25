@@ -43,7 +43,7 @@ async function ask(body: unknown, world: World = {}, env: Record<string, string 
     const u = String(url)
     calls.push({ url: u, init: init ?? {} })
     if (u.endsWith('/auth/v1/user')) return new Response(JSON.stringify({ id: USER }))
-    if (u === GOOGLE) return (world.google ?? listing)()
+    if (!u.startsWith(PROJECT)) return (world.google ?? listing)()
     const fn = u.slice(`${PROJECT}/rest/v1/rpc/`.length)
     const answer = world.db?.[fn]
     if (answer !== undefined) return answer()
@@ -111,7 +111,7 @@ describe('save_key', () => {
       const { res, calls } = await ask({ action: 'save_key', provider: 'gemini', key })
       expect([res.status, calls]).toEqual([400, []])
     }
-    expect((await ask({ action: 'save_key', provider: 'groq', key: KEY })).res.status).toBe(400)
+    expect((await ask({ action: 'save_key', provider: 'mistral', key: KEY })).res.status).toBe(400)
   })
 
   it('asks Google nothing when there is no root to seal the key with', async () => {
@@ -124,6 +124,34 @@ describe('save_key', () => {
     const missing = () => new Response(JSON.stringify({ code: 'PGRST202' }), { status: 404 })
     const { res, body } = await save({ db: { ai_key_put: missing } })
     expect([res.status, body]).toEqual([503, { ok: false, code: 'needs_update' }])
+  })
+})
+
+describe('a key for another service', () => {
+  const GROQ = 'https://api.groq.com/openai/v1/models'
+  const groqList = () => new Response(JSON.stringify({ data: [{ id: 'openai/gpt-oss-120b' }] }))
+
+  it('is tested on that service’s list, sealed for that service, and answered with its own models', async () => {
+    const { body, calls, rpc } = await ask({ action: 'save_key', provider: 'groq', key: KEY }, { db: {}, google: groqList })
+    expect(calls.some((c) => c.url === GOOGLE)).toBe(false)
+    expect(body).toEqual({
+      ok: true, provider: 'groq', source: 'saved', status: 'ok', hint: '0001',
+      models: [{ id: 'openai/gpt-oss-20b', listed: false }, { id: 'openai/gpt-oss-120b', listed: true }],
+    })
+    expect(new Headers(calls.find((c) => c.url === GROQ)?.init.headers).get('authorization')).toBe(`Bearer ${KEY}`)
+    expect(rpc('ai_key_put')[0]).toMatchObject({ p_provider: 'groq', p_status: 'ok' })
+  })
+
+  it('never uses the Gemini secret: with no pasted key the service is not set up', async () => {
+    const { res, body, calls } = await ask({ action: 'test_key', provider: 'openai' }, {}, { ...ENV, GEMINI_API_KEY: SECRET })
+    expect([res.status, body]).toEqual([409, { ok: false, code: 'not_set_up' }])
+    expect(calls.some((c) => !c.url.startsWith(PROJECT))).toBe(false)
+  })
+
+  it('does not open for another service: a Gemini key saved under Groq is locked', async () => {
+    const sealed = await sealKey(ENV, USER, 'gemini', KEY)
+    const { body } = await ask({ action: 'test_key', provider: 'groq' }, { keys: [{ provider: 'groq', ...sealed, key_hint: '0001', status: 'ok' }] })
+    expect(body).toMatchObject({ provider: 'groq', status: 'locked' })
   })
 })
 

@@ -5,8 +5,8 @@
 // keys kept encrypted in 0016's ai_provider_keys, a hardcoded allowlist of
 // services, and failing over between them. This version answers `ping`,
 // which says the helper is deployed, `status`, which says what is set up,
-// and `save_key` and `test_key`, which take and check a free Gemini key
-// (plan A10); the tasks arrive in later slices (A11 on).
+// and `save_key` and `test_key`, which take and check a key for any of the
+// five services (plan A10, A11).
 //
 // Who is calling comes from Supabase's auth server, asked with the
 // caller's own token, never from the request body. The database is reached
@@ -24,7 +24,7 @@
 import { z } from 'npm:zod@4.6.5'
 
 /** Which copy is deployed, so One-time updates can tell an old paste from this one. */
-export const VERSION = '2026-09-25.2'
+export const VERSION = '2026-09-25.3'
 
 // Browsers allowed to call this, as read-receipt's: the Cloudflare and
 // Netlify sites and a local dev server, plus exact https origins in the
@@ -56,9 +56,8 @@ type Env = z.infer<typeof EnvSchema>
 // field, so no URL, host, user id or prompt can ride along (ADR 0004).
 // A key is 20 to 200 characters of what providers' keys are made of
 // (plan §3.2); anything else is refused before any service is asked.
-// Only Gemini takes a pasted key so far; the others join with their
-// adapters (A11).
-const KeyProvider = z.enum(['gemini'])
+// Every service takes a pasted key (A11).
+const KeyProvider = z.enum(['gemini', 'groq', 'openrouter', 'openai', 'anthropic'])
 export const RequestSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('ping') }).strict(),
   z.object({ action: z.literal('status') }).strict(),
@@ -158,8 +157,7 @@ async function whoIs(env: Env, bearer: string, fetchFn: typeof fetch): Promise<W
 }
 
 // The services, their tier and their models, the default first (ADR 0004's
-// allowlist; each service's host and paths join it with its adapter, A10
-// and A11). A model is only ever one of these: the owner's choice, when it
+// allowlist). A model is only ever one of these: the owner's choice, when it
 // is on the list, or the list's first.
 const SERVICES = {
   gemini: { tier: 'free', models: ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.5-flash'] },
@@ -181,15 +179,34 @@ function modelFor(provider: Provider, ...choices: readonly unknown[]): string {
 // ---------------------------------------------------------------------------
 // Where each service is reached: a fixed host and a fixed path per
 // operation, never read from a model, the database or a request. A model id
-// goes into a path only through modelFor, so only an id on the list above
-// can ever reach a URL. Gemini's is here (A10); the others join with their
-// adapters (A11).
+// goes into a path or a body only through modelFor, so only an id on the
+// list above can ever reach a service.
 // ---------------------------------------------------------------------------
 
 const GEMINI_HOST = 'https://generativelanguage.googleapis.com'
-// One page of every model the key can use; Google lists far fewer than this.
-const GEMINI_LIST = `${GEMINI_HOST}/v1beta/models?pageSize=1000`
+const GROQ_API = 'https://api.groq.com/openai/v1'
+const OPENROUTER_API = 'https://openrouter.ai/api/v1'
+const OPENAI_API = 'https://api.openai.com/v1'
+const ANTHROPIC_API = 'https://api.anthropic.com/v1'
+
+// Each service's key test, which spends no quota: a list of the models the
+// key can use, or for OpenRouter, whose free router is one name, the key's
+// own record. One page each; every service lists far fewer than this.
+const LIST_URL: Readonly<Record<Provider, string>> = {
+  gemini: `${GEMINI_HOST}/v1beta/models?pageSize=1000`,
+  groq: `${GROQ_API}/models`,
+  openrouter: `${OPENROUTER_API}/key`,
+  openai: `${OPENAI_API}/models`,
+  anthropic: `${ANTHROPIC_API}/models?limit=1000`,
+}
 const geminiChat = (model: string) => `${GEMINI_HOST}/v1beta/models/${modelFor('gemini', model)}:generateContent`
+
+/** How each service takes its key: Google and Anthropic in headers of their own, the rest as a bearer token. */
+function keyHeaders(provider: Provider, key: string): Record<string, string> {
+  if (provider === 'gemini') return { 'x-goog-api-key': key }
+  if (provider === 'anthropic') return { 'x-api-key': key, 'anthropic-version': '2023-06-01' }
+  return { Authorization: `Bearer ${key}` }
+}
 
 /** How long one call to a service may take before it counts as a timeout (plan §3.5). */
 const ATTEMPT_MS = 20_000
@@ -198,9 +215,9 @@ const ATTEMPT_MS = 20_000
 export type Outcome = 'ok' | 'rate_limited' | 'rejected' | 'model_not_found' | 'provider_error' | 'timeout' | 'unreachable'
 
 /** One call, cut off at the attempt's limit. No reply at all is a timeout or no route. */
-async function callService(fetchFn: typeof fetch, url: string, init: RequestInit): Promise<Response | 'timeout' | 'unreachable'> {
+async function callService(fetchFn: typeof fetch, url: string, init: RequestInit, ms = ATTEMPT_MS): Promise<Response | 'timeout' | 'unreachable'> {
   const stop = new AbortController()
-  const timer = setTimeout(() => stop.abort(), ATTEMPT_MS)
+  const timer = setTimeout(() => stop.abort(), ms)
   try {
     return await fetchFn(url, { ...init, signal: stop.signal })
   } catch {
@@ -211,13 +228,14 @@ async function callService(fetchFn: typeof fetch, url: string, init: RequestInit
 }
 
 /**
- * Gemini's answer, as an outcome. Google turns down a bad key with a 400
- * whose reason is API_KEY_INVALID, not a 401, so that 400 is a rejection;
- * any other 400 is the service's trouble.
+ * A service's answer, as an outcome. Anthropic says 529 when it is
+ * overloaded, which is resting like a 429. Google turns down a bad key with
+ * a 400 whose reason is API_KEY_INVALID, not a 401, so that 400 is a
+ * rejection; any other 400 is the service's trouble.
  */
-function geminiOutcome(status: number, body: unknown): Outcome {
+function outcomeOf(status: number, body: unknown): Outcome {
   if (status >= 200 && status < 300) return 'ok'
-  if (status === 429) return 'rate_limited'
+  if (status === 429 || status === 529) return 'rate_limited'
   if (status === 401 || status === 403) return 'rejected'
   if (status === 404) return 'model_not_found'
   const error = obj(obj(body)['error'])
@@ -227,23 +245,40 @@ function geminiOutcome(status: number, body: unknown): Outcome {
 }
 
 /**
- * Check which models work: ask Gemini which models this key can use (no
- * quota is spent), and keep only the ones on the committed list that can
- * write text. Nothing Google lists is ever added.
+ * Which committed models a service's list offers. Google names a model
+ * `models/<id>` and says what it can do; Anthropic may list an alias under
+ * its dated id (`claude-haiku-4-5-20251001`); the others list the id as is.
+ * OpenRouter's key test is the key's record, not a list: a key that works
+ * can use its free router.
  */
-export async function geminiModels(key: string, fetchFn: typeof fetch): Promise<{ outcome: Outcome; listed: readonly string[] }> {
-  const res = await callService(fetchFn, GEMINI_LIST, { method: 'GET', headers: { 'x-goog-api-key': key } })
+function listedIn(provider: Provider, body: unknown): readonly string[] {
+  const committed: readonly string[] = SERVICES[provider].models
+  if (provider === 'openrouter') return committed
+  if (provider === 'gemini') {
+    const writes = new Set(
+      list(obj(body)['models'])
+        .map(obj)
+        .filter((m) => !Array.isArray(m['supportedGenerationMethods']) || m['supportedGenerationMethods'].includes('generateContent'))
+        .map((m) => m['name']),
+    )
+    return committed.filter((id) => writes.has(`models/${id}`))
+  }
+  const ids = list(obj(body)['data']).map((m) => obj(m)['id']).filter((id): id is string => typeof id === 'string')
+  const dated = (listed: string, id: string) => provider === 'anthropic' && listed.startsWith(`${id}-`) && /^\d{8}$/.test(listed.slice(id.length + 1))
+  return committed.filter((id) => ids.some((listed) => listed === id || dated(listed, id)))
+}
+
+/**
+ * Check which models work: ask the service which models this key can use
+ * (no quota is spent), and keep only the ones on the committed list.
+ * Nothing a service lists is ever added.
+ */
+export async function listModels(provider: Provider, key: string, fetchFn: typeof fetch): Promise<{ outcome: Outcome; listed: readonly string[] }> {
+  const res = await callService(fetchFn, LIST_URL[provider], { method: 'GET', headers: keyHeaders(provider, key) })
   if (typeof res === 'string') return { outcome: res, listed: [] }
   const body: unknown = await res.json().catch(() => null)
-  const outcome = geminiOutcome(res.status, body)
-  if (outcome !== 'ok') return { outcome, listed: [] }
-  const writes = new Set(
-    list(obj(body)['models'])
-      .map(obj)
-      .filter((m) => !Array.isArray(m['supportedGenerationMethods']) || m['supportedGenerationMethods'].includes('generateContent'))
-      .map((m) => m['name']),
-  )
-  return { outcome, listed: SERVICES.gemini.models.filter((id) => writes.has(`models/${id}`)) }
+  const outcome = outcomeOf(res.status, body)
+  return outcome === 'ok' ? { outcome, listed: listedIn(provider, body) } : { outcome, listed: [] }
 }
 
 /** What a task asks of a service: its fixed prompt, its data, the shape of its reply and its limits. */
@@ -286,7 +321,7 @@ export function geminiRequest(model: string, key: string, ask: Ask): { readonly 
  * failure, so the next service can be tried.
  */
 export function geminiReply(status: number, body: unknown): { readonly outcome: Outcome; readonly text: string | null } {
-  const outcome = geminiOutcome(status, body)
+  const outcome = outcomeOf(status, body)
   if (outcome !== 'ok') return { outcome, text: null }
   const reply = obj(body)
   const candidate = obj(list(reply['candidates'])[0])
@@ -498,35 +533,52 @@ type Reply = [status: number, body: unknown]
 const failed = (code: Code): Reply => [STATUS_OF[code], { ok: false, code }]
 
 /** What a test found, as the app reads it: every committed model, ticked when the key can use it. */
-function keyReply(source: 'saved' | 'secret' | 'none', status: KeyStatus, hint: string | null, listed: readonly string[]): Reply {
+function keyReply(provider: Provider, source: 'saved' | 'secret' | 'none', status: KeyStatus, hint: string | null, listed: readonly string[]): Reply {
   log(`key_${status}`)
-  const models = status === 'ok' ? SERVICES.gemini.models.map((id) => ({ id, listed: listed.includes(id) })) : []
-  return [200, { ok: true, provider: 'gemini', source, status, hint: hint !== null && HINT.test(hint) ? hint : null, models }]
+  const models = status === 'ok' ? SERVICES[provider].models.map((id) => ({ id, listed: listed.includes(id) })) : []
+  return [200, { ok: true, provider, source, status, hint: hint !== null && HINT.test(hint) ? hint : null, models }]
 }
 
-async function saveKey(env: Env, user: string, key: string, fetchFn: typeof fetch): Promise<Reply> {
-  // Checked before Google is asked: a key that could not be sealed is not tested.
+async function saveKey(env: Env, user: string, provider: Provider, key: string, fetchFn: typeof fetch): Promise<Reply> {
+  // Checked before the service is asked: a key that could not be sealed is not tested.
   if (keyRoots(env).length === 0) {
     log('not_configured')
     return failed('helper_error')
   }
-  const { outcome, listed } = await geminiModels(key, fetchFn)
+  const { outcome, listed } = await listModels(provider, key, fetchFn)
   const status = keyStatusOf(outcome)
-  if (status === 'rejected') return keyReply('none', status, null, [])
-  const sealed = await sealKey(env, user, 'gemini', key)
+  if (status === 'rejected') return keyReply(provider, 'none', status, null, [])
+  const sealed = await sealKey(env, user, provider, key)
   if (sealed === null) return failed('helper_error')
   const hint = key.slice(-4)
   const put = await callDb(
     env,
     'ai_key_put',
     {
-      p_user: user, p_provider: 'gemini', p_ciphertext: sealed.ciphertext, p_iv: sealed.iv, p_kek_id: sealed.kek_id,
+      p_user: user, p_provider: provider, p_ciphertext: sealed.ciphertext, p_iv: sealed.iv, p_kek_id: sealed.kek_id,
       p_key_v: sealed.key_v, p_key_hint: hint, p_status: status, p_model: null,
     },
     fetchFn,
   )
   if ('code' in put) return failed(put.code)
-  return keyReply('saved', status, hint, listed)
+  return keyReply(provider, 'saved', status, hint, listed)
+}
+
+/**
+ * The key the helper would use for a service: the saved one, opened, else
+ * for Gemini the GEMINI_API_KEY secret. `key` is null when a saved key no
+ * root can open (locked); `saved` is null when there is no key at all.
+ */
+type KeyFor = { readonly source: 'saved' | 'secret'; readonly key: string | null; readonly hint: string | null; readonly status: unknown }
+async function keyFor(env: Env, user: string, provider: Provider, keys: unknown): Promise<KeyFor | null> {
+  const saved = list(keys).map(obj).find((k) => k['provider'] === provider)
+  if (saved === undefined) {
+    const secret = provider === 'gemini' ? (env.GEMINI_API_KEY?.trim() ?? '') : ''
+    return secret === '' ? null : { source: 'secret', key: secret, hint: secret.slice(-4), status: null }
+  }
+  const sealed = { ciphertext: String(saved['ciphertext']), iv: String(saved['iv']), kek_id: String(saved['kek_id']), key_v: Number(saved['key_v']) }
+  const hint = typeof saved['key_hint'] === 'string' ? saved['key_hint'] : null
+  return { source: 'saved', key: await openKey(env, user, provider, sealed), hint, status: saved['status'] }
 }
 
 /**
@@ -534,24 +586,18 @@ async function saveKey(env: Env, user: string, key: string, fetchFn: typeof fetc
  * secret. This is also Check which models work. A saved key no root can
  * open is marked locked, so AI settings asks for it again.
  */
-async function testKey(env: Env, user: string, fetchFn: typeof fetch): Promise<Reply> {
+async function testKey(env: Env, user: string, provider: Provider, fetchFn: typeof fetch): Promise<Reply> {
   const context = await callDb(env, 'ai_context_for', { p_user: user }, fetchFn)
   if ('code' in context) return failed(context.code)
-  const saved = list(obj(context.data)['keys']).map(obj).find((k) => k['provider'] === 'gemini')
-  if (saved === undefined) {
-    const secret = env.GEMINI_API_KEY?.trim() ?? ''
-    if (secret === '') return failed('not_set_up')
-    const { outcome, listed } = await geminiModels(secret, fetchFn)
-    return keyReply('secret', keyStatusOf(outcome), secret.slice(-4), listed)
+  const found = await keyFor(env, user, provider, obj(context.data)['keys'])
+  if (found === null) return failed('not_set_up')
+  const test = found.key === null ? { outcome: null, listed: [] } : await listModels(provider, found.key, fetchFn)
+  const status = test.outcome === null ? 'locked' : keyStatusOf(test.outcome)
+  if (found.source === 'saved') {
+    const mark = await callDb(env, 'ai_key_mark', { p_user: user, p_provider: provider, p_status: status }, fetchFn)
+    if ('code' in mark) return failed(mark.code)
   }
-  const hint = typeof saved['key_hint'] === 'string' ? saved['key_hint'] : null
-  const sealed = { ciphertext: String(saved['ciphertext']), iv: String(saved['iv']), kek_id: String(saved['kek_id']), key_v: Number(saved['key_v']) }
-  const key = await openKey(env, user, 'gemini', sealed)
-  const found = key === null ? { outcome: null, listed: [] } : await geminiModels(key, fetchFn)
-  const status = found.outcome === null ? 'locked' : keyStatusOf(found.outcome)
-  const mark = await callDb(env, 'ai_key_mark', { p_user: user, p_provider: 'gemini', p_status: status }, fetchFn)
-  if ('code' in mark) return failed(mark.code)
-  return keyReply('saved', status, hint, found.listed)
+  return keyReply(provider, found.source, status, found.hint, test.listed)
 }
 
 export async function handle(
@@ -592,8 +638,8 @@ export async function handle(
 
   // Answered only for a signed-in caller, so the version is no one else's business.
   if (body.action === 'ping') return send(200, { ok: true, version: VERSION })
-  if (body.action === 'save_key') return send(...(await saveKey(env, who.user, body.key, fetchFn)))
-  if (body.action === 'test_key') return send(...(await testKey(env, who.user, fetchFn)))
+  if (body.action === 'save_key') return send(...(await saveKey(env, who.user, body.provider, body.key, fetchFn)))
+  if (body.action === 'test_key') return send(...(await testKey(env, who.user, body.provider, fetchFn)))
 
   const context = await callDb(env, 'ai_context_for', { p_user: who.user }, fetchFn)
   if ('code' in context) return fail(context.code)

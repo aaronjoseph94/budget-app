@@ -7,7 +7,7 @@
  * Removing one is 0016's `ai_key_forget`, which deletes only the caller's
  * own key; the browser has no grant on the table itself.
  */
-import { AI_KEY_SHAPE, type AiKeyReply, type AiModelChoice } from '@budget/schema'
+import { AI_KEY_SHAPE, AiProviderSchema, type AiKeyReply, type AiModelChoice } from '@budget/schema'
 import { ReadRefused, needsOneTimeUpdate } from '../ledger.js'
 import type { SupabaseClient } from '../supabase.js'
 import { askAi, viewOf, type AiView } from './client.js'
@@ -29,13 +29,14 @@ function keyReplyOf(data: unknown): AiKeyReply | null {
   const d = data as Record<string, unknown>
   const hint = d['hint']
   const models = Array.isArray(d['models']) ? (d['models'] as unknown[]) : null
-  if (d['ok'] !== true || !['ok', 'busy', 'rejected', 'locked'].includes(String(d['status']))) return null
+  const provider = AiProviderSchema.options.find((p) => p === d['provider'])
+  if (d['ok'] !== true || provider === undefined || !['ok', 'busy', 'rejected', 'locked'].includes(String(d['status']))) return null
   if (!['saved', 'secret', 'none'].includes(String(d['source'])) || (hint !== null && typeof hint !== 'string')) return null
   const choices = (models ?? []).filter(
     (m): m is AiModelChoice => typeof m === 'object' && m !== null && typeof (m as AiModelChoice).id === 'string' && typeof (m as AiModelChoice).listed === 'boolean',
   )
   if (models === null || choices.length !== models.length) return null
-  return { ok: true, provider: 'gemini', source: d['source'] as AiKeyReply['source'], status: d['status'] as AiKeyReply['status'], hint, models: choices }
+  return { ok: true, provider, source: d['source'] as AiKeyReply['source'], status: d['status'] as AiKeyReply['status'], hint, models: choices }
 }
 
 /** The sentences of plan §8.3, for what a test found. */
