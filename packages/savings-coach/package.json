@@ -10,5 +10,8 @@
   "dependencies": {
     "@budget/core": "workspace:*",
     "@budget/money-primitives": "workspace:*"
+  },
+  "devDependencies": {
+    "@budget/schema": "workspace:*"
   }
 }

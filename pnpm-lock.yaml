@@ -125,6 +125,10 @@ importers:
       '@budget/money-primitives':
         specifier: workspace:*
         version: link:../money-primitives
+    devDependencies:
+      '@budget/schema':
+        specifier: workspace:*
+        version: link:../schema
 
   packages/schema:
     dependencies:

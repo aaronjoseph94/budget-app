@@ -10,37 +10,15 @@ import {
   slotsOf,
   type CardTemplateKey,
 } from '../src/index.js'
+import { proseProblem } from '@budget/schema'
 import { FACTS, WIN_FACTS, factOf } from './fixtures.js'
 
 /**
- * ADR 0005 §4's rules 1 to 7, checked here by the test itself until
- * ModelProse arrives in packages/schema (plan A12): the app's own words must
- * pass the rule a model's words will.
+ * ADR 0005 §4's rules 1 to 7, as ModelProse applies them to a model's
+ * words: the app's own words must pass the very rule a model's must, so
+ * the two are drawn by the same code and neither can hold a figure.
  */
-const NUMBER_WORDS = [
-  'zero', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen',
-  'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty', 'thirty', 'forty', 'fifty',
-  'sixty', 'seventy', 'eighty', 'ninety', 'hundreds?', 'thousands?', 'millions?', 'billions?', 'trillions?',
-  'half', 'halves', 'halve', 'halved', 'quarters?', 'thirds?', 'double', 'doubled', 'twice', 'triple', 'tripled',
-  'dozens?', 'percent', 'percentage', 'pct',
-]
-const PRODUCTS = ['crypto', 'bitcoin', 'stocks?', 'etf', 'index fund', 'mutual fund', 'tfsa', 'rrsp', 'gic', 'invest in']
-const BLANK = /\{\{[A-Z]{1,2}\.[a-z_]{1,24}\}\}/g
-
-function breaksTextRule(raw: string, limit: number): string | null {
-  const text = raw.normalize('NFKC')
-  const bare = text.replace(BLANK, '')
-  if (/[{}]/.test(bare)) return 'a stray brace'
-  if (/[\p{N}\p{Sc}]/u.test(bare)) return 'a number or currency sign'
-  if (/[%‰#@<>`*_[\]|\\~]/.test(bare)) return 'a markup or percent character'
-  if (/http|www\.|:\/\//i.test(bare)) return 'a link'
-  const word = (list: readonly string[]) => new RegExp(`(?<![\\p{L}])(${list.join('|')})(?![\\p{L}])`, 'iu')
-  if (word(NUMBER_WORDS).test(bare)) return 'a number word'
-  if (word(PRODUCTS).test(bare)) return 'advice on a product'
-  if ((text.match(/\n/g) ?? []).length > 2) return 'more than two line breaks'
-  if (text.length > limit) return `more than ${limit} characters`
-  return null
-}
+const breaksTextRule = (text: string, limit: number) => proseProblem(text, limit)
 
 /** A fact of each card template's kind, from the fixture, so the slots are the engine's. */
 const SAMPLE: Readonly<Record<CardTemplateKey, string>> = {
@@ -115,11 +93,11 @@ describe('the app’s own templates', () => {
   })
 
   it('catch what the rule is for', () => {
-    expect(breaksTextRule('Up {{A.change}} from $40', 240)).toBe('a number or currency sign')
-    expect(breaksTextRule('Up by forty dollars', 240)).toBe('a number word')
-    expect(breaksTextRule('<img src=x onerror=y>', 240)).toBe('a markup or percent character')
+    expect(breaksTextRule('Up {{A.change}} from $40', 240)).toBe('number')
+    expect(breaksTextRule('Up by forty dollars', 240)).toBe('number_word')
+    expect(breaksTextRule('<img src=x onerror=y>', 240)).toBe('markup')
     expect(breaksTextRule('One thing to try: save more money often', 240)).toBeNull()
-    expect(breaksTextRule('Put it in an index fund', 240)).toBe('advice on a product')
-    expect(breaksTextRule('{{A.change', 240)).toBe('a stray brace')
+    expect(breaksTextRule('Put it in an index fund', 240)).toBe('product')
+    expect(breaksTextRule('{{A.change', 240)).toBe('stray_brace')
   })
 })

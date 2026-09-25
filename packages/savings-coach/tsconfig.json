@@ -2,5 +2,5 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": { "outDir": "./dist", "rootDir": "." },
   "include": ["src/**/*", "test/**/*"],
-  "references": [{ "path": "../money-primitives" }, { "path": "../core" }]
+  "references": [{ "path": "../money-primitives" }, { "path": "../core" }, { "path": "../schema" }]
 }

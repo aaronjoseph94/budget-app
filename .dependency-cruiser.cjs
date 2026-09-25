@@ -182,6 +182,10 @@ module.exports = {
       from: { path: '^packages/savings-coach/' },
       to: { path: ['^packages/(schema|money-primitives)/src/'], dependencyTypes: ['type-only'] },
     },
+    // Its tests hold its templates to schema's text rule itself (ModelProse,
+    // plan A12), so the app's words and a model's pass the one rule; the
+    // source still names schema's types only.
+    { from: { path: '^packages/savings-coach/test/' }, to: { path: '^packages/schema/src/' } },
     // The app, and the libraries its package.json names. Which of the
     // packages' exports it may use is the forbidden rules' business above.
     {
