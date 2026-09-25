@@ -9,7 +9,7 @@ import { Card, CardContent, CardTitle } from '../components/ui/card.js'
 import { Progress } from '../components/ui/feedback.js'
 import { Icon } from '../components/ui/icons.js'
 import { HelpButton } from '../help/HelpButton.js'
-import { CoachCards, DayLine, Said } from '../coach/CoachCards.js'
+import { CoachCards, DayLine, ForecastCard, Said } from '../coach/CoachCards.js'
 import { CoachStatus } from '../coach/CoachStatus.js'
 import { useCoachDay } from '../coach/day.js'
 import type { Words } from '../coach/narration.js'
@@ -60,6 +60,7 @@ export function CoachScreen() {
         narration={narration}
         onDismiss={dismissals.canDismiss ? (card) => void dismissals.dismiss(card.fact.cause) : null}
       />
+      <ForecastCard cards={day?.cards ?? null} narration={narration} />
       {/* Picked once the facts are in, so the day's pick does not change under the owner. */}
       {digest === null ? null : (
         <QuoteCard entry={quote === null ? pick.entry : (pick.shortlist.find((e) => e.id === quote.id) ?? pick.entry)} why={quote?.why ?? null} asOf={asOf} />

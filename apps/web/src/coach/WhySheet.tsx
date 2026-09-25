@@ -37,10 +37,26 @@ const REASON: Readonly<Partial<Record<Fact['kind'], string>>> = {
   saved_more: 'It shows because more has gone into your savings than by this day last month.',
   goal_milestone:
     'It shows because your savings passed a milestone since last week began: every 5 hours for a goal with a cost an hour, or every tenth of the target.',
+  month_forecast:
+    'It shows every day: where the month is heading at your pace, from what has happened, your planned bills, pay still due and savings still planned. See Help, How the forecast works.',
+}
+
+/** The forecast's figures (F30 to F32), whose slot names mean their own things. */
+const FORECAST_LABEL: Readonly<Record<string, string>> = {
+  month: 'Month',
+  spent: 'Spent by the month’s end, most likely',
+  end: 'Month’s end, most likely',
+  low: 'Month’s end, lowest',
+  high: 'Month’s end, highest',
+  safe_day: 'Safe to spend a day',
+  days: 'Days left, today included',
+  tightest_day: 'Tightest day in the next 30',
+  tightest: 'Balance on the tightest day',
 }
 
 /** A figure's name; the same slot means another thing on a pace or a savings fact. */
 function labelOf(fact: Fact, slot: string): string {
+  if (fact.kind === 'month_forecast') return FORECAST_LABEL[slot] ?? slot
   if (fact.kind === 'budget_pace' && slot === 'over') return 'Over budget at this pace by'
   if (fact.kind === 'saved_more' && slot === 'now') return 'Saved so far this month'
   return LABEL[slot] ?? slot

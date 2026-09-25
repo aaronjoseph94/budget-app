@@ -10,18 +10,22 @@
  * the cards alone; the flight card beside them still shows.
  */
 import { useEffect, useMemo, useState } from 'react'
-import { factsDigest, historyStart, isoDate, monthBounds, shiftMonth, type DigestGoal, type FactsDigest } from '@budget/core'
+import { factsDigest, historyStart, isoDate, monthBounds, shiftMonth, type DigestGoal, type FactsDigest, type IncomeSchedule } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { todayIso } from '../format.js'
 import {
+  getMonthBalance,
   latestStatementEnd,
   listBudgetHistory,
+  listPaySchedules,
   listPlanHistory,
   listTransactions,
+  needsOneTimeUpdate,
   readRecordsStart,
   type BudgetRow,
   type Category,
   type LedgerRow,
+  type PayScheduleRow,
   type PlanRow,
 } from '../ledger.js'
 import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
@@ -38,7 +42,14 @@ export interface DigestRows {
   readonly records: { readonly statementStarts: readonly string[]; readonly entryDates: readonly string[] }
   /** Rows waiting in Review, or null when that count did not load. */
   readonly pending: number | null
+  /** What the month's forecast needs besides (plan A13); left out where no forecast is made. */
+  readonly forecast?: ForecastRows
 }
+
+/** When each source is paid and this month's typed start; or that they did not load, and whether an update is missing. */
+export type ForecastRows =
+  | { readonly status: 'ready'; readonly schedules: readonly PayScheduleRow[]; readonly balance: number | null }
+  | { readonly status: 'failed'; readonly missingUpdate: boolean }
 
 /** Where the records start (F24), from what was read. */
 export function historyOf(read: DigestRows): ReturnType<typeof historyStart>['start'] {
@@ -67,7 +78,19 @@ export function digestOf(read: DigestRows, categories: readonly Category[], goal
     latestStatementEnd: latest,
     pendingCount: read.pending,
     goals,
+    ...(read.forecast?.status === 'ready' ? { forecast: forecastOf(read.forecast) } : {}),
   })
+}
+
+/** The schedules and start, renamed for core's forecast (F29 to F32). */
+export function forecastOf(rows: Extract<ForecastRows, { status: 'ready' }>): {
+  readonly paySchedules: readonly IncomeSchedule[]
+  readonly startingBalanceCents: number | null
+} {
+  return {
+    paySchedules: rows.schedules.map((s) => ({ categoryId: s.category_id, firstPayDate: isoDate(s.first_pay_date), frequency: s.frequency })),
+    startingBalanceCents: rows.balance,
+  }
 }
 
 /**
@@ -86,15 +109,21 @@ export function useCoachRead(): DigestRows | 'failed' | null {
     const asOf = todayIso()
     const { start, end } = monthBounds(isoDate(asOf))
     const readFrom = shiftMonth(start, -12)
+    // The forecast's own reads fail on their own: without them the cards and goals still show.
+    const forecast: Promise<ForecastRows> = Promise.all([listPaySchedules(supabase, 'read'), getMonthBalance(supabase, start)]).then(
+      ([schedules, balance]): ForecastRows => ({ status: 'ready', schedules, balance }),
+      (cause: unknown): ForecastRows => ({ status: 'failed', missingUpdate: needsOneTimeUpdate(cause) }),
+    )
     Promise.all([
       listTransactions(supabase, { from: readFrom, to: end }),
       listBudgetHistory(supabase, start),
       listPlanHistory(supabase, start, 'month'),
       latestStatementEnd(supabase),
       readRecordsStart(supabase),
+      forecast,
     ])
-      .then(([rows, budgets, plans, statementEnds, records]) => {
-        if (live) setRead({ asOf, readFrom, rows, budgets, plans, statementEnds, records, pending: null })
+      .then(([rows, budgets, plans, statementEnds, records, forecastRows]) => {
+        if (live) setRead({ asOf, readFrom, rows, budgets, plans, statementEnds, records, pending: null, forecast: forecastRows })
       })
       .catch(() => live && setRead('failed'))
     return () => {

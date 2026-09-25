@@ -1,6 +1,6 @@
 /**
  * What the Coach speaks of today, as one Day (plan §2.3, A12): the line,
- * the cards, the active goals (main first) and the quote shortlist, all
+ * the cards (the forecast's last, A13), the active goals (main first) and the quote shortlist, all
  * from core's digest of a year of records and savings-coach's ranking.
  * The Coach draws it; the Month's line builds the very same Day in the
  * background when the day's words have not been asked for yet, so both
@@ -8,6 +8,7 @@
  */
 import { useMemo } from 'react'
 import type { FactsDigest } from '@budget/core'
+import { forecastCard } from '@budget/savings-coach'
 import { useAppData } from '../app-data.js'
 import type { FundsState } from '../funds.js'
 import { todayIso } from '../format.js'
@@ -37,6 +38,8 @@ export function useCoachDay(read: DigestRows | 'failed' | null, funds: FundsStat
   const { dismissed } = dismissals
   const asOf = todayIso()
   const facts = digest === null || digest === 'failed' ? null : digest.facts
+  // The forecast's own card rides with the day's cards, so it is worded, kept and reused as they are.
+  const forecast = useMemo(() => (digest === null || digest === 'failed' ? null : forecastCard(digest.forecast)), [digest])
   // What today is about, for the quote: the cards, then the day's line.
   // Which fact the line speaks of is the same in either tone.
   const topFacts = useMemo(() => {
@@ -50,12 +53,12 @@ export function useCoachDay(read: DigestRows | 'failed' | null, funds: FundsStat
     return {
       tone,
       line: todaysLine(facts, tone),
-      cards: todaysCards(facts, dismissed),
+      cards: [...todaysCards(facts, dismissed), ...(forecast === null ? [] : [forecast])],
       goals: goals
         .filter((g) => g.status === 'active')
         .map((g) => ({ id: g.id, name: g.name, main: g.id === mainGoal?.id, hasHours: g.unit_cost_cents !== null })),
       quotes: pick.shortlist,
     }
-  }, [facts, tone, dismissed, goals, mainGoal, pick.shortlist])
+  }, [facts, forecast, tone, dismissed, goals, mainGoal, pick.shortlist])
   return { digest, day, pick, asOf, dismissals }
 }

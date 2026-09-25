@@ -65,11 +65,13 @@ export function CoachCards(props: {
   /** Dismiss a card's cause; absent when a dismissal could not be kept (0017 missing). */
   onDismiss: ((card: CoachCard) => void) | null
 }) {
-  const { digest, cards, narration, onDismiss } = props
+  const { digest, cards: all, narration, onDismiss } = props
   if (digest === 'failed') {
     return <p className="text-sm text-muted-foreground">Your insights did not load. Reload to try again; everything else still works.</p>
   }
-  if (digest === null || cards === null || narration === null) return <p className="text-sm text-muted-foreground">Working out today’s insights…</p>
+  if (digest === null || all === null || narration === null) return <p className="text-sm text-muted-foreground">Working out today’s insights…</p>
+  // The forecast has a card of its own (ForecastCard); these are the ranked three.
+  const cards = all.filter((c) => c.action !== 'forecast')
   return (
     <section aria-label="Insights" className="space-y-3">
       {cards.length === 0 ? (
@@ -101,6 +103,22 @@ const ACTION: Readonly<Record<CardAction, { readonly label: string; readonly go:
   see_month: { label: 'See the Month', go: () => navigate('month') },
   goals: { label: 'See your goals', go: () => navigate('savings') },
   forecast: { label: 'Open the Forecast', go: () => navigate('forecast') },
+}
+
+/**
+ * The forecast's card on the Coach (plan §2.3, A13): where the month is
+ * heading, in the app's words or the AI's, and the way to the Forecast.
+ * Never dismissed: it is not an insight but the day's outlook.
+ */
+export function ForecastCard({ cards, narration }: { cards: readonly CoachCard[] | null; narration: Narration | null }) {
+  const card = cards?.find((c) => c.action === 'forecast')
+  const text = card === undefined ? undefined : narration?.cards.get(card.fact.key)
+  if (card === undefined || text === undefined) return null
+  return (
+    <section aria-label="Forecast">
+      <InsightCard card={card} text={text} onDismiss={null} />
+    </section>
+  )
 }
 
 function InsightCard({ card, text, onDismiss }: { card: CoachCard; text: CardText; onDismiss: (() => void) | null }) {
