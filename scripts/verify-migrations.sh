@@ -40,7 +40,11 @@ if [ "$(id -u)" -eq 0 ]; then
   RUN=(su pgverify -c)
 fi
 
-"${RUN[@]}" "$PGBIN/initdb -D '$WORK/data' -A trust -U postgres" >"$WORK/initdb.log" 2>&1
+# UTF-8, as Supabase's database is: 0017's check names fullwidth,
+# Arabic-Indic and Devanagari digits, and only in a UTF-8 database are those
+# ranges characters rather than bytes. The C locale keeps sorting the same
+# on every machine.
+"${RUN[@]}" "$PGBIN/initdb -D '$WORK/data' -A trust -U postgres -E UTF8 --locale=C" >"$WORK/initdb.log" 2>&1
 "${RUN[@]}" "$PGBIN/pg_ctl -D '$WORK/data' -o '-p $PORT -k $WORK' -l '$WORK/pg.log' -w start" \
   >"$WORK/start.log" 2>&1
 

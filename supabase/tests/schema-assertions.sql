@@ -1916,6 +1916,174 @@ end $$;
 
 reset role;
 
+-- ---------------------------------------------------------------------------
+-- 0017: the Coach's memory. Words with blanks and never a figure; dismissals
+-- and answers that are the owner's own, about the owner's own charges.
+-- ---------------------------------------------------------------------------
+-- The other user's account, charge and note, and a charge of the first
+-- user's to answer about, written as the superuser: the browser cannot
+-- write the ledger (0004).
+insert into public.accounts (id, user_id, name)
+  values ('aaaaaaaa-0000-4000-8000-000000000017', '22222222-2222-4222-8222-222222222222', 'Their Card');
+insert into public.transactions
+  (id,user_id,account_id,posted_on,amount_cents,merchant,merchant_raw,category_id,dedupe_hash,dedupe_hash_v,source)
+values
+  ('dddddddd-0000-4000-8000-000000000171','11111111-1111-4111-8111-111111111111','aaaaaaaa-0000-4000-8000-000000000001',
+   '2026-09-18',-8420,'SUSHI','SUSHI','cccccccc-0000-4000-8000-000000000001',repeat('7',64),1,'card_csv'),
+  ('dddddddd-0000-4000-8000-000000000172','22222222-2222-4222-8222-222222222222','aaaaaaaa-0000-4000-8000-000000000017',
+   '2026-09-18',-5000,'THEIRS','THEIRS','cccccccc-0000-4000-8000-000000000201',repeat('8',64),1,'card_csv');
+insert into public.ai_notes (user_id, surface, scope, facts_sig, prompt_v, body, provider, model)
+  values ('22222222-2222-4222-8222-222222222222', 'daily', 'day:2026-09-24', repeat('b', 64), 1,
+          '{"summary": "Their words"}', 'gemini', 'gemini-3.5-flash-lite');
+
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+
+do $$
+declare
+  u    uuid := '11111111-1111-4111-8111-111111111111';
+  them uuid := '22222222-2222-4222-8222-222222222222';
+  mine uuid := 'dddddddd-0000-4000-8000-000000000171';
+  theirs_charge uuid := 'dddddddd-0000-4000-8000-000000000172';
+  bad  text;
+  n    int;
+begin
+  -- Words with a blank are kept; the blank holds no digit by construction.
+  insert into public.ai_notes (user_id, surface, scope, facts_sig, prompt_v, body, card_sigs, fact_keys, provider, model)
+    values (u, 'daily', 'day:2026-09-24', repeat('a', 64), 1,
+            '{"summary": "You’ve spent {{A.change}} than by this day last month."}',
+            jsonb_build_object('B', repeat('c', 64)), '{"A": "summary:month"}', 'gemini', 'gemini-3.5-flash-lite');
+
+  -- Any figure in the words is refused: ASCII, fullwidth, Arabic-Indic,
+  -- Extended Arabic-Indic and Devanagari digits, and every sign listed.
+  foreach bad in array array['$412 on dining', 'in $', 'since 2026', 'up ２ weeks', 'up ٣ weeks', 'up ۴ weeks', 'up ५ weeks',
+                             '＄ more', 'ten %', 'ten ％', 'in €', 'in £', 'in ¥', 'a ¢', 'in ₹'] loop
+    begin
+      insert into public.ai_notes (user_id, surface, scope, facts_sig, prompt_v, body, provider, model)
+        values (u, 'daily', 'day:2026-09-25', repeat('d', 64), 1, jsonb_build_object('summary', bad), 'gemini', 'gemini-3.5-flash-lite');
+      raise exception 'NOT REFUSED: AI words holding "%"', bad;
+    exception when check_violation then null;
+    end;
+  end loop;
+  begin
+    insert into public.ai_notes (user_id, surface, scope, facts_sig, prompt_v, body, provider, model)
+      values (u, 'daily', 'day:2026-09-25', repeat('d', 64), 1, '{"cards": [{"n": 5}]}', 'gemini', 'gemini-3.5-flash-lite');
+    raise exception 'NOT REFUSED: a JSON number in the words';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.ai_notes (user_id, surface, scope, facts_sig, prompt_v, body, provider, model)
+      values (u, 'daily', 'day:2026-09-25', repeat('d', 64), 1, jsonb_build_object('summary', repeat('a', 8200)), 'gemini', 'gemini-3.5-flash-lite');
+    raise exception 'NOT REFUSED: words over 8 KB';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.ai_notes (user_id, surface, scope, facts_sig, prompt_v, body, provider, model)
+      values (u, 'daily', 'day:2026-09-25', 'not-a-signature', 1, '{}', 'gemini', 'gemini-3.5-flash-lite');
+    raise exception 'NOT REFUSED: a signature that is not SHA-256 hex';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.ai_notes (user_id, surface, scope, facts_sig, prompt_v, body, provider, model)
+      values (u, 'weekly', 'day:2026-09-25', repeat('d', 64), 1, '{}', 'gemini', 'gemini-3.5-flash-lite');
+    raise exception 'NOT REFUSED: a surface that is not daily, checkin or report';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.ai_notes (user_id, surface, scope, facts_sig, prompt_v, body, card_sigs, provider, model)
+      values (u, 'daily', 'day:2026-09-25', repeat('d', 64), 1, '{}', '{"A": "short"}', 'gemini', 'gemini-3.5-flash-lite');
+    raise exception 'NOT REFUSED: a card signature that is not SHA-256 hex';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.ai_notes (user_id, surface, scope, facts_sig, prompt_v, body, provider, model)
+      values (u, 'daily', 'day:2026-09-24', repeat('a', 64), 1, '{}', 'gemini', 'gemini-3.5-flash-lite');
+    raise exception 'NOT REFUSED: the same words kept twice for one signature';
+  exception when unique_violation then null;
+  end;
+  begin
+    insert into public.ai_notes (user_id, surface, scope, facts_sig, prompt_v, body, provider, model)
+      values (them, 'daily', 'day:2026-09-25', repeat('d', 64), 1, '{}', 'gemini', 'gemini-3.5-flash-lite');
+    raise exception 'NOT REFUSED: a note written for another user';
+  exception when insufficient_privilege then null;
+  end;
+  select count(*) into n from public.ai_notes;
+  if n <> 1 then raise exception 'another user''s notes are visible: % rows', n; end if;
+
+  -- Thirty-one more daily notes and one report: the newest 30 daily stay,
+  -- the report stays, and the oldest daily note (the first above) is gone.
+  for i in 1..31 loop
+    insert into public.ai_notes (user_id, surface, scope, facts_sig, prompt_v, body, provider, model, created_at)
+      values (u, 'daily', 'day:2026-09-25', encode(sha256(convert_to('note ' || i, 'UTF8')), 'hex'), 1, '{}',
+              'gemini', 'gemini-3.5-flash-lite', now() + make_interval(secs => i));
+  end loop;
+  insert into public.ai_notes (user_id, surface, scope, facts_sig, prompt_v, body, provider, model)
+    values (u, 'report', 'month:2026-08', repeat('e', 64), 1, '{}', 'gemini', 'gemini-3.5-flash-lite');
+  select count(*) into n from public.ai_notes where surface = 'daily';
+  if n <> 30 then raise exception 'kept % daily notes, not the newest 30', n; end if;
+  if exists (select 1 from public.ai_notes where facts_sig = repeat('a', 64)) then
+    raise exception 'the oldest daily note was kept over a newer one';
+  end if;
+  if not exists (select 1 from public.ai_notes where surface = 'report') then
+    raise exception 'keeping 30 daily notes removed a report';
+  end if;
+
+  -- A dismissal names a cause once, and only for its owner.
+  insert into public.insight_dismissals (user_id, insight_key) values (u, 'category_change:dining:2026-09-01:up');
+  begin
+    insert into public.insight_dismissals (user_id, insight_key) values (u, 'category_change:dining:2026-09-01:up');
+    raise exception 'NOT REFUSED: one cause dismissed twice';
+  exception when unique_violation then null;
+  end;
+  begin
+    insert into public.insight_dismissals (user_id, insight_key) values (u, E'Bad Cause\n');
+    raise exception 'NOT REFUSED: a dismissal key that is not a cause';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.insight_dismissals (user_id, insight_key) values (them, 'stale_data:2026-09-07');
+    raise exception 'NOT REFUSED: a dismissal written for another user';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- An answer about the owner's own charge is kept; about another's, never.
+  insert into public.coach_answers (user_id, transaction_id, answer, asked_week) values (u, mine, 'impulse', '2026-09-21');
+  begin
+    insert into public.coach_answers (user_id, transaction_id, answer, asked_week) values (u, theirs_charge, 'planned', '2026-09-21');
+    raise exception 'NOT REFUSED: an answer about another user''s charge';
+  exception when foreign_key_violation then null;
+  end;
+  begin
+    insert into public.coach_answers (user_id, transaction_id, answer, asked_week) values (them, theirs_charge, 'planned', '2026-09-21');
+    raise exception 'NOT REFUSED: an answer written for another user';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    update public.coach_answers set answer = 'maybe' where transaction_id = mine;
+    raise exception 'NOT REFUSED: an answer that is not planned, impulse or needed';
+  exception when check_violation then null;
+  end;
+  begin
+    update public.coach_answers set asked_week = '2026-09-22' where transaction_id = mine;
+    raise exception 'NOT REFUSED: a week that does not start on a Monday';
+  exception when check_violation then null;
+  end;
+
+  raise notice 'the Coach keeps words with no figure, 30 a surface, and answers only about the owner''s own charges';
+end $$;
+
+reset role;
+
+-- An answer goes with its charge.
+do $$
+begin
+  delete from public.transactions where id = 'dddddddd-0000-4000-8000-000000000171';
+  if exists (select 1 from public.coach_answers where transaction_id = 'dddddddd-0000-4000-8000-000000000171') then
+    raise exception 'an answer outlived its charge';
+  end if;
+  raise notice 'an answer is removed with its charge';
+end $$;
+
 -- The anonymous role — anyone holding the published key — cannot call any of
 -- these at all. Every SECURITY DEFINER function the browser calls is listed:
 -- one left off can lose its revoke with this check still green, as 0004's
