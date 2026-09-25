@@ -37,6 +37,13 @@ describe('midnight Pacific', () => {
     // Sunday 1 November, 03:00 PST: the next midnight is in winter time.
     expect(nextPacificMidnight(at('2026-11-01T11:00:00Z'))).toBe(at('2026-11-02T08:00:00Z'))
   })
+
+  it('finds the right midnight in the two hours before the clocks change', () => {
+    // Sunday 1 November 2026, 00:30 PDT: still summer time now, but the next midnight is in winter time.
+    expect(nextPacificMidnight(at('2026-11-01T07:30:00Z'))).toBe(at('2026-11-02T08:00:00Z'))
+    // Sunday 8 March 2026, 01:30 PST: still winter time now, but the next midnight is in summer time.
+    expect(nextPacificMidnight(at('2026-03-08T09:30:00Z'))).toBe(at('2026-03-09T07:00:00Z'))
+  })
 })
 
 describe('how long a service rests', () => {

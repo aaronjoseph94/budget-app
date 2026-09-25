@@ -431,21 +431,29 @@ export function limitsOf(provider: Provider, model: string): Limits {
 /** Tokens, estimated: a service's tokenizer is not at hand, and about three bytes of UTF-8 make a token. */
 export const tokensOf = (text: string): number => Math.ceil(new TextEncoder().encode(text).length / 3)
 
-/**
- * The next midnight in the Pacific time zone, when the free services reset
- * their daily quotas. Clocks change at 2 a.m., so the offset now is the
- * offset at the coming midnight.
- */
-export function nextPacificMidnight(now: number): number {
-  const format = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/Los_Angeles', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hourCycle: 'h23',
-  })
-  const parts = format.formatToParts(new Date(now))
+const PACIFIC = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/Los_Angeles', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hourCycle: 'h23',
+})
+
+/** The Pacific calendar day at an instant, and how far the Pacific clock is from UTC then. */
+function pacificAt(t: number): { readonly y: number; readonly m: number; readonly d: number; readonly offset: number } {
+  const parts = PACIFIC.formatToParts(new Date(t))
   // Every part is always there; a missing one would be NaN, never a guess.
   const part = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((p) => p.type === type)?.value)
   const [y, m, d] = [part('year'), part('month') - 1, part('day')]
-  const offset = Date.UTC(y, m, d, part('hour'), part('minute'), part('second')) - (now - (now % 1000))
-  return Date.UTC(y, m, d + 1) - offset
+  return { y, m, d, offset: Date.UTC(y, m, d, part('hour'), part('minute'), part('second')) - (t - (t % 1000)) }
+}
+
+/**
+ * The next midnight in the Pacific time zone, when the free services reset
+ * their daily quotas. Between midnight and 2 a.m. on the day the clocks
+ * change, the offset now is not the offset at the coming midnight, so the
+ * offset is read again at the first guess, which is within an hour of it.
+ */
+export function nextPacificMidnight(now: number): number {
+  const { y, m, d, offset } = pacificAt(now)
+  const midnight = Date.UTC(y, m, d + 1)
+  return midnight - pacificAt(midnight - offset).offset
 }
 
 const MINUTE = 60_000
