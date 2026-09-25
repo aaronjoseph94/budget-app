@@ -21,3 +21,4 @@ export {
   type IncomeExpenseInput,
   type MonthColumn,
 } from './columns.js'
+export { rangeBar, type RangeBarInput } from './range-bar.js'
