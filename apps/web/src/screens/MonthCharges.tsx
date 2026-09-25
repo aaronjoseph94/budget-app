@@ -1,8 +1,9 @@
 import { useState } from 'react'
+import { timeEquivalent } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { recategoriseTransaction, type LedgerRow } from '../ledger.js'
 import { CategoryOptions } from '../lists.js'
-import { formatCents, formatIsoDate, formatMonthName, formatMonthTitle } from '../format.js'
+import { formatCents, formatIsoDate, formatMinutes, formatMonthName, formatMonthTitle } from '../format.js'
 import { IngestedText } from '../ui.js'
 import { Sheet } from '../components/ui/sheet.js'
 import { Alert } from '../components/ui/feedback.js'
@@ -32,6 +33,11 @@ const FIRST = 30
  *
  * `lastMonth` is what the category came to over the same days last month,
  * from periodComparison (D26); null when there is no comparison.
+ *
+ * `toward` is the main goal, on a Variable expenses row when that goal has a
+ * cost an hour: each charge then says what it cost in the goal's time
+ * (timeEquivalent, D29), the tradeoff the savings coach is built on. A
+ * refund, or a charge under half a minute, says nothing.
  */
 export function MonthCharges({
   categoryId,
@@ -42,6 +48,7 @@ export function MonthCharges({
   basis,
   charges,
   lastMonth = null,
+  toward = null,
   onClose,
 }: {
   categoryId: string
@@ -55,6 +62,7 @@ export function MonthCharges({
   basis: 'real' | 'planned' | 'none'
   charges: readonly LedgerRow[]
   lastMonth?: { readonly label: string; readonly cents: number } | null
+  toward?: { readonly goalName: string; readonly unitCostCents: number } | null
   onClose: () => void
 }) {
   const monthName = formatMonthTitle(month)
@@ -108,6 +116,7 @@ export function MonthCharges({
                     {formatIsoDate(c.posted_on)}
                     {c.source === 'typed' ? ' · added by hand' : ''}
                   </p>
+                  <TimeToward charge={c} toward={toward} />
                 </div>
                 <span className={cn('tnum shrink-0 text-sm font-semibold', c.amount_cents > 0 && 'text-income')}>
                   {formatCents(c.amount_cents)}
@@ -149,6 +158,19 @@ export function MonthCharges({
         </div>
       ) : null}
     </Sheet>
+  )
+}
+
+/** A charge's cost in the main goal's time: "= 22 min toward Flight training". */
+function TimeToward({ charge, toward }: { charge: LedgerRow; toward: { readonly goalName: string; readonly unitCostCents: number } | null }) {
+  // Only money spent: a charge is a negative row (D3), and its size is what it cost.
+  if (toward === null || charge.amount_cents >= 0) return null
+  const { totalMinutes } = timeEquivalent(Math.abs(charge.amount_cents), toward.unitCostCents)
+  if (totalMinutes === 0) return null
+  return (
+    <p className="text-xs text-muted-foreground">
+      = {formatMinutes(totalMinutes)} toward {toward.goalName}
+    </p>
   )
 }
 

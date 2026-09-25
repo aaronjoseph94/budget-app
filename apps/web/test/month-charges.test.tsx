@@ -190,3 +190,37 @@ describe('MonthCharges, a busy category (PERF-4)', () => {
     expect(sheet.queryByRole('button', { name: /^Show all/ })).toBeNull()
   })
 })
+
+describe('a charge in the main goal’s time (A08, D29)', () => {
+  const flight = { id: 'g1', name: 'Flight training', target_cents: 3_000_000, saved_cents: 0, target_date: null, unit_cost_cents: 27_500, unit_label: 'flight time' }
+
+  it('says what each Variable charge cost in the main goal’s time', async () => {
+    // Hand-derived: 35.88 × 60 ÷ 275.00 = 7.83 min, 8; 64.12 × 60 ÷ 275.00 = 13.99 min, 14.
+    const fake = seeded()
+    fake.tables.savings_goals.push(flight)
+    fake.tables.transactions.push(tx('t4', '2026-09-21', 1_200, 'groceries', 'CONTOSO MARKET REFUND'))
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+    await screen.findByRole('rowheader', { name: 'Groceries' })
+
+    const sheet = openRow('Variable expenses', 'Groceries')
+    const times = sheet.getAllByText(/ toward Flight training$/).map((p: HTMLElement) => p.textContent)
+    // Newest first; the refund on the 21st costs no time.
+    expect(times).toEqual(['= 8 min toward Flight training', '= 14 min toward Flight training'])
+  })
+
+  it('says nothing of time for a main goal in dollars, or for a bill', async () => {
+    const fake = seeded()
+    fake.tables.savings_goals.push({ ...flight, unit_cost_cents: null, unit_label: null })
+    fake.tables.transactions.push(tx('t5', '2026-09-01', -160_000, 'rent', 'FABRIKAM RENT'))
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+    await screen.findByRole('rowheader', { name: 'Groceries' })
+    expect(openRow('Variable expenses', 'Groceries').queryByText(/ toward /)).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+
+    fake.tables.savings_goals[0] = flight
+    cleanup()
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+    await screen.findByRole('rowheader', { name: 'Rent' })
+    expect(openRow('Bills', 'Rent').queryByText(/ toward /)).toBeNull()
+  })
+})

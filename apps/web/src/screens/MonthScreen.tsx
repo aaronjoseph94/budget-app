@@ -347,10 +347,13 @@ function OpenedRow({
   compared: Extract<PeriodComparison, { status: 'compared' }> | null
   onClose: () => void
 }) {
+  const { mainGoal } = useAppData()
   for (const kind of BLOCKS) {
     const row = sheet.blocks[kind].rows.find((r) => r.categoryId === categoryId)
     if (row === undefined) continue
     const before = compared?.blocks[kind].rows.find((r) => r.categoryId === categoryId)
+    // A Variable charge in the main goal's time, when the goal has one (D29).
+    const rate = kind === 'variable' && mainGoal !== null ? mainGoal.unit_cost_cents : null
     return (
       <MonthCharges
         categoryId={categoryId}
@@ -365,6 +368,7 @@ function OpenedRow({
             ? null
             : { label: compared.sameDays ? 'Last month (same days)' : 'Last month', cents: before.beforeCents }
         }
+        toward={rate === null || mainGoal === null ? null : { goalName: mainGoal.name, unitCostCents: rate }}
         onClose={onClose}
       />
     )
