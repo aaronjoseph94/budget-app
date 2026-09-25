@@ -1,4 +1,4 @@
-import { act, cleanup, screen, within } from '@testing-library/react'
+import { act, cleanup, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
@@ -61,7 +61,8 @@ describe('the Coach’s quote', () => {
     const card = await quote()
     expect(card.getByText(/^“It is very much the same in learning to ride a flying machine;/)).toBeTruthy()
     expect(card.getByText('Wilbur Wright, Some Aeronautical Experiments (1901), Address to the Western Society of Engineers, Chicago')).toBeTruthy()
-    expect(JSON.parse(window.localStorage.getItem(KEY) ?? '{}')).toEqual({ 'watch-the-birds': '2026-09-23' })
+    // Remembered in an effect after the card is drawn, so awaited, not assumed.
+    await waitFor(() => expect(JSON.parse(window.localStorage.getItem(KEY) ?? '{}')).toEqual({ 'watch-the-birds': '2026-09-23' }))
   })
 
   it('never shows what this device showed in the fortnight before, and keeps today’s pick all day', async () => {
@@ -75,7 +76,9 @@ describe('the Coach’s quote', () => {
     expect(card.getByText(/^Before you buy, work out what it costs in hours/)).toBeTruthy()
     expect(card.getByText('Advice from Vicki Robin and Joe Dominguez: Your Money or Your Life (1992)')).toBeTruthy()
     // The 8th is more than a fortnight before, so tasted-flight was not left out, and is forgotten.
-    expect(JSON.parse(window.localStorage.getItem(KEY) ?? '{}')).toEqual({ 'watch-the-birds': '2026-09-20', 'price-it-in-hours': '2026-09-23' })
+    await waitFor(() =>
+      expect(JSON.parse(window.localStorage.getItem(KEY) ?? '{}')).toEqual({ 'watch-the-birds': '2026-09-20', 'price-it-in-hours': '2026-09-23' }),
+    )
   })
 
   it('keeps showing today’s pick when the Coach is opened again the same day', async () => {
