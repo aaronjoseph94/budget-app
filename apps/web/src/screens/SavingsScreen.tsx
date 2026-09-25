@@ -28,6 +28,10 @@ import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 import { Figure } from '../components/ui/type.js'
 import { HelpButton } from '../help/HelpButton.js'
+import { useCoachRead } from '../coach/facts.js'
+import { goalsForCore } from '../coach/goals.js'
+import { GoalLever } from '../coach/GoalLever.js'
+import { useGoalOutlooks } from '../coach/outlook.js'
 
 /**
  * The workbook's Savings tab (S16): a yellow card for every goal, with what
@@ -45,6 +49,20 @@ export function SavingsScreen() {
   const state = useFunds()
   const { supabase, userId, refresh, categories, goals, mainGoal, goalsOrdered } = useAppData()
   const comparison = useSavedThisMonth(categories)
+  // The year the Coach reads, for each goal's pace and its levers (F33, F34).
+  const year = useCoachRead()
+  const coreGoals = useMemo(() => goalsForCore(goals, state), [goals, state])
+  const outlooks = useGoalOutlooks(year, coreGoals)
+  // Each active goal's top lever (F34): what to trim to get there sooner.
+  const leverOf = (goal: ListedGoalRow): ReactNode => {
+    const top = outlooks.status === 'ready' ? outlooks.byGoal.get(goal.id)?.levers.offered[0] : undefined
+    const category = top === undefined ? undefined : categories.find((c) => c.id === top.categoryId)
+    return top === undefined || category === undefined ? null : (
+      <div className="rounded-lg bg-savings-header px-3 py-2">
+        <GoalLever lever={top} categoryName={category.name} unitLabel={goal.unit_label} />
+      </div>
+    )
+  }
   const [editing, setEditing] = useState<string | null>(null)
   // A goal on no fund, edited by its own id: it has no fund to name it by.
   const [editingLoose, setEditingLoose] = useState<string | null>(null)
@@ -86,10 +104,22 @@ export function SavingsScreen() {
         />
       )
     if (row !== undefined && fund !== undefined) {
-      return <FundCard fund={fund} goal={row} comparison={comparison} badge={badge(goal)} actions={actions} onEdit={() => setEditing(fund.categoryId)} />
+      return (
+        <FundCard
+          fund={fund}
+          goal={row}
+          comparison={comparison}
+          badge={badge(goal)}
+          lever={leverOf(goal)}
+          actions={actions}
+          onEdit={() => setEditing(fund.categoryId)}
+        />
+      )
     }
     if (row !== undefined && loose !== undefined) {
-      return <LooseGoalCard goal={row} figures={loose} badge={badge(goal)} actions={actions} onMakeFund={() => void makeFund(row)} />
+      return (
+        <LooseGoalCard goal={row} figures={loose} badge={badge(goal)} lever={leverOf(goal)} actions={actions} onMakeFund={() => void makeFund(row)} />
+      )
     }
     // Saved a moment ago, and the funds not read again yet.
     return <p className="rounded-xl border bg-card p-4 text-sm shadow-sm">{goal.name}: loading…</p>
@@ -246,6 +276,7 @@ function FundCard({
   goal,
   comparison,
   badge = null,
+  lever = null,
   actions = null,
   onEdit,
   children = null,
@@ -254,6 +285,8 @@ function FundCard({
   goal: FundRow | null
   comparison: PeriodComparison | 'failed' | null
   badge?: ReactNode
+  /** What to trim to reach an active goal sooner (F34). */
+  lever?: ReactNode
   /** A goal's buttons; with none, Edit goal alone. */
   actions?: ReactNode
   onEdit: () => void
@@ -278,6 +311,7 @@ function FundCard({
       ) : (
         <div className="space-y-3 px-4 py-4">
           <GoalFigures figures={f} goal={goal} />
+          {lever}
           {/* This fund's line only when there is one; the card above says why when there is not. */}
           {row === null || mine === null ? null : (
             <CompareLine
@@ -320,12 +354,14 @@ function LooseGoalCard({
   goal,
   figures,
   badge,
+  lever,
   actions,
   onMakeFund,
 }: {
   goal: FundRow
   figures: FundFigures
   badge: ReactNode
+  lever: ReactNode
   actions: ReactNode
   onMakeFund: () => void
 }) {
@@ -338,6 +374,7 @@ function LooseGoalCard({
           Make it a fund
         </Button>
         <GoalFigures figures={figures} goal={goal} />
+        {lever}
         {actions}
       </div>
     </section>
@@ -426,7 +463,6 @@ function Item({ label, children }: { label: string; children: ReactNode }) {
     </div>
   )
 }
-
 
 /**
  * Saved this month against the same days last month (F25, D26): the Savings
