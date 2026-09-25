@@ -46,6 +46,13 @@ describe('the quotes and tips library', () => {
     for (const e of LIBRARY) expect(`${e.text} ${e.note ?? ''}`, e.id).not.toMatch(products)
   })
 
+  it('has tips as well as quotes, each tip from a named source', () => {
+    const tips = LIBRARY.filter((e) => e.kind === 'tip')
+    expect(tips.length).toBeGreaterThan(0)
+    expect(LIBRARY.some((e) => e.kind === 'quote')).toBe(true)
+    for (const tip of tips) expect(tip.attribution, tip.id).toBe('wrote')
+  })
+
   it('leaves out what could not be checked against a source', () => {
     // No evidence Einstein said it (plan §4); the others could not be found in
     // their own words on a primary source when the library was committed.

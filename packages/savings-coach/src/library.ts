@@ -12,12 +12,16 @@
  * search restricted to a site that holds the source itself or documents
  * it (Founders Online, Project Gutenberg, Wikisource and Wikiquote, MIT's
  * Shakespeare, the Internet Archive, The Henry Ford, Quote Investigator, or
- * the author's own site), and `sourceUrls` holds the pages it found. A
- * chapter is named only where that page named it. A line found only on quotation sites was left out:
+ * the author's own site; for a tip, the Government of Canada's pages too),
+ * and `sourceUrls` holds the pages it found. A chapter is named only where
+ * that page named it. A web page's year is the year it was checked. A line found only on quotation sites was left out:
  * Johnson's "Resolve not to be poor", Sethi's "spend extravagantly", "Big
  * Hat, No Cattle" and "spend what is left after saving". "Compound interest
  * is the eighth wonder of the world" is left out because nothing shows
- * Einstein said it. Nothing here advises on a product or on investing.
+ * Einstein said it. The plan's "pay the smallest debt first" tip is left
+ * out too: Debts sets snowball beside avalanche (F23), and a tip taking a
+ * side would be advice on that choice, which stays the owner's. Nothing
+ * here advises on a product or on investing.
  */
 
 /** The closed set a quote is chosen by (plan §4). */
@@ -190,5 +194,60 @@ export const LIBRARY: readonly LibraryEntry[] = [
     sourceUrls: ['https://shakespeare.mit.edu/hamlet/hamlet.1.3.html'],
     note: null,
     tags: ['debt'],
+  },
+  {
+    id: 'payday-first',
+    kind: 'tip',
+    text: 'Move money to your goal on payday, before the spending starts.',
+    by: 'David Bach',
+    attribution: 'wrote',
+    source: { title: 'The Automatic Millionaire', year: 2004, locator: 'Pay yourself first' },
+    sourceUrls: ['https://davidbach.com/number-1-piece-advice/'],
+    note: null,
+    tags: ['pay_yourself_first', 'saving', 'goal'],
+  },
+  {
+    id: 'make-it-automatic',
+    kind: 'tip',
+    text: 'Set the move to your goal to happen by itself each payday, so it never waits on willpower.',
+    by: 'David Bach',
+    attribution: 'wrote',
+    source: { title: 'The Automatic Millionaire', year: 2004, locator: 'Make it automatic' },
+    sourceUrls: ['https://davidbach.com/automated-savings/'],
+    note: null,
+    tags: ['habits', 'pay_yourself_first', 'streaks'],
+  },
+  {
+    id: 'price-it-in-hours',
+    kind: 'tip',
+    text: 'Before you buy, work out what it costs in hours of your life, or of your goal, and ask if it is worth them.',
+    by: 'Vicki Robin and Joe Dominguez',
+    attribution: 'wrote',
+    source: { title: 'Your Money or Your Life', year: 1992, locator: 'Life energy' },
+    sourceUrls: ['https://vickirobin.com/life-energy-calculator/'],
+    note: null,
+    tags: ['hours', 'impulse', 'levers', 'flight'],
+  },
+  {
+    id: 'track-and-adjust',
+    kind: 'tip',
+    text: 'Write down what comes in and what goes out. When real spending keeps missing a budget, change the budget so it fits.',
+    by: 'Financial Consumer Agency of Canada',
+    attribution: 'wrote',
+    source: { title: 'Making a budget', year: 2026, locator: 'As checked on 25 September 2026' },
+    sourceUrls: ['https://www.canada.ca/en/financial-consumer-agency/services/make-budget.html'],
+    note: null,
+    tags: ['over_budget', 'habits'],
+  },
+  {
+    id: 'emergency-fund',
+    kind: 'tip',
+    text: 'Build an emergency fund that would cover three to six months of living expenses, a little at a time.',
+    by: 'Financial Consumer Agency of Canada',
+    attribution: 'wrote',
+    source: { title: 'Setting up an emergency fund', year: 2026, locator: 'As checked on 25 September 2026' },
+    sourceUrls: ['https://www.canada.ca/en/financial-consumer-agency/services/savings-investments/setting-up-emergency-funds.html'],
+    note: null,
+    tags: ['saving', 'goal', 'enough'],
   },
 ]
