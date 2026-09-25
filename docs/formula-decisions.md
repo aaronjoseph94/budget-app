@@ -1059,6 +1059,124 @@ September, no pace. August viewed on 24 September: no pace.
 
 ---
 
+## F33 — When each savings goal is reached at your pace, and its milestones
+
+**Decided 2026-09-25. Engineering default. Not from the workbook,** whose
+Savings tab works a monthly contribution back from a typed goal date (F21)
+and never forward from what is really moved in. Decided by the engineer
+under the owner's 2026-09-24 instruction to proceed without questions
+(plan §5, §11; built in slice A08). The plan wrote it for the flight goal;
+G1 made goals plural, so it holds for every active goal.
+
+**Chosen.**
+
+- **The pace comes from what moved in.** A goal's monthly contribution is
+  its fund's Savings Actual in each complete month (F24), as the Month's
+  Savings block shows it: money moved in, less money taken back out. Up to
+  the **6 most recent** complete months are used. A goal on no fund, or on
+  a fund no longer on the Savings list (N52), has nothing measured, so it
+  has no pace and says so.
+- **Low, middle and high.** The middle is the **median** of those months
+  (F27's, the middle two halved half-up); the low and high are the **25th
+  and 75th percentiles by nearest rank** (F27), so each is a month that
+  happened.
+- **Weekly** = monthly × 12 ÷ 52, half-up on the magnitude.
+- **A date for each** by `projectGoal`: ⌈remaining ÷ weekly⌉ weeks from
+  `asOf`. The high pace gives the early date, the middle the middle date,
+  the low the late one. A low pace of $0 or less has no late date: the
+  range reads "or later".
+- **Rough under 3 months.** With 1 or 2 complete months, only the middle
+  pace and its one date, labelled rough. With none, no date: the card says
+  the month a pace becomes possible, the first of the month after the first
+  complete month.
+- **No pace.** When the middle weekly pace is $0 or less, there is no date
+  ("no date at your current pace"), and the top lever (F34) says how long it
+  alone would take.
+- **The weekly amount needed** for a goal with a target date after `asOf`
+  is `requiredWeeklyContribution`, as written in `goal.ts`; none for a goal
+  with no date, a date passed, or the target met.
+- **Evidence** (F24) is counted from the months the pace used.
+- **Milestones.** A goal with a cost an hour has one every **5 whole hours**
+  saved (F45's hours: `timeEquivalent`, minutes half-up, whole hours); any
+  other goal one every **tenth of its target** (⌊saved × 10 ÷ target⌋). A
+  milestone is **passed** when the saved amount crosses it between the eve
+  of the last complete week's Monday and `asOf`, so a new one stays up for
+  one to two weeks. Saved then = saved now − what moved into the fund after
+  that eve, or after the day its balance was typed if later (D16): a move
+  on or before the typed day is already in the typed amount. Only the
+  highest milestone passed is named. Nothing at or below $0 is a milestone.
+
+**Worked example.** Thursday 24 September 2026, records from 1 May.
+Flight training: $30,000.00 target, $12,650.00 saved, $17,350.00 to go,
+$275.00 an hour. Moved in: May $400.00, June $650.00, July $500.00, August
+$300.00 (4 complete months, *some*). Sorted 300, 400, 500, 650: the low is
+rank ⌈0.25 × 4⌉ = 1, $300.00; the middle ($400.00 + $500.00) ÷ 2 =
+$450.00; the high rank ⌈0.75 × 4⌉ = 3, $500.00. Weekly: $69.23, $103.85
+and $115.38. Weeks: ⌈17,350.00 ÷ 115.38⌉ = 151, ⌈÷ 103.85⌉ = 168 and
+⌈÷ 69.23⌉ = 251, so 16 August 2029, 13 December 2029 and 17 July 2031.
+With only July and August, the one rough date is from $400.00: weekly
+$92.31, ⌈17,350.00 ÷ 92.31⌉ = 188 weeks, 2 May 2030. With a target date of
+24 September 2028, $17,350.00 over 731 ÷ 7 weeks needs $166.15 a week.
+**Milestone:** the last complete week is 14–20 September, so the eve is
+13 September. $300.00 moved in on the 15th, so saved then was
+$12,350.00: 12,350.00 × 60 ÷ 275.00 = 2,694.54…, 2,695 minutes, 44 h. Now
+46 h. ⌊44 ÷ 5⌋ = 8 and ⌊46 ÷ 5⌋ = 9, so 45 hours was passed. Emergency,
+$1,000.00 target, $520.00 now, $100.00 moved in on the 15th: ⌊420 × 10 ÷
+1,000⌋ = 4 then, 5 now, so half the target was passed.
+
+---
+
+## F34 — What to cut: levers, and how much sooner each gets you there
+
+**Decided 2026-09-25. Engineering default. Not from the workbook.** Decided
+by the engineer under the owner's 2026-09-24 instruction to proceed without
+questions (plan §5, §11; built in slice A08), for every active goal.
+
+**Chosen.**
+
+- **Which categories.** Each Variable expenses category with a usual month
+  (F27: the median of up to its 6 most recent complete months) above $0.
+- **Three levers each,** as a month's saving, each rounded half-up to
+  **$5.00** (500 cents): a **tenth** of the usual month, a **quarter** of
+  it, and **your best month**, the usual month less the lowest of those
+  complete months, only when that difference is at least $5.00 before
+  rounding. A lever that rounds to $0 is left out.
+- **Weekly** = monthly × 12 ÷ 52, half-up.
+- **Weeks sooner,** at the goal's middle pace (F33): ⌈remaining ÷ pace⌉ −
+  ⌈remaining ÷ (pace + weekly)⌉. With no pace, the lever alone gets there
+  in ⌈remaining ÷ weekly⌉ weeks. A goal whose target is met has no levers.
+- **Time a month,** for a goal with a cost an hour: the monthly saving by
+  `timeEquivalent`, in whole minutes (half-up), shown in the goal's own
+  unit.
+- **What is offered:** at most **two categories, one lever each**, the
+  quarter by default, or the best month when the quarter rounds to $0;
+  largest saving first, ties by the category's place on its list, then id.
+  A lever that brings the date no sooner (0 weeks) is not offered. The first
+  offered is **the top lever**, the one the Coach's goal card and Savings
+  show. The rest wait for Forecast's What if (plan A14).
+
+**Worked example.** Dining out's usual month is $405.00 over six months
+whose lowest is $300.00 (F27's example). A tenth, $40.50, is $40.00; a
+quarter, $101.25, is $100.00; the best month, $105.00, is $105.00.
+Groceries' usual month is $380.00: its quarter, $95.00, is $95.00. Offered:
+Dining out $100.00, then Groceries $95.00. For Flight training (F33's
+example, middle pace $103.85 a week, $17,350.00 to go), Dining out's
+$100.00 a month is $23.08 a week: ⌈17,350.00 ÷ 103.85⌉ = 168 less
+⌈17,350.00 ÷ 126.93⌉ = 137, **31 weeks sooner**, and 100.00 × 60 ÷
+275.00 = 21.8, **22 minutes of flight time a month**. With no pace, it
+alone takes ⌈17,350.00 ÷ 23.08⌉ = 752 weeks.
+
+**Wins in the Coach's digest** (F44's list of kinds grows here). **Saved
+more:** this month's Savings Actual against the same days last month
+(F25), when more was saved; sized and made notable by the summary's band
+(F27), weighed as a summary is (thin, the change as its month's effect).
+**A milestone passed** (above), one fact per active goal, always notable,
+its effect the money one step is worth (5 hours at the goal's cost an
+hour, or a tenth of its target, half-up), *solid* because a balance is not
+an estimate: a milestone comes rarely, and the Coach should cheer it.
+
+---
+
 ## F44 — Impact, for ranking the Coach's cards
 
 **Decided 2026-09-24. Engineering default. Not from the workbook.** Decided

@@ -817,3 +817,36 @@ one goal the Coach and the Week need to know which one to show. The list's
 order is kept where the workbook shows it (the Month); the goals' order is the
 owner's own, because which goal matters most is not where a fund happens to
 sit on a list.
+
+---
+
+## D29 — Savings says what to trim, and a Month charge says what it costs in time
+
+**Date:** 2026-09-25
+**Sheet / cells:** Savings, "How To Reach These Goals", rows 14–20; every
+month tab's Variable Expenses block, Jan!B42:V44 and the rows it lists;
+formula decisions F33, F34
+**Settled:** Decided by the engineer under the owner's 2026-09-24
+instruction to proceed without questions, in answer to that instruction's
+items 2 ("telling me what to cut down on, encouraging me to save,
+providing insights into goals") and 3 ("Build forecasting into this").
+
+**Workbook behaviour.** A Savings card says what to put in each month to
+reach the goal by its typed date, and nothing about what could be cut to
+get there. A month tab lists each Variable expense and says nothing of what
+it costs in anything but dollars.
+
+**Chosen behaviour.** Each active goal's Savings card gains one line: its
+top lever (F34), such as "Trim Dining out by $100.00 a month: 31 weeks
+sooner", with the time it buys a month for a goal with a cost an hour. On
+the Month, a Variable charge opened from its row also shows its cost in the
+main goal's unit, "22 min toward Flight training", or nothing when the main
+goal is in dollars. **The workbook's own figures do not change** (the
+card's goal, saved, amount needed, months remaining and monthly
+contribution; the Month's Budgeted, Actual and Left), nor do the golden
+tests.
+
+**Why.** The owner asked to be told what to cut and to be encouraged to
+save, and the savings coach's idea is that a charge priced in hours of the
+goal is felt where dollars are not (`docs/ideas/savings-coach.md`,
+"Tradeoff framing").
