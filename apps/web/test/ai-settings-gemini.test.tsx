@@ -60,7 +60,7 @@ async function open(fake: FakeSupabase) {
 }
 
 async function paste(card: Awaited<ReturnType<typeof open>>, key: string) {
-  const field = card.getByLabelText('2. Paste it here') as HTMLInputElement
+  const field = card.getByLabelText('Step 2: paste it here') as HTMLInputElement
   fireEvent.change(field, { target: { value: key } })
   fireEvent.click(card.getByRole('button', { name: 'Save & test' }))
   return field
@@ -69,11 +69,11 @@ async function paste(card: Awaited<ReturnType<typeof open>>, key: string) {
 describe('the free Gemini card, with no key yet', () => {
   it('gives the three steps, with a key field that is private, unzoomed and not autocorrected', async () => {
     const card = await open(createFakeSupabase())
-    const link = card.getByRole('link', { name: 'Get a free key' })
+    const link = card.getByRole('link', { name: 'Get a free key ↗' })
     expect([link.getAttribute('href'), link.getAttribute('target'), link.getAttribute('rel')]).toEqual([
       'https://aistudio.google.com/apikey', '_blank', 'noopener noreferrer',
     ])
-    const field = card.getByLabelText('2. Paste it here')
+    const field = card.getByLabelText('Step 2: paste it here')
     expect(field.getAttribute('type')).toBe('password')
     for (const [name, value] of [['autocomplete', 'off'], ['autocapitalize', 'none'], ['autocorrect', 'off'], ['spellcheck', 'false']]) {
       expect(field.getAttribute(name!)).toBe(value)
@@ -119,6 +119,8 @@ describe('the free Gemini card, with a key', () => {
     const card = await open(fake)
     expect(card.getByText(/Already on/).parentElement?.textContent).toContain('your receipts key ending …0002')
     expect(card.queryByRole('button', { name: 'Remove key' })).toBeNull()
+    // With a key, the three steps fold away under one line.
+    expect((card.getByText('Paste a different key').closest('details') as HTMLDetailsElement).open).toBe(false)
     fireEvent.click(card.getByRole('button', { name: 'Check which models work' }))
     await card.findByText('Works · your receipts key ending …0002')
     expect(fake.functions.calls.filter((c) => c['action'] === 'test_key')).toEqual([{ action: 'test_key', provider: 'gemini' }])

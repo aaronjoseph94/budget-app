@@ -56,6 +56,55 @@ export function GeminiCard({ gemini, onChanged }: { readonly gemini: AiServiceSt
         : { sentence: 'Couldn’t save that choice just now. Try again.', good: false, help: null, models: result?.models ?? null },
     )
 
+  // The three steps: open while there is no key, folded under "Paste a different key" once there is one.
+  const steps = (
+    <form onSubmit={save} aria-labelledby={ids.steps}>
+      <h3 id={ids.steps} className="sr-only">
+        Turn on free Gemini
+      </h3>
+      <ol className="space-y-4">
+        <li className="space-y-1">
+          <p className="text-sm font-medium">Step 1</p>
+          <a
+            href={GET_A_KEY}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-11 items-center rounded-md border bg-card px-4 text-base font-medium shadow-sm hover:bg-accent"
+          >
+            Get a free key ↗
+          </a>
+          <p className="text-sm text-muted-foreground">Google AI Studio opens in a new tab. Press Create API key, then copy it.</p>
+        </li>
+        <li className="space-y-2">
+          <label htmlFor={ids.key} className="block text-sm font-medium">
+            Step 2: paste it here
+          </label>
+          <div className="flex gap-2">
+            <Input
+              id={ids.key}
+              type={shown ? 'text' : 'password'}
+              name="gemini-key"
+              autoComplete="off"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              className="min-w-0 flex-1"
+            />
+            <Button variant="outline" className="min-h-11" aria-pressed={shown} onClick={() => setShown((s) => !s)}>
+              {shown ? 'Hide' : 'Show'}
+            </Button>
+          </div>
+        </li>
+        <li className="space-y-1">
+          <p className="text-sm font-medium">Step 3</p>
+          <Button type="submit" className="min-h-11" disabled={working !== null}>
+            {working === 'save' ? 'Testing…' : 'Save & test'}
+          </Button>
+        </li>
+      </ol>
+    </form>
+  )
+
   const already = gemini.source === 'secret'
   const saved = gemini.source === 'saved'
   const models = result?.models ?? null
@@ -71,58 +120,21 @@ export function GeminiCard({ gemini, onChanged }: { readonly gemini: AiServiceSt
       {already ? (
         <p className="text-base">
           <span className="font-medium">Already on</span>, with your receipts key{gemini.hint === null ? '' : ` ending …${gemini.hint}`}. There is
-          nothing to paste. To use a different key, paste it below.
+          nothing to paste.
         </p>
       ) : saved ? (
-        <p className="text-base">Your key{gemini.hint === null ? '' : ` ending …${gemini.hint}`} is saved. To replace it, paste a new one below.</p>
+        <p className="text-base">Your key{gemini.hint === null ? '' : ` ending …${gemini.hint}`} is saved.</p>
       ) : (
         <p className="text-base">Free, and about 2 minutes. A key is a password Google gives you for the app to use.</p>
       )}
-      <form onSubmit={save} aria-labelledby={ids.steps}>
-        <h3 id={ids.steps} className="sr-only">
-          Turn on free Gemini
-        </h3>
-        <ol className="space-y-4">
-          <li className="space-y-1">
-            <p className="text-sm font-medium">1. Get a free key</p>
-            <a
-              href={GET_A_KEY}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center text-base font-medium underline underline-offset-4"
-            >
-              Get a free key
-            </a>
-            <p className="text-sm text-muted-foreground">Google AI Studio opens in a new tab. Press Create API key, then copy it.</p>
-          </li>
-          <li className="space-y-2">
-            <label htmlFor={ids.key} className="block text-sm font-medium">
-              2. Paste it here
-            </label>
-            <div className="flex gap-2">
-              <Input
-                id={ids.key}
-                type={shown ? 'text' : 'password'}
-                name="gemini-key"
-                autoComplete="off"
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck={false}
-                className="min-w-0 flex-1"
-              />
-              <Button variant="outline" className="min-h-11" aria-pressed={shown} onClick={() => setShown((s) => !s)}>
-                {shown ? 'Hide' : 'Show'}
-              </Button>
-            </div>
-          </li>
-          <li className="space-y-1">
-            <p className="text-sm font-medium">3. Save and test it</p>
-            <Button type="submit" className="min-h-11" disabled={working !== null}>
-              {working === 'save' ? 'Testing…' : 'Save & test'}
-            </Button>
-          </li>
-        </ol>
-      </form>
+      {already || saved ? (
+        <details className="rounded-lg border px-3">
+          <summary className="flex min-h-11 cursor-pointer items-center text-base font-medium">Paste a different key</summary>
+          <div className="pb-3">{steps}</div>
+        </details>
+      ) : (
+        steps
+      )}
       <div aria-live="polite" className="space-y-1">
         {result === null ? null : <p className={result.good ? 'text-base font-medium' : 'text-base font-medium text-destructive'}>{result.sentence}</p>}
         {result?.help == null ? null : (
