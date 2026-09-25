@@ -45,6 +45,9 @@ const EnvSchema = z.object({
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().optional(),
   EXTRA_ORIGINS: z.string().optional(),
+  // Optional: a root of the owner's own for sealing pasted keys, so they
+  // survive a change of Supabase's keys (ADR 0004).
+  AI_KEYS_ROOT: z.string().optional(),
 })
 type Env = z.infer<typeof EnvSchema>
 
@@ -155,13 +158,8 @@ function modelFor(provider: Provider, ...choices: readonly unknown[]): string {
   return chosen ?? list[0] ?? ''
 }
 
-/**
- * The key the helper reaches the database with: the project's new secret
- * key when it has one, else the legacy service_role key. It always goes in
- * `apikey`. A legacy key is a three-part JWT and goes as the bearer too; a
- * new `sb_secret_` key is not a JWT, and Supabase refuses one as a bearer.
- */
-function databaseKey(env: Env): string | null {
+/** The project's new secret key, from the JSON of them all, when it has one. */
+function secretKeysDefault(env: Env): string | null {
   let fresh: unknown = null
   try {
     const keys: unknown = JSON.parse(env.SUPABASE_SECRET_KEYS ?? 'null')
@@ -169,8 +167,99 @@ function databaseKey(env: Env): string | null {
   } catch {
     fresh = null
   }
-  if (typeof fresh === 'string' && fresh !== '') return fresh
-  return env.SUPABASE_SERVICE_ROLE_KEY ?? null
+  return typeof fresh === 'string' && fresh !== '' ? fresh : null
+}
+
+/**
+ * The key the helper reaches the database with: the project's new secret
+ * key when it has one, else the legacy service_role key. It always goes in
+ * `apikey`. A legacy key is a three-part JWT and goes as the bearer too; a
+ * new `sb_secret_` key is not a JWT, and Supabase refuses one as a bearer.
+ */
+function databaseKey(env: Env): string | null {
+  return secretKeysDefault(env) ?? env.SUPABASE_SERVICE_ROLE_KEY ?? null
+}
+
+// ---------------------------------------------------------------------------
+// Sealing a pasted key (ADR 0004). AES-256-GCM with a random 12-byte IV,
+// under a key derived by HKDF-SHA-256 from a root the helper already holds.
+// The additional data names the user and the service, so a ciphertext moved
+// to another row or another user cannot be opened. kek_id says which root
+// sealed it without saying anything about the root.
+// ---------------------------------------------------------------------------
+
+const SALT = new TextEncoder().encode('budget-app:ai-provider-keys:v1')
+const KEY_V = 1
+
+/**
+ * Every root present, the one that seals new keys first: the owner's own
+ * AI_KEYS_ROOT, then the legacy service_role key, then the new secret key.
+ * The order differs from databaseKey's on purpose: a root the owner chose
+ * outlives a change of Supabase's keys, so it seals first.
+ */
+function keyRoots(env: Env): string[] {
+  return [env.AI_KEYS_ROOT?.trim(), env.SUPABASE_SERVICE_ROLE_KEY, secretKeysDefault(env)].filter(
+    (r): r is string => typeof r === 'string' && r !== '',
+  )
+}
+
+async function derive(root: string, info: string, bits: number): Promise<ArrayBuffer> {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(root), 'HKDF', false, ['deriveBits'])
+  return crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt: SALT, info: new TextEncoder().encode(info) }, base, bits)
+}
+
+async function kekIdOf(root: string): Promise<string> {
+  return [...new Uint8Array(await derive(root, 'kek-id/v1', 64))].map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+async function sealingKey(root: string): Promise<CryptoKey> {
+  return crypto.subtle.importKey('raw', await derive(root, 'aes-gcm/v1', 256), 'AES-GCM', false, ['encrypt', 'decrypt'])
+}
+
+const additionalData = (user: string, provider: string) => new TextEncoder().encode(`${user}:${provider}:v1`)
+const toBase64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes))
+const fromBase64 = (text: string) => Uint8Array.from(atob(text), (c) => c.charCodeAt(0))
+
+export interface Sealed {
+  readonly ciphertext: string
+  readonly iv: string
+  readonly kek_id: string
+  readonly key_v: number
+}
+
+/** A key sealed for this user and service, or null when the helper holds no root to seal it with. */
+export async function sealKey(env: Env, user: string, provider: string, key: string): Promise<Sealed | null> {
+  const root = keyRoots(env)[0]
+  if (root === undefined) return null
+  const iv = crypto.getRandomValues(new Uint8Array(12))
+  const sealed = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv, additionalData: additionalData(user, provider) },
+    await sealingKey(root),
+    new TextEncoder().encode(key),
+  )
+  return { ciphertext: toBase64(new Uint8Array(sealed)), iv: toBase64(iv), kek_id: await kekIdOf(root), key_v: KEY_V }
+}
+
+/**
+ * The key again, or null when no root the helper holds can open it: sealed
+ * under a root since changed, or for another user or service. Null is the
+ * `locked` state, never an error: the owner pastes the key again.
+ */
+export async function openKey(env: Env, user: string, provider: string, sealed: Sealed): Promise<string | null> {
+  for (const root of keyRoots(env)) {
+    if ((await kekIdOf(root)) !== sealed.kek_id) continue
+    try {
+      const key = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: fromBase64(sealed.iv), additionalData: additionalData(user, provider) },
+        await sealingKey(root),
+        fromBase64(sealed.ciphertext),
+      )
+      return new TextDecoder().decode(key)
+    } catch {
+      // Wrong additional data, a damaged row, or two roots sharing an id: try the next.
+    }
+  }
+  return null
 }
 
 const JWT = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/
@@ -308,6 +397,7 @@ if (typeof Deno !== 'undefined') {
         GEMINI_API_KEY: Deno.env.get('GEMINI_API_KEY'),
         GEMINI_MODEL: Deno.env.get('GEMINI_MODEL'),
         EXTRA_ORIGINS: Deno.env.get('EXTRA_ORIGINS'),
+        AI_KEYS_ROOT: Deno.env.get('AI_KEYS_ROOT'),
       },
       fetch,
     ),
