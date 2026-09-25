@@ -1540,6 +1540,81 @@ a month with $0.00 in and $50.00 saved has no savings rate.
 
 ---
 
+## F37 — Trends: six or twelve months, and when a line is called steady
+
+**Decided 2026-09-25. Engineering default. Not from the workbook,** whose
+month tabs each hold one month and draw no line across months. Decided by
+the engineer under the owner's 2026-09-24 instruction to proceed without
+questions (plan §2.6, §7, §11; built in slice A16).
+
+**Which months.** The 6 or 12 calendar months before `asOf`'s month, oldest
+first. The month still running is never a point: a part month would always
+read as a fall. A month that is not complete (F24: wholly inside the
+records and what was read) is a **gap**, never $0, so a line never dives to
+nothing before the records start.
+
+**The lines.**
+
+- **Income, Spent and Saved:** each complete month's whole-month totals,
+  F36's `monthlyTotals` (planned bills counted, as the Month counts them).
+- **Each category:** every Variable expenses category with a figure other
+  than $0 in a complete month of the window, by its Actual as the Month
+  shows it (`monthActuals`). Variable only, as F36's biggest changes and
+  digest version 1: a bill moving is not a habit (F38 speaks of prices).
+- **Its usual level:** F27's usual month over up to the 6 most recent
+  complete months, drawn as a dashed line across its row.
+
+**The label** (`trendLabel`), given each complete month's figure:
+
+- **Under 4 complete months: "not enough months yet",** naming the month it
+  becomes possible: the later of `asOf`'s month plus (4 − the months there
+  are), and the first whole month of the records plus 4. With no records,
+  no month is named ("once your records hold four whole months").
+- **Otherwise** the last up to 6 months, and each pair of months next to
+  each other (up to 5 pairs). A pair **rises** when the later month is at
+  least $1.00 more, and **falls** when at least $1.00 less (F26: under
+  $1.00 either way is the same). The **band** is F27's over those months,
+  for a whole month.
+- **Rising steadily:** rises × 4 ≥ pairs × 3 (at least 75% of the pairs:
+  all 3 of 3, 3 of 4, 4 of 5), **and** last − first is at least the band
+  (F27's "clear": from one band). **Falling steadily** is the mirror.
+  Anything else is **no clear trend**.
+- The label always reads the last 6 months, in the 12-month view too, so a
+  label does not change when the view does, and a year-old habit does not
+  outvote this half-year.
+- Income, Spent and Saved are labelled by the same rule, each against its
+  own band.
+
+**Heights** come from `scaleSeries` over $0, every figure drawn and the
+usual level: one scale for the three totals, so their lines compare, and
+one per category row. So the charts divide no money, and $0 is always on
+the scale, so a small wobble is never drawn as a cliff.
+
+**In the Coach's digest:** a Variable category **rising steadily** or
+**falling steadily** is a fact (`category_trend`), always worth a card:
+rising is one to watch, with one thing to try; falling is a win. Its
+figures are the first and last month and their amounts, the months it rests
+on and the usual month. Its monthly effect (F44) is |last − first|, weighed
+by the evidence of those months. A dismissal names the category, the last
+month and the direction, so next month's trend can come back.
+
+**Worked example.** Friday 25 September 2026, records from 1 February.
+**Dining out**, March to August: $300, $340, $330, $380, $420, $450. Pairs:
++$40, −$10, +$50, +$40, +$30: 4 of 5 rise, and 4 × 4 = 16 ≥ 5 × 3 = 15.
+Usual month: the median of $300, $330, $340, $380, $420, $450, ($340 +
+$380) ÷ 2 = **$360.00**; distances $60, $20, $30, $20, $60, $90, MAD ($30 +
+$60) ÷ 2 = $45.00; band max($25.00, $54.00, $135.00) = **$135.00**. Last −
+first = $150.00 ≥ $135.00: **rising steadily**. **Groceries** $400, $410,
+$420, $405, $415, $425: 4 of 5 rise too, but last − first is $25.00, under
+its band of max($25.00, 15% of $412.50 = $61.88, 3 × $7.50) = $61.88: **no
+clear trend**. **Coffee** $60, $62, $59, $61, $60, $63: 3 rises of 5, 3 × 4
+= 12 < 15: **no clear trend**. **Records from 8 August 2026:** on 25
+September no month is complete; the first whole month is September, so
+with September to December whole, trends are possible from **January
+2027**.
+
+---
+
 ## F44 — Impact, for ranking the Coach's cards
 
 **Decided 2026-09-24. Engineering default. Not from the workbook.** Decided
