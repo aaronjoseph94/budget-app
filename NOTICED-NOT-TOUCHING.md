@@ -2015,3 +2015,30 @@ which sees every screen at once.
 **To settle:** a small switch style in `components/ui/form.tsx`, used
 here and anywhere else an on/off choice appears (AI on/off, Share shop
 names, both A12).
+
+## N83 — The Coach cards' action buttons are under 44 px tall
+
+**Seen:** 2026-09-25, A12, in the preview harness at 320 and 390 px.
+**Import a statement**, **See the Month**, **Why am I seeing this?**
+and **What if…** are the small button size (about 36 px), since A07
+and A08. A12's ✕ beside them is 44 px.
+
+**Why not fixed here:** the size is shared by every small button in the
+app; changing it is A26's mobile pass, which sees every screen at once.
+
+**To settle:** in A26, give the small size a 44 px minimum height on
+touch screens, or use the default size on the Coach's cards.
+
+## N84 — Share shop names has nothing to hold back yet
+
+**Seen:** 2026-09-25, A12. The switch is stored in `ai_settings` and
+shown in AI settings, but digest version 1 names only categories and
+goals, so no brief carries a shop name today.
+
+**Why not fixed here:** shop facts arrive with A17 (subscriptions,
+unusual charges) and shop names go to the AI with A21 (Review
+suggestions).
+
+**To settle:** in A17 and A21, send "a shop" in place of each shop's
+name when the switch is off, with a test each.
+

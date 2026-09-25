@@ -215,3 +215,21 @@ the owner's choice: **Cheerleader** (the default) or **Straight talker**.
 **Revisit** if drop counts show a rule refusing ordinary sentences (the
 number-word list first), or if a figure the owner needs cannot be put in a
 blank.
+
+## Note, 2026-09-25: built in slice A12
+
+Decided by the engineer under the owner's 2026-09-24 instruction to
+proceed without questions.
+
+- `ModelProse` and `parseNarrateReply` (packages/schema) and `checkReply`
+  (savings-coach) are §4's rules as written, plus two: a card to watch
+  must keep its one thing to try, and a direction word straight after a
+  change blank is refused.
+- The prompt's version is packages/schema's `NARRATE_PROMPT_VERSION`; the
+  app adds it to every signature as it hashes, and savings-coach signs
+  the brief, the tone and the library version.
+- A line, a card and the goal line are each reused by its own
+  signature; a quote pick only with its whole pack.
+- `ai_notes` is 0017 as §6 says; the schema gate runs on a UTF-8
+  database so its digit ranges are characters.
+
