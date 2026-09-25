@@ -24,6 +24,13 @@ export const FACT_LETTER = /^[A-Z]{1,2}$/
 /** A library entry's id: lowercase words and hyphens, no digit (plan §4). */
 export const QUOTE_ID = /^[a-z]+(?:-[a-z]+)*$/
 
+/**
+ * The daily prompt's version. The helper's own constant is held to it by
+ * a contract test, and the app hashes it into every signature, so words
+ * written under an older prompt are never reused.
+ */
+export const NARRATE_PROMPT_VERSION = 1
+
 /** Each field's length, and how many cards a pack may word (plan A12). */
 export const NARRATE_LIMITS = { summary: 200, title: 80, body: 240, tryThis: 240, goal: 160, why: 160, cards: 5 } as const
 

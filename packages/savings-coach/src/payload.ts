@@ -20,13 +20,6 @@ import { LIBRARY_VERSION } from './library.js'
 import type { Card } from './rank.js'
 import { slotsOf, type Tone } from './templates.js'
 
-/**
- * The daily prompt's version, part of every signature: when the helper's
- * prompt changes, words it wrote under the old one are not reused. The
- * helper's own constant is held to this one by a contract test.
- */
-export const NARRATE_PROMPT_VERSION = 1
-
 /** A goal as the brief names it: never its target or what it holds. */
 export interface PayloadGoal {
   readonly id: string
@@ -103,9 +96,14 @@ export function canonicalJson(value: unknown): string {
   return JSON.stringify(value)
 }
 
-/** The text a pack's `facts_sig` hashes: the brief, with the prompt's and the library's versions. */
+/**
+ * The text a pack's `facts_sig` hashes: the brief, with the library's
+ * version. The app adds the prompt's version (packages/schema's
+ * NARRATE_PROMPT_VERSION) as it hashes each signature, so words the
+ * helper wrote under an older prompt are never reused.
+ */
 export function canonicalPayload(brief: NarrateDaily): string {
-  return canonicalJson({ brief, prompt: NARRATE_PROMPT_VERSION, library: LIBRARY_VERSION })
+  return canonicalJson({ brief, library: LIBRARY_VERSION })
 }
 
 export interface CardSignatureInput {
@@ -118,7 +116,7 @@ export interface CardSignatureInput {
 /**
  * The text one card's `card_sig` hashes (ADR 0005 §6): its kind, its fact's
  * stable key, its template, and its fact's direction, size and evidence,
- * with the tone and versions. Words kept under it are reused only while
+ * with the tone. Words kept under it are reused only while
  * every one of those still holds; the figures in them are always filled
  * fresh as they are drawn.
  */
@@ -133,11 +131,10 @@ export function cardSignature(input: CardSignatureInput): string {
     evidence: fact.evidence,
     meaning: fact.meaning,
     tone: input.tone,
-    prompt: NARRATE_PROMPT_VERSION,
   })
 }
 
 /** The text the goal line's signature hashes: which goals, which is the main one, and their units. */
 export function goalLineSignature(goals: readonly PayloadGoal[], tone: Tone): string {
-  return canonicalJson({ goals: goals.map((g) => ({ id: g.id, main: g.main, hours: g.hasHours })), tone, prompt: NARRATE_PROMPT_VERSION })
+  return canonicalJson({ goals: goals.map((g) => ({ id: g.id, main: g.main, hours: g.hasHours })), tone })
 }

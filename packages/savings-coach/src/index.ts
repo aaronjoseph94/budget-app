@@ -29,7 +29,6 @@ export { rankCards, type Card, type CardAction, type RankCardsInput } from './ra
 export { LIBRARY, LIBRARY_VERSION, QUOTE_TAGS, type LibraryEntry, type QuoteTag } from './library.js'
 export { pickQuote, quoteTags, type PickQuoteInput, type PickedQuote, type QuoteTagsInput } from './pick-quote.js'
 export {
-  NARRATE_PROMPT_VERSION,
   canonicalJson,
   canonicalPayload,
   cardSignature,

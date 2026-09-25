@@ -70,6 +70,7 @@ export { ModelProse, proseProblem, type ProseProblem } from './prose.js'
 export {
   FACT_LETTER,
   NARRATE_LIMITS,
+  NARRATE_PROMPT_VERSION,
   QUOTE_ID,
   parseNarrateReply,
   type NarrateCard,
