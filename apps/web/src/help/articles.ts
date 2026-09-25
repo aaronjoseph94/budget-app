@@ -275,7 +275,41 @@ export const ARTICLES: readonly Article[] = [
     done: 'the Gemini card says "Works · key ending …" and the top says "AI is on".',
     stuck:
       'If it says the key isn’t valid, copy it again from AI Studio, all of it. If Google is busy, the key is saved and tried again later. Nothing breaks while AI is off: the Coach and every other screen use the app’s own words. A key is a password Google gives you for the app to use; the app only ever shows its last four characters, and **Remove key** deletes it.',
-    related: ['updates', 'coach'],
+    related: ['updates', 'coach', 'more-ai'],
+  },
+  {
+    id: 'more-ai',
+    title: 'More AI services, paid ones too',
+    summary:
+      'Optional. Gemini alone is enough. Adding Groq or OpenRouter, both free, means another service answers when Gemini is busy. OpenAI and Anthropic are paid, and used only if you switch them on.',
+    steps: [
+      'Open **More**, then **AI settings**, and press **More AI services** to unfold the cards.',
+      'On the card you want, press the link that starts with **Get**, and create a key on the page that opens.',
+      'Copy the key, paste it in that card, and press **Save & test**.',
+      'Under **Try in this order**, press the arrows to put the services in the order you want them asked.',
+      'To let OpenAI or Anthropic answer, turn on **Use paid services**, knowing each use is billed to you by them.',
+      'Choose a **Daily limit** if 40 AI calls a day is too many or too few.',
+    ],
+    done: 'the card says "Works · key ending …" and the service sits where you want it under Try in this order.',
+    stuck:
+      'Free services may keep what they are sent, and people there may read it, as with Gemini’s free tier. A paid key does nothing until **Use paid services** is on, so nothing is billed by surprise. **Remove key** on a card deletes that key alone.',
+    related: ['free-ai', 'ai-rests'],
+  },
+  {
+    id: 'ai-rests',
+    title: 'Why the AI sometimes rests',
+    summary:
+      'Free AI has daily limits, and so does the app. When a service is busy or out of free uses it rests for a while, and the next one is asked. When none can answer, the app shows its own words: nothing breaks.',
+    steps: [
+      'Open **More**, then **AI settings**, and read the sentence at the top and the line **Today: N of 40**.',
+      'If today’s calls reached the limit, wait until tomorrow, or raise the **Daily limit**.',
+      'If every service is resting, wait a minute or two and press **Check again**.',
+      'To have another service answer while Gemini rests, add a free one under **More AI services**.',
+    ],
+    done: 'the top of AI settings says "AI is on" again.',
+    stuck:
+      'The free services reset overnight, at midnight Pacific time. A service that turns down its key is passed over until you paste the key again. While AI rests, the Coach and every other screen use the app’s own words, with your real figures.',
+    related: ['more-ai', 'free-ai'],
   },
   {
     id: 'wrong-number',
