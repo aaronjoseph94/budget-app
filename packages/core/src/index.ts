@@ -241,6 +241,16 @@ export {
 
 export { biggestMovers, type BiggestMoversInput, type Mover, type MoverCategory } from './movers.js'
 
+export {
+  monthReport,
+  type LastMonth,
+  type MonthReport,
+  type MonthReportInput,
+  type PairedRow,
+  type TotalChange,
+  type UsualTotals,
+} from './month-report.js'
+
 export { mad, median, quantile, type QuantileInput, type StatsInput } from './stats.js'
 
 export {

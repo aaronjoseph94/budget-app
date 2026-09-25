@@ -319,8 +319,8 @@ export function debtBalanceChange(input: DebtBalanceChangeInput): DebtBalanceCha
   }
 }
 
-/** F26. `moreIsGood` is true on Income and Savings. */
-function change(now: Cents, before: Cents, moreIsGood: boolean): Change {
+/** F26. `moreIsGood` is true on Income and Savings. Also month-report's, for a total against its usual month; not the package's. */
+export function change(now: Cents, before: Cents, moreIsGood: boolean): Change {
   const changeCents = subCents(now, before)
   const size = Math.abs(changeCents)
   const direction = size < 100 ? 'same' : changeCents > 0 ? 'more' : 'less'
