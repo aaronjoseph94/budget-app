@@ -103,7 +103,7 @@ export function monthEndForecast(input: MonthForecastInput): MonthEndForecast {
 }
 
 /** To the nearest $10, half-up on the magnitude: −$15.00 is −$20. */
-function toTen(value: number): Cents {
+export function toTen(value: number): Cents {
   const size = Math.floor((Math.abs(value) + 500) / 1_000) * 1_000
   return value < 0 ? cents(ZERO_CENTS - size) : cents(size)
 }

@@ -132,7 +132,7 @@ function weekly(monthly: number | null): Cents {
 }
 
 /** The day the first complete month ends: the first whole month on or after the records and the read begin. */
-function firstComplete(input: GoalForecastInput): IsoDate | null {
+export function firstComplete(input: Pick<GoalForecastInput, 'historyStart' | 'readFrom'>): IsoDate | null {
   if (input.historyStart === null) return null
   const first = input.historyStart > input.readFrom ? input.historyStart : input.readFrom
   const whole = first === monthBounds(first).start ? first : shiftMonth(first, 1)

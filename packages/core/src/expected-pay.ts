@@ -111,7 +111,7 @@ function notCounted(categoryId: string): PaySource {
  * and on or before asOf, the latest first and, on one day, the larger
  * first. None with no receipt.
  */
-function usualPay(rows: readonly PeriodEntry[], historyStart: IsoDate | null, asOf: IsoDate): Cents | null {
+export function usualPay(rows: readonly PeriodEntry[], historyStart: IsoDate | null, asOf: IsoDate): Cents | null {
   if (historyStart === null) return null
   const receipts = rows
     .filter((e) => e.amountCents > 0 && e.postedOn >= historyStart && e.postedOn <= asOf)
