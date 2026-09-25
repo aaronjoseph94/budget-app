@@ -271,6 +271,20 @@ describe('when each goal is reached at your pace (A08, F33)', () => {
     expect(within(others).getByText('On no fund yet')).toBeTruthy()
   })
 
+  it('gives one month, not a range, when every date falls in it', async () => {
+    // $450.00 moved in each month: every pace is $103.85 a week, 168 weeks, 12 Dec 2029.
+    const fake = paced()
+    fake.tables.transactions.splice(0, fake.tables.transactions.length, ...['05', '06', '07', '08'].map((m, i) => ({
+      id: `e${i}`, posted_on: `2026-${m}-15`, amount_cents: -45_000, merchant_raw: 'TO FLIGHT FUND', category_id: 'c4', source: 'typed' as const,
+    })))
+    go('/coach')
+    renderScreen(<Shell />, fake)
+
+    expect(await screen.findByText('At your pace: about Dec 2029')).toBeTruthy()
+    expect(screen.getByText('Based on 4 months')).toBeTruthy()
+    expect(screen.queryByText(/^Most likely/)).toBeNull()
+  })
+
   it('gives one rough date under three complete months', async () => {
     // July and August: $400.00 a month, $92.31 a week, 188 weeks.
     go('/coach')

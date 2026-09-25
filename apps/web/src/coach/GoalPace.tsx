@@ -18,7 +18,7 @@ export function GoalPace({ forecast, targetDate }: { forecast: GoalForecast; tar
         <span>{paceWords(pace)}</span>
         {chip === null ? null : <Badge variant="outline">{chip}</Badge>}
       </p>
-      {pace.status === 'range' ? (
+      {pace.status === 'range' && !oneMonth(pace) ? (
         <p className="text-muted-foreground">Most likely {formatShortMonth(pace.dates.middle)}.</p>
       ) : null}
       {forecast.neededWeeklyCents === null || targetDate === null ? null : (
@@ -45,10 +45,19 @@ function paceWords(pace: Pace): string {
     case 'rough':
       return `At your pace: about ${formatShortMonth(pace.date)}`
     case 'range':
+      if (oneMonth(pace)) return `At your pace: about ${formatShortMonth(pace.dates.middle)}`
       return pace.dates.late === null
         ? `At your pace: ${formatShortMonth(pace.dates.early)} or later`
         : `At your pace: ${formatShortMonth(pace.dates.early)} – ${formatShortMonth(pace.dates.late)}`
   }
+}
+
+/**
+ * A range whose ends fall in the same month, as with the same amount moved in
+ * every month: "Jul 2029 – Jul 2029" says nothing a single month does not.
+ */
+function oneMonth(pace: Extract<Pace, { status: 'range' }>): boolean {
+  return pace.dates.late !== null && formatShortMonth(pace.dates.early) === formatShortMonth(pace.dates.late)
 }
 
 function evidenceChip(pace: Pace): string | null {
