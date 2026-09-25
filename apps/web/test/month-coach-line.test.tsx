@@ -139,6 +139,22 @@ describe('the Month’s coach line (D27)', () => {
       expect(count.asked).toBe(1)
     })
 
+    it('leaves the Coach’s year unread once today’s ask is used', async () => {
+      const fake = seeded()
+      const count = helper(fake)
+      const reads: string[] = []
+      fake.server.afterRead = (table) => void reads.push(table)
+      window.localStorage.setItem('budget.coach.asked', '2026-09-24')
+      renderScreen(<MonthScreen month={null} />, fake)
+      expect(await screen.findByText(whole('You’ve spent $160.00 less than by this day last month. Nice going! Open the Coach.'))).toBeTruthy()
+      await vi.waitFor(() => expect(reads).toContain('ai_notes'))
+      // Long enough for the Coach's Day to start its reads, if it were built.
+      await new Promise((resolve) => setTimeout(resolve, 50))
+      // insight_dismissals is read only by the Coach's Day, which the Month builds only to ask.
+      expect(reads).not.toContain('insight_dismissals')
+      expect(count.asked).toBe(0)
+    })
+
     it('keeps the app’s own line, and the Month, when the AI helper is not installed', async () => {
       const fake = seeded()
       fake.functions.ai = null
