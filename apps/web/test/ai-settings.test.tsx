@@ -62,9 +62,9 @@ describe('AI settings says what is true, whatever the helper does', () => {
   it('says AI is not set up, with each service and today’s calls, when no key is anywhere', async () => {
     await open(createFakeSupabase(), 'AI isn’t set up yet. Everything still works in the app’s own words. Turn on free AI below, in about 2 minutes.')
     expect(screen.getByRole('link', { name: 'Show me how' }).getAttribute('href')).toBe('#/help/free-ai')
-    const services = within(screen.getByRole('region', { name: 'AI services, in the order they are tried' }))
+    const services = within(await screen.findByRole('region', { name: 'Try in this order' }))
     expect(services.getAllByRole('listitem').map((li) => li.textContent)).toEqual([
-      'Google GeminiNo key yetFree', 'GroqNo key yetFree', 'OpenRouterNo key yetFree', 'OpenAINo key yetPaid', 'AnthropicNo key yetPaid',
+      '1. Google GeminiFreeNo key yet↑↓', '2. GroqFreeNo key yet↑↓', '3. OpenRouterFreeNo key yet↑↓', '4. OpenAIPaidNo key yet↑↓', '5. AnthropicPaidNo key yet↑↓',
     ])
     expect(screen.getByText('Today: 0 of 40 AI calls. Resets overnight.')).toBeTruthy()
   })
@@ -77,7 +77,7 @@ describe('AI settings says what is true, whatever the helper does', () => {
     })
     await open(fake, 'AI is on, using your receipts key.')
     // Whatever the hint holds is drawn as text, never markup.
-    expect(screen.getByText('Your receipts key ending …<b>1, from Supabase')).toBeTruthy()
+    expect(await screen.findByText('Your receipts key ending …<b>1, from Supabase')).toBeTruthy()
     expect(screen.getByText('Today: 3 of 40 AI calls. Resets overnight.')).toBeTruthy()
   })
 

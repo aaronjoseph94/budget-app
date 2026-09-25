@@ -108,7 +108,7 @@ describe('the free Gemini card, with no key yet', () => {
     await paste(card, KEY)
     await card.findByText('AI needs a one-time update. Everything else works. One-time updates shows which.')
     expect(card.getByRole('link', { name: 'Open One-time updates' }).getAttribute('href')).toBe('#/help/updates')
-    expect(screen.getByRole('region', { name: 'AI services, in the order they are tried' })).toBeTruthy()
+    expect(await screen.findByRole('region', { name: 'Try in this order' })).toBeTruthy()
   })
 })
 
@@ -120,7 +120,7 @@ describe('the free Gemini card, with an older helper', () => {
     expect(card.getByText('The AI helper you installed is an older copy, so it can’t take a key yet. Everything else works.')).toBeTruthy()
     expect(card.getByRole('link', { name: 'Open One-time updates' }).getAttribute('href')).toBe('#/help/updates')
     expect(card.queryByLabelText('Step 2: paste it here')).toBeNull()
-    expect(screen.getByRole('region', { name: 'AI services, in the order they are tried' })).toBeTruthy()
+    expect(await screen.findByRole('region', { name: 'Try in this order' })).toBeTruthy()
   })
 })
 
