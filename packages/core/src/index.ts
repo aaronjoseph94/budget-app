@@ -158,6 +158,7 @@ export { scaleSeries, type ScaleSeriesInput, type ScaledSeries } from './scale.j
 export { forecastFact } from './digest.js'
 export { cashFlow30, type CashFlow30, type CashFlowBill, type CashFlowPay } from './cash-flow-30.js'
 export { cashFlowAhead, type AheadMonth, type CashFlowAhead } from './cash-flow-ahead.js'
+export { whatIf, type WhatIf, type WhatIfGoal, type WhatIfInput } from './what-if.js'
 
 export {
   PAYDAYS_A_YEAR,
