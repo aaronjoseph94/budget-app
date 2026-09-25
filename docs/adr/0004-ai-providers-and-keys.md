@@ -240,6 +240,22 @@ isn't available: pick another"), when a free tier's limits change enough
 that the soft limits bite, or if the owner wants keys to survive key
 changes without `AI_KEYS_ROOT`.
 
+## Note, 2026-09-25: built in slice A10
+
+Decided by the engineer under the owner's 2026-09-24 instruction to
+proceed without questions. The approvals above stand as quoted; nothing
+here widens them.
+
+- Keys are sealed as this ADR says, with the salt and infos above; a key
+  no root can open is `locked`, never an error. Each rule is tested in
+  `supabase/functions/test/ai-crypto.test.ts`.
+- Remove key is 0016's `ai_key_forget`, called by the browser, which
+  deletes only the caller's key; the helper has no delete of its own.
+- Gemini's adapter asks for thinking at `minimal` and counts a reply only
+  when it finished (`STOP`). Its list endpoint is the key test, and its
+  answers are intersected with the committed list, never added to it.
+- No new dependency: WebCrypto and `fetch`, in Deno and in Node's tests.
+
 ## Not yet met
 
 - CONSTRAINTS.md's **Extraction accuracy** row stays pending: it needs 20

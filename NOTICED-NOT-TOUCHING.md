@@ -1953,3 +1953,35 @@ test_key (version `2026-09-25.2`). `packages/schema` holds
 it, and One-time updates marks a helper answering with an older version
 (or none it can read) "An older copy", with the steps for pasting the new
 version over it.
+
+## N79 — Google advises against a low temperature on Gemini 3 models
+
+**Seen:** 2026-09-25, A10, while checking Gemini's request. Search
+results report Google's advice for the Gemini 3 family to keep
+`temperature` at its default of 1.0, since lower values can make a reply
+loop or degrade, and ADR 0002's note says 3.5 Flash-Lite ignores a custom
+temperature. Plan §3.3 sets 0.2 (0 for extraction), and the adapter sends
+whatever the task says.
+
+**Why not fixed here:** no task calls the model yet; the temperatures
+belong to the tasks, which arrive with `run` (A11) and the packs (A12).
+
+**To settle:** in A11, re-check Google's guidance, and either leave
+`temperature` out of Gemini 3 requests or record why each task's value
+stands, in the plan's A11 notes.
+
+## N80 — AI settings shows the model choice only after a check
+
+**Seen:** 2026-09-25, A10. The model list comes from `save_key` or
+`test_key`'s answer, so reopening AI settings shows the model in use in
+the services list but no choice until **Check which models work** is
+pressed. `status` carries no listed models, and 0016 has no column for
+them.
+
+**Why not fixed here:** storing a service's list would need a migration
+for a convenience, and a check costs no quota.
+
+**To settle:** if the owner finds it confusing, show the model as a line
+("Model: gemini-3.5-flash-lite · Check which models work to change it")
+in A11's service cards, or keep the last check's list on this device.
+
