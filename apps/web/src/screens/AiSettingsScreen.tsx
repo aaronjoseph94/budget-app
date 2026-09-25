@@ -3,6 +3,7 @@ import type { AiServiceStatus } from '@budget/schema'
 import { useAppData } from '../app-data.js'
 import { aiStatus, type AiView } from '../ai/client.js'
 import { ChoicesPanel } from '../ai/ChoicesPanel.js'
+import { CoachPanel } from '../ai/CoachPanel.js'
 import { KeyCard } from '../ai/KeyCard.js'
 import { Button } from '../components/ui/button.js'
 import { HelpButton } from '../help/HelpButton.js'
@@ -14,7 +15,8 @@ import { hashOf } from '../nav.js'
  * Gemini card (A10: paste a key, test it, remove it, choose a model), the
  * other four services' cards folded under More AI services, then the order
  * they are tried in, Use paid services and the daily limit with today's
- * calls (A11).
+ * calls (A11); and how the Coach talks (A12), which is shown even with no
+ * helper, since the app's own words follow its tone too.
  *
  * Its own chunk, and the only screen that asks the helper anything, so a
  * helper not installed, or 0016 not pasted, changes this page and nothing
@@ -90,6 +92,7 @@ export function AiSettingsScreen() {
           <ChoicesPanel status={status} onChanged={() => void check(true)} />
         </>
       )}
+      <CoachPanel />
     </div>
   )
 }
