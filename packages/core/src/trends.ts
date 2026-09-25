@@ -10,8 +10,13 @@
  * than four whole months.
  */
 import { type Cents, type IsoDate, cents } from '@budget/money-primitives'
-import type { Evidence } from './history.js'
+import { type Evidence, completeMonths } from './history.js'
+import { monthActuals } from './month-actuals.js'
+import { type MonthTotals, monthlyTotals } from './month-totals.js'
 import { notableBand, usualMonth } from './notable.js'
+import type { PeriodCategory, PeriodEntry } from './period-sheet.js'
+import type { PlanHistoryRow } from './plans.js'
+import { scaleSeries } from './scale.js'
 import { monthBounds, shiftMonth } from './week.js'
 
 export interface TrendLabelInput {
@@ -101,4 +106,113 @@ function possibleFrom(input: TrendLabelInput, have: number): IsoDate | null {
   const byToday = shiftMonth(input.asOf, TREND_MONTHS - have)
   const byRecords = shiftMonth(firstWhole, TREND_MONTHS)
   return byToday > byRecords ? byToday : byRecords
+}
+
+export interface TrendWindowInput {
+  /** Today: the window is the months before its month. */
+  readonly asOf: IsoDate
+  /** From historyStart; null when there are no records. */
+  readonly historyStart: IsoDate | null
+  /** The first day `entries` covers: a month before it was not read, and is a gap, not $0. */
+  readonly readFrom: IsoDate
+  /** How many months the view shows. */
+  readonly months: 6 | 12
+  readonly categories: readonly PeriodCategory[]
+  readonly entries: readonly PeriodEntry[]
+}
+
+/** One line: a figure per month of the window, oldest first; null is a gap, never $0. */
+export interface TrendLine {
+  readonly points: readonly (Cents | null)[]
+  /** Each point's height, placed by scaleSeries; null where the point is. */
+  readonly pointsBp: readonly (number | null)[]
+  readonly label: TrendLabel
+}
+
+export interface MonthlyTrend {
+  /** The window's months by their first day, oldest first. */
+  readonly months: readonly IsoDate[]
+  readonly income: TrendLine
+  readonly spent: TrendLine
+  readonly saved: TrendLine
+  /** Where $0 sits on the three lines' one scale. */
+  readonly zeroBp: number
+}
+
+/** F37: Income, Spent and Saved in each complete month of the window, on one scale so the lines compare. */
+export function monthlyTrend(input: TrendWindowInput & { readonly planHistory: readonly PlanHistoryRow[] }): MonthlyTrend {
+  const months = windowOf(input)
+  const byMonth = new Map(monthlyTotals(input).months.map((t) => [t.month as string, t]))
+  const pick = (figure: (t: MonthTotals) => Cents) => months.map((m) => {
+    const totals = byMonth.get(m)
+    return totals === undefined ? null : figure(totals)
+  })
+  const figures = [pick((t) => t.incomeCents), pick((t) => t.spentCents), pick((t) => t.savedCents)]
+  const { lines, zeroBp } = placed(figures)
+  const [income, spent, saved] = figures.map((points, i) => ({ points, pointsBp: lines[i]!, label: labelOf(input, months, points) }))
+  return { months, income: income!, spent: spent!, saved: saved!, zeroBp }
+}
+
+export interface CategoryTrend extends TrendLine {
+  readonly categoryId: string
+  /** F27's usual month over up to its 6 most recent complete months; null with none. */
+  readonly usualCents: Cents | null
+  readonly usualBp: number | null
+  /** Where $0 sits on the row's own scale. */
+  readonly zeroBp: number
+}
+
+const ORDER: Readonly<Record<TrendLabel['status'], number>> = { rising: 0, falling: 1, no_trend: 2, not_enough: 3 }
+
+/**
+ * F37: each Variable expenses category with a figure other than $0 in a
+ * complete month of the window, its Actual month by month against its usual
+ * level. Steady ones first, rising then falling, then the list's order.
+ */
+export function categoryTrends(input: TrendWindowInput): { readonly months: readonly IsoDate[]; readonly categories: readonly CategoryTrend[] } {
+  const months = windowOf(input)
+  const whole = new Set<string>(completeMonths(input).months)
+  const read = monthActuals({ categories: input.categories, entries: input.entries, months: months.filter((m) => whole.has(m)) }).months
+  const actuals = new Map(read.map((m) => [m.month as string, m.actuals]))
+  const trends = input.categories
+    .filter((c) => c.kind === 'variable')
+    .flatMap((c): { trend: CategoryTrend; order: number }[] => {
+      const points = months.map((m) => {
+        const month = actuals.get(m)
+        return month === undefined ? null : month.get(c.id)!
+      })
+      if (points.every((p) => p === null || p === 0)) return []
+      const had = months.flatMap((month, i) => (points[i] === null ? [] : [{ month, cents: points[i]! }]))
+      const { usualCents } = usualMonth({ totals: had })
+      const { lines, zeroBp } = placed([points, [usualCents]])
+      const trend = { categoryId: c.id, points, pointsBp: lines[0]!, usualCents, usualBp: lines[1]![0]!, zeroBp, label: labelOf(input, months, points) }
+      return [{ trend, order: c.sortOrder }]
+    })
+  trends.sort(
+    (a, b) =>
+      ORDER[a.trend.label.status] - ORDER[b.trend.label.status] ||
+      a.order - b.order ||
+      (a.trend.categoryId < b.trend.categoryId ? -1 : a.trend.categoryId > b.trend.categoryId ? 1 : 0),
+  )
+  return { months, categories: trends.map((t) => t.trend) }
+}
+
+/** The window's months, oldest first, ending with the month before asOf's. */
+function windowOf(input: TrendWindowInput): IsoDate[] {
+  return Array.from({ length: input.months }, (_, i) => shiftMonth(input.asOf, i - input.months))
+}
+
+function labelOf(input: TrendWindowInput, months: readonly IsoDate[], points: readonly (Cents | null)[]): TrendLabel {
+  const totals = months.flatMap((month, i) => (points[i] === null ? [] : [{ month, cents: points[i]! }]))
+  return trendLabel({ asOf: input.asOf, historyStart: input.historyStart, totals })
+}
+
+/** Every series on one scale from $0 (scaleSeries), so no chart divides money and $0 is always on it. */
+function placed(series: readonly (readonly (Cents | null)[])[]): { lines: (number | null)[][]; zeroBp: number } {
+  const values = series.flatMap((s) => s.filter((v): v is Cents => v !== null))
+  const { bps, zeroBp } = scaleSeries({ values: [0, ...values] })
+  let next = 1
+  const lines = series.map((s) => s.map((v) => (v === null ? null : bps[next++]!)))
+  // $0 is one of the values, so it always lies on the scale.
+  return { lines, zeroBp: zeroBp! }
 }
