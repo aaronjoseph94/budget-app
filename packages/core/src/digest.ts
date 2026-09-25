@@ -13,12 +13,16 @@
  * month, sized by its usual month (F27); over, near and pace on budget
  * (F28); stale data and rows waiting in Review (F44). Variable only: a
  * change on Bills or Debts is a bill moving, not a habit (F38 will say it).
+ * Plan A08 adds two wins (F33, F34): more saved than by this day last
+ * month, and a milestone passed on an active goal. They join version 1:
+ * nothing reads the version until the AI's words are cached (plan A12).
  */
-import { type Cents, type IsoDate, daysBetween } from '@budget/money-primitives'
+import { type Cents, type IsoDate, cents, daysBetween } from '@budget/money-primitives'
 import type { BudgetHistoryRow } from './budgets.js'
 import { type Change, periodComparison } from './compare.js'
 import { type Evidence, completeMonths } from './history.js'
 import { impactScore } from './impact.js'
+import { goalMilestones } from './goal-milestones.js'
 import { changeSize, notableBand, usualMonth } from './notable.js'
 import { budgetStanding, categoryPace } from './pace.js'
 import { monthActuals } from './month-actuals.js'
@@ -46,6 +50,20 @@ export interface FactsDigestInput {
   readonly latestStatementEnd: IsoDate | null
   /** Rows waiting in Review; null when the count could not be read. */
   readonly pendingCount: number | null
+  /** The active goals, main first (F45), whose milestones are cheered; none where only the summaries are needed. */
+  readonly goals: readonly DigestGoal[]
+}
+
+/** An active goal as goalMilestones reads it, with what the owner calls it. */
+export interface DigestGoal {
+  readonly id: string
+  readonly name: string
+  readonly targetCents: number
+  /** Saved now: the fund's kept balance (D16), or the amount typed on no fund. */
+  readonly savedCents: number
+  readonly unitCostCents: number | null
+  readonly fundCategoryId: string | null
+  readonly typedOn: IsoDate | null
 }
 
 export type FactKind =
@@ -57,6 +75,8 @@ export type FactKind =
   | 'over_budget'
   | 'near_budget'
   | 'budget_pace'
+  | 'saved_more'
+  | 'goal_milestone'
 
 /** One figure a sentence can name by its slot. A change carries its direction word (ADR 0005 §5). */
 export type Figure =
@@ -65,13 +85,21 @@ export type Figure =
   | { readonly unit: 'date'; readonly value: IsoDate }
   | { readonly unit: 'month'; readonly value: IsoDate }
   | { readonly unit: 'count'; readonly value: number }
+  /** Whole hours of a goal's unit. */
+  | { readonly unit: 'hours'; readonly value: number }
+  /** A share of a whole, in basis points. */
+  | { readonly unit: 'share'; readonly value: number }
 
 export interface Fact {
   /** Stable while its subject is: `summary:month`, `cat:<id>:change`, … */
   readonly key: string
   readonly kind: FactKind
   /** What it is about. The label is what the owner sees: a name, never an id. */
-  readonly subject: { readonly type: 'data' | 'review' | 'month' | 'week' | 'category'; readonly id: string | null; readonly label: string }
+  readonly subject: {
+    readonly type: 'data' | 'review' | 'month' | 'week' | 'category' | 'goal'
+    readonly id: string | null
+    readonly label: string
+  }
   readonly direction: 'up' | 'down' | 'same' | 'none'
   /** Against its band (F27); null where there is no change to size. */
   readonly size: 'slight' | 'clear' | 'big' | null
@@ -102,7 +130,7 @@ const STALE_AFTER_DAYS = 10
 export function factsDigest(input: FactsDigestInput): FactsDigest {
   const history = completeMonths(input)
   const first: Fact[] = [...staleData(input), ...rowsWaiting(input), ...summaries(input)]
-  const rest = [...categoryChanges(input, history.months), ...budgets(input)].sort(
+  const rest = [...categoryChanges(input, history.months), ...budgets(input), ...savedMore(input), ...milestones(input)].sort(
     (a, b) => Number(b.notable) - Number(a.notable) || b.impact - a.impact || (a.key < b.key ? -1 : 1),
   )
   return { version: DIGEST_VERSION, completeMonths: history.months.length, facts: [...first, ...rest].slice(0, MAX_FACTS) }
@@ -297,6 +325,69 @@ function budgets(input: FactsDigestInput): Fact[] {
       out.push(fact('budget_pace', 'pace', pace.notable, 'some', pace.overCents, figures))
     }
     return out
+  })
+}
+
+/**
+ * More moved into savings than by this day last month (F34's wins), sized
+ * and weighed as a summary is (F27, F44). Saving less is not a card: the
+ * Month's Savings row already shows it, and a coach does not scold.
+ */
+function savedMore(input: FactsDigestInput): Fact[] {
+  const { start } = dayOf(input.asOf)
+  const compared = periodComparison({ ...input, period: 'month', month: start })
+  if (compared.status !== 'compared' || compared.summary.saved.direction !== 'more') return []
+  const saved = compared.summary.saved
+  const { bandCents } = notableBand({ basis: 'summary', beforeCents: saved.beforeCents })
+  const sized = changeSize({ changeCents: saved.changeCents, bandCents })
+  return [
+    {
+      key: 'summary:saved',
+      kind: 'saved_more',
+      subject: { type: 'month', id: start, label: 'This month' },
+      direction: 'up',
+      size: sized.size,
+      evidence: 'thin',
+      meaning: 'good',
+      notable: sized.notable,
+      figures: {
+        now: { unit: 'cents', value: saved.nowCents },
+        before: { unit: 'cents', value: saved.beforeCents },
+        change: { unit: 'change', value: saved.changeCents, direction: saved.direction },
+        before_month: { unit: 'month', value: compared.before.from },
+      },
+      impact: impactScore({ effect: 'monthly', monthlyCents: saved.changeCents, evidence: 'thin' }).impact,
+      cause: `saved_more:${start}`,
+    },
+  ]
+}
+
+/**
+ * Each active goal's milestone passed since last week began (F33), always
+ * a card. Worth one step of the goal, 5 hours at its cost an hour or a
+ * tenth of its target, and solid: a balance is not an estimate.
+ */
+function milestones(input: FactsDigestInput): Fact[] {
+  return input.goals.flatMap((goal): Fact[] => {
+    const { unit, passed } = goalMilestones({ asOf: input.asOf, entries: input.entries, goal })
+    if (passed === null) return []
+    // One step: 5 hours at its cost an hour, or a tenth of its target, half-up.
+    const step = goal.unitCostCents !== null ? 5 * goal.unitCostCents : Number((BigInt(goal.targetCents) * 2n + 10n) / 20n)
+    return [
+      {
+        key: `goal:${goal.id}:milestone`,
+        kind: 'goal_milestone',
+        subject: { type: 'goal', id: goal.id, label: goal.name },
+        direction: 'none',
+        size: null,
+        evidence: 'solid',
+        meaning: 'good',
+        notable: true,
+        figures: { milestone: { unit, value: passed } },
+        impact: impactScore({ effect: 'monthly', monthlyCents: cents(step), evidence: 'solid' }).impact,
+        cause: `goal_milestone:${goal.id}:${passed}`,
+      },
+    ]
   })
 }
 

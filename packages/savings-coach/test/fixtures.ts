@@ -35,6 +35,7 @@ export const EVERY_KIND: FactsDigestInput = {
   ],
   latestStatementEnd: d('2026-09-07'),
   pendingCount: 2,
+  goals: [],
 }
 
 export const FACTS: readonly Fact[] = factsDigest(EVERY_KIND).facts

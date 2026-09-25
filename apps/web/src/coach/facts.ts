@@ -55,6 +55,8 @@ export function digestOf(read: DigestRows, categories: readonly Category[]): Fac
     entries: entriesForCore(read.rows),
     latestStatementEnd: latest,
     pendingCount: read.pending,
+    // The goals' milestones join the Coach's read with the goals themselves, next.
+    goals: [],
   })
 }
 

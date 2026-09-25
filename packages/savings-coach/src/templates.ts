@@ -157,6 +157,9 @@ export function cardTemplateKey(fact: Fact): CardTemplateKey | null {
       return fact.direction === 'up' ? 'change_up' : 'change_down'
     case 'month_so_far':
     case 'week_so_far':
+    // Worded as cards once their templates are written, in the next change.
+    case 'saved_more':
+    case 'goal_milestone':
       return null
   }
 }
