@@ -41,7 +41,7 @@ const ASKED_KEY = 'budget.coach.asked'
 /** A reply that came back but failed the app's checks as a whole. */
 const REFUSED: AiView = { state: 'all_failed', sentence: 'The AI’s words didn’t pass the app’s checks: showing the app’s own words.', help: null, status: null }
 
-function askedHereToday(asOf: string): boolean {
+export function askedHereToday(asOf: string): boolean {
   try {
     return window.localStorage.getItem(ASKED_KEY) === asOf
   } catch {

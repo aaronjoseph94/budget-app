@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MonthScreen } from '../src/screens/MonthScreen.js'
 import type { Category, LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
+import type { NarrateDaily } from '@budget/schema'
 import { renderScreen } from './render-screen.js'
 
 // Thursday 24 September 2026, local noon. Only Date is faked.
@@ -94,5 +95,58 @@ describe('the Month’s coach line (D27)', () => {
     expect(screen.queryByRole('button', { name: /Open the Coach/ })).toBeNull()
     expect(screen.getByRole('region', { name: 'Variable expenses' })).toBeTruthy()
     expect(screen.getByText('Last month did not load, so there is no comparison. Reload to try again.')).toBeTruthy()
+  })
+
+  describe('with the AI’s words (A12)', () => {
+    /** The helper answering the daily pack with a line on the summary; every brief sent is counted. */
+    function helper(fake: FakeSupabase): { asked: number } {
+      const count = { asked: 0 }
+      const fallback = fake.functions.ai!
+      fake.functions.ai = (body) => {
+        if (body['action'] !== 'run') return fallback(body)
+        count.asked += 1
+        const brief = body['data'] as NarrateDaily
+        const reply = { summary: `Lovely: {{${brief.summary}.change}} than by this day last month.`, cards: [], goal: null, quote: null }
+        return new Response(JSON.stringify({ ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: JSON.stringify(reply) }), { headers: { 'content-type': 'application/json' } })
+      }
+      return count
+    }
+
+    beforeEach(() => window.localStorage.clear())
+
+    it('asks once, in the background after the Month has drawn, and then shows the AI’s line, marked ✨', async () => {
+      const fake = seeded()
+      const count = helper(fake)
+      renderScreen(<MonthScreen month={null} />, fake)
+      // The app's own line first; the Coach's year is read only after it.
+      expect(await screen.findByText(whole('You’ve spent $160.00 less than by this day last month. Nice going! Open the Coach.'))).toBeTruthy()
+      expect(await screen.findByText(whole('✨ Written by AI: Lovely: $160.00 less than by this day last month. Open the Coach.'))).toBeTruthy()
+      expect(count.asked).toBe(1)
+      await vi.waitFor(() => expect(fake.tables.ai_notes).toHaveLength(1))
+    })
+
+    it('uses words kept for its own summary without asking, and never asks twice a day', async () => {
+      const fake = seeded()
+      const count = helper(fake)
+      renderScreen(<MonthScreen month={null} />, fake)
+      await screen.findByText(whole('✨ Written by AI: Lovely: $160.00 less than by this day last month. Open the Coach.'))
+      await vi.waitFor(() => expect(fake.tables.ai_notes).toHaveLength(1))
+      cleanup()
+      // Another device: nothing marked here, but today's words are kept.
+      window.localStorage.clear()
+      renderScreen(<MonthScreen month={null} />, fake)
+      expect(await screen.findByText(whole('✨ Written by AI: Lovely: $160.00 less than by this day last month. Open the Coach.'))).toBeTruthy()
+      expect(count.asked).toBe(1)
+    })
+
+    it('keeps the app’s own line, and the Month, when the AI helper is not installed', async () => {
+      const fake = seeded()
+      fake.functions.ai = null
+      renderScreen(<MonthScreen month={null} />, fake)
+      expect(await screen.findByText(whole('You’ve spent $160.00 less than by this day last month. Nice going! Open the Coach.'))).toBeTruthy()
+      await vi.waitFor(() => expect(fake.functions.calls.some((c) => c['action'] === 'run')).toBe(true))
+      expect(screen.getByText(whole('You’ve spent $160.00 less than by this day last month. Nice going! Open the Coach.'))).toBeTruthy()
+      expect(screen.getByRole('region', { name: 'Variable expenses' })).toBeTruthy()
+    })
   })
 })
