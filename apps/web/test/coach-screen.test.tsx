@@ -207,6 +207,37 @@ describe('the Coach’s wins (A08)', () => {
     expect(window.location.hash).toBe('#/savings')
   })
 
+  it('says in “Why am I seeing this?” which milestone was passed, and why that is a card', async () => {
+    go('/coach')
+    renderScreen(<Shell />, withMilestone())
+    const card = (await screen.findByRole('heading', { name: 'Milestone: Flight training' })).closest('li')!
+    fireEvent.click(within(card).getByRole('button', { name: 'Why am I seeing this?' }))
+
+    const sheet = within(screen.getByRole('dialog', { name: 'Why am I seeing this?' }))
+    expect(sheet.getAllByRole('term').map((t) => [t.textContent, t.nextElementSibling?.textContent])).toEqual([['Milestone passed', '45 hours']])
+    expect(sheet.getByText(/^It shows because your savings passed a milestone since last week began/)).toBeTruthy()
+  })
+
+  it('says more was saved than by this day last month, and names the figures', async () => {
+    // Records from 1 August: $100.00 into savings by 23 Aug, $300.00 by 23 Sep, $200.00 more.
+    const fake = withGoal(1_265_000)
+    fake.tables.categories.push({ id: 'c4', name: 'Flight fund', kind: 'savings', sort_order: 0, weekly_budget_cents: null })
+    fake.tables.ingest_batches.push({ id: 'b1', source: 'card_pdf', created_at: '2026-09-21T12:00:00Z', period_start: '2026-08-01', period_end: '2026-09-20' })
+    fake.tables.transactions.push(
+      { id: 't1', posted_on: '2026-08-05', amount_cents: -10_000, merchant_raw: 'TO FLIGHT FUND', category_id: 'c4', source: 'typed' },
+      { id: 't2', posted_on: '2026-09-05', amount_cents: -30_000, merchant_raw: 'TO FLIGHT FUND', category_id: 'c4', source: 'typed' },
+    )
+    go('/coach')
+    renderScreen(<Shell />, fake)
+
+    const card = (await screen.findByRole('heading', { name: 'You saved more this month' })).closest('li')!
+    expect(within(card).getByText(para('You’ve put $200.00 more into savings than by this day in August. Keep it up!'))).toBeTruthy()
+    fireEvent.click(within(card).getByRole('button', { name: 'Why am I seeing this?' }))
+    const sheet = within(screen.getByRole('dialog', { name: 'Why am I seeing this?' }))
+    expect(sheet.getAllByRole('term')[0]?.textContent).toBe('Saved so far this month')
+    expect(sheet.getByText('It shows because more has gone into your savings than by this day last month.')).toBeTruthy()
+  })
+
   it('cheers nothing while no 5 hours were passed', async () => {
     // $12,400.00 typed, only the 21st's $350.00 since: 2,705.45… minutes, 45 h,
     // on the eve, and $12,750.00, 46 h, now. No 5 hours passed.

@@ -22,6 +22,7 @@ const LABEL: Readonly<Record<string, string>> = {
   through: 'Latest statement ends',
   days: 'Days since then',
   count: 'Waiting in Review',
+  milestone: 'Milestone passed',
 }
 
 const REASON: Readonly<Partial<Record<Fact['kind'], string>>> = {
@@ -31,6 +32,16 @@ const REASON: Readonly<Partial<Record<Fact['kind'], string>>> = {
   budget_pace: 'It shows because, at the pace so far, the month would end well over the budget you set.',
   stale_data: 'It shows because your latest statement ends more than 10 days ago, so the Coach may be missing charges.',
   rows_waiting: 'It shows because charges waiting in Review are not counted anywhere until you file them.',
+  saved_more: 'It shows because more has gone into your savings than by this day last month.',
+  goal_milestone:
+    'It shows because your savings passed a milestone since last week began: every 5 hours for a goal with a cost an hour, or every tenth of the target.',
+}
+
+/** A figure's name; the same slot means another thing on a pace or a savings fact. */
+function labelOf(fact: Fact, slot: string): string {
+  if (fact.kind === 'budget_pace' && slot === 'over') return 'Over budget at this pace by'
+  if (fact.kind === 'saved_more' && slot === 'now') return 'Saved so far this month'
+  return LABEL[slot] ?? slot
 }
 
 export function WhySheet({ fact, title, onClose }: { fact: Fact; title: string; onClose: () => void }) {
@@ -40,9 +51,7 @@ export function WhySheet({ fact, title, onClose }: { fact: Fact; title: string; 
         <dl className="divide-y">
           {Object.entries(fact.figures).map(([slot, figure]) => (
             <div key={slot} className="flex items-baseline justify-between gap-3 py-2">
-              <dt className="min-w-0 text-muted-foreground">
-                {fact.kind === 'budget_pace' && slot === 'over' ? 'Over budget at this pace by' : (LABEL[slot] ?? slot)}
-              </dt>
+              <dt className="min-w-0 text-muted-foreground">{labelOf(fact, slot)}</dt>
               <dd className="tnum whitespace-nowrap font-medium">{figureText(figure)}</dd>
             </div>
           ))}
