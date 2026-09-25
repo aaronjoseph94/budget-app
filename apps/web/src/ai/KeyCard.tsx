@@ -32,7 +32,7 @@ export const CARDS: Readonly<Record<AiProvider, { readonly title: string; readon
     title: 'OpenRouter',
     getKey: 'https://openrouter.ai/settings/keys',
     getLabel: 'Get a free OpenRouter key ↗',
-    where: 'OpenRouter opens in a new tab. Sign in, press Create Key, then copy it.',
+    where: 'OpenRouter opens in a new tab. Sign in, press Create API Key, then copy it.',
     about: 'Free: it passes each question to one of its free models. Free services may keep what they are sent, and people there may read it.',
   },
   openai: {

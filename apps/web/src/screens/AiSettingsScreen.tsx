@@ -11,9 +11,10 @@ import { hashOf } from '../nav.js'
 
 /**
  * AI settings (plan §8.3): one true sentence on whether AI is on, the free
- * Gemini card (A10: paste a key, test it, remove it, choose a model), and
- * the order the services are tried in, with where each one's key comes
- * from (A11); today's calls against the daily limit.
+ * Gemini card (A10: paste a key, test it, remove it, choose a model), the
+ * other four services' cards folded under More AI services, then the order
+ * they are tried in, Use paid services and the daily limit with today's
+ * calls (A11).
  *
  * Its own chunk, and the only screen that asks the helper anything, so a
  * helper not installed, or 0016 not pasted, changes this page and nothing
@@ -71,6 +72,21 @@ export function AiSettingsScreen() {
             allowPaid={status.allowPaid}
             onChanged={() => void check(true)}
           />
+          <details className="group rounded-xl border bg-card px-4 shadow-sm">
+            <summary className="flex min-h-11 cursor-pointer items-center py-2 text-base font-medium">
+              More AI services: Groq, OpenRouter, and paid ones
+            </summary>
+            <div className="space-y-4 pb-4">
+              <p className="text-sm text-muted-foreground">
+                Optional. When Gemini is busy or out of free uses, the next service with a key answers instead.
+              </p>
+              {status.services
+                .filter((s) => s.provider !== 'gemini')
+                .map((s) => (
+                  <KeyCard key={s.provider} service={s} outdated={isOlder(status.version)} allowPaid={status.allowPaid} onChanged={() => void check(true)} />
+                ))}
+            </div>
+          </details>
           <ChoicesPanel status={status} onChanged={() => void check(true)} />
         </>
       )}
