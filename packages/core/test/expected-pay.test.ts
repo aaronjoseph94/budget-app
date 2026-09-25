@@ -22,6 +22,7 @@ const base: ExpectedPayInput = {
     received('2026-08-14', 2_080),
     received('2026-08-28', 2_150),
     received('2026-09-11', 2_100),
+    received('2026-08-20', 150, SIDE),
   ],
   paySchedules: [{ categoryId: PAY, firstPayDate: d('2026-06-05'), frequency: 'biweekly' }],
   budgetHistory: [],
@@ -30,8 +31,8 @@ const base: ExpectedPayInput = {
 describe('expectedPay (F29)', () => {
   it('counts each payday left this month at the median of the last three receipts', () => {
     // Paydays 11 and 25 September; only the 25th is after asOf. Latest three:
-    // 2,100.00, 2,150.00, 2,080.00; the median is 2,100.00. Side work has
-    // neither a schedule nor a goal, so it is named, not counted as $0.
+    // 2,100.00, 2,150.00, 2,080.00; the median is 2,100.00. Side work paid
+    // once but has neither a schedule nor a goal, so it is named, not counted as $0.
     expect(expectedPay(base)).toEqual({
       dueCents: 210_000,
       notCounted: [SIDE],
@@ -40,6 +41,13 @@ describe('expectedPay (F29)', () => {
         { categoryId: SIDE, basis: 'not_counted', paydays: [], perPaydayCents: null, dueCents: null },
       ],
     })
+  })
+
+  it('says nothing of an Income row that has never paid and has no schedule or goal', () => {
+    // A starter list's spare row, such as Donations, is not pay left out.
+    const pay = expectedPay({ ...base, entries: base.entries.filter((e) => e.categoryId !== SIDE) })
+    expect(pay.notCounted).toEqual([])
+    expect(pay.sources[1]).toEqual({ categoryId: SIDE, basis: 'idle', paydays: [], perPaydayCents: null, dueCents: null })
   })
 
   it("shares the month's goal across a pay period when nothing has been received yet", () => {

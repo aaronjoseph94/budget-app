@@ -1082,7 +1082,10 @@ in slice A13).
 - **With no schedule and a Goal:** `max(0, goal − received)`, where
   received is its Income Actual this month. It has no day.
 - **With neither,** it is *not counted*, and the forecast says pay from it
-  is left out rather than treat it as $0.
+  is left out rather than treat it as $0. One that has also never paid
+  inside the records (a starter list's spare row, such as Donations) is
+  *idle* and is not named: it is no pay left out. Added 2026-09-25 while
+  building, when the preview named three spare rows on every card.
 
 Pay still due is the sum of what each counted source brings. A source whose
 pay is not counted is named, so "pay not included" is never silent.

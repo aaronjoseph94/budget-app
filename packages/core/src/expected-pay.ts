@@ -35,9 +35,11 @@ export interface ExpectedPayInput {
 
 /**
  * How a source's pay was counted: its usual pay a payday, its goal shared
- * across a pay period, its goal less what came in, or not at all.
+ * across a pay period, its goal less what came in, or not at all; `idle`
+ * for a row that has never paid inside the records and has no schedule or
+ * goal, such as a starter list's spare, which is no pay left out.
  */
-export type PayBasis = 'usual' | 'goal_share' | 'goal_left' | 'not_counted'
+export type PayBasis = 'usual' | 'goal_share' | 'goal_left' | 'not_counted' | 'idle'
 
 export interface PaySource {
   readonly categoryId: string
@@ -75,7 +77,7 @@ export function expectedPay(input: ExpectedPayInput): ExpectedPay {
     // N27: a schedule counts only on a category that is on Income, as this one is.
     const schedule = input.paySchedules.find((s) => s.categoryId === c.id)
     if (schedule === undefined) {
-      if (goal === null) return notCounted(c.id)
+      if (goal === null) return usualPay(rows, input.historyStart, asOf) === null ? { ...notCounted(c.id), basis: 'idle' } : notCounted(c.id)
       const got = sumCents(rows.filter((e) => e.postedOn >= start && e.postedOn <= end).map((e) => cents(e.amountCents)))
       const left = subCents(goal, got)
       return { categoryId: c.id, basis: 'goal_left', paydays: [], perPaydayCents: null, dueCents: left > 0 ? left : ZERO_CENTS }
