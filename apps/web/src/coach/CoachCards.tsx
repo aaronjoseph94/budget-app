@@ -100,6 +100,7 @@ const ACTION: Readonly<Record<CardAction, { readonly label: string; readonly go:
   review: { label: 'Open Review', go: () => navigate('review') },
   see_month: { label: 'See the Month', go: () => navigate('month') },
   goals: { label: 'See your goals', go: () => navigate('savings') },
+  forecast: { label: 'Open the Forecast', go: () => navigate('forecast') },
 }
 
 function InsightCard({ card, text, onDismiss }: { card: CoachCard; text: CardText; onDismiss: (() => void) | null }) {

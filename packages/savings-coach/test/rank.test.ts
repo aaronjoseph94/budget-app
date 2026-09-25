@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { factsDigest } from '@budget/core'
-import { rankCards } from '../src/index.js'
-import { EVERY_KIND, FACTS, WIN_FACTS, factOf } from './fixtures.js'
+import { forecastCard, rankCards } from '../src/index.js'
+import { EVERY_KIND, FACTS, WIN_FACTS, factOf, forecastOf } from './fixtures.js'
 
 const none = new Set<string>()
 const keys = (facts = FACTS, dismissed: ReadonlySet<string> = none) => rankCards({ facts, dismissed }).cards.map((c) => c.fact.key)
@@ -79,5 +79,18 @@ describe('rankCards', () => {
 
   it('ranks by impact whatever order the facts come in', () => {
     expect(keys([...fresh].reverse())).toEqual(keys(fresh))
+  })
+})
+
+describe('forecastCard', () => {
+  it('gives the forecast a card of its own, opening the Forecast, worded by its shape', () => {
+    expect(forecastCard(forecastOf(500_000))).toMatchObject({ template: 'forecast', action: 'forecast' })
+    expect(forecastCard(forecastOf(null))?.template).toBe('forecast_spent')
+    expect(forecastCard(forecastOf(50_000))?.template).toBe('forecast_watch')
+    expect(forecastCard(null)).toBeNull()
+  })
+
+  it('never ranks the forecast among the three', () => {
+    expect(keys([...FACTS, forecastOf(50_000)])).toEqual(keys())
   })
 })

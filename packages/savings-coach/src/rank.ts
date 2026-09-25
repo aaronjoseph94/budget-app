@@ -12,8 +12,8 @@
 import type { Fact } from '@budget/core'
 import { type CardTemplateKey, cardTemplateKey } from './templates.js'
 
-/** The card's one action: bring in a statement, open Review, see the month, or see the goals. */
-export type CardAction = 'import' | 'review' | 'see_month' | 'goals'
+/** The card's one action: bring in a statement, open Review, see the month, see the goals, or open the Forecast. */
+export type CardAction = 'import' | 'review' | 'see_month' | 'goals' | 'forecast'
 
 export interface Card {
   readonly fact: Fact
@@ -65,6 +65,16 @@ export function rankCards(input: RankCardsInput): { readonly cards: readonly Car
     }
   }
   return { cards: picked.map(({ fact, template }) => ({ fact, template, action: actionFor(fact) })) }
+}
+
+/**
+ * The forecast's own card (plan §2.3, A13), apart from the three ranked
+ * ones: worded like them, by the app or the AI, and opening the Forecast.
+ * None when it is too early to forecast.
+ */
+export function forecastCard(fact: Fact | null): Card | null {
+  const template = fact === null ? null : cardTemplateKey(fact)
+  return fact === null || template === null ? null : { fact, template, action: 'forecast' }
 }
 
 function order(fact: Fact): number {

@@ -25,8 +25,8 @@ export interface WatchTemplate extends Template {
   readonly tryThis: string
 }
 
-export type CardTemplateKey = 'stale_data' | 'rows_waiting' | 'change_down' | 'saved_more' | 'goal_milestone' | WatchKey
-export type WatchKey = 'change_up' | 'over_budget' | 'near_budget' | 'budget_pace'
+export type CardTemplateKey = 'stale_data' | 'rows_waiting' | 'change_down' | 'saved_more' | 'goal_milestone' | 'forecast' | 'forecast_spent' | WatchKey
+export type WatchKey = 'change_up' | 'over_budget' | 'near_budget' | 'budget_pace' | 'forecast_watch'
 
 type Tones<T> = Readonly<Record<Tone, T>>
 
@@ -79,6 +79,19 @@ export const WATCH_TEMPLATES: Readonly<Record<WatchKey, Tones<WatchTemplate>>> =
       tryThis: 'Try this: cut back on it for the next week.',
     },
   },
+  // The month would end below $0, or a day would run short (F30 to F32).
+  forecast_watch: {
+    cheerleader: {
+      title: 'A tight finish ahead',
+      body: 'At this pace, {{A.month}} ends near {{A.end}}, and money is tightest on {{A.tightest_day}}.',
+      tryThis: 'One thing to try: hold off on what can wait until after payday.',
+    },
+    straight: {
+      title: 'Heading for a shortfall',
+      body: 'At this pace, {{A.month}} ends near {{A.end}}. The tightest day is {{A.tightest_day}}, at {{A.tightest}}.',
+      tryThis: 'Try this: keep to {{A.safe_day}} a day until payday.',
+    },
+  },
 }
 
 export const PLAIN_TEMPLATES: Readonly<Record<Exclude<CardTemplateKey, WatchKey>, Tones<Template>>> = {
@@ -120,6 +133,27 @@ export const PLAIN_TEMPLATES: Readonly<Record<Exclude<CardTemplateKey, WatchKey>
     straight: {
       title: 'Saved more than last month',
       body: 'Savings: {{A.change}} than by this day in {{A.before_month}}.',
+    },
+  },
+  // Where the month is heading (F30, F31), with a start typed, and without one (D17).
+  forecast: {
+    cheerleader: {
+      title: 'Where {{A.month}} is heading',
+      body: 'At this pace, {{A.month}} ends near {{A.end}}. Safe to spend: {{A.safe_day}} a day.',
+    },
+    straight: {
+      title: 'Forecast: {{A.month}}',
+      body: 'Heading for {{A.end}} at the month’s end. Safe to spend: {{A.safe_day}} a day.',
+    },
+  },
+  forecast_spent: {
+    cheerleader: {
+      title: 'Where {{A.month}} is heading',
+      body: 'At this pace, you’ll spend about {{A.spent}} in {{A.month}}. Type this month’s starting balance to see where you’ll end.',
+    },
+    straight: {
+      title: 'Forecast: {{A.month}}',
+      body: 'Spending is heading for {{A.spent}}. Type this month’s starting balance to see the month’s end.',
     },
   },
   // The milestone is hours of the goal's unit, or a share of its target.
@@ -189,10 +223,11 @@ export function cardTemplateKey(fact: Fact): CardTemplateKey | null {
     case 'saved_more':
     case 'goal_milestone':
       return fact.kind
+    // Never ranked into a card (core's forecastFact is not notable): the Coach gives it its own (forecastCard).
+    case 'month_forecast':
+      return fact.meaning === 'watch' ? 'forecast_watch' : 'end' in fact.figures ? 'forecast' : 'forecast_spent'
     case 'month_so_far':
     case 'week_so_far':
-    // The forecast is never ranked into a card (core's forecastFact is not notable).
-    case 'month_forecast':
       return null
   }
 }

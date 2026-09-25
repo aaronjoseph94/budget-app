@@ -67,3 +67,13 @@ export function factOf(key: string): Fact {
   if (fact === undefined) throw new Error(`The fixture has no fact ${key}`)
   return fact
 }
+
+/**
+ * The month's forecast (plan A13) on the same day, with a start typed that
+ * leaves room ($5,000.00), one that runs short on a day ($500.00), and none.
+ */
+export function forecastOf(startingBalanceCents: number | null): Fact {
+  const fact = factsDigest({ ...EVERY_KIND, forecast: { paySchedules: [], startingBalanceCents } }).forecast
+  if (fact === null) throw new Error('The fixture has no forecast')
+  return fact
+}

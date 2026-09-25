@@ -11,8 +11,9 @@ import {
   slotsOf,
   type CardTemplateKey,
 } from '../src/index.js'
+import type { Fact } from '@budget/core'
 import { proseProblem } from '@budget/schema'
-import { FACTS, WIN_FACTS, factOf } from './fixtures.js'
+import { FACTS, WIN_FACTS, factOf, forecastOf } from './fixtures.js'
 
 /**
  * ADR 0005 §4's rules 1 to 7, as ModelProse applies them to a model's
@@ -22,16 +23,19 @@ import { FACTS, WIN_FACTS, factOf } from './fixtures.js'
 const breaksTextRule = (text: string, limit: number) => proseProblem(text, limit)
 
 /** A fact of each card template's kind, from the fixture, so the slots are the engine's. */
-const SAMPLE: Readonly<Record<CardTemplateKey, string>> = {
-  stale_data: 'data:stale',
-  rows_waiting: 'review:waiting',
-  change_up: 'cat:dining:change',
-  change_down: 'cat:groceries:change',
-  over_budget: 'cat:fuel:over_budget',
-  near_budget: 'cat:fun:near_budget',
-  budget_pace: 'cat:fun:pace',
-  saved_more: 'summary:saved',
-  goal_milestone: 'goal:g1:milestone',
+const SAMPLE: Readonly<Record<CardTemplateKey, () => Fact>> = {
+  stale_data: () => factOf('data:stale'),
+  rows_waiting: () => factOf('review:waiting'),
+  change_up: () => factOf('cat:dining:change'),
+  change_down: () => factOf('cat:groceries:change'),
+  over_budget: () => factOf('cat:fuel:over_budget'),
+  near_budget: () => factOf('cat:fun:near_budget'),
+  budget_pace: () => factOf('cat:fun:pace'),
+  saved_more: () => factOf('summary:saved'),
+  goal_milestone: () => factOf('goal:g1:milestone'),
+  forecast: () => forecastOf(500_000),
+  forecast_spent: () => forecastOf(null),
+  forecast_watch: () => forecastOf(50_000),
 }
 
 const CARDS = { ...WATCH_TEMPLATES, ...PLAIN_TEMPLATES }
@@ -57,8 +61,8 @@ describe('the app’s own templates', () => {
   })
 
   it('name only the slots their kind of fact has', () => {
-    for (const [key, factKey] of Object.entries(SAMPLE) as [CardTemplateKey, string][]) {
-      const fact = factOf(factKey)
+    for (const [key, sample] of Object.entries(SAMPLE) as [CardTemplateKey, () => Fact][]) {
+      const fact = sample()
       expect(cardTemplateKey(fact)).toBe(key)
       for (const tone of TONES) {
         const t = CARDS[key][tone]
