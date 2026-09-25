@@ -207,6 +207,12 @@ module.exports = {
       from: { path: '^apps/web/[^/]+\\.ts$' },
       to: { path: 'node_modules/(vite|@vitejs/plugin-react|@tailwindcss/vite)/' },
     },
+    // The /setup/ plugin (ADR 0007) reads the committed updates from disk at
+    // build time, with Node's fs; the config loads it, and its test checks
+    // the bytes it serves against the files. Nothing that ships reaches it.
+    { from: { path: '^apps/web/vite\\.config\\.ts$' }, to: { path: '^apps/web/setup-files\\.ts$' } },
+    { from: { path: '^apps/web/(setup-files\\.ts|test/setup-files\\.test\\.ts)$' }, to: { dependencyTypes: ['core'] } },
+    { from: { path: '^apps/web/test/setup-files\\.test\\.ts$' }, to: { path: '^apps/web/setup-files\\.ts$' } },
   ],
   options: {
     doNotFollow: { path: 'node_modules' },

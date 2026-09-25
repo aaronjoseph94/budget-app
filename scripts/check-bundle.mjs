@@ -11,10 +11,13 @@
 // 3. Only the two public values may be compiled in. The build is run with a
 //    probe VITE_ variable that no code reads; finding its value in the
 //    output means every VITE_ variable in the environment ships (SEC-4).
+// 4. The one-time updates under setup/ (ADR 0007) are exactly every
+//    migration from 0015 on and the AI helper, each byte for byte as
+//    committed: nothing more is published, and nothing is changed on the way.
 //
 // Built into a temporary folder, so the working tree is untouched.
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { gzipSync } from 'node:zlib'
@@ -64,6 +67,25 @@ try {
     console.log(`FAIL: build-time variables shipped beyond the two public ones: ${named.join(', ') || PROBE}`)
     failed = true
   }
+  const migrations = join(import.meta.dirname, '..', 'supabase', 'migrations')
+  const sources = new Map([
+    ...readdirSync(migrations).filter((n) => /^\d{4}_[a-z0-9_]+\.sql$/.test(n) && n >= '0015').map((n) => [n, join(migrations, n)]),
+    ['ai-function.ts', join(import.meta.dirname, '..', 'supabase', 'functions', 'ai', 'index.ts')],
+  ])
+  const setup = join(out, 'setup')
+  const published = existsSync(setup) ? readdirSync(setup).sort() : []
+  const wanted = [...sources.keys()].sort()
+  if (published.join() !== wanted.join()) {
+    console.log(`FAIL: setup/ holds ${published.join(', ') || 'nothing'}; it must hold exactly ${wanted.join(', ')}`)
+    failed = true
+  }
+  for (const name of published.filter((n) => sources.has(n))) {
+    if (!readFileSync(join(setup, name)).equals(readFileSync(sources.get(name)))) {
+      console.log(`FAIL: setup/${name} is not byte for byte the committed file`)
+      failed = true
+    }
+  }
+  console.log(`setup/: ${published.join(', ')}`)
   process.exitCode = failed ? 1 : 0
 } finally {
   rmSync(out, { recursive: true, force: true })

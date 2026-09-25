@@ -9,7 +9,7 @@
     "noEmit": false,
     "emitDeclarationOnly": true
   },
-  "include": ["src/**/*", "test/**/*", "vite.config.ts"],
+  "include": ["src/**/*", "test/**/*", "vite.config.ts", "setup-files.ts"],
   "references": [
     { "path": "../../packages/money-primitives" },
     { "path": "../../packages/schema" },
