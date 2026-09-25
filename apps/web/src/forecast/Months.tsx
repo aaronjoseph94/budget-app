@@ -50,11 +50,11 @@ export function MonthsAheadCard({ ahead, bars, names }: { ahead: CashFlowAhead; 
           })),
         })}
       />
-      <div className="-mx-1 overflow-x-auto px-1">
+      <div className="overflow-x-auto">
         <table className="w-full min-w-[18rem] text-sm">
           <thead>
             <tr className="text-muted-foreground">
-              <th scope="col" className="py-2 text-left font-normal">
+              <th scope="col" className="sticky left-0 bg-card py-2 text-left font-normal">
                 <span className="sr-only">What</span>
               </th>
               {ahead.months.map((m) => (
@@ -97,7 +97,8 @@ function zeroOf(bars: ScaledSeries): number {
 function Line({ label, cells, strong = false }: { label: string; cells: readonly string[]; strong?: boolean }) {
   return (
     <tr>
-      <th scope="row" className="py-2 pr-2 text-left font-normal text-muted-foreground">
+      {/* Held at the left as the months scroll, so a figure never loses its name on a narrow phone. */}
+      <th scope="row" className="sticky left-0 bg-card py-2 pr-2 text-left font-normal text-muted-foreground">
         {label}
       </th>
       {cells.map((c, i) => (

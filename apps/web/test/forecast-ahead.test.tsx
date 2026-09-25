@@ -56,6 +56,8 @@ describe('the next three months on the Forecast (plan §2.5, A14, F35)', () => {
     expect(rowOf(card, 'Worst case end')).toEqual(['$4,430', '$5,450', '$6,470'])
     expect(rowOf(card, 'Most likely end')).toEqual(['$4,620', '$5,820', '$7,030'])
     expect(rowOf(card, 'Best case end')).toEqual(['$4,770', '$6,130', '$7,490'])
+    // Each row's name stays in view as the months scroll sideways on a narrow phone.
+    expect(within(card).getAllByRole('rowheader').every((th) => th.classList.contains('sticky'))).toBe(true)
   })
 
   it('shows what each month leaves over, and no ends, without this month’s start (D17)', async () => {
