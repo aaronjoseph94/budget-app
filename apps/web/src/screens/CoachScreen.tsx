@@ -2,14 +2,15 @@ import { useMemo } from 'react'
 import { goalsProgress } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { goalSavedCents, useFunds, type FundsState } from '../funds.js'
-import { formatBasisPoints, formatCents } from '../format.js'
+import { formatBasisPoints, formatCents, todayIso } from '../format.js'
 import { hashOf, navigate } from '../nav.js'
 import { Button } from '../components/ui/button.js'
 import { Card, CardContent, CardTitle } from '../components/ui/card.js'
 import { Progress } from '../components/ui/feedback.js'
 import { Icon } from '../components/ui/icons.js'
 import { HelpButton } from '../help/HelpButton.js'
-import { CoachCards, DayLine } from '../coach/CoachCards.js'
+import { CoachCards, DayLine, todaysCards, todaysLine } from '../coach/CoachCards.js'
+import { QuoteCard } from '../coach/QuoteCard.js'
 import { useCoachFacts, useCoachRead } from '../coach/facts.js'
 import { goalsForCore } from '../coach/goals.js'
 import { GoalLever } from '../coach/GoalLever.js'
@@ -32,11 +33,17 @@ import type { ListedGoalRow } from '../ledger.js'
 export function CoachScreen() {
   const read = useCoachRead()
   const funds = useFunds()
-  const { goals } = useAppData()
+  const { goals, mainGoal } = useAppData()
   const coreGoals = useMemo(() => goalsForCore(goals, funds), [goals, funds])
   const digest = useCoachFacts(read, coreGoals)
   const outlooks = useGoalOutlooks(read, coreGoals)
   const facts = digest === null || digest === 'failed' ? null : digest.facts
+  // What today is about, for the quote: the cards, then the day's line.
+  const topFacts = useMemo(() => {
+    if (facts === null) return []
+    const line = todaysLine(facts)
+    return [...todaysCards(facts).map((c) => c.fact), ...(line === null ? [] : [line.fact])]
+  }, [facts])
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-1">
@@ -47,6 +54,8 @@ export function CoachScreen() {
       {facts === null ? null : <DayLine facts={facts} className="text-lg font-medium leading-snug" />}
       <GoalsCard funds={funds} outlooks={outlooks} />
       <CoachCards digest={digest} />
+      {/* Picked once the facts are in, so the day's pick does not change under the owner. */}
+      {digest === null ? null : <QuoteCard facts={topFacts} goal={mainGoal} asOf={todayIso()} />}
     </div>
   )
 }

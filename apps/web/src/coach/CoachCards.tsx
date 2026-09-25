@@ -17,6 +17,11 @@ import { WhySheet } from './WhySheet.js'
 const NOTHING_DISMISSED: ReadonlySet<string> = new Set()
 const TONE = 'cheerleader'
 
+/** Today's cards, as savings-coach ranks them: at most three. */
+export function todaysCards(facts: readonly Fact[]): readonly CoachCard[] {
+  return rankCards({ facts, dismissed: NOTHING_DISMISSED }).cards
+}
+
 /** The day's words and the summary they name, or null with no summary to speak of. */
 export function todaysLine(facts: readonly Fact[]): { readonly text: string; readonly fact: Fact } | null {
   const line = dayLine({ facts, tone: TONE })
@@ -39,7 +44,7 @@ export function CoachCards({ digest }: { digest: FactsDigest | 'failed' | null }
   if (digest === 'failed') {
     return <p className="text-sm text-muted-foreground">Your insights did not load. Reload to try again; everything else still works.</p>
   }
-  const { cards } = rankCards({ facts: digest.facts, dismissed: NOTHING_DISMISSED })
+  const cards = todaysCards(digest.facts)
   return (
     <section aria-label="Insights" className="space-y-3">
       {cards.length === 0 ? (
