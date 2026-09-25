@@ -30,16 +30,6 @@ const ALLOWED = new Set<string>([`${PROJECT}/auth/v1/user`, ...Object.values(CHA
 const serviceOf = (url: string): Service | undefined =>
   url.startsWith('https://generativelanguage.googleapis.com/v1beta/models/') ? 'gemini' : (Object.keys(CHAT) as Service[]).find((s) => CHAT[s] === url)
 
-/**
- * Real turns of the event loop until `seen` holds. Opening a saved key is
- * WebCrypto, which fake timers do not drive, so a test that moves the
- * clock waits for each call to be made before it moves the clock again.
- */
-async function until(seen: () => boolean) {
-  for (let i = 0; i < 1000 && !seen(); i++) await new Promise((r) => setImmediate(r))
-  expect(seen()).toBe(true)
-}
-
 const json = (body: unknown, status = 200, headers: Record<string, string> = {}) => new Response(JSON.stringify(body), { status, headers })
 const answers: Record<Service, () => Response> = {
   gemini: () => json({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: '{"ok":true}' }] } }] }),
@@ -73,9 +63,20 @@ async function world(w: World = {}, env: Record<string, string | undefined> = EN
   const context = { settings: { ...SETTINGS, ...w.settings }, keys, usage: [], resting: (w.resting ?? []).map((r) => ({ ...r, until: 'later', code: 'rate_limited' })) }
   const claims = [...(w.claims ?? [])]
   const calls: { url: string; init: RequestInit }[] = []
+  const waiting: { readonly seen: () => boolean; readonly resolve: () => void }[] = []
+  /**
+   * Resolves once `seen` holds, checked as each call is made. Opening a
+   * saved key is WebCrypto, which fake timers do not drive, so a test
+   * that moves the clock waits here for each call before moving it again.
+   */
+  const when = (seen: () => boolean) => new Promise<void>((resolve) => (seen() ? resolve() : waiting.push({ seen, resolve })))
   const fetchFn = (async (url: string | URL | Request, init?: RequestInit) => {
     const u = String(url)
     calls.push({ url: u, init: init ?? {} })
+    for (const w of waiting.filter((w) => w.seen())) {
+      waiting.splice(waiting.indexOf(w), 1)
+      w.resolve()
+    }
     if (u.endsWith('/auth/v1/user')) {
       if (w.authAfterMs !== undefined) await new Promise((r) => setTimeout(r, w.authAfterMs))
       return json({ id: USER })
@@ -87,18 +88,18 @@ async function world(w: World = {}, env: Record<string, string | undefined> = EN
     if (service === undefined) return json({}, 404)
     return (w.services?.[service] ?? (() => json({}, 500)))(init ?? {})
   }) as typeof fetch
-  return { calls, fetchFn }
+  return { calls, fetchFn, when }
 }
 
 async function run(w: World = {}, env: Record<string, string | undefined> = ENV) {
-  const { calls, fetchFn } = await world(w, env)
+  const { calls, fetchFn, when } = await world(w, env)
   const req = new Request(`${PROJECT}/functions/v1/ai`, {
     method: 'POST',
     headers: { authorization: 'Bearer caller-token', 'content-type': 'application/json' },
     body: JSON.stringify({ action: 'run', task: 'test' }),
   })
   const pending = handle(req, env, fetchFn)
-  return { pending, calls }
+  return { pending, calls, when }
 }
 async function ran(w: World = {}, env: Record<string, string | undefined> = ENV) {
   const { pending, calls } = await run(w, env)
@@ -148,8 +149,8 @@ describe('failing over, in the owner’s order', () => {
 
   it('gives up on a service that never answers, with an abort, and asks the next', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
-    const { pending, calls } = await run({ saved: ['groq'], services: { gemini: silent, groq: answers.groq } })
-    await until(() => calls.some((c) => serviceOf(c.url) === 'gemini'))
+    const { pending, calls, when } = await run({ saved: ['groq'], services: { gemini: silent, groq: answers.groq } })
+    await when(() => calls.some((c) => serviceOf(c.url) === 'gemini'))
     await vi.advanceTimersByTimeAsync(20_000)
     const res = await pending
     const r = summary(res.status, await res.text(), calls)
@@ -160,13 +161,13 @@ describe('failing over, in the owner’s order', () => {
   it('starts no attempt whose whole timeout would pass the deadline', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
     // Signing in took 45 s; two silent services take 20 s each, leaving 15 s: too little for a third.
-    const { pending, calls } = await run({ saved: ['groq', 'openrouter'], authAfterMs: 45_000, services: { gemini: silent, groq: silent, openrouter: answers.openrouter } })
+    const { pending, calls, when } = await run({ saved: ['groq', 'openrouter'], authAfterMs: 45_000, services: { gemini: silent, groq: silent, openrouter: answers.openrouter } })
     const asked = (service: Service) => () => calls.some((c) => serviceOf(c.url) === service)
-    await until(() => calls.length > 0)
+    await when(() => calls.length > 0)
     await vi.advanceTimersByTimeAsync(45_000)
-    await until(asked('gemini'))
+    await when(asked('gemini'))
     await vi.advanceTimersByTimeAsync(20_000)
-    await until(asked('groq'))
+    await when(asked('groq'))
     await vi.advanceTimersByTimeAsync(20_000)
     const res = await pending
     const r = summary(res.status, await res.text(), calls)
