@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AiServiceStatus } from '@budget/schema'
 import { useAppData } from '../app-data.js'
 import { aiStatus, type AiView } from '../ai/client.js'
-import { GeminiCard } from '../ai/GeminiCard.js'
+import { KeyCard } from '../ai/KeyCard.js'
 import { Button } from '../components/ui/button.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { isOlder } from '../help/updates.js'
@@ -63,9 +63,10 @@ export function AiSettingsScreen() {
         </Button>
       </section>
       {view?.status == null ? null : (
-        <GeminiCard
-          gemini={view.status.services.find((s) => s.provider === 'gemini') ?? GEMINI_NONE}
+        <KeyCard
+          service={view.status.services.find((s) => s.provider === 'gemini') ?? GEMINI_NONE}
           outdated={isOlder(view.status.version)}
+          allowPaid={view.status.allowPaid}
           onChanged={() => void check(true)}
         />
       )}

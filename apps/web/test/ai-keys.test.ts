@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { AiKeyReply } from '@budget/schema'
-import { saveGeminiKey } from '../src/ai/keys.js'
+import { saveKey } from '../src/ai/keys.js'
 import { createFakeSupabase } from './fake-supabase.js'
 
 /**
@@ -18,7 +18,7 @@ const keyReply = (over: Partial<AiKeyReply> = {}): AiKeyReply => ({
 async function saveWith(answer: () => Response, pasted = KEY) {
   const fake = createFakeSupabase()
   fake.functions.ai = answer
-  return { result: await saveGeminiKey(fake.client, pasted), sent: fake.functions.calls }
+  return { result: await saveKey(fake.client, 'gemini', pasted), sent: fake.functions.calls }
 }
 
 describe('Save & test', () => {
@@ -41,6 +41,14 @@ describe('Save & test', () => {
       // Models to choose from only when the key works.
       expect(result.models === null).toBe(over.status !== undefined)
     }
+  })
+
+  it('sends a key for the service it was pasted for, and names that service when it is turned down', async () => {
+    const fake = createFakeSupabase()
+    fake.functions.ai = reply(keyReply({ provider: 'groq', source: 'none', status: 'rejected', hint: null, models: [] }))
+    const result = await saveKey(fake.client, 'groq', KEY)
+    expect(fake.functions.calls).toEqual([{ action: 'save_key', provider: 'groq', key: KEY }])
+    expect(result.sentence).toBe('Groq says this key isn’t valid: check you copied all of it')
   })
 
   it('sends nothing that is not a whole key', async () => {

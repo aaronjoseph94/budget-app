@@ -1,38 +1,86 @@
 import { useId, useState, type FormEvent } from 'react'
-import type { AiServiceStatus } from '@budget/schema'
+import type { AiProvider, AiServiceStatus } from '@budget/schema'
 import { useAppData } from '../app-data.js'
 import { Button } from '../components/ui/button.js'
 import { Input, NativeSelect } from '../components/ui/form.js'
 import { hashOf } from '../nav.js'
-import { chooseGeminiModel, forgetGeminiKey, saveGeminiKey, testGeminiKey, type KeyResult } from './keys.js'
-
-/** Where Google gives out free Gemini keys: a fixed address, opened in a new tab. */
-export const GET_A_KEY = 'https://aistudio.google.com/apikey'
+import { chooseModel, COMPANY, forgetKey, saveKey, testKey, type KeyResult } from './keys.js'
 
 /**
- * Free Google Gemini, in three steps (plan §8.3): get a free key, paste it,
+ * What each service's card says (plan §8.3). Each key comes from the
+ * service's own page, a fixed address opened in a new tab; the helper,
+ * never the page, is what talks to the service. Free services may keep
+ * what they are sent, as the owner accepted for Gemini (ADR 0002), and
+ * each free card says so before a key is pasted (ADR 0004).
+ */
+export const CARDS: Readonly<Record<AiProvider, { readonly title: string; readonly getKey: string; readonly getLabel: string; readonly where: string; readonly about: string }>> = {
+  gemini: {
+    title: 'Free Google Gemini',
+    getKey: 'https://aistudio.google.com/apikey',
+    getLabel: 'Get a free key ↗',
+    where: 'Google AI Studio opens in a new tab. Press Create API key, then copy it.',
+    about: 'Free, and about 2 minutes. A key is a password Google gives you for the app to use.',
+  },
+  groq: {
+    title: 'Groq',
+    getKey: 'https://console.groq.com/keys',
+    getLabel: 'Get a free Groq key ↗',
+    where: 'Groq’s console opens in a new tab. Sign in, press Create API Key, then copy it.',
+    about: 'Free, and quick. Free services may keep what they are sent, and people there may read it.',
+  },
+  openrouter: {
+    title: 'OpenRouter',
+    getKey: 'https://openrouter.ai/settings/keys',
+    getLabel: 'Get a free OpenRouter key ↗',
+    where: 'OpenRouter opens in a new tab. Sign in, press Create Key, then copy it.',
+    about: 'Free: it passes each question to one of its free models. Free services may keep what they are sent, and people there may read it.',
+  },
+  openai: {
+    title: 'OpenAI',
+    getKey: 'https://platform.openai.com/api-keys',
+    getLabel: 'Get an OpenAI key ↗',
+    where: 'OpenAI opens in a new tab. Sign in, press Create new secret key, then copy it.',
+    about: 'Paid: OpenAI bills you for each use. Tried only when Use paid services is on.',
+  },
+  anthropic: {
+    title: 'Anthropic',
+    getKey: 'https://platform.claude.com/settings/keys',
+    getLabel: 'Get an Anthropic key ↗',
+    where: 'Anthropic opens in a new tab. Sign in, press Create Key, then copy it.',
+    about: 'Paid: Anthropic bills you for each use. Tried only when Use paid services is on.',
+  },
+}
+
+/**
+ * One AI service's key, in three steps (plan §8.3): get a key, paste it,
  * Save & test. A key is read from the field only when it is sent, and the
  * field is emptied at once: it is never held in the screen's state, and
  * nothing shows more of it than its last four characters.
  *
- * `onChanged` asks AI settings to read the helper's status again, quietly,
- * so the sentence at the top follows what happened here.
+ * Gemini's card is the recommended one, and says "Already on" when the
+ * receipts secret is set. A paid service's saved key says it waits for
+ * Use paid services. `onChanged` asks AI settings to read the helper's
+ * status again, quietly, so the sentence at the top follows what happened.
  */
-export function GeminiCard({
-  gemini,
+export function KeyCard({
+  service,
   outdated,
+  allowPaid,
   onChanged,
 }: {
-  readonly gemini: AiServiceStatus
-  /** The deployed helper is older than this app, so it cannot take a key yet (N78). */
+  readonly service: AiServiceStatus
+  /** The deployed helper is older than this app, so it cannot take this key yet (N78). */
   readonly outdated: boolean
+  readonly allowPaid: boolean
   readonly onChanged: () => void
 }) {
   const { supabase, userId } = useAppData()
+  const provider = service.provider
+  const card = CARDS[provider]
   const [shown, setShown] = useState(false)
   const [working, setWorking] = useState<null | 'save' | 'test' | 'forget' | 'model'>(null)
   const [result, setResult] = useState<KeyResult | null>(null)
-  const ids = { steps: useId(), key: useId(), model: useId() }
+  const ids = { title: useId(), steps: useId(), key: useId(), model: useId() }
 
   const run = async (step: NonNullable<typeof working>, act: () => Promise<KeyResult | null>) => {
     setWorking(step)
@@ -44,23 +92,23 @@ export function GeminiCard({
 
   const save = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const input = e.currentTarget.elements.namedItem('gemini-key')
+    const input = e.currentTarget.elements.namedItem(`${provider}-key`)
     if (!(input instanceof HTMLInputElement)) return
     const pasted = input.value
     input.value = ''
     setShown(false)
-    void run('save', () => saveGeminiKey(supabase, pasted))
+    void run('save', () => saveKey(supabase, provider, pasted))
   }
 
   const forget = () =>
     void run('forget', async () => {
-      const gone = await forgetGeminiKey(supabase)
+      const gone = await forgetKey(supabase, provider)
       return gone === true ? { sentence: 'Key removed.', good: true, help: null, models: null } : gone
     })
 
   const choose = (model: string) =>
     void run('model', async () =>
-      (await chooseGeminiModel(supabase, userId, model))
+      (await chooseModel(supabase, userId, provider, model))
         ? null
         : { sentence: 'Couldn’t save that choice just now. Try again.', good: false, help: null, models: result?.models ?? null },
     )
@@ -69,20 +117,20 @@ export function GeminiCard({
   const steps = (
     <form onSubmit={save} aria-labelledby={ids.steps}>
       <h3 id={ids.steps} className="sr-only">
-        Turn on free Gemini
+        Turn on {card.title}
       </h3>
       <ol className="space-y-4">
         <li className="space-y-1">
           <p className="text-sm font-medium">Step 1</p>
           <a
-            href={GET_A_KEY}
+            href={card.getKey}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex min-h-11 items-center rounded-md border bg-card px-4 text-base font-medium shadow-sm hover:bg-accent"
           >
-            Get a free key ↗
+            {card.getLabel}
           </a>
-          <p className="text-sm text-muted-foreground">Google AI Studio opens in a new tab. Press Create API key, then copy it.</p>
+          <p className="text-sm text-muted-foreground">{card.where}</p>
         </li>
         <li className="space-y-2">
           <label htmlFor={ids.key} className="block text-sm font-medium">
@@ -92,7 +140,7 @@ export function GeminiCard({
             <Input
               id={ids.key}
               type={shown ? 'text' : 'password'}
-              name="gemini-key"
+              name={`${provider}-key`}
               autoComplete="off"
               autoCapitalize="none"
               autoCorrect="off"
@@ -114,19 +162,29 @@ export function GeminiCard({
     </form>
   )
 
-  const already = gemini.source === 'secret'
-  const saved = gemini.source === 'saved'
-  // A saved key Google turned down, or one no longer opened, is pasted again: the steps stay open.
-  const again = saved && (gemini.status === 'locked' || gemini.status === 'rejected')
-  const ending = gemini.hint === null ? '' : ` ending …${gemini.hint}`
+  const already = service.source === 'secret'
+  const saved = service.source === 'saved'
+  // A saved key its service turned down, or one no longer opened, is pasted again: the steps stay open.
+  const again = saved && (service.status === 'locked' || service.status === 'rejected')
+  const ending = service.hint === null ? '' : ` ending …${service.hint}`
   const models = result?.models ?? null
+  const waitsForPaid = saved && !again && service.tier === 'paid' && !allowPaid
+
+  const heading = (
+    <div className="flex flex-wrap items-center gap-2">
+      <h2 id={ids.title} className="text-lg font-semibold">
+        {card.title}
+      </h2>
+      <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">
+        {provider === 'gemini' ? 'Recommended' : service.tier === 'free' ? 'Free' : 'Paid'}
+      </span>
+    </div>
+  )
 
   if (outdated) {
     return (
-      <section aria-labelledby="ai-gemini" className="space-y-2 rounded-xl border bg-card p-4 shadow-sm">
-        <h2 id="ai-gemini" className="text-lg font-semibold">
-          Free Google Gemini
-        </h2>
+      <section aria-labelledby={ids.title} className="space-y-2 rounded-xl border bg-card p-4 shadow-sm">
+        {heading}
         <p className="text-base">The AI helper you installed is an older copy, so it can’t take a key yet. Everything else works.</p>
         <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
           Open One-time updates
@@ -136,21 +194,18 @@ export function GeminiCard({
   }
 
   return (
-    <section aria-labelledby="ai-gemini" className="space-y-4 rounded-xl border bg-card p-4 shadow-sm">
-      <div className="flex flex-wrap items-center gap-2">
-        <h2 id="ai-gemini" className="text-lg font-semibold">
-          Free Google Gemini
-        </h2>
-        <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">Recommended</span>
-      </div>
+    <section aria-labelledby={ids.title} className="space-y-4 rounded-xl border bg-card p-4 shadow-sm">
+      {heading}
       {already ? (
         <p className="text-base">
           <span className="font-medium">Already on</span>, with your receipts key{ending}. There is nothing to paste.
         </p>
+      ) : waitsForPaid ? (
+        <p className="text-base">Saved{ending === '' ? '' : `, key${ending}`}. Not used until you turn on paid services.</p>
       ) : saved ? (
-        <p className="text-base">{SAVED_SAYS[gemini.status ?? 'ok'](ending)}</p>
+        <p className="text-base">{savedSays(COMPANY[provider], service.status ?? 'ok', ending)}</p>
       ) : (
-        <p className="text-base">Free, and about 2 minutes. A key is a password Google gives you for the app to use.</p>
+        <p className="text-base">{card.about}</p>
       )}
       {(already || saved) && !again ? (
         <details className="rounded-lg border px-3">
@@ -170,7 +225,7 @@ export function GeminiCard({
       </div>
       {already || saved ? (
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" className="min-h-11" disabled={working !== null} onClick={() => void run('test', () => testGeminiKey(supabase))}>
+          <Button variant="outline" className="min-h-11" disabled={working !== null} onClick={() => void run('test', () => testKey(supabase, provider))}>
             {working === 'test' ? 'Checking…' : 'Check which models work'}
           </Button>
           {saved ? (
@@ -185,7 +240,7 @@ export function GeminiCard({
           <label htmlFor={ids.model} className="block text-sm font-medium">
             Model
           </label>
-          <NativeSelect id={ids.model} value={gemini.model} disabled={working !== null} onChange={(e) => choose(e.target.value)}>
+          <NativeSelect id={ids.model} value={service.model} disabled={working !== null} onChange={(e) => choose(e.target.value)}>
             {models.map((m) => (
               <option key={m.id} value={m.id} disabled={!m.listed}>
                 {m.listed ? m.id : `${m.id} (not available for this key)`}
@@ -200,9 +255,11 @@ export function GeminiCard({
 }
 
 /** What the card says of a saved key, from its last test. */
-const SAVED_SAYS: Readonly<Record<NonNullable<AiServiceStatus['status']>, (ending: string) => string>> = {
-  ok: (ending) => `Your key${ending} is saved.`,
-  busy: (ending) => `Your key${ending} is saved. Google was busy when it was last tried.`,
-  rejected: (ending) => `Google turned down your key${ending}. Paste it again below.`,
-  locked: (ending) => `Your key${ending} can’t be opened after a Supabase key change. Paste it again below.`,
+function savedSays(company: string, status: NonNullable<AiServiceStatus['status']>, ending: string): string {
+  return {
+    ok: `Your key${ending} is saved.`,
+    busy: `Your key${ending} is saved. ${company} was busy when it was last tried.`,
+    rejected: `${company} turned down your key${ending}. Paste it again below.`,
+    locked: `Your key${ending} can’t be opened after a Supabase key change. Paste it again below.`,
+  }[status]
 }
