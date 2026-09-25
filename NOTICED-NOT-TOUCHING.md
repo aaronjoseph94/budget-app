@@ -2115,3 +2115,36 @@ test, so one warm screen would not cover them. None has failed yet.
 
 **To settle:** if one of them fails the same way, warm each screen its
 first test opens.
+
+---
+
+## N88 — The Forecast's charts grow with the card on a wide screen
+
+**Seen:** 2026-09-25, A14, in the preview at 1280 px. The range bar, the
+30-day line and the three months' bars scale their drawing, text
+included, to the card's width, so on a desktop their labels are about
+twice the page's text and the three months' chart is taller than the
+card's table.
+
+**Why not fixed here:** it reads correctly and scrolls nowhere, and it is
+how every Forecast chart A13 drew behaves; one of three changed alone
+would look out of place.
+
+**To settle:** in A26, cap the Forecast charts' drawn width (as the
+Month's charts are held to their column) and look at 768 and 1280 px.
+
+---
+
+## N89 — format.ts read at 67.85% branches once more
+
+**Seen:** 2026-09-25, A14. One full gate run failed `coverage` with
+`apps/web/src/format.ts` at 67.85% branches against 75%, the signature
+N81 settled in A13; the same tree passed the next run and a coverage run
+alone. That run shared the machine with another test run.
+
+**Why not fixed here:** A14 changes nothing about how the tests are
+compiled, and one occurrence after the fix is too little to tell a
+second cause from the first.
+
+**To settle:** if it recurs, keep the failing run's `coverage-final.json`
+and compare it file by file with a passing one, as N81 did.

@@ -900,6 +900,18 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **Screens:** Forecast sections 5 and 6 (§2.5); the what-if chips recompute on the phone; the flight card's **What if…** now opens here.
 - **Tests:** `cash-flow-ahead.test.ts` (a rent change from month 2, D13; under 3 months, the median only); `what-if.test.ts`; a screen test that a chip changes the figures with no network call.
 - **Acceptance:** the chain is labelled best and worst case.
+- **Changed while building (2026-09-25).** Each decided by the engineer under the owner's 2026-09-24 instruction to proceed without questions.
+  - **Every active goal, not the flight date** (G1). Section 5 is "When you’ll reach your goals": each active goal's date range at its pace (F33), in the owner's order with the main goal first, in the Coach's words and chips. **What if…** applies to the goal chosen from a list (the main goal first); hours only for a goal with a cost an hour.
+  - **The what-if has no F-number of its own** (F36 to F44 are taken), so it is written under F35. Its chips are the levers of F34 for the two categories with the largest: each one's quarter, tenth and best month. A tap works out core's `whatIf` from what is already loaded; the screen test spies on the client and finds no read, write or call.
+  - **`scaleSeries` was built in A13,** which needed it first; A14 adds `cashFlowAhead`, `whatIf` and the chart `bandBars`.
+  - **F35's open points, decided in formula-decisions:** the three calendar months after this one; a source with no usual pay counts its whole goal; a month of refunds counts as $0 spent; every chain starts at F30's most likely end, as the plan's words say; nothing is forecast with no whole month. With a start, the bars and table are where each month ends; without one, what each month leaves over.
+  - **The Coach's year read reads budgets and bills typed up to three months ahead,** so a rent rise typed from November counts from November (and on the 30-day line). Each rule resolves the row in effect in its own month, so nothing earlier moves.
+  - **The goals' dates show without the month's forecast,** since they need only the year's read. Fail soft: with 0013's columns missing the card says in one line that the dates need a one-time update, pointing to Help, and every other card shows (a screen test, 42703). No migration and no helper change.
+  - **The three months' table** scrolls inside its own box below about 400 px, with each row's name held at the left.
+  - **Screen tests were racing a cold start** (N87): a file's first render of a lazy screen took about half of a find's one second. `apps/web/test/warm-screen.tsx` renders the screen once in a file's `beforeAll`; no test's own wait was raised.
+  - **Tests:** `cash-flow-ahead.test.ts`, `what-if.test.ts`, `band-bars.test.ts`, `forecast-ahead.test.tsx`, `forecast-goals.test.tsx` and `forecast-what-if.test.tsx` are new; the Coach and Help tests changed. Commits: 13 rather than about 3, each within 300 lines, four of them the test warm-up and its record.
+  - **First load:** 187.73 KB gzipped before the slice, 187.80 KB after (the Coach's year read reaching three months ahead, which the Month's forecast line shares); the Forecast, its goals, what-ifs and three months are its own chunk.
+  - **Seen in the preview harness** (copied from `preview-a13r`) at 320, 390 and 1280 px, light and dark, with no sideways scroll and no console errors; the table's row names were fixed from it. The charts grow with the card on a wide screen (N88).
 
 ### A15: Reports: the month in review
 
