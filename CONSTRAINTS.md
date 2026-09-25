@@ -56,6 +56,7 @@ whether a commit is clean.
 | Web first load | The JavaScript a phone loads before the first screen (the entry and the chunks it preloads) ≤200 KB gzipped | `node scripts/check-bundle.mjs` | CI |
 | Edge Functions | Every `supabase/functions/*/index.ts` type-checks; imports zod alone, so it can be pasted as one file (its tests: the function, vitest, Node and `packages/schema`); uses `console` only inside its one `log(code, counts)` helper; and is tested to ≥80% lines and functions, ≥75% branches | `tsc --build` + `depcruise` + `eslint` + `vitest run --coverage` | every edit (coverage: CI) |
 | Browser holds no AI key | No AI service's API host (`generativelanguage.googleapis.com`, `api.groq.com`, `openrouter.ai/api`, `api.openai.com`, `api.anthropic.com`) and no `SERVICE_ROLE` in `apps/web/src` or the built JavaScript (`/setup/` left out: it is the AI helper's own source, never run by the page); `connect-src` is `'self'` and the Supabase project alone | `vitest run` (`no-provider-hosts.test.ts`, `headers.test.ts`) + `node scripts/check-bundle.mjs` | every edit (bundle: CI) |
+| Model text carries no numbers | Every string a model writes is held to ADR 0005's text rule (`ModelProse`: NFKC, then no `\p{N}` or `\p{Sc}`, no markup or link characters, no number word but "one", no product or investing words, at most two line breaks, each field within its length) before it is drawn or kept; the database refuses any digit, in five scripts, and `$ ＄ % ％ € £ ¥ ¢ ₹` in the AI's kept words (`ai_text_is_clean`, 0017) | `vitest run` (`model-prose.test.ts`) + `scripts/verify-migrations.sh` | every edit (schema: CI) |
 | Brand | The workbook vendor's name is in no tracked file's text or path, in any letter case | `git grep -niI -e "w[i]nky"` + `git ls-files` | every edit |
 
 The web first-load row replaced the pending "≤700 KB gzipped" entry-bundle
@@ -82,6 +83,15 @@ name in the browser's code would be a leak waiting for a mistake. Seen
 `api.groq.com` and `SERVICE_ROLE` in strings the app ships (the bundle
 check). The lowercase word `service_role` stays allowed: sign-in tells
 the owner never to paste that key.
+
+The "model text carries no numbers" row was added on 2026-09-25 (plan
+A12). A figure in the AI's words could only be one it made up, since the
+app fills every figure from the engine into a blank (ADR 0005). Seen `RED`
+by matching `\d` and `$` instead of `\p{N}` and `\p{Sc}` (six rows:
+Arabic-Indic, Extended Arabic-Indic and Devanagari digits, and €, ₹ and
+¢; NFKC had already made fullwidth digits ASCII) and by dropping the letter boundary before a number word
+("often", "tenth"); the database's half was seen `RED` by removing each
+of its digit ranges and signs in turn (0017's commit).
 
 The brand row was added on 2026-09-24, when the owner asked for the
 workbook vendor's name to go from everything in the repository. It checks

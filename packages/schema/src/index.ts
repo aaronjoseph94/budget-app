@@ -64,3 +64,5 @@ export {
   type AiStatusReply,
   type AiTask,
 } from './ai.js'
+
+export { ModelProse, proseProblem, type ProseProblem } from './prose.js'
