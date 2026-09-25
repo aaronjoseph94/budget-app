@@ -84,6 +84,19 @@ export function shiftPayPeriod(input: {
 }
 
 /**
+ * The paydays from `from` to `to`, both included, and none before the
+ * first pay date, as the Bill calendar counts them (`C <= date`, D21).
+ */
+export function paydaysIn(input: { readonly schedule: PaySchedule; readonly from: IsoDate; readonly to: IsoDate }): IsoDate[] {
+  const { schedule, from, to } = input
+  const days: IsoDate[] = []
+  for (let n = Math.max(0, indexOf(schedule, from)); payday(schedule, n) <= to; n += 1) {
+    if (payday(schedule, n) >= from) days.push(payday(schedule, n))
+  }
+  return days
+}
+
+/**
  * A monthly amount's share of one pay period (F15): × 12 ÷ paydays a year,
  * half-up to the cent. Taken in BigInt, since the product can pass the
  * largest integer a double holds. Amounts and budgets are never below zero

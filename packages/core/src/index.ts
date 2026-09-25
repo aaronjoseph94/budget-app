@@ -143,6 +143,15 @@ export {
 } from './bill-calendar.js'
 
 export {
+  expectedPay,
+  type ExpectedPay,
+  type ExpectedPayInput,
+  type IncomeSchedule,
+  type PayBasis,
+  type PaySource,
+} from './expected-pay.js'
+
+export {
   PAYDAYS_A_YEAR,
   payPeriod,
   payShare,
