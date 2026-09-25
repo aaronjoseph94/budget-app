@@ -87,9 +87,9 @@ describe('the Coach, in the app’s own words', () => {
     expect(within(cards[1]!).getByText(whole('P', 'Waiting in Review: 2. Each one counts as soon as you file it.'))).toBeTruthy()
     expect(within(cards[2]!).getByText(whole('P', 'You’ve spent $300.00 more on Dining out than by this day in August.'))).toBeTruthy()
     expect(within(cards[2]!).getByText('One thing to try: give it a lighter week, and the month evens out.')).toBeTruthy()
-    expect(cards.map((c) => within(c).getAllByRole('button')[0]!.textContent)).toEqual(['Import a statement', 'Open Review', 'See the Month'])
-    // ✕ waits for the table that keeps a dismissal (0017).
-    expect(screen.queryByRole('button', { name: /dismiss/i })).toBeNull()
+    expect(cards.map((c) => within(c).getAllByRole('button')[1]!.textContent)).toEqual(['Import a statement', 'Open Review', 'See the Month'])
+    // ✕ on each, kept by its cause in 0017's insight_dismissals.
+    expect(cards.map((c) => within(c).getAllByRole('button')[0]!.getAttribute('aria-label'))).toEqual(Array(3).fill('Dismiss this insight'))
   })
 
   it('speaks in the tone the owner chose in AI settings', async () => {

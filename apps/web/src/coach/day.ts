@@ -17,6 +17,7 @@ import { goalsForCore } from './goals.js'
 import type { Day } from './narration.js'
 import { useQuotePick } from './QuoteCard.js'
 import { useCoachSettings } from './settings.js'
+import { useDismissals, type Dismissals } from './dismissals.js'
 
 export interface CoachDay {
   readonly digest: FactsDigest | 'failed' | null
@@ -24,6 +25,7 @@ export interface CoachDay {
   readonly day: Day | null
   readonly pick: ReturnType<typeof useQuotePick>
   readonly asOf: string
+  readonly dismissals: Dismissals
 }
 
 export function useCoachDay(read: DigestRows | 'failed' | null, funds: FundsState): CoachDay {
@@ -31,6 +33,8 @@ export function useCoachDay(read: DigestRows | 'failed' | null, funds: FundsStat
   const coreGoals = useMemo(() => goalsForCore(goals, funds), [goals, funds])
   const digest = useCoachFacts(read, coreGoals)
   const tone = useCoachSettings()?.tone ?? null
+  const dismissals = useDismissals()
+  const { dismissed } = dismissals
   const asOf = todayIso()
   const facts = digest === null || digest === 'failed' ? null : digest.facts
   // What today is about, for the quote: the cards, then the day's line.
@@ -38,20 +42,20 @@ export function useCoachDay(read: DigestRows | 'failed' | null, funds: FundsStat
   const topFacts = useMemo(() => {
     if (facts === null) return []
     const line = todaysLine(facts, 'cheerleader')
-    return [...todaysCards(facts).map((c) => c.fact), ...(line === null ? [] : [line.fact])]
-  }, [facts])
+    return [...todaysCards(facts, dismissed ?? undefined).map((c) => c.fact), ...(line === null ? [] : [line.fact])]
+  }, [facts, dismissed])
   const pick = useQuotePick(topFacts, mainGoal, asOf)
   const day = useMemo((): Day | null => {
-    if (facts === null || tone === null) return null
+    if (facts === null || tone === null || dismissed === null) return null
     return {
       tone,
       line: todaysLine(facts, tone),
-      cards: todaysCards(facts),
+      cards: todaysCards(facts, dismissed),
       goals: goals
         .filter((g) => g.status === 'active')
         .map((g) => ({ id: g.id, name: g.name, main: g.id === mainGoal?.id, hasHours: g.unit_cost_cents !== null })),
       quotes: pick.shortlist,
     }
-  }, [facts, tone, goals, mainGoal, pick.shortlist])
-  return { digest, day, pick, asOf }
+  }, [facts, tone, dismissed, goals, mainGoal, pick.shortlist])
+  return { digest, day, pick, asOf, dismissals }
 }

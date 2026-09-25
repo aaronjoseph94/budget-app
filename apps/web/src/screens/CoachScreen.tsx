@@ -41,7 +41,7 @@ export function CoachScreen() {
   const { goals } = useAppData()
   const coreGoals = useMemo(() => goalsForCore(goals, funds), [goals, funds])
   const outlooks = useGoalOutlooks(read, coreGoals)
-  const { digest, day, pick, asOf } = useCoachDay(read, funds)
+  const { digest, day, pick, asOf, dismissals } = useCoachDay(read, funds)
   const narrated = useNarration(day, asOf, true)
   const { narration } = narrated
   const quote = narration?.quote ?? null
@@ -54,7 +54,12 @@ export function CoachScreen() {
       <CoachStatus state={narrated} />
       <DayLine words={narration?.line ?? null} className="text-lg font-medium leading-snug" />
       <GoalsCard funds={funds} outlooks={outlooks} words={narration?.goal ?? null} />
-      <CoachCards digest={digest} narration={narration} />
+      <CoachCards
+        digest={digest}
+        cards={day?.cards ?? null}
+        narration={narration}
+        onDismiss={dismissals.canDismiss ? (card) => void dismissals.dismiss(card.fact.cause) : null}
+      />
       {/* Picked once the facts are in, so the day's pick does not change under the owner. */}
       {digest === null ? null : (
         <QuoteCard entry={quote === null ? pick.entry : (pick.shortlist.find((e) => e.id === quote.id) ?? pick.entry)} why={quote?.why ?? null} asOf={asOf} />

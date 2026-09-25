@@ -16,9 +16,9 @@ import { WhySheet } from './WhySheet.js'
  */
 const NOTHING_DISMISSED: ReadonlySet<string> = new Set()
 
-/** Today's cards, as savings-coach ranks them: at most three. */
-export function todaysCards(facts: readonly Fact[]): readonly CoachCard[] {
-  return rankCards({ facts, dismissed: NOTHING_DISMISSED }).cards
+/** Today's cards, as savings-coach ranks them: at most three, none the owner dismissed. */
+export function todaysCards(facts: readonly Fact[], dismissed: ReadonlySet<string> = NOTHING_DISMISSED): readonly CoachCard[] {
+  return rankCards({ facts, dismissed }).cards
 }
 
 /** The day's words and the summary they name, or null with no summary to speak of. */
@@ -58,12 +58,18 @@ export function DayLine({ words, className }: { words: Words | null; className: 
   )
 }
 
-export function CoachCards({ digest, narration }: { digest: FactsDigest | 'failed' | null; narration: Narration | null }) {
+export function CoachCards(props: {
+  digest: FactsDigest | 'failed' | null
+  cards: readonly CoachCard[] | null
+  narration: Narration | null
+  /** Dismiss a card's cause; absent when a dismissal could not be kept (0017 missing). */
+  onDismiss: ((card: CoachCard) => void) | null
+}) {
+  const { digest, cards, narration, onDismiss } = props
   if (digest === 'failed') {
     return <p className="text-sm text-muted-foreground">Your insights did not load. Reload to try again; everything else still works.</p>
   }
-  if (digest === null || narration === null) return <p className="text-sm text-muted-foreground">Working out today’s insights…</p>
-  const cards = todaysCards(digest.facts)
+  if (digest === null || cards === null || narration === null) return <p className="text-sm text-muted-foreground">Working out today’s insights…</p>
   return (
     <section aria-label="Insights" className="space-y-3">
       {cards.length === 0 ? (
@@ -79,7 +85,7 @@ export function CoachCards({ digest, narration }: { digest: FactsDigest | 'faile
               ? []
               : [
                   <li key={card.fact.key}>
-                    <InsightCard card={card} text={text} />
+                    <InsightCard card={card} text={text} onDismiss={onDismiss === null ? null : () => onDismiss(card)} />
                   </li>,
                 ]
           })}
@@ -96,14 +102,21 @@ const ACTION: Readonly<Record<CardAction, { readonly label: string; readonly go:
   goals: { label: 'See your goals', go: () => navigate('savings') },
 }
 
-function InsightCard({ card, text }: { card: CoachCard; text: CardText }) {
+function InsightCard({ card, text, onDismiss }: { card: CoachCard; text: CardText; onDismiss: (() => void) | null }) {
   const [why, setWhy] = useState(false)
   const action = ACTION[card.action]
   return (
     <Card className="words-in space-y-2 p-4">
-      <h2 className="font-semibold [overflow-wrap:anywhere]">
-        <Said words={text.title} />
-      </h2>
+      <div className="flex items-start gap-2">
+        <h2 className="min-w-0 flex-1 font-semibold [overflow-wrap:anywhere]">
+          <Said words={text.title} />
+        </h2>
+        {onDismiss === null ? null : (
+          <Button variant="ghost" size="icon" className="-mr-2 -mt-2 min-h-11 min-w-11 shrink-0" aria-label="Dismiss this insight" onClick={onDismiss}>
+            ✕
+          </Button>
+        )}
+      </div>
       <p className="text-sm [overflow-wrap:anywhere]">
         <CoachText text={text.body.text} facts={text.body.names} />
       </p>
