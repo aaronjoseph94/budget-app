@@ -296,3 +296,49 @@ describe('when each goal is reached at your pace (A08, F33)', () => {
     expect(await screen.findByText(para('To reach it by 23 Sep 2028: $166.15 a week.'))).toBeTruthy()
   })
 })
+
+describe('what to trim on the Coach (A08, F34)', () => {
+  /**
+   * The paced goal above, with Dining out $300.00, $420.00, $360.00 and
+   * $510.00 from May to August: its usual month is $390.00, a quarter $97.50,
+   * $100.00 to the nearest $5. At the middle pace of $103.85 a week, $23.08 a
+   * week more is 168 − 137 = 31 weeks sooner, and 100.00 × 60 ÷ 275.00 = 22
+   * minutes of flight time a month.
+   */
+  function withDining(moves = true): FakeSupabase {
+    const fake = withGoal(1_265_000)
+    fake.tables.categories.push(
+      { id: 'c4', name: 'Flight fund', kind: 'savings', sort_order: 0, weekly_budget_cents: null },
+      { id: 'c5', name: 'Dining out', kind: 'variable', sort_order: 0, weekly_budget_cents: null },
+    )
+    fake.tables.ingest_batches.push({ id: 'b1', source: 'card_pdf', created_at: '2026-09-21T12:00:00Z', period_start: '2026-05-01', period_end: '2026-09-20' })
+    const row = (id: string, posted_on: string, dollars: number, category_id: string) => ({
+      id, posted_on, amount_cents: -dollars * 100, merchant_raw: 'SYNTHETIC', category_id, source: 'typed' as const,
+    })
+    const fund: [string, number][] = [['2026-05-15', 400], ['2026-06-01', 400], ['2026-06-15', 250], ['2026-07-15', 500], ['2026-08-15', 300]]
+    if (moves) fake.tables.transactions.push(...fund.map(([day, dollars], i) => row(`f${i}`, day, dollars, 'c4')))
+    fake.tables.transactions.push(
+      ...[['05', 300], ['06', 420], ['07', 360], ['08', 510]].map(([m, dollars], i) => row(`d${i}`, `2026-${m as string}-10`, dollars as number, 'c5')),
+    )
+    Object.assign(fake.tables.savings_goals[0]!, { category_id: 'c4', start_date: null, balance_as_of: '2026-09-01' })
+    return fake
+  }
+
+  it('offers the top lever, in weeks sooner and flight time, and What if… opens Savings', async () => {
+    go('/coach')
+    renderScreen(<Shell />, withDining())
+
+    expect(await screen.findByText('Trim Dining out by $100.00 a month to get there 31 weeks sooner. That’s 22 min of flight time a month.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'What if…' }))
+    expect(window.location.hash).toBe('#/savings')
+  })
+
+  it('says how long the lever alone takes when nothing is moved in', async () => {
+    // No pace: ⌈17,350.00 ÷ 23.08⌉ = 752 weeks.
+    go('/coach')
+    renderScreen(<Shell />, withDining(false))
+
+    expect(await screen.findByText('No date at your current pace: in a usual month, nothing is moved into it.')).toBeTruthy()
+    expect(screen.getByText('Trim Dining out by $100.00 a month, and that alone gets you there in 752 weeks. That’s 22 min of flight time a month.')).toBeTruthy()
+  })
+})

@@ -577,6 +577,14 @@ export function formatChange(change: { readonly changeCents: number; readonly di
   return change.direction === 'same' ? 'about the same' : `${formatMagnitude(change.changeCents)} ${change.direction}`
 }
 
+/** Whole minutes from the engine (timeEquivalent) as "22 min", "1 h" or "1 h 5 min". Display only. */
+export function formatMinutes(totalMinutes: number): string {
+  const minutes = totalMinutes % 60
+  const hours = (totalMinutes - minutes) / 60
+  if (hours === 0) return `${minutes} min`
+  return minutes === 0 ? `${hours} h` : `${hours} h ${minutes} min`
+}
+
 /** A signed amount shown as a magnitude, for places where the direction is the label. */
 export function formatMagnitude(amountCents: number): string {
   return formatCents(Math.abs(amountCents))

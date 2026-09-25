@@ -17,6 +17,7 @@ import {
   formatForInput,
   formatIsoDate,
   formatMagnitude,
+  formatMinutes,
   formatMonthTitle,
   formatMonthName,
   formatDayMonth,
@@ -144,6 +145,13 @@ describe('the smaller display helpers', () => {
     expect([formatRate(1_999), formatRate(500), formatRate(0), formatRate(1_205), formatRate(7)]).toEqual([
       '19.99%', '5%', '0%', '12.05%', '0.07%',
     ])
+  })
+
+  it('shows minutes as minutes, then hours and minutes', () => {
+    expect(formatMinutes(22)).toBe('22 min')
+    expect(formatMinutes(0)).toBe('0 min')
+    expect(formatMinutes(60)).toBe('1 h')
+    expect(formatMinutes(65)).toBe('1 h 5 min')
   })
 
   it('shows a magnitude without the sign, for places the label carries direction', () => {

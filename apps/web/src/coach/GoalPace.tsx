@@ -41,7 +41,7 @@ function paceWords(pace: Pace): string {
         ? 'Import a statement to see when you will get there.'
         : `Too early to tell: check back on ${formatIsoDate(pace.possibleFrom)}, once a whole month of records is in.`
     case 'no_pace':
-      return 'No date at your current pace: nothing was moved into it.'
+      return 'No date at your current pace: in a usual month, nothing is moved into it.'
     case 'rough':
       return `At your pace: about ${formatShortMonth(pace.date)}`
     case 'range':

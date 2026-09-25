@@ -3,7 +3,8 @@ import { goalsProgress } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { goalSavedCents, useFunds, type FundsState } from '../funds.js'
 import { formatBasisPoints, formatCents } from '../format.js'
-import { hashOf } from '../nav.js'
+import { hashOf, navigate } from '../nav.js'
+import { Button } from '../components/ui/button.js'
 import { Card, CardContent, CardTitle } from '../components/ui/card.js'
 import { Progress } from '../components/ui/feedback.js'
 import { Icon } from '../components/ui/icons.js'
@@ -11,6 +12,7 @@ import { HelpButton } from '../help/HelpButton.js'
 import { CoachCards, DayLine } from '../coach/CoachCards.js'
 import { useCoachFacts, useCoachRead } from '../coach/facts.js'
 import { goalsForCore } from '../coach/goals.js'
+import { GoalLever } from '../coach/GoalLever.js'
 import { GoalPace, paceShort } from '../coach/GoalPace.js'
 import { useGoalOutlooks, type Outlooks } from '../coach/outlook.js'
 import type { ListedGoalRow } from '../ledger.js'
@@ -140,14 +142,35 @@ function GoalsCard({ funds, outlooks }: { funds: FundsState; outlooks: Outlooks 
   )
 }
 
-/** When the main goal is reached at the owner's pace (F33), or why that is not shown. */
+/**
+ * When the main goal is reached at the owner's pace (F33), or why that is
+ * not shown, and the top lever that gets it there sooner (F34). What if…
+ * opens Savings, where every goal's lever is, until Forecast's what-ifs
+ * arrive (plan A14).
+ */
 function MainOutlook({ outlooks, goal }: { outlooks: Outlooks; goal: ListedGoalRow }) {
+  const { categories } = useAppData()
   if (outlooks.status === 'loading') return <p className="text-sm text-muted-foreground">Working out when you will get there…</p>
   if (outlooks.status === 'failed') {
     return <p className="text-sm text-muted-foreground">When you will get there did not load. Reload to try again.</p>
   }
   const outlook = outlooks.byGoal.get(goal.id)
-  return outlook === undefined ? null : <GoalPace forecast={outlook.forecast} targetDate={goal.target_date} />
+  if (outlook === undefined) return null
+  const top = outlook.levers.offered[0]
+  const category = top === undefined ? undefined : categories.find((c) => c.id === top.categoryId)
+  return (
+    <div className="space-y-3">
+      <GoalPace forecast={outlook.forecast} targetDate={goal.target_date} />
+      {top === undefined || category === undefined ? null : (
+        <div className="space-y-2 rounded-lg bg-muted/60 p-3">
+          <GoalLever lever={top} categoryName={category.name} unitLabel={goal.unit_label} />
+          <Button variant="outline" size="sm" onClick={() => navigate('savings')}>
+            What if… <Icon name="chevronRight" className="size-4" />
+          </Button>
+        </div>
+      )}
+    </div>
+  )
 }
 
 /**
