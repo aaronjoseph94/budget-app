@@ -234,3 +234,65 @@ describe('the Coach’s wins (A08)', () => {
     expect(screen.queryByRole('heading', { name: /^Milestone/ })).toBeNull()
   })
 })
+
+describe('when each goal is reached at your pace (A08, F33)', () => {
+  /**
+   * Hand-derived: records from 1 May; $12,650.00 of $30,000.00 typed on 1
+   * September in the flight fund, with May $400.00, June $650.00, July
+   * $500.00 and August $300.00 moved in before it. Low $300.00, middle
+   * $450.00, high $500.00 a month: $69.23, $103.85 and $115.38 a week, 251,
+   * 168 and 151 weeks from 23 September.
+   */
+  function paced(recordsFrom = '2026-05-01', targetDate: string | null = null): FakeSupabase {
+    const fake = withGoal(1_265_000)
+    fake.tables.categories.push({ id: 'c4', name: 'Flight fund', kind: 'savings', sort_order: 0, weekly_budget_cents: null })
+    fake.tables.ingest_batches.push({ id: 'b1', source: 'card_pdf', created_at: '2026-09-21T12:00:00Z', period_start: recordsFrom, period_end: '2026-09-20' })
+    const moves: [string, number][] = [['2026-05-15', 400], ['2026-06-01', 400], ['2026-06-15', 250], ['2026-07-15', 500], ['2026-08-15', 300]]
+    fake.tables.transactions.push(
+      ...moves.map(([posted_on, dollars], i) => ({
+        id: `t${i}`, posted_on, amount_cents: -dollars * 100, merchant_raw: 'TO FLIGHT FUND', category_id: 'c4', source: 'typed' as const,
+      })),
+    )
+    Object.assign(fake.tables.savings_goals[0]!, { category_id: 'c4', start_date: null, balance_as_of: '2026-09-01', target_date: targetDate })
+    return fake
+  }
+
+  it('gives the main goal a range of dates, the likeliest, and how many months it stands on', async () => {
+    const fake = paced()
+    fake.tables.savings_goals.push({ id: 'g2', name: 'Travel', target_cents: 100_000, saved_cents: 15_000, target_date: null, unit_cost_cents: null, unit_label: null, sort_order: 1 })
+    go('/coach')
+    renderScreen(<Shell />, fake)
+
+    expect(await screen.findByText('At your pace: Aug 2029 – Jul 2031')).toBeTruthy()
+    expect(screen.getByText('Based on 4 months')).toBeTruthy()
+    expect(screen.getByText('Most likely Dec 2029.')).toBeTruthy()
+    // Travel is on no fund, so nothing moved in can be measured.
+    const others = screen.getByRole('heading', { name: 'Your other goals', level: 3 }).parentElement!
+    expect(within(others).getByText('On no fund yet')).toBeTruthy()
+  })
+
+  it('gives one rough date under three complete months', async () => {
+    // July and August: $400.00 a month, $92.31 a week, 188 weeks.
+    go('/coach')
+    renderScreen(<Shell />, paced('2026-07-01'))
+
+    expect(await screen.findByText('At your pace: about May 2030')).toBeTruthy()
+    expect(screen.getByText('Rough: 2 months')).toBeTruthy()
+    expect(screen.queryByText(/^Most likely/)).toBeNull()
+  })
+
+  it('says when it will be possible before a whole month of records is in', async () => {
+    go('/coach')
+    renderScreen(<Shell />, paced('2026-08-08'))
+
+    expect(await screen.findByText('Too early to tell: check back on 1 Oct 2026, once a whole month of records is in.')).toBeTruthy()
+  })
+
+  it('says what a week must add to reach a target date', async () => {
+    // $17,350.00 over 731 ÷ 7 weeks, rounded up.
+    go('/coach')
+    renderScreen(<Shell />, paced('2026-05-01', '2028-09-23'))
+
+    expect(await screen.findByText(para('To reach it by 23 Sep 2028: $166.15 a week.'))).toBeTruthy()
+  })
+})

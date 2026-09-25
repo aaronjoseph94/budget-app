@@ -11,11 +11,15 @@ import { HelpButton } from '../help/HelpButton.js'
 import { CoachCards, DayLine } from '../coach/CoachCards.js'
 import { useCoachFacts, useCoachRead } from '../coach/facts.js'
 import { goalsForCore } from '../coach/goals.js'
+import { GoalPace, paceShort } from '../coach/GoalPace.js'
+import { useGoalOutlooks, type Outlooks } from '../coach/outlook.js'
+import type { ListedGoalRow } from '../ledger.js'
 
 /**
  * The Coach (plan §2.3): the day's line, the main goal's card with the
  * other goals under it (G1), and up to three cards on what changed, each
- * with one action and "Why am I seeing this?" (A07). What to cut and the quote arrive with A08, the AI's words with A12.
+ * with one action and "Why am I seeing this?" (A07); each goal's date at
+ * the owner's pace (A08). The AI's words arrive with A12.
  *
  * It needs no one-time update, no AI helper and no key: the facts are
  * packages/core's digest of a year of the owner's own records, read here
@@ -29,6 +33,7 @@ export function CoachScreen() {
   const { goals } = useAppData()
   const coreGoals = useMemo(() => goalsForCore(goals, funds), [goals, funds])
   const digest = useCoachFacts(read, coreGoals)
+  const outlooks = useGoalOutlooks(read, coreGoals)
   const facts = digest === null || digest === 'failed' ? null : digest.facts
   return (
     <div className="space-y-4">
@@ -38,7 +43,7 @@ export function CoachScreen() {
       </div>
       <p className="text-xs text-muted-foreground">In the app’s own words, from your records.</p>
       {facts === null ? null : <DayLine facts={facts} className="text-lg font-medium leading-snug" />}
-      <GoalsCard funds={funds} />
+      <GoalsCard funds={funds} outlooks={outlooks} />
       <CoachCards digest={digest} />
     </div>
   )
@@ -50,7 +55,7 @@ export function CoachScreen() {
  * without is in dollars. Saved is the fund's kept balance (D16), and every
  * figure is core's goalsProgress.
  */
-function GoalsCard({ funds }: { funds: FundsState }) {
+function GoalsCard({ funds, outlooks }: { funds: FundsState; outlooks: Outlooks }) {
   const { goals, mainGoal } = useAppData()
   if (mainGoal === null) {
     return (
@@ -100,6 +105,7 @@ function GoalsCard({ funds }: { funds: FundsState }) {
             </p>
           </div>
         </div>
+        <MainOutlook outlooks={outlooks} goal={mainGoal} />
         {others.length === 0 ? null : (
           <div className="border-t pt-3">
             <h3 className="text-sm font-medium">Your other goals</h3>
@@ -117,6 +123,9 @@ function GoalsCard({ funds }: { funds: FundsState }) {
                       </span>
                     </p>
                     <Progress basisPoints={f.progressBp} />
+                    {outlooks.status === 'ready' && outlooks.byGoal.has(f.id) ? (
+                      <p className="text-xs text-muted-foreground">{paceShort(outlooks.byGoal.get(f.id)!.forecast)}</p>
+                    ) : null}
                   </li>
                 )
               })}
@@ -129,6 +138,16 @@ function GoalsCard({ funds }: { funds: FundsState }) {
       </CardContent>
     </Card>
   )
+}
+
+/** When the main goal is reached at the owner's pace (F33), or why that is not shown. */
+function MainOutlook({ outlooks, goal }: { outlooks: Outlooks; goal: ListedGoalRow }) {
+  if (outlooks.status === 'loading') return <p className="text-sm text-muted-foreground">Working out when you will get there…</p>
+  if (outlooks.status === 'failed') {
+    return <p className="text-sm text-muted-foreground">When you will get there did not load. Reload to try again.</p>
+  }
+  const outlook = outlooks.byGoal.get(goal.id)
+  return outlook === undefined ? null : <GoalPace forecast={outlook.forecast} targetDate={goal.target_date} />
 }
 
 /**
