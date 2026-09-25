@@ -12,6 +12,7 @@ import { HelpButton } from '../help/HelpButton.js'
 import { CoachCards, DayLine, todaysCards, todaysLine } from '../coach/CoachCards.js'
 import { QuoteCard } from '../coach/QuoteCard.js'
 import { useCoachFacts, useCoachRead } from '../coach/facts.js'
+import { useCoachSettings } from '../coach/settings.js'
 import { goalsForCore } from '../coach/goals.js'
 import { GoalLever } from '../coach/GoalLever.js'
 import { GoalPace, paceShort } from '../coach/GoalPace.js'
@@ -37,11 +38,13 @@ export function CoachScreen() {
   const coreGoals = useMemo(() => goalsForCore(goals, funds), [goals, funds])
   const digest = useCoachFacts(read, coreGoals)
   const outlooks = useGoalOutlooks(read, coreGoals)
+  const tone = useCoachSettings()?.tone ?? null
   const facts = digest === null || digest === 'failed' ? null : digest.facts
   // What today is about, for the quote: the cards, then the day's line.
   const topFacts = useMemo(() => {
     if (facts === null) return []
-    const line = todaysLine(facts)
+    // Which fact the line speaks of is the same in either tone.
+    const line = todaysLine(facts, 'cheerleader')
     return [...todaysCards(facts).map((c) => c.fact), ...(line === null ? [] : [line.fact])]
   }, [facts])
   return (
@@ -51,9 +54,9 @@ export function CoachScreen() {
         <HelpButton screen="coach" />
       </div>
       <p className="text-xs text-muted-foreground">In the app’s own words, from your records.</p>
-      {facts === null ? null : <DayLine facts={facts} className="text-lg font-medium leading-snug" />}
+      {facts === null || tone === null ? null : <DayLine facts={facts} tone={tone} className="text-lg font-medium leading-snug" />}
       <GoalsCard funds={funds} outlooks={outlooks} />
-      <CoachCards digest={digest} />
+      <CoachCards digest={digest} tone={tone} />
       {/* Picked once the facts are in, so the day's pick does not change under the owner. */}
       {digest === null ? null : <QuoteCard facts={topFacts} goal={mainGoal} asOf={todayIso()} />}
     </div>

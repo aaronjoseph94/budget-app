@@ -91,6 +91,17 @@ describe('the Coach, in the app’s own words', () => {
     expect(screen.queryByRole('button', { name: /dismiss/i })).toBeNull()
   })
 
+  it('speaks in the tone the owner chose in AI settings', async () => {
+    go('/coach')
+    const fake = seeded()
+    fake.tables.ai_settings.push({ user_id: 'u1', tone: 'straight' })
+    renderScreen(<Shell />, fake)
+
+    expect(await screen.findByText(whole('P', 'You’ve spent $300.00 more than by this day last month. Ease off for the rest of it.'))).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Up on last month: Dining out' })).toBeTruthy()
+    expect(screen.getByText('Try this: set a weekly limit for it and check it on Sunday.')).toBeTruthy()
+  })
+
   it('lists the engine’s figures behind a card in “Why am I seeing this?”', async () => {
     go('/coach')
     renderScreen(<Shell />, seeded())

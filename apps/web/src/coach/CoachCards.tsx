@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Fact, FactsDigest } from '@budget/core'
-import { cardWords, dayLine, rankCards, type Card as CoachCard, type CardAction } from '@budget/savings-coach'
+import { cardWords, dayLine, rankCards, type Card as CoachCard, type CardAction, type Tone } from '@budget/savings-coach'
 import { navigate } from '../nav.js'
 import { Button } from '../components/ui/button.js'
 import { Card } from '../components/ui/card.js'
@@ -8,14 +8,13 @@ import { CoachText } from './words.js'
 import { WhySheet } from './WhySheet.js'
 
 /**
- * The day's line and up to three cards (plan §2.3), in the app's own words
- * until the AI's arrive (A12). Which facts become cards, and in what order,
+ * The day's line and up to three cards (plan §2.3), in the app's own words,
+ * in the owner's tone (A12). Which facts become cards, and in what order,
  * is savings-coach's; every figure is the engine's; this draws them.
  * Nothing is dismissed yet: ✕ arrives with the table that keeps a
  * dismissal on every device (0017, A17).
  */
 const NOTHING_DISMISSED: ReadonlySet<string> = new Set()
-const TONE = 'cheerleader'
 
 /** Today's cards, as savings-coach ranks them: at most three. */
 export function todaysCards(facts: readonly Fact[]): readonly CoachCard[] {
@@ -23,14 +22,14 @@ export function todaysCards(facts: readonly Fact[]): readonly CoachCard[] {
 }
 
 /** The day's words and the summary they name, or null with no summary to speak of. */
-export function todaysLine(facts: readonly Fact[]): { readonly text: string; readonly fact: Fact } | null {
-  const line = dayLine({ facts, tone: TONE })
+export function todaysLine(facts: readonly Fact[], tone: Tone): { readonly text: string; readonly fact: Fact } | null {
+  const line = dayLine({ facts, tone })
   const fact = line === null ? undefined : facts.find((f) => f.key === line.factKey)
   return line === null || fact === undefined ? null : { text: line.text, fact }
 }
 
-export function DayLine({ facts, className }: { facts: readonly Fact[]; className: string }) {
-  const line = todaysLine(facts)
+export function DayLine({ facts, tone, className }: { facts: readonly Fact[]; tone: Tone; className: string }) {
+  const line = todaysLine(facts, tone)
   if (line === null) return null
   return (
     <p className={className}>
@@ -39,8 +38,8 @@ export function DayLine({ facts, className }: { facts: readonly Fact[]; classNam
   )
 }
 
-export function CoachCards({ digest }: { digest: FactsDigest | 'failed' | null }) {
-  if (digest === null) return <p className="text-sm text-muted-foreground">Working out today’s insights…</p>
+export function CoachCards({ digest, tone }: { digest: FactsDigest | 'failed' | null; tone: Tone | null }) {
+  if (digest === null || tone === null) return <p className="text-sm text-muted-foreground">Working out today’s insights…</p>
   if (digest === 'failed') {
     return <p className="text-sm text-muted-foreground">Your insights did not load. Reload to try again; everything else still works.</p>
   }
@@ -56,7 +55,7 @@ export function CoachCards({ digest }: { digest: FactsDigest | 'failed' | null }
         <ul className="space-y-3">
           {cards.map((card) => (
             <li key={card.fact.key}>
-              <InsightCard card={card} />
+              <InsightCard card={card} tone={tone} />
             </li>
           ))}
         </ul>
@@ -72,10 +71,10 @@ const ACTION: Readonly<Record<CardAction, { readonly label: string; readonly go:
   goals: { label: 'See your goals', go: () => navigate('savings') },
 }
 
-function InsightCard({ card }: { card: CoachCard }) {
+function InsightCard({ card, tone }: { card: CoachCard; tone: Tone }) {
   const [why, setWhy] = useState(false)
   const facts = { A: card.fact }
-  const words = cardWords(card.template, TONE)
+  const words = cardWords(card.template, tone)
   const action = ACTION[card.action]
   return (
     <Card className="space-y-2 p-4">

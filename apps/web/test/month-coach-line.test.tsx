@@ -56,6 +56,18 @@ describe('the Month’s coach line (D27)', () => {
     expect(window.location.hash).toBe('#/coach')
   })
 
+  it('speaks in the tone the owner chose, and in the Cheerleader’s without 0016', async () => {
+    const fake = seeded()
+    fake.tables.ai_settings.push({ user_id: 'u1', tone: 'straight' })
+    renderScreen(<MonthScreen month={null} />, fake)
+    expect(await screen.findByText(whole('You’ve spent $160.00 less than by this day last month. Open the Coach.'))).toBeTruthy()
+    cleanup()
+    const missing = seeded()
+    missing.fail('ai_settings', 'PGRST205')
+    renderScreen(<MonthScreen month={null} />, missing)
+    expect(await screen.findByText(whole('You’ve spent $160.00 less than by this day last month. Nice going! Open the Coach.'))).toBeTruthy()
+  })
+
   it('speaks of this week when the records do not reach last month’s same days', async () => {
     // Records from 8 Aug: 1–24 Aug is outside them; 14–17 Sep is inside.
     renderScreen(<MonthScreen month={null} />, seeded('2026-08-08'))

@@ -4,6 +4,7 @@ import { navigate } from '../nav.js'
 import { Icon } from '../components/ui/icons.js'
 import { todaysLine } from '../coach/CoachCards.js'
 import { digestOf, type DigestRows } from '../coach/facts.js'
+import { useCoachSettings } from '../coach/settings.js'
 import { CoachText } from '../coach/words.js'
 
 /**
@@ -12,11 +13,14 @@ import { CoachText } from '../coach/words.js'
  * already read, this month and last, so it costs no read of its own; the
  * summaries it speaks of need nothing more (F27), so it is the Coach's
  * very line. Loaded after the Month draws, as its own chunk, inside an
- * error boundary: if the digest throws, the line is simply not there.
+ * error boundary: if the digest throws, the line is simply not there. It
+ * speaks in the owner's tone (A12).
  */
 export default function MonthCoachLine({ read, categories }: { read: DigestRows; categories: readonly Category[] }) {
+  const tone = useCoachSettings()?.tone ?? null
   // An engine refusal throws here, during render, for the boundary to catch.
-  const line = useMemo(() => todaysLine(digestOf(read, categories).facts), [read, categories])
+  const facts = useMemo(() => digestOf(read, categories).facts, [read, categories])
+  const line = tone === null ? null : todaysLine(facts, tone)
   if (line === null) return null
   return (
     <button
