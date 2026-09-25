@@ -82,3 +82,14 @@ export {
   type NarrateQuote,
   type NarrateReply,
 } from './narrate.js'
+
+export {
+  REPORT_LIMITS,
+  REPORT_PROMPT_VERSION,
+  parseReportReply,
+  type NarrateReport,
+  type ReportDrop,
+  type ReportParsed,
+  type ReportPoint,
+  type ReportReply,
+} from './report.js'
