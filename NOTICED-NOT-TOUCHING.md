@@ -1987,7 +1987,7 @@ for a convenience, and a check costs no quota.
 ("Model: gemini-3.5-flash-lite · Check which models work to change it")
 in A11's service cards, or keep the last check's list on this device.
 
-## N81 — The coverage gate once read format.ts at 68% branches
+## N81 — The coverage gate once read format.ts at 68% branches *(settled 2026-09-25, A13)*
 
 **Seen:** 2026-09-25, A11. One `./scripts/gates.sh full` run failed
 `coverage` with `apps/web/src/format.ts` at 68.18% branches against 75%;
@@ -2001,6 +2001,13 @@ occurrence is too little to find the cause.
 **To settle:** if it recurs, keep the failing run's
 `coverage-final.json` and compare it with a passing one, file by file,
 to see whether whole test files' coverage went missing.
+
+**Settled in A13 (80ca5c0):** it recurred twice, and comparing runs file
+by file found the cause: not a lost worker, but two compilations of the
+same file (the app's node tests for the server, its DOM tests for the
+browser), 112 branches against 153, with the report keeping whichever
+arrived first. The app's node tests now compile for the browser too; the
+small movement left is N85.
 
 ## N82 — Use paid services looks like a tick box, not a switch
 
@@ -2041,4 +2048,39 @@ suggestions).
 
 **To settle:** in A17 and A21, send "a shop" in place of each shop's
 name when the switch is off, with a test each.
+
+---
+
+## N85 — Coverage still moves a few branches between runs
+
+**Seen:** 2026-09-25, A13, settling N81 (the app's node tests now use
+the browser transform, 80ca5c0). Measured over three runs after it, a few
+files with no floor of their own still differ by one to six branches
+(`coach/narration.ts` 72 against 66, `coach/settings.ts` 2 against 7),
+and core files the DOM tests load differ by one.
+
+**Why not fixed here:** the rest is V8 reporting a function's branches
+only once it has been compiled, not a second transform, and no floor
+depends on it today.
+
+**To settle:** try vitest's `coverage.experimentalAstAwareRemapping`,
+which maps coverage by the source's own syntax tree, and measure three
+runs before and after.
+
+---
+
+## N86 — Two small layout points on the Forecast
+
+**Seen:** 2026-09-25, A13, in the preview at 390 px.
+
+- On the 30-day line, the tightest day's name sits over its point and
+  can cross the line where it rises steeply the next day.
+- "Open Debts" on the Debt-free card is a 44 px tall inline link, so the
+  sentence before it wraps with a tall gap.
+
+**Why not fixed here:** both read correctly and neither scrolls
+sideways; the mobile pass (A26) walks every screen for exactly this.
+
+**To settle:** in A26, put the tightest day's name beside its point on
+the side the line is not going, and the Debts link on a line of its own.
 

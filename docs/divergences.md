@@ -780,6 +780,19 @@ this entry with the Month's labelled forecast line.
 **Why.** The owner asked for insight into spending "in as many places as
 possible", and the Month opens first.
 
+**Extended 2026-09-25 (plan slice A13): the labelled forecast line.**
+Decided by the engineer under the owner's 2026-09-24 instruction to
+proceed without questions, in answer to its item 3 ("Build forecasting
+into this as well"). The workbook's End of month (Jan!D15, F7) is
+unchanged: start + income − spent − saved, planned bills counted. Under
+it, on this month only and only with a start typed (D17), one line reads
+"Forecast: about $3,310 by 30 Sep" (F30's most likely end, to $10),
+linking to the Forecast, with ⓘ saying in one sentence that the forecast
+adds pay still due and spending at the usual pace, and linking to Help's
+"Two month-end figures". The Month never shows two unlabelled month-end
+figures. The line loads after the Month draws, in its own error
+boundary, and is simply not there when what it needs cannot be read.
+
 ---
 
 ## D28 — Savings holds many goals, in the owner's order, one of them the main goal
