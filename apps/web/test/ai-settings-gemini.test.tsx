@@ -1,0 +1,111 @@
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { AiKeyReply, AiServiceStatus } from '@budget/schema'
+import { Shell } from '../src/App.js'
+import { aiStatusReply, createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
+import { renderScreen } from './render-screen.js'
+
+/**
+ * AI settings' free Gemini card (plan §8.3, A10): get a key, paste it,
+ * Save & test, and what each result says. The key is
+ * obviously fake, and must be nowhere on the page once it is sent.
+ */
+
+const TODAY = new Date(2026, 8, 23, 12)
+const KEY = 'test-not-a-real-key-0001'
+
+function go(hash: string) {
+  act(() => {
+    window.location.hash = hash
+    window.dispatchEvent(new HashChangeEvent('hashchange'))
+  })
+}
+
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(TODAY)
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
+  go('#/ai')
+})
+
+afterEach(() => {
+  cleanup()
+  vi.useRealTimers()
+  vi.restoreAllMocks()
+  window.location.hash = ''
+})
+
+const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
+const MODELS = [
+  { id: 'gemini-3.5-flash-lite', listed: true },
+  { id: 'gemini-3.1-flash-lite', listed: true },
+  { id: 'gemini-3.5-flash', listed: false },
+]
+const keyReply = (over: Partial<AiKeyReply> = {}): AiKeyReply => ({
+  ok: true, provider: 'gemini', source: 'saved', status: 'ok', hint: '0001', models: MODELS, ...over,
+})
+
+/** A helper whose Gemini line is `gemini`, answering save_key and test_key with `answer`. */
+function helper(fake: FakeSupabase, gemini: Partial<AiServiceStatus>, answer: () => Response) {
+  fake.functions.aiStatus = aiStatusReply({
+    services: aiStatusReply().services.map((s) => (s.provider === 'gemini' ? { ...s, ...gemini } : s)),
+  })
+  fake.functions.ai = (body) => (body['action'] === 'status' ? reply(fake.functions.aiStatus) : answer())
+}
+
+async function open(fake: FakeSupabase) {
+  renderScreen(<Shell />, fake)
+  return within(await screen.findByRole('region', { name: 'Free Google Gemini' }))
+}
+
+async function paste(card: Awaited<ReturnType<typeof open>>, key: string) {
+  const field = card.getByLabelText('2. Paste it here') as HTMLInputElement
+  fireEvent.change(field, { target: { value: key } })
+  fireEvent.click(card.getByRole('button', { name: 'Save & test' }))
+  return field
+}
+
+describe('the free Gemini card, with no key yet', () => {
+  it('gives the three steps, with a key field that is private, unzoomed and not autocorrected', async () => {
+    const card = await open(createFakeSupabase())
+    const link = card.getByRole('link', { name: 'Get a free key' })
+    expect([link.getAttribute('href'), link.getAttribute('target'), link.getAttribute('rel')]).toEqual([
+      'https://aistudio.google.com/apikey', '_blank', 'noopener noreferrer',
+    ])
+    const field = card.getByLabelText('2. Paste it here')
+    expect(field.getAttribute('type')).toBe('password')
+    for (const [name, value] of [['autocomplete', 'off'], ['autocapitalize', 'none'], ['autocorrect', 'off'], ['spellcheck', 'false']]) {
+      expect(field.getAttribute(name!)).toBe(value)
+    }
+    expect(field.className).toContain('text-base')
+    fireEvent.click(card.getByRole('button', { name: 'Show' }))
+    expect(field.getAttribute('type')).toBe('text')
+    expect(card.queryByRole('button', { name: 'Remove key' })).toBeNull()
+  })
+
+  it('sends the key once, empties the field, says it works, and never shows the key', async () => {
+    const fake = createFakeSupabase()
+    helper(fake, {}, () => {
+      fake.functions.aiStatus = aiStatusReply({ services: aiStatusReply().services.map((s) => (s.provider === 'gemini' ? { ...s, source: 'saved', hint: '0001', status: 'ok' } : s)) })
+      return reply(keyReply())
+    })
+    const card = await open(fake)
+    const field = await paste(card, `  ${KEY} `)
+    expect(field.value).toBe('')
+    await card.findByText('Works · key ending …0001')
+    expect(fake.functions.calls.filter((c) => c['action'] === 'save_key')).toEqual([{ action: 'save_key', provider: 'gemini', key: KEY }])
+    expect(document.body.innerHTML).not.toContain('real-key')
+    // The page reads the helper again, so the top sentence follows.
+    await screen.findByText('AI is on, using free Google Gemini.')
+  })
+
+  it('points to One-time updates when the helper needs one, and the rest of the page stays', async () => {
+    const fake = createFakeSupabase()
+    helper(fake, {}, () => reply({ ok: false, code: 'needs_update' }, 503))
+    const card = await open(fake)
+    await paste(card, KEY)
+    await card.findByText('AI needs a one-time update. Everything else works. One-time updates shows which.')
+    expect(card.getByRole('link', { name: 'Open One-time updates' }).getAttribute('href')).toBe('#/help/updates')
+    expect(screen.getByRole('region', { name: 'AI services, in the order they are tried' })).toBeTruthy()
+  })
+})

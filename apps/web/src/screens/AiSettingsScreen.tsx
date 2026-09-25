@@ -2,15 +2,17 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AiServiceStatus } from '@budget/schema'
 import { useAppData } from '../app-data.js'
 import { aiStatus, type AiView } from '../ai/client.js'
+import { GeminiCard } from '../ai/GeminiCard.js'
 import { Button } from '../components/ui/button.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { hashOf } from '../nav.js'
 
 /**
  * AI settings (plan §8.3), first version: one true sentence on whether AI
- * is on, the services and where each one's key comes from, and today's
- * calls against the daily limit. Pasting a key arrives with A10, and the
- * order, paid services, the limit and the tone with A11.
+ * is on, the free Gemini card (A10: paste a key, test it, remove it, choose
+ * a model), the services and where each one's key comes from, and today's
+ * calls against the daily limit. The order, paid services, the limit and
+ * the tone arrive with A11.
  *
  * Its own chunk, and the only screen that asks the helper anything, so a
  * helper not installed, or 0016 not pasted, changes this page and nothing
@@ -21,9 +23,10 @@ export function AiSettingsScreen() {
   const [view, setView] = useState<AiView | null>(null)
   const latest = useRef(0)
 
-  const check = useCallback(async () => {
+  // Quiet after a step on the card: the page stays as it is until the new status arrives.
+  const check = useCallback(async (quiet = false) => {
     const run = ++latest.current
-    setView(null)
+    if (!quiet) setView(null)
     const next = await aiStatus(supabase)
     if (run === latest.current) setView(next)
   }, [supabase])
@@ -58,6 +61,9 @@ export function AiSettingsScreen() {
           {view === null ? 'Checking…' : 'Check again'}
         </Button>
       </section>
+      {view?.status == null ? null : (
+        <GeminiCard gemini={view.status.services.find((s) => s.provider === 'gemini') ?? GEMINI_NONE} onChanged={() => void check(true)} />
+      )}
       {view === null || view.status === null ? null : (
         <section aria-labelledby="ai-services" className="space-y-2">
           <h2 id="ai-services" className="px-1 text-sm font-medium text-muted-foreground">
@@ -82,6 +88,9 @@ export function AiSettingsScreen() {
     </div>
   )
 }
+
+// The helper always lists Gemini; this is only what the card shows if a reply ever did not.
+const GEMINI_NONE: AiServiceStatus = { provider: 'gemini', tier: 'free', source: 'none', hint: null, status: null, model: 'gemini-3.5-flash-lite' }
 
 const NAME: Readonly<Record<AiServiceStatus['provider'], string>> = {
   gemini: 'Google Gemini',
