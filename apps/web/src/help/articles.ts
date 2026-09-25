@@ -229,18 +229,18 @@ export const ARTICLES: readonly Article[] = [
     summary:
       'The Coach reads your own records and tells you, in plain words, how the month is going, what changed, when you will reach your goals, and what to trim to get there sooner. With free AI on, the AI writes the words; your own records write every figure.',
     steps: [
-      'Open **Coach**, and read the small line under the title: it says whose words these are.',
+      'Open **Coach**, and read the small line under the title, which says whose words these are and offers **Refresh the AI’s words** when today has changed.',
       'Read the line at the top: how your spending compares with the same days last month, or last week.',
-      'Read your main goal’s card: what is saved, and when you will get there at your own pace.',
+      'Read your main goal’s card: what is saved, when you will get there at your own pace, and one thing to trim to get there sooner.',
       'Read the cards under it: at most three, the most important first, each with one thing to try.',
       'Press a card’s button, such as **See the Month** or **See your goals**, to act on it.',
       'Press **Why am I seeing this?** to see the figures behind a card.',
       'Press **✕** on a card you have seen enough of, and it stays gone until something new happens.',
-      'Press **Refresh the AI’s words** when it shows, to have today’s changes put in words.',
+      'Read the quote or tip at the bottom, picked for what your day is about.',
     ],
     done: 'you have read the line, your goal’s date and the cards, and you know why each one is there.',
     stuck:
-      'Words marked ✨ were written by AI. The AI is never sent an amount, a balance or a date: it writes around blanks, and the app fills each blank with your own figure as it draws, so a figure is never the AI’s. A sentence that breaks the app’s rules is dropped, and that card shows the app’s own words. The AI is asked by itself at most once a day, and its words are kept and reused while what they say is still true. The Coach never moves money and never changes a budget without your tap. The date comes from what you really moved into the goal’s fund in each whole month: with under three months it is one rough date. A goal on no fund has no date until you press **Make it a fund** on Savings. Every quote and tip comes from a book, a speech or a public page, never written by AI; the AI may only pick one and say why it fits. A category shows only when it moves more than it usually does, so a quiet month has no cards. The same line sits at the top of the **Month**; tap it to come here.',
+      'Words marked ✨ were written by AI. The AI is never sent an amount, a balance or a date: it writes around blanks, and the app fills each blank with your own figure as it draws, so a figure is never the AI’s. A sentence that breaks the app’s rules is dropped, and that card shows the app’s own words. The AI is asked by itself at most once a day, and its words are kept and reused while what they say is still true. The Coach never moves money and never changes a budget without your tap. The date comes from what you really moved into the goal’s fund in each whole month: with under three months it is one rough date, and before a whole month is in, it says when to check back. A goal on no fund has no date until you press **Make it a fund** on Savings. Every quote and tip comes from a book, a speech or a public page, never written by AI; the AI may only pick one and say why it fits. A category shows only when it moves more than it usually does, so a quiet month has no cards. The same line sits at the top of the **Month**; tap it to come here.',
     related: ['savings', 'goals', 'ai-sees', 'free-ai', 'comparisons'],
   },
   {
