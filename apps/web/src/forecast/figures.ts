@@ -6,11 +6,13 @@
  */
 import {
   cashFlow30,
+  cashFlowAhead,
   isoDate,
   monthEndForecast,
   safeToSpend,
   scaleSeries,
   type CashFlow30,
+  type CashFlowAhead,
   type MonthEndForecast,
   type MonthForecastInput,
   type SafeToSpend,
@@ -28,6 +30,12 @@ export interface ForecastFigures {
   readonly range: ScaledSeries | null
   /** Today's balance, then each of the 30 days; null with no line. */
   readonly line: ScaledSeries | null
+  readonly ahead: CashFlowAhead
+  /**
+   * $0, then each month ahead's worst, most likely and best: its balance with
+   * a start, else its net (D17). Null with no month to draw.
+   */
+  readonly aheadBars: ScaledSeries | null
 }
 
 /** The rows the Coach's year read gave, renamed for core's forecast. */
@@ -51,6 +59,11 @@ export function forecastFigures(read: DigestRows, rows: Extract<ForecastRows, { 
   const flow = cashFlow30(input)
   const { end } = monthEnd
   const today = flow.todayCents
+  const ahead = cashFlowAhead(input)
+  const drawn = ahead.months.flatMap((m) => {
+    const s = m.balance ?? m.net
+    return [s.low, s.mid, s.high]
+  })
   return {
     monthEnd,
     safe: safeToSpend(input),
@@ -58,5 +71,8 @@ export function forecastFigures(read: DigestRows, rows: Extract<ForecastRows, { 
     // Both need the typed start, so an end always comes with today's balance (D17).
     range: end === null || today === null ? null : scaleSeries({ values: [today, end.low, end.mid, end.high] }),
     line: today === null ? null : scaleSeries({ values: [today, ...flow.days.map((day) => day.balanceCents)] }),
+    ahead,
+    // $0 is on the scale, so each bar starts there.
+    aheadBars: drawn.length === 0 ? null : scaleSeries({ values: [0, ...drawn] }),
   }
 }

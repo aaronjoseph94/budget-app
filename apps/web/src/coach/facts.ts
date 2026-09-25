@@ -114,10 +114,14 @@ export function useCoachRead(): DigestRows | 'failed' | null {
       ([schedules, balance]): ForecastRows => ({ status: 'ready', schedules, balance }),
       (cause: unknown): ForecastRows => ({ status: 'failed', missingUpdate: needsOneTimeUpdate(cause) }),
     )
+    // Budgets and bills typed for the three months ahead too (F35): a rent
+    // rise from November counts from November. Every rule resolves the row in
+    // effect in the month it asks about, so a later row changes nothing before it.
+    const ahead = shiftMonth(start, 3)
     Promise.all([
       listTransactions(supabase, { from: readFrom, to: end }),
-      listBudgetHistory(supabase, start),
-      listPlanHistory(supabase, start, 'month'),
+      listBudgetHistory(supabase, ahead),
+      listPlanHistory(supabase, ahead, 'month'),
       latestStatementEnd(supabase),
       readRecordsStart(supabase),
       forecast,

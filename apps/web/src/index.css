@@ -503,6 +503,10 @@
 .spec-chart .chart-forecast-low {
   fill: var(--spend);
 }
+/* The months ahead's worst-to-best band (A14): the bar's colour, faded into the card. */
+.spec-chart .chart-forecast-band {
+  fill: color-mix(in oklab, var(--primary) 30%, var(--card));
+}
 
 /* Room for the bottom tab bar and the iPhone home indicator beneath it. */
 .pb-safe {
