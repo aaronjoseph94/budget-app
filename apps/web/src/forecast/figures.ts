@@ -24,6 +24,8 @@ export interface ForecastFigures {
   readonly monthEnd: MonthEndForecast
   readonly safe: SafeToSpend
   readonly flow: CashFlow30
+  /** Today's balance, then the month's lowest, most likely and highest end, in that order; null with no end to draw. */
+  readonly range: ScaledSeries | null
   /** Today's balance, then each of the 30 days; null with no line. */
   readonly line: ScaledSeries | null
 }
@@ -42,11 +44,14 @@ export function forecastFigures(read: DigestRows, rows: Extract<ForecastRows, { 
   }
   const monthEnd = monthEndForecast(input)
   const flow = cashFlow30(input)
+  const { end } = monthEnd
   const today = flow.todayCents
   return {
     monthEnd,
     safe: safeToSpend(input),
     flow,
+    // Both need the typed start, so an end always comes with today's balance (D17).
+    range: end === null || today === null ? null : scaleSeries({ values: [today, end.low, end.mid, end.high] }),
     line: today === null ? null : scaleSeries({ values: [today, ...flow.days.map((day) => day.balanceCents)] }),
   }
 }

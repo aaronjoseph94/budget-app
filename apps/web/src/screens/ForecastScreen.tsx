@@ -1,10 +1,13 @@
 import { useMemo, type ReactNode } from 'react'
-import type { SafeToSpend } from '@budget/core'
+import { rangeBar } from '@budget/chart-specs'
+import type { MonthEndForecast, SafeToSpend } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { useFunds } from '../funds.js'
-import { formatCents } from '../format.js'
+import { formatCents, formatDayMonth, formatMonthName, formatWholeDollars } from '../format.js'
 import { hashOf } from '../nav.js'
 import { Card, CardContent, CardTitle } from '../components/ui/card.js'
+import { SvgChart } from '../components/ui/chart.js'
+import { Badge } from '../components/ui/feedback.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { Said } from '../coach/CoachCards.js'
 import { useCoachDay } from '../coach/day.js'
@@ -53,6 +56,7 @@ export function ForecastScreen() {
         <>
           <Sentence read={read} />
           <SafeCard safe={figures.safe} names={namesOf(categories)} />
+          <MonthEndCard monthEnd={figures.monthEnd} figures={figures} month={read.asOf} />
         </>
       ) : null}
     </div>
@@ -119,5 +123,70 @@ function NoStart() {
         Open the Month
       </a>
     </p>
+  )
+}
+
+/** Where the month ends (F30): the range, what is still to come, and how much history it rests on. */
+function MonthEndCard({ monthEnd, figures, month }: { monthEnd: MonthEndForecast; figures: ForecastFigures; month: string }) {
+  const name = formatMonthName(month)
+  if (monthEnd.status === 'too_early' || monthEnd.spent === null) {
+    return (
+      <Section title={`End of ${name}`}>
+        <p>Too early to tell: check back on {formatDayMonth(monthEnd.checkBackOn ?? month)}.</p>
+      </Section>
+    )
+  }
+  const { end, spent } = monthEnd
+  const { range } = figures
+  const today = figures.flow.todayCents
+  const toCome = monthEnd.variableToComeCents
+  return (
+    <Section title={`End of ${name}`}>
+      <div className="flex flex-wrap items-center gap-2">
+        {end === null ? null : monthEnd.status === 'rough' ? (
+          <span className="tnum text-3xl font-bold">About {formatWholeDollars(end.mid)}</span>
+        ) : (
+          <span className="tnum text-3xl font-bold">
+            {formatWholeDollars(end.low)} to {formatWholeDollars(end.high)}
+          </span>
+        )}
+        <Badge>{monthEnd.status === 'rough' ? 'Rough' : 'Range'}</Badge>
+        <Badge variant="outline">{monthEnd.completeMonths === 0 ? 'New: not enough history yet' : `Based on ${monthEnd.completeMonths} ${monthEnd.completeMonths === 1 ? 'month' : 'months'}`}</Badge>
+      </div>
+      {end === null ? <NoStart /> : monthEnd.status === 'range' ? <p>Most likely {formatWholeDollars(end.mid)}.</p> : null}
+      {end === null || range === null || today === null ? null : (
+        <SvgChart
+          svg={rangeBar({
+            id: 'forecast-month-end',
+            title: `Where ${name} ends`,
+            description: `Today ${formatCents(today)}; the month ends between ${formatWholeDollars(end.low)} and ${formatWholeDollars(end.high)}, most likely ${formatWholeDollars(end.mid)}.`,
+            todayBp: range.bps[0]!,
+            lowBp: range.bps[1]!,
+            midBp: range.bps[2]!,
+            highBp: range.bps[3]!,
+            zeroBp: range.zeroBp,
+            midText: `${monthEnd.status === 'rough' ? 'About' : 'Most likely'} ${formatWholeDollars(end.mid)}`,
+            todayText: `Today ${formatCents(today)}`,
+          })}
+        />
+      )}
+      <h3 className="pt-1 font-medium">Still to come</h3>
+      <dl className="divide-y">
+        <Row label="Pay still due" value={formatCents(monthEnd.pay.dueCents)} />
+        <Row label="Bills not charged yet (already in Spent)" value={formatCents(monthEnd.billsNotChargedCents)} />
+        <Row label="Spending at your usual pace" value={toCome === null ? '' : `about ${formatWholeDollars(toCome)}`} />
+        <Row label="Savings still planned" value={formatCents(monthEnd.savingsPlannedCents)} />
+        <Row label={`Spent by the end of ${name}`} value={`about ${formatWholeDollars(spent.mid)}`} />
+      </dl>
+    </Section>
+  )
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 py-2">
+      <dt className="min-w-0 text-muted-foreground">{label}</dt>
+      <dd className="tnum whitespace-nowrap font-medium">{value}</dd>
+    </div>
   )
 }

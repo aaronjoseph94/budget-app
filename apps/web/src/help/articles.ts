@@ -252,10 +252,11 @@ export const ARTICLES: readonly Article[] = [
       'Open **Forecast** from **More**, or press **Open the Forecast** on the Coach.',
       'Read the sentence at the top: where the month is heading, in a few words.',
       'Read **Safe to spend**: what you can spend each day, today included, once your bills and savings are counted.',
+      'Read where the month ends: a range, or one rough figure early in the month or with little history, with what is still to come under it.',
     ],
     done: 'you know what you can spend today and still end the month as planned.',
     stuck:
-      'Safe to spend needs this month’s starting balance: type it on the **Month**, under **Start**. It counts your pay still to come from each income’s pay schedule, at what it usually pays; if it says pay is not counted, give that income a schedule or a goal in **Setup**. Savings you still plan to move this month are kept aside, so they are never counted as money to spend. If it says it needs a one-time update, see One-time updates.',
+      'Safe to spend needs this month’s starting balance: type it on the **Month**, under **Start**. It counts your pay still to come from each income’s pay schedule, at what it usually pays; if it says pay is not counted, give that income a schedule or a goal in **Setup**. Savings you still plan to move this month are kept aside, so they are never counted as money to spend. The month’s end is worked out from this month’s pace and each of up to six earlier whole months, rounded to $10: before the 7th, or with under three whole months of records, it is one rough figure, and with no whole month before the 7th it says when to check back. If it says it needs a one-time update, see One-time updates.',
     related: ['coach', 'budgets', 'updates'],
   },
   {

@@ -480,6 +480,29 @@
 .spec-chart .chart-surface-gap {
   stroke: var(--card);
 }
+/* The Forecast's charts (A13) take the app's own tokens, so they follow it into dark mode. */
+.spec-chart .chart-forecast-ink {
+  fill: var(--muted-foreground);
+}
+.spec-chart .chart-forecast-track {
+  fill: var(--secondary);
+}
+.spec-chart .chart-forecast-rule {
+  stroke: var(--muted-foreground);
+}
+.spec-chart .chart-forecast-range {
+  fill: var(--primary);
+}
+.spec-chart .chart-forecast-today {
+  fill: var(--card);
+  stroke: var(--foreground);
+}
+.spec-chart .chart-forecast-line {
+  stroke: var(--primary);
+}
+.spec-chart .chart-forecast-low {
+  fill: var(--spend);
+}
 
 /* Room for the bottom tab bar and the iPhone home indicator beneath it. */
 .pb-safe {
