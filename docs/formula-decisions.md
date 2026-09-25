@@ -1163,6 +1163,87 @@ with records from 8 August: nothing, "check back on 7 Sep".
 
 ---
 
+## F31 — Safe to spend, a day
+
+**Decided 2026-09-25. Engineering default. Not from the workbook.** Decided
+by the engineer under the owner's 2026-09-24 instruction to proceed without
+questions (plan §5, §11; built in slice A13).
+
+**Chosen.**
+
+- **Available** = `start + income received + pay still due (F29) − Spent
+  (F7) − saved − savings still planned (F30)`: what is left once every
+  planned bill, the pay still to come and the savings still planned are
+  counted, for Variable spending and anything unplanned.
+- **A day** = available ÷ the days left **including today** (`D − d + 1`),
+  **rounded down** to the cent, so following it never overspends by a
+  rounding.
+- When available is **$0 or less**, it is $0 a day and says "nothing left
+  to spend safely this month", never a negative daily figure.
+- **None without a typed start (D17).** A pay source not counted (F29) is
+  named beside it, since the figure is then lower than it will be.
+
+**Worked example.** 24 September 2026, as in F30: available is $3,520.00,
+over 30 − 24 + 1 = 7 days: 352,000 ÷ 7 = 50,285.71 cents, so **$502.85 a
+day for 7 days**. With $3,519.95 overspent instead (available −$0.05):
+$0.00, nothing left to spend safely.
+
+---
+
+## F32 — The next 30 days, and the tightest day
+
+**Decided 2026-09-25. Engineering default. Not from the workbook.** Decided
+by the engineer under the owner's 2026-09-24 instruction to proceed without
+questions (plan §5, §11; built in slice A13).
+
+**Chosen.**
+
+- **Today's balance** = `start + income − spending − saved`, counting only
+  real ledger rows dated from the 1st to `asOf`: spending is Bills, Debts,
+  Subscriptions and Variable expenses as the Month nets them; a planned
+  bill not yet charged is not in it.
+- **Each of the 30 days after `asOf`**, in order:
+  - **pay:** each scheduled Income source's paydays (F29's days, from its
+    first pay date on), each bringing the per-payday amount F29 gives it
+    this month (its usual pay, or its goal's share); a source with no
+    schedule has no day and is left out;
+  - **bills:** each Bills, Debts or Subscriptions amount in effect in that
+    day's month (D13) on its due day, a 29th to 31st on a short month's
+    last day (D6), unless a real charge in that month already replaced it
+    (D5). One in `asOf`'s month whose day has come (on or before `asOf`)
+    with no charge yet, or which has no due day, counts **tomorrow**, as
+    "due, not seen yet". One with no due day in a later month counts on
+    that month's 1st;
+  - **Variable spending:** a daily amount, the real Variable spending over
+    the last `min(90, days of records)` days (from the latest of history
+    start, the first day read and `asOf` − 89, to `asOf`) ÷ those days,
+    half-up; below $0 is $0. Only with **14 days or more** of records;
+    with fewer, it is left out and the card says so.
+- **The line** is today's balance, then each day's. **The tightest day** is
+  the lowest of the 30, the earliest on a tie. **Bills due in the next 7
+  days** are those on days `asOf + 1` to `asOf + 7`, in date order.
+- **Savings not yet moved are left out,** and the card names savings still
+  planned (F30) so the owner knows.
+- **No balance without a typed start (D17):** the line and the tightest day
+  are not shown, and the bills due in the next 7 days still are.
+- **Heights are core's** (`scaleSeries`): each balance as basis points of
+  the span from the lowest to the highest value drawn, half-up, so the chart
+  divides no money.
+
+**Worked example.** 24 September 2026, as in F30. Today's balance:
+2,000.00 + 2,100.00 − (1,200.00 + 840.00) − 300.00 = **$1,760.00**.
+Variable spending in the 90 days from 27 June: July $1,240.00, August
+$1,054.00 and September $840.00, $3,134.00 ÷ 90 = $34.82 a day. 25
+September: +$2,100.00 pay, −$80.00 Internet (due the 20th, not seen yet),
+−$34.82: $3,745.18. 28 September: −$60.00 Phone. 1 October: −$1,200.00
+Rent, $2,276.26. Then $34.82 a day to **8 October, the tightest day, at
+$2,032.52**, the day before payday; 9 October +$2,100.00. Bills in the next
+7 days: Internet $80.00 (25 Sep, not seen yet), Phone $60.00 (28 Sep),
+Rent $1,200.00 (1 Oct). The $200.00 still to go to the Flight fund is
+left out, and said.
+
+---
+
 ## F33 — When each savings goal is reached at your pace, and its milestones
 
 **Decided 2026-09-25. Engineering default. Not from the workbook,** whose
