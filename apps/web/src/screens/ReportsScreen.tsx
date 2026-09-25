@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { isoDate, shiftMonth } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { formatMonthTitle, todayIso } from '../format.js'
@@ -7,7 +7,7 @@ import { Badge } from '../components/ui/feedback.js'
 import { Icon } from '../components/ui/icons.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { reportOf, useReportRead, type ReportFigures } from '../reports/read.js'
-import { TotalsCard } from '../reports/Overview.js'
+import { MoversCard, PairsCard, TotalsCard } from '../reports/Overview.js'
 
 /**
  * Reports (plan §2.6, A15): a month in review, any month, the current one
@@ -28,6 +28,8 @@ export function ReportsScreen({ month }: { month: string | null }) {
       return 'failed' as const
     }
   }, [read, categories])
+  // Stable while the categories are, so nothing drawn from it is worked out again every render.
+  const nameOf = useCallback((id: string) => categories.find((c) => c.id === id)?.name ?? 'a category', [categories])
   const thisMonth = `${asOf.slice(0, 7)}-01`
   const step = (by: number) => shiftMonth(isoDate(shown), by).slice(0, 7)
 
@@ -61,7 +63,7 @@ export function ReportsScreen({ month }: { month: string | null }) {
       <div role="tabpanel" id="report-overview" aria-labelledby="report-tab-overview" className="space-y-4">
         {figures === 'loading' ? <p className="text-sm text-muted-foreground">Working out your month…</p> : null}
         {figures === 'failed' ? <Failed missingUpdate={read.status === 'failed' && read.missingUpdate} /> : null}
-        {typeof figures === 'object' ? <Overview {...figures} /> : null}
+        {typeof figures === 'object' ? <Overview {...figures} nameOf={nameOf} /> : null}
       </div>
     </div>
   )
@@ -80,7 +82,7 @@ function Failed({ missingUpdate }: { missingUpdate: boolean }) {
   )
 }
 
-function Overview({ report, historyStart }: ReportFigures) {
+function Overview({ report, historyStart, nameOf }: ReportFigures & { nameOf: (id: string) => string }) {
   if (!('totals' in report)) {
     return report.status === 'not_started' ? (
       <p className="text-sm">Nothing has happened in this month yet.</p>
@@ -93,6 +95,8 @@ function Overview({ report, historyStart }: ReportFigures) {
   return (
     <>
       <TotalsCard report={report} historyStart={historyStart} />
+      <MoversCard report={report} nameOf={nameOf} />
+      <PairsCard report={report} nameOf={nameOf} />
     </>
   )
 }

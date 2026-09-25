@@ -507,6 +507,13 @@
 .spec-chart .chart-forecast-band {
   fill: color-mix(in oklab, var(--primary) 30%, var(--card));
 }
+/* The month in review's this month and last (A15): this month in the bar's colour, last month faded. */
+.spec-chart .chart-report-now {
+  fill: var(--primary);
+}
+.spec-chart .chart-report-before {
+  fill: color-mix(in oklab, var(--primary) 50%, var(--card));
+}
 
 /* Room for the bottom tab bar and the iPhone home indicator beneath it. */
 .pb-safe {

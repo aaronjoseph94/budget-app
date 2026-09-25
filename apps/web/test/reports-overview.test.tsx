@@ -46,6 +46,29 @@ describe('Reports, the Overview (plan §2.6, A15)', () => {
     expect(document.title).toBe('Reports · Budget')
   })
 
+  it('names the biggest changes against the usual month, each way', async () => {
+    go('/reports/2026-08')
+    renderScreen(<Shell />, reportFake())
+
+    const movers = await card('Biggest changes')
+    const up = within(movers).getByRole('heading', { name: 'More than usual' }).parentElement as HTMLElement
+    expect(within(up).getByText('Dining out')).toBeTruthy()
+    expect(within(up).getByText('$155.00 more than usual ($405.00)')).toBeTruthy()
+    const down = within(movers).getByRole('heading', { name: 'Less than usual' }).parentElement as HTMLElement
+    expect(within(down).getByText('$80.00 less than usual ($380.00)')).toBeTruthy()
+    expect(within(movers).getByText('Against your usual month over the 6 months before, Variable expenses only.')).toBeTruthy()
+  })
+
+  it('sets each category beside last month as bars, and as a list of the same figures', async () => {
+    go('/reports/2026-08')
+    renderScreen(<Shell />, reportFake())
+
+    const pairs = await card('This month and last, by category')
+    expect(within(pairs).getByRole('img', { name: 'August against July, by category' })).toBeTruthy()
+    const row = within(pairs).getByText('Dining out', { selector: 'dt' }).nextElementSibling
+    expect(row?.textContent).toBe('$560.00 · $450.00')
+  })
+
   it('opens on this month, marked so far and set against the same days of last month', async () => {
     go('/reports')
     renderScreen(<Shell />, reportFake())
