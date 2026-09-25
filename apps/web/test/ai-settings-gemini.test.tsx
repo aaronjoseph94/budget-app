@@ -112,6 +112,18 @@ describe('the free Gemini card, with no key yet', () => {
   })
 })
 
+describe('the free Gemini card, with an older helper', () => {
+  it('asks for the helper’s new version instead of a key it could not take, and the rest of the page stays', async () => {
+    const fake = createFakeSupabase()
+    fake.functions.aiStatus = aiStatusReply({ version: '2026-09-25.1' })
+    const card = await open(fake)
+    expect(card.getByText('The AI helper you installed is an older copy, so it can’t take a key yet. Everything else works.')).toBeTruthy()
+    expect(card.getByRole('link', { name: 'Open One-time updates' }).getAttribute('href')).toBe('#/help/updates')
+    expect(card.queryByLabelText('Step 2: paste it here')).toBeNull()
+    expect(screen.getByRole('region', { name: 'AI services, in the order they are tried' })).toBeTruthy()
+  })
+})
+
 describe('the free Gemini card, with a key', () => {
   it('says Already on with the receipts key, and checks which models work', async () => {
     const fake = createFakeSupabase()
@@ -147,6 +159,21 @@ describe('the free Gemini card, with a key', () => {
     const card = await open(fake)
     fireEvent.click(card.getByRole('button', { name: 'Check which models work' }))
     await card.findByText('Your saved key can’t be opened after a Supabase key change: paste it again')
+  })
+
+  it('says on opening that a turned-down or locked key must be pasted again, with the steps open', async () => {
+    for (const [status, said] of [
+      ['rejected', 'Google turned down your key ending …0001. Paste it again below.'],
+      ['locked', 'Your key ending …0001 can’t be opened after a Supabase key change. Paste it again below.'],
+    ] as const) {
+      const fake = createFakeSupabase()
+      helper(fake, { source: 'saved', hint: '0001', status }, () => reply(keyReply()))
+      const card = await open(fake)
+      expect(card.getByText(said)).toBeTruthy()
+      expect(card.queryByText('Paste a different key')).toBeNull()
+      expect(card.getByLabelText('Step 2: paste it here')).toBeTruthy()
+      cleanup()
+    }
   })
 
   it('removes the key through ai_key_forget, and says so', async () => {

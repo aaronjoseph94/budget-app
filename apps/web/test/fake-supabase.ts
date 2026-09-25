@@ -80,7 +80,7 @@ export function aiStatusReply(over: Partial<AiStatusReply> = {}): AiStatusReply 
   const none = { source: 'none', hint: null, status: null } as const
   return {
     ok: true,
-    version: 'test',
+    version: AI_HELPER_VERSION,
     enabled: true,
     allowPaid: false,
     services: [

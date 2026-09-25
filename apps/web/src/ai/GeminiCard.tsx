@@ -18,7 +18,16 @@ export const GET_A_KEY = 'https://aistudio.google.com/apikey'
  * `onChanged` asks AI settings to read the helper's status again, quietly,
  * so the sentence at the top follows what happened here.
  */
-export function GeminiCard({ gemini, onChanged }: { readonly gemini: AiServiceStatus; readonly onChanged: () => void }) {
+export function GeminiCard({
+  gemini,
+  outdated,
+  onChanged,
+}: {
+  readonly gemini: AiServiceStatus
+  /** The deployed helper is older than this app, so it cannot take a key yet (N78). */
+  readonly outdated: boolean
+  readonly onChanged: () => void
+}) {
   const { supabase, userId } = useAppData()
   const [shown, setShown] = useState(false)
   const [working, setWorking] = useState<null | 'save' | 'test' | 'forget' | 'model'>(null)
@@ -107,7 +116,24 @@ export function GeminiCard({ gemini, onChanged }: { readonly gemini: AiServiceSt
 
   const already = gemini.source === 'secret'
   const saved = gemini.source === 'saved'
+  // A saved key Google turned down, or one no longer opened, is pasted again: the steps stay open.
+  const again = saved && (gemini.status === 'locked' || gemini.status === 'rejected')
+  const ending = gemini.hint === null ? '' : ` ending …${gemini.hint}`
   const models = result?.models ?? null
+
+  if (outdated) {
+    return (
+      <section aria-labelledby="ai-gemini" className="space-y-2 rounded-xl border bg-card p-4 shadow-sm">
+        <h2 id="ai-gemini" className="text-lg font-semibold">
+          Free Google Gemini
+        </h2>
+        <p className="text-base">The AI helper you installed is an older copy, so it can’t take a key yet. Everything else works.</p>
+        <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+          Open One-time updates
+        </a>
+      </section>
+    )
+  }
 
   return (
     <section aria-labelledby="ai-gemini" className="space-y-4 rounded-xl border bg-card p-4 shadow-sm">
@@ -119,15 +145,14 @@ export function GeminiCard({ gemini, onChanged }: { readonly gemini: AiServiceSt
       </div>
       {already ? (
         <p className="text-base">
-          <span className="font-medium">Already on</span>, with your receipts key{gemini.hint === null ? '' : ` ending …${gemini.hint}`}. There is
-          nothing to paste.
+          <span className="font-medium">Already on</span>, with your receipts key{ending}. There is nothing to paste.
         </p>
       ) : saved ? (
-        <p className="text-base">Your key{gemini.hint === null ? '' : ` ending …${gemini.hint}`} is saved.</p>
+        <p className="text-base">{SAVED_SAYS[gemini.status ?? 'ok'](ending)}</p>
       ) : (
         <p className="text-base">Free, and about 2 minutes. A key is a password Google gives you for the app to use.</p>
       )}
-      {already || saved ? (
+      {(already || saved) && !again ? (
         <details className="rounded-lg border px-3">
           <summary className="flex min-h-11 cursor-pointer items-center text-base font-medium">Paste a different key</summary>
           <div className="pb-3">{steps}</div>
@@ -172,4 +197,12 @@ export function GeminiCard({ gemini, onChanged }: { readonly gemini: AiServiceSt
       )}
     </section>
   )
+}
+
+/** What the card says of a saved key, from its last test. */
+const SAVED_SAYS: Readonly<Record<NonNullable<AiServiceStatus['status']>, (ending: string) => string>> = {
+  ok: (ending) => `Your key${ending} is saved.`,
+  busy: (ending) => `Your key${ending} is saved. Google was busy when it was last tried.`,
+  rejected: (ending) => `Google turned down your key${ending}. Paste it again below.`,
+  locked: (ending) => `Your key${ending} can’t be opened after a Supabase key change. Paste it again below.`,
 }

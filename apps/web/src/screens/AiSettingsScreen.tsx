@@ -5,6 +5,7 @@ import { aiStatus, type AiView } from '../ai/client.js'
 import { GeminiCard } from '../ai/GeminiCard.js'
 import { Button } from '../components/ui/button.js'
 import { HelpButton } from '../help/HelpButton.js'
+import { isOlder } from '../help/updates.js'
 import { hashOf } from '../nav.js'
 
 /**
@@ -62,7 +63,11 @@ export function AiSettingsScreen() {
         </Button>
       </section>
       {view?.status == null ? null : (
-        <GeminiCard gemini={view.status.services.find((s) => s.provider === 'gemini') ?? GEMINI_NONE} onChanged={() => void check(true)} />
+        <GeminiCard
+          gemini={view.status.services.find((s) => s.provider === 'gemini') ?? GEMINI_NONE}
+          outdated={isOlder(view.status.version)}
+          onChanged={() => void check(true)}
+        />
       )}
       {view === null || view.status === null ? null : (
         <section aria-labelledby="ai-services" className="space-y-2">

@@ -119,7 +119,7 @@ async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateStat
  * `YYYY-MM-DD.N`; one that is not in that shape is older, since every
  * copy that ever shipped carries one.
  */
-function isOlder(version: unknown): boolean {
+export function isOlder(version: unknown): boolean {
   const parts = (v: unknown) => (typeof v === 'string' ? /^(\d{4}-\d{2}-\d{2})\.(\d+)$/.exec(v) : null)
   const have = parts(version)
   const want = parts(AI_HELPER_VERSION)
