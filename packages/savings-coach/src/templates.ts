@@ -191,6 +191,8 @@ export function cardTemplateKey(fact: Fact): CardTemplateKey | null {
       return fact.kind
     case 'month_so_far':
     case 'week_so_far':
+    // The forecast is never ranked into a card (core's forecastFact is not notable).
+    case 'month_forecast':
       return null
   }
 }

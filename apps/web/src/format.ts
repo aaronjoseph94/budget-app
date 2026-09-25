@@ -585,6 +585,16 @@ export function formatMinutes(totalMinutes: number): string {
   return minutes === 0 ? `${hours} h` : `${hours} h ${minutes} min`
 }
 
+/**
+ * An amount the engine already rounded to whole dollars (F30's $10 steps)
+ * without its cents: "$3,310", "-$20". Refuses one with cents, which would
+ * be a figure shown as rounder than it is. Display only.
+ */
+export function formatWholeDollars(amountCents: number): string {
+  if (amountCents % 100 !== 0) throw new RangeError(`Not a whole-dollar amount: ${amountCents}`)
+  return formatCents(amountCents).slice(0, -3)
+}
+
 /** A signed amount shown as a magnitude, for places where the direction is the label. */
 export function formatMagnitude(amountCents: number): string {
   return formatCents(Math.abs(amountCents))

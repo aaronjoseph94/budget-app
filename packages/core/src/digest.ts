@@ -16,16 +16,23 @@
  * Plan A08 adds two wins (F33, F34): more saved than by this day last
  * month, and a milestone passed on an active goal. They join version 1:
  * nothing reads the version until the AI's words are cached (plan A12).
+ * Plan A13 adds the month's forecast (F30 to F32) beside the facts, never
+ * ranked among them: the Coach gives it a card of its own.
  */
 import { type Cents, type IsoDate, cents, daysBetween } from '@budget/money-primitives'
 import type { BudgetHistoryRow } from './budgets.js'
 import { type Change, periodComparison } from './compare.js'
+import { cashFlow30 } from './cash-flow-30.js'
+import type { IncomeSchedule } from './expected-pay.js'
 import { type Evidence, completeMonths } from './history.js'
 import { impactScore } from './impact.js'
 import { goalMilestones } from './goal-milestones.js'
 import { changeSize, notableBand, usualMonth } from './notable.js'
 import { budgetStanding, categoryPace } from './pace.js'
+import { safeToSpend } from './safe-to-spend.js'
 import { monthActuals } from './month-actuals.js'
+import { monthEndForecast } from './month-end.js'
+import type { MonthForecastInput } from './month-position.js'
 import { type PeriodCategory, type PeriodEntry, monthSheet } from './period-sheet.js'
 import type { PlanHistoryRow } from './plans.js'
 import { monthBounds, weekBounds } from './week.js'
@@ -52,6 +59,8 @@ export interface FactsDigestInput {
   readonly pendingCount: number | null
   /** The active goals, main first (F45), whose milestones are cheered; none where only the summaries are needed. */
   readonly goals: readonly DigestGoal[]
+  /** What the month's forecast needs besides (F29 to F32); left out where only the summaries are needed. */
+  readonly forecast?: { readonly paySchedules: readonly IncomeSchedule[]; readonly startingBalanceCents: number | null }
 }
 
 /** An active goal as goalMilestones reads it, with what the owner calls it. */
@@ -77,6 +86,7 @@ export type FactKind =
   | 'budget_pace'
   | 'saved_more'
   | 'goal_milestone'
+  | 'month_forecast'
 
 /** One figure a sentence can name by its slot. A change carries its direction word (ADR 0005 §5). */
 export type Figure =
@@ -89,6 +99,8 @@ export type Figure =
   | { readonly unit: 'hours'; readonly value: number }
   /** A share of a whole, in basis points. */
   | { readonly unit: 'share'; readonly value: number }
+  /** An amount the engine rounded to whole dollars, such as F30's $10 steps: drawn without cents. */
+  | { readonly unit: 'dollars'; readonly value: Cents }
 
 export interface Fact {
   /** Stable while its subject is: `summary:month`, `cat:<id>:change`, … */
@@ -121,6 +133,8 @@ export interface FactsDigest {
   readonly completeMonths: number
   /** At most 12, in rank order (F44). */
   readonly facts: readonly Fact[]
+  /** The month's forecast (plan A13), never ranked among the facts; null without its inputs or too early. */
+  readonly forecast: Fact | null
 }
 
 const MAX_FACTS = 12
@@ -133,7 +147,8 @@ export function factsDigest(input: FactsDigestInput): FactsDigest {
   const rest = [...categoryChanges(input, history.months), ...budgets(input), ...savedMore(input), ...milestones(input)].sort(
     (a, b) => Number(b.notable) - Number(a.notable) || b.impact - a.impact || (a.key < b.key ? -1 : 1),
   )
-  return { version: DIGEST_VERSION, completeMonths: history.months.length, facts: [...first, ...rest].slice(0, MAX_FACTS) }
+  const forecast = input.forecast === undefined ? null : forecastFact({ ...input, ...input.forecast })
+  return { version: DIGEST_VERSION, completeMonths: history.months.length, facts: [...first, ...rest].slice(0, MAX_FACTS), forecast }
 }
 
 function staleData(input: FactsDigestInput): Fact[] {
@@ -389,6 +404,52 @@ function milestones(input: FactsDigestInput): Fact[] {
       },
     ]
   })
+}
+
+/**
+ * The forecast as one fact the Coach's words may speak of (plan §3.11 #8,
+ * A13; ADR 0005 §1): where the month is heading, safe to spend and the
+ * tightest day, each a blank the app fills (F30, F31, F32). It is never a
+ * ranked card (not notable): the Coach gives the forecast its own card,
+ * and the Forecast screen leads with its sentence. Its claims, for the
+ * AI's cached words, are its meaning and evidence: words written for a
+ * comfortable month are never reused once the month would run short.
+ * Null when it is too early to say anything (F30).
+ */
+export function forecastFact(input: MonthForecastInput): Fact | null {
+  const forecast = monthEndForecast(input)
+  if (forecast.spent === null) return null
+  const month = monthBounds(input.asOf).start
+  const figures: Record<string, Figure> = { month: { unit: 'month', value: month }, spent: { unit: 'dollars', value: forecast.spent.mid } }
+  let short = false
+  const { end } = forecast
+  const safe = safeToSpend(input)
+  const { lowest } = cashFlow30(input)
+  // With a start typed there is always an end, a daily figure and a line, so
+  // words written for them can always be drawn; without one, none of them.
+  if (end !== null && safe.perDayCents !== null && lowest !== null) {
+    figures['end'] = { unit: 'dollars', value: end.mid }
+    figures['low'] = { unit: 'dollars', value: end.low }
+    figures['high'] = { unit: 'dollars', value: end.high }
+    figures['safe_day'] = { unit: 'cents', value: safe.perDayCents }
+    figures['days'] = { unit: 'count', value: safe.days }
+    figures['tightest_day'] = { unit: 'date', value: lowest.date }
+    figures['tightest'] = { unit: 'cents', value: lowest.balanceCents }
+    short = end.low < 0 || safe.status === 'nothing_left' || lowest.balanceCents < 0
+  }
+  return {
+    key: 'forecast:month',
+    kind: 'month_forecast',
+    subject: { type: 'month', id: month, label: 'This month' },
+    direction: 'none',
+    size: null,
+    evidence: forecast.evidence,
+    meaning: short ? 'watch' : 'info',
+    notable: false,
+    figures,
+    impact: 0,
+    cause: `month_forecast:${month}`,
+  }
 }
 
 /** The engine's own sheets list every category given, so this cannot miss. */

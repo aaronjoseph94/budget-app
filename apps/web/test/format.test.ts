@@ -18,6 +18,7 @@ import {
   formatIsoDate,
   formatMagnitude,
   formatMinutes,
+  formatWholeDollars,
   formatMonthTitle,
   formatMonthName,
   formatDayMonth,
@@ -152,6 +153,12 @@ describe('the smaller display helpers', () => {
     expect(formatMinutes(0)).toBe('0 min')
     expect(formatMinutes(60)).toBe('1 h')
     expect(formatMinutes(65)).toBe('1 h 5 min')
+  })
+
+  it('shows an amount the engine rounded to whole dollars without its cents, and refuses one with cents', () => {
+    expect(formatWholeDollars(331_000)).toBe('$3,310')
+    expect(formatWholeDollars(-2_000)).toBe('-$20')
+    expect(() => formatWholeDollars(331_050)).toThrow(RangeError)
   })
 
   it('shows a magnitude without the sign, for places the label carries direction', () => {
