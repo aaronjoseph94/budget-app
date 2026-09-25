@@ -47,6 +47,7 @@ export {
   type GoalPace,
   type Paces,
 } from './goal-forecast.js'
+export { goalMilestones, type GoalMilestones, type GoalMilestonesInput } from './goal-milestones.js'
 
 export {
   fundBalance,

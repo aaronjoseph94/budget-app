@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { isoDate } from '@budget/money-primitives'
-import { goalForecast, type GoalForecastInput } from '../src/index.js'
+import { goalForecast, goalMilestones, type GoalForecastInput, type GoalMilestonesInput } from '../src/index.js'
 
 /** Suite tests, worked by hand from F33 (docs/formula-decisions.md). */
 
@@ -117,5 +117,51 @@ describe('goalForecast (F33)', () => {
     // $17,350.00 over 731 ÷ 7 weeks, rounded up: $166.15.
     expect(goalForecast({ ...base, goal: { ...base.goal, targetDate: d('2028-09-24') } }).neededWeeklyCents).toBe(16_615)
     expect(goalForecast({ ...base, goal: { ...base.goal, targetDate: d('2026-09-24') } }).neededWeeklyCents).toBeNull()
+  })
+})
+
+/**
+ * F33's milestones on Thursday 24 September 2026: the last complete week is
+ * 14–20 September, so a move after the eve of the 14th counts as new.
+ */
+const flight: GoalMilestonesInput = {
+  asOf: d('2026-09-24'),
+  entries: [moveIn('2026-09-15', 300), { postedOn: d('2026-09-16'), amountCents: -9_000, categoryId: DINING }],
+  goal: { targetCents: 3_000_000, savedCents: 1_265_000, unitCostCents: 27_500, fundCategoryId: FUND, typedOn: d('2026-09-01') },
+}
+
+describe('goalMilestones (F33)', () => {
+  it('names the 5 hours passed since the last complete week began', () => {
+    // $12,350.00 then: 2,694.54… minutes, 2,695, 44 h. $12,650.00 now: 46 h. 45 h passed.
+    expect(goalMilestones(flight)).toEqual({ unit: 'hours', passed: 45, since: '2026-09-14' })
+  })
+
+  it('names only the highest when several are passed', () => {
+    // $10,000.00 then is 36 h; 46 h now passes 40 and 45.
+    expect(goalMilestones({ ...flight, entries: [moveIn('2026-09-15', 2_650)] }).passed).toBe(45)
+  })
+
+  it('counts nothing moved in on or before the eve, nor on or before the day the balance was typed', () => {
+    expect(goalMilestones({ ...flight, entries: [moveIn('2026-09-13', 300)] }).passed).toBeNull()
+    // Typed on the 16th: the 15th's move is already in the typed amount.
+    expect(goalMilestones({ ...flight, goal: { ...flight.goal, typedOn: d('2026-09-16') } }).passed).toBeNull()
+    expect(goalMilestones({ ...flight, entries: [moveIn('2026-09-25', 300)] }).passed).toBeNull()
+  })
+
+  it('has one every tenth of the target for a goal in dollars', () => {
+    // $420.00 then of $1,000.00 is 4 tenths; $520.00 now is 5: half, 5,000 bp.
+    const emergency = { targetCents: 100_000, savedCents: 52_000, unitCostCents: null, fundCategoryId: FUND, typedOn: d('2026-09-01') }
+    expect(goalMilestones({ ...flight, entries: [moveIn('2026-09-15', 100)], goal: emergency })).toEqual({
+      unit: 'share', passed: 5_000, since: '2026-09-14',
+    })
+  })
+
+  it('has no milestone at or below nothing saved, and none on no fund', () => {
+    // From -$50.00 to $1,300.00: 283.6… minutes, 4 h, short of 5.
+    const start = { ...flight.goal, savedCents: 130_000 }
+    expect(goalMilestones({ ...flight, entries: [moveIn('2026-09-15', 1_350)], goal: start }).passed).toBeNull()
+    // To $1,400.00: 305.45… minutes, 5 h.
+    expect(goalMilestones({ ...flight, entries: [moveIn('2026-09-15', 1_450)], goal: { ...start, savedCents: 140_000 } }).passed).toBe(5)
+    expect(goalMilestones({ ...flight, goal: { ...flight.goal, fundCategoryId: null, typedOn: null } }).passed).toBeNull()
   })
 })
