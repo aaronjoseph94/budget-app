@@ -233,3 +233,21 @@ proceed without questions.
 - `ai_notes` is 0017 as §6 says; the schema gate runs on a UTF-8
   database so its digit ranges are characters.
 
+## Note, 2026-09-25: the month in review (slice A15)
+
+Decided by the engineer under the owner's 2026-09-24 instruction to
+proceed without questions.
+
+- The review is its own pack, `report`: a brief of facts as the daily
+  pack's (kinds, directions, sizes, evidence, blank names; no amount,
+  month or date), which of them to word as three points, and the fact
+  the one thing to try is about. `parseReportReply` (packages/schema)
+  holds each string to §4's rules 1 to 7, and `checkReportReply`
+  (savings-coach) applies rules 8 and 9 through the same
+  `sentenceProblem` the daily pack's check uses.
+- Each part falls back alone: a headline, point or thing to try that
+  fails shows the app's own words in its place.
+- Its words are kept in `ai_notes` under the `report` surface, the
+  month's scope and a signature of the brief with
+  `REPORT_PROMPT_VERSION`, and read back as model output. A month still
+  running is never sent: its facts change daily.

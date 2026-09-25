@@ -2148,3 +2148,62 @@ second cause from the first.
 
 **To settle:** if it recurs, keep the failing run's `coverage-final.json`
 and compare it file by file with a passing one, as N81 did.
+
+---
+
+## N90 — Full gate runs failed on timing tests or format.ts's branches four times in A15
+
+**Seen:** 2026-09-25, A15. Of about twenty full gate runs, four failed
+`coverage` on something the slice had not touched: `format.ts` at 67.85%
+branches twice (N89's signature), and the first test of
+`coach-dismiss` and of `forecast-screen` once each, not finding what
+they waited for within a find's one second. Each tree passed on the next
+run. At the time another worktree on the machine was running its own
+vitest, and the load average was about 9 on 4 cores.
+
+**Why not fixed here:** none of it is Reports' code, and the two first
+tests are N87's cold start under load: its warm-up waits for the
+screen's title, not for the cards a test then waits for.
+
+**To settle:** warm each such file's screen to the element its first
+test waits for (the Coach's Insights region, the Forecast's sentence),
+and for format.ts keep a failing run's `coverage-final.json` beside a
+passing one, as N89 asks; the gate prints a summary only, so these runs
+left none.
+
+---
+
+## N91 — An older AI helper turns the review down with a generic sentence
+
+**Seen:** 2026-09-25, A15. Until the owner pastes the helper's
+`2026-09-25.5` copy, the old one refuses the `report` pack as
+`bad_request`, which the app says as "The AI helper couldn't finish
+that", linking to the codes article. The review shows in the app's own
+words meanwhile, and One-time updates already asks for the new copy.
+
+**Why not fixed here:** telling an old helper from a real bad request
+needs `ping`'s version beside a run, a change to the shared client every
+AI screen goes through.
+
+**To settle:** when a run comes back `bad_request`, compare the helper's
+version from `ping` with `AI_HELPER_VERSION`, and say "Paste the AI
+helper's new copy" with a link to One-time updates.
+
+---
+
+## N92 — Two small points on Reports
+
+**Seen:** 2026-09-25, A15, in the preview.
+
+- The ? beside the title is printed on the PDF; harmless, but no use on
+  paper.
+- The app's own thing to try begins "Next month, try…" under the label
+  "One thing to try:", which reads a little doubled.
+
+**Why not fixed here:** both read correctly; the first is one class on
+HelpButton, which every screen shares, and the second a wording pass
+over the templates that A16 to A18 add to anyway.
+
+**To settle:** `print:hidden` on HelpButton; drop "try" from the
+templates' openings, re-running the text-rule tests.
+
