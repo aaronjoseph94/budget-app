@@ -250,11 +250,14 @@ describe('limits and rests', () => {
   })
 
   it('passes over Groq when a request would go past its budget, without a claim', async () => {
-    const { fetchFn } = await world({ saved: ['groq'], settings: { provider_order: ['groq', 'gemini'] }, services: { gemini: answers.gemini } })
+    // Groq would answer if it were asked, so only its budget can pass it over.
+    const { calls, fetchFn } = await world({ saved: ['groq'], settings: { provider_order: ['groq', 'gemini'] }, services: { groq: answers.groq, gemini: answers.gemini } })
     const big = { system: 'SYSTEM', data: { text: 'x'.repeat(16_000) }, schema: { type: 'object' }, maxOutputTokens: 400 }
     const [status, body] = await route(ENV, USER, 'test', big, Date.now(), fetchFn)
     expect([status, body]).toMatchObject([200, { ok: true, provider: 'gemini' }])
-    expect((body as Answer).tried).toBeUndefined()
+    const r = summary(status, JSON.stringify(body), calls)
+    expect(r.services).toEqual(['gemini'])
+    expect(r.rpc('ai_usage_claim').map((c) => c['p_provider'])).toEqual(['gemini'])
   })
 })
 
