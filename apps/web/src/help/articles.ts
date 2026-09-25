@@ -283,19 +283,19 @@ export const ARTICLES: readonly Article[] = [
     id: 'reports',
     title: 'Reports and trends',
     summary:
-      'Reports reviews a month: what came in, what you spent and what you saved, against last month and your usual month, the categories that moved most, and a short review in words with one thing to try.',
+      'Reports reviews a month: what came in, what you spent and what you saved, against last month and your usual month, the categories that moved most, and a short review in words with one thing to try. Trends shows how your months have moved, and which spending is creeping up.',
     steps: [
       'Open **Reports** from **More**, or from the bar at the top on a wide screen.',
       'Press **‹** or **›** to choose a month; this month is marked **So far** and set against the same days of last month.',
       'Read **The month in review**: a headline, three points and one thing to try next month.',
       'Read **Income, Spent and Saved**: each against last month and, once the month is over, against your usual month.',
-      'Read **Biggest changes**: the categories furthest from their usual month, up and down.',
-      'Read **This month and last, by category**: bars, and a list of the same figures under them.',
+      'Read **Biggest changes** and **This month and last, by category**: the categories that moved most, and bars with a list of the same figures under them.',
+      'Press **Trends** for the last **6 months** or **12 months** of Income, Spent and Saved, and each everyday category against its usual month, marked **Rising steadily**, **Falling steadily** or **No clear trend**.',
       'Press **Save as PDF**, then choose **Save as PDF** where the print window asks for a printer, to keep a copy.',
     ],
     done: 'you know how the month went, what changed most, and one thing to try next month.',
     stuck:
-      'Your usual month is the middle of up to six whole months of records before the one shown, so it needs a whole month of records first. A month your records start partway through says so, and has nothing before it to compare with. Only everyday spending (Variable expenses) can be a biggest change: a bill moving is not a habit. With free AI on, a month that is over is reviewed in the AI’s words (✨) once, and kept; the AI never sees your amounts, and every figure is still the app’s own. A month still running is always in the app’s own words. If it says Reports need a one-time update, see One-time updates. Trends, shops and habits are on their way.',
+      'Your usual month is the middle of up to six whole months of records before the one shown, so it needs a whole month of records first. A month your records start partway through says so, and has nothing before it to compare with. Only everyday spending (Variable expenses) can be a biggest change: a bill moving is not a habit. With free AI on, a month that is over is reviewed in the AI’s words (✨) once, and kept; the AI never sees your amounts, and every figure is still the app’s own. A month still running is always in the app’s own words. A trend is only named with four whole months of records: most months moving the same way, and further than that category usually swings, so one dear month is never called a habit. Until then Trends says which month to check back in. A month before your records is left as a gap, never counted as $0. If it says Reports need a one-time update, see One-time updates. Shops and habits are on their way.',
     related: ['comparisons', 'coach', 'free-ai'],
   },
   {

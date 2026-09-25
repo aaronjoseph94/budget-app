@@ -2207,3 +2207,16 @@ over the templates that A16 to A18 add to anyway.
 **To settle:** `print:hidden` on HelpButton; drop "try" from the
 templates' openings, re-running the text-rule tests.
 
+## N93 — Save as PDF is 40 px tall, under the 44 px touch target
+
+**Seen:** 2026-09-25, A16, in the preview at 320 and 390 px.
+
+The Reports' **Save as PDF** button uses the shared Button's default size
+(`h-10`, 40 px), so the preview's touch-target check flags it on every
+Reports tab. It came with A15; Trends adds nothing to it.
+
+**Why not fixed here:** the default size is shared by every Button in the
+app, and the mobile pass (A26) is where button sizes are set together.
+
+**To settle:** a 44 px size on the shared Button, or `min-h-11` on this
+one, checked at 320 px.
