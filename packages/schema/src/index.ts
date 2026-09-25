@@ -66,3 +66,18 @@ export {
 } from './ai.js'
 
 export { ModelProse, proseProblem, type ProseProblem } from './prose.js'
+
+export {
+  FACT_LETTER,
+  NARRATE_LIMITS,
+  QUOTE_ID,
+  parseNarrateReply,
+  type NarrateCard,
+  type NarrateDaily,
+  type NarrateDrop,
+  type NarrateFact,
+  type NarrateGoal,
+  type NarrateParsed,
+  type NarrateQuote,
+  type NarrateReply,
+} from './narrate.js'
