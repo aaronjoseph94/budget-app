@@ -30,6 +30,7 @@ import type {
   UnreadableLine,
 } from '../src/ledger.js'
 import type { SupabaseClient } from '../src/supabase.js'
+import type { AiStatusReply } from '@budget/schema'
 
 type Row = Readonly<Record<string, unknown>>
 
@@ -69,6 +70,29 @@ export interface RpcCall {
   readonly args: Readonly<Record<string, unknown>>
 }
 
+/**
+ * What the AI helper's `status` says for an owner with nothing set up:
+ * AI on, no key anywhere, no calls today. Tests change what they need.
+ */
+export function aiStatusReply(over: Partial<AiStatusReply> = {}): AiStatusReply {
+  const none = { source: 'none', hint: null, status: null } as const
+  return {
+    ok: true,
+    version: 'test',
+    enabled: true,
+    allowPaid: false,
+    services: [
+      { provider: 'gemini', tier: 'free', model: 'gemini-3.5-flash-lite', ...none },
+      { provider: 'groq', tier: 'free', model: 'openai/gpt-oss-20b', ...none },
+      { provider: 'openrouter', tier: 'free', model: 'openrouter/free', ...none },
+      { provider: 'openai', tier: 'paid', model: 'gpt-5-nano', ...none },
+      { provider: 'anthropic', tier: 'paid', model: 'claude-haiku-4-5', ...none },
+    ],
+    today: { used: 0, cap: 40 },
+    ...over,
+  }
+}
+
 export interface FakeSupabase {
   readonly client: SupabaseClient
   readonly tables: FakeTables
@@ -83,6 +107,17 @@ export interface FakeSupabase {
   fail(target: string, code: string): void
   /** Stop failing what `fail` named: the server has come back. */
   heal(target: string): void
+  /**
+   * The AI helper, `functions/v1/ai`. `ai` answers each request's body;
+   * null is a helper never deployed, which Supabase answers with its own
+   * 404. By default it answers `ping`, and `status` with `aiStatus`. Every
+   * body sent is kept in `calls`.
+   */
+  readonly functions: {
+    ai: ((body: Readonly<Record<string, unknown>>) => Response | Promise<Response>) | null
+    aiStatus: AiStatusReply
+    readonly calls: Readonly<Record<string, unknown>>[]
+  }
   /** The signed-in user as the auth server holds it, `user_metadata` included. */
   readonly user: { id: string; email: string; user_metadata: Record<string, unknown> }
   /** Give the client a session, which `auth.updateUser` needs. `fail('auth/user', …)` makes updates fail. */
@@ -148,6 +183,11 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
   const failures = new Map<string, string>()
   const server: FakeSupabase['server'] = { refuse: null, maxRows: null, afterRead: null, hold: null, lacks: {} }
   const user = { id: 'u1', email: 'you@example.com', user_metadata: {} as Record<string, unknown> }
+  const functions: FakeSupabase['functions'] = {
+    ai: (body) => (body['action'] === 'ping' ? json({ ok: true, version: 'test' }) : json(functions.aiStatus)),
+    aiStatus: aiStatusReply(),
+    calls: [],
+  }
   let nextId = 1
 
   const json = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
@@ -235,6 +275,12 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
         Object.assign(user.user_metadata, body.data)
       }
       return json({ ...user, aud: 'authenticated', app_metadata: {}, created_at: '2026-01-01T00:00:00Z' })
+    }
+    if (url.pathname === '/functions/v1/ai') {
+      const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
+      functions.calls.push(body)
+      if (functions.ai === null) return json({ code: 'NOT_FOUND', message: 'Requested function was not found' }, 404)
+      return functions.ai(body)
     }
     const target = url.pathname.replace(/^\/rest\/v1\//, '')
     const failure = failures.get(target) ?? failures.get(`${method} ${target}`)
@@ -472,5 +518,5 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     if (error !== null) throw error
   }
 
-  return { client, tables, rpcCalls, rpcReplies, fail: (t, code) => void failures.set(t, code), heal: (t) => void failures.delete(t), user, signIn, server }
+  return { client, tables, rpcCalls, rpcReplies, functions, fail: (t, code) => void failures.set(t, code), heal: (t) => void failures.delete(t), user, signIn, server }
 }
