@@ -1763,6 +1763,159 @@ begin
   end if;
 end $$;
 
+-- The helper's side of 0016, as the helper reaches it: service_role, which
+-- bypasses row-level security as in Supabase, calling the functions granted
+-- to it. A user of its own, so each count below starts from nothing.
+insert into auth.users (id) values ('55555555-5555-4555-8555-555555555555');
+
+set role service_role;
+
+do $$
+declare
+  u    uuid := '55555555-5555-4555-8555-555555555555';
+  ctx  jsonb;
+  i    int;
+  -- Each claim is its own statement, in order: in one expression SQL does
+  -- not promise which runs first.
+  got  text[];
+begin
+  -- Another user's key, beside the use and rest the other user already has:
+  -- none of it is this user's context.
+  perform public.ai_key_put('11111111-1111-4111-8111-111111111111', 'groq', repeat('T', 48), repeat('D', 16),
+                            '0123456789abcdef', 1::smallint, 'lmno', 'ok', null);
+
+  -- An owner who has saved no choice gets the column defaults, and nothing else.
+  ctx := public.ai_context_for(u);
+  if ctx->'settings' is distinct from jsonb_build_object(
+       'enabled', true, 'provider_order', '["gemini","groq","openrouter","openai","anthropic"]'::jsonb,
+       'models', '{}'::jsonb, 'daily_cap', 40, 'allow_paid', false, 'tone', 'cheerleader', 'share_shop_names', true)
+     or ctx->'keys' is distinct from '[]' or ctx->'usage' is distinct from '[]'
+     or ctx->'resting' is distinct from '[]' or (ctx->>'day')::date is distinct from public.ai_today() then
+    raise exception 'a new owner''s AI context came out as %', ctx;
+  end if;
+
+  -- A key saved, saved again over itself, marked twice, and read back.
+  perform public.ai_key_put(u, 'gemini', repeat('S', 48), repeat('C', 16), '0123456789abcdef', 1::smallint, 'abcd', 'ok', null);
+  perform public.ai_key_put(u, 'gemini', repeat('U', 48), repeat('E', 16), 'fedcba9876543210', 2::smallint, 'wxyz', 'busy', null);
+  ctx := public.ai_context_for(u);
+  if ctx->'keys' is distinct from jsonb_build_array(jsonb_build_object(
+       'provider', 'gemini', 'ciphertext', repeat('U', 48), 'iv', repeat('E', 16), 'kek_id', 'fedcba9876543210',
+       'key_v', 2, 'key_hint', 'wxyz', 'status', 'busy', 'model', null, 'tested_at', ctx->'keys'->0->'tested_at')) then
+    raise exception 'a key saved over itself read back as %', ctx->'keys';
+  end if;
+  if not public.ai_key_mark(u, 'gemini', 'ok', 'gemini-3.5-flash-lite') then raise exception 'ai_key_mark missed a saved key'; end if;
+  if not public.ai_key_mark(u, 'gemini', 'ok') then raise exception 'ai_key_mark missed a saved key'; end if;
+  if public.ai_key_mark(u, 'groq', 'ok') then raise exception 'ai_key_mark marked a key never saved'; end if;
+  ctx := public.ai_context_for(u);
+  if ctx->'keys'->0->>'status' is distinct from 'ok' or ctx->'keys'->0->>'model' is distinct from 'gemini-3.5-flash-lite' then
+    raise exception 'a marked key read back as %, or a mark with no model cleared it', ctx->'keys';
+  end if;
+
+  -- A key row keeps its shape whoever writes it.
+  begin
+    perform public.ai_key_put(u, 'groq', repeat('S', 48), repeat('C', 16), 'fedcba9876543210', 1::smallint, 'vwxyz', 'ok', null);
+    raise exception 'NOT REFUSED: a hint of more than four characters';
+  exception when check_violation then null;
+  end;
+  begin
+    perform public.ai_key_put(u, 'groq', repeat('S', 48), repeat('C', 12), 'fedcba9876543210', 1::smallint, 'wxyz', 'ok', null);
+    raise exception 'NOT REFUSED: an IV that is not twelve bytes';
+  exception when check_violation then null;
+  end;
+  begin
+    perform public.ai_key_put(u, 'groq', 'sk-' || repeat('a', 60), repeat('C', 16), 'fedcba9876543210', 1::smallint, 'wxyz', 'ok', null);
+    raise exception 'NOT REFUSED: a key that is not ciphertext';
+  exception when check_violation then null;
+  end;
+  begin
+    perform public.ai_key_put(u, 'groq', repeat('S', 40), repeat('C', 16), 'fedcba9876543210', 1::smallint, 'wxyz', 'ok', null);
+    raise exception 'NOT REFUSED: ciphertext too short to hold a key and its tag';
+  exception when check_violation then null;
+  end;
+  begin
+    perform public.ai_key_mark(u, 'gemini', 'fine');
+    raise exception 'NOT REFUSED: a key status that is not ok, busy, rejected or locked';
+  exception when check_violation then null;
+  end;
+
+  -- The owner's daily limit, over every task and service: 10 go, the 11th waits.
+  insert into public.ai_settings (user_id, daily_cap, tone) values (u, 10, 'straight');
+  ctx := public.ai_context_for(u);
+  if (ctx->'settings'->>'daily_cap')::int is distinct from 10 or ctx->'settings'->>'tone' is distinct from 'straight' then
+    raise exception 'saved AI settings read back as %', ctx->'settings';
+  end if;
+  for i in 1..10 loop
+    if public.ai_usage_claim(u, 'openai', 'gpt-5-nano', 'ask', 100, 99, null, null) is distinct from 'ok' then
+      raise exception 'claim % of 10 was refused', i;
+    end if;
+  end loop;
+  if public.ai_usage_claim(u, 'gemini', 'gemini-3.5-flash-lite', 'test', 0, 99, 200, null) is distinct from 'daily_cap' then
+    raise exception 'NOT REFUSED: an 11th call with a daily limit of 10';
+  end if;
+  ctx := public.ai_context_for(u);
+  if ctx->'usage' is distinct from '[{"provider": "openai", "model": "gpt-5-nano", "task": "ask", "attempts": 10, "tokens_est": 1000, "ok": 0}]' then
+    raise exception 'today''s use read back as %', ctx->'usage';
+  end if;
+
+  -- A task's own limit, and a free service's soft limits in calls and in tokens.
+  update public.ai_settings set daily_cap = 150 where user_id = u;
+  got := array[]::text[];
+  got := got || public.ai_usage_claim(u, 'gemini', 'gemini-3.5-flash-lite', 'ask', 0, 11, null, null);
+  got := got || public.ai_usage_claim(u, 'gemini', 'gemini-3.5-flash-lite', 'ask', 0, 11, null, null);
+  if got is distinct from array['ok', 'task_cap'] then
+    raise exception 'NOT REFUSED: a task past its own limit (%)', got;
+  end if;
+  got := array[]::text[];
+  got := got || public.ai_usage_claim(u, 'gemini', 'gemini-3.5-flash', 'test', 0, 99, 1, null);
+  got := got || public.ai_usage_claim(u, 'gemini', 'gemini-3.5-flash', 'test', 0, 99, 1, null);
+  if got is distinct from array['ok', 'service_cap'] then
+    raise exception 'NOT REFUSED: a free model past its calls a day (%)', got;
+  end if;
+  got := array[]::text[];
+  got := got || public.ai_usage_claim(u, 'groq', 'openai/gpt-oss-20b', 'test', 600, 99, 300, 1000);
+  got := got || public.ai_usage_claim(u, 'groq', 'openai/gpt-oss-20b', 'test', 401, 99, 300, 1000);
+  got := got || public.ai_usage_claim(u, 'groq', 'openai/gpt-oss-20b', 'test', 400, 99, 300, 1000);
+  if got is distinct from array['ok', 'service_cap', 'ok'] then
+    raise exception 'NOT REFUSED: a free service past its tokens a day, or refused within them (%)', got;
+  end if;
+  begin
+    perform public.ai_usage_claim(u, 'gemini', 'gemini-3.5-flash-lite', 'test', -1, 99, null, null);
+    raise exception 'NOT REFUSED: a claim of fewer than no tokens';
+  exception when invalid_parameter_value then null;
+  end;
+  begin
+    perform public.ai_usage_claim(u, 'gemini', 'gemini-3.5-flash-lite', 'chat', 0, 99, null, null);
+    raise exception 'NOT REFUSED: a task that is not one of the helper''s';
+  exception when check_violation then null;
+  end;
+
+  -- Outcomes: a rest, no rest, a rest that could not end, and an answer counted.
+  perform public.ai_note_outcome(u, 'groq', 'openai/gpt-oss-20b', 'test', 'rate_limited', now() + interval '60 seconds');
+  perform public.ai_note_outcome(u, 'gemini', 'gemini-3.5-flash', 'test', 'rate_limited', now() + interval '400 days');
+  perform public.ai_note_outcome(u, 'gemini', 'gemini-3.5-flash-lite', 'ask', 'ok', null);
+  ctx := public.ai_context_for(u);
+  if jsonb_array_length(ctx->'resting') is distinct from 2 or ctx->'resting'->0->>'model' is distinct from 'gemini-3.5-flash'
+     or not (ctx->'resting'->0->>'until')::timestamptz <= now() + interval '25 hours' then
+    raise exception 'resting services read back as %', ctx->'resting';
+  end if;
+  if (select cooldown_until from public.ai_provider_state
+       where user_id = u and model = 'gemini-3.5-flash-lite') is not null then
+    raise exception 'an outcome with no rest left the service resting';
+  end if;
+  if (select ok from public.ai_usage where user_id = u and model = 'gemini-3.5-flash-lite' and task = 'ask') is distinct from 1 then
+    raise exception 'an answer that worked was not counted';
+  end if;
+  begin
+    perform public.ai_note_outcome(u, 'gemini', 'gemini-3.5-flash-lite', 'ask', 'fine', null);
+    raise exception 'NOT REFUSED: an outcome code the helper does not have';
+  exception when check_violation then null;
+  end;
+
+  raise notice 'the helper reads a context, saves keys, claims calls within every limit and rests services';
+end $$;
+
+reset role;
+
 -- The anonymous role — anyone holding the published key — cannot call any of
 -- these at all. Every SECURITY DEFINER function the browser calls is listed:
 -- one left off can lose its revoke with this check still green, as 0004's
