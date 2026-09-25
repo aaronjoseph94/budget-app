@@ -66,7 +66,7 @@ describe('AI settings says what is true, whatever the helper does', () => {
     expect(services.getAllByRole('listitem').map((li) => li.textContent)).toEqual([
       '1. Google GeminiFreeNo key yet↑↓', '2. GroqFreeNo key yet↑↓', '3. OpenRouterFreeNo key yet↑↓', '4. OpenAIPaidNo key yet↑↓', '5. AnthropicPaidNo key yet↑↓',
     ])
-    expect(screen.getByText('Today: 0 of 40 AI calls. Resets overnight.')).toBeTruthy()
+    expect(screen.getByText(/^Today: 0 of 40\. Resets overnight\./)).toBeTruthy()
   })
 
   it('says AI is on with the receipts key, showing only its last four characters', async () => {
@@ -78,7 +78,7 @@ describe('AI settings says what is true, whatever the helper does', () => {
     await open(fake, 'AI is on, using your receipts key.')
     // Whatever the hint holds is drawn as text, never markup.
     expect(await screen.findByText('Your receipts key ending …<b>1, from Supabase')).toBeTruthy()
-    expect(screen.getByText('Today: 3 of 40 AI calls. Resets overnight.')).toBeTruthy()
+    expect(screen.getByText(/^Today: 3 of 40\. Resets overnight\./)).toBeTruthy()
   })
 
   it('asks again on Check again, showing the newest answer', async () => {

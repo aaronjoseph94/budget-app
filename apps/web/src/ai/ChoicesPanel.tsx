@@ -2,8 +2,9 @@ import { useEffect, useId, useState } from 'react'
 import type { AiProvider, AiServiceStatus, AiStatusReply } from '@budget/schema'
 import { useAppData } from '../app-data.js'
 import { Button } from '../components/ui/button.js'
+import { NativeSelect } from '../components/ui/form.js'
 import { hashOf } from '../nav.js'
-import { moved, readChoices, saveChoices, type AiChoices } from './choices.js'
+import { DAILY_CAPS, moved, readChoices, saveChoices, type AiChoices } from './choices.js'
 
 const NAME: Readonly<Record<AiProvider, string>> = {
   gemini: 'Google Gemini',
@@ -31,7 +32,8 @@ function keyLine(s: AiServiceStatus): string {
 type Loaded = { readonly state: 'loading' } | { readonly state: 'missing' | 'unreachable' } | { readonly state: 'ready'; readonly choices: AiChoices }
 
 /**
- * Try in this order (plan §8.3, A11), with each service's key. Each change is saved to ai_settings at once, and the
+ * Try in this order, Use paid services and Daily limit (plan §8.3, A11),
+ * with today's calls. Each change is saved to ai_settings at once, and the
  * helper follows it from its next call. If 0016 is not in, this panel says
  * so in one line and the rest of AI settings still works.
  */
@@ -40,7 +42,7 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
   const [loaded, setLoaded] = useState<Loaded>({ state: 'loading' })
   const [saving, setSaving] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
-  const ids = { order: useId() }
+  const ids = { order: useId(), paid: useId(), cap: useId(), capHint: useId() }
 
   useEffect(() => {
     let live = true
@@ -56,7 +58,7 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
     return (
       <p className="px-1 text-base">
         {loaded.state === 'missing'
-          ? 'Choosing the order needs a one-time update. '
+          ? 'Choosing the order, paid services and a daily limit needs a one-time update. '
           : 'Couldn’t load your AI choices just now. Check your connection and try again. '}
         {loaded.state === 'missing' ? (
           <a href={hashOf({ screen: 'help', param: 'updates' })} className="font-medium underline underline-offset-4">
@@ -125,9 +127,49 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
         <p className="px-1 text-sm text-muted-foreground">When one is busy or out of free uses, the next is asked.</p>
       </section>
 
-      <p className="px-1 text-sm text-muted-foreground">
-        Today: {status.today.used} of {status.today.cap} AI calls. Resets overnight.
-      </p>
+      <section aria-label="Use paid services" className="space-y-1 rounded-xl border bg-card p-4 shadow-sm">
+        <div className="flex min-h-11 items-center gap-3">
+          <label htmlFor={ids.paid} className="flex-1 text-base font-medium">
+            Use paid services
+          </label>
+          <input
+            id={ids.paid}
+            type="checkbox"
+            role="switch"
+            className="size-6 shrink-0 accent-primary"
+            checked={choices.allowPaid}
+            disabled={saving}
+            onChange={(e) => void change({ ...choices, allowPaid: e.target.checked })}
+          />
+        </div>
+        <p className="text-sm text-muted-foreground">
+          {choices.allowPaid
+            ? 'On: OpenAI and Anthropic are asked, in the order above, when their key is saved. They bill you for each use.'
+            : 'Off: OpenAI and Anthropic are never asked, even with a key saved, so nothing is billed.'}
+        </p>
+      </section>
+
+      <section aria-label="Daily limit" className="space-y-2 rounded-xl border bg-card p-4 shadow-sm">
+        <label htmlFor={ids.cap} className="block text-base font-medium">
+          Daily limit
+        </label>
+        <NativeSelect
+          id={ids.cap}
+          aria-describedby={ids.capHint}
+          value={String(choices.dailyCap)}
+          disabled={saving}
+          onChange={(e) => void change({ ...choices, dailyCap: Number(e.target.value) })}
+        >
+          {[...new Set([...DAILY_CAPS, choices.dailyCap])].sort((a, b) => a - b).map((n) => (
+            <option key={n} value={n}>
+              {n} AI calls a day
+            </option>
+          ))}
+        </NativeSelect>
+        <p id={ids.capHint} className="text-sm text-muted-foreground">
+          Today: {status.today.used} of {status.today.cap}. Resets overnight. Past the limit, the app uses its own words until tomorrow.
+        </p>
+      </section>
 
       <p aria-live="polite" className="px-1 text-base font-medium text-destructive">
         {problem}
