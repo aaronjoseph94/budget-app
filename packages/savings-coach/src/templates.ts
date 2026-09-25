@@ -165,6 +165,16 @@ export const LINE_TEMPLATES: Readonly<Record<LineKey, Tones<string>>> = {
   },
 }
 
+/**
+ * A line of encouragement on the goals' card, naming the main goal as
+ * `{{A.name}}`: the app's own words where the AI's goal line would go
+ * (plan A12). It names no figure, because the card beside it shows them.
+ */
+export const GOAL_LINE_TEMPLATES: Tones<string> = {
+  cheerleader: 'Every lighter week brings {{A.name}} closer. Keep going!',
+  straight: 'Each week you spend less moves {{A.name}} closer.',
+}
+
 /** Which card template a fact is worded by; null for a kind that is never a card. */
 export function cardTemplateKey(fact: Fact): CardTemplateKey | null {
   switch (fact.kind) {

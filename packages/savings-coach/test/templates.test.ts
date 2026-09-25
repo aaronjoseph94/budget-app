@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  GOAL_LINE_TEMPLATES,
   LINE_TEMPLATES,
   PLAIN_TEMPLATES,
   TONES,
@@ -47,6 +48,11 @@ describe('the app’s own templates', () => {
     }
     for (const [key, tones] of Object.entries(LINE_TEMPLATES)) {
       for (const tone of TONES) expect(breaksTextRule(tones[tone], 200), `${key} ${tone}`).toBeNull()
+    }
+    for (const tone of TONES) {
+      expect(breaksTextRule(GOAL_LINE_TEMPLATES[tone], 160), `goal line ${tone}`).toBeNull()
+      // The goal line names the main goal and nothing else: the card beside it shows the figures.
+      expect(renderSegments({ text: GOAL_LINE_TEMPLATES[tone], slots: { A: ['name'] } }).ok, `goal line ${tone}`).toBe(true)
     }
   })
 

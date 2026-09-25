@@ -9,6 +9,7 @@
  */
 export { renderSegments, type RenderSegmentsInput, type RenderSegmentsOutput, type Segment } from './segments.js'
 export {
+  GOAL_LINE_TEMPLATES,
   LINE_TEMPLATES,
   PLAIN_TEMPLATES,
   TONES,
