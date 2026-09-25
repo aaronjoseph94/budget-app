@@ -1919,3 +1919,30 @@ fix for all of them belongs to the mobile pass.
 inline element (or a full-width block link under the sentence), and
 check both screens at 320 and 390px.
 
+
+## N77 — Copy's empty status line leaves a gap on One-time updates
+
+**Seen:** 2026-09-25, A09, in the preview harness: before Copy is pressed,
+its `aria-live` line is an empty paragraph, which the step's `space-y-2`
+still spaces, so the GitHub link sits a line lower than it needs to.
+
+**Why not fixed here:** cosmetic, and A26's mobile pass is walking every
+spacing of this kind at once.
+
+**To settle:** in A26, keep the live region but give it no height while
+empty (for example `empty:hidden` on a wrapper that stays mounted), and
+check at 320 and 390px.
+
+## N78 — Every AI surface still needs the helper's version checked
+
+**Seen:** 2026-09-25, A09. `ping` returns the helper's `VERSION`, but One-
+time updates only asks whether it answers. An owner who pasted an older
+copy will see "in" while a later slice's action is refused as
+`bad_request` ("The AI helper couldn't finish that").
+
+**Why not fixed here:** A09's helper is the first; there is no older copy
+yet to tell apart.
+
+**To settle:** when A10 adds its actions, have One-time updates compare
+the pinged version with the one the app expects and name the helper as
+the next step, "paste its new version", when it is older.
