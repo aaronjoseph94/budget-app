@@ -2103,7 +2103,11 @@ because React.lazy suspends on its own first render regardless.
 **Done here:** `apps/web/test/warm-screen.tsx` renders a screen once in
 a file's `beforeAll`, and the thirteen files whose first test waits on
 one lazy screen (the Coach, AI settings, Help, One-time updates and the
-Forecast) use it. No timeout was raised.
+Forecast) use it. No timeout was raised. The warm-up first waited with a
+find, and under a load average of 10 lost the same race itself, in
+`forecast-ahead`; it now waits for the title as the page changes,
+bounded by vitest's own hook limit, since it is setup and not an
+assertion.
 
 **Left:** `help-button`, `heading-order`, `period-switch` and `shell`
 walk several screens, or test the shell's own loading, in their first
