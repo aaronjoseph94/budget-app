@@ -2229,3 +2229,35 @@ app, and the mobile pass (A26) is where button sizes are set together.
 
 **To settle:** a 44 px size on the shared Button, or `min-h-11` on this
 one, checked at 320 px.
+
+---
+
+## N94 — Where the records start never reads as a missing update
+
+**Seen:** 2026-09-26, A17, testing Shops' fail-soft line.
+`readRecordsStart` (`apps/web/src/ledger.ts`) throws a plain `Error`
+through `fail`, not `ReadRefused`, so when `ingest_batches` or its
+0007 column is missing, Reports (every tab), the Coach and Setup's
+nudge say "did not load" rather than "needs a one-time update".
+
+**Why not fixed here:** 0001 to 0014 are pasted (2026-09-24), so it
+cannot happen on the owner's project today, and the fix touches every
+screen that reads where the records start.
+
+**To settle:** throw `ReadRefused` with the database's code there, as
+`readAll` does, and add a 42703 case to one screen test.
+
+---
+
+## N95 — Setup's compact editor fields are under 44 px and 16 px
+
+**Seen:** 2026-09-26, A17, in the preview at 390 px. Setup's day and
+amount fields, and each row's arrows and list switch, are 36 to 40 px
+tall, and some inputs 14 px, so iOS may zoom on them. The nudge's own
+buttons are 44 px.
+
+**Why not fixed here:** it is Setup's whole editor, laid out before this
+phase, and the mobile pass (A26) sets sizes across the app together.
+
+**To settle:** raise the shared `Input size="sm"` and Setup's icon
+buttons to 44 px and 16 px text, checked at 320 px.
