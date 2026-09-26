@@ -285,6 +285,16 @@ export {
   type CategoryPaceInput,
 } from './pace.js'
 
+export {
+  topShops,
+  type ShopEntry,
+  type ShopRowsInput,
+  type ShopTotal,
+  type TopShop,
+  type TopShops,
+  type TopShopsInput,
+} from './shops.js'
+
 export { dailyIndex, impactScore, type ImpactScore, type ImpactScoreInput } from './impact.js'
 
 export {
