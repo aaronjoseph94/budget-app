@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { addDays, isoDate } from '@budget/money-primitives'
-import { recurringCharges, type RecurringInput, type ShopEntry } from '../src/index.js'
+import { billNudges, recurringCharges, type RecurringInput, type ShopEntry } from '../src/index.js'
 import { CATEGORIES, charges, row } from './shop-example.js'
 
 /** Suite tests, worked by hand from F38 (docs/formula-decisions.md). */
@@ -117,5 +117,21 @@ describe('recurringCharges (F38)', () => {
 
   it('reads charges only: a refund between them is not a gap', () => {
     expect(found([...SPOTIFY, row('2026-06-20', 11.99, 'SPOTIFY', 'music')])).toHaveLength(1)
+  })
+})
+describe('billNudges (F38)', () => {
+  const nudges = (entries: readonly ShopEntry[], planned: readonly string[] = []) =>
+    billNudges({ series: found(entries), categories: CATEGORIES, plannedCategoryIds: planned }).nudges
+
+  it('offers a monthly charge on a bill list with no monthly amount, at its price and day', () => {
+    expect(nudges(SPOTIFY)).toEqual([{ categoryId: 'music', shop: 'SPOTIFY', amountCents: 1_299, dueDay: 14 }])
+    expect(nudges(SPOTIFY, ['music'])).toEqual([])
+  })
+
+  it('offers nothing for Variable expenses or a weekly charge, and one per category, the dearest', () => {
+    expect(nudges(every('2026-07-20', [31, 31], 45, 'GYM'))).toEqual([])
+    expect(nudges(every('2026-09-10', [7, 7], 10, 'PAPER', 'music'))).toEqual([])
+    const two = [...SPOTIFY, ...every('2026-07-03', [31, 31], 20, 'RADIO', 'music')]
+    expect(nudges(two)).toEqual([{ categoryId: 'music', shop: 'RADIO', amountCents: 2_000, dueDay: 3 }])
   })
 })

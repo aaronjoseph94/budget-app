@@ -297,7 +297,10 @@ export {
 
 export {
   CADENCE_BANDS,
+  billNudges,
   recurringCharges,
+  type BillNudge,
+  type BillNudgesInput,
   type Cadence,
   type PriceChange,
   type RecurringCharge,

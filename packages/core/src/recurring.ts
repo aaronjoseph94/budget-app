@@ -10,6 +10,7 @@
  * is never mistaken for a plan.
  */
 import { type Cents, type IsoDate, addDays, cents, daysBetween } from '@budget/money-primitives'
+import type { PeriodCategory } from './period-sheet.js'
 import { type ShopRow, type ShopRowsInput, coveredFrom, shopRows } from './shops.js'
 import { median } from './stats.js'
 
@@ -136,4 +137,37 @@ function priceChange(previous: Cents, latest: Cents): PriceChange | null {
 function whole(value: number | null): number {
   if (value === null) throw new RangeError('A series has no charges to take a median of')
   return value
+}
+
+export interface BillNudgesInput {
+  readonly series: readonly RecurringCharge[]
+  readonly categories: readonly Pick<PeriodCategory, 'id' | 'kind'>[]
+  /** Categories with a monthly amount in effect this month. */
+  readonly plannedCategoryIds: readonly string[]
+}
+
+export interface BillNudge {
+  readonly categoryId: string
+  readonly shop: string
+  readonly amountCents: Cents
+  /** The day of the month of the latest charge. */
+  readonly dueDay: number
+}
+
+/**
+ * F38's "Looks like a monthly bill": a monthly series filed on Bills, Debts
+ * or Subscriptions under a category with no monthly amount, one per
+ * category, the dearest. It only fills the bill editor; the owner saves.
+ */
+export function billNudges(input: BillNudgesInput): { readonly nudges: readonly BillNudge[] } {
+  const bills = new Set(input.categories.filter((c) => c.kind === 'bill' || c.kind === 'debt' || c.kind === 'subscription').map((c) => c.id))
+  const planned = new Set(input.plannedCategoryIds)
+  const nudges: BillNudge[] = []
+  // The series come dearest first, so the first per category is the one kept.
+  for (const s of input.series) {
+    if (s.cadence !== 'monthly' || !bills.has(s.categoryId) || planned.has(s.categoryId)) continue
+    if (nudges.some((n) => n.categoryId === s.categoryId)) continue
+    nudges.push({ categoryId: s.categoryId, shop: s.shop, amountCents: s.priceCents, dueDay: Number(s.last.slice(8)) })
+  }
+  return { nudges }
 }
