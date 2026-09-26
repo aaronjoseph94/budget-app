@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { billsTotals, isoDate, resolvePlans, type BillsTotals, type ResolvedPlan } from '@budget/core'
+import { billsTotals, isoDate, resolvePlans, type BillNudge, type BillsTotals, type ResolvedPlan } from '@budget/core'
 import { parseMoneyInput, useAppData } from '../app-data.js'
 import { listPlanHistory, setPlan, type Category, type PlanRow } from '../ledger.js'
 import { formatCents, formatForInput, formatMonthName } from '../format.js'
@@ -166,6 +166,7 @@ export function PlanFields({
   month,
   write,
   onSaved,
+  nudge,
 }: {
   row: Category
   /** What core says is in effect this month; undefined when none was ever set. */
@@ -174,6 +175,8 @@ export function PlanFields({
   month: string
   write: (change: () => Promise<unknown>) => Promise<boolean>
   onSaved: (note: string) => void
+  /** "Looks like a monthly bill" (F38), when this row has no amount and a monthly charge looks like it. */
+  nudge?: BillNudge | undefined
 }) {
   const { supabase, userId } = useAppData()
   const storedCents = plan === undefined ? null : plan.plannedCents
@@ -188,6 +191,8 @@ export function PlanFields({
     setWas(shown)
   }
   const [problem, setProblem] = useState<string | null>(null)
+  // The nudge's figures, put in the fields and not yet saved.
+  const [filled, setFilled] = useState(false)
   const problemId = useId()
   // The message, tied to the field it is about and marking it (FE-8).
   const about = (help: string) =>
@@ -290,6 +295,41 @@ export function PlanFields({
         <p id={problemId} role="alert" className="mt-1 text-xs text-destructive">
           {problem}
         </p>
+      ) : null}
+      {nudge !== undefined && storedCents === null ? (
+        <div className="mt-2 space-y-1 rounded-md bg-muted/60 p-2 text-sm">
+          {filled ? (
+            <>
+              <p>Filled in from your charges. Check the day and the amount, then save.</p>
+              <Button size="sm" className="min-h-11" aria-label={`Save ${row.name}’s monthly amount`} onClick={() => {
+                  setFilled(false)
+                  commit('amount')
+                }}>
+                Save
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="font-medium">Looks like a monthly bill: add it?</p>
+              <p className="[overflow-wrap:anywhere]">
+                {nudge.shop} charged <span className="tnum">{formatCents(nudge.amountCents)}</span> each month, lately on day {nudge.dueDay}.
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                className="min-h-11"
+                aria-label={`Fill it in for ${row.name}`}
+                onClick={() => {
+                  setDay(String(nudge.dueDay))
+                  setAmount(formatForInput(nudge.amountCents))
+                  setFilled(true)
+                }}
+              >
+                Fill it in
+              </Button>
+            </>
+          )}
+        </div>
       ) : null}
       {/* F8: a blank day counts in a whole month, never in a week. */}
       {storedCents !== null && storedDay === null ? (

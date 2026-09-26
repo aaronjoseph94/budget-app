@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { useAppData } from '../app-data.js'
-import { appendToLists, isoDate, monthBounds, moveInList, type BillsTotals } from '@budget/core'
+import { appendToLists, isoDate, monthBounds, moveInList, type BillNudge, type BillsTotals } from '@budget/core'
 import {
   addCategories,
   ensureCategory,
@@ -19,6 +19,7 @@ import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { navigate } from '../nav.js'
 import { PlanFields, PlanHeadings, TotalTile, useMonthlyAmounts, type MonthlyAmounts } from './SetupPlans.js'
+import { useBillNudges } from '../bill-nudges.js'
 import { PayFields, PayHeadings, usePaySchedules, type PaySchedules } from './SetupPay.js'
 import { HelpButton } from '../help/HelpButton.js'
 
@@ -72,6 +73,7 @@ export function SetupScreen() {
   // sets one for every month.
   const month = monthBounds(isoDate(todayIso())).start
   const amounts = useMonthlyAmounts(month)
+  const nudges = useBillNudges(amounts)
   const schedules = usePaySchedules()
 
   return (
@@ -93,6 +95,7 @@ export function SetupScreen() {
                 rows={lists.get(card.kind) ?? []}
                 month={month}
                 amounts={RECURRING.has(card.kind) ? amounts : null}
+                nudges={nudges}
                 schedules={card.kind === 'income' ? schedules : null}
               />
             ))}
@@ -270,6 +273,7 @@ function ListCardView({
   rows,
   month,
   amounts,
+  nudges,
   schedules,
 }: {
   card: ListCard
@@ -278,6 +282,8 @@ function ListCardView({
   month: string
   /** On Bills, Debts and Subscriptions only; null on the other lists. */
   amounts: MonthlyAmounts | null
+  /** "Looks like a monthly bill", by category (F38). */
+  nudges: ReadonlyMap<string, BillNudge>
   /** On Income only; null on the other lists. */
   schedules: PaySchedules | null
 }) {
@@ -336,7 +342,7 @@ function ListCardView({
             {rows.map((row) => (
               <CategoryRow key={row.id} row={row} list={rows} write={write}>
                 {plans !== null ? (
-                  <PlanFields row={row} plan={plans.get(row.id)} month={month} write={write} onSaved={setNote} />
+                  <PlanFields row={row} plan={plans.get(row.id)} month={month} write={write} onSaved={setNote} nudge={nudges.get(row.id)} />
                 ) : null}
                 {paid !== null ? <PayFields row={row} stored={paid.get(row.id)} write={write} onSaved={setNote} /> : null}
               </CategoryRow>
