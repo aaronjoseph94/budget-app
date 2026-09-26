@@ -5,7 +5,7 @@
  * (F38, F39, F41); this draws and formats, and never computes. A flagged
  * charge is only pointed out: nothing is hidden or left out of a total.
  */
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import type { Change } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { formatCents, formatChange, formatDateRange, formatDayMonth, formatMonthName } from '../format.js'
@@ -14,6 +14,7 @@ import { Row, Section } from '../forecast/parts.js'
 import { Failed } from './Failed.js'
 import { shopsOf, useShopsRead, type ShopFigures } from './shops-read.js'
 import { SubscriptionsCard } from './Subscriptions.js'
+import { SecondLookCard } from './SecondLook.js'
 
 export function ShopsPanel({ month, asOf }: { month: string; asOf: string }) {
   const { categories } = useAppData()
@@ -41,10 +42,13 @@ export function ShopsPanel({ month, asOf }: { month: string; asOf: string }) {
 }
 
 function Figures({ figures, dismissals }: { figures: ShopFigures; dismissals: Dismissals }) {
+  const { categories } = useAppData()
+  const nameOf = useCallback((id: string) => categories.find((c) => c.id === id)?.name ?? 'its category', [categories])
   return (
     <>
       <TopShopsCard figures={figures} />
       <SubscriptionsCard series={figures.series} dismissals={dismissals} />
+      <SecondLookCard unusual={figures.unusual} nameOf={nameOf} />
     </>
   )
 }

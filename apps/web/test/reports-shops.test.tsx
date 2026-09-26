@@ -121,3 +121,29 @@ describe('Reports, Shops: subscriptions', () => {
     expect(within(subs).getByRole('link', { name: 'See One-time updates' }).getAttribute('href')).toBe('#/help/updates')
   })
 })
+
+describe('Reports, Shops: worth a second look', () => {
+  it('points out each flagged charge, and hides none', async () => {
+    const fake = shopsFake()
+    // Dismissed on the Coach: still listed here, since a possible double is flagged, never hidden.
+    fake.tables.insight_dismissals.push({ user_id: 'u1', insight_key: 'possible_double:k1:k2' })
+    go('/reports')
+    renderScreen(<Shell />, fake)
+    await openShops()
+    const look = await card('Worth a second look')
+    expect(within(look).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
+      'Possible repeat charge: COFFEE HOUSE$4.50 on 21 Sep, and the same again on 23 Sep.If one was a mistake, ask the shop for a refund.',
+      'Maybe counted twice: TEA ROOM$6.25 you added, and $6.25 from your statement: 22 Sep and 23 Sep.If they are one purchase, remove the one you added in All transactions.',
+      'Bigger than usual: CAFE$180.00 on 20 Sep. A usual charge in Dining out is about $25.00.',
+      'First charge from a new shop: FURNITURE CO$450.00 on 12 Sep.',
+    ])
+    expect(within(look).getByRole('link', { name: 'Open All transactions' }).getAttribute('href')).toBe('#/ledger')
+  })
+
+  it('says so when nothing stands out', async () => {
+    go('/reports/2026-07')
+    renderScreen(<Shell />, shopsFake())
+    await openShops()
+    expect(within(await card('Worth a second look')).getByText('Nothing unusual in these days.')).toBeTruthy()
+  })
+})
