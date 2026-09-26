@@ -25,8 +25,8 @@ const LABEL: Readonly<Record<string, string>> = {
   days: 'Days since then',
   count: 'Waiting in Review',
   milestone: 'Milestone passed',
-  first: 'The first month read',
-  last: 'The last month read',
+  first: 'Spent in the first month',
+  last: 'Spent in the last month',
   first_month: 'From',
   last_month: 'To',
 }
