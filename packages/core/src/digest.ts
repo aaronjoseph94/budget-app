@@ -584,10 +584,9 @@ function detectors(input: FactsDigestInput): Fact[] {
   return [...out, ...unusual.doubles.map((p) => pairFact('possible_double', p)), ...unusual.countedTwice.map((p) => pairFact('counted_twice', p))]
 }
 
-/** Two charges of one amount, named by the statement's shop: a typed name is the owner's shorthand. */
+/** Two charges of one amount, named by the shop F39 names the pair by. */
 function pairFact(kind: 'possible_double' | 'counted_twice', pair: ChargePair): Fact {
-  const named = [pair.second, pair.first].find((c) => c.by === 'statement' && c.shop !== '') ?? [pair.first, pair.second].find((c) => c.shop !== '')
-  const subject = named === undefined ? { type: 'shop' as const, id: null, label: 'A charge' } : shopSubject(named.shop)
+  const subject = pair.shop === '' ? { type: 'shop' as const, id: null, label: 'A charge' } : shopSubject(pair.shop)
   return detected(`charges:${pair.first.id}:${pair.second.id}:${kind}`, kind, subject, 'solid', pair.amountCents, `${kind}:${pair.first.id}:${pair.second.id}`, {
     amount: { unit: 'cents', value: pair.amountCents },
     first: { unit: 'date', value: pair.first.postedOn },

@@ -72,6 +72,7 @@ describe('unusualCharges (F39): charged or counted twice', () => {
     const [a, b] = [row('2026-09-21', -4.5, 'COFFEE HOUSE'), row('2026-09-23', -4.5, 'COFFEE HOUSE')]
     expect(flagged([a, b]).doubles).toEqual([
       {
+        shop: 'COFFEE HOUSE',
         amountCents: 450,
         first: { id: a.id, postedOn: '2026-09-21', shop: 'COFFEE HOUSE', categoryId: 'dining', by: 'statement', amountCents: 450 },
         second: { id: b.id, postedOn: '2026-09-23', shop: 'COFFEE HOUSE', categoryId: 'dining', by: 'statement', amountCents: 450 },
@@ -92,7 +93,11 @@ describe('unusualCharges (F39): charged or counted twice', () => {
     const typed = row('2026-09-22', -6.25, 'COFFEE', 'dining', 'hand')
     const card = row('2026-09-23', -6.25, 'COFFEE HOUSE')
     const result = flagged([typed, card])
-    expect(result.countedTwice).toMatchObject([{ amountCents: 625, first: { id: typed.id, by: 'hand' }, second: { id: card.id, by: 'statement' } }])
+    expect(result.countedTwice).toMatchObject([{ shop: 'COFFEE HOUSE', amountCents: 625, first: { id: typed.id, by: 'hand' }, second: { id: card.id, by: 'statement' } }])
+    // Named by the statement's row whichever came first, and by the typed one's when the statement has no shop.
+    const later = row('2026-09-24', -6.25, 'COFFEE', 'dining', 'hand')
+    expect(flagged([card, later]).countedTwice[0]!.shop).toBe('COFFEE HOUSE')
+    expect(flagged([row('2026-09-22', -6.25, 'COFFEE', 'dining', 'hand'), row('2026-09-23', -6.25, '')]).countedTwice[0]!.shop).toBe('COFFEE')
     expect(result.doubles).toEqual([])
     expect(flagged([row('2026-09-19', -6.25, 'COFFEE', 'dining', 'hand'), card]).countedTwice).toEqual([])
   })

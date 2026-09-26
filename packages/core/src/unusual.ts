@@ -39,6 +39,8 @@ export interface LargeCharge extends FlaggedCharge {
 
 /** Two charges of one amount, the earlier first (by date, then id). */
 export interface ChargePair {
+  /** The shop to name it by: the statement row's, since a typed name is the owner's shorthand; '' when neither has one. */
+  readonly shop: string
   readonly amountCents: Cents
   readonly first: FlaggedCharge
   readonly second: FlaggedCharge
@@ -79,7 +81,7 @@ export function unusualCharges(input: UnusualInput): UnusualCharges {
     for (let i = j - 1; i >= 0 && daysBetween(charges[i]!.postedOn, b.postedOn) <= PAIR_DAYS; i--) {
       const a = charges[i]!
       if (a.sizeCents !== b.sizeCents) continue
-      const pair = { amountCents: b.sizeCents, first: flagged(a), second: flagged(b) }
+      const pair = { shop: pairShop(a, b), amountCents: b.sizeCents, first: flagged(a), second: flagged(b) }
       // A pair that is both says more as counted twice.
       if (a.by !== b.by) countedTwice.push(pair)
       else if (a.shop !== '' && a.shop === b.shop) doubles.push(pair)
@@ -104,6 +106,11 @@ function largeCharge(c: ShopRow, charges: readonly ShopRow[]): LargeCharge | nul
 function isNewShop(c: ShopRow, rows: readonly ShopRow[], from: IsoDate): boolean {
   if (c.sizeCents < NEW_SHOP_FLOOR || daysBetween(from, c.postedOn) < NEW_AFTER_DAYS) return false
   return !rows.some((r) => r.shop === c.shop && (r.postedOn < c.postedOn || (r.postedOn === c.postedOn && r.id < c.id)))
+}
+
+function pairShop(a: ShopRow, b: ShopRow): string {
+  const named = [b, a].find((c) => c.by === 'statement' && c.shop !== '') ?? [a, b].find((c) => c.shop !== '')
+  return named === undefined ? '' : named.shop
 }
 
 function flagged(r: ShopRow): FlaggedCharge {
