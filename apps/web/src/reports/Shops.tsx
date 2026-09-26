@@ -9,15 +9,17 @@ import { useMemo } from 'react'
 import type { Change } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { formatCents, formatChange, formatDateRange, formatDayMonth, formatMonthName } from '../format.js'
-import { notSubscriptionsOf, useDismissals } from '../coach/dismissals.js'
+import { notSubscriptionsOf, useDismissals, type Dismissals } from '../coach/dismissals.js'
 import { Row, Section } from '../forecast/parts.js'
 import { Failed } from './Failed.js'
 import { shopsOf, useShopsRead, type ShopFigures } from './shops-read.js'
+import { SubscriptionsCard } from './Subscriptions.js'
 
 export function ShopsPanel({ month, asOf }: { month: string; asOf: string }) {
   const { categories } = useAppData()
   const read = useShopsRead(month, asOf)
-  const { dismissed } = useDismissals()
+  const dismissals = useDismissals()
+  const { dismissed } = dismissals
   const figures = useMemo(() => {
     if (read.status !== 'ready') return read.status
     if (dismissed === null) return 'loading'
@@ -33,8 +35,17 @@ export function ShopsPanel({ month, asOf }: { month: string; asOf: string }) {
       {figures === 'loading' ? <p className="text-sm text-muted-foreground">Working out your shops…</p> : null}
       {figures === 'failed' ? <Failed missingUpdate={read.status === 'failed' && read.missingUpdate} /> : null}
       {figures === null ? <p className="text-sm">Nothing has happened in this month yet.</p> : null}
-      {typeof figures === 'object' && figures !== null ? <TopShopsCard figures={figures} /> : null}
+      {typeof figures === 'object' && figures !== null ? <Figures figures={figures} dismissals={dismissals} /> : null}
     </div>
+  )
+}
+
+function Figures({ figures, dismissals }: { figures: ShopFigures; dismissals: Dismissals }) {
+  return (
+    <>
+      <TopShopsCard figures={figures} />
+      <SubscriptionsCard series={figures.series} dismissals={dismissals} />
+    </>
   )
 }
 

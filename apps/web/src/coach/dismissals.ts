@@ -9,6 +9,7 @@
  */
 import { useCallback, useEffect, useState } from 'react'
 import { useAppData } from '../app-data.js'
+import { ReadRefused, needsOneTimeUpdate } from '../ledger.js'
 
 /** A shop the owner marked "Not a subscription" on Reports → Shops, kept as a dismissal (F38). */
 const NOT_SUBSCRIPTION = 'not_subscription:'
@@ -29,12 +30,18 @@ export interface Dismissals {
   readonly dismissed: ReadonlySet<string> | null
   /** False when 0017 is not in, or the read failed: ✕ is not offered. */
   readonly canDismiss: boolean
+  /** The read failed because 0017 is not in yet, so a screen can point to One-time updates. */
+  readonly missingUpdate: boolean
   readonly dismiss: (cause: string) => Promise<boolean>
 }
 
 export function useDismissals(): Dismissals {
   const { supabase, userId } = useAppData()
-  const [state, setState] = useState<{ dismissed: ReadonlySet<string> | null; canDismiss: boolean }>({ dismissed: null, canDismiss: false })
+  const [state, setState] = useState<{ dismissed: ReadonlySet<string> | null; canDismiss: boolean; missingUpdate: boolean }>({
+    dismissed: null,
+    canDismiss: false,
+    missingUpdate: false,
+  })
 
   useEffect(() => {
     let live = true
@@ -43,9 +50,12 @@ export function useDismissals(): Dismissals {
       .select('insight_key')
       .then(({ data, error }) => {
         if (!live) return
-        if (error !== null) return setState({ dismissed: new Set(), canDismiss: false })
+        if (error !== null) {
+          const missingUpdate = needsOneTimeUpdate(new ReadRefused('Dismissed insights could not be read.', error.code))
+          return setState({ dismissed: new Set(), canDismiss: false, missingUpdate })
+        }
         const keys = (data as readonly { insight_key: unknown }[]).map((r) => r.insight_key).filter((k): k is string => typeof k === 'string')
-        setState({ dismissed: new Set(keys), canDismiss: true })
+        setState({ dismissed: new Set(keys), canDismiss: true, missingUpdate: false })
       })
     return () => void (live = false)
   }, [supabase])

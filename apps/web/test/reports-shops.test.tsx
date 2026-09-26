@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import { SHOPS_TODAY, shopsFake } from './shops-seed.js'
@@ -80,5 +80,44 @@ describe('Reports, Shops: top shops', () => {
     expect(await screen.findByText('Reports need a one-time update.', { exact: false })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'Shops' }).getAttribute('aria-selected')).toBe('true')
     expect(screen.getByRole('link', { name: 'See One-time updates' }).getAttribute('href')).toBe('#/help/updates')
+  })
+})
+
+describe('Reports, Shops: subscriptions', () => {
+  it('lists each regular charge with how often, its next date, a year of it and a price change', async () => {
+    go('/reports')
+    renderScreen(<Shell />, shopsFake())
+    await openShops()
+    const subs = await card('Subscriptions and regular charges')
+    const [gym, spotify] = within(subs).getAllByRole('listitem')
+    expect(within(gym!).getByText('New')).toBeTruthy()
+    expect(gym!.textContent).toContain('Monthly · next about 21 Oct · $540.00 a year')
+    expect(spotify!.textContent).toContain('Monthly · next about 15 Oct · $155.88 a year')
+    expect(spotify!.textContent).toContain('Price went up from $11.99 to $12.99')
+  })
+
+  it('marks one as not a subscription, kept on every device, and it is never called one again', async () => {
+    const fake = shopsFake()
+    go('/reports')
+    renderScreen(<Shell />, fake)
+    await openShops()
+    const subs = await card('Subscriptions and regular charges')
+    fireEvent.click(within(subs).getByRole('button', { name: 'Not a subscription: SPOTIFY' }))
+    await waitFor(() => expect(fake.tables.insight_dismissals.map((r) => r['insight_key'])).toEqual(['not_subscription:SPOTIFY']))
+    await waitFor(() => expect(within(subs).queryByText('SPOTIFY')).toBeNull())
+    expect(within(subs).getByText('GYM')).toBeTruthy()
+  })
+
+  it('says in one line that marking needs a one-time update without 0017, and still lists every charge', async () => {
+    const fake = shopsFake()
+    fake.fail('insight_dismissals', 'PGRST205')
+    go('/reports')
+    renderScreen(<Shell />, fake)
+    await openShops()
+    const subs = await card('Subscriptions and regular charges')
+    expect(await within(subs).findByText('Marking one as not a subscription needs a one-time update.', { exact: false })).toBeTruthy()
+    expect(within(subs).getAllByRole('listitem')).toHaveLength(2)
+    expect(within(subs).queryByRole('button', { name: /Not a subscription/ })).toBeNull()
+    expect(within(subs).getByRole('link', { name: 'See One-time updates' }).getAttribute('href')).toBe('#/help/updates')
   })
 })
