@@ -33,11 +33,12 @@ function dayWith(diningSept: number): Day {
     cards: rankCards({ facts, dismissed: new Set() }).cards,
     goals: [{ id: 'g1', name: 'Flight training', main: true, hasHours: true }, { id: 'g2', name: 'Emergency fund', main: false, hasHours: false }],
     quotes: LIBRARY.slice(0, 6),
+    shareShopNames: true,
   }
 }
 
 const DAY = dayWith(60_000)
-const payload = modelPayload({ tone: DAY.tone, line: DAY.line!.fact, cards: DAY.cards, goals: DAY.goals, quotes: DAY.quotes })
+const payload = modelPayload({ tone: DAY.tone, line: DAY.line!.fact, cards: DAY.cards, goals: DAY.goals, quotes: DAY.quotes, shareShopNames: true })
 const letter = (key: string) => Object.entries(payload.keys).find(([, k]) => k === key)![0]
 const L = { line: letter('summary:month'), stale: letter('data:stale'), review: letter('review:waiting'), dining: letter('cat:dining:change'), flight: letter('goal:g1') }
 

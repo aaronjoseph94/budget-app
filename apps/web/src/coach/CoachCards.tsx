@@ -103,6 +103,7 @@ const ACTION: Readonly<Record<CardAction, { readonly label: string; readonly go:
   see_month: { label: 'See the Month', go: () => navigate('month') },
   goals: { label: 'See your goals', go: () => navigate('savings') },
   forecast: { label: 'Open the Forecast', go: () => navigate('forecast') },
+  shops: { label: 'See your shops', go: () => navigate('reports') },
 }
 
 /**

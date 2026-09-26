@@ -14,6 +14,7 @@ const line = dayLine({ facts: FACTS, tone: 'cheerleader' })!
 const cards = rankCards({ facts: FACTS, dismissed: new Set() }).cards
 const { brief, keys } = modelPayload({
   tone: 'cheerleader',
+  shareShopNames: true,
   line: factOf(line.factKey),
   cards,
   goals: [

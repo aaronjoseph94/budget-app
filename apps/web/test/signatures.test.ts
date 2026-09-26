@@ -26,9 +26,10 @@ function day(diningCents: number, tone: Tone = 'cheerleader'): Day {
     cards: rankCards({ facts, dismissed: new Set() }).cards,
     goals: [{ id: 'g1', name: 'Flight training', main: true, hasHours: true }, { id: 'g2', name: 'Travel', main: false, hasHours: false }],
     quotes: [],
+    shareShopNames: true,
   }
 }
-const payloadOf = (today: Day) => modelPayload({ tone: today.tone, line: today.line!.fact, cards: today.cards, goals: today.goals, quotes: [] })
+const payloadOf = (today: Day) => modelPayload({ tone: today.tone, line: today.line!.fact, cards: today.cards, goals: today.goals, quotes: [], shareShopNames: true })
 
 describe('today’s signatures', () => {
   it('sign the whole brief and each part, as SHA-256 hex', async () => {

@@ -72,7 +72,8 @@ function useKeptLine(line: { readonly text: string; readonly fact: Fact } | null
       const read = await readNotes(supabase)
       if (!live) return
       const notes = read.ok ? read.notes : []
-      const day = { tone, line, cards: [], goals: [], quotes: [] }
+      // The line speaks of a month or a week, never a shop.
+      const day = { tone, line, cards: [], goals: [], quotes: [], shareShopNames: true }
       const found = reuse(day, { factsSig: '', parts: new Map([[fact.key, sig]]) }, notes).narration.line
       if (found?.ai === true) setKept({ state: 'found', words: found })
       else setKept({ state: 'none', askedToday: askedHereToday(asOf) || notes.some((n) => n.scope === `day:${asOf}`) })

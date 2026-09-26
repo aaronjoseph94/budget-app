@@ -46,6 +46,8 @@ export interface Day {
   readonly cards: readonly Card[]
   readonly goals: readonly PayloadGoal[]
   readonly quotes: readonly LibraryEntry[]
+  /** AI settings' Share shop names: off, the brief says "a shop". */
+  readonly shareShopNames: boolean
 }
 
 /** Today's signatures: the whole brief's, and each part's by its fact key (`goals` for the goal line). */

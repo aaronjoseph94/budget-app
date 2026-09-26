@@ -33,7 +33,7 @@ export function useCoachDay(read: DigestRows | 'failed' | null, funds: FundsStat
   const { goals, mainGoal } = useAppData()
   const coreGoals = useMemo(() => goalsForCore(goals, funds), [goals, funds])
   const digest = useCoachFacts(read, coreGoals)
-  const tone = useCoachSettings()?.tone ?? null
+  const settings = useCoachSettings()
   const dismissals = useDismissals()
   const { dismissed } = dismissals
   const asOf = todayIso()
@@ -49,9 +49,11 @@ export function useCoachDay(read: DigestRows | 'failed' | null, funds: FundsStat
   }, [facts, dismissed])
   const pick = useQuotePick(topFacts, mainGoal, asOf)
   const day = useMemo((): Day | null => {
-    if (facts === null || tone === null || dismissed === null) return null
+    if (facts === null || settings === null || dismissed === null) return null
+    const { tone, shareShopNames } = settings
     return {
       tone,
+      shareShopNames,
       line: todaysLine(facts, tone),
       cards: [...todaysCards(facts, dismissed), ...(forecast === null ? [] : [forecast])],
       goals: goals
@@ -59,6 +61,6 @@ export function useCoachDay(read: DigestRows | 'failed' | null, funds: FundsStat
         .map((g) => ({ id: g.id, name: g.name, main: g.id === mainGoal?.id, hasHours: g.unit_cost_cents !== null })),
       quotes: pick.shortlist,
     }
-  }, [facts, forecast, tone, dismissed, goals, mainGoal, pick.shortlist])
+  }, [facts, forecast, settings, dismissed, goals, mainGoal, pick.shortlist])
   return { digest, day, pick, asOf, dismissals }
 }

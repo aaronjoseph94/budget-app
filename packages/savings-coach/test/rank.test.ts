@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { factsDigest } from '@budget/core'
 import { forecastCard, rankCards } from '../src/index.js'
-import { EVERY_KIND, FACTS, WIN_FACTS, factOf, forecastOf } from './fixtures.js'
+import { EVERY_KIND, FACTS, SHOP_FACTS, WIN_FACTS, factOf, forecastOf } from './fixtures.js'
 
 const none = new Set<string>()
 const keys = (facts = FACTS, dismissed: ReadonlySet<string> = none) => rankCards({ facts, dismissed }).cards.map((c) => c.fact.key)
@@ -61,6 +61,20 @@ describe('rankCards', () => {
       ['change_up', 'see_month'],
     ])
     expect(rankCards({ facts: fresh, dismissed: none }).cards.map((c) => c.template)).toEqual(['change_up', 'change_down', 'budget_pace'])
+  })
+
+  it('sends each detector’s card to the shops, and gives a shop one card (F38, F39)', () => {
+    const one = (key: string) => rankCards({ facts: [factOf(key)], dismissed: none }).cards.map((c) => [c.template, c.action])
+    expect(one('shop:SPOTIFY:price_rise')).toEqual([['price_rise', 'shops']])
+    expect(one('shop:GYM:new_subscription')).toEqual([['new_subscription', 'shops']])
+    expect(one('charge:big:large')).toEqual([['large_charge', 'shops']])
+    expect(one('charge:sofa:new_shop')).toEqual([['new_shop', 'shops']])
+    expect(one('charges:k1:k2:possible_double')).toEqual([['possible_double', 'shops']])
+    expect(one('charges:t1:t2:counted_twice')).toEqual([['counted_twice', 'shops']])
+    // A repeat at CAFE, beside CAFE's large charge: one card for the shop, the bigger.
+    const again = { ...factOf('charges:k1:k2:possible_double'), key: 'charges:c9:c10:possible_double', subject: factOf('charge:big:large').subject }
+    expect(keys([again, factOf('charge:big:large')])).toEqual(['charge:big:large'])
+    expect(keys(SHOP_FACTS)).toHaveLength(2)
   })
 
   it('cheers a milestone near the top, and sends both wins to the goals', () => {

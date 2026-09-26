@@ -41,6 +41,7 @@ function inputFor(facts: readonly Fact[], over: Partial<ModelPayloadInput> = {})
     cards: rankCards({ facts, dismissed: new Set() }).cards,
     goals: GOALS,
     quotes: LIBRARY.slice(0, 6),
+    shareShopNames: true,
     ...over,
   }
 }
@@ -108,6 +109,16 @@ describe('modelPayload', () => {
     const named = { ...factOf('cat:dining:change'), subject: { type: 'category' as const, id: 'dining', label: 'PIZZA PLACE #04417 LONDON ONTARIO CANADA N6A' } }
     const { brief } = modelPayload(inputFor(FACTS, { line: null, cards: [{ fact: named, template: 'change_up', action: 'see_month' }] }))
     expect(brief.facts[0]?.about).toBe('PIZZA PLACE ## LONDON ONTARIO CANADA N6A')
+  })
+
+  it('says "a shop" for a shop when Share shop names is off, and still names a category', () => {
+    const cards = [
+      { fact: factOf('shop:SPOTIFY:price_rise'), template: 'price_rise' as const, action: 'shops' as const },
+      { fact: factOf('cat:dining:change'), template: 'change_up' as const, action: 'see_month' as const },
+    ]
+    const about = (shareShopNames: boolean) => modelPayload(inputFor(FACTS, { line: null, cards, shareShopNames })).brief.facts.map((f) => f.about)
+    expect(about(true)).toEqual(['SPOTIFY', 'Dining out'])
+    expect(about(false)).toEqual(['a shop', 'Dining out'])
   })
 })
 

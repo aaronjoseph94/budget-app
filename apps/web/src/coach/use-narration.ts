@@ -102,7 +102,14 @@ export function useNarration(day: Day | null, asOf: string, auto: boolean): Narr
     brief.current = null
     setState({ narration: ownWords(day), status: 'loading', view: null, provider: null, canRefresh: false })
     void (async () => {
-      const payload = modelPayload({ tone: day.tone, line: day.line?.fact ?? null, cards: day.cards, goals: day.goals, quotes: day.quotes })
+      const payload = modelPayload({
+        tone: day.tone,
+        line: day.line?.fact ?? null,
+        cards: day.cards,
+        goals: day.goals,
+        quotes: day.quotes,
+        shareShopNames: day.shareShopNames,
+      })
       const signed = await sign(day, payload)
       const read = await readNotes(supabase)
       if (mine !== run.current) return

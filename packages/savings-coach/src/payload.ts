@@ -38,6 +38,8 @@ export interface ModelPayloadInput {
   readonly goals: readonly PayloadGoal[]
   /** The quote shortlist, at most six (pickQuote). */
   readonly quotes: readonly LibraryEntry[]
+  /** AI settings' Share shop names: off, a shop is sent as "a shop" (plan §3.6). */
+  readonly shareShopNames: boolean
 }
 
 export interface ModelPayload {
@@ -65,7 +67,8 @@ export function modelPayload(input: ModelPayloadInput): ModelPayload {
     const id = letterOf(i)
     keys[id] = fact.key
     const { kind, direction, size, evidence, meaning } = fact
-    return { id, kind, about: maskLabel(fact.subject.label), direction, size, evidence, meaning, slots: slotsOf(fact) }
+    const about = fact.subject.type === 'shop' && !input.shareShopNames ? 'a shop' : maskLabel(fact.subject.label)
+    return { id, kind, about, direction, size, evidence, meaning, slots: slotsOf(fact) }
   })
   const goals: NarrateGoal[] = input.goals.map((goal, i) => {
     const id = letterOf(facts.length + i)
