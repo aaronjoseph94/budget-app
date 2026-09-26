@@ -41,7 +41,7 @@ const kinds = (input: FactsDigestInput) => factsDigest(input).facts.map((f) => f
 describe('factsDigest, version 1', () => {
   it('puts stale data first, rows waiting second, then this month and this week against the same days before', () => {
     const digest = factsDigest(base)
-    expect(digest.version).toBe(1)
+    expect(digest.version).toBe(2)
     expect(digest.facts.slice(0, 4).map((f) => f.key)).toEqual(['data:stale', 'review:waiting', 'summary:month', 'summary:week'])
   })
 

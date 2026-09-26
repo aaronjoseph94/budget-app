@@ -20,8 +20,14 @@
  * ranked among them: the Coach gives it a card of its own. Plan A16 adds
  * each Variable category rising or falling steadily (F37). They join
  * version 1 too: a new kind of fact changes no fact already made.
+ *
+ * Version 2 (plan A17) adds the detectors, from each row's shop: a price
+ * rise and a new subscription (F38); a large charge, a first large charge
+ * at a new shop, a possible double and a charge that may be counted twice
+ * (F39). Each is always a card, to watch, and its cause names the shop or
+ * the rows, so a dismissed one stays gone and the next one comes back.
  */
-import { type Cents, type IsoDate, cents, daysBetween } from '@budget/money-primitives'
+import { type Cents, type IsoDate, addDays, cents, daysBetween } from '@budget/money-primitives'
 import type { BudgetHistoryRow } from './budgets.js'
 import { type Change, periodComparison } from './compare.js'
 import { cashFlow30 } from './cash-flow-30.js'
@@ -37,10 +43,13 @@ import { monthEndForecast } from './month-end.js'
 import type { MonthForecastInput } from './month-position.js'
 import { type PeriodCategory, type PeriodEntry, monthSheet } from './period-sheet.js'
 import type { PlanHistoryRow } from './plans.js'
+import { recurringCharges } from './recurring.js'
+import type { ShopEntry } from './shops.js'
+import { type ChargePair, unusualCharges } from './unusual.js'
 import { TREND_MONTHS, trendLabel } from './trends.js'
 import { monthBounds, weekBounds } from './week.js'
 
-export const DIGEST_VERSION = 1
+export const DIGEST_VERSION = 2
 
 export interface FactsDigestInput {
   /** Today: its month and week are the ones spoken about. */
@@ -64,6 +73,12 @@ export interface FactsDigestInput {
   readonly goals: readonly DigestGoal[]
   /** What the month's forecast needs besides (F29 to F32); left out where only the summaries are needed. */
   readonly forecast?: { readonly paySchedules: readonly IncomeSchedule[]; readonly startingBalanceCents: number | null }
+  /**
+   * The rows again, each with its shop and how it came in, and the shops the
+   * owner marked "Not a subscription" (F38, F39); left out where only the
+   * summaries are needed, as on the Month.
+   */
+  readonly shops?: { readonly entries: readonly ShopEntry[]; readonly notSubscriptions: readonly string[] }
 }
 
 /** An active goal as goalMilestones reads it, with what the owner calls it. */
@@ -91,6 +106,12 @@ export type FactKind =
   | 'goal_milestone'
   | 'month_forecast'
   | 'category_trend'
+  | 'price_rise'
+  | 'new_subscription'
+  | 'large_charge'
+  | 'new_shop'
+  | 'possible_double'
+  | 'counted_twice'
 
 /** One figure a sentence can name by its slot. A change carries its direction word (ADR 0005 §5). */
 export type Figure =
@@ -112,7 +133,7 @@ export interface Fact {
   readonly kind: FactKind
   /** What it is about. The label is what the owner sees: a name, never an id. */
   readonly subject: {
-    readonly type: 'data' | 'review' | 'month' | 'week' | 'category' | 'goal'
+    readonly type: 'data' | 'review' | 'month' | 'week' | 'category' | 'goal' | 'shop'
     readonly id: string | null
     readonly label: string
   }
@@ -148,7 +169,7 @@ const STALE_AFTER_DAYS = 10
 export function factsDigest(input: FactsDigestInput): FactsDigest {
   const history = completeMonths(input)
   const first: Fact[] = [...staleData(input), ...rowsWaiting(input), ...summaries(input)]
-  const rest = [...categoryChanges(input, history.months), ...trends(input, history.months), ...budgets(input), ...savedMore(input), ...milestones(input)].sort(
+  const rest = [...categoryChanges(input, history.months), ...trends(input, history.months), ...budgets(input), ...savedMore(input), ...milestones(input), ...detectors(input)].sort(
     (a, b) => Number(b.notable) - Number(a.notable) || b.impact - a.impact || (a.key < b.key ? -1 : 1),
   )
   const forecast = input.forecast === undefined ? null : forecastFact({ ...input, ...input.forecast })
@@ -497,6 +518,105 @@ export function forecastFact(input: MonthForecastInput): Fact | null {
     impact: 0,
     cause: `month_forecast:${month}`,
   }
+}
+
+/** The detectors look back this many days, today included (F38, F39). */
+const DETECT_DAYS = 30
+/** A shop's name in a cause is cut to this many characters, so a cause fits what 0017 keeps. */
+const CAUSE_SHOP = 100
+
+/**
+ * Price rises and new subscriptions (F38), and unusual, doubled and
+ * twice-counted charges (F39), over the last 30 days. Each is always a
+ * card, to watch; its monthly effect is a month of the subscription or
+ * the charge itself (F44).
+ */
+function detectors(input: FactsDigestInput): Fact[] {
+  const { shops } = input
+  if (shops === undefined) return []
+  const rows = { historyStart: input.historyStart, readFrom: input.readFrom, categories: input.categories, entries: shops.entries }
+  const window = { from: addDays(input.asOf, -(DETECT_DAYS - 1)), to: input.asOf }
+  const out: Fact[] = []
+  for (const s of recurringCharges({ ...rows, asOf: input.asOf, notSubscriptions: shops.notSubscriptions }).series) {
+    const next = { unit: 'date', value: s.next } as const
+    const year = { unit: 'cents', value: s.yearCents } as const
+    if (s.priceChange !== null && s.priceChange.direction === 'up' && s.last >= window.from) {
+      const { beforeCents, nowCents } = s.priceChange
+      out.push(
+        detected(`shop:${s.shop}:price_rise`, 'price_rise', shopSubject(s.shop), 'solid', s.monthCents, `price_rise:${cut(s.shop)}:${s.last}`, {
+          before: { unit: 'cents', value: beforeCents },
+          now: { unit: 'cents', value: nowCents },
+          change: { unit: 'change', value: cents(nowCents - beforeCents), direction: 'more' },
+          next,
+          year,
+        }),
+      )
+    }
+    if (s.isNew) {
+      out.push(
+        detected(`shop:${s.shop}:new_subscription`, 'new_subscription', shopSubject(s.shop), 'some', s.monthCents, `new_subscription:${cut(s.shop)}:${s.first}`, {
+          price: { unit: 'cents', value: s.priceCents },
+          first: { unit: 'date', value: s.first },
+          next,
+          year,
+        }),
+      )
+    }
+  }
+  const unusual = unusualCharges({ ...rows, window })
+  for (const c of unusual.large) {
+    out.push(
+      detected(`charge:${c.id}:large`, 'large_charge', shopSubject(c.shop), 'some', c.amountCents, `large_charge:${c.id}`, {
+        amount: { unit: 'cents', value: c.amountCents },
+        date: { unit: 'date', value: c.postedOn },
+        usual: { unit: 'cents', value: c.usualCents },
+      }),
+    )
+  }
+  for (const c of unusual.newShop) {
+    out.push(
+      detected(`charge:${c.id}:new_shop`, 'new_shop', shopSubject(c.shop), 'some', c.amountCents, `new_shop:${c.id}`, {
+        amount: { unit: 'cents', value: c.amountCents },
+        date: { unit: 'date', value: c.postedOn },
+      }),
+    )
+  }
+  return [...out, ...unusual.doubles.map((p) => pairFact('possible_double', p)), ...unusual.countedTwice.map((p) => pairFact('counted_twice', p))]
+}
+
+/** Two charges of one amount, named by the statement's shop: a typed name is the owner's shorthand. */
+function pairFact(kind: 'possible_double' | 'counted_twice', pair: ChargePair): Fact {
+  const named = [pair.second, pair.first].find((c) => c.by === 'statement' && c.shop !== '') ?? [pair.first, pair.second].find((c) => c.shop !== '')
+  const subject = named === undefined ? { type: 'shop' as const, id: null, label: 'A charge' } : shopSubject(named.shop)
+  return detected(`charges:${pair.first.id}:${pair.second.id}:${kind}`, kind, subject, 'solid', pair.amountCents, `${kind}:${pair.first.id}:${pair.second.id}`, {
+    amount: { unit: 'cents', value: pair.amountCents },
+    first: { unit: 'date', value: pair.first.postedOn },
+    second: { unit: 'date', value: pair.second.postedOn },
+  })
+}
+
+function detected(key: string, kind: FactKind, subject: Fact['subject'], evidence: Evidence, monthly: Cents, cause: string, figures: Fact['figures']): Fact {
+  return {
+    key,
+    kind,
+    subject,
+    direction: kind === 'price_rise' ? 'up' : 'none',
+    size: null,
+    evidence,
+    meaning: 'watch',
+    notable: true,
+    figures,
+    impact: impactScore({ effect: 'monthly', monthlyCents: monthly, evidence }).impact,
+    cause,
+  }
+}
+
+function shopSubject(shop: string): Fact['subject'] {
+  return { type: 'shop', id: shop, label: shop }
+}
+
+function cut(shop: string): string {
+  return [...shop].slice(0, CAUSE_SHOP).join('')
 }
 
 /** The engine's own sheets list every category given, so this cannot miss. */

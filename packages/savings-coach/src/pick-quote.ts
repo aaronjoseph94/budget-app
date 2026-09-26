@@ -72,6 +72,15 @@ function tagsOf(fact: Fact): readonly QuoteTag[] {
       return ['milestone', 'goal', 'courage']
     case 'month_forecast':
       return []
+    case 'price_rise':
+    case 'new_subscription':
+      return ['subscriptions', 'small_leaks']
+    case 'large_charge':
+    case 'new_shop':
+      return ['impulse', 'enough']
+    case 'possible_double':
+    case 'counted_twice':
+      return ['habits']
   }
 }
 

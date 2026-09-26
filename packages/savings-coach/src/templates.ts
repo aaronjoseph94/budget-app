@@ -263,6 +263,14 @@ export function cardTemplateKey(fact: Fact): CardTemplateKey | null {
     case 'month_so_far':
     case 'week_so_far':
       return null
+    // Digest version 2's detectors (plan A17) are worded in the next change.
+    case 'price_rise':
+    case 'new_subscription':
+    case 'large_charge':
+    case 'new_shop':
+    case 'possible_double':
+    case 'counted_twice':
+      return null
   }
 }
 
