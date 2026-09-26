@@ -2067,6 +2067,15 @@ depends on it today.
 which maps coverage by the source's own syntax tree, and measure three
 runs before and after.
 
+**Update, 2026-09-26 (A17):** a floor did come to depend on it.
+`apps/web/src/format.ts` went RED twice in about ten full runs at
+67.85% of branches, then GREEN on the same tree. Measured alone, the
+node project reports it as 135 branches (89.6% covered) and the DOM
+project as 111 (67.6%); a merged run normally reads 152, and a RED one
+had kept the DOM's map alone. `format-dom.test.tsx` now runs
+format.test.ts's cases in the DOM project too (89.9% there alone), so
+the floor holds whichever map survives. The merge itself still moves.
+
 ---
 
 ## N86 — Two small layout points on the Forecast
