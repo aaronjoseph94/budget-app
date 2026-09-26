@@ -91,6 +91,14 @@ describe('recurringCharges (F38)', () => {
     // $30.00: 10% is $3.00, so $33.00 is inside and $33.01 is not.
     expect(found(every('2026-06-01', [30, 30, 30], [30, 33, 30, 30]))).toHaveLength(1)
     expect(found(every('2026-06-01', [30, 30, 30], [30, 33.01, 30, 30]))).toEqual([])
+    // $5.00: 10% is 50 cents, under the $1.00 floor, so $5.90 is inside and $6.01 is not.
+    expect(found(every('2026-06-01', [30, 30, 30], [5, 5.9, 5, 5]))).toHaveLength(1)
+    expect(found(every('2026-06-01', [30, 30, 30], [5, 6.01, 5, 5]))).toEqual([])
+  })
+
+  it('takes a month as a year ÷ 12, half-up', () => {
+    // $10.01 weekly: a year is $520.52, and ÷ 12 is 4,337.67 cents, so $43.38.
+    expect(found(every('2026-09-03', [7, 7, 7], 10.01))[0]).toMatchObject({ cadence: 'weekly', yearCents: 52_052, monthCents: 4_338 })
   })
 
   it('leaves out a series that has stopped, once the longest gap has passed', () => {

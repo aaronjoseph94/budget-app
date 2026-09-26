@@ -64,6 +64,12 @@ describe('topShops (F41)', () => {
     expect(result.shops.map((s) => s.shop)).toEqual(['LANDLORD'])
   })
 
+  it('leaves out a shop whose refunds cancel its charges, a net of $0', () => {
+    const result = shops([row('2026-09-03', -20, 'SHOE SHOP'), row('2026-09-08', 20, 'SHOE SHOP'), row('2026-09-09', -5, 'TEA')])
+    if (result.status !== 'ready') throw new Error('expected shops')
+    expect(result.shops.map((s) => s.shop)).toEqual(['TEA'])
+  })
+
   it('keeps the top 10, ties by shop', () => {
     const many = 'LKJIHGFEDCBA'.split('').map((letter) => row('2026-09-02', -10, `SHOP ${letter}`))
     const result = shops(many)

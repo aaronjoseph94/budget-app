@@ -70,6 +70,13 @@ describe('Setup’s monthly bill nudge', () => {
     expect(screen.queryByText(/SPOTIFY charged/)).toBeNull()
   })
 
+  it('still offers it on a row whose monthly amount was stopped', async () => {
+    const fake = shopsFake()
+    fake.tables.category_plans.push({ id: 'p1', category_id: 'music', effective_month: '2026-01-01', planned_cents: null, due_day: null })
+    renderScreen(<SetupScreen />, fake)
+    expect(await (await music()).findByText(/SPOTIFY charged/)).toBeTruthy()
+  })
+
   it('leaves Setup working, with no nudge, when the charges cannot be read', async () => {
     const fake = shopsFake()
     fake.fail('transactions', '08006')
