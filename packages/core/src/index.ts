@@ -304,6 +304,15 @@ export {
   type RecurringInput,
 } from './recurring.js'
 
+export {
+  unusualCharges,
+  type ChargePair,
+  type FlaggedCharge,
+  type LargeCharge,
+  type UnusualCharges,
+  type UnusualInput,
+} from './unusual.js'
+
 export { dailyIndex, impactScore, type ImpactScore, type ImpactScoreInput } from './impact.js'
 
 export {

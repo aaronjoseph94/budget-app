@@ -1727,6 +1727,9 @@ shown, to `asOf` while it runs. Earlier charges are read for comparison.
   the same amount, at most 3 days apart, whatever each calls the shop (a
   typed "coffee" is the statement's "COFFEE HOUSE"). A pair that is both is
   listed here only, as this says more.
+- **A row with no shop** counts toward its category's usual charge and can
+  be half of a pair counted twice; it is never called large, new or a
+  double, having no shop to name.
 - **Each is flagged, never hidden:** Shops lists every one, whatever the
   Coach's cards show, and nothing is removed or left out of a total.
   Keeping out a duplicate import is the dedupe hash's job, not this.
