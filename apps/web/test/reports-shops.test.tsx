@@ -133,11 +133,22 @@ describe('Reports, Shops: worth a second look', () => {
     const look = await card('Worth a second look')
     expect(within(look).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
       'Possible repeat charge: COFFEE HOUSE$4.50 on 21 Sep, and the same again on 23 Sep.If one was a mistake, ask the shop for a refund.',
-      'Maybe counted twice: TEA ROOM$6.25 you added, and $6.25 from your statement: 22 Sep and 23 Sep.If they are one purchase, remove the one you added in All transactions.',
+      'Maybe counted twice: TEA ROOM$6.25 you added on 22 Sep, and $6.25 from your statement on 23 Sep.If they are one purchase, remove the one you added in All transactions.',
       'Bigger than usual: CAFE$180.00 on 20 Sep. A usual charge in Dining out is about $25.00.',
       'First charge from a new shop: FURNITURE CO$450.00 on 12 Sep.',
     ])
     expect(within(look).getByRole('link', { name: 'Open All transactions' }).getAttribute('href')).toBe('#/ledger')
+  })
+
+  it('gives each date to its own row when the statement’s comes first', async () => {
+    const fake = shopsFake()
+    const at = fake.tables.transactions.findIndex((r) => r['id'] === 't1')
+    fake.tables.transactions.splice(at, 1, { ...fake.tables.transactions[at]!, posted_on: '2026-09-24' })
+    go('/reports')
+    renderScreen(<Shell />, fake)
+    await openShops()
+    const look = await card('Worth a second look')
+    expect(within(look).getByText(/you added on/).textContent).toBe('$6.25 you added on 24 Sep, and $6.25 from your statement on 23 Sep.')
   })
 
   it('says so when nothing stands out', async () => {

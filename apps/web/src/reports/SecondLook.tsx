@@ -33,13 +33,17 @@ function flagsOf(unusual: UnusualCharges, nameOf: (id: string) => string): Flag[
       detail: `${amount(p.amountCents)} on ${formatDayMonth(p.first.postedOn)}, and the same again on ${formatDayMonth(p.second.postedOn)}.`,
       help: 'If one was a mistake, ask the shop for a refund.',
     })),
-    ...unusual.countedTwice.map((p) => ({
-      key: `twice:${p.first.id}:${p.second.id}`,
-      title: 'Maybe counted twice',
-      shop: pairShop(p),
-      detail: `${amount(p.amountCents)} you added, and ${amount(p.amountCents)} from your statement: ${formatDayMonth(p.first.postedOn)} and ${formatDayMonth(p.second.postedOn)}.`,
-      help: 'If they are one purchase, remove the one you added in All transactions.',
-    })),
+    ...unusual.countedTwice.map((p) => {
+      // Either may come first by date; each date goes with the row it belongs to.
+      const [added, imported] = p.first.by === 'hand' ? [p.first, p.second] : [p.second, p.first]
+      return {
+        key: `twice:${p.first.id}:${p.second.id}`,
+        title: 'Maybe counted twice',
+        shop: pairShop(p),
+        detail: `${amount(p.amountCents)} you added on ${formatDayMonth(added.postedOn)}, and ${amount(p.amountCents)} from your statement on ${formatDayMonth(imported.postedOn)}.`,
+        help: 'If they are one purchase, remove the one you added in All transactions.',
+      }
+    }),
     ...unusual.large.map((c) => ({
       key: `large:${c.id}`,
       title: 'Bigger than usual',
