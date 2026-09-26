@@ -1615,6 +1615,170 @@ with September to December whole, trends are possible from **January
 
 ---
 
+## F38 — Subscriptions: which charges repeat, and when a price changed
+
+**Decided 2026-09-26. Engineering default. Not from the workbook,** whose
+Bills tab holds what the owner types and never reads a statement for a
+pattern. Decided by the engineer under the owner's 2026-09-24 instruction
+to proceed without questions (plan §2.6, §7, §11; built in slice A17).
+
+**A shop, and its charges** (shared with F39 and F41).
+
+- **A shop** is the statement's descriptor as `statement-parsers`'
+  `normalizeMerchant` tidies it (the same key a learned rule matches). The
+  app passes it in with each row as data, so core still imports only
+  `money-primitives`. A row whose key is empty belongs to no shop.
+- **A charge** is a row below $0 on a spending list (Bills, Debts,
+  Subscriptions, Variable expenses); its size is the amount without its
+  sign. **A refund** is a row above $0 on one. Rows on Income, Savings and
+  Not spending are never a shop's.
+- **The records covered** start at the later of history start (F24) and the
+  first day read. A row before them is not looked at.
+- **By hand or from a statement:** rows typed in Add, and rows read from a
+  receipt photo, are *by hand*; rows from a card statement (CSV, Excel or
+  PDF) are *from a statement*.
+
+**Chosen.**
+
+- **A series** is every charge of one shop in the records covered up to
+  `asOf`, oldest first (by date, then row id). It needs **3 or more
+  charges**, and **every gap** between one charge and the next in **one
+  band**: 6–8 days (weekly), 12–16 (fortnightly), 26–35 (monthly) or
+  350–380 (yearly), ends included.
+- **Steady amounts:** every charge **but the latest** is within
+  max(100 cents, 10% of their median, half-up) of the median of those
+  charges (F27's median). The latest is within that too, **or** it is a
+  price change (below) of at most half the charge before it.
+- **Still running:** `asOf` is at most the band's longest gap after the
+  latest charge (35 days for monthly). A series that has stopped, such as a
+  cancelled plan, is not listed.
+- **Not a subscription:** a shop the owner marked so is never a series.
+- **Next date** = the latest charge + the median gap (F27's median, half-up).
+- **A price change:** the latest charge differs from the one before by at
+  least 50 cents **and** at least 2% of the one before
+  (`|latest − previous| × 50 ≥ previous`). Up or down.
+- **Its price** is the latest charge when a price changed, else the median.
+  **A year's cost** = price × 52, 26, 12 or 1; **a month's** = a year's ÷
+  12, half-up.
+- **New:** the first charge is at most 100 days before `asOf`, and the
+  records covered begin at least one band's longest gap before it, so an
+  earlier charge would have been seen.
+- **Order:** largest year's cost first, ties by shop.
+- **"Looks like a monthly bill"** (Setup): a monthly series whose latest
+  charge is filed on Bills, Debts or Subscriptions, under a category with
+  no monthly amount in effect this month. It offers the price and the day
+  of the month of the latest charge; one per category, the largest year's
+  cost. Nothing is written until the owner saves the bill.
+- **In the Coach's digest (version 2):** a price rise whose latest charge
+  is in the last 30 days (`price_rise`), and a new series (`new_subscription`),
+  are facts, always worth a card, to watch. A price rise is *solid* (the
+  statement says it), a new series *some*. Monthly effect (F44): its
+  month's cost. A dismissal names the shop and the latest charge's date
+  (a price rise) or the first charge's (new), so the next rise comes back.
+
+**Why the latest charge is judged apart.** The plan's rule held every
+amount to 10% of the median, which hides the very rise it must report:
+$15.99 three times then $18.99 is 19% above its median, so the series
+would vanish and no rise would show. The cap at half the charge before
+keeps a one-off large purchase at a shop from reading as a price change.
+
+**Worked example.** Thursday 24 September 2026, records from 1 February.
+**SPOTIFY** $11.99 on 14 May, 14 June, 14 July and 14 August, and $12.99 on
+14 September. Gaps 31, 30, 31, 31: monthly. The first four's median is
+$11.99, tolerance max($1.00, $1.20) = $1.20, all within. Latest $12.99 is
+$1.00 more: $1.00 ≥ $0.50 and 100 × 50 = 5,000 ≥ 1,199, **a price rise**.
+Median gap (30, 31, 31, 31) = 31, next **15 October**; a year $12.99 × 12
+= **$155.88**, a month $12.99. First charge 133 days ago: not new.
+**NETFLIX** $15.99 on 3 June, 3 July, 3 August, $18.99 on 3 September: a
+rise of $3.00, 19% (at most half of $15.99), a series. **GYM** $45.00 on
+20 July, 20 August and 20 September: first 66 days ago and the records
+began more than 35 days before it, **new**. **CAFE** $4.50 on 1, 29 and
+30 September: a gap of 1 day is in no band, **not a series**. Two charges
+are never a series.
+
+---
+
+## F39 — Unusual charges, possible doubles, and a charge counted twice
+
+**Decided 2026-09-26. Engineering default. Not from the workbook.** Decided
+by the engineer under the owner's 2026-09-24 instruction to proceed without
+questions (plan §2.6, §7, §11; built in slice A17). Shops, charges and the
+records covered are F38's.
+
+**Which charges are looked at:** those in a window the screen names. The
+Coach: the last 30 days, `asOf` − 29 to `asOf`. Reports → Shops: the month
+shown, to `asOf` while it runs. Earlier charges are read for comparison.
+
+**Chosen.**
+
+- **A large charge:** a charge at least max(5000 cents, 3 × the median size
+  of its category's charges in the 90 days before its date), where the
+  category has **5 or more** such earlier charges inside the records
+  covered. Fewer, and it is never called large.
+- **A new shop:** a charge of 10,000 cents or more at a shop with no
+  earlier row (charge or refund; earlier by date, then row id) in the
+  records covered, and at least 60 days after they begin. A charge that is
+  large is not also called new.
+- **A possible double charge:** two different rows, both charges, at the
+  same shop, of the same amount to the cent, at most 3 days apart. Listed
+  once, by the later row, which is in the window.
+- **Maybe counted twice:** a charge by hand and a charge from a statement of
+  the same amount, at most 3 days apart, whatever each calls the shop (a
+  typed "coffee" is the statement's "COFFEE HOUSE"). A pair that is both is
+  listed here only, as this says more.
+- **Each is flagged, never hidden:** Shops lists every one, whatever the
+  Coach's cards show, and nothing is removed or left out of a total.
+  Keeping out a duplicate import is the dedupe hash's job, not this.
+- **In the Coach's digest (version 2):** each is a fact, always worth a
+  card, to watch: `large_charge` and `new_shop` *some*, `possible_double`
+  and `counted_twice` *solid* (the statement says it). Monthly effect
+  (F44): the charge's amount. A dismissal names the row, or the two rows.
+
+**Worked example.** Thursday 24 September 2026, records from 1 February.
+Dining out has 12 charges between 22 June and 19 September, median $25.00:
+threshold max($50.00, $75.00) = $75.00, so **$180.00 on 20 September is
+large**. A category with 4 earlier charges is never judged. **FURNITURE CO**
+$450.00 on 12 September, no earlier row, 223 days after 1 February: **a
+new shop**. **COFFEE HOUSE** $4.50 on 21 and on 23 September, two rows:
+**a possible double**. A typed "coffee" $6.25 on 22 September and
+**COFFEE HOUSE** $6.25 from the statement on 23 September: **maybe counted
+twice**. $6.25 four days apart: neither.
+
+---
+
+## F41 — Top shops, against last month
+
+**Decided 2026-09-26. Engineering default. Not from the workbook.** Decided
+by the engineer under the owner's 2026-09-24 instruction to proceed without
+questions (plan §2.6, §7, §11; built in slice A17). Shops, charges and
+refunds are F38's.
+
+**Chosen.**
+
+- **Windows** are F25's for a month: a month so far against the same days
+  of the month before, a month that is over against the whole month before.
+  When the earlier window starts before the records (F24) there is no
+  comparison, and the shops still show.
+- **A shop's spending** in a window is net: its charges less its refunds.
+  A shop whose net is $0 or less in the window shown is left out.
+- **The top 10** by net, largest first, ties by shop, each with its net in
+  the window before, the change (F26: under $1.00 is the same) and how many
+  charges.
+- **New this month:** a shop with a charge in the window shown and no row
+  at all in the records covered before it. Only when the records covered
+  begin at least 60 days before the window, as F39's new shop; otherwise
+  "too early to tell". Largest first, at most 10.
+
+**Worked example.** Thursday 24 September 2026, records from 1 February:
+1–24 September against 1–24 August. **SUSHI PLACE** $42.10 on 3 September
+and $84.20 on 19 September, $126.30, against $60.00: **$66.30 more**.
+**GROCER** $250.00 less a $20.00 refund: **$230.00**. **BOOKSHOP**, only a
+$15.00 refund: left out. **NEW GYM** $45.00 on 10 September, never seen
+before 1 September: **new this month**. With records from 8 August, every
+shop in September would look new, so it says it is too early to tell.
+
+---
+
 ## F44 — Impact, for ranking the Coach's cards
 
 **Decided 2026-09-24. Engineering default. Not from the workbook.** Decided
