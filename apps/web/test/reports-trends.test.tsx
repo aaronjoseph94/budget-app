@@ -98,6 +98,19 @@ describe('Reports, Trends (plan §2.6, A16)', () => {
     expect(within(categories).getByText(/No everyday spending .* Trends can be called from January 2027/)).toBeTruthy()
   })
 
+  it('names the month a line can be called when only some months are whole', async () => {
+    go('/reports')
+    renderScreen(<Shell />, trendsFake('2026-06-10'))
+    await openTrends()
+
+    // From 10 June, July and August are whole: two months, so November makes four.
+    const totals = await card('Income, Spent and Saved')
+    expect(within(totals).getByText('Spent', { selector: 'dt' }).nextElementSibling?.textContent).toBe('Not enough months yet: check back in November 2026')
+    expect(within(totals).getByText('Jun 2026: no records')).toBeTruthy()
+    const list = within(await card('Each category against its usual month')).getAllByRole('listitem')
+    expect(within(list[0]!).getByText('Not enough months yet: check back in November 2026')).toBeTruthy()
+  })
+
   it('says in one line that a one-time update is missing, pointing to Help, and the Month still works', async () => {
     const fake = trendsFake()
     fake.fail('category_plans', '42P01')
