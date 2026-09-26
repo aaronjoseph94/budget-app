@@ -79,6 +79,8 @@ describe('the Coach’s detector cards', () => {
     const card = screen.getByRole('heading', { name: 'Charged again? COFFEE HOUSE' }).closest('li')!
     fireEvent.click(within(card).getByRole('button', { name: 'See your shops' }))
     await waitFor(() => expect(window.location.hash).toBe('#/reports'))
+    // Reports opens on Shops, where every subscription and flagged charge is listed.
+    expect(localStorage.getItem('budget.reports.tab')).toBe('shops')
   })
 
   it('keeps a dismissed price rise gone by its cause, and never speaks of a shop marked not a subscription', async () => {

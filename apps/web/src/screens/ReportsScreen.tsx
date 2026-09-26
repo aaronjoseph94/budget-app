@@ -12,26 +12,21 @@ import { MoversCard, PairsCard, TotalsCard } from '../reports/Overview.js'
 import { ReviewCard } from '../reports/ReviewCard.js'
 import { Failed } from '../reports/Failed.js'
 import { TrendsPanel } from '../reports/Trends.js'
+import { ShopsPanel } from '../reports/Shops.js'
+import { rememberTab, rememberedTab, type ReportTab } from '../reports/tab.js'
 import { cn } from '../lib/cn.js'
 
-type Tab = 'overview' | 'trends'
-const TABS: readonly { readonly id: Tab; readonly name: string }[] = [{ id: 'overview', name: 'Overview' }, { id: 'trends', name: 'Trends' }]
-/** The last tab chosen, on this device only: a convenience, so a storage that throws opens the Overview. */
-const TAB_KEY = 'budget.reports.tab'
-
-function rememberedTab(): Tab {
-  try {
-    return localStorage.getItem(TAB_KEY) === 'trends' ? 'trends' : 'overview'
-  } catch {
-    return 'overview'
-  }
-}
+const TABS: readonly { readonly id: ReportTab; readonly name: string }[] = [
+  { id: 'overview', name: 'Overview' },
+  { id: 'trends', name: 'Trends' },
+  { id: 'shops', name: 'Shops' },
+]
 
 /**
- * Reports (plan §2.6, A15, A16): a month in review, any month, the current
- * one marked "so far", and Trends over the whole months before this one,
- * which have no month to step through. Shops and Habits join the tab row
- * with A17 and A18. Every figure is core's monthReport (F36); the
+ * Reports (plan §2.6, A15, A16, A17): a month in review, any month, the
+ * current one marked "so far"; Trends over the whole months before this
+ * one, which have no month to step through; and Shops, for the month shown.
+ * Habits joins the tab row with A18. Every figure is core's monthReport (F36); the
  * screen formats and never computes. Save as PDF is the browser's own
  * print, with the bars and buttons left off the page and the figures on it.
  */
@@ -52,14 +47,10 @@ export function ReportsScreen({ month }: { month: string | null }) {
   const nameOf = useCallback((id: string) => categories.find((c) => c.id === id)?.name ?? 'a category', [categories])
   const thisMonth = `${asOf.slice(0, 7)}-01`
   const step = (by: number) => shiftMonth(isoDate(shown), by).slice(0, 7)
-  const [tab, setTab] = useState<Tab>(rememberedTab)
-  const choose = (next: Tab) => {
+  const [tab, setTab] = useState<ReportTab>(rememberedTab)
+  const choose = (next: ReportTab) => {
     setTab(next)
-    try {
-      localStorage.setItem(TAB_KEY, next)
-    } catch {
-      // Not kept on this device; the tab still changes.
-    }
+    rememberTab(next)
   }
 
   return (
@@ -98,7 +89,7 @@ export function ReportsScreen({ month }: { month: string | null }) {
             </button>
           ))}
         </div>
-        {shown === thisMonth && tab === 'overview' ? <Badge>So far</Badge> : null}
+        {shown === thisMonth && tab !== 'trends' ? <Badge>So far</Badge> : null}
         {/* The browser's own print makes the PDF: nothing is loaded and nothing leaves the phone. */}
         <Button variant="outline" onClick={() => window.print()} className="print:hidden">
           Save as PDF
@@ -107,6 +98,10 @@ export function ReportsScreen({ month }: { month: string | null }) {
       {tab === 'trends' ? (
         <div role="tabpanel" id="report-trends" aria-labelledby="report-tab-trends">
           <TrendsPanel asOf={asOf} />
+        </div>
+      ) : tab === 'shops' ? (
+        <div role="tabpanel" id="report-shops" aria-labelledby="report-tab-shops">
+          <ShopsPanel month={shown} asOf={asOf} />
         </div>
       ) : (
       <div role="tabpanel" id="report-overview" aria-labelledby="report-tab-overview" className="space-y-4">

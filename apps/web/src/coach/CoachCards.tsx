@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Fact, FactsDigest } from '@budget/core'
 import { dayLine, rankCards, type Card as CoachCard, type CardAction, type Tone } from '@budget/savings-coach'
 import { navigate } from '../nav.js'
+import { rememberTab } from '../reports/tab.js'
 import { Button } from '../components/ui/button.js'
 import { Card } from '../components/ui/card.js'
 import type { CardText, Narration, Words } from './narration.js'
@@ -103,7 +104,13 @@ const ACTION: Readonly<Record<CardAction, { readonly label: string; readonly go:
   see_month: { label: 'See the Month', go: () => navigate('month') },
   goals: { label: 'See your goals', go: () => navigate('savings') },
   forecast: { label: 'Open the Forecast', go: () => navigate('forecast') },
-  shops: { label: 'See your shops', go: () => navigate('reports') },
+  shops: {
+    label: 'See your shops',
+    go: () => {
+      rememberTab('shops')
+      navigate('reports')
+    },
+  },
 }
 
 /**
