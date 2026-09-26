@@ -1657,7 +1657,8 @@ to proceed without questions (plan §2.6, §7, §11; built in slice A17).
 - **A price change:** the latest charge differs from the one before by at
   least 50 cents **and** at least 2% of the one before
   (`|latest − previous| × 50 ≥ previous`). Up or down.
-- **Its price** is the latest charge when a price changed, else the median.
+- **Its price** is the latest charge when a price changed, else the median
+  of all its charges.
   **A year's cost** = price × 52, 26, 12 or 1; **a month's** = a year's ÷
   12, half-up.
 - **New:** the first charge is at most 100 days before `asOf`, and the
