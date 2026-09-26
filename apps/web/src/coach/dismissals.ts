@@ -10,6 +10,20 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAppData } from '../app-data.js'
 
+/** A shop the owner marked "Not a subscription" on Reports → Shops, kept as a dismissal (F38). */
+const NOT_SUBSCRIPTION = 'not_subscription:'
+/** 0017 keeps at most 160 characters after the cause's colon. */
+const MAX_SHOP = 160
+
+export function notSubscriptionCause(shop: string): string | null {
+  return [...shop].length > MAX_SHOP ? null : `${NOT_SUBSCRIPTION}${shop}`
+}
+
+/** The shops marked "Not a subscription", from the dismissed causes. */
+export function notSubscriptionsOf(dismissed: ReadonlySet<string>): readonly string[] {
+  return [...dismissed].filter((k) => k.startsWith(NOT_SUBSCRIPTION)).map((k) => k.slice(NOT_SUBSCRIPTION.length))
+}
+
 export interface Dismissals {
   /** Null while it loads. */
   readonly dismissed: ReadonlySet<string> | null

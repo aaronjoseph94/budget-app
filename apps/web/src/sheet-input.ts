@@ -6,7 +6,8 @@
  * amount is in effect, and what counts where, is core's to say. The Month
  * and the Year read the same rows, so they read them through one place.
  */
-import { isoDate, type BudgetHistoryRow, type PeriodCategory, type PeriodEntry, type PlanHistoryRow, type WeekCategory } from '@budget/core'
+import { isoDate, type BudgetHistoryRow, type PeriodCategory, type PeriodEntry, type PlanHistoryRow, type ShopEntry, type WeekCategory } from '@budget/core'
+import { normalizeMerchant } from '@budget/statement-parsers'
 import type { BudgetRow, Category, LedgerRow, PlanRow } from './ledger.js'
 
 export function categoriesForCore(categories: readonly Category[]): PeriodCategory[] {
@@ -43,4 +44,23 @@ export function plansForCore(plans: readonly PlanRow[]): PlanHistoryRow[] {
 
 export function entriesForCore(rows: readonly LedgerRow[]): PeriodEntry[] {
   return rows.map((r) => ({ postedOn: isoDate(r.posted_on), amountCents: r.amount_cents, categoryId: r.category_id }))
+}
+
+/** Rows typed in Add or read from a receipt photo, as against a card statement's (F38). */
+const BY_HAND: ReadonlySet<string> = new Set(['typed', 'receipt_photo'])
+
+/**
+ * As entriesForCore, with each row's shop: the descriptor as
+ * statement-parsers normalises it, the key a learned rule matches, so
+ * core groups by shop without importing a parser (plan §7, A17).
+ */
+export function shopEntriesForCore(rows: readonly LedgerRow[]): ShopEntry[] {
+  return rows.map((r) => ({
+    id: r.id,
+    postedOn: isoDate(r.posted_on),
+    amountCents: r.amount_cents,
+    categoryId: r.category_id,
+    shop: normalizeMerchant(r.merchant_raw),
+    by: BY_HAND.has(r.source) ? 'hand' : 'statement',
+  }))
 }

@@ -45,7 +45,33 @@ const REASON: Readonly<Partial<Record<Fact['kind'], string>>> = {
     'It shows because your savings passed a milestone since last week began: every 5 hours for a goal with a cost an hour, or every tenth of the target.',
   month_forecast:
     'It shows every day: where the month is heading at your pace, from what has happened, your planned bills, pay still due and savings still planned. See Help, How the forecast works.',
+  price_rise:
+    'It shows because this shop charges you regularly, and its latest charge is at least 50 cents and 2% more than the one before. See Reports, Shops.',
+  new_subscription:
+    'It shows because this shop has charged you a steady amount at regular gaps since a day in the last 100 days. If it is not a subscription, say so on Reports, Shops.',
+  large_charge: 'It shows because this charge is $50.00 or more, and at least three times a usual charge in its category over the 90 days before.',
+  new_shop: 'It shows because it is $100.00 or more, and the first charge from this shop in your records.',
+  possible_double:
+    'It shows because the same shop charged the same amount within 3 days. Nothing was removed or left out: if one was a mistake, ask the shop for a refund.',
+  counted_twice:
+    'It shows because a charge you added and one from your statement are the same amount within 3 days, so one purchase may be counted twice. Nothing was removed.',
 }
+
+/** The detectors' figures (F38, F39), whose slot names mean their own things. */
+const SHOP_LABEL: Readonly<Record<string, string>> = {
+  before: 'The charge before',
+  now: 'The latest charge',
+  change: 'The difference',
+  next: 'Next charge expected',
+  year: 'A year of it',
+  price: 'Each charge',
+  first: 'First charge',
+  amount: 'The charge',
+  date: 'Charged on',
+  usual: 'A usual charge in its category',
+}
+const PAIR_LABEL: Readonly<Record<string, string>> = { amount: 'Each charge', first: 'The first', second: 'The second' }
+const SHOP_KINDS: ReadonlySet<Fact['kind']> = new Set(['price_rise', 'new_subscription', 'large_charge', 'new_shop'])
 
 /** The forecast's figures (F30 to F32), whose slot names mean their own things. */
 const FORECAST_LABEL: Readonly<Record<string, string>> = {
@@ -63,6 +89,8 @@ const FORECAST_LABEL: Readonly<Record<string, string>> = {
 /** A figure's name; the same slot means another thing on a pace or a savings fact. */
 function labelOf(fact: Fact, slot: string): string {
   if (fact.kind === 'month_forecast') return FORECAST_LABEL[slot] ?? slot
+  if (fact.kind === 'possible_double' || fact.kind === 'counted_twice') return PAIR_LABEL[slot] ?? slot
+  if (SHOP_KINDS.has(fact.kind)) return SHOP_LABEL[slot] ?? slot
   if (fact.kind === 'budget_pace' && slot === 'over') return 'Over budget at this pace by'
   if (fact.kind === 'saved_more' && slot === 'now') return 'Saved so far this month'
   if (fact.kind === 'category_trend' && slot === 'change') return 'From the first month to the last'

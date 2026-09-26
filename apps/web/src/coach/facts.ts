@@ -28,7 +28,7 @@ import {
   type PayScheduleRow,
   type PlanRow,
 } from '../ledger.js'
-import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
+import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore, shopEntriesForCore } from '../sheet-input.js'
 
 /** What the digest reads, as the database gave it. */
 export interface DigestRows {
@@ -63,9 +63,15 @@ export function historyOf(read: DigestRows): ReturnType<typeof historyStart>['st
  * The rows, renamed for core, through factsDigest. Throws where the engine
  * refuses a row. The goals are the active ones, main first, whose
  * milestones are cheered; the Month, which shows only the day's line, gives
- * none.
+ * none. With the shops marked "Not a subscription", the detectors run too
+ * (F38, F39); without, as on the Month's line, they do not.
  */
-export function digestOf(read: DigestRows, categories: readonly Category[], goals: readonly DigestGoal[] = []): FactsDigest {
+export function digestOf(
+  read: DigestRows,
+  categories: readonly Category[],
+  goals: readonly DigestGoal[] = [],
+  notSubscriptions: readonly string[] | null = null,
+): FactsDigest {
   const latest = read.statementEnds.map((e) => isoDate(e)).sort().at(-1) ?? null
   return factsDigest({
     asOf: isoDate(read.asOf),
@@ -79,6 +85,7 @@ export function digestOf(read: DigestRows, categories: readonly Category[], goal
     pendingCount: read.pending,
     goals,
     ...(read.forecast?.status === 'ready' ? { forecast: forecastOf(read.forecast) } : {}),
+    ...(notSubscriptions === null ? {} : { shops: { entries: shopEntriesForCore(read.rows), notSubscriptions } }),
   })
 }
 
@@ -139,19 +146,23 @@ export function useCoachRead(): DigestRows | 'failed' | null {
 }
 
 /**
- * The Coach's facts. Null while the read or the goals load (goalsForCore
- * waits for the funds); 'failed' when the read failed or the engine refused
- * a row.
+ * The Coach's facts. Null while the read, the goals (goalsForCore waits
+ * for the funds) or the dismissals load; 'failed' when the read failed or
+ * the engine refused a row.
  */
-export function useCoachFacts(read: DigestRows | 'failed' | null, goals: readonly DigestGoal[] | null): FactsDigest | 'failed' | null {
+export function useCoachFacts(
+  read: DigestRows | 'failed' | null,
+  goals: readonly DigestGoal[] | null,
+  notSubscriptions: readonly string[] | null,
+): FactsDigest | 'failed' | null {
   const { categories, pendingTotal, status } = useAppData()
   return useMemo(() => {
     if (read === null || read === 'failed') return read
-    if (goals === null) return null
+    if (goals === null || notSubscriptions === null) return null
     try {
-      return digestOf({ ...read, pending: status === 'ready' ? pendingTotal : null }, categories, goals)
+      return digestOf({ ...read, pending: status === 'ready' ? pendingTotal : null }, categories, goals, notSubscriptions)
     } catch {
       return 'failed'
     }
-  }, [read, goals, categories, pendingTotal, status])
+  }, [read, goals, notSubscriptions, categories, pendingTotal, status])
 }
