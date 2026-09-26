@@ -73,6 +73,16 @@ describe('quoteTags', () => {
     expect(tags).toEqual(['small_leaks', 'impulse', 'over_budget', 'enough'])
   })
 
+  it('reads a subscription as a small leak, a large or new charge as an impulse, and a repeat as a habit (F38, F39)', () => {
+    const tags = (key: string) => quoteTags({ facts: [factOf(key)], goal: null })
+    expect(tags('shop:SPOTIFY:price_rise')).toEqual(['subscriptions', 'small_leaks'])
+    expect(tags('shop:GYM:new_subscription')).toEqual(['subscriptions', 'small_leaks'])
+    expect(tags('charge:big:large')).toEqual(['impulse', 'enough'])
+    expect(tags('charge:sofa:new_shop')).toEqual(['impulse', 'enough'])
+    expect(tags('charges:k1:k2:possible_double')).toEqual(['habits'])
+    expect(tags('charges:t1:t2:counted_twice')).toEqual(['habits'])
+  })
+
   it('reads a steady rise as a leak and a habit, and a steady fall as a habit kept (F37)', () => {
     expect(quoteTags({ facts: [factOf('cat:dining:trend')], goal: null })).toEqual(['small_leaks', 'habits'])
     expect(quoteTags({ facts: [factOf('cat:groceries:trend')], goal: null })).toEqual(['habits', 'streaks'])

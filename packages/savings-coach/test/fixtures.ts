@@ -1,4 +1,4 @@
-import { type Fact, type FactsDigestInput, factsDigest, isoDate } from '@budget/core'
+import { type Fact, type FactsDigestInput, type ShopEntry, factsDigest, isoDate } from '@budget/core'
 
 const d = isoDate
 const spend = (postedOn: string, cents: number, categoryId: string) => ({ postedOn: d(postedOn), amountCents: -cents, categoryId })
@@ -80,8 +80,46 @@ export const TRENDS: FactsDigestInput = {
 
 export const TREND_FACTS: readonly Fact[] = factsDigest(TRENDS).facts.filter((f) => f.kind === 'category_trend')
 
+const shop = (id: string, postedOn: string, cents: number, name: string, categoryId: string, by: ShopEntry['by'] = 'statement'): ShopEntry =>
+  ({ id, postedOn: d(postedOn), amountCents: -cents, categoryId, shop: name, by })
+const WEEKLY = ['07-04', '07-11', '07-18', '07-25', '08-01', '08-08', '08-15', '08-22', '08-29', '09-05', '09-12', '09-19']
+const cafe = WEEKLY.map((day, i) => shop(`c${i}`, `2026-${day}`, 2_500, 'CAFE', 'dining'))
+
+/**
+ * Digest version 2's detectors (F38, F39), records from February: SPOTIFY's
+ * price went up, GYM is a new monthly charge, $180.00 at CAFE is large,
+ * FURNITURE CO is a new shop, COFFEE HOUSE charged the same twice, and a
+ * typed $6.25 matches TEA ROOM's on the statement.
+ */
+const SHOP_ROWS: readonly ShopEntry[] = [
+  ...['05', '06', '07', '08'].map((m) => shop(`s${m}`, `2026-${m}-14`, 1_199, 'SPOTIFY', 'music')),
+  shop('s09', '2026-09-14', 1_299, 'SPOTIFY', 'music'),
+  ...['07', '08', '09'].map((m) => shop(`g${m}`, `2026-${m}-20`, 4_500, 'GYM', 'fun')),
+  ...cafe,
+  shop('big', '2026-09-20', 18_000, 'CAFE', 'dining'),
+  shop('sofa', '2026-09-12', 45_000, 'FURNITURE CO', 'groceries'),
+  shop('k1', '2026-09-21', 450, 'COFFEE HOUSE', 'fuel'),
+  shop('k2', '2026-09-23', 450, 'COFFEE HOUSE', 'fuel'),
+  shop('t1', '2026-09-22', 625, 'TEA', 'fuel', 'hand'),
+  shop('t2', '2026-09-23', 625, 'TEA ROOM', 'fuel'),
+]
+
+export const SHOPS: FactsDigestInput = {
+  ...EVERY_KIND,
+  historyStart: d('2026-02-01'),
+  categories: [...EVERY_KIND.categories, { id: 'music', name: 'Music', kind: 'subscription', sortOrder: 4 }],
+  budgetHistory: [],
+  entries: SHOP_ROWS,
+  latestStatementEnd: null,
+  pendingCount: 0,
+  shops: { entries: SHOP_ROWS, notSubscriptions: [] },
+}
+
+const DETECTORS: readonly Fact['kind'][] = ['price_rise', 'new_subscription', 'large_charge', 'new_shop', 'possible_double', 'counted_twice']
+export const SHOP_FACTS: readonly Fact[] = factsDigest(SHOPS).facts.filter((f) => DETECTORS.includes(f.kind))
+
 export function factOf(key: string): Fact {
-  const fact = [...FACTS, ...WIN_FACTS, ...TREND_FACTS].find((f) => f.key === key)
+  const fact = [...FACTS, ...WIN_FACTS, ...TREND_FACTS, ...SHOP_FACTS].find((f) => f.key === key)
   if (fact === undefined) throw new Error(`The fixture has no fact ${key}`)
   return fact
 }

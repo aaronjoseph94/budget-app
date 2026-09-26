@@ -38,6 +38,12 @@ const SAMPLE: Readonly<Record<CardTemplateKey, () => Fact>> = {
   forecast: () => forecastOf(500_000),
   forecast_spent: () => forecastOf(null),
   forecast_watch: () => forecastOf(50_000),
+  price_rise: () => factOf('shop:SPOTIFY:price_rise'),
+  new_subscription: () => factOf('shop:GYM:new_subscription'),
+  large_charge: () => factOf('charge:big:large'),
+  new_shop: () => factOf('charge:sofa:new_shop'),
+  possible_double: () => factOf('charges:k1:k2:possible_double'),
+  counted_twice: () => factOf('charges:t1:t2:counted_twice'),
 }
 
 const CARDS = { ...WATCH_TEMPLATES, ...PLAIN_TEMPLATES }

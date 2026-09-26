@@ -8,7 +8,8 @@
  * card that says to watch something always carries one thing to try: a
  * bare "you overspent" helps nobody. A category's name is the owner's own
  * text and may be plural ("Groceries"), so no title makes it the subject
- * of "is": the name follows a colon instead.
+ * of "is": the name follows a colon instead. A shop's name is the
+ * statement's, in capitals, and follows a colon too.
  */
 import type { Fact } from '@budget/core'
 
@@ -35,7 +36,9 @@ export type CardTemplateKey =
   | 'forecast'
   | 'forecast_spent'
   | WatchKey
-export type WatchKey = 'change_up' | 'trend_up' | 'over_budget' | 'near_budget' | 'budget_pace' | 'forecast_watch'
+export type WatchKey = 'change_up' | 'trend_up' | 'over_budget' | 'near_budget' | 'budget_pace' | 'forecast_watch' | ShopKey
+/** Digest version 2's detectors (F38, F39): each is a card to watch, named by its fact's kind. */
+export type ShopKey = 'price_rise' | 'new_subscription' | 'large_charge' | 'new_shop' | 'possible_double' | 'counted_twice'
 
 type Tones<T> = Readonly<Record<Tone, T>>
 
@@ -112,6 +115,81 @@ export const WATCH_TEMPLATES: Readonly<Record<WatchKey, Tones<WatchTemplate>>> =
       title: 'Heading for a shortfall',
       body: 'At this pace, {{A.month}} ends near {{A.end}}. The tightest day is {{A.tightest_day}}, at {{A.tightest}}.',
       tryThis: 'Try this: keep to {{A.safe_day}} a day until payday.',
+    },
+  },
+  // A subscription's latest charge is dearer than the one before (F38).
+  price_rise: {
+    cheerleader: {
+      title: 'A price went up: {{A.name}}',
+      body: 'It now charges {{A.now}}, up from {{A.before}}. That comes to {{A.year}} a year.',
+      tryThis: 'One thing to try: check it is still worth it to you, or look for a cheaper plan.',
+    },
+    straight: {
+      title: 'Price rise: {{A.name}}',
+      body: '{{A.before}} before, {{A.now}} now: {{A.year}} a year.',
+      tryThis: 'Try this: cancel it if you would not sign up again at this price.',
+    },
+  },
+  new_subscription: {
+    cheerleader: {
+      title: 'A new regular charge: {{A.name}}',
+      body: 'It has charged you {{A.price}} regularly since {{A.first}}, about {{A.year}} a year. The next one looks due around {{A.next}}.',
+      tryThis: 'One thing to try: if you meant to sign up, plan for it as a bill; if not, cancel it before {{A.next}}.',
+    },
+    straight: {
+      title: 'New subscription: {{A.name}}',
+      body: '{{A.price}} each time since {{A.first}}: {{A.year}} a year.',
+      tryThis: 'Try this: cancel it before {{A.next}} unless you mean to keep it.',
+    },
+  },
+  // Far above its category's usual charge (F39).
+  large_charge: {
+    cheerleader: {
+      title: 'A bigger charge than usual: {{A.name}}',
+      body: '{{A.amount}} on {{A.date}}. A usual charge in that category is about {{A.usual}}.',
+      tryThis: 'One thing to try: if it was planned, all is well; if not, check it on your statement.',
+    },
+    straight: {
+      title: 'Large charge: {{A.name}}',
+      body: '{{A.amount}} on {{A.date}}, against a usual {{A.usual}} in its category.',
+      tryThis: 'Try this: make sure you recognise it.',
+    },
+  },
+  new_shop: {
+    cheerleader: {
+      title: 'A new place: {{A.name}}',
+      body: '{{A.amount}} on {{A.date}}, the first charge from it in your records.',
+      tryThis: 'One thing to try: if you don’t recognise it, ask your card company about it.',
+    },
+    straight: {
+      title: 'First charge from a new shop: {{A.name}}',
+      body: '{{A.amount}} on {{A.date}}.',
+      tryThis: 'Try this: check you recognise it.',
+    },
+  },
+  // "Double" and "twice" are number words, which no card may hold (ADR 0005).
+  possible_double: {
+    cheerleader: {
+      title: 'Charged again? {{A.name}}',
+      body: 'The same charge of {{A.amount}} came on {{A.first}} and again on {{A.second}}.',
+      tryThis: 'One thing to try: check your statement, and ask the shop for a refund if one was a mistake.',
+    },
+    straight: {
+      title: 'Possible repeat charge: {{A.name}}',
+      body: '{{A.amount}} on {{A.first}}, and the same again on {{A.second}}.',
+      tryThis: 'Try this: ask the shop to refund one if it was charged in error.',
+    },
+  },
+  counted_twice: {
+    cheerleader: {
+      title: 'Counted more than once? {{A.name}}',
+      body: 'A charge of {{A.amount}} you added yourself looks like one from your statement: {{A.first}} and {{A.second}}.',
+      tryThis: 'One thing to try: if they are the same purchase, remove the one you added in All transactions.',
+    },
+    straight: {
+      title: 'Added and imported: {{A.name}}',
+      body: '{{A.amount}} you added, and the same from your statement: {{A.first}} and {{A.second}}.',
+      tryThis: 'Try this: remove the one you added in All transactions if they are one purchase.',
     },
   },
 }
@@ -263,14 +341,13 @@ export function cardTemplateKey(fact: Fact): CardTemplateKey | null {
     case 'month_so_far':
     case 'week_so_far':
       return null
-    // Digest version 2's detectors (plan A17) are worded in the next change.
     case 'price_rise':
     case 'new_subscription':
     case 'large_charge':
     case 'new_shop':
     case 'possible_double':
     case 'counted_twice':
-      return null
+      return fact.kind
   }
 }
 
