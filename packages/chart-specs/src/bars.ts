@@ -77,7 +77,7 @@ const DEBTS: Palette = {
  */
 const WEEKDAYS: Palette = {
   goal: { fill: '#FFEFE6', class: 'chart-variable-track' },
-  actual: { fill: '#C9492F', class: 'chart-heat-3' },
+  actual: { fill: '#A42F1A', class: 'chart-heat-3' },
   ink: { fill: '#5B6773', class: 'chart-forecast-ink' },
   keys: ['Daily allowance', 'Average'],
 }

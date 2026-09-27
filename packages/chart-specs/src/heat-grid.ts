@@ -42,11 +42,11 @@ const ROOM = 6
 
 const INK = { fill: '#5B6773', class: 'chart-forecast-ink' } as const
 const LEVELS = [
-  { fill: '#ECE8E3', class: 'chart-heat-0' },
-  { fill: '#F7D6CB', class: 'chart-heat-1' },
-  { fill: '#EC8F77', class: 'chart-heat-2' },
-  { fill: '#C9492F', class: 'chart-heat-3' },
-  { fill: '#7E1D16', class: 'chart-heat-4' },
+  { fill: '#E8E5E1', class: 'chart-heat-0' },
+  { fill: '#EBA591', class: 'chart-heat-1' },
+  { fill: '#DA6448', class: 'chart-heat-2' },
+  { fill: '#A42F1A', class: 'chart-heat-3' },
+  { fill: '#5E120D', class: 'chart-heat-4' },
 ] as const
 
 function paint(level: number): (typeof LEVELS)[number] {

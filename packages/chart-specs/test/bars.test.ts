@@ -120,9 +120,9 @@ describe('weekdayBars', () => {
     const svg = week([bar('Mon', 10_000, 833), bar('Sat', 10_000, 8_417)])
     expect(rects(svg)).toEqual([
       [390, '#FFEFE6', 3_000],
-      [390, '#C9492F', 250],
+      [390, '#A42F1A', 250],
       [730, '#FFEFE6', 3_000],
-      [730, '#C9492F', 2_525],
+      [730, '#A42F1A', 2_525],
     ])
     expect(svg).toContain('>Daily allowance</text>')
     expect(svg).toContain('>Average</text>')
@@ -130,7 +130,7 @@ describe('weekdayBars', () => {
 
   it('leaves the key off with no allowance to draw, and starts the rows at the top', () => {
     const svg = week([bar('Mon', null, 10_000)])
-    expect(rects(svg)).toEqual([[170, '#C9492F', 3_000]])
+    expect(rects(svg)).toEqual([[170, '#A42F1A', 3_000]])
     expect(svg).not.toContain('Daily allowance')
     expect(svg).toContain('viewBox="0 0 3000 360"')
   })

@@ -26,11 +26,11 @@ const grid = (over: Partial<HeatGridInput> = {}) =>
 describe('heatGrid', () => {
   it('draws a week to a column and a weekday to a row, each day titled', () => {
     const svg = grid()
-    expect(svg).toContain('<rect x="360" y="600" width="80" height="80" rx="16" fill="#7E1D16" class="chart-heat-4"><title>Sun 9 Aug: $60.00</title></rect>')
-    expect(svg).toContain('<rect x="460" y="0" width="80" height="80" rx="16" fill="#EC8F77" class="chart-heat-2"><title>Mon 10 Aug: $20.00</title></rect>')
-    expect(svg).toContain('<rect x="460" y="200" width="80" height="80" rx="16" fill="#F7D6CB" class="chart-heat-1">')
-    expect(svg).toContain('fill="#ECE8E3" class="chart-heat-0"')
-    expect(svg).toContain('fill="#C9492F" class="chart-heat-3"')
+    expect(svg).toContain('<rect x="360" y="600" width="80" height="80" rx="16" fill="#5E120D" class="chart-heat-4"><title>Sun 9 Aug: $60.00</title></rect>')
+    expect(svg).toContain('<rect x="460" y="0" width="80" height="80" rx="16" fill="#DA6448" class="chart-heat-2"><title>Mon 10 Aug: $20.00</title></rect>')
+    expect(svg).toContain('<rect x="460" y="200" width="80" height="80" rx="16" fill="#EBA591" class="chart-heat-1">')
+    expect(svg).toContain('fill="#E8E5E1" class="chart-heat-0"')
+    expect(svg).toContain('fill="#A42F1A" class="chart-heat-3"')
     expect(svg).toContain('viewBox="0 0 3000 1000"')
   })
 
@@ -46,7 +46,7 @@ describe('heatGrid', () => {
     expect(svg).not.toContain('></text>')
     // "Less" is 4 characters, 280 units, then 60 before the first square.
     expect(svg).toContain('>Less</text>')
-    expect(svg).toContain('<rect x="700" y="880" width="80" height="80" rx="16" fill="#ECE8E3" class="chart-heat-0"/>')
+    expect(svg).toContain('<rect x="700" y="880" width="80" height="80" rx="16" fill="#E8E5E1" class="chart-heat-0"/>')
     expect(svg).toContain('<text x="1260" y="950" fill="#5B6773" class="chart-forecast-ink">More</text>')
   })
 

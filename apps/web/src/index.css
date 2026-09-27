@@ -139,6 +139,14 @@
      the same hue that reads at 6.3. */
   --paycheck-band: #f1f3ff;
   --paycheck-ink: #4a5591;
+  /* Habits' spending grid (A18): a neutral for a day with nothing spent,
+     then one red hue from light to dark, each step told apart for normal
+     and colour-blind vision with the dataviz palette validator. */
+  --heat-0: #e8e5e1;
+  --heat-1: #eba591;
+  --heat-2: #da6448;
+  --heat-3: #a42f1a;
+  --heat-4: #5e120d;
   /* Bill Calendar's header band and pills (F5FEFF, E6F9FC), its bill text
      (135D5C) and day numbers (3E4D5B). Its pill text A4BCBF, week totals
      6E8AA3 and white-on-6CAC8F payday pill read at 1.8, 3.5 and 2.7 to one,
@@ -280,6 +288,12 @@
     --debt-ink: #d9cdf5;
     --debt-left: #a58be0;
     --debt-paid: #3e3558;
+    /* On a dark card more reads lighter, so the steps run the other way. */
+    --heat-0: #34312e;
+    --heat-1: #852c1d;
+    --heat-2: #c8502f;
+    --heat-3: #f58e6d;
+    --heat-4: #ffd2c2;
   }
 }
 
@@ -535,6 +549,12 @@
 .spec-chart .chart-trend-last {
   fill: var(--primary);
 }
+/* Habits (A18): the spending grid's five levels; the weekday bars share level 3. */
+.spec-chart .chart-heat-0 { fill: var(--heat-0); }
+.spec-chart .chart-heat-1 { fill: var(--heat-1); }
+.spec-chart .chart-heat-2 { fill: var(--heat-2); }
+.spec-chart .chart-heat-3 { fill: var(--heat-3); }
+.spec-chart .chart-heat-4 { fill: var(--heat-4); }
 
 /*
  * Save as PDF (Reports, A15): the page as it is, less the bars and buttons,
