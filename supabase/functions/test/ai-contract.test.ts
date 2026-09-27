@@ -1,5 +1,5 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
-import { AI_HELPER_VERSION, AI_KEY_SHAPE, AiProviderSchema, type AiRequest, type NarrateDaily } from '@budget/schema'
+import { AI_HELPER_VERSION, AI_KEY_SHAPE, AiProviderSchema, CATEGORY_ALIAS, type AiRequest, type NarrateDaily } from '@budget/schema'
 import { RequestSchema, VERSION } from '../ai/index.js'
 
 /** Readonly all the way down: the app's types are, and zod's output is not, which is no difference on the wire. */
@@ -26,6 +26,7 @@ describe('the helper and the app agree on what may be asked', () => {
       { action: 'run', task: 'narrate', pack: 'daily', data: BRIEF },
       { action: 'run', task: 'narrate', pack: 'report', data: { tone: 'straight', facts: [FACT], points: ['A'], tryThis: null } },
       { action: 'run', task: 'narrate', pack: 'checkin', data: { tone: 'straight', facts: [FACT], recap: 'A', win: null, tryThis: null, goals: [] } },
+      { action: 'run', task: 'categorise', data: { rows: [{ i: 1, shop: 'CORNER MARKET', flow: 'spent', size: 'small' }], categories: [{ alias: 'c1', name: 'Groceries', list: 'variable' }] } },
     ]
     for (const provider of AiProviderSchema.options) {
       expect(RequestSchema.safeParse({ action: 'save_key', provider, key: 'test-not-a-real-key-0001' }).success).toBe(true)
@@ -43,6 +44,14 @@ describe('the helper and the app agree on what may be asked', () => {
     for (const key of ['test-not-a-real-key-0001', 'a'.repeat(20), 'a'.repeat(200), 'x'.repeat(19), 'a'.repeat(201), 'test not a real key 0001', 'test-not-a-real-key-000/']) {
       const helper = RequestSchema.safeParse({ action: 'save_key', provider: 'gemini', key }).success
       expect([key, helper]).toEqual([key, AI_KEY_SHAPE.test(key)])
+    }
+  })
+
+  it('takes a category alias of exactly the shape the app writes', () => {
+    for (const alias of ['c1', 'c10', 'c200', 'c0', 'c01', 'c201', 'C1', 'Groceries']) {
+      const data = { rows: [{ i: 1, shop: 'CORNER MARKET', flow: 'spent', size: 'small' }], categories: [{ alias, name: 'Groceries', list: 'variable' }] }
+      const helper = RequestSchema.safeParse({ action: 'run', task: 'categorise', data }).success
+      expect([alias, helper]).toEqual([alias, CATEGORY_ALIAS.test(alias)])
     }
   })
 
