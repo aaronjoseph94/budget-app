@@ -62,10 +62,12 @@ export function useSuggestions(input: CategoriseInput | null, reload: () => Prom
   const run = useCallback(async () => {
     if (input === null) return
     setStatus({ kind: 'asking' })
-    markAsked(waiting)
     if ((await suggestionsReady(supabase)) === 'missing') return setStatus({ kind: 'missing' })
     const settings = await readCoachSettings(supabase, userId)
     if (settings.ok && !settings.settings.shareShopNames) return setStatus({ kind: 'no_shop_names' })
+    // Only once the AI is really asked: rows that waited for 0018 or for
+    // Share shop names are still asked about by themselves afterwards.
+    markAsked(waiting)
     const result = await suggestCategories(supabase, input)
     setStatus({ kind: 'done', ...result })
     if (result.suggested > 0) await reload()

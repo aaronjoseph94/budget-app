@@ -180,6 +180,34 @@ describe('Review asks the AI for categories', () => {
     expect(await screen.findByText(/^Added\./)).toBeTruthy()
   })
 
+  it('asks by itself once 0018 is pasted, about rows that waited while it was missing', async () => {
+    const fake = fresh()
+    aiOn(fake)
+    delete fake.rpcReplies['suggest_candidate_categories']
+    renderScreen(<ReviewScreen />, fake)
+    expect(await screen.findByText(/Suggested categories need a one-time update\./)).toBeTruthy()
+    cleanup()
+
+    fake.rpcReplies['suggest_candidate_categories'] = 0
+    renderScreen(<ReviewScreen />, fake)
+    expect(await screen.findByText(/Suggested a category for 2 rows\./)).toBeTruthy()
+    expect(runs(fake)).toHaveLength(1)
+  })
+
+  it('asks by itself once Share shop names is back on, about rows that waited while it was off', async () => {
+    const fake = fresh()
+    aiOn(fake)
+    fake.tables.ai_settings.push({ user_id: 'u1', share_shop_names: false })
+    renderScreen(<ReviewScreen />, fake)
+    expect(await screen.findByText(/Suggestions are off while Share shop names is off\./)).toBeTruthy()
+    cleanup()
+
+    fake.tables.ai_settings.length = 0
+    renderScreen(<ReviewScreen />, fake)
+    expect(await screen.findByText(/Suggested a category for 2 rows\./)).toBeTruthy()
+    expect(runs(fake)).toHaveLength(1)
+  })
+
   it('without the helper, says so in one line when asked', async () => {
     const fake = fresh()
     fake.functions.ai = null
