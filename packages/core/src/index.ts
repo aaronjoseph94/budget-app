@@ -253,6 +253,16 @@ export {
   type TrendLine,
   type TrendWindowInput,
 } from './trends.js'
+export {
+  gridLevel,
+  spendingGrid,
+  type DailyAllowance,
+  type GridDay,
+  type GridLevel,
+  type GridWeek,
+  type HabitsInput,
+  type SpendingGrid,
+} from './habits.js'
 
 export {
   monthReport,
