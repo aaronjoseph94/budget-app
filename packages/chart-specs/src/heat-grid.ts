@@ -32,10 +32,12 @@ export interface HeatGridInput extends ChartFrame {
 }
 
 const LABEL = 360
+/** Room above the first row, so its label's ascenders are not cut off by the frame. */
+const TOP = 40
 const PITCH = 100
 const CELL = 80
 const ROUND = 16
-const DATES = 7 * PITCH + FONT
+const DATES = TOP + 7 * PITCH + FONT
 const KEY = DATES + 60
 /** The last column is named only from this many weeks, so it never runs into the first. */
 const ROOM = 6
@@ -62,11 +64,11 @@ function square(x: number, y: number, level: number, children: readonly SvgNode[
 export function heatGrid(input: HeatGridInput): SvgMarkup {
   const marks: SvgNode[] = []
   input.rowLabels.forEach((label, row) => {
-    if (label !== '') marks.push(el('text', { x: 0, y: row * PITCH + 70, ...INK }, [label]))
+    if (label !== '') marks.push(el('text', { x: 0, y: TOP + row * PITCH + 70, ...INK }, [label]))
   })
   input.weeks.forEach((days, col) => {
     days.forEach((cell, row) => {
-      if (cell !== null) marks.push(square(LABEL + col * PITCH, row * PITCH, cell.level, [el('title', {}, [cell.title])]))
+      if (cell !== null) marks.push(square(LABEL + col * PITCH, TOP + row * PITCH, cell.level, [el('title', {}, [cell.title])]))
     })
   })
   marks.push(el('text', { x: LABEL, y: DATES, ...INK }, [input.startText]))
