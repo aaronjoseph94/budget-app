@@ -5,7 +5,7 @@ import { parseMoneyInput, useAppData } from '../app-data.js'
 import { addTypedTransaction, ensureCategory, saveImport } from '../ledger.js'
 import { ImportScreen, type SaveRequest } from '../ImportScreen.js'
 import { readStatementPdf, type PdfImport } from '../pdf-import.js'
-import { readReceipt } from '../receipt.js'
+import { readReceipt, type ReceiptLink } from '../receipt.js'
 import { formatCents, formatDayMonth, formatIsoDate, todayIso } from '../format.js'
 import { IngestedText } from '../ui.js'
 import { atEndOf, CategoryOptions, ListSelect, LISTS_FOR, type CategoryKind } from '../lists.js'
@@ -14,7 +14,7 @@ import { Alert, Badge } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Field, Input, NativeSelect } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
-import { navigate } from '../nav.js'
+import { hashOf, navigate } from '../nav.js'
 import { cn } from '../lib/cn.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { JustTypeIt } from '../add/JustTypeIt.js'
@@ -594,11 +594,20 @@ function StillNeeded({ needed }: { needed: readonly string[] }) {
 type PhotoState =
   | { readonly kind: 'none' }
   | { readonly kind: 'reading'; readonly preview: string }
-  | { readonly kind: 'read'; readonly preview: string }
-  | { readonly kind: 'failed'; readonly preview: string; readonly message: string }
+  | { readonly kind: 'read'; readonly preview: string; readonly by: string }
+  | { readonly kind: 'failed'; readonly preview: string; readonly message: string; readonly link: ReceiptLink | null }
+
+/** The one place that fixes a photo not read: One-time updates, AI settings, or why the AI rests. */
+const PHOTO_LINKS: Readonly<Record<ReceiptLink, { readonly href: string; readonly words: string }>> = {
+  updates: { href: hashOf({ screen: 'help', param: 'updates' }), words: 'See One-time updates' },
+  ai: { href: hashOf({ screen: 'ai', param: null }), words: 'Open AI settings' },
+  'ai-rests': { href: hashOf({ screen: 'help', param: 'ai-rests' }), words: 'Why?' },
+}
 
 /**
- * A receipt photo, read by Gemini, checked by the user, then sent to Review.
+ * A receipt photo, read by an AI service that reads images (the AI
+ * helper, or read-receipt before it is installed), checked by the user,
+ * then sent to Review.
  *
  * What the model reads only fills in the form. The user sees every field and
  * can correct it, and the row still waits in Review for a category like any
@@ -626,9 +635,9 @@ function PhotoEntry() {
       setMerchant(result.reading.merchant ?? '')
       setAmount(result.reading.total)
       setDate(result.reading.date ?? '')
-      setState({ kind: 'read', preview })
+      setState({ kind: 'read', preview, by: result.by })
     } else {
-      setState({ kind: 'failed', preview, message: result.message })
+      setState({ kind: 'failed', preview, message: result.message, link: result.link })
     }
   }
 
@@ -699,7 +708,7 @@ function PhotoEntry() {
           }}
         />
         <span className="mt-2 max-w-xs text-xs text-muted-foreground">
-          The photo is read by Google Gemini and is not stored. On the free tier Google may use it to improve its products.
+          The photo goes only to an AI service that reads photos, free Google Gemini first, and is not stored. A free service may use it to improve its products.
         </span>
       </label>
     )
@@ -714,12 +723,24 @@ function PhotoEntry() {
           {state.kind === 'read' ? (
             <p className="text-sm">
               <Badge variant="outline">
-                <Icon name="sparkles" className="size-3" /> Read by Gemini
+                <Icon name="sparkles" className="size-3" /> Read by {state.by}
               </Badge>{' '}
               <span className="text-muted-foreground">Check each field before sending.</span>
             </p>
           ) : null}
-          {state.kind === 'failed' ? <Alert tone="error">{state.message}</Alert> : null}
+          {state.kind === 'failed' ? (
+            <Alert tone="error">
+              {state.message}
+              {state.link === null ? null : (
+                <>
+                  {' '}
+                  <a href={PHOTO_LINKS[state.link].href} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+                    {PHOTO_LINKS[state.link].words}
+                  </a>
+                </>
+              )}
+            </Alert>
+          ) : null}
           <Button variant="outline" size="sm" onClick={reset}>
             Use another photo
           </Button>
