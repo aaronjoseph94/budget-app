@@ -285,8 +285,11 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
   // of a suggestion. Each answers as the function does.
   const open = (r: FakeTables['ingest_candidates'][number]) => r.status === 'pending' && (r.category_id ?? null) === null
   function suggest(args: Readonly<Record<string, unknown>>): Response {
+    const offered = args['p'] as { candidate: string; category: string }[]
+    // 0018 refuses more than 200 at once, as invalid_parameter_value.
+    if (offered.length > 200) return pgError('22023')
     let set = 0
-    for (const { candidate, category } of args['p'] as { candidate: string; category: string }[]) {
+    for (const { candidate, category } of offered) {
       const at = tables.ingest_candidates.findIndex((r) => r.id === candidate && (open(r) || r.category_source === 'model'))
       const row = tables.ingest_candidates[at]
       const kind = tables.categories.find((c) => c.id === category)?.kind

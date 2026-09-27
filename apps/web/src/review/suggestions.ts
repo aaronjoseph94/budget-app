@@ -20,6 +20,8 @@ import type { SupabaseClient } from '../supabase.js'
 
 /** PostgREST's "no such function" and Postgres's: 0018 not pasted yet. */
 const NOT_THERE: ReadonlySet<string> = new Set(['PGRST202', '42883'])
+/** 0018 takes at most this many at once; a shop seen often can stand for more rows than that. */
+const PER_CALL = 200
 
 export type Stopped = { readonly kind: 'ai'; readonly view: AiView } | { readonly kind: 'needs_update' } | { readonly kind: 'failed' }
 
@@ -52,10 +54,11 @@ export async function suggestCategories(supabase: SupabaseClient, input: Categor
     const parsed = ran === null ? null : parseCategoriseReply(ran.text, batch.brief)
     if (parsed === null || !parsed.ok) continue
     const proposals = suggestionsOf({ batch, picks: parsed.picks })
-    if (proposals.length === 0) continue
-    const { data, error } = await supabase.rpc('suggest_candidate_categories', { p: proposals })
-    if (error !== null) return { suggested, stopped: NOT_THERE.has(error.code) ? { kind: 'needs_update' } : { kind: 'failed' } }
-    if (typeof data === 'number') suggested += data
+    for (let from = 0; from < proposals.length; from += PER_CALL) {
+      const { data, error } = await supabase.rpc('suggest_candidate_categories', { p: proposals.slice(from, from + PER_CALL) })
+      if (error !== null) return { suggested, stopped: NOT_THERE.has(error.code) ? { kind: 'needs_update' } : { kind: 'failed' } }
+      if (typeof data === 'number') suggested += data
+    }
   }
   return { suggested, stopped: null }
 }

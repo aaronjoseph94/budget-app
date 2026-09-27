@@ -55,6 +55,18 @@ describe('suggesting categories for Review', () => {
     expect((await listPending(fake.client)).rows[0]).toMatchObject({ category_id: 'c1', category_source: 'model' })
   })
 
+  it('stores a pick for a shop seen more than 200 times in parts 0018 takes', async () => {
+    const fake = seeded()
+    fake.tables.ingest_candidates.push(
+      ...Array.from({ length: 250 }, (_, n) => ({ id: `r${n}`, posted_on: '2026-09-12', amount_cents: -475, merchant: 'LITWARE COFFEE', merchant_raw: 'SQ *LITWARE COFFEE', status: 'pending' })),
+    )
+    answering(fake, 'Coffee')
+    expect(await suggestCategories(fake.client, await input(fake))).toEqual({ suggested: 253, stopped: null })
+    expect(fake.functions.calls).toHaveLength(1)
+    const sizes = fake.rpcCalls.filter((c) => c.name === 'suggest_candidate_categories').map((c) => (c.args['p'] as unknown[]).length)
+    expect(sizes).toEqual([200, 53])
+  })
+
   it('stores nothing the AI was unsure of', async () => {
     const fake = seeded()
     answering(fake, 'Groceries', 'low')
