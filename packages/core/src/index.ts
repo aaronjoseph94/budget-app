@@ -381,6 +381,8 @@ export {
   type RowChange,
 } from './compare.js'
 
+export { sizeBand, type Flow, type SizeBand, type SizeBandInput, type SizeBandOutput } from './size-band.js'
+
 /**
  * Date validation, re-exported so the app can make an IsoDate without importing
  * money-primitives — which apps/web may not do as a value, so that its money
