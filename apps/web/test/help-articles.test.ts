@@ -78,6 +78,15 @@ describe('Help articles', () => {
     expect(articleFor('savings')?.related).toContain('goals')
   })
 
+  // A18: Habits is written, and what it needs before each part shows.
+  it('says how to open Habits, what a streak needs, and where the Coach’s cheers lead', () => {
+    const reports = articleFor('reports')
+    expect(reports?.steps.some((step) => step.startsWith('Press **Habits**'))).toBe(true)
+    expect(reports?.stuck).toMatch(/set weekly budgets on the \*\*Week\*\* to start one/)
+    expect(reports?.stuck).not.toMatch(/on their way/)
+    expect(articleFor('coach')?.stuck).toMatch(/\*\*See your habits\*\*/)
+  })
+
   // A08: the owner is told where the goal's date and the quotes come from.
   it('says the Coach’s date is from what really moved in, and its quotes never from AI', () => {
     const coach = articleFor('coach')

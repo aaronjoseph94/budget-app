@@ -1156,6 +1156,11 @@ the workbook's per-block totals and F5's Left to spend, and refuses a row it
 cannot file, as the Month does. `weekBounds`, `shiftWeek`, `monthBounds`,
 `shiftMonth` and `SPENDING_LISTS` in the same file are all still used.
 
+**Update, 2026-09-27 (A18):** the Coach's and Habits' streak (F40) reads
+`weekSheet`'s Left to spend, the Week's own figure, as the plan asked.
+`weeklySummary` is left as it is, still with no caller; nothing in A18
+needed what it gives.
+
 **Why not fixed here:** removing it would delete tested behaviour with no
 equivalent in its place, which the task allowed only if the tests moved
 across unchanged.
@@ -2261,3 +2266,21 @@ phase, and the mobile pass (A26) sets sizes across the app together.
 
 **To settle:** raise the shared `Input size="sm"` and Setup's icon
 buttons to 44 px and 16 px text, checked at 320 px.
+
+---
+
+## N96 — The streak card names the longest run even when it is this one
+
+**Seen:** 2026-09-27, A18, in the preview. When the run now is also the
+longest, the Coach's streak card reads "…37 weeks in a row. Your longest
+run is 37 weeks." Correct, but it says the same number twice where
+"your best run yet" would say more.
+
+**Why not fixed here:** the card's words are one template per tone with
+the figures as blanks, and choosing between two by comparing the counts
+is a claim the digest should make (a size or status on the fact), which
+also changes the AI's cached signature.
+
+**To settle:** give `spending_streak` a status (`best` when current
+equals best) in the digest, and a second template for it.
+
