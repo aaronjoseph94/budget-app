@@ -99,7 +99,8 @@ describe('Reports, Habits: streaks, weekdays and personal bests (plan §2.6, A18
 
     const streak = await card('Weeks within budget')
     expect(figure(streak, 'In a row now')).toBe('5 weeks')
-    expect(figure(streak, 'Your longest run')).toBe('5 weeks, to the week of 14 Sep')
+    expect(figure(streak, 'Your longest run')).toBe('5 weeks')
+    expect(within(streak).getByText('Your longest run ended with the week of 14 Sep.')).toBeTruthy()
     expect(within(streak).getByText('Your best run yet. Keep it going!')).toBeTruthy()
     const listed = within(streak).getAllByRole('listitem').map((li) => li.textContent)
     expect(listed).toHaveLength(8)

@@ -157,8 +157,9 @@ function StreakCard({ streaks }: { streaks: Streaks }) {
       {current > 0 && current === best ? <p className="font-medium">Your best run yet. Keep it going!</p> : null}
       <dl className="divide-y">
         <Row label="In a row now" value={weeksText(current)} />
-        <Row label="Your longest run" value={bestEnded === null ? 'none yet' : `${weeksText(best)}, to the week of ${formatDayMonth(bestEnded)}`} />
+        <Row label="Your longest run" value={bestEnded === null ? 'none yet' : weeksText(best)} />
       </dl>
+      {bestEnded === null ? null : <p className="text-muted-foreground">Your longest run ended with the week of {formatDayMonth(bestEnded)}.</p>}
       <p className="text-muted-foreground">A week counts when the Week’s Left to spend stays at $0.00 or more.</p>
       <ul className="space-y-1">
         {weeks.slice(-WEEKS_LISTED).reverse().map((w) => (
