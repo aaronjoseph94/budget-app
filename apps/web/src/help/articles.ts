@@ -349,7 +349,7 @@ export const ARTICLES: readonly Article[] = [
     ],
     done: 'you have your answer, and you know which days and categories it counts.',
     stuck:
-      'With free AI on, the AI reads your question (✨), and is sent only the question, today’s date, your category names and the Help titles: never an amount or a charge. It never works out the answer: the app does, from your records, the same way the Month, the Forecast and Savings do. With AI off, resting or not installed, the app reads the question itself, which works best with a category’s name and words like “this month” or “last week”. An amount the AI read is kept only when it is one you typed, and you can change it. Opened with **Ask about this**, Ask suggests that screen’s questions first. If it says “I can’t answer that from your figures yet”, try one of the questions it suggests. A question about days before your records says where they start: bring in an earlier statement on **Add**. Your last five questions are kept on this phone or computer only, and never sent anywhere; **Clear these** forgets them.',
+      'With free AI on, the AI reads your question (✨), and is sent only your question as you typed it, today’s date, your category names and the Help titles: never a figure or a charge from your records. It never works out the answer: the app does, from your records, the same way the Month, the Forecast and Savings do. With AI off, resting or not installed, the app reads the question itself, which works best with a category’s name and words like “this month” or “last week”. An amount the AI read is kept only when it is one you typed, and you can change it. Opened with **Ask about this**, Ask suggests that screen’s questions first. If it says “I can’t answer that from your figures yet”, try one of the questions it suggests. A question about days before your records says where they start: bring in an earlier statement on **Add**. The list of your last five questions is kept on this phone or computer only; **Clear these** forgets them.',
     related: ['coach', 'forecast', 'free-ai', 'ai-sees'],
   },
   {
@@ -401,7 +401,7 @@ export const ARTICLES: readonly Article[] = [
     ],
     done: 'the Coach speaks in the tone you chose, and AI settings shows your choices.',
     stuck:
-      'Free AI services may keep what they are sent, and people there may read it. That is why the Coach sends only kinds of change, directions and your names for things, with long numbers in a name hidden. Ask sends only your question, today’s date, your category names and the Help titles, never an amount or a charge. If choosing a tone says it needs a one-time update, see **One-time updates**: until then the Coach cheers you on.',
+      'Free AI services may keep what they are sent, and people there may read it. That is why the Coach sends only kinds of change, directions and your names for things, with long numbers in a name hidden. Ask sends only your question as you typed it (so an amount you type is sent too), today’s date, your category names and the Help titles, never a figure or a charge from your records. If choosing a tone says it needs a one-time update, see **One-time updates**: until then the Coach cheers you on.',
     related: ['coach', 'free-ai', 'updates'],
     terms: [
       { term: 'Sent for the Coach', meaning: 'what kind of change each is, up or down, a little or a lot, how many months of records it rests on, your category and goal names, and a short list of quotes.' },
