@@ -2,7 +2,8 @@
  * A month as two CSV files (plan A19): its charges, and the Overview's
  * figures. Every amount is the screen's own, through formatPlainAmount, and
  * every figure in the summary is core's monthReport (F36), so a file cannot
- * say something the screen does not. Nothing here adds or compares.
+ * say something the screen does not. Nothing here adds up or works out
+ * a figure; it only picks the month's rows and puts them in date order.
  *
  * The writer, packages/report-export, is fetched only when a download is
  * tapped, so it never weighs on opening Reports. These rows are only the

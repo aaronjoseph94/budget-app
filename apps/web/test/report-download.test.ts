@@ -55,10 +55,17 @@ describe('chargesCsvRows', () => {
     ])
   })
 
-  it('keeps the database’s order within a day, and leaves out a charge outside the month', () => {
-    const sameDay = [row('b', '2026-08-10', -100, 'dining'), row('a', '2026-08-10', -200, 'dining'), row('z', '2026-09-01', -300, 'dining')]
-    const out = chargesCsvRows(reviewed(), sameDay, categories)
-    expect(out.slice(1).map((r) => r[4])).toEqual([{ number: '-1.00' }, { number: '-2.00' }])
+  it('keeps the database’s order within a day, keeps the first and last days, and leaves out a charge outside the month', () => {
+    const edges = [
+      row('z', '2026-09-01', -300, 'dining'),
+      row('y', '2026-08-31', -400, 'dining'),
+      row('b', '2026-08-10', -100, 'dining'),
+      row('a', '2026-08-10', -200, 'dining'),
+      row('x', '2026-08-01', -500, 'dining'),
+      row('w', '2026-07-31', -600, 'dining'),
+    ]
+    const out = chargesCsvRows(reviewed(), edges, categories)
+    expect(out.slice(1).map((r) => r[4])).toEqual([{ number: '-5.00' }, { number: '-1.00' }, { number: '-2.00' }, { number: '-4.00' }])
   })
 
   it('names a category it cannot find, rather than leaving the cell blank', () => {
