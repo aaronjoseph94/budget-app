@@ -86,6 +86,22 @@ describe('Ask with AI off', () => {
     await screen.findByText(sentence('You can spend $502.85 a day until the month ends, today included.'))
     expect(fake.functions.calls.filter((c) => c['action'] === 'run')).toEqual([])
   })
+
+  it('shows an amount from the question as a chip the owner can change, worked out again on the phone', async () => {
+    const fake = forecastFakeWithGoals()
+    open(fake)
+    await ask('What if I saved $50 a month?')
+
+    await screen.findByText(sentence('Saving $50.00 a month gets you to Flight training around December 2029, instead of May 2030.'))
+    const chip = screen.getByLabelText<HTMLInputElement>('A month’s saving')
+    expect(chip.value).toBe('50')
+    expect(screen.getByText('From your question: change it to see another.')).toBeTruthy()
+
+    const asked = { calls: fake.functions.calls.length, rpc: fake.rpcCalls.length }
+    fireEvent.change(chip, { target: { value: '100' } })
+    await screen.findByText(sentence('Saving $100.00 a month gets you to Flight training around August 2029, instead of May 2030.'))
+    expect({ calls: fake.functions.calls.length, rpc: fake.rpcCalls.length }).toEqual(asked)
+  })
 })
 
 describe('Ask with AI on', () => {
@@ -133,6 +149,22 @@ describe('Ask fails soft', () => {
     await screen.findByText(sentence('You spent $1,054.00 on Dining out.'))
     expect(screen.getByText(/The AI helper needs a one-time update, so the app read your question itself\./)).toBeTruthy()
     expect(screen.getByRole('link', { name: 'See One-time updates' }).getAttribute('href')).toBe('#/help/updates')
+  })
+
+  it('reads the payoff plan only for a debt-free question, and says when it needs a one-time update', async () => {
+    const fake = forecastFakeWithGoals()
+    open(fake)
+    await ask('When will I be debt-free?')
+    await screen.findByText(sentence('No debts on your payoff plan.'))
+    cleanup()
+
+    const missing = forecastFakeWithGoals()
+    missing.fail('debts', '42P01')
+    open(missing)
+    await ask('How much did I spend on dining out in August?')
+    await screen.findByText(sentence('You spent $1,054.00 on Dining out.'))
+    await ask('When will I be debt-free?')
+    await screen.findByText(/Your payoff plan needs a one-time update\./)
   })
 
   it('says the forecast needs a one-time update when its reads are missing, and still answers the rest', async () => {

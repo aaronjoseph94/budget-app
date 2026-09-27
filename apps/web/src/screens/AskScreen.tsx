@@ -1,9 +1,9 @@
-import { useMemo, useState, type ReactNode } from 'react'
-import type { Answer } from '@budget/core'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import type { Answer, DebtPlanInput } from '@budget/core'
 import { queryOf, type AskRead } from '@budget/savings-coach'
-import { useAppData } from '../app-data.js'
+import { useAppData, parseMoneyInput } from '../app-data.js'
 import { useFunds } from '../funds.js'
-import { todayIso } from '../format.js'
+import { formatForInput, todayIso } from '../format.js'
 import { hashOf } from '../nav.js'
 import { Button } from '../components/ui/button.js'
 import { Card, CardContent } from '../components/ui/card.js'
@@ -16,7 +16,7 @@ import { useCoachRead } from '../coach/facts.js'
 import { goalsForCore } from '../coach/goals.js'
 import { notSubscriptionsOf, useDismissals } from '../coach/dismissals.js'
 import { AnswerCard } from '../ask/AnswerCard.js'
-import { answerOf } from '../ask/answer.js'
+import { answerOf, readDebts } from '../ask/answer.js'
 import { readQuestion, type QuestionRead, type ReadBy } from '../ask/read.js'
 import { suggestions } from '../ask/suggest.js'
 
@@ -65,6 +65,8 @@ export function AskScreen({ topic }: { topic: HelpTopic | null }) {
   const [text, setText] = useState('')
   const [asked, setAsked] = useState<{ readonly question: string; readonly read: QuestionRead } | null>(null)
   const [busy, setBusy] = useState(false)
+  const [amount, setAmount] = useState<string | null>(null)
+  const [debts, setDebts] = useState<DebtPlanInput | 'missing_update' | 'failed' | null>(null)
 
   const ask = async (question: string, chip: boolean) => {
     if (question.trim() === '' || busy) return
@@ -72,28 +74,39 @@ export function AskScreen({ topic }: { topic: HelpTopic | null }) {
     try {
       const reading = await readQuestion(supabase, { question, asOf: todayIso(), categories, topics: TOPICS, chip })
       setAsked({ question: question.trim(), read: reading })
+      setAmount(reading.read.kind === 'intent' && reading.read.amountText !== null ? reading.read.amountText : null)
     } finally {
       setBusy(false)
     }
   }
 
   const intent = asked?.read.read.kind === 'intent' ? asked.read.read : null
+  // The payoff plan is read only for a question about it, on its own, so its failure is its answer's alone.
+  const wantsDebts = intent?.intent === 'debt_free'
+  useEffect(() => {
+    if (!wantsDebts || debts !== null) return
+    let live = true
+    void readDebts(supabase).then((d) => live && setDebts(d))
+    return () => void (live = false)
+  }, [wantsDebts, debts, supabase])
 
   const answer = useMemo((): Answer | 'loading' | 'failed' | null => {
     if (intent === null) return null
     if (read === 'failed') return 'failed'
-    if (read === null || coreGoals === null || dismissed === null) return 'loading'
+    if (read === null || coreGoals === null || dismissed === null || (wantsDebts && debts === null)) return 'loading'
+    const monthly = amount === null ? null : parseMoneyInput(amount)
     try {
       return answerOf(
-        { read, categories, goals: coreGoals, debts: null, notSubscriptions: notSubscriptionsOf(dismissed) },
-        queryOf(intent, null),
+        { read, categories, goals: coreGoals, debts: typeof debts === 'object' ? debts : null, notSubscriptions: notSubscriptionsOf(dismissed) },
+        queryOf(intent, monthly),
       )
     } catch {
       return 'failed'
     }
-  }, [intent, read, coreGoals, dismissed, categories])
+  }, [intent, read, coreGoals, dismissed, wantsDebts, debts, amount, categories])
 
   const missingUpdate =
+    (typeof answer === 'object' && answer?.status === 'missing' && answer.what === 'debts' && debts === 'missing_update') ||
     (typeof answer === 'object' && answer?.status === 'missing' && answer.what === 'forecast' && typeof read === 'object' && read?.forecast?.status === 'failed' && read.forecast.missingUpdate)
 
   return (
@@ -140,11 +153,33 @@ export function AskScreen({ topic }: { topic: HelpTopic | null }) {
         ) : answer === 'failed' ? (
           <p className="text-sm text-muted-foreground">Your records did not load, so this can’t be answered right now. Reload to try again; everything else still works.</p>
         ) : answer === null ? null : (
-          <AnswerCard read={intent} by={asked.read.by} names={intent.categoryIds.map((id) => categories.find((c) => c.id === id)?.name ?? '')} answer={answer} missingUpdate={missingUpdate} />
+          <AnswerCard read={intent} by={asked.read.by} names={intent.categoryIds.map((id) => categories.find((c) => c.id === id)?.name ?? '')} answer={answer} missingUpdate={missingUpdate}>
+            {intent.intent === 'what_if_cut' ? <AmountChip amount={amount} answer={answer} fromQuestion={intent.amountText !== null} onChange={setAmount} /> : null}
+          </AnswerCard>
         )}
       </div>
 
       {asked !== null && asked.read.read.kind === 'cannot' ? null : <Suggestions topic={topic} onAsk={(q) => void ask(q, true)} />}
+    </div>
+  )
+}
+
+/** The amount a what-if saves a month: the owner's own words, or the suggestion, and theirs to change. */
+function AmountChip({ amount, answer, fromQuestion, onChange }: { amount: string | null; answer: Answer; fromQuestion: boolean; onChange: (amount: string) => void }) {
+  const figure = answer.status === 'answered' ? answer.main.figures['monthly'] : undefined
+  const shown = amount ?? (figure?.unit === 'cents' ? formatForInput(figure.value) : '')
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-lg bg-muted/60 p-3 text-sm">
+      <label htmlFor="ask-amount" className="font-medium">
+        A month’s saving
+      </label>
+      <span className="relative">
+        <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-2 flex items-center text-muted-foreground">
+          $
+        </span>
+        <Input id="ask-amount" inset className="w-28" inputMode="decimal" autoComplete="off" value={shown} onChange={(e) => onChange(e.target.value)} />
+      </span>
+      <span className="text-muted-foreground">{fromQuestion ? 'From your question: change it to see another.' : 'Change it to see another.'}</span>
     </div>
   )
 }
