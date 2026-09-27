@@ -139,3 +139,71 @@ function budgetOf(input: CheckinInput, week: CheckinWeek): RecapBudget | null {
   const kept = leftCents >= 0
   return { budgetCents: sumCents(set), leftCents, kept, overCents: kept ? ZERO_CENTS : cents(ZERO_CENTS - leftCents) }
 }
+
+/** A charge the check-in asks about. */
+export interface CheckinQuestion {
+  readonly transactionId: string
+  readonly postedOn: IsoDate
+  /** What was charged, as a positive amount. */
+  readonly chargeCents: Cents
+  readonly categoryId: string
+}
+
+/** A charge of this much or more is worth a question; a snack is not. */
+const ASK_FROM = 2_000
+const QUESTIONS = 3
+
+/**
+ * F42: the check-in week's Variable charges of $20.00 or more with no
+ * answer, the largest 3, a tie going to the earlier day, then the order
+ * given. A refund is never asked about. Asked whether or not the records
+ * cover the whole week: a question names a real row.
+ */
+export function questionsToAsk(input: {
+  readonly asOf: IsoDate
+  readonly categories: readonly WeekCategory[]
+  readonly entries: readonly (PeriodEntry & { readonly id: string })[]
+  /** Transactions already answered, in any week. */
+  readonly answered: readonly string[]
+}): { readonly week: CheckinWeek; readonly questions: readonly CheckinQuestion[] } {
+  const week = checkinWeek(input)
+  const answered = new Set(input.answered)
+  const kinds = new Map(input.categories.map((c) => [c.id, c.kind]))
+  const asked = input.entries
+    .map((e, order) => ({ e, order }))
+    .filter(({ e }) => kinds.get(e.categoryId) === 'variable' && e.postedOn >= week.start && e.postedOn <= week.end)
+    .filter(({ e }) => cents(e.amountCents) <= -ASK_FROM && !answered.has(e.id))
+    .sort((a, b) => a.e.amountCents - b.e.amountCents || (a.e.postedOn < b.e.postedOn ? -1 : a.e.postedOn > b.e.postedOn ? 1 : a.order - b.order))
+    .slice(0, QUESTIONS)
+  return {
+    week,
+    questions: asked.map(({ e }) => ({ transactionId: e.id, postedOn: e.postedOn, chargeCents: cents(-e.amountCents), categoryId: e.categoryId })),
+  }
+}
+
+export type CheckinAnswer = 'planned' | 'impulse' | 'needed'
+
+export interface ImpulseShare {
+  /** The first and last of the eight weeks' Mondays. */
+  readonly from: IsoDate
+  readonly to: IsoDate
+  readonly answers: number
+  readonly impulse: number
+  /** Impulse answers ÷ answers, in basis points, half-up; null with no answer. */
+  readonly shareBp: number | null
+}
+
+const SHARE_WEEKS = 8
+
+/** F42: how much of what was answered over the last eight check-in weeks was impulse. */
+export function impulseShare(input: {
+  readonly asOf: IsoDate
+  readonly answers: readonly { readonly askedWeek: IsoDate; readonly answer: CheckinAnswer }[]
+}): ImpulseShare {
+  const to = checkinWeek(input).start
+  const from = addDays(to, -7 * (SHARE_WEEKS - 1))
+  const counted = input.answers.filter((a) => a.askedWeek >= from && a.askedWeek <= to)
+  const impulse = counted.filter((a) => a.answer === 'impulse').length
+  const answers = counted.length
+  return { from, to, answers, impulse, shareBp: answers === 0 ? null : Math.floor((impulse * 20_000 + answers) / (2 * answers)) }
+}

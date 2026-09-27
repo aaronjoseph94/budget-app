@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { isoDate } from '@budget/money-primitives'
-import { checkinWeek, weeklyRecap, type CheckinInput } from '../src/index.js'
+import { checkinWeek, impulseShare, questionsToAsk, weeklyRecap, type CheckinInput } from '../src/index.js'
 
 /** Suite tests, worked by hand from F42 (docs/formula-decisions.md). Sunday 27 September 2026. */
 
@@ -95,5 +95,57 @@ describe('weeklyRecap (F42)', () => {
     // The first day read counts as much as history start.
     expect(weeklyRecap(input({ readFrom: d('2026-09-23') }))).toMatchObject({ status: 'not_covered', coveredFrom: '2026-09-23' })
     expect(weeklyRecap(input({ historyStart: null }))).toMatchObject({ status: 'not_covered', coveredFrom: null })
+  })
+})
+
+describe('questionsToAsk (F42)', () => {
+  const asked = (over: Partial<Parameters<typeof questionsToAsk>[0]> = {}) =>
+    questionsToAsk({ asOf: d('2026-09-27'), categories: CATEGORIES, entries: [...WEEK, ...BEFORE], answered: [], ...over }).questions
+  const ids = (qs: ReturnType<typeof asked>) => qs.map((q) => WEEK.find((r) => r.id === q.transactionId)?.amountCents)
+
+  it('asks about the week’s three largest everyday charges of $20.00 or more, never one under', () => {
+    const qs = asked()
+    expect(ids(qs)).toEqual([-11_240, -8_420, -2_000])
+    expect(qs[0]).toEqual({ transactionId: WEEK[2]!.id, postedOn: '2026-09-24', chargeCents: 11_240, categoryId: 'groceries' })
+    // CAFE's $19.99, the rent (a bill) and the refund are never asked about.
+    expect(qs.some((q) => q.chargeCents === 1_999 || q.categoryId === 'rent')).toBe(false)
+  })
+
+  it('never asks again about a charge already answered, in any week', () => {
+    expect(ids(asked({ answered: [WEEK[1]!.id] }))).toEqual([-11_240, -2_000])
+  })
+
+  it('keeps the largest three, a tie going to the earlier day', () => {
+    const more = [row('2026-09-21', -2_000, 'coffee'), row('2026-09-27', -9_000, 'dining')]
+    const qs = asked({ entries: [...WEEK, ...more] })
+    expect(qs.map((q) => [q.postedOn, q.chargeCents])).toEqual([
+      ['2026-09-24', 11_240],
+      ['2026-09-27', 9_000],
+      ['2026-09-23', 8_420],
+    ])
+    const tie = asked({ entries: [row('2026-09-26', -2_000, 'dining'), row('2026-09-21', -2_000, 'coffee')] })
+    expect(tie.map((q) => q.postedOn)).toEqual(['2026-09-21', '2026-09-26'])
+  })
+
+  it('asks about the week before on a weekday, and nothing outside the check-in’s week', () => {
+    expect(ids(asked({ asOf: d('2026-09-30') }))).toEqual([-11_240, -8_420, -2_000])
+    expect(asked({ asOf: d('2026-10-04') })).toEqual([])
+  })
+})
+
+describe('impulseShare (F42)', () => {
+  const answer = (askedWeek: string, a: 'planned' | 'impulse' | 'needed') => ({ askedWeek: d(askedWeek), answer: a })
+  const share = (answers: ReturnType<typeof answer>[]) => impulseShare({ asOf: d('2026-09-27'), answers })
+
+  it('is the impulse answers over the answers of the last eight weeks, half-up in basis points', () => {
+    const five = [answer('2026-09-21', 'impulse'), answer('2026-09-14', 'planned'), answer('2026-08-03', 'impulse'), answer('2026-08-10', 'needed'), answer('2026-09-07', 'planned')]
+    expect(share(five)).toEqual({ from: '2026-08-03', to: '2026-09-21', answers: 5, impulse: 2, shareBp: 4_000 })
+    expect(share([answer('2026-09-21', 'impulse'), answer('2026-09-21', 'planned'), answer('2026-09-21', 'needed')]).shareBp).toBe(3_333)
+    expect(share([answer('2026-09-21', 'impulse'), answer('2026-09-14', 'impulse'), answer('2026-09-21', 'needed')]).shareBp).toBe(6_667)
+  })
+
+  it('leaves out an answer from before the eight weeks, and has no share with no answers', () => {
+    expect(share([answer('2026-07-27', 'impulse'), answer('2026-09-21', 'planned')])).toMatchObject({ answers: 1, impulse: 0, shareBp: 0 })
+    expect(share([])).toMatchObject({ answers: 0, impulse: 0, shareBp: null })
   })
 })

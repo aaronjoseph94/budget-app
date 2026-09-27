@@ -273,7 +273,19 @@ export {
   type WeekdayPattern,
 } from './habits.js'
 
-export { checkinWeek, weeklyRecap, type CheckinInput, type CheckinWeek, type RecapBudget, type WeeklyRecap } from './checkin.js'
+export {
+  checkinWeek,
+  impulseShare,
+  questionsToAsk,
+  weeklyRecap,
+  type CheckinAnswer,
+  type CheckinInput,
+  type CheckinQuestion,
+  type CheckinWeek,
+  type ImpulseShare,
+  type RecapBudget,
+  type WeeklyRecap,
+} from './checkin.js'
 
 export {
   monthReport,
