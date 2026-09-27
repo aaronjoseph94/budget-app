@@ -254,6 +254,18 @@ describe('personalBest (F40)', () => {
     })
   })
 
+  it('counts exactly $1.00 under as a best, and sorts by how far under, not by the list', () => {
+    // Groceries' May at $401.00 against August's $400.00: exactly $1.00 apart.
+    const entries = seven.entries.map((e) => (e.categoryId === 'groceries' && e.postedOn === '2026-05-12' ? { ...e, amountCents: -40_100 } : e))
+    expect(personalBest({ ...seven, entries })).toMatchObject({
+      bests: [
+        { categoryId: 'coffee', cents: 2_000, nextCents: 6_000 },
+        { categoryId: 'dining', cents: 25_000, nextCents: 28_000 },
+        { categoryId: 'groceries', cents: 40_000, nextCents: 40_100, nextMonth: '2026-05-01' },
+      ],
+    })
+  })
+
   it('reads the last 12 whole months at most', () => {
     // September 2025 to January 2026 at $400.00 fill the twelve; August 2025, lower, is the thirteenth.
     const autumn = ['2025-09', '2025-10', '2025-11', '2025-12', '2026-01'].map((m) => spend(`${m}-12`, 40_000))
