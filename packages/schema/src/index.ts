@@ -104,3 +104,14 @@ export {
   type CheckinReply,
   type NarrateCheckin,
 } from './checkin.js'
+
+export {
+  CATEGORISE_LIMITS,
+  CATEGORY_ALIAS,
+  parseCategoriseReply,
+  type CategoriseBrief,
+  type CategoriseCategory,
+  type CategoriseParsed,
+  type CategorisePick,
+  type CategoriseRow,
+} from './categorise.js'
