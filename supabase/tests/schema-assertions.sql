@@ -2084,6 +2084,160 @@ begin
   raise notice 'an answer is removed with its charge';
 end $$;
 
+-- ---------------------------------------------------------------------------
+-- 0018: Review's suggested categories. A proposal lands only on the caller's
+-- own pending row that nobody filled, only in the caller's own spending
+-- category, and never approves anything.
+-- ---------------------------------------------------------------------------
+-- Rows in every state a proposal must respect, written as the superuser:
+-- the browser cannot write candidates (0004).
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000000181', '11111111-1111-4111-8111-111111111111', 'Card payments', 'transfer'),
+  ('cccccccc-0000-4000-8000-000000000182', '11111111-1111-4111-8111-111111111111', 'Old list', 'variable'),
+  ('cccccccc-0000-4000-8000-000000000183', '11111111-1111-4111-8111-111111111111', 'Kept', 'variable');
+insert into public.ingest_batches (id, user_id, account_id, source, parsed, deduped, inserted, rejected)
+  values ('bbbbbbbb-0000-4000-8000-000000000018', '22222222-2222-4222-8222-222222222222',
+          'aaaaaaaa-0000-4000-8000-000000000017', 'card_csv', 0, 0, 0, 0);
+insert into public.ingest_candidates
+  (id, user_id, batch_id, account_id, posted_on, amount_cents, merchant, merchant_raw,
+   category_id, category_source, status, dedupe_hash, dedupe_hash_v, source)
+select v.id::uuid, w.u::uuid, w.b::uuid, w.a::uuid, '2026-09-20', -1234, v.m, v.m,
+       v.cat::uuid, v.src::public.category_source, v.st::public.candidate_status,
+       encode(sha256(convert_to(v.id, 'UTF8')), 'hex'), 1, 'card_csv'
+  from (values
+    ('eeeeeeee-0000-4000-8000-000000000181', 'OPEN SHOP', null, null, 'pending'),
+    ('eeeeeeee-0000-4000-8000-000000000182', 'OWNER FILLED', 'cccccccc-0000-4000-8000-000000000183', 'user', 'pending'),
+    ('eeeeeeee-0000-4000-8000-000000000183', 'RULE FILLED', 'cccccccc-0000-4000-8000-000000000001', 'merchant_rule', 'pending'),
+    ('eeeeeeee-0000-4000-8000-000000000184', 'APPROVED SHOP', 'cccccccc-0000-4000-8000-000000000001', 'user', 'approved'),
+    ('eeeeeeee-0000-4000-8000-000000000185', 'GUESSED SHOP', 'cccccccc-0000-4000-8000-000000000182', 'model', 'pending')
+  ) as v(id, m, cat, src, st)
+  cross join (values ('11111111-1111-4111-8111-111111111111', 'bbbbbbbb-0000-4000-8000-000000000001',
+                      'aaaaaaaa-0000-4000-8000-000000000001')) as w(u, b, a);
+insert into public.ingest_candidates
+  (id, user_id, batch_id, account_id, posted_on, amount_cents, merchant, merchant_raw,
+   status, dedupe_hash, dedupe_hash_v, source)
+values ('eeeeeeee-0000-4000-8000-000000000186', '22222222-2222-4222-8222-222222222222',
+        'bbbbbbbb-0000-4000-8000-000000000018', 'aaaaaaaa-0000-4000-8000-000000000017', '2026-09-20', -1234,
+        'THEIR SHOP', 'THEIR SHOP', 'pending', repeat('9', 64), 1, 'card_csv');
+insert into public.ingest_candidates
+  (id, user_id, batch_id, account_id, posted_on, amount_cents, merchant, merchant_raw,
+   status, rejection_reason, dedupe_hash, dedupe_hash_v, source)
+values ('eeeeeeee-0000-4000-8000-000000000187', '11111111-1111-4111-8111-111111111111',
+        'bbbbbbbb-0000-4000-8000-000000000001', 'aaaaaaaa-0000-4000-8000-000000000001', '2026-09-20', -1234,
+        'REMOVED SHOP', 'REMOVED SHOP', 'rejected', 'user_rejected', repeat('6', 64), 1, 'card_csv');
+
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+
+do $$
+declare
+  coffee  uuid := 'cccccccc-0000-4000-8000-000000000001';
+  moving  uuid := 'cccccccc-0000-4000-8000-000000000181';
+  theirs  uuid := 'cccccccc-0000-4000-8000-000000000201';
+  open_   uuid := 'eeeeeeee-0000-4000-8000-000000000181';
+  guessed uuid := 'eeeeeeee-0000-4000-8000-000000000185';
+  n int;
+  s text;
+begin
+  -- Every row a proposal must leave alone, and the two it may set.
+  select public.suggest_candidate_categories(jsonb_build_array(
+    jsonb_build_object('candidate', open_, 'category', coffee),
+    jsonb_build_object('candidate', 'eeeeeeee-0000-4000-8000-000000000182', 'category', moving),
+    jsonb_build_object('candidate', 'eeeeeeee-0000-4000-8000-000000000182', 'category', coffee),
+    jsonb_build_object('candidate', 'eeeeeeee-0000-4000-8000-000000000183', 'category', coffee),
+    jsonb_build_object('candidate', 'eeeeeeee-0000-4000-8000-000000000184', 'category', coffee),
+    jsonb_build_object('candidate', 'eeeeeeee-0000-4000-8000-000000000186', 'category', coffee),
+    jsonb_build_object('candidate', 'eeeeeeee-0000-4000-8000-000000000187', 'category', coffee),
+    jsonb_build_object('candidate', guessed, 'category', coffee)
+  )) into n;
+  if n <> 2 then raise exception 'suggested % rows, not the open one and the one a model filled', n; end if;
+  select category_source::text into s from public.ingest_candidates where id = open_ and category_id = coffee;
+  if s is distinct from 'model' then raise exception 'a suggestion was recorded as %, not model', s; end if;
+  if exists (select 1 from public.ingest_candidates where id = 'eeeeeeee-0000-4000-8000-000000000182' and category_source <> 'user') then
+    raise exception 'a suggestion overwrote a row the owner filled';
+  end if;
+  if exists (select 1 from public.ingest_candidates where id = 'eeeeeeee-0000-4000-8000-000000000183' and category_source <> 'merchant_rule') then
+    raise exception 'a suggestion overwrote a row a learned rule filled';
+  end if;
+  if exists (select 1 from public.ingest_candidates where id = 'eeeeeeee-0000-4000-8000-000000000184' and category_source <> 'user') then
+    raise exception 'a suggestion changed an approved row';
+  end if;
+  if exists (select 1 from public.ingest_candidates where id = 'eeeeeeee-0000-4000-8000-000000000187' and category_id is not null) then
+    raise exception 'a suggestion landed on a row the owner removed';
+  end if;
+
+  -- Not into Not spending, nor into another user's category.
+  perform public.clear_candidate_suggestion(open_);
+  if public.suggest_candidate_categories(jsonb_build_array(jsonb_build_object('candidate', open_, 'category', moving))) <> 0 then
+    raise exception 'NOT REFUSED: a suggestion onto Not spending';
+  end if;
+  if public.suggest_candidate_categories(jsonb_build_array(jsonb_build_object('candidate', open_, 'category', theirs))) <> 0 then
+    raise exception 'NOT REFUSED: a suggestion into another user''s category';
+  end if;
+
+  -- At most 200 at once.
+  begin
+    perform public.suggest_candidate_categories(
+      (select jsonb_agg(jsonb_build_object('candidate', open_, 'category', coffee)) from generate_series(1, 201)));
+    raise exception 'NOT REFUSED: 201 suggestions at once';
+  exception when invalid_parameter_value then null;
+  end;
+
+  -- A proposal is never an approval: approving it as the model's is still refused.
+  perform public.suggest_candidate_categories(jsonb_build_array(jsonb_build_object('candidate', open_, 'category', coffee)));
+  if public.approve_candidate(open_, coffee) <> 'approved' then raise exception 'a suggested row could not be approved'; end if;
+  if not exists (select 1 from public.ingest_candidates where id = open_ and status = 'approved' and category_source = 'user') then
+    raise exception 'approving a suggestion did not record the owner''s choice';
+  end if;
+
+  -- Clearing: only the caller's own pending proposal.
+  if public.clear_candidate_suggestion('eeeeeeee-0000-4000-8000-000000000182') then
+    raise exception 'NOT REFUSED: clearing a category the owner chose';
+  end if;
+  if not public.clear_candidate_suggestion(guessed) then raise exception 'a proposal could not be cleared'; end if;
+  if exists (select 1 from public.ingest_candidates where id = guessed and category_id is not null) then
+    raise exception 'clearing left the proposal in place';
+  end if;
+  raise notice 'a suggestion lands only on the owner''s open rows, in their own spending categories';
+end $$;
+
+-- Another user can neither suggest onto nor clear the first user's rows.
+reset role;
+update public.ingest_candidates set category_id = 'cccccccc-0000-4000-8000-000000000182', category_source = 'model'
+ where id = 'eeeeeeee-0000-4000-8000-000000000185';
+set role app_user;
+set request.jwt.claim.sub = '22222222-2222-4222-8222-222222222222';
+do $$
+begin
+  if public.suggest_candidate_categories(jsonb_build_array(jsonb_build_object(
+       'candidate', 'eeeeeeee-0000-4000-8000-000000000185', 'category', 'cccccccc-0000-4000-8000-000000000201'))) <> 0 then
+    raise exception 'NOT REFUSED: a suggestion onto another user''s candidate';
+  end if;
+  if public.clear_candidate_suggestion('eeeeeeee-0000-4000-8000-000000000185') then
+    raise exception 'NOT REFUSED: clearing another user''s suggestion';
+  end if;
+  raise notice 'suggestions are each user''s own';
+end $$;
+
+reset role;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+
+-- A category named only by a proposal can be removed, and the proposal goes;
+-- one the owner filled a row with still cannot.
+do $$
+begin
+  delete from public.categories where id = 'cccccccc-0000-4000-8000-000000000182';
+  if exists (select 1 from public.ingest_candidates where id = 'eeeeeeee-0000-4000-8000-000000000185' and category_id is not null) then
+    raise exception 'a removed category''s proposal was kept';
+  end if;
+  begin
+    delete from public.categories where id = 'cccccccc-0000-4000-8000-000000000183';
+    raise exception 'NOT REFUSED: removing a category an owner-filled row names';
+  exception when foreign_key_violation then null;
+  end;
+  raise notice 'a proposal never stops a category being removed';
+end $$;
+
 -- The anonymous role — anyone holding the published key — cannot call any of
 -- these at all. Every SECURITY DEFINER function the browser calls is listed:
 -- one left off can lose its revoke with this check still green, as 0004's
@@ -2099,6 +2253,9 @@ begin
      or has_function_privilege('anon', 'public.dismiss_unreadable_line(uuid)', 'execute')
      or has_function_privilege('anon', 'public.ai_key_status()', 'execute')
      or has_function_privilege('anon', 'public.ai_key_forget(public.ai_provider)', 'execute')
+     or has_function_privilege('anon', 'public.suggest_candidate_categories(jsonb)', 'execute')
+     or has_function_privilege('anon', 'public.clear_candidate_suggestion(uuid)', 'execute')
+     or has_function_privilege('authenticated', 'public._clear_suggestions_of_category()', 'execute')
      or has_function_privilege('authenticated', 'public._post_candidate(uuid)', 'execute') then
     raise exception 'a SECURITY DEFINER function is callable by a role that must not call it';
   end if;
