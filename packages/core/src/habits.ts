@@ -12,6 +12,7 @@
  */
 import { type Cents, type IsoDate, ZERO_CENTS, addDays, cents, daysBetween, sumCents } from '@budget/money-primitives'
 import type { PeriodEntry, WeekCategory } from './period-sheet.js'
+import { goalBars } from './shares.js'
 import { median } from './stats.js'
 import { weekBounds } from './week.js'
 
@@ -112,6 +113,88 @@ export function spendingGrid(input: HabitsInput): SpendingGrid {
   })
   const recordedDays = weeks.reduce((n, w) => n + w.days.filter((x) => x.status === 'recorded').length, 0)
   return { weeks, allowance, recordedDays, noSpendDays: levels.none, levels }
+}
+
+export interface WeekdayAverage {
+  /** 1 for Monday to 7 for Sunday. */
+  readonly weekday: number
+  /** Its spending over the weeks read ÷ their number, half-up; below $0 after refunds. */
+  readonly averageCents: Cents
+  /** The bar's length (goalBars, F17); null below $0, which no bar can draw. */
+  readonly barBp: number | null
+  /** The allowance's track on the same scale; null with no weekly budget. */
+  readonly trackBp: number | null
+}
+
+export type WeekdayPattern =
+  | {
+      readonly status: 'ready'
+      /** Complete weeks read: 4 to 12. */
+      readonly weeks: number
+      /** The first read week's Monday and the last's Sunday. */
+      readonly from: IsoDate
+      readonly to: IsoDate
+      /** Monday to Sunday. */
+      readonly days: readonly WeekdayAverage[]
+      /** The weekday with the largest average above $0, the earlier on a tie; null when none is above $0. */
+      readonly costliest: number | null
+      /** The weekly budgets ÷ 7 the tracks show; null with none set. */
+      readonly allowanceCents: Cents | null
+    }
+  /** Under 4 complete weeks. `possibleFrom` is the Monday a pattern becomes possible; null with no records. */
+  | { readonly status: 'not_enough'; readonly weeks: number; readonly possibleFrom: IsoDate | null }
+
+/** Complete weeks read at most, and at least. */
+const PATTERN_WEEKS = 12
+const PATTERN_NEEDS = 4
+
+/** F40: the average Variable spending on each weekday over the last up to 12 complete weeks. */
+export function weekdayPattern(input: HabitsInput): WeekdayPattern {
+  const all = completeWeeks(input)
+  if (all.status === 'none') return { status: 'not_enough', weeks: 0, possibleFrom: null }
+  const starts = all.starts.slice(-PATTERN_WEEKS)
+  const n = starts.length
+  if (n < PATTERN_NEEDS) {
+    // Every week from the first whole one to today's is complete, so the
+    // fourth is complete from the Monday four weeks after the first.
+    return { status: 'not_enough', weeks: n, possibleFrom: addDays(all.firstWhole, 7 * PATTERN_NEEDS) }
+  }
+  const daily = dailySpending(input)
+  const averages = Array.from({ length: 7 }, (_, i) => {
+    const total = sumCents(starts.flatMap((start) => {
+      const spent = daily.get(addDays(start, i))
+      return spent === undefined ? [] : [spent]
+    }))
+    return halfUp(BigInt(total), BigInt(n))
+  })
+  const budgets = budgetAllowance(input.categories)
+  const allowanceCents = budgets === null ? null : budgets.cents
+  const { bars } = goalBars({ rows: averages.map((a, i) => ({ categoryId: String(i + 1), budgetCents: allowanceCents, actualCents: a })) })
+  const top = averages.reduce<number | null>((best, a, i) => (a > 0 && (best === null || a > averages[best]!) ? i : best), null)
+  return {
+    status: 'ready',
+    weeks: n,
+    from: starts[0]!,
+    to: addDays(starts[n - 1]!, 6),
+    days: averages.map((averageCents, i) => ({ weekday: i + 1, averageCents, barBp: bars[i]!.actualBp, trackBp: bars[i]!.goalBp })),
+    costliest: top === null ? null : top + 1,
+    allowanceCents,
+  }
+}
+
+/**
+ * Every complete week's Monday, oldest first (F40): wholly inside the
+ * records covered, and ended before asOf's week began. `firstWhole` is the
+ * first Monday on or after the records start.
+ */
+function completeWeeks(input: HabitsInput): { readonly status: 'none' } | { readonly status: 'some'; readonly starts: readonly IsoDate[]; readonly firstWhole: IsoDate } {
+  const covered = coveredFrom(input)
+  if (covered === null) return { status: 'none' }
+  const monday = weekBounds(covered).start
+  const firstWhole = monday === covered ? covered : addDays(monday, 7)
+  const thisWeek = weekBounds(input.asOf).start
+  const count = firstWhole < thisWeek ? daysBetween(firstWhole, thisWeek) / 7 : 0
+  return { status: 'some', starts: Array.from({ length: count }, (_, i) => addDays(firstWhole, 7 * i)), firstWhole }
 }
 
 /** The first day the records cover: the later of history start and the first day read (F38). */

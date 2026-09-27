@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { isoDate } from '@budget/money-primitives'
-import { gridLevel, spendingGrid, type HabitsInput } from '../src/index.js'
+import { gridLevel, spendingGrid, weekdayPattern, type HabitsInput } from '../src/index.js'
 
 /** Suite tests, worked by hand from F40 (docs/formula-decisions.md). Thursday 24 September 2026. */
 
@@ -115,5 +115,69 @@ describe('spendingGrid (F40)', () => {
   it('has no weeks with no records, and refuses a row naming a category it was not given', () => {
     expect(spendingGrid(habits({ historyStart: null })).weeks).toEqual([])
     expect(() => spendingGrid(habits({ entries: [spend('2026-09-01', 100, 'nowhere')] }))).toThrow(RangeError)
+  })
+})
+
+describe('weekdayPattern (F40)', () => {
+  // Records from Monday 24 August: four complete weeks, 24 August to 20 September.
+  const four = habits({
+    historyStart: d('2026-08-24'),
+    entries: [
+      spend('2026-08-24', 1_000),
+      spend('2026-08-29', 4_000),
+      spend('2026-09-01', 10),
+      spend('2026-09-02', -10, 'groceries'),
+      spend('2026-09-12', 2_500),
+      spend('2026-09-19', 3_600, 'coffee'),
+      spend('2026-09-19', 60_000, 'rent'),
+      // This week is not complete.
+      spend('2026-09-22', 10_000),
+    ],
+  })
+
+  it('averages each weekday over the complete weeks, half-up, and names the costliest', () => {
+    const pattern = weekdayPattern(four)
+    if (pattern.status !== 'ready') throw new Error('expected a pattern')
+    expect(pattern).toMatchObject({ weeks: 4, from: '2026-08-24', to: '2026-09-20', costliest: 6, allowanceCents: 3_000 })
+    // Saturdays $40 + $0 + $25 + $36 = $101 ÷ 4; Tuesday 10¢ ÷ 4 = 2.5¢, Wednesday's refund −2.5¢, each half-up on its size.
+    expect(pattern.days.map((x) => x.averageCents)).toEqual([250, 3, -3, 0, 0, 2_525, 0])
+    expect(pattern.days.map((x) => x.weekday)).toEqual([1, 2, 3, 4, 5, 6, 7])
+  })
+
+  it('draws each average over a track as long as the budgets\' allowance, and none below $0', () => {
+    const pattern = weekdayPattern(four)
+    if (pattern.status !== 'ready') throw new Error('expected a pattern')
+    // On a scale of $30.00: $25.25 is 8,416.7 bp, $2.50 833.3, 3¢ 10.
+    expect(pattern.days.map((x) => x.barBp)).toEqual([833, 10, null, 0, 0, 8_417, 0])
+    expect(pattern.days.every((x) => x.trackBp === 10_000)).toBe(true)
+  })
+
+  it('draws no track with no weekly budget, the largest average the scale', () => {
+    const pattern = weekdayPattern({ ...four, categories: CATEGORIES.map((c) => ({ ...c, weeklyBudgetCents: null })) })
+    if (pattern.status !== 'ready') throw new Error('expected a pattern')
+    expect(pattern.allowanceCents).toBeNull()
+    expect(pattern.days[5]).toMatchObject({ barBp: 10_000, trackBp: null })
+  })
+
+  it('reads the last 12 complete weeks at most', () => {
+    const pattern = weekdayPattern(habits({ entries: [spend('2026-06-27', 5_000), spend('2026-06-29', 1_200)] }))
+    if (pattern.status !== 'ready') throw new Error('expected a pattern')
+    expect(pattern).toMatchObject({ weeks: 12, from: '2026-06-29', to: '2026-09-20', costliest: 1 })
+    expect(pattern.days[0]!.averageCents).toBe(100)
+    expect(pattern.days[5]!.averageCents).toBe(0)
+  })
+
+  it('names the earlier weekday on a tie, and none when nothing was spent', () => {
+    const tie = weekdayPattern({ ...four, entries: [spend('2026-09-15', 400), spend('2026-09-17', 400)] })
+    expect(tie).toMatchObject({ status: 'ready', costliest: 2 })
+    expect(weekdayPattern({ ...four, entries: [] })).toMatchObject({ status: 'ready', costliest: null })
+  })
+
+  it('needs 4 complete weeks, and names the Monday it becomes possible', () => {
+    // Tuesday 1 September: the first whole week is 7 September; 7 and 14 September are complete.
+    expect(weekdayPattern(habits({ historyStart: d('2026-09-01') }))).toEqual({ status: 'not_enough', weeks: 2, possibleFrom: '2026-10-05' })
+    // A whole week of records from this Monday: complete from 28 September, four by 19 October.
+    expect(weekdayPattern(habits({ historyStart: d('2026-09-21') }))).toEqual({ status: 'not_enough', weeks: 0, possibleFrom: '2026-10-19' })
+    expect(weekdayPattern(habits({ historyStart: null }))).toEqual({ status: 'not_enough', weeks: 0, possibleFrom: null })
   })
 })

@@ -256,12 +256,15 @@ export {
 export {
   gridLevel,
   spendingGrid,
+  weekdayPattern,
   type DailyAllowance,
   type GridDay,
   type GridLevel,
   type GridWeek,
   type HabitsInput,
   type SpendingGrid,
+  type WeekdayAverage,
+  type WeekdayPattern,
 } from './habits.js'
 
 export {
