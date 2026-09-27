@@ -102,8 +102,10 @@ const PERIOD_WORDS: readonly (readonly [AskPeriodName, RegExp])[] = [
 const MONTHS: readonly AskMonthName[] = [
   'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december',
 ]
-/** Short names too, but never "may" or "mar" alone in a sentence that means something else: only as the whole word. */
+/** A month by its name or short name, as a whole word; "may" only after a word that names a time (MAY_MONTH). */
 const MONTH_WORD = /\b(?:(last) )?(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sept?(?:ember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/
+/** "May" is the month only after a word that names a time, so "how much may I spend" names none. */
+const MAY_MONTH = /\b(?:in|of|for|during|since|from|until|through|last|this) may\b/
 const AMOUNT_WORD = /^\$?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?\$?$/
 
 /** The question in lower case, NFKC, with the punctuation a sentence ends in turned to spaces. */
@@ -154,7 +156,7 @@ function periodIn(text: string, today: string): AskPeriodPick | null {
   const named = PERIOD_WORDS.find(([, words]) => words.test(text))
   if (named !== undefined) return { kind: named[0] }
   const month = MONTH_WORD.exec(text)
-  if (month === null) return null
+  if (month === null || (month[2] === 'may' && !MAY_MONTH.test(text))) return null
   const index = MONTHS.findIndex((m) => m.startsWith(month[2]!.slice(0, 3)))
   const name = MONTHS[index]!
   // A month named alone is the latest one: in September, "December" is last December.

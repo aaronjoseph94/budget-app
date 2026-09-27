@@ -51,6 +51,10 @@ describe('matchQuestion', () => {
     expect(match('spending last august')).toMatchObject({ period: { kind: 'month', month: 'august', year: 'last' } })
     expect(match('spending in sept')).toMatchObject({ period: { kind: 'month', month: 'september', year: 'this' } })
     expect(match('spent over the past 3 months')).toMatchObject({ period: { kind: 'last_three_months' } })
+    // "May" is a month after a word that names a time, never the verb.
+    expect(match('How much may I spend on coffee?')).toMatchObject({ intent: 'spend_in', period: null })
+    expect(match('coffee spending in may')).toMatchObject({ period: { kind: 'month', month: 'may', year: 'this' } })
+    expect(match('spending last may')).toMatchObject({ period: { kind: 'month', month: 'may', year: 'last' } })
   })
 
   it('opens Help for a how-to question, by the topic sharing the most words', () => {
