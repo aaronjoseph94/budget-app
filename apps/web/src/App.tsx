@@ -20,6 +20,7 @@ import { checkinDue } from './coach/checkin-seen.js'
 // it waited for every other screen's code: 214 KB gzipped, most of it
 // unused on the Month (PERF-3). Add carries the statement readers with it.
 const AiSettingsScreen = lazy(() => import('./screens/AiSettingsScreen.js').then((m) => ({ default: m.AiSettingsScreen })))
+const AskScreen = lazy(() => import('./screens/AskScreen.js').then((m) => ({ default: m.AskScreen })))
 const AddScreen = lazy(() => import('./screens/AddScreen.js').then((m) => ({ default: m.AddScreen })))
 const CalendarScreen = lazy(() => import('./screens/CalendarScreen.js').then((m) => ({ default: m.CalendarScreen })))
 const CoachScreen = lazy(() => import('./screens/CoachScreen.js').then((m) => ({ default: m.CoachScreen })))
@@ -279,6 +280,7 @@ function Screens({ screen, param }: { screen: Screen; param: string | null }) {
       {screen === 'ai' ? <AiSettingsScreen /> : null}
       {screen === 'forecast' ? <ForecastScreen /> : null}
       {screen === 'reports' ? <ReportsScreen month={param} /> : null}
+      {screen === 'ask' ? <AskScreen topic={null} /> : null}
       {screen === 'coach' && param === null ? <CoachScreen /> : null}
       {/* nav.ts reads no other param on the Coach. */}
       {screen === 'coach' && param === 'checkin' ? <CheckinScreen /> : null}

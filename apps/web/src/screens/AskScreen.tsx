@@ -1,15 +1,16 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import type { Answer } from '@budget/core'
-import { queryOf } from '@budget/savings-coach'
+import { queryOf, type AskRead } from '@budget/savings-coach'
 import { useAppData } from '../app-data.js'
 import { useFunds } from '../funds.js'
 import { todayIso } from '../format.js'
 import { hashOf } from '../nav.js'
 import { Button } from '../components/ui/button.js'
+import { Card, CardContent } from '../components/ui/card.js'
 import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { HelpButton } from '../help/HelpButton.js'
-import { ARTICLES } from '../help/articles.js'
+import { ARTICLES, articleFor } from '../help/articles.js'
 import type { HelpTopic } from '../help/topics.js'
 import { useCoachRead } from '../coach/facts.js'
 import { goalsForCore } from '../coach/goals.js'
@@ -133,7 +134,7 @@ export function AskScreen({ topic }: { topic: HelpTopic | null }) {
 
       <div aria-live="polite" className="space-y-3">
         {asked === null ? null : <ReadByApp by={asked.read.by} />}
-        {asked !== null && asked.read.read.kind !== 'intent' ? <p>I can’t answer that from your figures yet. Try one of the questions below.</p> : null}
+        {asked !== null && asked.read.read.kind !== 'intent' ? <NotAnIntent read={asked.read.read} topic={topic} onAsk={(q) => void ask(q, true)} /> : null}
         {intent === null || asked === null ? null : answer === 'loading' ? (
           <p className="text-sm text-muted-foreground">Working it out…</p>
         ) : answer === 'failed' ? (
@@ -143,16 +144,42 @@ export function AskScreen({ topic }: { topic: HelpTopic | null }) {
         )}
       </div>
 
-      <Suggestions topic={topic} onAsk={(q) => void ask(q, true)} />
+      {asked !== null && asked.read.read.kind === 'cannot' ? null : <Suggestions topic={topic} onAsk={(q) => void ask(q, true)} />}
+    </div>
+  )
+}
+
+/** A Help answer, or "I can't answer that", with questions it can. */
+function NotAnIntent({ read, topic, onAsk }: { read: Exclude<AskRead, { kind: 'intent' }>; topic: HelpTopic | null; onAsk: (q: string) => void }) {
+  if (read.kind === 'help') {
+    const article = articleFor(read.topic)
+    if (article !== undefined) {
+      return (
+        <Card>
+          <CardContent className="space-y-2 pt-5">
+            <h2 className="font-semibold">{article.title}</h2>
+            <p className="text-sm">{article.summary}</p>
+            <a href={hashOf({ screen: 'help', param: article.id })} className={link}>
+              Open this article
+            </a>
+          </CardContent>
+        </Card>
+      )
+    }
+  }
+  return (
+    <div className="space-y-2">
+      <p>I can’t answer that from your figures yet. Try one of these:</p>
+      <Suggestions topic={topic} onAsk={onAsk} bare />
     </div>
   )
 }
 
 /** Questions the app answers by itself, so they work with AI off. */
-function Suggestions({ topic, onAsk }: { topic: HelpTopic | null; onAsk: (q: string) => void }) {
+function Suggestions({ topic, onAsk, bare = false }: { topic: HelpTopic | null; onAsk: (q: string) => void; bare?: boolean }) {
   return (
     <section aria-label="Suggested questions" className="space-y-2">
-      <h2 className="text-sm font-medium">Try asking</h2>
+      {bare ? null : <h2 className="text-sm font-medium">Try asking</h2>}
       <div className="flex flex-wrap gap-2">
         {suggestions(topic).map((q) => (
           <Button key={q} variant="outline" size="sm" className="h-auto min-h-11 whitespace-normal text-left" onClick={() => onAsk(q)}>

@@ -1,7 +1,8 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { AskBrief } from '@budget/schema'
 import { AskScreen } from '../src/screens/AskScreen.js'
-import type { FakeSupabase } from './fake-supabase.js'
+import { aiStatusReply, type FakeSupabase } from './fake-supabase.js'
 import { EXAMPLE_TODAY, forecastFakeWithGoals } from './forecast-seed.js'
 import { renderScreen } from './render-screen.js'
 
@@ -11,6 +12,20 @@ import { renderScreen } from './render-screen.js'
  * Flight training, $17,350.00 to go, is reached in May 2030 at its middle
  * pace of $92.31 a week (F33).
  */
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
+
+/** AI on through the receipts key, and a helper that reads every question as `plan`, naming categories by their names' aliases. */
+function aiReads(fake: FakeSupabase, plan: Record<string, unknown>, names: readonly string[] = []) {
+  const [gemini, ...rest] = fake.functions.aiStatus.services
+  fake.functions.aiStatus = aiStatusReply({ services: [{ ...gemini!, source: 'secret', hint: 'abcd' }, ...rest] })
+  fake.functions.ai = (body) => {
+    if (body['action'] !== 'run') return json(fake.functions.aiStatus)
+    const brief = body['data'] as AskBrief
+    const categories = names.map((n) => brief.categories.find((c) => c.name === n)?.alias)
+    return json({ ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: JSON.stringify({ ...plan, categories }) })
+  }
+}
+
 function open(fake: FakeSupabase) {
   renderScreen(<AskScreen topic={null} />, fake)
 }
@@ -70,6 +85,41 @@ describe('Ask with AI off', () => {
 
     await screen.findByText(sentence('You can spend $502.85 a day until the month ends, today included.'))
     expect(fake.functions.calls.filter((c) => c['action'] === 'run')).toEqual([])
+  })
+})
+
+describe('Ask with AI on', () => {
+  it('marks what the AI read, and answers from core with the categories it named', async () => {
+    const fake = forecastFakeWithGoals()
+    aiReads(fake, { intent: 'compare', period: 'this_month', month: null, year: null, topic: null, amount: null }, ['Dining out'])
+    open(fake)
+    await ask('am i eating out more?')
+
+    // 1–24 September against 1–24 August: $840.00 against $1,054.00.
+    const card = await answerCard('Dining out: $214.00 less than the days before, $840.00 against $1,054.00.')
+    expect(within(card).getByText(/I read that as: Against the time before · Dining out · This month/).textContent).toContain('✨')
+    expect(within(card).getByText('1 – 24 Sep, against 1 – 24 Aug')).toBeTruthy()
+    const [brief] = fake.functions.calls.filter((c) => c['action'] === 'run').map((c) => c['data'] as Record<string, unknown>)
+    expect(Object.keys(brief!)).toEqual(['question', 'today', 'categories', 'topics'])
+  })
+
+  it('says it cannot answer, with questions it can', async () => {
+    const fake = forecastFakeWithGoals()
+    aiReads(fake, { intent: 'cannot', period: null, month: null, year: null, topic: null, amount: null })
+    open(fake)
+    await ask('Should I buy a boat?')
+
+    await screen.findByText('I can’t answer that from your figures yet. Try one of these:')
+    expect(screen.getAllByRole('button', { name: 'How much did I spend this month?' })).toHaveLength(1)
+  })
+
+  it('opens the Help article a how-to question is about', async () => {
+    const fake = forecastFakeWithGoals()
+    aiReads(fake, { intent: 'help', period: null, month: null, year: null, topic: 'statements', amount: null })
+    open(fake)
+    await ask('where do my card statements go')
+
+    expect((await screen.findByRole('link', { name: 'Open this article' })).getAttribute('href')).toBe('#/help/statements')
   })
 })
 

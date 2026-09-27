@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import { ArticleBody } from '../src/help/ArticleBody.js'
+import { HelpScreen } from '../src/screens/HelpScreen.js'
 import { ARTICLES, type Article } from '../src/help/articles.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
@@ -78,8 +79,9 @@ describe('Help', () => {
   })
 
   it('opens the list, saying so, for a topic whose article is not written yet', async () => {
-    go('/help/ask')
-    renderScreen(<Shell />, createFakeSupabase())
+    // Ask's article (A24) was the last one missing, so no committed topic lacks one:
+    // a topic the screen has no article for is handed to it directly.
+    renderScreen(<HelpScreen topic="not-written-yet" />, createFakeSupabase())
     await screen.findByRole('heading', { level: 1, name: 'Help' })
     expect(screen.getByText('That page is not written yet. Here is everything that is.').getAttribute('role')).toBe('status')
     expect(titles()).toHaveLength(ARTICLES.length)

@@ -335,6 +335,23 @@ export const ARTICLES: readonly Article[] = [
     related: ['periods', 'statements', 'wrong-number'],
   },
   {
+    id: 'ask',
+    title: 'Ask about your money',
+    summary:
+      'Ask a question in your own words, such as “How much did I spend on coffee in August?”, and get the answer from your own records: how much, against last time, where it went, your subscriptions, where the month ends, what is safe to spend, when you reach your goals, what a saving would do, and your debt-free date.',
+    steps: [
+      'Open **Ask** from **More**.',
+      'Type your question and press **Ask**, or tap one of the questions under **Try asking**.',
+      'Read **I read that as**, to check the app understood which categories and which days you meant.',
+      'Read the answer: the figure, a sentence and, where there is one, the list under it.',
+      'Press the link under the answer, such as **Open the Forecast**, to see the whole of it.',
+    ],
+    done: 'you have your answer, and you know which days and categories it counts.',
+    stuck:
+      'With free AI on, the AI reads your question (✨), and is sent only the question, today’s date, your category names and the Help titles: never an amount or a charge. It never works out the answer: the app does, from your records, the same way the Month, the Forecast and Savings do. With AI off, resting or not installed, the app reads the question itself, which works best with a category’s name and words like “this month” or “last week”. If it says “I can’t answer that from your figures yet”, try one of the questions it suggests. A question about days before your records says where they start: bring in an earlier statement on **Add**.',
+    related: ['coach', 'forecast', 'free-ai', 'ai-sees'],
+  },
+  {
     id: 'free-ai',
     title: 'Turn on free AI',
     summary:
@@ -383,7 +400,7 @@ export const ARTICLES: readonly Article[] = [
     ],
     done: 'the Coach speaks in the tone you chose, and AI settings shows your choices.',
     stuck:
-      'Free AI services may keep what they are sent, and people there may read it. That is why the Coach sends only kinds of change, directions and your names for things, with long numbers in a name hidden. If choosing a tone says it needs a one-time update, see **One-time updates**: until then the Coach cheers you on.',
+      'Free AI services may keep what they are sent, and people there may read it. That is why the Coach sends only kinds of change, directions and your names for things, with long numbers in a name hidden. Ask sends only your question, today’s date, your category names and the Help titles, never an amount or a charge. If choosing a tone says it needs a one-time update, see **One-time updates**: until then the Coach cheers you on.',
     related: ['coach', 'free-ai', 'updates'],
     terms: [
       { term: 'Sent for the Coach', meaning: 'what kind of change each is, up or down, a little or a lot, how many months of records it rests on, your category and goal names, and a short list of quotes.' },
