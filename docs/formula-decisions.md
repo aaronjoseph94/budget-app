@@ -2123,3 +2123,37 @@ training with $12,650.00 of $30,000.00 at $275.00 an hour: 4,217 bp
 (42.1666…% half-up), $17,350.00 to go, 12,650.00 × 60 ÷ 275.00 = 2,760
 minutes, 46 h, of 30,000.00 × 60 ÷ 275.00 = 6,545.45…, 6,545 minutes,
 109 h.
+
+---
+
+## F46 — Review suggestions: a charge's size band, and which rows are asked about
+
+**Decided 2026-09-27. Engineering default. Not from the workbook.** Decided
+by the engineer under the owner's 2026-09-24 instruction to proceed without
+questions (plan slice A21, §3.6; ADR 0008). The workbook files every row by
+hand, so there is no cell to follow.
+
+The AI is never sent an amount (§3.6). To tell a coffee from a tank of fuel
+it is sent a size band instead, which core decides (`sizeBand`), so no
+screen compares money itself.
+
+**Chosen.**
+
+- **Spent or received.** A row below $0 is spent; $0 or above is received,
+  as the ledger's signs are (a purchase is negative).
+- **The band** is of the amount without its sign: **small** under 2,000
+  cents (under $20), **medium** under 10,000 cents (under $100), and
+  **large** from 10,000 cents. A boundary belongs to the band above it:
+  exactly $20.00 is medium, exactly $100.00 is large.
+- **Which rows are asked about:** those waiting in Review with no category
+  stored and no learned rule for their shop. Rows sharing a shop, a
+  direction and a band are asked about once, and the answer is proposed for
+  each of them.
+- **Batches:** each request holds every offered category and as many rows
+  as keep its data under about 2,500 tokens (its JSON's UTF-8 bytes ÷ 3,
+  rounded up, the helper's own estimate) and at most 40 rows; a batch
+  always holds at least one row.
+
+**Worked example.** −$4.50 (−450): spent, small. −$20.00 (−2,000): spent,
+medium. −$99.99 (−9,999): spent, medium. −$100.00 (−10,000): spent, large.
+$2,100.00 (210,000): received, large. $0.00: received, small.
