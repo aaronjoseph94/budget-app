@@ -391,6 +391,8 @@ export { sizeBand, type Flow, type SizeBand, type SizeBandInput, type SizeBandOu
  */
 export { isoDate } from '@budget/money-primitives'
 
+export { starterBudgets, type StarterBudget, type StarterBudgets, type StarterBudgetsInput } from './starter-budgets.js'
+
 export { askWindow, type AskPeriod, type AskWindow, type AskWindowInput } from './ask-window.js'
 export type { Answer, AnswerLine, AnswerSay, Lines, SpendingBase } from './answer-spending.js'
 export type { AskGoal, ForecastRead } from './answer-outlook.js'
