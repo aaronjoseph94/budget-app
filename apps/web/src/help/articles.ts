@@ -241,7 +241,24 @@ export const ARTICLES: readonly Article[] = [
     done: 'you have read the line, your goal’s date and the cards, and you know why each one is there.',
     stuck:
       'Words marked ✨ were written by AI. The AI is never sent an amount, a balance or a date: it writes around blanks, and the app fills each blank with your own figure as it draws, so a figure is never the AI’s. A sentence that breaks the app’s rules is dropped, and that card shows the app’s own words. The AI is asked by itself at most once a day, and its words are kept and reused while what they say is still true. The Coach never moves money and never changes a budget without your tap. The date comes from what you really moved into the goal’s fund in each whole month: with under three months it is one rough date, and before a whole month is in, it says when to check back. A goal on no fund has no date until you press **Make it a fund** on Savings. Every quote and tip comes from a book, a speech or a public page, never written by AI; the AI may only pick one and say why it fits. A category shows only when it moves more than it usually does, so a quiet month has no cards. The same line sits at the top of the **Month**; tap it to come here. Under the cards, the forecast card says where the month is heading and what is safe to spend each day; press **Open the Forecast** for the whole of it. Some cards come from your shops: a price that went up, a new regular charge, a charge far above usual or the first at a new shop, the same charge twice, or a charge you added that a statement also holds. Press **See your shops** to see them all on Reports. Some cards cheer you on: two or more weeks in a row within your weekly budgets, or a category whose last whole month was its lowest; press **See your habits** for them on Reports. With **Share shop names** off in AI settings, the AI is told “a shop”, never its name.',
-    related: ['savings', 'goals', 'forecast', 'ai-sees', 'free-ai', 'comparisons'],
+    related: ['savings', 'goals', 'forecast', 'checkin', 'ai-sees', 'free-ai', 'comparisons'],
+  },
+  {
+    id: 'checkin',
+    title: 'The Sunday check-in',
+    summary:
+      'Once a week the Coach looks back at last week with you, Monday to Sunday: what your everyday spending came to, a win, a few questions about your biggest charges, one thing to try next week and how your goals are doing. It takes about 2 minutes.',
+    steps: [
+      'From Sunday, look for the dot on **Coach**, then press **Your Sunday check-in is ready**.',
+      'Read **Last week**: what you spent on everyday things, against the week before and your weekly budgets, and a win.',
+      'Under **Was it planned?**, press **Planned**, **Impulse** or **Needed** for each charge; press another to change your answer.',
+      'Read **One thing to try**, and press **Yes, set it** to make it that category’s weekly budget on the **Week**.',
+      'Read **Your goals**: a line for them and how far each has come.',
+    ],
+    done: 'you have answered the questions and chosen whether to set next week’s limit.',
+    stuck:
+      'Until Sunday, the check-in is about the week before; on Sunday it moves on to the week ending that day. It asks only about everyday charges of $20.00 or more, the three largest, and never again about one you have answered. Your answers show how much of your spending you called impulse over the last 8 weeks. The limit it suggests is the lower of what you spent last week and your usual week, rounded down to $5, and never above a weekly budget you already set; nothing is saved until you press the button. If your records do not cover all of last week yet, there is no recap: import the statement that covers it. If the questions say they need a one-time update, see One-time updates; the rest of the check-in still works. Words marked ✨ were written by AI around your own figures; with AI off, the app’s own words show. The dot goes once you open the check-in on this phone or computer.',
+    related: ['coach', 'budgets', 'goals', 'updates'],
   },
   {
     id: 'forecast',

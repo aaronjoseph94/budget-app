@@ -2332,3 +2332,56 @@ remedy found so far, a longer wait, is one the rules forbid.
 of its reads or effects is slow, and make the screen do less on first
 draw.
 
+
+---
+
+## N99 — "Turn on free AI below" is said where nothing is below
+
+**Seen:** 2026-09-27, A20, in the preview harness. The helper's
+`not_set_up` sentence ("…Turn on free AI below, in about 2 minutes.")
+was written for AI settings, where the Gemini card is below it. Reports'
+month in review and the check-in show the same sentence under their
+words, with a "Why?" link to Help, and nothing is below.
+
+**Why not fixed here:** the sentence lives in `ai/client.ts` and is
+shared by every screen that asks the AI; changing it here would change
+AI settings too, outside the slice.
+
+**To settle:** in A27, give each state a sentence for screens other
+than AI settings ("Turn on free AI in AI settings, in about 2
+minutes"), with the link to AI settings itself.
+
+---
+
+## N100 — The impulse share is not yet a fact on the Coach's daily cards
+
+**Seen:** 2026-09-27, A20. Plan §2.4 says the check-in's answers
+"become the 'how much of it was impulse' fact the coach can cite". A20
+shows the share on the check-in and sends it in the check-in's own
+brief, so the check-in's words can cite it; the Coach's daily digest
+does not read `coach_answers`, so its cards cannot.
+
+**Why not fixed here:** the digest's facts are read on the Month's path
+too (the coach line), and a new read of `coach_answers` there needs its
+own fail-soft and a new fact kind with templates in both tones and
+cards: a slice of its own.
+
+**To settle:** a later slice (A24's Ask, which already needs a fact per
+intent, or A27): an `impulse_share` digest fact from 3 or more answers,
+read off the Month's path, as the Coach's year read is.
+
+---
+
+## N101 — 0017's comment on `asked_week` says "asked in"; the app keeps the week asked about
+
+**Seen:** 2026-09-27, A20. 0017 describes `coach_answers.asked_week` as
+"The Monday of the week the question was asked in". F42 keeps the Monday
+of the week the question is about (the check-in's week), so an answer
+given on a Wednesday about the week before counts with that week in the
+eight-week impulse share. The column's CHECK (a Monday) holds either way.
+
+**Why not fixed here:** 0017 is applied to the hosted project and is
+never edited; the comment has no effect on behaviour.
+
+**To settle:** say so in the next migration that touches
+`coach_answers`, with a `comment on column`.

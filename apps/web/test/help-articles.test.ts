@@ -95,6 +95,15 @@ describe('Help articles', () => {
     expect(articleFor('savings')?.steps.join(' ')).toMatch(/one thing to trim/)
   })
 
+  // A20: the check-in says when it is ready, what it asks about, and that nothing is saved without a tap.
+  it('says how to open the check-in, what it asks about, and that the limit waits for a tap', () => {
+    const checkin = articleFor('checkin')
+    expect(checkin?.steps[0]).toMatch(/\*\*Your Sunday check-in is ready\*\*/)
+    expect(checkin?.stuck).toMatch(/\$20\.00 or more/)
+    expect(checkin?.stuck).toMatch(/nothing is saved until you press the button/)
+    expect(articleFor('coach')?.related).toContain('checkin')
+  })
+
   it('finds no article for a topic not written yet', () => {
     expect(articleFor('start')?.title).toBe('Start here')
     expect(articleFor('nowhere')).toBeUndefined()
