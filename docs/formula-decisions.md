@@ -2157,3 +2157,55 @@ screen compares money itself.
 **Worked example.** −$4.50 (−450): spent, small. −$20.00 (−2,000): spent,
 medium. −$99.99 (−9,999): spent, medium. −$100.00 (−10,000): spent, large.
 $2,100.00 (210,000): received, large. $0.00: received, small.
+
+---
+
+## F47 — Just type it: which number is the amount, which day it was, and which way the money went
+
+**Decided 2026-09-27. Engineering default. Not from the workbook.** Decided
+by the engineer under the owner's 2026-09-24 instruction to proceed without
+questions (plan slice A22, §3.9; ADR 0005 §7). The workbook is typed into
+cell by cell, so there is no cell to follow.
+
+`parseQuickEntry` in `statement-parsers` reads one line such as "coffee 4.50
+yesterday" into the typed form's fields. It fills a field only when the
+words settle it; anything else is left empty for the owner, or for the AI
+under ADR 0005 §7's rule. Nothing is saved until **Add** is pressed.
+
+**Chosen.**
+
+- **The amount.** A word is a possible amount when it is digits, with
+  commas grouping thousands and up to two decimals, with `$` before or
+  after, read by the existing `parseAmountToCents` in `US_AMOUNT_FORMAT`.
+  A zero is not an amount. Words that make up a date are not amounts.
+  If any possible amount carries a `$`, only those count; otherwise, if any
+  carries cents, only those count. The amount is found when exactly one
+  word is left; two or more leave it empty, never the larger or the first.
+  A "dollars", "dollar" or "bucks" straight after it is dropped.
+- **The day.** Nothing said is today (`asOf`). "today", "yesterday", a
+  weekday's full name (the latest such day, today included; "last" before
+  it means the latest before today), `YYYY-MM-DD`, or a month's name or its
+  three-letter form (and "sept") with a day of the month, either way round,
+  with an optional year and an optional "st", "nd", "rd" or "th". With no
+  year, this year: last year is never guessed. A date after today, a day
+  the month does not have, a date with slashes (9/10 is September in one
+  country and October in another), or two different days in one line
+  leaves the day empty.
+- **Which way.** Received when the line says "received", "earned",
+  "refund", "refunded", "got paid" or "was paid"; otherwise spent. "paid"
+  alone is spent: "paid 1200 rent" is rent paid.
+- **The shop** is every other word, in the owner's own letters, with "I",
+  "spent", "paid", "bought", "on", "at", "for", "from", "to" and "with"
+  taken off either end. Nothing left leaves it empty.
+- **The category** is the one a learned rule gives the shop's tidied name
+  (`normalizeMerchant`), exactly, as an import would file it; no rule
+  leaves it empty.
+
+**Worked example, on Sunday 2026-09-27.** "coffee 4.50" is 450 cents,
+today, spent, "coffee". "coffee $12 yesterday" is 1,200 cents, 2026-09-26.
+"paid 1200 rent monday" is 120,000 cents, spent, "rent", 2026-09-21.
+"got paid 2100" is 210,000 cents, received, with no shop. "3 coffees 12"
+has no amount (3 and 12 both could be); "3 coffees 12.50" is 1,250 cents;
+"3 coffees $12" is 1,200 cents. "lunch sep 3" is 2026-09-03; "lunch sep
+30" and "lunch 9/3" leave the day empty (the first is after today, the
+second could be either month).
