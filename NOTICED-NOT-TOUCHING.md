@@ -2463,3 +2463,53 @@ rule can be filed under Not spending only by the owner's own pick.
 move money out of the budget; the owner and their own rules may.
 
 **To settle:** nothing, unless the owner asks for the AI to offer it.
+
+---
+
+## N107 — read-receipt is still deployed beside the AI helper
+
+**Seen:** 2026-09-27, A23. A receipt photo now goes to the helper first,
+and read-receipt answers only while the helper is not deployed, 0016 is
+not pasted, or the helper cannot do its part. Once the owner has pasted
+the helper, read-receipt is never reached, but it stays deployed with
+its own copy of the Gemini secret's use, its own origins list and its
+own `temperature: 0` (N65).
+
+**Why not fixed here:** ADR 0004 keeps it as the receipt fallback until
+the owner retires it; deleting a deployed function is the owner's step.
+
+**To settle:** after the helper is live, Help → One-time updates can say
+read-receipt may be deleted in Supabase → Edge Functions, and
+`receipt.ts`'s fallback, the fake's `readReceipt` and
+`supabase/functions/read-receipt` can go in one commit.
+
+---
+
+## N108 — read-receipt's own messages still name Gemini and docs/setup.md
+
+**Seen:** 2026-09-27, A23. When read-receipt is the one answering, its
+reasons are the old ones: "the Gemini key has not been added in
+Supabase. See docs/setup.md", and "Set GEMINI_MODEL in Supabase". They
+are true for read-receipt, but they send a non-engineer to a file in
+the repository and to Supabase's secrets rather than to Help.
+
+**Why not fixed here:** A23 kept the fallback exactly as before; the
+rewording of every such message is A27's (N28's rest).
+
+**To settle:** point both at Help → One-time updates, or at Turn on free
+AI, in A27's pass.
+
+---
+
+## N109 — The Photo tab's date field is clipped at 320 px
+
+**Seen:** 2026-09-27, A23's screenshots. The Photo form puts Total spent
+and Date side by side at every width; at 320 px Chromium's empty date
+field shows "mm/dd/yyy" cut at its edge. A chosen date fits, and nothing
+scrolls sideways.
+
+**Why not fixed here:** the form's layout is older than A23 and the same
+on the typed form; it is A26's mobile pass.
+
+**To settle:** stack the two fields below 360 px, as the plan's §9 does
+for comparison chips.

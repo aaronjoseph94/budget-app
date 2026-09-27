@@ -1102,6 +1102,18 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **Build:** the `receipt` task on services that read images only, with `read-receipt`'s prompt and schema; `receipt.ts` tries the helper and falls back to `read-receipt` when it is not deployed.
 - **Tests:** Groq is never sent an image; failover to a paid service only with the switch on; the fallback path; the reply still parsed by the existing receipt zod.
 - **Acceptance:** a service that cannot read images is never sent one; a paid service is tried only with **Use paid services** on; with the helper missing, a photo works exactly as today through `read-receipt`; the result still fills the form and goes to Review.
+- **Changed while building (2026-09-27).** Each decided by the engineer under the owner's 2026-09-24 instruction to proceed without questions.
+  - **No migration, as planned:** 0016's `ai_usage` CHECK already names `receipt`.
+  - **Which services read a photo** is a flag on each allowlist entry: Gemini, OpenAI and Anthropic. Groq's gpt-oss models read text only, and OpenRouter's free router may pick a model that does, so neither is ever sent one; a service passed over for this spends no call and is not listed as tried. With only those two set up, a receipt is `not_set_up`.
+  - **The photo is counted as a photo:** a request's tokens are its body without the photo's bytes, plus 1,600 for the photo (about what Anthropic counts for a phone receipt shrunk to its limit; Gemini and OpenAI count less). Counting base64 bytes would have claimed hundreds of thousands of tokens for one photo.
+  - **How the photo travels:** Gemini as `inline_data`, as `read-receipt` sends it; OpenAI as a `data:` address in an `image_url` part; Anthropic as a base64 `image` block; each before the text turn, which says only "Read this receipt." as data. The prompt and reply shape are `read-receipt`'s, word for word, with the shape as JSON Schema.
+  - **When `read-receipt` answers:** the helper not deployed (404), 0016 not pasted (`needs_update`), or the helper unable to do its part (`helper_error`, which is also how an older copy's refusal of the task reads). AI off, no service that reads photos, a limit reached, every service resting or a key turned down are the owner's settings and are never gone around: the photo is not sent elsewhere, and one line says why, with a link to AI settings or Why?. With neither function deployed, the line points to One-time updates.
+  - **The Photo tab names the company that read the photo** ("Read by Anthropic"), rather than always Gemini, and its line under the button says the photo goes only to a service that reads photos, free Google Gemini first.
+  - **The helper's version is `2026-09-27.4`.**
+  - **Helpers not named in the plan:** `ReceiptPhoto` (schema), `readReceiptPhoto` and `ReceiptLink` (`receipt.ts`), and the fake's `readReceipt`. Extra test: `apps/web/test/add-photo-ai.test.tsx` (the Photo tab with the helper reading, with neither function deployed, and with AI off); the contract and One-time updates tests gained cases, and `ai-receipt.test.ts` proves a photo gets its 30 seconds, not 20.
+  - **Commits:** 5 rather than about 2, each within 300 lines.
+  - **First load:** 188.60 KB gzipped before the slice, 188.59 KB after; Add is its own chunk.
+  - **Seen in the preview harness** (copied from `preview-a22`, with `?receipt` for a helper that reads an invented cafe receipt, `?nohelper` and `?aioff`) at 320, 390 and 1280 px, light and dark: no sideways scroll, inputs at 16 px, phone targets 44 px, no console errors. The empty date field clipped at 320 px is older than the slice (N109).
 
 ### A24: Ask about your money
 
