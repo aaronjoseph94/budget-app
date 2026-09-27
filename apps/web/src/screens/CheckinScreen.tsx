@@ -4,7 +4,7 @@ import { checkinFacts, type Checkin, type CheckinFacts } from '@budget/savings-c
 import type { AiProvider } from '@budget/schema'
 import { useAppData } from '../app-data.js'
 import { goalSavedCents, useFunds } from '../funds.js'
-import { formatCents, formatDateRange, formatDayMonth } from '../format.js'
+import { formatCents, formatDateRange, formatDayMonth, todayIso } from '../format.js'
 import { setWeeklyBudget } from '../ledger.js'
 import { hashOf } from '../nav.js'
 import { Button } from '../components/ui/button.js'
@@ -13,6 +13,7 @@ import { Section } from '../forecast/parts.js'
 import { useCoachRead } from '../coach/facts.js'
 import { checkinFigures, type CheckinFigures } from '../coach/checkin.js'
 import { useCheckinWords, type CheckinWordsState } from '../coach/use-checkin-words.js'
+import { markCheckinSeen } from '../coach/checkin-seen.js'
 import { CoachText } from '../coach/words.js'
 import { CheckinQuestions, useCheckinAnswers } from '../coach/CheckinQuestions.js'
 
@@ -29,6 +30,8 @@ const link = 'inline-flex min-h-11 items-center font-medium underline underline-
  * Without 0017 only the questions give way, to one line.
  */
 export function CheckinScreen() {
+  // Opened: the Coach tab's dot goes until next Sunday's check-in.
+  useEffect(() => markCheckinSeen(todayIso()), [])
   const read = useCoachRead()
   const { categories } = useAppData()
   const answers = useCheckinAnswers()

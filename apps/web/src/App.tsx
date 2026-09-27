@@ -12,6 +12,8 @@ import { Button } from './components/ui/button.js'
 import { AnnounceProvider } from './components/ui/announce.js'
 import { Icon, type IconName } from './components/ui/icons.js'
 import { cn } from './lib/cn.js'
+import { todayIso } from './format.js'
+import { checkinDue } from './coach/checkin-seen.js'
 
 // Each screen but the Month (and More, a list of links) is its own chunk,
 // fetched the first time it opens. The Month opens first (decision 1), and
@@ -121,6 +123,9 @@ export function Shell() {
   const width = wide ? 'max-w-3xl lg:max-w-7xl' : 'max-w-3xl'
   const main = useRef<HTMLElement>(null)
   useAnnounceScreen(screen, main)
+  // Read again on every move: opening the check-in marks it seen. Not on
+  // the Coach itself, whose own card says the check-in is ready.
+  const dot = useMemo(() => screen !== 'coach' && checkinDue(todayIso()), [screen, param])
 
   return (
     <AnnounceProvider>
@@ -151,7 +156,7 @@ export function Shell() {
                     key={t.screen}
                     href={hashOf({ screen: t.screen, param: null })}
                     aria-current={active ? 'page' : undefined}
-                    aria-label={labelOf(t, pendingTotal)}
+                    aria-label={labelOf(t, pendingTotal, dot)}
                     className={cn(
                       'relative flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5 rounded-md px-1.5 text-[11px] font-medium transition-colors',
                       'xl:flex-row xl:gap-2 xl:px-3 xl:text-sm',
@@ -169,6 +174,7 @@ export function Shell() {
                         <Count n={pendingTotal} />
                       </span>
                     ) : null}
+                    {t.screen === 'coach' && dot ? <Dot className="absolute right-1 top-1 xl:static" /> : null}
                   </a>
                 )
               })}
@@ -219,7 +225,7 @@ export function Shell() {
                   key={t.screen}
                   href={hashOf({ screen: t.screen, param: null })}
                   aria-current={active ? 'page' : undefined}
-                  aria-label={labelOf(t, pendingTotal)}
+                  aria-label={labelOf(t, pendingTotal, dot)}
                   className={cn(
                     'relative flex flex-col items-center gap-0.5 pb-1.5 pt-2 text-[11px] font-medium transition-colors',
                     active ? 'text-foreground' : 'text-muted-foreground',
@@ -241,6 +247,7 @@ export function Shell() {
                       <Count n={pendingTotal} />
                     </span>
                   ) : null}
+                  {t.screen === 'coach' && dot ? <Dot className="absolute right-[30%] top-2" /> : null}
                 </a>
               )
             })}
@@ -338,9 +345,15 @@ function useAnnounceScreen(screen: Screen, main: { readonly current: HTMLElement
   }, [screen, main])
 }
 
-/** "Review, 3 waiting" to a screen reader, rather than the badge read as "Review3". */
-function labelOf(t: Tab, pendingTotal: number): string {
+/** "Review, 3 waiting" to a screen reader, rather than the badge read as "Review3"; the Coach's dot as words. */
+function labelOf(t: Tab, pendingTotal: number, dot: boolean): string {
+  if (t.screen === 'coach' && dot) return `${t.label}, check-in ready`
   return t.screen === 'review' && pendingTotal > 0 ? `${t.label}, ${pendingTotal} waiting` : t.label
+}
+
+/** The Coach's dot: the Sunday check-in is ready (plan §2.1). Said in the tab's label, so hidden here. */
+function Dot({ className }: { className: string }) {
+  return <span aria-hidden="true" className={cn('size-2 rounded-full bg-primary', className)} />
 }
 
 function Count({ n }: { n: number }) {

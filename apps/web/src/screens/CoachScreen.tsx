@@ -20,6 +20,7 @@ import { goalsForCore } from '../coach/goals.js'
 import { GoalLever } from '../coach/GoalLever.js'
 import { GoalPace, paceShort } from '../coach/GoalPace.js'
 import { useGoalOutlooks, type Outlooks } from '../coach/outlook.js'
+import { CheckinLink } from '../coach/CheckinLink.js'
 import type { ListedGoalRow } from '../ledger.js'
 
 /**
@@ -54,6 +55,7 @@ export function CoachScreen() {
       <CoachStatus state={narrated} />
       <DayLine words={narration?.line ?? null} className="text-lg font-medium leading-snug" />
       <GoalsCard funds={funds} outlooks={outlooks} words={narration?.goal ?? null} />
+      <CheckinLink />
       <CoachCards
         digest={digest}
         cards={day?.cards ?? null}
