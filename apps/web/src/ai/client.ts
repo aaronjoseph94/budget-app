@@ -12,7 +12,7 @@
  * CLAUDE.md keeps to its four boundaries. Nothing from a reply is ever
  * drawn as markup.
  */
-import { AI_CODES, AiProviderSchema, type AiCode, type AiRequest, type AiServiceStatus, type AiStatusReply } from '@budget/schema'
+import { AI_CODES, AiProviderSchema, type AiCode, type AiProvider, type AiRequest, type AiServiceStatus, type AiStatusReply } from '@budget/schema'
 import type { HelpTopic } from '../help/topics.js'
 import type { SupabaseClient } from '../supabase.js'
 
@@ -102,6 +102,14 @@ export async function askAi(supabase: SupabaseClient, request: AiRequest): Promi
   const body: unknown = await reply.json().catch(() => null)
   const code = typeof body === 'object' && body !== null && 'code' in body ? body.code : null
   return { ok: false, view: viewOf(isCode(code) ? STATE_OF[code] : 'helper_error') }
+}
+
+/** The helper's answer to a run, narrowed by hand: its own code talking, not a model. The text is the model's, for a task's parser. */
+export function ranOf(data: unknown): { provider: AiProvider; model: string; text: string } | null {
+  const d = typeof data === 'object' && data !== null ? (data as Record<string, unknown>) : {}
+  const [provider, model, text] = [AiProviderSchema.safeParse(d['provider']), d['model'], d['text']]
+  if (!provider.success || typeof model !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,79}$/.test(model) || typeof text !== 'string') return null
+  return { provider: provider.data, model, text }
 }
 
 const PROVIDERS: readonly unknown[] = AiProviderSchema.options

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { AiKeyStatus } from '@budget/schema'
-import { aiStatus, askAi, statusOf, type AiView } from '../src/ai/client.js'
+import { aiStatus, askAi, ranOf, statusOf, type AiView } from '../src/ai/client.js'
 import { aiStatusReply, createFakeSupabase } from './fake-supabase.js'
 
 const reply = (body: unknown, status = 200) => () => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
@@ -114,5 +114,20 @@ describe('a status reply is read only when it is one', () => {
     expect(statusOf({ ...good, services: [{ ...good.services[0], model: 7 }] })).toBeNull()
     expect(statusOf({ ...good, today: { used: 1 } })).toBeNull()
     expect(statusOf('ok')).toBeNull()
+  })
+})
+
+describe('ranOf', () => {
+  const ran = { ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: '{"suggestions": []}' }
+  it('reads which service answered a run, with its model and the reply text', () => {
+    expect(ranOf(ran)).toEqual({ provider: 'gemini', model: 'gemini-3.5-flash-lite', text: '{"suggestions": []}' })
+  })
+
+  it('is null for a service it does not know, a model id that is not one, or a reply that is not text', () => {
+    expect(ranOf({ ...ran, provider: 'acme' })).toBeNull()
+    expect(ranOf({ ...ran, model: 'gemini <img>' })).toBeNull()
+    expect(ranOf({ ...ran, model: 7 })).toBeNull()
+    expect(ranOf({ ...ran, text: { suggestions: [] } })).toBeNull()
+    expect(ranOf(null)).toBeNull()
   })
 })

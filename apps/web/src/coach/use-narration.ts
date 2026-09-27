@@ -15,9 +15,9 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { checkReply, modelPayload, type ModelPayload } from '@budget/savings-coach'
-import { AiProviderSchema, parseNarrateReply, type AiProvider } from '@budget/schema'
+import { parseNarrateReply, type AiProvider } from '@budget/schema'
 import { useAppData } from '../app-data.js'
-import { askAi, type AiView } from '../ai/client.js'
+import { askAi, ranOf, type AiView } from '../ai/client.js'
 import { readNotes, writeNote } from './ai-cache.js'
 import { fromReply, ownWords, reuse, type Day, type Narration, type Signed } from './narration.js'
 import { sign, sigsByLetter } from './signatures.js'
@@ -56,14 +56,6 @@ function markAsked(asOf: string): void {
   } catch {
     // Storage blocked: the helper's own daily limit still bounds the asks.
   }
-}
-
-/** The helper's answer to a run, narrowed by hand: its own code talking, not a model (ai/client.ts). */
-export function ranOf(data: unknown): { provider: AiProvider; model: string; text: string } | null {
-  const d = typeof data === 'object' && data !== null ? (data as Record<string, unknown>) : {}
-  const [provider, model, text] = [AiProviderSchema.safeParse(d['provider']), d['model'], d['text']]
-  if (!provider.success || typeof model !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,79}$/.test(model) || typeof text !== 'string') return null
-  return { provider: provider.data, model, text }
 }
 
 export function useNarration(day: Day | null, asOf: string, auto: boolean): NarrationState {

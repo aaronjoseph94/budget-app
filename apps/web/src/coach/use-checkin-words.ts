@@ -13,11 +13,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { canonicalJson, checkCheckinReply, checkinBrief, checkinWords, mergeCheckin, type Checkin, type CheckinFacts } from '@budget/savings-coach'
 import { AiProviderSchema, CHECKIN_PROMPT_VERSION, parseCheckinReply, type AiProvider, type CheckinReply, type NarrateCheckin } from '@budget/schema'
 import { useAppData } from '../app-data.js'
-import { askAi, type AiView } from '../ai/client.js'
+import { askAi, ranOf, type AiView } from '../ai/client.js'
 import type { SupabaseClient } from '../supabase.js'
 import { sha256Hex } from './ai-cache.js'
 import { useCoachSettings } from './settings.js'
-import { ranOf } from './use-narration.js'
 
 export type CheckinWordsStatus = 'looking' | 'asking' | 'own' | 'ai'
 export interface CheckinWordsState {
