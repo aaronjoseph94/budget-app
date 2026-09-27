@@ -2513,3 +2513,50 @@ on the typed form; it is A26's mobile pass.
 
 **To settle:** stack the two fields below 360 px, as the plan's §9 does
 for comparison chips.
+
+---
+
+## N110 — Ask looks back twelve months, as the Coach does
+
+**Seen:** 2026-09-27, A24. Ask answers from the year the Coach reads
+(`useCoachRead`: twelve months before this month's first day). A question
+about January of last year, once the records reach that far, is answered
+"Your records here start on 1 Sep", naming the first day read rather
+than the first day of the records.
+
+**Why not fixed here:** the owner's records start on 8 August 2026, so
+today every such question is before the records anyway, and a second,
+longer read only for Ask would double the Coach's reads.
+
+**To settle:** when the records pass a year, read back to the period a
+question names before answering it, or say "Ask looks back a year".
+
+---
+
+## N111 — Ask's goal answers are dates, not hours of flight time
+
+**Seen:** 2026-09-27, A24. "When will I reach my goal?" and "what if I
+saved $50 a month?" answer with each goal's date, as Savings and the
+Forecast do. They do not add the hours framing the Coach's hero card
+has for a goal with a cost an hour ("11 min of flight time a month").
+
+**Why not fixed here:** a figure in minutes needs a new figure unit and
+sentence, and the Coach, Savings and the Forecast's What if… already
+show the time; the plan's Ask section asks for none.
+
+**To settle:** only if the owner asks for it in Ask: a `minutes` figure
+from `whatIf`'s `minutesPerMonth`, and a sentence naming the goal's unit.
+
+---
+
+## N112 — Ask meets N104 too
+
+**Seen:** 2026-09-27, A24. Ask sends the owner's category names cut by
+`maskLabel`, and the AI helper's `ask` holds them to the same `Label`
+(40 UTF-16 units). A category name of 40 or more characters holding an
+emoji makes the helper refuse the question as `bad_request`, which Ask
+reads as a helper needing its new copy, and answers the question itself.
+
+**Why not fixed here:** it is N104's cause, shared by every AI task.
+
+**To settle:** with N104.

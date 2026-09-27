@@ -251,3 +251,20 @@ proceed without questions.
   month's scope and a signature of the brief with
   `REPORT_PROMPT_VERSION`, and read back as model output. A month still
   running is never sent: its facts change daily.
+
+## Note, 2026-09-27: Ask about your money (slice A24)
+
+Decided by the engineer under the owner's 2026-09-24 instruction to
+proceed without questions.
+
+- The AI reads a question into a plan (`parseAskPlan`, packages/schema):
+  an intent from a fixed list, categories by alias, a period with no
+  digit, a Help topic id, and an amount only as the owner wrote it (§7).
+  It is sent no figure, and every figure is core's `answerQuery`.
+- **The answer's sentence is the app's own** (savings-coach's
+  `ANSWER_WORDS`, held to ModelProse), not the AI's, although §2.7 of
+  the plan drew a ✨ sentence: with no figure and no direction sent, any
+  sentence the AI wrote about the answer would be a claim it could not
+  know (§1). The ✨ marks the AI's reading, "I read that as".
+- Ask's answers are never cached (§6): nothing is kept but the last five
+  questions, in the owner's browser.
