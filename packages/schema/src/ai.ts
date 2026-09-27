@@ -18,6 +18,7 @@ import type { NarrateCheckin } from './checkin.js'
 import type { CategoriseBrief } from './categorise.js'
 import type { QuickAddBrief } from './quick-add.js'
 import type { ReceiptPhoto } from './receipt.js'
+import type { AskBrief } from './ask.js'
 
 /**
  * The AI services, in 0016's `ai_provider` enum order, which is also the
@@ -48,6 +49,7 @@ export type AiRequest =
   | { readonly action: 'run'; readonly task: 'categorise'; readonly data: CategoriseBrief }
   | { readonly action: 'run'; readonly task: 'quick_add'; readonly data: QuickAddBrief }
   | { readonly action: 'run'; readonly task: 'receipt'; readonly data: ReceiptPhoto }
+  | { readonly action: 'run'; readonly task: 'ask'; readonly data: AskBrief }
 
 /**
  * The tasks `run` takes. Each carries data, never a prompt: the prompt and
@@ -57,9 +59,10 @@ export type AiRequest =
  * check-in (A20); `categorise` suggests categories for rows waiting in
  * Review (A21); `quick_add` fills what Just type it's parser left empty
  * (A22); `receipt` reads a receipt photo, on a service that reads images
- * (A23); each later task joins with its slice.
+ * (A23); `ask` reads a question into a plan the app answers (A24); each
+ * later task joins with its slice.
  */
-export type AiTask = 'test' | 'narrate' | 'categorise' | 'quick_add' | 'receipt'
+export type AiTask = 'test' | 'narrate' | 'categorise' | 'quick_add' | 'receipt' | 'ask'
 
 /** What the helper takes as a key, so the app can say "check you copied all of it" before sending. */
 export const AI_KEY_SHAPE = /^[A-Za-z0-9_.:-]{20,200}$/
@@ -72,7 +75,7 @@ export type AiAction = AiRequest['action']
  * new version to be pasted over it. Bumped with every change to the
  * helper, as `YYYY-MM-DD.N`.
  */
-export const AI_HELPER_VERSION = '2026-09-27.4'
+export const AI_HELPER_VERSION = '2026-09-27.5'
 
 /**
  * Every failure the helper answers with, as a code the app turns into a

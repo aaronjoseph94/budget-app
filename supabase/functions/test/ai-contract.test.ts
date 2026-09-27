@@ -29,6 +29,7 @@ describe('the helper and the app agree on what may be asked', () => {
       { action: 'run', task: 'categorise', data: { rows: [{ i: 1, shop: 'CORNER MARKET', flow: 'spent', size: 'small' }], categories: [{ alias: 'c1', name: 'Groceries', list: 'variable' }] } },
       { action: 'run', task: 'quick_add', data: { text: '3 coffees 12', today: '2026-09-27', missing: ['amount'], categories: [{ alias: 'c1', name: 'Coffee', list: 'variable' }] } },
       { action: 'run', task: 'receipt', data: { image: 'QUJD'.repeat(40), mimeType: 'image/jpeg' } },
+      { action: 'run', task: 'ask', data: { question: 'coffee in August?', today: '2026-09-27', categories: [{ alias: 'c1', name: 'Coffee', list: 'variable' }], topics: [{ id: 'month-end', title: 'Two month-end figures' }] } },
     ]
     for (const provider of AiProviderSchema.options) {
       expect(RequestSchema.safeParse({ action: 'save_key', provider, key: 'test-not-a-real-key-0001' }).success).toBe(true)
