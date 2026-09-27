@@ -391,6 +391,16 @@ export { sizeBand, type Flow, type SizeBand, type SizeBandInput, type SizeBandOu
  */
 export { isoDate } from '@budget/money-primitives'
 
+export {
+  putOffStep,
+  setupProgress,
+  type PutOffStepInput,
+  type SetupCheck,
+  type SetupProgress,
+  type SetupProgressInput,
+  type SetupStep,
+  type SetupStepInput,
+} from './setup-progress.js'
 export { starterBudgets, type StarterBudget, type StarterBudgets, type StarterBudgetsInput } from './starter-budgets.js'
 
 export { askWindow, type AskPeriod, type AskWindow, type AskWindowInput } from './ask-window.js'
