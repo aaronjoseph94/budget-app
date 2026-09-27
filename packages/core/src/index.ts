@@ -273,6 +273,8 @@ export {
   type WeekdayPattern,
 } from './habits.js'
 
+export { checkinWeek, weeklyRecap, type CheckinInput, type CheckinWeek, type RecapBudget, type WeeklyRecap } from './checkin.js'
+
 export {
   monthReport,
   type LastMonth,

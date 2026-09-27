@@ -1,0 +1,99 @@
+import { describe, expect, it } from 'vitest'
+import { isoDate } from '@budget/money-primitives'
+import { checkinWeek, weeklyRecap, type CheckinInput } from '../src/index.js'
+
+/** Suite tests, worked by hand from F42 (docs/formula-decisions.md). Sunday 27 September 2026. */
+
+const d = isoDate
+const CATEGORIES: CheckinInput['categories'] = [
+  { id: 'dining', name: 'Dining out', kind: 'variable', sortOrder: 1, weeklyBudgetCents: 7_000 },
+  { id: 'groceries', name: 'Groceries', kind: 'variable', sortOrder: 2, weeklyBudgetCents: 14_000 },
+  { id: 'coffee', name: 'Coffee', kind: 'variable', sortOrder: 3, weeklyBudgetCents: null },
+  { id: 'rent', name: 'Rent', kind: 'bill', sortOrder: 4, weeklyBudgetCents: null },
+]
+let n = 0
+const row = (date: string, cents: number, categoryId: string) => ({ id: `t${++n}`, postedOn: d(date), amountCents: cents, categoryId })
+/** F42's week of 21 to 27 September. */
+const WEEK = [
+  row('2026-09-22', -450, 'coffee'),
+  row('2026-09-23', -8_420, 'dining'),
+  row('2026-09-24', -11_240, 'groceries'),
+  row('2026-09-25', -1_999, 'coffee'),
+  row('2026-09-25', -150_000, 'rent'),
+  row('2026-09-26', -2_000, 'dining'),
+  row('2026-09-26', 1_500, 'groceries'),
+]
+const BEFORE = [row('2026-09-15', -25_000, 'groceries')]
+const input = (over: Partial<CheckinInput> = {}): CheckinInput => ({
+  asOf: d('2026-09-27'),
+  historyStart: d('2026-02-01'),
+  readFrom: d('2025-09-01'),
+  categories: CATEGORIES,
+  entries: [...WEEK, ...BEFORE],
+  ...over,
+})
+
+describe('checkinWeek (F42)', () => {
+  it('is the week ending on a Sunday on that Sunday, and stays on it until the next', () => {
+    expect(checkinWeek({ asOf: d('2026-09-27') })).toEqual({ start: '2026-09-21', end: '2026-09-27' })
+    expect(checkinWeek({ asOf: d('2026-09-28') })).toEqual({ start: '2026-09-21', end: '2026-09-27' })
+    expect(checkinWeek({ asOf: d('2026-09-30') })).toEqual({ start: '2026-09-21', end: '2026-09-27' })
+    expect(checkinWeek({ asOf: d('2026-10-03') })).toEqual({ start: '2026-09-21', end: '2026-09-27' })
+    expect(checkinWeek({ asOf: d('2026-10-04') })).toEqual({ start: '2026-09-28', end: '2026-10-04' })
+  })
+})
+
+describe('weeklyRecap (F42)', () => {
+  it('sums the week’s everyday spending net of refunds, and judges it against the Week’s Left to spend', () => {
+    const recap = weeklyRecap(input())
+    if (recap.status !== 'ready') throw new Error(recap.status)
+    expect(recap.week).toEqual({ start: '2026-09-21', end: '2026-09-27' })
+    expect(recap.spentCents).toBe(22_609)
+    // ($70.00 − $104.20) + ($140.00 − $97.40) − $24.49 of Coffee, which has no budget.
+    expect(recap.budget).toEqual({ budgetCents: 21_000, leftCents: -1_609, kept: false, overCents: 1_609 })
+    expect(recap.noSpendDays).toBe(2)
+    expect(recap.top).toEqual({ categoryId: 'dining', spentCents: 10_420 })
+  })
+
+  it('compares with the week before, where the records cover it', () => {
+    const recap = weeklyRecap(input())
+    if (recap.status !== 'ready') throw new Error(recap.status)
+    expect(recap.before?.spentCents).toBe(25_000)
+    expect(recap.before?.change).toMatchObject({ changeCents: -2_391, direction: 'less' })
+
+    // Records from Monday 21 September: the week is covered, the one before is not.
+    const fresh = weeklyRecap(input({ historyStart: d('2026-09-21') }))
+    if (fresh.status !== 'ready') throw new Error(fresh.status)
+    expect(fresh.before).toBeNull()
+  })
+
+  it('calls a week kept at exactly $0.00 left, with nothing over', () => {
+    const exact = [row('2026-09-23', -7_000, 'dining'), row('2026-09-24', -14_000, 'groceries')]
+    const recap = weeklyRecap(input({ entries: exact }))
+    if (recap.status !== 'ready') throw new Error(recap.status)
+    expect(recap.budget).toEqual({ budgetCents: 21_000, leftCents: 0, kept: true, overCents: 0 })
+  })
+
+  it('has no budget line when no Variable category has a weekly budget, and no top in a week of nothing', () => {
+    const none = CATEGORIES.map((c) => ({ ...c, weeklyBudgetCents: c.kind === 'variable' ? null : c.weeklyBudgetCents }))
+    const recap = weeklyRecap(input({ categories: none, entries: [] }))
+    if (recap.status !== 'ready') throw new Error(recap.status)
+    expect(recap.spentCents).toBe(0)
+    expect(recap.budget).toBeNull()
+    expect(recap.top).toBeNull()
+    expect(recap.noSpendDays).toBe(7)
+  })
+
+  it('gives a tie for the top to the list’s order', () => {
+    const tie = [row('2026-09-23', -3_000, 'groceries'), row('2026-09-24', -3_000, 'dining')]
+    const recap = weeklyRecap(input({ entries: tie }))
+    expect(recap.status === 'ready' && recap.top).toEqual({ categoryId: 'dining', spentCents: 3_000 })
+  })
+
+  it('is not covered when the records start inside the week, and names where they do', () => {
+    expect(weeklyRecap(input({ historyStart: d('2026-09-22') }))).toEqual({ status: 'not_covered', week: { start: '2026-09-21', end: '2026-09-27' }, coveredFrom: '2026-09-22' })
+    // The first day read counts as much as history start.
+    expect(weeklyRecap(input({ readFrom: d('2026-09-23') }))).toMatchObject({ status: 'not_covered', coveredFrom: '2026-09-23' })
+    expect(weeklyRecap(input({ historyStart: null }))).toMatchObject({ status: 'not_covered', coveredFrom: null })
+  })
+})

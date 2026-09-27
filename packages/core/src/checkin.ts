@@ -1,0 +1,141 @@
+/**
+ * The Sunday check-in: which week it is about, and what that week came to
+ * (F42, docs/formula-decisions.md; plan §2.4, A20).
+ *
+ * The workbook has no check-in, so nothing here has a cached value; the
+ * tests are worked by hand. Everyday spending is the Variable expenses
+ * list, net of refunds, as F40's habits count it, and a week is judged by
+ * the Week's own Left to spend (F5), so the check-in never disagrees with
+ * the Week about the same seven days. Nothing is stored: it is recomputed
+ * from the ledger on every read.
+ */
+import { type Cents, type IsoDate, ZERO_CENTS, addDays, cents, sumCents } from '@budget/money-primitives'
+import { type Change, change } from './compare.js'
+import { type PeriodEntry, type WeekCategory, weekSheet } from './period-sheet.js'
+import { weekBounds } from './week.js'
+
+export interface CheckinInput {
+  /** Today: the check-in is about the week ending on the latest Sunday on or before it. */
+  readonly asOf: IsoDate
+  /** From historyStart; null when there are no records. */
+  readonly historyStart: IsoDate | null
+  /** The first day `entries` covers: a day before it was not read, and is not $0. */
+  readonly readFrom: IsoDate
+  /** Every category the entries name, each with its one weekly budget (0004). */
+  readonly categories: readonly WeekCategory[]
+  readonly entries: readonly PeriodEntry[]
+}
+
+export interface CheckinWeek {
+  /** Its Monday. */
+  readonly start: IsoDate
+  /** Its Sunday, on or before asOf. */
+  readonly end: IsoDate
+}
+
+/** F42: the week ending on the latest Sunday on or before asOf. */
+export function checkinWeek(input: { readonly asOf: IsoDate }): CheckinWeek {
+  const thisWeek = weekBounds(input.asOf)
+  // Only on its Sunday has this week ended; any other day, the check-in is about the week before.
+  return thisWeek.end === input.asOf ? thisWeek : weekBounds(addDays(input.asOf, -7))
+}
+
+export interface RecapBudget {
+  /** The Variable weekly budgets set, summed. */
+  readonly budgetCents: Cents
+  /** The Week's Left to spend (F5): below $0 when over. */
+  readonly leftCents: Cents
+  /** Left to spend is $0 or more. */
+  readonly kept: boolean
+  /** How far over, when not kept; $0 when kept. */
+  readonly overCents: Cents
+}
+
+export type WeeklyRecap =
+  | {
+      readonly status: 'ready'
+      readonly week: CheckinWeek
+      /** The week's Variable spending, net; below $0 in a week of refunds. */
+      readonly spentCents: Cents
+      /** Null when no Variable category has a weekly budget. */
+      readonly budget: RecapBudget | null
+      /** The week before, when the records cover it too. */
+      readonly before: { readonly spentCents: Cents; readonly change: Change } | null
+      /** Days whose Variable spending is $0 or less. */
+      readonly noSpendDays: number
+      /** The Variable category that cost most, above $0; null when none did. */
+      readonly top: { readonly categoryId: string; readonly spentCents: Cents } | null
+    }
+  /** The week starts before the records covered (or there are none), so its spending is unknown, not $0. */
+  | { readonly status: 'not_covered'; readonly week: CheckinWeek; readonly coveredFrom: IsoDate | null }
+
+export function weeklyRecap(input: CheckinInput): WeeklyRecap {
+  const week = checkinWeek(input)
+  const covered = coveredFrom(input)
+  if (covered === null || week.start < covered) return { status: 'not_covered', week, coveredFrom: covered }
+
+  const byCategory = variableSpending(input, week)
+  const spentCents = sumCents([...byCategory.values()])
+  const budget = budgetOf(input, week)
+  const beforeStart = addDays(week.start, -7)
+  const beforeSpent = beforeStart < covered ? null : sumCents([...variableSpending(input, { start: beforeStart, end: addDays(week.start, -1) }).values()])
+
+  const daily = new Map<IsoDate, Cents[]>()
+  for (const e of variableRows(input, week)) daily.set(e.postedOn, [...(daily.get(e.postedOn) ?? []), cents(e.amountCents)])
+  // A day's spending is the negated net of its rows (D3), so a day with only a refund spent nothing.
+  const noSpendDays = Array.from({ length: 7 }, (_, i) => addDays(week.start, i)).filter((day) => sumCents(daily.get(day) ?? []) >= 0).length
+
+  // The list's order breaks a tie, as the Month lists them.
+  const ordered = input.categories.filter((c) => c.kind === 'variable').sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+  let top: { categoryId: string; spentCents: Cents } | null = null
+  for (const c of ordered) {
+    const spent = byCategory.get(c.id)
+    if (spent !== undefined && spent > 0 && (top === null || spent > top.spentCents)) top = { categoryId: c.id, spentCents: spent }
+  }
+
+  return {
+    status: 'ready',
+    week,
+    spentCents,
+    budget,
+    before: beforeSpent === null ? null : { spentCents: beforeSpent, change: change(spentCents, beforeSpent, false) },
+    noSpendDays,
+    top,
+  }
+}
+
+/** The first day the records cover: the later of history start and the first day read (F38, F40). */
+function coveredFrom(input: CheckinInput): IsoDate | null {
+  const start = input.historyStart
+  if (start === null) return null
+  return start > input.readFrom ? start : input.readFrom
+}
+
+/** The window's rows on the Variable list. A row naming a category not passed in is refused, as periodSheet refuses it. */
+function variableRows(input: CheckinInput, window: CheckinWeek): PeriodEntry[] {
+  const kinds = new Map(input.categories.map((c) => [c.id, c.kind]))
+  return input.entries.filter((e) => {
+    const kind = kinds.get(e.categoryId)
+    if (kind === undefined) throw new RangeError(`A ledger row names category ${e.categoryId}, which was not passed in`)
+    return kind === 'variable' && e.postedOn >= window.start && e.postedOn <= window.end
+  })
+}
+
+/** Each Variable category's spending in the window, net: the negated net of its rows (D3). */
+function variableSpending(input: CheckinInput, window: CheckinWeek): Map<string, Cents> {
+  const nets = new Map<string, Cents[]>()
+  for (const e of variableRows(input, window)) nets.set(e.categoryId, [...(nets.get(e.categoryId) ?? []), cents(e.amountCents)])
+  // Subtracted from zero, not negated: -0 is not the 0 a purchase and its full refund make.
+  return new Map([...nets].map(([id, rows]) => [id, cents(ZERO_CENTS - sumCents(rows))]))
+}
+
+/** The Week's Left to spend on the Variable budgets (F5, as F40's streak), or null with none set. */
+function budgetOf(input: CheckinInput, week: CheckinWeek): RecapBudget | null {
+  const set = input.categories.flatMap((c) => (c.kind === 'variable' && c.weeklyBudgetCents !== null ? [cents(c.weeklyBudgetCents)] : []))
+  if (set.length === 0) return null
+  // Only the Variable block is read, which no planned bill touches.
+  const sheet = weekSheet({ asOf: week.start, categories: input.categories, entries: input.entries, planHistory: [], statementPeriodEnds: [], startingBalanceCents: null })
+  const leftCents = sheet.summary.leftToSpendCents
+  const kept = leftCents >= 0
+  return { budgetCents: sumCents(set), leftCents, kept, overCents: kept ? ZERO_CENTS : cents(ZERO_CENTS - leftCents) }
+}
