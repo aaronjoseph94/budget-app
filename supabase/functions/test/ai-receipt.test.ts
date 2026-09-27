@@ -42,6 +42,10 @@ interface World {
   readonly down?: readonly Service[]
   readonly env?: Record<string, string | undefined>
   readonly data?: unknown
+  /** Gemini answers only after this long, in fake time, unless the attempt is cut off first. */
+  readonly geminiAfterMs?: number
+  /** Told once a service is asked, so a test can move the clock only then. */
+  readonly asked?: () => void
 }
 
 async function receipt(w: World = {}) {
@@ -60,6 +64,14 @@ async function receipt(w: World = {}) {
     if (u.includes('/rpc/')) return new Response(null, { status: 204 })
     const service = ALL.find((s) => CHAT[s] === u)
     if (service === undefined) return json({}, 404)
+    w.asked?.()
+    if (service === 'gemini' && w.geminiAfterMs !== undefined) {
+      const signal = init?.signal
+      await new Promise<void>((resolve, reject) => {
+        const t = setTimeout(resolve, w.geminiAfterMs)
+        signal?.addEventListener('abort', () => (clearTimeout(t), reject(new DOMException('aborted', 'AbortError'))))
+      })
+    }
     return w.down?.includes(service) ? json({}, 500) : ANSWERS[service]()
   }) as typeof fetch
   const req = new Request(`${PROJECT}/functions/v1/ai`, {
@@ -83,7 +95,10 @@ beforeEach(() => {
   lines = []
   vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => void lines.push(args.map(String).join(' ')))
 })
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => {
+  vi.useRealTimers()
+  vi.restoreAllMocks()
+})
 
 describe('the receipt task', () => {
   it('sends Gemini the photo with read-receipt’s prompt and shape, and passes the reply back as text the receipt zod reads', async () => {
@@ -137,6 +152,17 @@ describe('the receipt task', () => {
     expect(claim).toMatchObject({ p_task: 'receipt', p_task_limit: 15 })
     expect(Number(claim!['p_tokens'])).toBeLessThan(3000)
     expect(Number(claim!['p_tokens'])).toBeGreaterThan(1600)
+  })
+
+  it('gives a photo 30 seconds an attempt, where words get 20', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    let asked!: () => void
+    const seen = new Promise<void>((resolve) => (asked = resolve))
+    const pending = receipt({ geminiAfterMs: 25_000, asked })
+    await seen
+    await vi.advanceTimersByTimeAsync(25_000)
+    const r = await pending
+    expect([r.status, r.reply['provider'], r.services]).toEqual([200, 'gemini', ['gemini']])
   })
 
   it('never logs the photo, the prompt or the reading', async () => {
