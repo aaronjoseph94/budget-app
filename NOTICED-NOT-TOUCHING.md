@@ -2433,3 +2433,33 @@ either reaches every AI task, and the helper would need pasting again.
 
 **To settle:** cut in `maskLabel` by UTF-16 length without splitting a
 pair, with a test naming a 40-character name that holds an emoji.
+
+---
+
+## N105 — Just type it meets N104 too
+
+**Seen:** 2026-09-27, A22. Just type it sends the owner's category
+names cut by `maskLabel`, and the AI helper's `quick_add` holds them to
+the same `Label` (40 UTF-16 units) as Review's suggestions. A category
+name of 40 or more characters holding an emoji makes the helper refuse
+the request as `bad_request`, which Add reads as a helper needing its
+new copy. The parser's fields are still filled.
+
+**Why not fixed here:** it is N104's cause, shared by every AI task.
+
+**To settle:** with N104.
+
+---
+
+## N106 — The typed form offers Not spending; Just type it's AI never does
+
+**Seen:** 2026-09-27, A22. The typed form's category list includes the
+Not spending list, and a learned rule may name one of its categories,
+which Just type it then fills. The AI is never offered one, as on
+Review (0018 refuses a suggestion there). So a line whose shop has no
+rule can be filed under Not spending only by the owner's own pick.
+
+**Why not fixed here:** that is the intended split: a guess must not
+move money out of the budget; the owner and their own rules may.
+
+**To settle:** nothing, unless the owner asks for the AI to offer it.

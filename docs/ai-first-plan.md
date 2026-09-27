@@ -1079,6 +1079,21 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **Screen:** **Just type it** first on Add; it fills the typed form; "read by AI: check it" on an amount the AI read.
 - **Tests:** `quick-entry.test.ts` ("4.50 coffee", "coffee $12 yesterday", "paid 1200 rent monday", an ambiguous "3 coffees 12"), `quick-add.test.ts` (an amount not in the text dropped), `add-just-type-it.test.tsx` (nothing saved without **Save**; AI off).
 - **Acceptance:** nothing is saved without **Save**; an amount the AI read that is not in the owner's words is dropped; Just type it works with AI off, through the parser alone.
+- **Changed while building (2026-09-27).** Each decided by the engineer under the owner's 2026-09-24 instruction to proceed without questions.
+  - **Records first:** F47 (which number is the amount, which day, which way the money went) was written before the parser.
+  - **No migration, as planned:** 0016's `ai_usage` CHECK already names `quick_add`.
+  - **`parseQuickEntry` takes one input object,** `{text, asOf, rules}`, as the engine's functions do, since the exact learned rule needs the owner's rules.
+  - **"paid" alone is spent, not money in.** The plan's own example, "paid 1200 rent monday", is rent paid; money in is "got paid", "was paid", "received", "earned", "refund" or "refunded". "got" alone is not money in either: "got coffee 4.50" is spent.
+  - **Weekdays by full name only,** since "sun", "sat" and "wed" are words in shop names. **Dates with slashes are never read** (9/10 is September in one country and October in another), and **last year is never guessed** for a date after today: each leaves the day empty.
+  - **The AI is asked only about the fields left empty,** listed as `missing`, and which way the money went only when the line did not say. The helper's reply shape lets a field not asked about be only null, and `parseQuickAddReply` drops it anyway. Its day must be neither after today nor before last year, and its shop must be words from the line, so nothing it invents fills the form. A kept amount is taken out of the shop's words it came from.
+  - **Save is the typed form's existing **Add** button;** Fill in only fills. Help's Add article says so.
+  - **Just type it sits at the top of the Type it tab, not before the tabs.** Statement stays the tab Add opens on, since nearly all the owner's money arrives by statement, and moving the tabs would change what the owner already knows.
+  - **Add has its own sentences** for an AI that did not help, as Review has: a missing or older helper points to One-time updates (an older copy refuses `quick_add` as a bad request), off and not set up to AI settings, resting to Why?.
+  - **The helper's version is `2026-09-27.3`.**
+  - **Helpers not named in the plan:** `amountIsTyped` and `QUICK_ADD_LIMITS` (schema); `apps/web/src/add/quick-add.ts` (`readQuickEntry`) and `JustTypeIt.tsx`. Extra tests: `supabase/functions/test/ai-quick-add.test.ts`, `apps/web/test/quick-add-read.test.ts`; the contract and One-time updates tests gained cases.
+  - **Commits:** 7 rather than about 3, each within 300 lines.
+  - **First load:** 188.57 KB gzipped before the slice, 188.60 KB after; Add is its own chunk.
+  - **Seen in the preview harness** (copied from `preview-a21`, with `?quickadd` for a helper that reads the amount, and `?nohelper`) at 320, 390 and 1280 px, light and dark: no sideways scroll, inputs at 16 px, the new button and links 44 px, no console errors. A reason line that said "fill in the rest" twice was fixed from it.
 
 ### A23: Receipts through the AI helper
 
