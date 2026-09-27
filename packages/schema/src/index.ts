@@ -93,3 +93,14 @@ export {
   type ReportPoint,
   type ReportReply,
 } from './report.js'
+
+export {
+  CHECKIN_LIMITS,
+  CHECKIN_PROMPT_VERSION,
+  parseCheckinReply,
+  type CheckinDrop,
+  type CheckinParsed,
+  type CheckinPart,
+  type CheckinReply,
+  type NarrateCheckin,
+} from './checkin.js'
