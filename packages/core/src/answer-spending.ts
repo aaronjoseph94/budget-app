@@ -24,7 +24,7 @@ import { SPENDING_LISTS, monthBounds } from './week.js'
 /** Which of the app's sentences an answer line is said in (savings-coach's ANSWER_WORDS). */
 export type AnswerSay =
   | 'spent_in' | 'received_in' | 'saved_in' | 'spent_all'
-  | 'compared' | 'compared_all' | 'not_compared'
+  | 'compared' | 'compared_all' | 'compared_same' | 'compared_all_same' | 'not_compared'
   | 'top_categories' | 'top_shops' | 'nothing_spent' | 'no_shops' | 'row'
   | 'month'
   | 'left' | 'over' | 'no_budget' | 'left_all' | 'over_all'
@@ -158,8 +158,10 @@ export function compareIn(base: SpendingBase, now: DateWindow, before: DateWindo
   if (before === null) return { say: 'not_compared', names: alone.names, figures: { amount: cents$(alone.amount) } }
   const earlier = amountIn(base, before, ids)
   const moved = change(alone.amount, earlier.amount, alone.say === 'received_in' || alone.say === 'saved_in')
+  // Under $1.00 either way is the same (F26), which a sentence says as "the same as", never "the same than".
+  const same = moved.direction === 'same'
   return {
-    say: alone.names.length === 0 ? 'compared_all' : 'compared',
+    say: alone.names.length === 0 ? (same ? 'compared_all_same' : 'compared_all') : same ? 'compared_same' : 'compared',
     names: alone.names,
     figures: { now: cents$(alone.amount), before: cents$(earlier.amount), change: { unit: 'change', value: moved.changeCents, direction: moved.direction } },
   }

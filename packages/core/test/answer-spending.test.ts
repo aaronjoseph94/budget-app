@@ -59,12 +59,11 @@ describe('compareIn (F48, F25, F26)', () => {
     expect(compareIn(BASE, SEPTEMBER, AUGUST_SAME_DAYS, []).say).toBe('compared_all')
   })
 
-  it('calls a change under $1.00 the same', () => {
-    expect(compareIn(BASE, AUGUST_SAME_DAYS, { from: d('2026-09-01'), to: d('2026-09-24') }, ['groceries']).figures['change']).toEqual({
-      unit: 'change',
-      value: 0,
-      direction: 'same',
-    })
+  it('calls a change under $1.00 the same, and says so', () => {
+    const same = compareIn(BASE, AUGUST_SAME_DAYS, { from: d('2026-09-01'), to: d('2026-09-24') }, ['groceries'])
+    expect(same.figures['change']).toEqual({ unit: 'change', value: 0, direction: 'same' })
+    expect(same.say).toBe('compared_same')
+    expect(compareIn(BASE, { from: d('2026-07-02'), to: d('2026-07-20') }, { from: d('2026-06-02'), to: d('2026-06-20') }, []).say).toBe('compared_all_same')
   })
 
   it('says there is nothing to compare with when the days before start before the records', () => {
