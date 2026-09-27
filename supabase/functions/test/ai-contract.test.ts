@@ -27,6 +27,7 @@ describe('the helper and the app agree on what may be asked', () => {
       { action: 'run', task: 'narrate', pack: 'report', data: { tone: 'straight', facts: [FACT], points: ['A'], tryThis: null } },
       { action: 'run', task: 'narrate', pack: 'checkin', data: { tone: 'straight', facts: [FACT], recap: 'A', win: null, tryThis: null, goals: [] } },
       { action: 'run', task: 'categorise', data: { rows: [{ i: 1, shop: 'CORNER MARKET', flow: 'spent', size: 'small' }], categories: [{ alias: 'c1', name: 'Groceries', list: 'variable' }] } },
+      { action: 'run', task: 'quick_add', data: { text: '3 coffees 12', today: '2026-09-27', missing: ['amount'], categories: [{ alias: 'c1', name: 'Coffee', list: 'variable' }] } },
     ]
     for (const provider of AiProviderSchema.options) {
       expect(RequestSchema.safeParse({ action: 'save_key', provider, key: 'test-not-a-real-key-0001' }).success).toBe(true)

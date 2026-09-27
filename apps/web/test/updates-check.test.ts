@@ -95,7 +95,7 @@ describe('checking the one-time updates', () => {
     const fake = createFakeSupabase()
     for (const [version, state] of [
       ['2026-09-25.5', 'old'], ['2026-09-24.9', 'old'], [undefined, 'old'], ['preview', 'old'],
-      ['2026-09-27.1', 'old'], ['2026-09-27.2', 'in'], ['2026-09-27.10', 'in'], ['2026-10-01.1', 'in'],
+      ['2026-09-27.2', 'old'], ['2026-09-27.3', 'in'], ['2026-09-27.10', 'in'], ['2026-10-01.1', 'in'],
     ] as const) {
       fake.functions.ai = () => new Response(JSON.stringify({ ok: true, version }), { headers: { 'content-type': 'application/json' } })
       const checked = await checkUpdates(fake.client)

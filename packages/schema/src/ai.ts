@@ -16,6 +16,7 @@ import type { NarrateDaily } from './narrate.js'
 import type { NarrateReport } from './report.js'
 import type { NarrateCheckin } from './checkin.js'
 import type { CategoriseBrief } from './categorise.js'
+import type { QuickAddBrief } from './quick-add.js'
 
 /**
  * The AI services, in 0016's `ai_provider` enum order, which is also the
@@ -44,6 +45,7 @@ export type AiRequest =
   | { readonly action: 'run'; readonly task: 'narrate'; readonly pack: 'report'; readonly data: NarrateReport }
   | { readonly action: 'run'; readonly task: 'narrate'; readonly pack: 'checkin'; readonly data: NarrateCheckin }
   | { readonly action: 'run'; readonly task: 'categorise'; readonly data: CategoriseBrief }
+  | { readonly action: 'run'; readonly task: 'quick_add'; readonly data: QuickAddBrief }
 
 /**
  * The tasks `run` takes. Each carries data, never a prompt: the prompt and
@@ -51,9 +53,10 @@ export type AiRequest =
  * whichever service answers first; `narrate` words the Coach's day from a
  * brief with no figure in it (A12), a month's review (A15) and the Sunday
  * check-in (A20); `categorise` suggests categories for rows waiting in
- * Review (A21); each later task joins with its slice.
+ * Review (A21); `quick_add` fills what Just type it's parser left empty
+ * (A22); each later task joins with its slice.
  */
-export type AiTask = 'test' | 'narrate' | 'categorise'
+export type AiTask = 'test' | 'narrate' | 'categorise' | 'quick_add'
 
 /** What the helper takes as a key, so the app can say "check you copied all of it" before sending. */
 export const AI_KEY_SHAPE = /^[A-Za-z0-9_.:-]{20,200}$/
@@ -66,7 +69,7 @@ export type AiAction = AiRequest['action']
  * new version to be pasted over it. Bumped with every change to the
  * helper, as `YYYY-MM-DD.N`.
  */
-export const AI_HELPER_VERSION = '2026-09-27.2'
+export const AI_HELPER_VERSION = '2026-09-27.3'
 
 /**
  * Every failure the helper answers with, as a code the app turns into a
