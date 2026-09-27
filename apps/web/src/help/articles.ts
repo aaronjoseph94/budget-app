@@ -126,14 +126,15 @@ export const ARTICLES: readonly Article[] = [
       'Nothing reaches your budget until you approve it. Every imported row waits here for its category, so a wrong guess never counts by itself.',
     steps: [
       'Open **Review**.',
-      'Choose a category for the first row.',
-      'Press **Approve**.',
+      'Check the category picked on each row: **✨ Suggested** is the AI’s guess from the shop’s name, and the others are how you filed that shop, or one like it, before.',
+      'Choose another category where the pick is wrong, or press **Not this** to clear the AI’s guess.',
+      'Press **Approve** on a row, or **Approve these 12** (with your own number) to file every row that has a category after one look at the list.',
       'For a row that is not a real charge, press the **✕** beside it.',
       'At the bottom, press **Dismiss** on a line the reader could not read once you have typed it yourself.',
     ],
     done: 'Review says "Nothing waiting." A shop you approved once is filed the same way next time, without waiting.',
     stuck:
-      'If a shop keeps landing in the wrong place, move one of its charges from the Month with **Move to…** and leave **Always file** ticked.',
+      'If a shop keeps landing in the wrong place, move one of its charges from the Month with **Move to…** and leave **Always file** ticked. With free AI on, categories are suggested by themselves after an import; press **Suggest categories** to ask again, and the line beside it says if something is missing, such as a one-time update. The AI is sent each shop’s name, whether it was money in or out, and whether it was small, medium or large, never the amount or the date, and nothing it suggests counts until you approve it. Turn off **Share shop names** in AI settings to send nothing.',
     related: ['statements', 'add', 'wrong-number'],
   },
   {

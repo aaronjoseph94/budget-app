@@ -37,7 +37,7 @@ export interface Update {
 
 const NIL = '00000000-0000-0000-0000-000000000000'
 
-/** 0005 to 0017 and the AI helper, each with what it adds; 0018 joins with its slice. */
+/** 0005 to 0018 and the AI helper, each with what it adds. */
 export const UPDATES: readonly Update[] = [
   { file: '0005_category_kinds.sql', adds: 'Which list each category is on', checks: [{ kind: 'column', table: 'categories', column: 'kind' }] },
   {
@@ -83,6 +83,12 @@ export const UPDATES: readonly Update[] = [
       { kind: 'table', table: 'insight_dismissals' },
       { kind: 'table', table: 'coach_answers' },
     ],
+  },
+  {
+    // Clearing the nil id's suggestion finds no row, changes nothing and answers false.
+    file: '0018_category_suggestions.sql',
+    adds: 'Where Review keeps the AI’s suggested categories',
+    checks: [{ kind: 'function', name: 'clear_candidate_suggestion', args: { p_candidate: NIL } }],
   },
   { file: HELPER_FILE, adds: 'The AI helper, which every AI feature goes through', checks: [{ kind: 'helper' }] },
 ]

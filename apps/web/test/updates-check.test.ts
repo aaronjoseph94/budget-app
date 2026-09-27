@@ -9,7 +9,7 @@ describe('checking the one-time updates', () => {
   it('finds each one in when everything it adds answers', async () => {
     const fake = createFakeSupabase()
     const checked = await checkUpdates(fake.client)
-    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', 'ai-f'])
+    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', 'ai-f'])
     expect(missing(checked)).toEqual([])
     expect(nextStep(checked)).toEqual({ kind: 'done' })
   })
@@ -69,6 +69,18 @@ describe('checking the one-time updates', () => {
     expect(nextStep(checked)).toEqual({ kind: 'paste', file: '0017_coach_memory.sql', fromStart: false })
   })
 
+  // A21's update adds two functions; clearing a suggestion proves it without changing a row.
+  it('reads PGRST202 on clearing a suggestion as 0018 not in yet', async () => {
+    const fake = createFakeSupabase()
+    delete fake.rpcReplies['clear_candidate_suggestion']
+    const checked = await checkUpdates(fake.client)
+    expect(missing(checked)).toEqual([['0018', 'missing']])
+    expect(nextStep(checked)).toEqual({ kind: 'paste', file: '0018_category_suggestions.sql', fromStart: false })
+    expect(fake.rpcCalls.filter((c) => c.name === 'clear_candidate_suggestion')).toEqual([
+      { name: 'clear_candidate_suggestion', args: { p_candidate: '00000000-0000-0000-0000-000000000000' } },
+    ])
+  })
+
   it('reads Supabase’s 404 for the AI helper as not installed, and any other failure as could not check', async () => {
     const fake = createFakeSupabase()
     fake.functions.ai = null
@@ -120,6 +132,7 @@ describe('checking the one-time updates', () => {
       { name: 'recategorise_transaction', args: { p_transaction: nil, p_category: nil, p_learn: false } },
       { name: 'dismiss_unreadable_line', args: { p_line: nil } },
       { name: 'ai_key_status', args: {} },
+      { name: 'clear_candidate_suggestion', args: { p_candidate: nil } },
     ])
     // The helper is only pinged.
     expect(fake.functions.calls).toEqual([{ action: 'ping' }])
