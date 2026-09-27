@@ -146,11 +146,12 @@ export const ARTICLES: readonly Article[] = [
       'For a receipt, choose **Photo**, then **Take or choose a receipt photo**.',
       'Check what it read, then press **Send to review**.',
       'For cash, pay or a move to savings, choose **Type it**.',
-      'Fill in each field, then press **Add**.',
+      'Under **Just type it**, write it the way you would say it, such as “coffee 4.50 yesterday” or “got paid 2100”, and press **Fill in**.',
+      'Check each field, fill in anything left empty, then press **Add**.',
     ],
     done: 'a photo waits in Review, and a typed entry shows on the Month on its date.',
     stuck:
-      'Reading a photo needs the receipt reader set up (see One-time updates). You can always type the receipt instead.',
+      'Reading a photo needs the receipt reader set up (see One-time updates). You can always type the receipt instead. **Just type it** reads what it can by itself; with free AI on, the AI fills in the rest, but only an amount you actually typed, marked “Read by AI: check it”. What you typed and your category names are sent to the AI, nothing else. Two numbers, such as “3 coffees 12”, leave the amount for you or the AI; a date with slashes is left for you, since 9/10 can be either month. Nothing is added until you press **Add**.',
     related: ['statements', 'review', 'updates'],
   },
   {

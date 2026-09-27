@@ -17,6 +17,8 @@ import { Icon } from '../components/ui/icons.js'
 import { navigate } from '../nav.js'
 import { cn } from '../lib/cn.js'
 import { HelpButton } from '../help/HelpButton.js'
+import { JustTypeIt } from '../add/JustTypeIt.js'
+import type { QuickFill } from '../add/quick-add.js'
 
 type Mode = 'statement' | 'photo' | 'typed'
 type Loaded =
@@ -390,9 +392,22 @@ function TypedEntry() {
   const [busy, setBusy] = useState(false)
   const [outcome, setOutcome] = useState<Outcome | null>(null)
   const [tried, setTried] = useState(0)
+  // The amount Just type it's AI read, until the owner changes it (plan A22).
+  const [aiAmount, setAiAmount] = useState(false)
   const amountError = useId()
 
   const cents = parseMoneyInput(amount)
+  const fill = (f: QuickFill) => {
+    setDirection(f.flow)
+    setNewKind(f.flow === 'spent' ? 'variable' : 'income')
+    setAmount(f.amount)
+    setMerchant(f.shop)
+    setDate(f.date)
+    setCategoryId(f.categoryId)
+    setAiAmount(f.byAi.has('amount'))
+    setOutcome(null)
+    setTried(0)
+  }
   const creating = categoryId === '__new__'
   const needed = [
     cents === null || cents <= 0 ? 'an amount' : null,
@@ -430,6 +445,7 @@ function TypedEntry() {
       setOutcome({ ok: true, message: `Added ${formatCents(cents)} — ${merchant.trim()}.` })
       setTried(0)
       setAmount('')
+      setAiAmount(false)
       setMerchant('')
       setNewCategory('')
       if (creating) setCategoryId('')
@@ -444,6 +460,8 @@ function TypedEntry() {
   return (
     <Card>
       <CardContent className="space-y-4 pt-5">
+        <JustTypeIt onFill={fill} />
+        <hr className="border-border" />
         {/* noValidate: the browser's own bubble would stop the press before
           StillNeeded can say, in words kept on the page, what is missing. */}
         <form
@@ -492,11 +510,19 @@ function TypedEntry() {
               inputMode="decimal"
               placeholder="0.00"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => {
+                setAmount(e.target.value)
+                setAiAmount(false)
+              }}
               required
               {...notMoney(amount, cents, amountError)}
             />
           </Field>
+          {aiAmount ? (
+            <p className="-mt-2 flex items-center gap-1 text-sm font-medium">
+              <Icon name="sparkles" className="size-3.5 shrink-0" /> Read by AI: check it
+            </p>
+          ) : null}
           <Field label="What was it?">
             <Input placeholder="e.g. Farmers market" value={merchant} maxLength={120} onChange={(e) => setMerchant(e.target.value)} required />
           </Field>
