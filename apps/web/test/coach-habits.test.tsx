@@ -22,7 +22,13 @@ function go(hash: string) {
   })
 }
 
-beforeAll(() => warmScreen('#/coach', 'Coach'))
+beforeAll(async () => {
+  // The cards wait on a year's read and the digest, which run cold in a file's first test (N90).
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(HABITS_TODAY)
+  await warmScreen('#/coach', 'Coach', { fake: habitsFake(), text: 'On a roll' })
+  vi.useRealTimers()
+})
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })

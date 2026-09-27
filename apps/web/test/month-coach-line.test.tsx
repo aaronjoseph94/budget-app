@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MonthScreen } from '../src/screens/MonthScreen.js'
 import type { Category, LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
@@ -34,6 +34,33 @@ function seeded(periodStart = '2026-07-01'): FakeSupabase {
 
 /** An element whose whole text is `s`, however it is split into spans. */
 const whole = (s: string) => (_: string, el: Element | null) => el?.tagName === 'BUTTON' && el.textContent === s
+
+/**
+ * The line is its own lazy chunk, drawn after the Month (N87): its first
+ * render in a file suspends and runs cold, and under a loaded machine
+ * that lost a find's one second. Setup, not an assertion, so it waits for
+ * the line as the page changes, bounded by vitest's hook limit; no test's
+ * own wait is raised.
+ */
+beforeAll(async () => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(TODAY)
+  const scroll = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
+  renderScreen(<MonthScreen month={null} />, seeded())
+  await new Promise<void>((resolve) => {
+    const shown = () => [...document.querySelectorAll('button')].some((b) => b.textContent?.endsWith('Open the Coach.') === true)
+    if (shown()) return resolve()
+    const watch = new MutationObserver(() => {
+      if (!shown()) return
+      watch.disconnect()
+      resolve()
+    })
+    watch.observe(document.body, { childList: true, subtree: true, characterData: true })
+  })
+  cleanup()
+  scroll.mockRestore()
+  vi.useRealTimers()
+})
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })

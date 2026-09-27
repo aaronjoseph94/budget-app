@@ -1,7 +1,7 @@
 import { cleanup } from '@testing-library/react'
 import { vi } from 'vitest'
 import { Shell } from '../src/App.js'
-import { createFakeSupabase } from './fake-supabase.js'
+import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 
 /**
@@ -17,12 +17,16 @@ import { renderScreen } from './render-screen.js'
  * machine can lose here just as it did in the tests. vitest's hook limit
  * still ends a screen that never shows. No test's own wait is raised.
  */
-export async function warmScreen(hash: string, title: string): Promise<void> {
+export async function warmScreen(hash: string, title: string, until?: { readonly fake: FakeSupabase; readonly text: string }): Promise<void> {
   const scroll = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
   window.location.hash = hash
-  renderScreen(<Shell />, createFakeSupabase())
+  renderScreen(<Shell />, until === undefined ? createFakeSupabase() : until.fake)
   await new Promise<void>((resolve) => {
-    const shown = () => [...document.querySelectorAll('h1')].some((h) => h.textContent === title)
+    // With `until`, the file's own seed is drawn as far as the text its first
+    // test waits for, so the engine code behind it has run once too (N90).
+    const shown = () =>
+      [...document.querySelectorAll('h1')].some((h) => h.textContent === title) &&
+      (until === undefined || document.body.textContent?.includes(until.text) === true)
     if (shown()) return resolve()
     const watch = new MutationObserver(() => {
       if (!shown()) return
