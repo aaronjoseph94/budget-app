@@ -249,3 +249,77 @@ describe('Review says why nothing was suggested, in its own words', () => {
     expect(await screen.findByText(/Suggested a category for 1 row\. Check each before you approve it\. The AI is resting\./)).toBeTruthy()
   })
 })
+
+describe('Approve these N', () => {
+  /** Both rows suggested, and a third with nothing picked. */
+  function twoReady(): FakeSupabase {
+    const fake = seeded()
+    fake.tables.ingest_candidates[1] = { ...fake.tables.ingest_candidates[1]!, category_id: 'c2', category_source: 'model' }
+    fake.tables.ingest_candidates.push({ id: 'p3', posted_on: '2026-09-11', amount_cents: 2500, merchant: 'ADVENTURE WORKS', merchant_raw: 'ADVENTURE WORKS REFUND', status: 'pending' })
+    return fake
+  }
+  const approvals = (fake: FakeSupabase) => fake.rpcCalls.filter((c) => c.name === 'approve_candidate').map((c) => c.args)
+
+  it('lists every row it will file with its category, asks once, then approves each in turn', async () => {
+    const fake = twoReady()
+    renderScreen(<ReviewScreen />, fake)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Approve these 2' }))
+    const asking = within(screen.getByRole('group', { name: 'Approve these 2?' }))
+    expect(asking.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['CORNER MARKET #12Groceries', 'SQ *LITWARE COFFEECoffee'])
+    expect(approvals(fake)).toEqual([])
+
+    fireEvent.click(asking.getByRole('button', { name: 'Approve all 2' }))
+    expect(await screen.findByText(/^Filed 2\./)).toBeTruthy()
+    expect(approvals(fake)).toEqual([{ p_candidate: 'p1', p_category: 'c1' }, { p_candidate: 'p2', p_category: 'c2' }])
+    expect(screen.queryByText('CORNER MARKET #12')).toBeNull()
+    expect(screen.getByText('ADVENTURE WORKS REFUND')).toBeTruthy()
+  })
+
+  it('files a row as the owner changed it', async () => {
+    const fake = twoReady()
+    renderScreen(<ReviewScreen />, fake)
+    fireEvent.change(await picker('SQ *LITWARE COFFEE'), { target: { value: 'c1' } })
+    fireEvent.change(await picker('ADVENTURE WORKS REFUND'), { target: { value: 'c1' } })
+    fireEvent.click(await screen.findByRole('button', { name: 'Approve these 3' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Approve all 3' }))
+    await screen.findByText(/^Filed 3\./)
+    expect(approvals(fake).map((a) => a['p_category'])).toEqual(['c1', 'c1', 'c1'])
+  })
+
+  it('approves nothing on Cancel', async () => {
+    const fake = twoReady()
+    renderScreen(<ReviewScreen />, fake)
+    fireEvent.click(await screen.findByRole('button', { name: 'Approve these 2' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(await screen.findByRole('button', { name: 'Approve these 2' })).toBeTruthy()
+    expect(approvals(fake)).toEqual([])
+  })
+
+  it('stops at the first that fails, and says how many went in', async () => {
+    const fake = twoReady()
+    // The first approval is answered, and then the function is gone, so the second fails.
+    Object.defineProperty(fake.rpcReplies, 'approve_candidate', {
+      configurable: true,
+      enumerable: true,
+      get: () => {
+        delete fake.rpcReplies['approve_candidate']
+        return 'approved'
+      },
+    })
+    renderScreen(<ReviewScreen />, fake)
+    fireEvent.change(await picker('ADVENTURE WORKS REFUND'), { target: { value: 'c1' } })
+    fireEvent.click(await screen.findByRole('button', { name: 'Approve these 3' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Approve all 3' }))
+    expect(await screen.findByText(/^1 of 3 were filed, then this:/)).toBeTruthy()
+    expect(approvals(fake).map((a) => a['p_candidate'])).toEqual(['p1', 'p2'])
+    expect(screen.queryByText('CORNER MARKET #12')).toBeNull()
+    expect(screen.getByText('SQ *LITWARE COFFEE')).toBeTruthy()
+  })
+
+  it('is not offered for a single row', async () => {
+    renderScreen(<ReviewScreen />, seeded())
+    await screen.findByText('✨ Suggested: Groceries')
+    expect(screen.queryByRole('button', { name: /Approve these/ })).toBeNull()
+  })
+})

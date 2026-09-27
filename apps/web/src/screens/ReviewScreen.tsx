@@ -26,10 +26,13 @@ import { Icon } from '../components/ui/icons.js'
 import { cn } from '../lib/cn.js'
 import { navigate } from '../nav.js'
 import { HelpButton } from '../help/HelpButton.js'
+import { ApproveAll } from '../review/ApproveAll.js'
 import { SuggestBar } from '../review/SuggestBar.js'
 import { useSuggestions } from '../review/use-suggestions.js'
 
 const NEW_CATEGORY = '__new__'
+/** `busy` while Approve these N works through its rows: every row waits. */
+const ALL = '__all__'
 
 /**
  * Cards drawn at a time. Each carries a picker of every category, and all
@@ -222,6 +225,39 @@ export function ReviewScreen() {
   })
   const onClear = useCallback((row: PendingCandidate) => void latestClear.current(row), [])
 
+  // Approve these N: every row loaded with a category picked, whoever
+  // picked it. The question lists them as they stand, so a row changed
+  // while it is open is approved as it now shows.
+  const ready = (rows ?? []).flatMap((row) => {
+    const categoryId = categoryFor(row)
+    const name = named.get(categoryId)
+    return name === undefined ? [] : [{ row, categoryId, name }]
+  })
+  const [confirming, setConfirming] = useState(false)
+  const approveAll = async (list: typeof ready) => {
+    setBusy(ALL)
+    setNote(null)
+    setError(null)
+    let done = 0
+    try {
+      // One at a time, each approve_candidate's own conditional write; the
+      // first that fails stops the rest.
+      for (const { row, categoryId } of list) {
+        await approveCandidate(supabase, row.id, categoryId)
+        done += 1
+        setRows((now) => now?.filter((r) => r.id !== row.id) ?? null)
+      }
+      setNote(`Filed ${done}. Future charges from these shops will be filed the same way automatically.`)
+    } catch (cause) {
+      setError(`${done} of ${list.length} were filed, then this: ${cause instanceof Error ? cause.message : 'That did not work.'}`)
+    } finally {
+      setBusy(null)
+      setConfirming(false)
+    }
+    if (done > 0) await refresh()
+    said.current?.focus()
+  }
+
   // Every Dismiss waits until the list has been read again, so the line
   // tapped is off the screen before another can be tapped in its place.
   const dismiss = async (lineId: string) => {
@@ -257,6 +293,17 @@ export function ReviewScreen() {
 
       <SuggestBar status={suggestions.status} waiting={suggestions.waiting} onSuggest={suggestions.suggest} />
 
+      {ready.length >= 2 || (confirming && ready.length > 0) ? (
+        <ApproveAll
+          items={ready.map((r) => ({ id: r.row.id, shop: r.row.merchant_raw, category: r.name }))}
+          open={confirming}
+          busy={busy !== null}
+          onOpen={() => setConfirming(true)}
+          onConfirm={() => void approveAll(ready)}
+          onCancel={() => setConfirming(false)}
+        />
+      ) : null}
+
       <div ref={said} tabIndex={-1} className="space-y-4 outline-none empty:hidden">
         {note !== null ? <Alert tone="success">{note}</Alert> : null}
         {/* Errors sit above the list and do NOT replace it: a single failure used
@@ -289,7 +336,7 @@ export function ReviewScreen() {
               suggestion={suggestion?.kind ?? null}
               suggestedName={suggestion === null ? null : (named.get(suggestion.id) ?? null)}
               categories={categories}
-              busy={busy === row.id}
+              busy={busy === row.id || busy === ALL}
               onPick={onPick}
               onApprove={onApprove}
               onReject={onReject}
