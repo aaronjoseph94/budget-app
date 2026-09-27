@@ -69,6 +69,18 @@ const DEBTS: Palette = {
   ink: { fill: '#5B3FA8', class: 'chart-debt-ink' },
   keys: ['Starting balance', 'Left to pay'],
 }
+/**
+ * The Habits tab's weekdays (F40): each weekday's average everyday
+ * spending over a track as long as the daily allowance, in the spending
+ * grid's hue, so the two charts read as one. With no weekly budget there
+ * is no allowance to draw, so no track and no key.
+ */
+const WEEKDAYS: Palette = {
+  goal: { fill: '#FFEFE6', class: 'chart-variable-track' },
+  actual: { fill: '#C9492F', class: 'chart-heat-3' },
+  ink: { fill: '#5B6773', class: 'chart-forecast-ink' },
+  keys: ['Daily allowance', 'Average'],
+}
 const KEY = 220
 const ROW = 340
 /** 10 px thick at the designed size, with 4 px rounded ends. */
@@ -98,9 +110,15 @@ export function debtBars(input: IncomeBarsInput): SvgMarkup {
   return drawBars(input, DEBTS)
 }
 
-function drawBars(input: IncomeBarsInput, palette: Palette): SvgMarkup {
-  const rows = input.bars.map((b, i) => row(b, KEY + i * ROW, palette))
-  return frame(input, KEY + input.bars.length * ROW + 20, [key(palette), ...rows])
+/** Each weekday's average over the daily allowance, on one scale (core's `weekdayPattern`). */
+export function weekdayBars(input: IncomeBarsInput): SvgMarkup {
+  return drawBars(input, WEEKDAYS, input.bars.some((b) => b.goalBp !== null))
+}
+
+function drawBars(input: IncomeBarsInput, palette: Palette, keyed = true): SvgMarkup {
+  const top = keyed ? KEY : 0
+  const rows = input.bars.map((b, i) => row(b, top + i * ROW, palette))
+  return frame(input, top + input.bars.length * ROW + 20, keyed ? [key(palette), ...rows] : rows)
 }
 
 /** Two series, so a key names them: colour is never the only way to tell them apart. */

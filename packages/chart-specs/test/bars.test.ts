@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { debtBars, incomeBars, savingsGoalBars, type IncomeBar } from '../src/bars.js'
+import { debtBars, incomeBars, savingsGoalBars, weekdayBars, type IncomeBar } from '../src/bars.js'
 
 /** Suite tests: lengths worked by hand on the 3,000-unit grid. */
 
@@ -109,5 +109,29 @@ describe('debtBars', () => {
     ])
     expect(svg).toContain('class="chart-debt-ink">Left to pay</text>')
     expect(svg).toContain('>Card &lt;1&gt;</text>')
+  })
+})
+
+describe('weekdayBars', () => {
+  const week = (bars: IncomeBar[]) => weekdayBars({ id: 'weekdays', title: 'Each weekday, on average', description: 'd', bars })
+
+  it('draws each weekday\'s average over a track as long as the daily allowance, keyed', () => {
+    // A $2.50 Monday against $30.00 is 833 bp: 250 of 3,000 units.
+    const svg = week([bar('Mon', 10_000, 833), bar('Sat', 10_000, 8_417)])
+    expect(rects(svg)).toEqual([
+      [390, '#FFEFE6', 3_000],
+      [390, '#C9492F', 250],
+      [730, '#FFEFE6', 3_000],
+      [730, '#C9492F', 2_525],
+    ])
+    expect(svg).toContain('>Daily allowance</text>')
+    expect(svg).toContain('>Average</text>')
+  })
+
+  it('leaves the key off with no allowance to draw, and starts the rows at the top', () => {
+    const svg = week([bar('Mon', null, 10_000)])
+    expect(rects(svg)).toEqual([[170, '#C9492F', 3_000]])
+    expect(svg).not.toContain('Daily allowance')
+    expect(svg).toContain('viewBox="0 0 3000 360"')
   })
 })
