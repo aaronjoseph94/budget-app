@@ -35,6 +35,8 @@ export {
 
 export { normalizeMerchant, sameMerchant, similarMerchant } from './merchant.js'
 
+export { parseQuickEntry, type QuickEntry, type QuickEntryInput } from './quick-entry.js'
+
 export {
   DATE_FORMATS,
   dateFormatCandidates,
