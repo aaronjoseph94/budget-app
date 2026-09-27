@@ -2284,3 +2284,42 @@ also changes the AI's cached signature.
 **To settle:** give `spending_streak` a status (`best` when current
 equals best) in the digest, and a second template for it.
 
+---
+
+## N97 — The Habits charts grow with the card on a wide screen
+
+**Seen:** 2026-09-27, A18, in the preview at 1280 px. The spending grid
+and the weekday bars scale their drawing, text included, to the card, so
+on a desktop the weekday bars' labels are about twice the page's text,
+as N88 says of the Forecast's charts. Nothing scrolls sideways and every
+figure reads.
+
+**Why not fixed here:** it is how every chart in the app behaves on a
+wide screen; capping only these would look out of place beside Trends.
+
+**To settle:** with N88, in A26: hold each chart's drawn width to a
+readable size at 768 and 1280 px.
+
+---
+
+## N98 — ai-settings-choices lost a find's one second once
+
+**Seen:** 2026-09-27, A18. One full gate run failed `coverage` on
+`ai-settings-choices`' first test ("lists the services in the owner's
+saved order"), which found its region after 1,167 ms. The same tree
+passed the next run. Warming the file up to that region (N90's remedy)
+did not stop it under an artificial load of six spinning processes on
+the machine, and under that load the file's other tests failed too, with
+or without the warm-up: it is slowness across the file, not a cold
+start alone.
+A later run failed the same way on `focus after an editor in a row
+closes`, while another worktree's gates ran beside it (load average
+about 9.5 on 4 cores); the next run passed.
+
+**Why not fixed here:** A18 touches nothing on AI settings, and the only
+remedy found so far, a longer wait, is one the rules forbid.
+
+**To settle:** profile a render of AI settings under load to see which
+of its reads or effects is slow, and make the screen do less on first
+draw.
+

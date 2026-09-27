@@ -1000,9 +1000,9 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
   - **Helpers not named in the plan:** `gridLevel` (core), `weekdayBars` (chart-specs), `habitsOf` and `useHabitsRead` (app). Extra tests: `apps/web/test/reports-habits-read.test.tsx` and `coach-habits.test.tsx`; the digest, templates, rank, pick-quote, bars and Help tests gained cases.
   - **Two cold-start races settled (N87, N90):** `month-coach-line`'s first test lost a find's one second in a full gate run, and `coach-habits`' did under load; each now draws its own seed once in `beforeAll` up to the text its first test waits for (`warmScreen` takes a seed and a text). No wait was raised.
   - **N44:** updated; the streak is on `weekSheet`, and `weeklySummary` is left as it is.
-  - **Commits:** 16 rather than about 3, each within 300 lines.
+  - **Commits:** 18 rather than about 3, each within 300 lines.
   - **First load:** 188.05 KB gzipped before the slice, 188.12 KB after (the Reports tab row's fourth tab and the remembered tab); Habits is in the Reports chunk.
-  - **Seen in the preview harness** (copied from `preview-a17`, with `?habits` leaving out late meals out so the Coach cheers a run) at 320, 390 and 1280 px, light and dark: Habits and the Coach's streak card, with no sideways scroll and no console errors. The longest run's week moved to a line of its own from it.
+  - **Seen in the preview harness** (copied from `preview-a17`, with `?habits` leaving out late meals out so the Coach cheers a run) at 320, 390 and 1280 px, light and dark: Habits and the Coach's streak card, with no sideways scroll and no console errors. The longest run's week moved to a line of its own, and the grid's first row label down from under the frame's edge, from it. On a wide screen the Habits charts' text grows with the card (N97).
 
 ### A19: Download a month
 
