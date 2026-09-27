@@ -84,6 +84,13 @@ describe('weeklyRecap (F42)', () => {
     expect(recap.noSpendDays).toBe(7)
   })
 
+  it('has no top in a week whose only everyday row is a refund', () => {
+    const recap = weeklyRecap(input({ entries: [row('2026-09-26', 1_500, 'groceries')] }))
+    if (recap.status !== 'ready') throw new Error(recap.status)
+    expect(recap.spentCents).toBe(-1_500)
+    expect(recap.top).toBeNull()
+  })
+
   it('gives a tie for the top to the list’s order', () => {
     const tie = [row('2026-09-23', -3_000, 'groceries'), row('2026-09-24', -3_000, 'dining')]
     const recap = weeklyRecap(input({ entries: tie }))

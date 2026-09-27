@@ -81,6 +81,44 @@ describe('the Sunday check-in', () => {
     expect(JSON.stringify(note['body'])).not.toMatch(/\d/)
   })
 
+  it('shows the app’s own words for a part whose AI words name another part’s figure', async () => {
+    const fake = checkinFake()
+    const reply = { recap: null, win: null, tryThis: 'Keep spending near {{A.now}}.', goal: null }
+    fake.functions.ai = () => json({ ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: JSON.stringify(reply) })
+    renderScreen(<Shell />, fake)
+
+    expect(await screen.findByText(/^✨ Words by AI/)).toBeTruthy()
+    expect(within(section('One thing to try')).getByText(whole('P', 'Try keeping Dining out under $65.00 next week.'))).toBeTruthy()
+    expect(screen.queryByText(/Keep spending near/)).toBeNull()
+  })
+
+  it('checks kept words again, and asks anew when a kept part breaks the text rule', async () => {
+    const fake = checkinFake()
+    const good = { recap: 'A calmer week: {{A.now}} on everyday things.', win: null, tryThis: null, goal: null }
+    fake.functions.ai = () => json({ ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: JSON.stringify(good) })
+    renderScreen(<Shell />, fake)
+    await waitFor(() => expect(fake.tables.ai_notes).toHaveLength(1))
+    const note = fake.tables.ai_notes[0]!
+
+    // A kept part naming another part's figure shows the app's own words, and the AI is not asked again.
+    cleanup()
+    window.localStorage.clear()
+    fake.tables.ai_notes[0] = { ...note, body: { ...good, tryThis: 'Keep spending near {{A.now}}.' } }
+    go('/coach/checkin')
+    renderScreen(<Shell />, fake)
+    expect(await screen.findByText(whole('P', '✨ Written by AI: A calmer week: $226.09 on everyday things.'))).toBeTruthy()
+    expect(within(section('One thing to try')).getByText(whole('P', 'Try keeping Dining out under $65.00 next week.'))).toBeTruthy()
+    expect(fake.functions.calls).toHaveLength(1)
+
+    // A kept part with a figure in it is not trusted at all: the AI is asked again.
+    cleanup()
+    window.localStorage.clear()
+    fake.tables.ai_notes[0] = { ...note, body: { ...good, win: 'Spent 2 times less.' } }
+    go('/coach/checkin')
+    renderScreen(<Shell />, fake)
+    await waitFor(() => expect(fake.functions.calls).toHaveLength(2))
+  })
+
   it('shows the app’s words and one line pointing to Help when the AI helper is not installed', async () => {
     const fake = checkinFake()
     fake.functions.ai = null

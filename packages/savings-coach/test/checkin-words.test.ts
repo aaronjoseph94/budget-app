@@ -79,6 +79,15 @@ describe('checkCheckinReply and mergeCheckin', () => {
     ])
   })
 
+  it('lets the recap name the impulse share, and no other part', () => {
+    const withImpulse = facts(CHECKIN, [{ askedWeek: d('2026-09-21'), answer: 'impulse' }])
+    const share = `You called {{${withImpulse.impulse!}.share}} of your answered charges impulse.`
+    const { reply, dropped } = checkCheckinReply({ reply: { recap: share, win: share, tryThis: null, goal: null }, brief: checkinBrief({ facts: withImpulse, tone: 'straight' }).brief })
+    expect(reply.recap).toBe(share)
+    expect(reply.win).toBeNull()
+    expect(dropped.map((x) => x.part)).toEqual(['win'])
+  })
+
   it('shows the AI’s words where they passed and the app’s own everywhere else, and nothing the app has no words for', () => {
     const own = checkinWords({ facts: OVER, tone: 'cheerleader' })
     const merged = mergeCheckin({ own, ai: { ...GOOD, win: null } })

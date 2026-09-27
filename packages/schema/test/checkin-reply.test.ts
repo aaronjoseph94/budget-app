@@ -40,6 +40,11 @@ describe('parseCheckinReply', () => {
     })
   })
 
+  it('keeps each part in its NFKC form', () => {
+    const parsed = parseCheckinReply({ ...GOOD, win: '\uFF21 calmer week.' })
+    expect(parsed.ok && parsed.reply.win).toBe('A calmer week.')
+  })
+
   it('holds each part to its own length', () => {
     const parsed = parseCheckinReply({ ...GOOD, win: 'a'.repeat(161), tryThis: 'b'.repeat(200) })
     expect(parsed.ok && parsed.reply.win).toBeNull()
