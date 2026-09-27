@@ -125,7 +125,9 @@ describe('Review asks the AI for categories', () => {
     aiOn(fake)
     renderScreen(<ReviewScreen />, fake)
 
-    expect(await screen.findByText(/Suggested a category for 2 rows\. Check each before you approve it\./)).toBeTruthy()
+    const line = await screen.findByText(/Suggested a category for 2 rows\. Check each before you approve it\./)
+    // At 320 px the line kept one word a row beside the button; it keeps 12rem and the button wraps under it.
+    expect(line.className.split(' ')).toContain('basis-48')
     expect((await row('CORNER MARKET #12')).getByText('✨ Suggested: Groceries')).toBeTruthy()
     expect((await picker('SQ *LITWARE COFFEE')).value).toBe('c2')
     expect(runs(fake)).toHaveLength(1)

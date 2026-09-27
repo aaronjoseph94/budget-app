@@ -110,7 +110,7 @@ export function SuggestBar({ status, waiting, onSuggest }: { status: SuggestStat
   if (line === null && !offer) return null
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-      <p aria-live="polite" className="min-w-0 flex-1 text-sm text-muted-foreground">
+      <p aria-live="polite" className="min-w-0 flex-1 basis-48 text-sm text-muted-foreground">
         {line}
       </p>
       {offer ? (
