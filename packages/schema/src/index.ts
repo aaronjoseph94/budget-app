@@ -115,3 +115,13 @@ export {
   type CategorisePick,
   type CategoriseRow,
 } from './categorise.js'
+
+export {
+  QUICK_ADD_LIMITS,
+  amountIsTyped,
+  parseQuickAddReply,
+  type QuickAddBrief,
+  type QuickAddField,
+  type QuickAddParsed,
+  type QuickAddPick,
+} from './quick-add.js'
