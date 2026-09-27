@@ -1,7 +1,9 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { similarMerchant } from '@budget/statement-parsers'
 import { useAppData } from '../app-data.js'
 import {
   approveCandidate,
+  clearCandidateSuggestion,
   dismissUnreadableLine,
   ensureCategory,
   listPending,
@@ -33,6 +35,14 @@ const NEW_CATEGORY = '__new__'
  * again after every approval (PERF-1). The oldest come first, as before.
  */
 const PAGE = 25
+
+/**
+ * Why a row arrives with a category picked, when the owner has not picked
+ * one: a learned rule for its shop, the AI's suggestion (0018), or a shop
+ * that starts the same way as one filed before (similarMerchant, never
+ * stored). Each is only picked; the owner still taps Approve.
+ */
+type SuggestionKind = 'rule' | 'model' | 'similar'
 
 /** A category being made while filing a row: its name and the list it goes on. */
 interface NewName {
@@ -100,7 +110,28 @@ export function ReviewScreen() {
     void load()
   }, [load, version])
 
-  const categoryFor = (row: PendingCandidate) => picked[row.id] ?? rules.get(row.merchant) ?? ''
+  // The AI's suggestions are stored; a similar shop's category is worked
+  // out here, for rows with neither a rule nor a stored suggestion.
+  const named = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories])
+  const similar = useMemo(() => {
+    const learned = [...rules.keys()]
+    const hints = new Map<string, string>()
+    for (const row of rows ?? []) {
+      if (rules.has(row.merchant) || row.category_source === 'model') continue
+      const shop = similarMerchant(row.merchant, learned)
+      const category = shop === null ? undefined : rules.get(shop)
+      if (category !== undefined) hints.set(row.id, category)
+    }
+    return hints
+  }, [rows, rules])
+  const suggestionFor = (row: PendingCandidate): { kind: SuggestionKind; id: string } | null => {
+    const rule = rules.get(row.merchant)
+    if (rule !== undefined) return { kind: 'rule', id: rule }
+    if (row.category_source === 'model' && row.category_id !== null && named.has(row.category_id)) return { kind: 'model', id: row.category_id }
+    const hint = similar.get(row.id)
+    return hint === undefined ? null : { kind: 'similar', id: hint }
+  }
+  const categoryFor = (row: PendingCandidate) => picked[row.id] ?? suggestionFor(row)?.id ?? ''
 
   const act = async (row: PendingCandidate, action: 'approve' | 'reject', created?: NewName) => {
     setBusy(row.id)
@@ -155,6 +186,26 @@ export function ReviewScreen() {
   const onPick = useCallback((rowId: string, id: string) => setPicked((p) => ({ ...p, [rowId]: id })), [])
   const onApprove = useCallback((row: PendingCandidate, created?: NewName) => void latest.current(row, 'approve', created), [])
   const onReject = useCallback((row: PendingCandidate) => void latest.current(row, 'reject'), [])
+
+  // Not this: the suggestion goes, so the row waits with nothing picked.
+  const clear = async (row: PendingCandidate) => {
+    setBusy(row.id)
+    setNote(null)
+    setError(null)
+    try {
+      await clearCandidateSuggestion(supabase, row.id)
+      setRows((now) => now?.map((r) => (r.id === row.id ? { ...r, category_id: null, category_source: null } : r)) ?? null)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'That did not work. Nothing was changed.')
+    } finally {
+      setBusy(null)
+    }
+  }
+  const latestClear = useRef(clear)
+  useLayoutEffect(() => {
+    latestClear.current = clear
+  })
+  const onClear = useCallback((row: PendingCandidate) => void latestClear.current(row), [])
 
   // Every Dismiss waits until the list has been read again, so the line
   // tapped is off the screen before another can be tapped in its place.
@@ -211,19 +262,24 @@ export function ReviewScreen() {
       ) : null}
 
       <ul className="space-y-3">
-        {(rows ?? []).slice(0, drawn).map((row) => (
-          <ReviewRow
-            key={row.id}
-            row={row}
-            categoryId={categoryFor(row)}
-            suggested={picked[row.id] === undefined && rules.has(row.merchant)}
-            categories={categories}
-            busy={busy === row.id}
-            onPick={onPick}
-            onApprove={onApprove}
-            onReject={onReject}
-          />
-        ))}
+        {(rows ?? []).slice(0, drawn).map((row) => {
+          const suggestion = picked[row.id] === undefined ? suggestionFor(row) : null
+          return (
+            <ReviewRow
+              key={row.id}
+              row={row}
+              categoryId={categoryFor(row)}
+              suggestion={suggestion?.kind ?? null}
+              suggestedName={suggestion === null ? null : (named.get(suggestion.id) ?? null)}
+              categories={categories}
+              busy={busy === row.id}
+              onPick={onPick}
+              onApprove={onApprove}
+              onReject={onReject}
+              onClear={onClear}
+            />
+          )
+        })}
       </ul>
 
       {rows !== null && rows.length > drawn ? (
@@ -248,21 +304,25 @@ export function ReviewScreen() {
 const ReviewRow = memo(function ReviewRow({
   row,
   categoryId,
-  suggested,
+  suggestion,
+  suggestedName,
   categories,
   busy,
   onPick,
   onApprove,
   onReject,
+  onClear,
 }: {
   row: PendingCandidate
   categoryId: string
-  suggested: boolean
+  suggestion: SuggestionKind | null
+  suggestedName: string | null
   categories: readonly Category[]
   busy: boolean
   onPick: (rowId: string, id: string) => void
   onApprove: (row: PendingCandidate, created?: NewName) => void
   onReject: (row: PendingCandidate) => void
+  onClear: (row: PendingCandidate) => void
 }) {
   const [newName, setNewName] = useState('')
   // A charge most likely belongs in Variable expenses. Money in could be a
@@ -327,13 +387,25 @@ const ReviewRow = memo(function ReviewRow({
             </Button>
           </div>
         </div>
-        {suggested ? (
+        {suggestion === 'rule' ? (
           <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
             <Badge variant="outline">
               <Icon name="sparkles" className="size-3" /> Suggested
             </Badge>
             How you filed this merchant last time.
           </p>
+        ) : suggestion === 'model' ? (
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+            <Badge variant="outline" className="max-w-full min-w-0">
+              <span className="truncate">✨ Suggested: {suggestedName}</span>
+            </Badge>
+            <span>By AI from the shop’s name. Check it.</span>
+            <Button variant="ghost" size="sm" className="-my-1 underline underline-offset-4" disabled={busy} onClick={() => onClear(row)}>
+              Not this
+            </Button>
+          </div>
+        ) : suggestion === 'similar' ? (
+          <p className="mt-2 text-xs text-muted-foreground">You filed a similar shop under {suggestedName}.</p>
         ) : null}
       </Card>
     </li>
