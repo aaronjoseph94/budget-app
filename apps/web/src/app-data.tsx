@@ -18,6 +18,7 @@ import {
   type ListedGoalRow,
 } from './ledger.js'
 import type { Cents } from '@budget/money-primitives'
+import { NO_MARKS, type SetupMarks } from './profile.js'
 import type { SupabaseClient } from './supabase.js'
 
 const DEFAULT_ACCOUNT = 'Main Card'
@@ -28,6 +29,8 @@ export interface AppData {
   readonly email: string
   /** Your name from Setup, or '' before you have given one. */
   readonly displayName: string
+  /** Getting started's steps put off, its hand-ticked iPhone step, and whether it has been opened (profile.ts). */
+  readonly setupMarks: SetupMarks
   readonly accountId: string | null
   readonly categories: readonly Category[]
   /** Every savings goal in the owner's order (F45): the active ones, main first, then paused, then reached. */
@@ -64,12 +67,14 @@ export function AppDataProvider({
   userId,
   email,
   displayName = '',
+  setupMarks = NO_MARKS,
   children,
 }: {
   supabase: SupabaseClient
   userId: string
   email: string
   displayName?: string
+  setupMarks?: SetupMarks
   children: ReactNode
 }) {
   const [accountId, setAccountId] = useState<string | null>(null)
@@ -128,6 +133,7 @@ export function AppDataProvider({
         userId,
         email,
         displayName,
+        setupMarks,
         accountId,
         categories,
         goals: inOrder.goals,

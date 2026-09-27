@@ -7,7 +7,7 @@ import { hashOf, isBuilt, useAddress, type Screen } from './nav.js'
 import { HELP_TOPICS } from './help/topics.js'
 import { MonthScreen } from './screens/MonthScreen.js'
 import { MoreScreen } from './screens/MoreScreen.js'
-import { displayNameOf } from './profile.js'
+import { displayNameOf, setupMarksOf } from './profile.js'
 import { Alert } from './components/ui/feedback.js'
 import { Button } from './components/ui/button.js'
 import { AnnounceProvider } from './components/ui/announce.js'
@@ -60,6 +60,7 @@ function Configured({ env }: { env: Parameters<typeof createSupabase>[0] }) {
       userId={session.session.user.id}
       email={session.session.user.email ?? ''}
       displayName={displayNameOf(session.session.user.user_metadata)}
+      setupMarks={setupMarksOf(session.session.user.user_metadata)}
     >
       <Shell />
     </AppDataProvider>
