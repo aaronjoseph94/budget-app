@@ -83,3 +83,4 @@ export {
   type CheckinPartWords,
   type CheckinWords,
 } from './checkin-words.js'
+export { categoriseBatches, suggestionsOf, type CategoriseBatch, type CategoriseInput } from './categorise.js'
