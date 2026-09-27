@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { isoDate } from '@budget/money-primitives'
-import { compareIn, spendIn } from '../src/answer-spending.js'
+import { compareIn, spendIn, topCategories, topShopsIn } from '../src/answer-spending.js'
 import { BASE } from './ask-example.js'
 
 /** Suite tests, worked by hand from F48's example (docs/formula-decisions.md). */
@@ -69,5 +69,33 @@ describe('compareIn (F48, F25, F26)', () => {
 
   it('says there is nothing to compare with when the days before start before the records', () => {
     expect(compareIn(BASE, SEPTEMBER, null, ['coffee'])).toEqual({ say: 'not_compared', names: ['Coffee'], figures: { amount: cents(1_100) } })
+  })
+})
+
+describe('topCategories and topShopsIn (F48)', () => {
+  it('lists the three categories with the most spent, largest first', () => {
+    const top = topCategories(BASE, SEPTEMBER)
+    expect(top.main).toEqual({ say: 'top_categories', names: ['Rent'], figures: { amount: cents(150_000) } })
+    expect(top.rows.map((r) => [r.say, r.names[0], r.figures['amount']?.value])).toEqual([
+      ['row', 'Rent', 150_000],
+      ['row', 'Groceries', 8_000],
+      ['row', 'Coffee', 1_100],
+    ])
+  })
+
+  it('lists the three shops with the most spent, net of refunds', () => {
+    const top = topShopsIn(BASE, SEPTEMBER)
+    expect(top.main.say).toBe('top_shops')
+    expect(top.rows.map((r) => [r.names[0], r.figures['amount']?.value])).toEqual([
+      ['LANDLORD', 150_000],
+      ['GROCER', 8_000],
+      ['KIOSK', 600],
+    ])
+  })
+
+  it('says when nothing was spent', () => {
+    const quiet = { from: d('2026-07-02'), to: d('2026-07-20') }
+    expect(topCategories(BASE, quiet)).toEqual({ main: { say: 'nothing_spent', names: [], figures: {} }, rows: [] })
+    expect(topShopsIn(BASE, quiet)).toEqual({ main: { say: 'no_shops', names: [], figures: {} }, rows: [] })
   })
 })

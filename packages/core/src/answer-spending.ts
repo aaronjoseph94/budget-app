@@ -12,13 +12,13 @@
  *
  * NOT workbook-derived. The tests are worked by hand.
  */
-import { type Cents, type IsoDate, addCents, addDays, sumCents } from '@budget/money-primitives'
+import { type Cents, type IsoDate, addCents, addDays, cents, sumCents } from '@budget/money-primitives'
 import type { BudgetHistoryRow } from './budgets.js'
 import { type DateWindow, change } from './compare.js'
 import type { Figure } from './digest.js'
 import type { PlanHistoryRow } from './plans.js'
 import { type PeriodRow, type PeriodSheet, type WeekCategory, periodSheet, plansInEffect } from './period-sheet.js'
-import type { ShopEntry } from './shops.js'
+import { type ShopEntry, shopRows } from './shops.js'
 import { SPENDING_LISTS, monthBounds } from './week.js'
 
 /** Which of the app's sentences an answer line is said in (savings-coach's ANSWER_WORDS). */
@@ -163,4 +163,37 @@ export function compareIn(base: SpendingBase, now: DateWindow, before: DateWindo
     names: alone.names,
     figures: { now: cents$(alone.amount), before: cents$(earlier.amount), change: { unit: 'change', value: moved.changeCents, direction: moved.direction } },
   }
+}
+
+const TOP = 3
+const byAmountThenName = (a: { amount: Cents; name: string }, b: { amount: Cents; name: string }) => b.amount - a.amount || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0)
+
+function topLines(ranked: readonly { readonly amount: Cents; readonly name: string }[], say: AnswerSay, none: AnswerSay): Lines {
+  const rows = ranked.slice(0, TOP).map((r): AnswerLine => ({ say: 'row', names: [r.name], figures: { amount: cents$(r.amount) } }))
+  const [first] = rows
+  return { main: first === undefined ? { say: none, names: [], figures: {} } : { ...first, say }, rows }
+}
+
+/** The spending categories with the most spent, above $0, at most three. */
+export function topCategories(base: SpendingBase, window: DateWindow): Lines {
+  const { actual } = counted(base, window)
+  const ranked = base.categories
+    .filter((c) => SPENDING.has(c.kind))
+    .map((c) => ({ name: c.name, amount: actual.get(c.id) ?? unknown(c.id) }))
+    .filter((r) => r.amount > 0)
+    .sort(byAmountThenName)
+  return topLines(ranked, 'top_categories', 'nothing_spent')
+}
+
+/** The shops with the most spent, net of refunds (F41's rows), above $0, at most three. */
+export function topShopsIn(base: SpendingBase, window: DateWindow): Lines {
+  const net = new Map<string, Cents>()
+  for (const r of shopRows(base)) {
+    if (r.postedOn < window.from || r.postedOn > window.to) continue
+    const was = net.get(r.shop)
+    const amount = cents(-r.amountCents)
+    net.set(r.shop, was === undefined ? amount : addCents(was, amount))
+  }
+  const ranked = [...net].map(([name, amount]) => ({ name, amount })).filter((r) => r.amount > 0).sort(byAmountThenName)
+  return topLines(ranked, 'top_shops', 'no_shops')
 }
