@@ -71,3 +71,15 @@ export {
   type CheckinGoal,
   type WinReason,
 } from './checkin.js'
+export {
+  CHECKIN_RECAP,
+  CHECKIN_TRY,
+  CHECKIN_WIN,
+  checkCheckinReply,
+  checkinWords,
+  mergeCheckin,
+  type Checkin,
+  type CheckinCheckDrop,
+  type CheckinPartWords,
+  type CheckinWords,
+} from './checkin-words.js'
