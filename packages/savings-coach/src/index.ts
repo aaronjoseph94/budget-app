@@ -62,3 +62,12 @@ export {
   type Review,
   type ReviewPart,
 } from './report-words.js'
+export {
+  checkinBrief,
+  checkinFacts,
+  type CheckinFact,
+  type CheckinFactKind,
+  type CheckinFacts,
+  type CheckinGoal,
+  type WinReason,
+} from './checkin.js'
