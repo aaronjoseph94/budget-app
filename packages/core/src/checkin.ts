@@ -15,7 +15,9 @@ import { completeMonths } from './history.js'
 import { monthActuals } from './month-actuals.js'
 import { usualMonth } from './notable.js'
 import { type PeriodEntry, type WeekCategory, weekSheet } from './period-sheet.js'
-import { weekBounds } from './week.js'
+import { type CheckinWeek, checkinWeek } from './week.js'
+
+export { type CheckinWeek, checkinWeek }
 
 export interface CheckinInput {
   /** Today: the check-in is about the week ending on the latest Sunday on or before it. */
@@ -29,19 +31,6 @@ export interface CheckinInput {
   readonly entries: readonly PeriodEntry[]
 }
 
-export interface CheckinWeek {
-  /** Its Monday. */
-  readonly start: IsoDate
-  /** Its Sunday, on or before asOf. */
-  readonly end: IsoDate
-}
-
-/** F42: the week ending on the latest Sunday on or before asOf. */
-export function checkinWeek(input: { readonly asOf: IsoDate }): CheckinWeek {
-  const thisWeek = weekBounds(input.asOf)
-  // Only on its Sunday has this week ended; any other day, the check-in is about the week before.
-  return thisWeek.end === input.asOf ? thisWeek : weekBounds(addDays(input.asOf, -7))
-}
 
 export interface RecapBudget {
   /** The Variable weekly budgets set, summed. */

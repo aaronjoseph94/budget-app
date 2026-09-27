@@ -125,6 +125,25 @@ export function weekBounds(date: IsoDate): { start: IsoDate; end: IsoDate } {
   return { start, end: addDays(start, 6) }
 }
 
+export interface CheckinWeek {
+  /** Its Monday. */
+  readonly start: IsoDate
+  /** Its Sunday, on or before asOf. */
+  readonly end: IsoDate
+}
+
+/**
+ * F42: the week the Sunday check-in is about, the one ending on the latest
+ * Sunday on or before asOf. Here rather than in checkin.ts because the
+ * app's tab bar asks it on every screen, and this module is already in the
+ * first load; the rest of the check-in is not.
+ */
+export function checkinWeek(input: { readonly asOf: IsoDate }): CheckinWeek {
+  const thisWeek = weekBounds(input.asOf)
+  // Only on its Sunday has this week ended; any other day, the check-in is about the week before.
+  return thisWeek.end === input.asOf ? thisWeek : weekBounds(addDays(input.asOf, -7))
+}
+
 /** The calendar month containing `date`, first day to last. */
 export function monthBounds(date: IsoDate): { start: IsoDate; end: IsoDate } {
   const start = `${date.slice(0, 7)}-01` as IsoDate
