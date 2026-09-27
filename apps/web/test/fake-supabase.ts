@@ -38,7 +38,9 @@ export interface FakeTables {
   accounts: NamedRow[]
   categories: Category[]
   transactions: LedgerRow[]
-  ingest_candidates: (PendingCandidate & { readonly status: string })[]
+  /** A suggested category (0018) may be left out; it reads as none. */
+  ingest_candidates: (Omit<PendingCandidate, 'category_id' | 'category_source'> &
+    Partial<Pick<PendingCandidate, 'category_id' | 'category_source'>> & { readonly status: string })[]
   merchant_rules: { readonly match_merchant: string; readonly category_id: string }[]
   /**
    * A goal from before 0013 may leave out its fund's columns; they read as
@@ -201,6 +203,9 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     dismiss_unreadable_line: null,
     // 0016: the caller's saved AI keys, never their ciphertext. None by default.
     ai_key_status: [],
+    // 0018: answered by suggest() and clearSuggestion() below.
+    suggest_candidate_categories: 0,
+    clear_candidate_suggestion: false,
   }
   const failures = new Map<string, string>()
   const server: FakeSupabase['server'] = { refuse: null, maxRows: null, afterRead: null, hold: null, lacks: {} }
@@ -253,6 +258,29 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     if (line === undefined) return pgError('42501', 403)
     tables.ingest_unreadable_lines[at] = { ...line, dismissed_at: line.dismissed_at ?? '2026-09-23T12:00:00+00:00' }
     return new Response(null, { status: 204 })
+  }
+
+  // What 0018 does: a suggestion only on a row still waiting that nobody
+  // filled, only into a category that is not on Not spending; a clear only
+  // of a suggestion. Each answers as the function does.
+  const open = (r: FakeTables['ingest_candidates'][number]) => r.status === 'pending' && (r.category_id ?? null) === null
+  function suggest(args: Readonly<Record<string, unknown>>): Response {
+    let set = 0
+    for (const { candidate, category } of args['p'] as { candidate: string; category: string }[]) {
+      const at = tables.ingest_candidates.findIndex((r) => r.id === candidate && (open(r) || r.category_source === 'model'))
+      const row = tables.ingest_candidates[at]
+      const kind = tables.categories.find((c) => c.id === category)?.kind
+      if (row === undefined || kind === undefined || kind === 'transfer') continue
+      tables.ingest_candidates[at] = { ...row, category_id: category, category_source: 'model' }
+      set += 1
+    }
+    return json(set)
+  }
+  function clearSuggestion(args: Readonly<Record<string, unknown>>): Response {
+    const at = tables.ingest_candidates.findIndex((r) => r.id === args['p_candidate'] && r.status === 'pending' && r.category_source === 'model')
+    const row = tables.ingest_candidates[at]
+    if (row !== undefined) tables.ingest_candidates[at] = { ...row, category_id: null, category_source: null }
+    return json(row !== undefined)
   }
 
   // What 0004 and 0013 refuse of a goal, in the order Postgres meets it: the
@@ -325,6 +353,8 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       if (!(name in rpcReplies)) return pgError('PGRST202', 404)
       if (name === 'recategorise_transaction') return recategorise(rpcCalls[rpcCalls.length - 1]?.args ?? {})
       if (name === 'dismiss_unreadable_line') return dismiss(rpcCalls[rpcCalls.length - 1]?.args ?? {})
+      if (name === 'suggest_candidate_categories') return suggest(rpcCalls[rpcCalls.length - 1]?.args ?? {})
+      if (name === 'clear_candidate_suggestion') return clearSuggestion(rpcCalls[rpcCalls.length - 1]?.args ?? {})
       return json(rpcReplies[name] ?? null)
     }
 

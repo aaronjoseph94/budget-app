@@ -193,6 +193,12 @@ export interface PendingCandidate {
   /** Normalised: what a learned rule matches on. */
   readonly merchant: string
   readonly merchant_raw: string
+  /**
+   * Set on a row waiting here only by a model's suggestion (0018), which
+   * the owner still confirms: 0004 refuses approving it as the model's.
+   */
+  readonly category_id: string | null
+  readonly category_source: 'model' | 'user' | 'merchant_rule' | null
 }
 
 export interface PendingPage {
@@ -211,7 +217,7 @@ export interface PendingPage {
 export async function listPending(supabase: SupabaseClient, limit = 300): Promise<PendingPage> {
   const { data, error, count } = await supabase
     .from('ingest_candidates')
-    .select('id, posted_on, amount_cents, merchant, merchant_raw', { count: 'exact' })
+    .select('id, posted_on, amount_cents, merchant, merchant_raw, category_id, category_source', { count: 'exact' })
     .eq('status', 'pending')
     .order('posted_on', { ascending: true })
     .limit(limit)
@@ -242,6 +248,18 @@ export async function approveCandidate(
   if (error !== null) fail(error)
   const outcome = String(data)
   return outcome === 'approved' || outcome === 'already_in_ledger' ? outcome : 'already_handled'
+}
+
+/**
+ * Put a suggested category back to none, so the row waits with nothing
+ * picked. clear_candidate_suggestion (0018) acts only on the caller's own
+ * row that still waits with a model's suggestion; any other row is left
+ * alone, and false says so.
+ */
+export async function clearCandidateSuggestion(supabase: SupabaseClient, candidateId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('clear_candidate_suggestion', { p_candidate: candidateId })
+  if (error !== null) fail(error)
+  return data === true
 }
 
 export async function rejectCandidate(supabase: SupabaseClient, candidateId: string): Promise<void> {
