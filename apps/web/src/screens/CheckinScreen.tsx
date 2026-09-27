@@ -193,7 +193,7 @@ function TryThis({ figures, facts, words }: { figures: CheckinFigures; facts: Ch
             </p>
           ) : (
             <Button onClick={() => void commit()} disabled={state === 'saving'}>
-              {limit.from === 'budget' ? 'Yes, keep my weekly budget' : 'Yes, set it as my weekly budget'}
+              {limit.from === 'budget' ? 'Yes, keep it' : 'Yes, set it'}
             </Button>
           )}
           {state === 'failed' ? <p role="alert">The weekly budget wasn’t saved. Try again, or set it on the Week.</p> : null}

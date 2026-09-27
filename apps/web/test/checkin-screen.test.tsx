@@ -107,7 +107,7 @@ describe('the Sunday check-in', () => {
     const fake = checkinFake()
     renderScreen(<Shell />, fake)
 
-    const button = await screen.findByRole('button', { name: 'Yes, set it as my weekly budget' })
+    const button = await screen.findByRole('button', { name: 'Yes, set it' })
     expect(screen.getByText(whole('P', 'Keep Dining out under $65.00 next week?'))).toBeTruthy()
     // Everything has drawn, and nothing is written.
     expect(fake.tables.categories.find((c) => c.id === 'dining')?.weekly_budget_cents).toBe(7_000)
@@ -124,7 +124,7 @@ describe('the Sunday check-in', () => {
     fake.fail('PATCH categories', '42501')
     renderScreen(<Shell />, fake)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Yes, set it as my weekly budget' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Yes, set it' }))
     expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'The weekly budget wasn’t saved. Try again, or set it on the Week.')
   })
 
@@ -151,7 +151,7 @@ describe('the Sunday check-in', () => {
     expect(questions.textContent).toContain('Your answers need a one-time update.')
     expect(within(questions).getByRole('link', { name: 'See One-time updates' }).getAttribute('href')).toBe('#/help/updates')
     expect(within(questions).queryAllByRole('button')).toEqual([])
-    expect(screen.getByRole('button', { name: 'Yes, set it as my weekly budget' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Yes, set it' })).toBeTruthy()
     expect(within(section('Your goal')).getByText('46 h of 109 h')).toBeTruthy()
   })
 

@@ -105,9 +105,9 @@ function Question({ question, week, answers, shop }: { question: CheckinQuestion
       <p className="[overflow-wrap:anywhere]">
         Was <span className="font-medium">{shop}</span>, <span className="tnum font-medium">{formatCents(question.chargeCents)}</span> on {formatDayMonth(question.postedOn)}, planned?
       </p>
-      <div role="group" aria-label={`${shop}: planned, impulse or needed`} className="flex flex-wrap gap-2">
+      <div role="group" aria-label={`${shop}: planned, impulse or needed`} className="grid grid-cols-3 gap-2">
         {CHOICES.map((c) => (
-          <Button key={c.answer} variant={chosen === c.answer ? 'default' : 'outline'} aria-pressed={chosen === c.answer} onClick={() => void choose(c.answer)}>
+          <Button key={c.answer} className="px-2" variant={chosen === c.answer ? 'default' : 'outline'} aria-pressed={chosen === c.answer} onClick={() => void choose(c.answer)}>
             {c.label}
           </Button>
         ))}
