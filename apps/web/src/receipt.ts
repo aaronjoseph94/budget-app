@@ -138,9 +138,10 @@ async function viaReadReceipt(supabase: SupabaseClient, photo: ReceiptPhoto): Pr
     // The function answers failures with { ok: false, code }. supabase-js
     // puts that response on error.context; its own message is generic.
     const reply = (error as { context?: unknown }).context
-    // Supabase's own 404: neither reader is deployed, so the one step left is the helper.
+    // Supabase's own 404: read-receipt is not deployed, and the helper is
+    // missing or waits for 0016, so the step left is a one-time update.
     if (reply instanceof Response && reply.status === 404) {
-      return { ok: false, message: 'Reading receipt photos needs the AI helper, which isn’t installed yet. Type it in below meanwhile.', link: 'updates' }
+      return { ok: false, message: 'Reading receipt photos needs a one-time update, so the photo was not read. Type it in below meanwhile.', link: 'updates' }
     }
     let code = ''
     try {

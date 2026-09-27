@@ -73,7 +73,7 @@ describe('AddScreen, a receipt photo read by the AI helper', () => {
     fake.rpcReplies.save_import = [{ batch_id: 'b1', parsed: 1, deduped: 0, inserted: 1, rejected: 0, auto_approved: 0 }]
     await takePhoto(fake)
 
-    expect(await screen.findByText(/Reading receipt photos needs the AI helper, which isn’t installed yet/)).toBeTruthy()
+    expect(await screen.findByText(/Reading receipt photos needs a one-time update, so the photo was not read/)).toBeTruthy()
     expect(screen.getByRole('link', { name: 'See One-time updates' }).getAttribute('href')).toBe('#/help/updates')
     fireEvent.change(screen.getByLabelText('Where'), { target: { value: 'FARMERS MARKET' } })
     fireEvent.change(screen.getByLabelText('Total spent'), { target: { value: '12.50' } })

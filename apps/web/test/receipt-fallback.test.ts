@@ -47,9 +47,19 @@ describe('reading a receipt photo', () => {
     const fake = setUp(null, null)
     expect(await readReceiptPhoto(fake.client, PHOTO)).toEqual({
       ok: false,
-      message: 'Reading receipt photos needs the AI helper, which isn’t installed yet. Type it in below meanwhile.',
+      message: 'Reading receipt photos needs a one-time update, so the photo was not read. Type it in below meanwhile.',
       link: 'updates',
     })
+  })
+
+  it('says a one-time update is needed, not that the helper is missing, when the helper waits for 0016 and read-receipt is not deployed', async () => {
+    const fake = setUp(helperSays('needs_update', 503), null)
+    expect(await readReceiptPhoto(fake.client, PHOTO)).toEqual({
+      ok: false,
+      message: 'Reading receipt photos needs a one-time update, so the photo was not read. Type it in below meanwhile.',
+      link: 'updates',
+    })
+    expect(fake.functions.receiptCalls).toEqual([PHOTO])
   })
 
   it('keeps read-receipt’s own reasons when it is the one that answered', async () => {

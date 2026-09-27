@@ -708,7 +708,7 @@ function PhotoEntry() {
           }}
         />
         <span className="mt-2 max-w-xs text-xs text-muted-foreground">
-          The photo goes only to an AI service that reads photos, free Google Gemini first, and is not stored. A free service may use it to improve its products.
+          The photo goes only to an AI service that reads photos, such as free Google Gemini, and is not stored. A free service may use it to improve its products.
         </span>
       </label>
     )
