@@ -77,6 +77,12 @@ describe('rankCards', () => {
     expect(keys(SHOP_FACTS)).toHaveLength(2)
   })
 
+  it('sends the habits’ wins to Habits, and keeps one card for a category with a best (F40)', () => {
+    const one = (key: string) => rankCards({ facts: [factOf(key)], dismissed: none }).cards.map((c) => [c.template, c.action])
+    expect(one('habits:streak')).toEqual([['spending_streak', 'habits']])
+    expect(one('cat:dining:best')).toEqual([['personal_best', 'habits']])
+  })
+
   it('cheers a milestone near the top, and sends both wins to the goals', () => {
     // A milestone is worth one step of its goal, 5 hours at $275.00, solid (F34): it outranks Dining out.
     const withWins = [...fresh, ...WIN_FACTS.filter((f) => f.notable)]

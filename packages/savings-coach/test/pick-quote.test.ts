@@ -88,6 +88,11 @@ describe('quoteTags', () => {
     expect(quoteTags({ facts: [factOf('cat:groceries:trend')], goal: null })).toEqual(['habits', 'streaks'])
   })
 
+  it('reads weeks within budget as a streak and a best month as a habit and saving (F40)', () => {
+    expect(quoteTags({ facts: [factOf('habits:streak')], goal: null })).toEqual(['streaks', 'habits'])
+    expect(quoteTags({ facts: [factOf('cat:dining:best')], goal: null })).toEqual(['habits', 'saving'])
+  })
+
   it('adds the wins’ and the main goal’s, with hours and flight only where the goal has them', () => {
     const flight = { name: 'Flight training', unitLabel: 'flight time', hasHours: true }
     expect(quoteTags({ facts: [factOf('goal:g1:milestone'), factOf('summary:saved')], goal: flight })).toEqual([

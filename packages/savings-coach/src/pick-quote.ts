@@ -70,6 +70,10 @@ function tagsOf(fact: Fact): readonly QuoteTag[] {
       return ['saving', 'pay_yourself_first']
     case 'goal_milestone':
       return ['milestone', 'goal', 'courage']
+    case 'spending_streak':
+      return ['streaks', 'habits']
+    case 'personal_best':
+      return ['habits', 'saving']
     case 'month_forecast':
       return []
     case 'price_rise':

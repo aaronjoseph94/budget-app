@@ -310,3 +310,50 @@ describe('factsDigest: trends (F37)', () => {
     expect(trendsOf({ ...trending, readFrom: d('2026-06-01') })).toEqual([])
   })
 })
+
+describe('factsDigest: habits (F40)', () => {
+  // Records from Monday 1 June; Dining out has $70.00 a week, and one dear meal on the 12th of June, July and August.
+  const month: FactsDigestInput = {
+    ...base,
+    historyStart: d('2026-06-01'),
+    readFrom: d('2025-09-01'),
+    categories: [{ id: DINING, name: 'Dining out', kind: 'variable', sortOrder: 0 }],
+    entries: [spend('2026-06-12', 30_000, DINING), spend('2026-07-12', 32_000, DINING), spend('2026-08-12', 25_000, DINING), spend('2026-09-15', 2, DINING)],
+    latestStatementEnd: null,
+    pendingCount: 0,
+  }
+  const habits: FactsDigestInput = { ...month, habits: { weeklyBudgets: [{ categoryId: DINING, weeklyBudgetCents: 7_000 }] } }
+  const winsOf = (input: FactsDigestInput) => factsDigest(input).facts.filter((f) => f.kind === 'spending_streak' || f.kind === 'personal_best')
+
+  it('cheers five weeks in a row within budget, and August as Dining out’s lowest month', () => {
+    // The weeks of 17 August to 14 September are kept; the last left $69.98, × 52 ÷ 12 = $303.246…, $303.25 a month, solid.
+    expect(winsOf(habits)).toEqual([
+      {
+        key: 'habits:streak', kind: 'spending_streak', subject: { type: 'week', id: '2026-09-14', label: 'Everyday spending' },
+        direction: 'none', size: null, evidence: 'solid', meaning: 'good', notable: true,
+        figures: { weeks: { unit: 'count', value: 5 }, best: { unit: 'count', value: 5 }, left: { unit: 'cents', value: 6_998 }, week: { unit: 'date', value: '2026-09-14' } },
+        impact: 90_975, cause: 'spending_streak:2026-09-14',
+      },
+      {
+        key: `cat:${DINING}:best`, kind: 'personal_best', subject: { type: 'category', id: DINING, label: 'Dining out' },
+        direction: 'down', size: null, evidence: 'some', meaning: 'good', notable: true,
+        figures: {
+          now: { unit: 'cents', value: 25_000 },
+          before: { unit: 'cents', value: 30_000 },
+          change: { unit: 'change', value: -5_000, direction: 'less' },
+          month: { unit: 'month', value: '2026-08-01' },
+          before_month: { unit: 'month', value: '2026-06-01' },
+          months: { unit: 'count', value: 3 },
+        },
+        impact: 10_000, cause: `personal_best:${DINING}:2026-08-01`,
+      },
+    ])
+  })
+
+  it('says nothing of a single week, of a streak with no weekly budget, or of habits it was not asked about', () => {
+    const one = { ...habits, entries: [...habits.entries, spend('2026-09-08', 7_001, DINING)] }
+    expect(winsOf(one).map((f) => f.kind)).toEqual(['personal_best'])
+    expect(winsOf({ ...habits, habits: { weeklyBudgets: [] } }).map((f) => f.kind)).toEqual(['personal_best'])
+    expect(winsOf(month)).toEqual([])
+  })
+})

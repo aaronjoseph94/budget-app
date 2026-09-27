@@ -26,13 +26,17 @@
  * at a new shop, a possible double and a charge that may be counted twice
  * (F39). Each is always a card, to watch, and its cause names the shop or
  * the rows, so a dismissed one stays gone and the next one comes back.
+ * Plan A18 adds two wins where the Coach gives the weekly budgets (F40):
+ * weeks in a row within them, and a category's lowest whole month. They
+ * join version 2, as the wins before them joined version 1.
  */
 import { type Cents, type IsoDate, addDays, cents, daysBetween } from '@budget/money-primitives'
 import type { BudgetHistoryRow } from './budgets.js'
 import { type Change, periodComparison } from './compare.js'
 import { cashFlow30 } from './cash-flow-30.js'
 import type { IncomeSchedule } from './expected-pay.js'
-import { type Evidence, completeMonths } from './history.js'
+import { type Evidence, completeMonths, evidenceOf } from './history.js'
+import { personalBest, streaks } from './habits.js'
 import { impactScore } from './impact.js'
 import { goalMilestones } from './goal-milestones.js'
 import { changeSize, notableBand, usualMonth } from './notable.js'
@@ -79,6 +83,8 @@ export interface FactsDigestInput {
    * summaries are needed, as on the Month.
    */
   readonly shops?: { readonly entries: readonly ShopEntry[]; readonly notSubscriptions: readonly string[] }
+  /** Each category's one weekly budget (0004), for the habits' wins (F40); left out where only the summaries are needed. */
+  readonly habits?: { readonly weeklyBudgets: readonly { readonly categoryId: string; readonly weeklyBudgetCents: number | null }[] }
 }
 
 /** An active goal as goalMilestones reads it, with what the owner calls it. */
@@ -112,6 +118,8 @@ export type FactKind =
   | 'new_shop'
   | 'possible_double'
   | 'counted_twice'
+  | 'spending_streak'
+  | 'personal_best'
 
 /** One figure a sentence can name by its slot. A change carries its direction word (ADR 0005 §5). */
 export type Figure =
@@ -169,7 +177,7 @@ const STALE_AFTER_DAYS = 10
 export function factsDigest(input: FactsDigestInput): FactsDigest {
   const history = completeMonths(input)
   const first: Fact[] = [...staleData(input), ...rowsWaiting(input), ...summaries(input)]
-  const rest = [...categoryChanges(input, history.months), ...trends(input, history.months), ...budgets(input), ...savedMore(input), ...milestones(input), ...detectors(input)].sort(
+  const rest = [...categoryChanges(input, history.months), ...trends(input, history.months), ...budgets(input), ...savedMore(input), ...milestones(input), ...detectors(input), ...habitWins(input)].sort(
     (a, b) => Number(b.notable) - Number(a.notable) || b.impact - a.impact || (a.key < b.key ? -1 : 1),
   )
   const forecast = input.forecast === undefined ? null : forecastFact({ ...input, ...input.forecast })
@@ -622,6 +630,72 @@ function shopSubject(shop: string): Fact['subject'] {
 
 function cut(shop: string): string {
   return [...shop].slice(0, CAUSE_SHOP).join('')
+}
+
+/**
+ * The habits' wins (F40), where the Coach gives the weekly budgets: two or
+ * more complete weeks in a row within them, worth the last week's Left to
+ * spend × 52 ÷ 12, and each Variable category whose last whole month was
+ * its lowest, worth how far under the next lowest. Always cards, as wins.
+ */
+function habitWins(input: FactsDigestInput): Fact[] {
+  if (input.habits === undefined) return []
+  const weekly = new Map(input.habits.weeklyBudgets.map((b) => [b.categoryId, b.weeklyBudgetCents]))
+  const categories = input.categories.map((c) => ({ ...c, weeklyBudgetCents: weekly.get(c.id) ?? null }))
+  const habits = { asOf: input.asOf, historyStart: input.historyStart, readFrom: input.readFrom, categories, entries: input.entries }
+  const out: Fact[] = []
+  const run = streaks(habits)
+  const last = run.status === 'ready' ? run.weeks[run.weeks.length - 1] : undefined
+  if (run.status === 'ready' && run.current >= 2 && last !== undefined) {
+    // Kept, so at least $0: × 52 ÷ 12, half-up.
+    const monthly = cents(Number((BigInt(last.leftCents) * 104n + 12n) / 24n))
+    out.push({
+      key: 'habits:streak',
+      kind: 'spending_streak',
+      subject: { type: 'week', id: last.start, label: 'Everyday spending' },
+      direction: 'none',
+      size: null,
+      evidence: 'solid',
+      meaning: 'good',
+      notable: true,
+      figures: {
+        weeks: { unit: 'count', value: run.current },
+        best: { unit: 'count', value: run.best },
+        left: { unit: 'cents', value: last.leftCents },
+        week: { unit: 'date', value: last.start },
+      },
+      impact: impactScore({ effect: 'monthly', monthlyCents: monthly, evidence: 'solid' }).impact,
+      cause: `spending_streak:${last.start}`,
+    })
+  }
+  const bests = personalBest(habits)
+  if (bests.status !== 'ready') return out
+  const evidence = evidenceOf(bests.months)
+  const names = new Map(input.categories.map((c) => [c.id, c]))
+  for (const b of bests.bests) {
+    const under = cents(b.nextCents - b.cents)
+    out.push({
+      key: `cat:${b.categoryId}:best`,
+      kind: 'personal_best',
+      subject: category(names.get(b.categoryId) ?? missing(b.categoryId)),
+      direction: 'down',
+      size: null,
+      evidence,
+      meaning: 'good',
+      notable: true,
+      figures: {
+        now: { unit: 'cents', value: b.cents },
+        before: { unit: 'cents', value: b.nextCents },
+        change: { unit: 'change', value: cents(b.cents - b.nextCents), direction: 'less' },
+        month: { unit: 'month', value: bests.month },
+        before_month: { unit: 'month', value: b.nextMonth },
+        months: { unit: 'count', value: bests.months },
+      },
+      impact: impactScore({ effect: 'monthly', monthlyCents: under, evidence }).impact,
+      cause: `personal_best:${b.categoryId}:${bests.month}`,
+    })
+  }
+  return out
 }
 
 /** The engine's own sheets list every category given, so this cannot miss. */

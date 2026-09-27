@@ -33,6 +33,8 @@ export type CardTemplateKey =
   | 'trend_down'
   | 'saved_more'
   | 'goal_milestone'
+  | 'spending_streak'
+  | 'personal_best'
   | 'forecast'
   | 'forecast_spent'
   | WatchKey
@@ -277,6 +279,28 @@ export const PLAIN_TEMPLATES: Readonly<Record<Exclude<CardTemplateKey, WatchKey>
       body: '{{A.milestone}} saved toward it, and counting.',
     },
   },
+  // Complete weeks in a row within the weekly budgets (F40).
+  spending_streak: {
+    cheerleader: {
+      title: 'On a roll: {{A.weeks}} weeks within budget',
+      body: 'Your everyday spending stayed within your weekly budgets {{A.weeks}} weeks in a row. Your longest run is {{A.best}} weeks. Keep it going!',
+    },
+    straight: {
+      title: '{{A.weeks}} weeks within budget',
+      body: 'Everyday spending: within your weekly budgets {{A.weeks}} weeks running. Longest run: {{A.best}} weeks.',
+    },
+  },
+  // A category's last whole month was its lowest (F40).
+  personal_best: {
+    cheerleader: {
+      title: 'Personal best: {{A.name}}',
+      body: '{{A.now}} on {{A.name}} in {{A.month}}, your lowest in {{A.months}} whole months: {{A.change}} than in {{A.before_month}}. Brilliant!',
+    },
+    straight: {
+      title: 'Lowest month yet: {{A.name}}',
+      body: '{{A.name}}: {{A.now}} in {{A.month}}, {{A.change}} than your next lowest, in {{A.before_month}}.',
+    },
+  },
 }
 
 /** The day's line, from this month's summary or, without one, this week's. */
@@ -334,6 +358,8 @@ export function cardTemplateKey(fact: Fact): CardTemplateKey | null {
       return fact.direction === 'up' ? 'trend_up' : 'trend_down'
     case 'saved_more':
     case 'goal_milestone':
+    case 'spending_streak':
+    case 'personal_best':
       return fact.kind
     // Never ranked into a card (core's forecastFact is not notable): the Coach gives it its own (forecastCard).
     case 'month_forecast':

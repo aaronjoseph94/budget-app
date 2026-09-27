@@ -111,6 +111,13 @@ const ACTION: Readonly<Record<CardAction, { readonly label: string; readonly go:
       navigate('reports')
     },
   },
+  habits: {
+    label: 'See your habits',
+    go: () => {
+      rememberTab('habits')
+      navigate('reports')
+    },
+  },
 }
 
 /**

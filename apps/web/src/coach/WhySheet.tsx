@@ -55,6 +55,24 @@ const REASON: Readonly<Partial<Record<Fact['kind'], string>>> = {
     'It shows because the same shop charged the same amount within 3 days. Nothing was removed or left out: if one was a mistake, ask the shop for a refund.',
   counted_twice:
     'It shows because a charge you added and one from your statement are the same amount within 3 days, so one purchase may be counted twice. Nothing was removed.',
+  spending_streak:
+    'It shows because the Week’s Left to spend stayed at $0.00 or more for 2 or more whole weeks in a row, against your weekly budgets. See Reports, Habits.',
+  personal_best:
+    'It shows because its last whole month was its lowest, by $1.00 or more, of up to 12 whole months, with 3 or more to go on. See Reports, Habits.',
+}
+
+/** The habits' wins (F40), whose slot names mean their own things. */
+const HABIT_LABEL: Readonly<Record<string, string>> = {
+  weeks: 'Whole weeks in a row within budget',
+  best: 'Your longest run, in weeks',
+  left: 'Left to spend in the last whole week',
+  week: 'The last whole week began',
+  now: 'Spent in its lowest month',
+  before: 'Its next lowest month',
+  change: 'The difference',
+  month: 'Its lowest month',
+  before_month: 'The next lowest was in',
+  months: 'Whole months it rests on',
 }
 
 /** The detectors' figures (F38, F39), whose slot names mean their own things. */
@@ -97,6 +115,7 @@ function labelOf(fact: Fact, slot: string): string {
   if (fact.kind === 'month_forecast') return FORECAST_LABEL[slot] ?? slot
   if (fact.kind === 'possible_double' || fact.kind === 'counted_twice') return PAIR_LABEL[slot] ?? slot
   if (SHOP_KINDS.has(fact.kind)) return SHOP_LABEL[slot] ?? slot
+  if (fact.kind === 'spending_streak' || fact.kind === 'personal_best') return HABIT_LABEL[slot] ?? slot
   if (fact.kind === 'budget_pace' && slot === 'over') return 'Over budget at this pace by'
   if (fact.kind === 'saved_more' && slot === 'now') return 'Saved so far this month'
   if (fact.kind === 'category_trend' && slot === 'change') return 'From the first month to the last'

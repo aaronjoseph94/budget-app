@@ -118,8 +118,25 @@ export const SHOPS: FactsDigestInput = {
 const DETECTORS: readonly Fact['kind'][] = ['price_rise', 'new_subscription', 'large_charge', 'new_shop', 'possible_double', 'counted_twice']
 export const SHOP_FACTS: readonly Fact[] = factsDigest(SHOPS).facts.filter((f) => DETECTORS.includes(f.kind))
 
+/**
+ * The habits' wins (F40), records from Monday 1 June: $70.00 a week on
+ * Dining out and one dear meal on the 12th of June, July and August, so
+ * five weeks in a row within budget, and August its lowest month.
+ */
+export const HABITS: FactsDigestInput = {
+  ...EVERY_KIND,
+  categories: [EVERY_KIND.categories[0]!],
+  budgetHistory: [],
+  entries: [spend('2026-06-12', 30_000, 'dining'), spend('2026-07-12', 32_000, 'dining'), spend('2026-08-12', 25_000, 'dining')],
+  latestStatementEnd: null,
+  pendingCount: 0,
+  habits: { weeklyBudgets: [{ categoryId: 'dining', weeklyBudgetCents: 7_000 }] },
+}
+
+export const HABIT_FACTS: readonly Fact[] = factsDigest(HABITS).facts.filter((f) => f.kind === 'spending_streak' || f.kind === 'personal_best')
+
 export function factOf(key: string): Fact {
-  const fact = [...FACTS, ...WIN_FACTS, ...TREND_FACTS, ...SHOP_FACTS].find((f) => f.key === key)
+  const fact = [...FACTS, ...WIN_FACTS, ...TREND_FACTS, ...SHOP_FACTS, ...HABIT_FACTS].find((f) => f.key === key)
   if (fact === undefined) throw new Error(`The fixture has no fact ${key}`)
   return fact
 }

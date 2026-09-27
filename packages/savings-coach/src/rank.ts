@@ -12,8 +12,8 @@
 import type { Fact } from '@budget/core'
 import { type CardTemplateKey, cardTemplateKey } from './templates.js'
 
-/** The card's one action: bring in a statement, open Review, see the month, see the goals, open the Forecast, or see the shops. */
-export type CardAction = 'import' | 'review' | 'see_month' | 'goals' | 'forecast' | 'shops'
+/** The card's one action: bring in a statement, open Review, see the month, see the goals, open the Forecast, see the shops, or see the habits. */
+export type CardAction = 'import' | 'review' | 'see_month' | 'goals' | 'forecast' | 'shops' | 'habits'
 
 export interface Card {
   readonly fact: Fact
@@ -104,6 +104,10 @@ function actionFor(fact: Fact): CardAction {
     case 'possible_double':
     case 'counted_twice':
       return 'shops'
+    // Reports → Habits has the weeks kept and every best.
+    case 'spending_streak':
+    case 'personal_best':
+      return 'habits'
     default:
       return 'see_month'
   }
