@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
-import { goalsProgress } from '@budget/core'
-import { checkinFacts, checkinWords, mergeCheckin, type Checkin, type CheckinFacts } from '@budget/savings-coach'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { goalsProgress, impulseShare, isoDate } from '@budget/core'
+import { checkinFacts, type Checkin, type CheckinFacts } from '@budget/savings-coach'
+import type { AiProvider } from '@budget/schema'
 import { useAppData } from '../app-data.js'
 import { goalSavedCents, useFunds } from '../funds.js'
 import { formatCents, formatDateRange, formatDayMonth } from '../format.js'
@@ -11,7 +12,7 @@ import { HelpButton } from '../help/HelpButton.js'
 import { Section } from '../forecast/parts.js'
 import { useCoachRead } from '../coach/facts.js'
 import { checkinFigures, type CheckinFigures } from '../coach/checkin.js'
-import { useCoachSettings } from '../coach/settings.js'
+import { useCheckinWords, type CheckinWordsState } from '../coach/use-checkin-words.js'
 import { CoachText } from '../coach/words.js'
 import { CheckinQuestions, useCheckinAnswers } from '../coach/CheckinQuestions.js'
 
@@ -31,25 +32,34 @@ export function CheckinScreen() {
   const read = useCoachRead()
   const { categories } = useAppData()
   const answers = useCheckinAnswers()
-  const tone = useCoachSettings()?.tone ?? null
-  const figures = useMemo((): CheckinFigures | 'failed' | null => {
+  const computed = useMemo((): CheckinFigures | 'failed' | null => {
     if (read === null || answers.answeredAtOpen === null) return read === 'failed' ? 'failed' : null
     if (read === 'failed') return 'failed'
     try {
-      return checkinFigures(read, categories, answers.answeredAtOpen, answers.rows)
+      // The answers as they were at open, so the words' facts hold still while the owner answers.
+      return checkinFigures(read, categories, answers.answeredAtOpen, answers.rowsAtOpen)
     } catch {
       return 'failed'
     }
-  }, [read, categories, answers.answeredAtOpen, answers.rows])
+  }, [read, categories, answers.answeredAtOpen, answers.rowsAtOpen])
+  // The impulse share as it stands, with each answer given here.
+  const impulse = useMemo(() => (read === null || read === 'failed' ? null : impulseShare({ asOf: isoDate(read.asOf), answers: answers.rows })), [read, answers.rows])
   const { goals, mainGoal } = useAppData()
-  const facts = useMemo(() => {
-    if (figures === null || figures === 'failed') return null
+  // Worked out once, as the check-in opens: tapping the weekly limit re-reads the app's data,
+  // and last week's check-in must not change under the owner, or ask the AI again, when it does.
+  const [opened, setOpened] = useState<{ figures: CheckinFigures; facts: CheckinFacts } | 'failed' | null>(null)
+  useEffect(() => {
+    if (opened !== null || computed === null) return
+    if (computed === 'failed') return setOpened('failed')
     const active = goals.filter((g) => g.status === 'active')
     const named = active.map((g) => ({ id: g.id, name: g.name, main: g.id === mainGoal?.id, hasHours: g.unit_cost_cents !== null }))
-    return checkinFacts({ ...figures, goals: named, nameOf: (id) => categories.find((c) => c.id === id)?.name ?? 'A category' })
-  }, [figures, goals, mainGoal, categories])
+    setOpened({ figures: computed, facts: checkinFacts({ ...computed, goals: named, nameOf: (id) => categories.find((c) => c.id === id)?.name ?? 'A category' }) })
+  }, [opened, computed, goals, mainGoal, categories])
+  const figures = opened === null || opened === 'failed' ? opened : opened.figures
+  const facts = opened === null || opened === 'failed' ? null : opened.facts
   const shops = useMemo(() => new Map(read === null || read === 'failed' ? [] : read.rows.map((r) => [r.id, r.merchant_raw])), [read])
-  const words = useMemo(() => (facts === null || tone === null ? null : mergeCheckin({ own: checkinWords({ facts, tone }), ai: null })), [facts, tone])
+  const said = useCheckinWords(facts, figures === null || figures === 'failed' ? null : figures.recap.week.start)
+  const words = said?.checkin ?? null
 
   return (
     <div className="space-y-4">
@@ -61,25 +71,60 @@ export function CheckinScreen() {
         <HelpButton screen="coach" topic="checkin" />
       </div>
       {figures === 'failed' ? <p className="text-muted-foreground">The check-in did not load. Reload to try again.</p> : null}
-      {figures === null || figures === 'failed' || facts === null || words === null ? (
+      {figures === null || figures === 'failed' || facts === null || said === null || words === null || impulse === null ? (
         figures === 'failed' ? null : <p className="text-muted-foreground">Looking back at last week…</p>
       ) : (
         <>
           <p className="text-sm text-muted-foreground">The week of {formatDateRange(figures.recap.week.start, figures.recap.week.end)}</p>
           <LastWeek figures={figures} facts={facts} words={words} />
-          <CheckinQuestions questions={figures.questions} week={figures.recap.week.start} answers={answers} impulse={figures.impulse} shops={shops} />
+          <CheckinQuestions questions={figures.questions} week={figures.recap.week.start} answers={answers} impulse={impulse} shops={shops} />
           <TryThis figures={figures} facts={facts} words={words} />
           <Goals facts={facts} words={words} />
+          <Whose state={said} />
         </>
       )}
     </div>
   )
 }
 
-/** A part's words, drawn as text with the engine's figures in its blanks. */
+/** A part's words, drawn as text with the engine's figures in its blanks, and ✨ on the AI's. */
 function Said({ part, facts }: { part: Checkin[keyof Checkin]; facts: CheckinFacts }) {
   if (part === null) return null
-  return <CoachText text={part.text} facts={{ ...facts.facts, ...facts.goals }} />
+  return (
+    <span aria-live="polite">
+      {part.ai ? (
+        <>
+          <span aria-hidden="true">✨ </span>
+          <span className="sr-only">Written by AI: </span>
+        </>
+      ) : null}
+      <CoachText text={part.text} facts={{ ...facts.facts, ...facts.goals }} />
+    </span>
+  )
+}
+
+const BY: Readonly<Record<AiProvider, string>> = { gemini: 'free Google Gemini', groq: 'free Groq', openrouter: 'free OpenRouter', openai: 'OpenAI', anthropic: 'Anthropic' }
+
+/** Whose words these are, and why the app's own show when the AI's do not. */
+function Whose({ state }: { state: CheckinWordsState }) {
+  const { status, view, provider } = state
+  let said: ReactNode = 'In the app’s own words, from your records.'
+  if (status === 'looking') said = 'Looking for this week’s AI words. The app’s own show meanwhile.'
+  else if (status === 'asking') said = 'Asking the AI for this week’s words. The app’s own show meanwhile.'
+  else if (status === 'ai' && provider !== null) said = `✨ Words by AI (${BY[provider]}) from your numbers. Every figure is the app’s own.`
+  else if (view !== null) {
+    said = (
+      <>
+        {view.sentence}{' '}
+        {view.help === null ? null : (
+          <a href={hashOf({ screen: 'help', param: view.help })} className={link}>
+            {view.help === 'updates' ? 'Help: One-time updates' : 'Why?'}
+          </a>
+        )}
+      </>
+    )
+  }
+  return <p className="text-xs text-muted-foreground">{said}</p>
 }
 
 function LastWeek({ figures, facts, words }: { figures: CheckinFigures; facts: CheckinFacts; words: Checkin }) {

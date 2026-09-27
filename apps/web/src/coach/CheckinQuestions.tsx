@@ -19,23 +19,21 @@ export interface CheckinAnswers {
   /** Charges answered when the check-in opened; null while they load. */
   readonly answeredAtOpen: readonly string[] | null
   readonly rows: readonly AnswerRow[]
+  /** Every answer as it was when the check-in opened. */
+  readonly rowsAtOpen: readonly AnswerRow[]
   readonly status: 'loading' | 'ready' | 'missing' | 'failed'
   readonly save: (row: AnswerRow) => Promise<boolean>
 }
 
 export function useCheckinAnswers(): CheckinAnswers {
   const { supabase, userId } = useAppData()
-  const [state, setState] = useState<{ status: CheckinAnswers['status']; rows: readonly AnswerRow[]; answeredAtOpen: readonly string[] | null }>({
-    status: 'loading',
-    rows: [],
-    answeredAtOpen: null,
-  })
+  const [state, setState] = useState<Omit<CheckinAnswers, 'save'>>({ status: 'loading', rows: [], rowsAtOpen: [], answeredAtOpen: null })
   useEffect(() => {
     let live = true
     void readAnswers(supabase).then((read) => {
       if (!live) return
       const rows = read.status === 'ready' ? read.rows : []
-      setState({ status: read.status, rows, answeredAtOpen: rows.map((r) => r.transactionId) })
+      setState({ status: read.status, rows, rowsAtOpen: rows, answeredAtOpen: rows.map((r) => r.transactionId) })
     })
     return () => void (live = false)
   }, [supabase])

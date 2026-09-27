@@ -15,6 +15,7 @@ function go(hash: string) {
 
 const whole = (tag: string, s: string) => (_: string, el: Element | null) => el?.tagName === tag && el.textContent === s
 const section = (name: string) => screen.getByRole('heading', { name, level: 2 }).closest('div.rounded-xl') as HTMLElement
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
 const RECAP = 'Last week you spent $226.09 on everyday things, $23.91 less than the week before. That went $16.09 past your weekly budgets.'
 
 beforeAll(async () => {
@@ -28,6 +29,8 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(CHECKIN_TODAY)
   vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
+  // The warm-up asked the AI too, and a device asks once a week.
+  window.localStorage.clear()
   go('/coach/checkin')
 })
 
@@ -42,7 +45,7 @@ afterEach(() => {
 describe('the Sunday check-in', () => {
   it('is whole with AI off: the recap, a win, the questions, one thing to try and the goals, in the app’s own words', async () => {
     const fake = checkinFake()
-    fake.tables.ai_settings.push({ user_id: fake.user.id, tone: 'cheerleader', ...{ enabled: false } })
+    fake.functions.ai = () => json({ ok: false, code: 'ai_off' }, 409)
     renderScreen(<Shell />, fake)
 
     expect(await screen.findByText(whole('P', RECAP))).toBeTruthy()
@@ -53,6 +56,51 @@ describe('the Sunday check-in', () => {
     expect(within(section('One thing to try')).getByText(whole('P', 'Try keeping Dining out under $65.00 next week.'))).toBeTruthy()
     expect(within(section('Your goal')).getByText(whole('P', 'Every lighter week brings Flight training closer. Keep going!'))).toBeTruthy()
     expect(within(section('Your goal')).getByText('46 h of 109 h')).toBeTruthy()
+    expect(await screen.findByText(/^AI is off\. Everything still works; the Coach uses the app’s own words\./)).toBeTruthy()
+    expect(fake.functions.calls).toEqual([expect.objectContaining({ action: 'run', task: 'narrate', pack: 'checkin' })])
+  })
+
+  it('shows the AI’s words where they pass, the app’s own where one fails, and keeps them with no figure', async () => {
+    const fake = checkinFake()
+    fake.functions.ai = () =>
+      json({
+        ok: true,
+        provider: 'gemini',
+        model: 'gemini-3.5-flash-lite',
+        text: JSON.stringify({ recap: 'A calmer week: {{A.now}} on everyday things.', win: 'You spent twice as little.', tryThis: 'Cook at home a few nights, and keep {{B.name}} under {{B.limit}}.', goal: null }),
+      })
+    renderScreen(<Shell />, fake)
+
+    expect(await screen.findByText(whole('P', '✨ Written by AI: A calmer week: $226.09 on everyday things.'))).toBeTruthy()
+    expect(within(section('Last week')).getByText(whole('P', 'You spent $23.91 less than the week before. That’s a win!'))).toBeTruthy()
+    expect(within(section('One thing to try')).getByText(whole('P', '✨ Written by AI: Cook at home a few nights, and keep Dining out under $65.00.'))).toBeTruthy()
+    expect(screen.getByText('✨ Words by AI (free Google Gemini) from your numbers. Every figure is the app’s own.')).toBeTruthy()
+    await waitFor(() => expect(fake.tables.ai_notes).toHaveLength(1))
+    const note = fake.tables.ai_notes[0]!
+    expect([note['surface'], note['scope']]).toEqual(['checkin', 'week:2026-09-21'])
+    expect(JSON.stringify(note['body'])).not.toMatch(/\d/)
+  })
+
+  it('shows the app’s words and one line pointing to Help when the AI helper is not installed', async () => {
+    const fake = checkinFake()
+    fake.functions.ai = null
+    renderScreen(<Shell />, fake)
+
+    expect(await screen.findByText(/^The AI helper isn’t installed yet\./)).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Help: One-time updates' }).getAttribute('href')).toBe('#/help/updates')
+    expect(screen.getByText(whole('P', RECAP))).toBeTruthy()
+  })
+
+  it('asks the AI once a week on a device, however often the check-in is opened', async () => {
+    const fake = checkinFake()
+    renderScreen(<Shell />, fake)
+    expect(await screen.findByText(/^AI isn’t set up yet\./)).toBeTruthy()
+    cleanup()
+    go('/coach/checkin')
+    renderScreen(<Shell />, fake)
+
+    expect(await screen.findByText('In the app’s own words, from your records.')).toBeTruthy()
+    expect(fake.functions.calls.filter((c) => c['action'] === 'run')).toHaveLength(1)
   })
 
   it('writes the weekly limit only when its button is tapped, through the Week’s save', async () => {
@@ -66,6 +114,9 @@ describe('the Sunday check-in', () => {
     fireEvent.click(button)
     expect(await screen.findByText(whole('P', 'Done: Dining out’s weekly budget is $65.00. It shows on the Week.'))).toBeTruthy()
     expect(fake.tables.categories.find((c) => c.id === 'dining')?.weekly_budget_cents).toBe(6_500)
+    // The check-in holds still after the save's re-read, and asks the AI no more.
+    expect(screen.getByText(whole('P', 'Keep Dining out under $65.00 next week?'))).toBeTruthy()
+    expect(fake.functions.calls).toHaveLength(1)
   })
 
   it('says so in one line when the weekly budget is not saved', async () => {
