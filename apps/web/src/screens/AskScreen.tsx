@@ -19,6 +19,7 @@ import { AnswerCard } from '../ask/AnswerCard.js'
 import { answerOf, readDebts } from '../ask/answer.js'
 import { readQuestion, type QuestionRead, type ReadBy } from '../ask/read.js'
 import { suggestions } from '../ask/suggest.js'
+import { forgetQuestions, keepQuestion, recentQuestions } from '../ask/recent.js'
 
 const link = 'inline-flex min-h-11 items-center font-medium underline underline-offset-4'
 const TOPICS = ARTICLES.map((a) => ({ id: a.id, title: a.title }))
@@ -67,10 +68,12 @@ export function AskScreen({ topic }: { topic: HelpTopic | null }) {
   const [busy, setBusy] = useState(false)
   const [amount, setAmount] = useState<string | null>(null)
   const [debts, setDebts] = useState<DebtPlanInput | 'missing_update' | 'failed' | null>(null)
+  const [recent, setRecent] = useState(recentQuestions)
 
   const ask = async (question: string, chip: boolean) => {
     if (question.trim() === '' || busy) return
     setBusy(true)
+    setRecent(keepQuestion(question))
     try {
       const reading = await readQuestion(supabase, { question, asOf: todayIso(), categories, topics: TOPICS, chip })
       setAsked({ question: question.trim(), read: reading })
@@ -160,6 +163,31 @@ export function AskScreen({ topic }: { topic: HelpTopic | null }) {
       </div>
 
       {asked !== null && asked.read.read.kind === 'cannot' ? null : <Suggestions topic={topic} onAsk={(q) => void ask(q, true)} />}
+      {recent.length === 0 ? null : (
+        <section aria-label="Your last questions" className="space-y-1">
+          <h2 className="text-sm font-medium">Your last questions</h2>
+          <ul>
+            {recent.map((q) => (
+              <li key={q}>
+                <button type="button" className="min-h-11 w-full text-left text-sm underline-offset-4 hover:underline [overflow-wrap:anywhere]" onClick={() => void ask(q, false)}>
+                  {q}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              forgetQuestions()
+              setRecent([])
+            }}
+          >
+            Clear these
+          </Button>
+          <p className="text-xs text-muted-foreground">Kept on this phone or computer only.</p>
+        </section>
+      )}
     </div>
   )
 }

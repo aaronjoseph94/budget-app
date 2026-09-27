@@ -348,7 +348,7 @@ export const ARTICLES: readonly Article[] = [
     ],
     done: 'you have your answer, and you know which days and categories it counts.',
     stuck:
-      'With free AI on, the AI reads your question (✨), and is sent only the question, today’s date, your category names and the Help titles: never an amount or a charge. It never works out the answer: the app does, from your records, the same way the Month, the Forecast and Savings do. With AI off, resting or not installed, the app reads the question itself, which works best with a category’s name and words like “this month” or “last week”. If it says “I can’t answer that from your figures yet”, try one of the questions it suggests. A question about days before your records says where they start: bring in an earlier statement on **Add**.',
+      'With free AI on, the AI reads your question (✨), and is sent only the question, today’s date, your category names and the Help titles: never an amount or a charge. It never works out the answer: the app does, from your records, the same way the Month, the Forecast and Savings do. With AI off, resting or not installed, the app reads the question itself, which works best with a category’s name and words like “this month” or “last week”. If it says “I can’t answer that from your figures yet”, try one of the questions it suggests. A question about days before your records says where they start: bring in an earlier statement on **Add**. Your last five questions are kept on this phone or computer only, and never sent anywhere; **Clear these** forgets them.',
     related: ['coach', 'forecast', 'free-ai', 'ai-sees'],
   },
   {
