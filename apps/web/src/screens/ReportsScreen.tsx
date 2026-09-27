@@ -14,6 +14,7 @@ import { Failed } from '../reports/Failed.js'
 import { TrendsPanel } from '../reports/Trends.js'
 import { ShopsPanel } from '../reports/Shops.js'
 import { HabitsPanel } from '../reports/Habits.js'
+import { DownloadCard } from '../reports/Download.js'
 import { rememberTab, rememberedTab, type ReportTab } from '../reports/tab.js'
 import { cn } from '../lib/cn.js'
 
@@ -30,7 +31,8 @@ const TABS: readonly { readonly id: ReportTab; readonly name: string }[] = [
  * one, and Habits to today, neither with a month to step through; and
  * Shops, for the month shown. Every figure is core's monthReport (F36); the
  * screen formats and never computes. Save as PDF is the browser's own
- * print, with the bars and buttons left off the page and the figures on it.
+ * print, with the bars and buttons left off the page and the figures on it;
+ * Download CSV (A19) writes the month's charges or those figures to a file.
  */
 export function ReportsScreen({ month }: { month: string | null }) {
   const { categories } = useAppData()
@@ -116,6 +118,9 @@ export function ReportsScreen({ month }: { month: string | null }) {
         {figures === 'loading' ? <p className="text-sm text-muted-foreground">Working out your month…</p> : null}
         {figures === 'failed' ? <Failed missingUpdate={read.status === 'failed' && read.missingUpdate} /> : null}
         {typeof figures === 'object' ? <Overview {...figures} nameOf={nameOf} /> : null}
+        {typeof figures === 'object' && 'totals' in figures.report && read.status === 'ready' ? (
+          <DownloadCard report={figures.report} rows={read.rows.rows} categories={categories} nameOf={nameOf} />
+        ) : null}
       </div>
       )}
     </div>
