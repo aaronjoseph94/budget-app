@@ -2209,3 +2209,72 @@ has no amount (3 and 12 both could be); "3 coffees 12.50" is 1,250 cents;
 "3 coffees $12" is 1,200 cents. "lunch sep 3" is 2026-09-03; "lunch sep
 30" and "lunch 9/3" leave the day empty (the first is after today, the
 second could be either month).
+
+---
+
+## F48 — Ask about your money: which days a question covers, and what each answer counts
+
+**Decided 2026-09-27. Engineering default. Not from the workbook.** Decided
+by the engineer under the owner's 2026-09-24 instruction to proceed without
+questions (plan §2.7, §3.11 row 12, slice A24; ADR 0005 §7). The workbook
+answers no questions, so there is no cell to follow.
+
+A question is read into an intent, up to three categories, a period and an
+amount (by the AI, or by the app's own matching). `answerQuery` in core then
+works out every figure. The AI never sees a figure and never writes one.
+
+**Chosen.**
+
+- **The periods,** each ending no later than today (`asOf`): this week is
+  Monday to today; last week the whole week before, Monday to Sunday (D14);
+  this month the 1st to today; last month the whole month before; a month
+  by its name this year the whole month when it is over, the 1st to today
+  when it is this month, and "not yet" when it is still to come; a month by
+  its name last year the whole month; this year 1 January to today; last
+  year the whole year before; the last three months the three whole months
+  before this one.
+- **Inside the records only (F24).** Ask reads what the Coach reads: twelve
+  months before this month's first day. A window is cut to the records
+  covered, the later of history start and the first day read (F38). A window
+  wholly before them is answered with the first day they cover; one partly
+  before them is answered from that day, and says so.
+- **What is counted.** A window is worked through `periodSheet` a month at
+  a time, each part with that month's planned amounts, so a planned bill
+  counts on its due day (F8) and a real charge replaces it (D5), as the
+  Month's comparison strip counts. Spent is F7's lists (Bills, Debts,
+  Subscriptions and Variable expenses), net of refunds. A category's figure
+  is its row's Actual in each part, added up.
+- **Two answers are a screen's own figures instead.** "Explain my month" is
+  the Month's own sheet (`monthSheet`, planned bills for the whole month,
+  F3): Income, Spent and Saved as the Month shows them, and the three
+  largest Variable expenses. "What's left" is the Month's Left (F5) for this
+  month, a row's or the Variable total's, or the Week's for this week.
+- **Compare** uses F25's windows: a week, month or year still running
+  against the same days before, one that is over whole against whole, and
+  the last three months against the three before them. The change is
+  F26's. When the earlier window starts before the records there is no
+  comparison, and the answer says so.
+- **Top categories:** the spending categories with an Actual above $0 in
+  the window, largest first, ties by name, at most three. **Top shops:**
+  F41's net by shop over the window, above $0, largest first, at most three.
+- **Subscriptions:** F38's series, less those marked Not a subscription;
+  how many, a year's cost added up, and the three dearest.
+- **The forecast, safe to spend, the goals' dates and the debt-free date**
+  are F30, F31, F33 and `debtPlan`, exactly as the Forecast shows them,
+  every active goal in the owner's order with the main goal first.
+- **What if I cut:** a month's saving applied to the main goal by
+  `whatIf` (F35). The saving is the amount in the question, read as
+  dollars a month, when it is the owner's own words (ADR 0005 §7);
+  otherwise the category's F34 quarter lever, or its best month when the
+  quarter rounds to nothing. With neither, there is nothing to suggest.
+
+**Worked example, Thursday 24 September 2026, records from 1 June.**
+Coffee: $4.50 on 5 August, $5.50 on 20 August, $7.00 on 28 August, $5.00
+on 3 September and $6.00 on 10 September. Groceries: $80.00 on 12 August,
+$90.00 on 14 September and a $10.00 refund on 15 September. Rent $1,500.00
+on the 1st of each month. "How much did I spend on coffee in August?" is
+**$17.00**. "Coffee this month against last" is $11.00 (1–24 September)
+against $10.00 (1–24 August): **$1.00 more**. "Where did my money go this
+month?" is Rent $1,500.00, Groceries $80.00, Coffee $11.00. "Coffee in
+May" is before the records, which start on 1 June; "coffee in December" is
+not yet.
