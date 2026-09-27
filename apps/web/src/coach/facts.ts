@@ -64,7 +64,8 @@ export function historyOf(read: DigestRows): ReturnType<typeof historyStart>['st
  * refuses a row. The goals are the active ones, main first, whose
  * milestones are cheered; the Month, which shows only the day's line, gives
  * none. With the shops marked "Not a subscription", the detectors run too
- * (F38, F39); without, as on the Month's line, they do not.
+ * (F38, F39), and so do the habits' wins, from each category's weekly
+ * budget (F40); without, as on the Month's line, neither does.
  */
 export function digestOf(
   read: DigestRows,
@@ -85,7 +86,12 @@ export function digestOf(
     pendingCount: read.pending,
     goals,
     ...(read.forecast?.status === 'ready' ? { forecast: forecastOf(read.forecast) } : {}),
-    ...(notSubscriptions === null ? {} : { shops: { entries: shopEntriesForCore(read.rows), notSubscriptions } }),
+    ...(notSubscriptions === null
+      ? {}
+      : {
+          shops: { entries: shopEntriesForCore(read.rows), notSubscriptions },
+          habits: { weeklyBudgets: categories.map((c) => ({ categoryId: c.id, weeklyBudgetCents: c.weekly_budget_cents })) },
+        }),
   })
 }
 
