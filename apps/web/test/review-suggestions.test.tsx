@@ -196,3 +196,56 @@ describe('Review asks the AI for categories', () => {
     expect(runs(fake)).toEqual([])
   })
 })
+
+describe('Review says why nothing was suggested, in its own words', () => {
+  const asked = async (fake: FakeSupabase) => {
+    renderScreen(<ReviewScreen />, fake)
+    fireEvent.click(await screen.findByRole('button', { name: /Suggest categories/ }))
+  }
+
+  it('points to AI settings when AI is not set up, or off', async () => {
+    const fake = fresh()
+    await asked(fake)
+    expect(await screen.findByText(/Turn on free AI to have categories suggested\./)).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Turn on free AI (2 minutes)' }).getAttribute('href')).toBe('#/ai')
+    cleanup()
+
+    const off = fresh()
+    off.functions.ai = (body) => (body['action'] === 'run' ? json({ ok: false, code: 'ai_off' }, 409) : json(off.functions.aiStatus))
+    await asked(off)
+    expect(await screen.findByText(/AI is off, so nothing is suggested\./)).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Turn AI back on' }).getAttribute('href')).toBe('#/ai')
+  })
+
+  it('asks for the helper’s new copy when an older one turns the request away', async () => {
+    const fake = fresh()
+    fake.functions.ai = (body) => (body['action'] === 'run' ? json({ ok: false, code: 'bad_request' }, 400) : json(fake.functions.aiStatus))
+    await asked(fake)
+    expect(await screen.findByText(/it needs its new copy\./)).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'See One-time updates' }).getAttribute('href')).toBe('#/help/updates')
+  })
+
+  it('says the AI is resting when the day’s limit is reached', async () => {
+    const fake = fresh()
+    fake.functions.ai = (body) => (body['action'] === 'run' ? json({ ok: false, code: 'limit_reached' }, 429) : json(fake.functions.aiStatus))
+    await asked(fake)
+    expect(await screen.findByText(/The AI is resting\. Try Suggest categories again later\./)).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Why?' }).getAttribute('href')).toBe('#/help/ai-rests')
+  })
+
+  it('keeps what was suggested before a limit stopped it, and says both', async () => {
+    const fake = fresh()
+    fake.tables.ingest_candidates.push(
+      ...Array.from({ length: 40 }, (_, n) => ({ id: `q${n}`, posted_on: '2026-09-12', amount_cents: -1000, merchant: `SHOP ${n}`, merchant_raw: `SHOP ${n}`, status: 'pending' })),
+    )
+    let answered = 0
+    fake.functions.ai = (body) => {
+      if (body['action'] !== 'run') return json(fake.functions.aiStatus)
+      if (answered++ > 0) return json({ ok: false, code: 'limit_reached' }, 429)
+      const brief = body['data'] as CategoriseBrief
+      return json({ ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: JSON.stringify({ suggestions: [{ i: 1, alias: brief.categories[0]!.alias, confidence: 'high' }] }) })
+    }
+    await asked(fake)
+    expect(await screen.findByText(/Suggested a category for 1 row\. Check each before you approve it\. The AI is resting\./)).toBeTruthy()
+  })
+})

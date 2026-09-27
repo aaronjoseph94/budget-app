@@ -19,11 +19,47 @@ function Updates({ children }: { children: string }) {
   )
 }
 
-/** Why asking stopped, as Review can say it in one line. */
+const AI = hashOf({ screen: 'ai', param: null })
+
+/**
+ * Why asking stopped, as Review can say it in one line, with the one place
+ * that fixes it. The Coach's sentences talk about its own words, so Review
+ * has its own.
+ */
 function stopLine(stopped: Stopped): ReactNode {
-  const missing = stopped.kind === 'needs_update' || (stopped.kind === 'ai' && (stopped.view.state === 'not_deployed' || stopped.view.state === 'needs_update'))
-  if (missing) return <Updates>Suggested categories need a one-time update.</Updates>
-  return stopped.kind === 'ai' ? 'The AI couldn’t suggest categories just now.' : 'Couldn’t keep the suggestions just now. Try again.'
+  if (stopped.kind === 'needs_update') return <Updates>Suggested categories need a one-time update.</Updates>
+  if (stopped.kind === 'failed') return 'Couldn’t keep the suggestions just now. Try again.'
+  const { view } = stopped
+  switch (view.state) {
+    case 'not_deployed':
+    case 'needs_update':
+      return <Updates>Suggested categories need a one-time update.</Updates>
+    case 'helper_error':
+      return <Updates>The AI helper couldn’t suggest categories. If it was pasted before 27 September, it needs its new copy.</Updates>
+    case 'not_set_up':
+    case 'off':
+      return (
+        <>
+          {view.state === 'off' ? 'AI is off, so nothing is suggested.' : 'Turn on free AI to have categories suggested.'}{' '}
+          <a href={AI} className={link}>
+            {view.state === 'off' ? 'Turn AI back on' : 'Turn on free AI (2 minutes)'}
+          </a>
+        </>
+      )
+    case 'limit_reached':
+    case 'all_resting':
+    case 'all_failed':
+      return (
+        <>
+          The AI is resting. Try Suggest categories again later.{' '}
+          <a href={hashOf({ screen: 'help', param: 'ai-rests' })} className={link}>
+            Why?
+          </a>
+        </>
+      )
+    default:
+      return view.sentence
+  }
 }
 
 function said(status: SuggestStatus): ReactNode {
@@ -38,7 +74,7 @@ function said(status: SuggestStatus): ReactNode {
       return (
         <>
           Suggestions are off while Share shop names is off.{' '}
-          <a href={hashOf({ screen: 'ai', param: null })} className={link}>
+          <a href={AI} className={link}>
             AI settings
           </a>
         </>
