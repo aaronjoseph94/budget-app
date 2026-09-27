@@ -11,7 +11,7 @@
  * stored: it is recomputed from the ledger on every read.
  */
 import { type Cents, type IsoDate, ZERO_CENTS, addDays, cents, daysBetween, sumCents } from '@budget/money-primitives'
-import type { PeriodEntry, WeekCategory } from './period-sheet.js'
+import { type PeriodEntry, type WeekCategory, weekSheet } from './period-sheet.js'
 import { goalBars } from './shares.js'
 import { median } from './stats.js'
 import { weekBounds } from './week.js'
@@ -180,6 +180,59 @@ export function weekdayPattern(input: HabitsInput): WeekdayPattern {
     costliest: top === null ? null : top + 1,
     allowanceCents,
   }
+}
+
+export interface KeptWeek {
+  /** Its Monday. */
+  readonly start: IsoDate
+  /** The Week's Left to spend (F5): the Variable weekly budgets less what was spent. */
+  readonly leftCents: Cents
+  /** At or under its weekly budgets: Left to spend is $0 or more. */
+  readonly kept: boolean
+}
+
+export type Streaks =
+  | {
+      readonly status: 'ready'
+      /** Every complete week read, oldest first. */
+      readonly weeks: readonly KeptWeek[]
+      /** Kept weeks in a row, ending with the last complete week. */
+      readonly current: number
+      /** The longest run of kept weeks read. */
+      readonly best: number
+      /** The Monday of the best run's last week, the latest of equal runs; null with none. */
+      readonly bestEnded: IsoDate | null
+    }
+  /** No Variable category has a weekly budget, so no week can be kept. */
+  | { readonly status: 'no_budget' }
+
+/**
+ * F40: complete weeks in a row at or under the Variable weekly budgets, as
+ * the Week shows them (weekSheet's Left to spend, F5), judged against
+ * today's budgets, since the Week keeps one set for every week (0004).
+ */
+export function streaks(input: HabitsInput): Streaks {
+  if (!input.categories.some((c) => c.kind === 'variable' && c.weeklyBudgetCents !== null)) return { status: 'no_budget' }
+  const all = completeWeeks(input)
+  const starts = all.status === 'none' ? [] : all.starts
+  const weeks = starts.map((start): KeptWeek => {
+    // Only the Variable block is read, which no planned bill touches.
+    const sheet = weekSheet({ asOf: start, categories: input.categories, entries: input.entries, planHistory: [], statementPeriodEnds: [], startingBalanceCents: null })
+    const leftCents = sheet.summary.leftToSpendCents
+    return { start, leftCents, kept: leftCents >= 0 }
+  })
+  let run = 0
+  let best = 0
+  let bestEnded: IsoDate | null = null
+  for (const w of weeks) {
+    run = w.kept ? run + 1 : 0
+    // At least as long: of equal runs, the latest is named.
+    if (run > 0 && run >= best) {
+      best = run
+      bestEnded = w.start
+    }
+  }
+  return { status: 'ready', weeks, current: run, best, bestEnded }
 }
 
 /**

@@ -1818,7 +1818,8 @@ and the first day read, as F38's. **Weeks** run Monday to Sunday (D14). A
   streak, since a row with no budget cannot be kept.
 - **The current streak** is the kept weeks in a row ending with the last
   complete week; **the best** is the longest run of kept weeks among all
-  the complete weeks read, and the week it ended.
+  the complete weeks read, and the week it ended (the latest, of equal
+  runs).
 
 **Personal bests** (`personalBest`).
 

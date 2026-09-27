@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { isoDate } from '@budget/money-primitives'
-import { gridLevel, spendingGrid, weekdayPattern, type HabitsInput } from '../src/index.js'
+import { gridLevel, spendingGrid, streaks, weekdayPattern, type HabitsInput } from '../src/index.js'
 
 /** Suite tests, worked by hand from F40 (docs/formula-decisions.md). Thursday 24 September 2026. */
 
@@ -179,5 +179,52 @@ describe('weekdayPattern (F40)', () => {
     // A whole week of records from this Monday: complete from 28 September, four by 19 October.
     expect(weekdayPattern(habits({ historyStart: d('2026-09-21') }))).toEqual({ status: 'not_enough', weeks: 0, possibleFrom: '2026-10-19' })
     expect(weekdayPattern(habits({ historyStart: null }))).toEqual({ status: 'not_enough', weeks: 0, possibleFrom: null })
+  })
+})
+
+describe('streaks (F40)', () => {
+  // Records from Monday 10 August: six complete weeks, 10 August to 20 September, against $210.00 a week.
+  const weeks = habits({
+    historyStart: d('2026-08-10'),
+    entries: [
+      spend('2026-08-10', 5_000),
+      spend('2026-08-12', 90_000, 'rent'),
+      spend('2026-09-01', 21_500),
+      spend('2026-09-14', 7_000),
+      spend('2026-09-15', 13_600, 'groceries'),
+      spend('2026-09-16', 400, 'coffee'),
+      spend('2026-09-22', 50_000),
+    ],
+  })
+
+  it('keeps a week whose Left to spend is $0 or more, and counts the run to the last complete week', () => {
+    expect(streaks(weeks)).toEqual({
+      status: 'ready',
+      weeks: [
+        { start: '2026-08-10', leftCents: 16_000, kept: true },
+        { start: '2026-08-17', leftCents: 21_000, kept: true },
+        { start: '2026-08-24', leftCents: 21_000, kept: true },
+        { start: '2026-08-31', leftCents: -500, kept: false },
+        { start: '2026-09-07', leftCents: 21_000, kept: true },
+        // $70 + $136 + $4 of Coffee, which has no budget and still takes its $4 off: exactly $0 left.
+        { start: '2026-09-14', leftCents: 0, kept: true },
+      ],
+      current: 2,
+      best: 3,
+      bestEnded: '2026-08-24',
+    })
+  })
+
+  it('breaks the current run on a week over, and names the latest of two equal best runs', () => {
+    const over = streaks({ ...weeks, entries: [...weeks.entries, spend('2026-09-20', 1)] })
+    expect(over).toMatchObject({ current: 0, best: 3, bestEnded: '2026-08-24' })
+    const level = streaks({ ...weeks, entries: [...weeks.entries, spend('2026-08-25', 30_000)] })
+    expect(level).toMatchObject({ current: 2, best: 2, bestEnded: '2026-09-14' })
+  })
+
+  it('has nothing to keep without a Variable weekly budget, and no run without a complete week', () => {
+    const categories = CATEGORIES.map((c) => (c.kind === 'variable' ? { ...c, weeklyBudgetCents: null } : c))
+    expect(streaks({ ...weeks, categories })).toEqual({ status: 'no_budget' })
+    expect(streaks(habits({ historyStart: d('2026-09-22') }))).toEqual({ status: 'ready', weeks: [], current: 0, best: 0, bestEnded: null })
   })
 })
