@@ -103,3 +103,41 @@ export function normalizeMerchant(raw: string): string {
 export function sameMerchant(a: string, b: string): boolean {
   return normalizeMerchant(a) === normalizeMerchant(b)
 }
+
+/** A word counts as a real name once it holds four or more letters; "THE" or "A&W" alone says nothing. */
+const LONG_WORD = /(?:\p{L}.*){4}/u
+
+/**
+ * The learned shop a descriptor most looks like, for a hint on Review when
+ * no AI is on (plan A21; ADR 0008): the one whose tidied name shares the
+ * most leading words with this one's, at least one of them four letters or
+ * more. A tie is no hint: guessing between two shops is a judgment.
+ *
+ * A HINT ONLY. The screen picks its category and the owner still taps
+ * Approve; nothing stores or approves by it. `sameMerchant`, equality,
+ * stays the only match that files a row by itself (CONSTRAINTS.md, the
+ * approval invariant).
+ *
+ * Returns the learned name as it was given, so the caller can look up its
+ * rule, or null.
+ */
+export function similarMerchant(name: string, learned: readonly string[]): string | null {
+  const words = normalizeMerchant(name).split(' ')
+  let best: string | null = null
+  let bestShared = 0
+  let tied = false
+  for (const shop of learned) {
+    const theirs = normalizeMerchant(shop).split(' ')
+    let shared = 0
+    while (shared < words.length && shared < theirs.length && words[shared] === theirs[shared]) shared += 1
+    if (shared === 0 || !words.slice(0, shared).some((w) => LONG_WORD.test(w))) continue
+    if (shared > bestShared) {
+      best = shop
+      bestShared = shared
+      tied = false
+    } else if (shared === bestShared) {
+      tied = true
+    }
+  }
+  return tied ? null : best
+}
