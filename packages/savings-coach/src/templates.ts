@@ -183,12 +183,12 @@ export const WATCH_TEMPLATES: Readonly<Record<WatchKey, Tones<WatchTemplate>>> =
   counted_twice: {
     cheerleader: {
       title: 'Counted more than once? {{A.name}}',
-      body: 'A charge of {{A.amount}} you added yourself looks like one from your statement: {{A.first}} and {{A.second}}.',
+      body: 'A charge of {{A.amount}} you added yourself on {{A.added}} looks like one from your statement on {{A.statement}}.',
       tryThis: 'One thing to try: if they are the same purchase, remove the one you added in All transactions.',
     },
     straight: {
       title: 'Added and imported: {{A.name}}',
-      body: '{{A.amount}} you added, and the same from your statement: {{A.first}} and {{A.second}}.',
+      body: '{{A.amount}} you added on {{A.added}}, and the same from your statement on {{A.statement}}.',
       tryThis: 'Try this: remove the one you added in All transactions if they are one purchase.',
     },
   },

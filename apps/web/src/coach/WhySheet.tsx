@@ -70,7 +70,13 @@ const SHOP_LABEL: Readonly<Record<string, string>> = {
   date: 'Charged on',
   usual: 'A usual charge in its category',
 }
-const PAIR_LABEL: Readonly<Record<string, string>> = { amount: 'Each charge', first: 'The first', second: 'The second' }
+const PAIR_LABEL: Readonly<Record<string, string>> = {
+  amount: 'Each charge',
+  first: 'The first',
+  second: 'The second',
+  added: 'You added it on',
+  statement: 'On your statement',
+}
 const SHOP_KINDS: ReadonlySet<Fact['kind']> = new Set(['price_rise', 'new_subscription', 'large_charge', 'new_shop'])
 
 /** The forecast's figures (F30 to F32), whose slot names mean their own things. */

@@ -115,6 +115,13 @@ describe('factsDigest, version 2: unusual charges (F39)', () => {
     // Named by the statement's shop, never the owner's shorthand.
     const [typed, card] = [row('2026-09-22', -6.25, 'COFFEE', 'dining', 'hand'), row('2026-09-23', -6.25, 'COFFEE HOUSE')]
     expect(ofKind([typed, card], 'counted_twice')).toMatchObject([{ subject: { id: 'COFFEE HOUSE' }, cause: `counted_twice:${typed.id}:${card.id}` }])
+    // Each date goes with its own row, whichever came first.
+    const addedLater = row('2026-09-24', -6.25, 'COFFEE', 'dining', 'hand')
+    expect(ofKind([card, addedLater], 'counted_twice')[0]!.figures).toEqual({
+      amount: { unit: 'cents', value: 625 },
+      added: { unit: 'date', value: '2026-09-24' },
+      statement: { unit: 'date', value: '2026-09-23' },
+    })
     // 25 August is the 31st day back.
     expect(ofKind([row('2026-08-24', -9, 'GYM'), row('2026-08-25', -9, 'GYM')], 'possible_double')).toEqual([])
     expect(ofKind([row('2026-08-25', -9, 'GYM'), row('2026-08-26', -9, 'GYM')], 'possible_double')).toHaveLength(1)

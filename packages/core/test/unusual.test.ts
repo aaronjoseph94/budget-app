@@ -81,6 +81,8 @@ describe('unusualCharges (F39): charged or counted twice', () => {
     expect(flagged([row('2026-09-19', -4.5, 'COFFEE HOUSE'), row('2026-09-23', -4.5, 'COFFEE HOUSE')]).doubles).toEqual([])
     expect(flagged([row('2026-09-21', -4.5, 'COFFEE HOUSE'), row('2026-09-21', -4.55, 'COFFEE HOUSE')]).doubles).toEqual([])
     expect(flagged([row('2026-09-21', -4.5, 'COFFEE HOUSE'), row('2026-09-21', -4.5, 'TEA ROOM')]).doubles).toEqual([])
+    // Two rows that name no shop are never one shop's double.
+    expect(flagged([row('2026-09-21', -4.5, ''), row('2026-09-22', -4.5, '')]).doubles).toEqual([])
   })
 
   it('flags a pair whose later row is in the window, and never a refund', () => {

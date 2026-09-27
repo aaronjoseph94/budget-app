@@ -113,8 +113,12 @@ describe('recurringCharges (F38)', () => {
     expect(found(gym)[0]).toMatchObject({ isNew: true, next: '2026-10-21', yearCents: 54_000 })
     // Records from 1 July: 19 days before the first charge, under a month's 35.
     expect(found(gym, { historyStart: d('2026-07-01') })[0]!.isNew).toBe(false)
-    // 101 days after the first charge.
+    // 100 days after the first charge is still new; 101 is not.
+    expect(found(gym, { asOf: d('2026-10-28') })[0]).toMatchObject({ charges: 4, isNew: true })
     expect(found(gym, { asOf: d('2026-10-29') })[0]).toMatchObject({ charges: 4, isNew: false })
+    // Records from 15 June reach 35 days before 20 July; from 16 June, 34.
+    expect(found(gym, { historyStart: d('2026-06-15') })[0]!.isNew).toBe(true)
+    expect(found(gym, { historyStart: d('2026-06-16') })[0]!.isNew).toBe(false)
   })
 
   it('never lists a shop marked not a subscription, and puts the dearest first', () => {

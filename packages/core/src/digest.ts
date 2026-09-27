@@ -584,13 +584,19 @@ function detectors(input: FactsDigestInput): Fact[] {
   return [...out, ...unusual.doubles.map((p) => pairFact('possible_double', p)), ...unusual.countedTwice.map((p) => pairFact('counted_twice', p))]
 }
 
-/** Two charges of one amount, named by the shop F39 names the pair by. */
+/**
+ * Two charges of one amount, named by the shop F39 names the pair by. A
+ * charge counted twice gives each date to its own row, the one added and
+ * the statement's, since either may come first.
+ */
 function pairFact(kind: 'possible_double' | 'counted_twice', pair: ChargePair): Fact {
   const subject = pair.shop === '' ? { type: 'shop' as const, id: null, label: 'A charge' } : shopSubject(pair.shop)
+  const [added, statement] = pair.first.by === 'hand' ? [pair.first, pair.second] : [pair.second, pair.first]
+  const on = (value: IsoDate) => ({ unit: 'date', value }) as const
+  const dates = kind === 'counted_twice' ? { added: on(added.postedOn), statement: on(statement.postedOn) } : { first: on(pair.first.postedOn), second: on(pair.second.postedOn) }
   return detected(`charges:${pair.first.id}:${pair.second.id}:${kind}`, kind, subject, 'solid', pair.amountCents, `${kind}:${pair.first.id}:${pair.second.id}`, {
     amount: { unit: 'cents', value: pair.amountCents },
-    first: { unit: 'date', value: pair.first.postedOn },
-    second: { unit: 'date', value: pair.second.postedOn },
+    ...dates,
   })
 }
 
