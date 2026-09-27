@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import { CHECKIN_TODAY, checkinFake } from './checkin-seed.js'
@@ -40,7 +40,7 @@ afterEach(() => {
 })
 
 describe('the Sunday check-in', () => {
-  it('is whole with AI off: the recap, a win and one thing to try, in the app’s own words', async () => {
+  it('is whole with AI off: the recap, a win, the questions and one thing to try, in the app’s own words', async () => {
     const fake = checkinFake()
     fake.tables.ai_settings.push({ user_id: fake.user.id, tone: 'cheerleader', ...{ enabled: false } })
     renderScreen(<Shell />, fake)
@@ -48,6 +48,8 @@ describe('the Sunday check-in', () => {
     expect(await screen.findByText(whole('P', RECAP))).toBeTruthy()
     expect(screen.getByText('The week of 21 – 27 Sep')).toBeTruthy()
     expect(within(section('Last week')).getByText(whole('P', 'You spent $23.91 less than the week before. That’s a win!'))).toBeTruthy()
+    const asked = within(section('Was it planned?')).getAllByRole('listitem').map((li) => li.querySelector('p')?.textContent)
+    expect(asked).toEqual(['Was GROCER, $112.40 on 24 Sep, planned?', 'Was SUSHI PLACE, $84.20 on 23 Sep, planned?', 'Was BURGER BAR, $20.00 on 26 Sep, planned?'])
     expect(within(section('One thing to try')).getByText(whole('P', 'Try keeping Dining out under $65.00 next week.'))).toBeTruthy()
   })
 
@@ -71,5 +73,31 @@ describe('the Sunday check-in', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Yes, set it as my weekly budget' }))
     expect(await screen.findByRole('alert')).toHaveProperty('textContent', 'The weekly budget wasn’t saved. Try again, or set it on the Week.')
+  })
+
+  it('keeps an answer, marks it chosen, and counts it in the impulse share', async () => {
+    const fake = checkinFake()
+    renderScreen(<Shell />, fake)
+
+    const group = await screen.findByRole('group', { name: 'SUSHI PLACE: planned, impulse or needed' })
+    fireEvent.click(within(group).getByRole('button', { name: 'Impulse' }))
+    await waitFor(() => expect(within(group).getByRole('button', { name: 'Impulse' }).getAttribute('aria-pressed')).toBe('true'))
+    expect(fake.tables.coach_answers).toEqual([expect.objectContaining({ transaction_id: 'sushi', answer: 'impulse', asked_week: '2026-09-21' })])
+    expect(screen.getByText('Over the last 8 weeks you called 100% of 1 charge impulse.')).toBeTruthy()
+    // Still asked on screen, marked, rather than giving way to the next charge.
+    expect(screen.getAllByRole('group')).toHaveLength(3)
+  })
+
+  it('without 0017, replaces only the questions with one line pointing to Help', async () => {
+    const fake = checkinFake()
+    fake.fail('coach_answers', '42P01')
+    renderScreen(<Shell />, fake)
+
+    expect(await screen.findByText(whole('P', RECAP))).toBeTruthy()
+    const questions = section('Was it planned?')
+    expect(questions.textContent).toContain('Your answers need a one-time update.')
+    expect(within(questions).getByRole('link', { name: 'See One-time updates' }).getAttribute('href')).toBe('#/help/updates')
+    expect(within(questions).queryAllByRole('button')).toEqual([])
+    expect(screen.getByRole('button', { name: 'Yes, set it as my weekly budget' })).toBeTruthy()
   })
 })

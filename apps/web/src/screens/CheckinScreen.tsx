@@ -11,6 +11,7 @@ import { useCoachRead } from '../coach/facts.js'
 import { checkinFigures, type CheckinFigures } from '../coach/checkin.js'
 import { useCoachSettings } from '../coach/settings.js'
 import { CoachText } from '../coach/words.js'
+import { CheckinQuestions, useCheckinAnswers } from '../coach/CheckinQuestions.js'
 
 const link = 'inline-flex min-h-11 items-center font-medium underline underline-offset-4'
 
@@ -27,15 +28,17 @@ const link = 'inline-flex min-h-11 items-center font-medium underline underline-
 export function CheckinScreen() {
   const read = useCoachRead()
   const { categories } = useAppData()
+  const answers = useCheckinAnswers()
   const tone = useCoachSettings()?.tone ?? null
   const figures = useMemo((): CheckinFigures | 'failed' | null => {
-    if (read === null || read === 'failed') return read
+    if (read === null || answers.answeredAtOpen === null) return read === 'failed' ? 'failed' : null
+    if (read === 'failed') return 'failed'
     try {
-      return checkinFigures(read, categories, [], [])
+      return checkinFigures(read, categories, answers.answeredAtOpen, answers.rows)
     } catch {
       return 'failed'
     }
-  }, [read, categories])
+  }, [read, categories, answers.answeredAtOpen, answers.rows])
   const { goals, mainGoal } = useAppData()
   const facts = useMemo(() => {
     if (figures === null || figures === 'failed') return null
@@ -43,6 +46,7 @@ export function CheckinScreen() {
     const named = active.map((g) => ({ id: g.id, name: g.name, main: g.id === mainGoal?.id, hasHours: g.unit_cost_cents !== null }))
     return checkinFacts({ ...figures, goals: named, nameOf: (id) => categories.find((c) => c.id === id)?.name ?? 'A category' })
   }, [figures, goals, mainGoal, categories])
+  const shops = useMemo(() => new Map(read === null || read === 'failed' ? [] : read.rows.map((r) => [r.id, r.merchant_raw])), [read])
   const words = useMemo(() => (facts === null || tone === null ? null : mergeCheckin({ own: checkinWords({ facts, tone }), ai: null })), [facts, tone])
 
   return (
@@ -61,6 +65,7 @@ export function CheckinScreen() {
         <>
           <p className="text-sm text-muted-foreground">The week of {formatDateRange(figures.recap.week.start, figures.recap.week.end)}</p>
           <LastWeek figures={figures} facts={facts} words={words} />
+          <CheckinQuestions questions={figures.questions} week={figures.recap.week.start} answers={answers} impulse={figures.impulse} shops={shops} />
           <TryThis figures={figures} facts={facts} words={words} />
         </>
       )}
