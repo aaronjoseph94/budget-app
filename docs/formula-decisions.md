@@ -1750,6 +1750,128 @@ twice**. $6.25 four days apart: neither.
 
 ---
 
+## F40 — Habits: the spending grid, the weekday pattern, streaks and personal bests
+
+**Decided 2026-09-27. Engineering default. Not from the workbook,** which
+has no day-by-day view, no weekday pattern and no record of weeks kept.
+Decided by the engineer under the owner's 2026-09-24 instruction to
+proceed without questions (plan §2.6, §7, §11; built in slice A18).
+
+**Shared.** Everyday spending is the **Variable expenses** list, as F36's
+biggest changes and F37's lines: a bill is paid on its day and says nothing
+about habits. **A day's spending** is the net of that day's Variable rows,
+charges less refunds, as the Month's Actual counts it; below $0 after a
+refund. **The records covered** start at the later of history start (F24)
+and the first day read, as F38's. **Weeks** run Monday to Sunday (D14). A
+**complete week** lies wholly inside the records covered and ends before
+`asOf`'s week begins.
+
+**The daily allowance.**
+
+- With a weekly budget on at least one Variable category: the sum of the
+  Variable weekly budgets set ÷ 7, half-up. A budget of $0 counts: it is
+  the owner's number.
+- With none set: the **median of the days that had spending** (above $0)
+  among the grid's recorded days, F27's median. Every day would give $0
+  for anyone who shops three days a week, and every day they shopped
+  would read as "more".
+- With no budget and no day of spending: none, and every recorded day is
+  "none".
+
+**The grid** (`spendingGrid`).
+
+- The weeks from the later of 25 weeks before `asOf`'s week and the week
+  holding the start of the records covered, to `asOf`'s week: up to 26.
+  None with no records.
+- A day before the records covered is **no records**, and a day after
+  `asOf` is **to come**; neither is ever $0 or a level.
+- **Five levels** against the allowance A, in whole cents with no
+  division: **none** when spent ≤ $0; **up to half** when 2 × spent ≤ A;
+  **up to all** when spent ≤ A; **up to one and a half** when 2 × spent ≤
+  3 × A; **more** otherwise. So each boundary belongs to the lower level.
+  With A = $0, any spending is "more".
+- Each week's total is its recorded days' spending, and **no-spend days**
+  are the recorded days at "none".
+
+**The weekday pattern** (`weekdayPattern`).
+
+- The last up to **12 complete weeks**. Under **4**, "not enough weeks
+  yet", naming the Monday it becomes possible: the later of the first
+  whole week of the records plus 4 weeks, and `asOf`'s week plus (4 − the
+  weeks there are).
+- Each weekday's **average** = that weekday's spending over those weeks ÷
+  their number, half-up on the magnitude. The **costliest** is the largest
+  average above $0, the earlier weekday on a tie; none when no average is
+  above $0.
+- Bars are `goalBars`' (F17), each weekday's average over a track as long
+  as the budgets' allowance; with no weekly budget, no track. The median
+  fallback is not drawn as a track: it is not a number the owner set.
+
+**Streaks** (`streaks`, on `weekSheet`).
+
+- A complete week is **kept** when the Week's Left to spend (F5, the
+  Variable block's Remaining total, on `weekSheet`) is $0 or more: at or
+  under its weekly budgets, a Variable row with no budget taking its whole
+  Actual off, as the Week shows it. Each week is judged against today's
+  weekly budgets, as the Week shows every week (0004 keeps one set).
+- Needs a weekly budget on at least one Variable category; with none, no
+  streak, since a row with no budget cannot be kept.
+- **The current streak** is the kept weeks in a row ending with the last
+  complete week; **the best** is the longest run of kept weeks among all
+  the complete weeks read, and the week it ended.
+
+**Personal bests** (`personalBest`).
+
+- The complete months (F24), up to the 12 most recent. Under **3**, "not
+  enough months yet", naming the month it becomes possible as F37 does,
+  with 3.
+- A Variable category has a **personal best** when its Actual in the last
+  complete month is lower than in every other of those months by at
+  least $1.00 (F26: under $1.00 is the same, so a tie is no best). Listed
+  by how far under the next lowest, largest first, ties by list order.
+
+**In the Coach's digest,** only where the Coach gives the weekly budgets
+(the Month's line does not): a **current streak of 2 or more weeks** is a
+`spending_streak` fact, and each personal best a `personal_best` fact.
+Both are wins, always worth a card, and *solid* for a streak (the owner's
+own budget) or by the months read for a best (F24). Monthly effect (F44):
+the last complete week's Left to spend × 52 ÷ 12, half-up, for a streak;
+the next lowest less the best, for a best. A dismissal names the last
+complete week, or the category and month, so next week's streak and next
+month's best come back.
+
+**Worked example.** Thursday 24 September 2026, records from 1 February.
+Weekly budgets: Dining out $70.00, Groceries $140.00, Coffee none. The
+allowance is $210.00 ÷ 7 = **$30.00**: a day of $15.00 is "up to half",
+$15.01 "up to all", $30.00 "up to all", $45.00 "up to one and a half",
+$45.01 "more", and a day with only a refund "none". Budgets of $100.00 give
+$14.2857…, **$14.29**. With no budget, days of $12, $30, $8 and $50 give
+($12 + $30) ÷ 2 = **$21.00**. The grid runs from Monday 30 March to
+Sunday 27 September; 25 to 27 September are to come. **Records from 8
+August** (a Saturday): the grid starts Monday 3 August, 3 to 7 August are
+no records, eight weeks in all.
+
+**The pattern:** the 12 weeks from 29 June to 20 September. Saturdays of
+$40, $0, $25 and $36 over four weeks average $101 ÷ 4 = **$25.25**. Records
+from Tuesday 1 September: the first whole week is 7 September, two are
+complete by 24 September, and the pattern is possible from **Monday 5
+October**.
+
+**A streak,** records from Monday 10 August: the weeks of 10, 17 and 24
+August kept, 31 August over by
+$5.00, 7 September kept, and 14 September with Left to spend exactly $0.00
+(kept: at or under). Current **2**, best **3**, ending the week of 24
+August. $4.00 of Coffee, which has no budget, takes $4.00 off a week's
+Left to spend.
+
+**A best:** complete months February to August. Dining out's August,
+$250.00, is its lowest and $30.00 under the next, $280.00: **a personal
+best**. Groceries' August of $400.00 against May's $400.50 is under $1.00
+apart: **no best**. Records from 8 August: September, October and
+November must be whole, so bests are possible from **December 2026**.
+
+---
+
 ## F41 — Top shops, against last month
 
 **Decided 2026-09-26. Engineering default. Not from the workbook.** Decided
