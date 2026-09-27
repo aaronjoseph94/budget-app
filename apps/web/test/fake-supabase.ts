@@ -116,7 +116,11 @@ export interface FakeSupabase {
   readonly tables: FakeTables
   /** Every RPC the screen made, in order, with the exact arguments sent. */
   readonly rpcCalls: RpcCall[]
-  /** What each RPC answers with. approve_candidate says 'approved' unless told otherwise. */
+  /**
+   * What each RPC answers with. approve_candidate says 'approved' unless
+   * told otherwise, and approves the row as 0004 does unless told
+   * 'already_handled'.
+   */
   readonly rpcReplies: Record<string, unknown>
   /**
    * Make a table or an RPC fail with this Postgres error code, e.g. `fail('rpc/approve_candidate', '42501')`,
@@ -260,6 +264,22 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     return new Response(null, { status: 204 })
   }
 
+  // What 0004's approve_candidate does to the row: a category the caller
+  // does not have is 42501; a row still waiting is approved into the
+  // category, as the owner's choice, unless the reply a test set says it
+  // had already been handled. Screens read the queue again after an
+  // approval, and a row the fake left waiting came back into view.
+  function approve(args: Readonly<Record<string, unknown>>): Response {
+    if (!tables.categories.some((c) => c.id === args['p_category'])) return pgError('42501', 403)
+    const reply = rpcReplies['approve_candidate']
+    const at = tables.ingest_candidates.findIndex((r) => r.id === args['p_candidate'] && r.status === 'pending')
+    const row = tables.ingest_candidates[at]
+    if (row !== undefined && reply !== 'already_handled') {
+      tables.ingest_candidates[at] = { ...row, status: 'approved', category_id: String(args['p_category']), category_source: 'user' }
+    }
+    return json(reply ?? null)
+  }
+
   // What 0018 does: a suggestion only on a row still waiting that nobody
   // filled, only into a category that is not on Not spending; a clear only
   // of a suggestion. Each answers as the function does.
@@ -353,6 +373,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       if (!(name in rpcReplies)) return pgError('PGRST202', 404)
       if (name === 'recategorise_transaction') return recategorise(rpcCalls[rpcCalls.length - 1]?.args ?? {})
       if (name === 'dismiss_unreadable_line') return dismiss(rpcCalls[rpcCalls.length - 1]?.args ?? {})
+      if (name === 'approve_candidate') return approve(rpcCalls[rpcCalls.length - 1]?.args ?? {})
       if (name === 'suggest_candidate_categories') return suggest(rpcCalls[rpcCalls.length - 1]?.args ?? {})
       if (name === 'clear_candidate_suggestion') return clearSuggestion(rpcCalls[rpcCalls.length - 1]?.args ?? {})
       return json(rpcReplies[name] ?? null)

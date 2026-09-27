@@ -272,6 +272,12 @@ describe('Approve these N', () => {
     fireEvent.click(asking.getByRole('button', { name: 'Approve all 2' }))
     expect(await screen.findByText(/^Filed 2\./)).toBeTruthy()
     expect(approvals(fake)).toEqual([{ p_candidate: 'p1', p_category: 'c1' }, { p_candidate: 'p2', p_category: 'c2' }])
+    // As 0004 records it, which the fake does too: the owner's choice, never the model's.
+    expect(fake.tables.ingest_candidates.map((r) => [r.id, r.status, r.category_source ?? null])).toEqual([
+      ['p1', 'approved', 'user'], ['p2', 'approved', 'user'], ['p3', 'pending', null],
+    ])
+    // The queue is read again after the approvals (its count says so), and the filed rows stay gone.
+    expect(await screen.findByText(/^1 waiting for a category\./)).toBeTruthy()
     expect(screen.queryByText('CORNER MARKET #12')).toBeNull()
     expect(screen.getByText('ADVENTURE WORKS REFUND')).toBeTruthy()
   })
