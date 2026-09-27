@@ -2006,6 +2006,59 @@ BAR $20.00 (Dining out) and a GROCER refund of $15.00 on the 26th.
 
 ---
 
+## F43 — Starter budgets: a spending category's usual month, offered once
+
+**Decided 2026-09-27. Engineering default. Not from the workbook.** Decided
+by the engineer under the owner's 2026-09-24 instruction to proceed without
+questions (plan §8.1 step 7, slice A25). The workbook's budgets are typed by
+hand on each month tab (Jan!D22:D44), with no suggestion, so there is no
+cell to follow.
+
+`starterBudgets` in core offers a budget for each spending category that
+has none, from what the owner actually spent. Getting started shows the
+offers beside this month's starting balance; nothing is written until
+**Accept** is tapped, and then as "from this month on" (D12), exactly as
+typing it on the Month would be.
+
+**Chosen.**
+
+- **Which categories:** those on the four spending lists (Bills, Debts,
+  Subscriptions and Variable expenses, F7). Income and Savings take goals,
+  not budgets, and Not spending is never counted.
+- **Left out:** a category with a budget row in effect this month
+  (`resolveBudgets`), including a typed "no budget", which is the owner's
+  own choice and is never overwritten by an offer.
+- **The months:** its complete months (F24), up to the 3 most recent. A
+  category with none is not offered anything.
+- **The figure:** each month's Actual as the Month counts it
+  (`monthActuals`: what was spent, less what came back), then the median
+  of those months (F27's median: an even count's middle two halved
+  half-up), then **rounded up to the next 500 cents** ($5). Rounding up,
+  not to the nearest, so a starter budget is never below the month it was
+  taken from, and the owner's first month on it is not "over" by cents.
+- **Nothing to offer** when the median is $0 or below (refunds larger than
+  spending): a $0 budget says nothing useful.
+- **Order:** the lists in the Month's order (Bills, Debts, Subscriptions,
+  Variable expenses), each in its own order.
+
+**Worked example.** Asked on 27 September 2026, records from 14 May 2026,
+so the complete months are June, July and August (May is partial).
+
+- Groceries: June $412.30, July $389.75, August $450.10. Median **$412.30**,
+  rounded up to **$415.00**.
+- Coffee, first charged in July: July $61.20, August $73.40 (June is $0.00,
+  a complete month with nothing spent, so it counts). Median of $0.00,
+  $61.20 and $73.40 is **$61.20**, rounded up to **$65.00**.
+- Phone: $55.00 each month. Median **$55.00**, already a multiple of $5:
+  **$55.00**.
+- Dining out has a budget of $150.00 typed "from this month on" in August:
+  **not offered**. Gifts has "no budget" typed: **not offered**.
+- Movies: $0.00 in all three: **not offered**.
+- With records from 3 September, there is no complete month: **nothing is
+  offered**, and the step says a budget can be offered after a whole month.
+
+---
+
 ## F44 — Impact, for ranking the Coach's cards
 
 **Decided 2026-09-24. Engineering default. Not from the workbook.** Decided
@@ -2281,3 +2334,45 @@ against $10.00 (1–24 August): **$1.00 more**. "Where did my money go this
 month?" is Rent $1,500.00, Groceries $80.00, Coffee $11.00. "Coffee in
 May" is before the records, which start on 1 June; "coffee in December" is
 not yet.
+
+
+---
+
+## F49 — Getting started: which steps are done, their order and the next one
+
+**Decided 2026-09-27. Engineering default. Not from the workbook.** Decided
+by the engineer under the owner's 2026-09-24 instruction to proceed without
+questions (plan §8.1, slice A25). The workbook's START HERE tab has no
+progress, so there is no cell to follow.
+
+`setupProgress` in core takes one answer per step, read from the data each
+time and never stored: **done**, **not done** or **can't check yet** (the
+read failed, or a one-time update it needs is not in). It returns the steps
+in order, how many are done, the next one and whether the guide is finished.
+
+**Chosen.**
+
+- **Order:** the nine steps in the plan's order, except that each step put
+  off with **Do this later** goes to the end, in the order it was put off.
+  Putting off a step already put off moves it to the very end again, so
+  **Do this later** always sends the step to the back of the line.
+- **Done count:** the steps whose answer is done. "Can't check yet" is
+  never counted as done.
+- **Next:** the first step in that order that is not done, "can't check
+  yet" included, since it may still need doing. None when every step is
+  done.
+- **Finished:** all nine are done. Until then More and Settings say "N of 9
+  done".
+- **What counts as done, step by step** (the app's reads): a name is saved;
+  a category is on a spending list; an Income category has a pay schedule;
+  a bill, debt or subscription has a monthly amount this month; a savings
+  goal with a target above $0 is active; a statement has been imported and
+  Review is empty; this month's starting balance is typed; AI is on with a
+  working key or the receipts key, or the owner has switched AI off in AI
+  settings (a choice, which is a finished step); the app is open from the
+  home screen, or the step is ticked by hand.
+
+**Worked example.** Steps 1 to 9; the name, lists and bills are done, the
+pay schedule's read failed, step 5 was put off, then step 9. The order is
+1, 2, 3, 4, 6, 7, 8, 5, 9; **3 of 9 done**; the next step is 3 ("can't
+check yet"). Putting 5 off again gives 1, 2, 3, 4, 6, 7, 8, 9, 5.
