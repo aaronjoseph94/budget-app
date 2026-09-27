@@ -377,7 +377,7 @@ export const ARTICLES: readonly Article[] = [
     steps: [
       'Open **More**, then **AI settings**, and find **How the Coach talks**.',
       'Choose **Cheerleader** for a win first and never a telling-off, or **Straight talker** for plain words.',
-      'Turn **Share shop names with the AI** off to have the AI told “a shop” instead of the name.',
+      'Turn **Share shop names with the AI** off to have the AI told “a shop” instead of the name, and Review’s suggestions stopped.',
       'Open **Coach** to read today’s words in the tone you chose.',
     ],
     done: 'the Coach speaks in the tone you chose, and AI settings shows your choices.',
@@ -386,6 +386,7 @@ export const ARTICLES: readonly Article[] = [
     related: ['coach', 'free-ai', 'updates'],
     terms: [
       { term: 'Sent for the Coach', meaning: 'what kind of change each is, up or down, a little or a lot, how many months of records it rests on, your category and goal names, and a short list of quotes.' },
+      { term: 'Sent for Review’s suggestions', meaning: 'each shop’s name with long numbers hidden, whether it was money in or out, whether it was small (under $20), medium (under $100) or large, and your category names.' },
       { term: 'Never sent', meaning: 'an amount, a balance, a date, a card or account number, your name or your email.' },
       { term: '✨', meaning: 'words written by AI from your numbers. Every figure in them is the app’s own.' },
     ],

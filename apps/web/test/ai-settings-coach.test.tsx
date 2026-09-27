@@ -58,7 +58,7 @@ describe('How the Coach talks', () => {
     await waitFor(() => expect(panel.getByRole<HTMLInputElement>('switch', { name: 'Share shop names with the AI' }).disabled).toBe(false))
     fireEvent.click(panel.getByRole('switch', { name: 'Share shop names with the AI' }))
     await waitFor(() => expect(fake.tables.ai_settings).toEqual([{ user_id: 'u1', daily_cap: 60, tone: 'straight', share_shop_names: false }]))
-    expect(panel.getByText(/the AI is told “a shop” instead of the name/)).toBeTruthy()
+    expect(panel.getByText(/the AI is told “a shop” instead of the name, and Review suggests no categories/)).toBeTruthy()
   })
 
   it('shows what is stored when a save fails', async () => {

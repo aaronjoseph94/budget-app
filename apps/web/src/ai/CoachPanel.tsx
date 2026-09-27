@@ -98,8 +98,8 @@ export function CoachPanel() {
           </label>
           <p id={ids.shareHint} className="text-sm text-muted-foreground">
             {loaded.settings.shareShopNames
-              ? 'On: when the Coach speaks of a shop, the AI sees its name, with long numbers hidden. It never sees an amount or a date.'
-              : 'Off: the AI is told “a shop” instead of the name. It never sees an amount or a date.'}
+              ? 'On: when the Coach speaks of a shop, or Review asks for a category, the AI sees its name, with long numbers hidden. It never sees an amount or a date.'
+              : 'Off: the AI is told “a shop” instead of the name, and Review suggests no categories. It never sees an amount or a date.'}
           </p>
           <a href={hashOf({ screen: 'help', param: 'ai-sees' })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
             What the AI sees
