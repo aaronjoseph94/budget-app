@@ -358,6 +358,17 @@ export async function latestStatementEnd(supabase: SupabaseClient): Promise<read
 }
 
 /**
+ * Whether a card statement has ever been brought in (Getting started, step
+ * 6). A typed row or a receipt photo is not a statement. One id at most is
+ * read; nothing about the import is.
+ */
+export async function hasImportedStatement(supabase: SupabaseClient): Promise<boolean> {
+  const { data, error } = await supabase.from('ingest_batches').select('id').in('source', ['card_csv', 'card_xlsx', 'card_pdf']).limit(1)
+  if (error !== null) fail(error)
+  return (data ?? []).length > 0
+}
+
+/**
  * What F24's history start is taken from: the first day of the earliest
  * statement period (0007), and the earliest ledger date for when no statement
  * has one. One row each; which counts is core's to say (historyStart).
