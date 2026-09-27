@@ -40,7 +40,7 @@ afterEach(() => {
 })
 
 describe('the Sunday check-in', () => {
-  it('is whole with AI off: the recap, a win, the questions and one thing to try, in the app’s own words', async () => {
+  it('is whole with AI off: the recap, a win, the questions, one thing to try and the goals, in the app’s own words', async () => {
     const fake = checkinFake()
     fake.tables.ai_settings.push({ user_id: fake.user.id, tone: 'cheerleader', ...{ enabled: false } })
     renderScreen(<Shell />, fake)
@@ -51,6 +51,8 @@ describe('the Sunday check-in', () => {
     const asked = within(section('Was it planned?')).getAllByRole('listitem').map((li) => li.querySelector('p')?.textContent)
     expect(asked).toEqual(['Was GROCER, $112.40 on 24 Sep, planned?', 'Was SUSHI PLACE, $84.20 on 23 Sep, planned?', 'Was BURGER BAR, $20.00 on 26 Sep, planned?'])
     expect(within(section('One thing to try')).getByText(whole('P', 'Try keeping Dining out under $65.00 next week.'))).toBeTruthy()
+    expect(within(section('Your goal')).getByText(whole('P', 'Every lighter week brings Flight training closer. Keep going!'))).toBeTruthy()
+    expect(within(section('Your goal')).getByText('46 h of 109 h')).toBeTruthy()
   })
 
   it('writes the weekly limit only when its button is tapped, through the Week’s save', async () => {
@@ -99,5 +101,21 @@ describe('the Sunday check-in', () => {
     expect(within(questions).getByRole('link', { name: 'See One-time updates' }).getAttribute('href')).toBe('#/help/updates')
     expect(within(questions).queryAllByRole('button')).toEqual([])
     expect(screen.getByRole('button', { name: 'Yes, set it as my weekly budget' })).toBeTruthy()
+    expect(within(section('Your goal')).getByText('46 h of 109 h')).toBeTruthy()
+  })
+
+  // Goals are plural (G1): each active goal, the main goal first, hours only where a goal has a cost an hour.
+  it('lists every active goal under the goal line, the main goal first', async () => {
+    const fake = checkinFake()
+    fake.tables.savings_goals.push(
+      { id: 'g2', name: 'Travel', target_cents: 100_000, saved_cents: 15_000, target_date: null, unit_cost_cents: null, unit_label: null, sort_order: 1 },
+      { id: 'g3', name: 'House', target_cents: 100_000, saved_cents: 0, target_date: null, unit_cost_cents: null, unit_label: null, status: 'paused' },
+    )
+    renderScreen(<Shell />, fake)
+
+    const goals = await screen.findByRole('heading', { name: 'Your goals', level: 2 })
+    const card = goals.closest('div.rounded-xl') as HTMLElement
+    expect(within(card).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Flight training46 h of 109 h', 'Travel$150.00 of $1,000.00'])
+    expect(within(card).getByText(whole('P', 'Every lighter week brings Flight training closer. Keep going!'))).toBeTruthy()
   })
 })

@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
+import { goalsProgress } from '@budget/core'
 import { checkinFacts, checkinWords, mergeCheckin, type Checkin, type CheckinFacts } from '@budget/savings-coach'
 import { useAppData } from '../app-data.js'
+import { goalSavedCents, useFunds } from '../funds.js'
 import { formatCents, formatDateRange, formatDayMonth } from '../format.js'
 import { setWeeklyBudget } from '../ledger.js'
 import { hashOf } from '../nav.js'
@@ -67,6 +69,7 @@ export function CheckinScreen() {
           <LastWeek figures={figures} facts={facts} words={words} />
           <CheckinQuestions questions={figures.questions} week={figures.recap.week.start} answers={answers} impulse={figures.impulse} shops={shops} />
           <TryThis figures={figures} facts={facts} words={words} />
+          <Goals facts={facts} words={words} />
         </>
       )}
     </div>
@@ -148,6 +151,39 @@ function TryThis({ figures, facts, words }: { figures: CheckinFigures; facts: Ch
           {state === 'failed' ? <p role="alert">The weekly budget wasn’t saved. Try again, or set it on the Week.</p> : null}
         </div>
       )}
+    </Section>
+  )
+}
+
+/** A line for the goals, then each active goal's progress, the main goal first (G1). */
+function Goals({ facts, words }: { facts: CheckinFacts; words: Checkin }) {
+  const { goals, mainGoal } = useAppData()
+  const funds = useFunds()
+  const active = goals.filter((g) => g.status === 'active').sort((a, b) => (a.id === mainGoal?.id ? -1 : b.id === mainGoal?.id ? 1 : 0))
+  if (active.length === 0) return null
+  const { goals: figures } = goalsProgress({
+    goals: active.map((g) => ({ id: g.id, targetCents: g.target_cents, savedCents: goalSavedCents(g, funds), unitCostCents: g.unit_cost_cents })),
+  })
+  return (
+    <Section title={active.length === 1 ? 'Your goal' : 'Your goals'}>
+      <p className="[overflow-wrap:anywhere]">
+        <Said part={words.goal} facts={facts} />
+      </p>
+      <ul className="space-y-1">
+        {figures.map((f) => {
+          const goal = active.find((g) => g.id === f.id)!
+          return (
+            <li key={f.id} className="flex flex-wrap items-baseline justify-between gap-x-3">
+              <span className="min-w-0 truncate font-medium" title={goal.name}>
+                {goal.name}
+              </span>
+              <span className="tnum whitespace-nowrap text-muted-foreground">
+                {f.hours === null ? `${formatCents(f.savedCents)} of ${formatCents(f.targetCents)}` : `${f.hours.saved} h of ${f.hours.target} h`}
+              </span>
+            </li>
+          )
+        })}
+      </ul>
     </Section>
   )
 }
