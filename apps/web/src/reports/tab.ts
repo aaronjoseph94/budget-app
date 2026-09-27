@@ -3,14 +3,14 @@
  * convenience, so a storage that throws opens the Overview. The Coach's
  * shop cards choose Shops before opening Reports (plan A17).
  */
-export type ReportTab = 'overview' | 'trends' | 'shops'
+export type ReportTab = 'overview' | 'trends' | 'shops' | 'habits'
 
 const TAB_KEY = 'budget.reports.tab'
 
 export function rememberedTab(): ReportTab {
   try {
     const kept = localStorage.getItem(TAB_KEY)
-    return kept === 'trends' || kept === 'shops' ? kept : 'overview'
+    return kept === 'trends' || kept === 'shops' || kept === 'habits' ? kept : 'overview'
   } catch {
     return 'overview'
   }

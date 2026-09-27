@@ -13,6 +13,7 @@ import { ReviewCard } from '../reports/ReviewCard.js'
 import { Failed } from '../reports/Failed.js'
 import { TrendsPanel } from '../reports/Trends.js'
 import { ShopsPanel } from '../reports/Shops.js'
+import { HabitsPanel } from '../reports/Habits.js'
 import { rememberTab, rememberedTab, type ReportTab } from '../reports/tab.js'
 import { cn } from '../lib/cn.js'
 
@@ -20,13 +21,14 @@ const TABS: readonly { readonly id: ReportTab; readonly name: string }[] = [
   { id: 'overview', name: 'Overview' },
   { id: 'trends', name: 'Trends' },
   { id: 'shops', name: 'Shops' },
+  { id: 'habits', name: 'Habits' },
 ]
 
 /**
- * Reports (plan §2.6, A15, A16, A17): a month in review, any month, the
+ * Reports (plan §2.6, A15 to A18): a month in review, any month, the
  * current one marked "so far"; Trends over the whole months before this
- * one, which have no month to step through; and Shops, for the month shown.
- * Habits joins the tab row with A18. Every figure is core's monthReport (F36); the
+ * one, and Habits to today, neither with a month to step through; and
+ * Shops, for the month shown. Every figure is core's monthReport (F36); the
  * screen formats and never computes. Save as PDF is the browser's own
  * print, with the bars and buttons left off the page and the figures on it.
  */
@@ -48,6 +50,8 @@ export function ReportsScreen({ month }: { month: string | null }) {
   const thisMonth = `${asOf.slice(0, 7)}-01`
   const step = (by: number) => shiftMonth(isoDate(shown), by).slice(0, 7)
   const [tab, setTab] = useState<ReportTab>(rememberedTab)
+  // Trends and Habits read to today whatever month is shown, so the arrows step aside.
+  const monthless = tab === 'trends' || tab === 'habits'
   const choose = (next: ReportTab) => {
     setTab(next)
     rememberTab(next)
@@ -59,7 +63,7 @@ export function ReportsScreen({ month }: { month: string | null }) {
         <h1 className="text-2xl font-semibold tracking-tight">Reports</h1>
         <HelpButton screen="reports" />
       </div>
-      <nav aria-label="Month" className={cn('flex items-center gap-1', tab === 'trends' && 'hidden')}>
+      <nav aria-label="Month" className={cn('flex items-center gap-1', monthless && 'hidden')}>
         <a href={hashOf({ screen: 'reports', param: step(-1) })} aria-label="Previous month" className="inline-flex size-11 items-center justify-center rounded-md hover:bg-secondary print:invisible">
           <Icon name="chevronLeft" className="size-5" />
         </a>
@@ -89,7 +93,7 @@ export function ReportsScreen({ month }: { month: string | null }) {
             </button>
           ))}
         </div>
-        {shown === thisMonth && tab !== 'trends' ? <Badge>So far</Badge> : null}
+        {shown === thisMonth && !monthless ? <Badge>So far</Badge> : null}
         {/* The browser's own print makes the PDF: nothing is loaded and nothing leaves the phone. */}
         <Button variant="outline" onClick={() => window.print()} className="print:hidden">
           Save as PDF
@@ -98,6 +102,10 @@ export function ReportsScreen({ month }: { month: string | null }) {
       {tab === 'trends' ? (
         <div role="tabpanel" id="report-trends" aria-labelledby="report-tab-trends">
           <TrendsPanel asOf={asOf} />
+        </div>
+      ) : tab === 'habits' ? (
+        <div role="tabpanel" id="report-habits" aria-labelledby="report-tab-habits">
+          <HabitsPanel asOf={asOf} />
         </div>
       ) : tab === 'shops' ? (
         <div role="tabpanel" id="report-shops" aria-labelledby="report-tab-shops">
