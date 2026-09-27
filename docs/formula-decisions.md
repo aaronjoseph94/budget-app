@@ -1906,6 +1906,106 @@ shop in September would look new, so it says it is too early to tell.
 
 ---
 
+## F42 — The Sunday check-in: its week, the recap, the questions, the suggested limit and the impulse share
+
+**Decided 2026-09-27. Engineering default. Not from the workbook,** which
+has no weekly check-in and no record of why a charge was made. Decided by
+the engineer under the owner's 2026-09-24 instruction to proceed without
+questions (plan §2.4, §3.11 feature 7, §11; built in slice A20).
+
+**Shared.** Weeks run Monday to Sunday (D14). Everyday spending is the
+**Variable expenses** list, net of refunds, as F40's. **The records
+covered** start at the later of history start (F24) and the first day
+read, as F38's and F40's.
+
+**The check-in's week** (`checkinWeek`). The Monday-to-Sunday week that
+ends on the latest Sunday on or before `asOf`: on a Sunday, the week
+ending that day; Monday to Saturday, the week before. So the check-in is
+ready from Sunday and stays on that week until the next Sunday. An
+answer's `asked_week` (0017) is this week's Monday: the week the question
+is about, whichever day it was answered.
+
+**The recap** (`weeklyRecap`).
+
+- Only when the whole week lies inside the records covered; otherwise
+  "not covered", naming where the records start, so a gap is never read
+  as a thrifty week.
+- **Spent:** the week's Variable spending, net; below $0 in a week of
+  refunds.
+- **The weekly budgets:** the sum of the Variable weekly budgets set, or
+  none. With any set, **Left to spend** is the Week's own (F5, on
+  `weekSheet`): each budget less its Actual, a Variable row with no
+  budget taking its whole Actual off, as F40's streak judges a week. The
+  week is **kept** when that is $0 or more; otherwise **over by** its
+  negation.
+- **The week before:** its Variable spending, when it too lies inside the
+  records covered, and the change (F26: under $1.00 is the same).
+- **No-spend days:** days of the week whose Variable net is $0 or less.
+- **The top category:** the Variable category with the most spending in
+  the week, above $0; the list's order breaks a tie.
+
+**The questions** (`questionsToAsk`). The week's rows on the Variable
+list that are **charges of 2000 cents or more** (a refund is never
+asked about), with **no answer** in `coach_answers` (in any week: an
+answer is kept by the charge), **the largest 3**, a tie going to the
+earlier day, then the order given. Asked whether or not the recap is
+covered: a question names a real row.
+
+**The suggested limit** (`suggestedWeeklyLimit`), for the recap's top
+category.
+
+- Its **usual month** is F27's: the median of its Actual (`monthActuals`,
+  as the Month counts it) over up to the 6 most recent complete months
+  before `asOf`'s month.
+- **Limit** = min(last week's Actual, usual × 12 ÷ 52), **rounded down to
+  500 cents**, and **at least 500**. The division is exact, never rounded
+  before the minimum is taken: floor(min(52 × actual, 12 × usual) ÷
+  (52 × 500)) × 500.
+- **With no complete month,** the limit is last week's Actual alone,
+  rounded down the same way: "no more than last week".
+- **Never above the category's own weekly budget.** When a budget is set
+  and the rule gives more, the offer is the budget as it is, so the
+  one-tap commitment never loosens a limit the owner chose.
+- None when the recap is not covered or had no top category.
+
+**The impulse share** (`impulseShare`). Answers whose `asked_week` is one
+of the 8 weeks ending with the check-in's week (its Monday and the 7
+Mondays before). Share = impulse answers × 10000 ÷ answers, in basis
+points, half-up; none when there is no answer.
+
+**Worked example.** Sunday 27 September 2026, records from 1 February.
+The check-in's week is **Monday 21 to Sunday 27 September**; on Wednesday
+30 September it is still that week, and on Sunday 4 October it becomes 28
+September to 4 October. Weekly budgets: Dining out $70.00, Groceries
+$140.00, Coffee none. The week's rows: Coffee $4.50 on the 22nd; SUSHI
+PLACE $84.20 (Dining out) on the 23rd; GROCER $112.40 (Groceries) on the
+24th; CAFE $19.99 (Coffee) and rent $1,500.00 (Bills) on the 25th; BURGER
+BAR $20.00 (Dining out) and a GROCER refund of $15.00 on the 26th.
+
+- **Spent** $104.20 + $97.40 + $24.49 = **$226.09**. **Left to spend**
+  ($70.00 − $104.20) + ($140.00 − $97.40) − $24.49 = **−$16.09**: not
+  kept, **over by $16.09**. The rent is a bill and counts nowhere here.
+- The week before spent $250.00: **$23.91 less**.
+- **No-spend days:** Monday the 21st and Sunday the 27th, **2**. Saturday
+  nets $20.00 − $15.00 = $5.00, a day of spending.
+- **Top category:** Dining out, $104.20.
+- **Questions:** GROCER $112.40, SUSHI PLACE $84.20, BURGER BAR $20.00 (at
+  exactly $20.00, asked). CAFE's $19.99 is never asked, nor the rent (not
+  Variable) or the refund. With SUSHI PLACE already answered: GROCER and
+  BURGER BAR.
+- **Limit,** Dining out's usual month $300.00: $300.00 × 12 ÷ 52 =
+  $69.23…; min($104.20, $69.23…) rounds down to **$65.00**, under its
+  $70.00 budget. Usual $500.00: $115.38… against $104.20 gives $100.00,
+  above the $70.00 budget, so **$70.00**; with no budget, **$100.00**.
+  Usual $20.00: $4.61… rounds down to $0.00, so **$5.00**. With no
+  complete month: $104.20 alone, **$100.00**.
+- **Impulse share,** the 8 weeks from 3 August to 21 September: 2
+  impulse of 5 answers is **4000 bp (40%)**; 1 of 3 is 3333.3…, **3333
+  bp**; 2 of 3 is 6666.6…, **6667 bp**. An answer asked the week of 27
+  July is left out. No answers: **no share**.
+
+---
+
 ## F44 — Impact, for ranking the Coach's cards
 
 **Decided 2026-09-24. Engineering default. Not from the workbook.** Decided
