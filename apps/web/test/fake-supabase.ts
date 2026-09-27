@@ -139,6 +139,9 @@ export interface FakeSupabase {
     ai: ((body: Readonly<Record<string, unknown>>) => Response | Promise<Response>) | null
     aiStatus: AiStatusReply
     readonly calls: Readonly<Record<string, unknown>>[]
+    /** `functions/v1/read-receipt`, the older receipt reader; null, the default, is one never deployed. Its bodies are kept in `receiptCalls`. */
+    readReceipt: ((body: Readonly<Record<string, unknown>>) => Response | Promise<Response>) | null
+    readonly receiptCalls: Readonly<Record<string, unknown>>[]
   }
   /** The signed-in user as the auth server holds it, `user_metadata` included. */
   readonly user: { id: string; email: string; user_metadata: Record<string, unknown> }
@@ -224,6 +227,8 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
           : json(functions.aiStatus),
     aiStatus: aiStatusReply(),
     calls: [],
+    readReceipt: null,
+    receiptCalls: [],
   }
   let nextId = 1
 
@@ -360,6 +365,12 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       functions.calls.push(body)
       if (functions.ai === null) return json({ code: 'NOT_FOUND', message: 'Requested function was not found' }, 404)
       return functions.ai(body)
+    }
+    if (url.pathname === '/functions/v1/read-receipt') {
+      const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
+      functions.receiptCalls.push(body)
+      if (functions.readReceipt === null) return json({ code: 'NOT_FOUND', message: 'Requested function was not found' }, 404)
+      return functions.readReceipt(body)
     }
     const target = url.pathname.replace(/^\/rest\/v1\//, '')
     const failure = failures.get(target) ?? failures.get(`${method} ${target}`)
