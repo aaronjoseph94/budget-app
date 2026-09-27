@@ -90,3 +90,50 @@ describe('Reports, Habits: the spending grid (plan §2.6, A18)', () => {
     expect(await screen.findByRole('heading', { name: 'September 2026' })).toBeTruthy()
   })
 })
+
+describe('Reports, Habits: streaks, weekdays and personal bests (plan §2.6, A18)', () => {
+  it('counts the weeks kept, names the costliest weekday and the best month, every figure core’s', async () => {
+    go('/reports')
+    renderScreen(<Shell />, habitsFake())
+    await openHabits()
+
+    const streak = await card('Weeks within budget')
+    expect(figure(streak, 'In a row now')).toBe('5 weeks')
+    expect(figure(streak, 'Your longest run')).toBe('5 weeks, to the week of 14 Sep')
+    expect(within(streak).getByText('Your best run yet. Keep it going!')).toBeTruthy()
+    const listed = within(streak).getAllByRole('listitem').map((li) => li.textContent)
+    expect(listed).toHaveLength(8)
+    expect(listed[0]).toBe('Week of 14 Sep: ✓ within budget, $150.00 left')
+    // $250.00 of Dining out and $60.00 of Groceries against $210.00.
+    expect(listed[5]).toBe('Week of 10 Aug: ✗ $100.00 over')
+
+    const weekday = await card('Which weekday costs most')
+    expect(within(weekday).getByText('Saturday costs most: $60.00 on average, over the last 12 whole weeks, 29 Jun to 20 Sep.')).toBeTruthy()
+    expect(within(weekday).getByRole('img', { name: 'Everyday spending on each weekday, on average' })).toBeTruthy()
+    expect(within(weekday).getByText('Each track is your daily allowance, $30.00.')).toBeTruthy()
+
+    const best = await card('Personal bests')
+    expect(within(best).getByText('Dining out')).toBeTruthy()
+    expect(within(best).getByText('$250.00 in August 2026, your lowest in 7 whole months. Next lowest: $280.00 in April 2026.')).toBeTruthy()
+  })
+
+  it('says what each needs and when, with records only from 1 September', async () => {
+    go('/reports')
+    renderScreen(<Shell />, habitsFake('2026-09-01'))
+    await openHabits()
+
+    expect(within(await card('Which weekday costs most')).getByText('This needs four whole weeks of records: check back on Monday 5 Oct 2026.')).toBeTruthy()
+    expect(within(await card('Personal bests')).getByText('A best needs three whole months of records: check back in December 2026.')).toBeTruthy()
+    expect(figure(await card('Weeks within budget'), 'In a row now')).toBe('2 weeks')
+  })
+
+  it('asks for a weekly budget before a week can be kept, and draws the weekdays with no track', async () => {
+    go('/reports')
+    renderScreen(<Shell />, habitsFake('2026-02-01', false))
+    await openHabits()
+
+    const streak = await card('Weeks within budget')
+    expect(within(streak).getByRole('link', { name: 'Open the Week' }).getAttribute('href')).toBe('#/week')
+    expect(within(await card('Which weekday costs most')).queryByText(/Each track is your daily allowance/)).toBeNull()
+  })
+})

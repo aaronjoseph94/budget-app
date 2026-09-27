@@ -5,17 +5,21 @@
  * (F40); this draws and formats, and never computes. A day before the
  * records or still to come is left blank and listed as such, never $0.
  */
-import { useMemo } from 'react'
-import { heatGrid } from '@budget/chart-specs'
-import type { GridDay, GridLevel, SpendingGrid } from '@budget/core'
+import { useCallback, useMemo } from 'react'
+import { heatGrid, weekdayBars } from '@budget/chart-specs'
+import type { GridDay, GridLevel, PersonalBests, SpendingGrid, Streaks, WeekdayPattern } from '@budget/core'
 import { useAppData } from '../app-data.js'
-import { formatCents, formatDayMonth } from '../format.js'
+import { formatCents, formatDayMonth, formatIsoDate, formatMagnitude, formatMonthTitle } from '../format.js'
+import { hashOf } from '../nav.js'
 import { SvgChart } from '../components/ui/chart.js'
 import { Row, Section } from '../forecast/parts.js'
 import { Failed } from './Failed.js'
 import { habitsOf, useHabitsRead } from './habits-read.js'
 
 export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const WEEKDAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+/** The last complete weeks listed under a streak. */
+const WEEKS_LISTED = 8
 const LEVEL: Readonly<Record<GridLevel, { readonly n: 0 | 1 | 2 | 3 | 4; readonly words: string }>> = {
   none: { n: 0, words: 'nothing spent' },
   half: { n: 1, words: 'up to half the allowance' },
@@ -35,12 +39,20 @@ export function HabitsPanel({ asOf }: { asOf: string }) {
       return 'failed' as const
     }
   }, [read, categories])
+  const nameOf = useCallback((id: string) => categories.find((c) => c.id === id)?.name ?? 'a category', [categories])
 
   return (
     <div className="space-y-4">
       {figures === 'loading' ? <p className="text-sm text-muted-foreground">Working out your habits…</p> : null}
       {figures === 'failed' ? <Failed missingUpdate={read.status === 'failed' && read.missingUpdate} /> : null}
-      {typeof figures === 'object' ? <GridCard grid={figures.grid} /> : null}
+      {typeof figures === 'object' ? (
+        <>
+          <GridCard grid={figures.grid} />
+          <StreakCard streaks={figures.streaks} />
+          <WeekdayCard pattern={figures.pattern} />
+          <BestsCard bests={figures.bests} nameOf={nameOf} />
+        </>
+      ) : null}
     </div>
   )
 }
@@ -114,6 +126,118 @@ function GridCard({ grid }: { grid: SpendingGrid }) {
           ))}
         </ul>
       </details>
+    </Section>
+  )
+}
+
+const link = 'inline-flex min-h-11 items-center font-medium underline underline-offset-4'
+const weeksText = (n: number) => (n === 1 ? '1 week' : `${n} weeks`)
+
+function StreakCard({ streaks }: { streaks: Streaks }) {
+  if (streaks.status === 'no_budget') {
+    return (
+      <Section title="Weeks within budget">
+        <p>Set a weekly budget for your everyday spending, and each week you stay within it counts toward a streak.</p>
+        <a href={hashOf({ screen: 'week', param: null })} className={link}>
+          Open the Week
+        </a>
+      </Section>
+    )
+  }
+  const { weeks, current, best, bestEnded } = streaks
+  if (weeks.length === 0) {
+    return (
+      <Section title="Weeks within budget">
+        <p>Streaks start once your records hold a whole week, Monday to Sunday.</p>
+      </Section>
+    )
+  }
+  return (
+    <Section title="Weeks within budget">
+      {current > 0 && current === best ? <p className="font-medium">Your best run yet. Keep it going!</p> : null}
+      <dl className="divide-y">
+        <Row label="In a row now" value={weeksText(current)} />
+        <Row label="Your longest run" value={bestEnded === null ? 'none yet' : `${weeksText(best)}, to the week of ${formatDayMonth(bestEnded)}`} />
+      </dl>
+      <p className="text-muted-foreground">A week counts when the Week’s Left to spend stays at $0.00 or more.</p>
+      <ul className="space-y-1">
+        {weeks.slice(-WEEKS_LISTED).reverse().map((w) => (
+          <li key={w.start} className="tnum">
+            Week of {formatDayMonth(w.start)}: {w.kept ? `✓ within budget, ${formatCents(w.leftCents)} left` : `✗ ${formatMagnitude(w.leftCents)} over`}
+          </li>
+        ))}
+      </ul>
+    </Section>
+  )
+}
+
+function WeekdayCard({ pattern }: { pattern: WeekdayPattern }) {
+  if (pattern.status === 'not_enough') {
+    return (
+      <Section title="Which weekday costs most">
+        <p>
+          {pattern.possibleFrom === null
+            ? 'Bring in a statement or add a charge to begin; this needs four whole weeks of records.'
+            : `This needs four whole weeks of records: check back on Monday ${formatIsoDate(pattern.possibleFrom)}.`}
+        </p>
+      </Section>
+    )
+  }
+  const { days, costliest, weeks, from, to } = pattern
+  const span = `the last ${weeks} whole weeks, ${formatDayMonth(from)} to ${formatDayMonth(to)}`
+  return (
+    <Section title="Which weekday costs most">
+      <p>
+        {costliest === null
+          ? `Nothing spent on any weekday over ${span}.`
+          : `${WEEKDAY_NAMES[costliest - 1]} costs most: ${formatCents(days[costliest - 1]!.averageCents)} on average, over ${span}.`}
+      </p>
+      <SvgChart
+        svg={weekdayBars({
+          id: 'weekday-bars',
+          title: 'Everyday spending on each weekday, on average',
+          description: days.map((x, i) => `${WEEKDAY_NAMES[i]} ${formatCents(x.averageCents)}`).join(', '),
+          bars: days.map((x, i) => ({ label: WEEKDAYS[i]!, valueText: formatCents(x.averageCents), goalBp: x.trackBp, actualBp: x.barBp })),
+        })}
+        className="max-w-xl"
+      />
+      {pattern.allowanceCents === null ? null : (
+        <p className="text-muted-foreground">Each track is your daily allowance, {formatCents(pattern.allowanceCents)}.</p>
+      )}
+    </Section>
+  )
+}
+
+function BestsCard({ bests, nameOf }: { bests: PersonalBests; nameOf: (id: string) => string }) {
+  if (bests.status === 'not_enough') {
+    return (
+      <Section title="Personal bests">
+        <p>
+          {bests.possibleFrom === null
+            ? 'Bring in a statement or add a charge to begin; a best needs three whole months of records.'
+            : `A best needs three whole months of records: check back in ${formatMonthTitle(bests.possibleFrom)}.`}
+        </p>
+      </Section>
+    )
+  }
+  const month = formatMonthTitle(bests.month)
+  return (
+    <Section title="Personal bests">
+      {bests.bests.length === 0 ? (
+        <p>No personal best in {month}. One shows when a category’s whole month is its lowest of the last {bests.months}.</p>
+      ) : (
+        <ul className="divide-y">
+          {bests.bests.map((b) => (
+            <li key={b.categoryId} className="py-2">
+              <p className="font-medium [overflow-wrap:anywhere]">{nameOf(b.categoryId)}</p>
+              <p className="tnum text-muted-foreground">
+                {formatCents(b.cents)} in {month}, your lowest in {bests.months} whole months. Next lowest: {formatCents(b.nextCents)} in{' '}
+                {formatMonthTitle(b.nextMonth)}.
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
     </Section>
   )
 }
