@@ -86,7 +86,16 @@ than stripping it.
 
 ---
 
-## N4 — Merchant text beginning `=`, `+`, `-` or `@` and the planned Excel export
+## N4 — Merchant text beginning `=`, `+`, `-` or `@` and the planned Excel export *(settled 2026-09-27, plan A19)*
+
+**Settled:** `packages/report-export`'s `toCsv` puts an apostrophe before
+any text cell starting with `=`, `+`, `-`, `@`, a tab or a carriage return,
+tested in `packages/report-export/test/csv.test.ts`. Amounts are number
+cells, left unguarded so a negative amount stays a number, and refused
+unless they are a plain decimal, so a number cell cannot carry a formula
+past the guard. Merchant text is stored and hashed as it came in. The
+Excel workbook is still unbuilt; when it is, its cell writer needs the
+same guard.
 
 **Seen:** 2026-09-22, from an adversarial review of the importer.
 

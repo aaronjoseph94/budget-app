@@ -1010,6 +1010,18 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **Build:** `packages/report-export` (config commit: coverage 80/80/75, depcruise lines: it imports nothing; the app loads it dynamically), with `toCsv(rows)` and its formula guard (§7); `format.ts` gains the plain amount formatter; **Download CSV** on Reports.
 - **Tests:** `csv.test.ts` (`=cmd`, `+1`, `@x`, a tab and a carriage return each get the apostrophe; a negative amount cell does not; commas, quotes and line breaks quoted); a screen test that the file is built only on the tap.
 - **Acceptance:** N4 marked settled; the export code is fetched only on the tap, so the first load does not grow; a downloaded file's amounts match the screen's.
+- **Changed while building (2026-09-27).** Each decided by the engineer under the owner's 2026-09-24 instruction to proceed without questions.
+  - **No migration and no helper change, as planned.** The download uses only what the Overview already read, so there is nothing new to paste and no new fail-soft line: a month that did not load (the Overview's one line, tested with `category_plans` missing, 42P01) or that the records have not reached offers no download, and a download that fails says so in one line while the month stays on screen.
+  - **Two files, not one.** "The month's transactions and the Overview's table" are two shapes, and one file holding both would not sort or filter in a spreadsheet. **Download CSV** is the Overview's last card, with **Download charges** and **Download summary**; the card is left off the printed page.
+  - **Charges:** Date, Shop, Category, List and Amount, for the days the review covers (the month, or the month so far), oldest first and in the database's order within a day. Planned bills that were never charged are not charges, so the file's rows need not add up to Spent; the summary holds Spent.
+  - **Summary:** Income, Spent and Saved against last month and the usual month, the share saved, then each Variable category beside last month: the Overview's own figures from core's `monthReport`, with a column only where the screen shows one.
+  - **The writer's cells:** a plain string is a text cell and is guarded; an amount is `{ number }` and is not, and is refused unless it is a plain decimal, so it cannot carry a formula past the guard. Rows end in CR LF (RFC 4180). The app adds a byte-order mark so Excel reads a shop's accents.
+  - **Loaded on the tap, enforced:** depcruise's `app-loads-the-export-on-the-tap` refuses a static import of `report-export` from the app (seen `RED` with one planted), and `export-imports-nothing` keeps the package free of imports (seen `RED` with the engine planted). In the build the writer is its own chunk; in the harness's Chromium nothing of it is requested until the tap.
+  - **`format.ts`:** `formatPlainAmount` ("1234.56"), which `formatForInput` now uses.
+  - **Tests:** `csv.test.ts` as planned; `report-download.test.ts` for the rows; `reports-download.test.tsx` counts the writer's loads and calls (none before the tap), checks each file byte for byte against the figures the Overview's test reads, and the failed download's line.
+  - **Help:** "Reports and trends" names the two buttons, and says why a shop name may begin with an apostrophe.
+  - **First load:** 188.12 KB gzipped after A18, 188.01 KB measured after this slice; the card is in the Reports chunk and the writer in its own.
+  - **Seen in the preview harness** (copied from `preview-a18`) at 320, 390 and 1280 px, light and dark, with touch on the phone widths: no sideways scroll, every button 44 px or more, no console errors. A real download of August's summary held the screen's figures.
 
 ### A20: The Sunday check-in
 
