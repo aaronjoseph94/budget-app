@@ -6,7 +6,8 @@ import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
 
 /**
- * The ways into Ask (plan A24): the last five questions kept on this device.
+ * The ways into Ask (plan A24): the Coach's ask box, and the last five
+ * questions kept on this device.
  * The Forecast's worked example, invented data only, with AI off.
  */
 const sentence = (text: string) => (_: string, el: Element | null) => el?.tagName === 'P' && el.textContent === text
@@ -25,8 +26,9 @@ async function ask(question: string) {
 beforeAll(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(EXAMPLE_TODAY)
-  // Ask draws once first, so no find races a cold chunk (N87).
+  // Each screen these tests open draws once first, so no find races a cold chunk (N87).
   await warmScreen('#/ask', 'Ask', { fake: forecastFakeWithGoals(), text: 'Try asking' })
+  await warmScreen('#/coach', 'Coach', { fake: forecastFakeWithGoals(), text: 'Ask anything about your money' })
   vi.useRealTimers()
 })
 beforeEach(() => {
@@ -41,6 +43,18 @@ afterEach(() => {
   vi.restoreAllMocks()
   window.location.hash = ''
   localStorage.clear()
+})
+
+describe('the Coach’s ask box', () => {
+  it('carries the question to Ask, which answers it', async () => {
+    open('#/coach')
+    fireEvent.change(await screen.findByRole('textbox', { name: /Ask anything about your money/ }), { target: { value: 'How much did I spend on dining out in August?' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Ask' }))
+
+    expect(await screen.findByText(sentence(DINING))).toBeTruthy()
+    expect(window.location.hash).toBe('#/ask')
+    expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Your question' }).value).toBe('How much did I spend on dining out in August?')
+  })
 })
 
 describe('the last five questions', () => {

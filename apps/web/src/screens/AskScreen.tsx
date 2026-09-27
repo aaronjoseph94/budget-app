@@ -20,6 +20,7 @@ import { answerOf, readDebts } from '../ask/answer.js'
 import { readQuestion, type QuestionRead, type ReadBy } from '../ask/read.js'
 import { suggestions } from '../ask/suggest.js'
 import { forgetQuestions, keepQuestion, recentQuestions } from '../ask/recent.js'
+import { takeHandedOver } from '../ask/handoff.js'
 
 const link = 'inline-flex min-h-11 items-center font-medium underline underline-offset-4'
 const TOPICS = ARTICLES.map((a) => ({ id: a.id, title: a.title }))
@@ -82,6 +83,15 @@ export function AskScreen({ topic }: { topic: HelpTopic | null }) {
       setBusy(false)
     }
   }
+
+  // A question typed in the Coach's box is asked as soon as Ask opens.
+  useEffect(() => {
+    const handed = takeHandedOver()
+    if (handed === null) return
+    setText(handed)
+    void ask(handed, false)
+    // Once, as Ask opens; the question is taken, so a second run finds none.
+  }, [])
 
   const intent = asked?.read.read.kind === 'intent' ? asked.read.read : null
   // The payoff plan is read only for a question about it, on its own, so its failure is its answer's alone.

@@ -238,7 +238,7 @@ export const ARTICLES: readonly Article[] = [
       'Press a card’s button, such as **See the Month** or **See your goals**, to act on it.',
       'Press **Why am I seeing this?** to see the figures behind a card.',
       'Press **✕** on a card you have seen enough of, and it stays gone until something new happens.',
-      'Read the quote or tip at the bottom, picked for what your day is about.',
+      'Read the quote or tip at the bottom, picked for what your day is about, and type a question in **Ask anything about your money** under it.',
     ],
     done: 'you have read the line, your goal’s date and the cards, and you know why each one is there.',
     stuck:
@@ -340,7 +340,7 @@ export const ARTICLES: readonly Article[] = [
     summary:
       'Ask a question in your own words, such as “How much did I spend on coffee in August?”, and get the answer from your own records: how much, against last time, where it went, your subscriptions, where the month ends, what is safe to spend, when you reach your goals, what a saving would do, and your debt-free date.',
     steps: [
-      'Open **Ask** from **More**.',
+      'Open **Ask** from **More**, or type your question in the box at the bottom of the **Coach**.',
       'Type your question and press **Ask**, or tap one of the questions under **Try asking**.',
       'Read **I read that as**, to check the app understood which categories and which days you meant.',
       'Read the answer: the figure, a sentence and, where there is one, the list under it.',

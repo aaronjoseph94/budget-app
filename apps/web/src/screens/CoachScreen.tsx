@@ -21,6 +21,7 @@ import { GoalLever } from '../coach/GoalLever.js'
 import { GoalPace, paceShort } from '../coach/GoalPace.js'
 import { useGoalOutlooks, type Outlooks } from '../coach/outlook.js'
 import { CheckinLink } from '../coach/CheckinLink.js'
+import { AskBox } from '../coach/AskBox.js'
 import type { ListedGoalRow } from '../ledger.js'
 
 /**
@@ -67,6 +68,7 @@ export function CoachScreen() {
       {digest === null ? null : (
         <QuoteCard entry={quote === null ? pick.entry : (pick.shortlist.find((e) => e.id === quote.id) ?? pick.entry)} why={quote?.why ?? null} asOf={asOf} />
       )}
+      <AskBox />
     </div>
   )
 }
