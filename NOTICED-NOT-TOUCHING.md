@@ -2414,3 +2414,22 @@ way"; a move without learning says the opposite, so hinting from it
 would be a guess about a guess.
 
 **To settle:** only if the owner asks for hints from every filed shop.
+
+---
+
+## N104 — A long name with an emoji is cut to 40 letters but counted as more
+
+**Seen:** 2026-09-27, reviewing A21. `maskLabel` (savings-coach,
+from A12) cuts a name to 40 characters counted as the eye sees them,
+while the AI helper's `Label` (zod `max(40)`) counts JavaScript's
+UTF-16 units, where an emoji is two. A category or shop name of 40 or
+more characters with an emoji in it passes the one and fails the other,
+so the helper refuses the whole request as `bad_request`, and Review
+says the helper may need its new copy.
+
+**Why not fixed here:** `maskLabel` and `Label` are shared with the
+Coach's daily words, the month's review and the check-in; changing
+either reaches every AI task, and the helper would need pasting again.
+
+**To settle:** cut in `maskLabel` by UTF-16 length without splitting a
+pair, with a test naming a 40-character name that holds an emoji.
