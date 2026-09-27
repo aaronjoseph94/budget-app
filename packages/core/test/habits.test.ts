@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { isoDate } from '@budget/money-primitives'
-import { gridLevel, spendingGrid, streaks, weekdayPattern, type HabitsInput } from '../src/index.js'
+import { gridLevel, personalBest, spendingGrid, streaks, weekdayPattern, type HabitsInput } from '../src/index.js'
 
 /** Suite tests, worked by hand from F40 (docs/formula-decisions.md). Thursday 24 September 2026. */
 
@@ -226,5 +226,57 @@ describe('streaks (F40)', () => {
     const categories = CATEGORIES.map((c) => (c.kind === 'variable' ? { ...c, weeklyBudgetCents: null } : c))
     expect(streaks({ ...weeks, categories })).toEqual({ status: 'no_budget' })
     expect(streaks(habits({ historyStart: d('2026-09-22') }))).toEqual({ status: 'ready', weeks: [], current: 0, best: 0, bestEnded: null })
+  })
+})
+
+describe('personalBest (F40)', () => {
+  const MONTHS = ['2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08']
+  /** One charge on the 12th of each month from February to August, in cents. */
+  const monthly = (categoryId: string, amounts: readonly number[]) => amounts.map((c, i) => spend(`${MONTHS[i]}-12`, c, categoryId))
+  const seven = habits({
+    entries: [
+      ...monthly('dining', [30_000, 32_000, 28_000, 35_000, 31_000, 33_000, 25_000]),
+      ...monthly('groceries', [45_000, 45_000, 45_000, 40_050, 45_000, 45_000, 40_000]),
+      ...monthly('coffee', [6_000, 6_000, 6_000, 6_000, 6_000, 6_000, 2_000]),
+      ...monthly('rent', [90_000, 90_000, 90_000, 90_000, 90_000, 90_000, 10_000]),
+    ],
+  })
+
+  it('names each Variable category whose last whole month is its lowest by $1.00 or more, furthest under first', () => {
+    expect(personalBest(seven)).toEqual({
+      status: 'ready',
+      months: 7,
+      month: '2026-08-01',
+      bests: [
+        { categoryId: 'coffee', cents: 2_000, nextCents: 6_000, nextMonth: '2026-07-01' },
+        { categoryId: 'dining', cents: 25_000, nextCents: 28_000, nextMonth: '2026-04-01' },
+      ],
+    })
+  })
+
+  it('reads the last 12 whole months at most', () => {
+    // September 2025 to January 2026 at $400.00 fill the twelve; August 2025, lower, is the thirteenth.
+    const autumn = ['2025-09', '2025-10', '2025-11', '2025-12', '2026-01'].map((m) => spend(`${m}-12`, 40_000))
+    const year = { historyStart: d('2025-01-01'), readFrom: d('2025-01-01') }
+    const long = habits({ ...year, entries: [spend('2025-08-12', 100), ...autumn, ...seven.entries] })
+    expect(personalBest(long)).toMatchObject({ months: 12, bests: [{ categoryId: 'dining', cents: 25_000 }] })
+    const within = habits({ ...year, entries: [spend('2025-09-12', -39_900), ...autumn, ...seven.entries] })
+    expect(personalBest(within)).toMatchObject({ months: 12, bests: [] })
+  })
+
+  it('needs 3 whole months, and names the month a best becomes possible', () => {
+    expect(personalBest(habits({ historyStart: d('2026-07-01'), entries: seven.entries.filter((e) => e.postedOn >= '2026-07-01') }))).toEqual({
+      status: 'not_enough',
+      months: 2,
+      possibleFrom: '2026-10-01',
+    })
+    expect(personalBest(habits({ historyStart: d('2026-06-01'), entries: seven.entries.filter((e) => e.postedOn >= '2026-06-01') }))).toMatchObject({
+      status: 'ready',
+      months: 3,
+    })
+    // Records from February, but only two whole months read.
+    expect(personalBest(habits({ readFrom: d('2026-07-01') }))).toEqual({ status: 'not_enough', months: 2, possibleFrom: '2026-10-01' })
+    expect(personalBest(habits({ historyStart: d('2026-08-08') }))).toEqual({ status: 'not_enough', months: 0, possibleFrom: '2026-12-01' })
+    expect(personalBest(habits({ historyStart: null }))).toEqual({ status: 'not_enough', months: 0, possibleFrom: null })
   })
 })

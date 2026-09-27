@@ -11,10 +11,12 @@
  * stored: it is recomputed from the ledger on every read.
  */
 import { type Cents, type IsoDate, ZERO_CENTS, addDays, cents, daysBetween, sumCents } from '@budget/money-primitives'
+import { completeMonths } from './history.js'
+import { monthActuals } from './month-actuals.js'
 import { type PeriodEntry, type WeekCategory, weekSheet } from './period-sheet.js'
 import { goalBars } from './shares.js'
 import { median } from './stats.js'
-import { weekBounds } from './week.js'
+import { monthBounds, shiftMonth, weekBounds } from './week.js'
 
 export interface HabitsInput {
   /** Today: its week is the grid's last, and never complete. */
@@ -233,6 +235,72 @@ export function streaks(input: HabitsInput): Streaks {
     }
   }
   return { status: 'ready', weeks, current: run, best, bestEnded }
+}
+
+export interface PersonalBestRow {
+  readonly categoryId: string
+  /** Its Actual in the last complete month, the lowest of the months read. */
+  readonly cents: Cents
+  /** The next lowest, and its month (the latest of equal ones). */
+  readonly nextCents: Cents
+  readonly nextMonth: IsoDate
+}
+
+export type PersonalBests =
+  | {
+      readonly status: 'ready'
+      /** Complete months read: 3 to 12. */
+      readonly months: number
+      /** The last complete month, by its first day. */
+      readonly month: IsoDate
+      /** Furthest under the next lowest first, then the list's order. */
+      readonly bests: readonly PersonalBestRow[]
+    }
+  /** Under 3 complete months. `possibleFrom` is the month a best becomes possible; null with no records. */
+  | { readonly status: 'not_enough'; readonly months: number; readonly possibleFrom: IsoDate | null }
+
+const BEST_MONTHS = 12
+const BEST_NEEDS = 3
+/** F26: under $1.00 either way is the same, so a tie is no best. */
+const SAME = 100
+
+/** F40: each Variable category whose last complete month is its lowest of up to 12, by $1.00 or more. */
+export function personalBest(input: HabitsInput): PersonalBests {
+  const months = completeMonths(input).months.slice(0, BEST_MONTHS)
+  const n = months.length
+  if (n < BEST_NEEDS) {
+    const start = input.historyStart
+    if (start === null) return { status: 'not_enough', months: n, possibleFrom: null }
+    // As F37 names its month: the later of today's month plus the months
+    // still needed, and the records' first whole month plus three.
+    const firstWhole = start === monthBounds(start).start ? start : shiftMonth(start, 1)
+    const byToday = shiftMonth(input.asOf, BEST_NEEDS - n)
+    const byRecords = shiftMonth(firstWhole, BEST_NEEDS)
+    return { status: 'not_enough', months: n, possibleFrom: byToday > byRecords ? byToday : byRecords }
+  }
+  // Newest first, as completeMonths gives them.
+  const read = monthActuals({ categories: input.categories, entries: input.entries, months }).months
+  const [last, ...earlier] = read
+  const bests = input.categories
+    .filter((c) => c.kind === 'variable')
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+    .flatMap((c): PersonalBestRow[] => {
+      const now = actualOf(last!.actuals, c.id)
+      // Newest first, so a strict "lower" keeps the latest of equal months.
+      const next = earlier.reduce((low, m) => (actualOf(m.actuals, c.id) < actualOf(low.actuals, c.id) ? m : low))
+      const nextCents = actualOf(next.actuals, c.id)
+      return nextCents - now >= SAME ? [{ categoryId: c.id, cents: now, nextCents, nextMonth: next.month }] : []
+    })
+  // A stable sort, so equal savings keep the list's order.
+  bests.sort((a, b) => b.nextCents - b.cents - (a.nextCents - a.cents))
+  return { status: 'ready', months: n, month: last!.month, bests }
+}
+
+/** monthActuals lists every category given, so this cannot miss. */
+function actualOf(actuals: ReadonlyMap<string, Cents>, categoryId: string): Cents {
+  const actual = actuals.get(categoryId)
+  if (actual === undefined) throw new RangeError(`Category ${categoryId} is missing from the months read`)
+  return actual
 }
 
 /**

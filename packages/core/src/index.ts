@@ -255,6 +255,7 @@ export {
 } from './trends.js'
 export {
   gridLevel,
+  personalBest,
   spendingGrid,
   streaks,
   weekdayPattern,
@@ -264,6 +265,8 @@ export {
   type GridWeek,
   type HabitsInput,
   type KeptWeek,
+  type PersonalBestRow,
+  type PersonalBests,
   type Streaks,
   type SpendingGrid,
   type WeekdayAverage,
