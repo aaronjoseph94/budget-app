@@ -26,6 +26,8 @@ import { Icon } from '../components/ui/icons.js'
 import { cn } from '../lib/cn.js'
 import { navigate } from '../nav.js'
 import { HelpButton } from '../help/HelpButton.js'
+import { SuggestBar } from '../review/SuggestBar.js'
+import { useSuggestions } from '../review/use-suggestions.js'
 
 const NEW_CATEGORY = '__new__'
 
@@ -62,7 +64,7 @@ interface NewName {
  * without a tap, and those never reach this screen.
  */
 export function ReviewScreen() {
-  const { supabase, userId, categories, refresh, version } = useAppData()
+  const { supabase, userId, categories, refresh, version, status } = useAppData()
   const [rows, setRows] = useState<readonly PendingCandidate[] | null>(null)
   const [unreadable, setUnreadable] = useState<UnreadablePage | null>(null)
   const [total, setTotal] = useState(0)
@@ -132,6 +134,19 @@ export function ReviewScreen() {
     return hint === undefined ? null : { kind: 'similar', id: hint }
   }
   const categoryFor = (row: PendingCandidate) => picked[row.id] ?? suggestionFor(row)?.id ?? ''
+
+  const input = useMemo(
+    () =>
+      rows === null || status !== 'ready'
+        ? null
+        : {
+            rows: rows.map((r) => ({ id: r.id, merchant: r.merchant, amountCents: r.amount_cents, categoryId: r.category_id })),
+            categories,
+            learned: new Set(rules.keys()),
+          },
+    [rows, status, categories, rules],
+  )
+  const suggestions = useSuggestions(input, load)
 
   const act = async (row: PendingCandidate, action: 'approve' | 'reject', created?: NewName) => {
     setBusy(row.id)
@@ -239,6 +254,8 @@ export function ReviewScreen() {
           budget until you approve it.
         </p>
       </header>
+
+      <SuggestBar status={suggestions.status} waiting={suggestions.waiting} onSuggest={suggestions.suggest} />
 
       <div ref={said} tabIndex={-1} className="space-y-4 outline-none empty:hidden">
         {note !== null ? <Alert tone="success">{note}</Alert> : null}

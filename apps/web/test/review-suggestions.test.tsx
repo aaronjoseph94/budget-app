@@ -1,7 +1,8 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
+import type { CategoriseBrief } from '@budget/schema'
 import { ReviewScreen } from '../src/screens/ReviewScreen.js'
-import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
+import { aiStatusReply, createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 
 /** Review's suggested categories (plan A21). Shop names are invented. */
@@ -18,6 +19,32 @@ function seeded(): FakeSupabase {
     ],
   })
 }
+
+/** The same queue with nothing suggested yet. */
+function fresh(): FakeSupabase {
+  const fake = seeded()
+  fake.tables.ingest_candidates[0] = { ...fake.tables.ingest_candidates[0]!, category_id: null, category_source: null }
+  return fake
+}
+
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
+
+/** AI on through the receipts key, and a helper that files each shop as `files` says. */
+function aiOn(fake: FakeSupabase, files: Readonly<Record<string, string>> = { 'CORNER MARKET': 'Groceries', 'LITWARE COFFEE': 'Coffee' }) {
+  const [gemini, ...rest] = fake.functions.aiStatus.services
+  fake.functions.aiStatus = aiStatusReply({ services: [{ ...gemini!, source: 'secret', hint: 'abcd' }, ...rest] })
+  fake.functions.ai = (body) => {
+    if (body['action'] !== 'run') return json(fake.functions.aiStatus)
+    const brief = body['data'] as CategoriseBrief
+    const suggestions = brief.rows.flatMap((r) => {
+      const alias = brief.categories.find((c) => c.name === files[r.shop])?.alias
+      return alias === undefined ? [] : [{ i: r.i, alias, confidence: 'high' }]
+    })
+    return json({ ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: JSON.stringify({ suggestions }) })
+  }
+}
+
+const runs = (fake: FakeSupabase) => fake.functions.calls.filter((c) => c['action'] === 'run')
 
 async function row(merchantRaw: string) {
   const item = (await screen.findByText(merchantRaw)).closest('li')
@@ -89,5 +116,83 @@ describe('Review shows suggested categories', () => {
     expect((await picker('SQ *LITWARE COFFEE')).value).toBe('c2')
     expect(fake.rpcCalls).toEqual([])
     expect(fake.tables.ingest_candidates[1]!.category_id ?? null).toBeNull()
+  })
+})
+
+describe('Review asks the AI for categories', () => {
+  it('asks by itself when AI is on, once, and stores what comes back as suggestions', async () => {
+    const fake = fresh()
+    aiOn(fake)
+    renderScreen(<ReviewScreen />, fake)
+
+    expect(await screen.findByText(/Suggested a category for 2 rows\. Check each before you approve it\./)).toBeTruthy()
+    expect((await row('CORNER MARKET #12')).getByText('✨ Suggested: Groceries')).toBeTruthy()
+    expect((await picker('SQ *LITWARE COFFEE')).value).toBe('c2')
+    expect(runs(fake)).toHaveLength(1)
+    expect(fake.rpcCalls.map((c) => c.name)).not.toContain('approve_candidate')
+    expect(fake.tables.ingest_candidates.map((r) => [r.status, r.category_source])).toEqual([['pending', 'model'], ['pending', 'model']])
+  })
+
+  it('does not ask by itself again about rows it already asked about on this device', async () => {
+    const fake = fresh()
+    aiOn(fake, {})
+    renderScreen(<ReviewScreen />, fake)
+    expect(await screen.findByText(/no suggestion it was sure of/)).toBeTruthy()
+    cleanup()
+
+    renderScreen(<ReviewScreen />, fake)
+    await screen.findByRole('button', { name: /Suggest categories/ })
+    expect(runs(fake)).toHaveLength(1)
+  })
+
+  it('with AI off, asks nothing by itself and offers the button', async () => {
+    const fake = fresh()
+    renderScreen(<ReviewScreen />, fake)
+    await screen.findByRole('button', { name: /Suggest categories/ })
+    expect(runs(fake)).toEqual([])
+    expect(fake.rpcCalls).toEqual([])
+  })
+
+  it('asks on the tap, too', async () => {
+    const fake = fresh()
+    aiOn(fake)
+    window.localStorage.setItem('budget.review.suggest-asked', JSON.stringify(['p1', 'p2']))
+    renderScreen(<ReviewScreen />, fake)
+    fireEvent.click(await screen.findByRole('button', { name: /Suggest categories/ }))
+    expect(await screen.findByText(/Suggested a category for 2 rows/)).toBeTruthy()
+    expect(runs(fake)).toHaveLength(1)
+  })
+
+  it('without 0018, leaves Review as it was with one line, and never asks the AI', async () => {
+    const fake = fresh()
+    aiOn(fake)
+    delete fake.rpcReplies['suggest_candidate_categories']
+    renderScreen(<ReviewScreen />, fake)
+
+    expect(await screen.findByText(/Suggested categories need a one-time update\./)).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'See One-time updates' }).getAttribute('href')).toBe('#/help/updates')
+    expect(runs(fake)).toEqual([])
+    expect(screen.queryByRole('button', { name: /Suggest categories/ })).toBeNull()
+    fireEvent.change(await picker('CORNER MARKET #12'), { target: { value: 'c1' } })
+    fireEvent.click((await row('CORNER MARKET #12')).getByRole('button', { name: /Approve/ }))
+    expect(await screen.findByText(/^Added\./)).toBeTruthy()
+  })
+
+  it('without the helper, says so in one line when asked', async () => {
+    const fake = fresh()
+    fake.functions.ai = null
+    renderScreen(<ReviewScreen />, fake)
+    fireEvent.click(await screen.findByRole('button', { name: /Suggest categories/ }))
+    expect(await screen.findByText(/Suggested categories need a one-time update\./)).toBeTruthy()
+    expect(screen.getByText('SQ *LITWARE COFFEE')).toBeTruthy()
+  })
+
+  it('sends nothing while Share shop names is off', async () => {
+    const fake = fresh()
+    aiOn(fake)
+    fake.tables.ai_settings.push({ user_id: 'u1', share_shop_names: false })
+    renderScreen(<ReviewScreen />, fake)
+    expect(await screen.findByText(/Suggestions are off while Share shop names is off\./)).toBeTruthy()
+    expect(runs(fake)).toEqual([])
   })
 })
