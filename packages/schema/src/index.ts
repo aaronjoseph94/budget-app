@@ -41,6 +41,7 @@ export {
   parseReceiptReply,
   type ReceiptFailure,
   type ReceiptOutcome,
+  type ReceiptPhoto,
   type ReceiptReading,
 } from './receipt.js'
 

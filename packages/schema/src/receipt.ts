@@ -24,6 +24,16 @@ const ReplySchema = z.object({
   date: IsoDateSchema.nullable(),
 })
 
+/**
+ * A receipt photo as the app sends it, to the AI helper's `receipt` task or
+ * to read-receipt: the shrunk JPEG's base64 body and its type. Nothing else
+ * goes with it (plan §3.6).
+ */
+export interface ReceiptPhoto {
+  readonly image: string
+  readonly mimeType: 'image/jpeg' | 'image/png' | 'image/webp'
+}
+
 export interface ReceiptReading {
   readonly merchant: string | null
   /** e.g. "14.23" — parse with parseAmountToCents, never Number(). */
