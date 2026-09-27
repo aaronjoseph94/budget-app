@@ -390,3 +390,5 @@ export { sizeBand, type Flow, type SizeBand, type SizeBandInput, type SizeBandOu
  * not arithmetic; routing it through core keeps that rule simple.
  */
 export { isoDate } from '@budget/money-primitives'
+
+export { askWindow, type AskPeriod, type AskWindow, type AskWindowInput } from './ask-window.js'
