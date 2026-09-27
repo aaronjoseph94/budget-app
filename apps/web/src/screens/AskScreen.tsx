@@ -189,6 +189,7 @@ export function AskScreen({ topic }: { topic: HelpTopic | null }) {
           <Button
             variant="ghost"
             size="sm"
+            className="min-h-11"
             onClick={() => {
               forgetQuestions()
               setRecent([])
