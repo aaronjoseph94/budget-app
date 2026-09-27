@@ -52,6 +52,13 @@ describe('readQuickEntry', () => {
     expect((await read(garbled, '3 coffees 12')).help).toEqual({ kind: 'unreadable' })
   })
 
+  it('never asks the AI for a day the parser would not guess, and keeps none it gives', async () => {
+    const { fake, briefs } = answering({ amount: null, category: 'c1', date: '2026-09-03', shop: null, flow: null })
+    const r = await read(fake, 'lunch 14 9/3')
+    expect(briefs.map((b) => b.missing)).toEqual([['category', 'flow']])
+    expect(r.fill).toMatchObject({ date: '', categoryId: 'c-coffee', byAi: new Set(['category']) })
+  })
+
   it('keeps what the parser read when the helper is not installed', async () => {
     const fake = createFakeSupabase()
     fake.functions.ai = null

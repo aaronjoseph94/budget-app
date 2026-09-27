@@ -2,8 +2,8 @@
  * Just type it, the app's side (plan A22, §3.9; F47; ADR 0005 §7).
  *
  * statement-parsers reads the line first, with no network. Only when it
- * leaves the amount, the day, the shop or the category empty is the AI
- * helper's `quick_add` task asked, about those fields alone; its answer
+ * leaves the amount, the shop or the category empty is the AI helper's
+ * `quick_add` task asked, about those fields alone; its answer
  * is parsed at the model-responses boundary (parseQuickAddReply), which
  * keeps an amount only when it is one of the owner's own words. What comes
  * back only fills the typed form: nothing here writes anything.
@@ -58,9 +58,12 @@ export async function readQuickEntry(supabase: SupabaseClient, input: QuickInput
     categoryId: parsed.categoryId ?? '',
     byAi: new Set(),
   }
+  // Never the day: the parser leaves it empty only when the line named one
+  // it will not guess (9/10, a day after today, two days), so the AI must
+  // not guess it either (F47), and a model's date is a number ADR 0005 §7
+  // does not let it supply.
   const empty: QuickAddField[] = [
     ...(parsed.amount === null ? (['amount'] as const) : []),
-    ...(parsed.date === null ? (['date'] as const) : []),
     ...(parsed.shop === null ? (['shop'] as const) : []),
     ...(parsed.categoryId === null ? (['category'] as const) : []),
   ]
