@@ -32,7 +32,7 @@ describe('checkinWords', () => {
 
   it('recaps a week over its budgets, cheers the fall from the week before, and suggests the limit', () => {
     expect(checkinWords({ facts: OVER, tone: 'cheerleader' })).toEqual({
-      recap: 'Last week you spent {{A.now}} on everyday things, {{A.change}} than the week before. That went {{A.over}} past your weekly budgets.',
+      recap: 'Last week you spent {{A.now}} on everyday things. That went {{A.over}} past your weekly budgets.',
       win: 'You spent {{A.change}} than the week before. That’s a win!',
       tryThis: 'Try keeping {{B.name}} under {{B.limit}} next week.',
       goal: 'Every lighter week brings {{D.name}} closer. Keep going!',

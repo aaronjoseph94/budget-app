@@ -70,7 +70,10 @@ export type CheckinWords = CheckinReply
 
 const as = (text: string, name: string, letter: string) => text.replaceAll(`{{${name}.`, `{{${letter}.`)
 
-/** The check-in in the app's own words: every part but the recap, which needs a covered week, and the goal line, which needs a goal. */
+/**
+ * The check-in in the app's own words: every part but the recap, which needs a covered week, and the goal line, which needs a goal.
+ * When the win is the fall from the week before, the recap leaves that change to the win rather than say it twice.
+ */
 export function checkinWords(input: { readonly facts: CheckinFacts; readonly tone: Tone }): CheckinWords {
   const { facts, tone } = input
   const spent = facts.recap === null ? null : facts.facts[facts.recap]!
@@ -78,7 +81,7 @@ export function checkinWords(input: { readonly facts: CheckinFacts; readonly ton
     spent === null
       ? null
       : as(
-          CHECKIN_RECAP['change' in spent.figures ? 'compared' : 'plain'][tone] +
+          CHECKIN_RECAP['change' in spent.figures && facts.win?.reason !== 'less' ? 'compared' : 'plain'][tone] +
             ('left' in spent.figures ? CHECKIN_RECAP.kept[tone] : 'over' in spent.figures ? CHECKIN_RECAP.over[tone] : ''),
           'R',
           facts.recap!,

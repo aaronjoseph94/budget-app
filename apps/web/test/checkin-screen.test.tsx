@@ -16,7 +16,7 @@ function go(hash: string) {
 const whole = (tag: string, s: string) => (_: string, el: Element | null) => el?.tagName === tag && el.textContent === s
 const section = (name: string) => screen.getByRole('heading', { name, level: 2 }).closest('div.rounded-xl') as HTMLElement
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
-const RECAP = 'Last week you spent $226.09 on everyday things, $23.91 less than the week before. That went $16.09 past your weekly budgets.'
+const RECAP = 'Last week you spent $226.09 on everyday things. That went $16.09 past your weekly budgets.'
 
 beforeAll(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
