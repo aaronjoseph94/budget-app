@@ -127,6 +127,8 @@ export type Figure =
   | { readonly unit: 'change'; readonly value: Cents; readonly direction: Change['direction'] }
   | { readonly unit: 'date'; readonly value: IsoDate }
   | { readonly unit: 'month'; readonly value: IsoDate }
+  /** A month years away, such as a goal's or the debt-free date: drawn with its year. */
+  | { readonly unit: 'month_year'; readonly value: IsoDate }
   | { readonly unit: 'count'; readonly value: number }
   /** Whole hours of a goal's unit. */
   | { readonly unit: 'hours'; readonly value: number }

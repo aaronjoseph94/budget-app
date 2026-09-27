@@ -10,7 +10,7 @@
 import { Fragment } from 'react'
 import type { Figure } from '@budget/core'
 import { renderSegments } from '@budget/savings-coach'
-import { formatBasisPoints, formatCents, formatChange, formatDayMonth, formatMonthName, formatWholeDollars } from '../format.js'
+import { formatBasisPoints, formatCents, formatChange, formatDayMonth, formatMonthName, formatMonthTitle, formatWholeDollars } from '../format.js'
 
 /** One figure as the owner reads it. */
 export function figureText(figure: Figure): string {
@@ -23,6 +23,8 @@ export function figureText(figure: Figure): string {
       return formatDayMonth(figure.value)
     case 'month':
       return formatMonthName(figure.value)
+    case 'month_year':
+      return formatMonthTitle(figure.value)
     case 'count':
       return String(figure.value)
     case 'hours':
