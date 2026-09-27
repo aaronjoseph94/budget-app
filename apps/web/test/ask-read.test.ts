@@ -48,6 +48,13 @@ describe('readQuestion', () => {
     })
   })
 
+  it('hides a long number in a category name, as every AI task does', async () => {
+    const { fake, briefs } = answering(PLAN)
+    const card: Category = { id: 'c-card', name: 'Visa 4111222233334444', kind: 'debt', sort_order: 2, weekly_budget_cents: null }
+    await readQuestion(fake.client, { question: 'How much on my card?', asOf: '2026-09-27', categories: [card], topics: TOPICS, chip: false })
+    expect(briefs[0]!.categories).toEqual([{ alias: 'c1', name: 'Visa #', list: 'debt' }])
+  })
+
   it('keeps no amount the owner did not write', async () => {
     const { fake } = answering({ ...PLAN, amount: '400' })
     expect((await read(fake, 'What if I cut dining out by $40?')).read).toMatchObject({ amountText: null })

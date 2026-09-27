@@ -75,6 +75,8 @@ describe('answerQuery (F48)', () => {
     expect(ask({ intent: 'debt_free' })).toMatchObject({ main: { say: 'no_debts' } })
     const card = { name: 'Card', startMonth: d('2026-01-01'), startingBalanceCents: 500_000, minimumPaymentCents: 1_000, aprBasisPoints: 2_000 }
     expect(ask({ intent: 'debt_free' }, { debts: { debts: [card], extraPayments: [] } })).toMatchObject({ main: { say: 'never_paid_off', names: ['Card'] } })
+    // With the car loan paid off in December, the card alone still never is: no date is given.
+    expect(ask({ intent: 'debt_free' }, { debts: { debts: [car, card], extraPayments: [] } })).toMatchObject({ main: { say: 'never_paid_off', names: ['Card'] } })
     expect(ask({ intent: 'debt_free' }, { debts: null })).toEqual({ status: 'missing', what: 'debts' })
   })
 
