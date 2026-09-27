@@ -122,12 +122,12 @@ describe('the Coach’s flight card', () => {
     expect(screen.getByRole('link', { name: 'Add a goal' }).getAttribute('href')).toBe('#/savings')
   })
 
-  it('opens the check-in address as one line until the check-in is built', async () => {
+  it('opens the check-in at its address, not the Coach', async () => {
     go('/coach/checkin')
     renderScreen(<Shell />, withGoal(1_265_000))
 
-    expect(await screen.findByText('The Sunday check-in is on its way. Everything else works as before.')).toBeTruthy()
-    expect(screen.queryByRole('heading', { name: 'Flight training' })).toBeNull()
+    expect(await screen.findByRole('heading', { name: 'Your Sunday check-in', level: 1 })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Coach', level: 1 })).toBeNull()
   })
 })
 

@@ -21,6 +21,7 @@ const AiSettingsScreen = lazy(() => import('./screens/AiSettingsScreen.js').then
 const AddScreen = lazy(() => import('./screens/AddScreen.js').then((m) => ({ default: m.AddScreen })))
 const CalendarScreen = lazy(() => import('./screens/CalendarScreen.js').then((m) => ({ default: m.CalendarScreen })))
 const CoachScreen = lazy(() => import('./screens/CoachScreen.js').then((m) => ({ default: m.CoachScreen })))
+const CheckinScreen = lazy(() => import('./screens/CheckinScreen.js').then((m) => ({ default: m.CheckinScreen })))
 const DebtsScreen = lazy(() => import('./screens/DebtsScreen.js').then((m) => ({ default: m.DebtsScreen })))
 const ForecastScreen = lazy(() => import('./screens/ForecastScreen.js').then((m) => ({ default: m.ForecastScreen })))
 const HelpScreen = lazy(() => import('./screens/HelpScreen.js').then((m) => ({ default: m.HelpScreen })))
@@ -272,8 +273,8 @@ function Screens({ screen, param }: { screen: Screen; param: string | null }) {
       {screen === 'forecast' ? <ForecastScreen /> : null}
       {screen === 'reports' ? <ReportsScreen month={param} /> : null}
       {screen === 'coach' && param === null ? <CoachScreen /> : null}
-      {/* The check-in arrives with A20; its address already reads. */}
-      {screen === 'coach' && param !== null ? <NotYet name="The Sunday check-in" /> : null}
+      {/* nav.ts reads no other param on the Coach. */}
+      {screen === 'coach' && param === 'checkin' ? <CheckinScreen /> : null}
       {isBuilt(screen) ? null : <NotYet name={SCREEN_NAME[screen]} />}
     </Suspense>
   )

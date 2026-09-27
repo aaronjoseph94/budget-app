@@ -1,0 +1,148 @@
+import { useMemo, useState } from 'react'
+import { checkinFacts, checkinWords, mergeCheckin, type Checkin, type CheckinFacts } from '@budget/savings-coach'
+import { useAppData } from '../app-data.js'
+import { formatCents, formatDateRange, formatDayMonth } from '../format.js'
+import { setWeeklyBudget } from '../ledger.js'
+import { hashOf } from '../nav.js'
+import { Button } from '../components/ui/button.js'
+import { HelpButton } from '../help/HelpButton.js'
+import { Section } from '../forecast/parts.js'
+import { useCoachRead } from '../coach/facts.js'
+import { checkinFigures, type CheckinFigures } from '../coach/checkin.js'
+import { useCoachSettings } from '../coach/settings.js'
+import { CoachText } from '../coach/words.js'
+
+const link = 'inline-flex min-h-11 items-center font-medium underline underline-offset-4'
+
+/**
+ * The Sunday check-in (plan §2.4, A20): last week's recap and a win, the
+ * week's biggest everyday charges to mark Planned, Impulse or Needed, one
+ * thing to try with a one-tap weekly limit, and a line for the goals.
+ *
+ * Every figure is core's (F42); the words are the app's own, in the
+ * owner's tone, so the check-in is whole with AI off. The weekly limit is
+ * written only when its button is tapped, through the Week's own save.
+ * Without 0017 only the questions give way, to one line.
+ */
+export function CheckinScreen() {
+  const read = useCoachRead()
+  const { categories } = useAppData()
+  const tone = useCoachSettings()?.tone ?? null
+  const figures = useMemo((): CheckinFigures | 'failed' | null => {
+    if (read === null || read === 'failed') return read
+    try {
+      return checkinFigures(read, categories, [], [])
+    } catch {
+      return 'failed'
+    }
+  }, [read, categories])
+  const { goals, mainGoal } = useAppData()
+  const facts = useMemo(() => {
+    if (figures === null || figures === 'failed') return null
+    const active = goals.filter((g) => g.status === 'active')
+    const named = active.map((g) => ({ id: g.id, name: g.name, main: g.id === mainGoal?.id, hasHours: g.unit_cost_cents !== null }))
+    return checkinFacts({ ...figures, goals: named, nameOf: (id) => categories.find((c) => c.id === id)?.name ?? 'A category' })
+  }, [figures, goals, mainGoal, categories])
+  const words = useMemo(() => (facts === null || tone === null ? null : mergeCheckin({ own: checkinWords({ facts, tone }), ai: null })), [facts, tone])
+
+  return (
+    <div className="space-y-4">
+      <a href={hashOf({ screen: 'coach', param: null })} className={`${link} text-sm`}>
+        ← Coach
+      </a>
+      <div className="flex items-center gap-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Your Sunday check-in</h1>
+        <HelpButton screen="coach" topic="checkin" />
+      </div>
+      {figures === 'failed' ? <p className="text-muted-foreground">The check-in did not load. Reload to try again.</p> : null}
+      {figures === null || figures === 'failed' || facts === null || words === null ? (
+        figures === 'failed' ? null : <p className="text-muted-foreground">Looking back at last week…</p>
+      ) : (
+        <>
+          <p className="text-sm text-muted-foreground">The week of {formatDateRange(figures.recap.week.start, figures.recap.week.end)}</p>
+          <LastWeek figures={figures} facts={facts} words={words} />
+          <TryThis figures={figures} facts={facts} words={words} />
+        </>
+      )}
+    </div>
+  )
+}
+
+/** A part's words, drawn as text with the engine's figures in its blanks. */
+function Said({ part, facts }: { part: Checkin[keyof Checkin]; facts: CheckinFacts }) {
+  if (part === null) return null
+  return <CoachText text={part.text} facts={{ ...facts.facts, ...facts.goals }} />
+}
+
+function LastWeek({ figures, facts, words }: { figures: CheckinFigures; facts: CheckinFacts; words: Checkin }) {
+  const { recap } = figures
+  return (
+    <Section title="Last week">
+      {recap.status === 'not_covered' ? (
+        <p>
+          {recap.coveredFrom === null
+            ? 'There are no records yet, so there is no recap this week. Import a statement and it starts with your first whole week.'
+            : `Your records start on ${formatDayMonth(recap.coveredFrom)}, so last week isn’t all there. The recap starts with your first whole week.`}
+        </p>
+      ) : (
+        <p className="[overflow-wrap:anywhere]">
+          <Said part={words.recap} facts={facts} />
+        </p>
+      )}
+      <p className="font-medium [overflow-wrap:anywhere]">
+        <Said part={words.win} facts={facts} />
+      </p>
+    </Section>
+  )
+}
+
+/**
+ * One thing to try, and the commitment: the suggested limit written as the
+ * category's weekly budget when, and only when, the button is tapped.
+ */
+function TryThis({ figures, facts, words }: { figures: CheckinFigures; facts: CheckinFacts; words: Checkin }) {
+  const { supabase, categories, refresh } = useAppData()
+  const [state, setState] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle')
+  const { limit } = figures
+  const name = limit === null ? null : (categories.find((c) => c.id === limit.categoryId)?.name ?? null)
+  const commit = async () => {
+    if (limit === null) return
+    setState('saving')
+    try {
+      await setWeeklyBudget(supabase, limit.categoryId, limit.limitCents)
+      setState('saved')
+      // Re-reads the categories, which carry the weekly budgets, so the Week shows it.
+      await refresh()
+    } catch {
+      setState('failed')
+    }
+  }
+  return (
+    <Section title="One thing to try">
+      <p className="[overflow-wrap:anywhere]">
+        <Said part={words.tryThis} facts={facts} />
+      </p>
+      {limit === null || name === null ? null : (
+        <div className="space-y-2 rounded-lg bg-muted/60 p-3">
+          <p className="font-medium [overflow-wrap:anywhere]">
+            Keep {name} under <span className="tnum">{formatCents(limit.limitCents)}</span> next week?
+          </p>
+          {state === 'saved' ? (
+            <p role="status">
+              Done: {name}’s weekly budget is {formatCents(limit.limitCents)}. It shows on the{' '}
+              <a href={hashOf({ screen: 'week', param: null })} className={link}>
+                Week
+              </a>
+              .
+            </p>
+          ) : (
+            <Button onClick={() => void commit()} disabled={state === 'saving'}>
+              {limit.from === 'budget' ? 'Yes, keep my weekly budget' : 'Yes, set it as my weekly budget'}
+            </Button>
+          )}
+          {state === 'failed' ? <p role="alert">The weekly budget wasn’t saved. Try again, or set it on the Week.</p> : null}
+        </div>
+      )}
+    </Section>
+  )
+}

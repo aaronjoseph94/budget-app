@@ -3,6 +3,7 @@ import type { Screen } from '../nav.js'
 import { Icon } from '../components/ui/icons.js'
 import { cn } from '../lib/cn.js'
 import { SCREEN_HELP } from './screen-help.js'
+import type { HelpTopic } from './topics.js'
 
 // The sheet and the articles are fetched when a ? is first pressed, so the
 // Month's first load carries the button alone.
@@ -10,13 +11,14 @@ const HelpSheet = lazy(() => import('./HelpSheet.js').then((m) => ({ default: m.
 
 /**
  * The ? beside a screen's title (plan §2.1): that screen's Help article in
- * a bottom sheet. It takes the colour of the title beside it, so it reads
+ * a bottom sheet, or `topic`'s where a screen has two parts, as the Coach
+ * and its check-in do. It takes the colour of the title beside it, so it reads
  * on each screen's own band, and is a 44px target on every pointer.
  * Closing the sheet puts focus back on it. The sheet itself returns focus
  * to what held it when it opened, and a tap in Safari does not focus the
  * button it taps, so that was the screen, not the ?.
  */
-export function HelpButton({ screen, className }: { screen: Exclude<Screen, 'help'>; className?: string }) {
+export function HelpButton({ screen, topic, className }: { screen: Exclude<Screen, 'help'>; topic?: HelpTopic; className?: string }) {
   const [open, setOpen] = useState(false)
   const button = useRef<HTMLButtonElement>(null)
   const was = useRef(false)
@@ -42,7 +44,7 @@ export function HelpButton({ screen, className }: { screen: Exclude<Screen, 'hel
       </button>
       {open ? (
         <Suspense fallback={null}>
-          <HelpSheet topic={SCREEN_HELP[screen]} onClose={() => setOpen(false)} />
+          <HelpSheet topic={topic ?? SCREEN_HELP[screen]} onClose={() => setOpen(false)} />
         </Suspense>
       ) : null}
     </>
