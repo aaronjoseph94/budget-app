@@ -22,6 +22,7 @@ import {
   formatMonthTitle,
   formatMonthName,
   formatDayMonth,
+  formatPlainAmount,
   localDateOf,
   todayIso,
 } from '../src/format.js'
@@ -177,6 +178,18 @@ describe('the smaller display helpers', () => {
     expect(formatForInput(0)).toBe('0.00')
     expect(formatForInput(-41_275)).toBe('-412.75')
     expect(formatForInput(null)).toBe('')
+  })
+
+  // A download's amounts (plan A19): what a spreadsheet reads as a number, and the same figure the screen shows.
+  it.each([
+    [123_456, '1234.56'],
+    [-3_274, '-32.74'],
+    [5, '0.05'],
+    [-5, '-0.05'],
+    [0, '0.00'],
+    [100_000_000, '1000000.00'],
+  ])('writes %i cents as the plain amount %s', (cents, plain) => {
+    expect(formatPlainAmount(cents)).toBe(plain)
   })
 
   it('gives today as a local ISO date', () => {

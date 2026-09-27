@@ -566,10 +566,19 @@ export function formatAmount(amountCents: number): string {
   return formatCents(amountCents).replace('$', '')
 }
 
+/**
+ * An amount as a spreadsheet reads a number: "1234.56", "-32.74", no symbol
+ * and no commas. A download writes it (plan A19), so the file holds the
+ * screen's own figure rather than one worked out again.
+ */
+export function formatPlainAmount(amountCents: number): string {
+  // The "$" follows a minus sign, so it is not always first.
+  return formatAmount(amountCents).replace(/,/g, '')
+}
+
 /** Cents as the text a person would type back in: "250.00", "-412.75", or "" for none. */
 export function formatForInput(cents: number | null): string {
-  // The "$" follows a minus sign, so it is not always first.
-  return cents === null ? '' : formatAmount(cents).replace(/,/g, '')
+  return cents === null ? '' : formatPlainAmount(cents)
 }
 
 /** A change from core (F26) in words: "$40.00 more", "$40.00 less" or "about the same". Display only. */
