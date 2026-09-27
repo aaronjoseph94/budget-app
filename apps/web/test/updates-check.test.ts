@@ -82,8 +82,8 @@ describe('checking the one-time updates', () => {
   it('asks for the helper’s new version when an older copy answers, and not for the same or a newer one', async () => {
     const fake = createFakeSupabase()
     for (const [version, state] of [
-      ['2026-09-25.4', 'old'], ['2026-09-24.9', 'old'], [undefined, 'old'], ['preview', 'old'],
-      ['2026-09-25.5', 'in'], ['2026-09-25.10', 'in'], ['2026-10-01.1', 'in'],
+      ['2026-09-25.5', 'old'], ['2026-09-24.9', 'old'], [undefined, 'old'], ['preview', 'old'],
+      ['2026-09-27.1', 'in'], ['2026-09-27.10', 'in'], ['2026-10-01.1', 'in'],
     ] as const) {
       fake.functions.ai = () => new Response(JSON.stringify({ ok: true, version }), { headers: { 'content-type': 'application/json' } })
       const checked = await checkUpdates(fake.client)
