@@ -84,3 +84,4 @@ export {
   type CheckinWords,
 } from './checkin-words.js'
 export { categoriseBatches, suggestionsOf, type CategoriseBatch, type CategoriseInput } from './categorise.js'
+export { ASK_CATALOGUE, matchQuestion, queryOf, readOf, type AskRead, type AskScreen, type IntentEntry, type MatchQuestionInput } from './ask.js'
