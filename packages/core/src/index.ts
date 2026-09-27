@@ -393,3 +393,5 @@ export { isoDate } from '@budget/money-primitives'
 
 export { askWindow, type AskPeriod, type AskWindow, type AskWindowInput } from './ask-window.js'
 export type { Answer, AnswerLine, AnswerSay, Lines, SpendingBase } from './answer-spending.js'
+export type { AskGoal, ForecastRead } from './answer-outlook.js'
+export { answerQuery, type AnswerQueryInput, type AskIntent, type AskQuery } from './answer-query.js'
