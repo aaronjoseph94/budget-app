@@ -2248,7 +2248,10 @@ works out every figure. The AI never sees a figure and never writes one.
   the Month's own sheet (`monthSheet`, planned bills for the whole month,
   F3): Income, Spent and Saved as the Month shows them, and the three
   largest Variable expenses. "What's left" is the Month's Left (F5) for this
-  month, a row's or the Variable total's, or the Week's for this week.
+  month, a row's or the Variable total's, or the Week's for this week. A
+  category with no budget has nothing left to tell, and the answer says to
+  set one: the workbook reads its Left against $0, which would call every
+  charge "over".
 - **Compare** uses F25's windows: a week, month or year still running
   against the same days before, one that is over whole against whole, and
   the last three months against the three before them. The change is

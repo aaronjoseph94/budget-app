@@ -17,7 +17,7 @@ import type { BudgetHistoryRow } from './budgets.js'
 import { type DateWindow, change } from './compare.js'
 import type { Figure } from './digest.js'
 import type { PlanHistoryRow } from './plans.js'
-import { type PeriodRow, type PeriodSheet, type WeekCategory, periodSheet, plansInEffect } from './period-sheet.js'
+import { type PeriodRow, type PeriodSheet, type WeekCategory, monthSheet, periodSheet, plansInEffect, weekSheet } from './period-sheet.js'
 import { type ShopEntry, shopRows } from './shops.js'
 import { SPENDING_LISTS, monthBounds } from './week.js'
 
@@ -196,4 +196,42 @@ export function topShopsIn(base: SpendingBase, window: DateWindow): Lines {
   }
   const ranked = [...net].map(([name, amount]) => ({ name, amount })).filter((r) => r.amount > 0).sort(byAmountThenName)
   return topLines(ranked, 'top_shops', 'no_shops')
+}
+
+/** The Month's own sheet explained (F48): Income, Spent and Saved as the Month shows them, and its three largest Variable expenses. */
+export function explainMonth(base: SpendingBase, month: IsoDate): Lines {
+  const sheet = monthSheet({ ...base, asOf: month, statementPeriodEnds: [], startingBalanceCents: null })
+  const { incomeCents, spentCents, savedCents } = sheet.summary
+  const ranked = sheet.blocks.variable.rows.map((r) => ({ name: r.name, amount: r.actualCents })).filter((r) => r.amount > 0).sort(byAmountThenName)
+  return {
+    main: {
+      say: 'month',
+      names: [],
+      figures: { month: { unit: 'month', value: monthBounds(month).start }, income: cents$(incomeCents), spent: cents$(spentCents), saved: cents$(savedCents) },
+    },
+    rows: topLines(ranked, 'row', 'row').rows,
+  }
+}
+
+/** What is left of a budget: the Month's Left (F5) this month, or the Week's this week. */
+export function budgetLeft(base: SpendingBase, week: boolean, ids: readonly string[]): Lines {
+  const common = { ...base, statementPeriodEnds: [], startingBalanceCents: null }
+  const sheet = week ? weekSheet(common) : monthSheet(common)
+  const leftOf = (remaining: Cents | null, names: readonly string[], all: boolean): AnswerLine => {
+    if (remaining === null) return { say: 'no_budget', names, figures: {} }
+    if (remaining < 0) return { say: all ? 'over_all' : 'over', names, figures: { over: cents$(cents(-remaining)) } }
+    return { say: all ? 'left_all' : 'left', names, figures: { left: cents$(remaining) } }
+  }
+  const spending = new Map(rowsOf(sheet).map((r) => [r.categoryId, r]))
+  const lines = ids.flatMap((id) => {
+    const row = spending.get(id)
+    const category = base.categories.find((c) => c.id === id) ?? unknown(id)
+    // Only spending has a Left; a question about pay or savings has none to give. A row
+    // with no budget has none either, though the workbook reads its Left against $0.
+    if (row === undefined || !SPENDING.has(category.kind)) return []
+    return [leftOf(row.budgetCents === null ? null : row.remainingCents, [row.name], false)]
+  })
+  const [main, ...rows] = lines
+  if (main === undefined) return { main: leftOf(sheet.blocks.variable.remainingTotalCents, [], true), rows: [] }
+  return { main, rows }
 }
