@@ -1,0 +1,165 @@
+import { useMemo, useState, type ReactNode } from 'react'
+import type { Answer } from '@budget/core'
+import { queryOf } from '@budget/savings-coach'
+import { useAppData } from '../app-data.js'
+import { useFunds } from '../funds.js'
+import { todayIso } from '../format.js'
+import { hashOf } from '../nav.js'
+import { Button } from '../components/ui/button.js'
+import { Input } from '../components/ui/form.js'
+import { Icon } from '../components/ui/icons.js'
+import { HelpButton } from '../help/HelpButton.js'
+import { ARTICLES } from '../help/articles.js'
+import type { HelpTopic } from '../help/topics.js'
+import { useCoachRead } from '../coach/facts.js'
+import { goalsForCore } from '../coach/goals.js'
+import { notSubscriptionsOf, useDismissals } from '../coach/dismissals.js'
+import { AnswerCard } from '../ask/AnswerCard.js'
+import { answerOf } from '../ask/answer.js'
+import { readQuestion, type QuestionRead, type ReadBy } from '../ask/read.js'
+import { suggestions } from '../ask/suggest.js'
+
+const link = 'inline-flex min-h-11 items-center font-medium underline underline-offset-4'
+const TOPICS = ARTICLES.map((a) => ({ id: a.id, title: a.title }))
+
+/** Why the app read the question itself, in one line with the one place that helps; nothing for a suggestion. */
+function ReadByApp({ by }: { by: ReadBy }): ReactNode {
+  if (by.by === 'ai' || by.why === 'chip') return null
+  const to = (href: string, words: string) => (
+    <a href={href} className={link}>
+      {words}
+    </a>
+  )
+  const why = by.why
+  const line =
+    why === 'unreadable' ? (
+      <>The AI’s reading didn’t make sense, so the app read your question itself.</>
+    ) : why.state === 'not_deployed' || why.state === 'needs_update' || why.state === 'helper_error' ? (
+      <>The AI helper needs a one-time update, so the app read your question itself. {to(hashOf({ screen: 'help', param: 'updates' }), 'See One-time updates')}</>
+    ) : why.state === 'not_set_up' ? (
+      <>The app read your question itself. {to(hashOf({ screen: 'ai', param: null }), 'Turn on free AI (2 minutes)')}</>
+    ) : why.state === 'off' ? (
+      <>AI is off, so the app read your question itself.</>
+    ) : why.state === 'limit_reached' || why.state === 'all_resting' || why.state === 'all_failed' ? (
+      <>The AI is resting, so the app read your question itself. {to(hashOf({ screen: 'help', param: 'ai-rests' }), 'Why?')}</>
+    ) : (
+      <>{why.sentence} The app read your question itself.</>
+    )
+  return <p className="text-sm text-muted-foreground">{line}</p>
+}
+
+/**
+ * Ask about your money (plan §2.7, A24): a question in the owner's own
+ * words, read by the AI into an intent (or by the app, with AI off), and
+ * answered by packages/core's answerQuery from the year the Coach reads.
+ * Every figure is core's; the words are the app's own; this screen formats.
+ * `topic` is the Help topic Ask was opened from ("Ask about this").
+ */
+export function AskScreen({ topic }: { topic: HelpTopic | null }) {
+  const { supabase, categories, goals } = useAppData()
+  const read = useCoachRead()
+  const funds = useFunds()
+  const coreGoals = useMemo(() => goalsForCore(goals, funds), [goals, funds])
+  const { dismissed } = useDismissals()
+  const [text, setText] = useState('')
+  const [asked, setAsked] = useState<{ readonly question: string; readonly read: QuestionRead } | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  const ask = async (question: string, chip: boolean) => {
+    if (question.trim() === '' || busy) return
+    setBusy(true)
+    try {
+      const reading = await readQuestion(supabase, { question, asOf: todayIso(), categories, topics: TOPICS, chip })
+      setAsked({ question: question.trim(), read: reading })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const intent = asked?.read.read.kind === 'intent' ? asked.read.read : null
+
+  const answer = useMemo((): Answer | 'loading' | 'failed' | null => {
+    if (intent === null) return null
+    if (read === 'failed') return 'failed'
+    if (read === null || coreGoals === null || dismissed === null) return 'loading'
+    try {
+      return answerOf(
+        { read, categories, goals: coreGoals, debts: null, notSubscriptions: notSubscriptionsOf(dismissed) },
+        queryOf(intent, null),
+      )
+    } catch {
+      return 'failed'
+    }
+  }, [intent, read, coreGoals, dismissed, categories])
+
+  const missingUpdate =
+    (typeof answer === 'object' && answer?.status === 'missing' && answer.what === 'forecast' && typeof read === 'object' && read?.forecast?.status === 'failed' && read.forecast.missingUpdate)
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Ask</h1>
+        <HelpButton screen="ask" />
+      </div>
+      <p className="text-sm text-muted-foreground">
+        Ask about your money in your own words. The app works out every figure from your own records.
+      </p>
+      <form
+        className="space-y-2"
+        onSubmit={(e) => {
+          e.preventDefault()
+          void ask(text, false)
+        }}
+      >
+        <label htmlFor="ask-question" className="sr-only">
+          Your question
+        </label>
+        <div className="flex gap-2">
+          <Input
+            id="ask-question"
+            className="min-w-0 flex-1"
+            placeholder="e.g. coffee in August?"
+            value={text}
+            maxLength={300}
+            autoComplete="off"
+            enterKeyHint="go"
+            onChange={(e) => setText(e.target.value)}
+          />
+          <Button type="submit" className="min-h-11 shrink-0" disabled={busy}>
+            <Icon name="sparkles" className="size-4" /> {busy ? 'Reading…' : 'Ask'}
+          </Button>
+        </div>
+      </form>
+
+      <div aria-live="polite" className="space-y-3">
+        {asked === null ? null : <ReadByApp by={asked.read.by} />}
+        {asked !== null && asked.read.read.kind !== 'intent' ? <p>I can’t answer that from your figures yet. Try one of the questions below.</p> : null}
+        {intent === null || asked === null ? null : answer === 'loading' ? (
+          <p className="text-sm text-muted-foreground">Working it out…</p>
+        ) : answer === 'failed' ? (
+          <p className="text-sm text-muted-foreground">Your records did not load, so this can’t be answered right now. Reload to try again; everything else still works.</p>
+        ) : answer === null ? null : (
+          <AnswerCard read={intent} by={asked.read.by} names={intent.categoryIds.map((id) => categories.find((c) => c.id === id)?.name ?? '')} answer={answer} missingUpdate={missingUpdate} />
+        )}
+      </div>
+
+      <Suggestions topic={topic} onAsk={(q) => void ask(q, true)} />
+    </div>
+  )
+}
+
+/** Questions the app answers by itself, so they work with AI off. */
+function Suggestions({ topic, onAsk }: { topic: HelpTopic | null; onAsk: (q: string) => void }) {
+  return (
+    <section aria-label="Suggested questions" className="space-y-2">
+      <h2 className="text-sm font-medium">Try asking</h2>
+      <div className="flex flex-wrap gap-2">
+        {suggestions(topic).map((q) => (
+          <Button key={q} variant="outline" size="sm" className="h-auto min-h-11 whitespace-normal text-left" onClick={() => onAsk(q)}>
+            {q}
+          </Button>
+        ))}
+      </div>
+    </section>
+  )
+}
