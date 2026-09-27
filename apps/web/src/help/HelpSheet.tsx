@@ -7,7 +7,8 @@ import type { HelpTopic } from './topics.js'
 /**
  * A screen's article in a bottom sheet: what it is and its steps, then
  * **Show me** for the whole article, with "You're done when…", "Stuck?"
- * and where to go next. Every built screen's topic has an article (the
+ * and where to go next, and **Ask about this**, which opens Ask with the
+ * screen as its subject (A24). Every built screen's topic has an article (the
  * tests hold it); were one missing, Show me would open the Help list.
  */
 export function HelpSheet({ topic, onClose }: { topic: HelpTopic; onClose: () => void }) {
@@ -22,6 +23,15 @@ export function HelpSheet({ topic, onClose }: { topic: HelpTopic; onClose: () =>
         >
           Show me
         </a>
+        {/* Ask's own ? has nothing further to ask about. */}
+        {topic === 'ask' ? null : (
+          <a
+            href={hashOf({ screen: 'ask', param: topic })}
+            className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-md border bg-card px-4 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground"
+          >
+            <span aria-hidden="true">✨</span> Ask about this
+          </a>
+        )}
       </div>
     </Sheet>
   )

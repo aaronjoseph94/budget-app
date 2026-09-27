@@ -45,8 +45,9 @@ export interface Address {
    * and the start month on the Year (`#/year/2026-01`, F14); a real day of a
    * pay period on Paycheck (`#/paycheck/2026-09-11`); a Monday on the Week
    * (`#/week/2026-09-21`); a committed topic id on Help (`#/help/updates`);
-   * `checkin` on the Coach. Null for the screen's own default, and on every
-   * other screen.
+   * `checkin` on the Coach; the Help topic Ask was opened from, "Ask about
+   * this" (`#/ask/forecast`). Null for the screen's own default, and on
+   * every other screen.
    */
   readonly param: string | null
 }
@@ -73,6 +74,7 @@ const PARAM: Partial<Record<Screen, (param: string) => boolean>> = {
   // A week is named by its Monday, so each week has one address.
   week: (p) => isDay(p) && weekBounds(isoDate(p)).start === p,
   help: (p) => HELP_TOPICS.some((t) => t === p),
+  ask: (p) => HELP_TOPICS.some((t) => t === p),
   coach: (p) => p === 'checkin',
 }
 

@@ -6,8 +6,8 @@ import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
 
 /**
- * The ways into Ask (plan A24): the Coach's ask box, and the last five
- * questions kept on this device.
+ * The ways into Ask (plan A24): the Coach's ask box, "Ask about this" in a
+ * screen's help sheet, and the last five questions kept on this device.
  * The Forecast's worked example, invented data only, with AI off.
  */
 const sentence = (text: string) => (_: string, el: Element | null) => el?.tagName === 'P' && el.textContent === text
@@ -29,6 +29,7 @@ beforeAll(async () => {
   // Each screen these tests open draws once first, so no find races a cold chunk (N87).
   await warmScreen('#/ask', 'Ask', { fake: forecastFakeWithGoals(), text: 'Try asking' })
   await warmScreen('#/coach', 'Coach', { fake: forecastFakeWithGoals(), text: 'Ask anything about your money' })
+  await warmScreen('#/forecast', 'Forecast')
   vi.useRealTimers()
 })
 beforeEach(() => {
@@ -54,6 +55,28 @@ describe('the Coach’s ask box', () => {
     expect(await screen.findByText(sentence(DINING))).toBeTruthy()
     expect(window.location.hash).toBe('#/ask')
     expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Your question' }).value).toBe('How much did I spend on dining out in August?')
+  })
+})
+
+describe('Ask about this', () => {
+  it('opens Ask from a screen’s help sheet, with that screen as its subject', async () => {
+    open('#/forecast')
+    fireEvent.click(await screen.findByRole('button', { name: 'Help with this screen' }))
+    const link = await screen.findByRole('link', { name: /Ask about this/ })
+    expect(link.getAttribute('href')).toBe('#/ask/forecast')
+
+    cleanup()
+    open('#/ask/forecast')
+    expect(await screen.findByText(/About: How the forecast works\./)).toBeTruthy()
+    const suggested = within(screen.getByRole('region', { name: 'Suggested questions' })).getAllByRole('button').map((b) => b.textContent)
+    expect(suggested.slice(0, 3)).toEqual(['Where will this month end?', 'How much is safe to spend today?', 'What if I saved $50 a month?'])
+  })
+
+  it('offers no Ask about this on Ask’s own help', async () => {
+    open('#/ask')
+    fireEvent.click(await screen.findByRole('button', { name: 'Help with this screen' }))
+    await screen.findByRole('link', { name: 'Show me' })
+    expect(screen.queryByRole('link', { name: /Ask about this/ })).toBeNull()
   })
 })
 

@@ -340,15 +340,16 @@ export const ARTICLES: readonly Article[] = [
     summary:
       'Ask a question in your own words, such as “How much did I spend on coffee in August?”, and get the answer from your own records: how much, against last time, where it went, your subscriptions, where the month ends, what is safe to spend, when you reach your goals, what a saving would do, and your debt-free date.',
     steps: [
-      'Open **Ask** from **More**, or type your question in the box at the bottom of the **Coach**.',
+      'Open **Ask** from **More**, type in the box at the bottom of the **Coach**, or press **Ask about this** in any screen’s **?**.',
       'Type your question and press **Ask**, or tap one of the questions under **Try asking**.',
       'Read **I read that as**, to check the app understood which categories and which days you meant.',
       'Read the answer: the figure, a sentence and, where there is one, the list under it.',
+      'For a what-if, change **A month’s saving** to see another amount; nothing is saved.',
       'Press the link under the answer, such as **Open the Forecast**, to see the whole of it.',
     ],
     done: 'you have your answer, and you know which days and categories it counts.',
     stuck:
-      'With free AI on, the AI reads your question (✨), and is sent only the question, today’s date, your category names and the Help titles: never an amount or a charge. It never works out the answer: the app does, from your records, the same way the Month, the Forecast and Savings do. With AI off, resting or not installed, the app reads the question itself, which works best with a category’s name and words like “this month” or “last week”. If it says “I can’t answer that from your figures yet”, try one of the questions it suggests. A question about days before your records says where they start: bring in an earlier statement on **Add**. Your last five questions are kept on this phone or computer only, and never sent anywhere; **Clear these** forgets them.',
+      'With free AI on, the AI reads your question (✨), and is sent only the question, today’s date, your category names and the Help titles: never an amount or a charge. It never works out the answer: the app does, from your records, the same way the Month, the Forecast and Savings do. With AI off, resting or not installed, the app reads the question itself, which works best with a category’s name and words like “this month” or “last week”. An amount the AI read is kept only when it is one you typed, and you can change it. Opened with **Ask about this**, Ask suggests that screen’s questions first. If it says “I can’t answer that from your figures yet”, try one of the questions it suggests. A question about days before your records says where they start: bring in an earlier statement on **Add**. Your last five questions are kept on this phone or computer only, and never sent anywhere; **Clear these** forgets them.',
     related: ['coach', 'forecast', 'free-ai', 'ai-sees'],
   },
   {

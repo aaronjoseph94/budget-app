@@ -4,6 +4,7 @@ import { createSupabase } from './supabase.js'
 import { NotConfigured, SignIn, useSession } from './auth.js'
 import { AppDataProvider, useAppData } from './app-data.js'
 import { hashOf, isBuilt, useAddress, type Screen } from './nav.js'
+import { HELP_TOPICS } from './help/topics.js'
 import { MonthScreen } from './screens/MonthScreen.js'
 import { MoreScreen } from './screens/MoreScreen.js'
 import { displayNameOf } from './profile.js'
@@ -280,7 +281,8 @@ function Screens({ screen, param }: { screen: Screen; param: string | null }) {
       {screen === 'ai' ? <AiSettingsScreen /> : null}
       {screen === 'forecast' ? <ForecastScreen /> : null}
       {screen === 'reports' ? <ReportsScreen month={param} /> : null}
-      {screen === 'ask' ? <AskScreen topic={null} /> : null}
+      {/* nav.ts reads Ask's param only as a committed Help topic. */}
+      {screen === 'ask' ? <AskScreen topic={HELP_TOPICS.find((t) => t === param) ?? null} /> : null}
       {screen === 'coach' && param === null ? <CoachScreen /> : null}
       {/* nav.ts reads no other param on the Coach. */}
       {screen === 'coach' && param === 'checkin' ? <CheckinScreen /> : null}

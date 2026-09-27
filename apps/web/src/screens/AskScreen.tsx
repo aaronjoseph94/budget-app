@@ -121,6 +121,7 @@ export function AskScreen({ topic }: { topic: HelpTopic | null }) {
   const missingUpdate =
     (typeof answer === 'object' && answer?.status === 'missing' && answer.what === 'debts' && debts === 'missing_update') ||
     (typeof answer === 'object' && answer?.status === 'missing' && answer.what === 'forecast' && typeof read === 'object' && read?.forecast?.status === 'failed' && read.forecast.missingUpdate)
+  const about = topic === null ? undefined : articleFor(topic)
 
   return (
     <div className="space-y-4">
@@ -129,7 +130,7 @@ export function AskScreen({ topic }: { topic: HelpTopic | null }) {
         <HelpButton screen="ask" />
       </div>
       <p className="text-sm text-muted-foreground">
-        Ask about your money in your own words. The app works out every figure from your own records.
+        {about === undefined ? 'Ask about your money in your own words.' : `About: ${about.title}.`} The app works out every figure from your own records.
       </p>
       <form
         className="space-y-2"
