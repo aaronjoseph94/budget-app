@@ -2385,3 +2385,32 @@ never edited; the comment has no effect on behaviour.
 
 **To settle:** say so in the next migration that touches
 `coach_answers`, with a `comment on column`.
+
+---
+
+## N102 — Review suggests categories only for the 300 rows it reads
+
+**Seen:** 2026-09-27, A21. `listPending` reads the oldest 300 rows
+waiting, and Suggest categories and Approve these N work on those. A
+first import larger than that leaves the rest unsuggested until some are
+approved and the rest load ("Approve some and the rest will load").
+
+**Why not fixed here:** the limit is PERF-1's, for drawing; reading more
+only to suggest would be a second read of the queue with its own paging.
+
+**To settle:** if a first import ever passes 300 rows, ask about the
+unread rows by a read of shops only (merchant, amount), paged.
+
+---
+
+## N103 — The similar-shop hint knows only shops with a learned rule
+
+**Seen:** 2026-09-27, A21. `similarMerchant` is offered the shops in
+`merchant_rules`. A charge moved on the Month with **Always file**
+unticked teaches no rule, so a shop filed that way is never hinted at.
+
+**Why not fixed here:** the rules are the owner's stated "file it this
+way"; a move without learning says the opposite, so hinting from it
+would be a guess about a guess.
+
+**To settle:** only if the owner asks for hints from every filed shop.
