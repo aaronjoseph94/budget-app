@@ -82,6 +82,25 @@ module.exports = {
       },
     },
     {
+      name: 'export-imports-nothing',
+      severity: 'error',
+      comment:
+        'report-export writes rows of text the app has already formatted into a file. It ' +
+        'imports nothing, not even the engine: a writer that can reach a figure will one ' +
+        'day work one out, and the file would then disagree with the screen (invariant 1).',
+      from: { path: '^packages/report-export/src' },
+      to: { pathNot: ['^packages/report-export/src'] },
+    },
+    {
+      name: 'app-loads-the-export-on-the-tap',
+      severity: 'error',
+      comment:
+        'The export is fetched only when Download CSV is tapped (plan A19), so it never ' +
+        'weighs on the first load. A static import would pull it into the screen\'s chunk.',
+      from: { path: '^apps/web/src' },
+      to: { path: '^packages/report-export/', dependencyTypesNot: ['dynamic-import', 'type-only'] },
+    },
+    {
       name: 'app-uses-package-entry-points-only',
       severity: 'error',
       comment:
@@ -192,7 +211,7 @@ module.exports = {
       from: { path: '^apps/web/(src|test)/' },
       to: {
         path: [
-          '^packages/(money-primitives|core|schema|statement-parsers|chart-specs|savings-coach)/src/',
+          '^packages/(money-primitives|core|schema|statement-parsers|chart-specs|savings-coach|report-export)/src/',
           'node_modules/(react|react-dom|zod|@supabase/supabase-js)/',
         ],
       },

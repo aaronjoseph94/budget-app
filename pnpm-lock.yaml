@@ -41,6 +41,9 @@ importers:
       '@budget/money-primitives':
         specifier: workspace:*
         version: link:../../packages/money-primitives
+      '@budget/report-export':
+        specifier: workspace:*
+        version: link:../../packages/report-export
       '@budget/savings-coach':
         specifier: workspace:*
         version: link:../../packages/savings-coach
@@ -116,6 +119,8 @@ importers:
   packages/golden-verification: {}
 
   packages/money-primitives: {}
+
+  packages/report-export: {}
 
   packages/savings-coach:
     dependencies:

@@ -203,6 +203,27 @@ export default tseslint.config(
     },
   },
   {
+    // report-export turns rows of text into a file and nothing more
+    // (CAPABILITY-MAP.md): the app formats every figure, and the app makes the
+    // download. So no clock, no page, no import; depcruise holds the imports
+    // too, and this names the globals it cannot see.
+    files: ['packages/report-export/src/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...NO_AMBIENT_STATE.map((rule) => ({ ...rule, message: rule.message.replace('packages/core', 'report-export') })),
+        ...NO_FLOAT_MONEY,
+      ],
+      'no-restricted-globals': [
+        'error',
+        ...['window', 'document', 'navigator', 'Blob', 'URL', 'fetch', 'localStorage'].map((name) => ({
+          name,
+          message: 'report-export returns text; the app makes the file and the download.',
+        })),
+      ],
+    },
+  },
+  {
     // Text a person typed or a statement carried is never markup (CLAUDE.md).
     // The one string the app may put into the page as markup is a chart from
     // chart-specs, which escapes as it builds; components/ui/chart.tsx is the
@@ -263,6 +284,7 @@ export default tseslint.config(
       'packages/statement-parsers/test/**/*.ts',
       'packages/chart-specs/test/**/*.ts',
       'packages/savings-coach/test/**/*.ts',
+      'packages/report-export/test/**/*.ts',
     ],
     rules: { 'no-restricted-syntax': ['error', ...NO_WEAK_ASSERTIONS] },
   },

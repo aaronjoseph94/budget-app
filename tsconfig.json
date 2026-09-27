@@ -6,6 +6,7 @@
     { "path": "./packages/core" },
     { "path": "./packages/chart-specs" },
     { "path": "./packages/savings-coach" },
+    { "path": "./packages/report-export" },
     { "path": "./packages/schema" },
     { "path": "./packages/statement-parsers" },
     { "path": "./apps/web" },
