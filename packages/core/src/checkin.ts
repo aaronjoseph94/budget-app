@@ -11,6 +11,9 @@
  */
 import { type Cents, type IsoDate, ZERO_CENTS, addDays, cents, sumCents } from '@budget/money-primitives'
 import { type Change, change } from './compare.js'
+import { completeMonths } from './history.js'
+import { monthActuals } from './month-actuals.js'
+import { usualMonth } from './notable.js'
 import { type PeriodEntry, type WeekCategory, weekSheet } from './period-sheet.js'
 import { weekBounds } from './week.js'
 
@@ -206,4 +209,53 @@ export function impulseShare(input: {
   const impulse = counted.filter((a) => a.answer === 'impulse').length
   const answers = counted.length
   return { from, to, answers, impulse, shareBp: answers === 0 ? null : Math.floor((impulse * 20_000 + answers) / (2 * answers)) }
+}
+
+export interface SuggestedLimit {
+  /** The recap's top category. */
+  readonly categoryId: string
+  readonly limitCents: Cents
+  /** Which bound set it: its usual week, last week, or the weekly budget already set. */
+  readonly from: 'usual' | 'last_week' | 'budget'
+  readonly lastWeekCents: Cents
+  /** Its usual month (F27); null with no complete month. */
+  readonly usualCents: Cents | null
+}
+
+const STEP = 500n
+
+/**
+ * F42: a weekly limit for the category that cost most last week: the lower
+ * of last week's Actual and its usual month × 12 ÷ 52, rounded down to $5,
+ * at least $5, and never above its own weekly budget. None when the week is
+ * not covered or nothing was spent.
+ */
+export function suggestedWeeklyLimit(input: CheckinInput): SuggestedLimit | null {
+  const recap = weeklyRecap(input)
+  if (recap.status !== 'ready' || recap.top === null) return null
+  const { categoryId, spentCents: lastWeekCents } = recap.top
+  const { months } = completeMonths(input)
+  const actuals = monthActuals({ categories: input.categories, entries: input.entries, months }).months
+  const usualCents = usualMonth({
+    totals: actuals.map((m) => {
+      const actual = m.actuals.get(categoryId)
+      // monthActuals lists every category given, so this cannot miss.
+      if (actual === undefined) throw new RangeError(`Category ${categoryId} is missing from the months read`)
+      return { month: m.month, cents: actual }
+    }),
+  }).usualCents
+
+  // Both sides over 52, so the usual week is never rounded before the two are compared.
+  const lastWeek = BigInt(lastWeekCents) * 52n
+  const usualWeek = usualCents === null ? null : BigInt(usualCents) * 12n
+  const lower = usualWeek !== null && usualWeek < lastWeek ? usualWeek : lastWeek
+  const stepped = (lower / (52n * STEP)) * STEP
+  let limitCents = cents(Number(stepped < STEP ? STEP : stepped))
+  let from: SuggestedLimit['from'] = lower === lastWeek ? 'last_week' : 'usual'
+  const budget = input.categories.find((c) => c.id === categoryId)?.weeklyBudgetCents
+  if (budget !== undefined && budget !== null && budget < limitCents) {
+    limitCents = cents(budget)
+    from = 'budget'
+  }
+  return { categoryId, limitCents, from, lastWeekCents, usualCents }
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { isoDate } from '@budget/money-primitives'
-import { checkinWeek, impulseShare, questionsToAsk, weeklyRecap, type CheckinInput } from '../src/index.js'
+import { checkinWeek, impulseShare, questionsToAsk, suggestedWeeklyLimit, weeklyRecap, type CheckinInput } from '../src/index.js'
 
 /** Suite tests, worked by hand from F42 (docs/formula-decisions.md). Sunday 27 September 2026. */
 
@@ -147,5 +147,42 @@ describe('impulseShare (F42)', () => {
   it('leaves out an answer from before the eight weeks, and has no share with no answers', () => {
     expect(share([answer('2026-07-27', 'impulse'), answer('2026-09-21', 'planned')])).toMatchObject({ answers: 1, impulse: 0, shareBp: 0 })
     expect(share([])).toMatchObject({ answers: 0, impulse: 0, shareBp: null })
+  })
+})
+
+describe('suggestedWeeklyLimit (F42)', () => {
+  /** Dining out's Actual in each of March to August, its six complete months before September. */
+  const usual = (monthly: number) => ['03', '04', '05', '06', '07', '08'].map((m) => row(`2026-${m}-10`, -monthly, 'dining'))
+  const limit = (over: Partial<CheckinInput> = {}, monthly = 30_000) => suggestedWeeklyLimit(input({ entries: [...WEEK, ...BEFORE, ...usual(monthly)], ...over }))
+  const noBudget = CATEGORIES.map((c) => (c.id === 'dining' ? { ...c, weeklyBudgetCents: null } : c))
+
+  it('offers the top category the lower of last week and its usual week, rounded down to $5', () => {
+    // $300.00 × 12 ÷ 52 = $69.23…, under last week’s $104.20: $65.00, under the $70.00 budget.
+    expect(limit()).toEqual({ categoryId: 'dining', limitCents: 6_500, from: 'usual', lastWeekCents: 10_420, usualCents: 30_000 })
+  })
+
+  it('takes last week when it is lower, and never offers more than the weekly budget already set', () => {
+    // $500.00 × 12 ÷ 52 = $115.38…, over $104.20: $100.00, which the $70.00 budget caps.
+    expect(limit({}, 50_000)).toMatchObject({ limitCents: 7_000, from: 'budget' })
+    expect(limit({ categories: noBudget }, 50_000)).toMatchObject({ limitCents: 10_000, from: 'last_week' })
+  })
+
+  it('offers at least $5.00', () => {
+    // $20.00 × 12 ÷ 52 = $4.61…, which rounds down to $0.00.
+    expect(limit({ categories: noBudget }, 2_000)).toMatchObject({ limitCents: 500, from: 'usual' })
+  })
+
+  it('does not round the usual week before comparing it', () => {
+    // $451.53 × 12 ÷ 52 = $104.199…: under $104.20 by a fraction of a cent, so the usual week is the lower, still $100.00.
+    expect(limit({ categories: noBudget }, 45_153)).toMatchObject({ limitCents: 10_000, from: 'usual' })
+  })
+
+  it('stands on last week alone with no complete month', () => {
+    expect(limit({ categories: noBudget, historyStart: d('2026-09-01') })).toEqual({ categoryId: 'dining', limitCents: 10_000, from: 'last_week', lastWeekCents: 10_420, usualCents: null })
+  })
+
+  it('offers nothing when the week is not covered or nothing was spent', () => {
+    expect(limit({ historyStart: d('2026-09-22') })).toBeNull()
+    expect(suggestedWeeklyLimit(input({ entries: usual(30_000) }))).toBeNull()
   })
 })

@@ -277,6 +277,7 @@ export {
   checkinWeek,
   impulseShare,
   questionsToAsk,
+  suggestedWeeklyLimit,
   weeklyRecap,
   type CheckinAnswer,
   type CheckinInput,
@@ -284,6 +285,7 @@ export {
   type CheckinWeek,
   type ImpulseShare,
   type RecapBudget,
+  type SuggestedLimit,
   type WeeklyRecap,
 } from './checkin.js'
 
