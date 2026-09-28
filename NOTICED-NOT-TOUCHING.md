@@ -2135,6 +2135,8 @@ assertion.
 **Left:** `help-button`, `heading-order`, `period-switch` and `shell`
 walk several screens, or test the shell's own loading, in their first
 test, so one warm screen would not cover them. None has failed yet.
+*(2026-09-28, A25)* `shell` failed the same way, on the Coach, and so
+did `checkin-dot`; both now warm the Coach in `beforeAll` (N113).
 
 **To settle:** if one of them fails the same way, warm each screen its
 first test opens.
@@ -2560,3 +2562,56 @@ reads as a helper needing its new copy, and answers the question itself.
 **Why not fixed here:** it is N104's cause, shared by every AI task.
 
 **To settle:** with N104.
+
+---
+
+## N113 — Full gate runs failed on a first find while another worktree ran its gates
+
+**Seen:** 2026-09-28, A25. About half of this slice's full gate runs
+failed `coverage` (and twice `golden`) on one screen test's first find,
+never the same one twice running: the Forecast's first test, Ask about
+this from a help sheet, the Shell opening the Coach, Try in this order,
+the Coach's cards, the check-in dot and the Month's forecast line. Each
+passed alone in 500 to 650 ms. Throughout, a verification worktree
+(`/tmp/claude-0/verify-wt`) ran its own full gates back to back on the
+same four cores, holding the load average near 9 to 10. The same tree
+went GREEN on the next run each time, with nothing changed.
+
+**Why not fixed here:** the tests are other slices', A25 changes nothing
+they draw, and the only remedy at hand, a longer wait, is one the rules
+forbid.
+
+**To settle:** as N98 says, make each lazy screen's first draw do less;
+and run one set of gates at a time on a shared machine.
+
+---
+
+## N114 — Two reads Getting started makes cannot tell a missing update from a lost connection
+
+**Seen:** 2026-09-28, A25. `getMonthBalance` and `hasImportedStatement`
+throw a plain `Error` with the describer's sentence, not `ReadRefused`,
+so `needsOneTimeUpdate` cannot see their code. Getting started says
+"could not be read just now" and links One-time updates either way,
+which is right for both, but it cannot say which.
+
+**Why not fixed here:** `getMonthBalance` is the Month's read too, and
+what it throws is part of the Month's messages; changing it is its own
+change.
+
+**To settle:** throw `ReadRefused` with the code from both, as `readAll`
+does, and let each screen say "needs a one-time update" where that is
+the reason.
+
+---
+
+## N115 — Nothing is left behind nav.ts's NOT_BUILT
+
+**Seen:** 2026-09-28, A25. Getting started was the last screen whose
+address read before its slice landed. `NOT_BUILT` is now empty, so
+`isBuilt` is always true and App's `NotYet` line is never drawn.
+
+**Why not fixed here:** taking the mechanism out touches the bars, More
+and App, which is a change of its own, and a later slice may want it.
+
+**To settle:** remove `NOT_BUILT`, `isBuilt` and `NotYet` in the
+whole-app review (A27) if nothing is planned to use them.
