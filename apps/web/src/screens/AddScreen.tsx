@@ -94,8 +94,10 @@ export function AddScreen() {
               mode === m ? 'bg-card shadow-sm' : 'text-muted-foreground',
             )}
           >
-            {/* shrink-0: at 320px "Statement" filled its tab and squeezed its icon to 9px (DT-6). */}
-            <Icon name={m === 'statement' ? 'file' : m === 'photo' ? 'camera' : 'pencil'} className="size-4 shrink-0" />
+            {/* shrink-0: at 320px "Statement" filled its tab and squeezed its icon to 9px (DT-6).
+              Below 360px the icons go, all three alike: kept, the icon and the word
+              spilled 3.5px past both sides of the tab (DT-6-N1). */}
+            <Icon name={m === 'statement' ? 'file' : m === 'photo' ? 'camera' : 'pencil'} className="hidden size-4 shrink-0 min-[360px]:block" />
             {m === 'statement' ? 'Statement' : m === 'photo' ? 'Photo' : 'Type it'}
           </button>
         ))}

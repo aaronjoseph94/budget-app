@@ -176,6 +176,20 @@ describe('AddScreen, focus while it saves (FE-6)', () => {
   })
 })
 
+describe('AddScreen, its tabs at 320 px (DT-6-N1)', () => {
+  // jsdom lays nothing out; the preview measured "Statement" and its icon
+  // 3.5 px past both sides of its tab at 320 px, and whole from 360.
+  it('shows the three icons from 360 px only, so each word fits its tab', async () => {
+    renderScreen(<AddScreen />, seeded())
+    const tabs = await screen.findAllByRole('tab')
+    expect(tabs).toHaveLength(3)
+    for (const tab of tabs) {
+      const icon = tab.querySelector('svg')!.classList
+      expect([icon.contains('hidden'), icon.contains('min-[360px]:block'), icon.contains('shrink-0')], tab.textContent ?? '').toEqual([true, true, true])
+    }
+  })
+})
+
 describe('AddScreen, its tabs from the keyboard (FE-15)', () => {
   it('is one stop in the tab order, moved along by the arrow keys, Home and End', async () => {
     renderScreen(<AddScreen />, seeded())
