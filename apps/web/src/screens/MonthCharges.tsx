@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { timeEquivalent } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { recategoriseTransaction, type LedgerRow } from '../ledger.js'
@@ -10,6 +10,7 @@ import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { NativeSelect } from '../components/ui/form.js'
 import { cn } from '../lib/cn.js'
+import { useFocusDrawn } from '../lib/return-focus.js'
 
 /** Charges drawn before "Show all" (PERF-4). */
 const FIRST = 30
@@ -73,6 +74,8 @@ export function MonthCharges({
   // 232 ms to open on a phone (PERF-4).
   const [all, setAll] = useState(false)
   const shown = all ? charges : charges.slice(0, FIRST)
+  const list = useRef<HTMLUListElement>(null)
+  const focusFrom = useFocusDrawn(list, shown.length)
   return (
     <Sheet
       title={name}
@@ -104,7 +107,7 @@ export function MonthCharges({
             : null}
         </p>
       ) : (
-        <ul aria-label="Charges" className="divide-y">
+        <ul ref={list} aria-label="Charges" className="divide-y">
           {shown.map((c) => (
             <li key={c.id} className="px-4 py-3">
               <div className="flex items-start gap-3">
@@ -152,7 +155,14 @@ export function MonthCharges({
       )}
       {shown.length < charges.length ? (
         <div className="border-t p-4">
-          <Button variant="outline" className="w-full" onClick={() => setAll(true)}>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => {
+              focusFrom(FIRST)
+              setAll(true)
+            }}
+          >
             Show all {charges.length}
           </Button>
         </div>

@@ -24,6 +24,7 @@ import { Button } from '../components/ui/button.js'
 import { Input, NativeSelect } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { cn } from '../lib/cn.js'
+import { useFocusDrawn } from '../lib/return-focus.js'
 import { navigate } from '../nav.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { ApproveAll } from '../review/ApproveAll.js'
@@ -88,6 +89,8 @@ export function ReviewScreen() {
   // disabled while it ran, so focus had fallen to the page; it goes here
   // instead, which also reads out what happened (FE-6).
   const said = useRef<HTMLDivElement>(null)
+  const list = useRef<HTMLUListElement>(null)
+  const focusFrom = useFocusDrawn(list, drawn)
 
   const load = useCallback(async () => {
     const read = ++reads.current
@@ -329,7 +332,7 @@ export function ReviewScreen() {
         </Card>
       ) : null}
 
-      <ul className="space-y-3">
+      <ul ref={list} className="space-y-3">
         {(rows ?? []).slice(0, drawn).map((row) => {
           const suggestion = picked[row.id] === undefined ? suggestionFor(row) : null
           return (
@@ -351,7 +354,14 @@ export function ReviewScreen() {
       </ul>
 
       {rows !== null && rows.length > drawn ? (
-        <Button variant="outline" className="w-full" onClick={() => setDrawn((n) => n + PAGE)}>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={() => {
+            focusFrom(drawn)
+            setDrawn((n) => n + PAGE)
+          }}
+        >
           {rows.length - drawn > PAGE ? `Show the next ${PAGE}` : `Show the last ${rows.length - drawn}`}
         </Button>
       ) : null}

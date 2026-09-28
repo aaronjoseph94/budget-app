@@ -189,6 +189,22 @@ describe('MonthCharges, a busy category (PERF-4)', () => {
     expect(sheet.getAllByRole('button', { name: /^Move to…/ })).toHaveLength(42)
     expect(sheet.queryByRole('button', { name: /^Show all/ })).toBeNull()
   })
+
+  it('moves focus to the first charge it drew, inside the sheet, as its button goes (PERF-10)', async () => {
+    const fake = seeded()
+    for (let i = 0; i < 40; i += 1) {
+      fake.tables.transactions.push(tx(`g${i}`, `2026-09-${String(1 + (i % 28)).padStart(2, '0')}`, -(100 + i), 'groceries', `SHOP ${i}`))
+    }
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+    await screen.findByRole('region', { name: 'Variable expenses' })
+    const sheet = openRow('Variable expenses', 'Groceries')
+
+    const more = sheet.getByRole('button', { name: 'Show all 42' })
+    more.focus()
+    fireEvent.click(more)
+    expect(document.activeElement).toBe(sheet.getAllByRole('button', { name: /^Move to…/ })[30])
+    expect(screen.getByRole('dialog').contains(document.activeElement)).toBe(true)
+  })
 })
 
 describe('a charge in the main goal’s time (A08, D29)', () => {
