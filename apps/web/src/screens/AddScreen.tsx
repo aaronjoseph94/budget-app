@@ -623,10 +623,18 @@ function PhotoEntry() {
   const [date, setDate] = useState('')
   const [busy, setBusy] = useState(false)
   const [outcome, setOutcome] = useState<Outcome | null>(null)
+  const [tried, setTried] = useState(0)
   const amountError = useId()
 
   const cents = parseMoneyInput(amount)
-  const ready = cents !== null && cents > 0 && merchant.trim().length > 0 && /^\d{4}-\d{2}-\d{2}$/.test(date)
+  // Named as Type it names them: a photo read without a date, or not read
+  // at all, left Send to review greyed out with no reason given (FE-8).
+  const needed = [
+    merchant.trim().length === 0 ? 'where it was' : null,
+    cents === null || cents <= 0 ? 'the total spent' : null,
+    !/^\d{4}-\d{2}-\d{2}$/.test(date) || date > todayIso() ? 'a date no later than today' : null,
+  ].filter((n): n is string => n !== null)
+  const ready = needed.length === 0
 
   const onPhoto = async (file: File) => {
     const preview = URL.createObjectURL(file)
@@ -650,11 +658,13 @@ function PhotoEntry() {
     setAmount('')
     setDate('')
     setOutcome(null)
+    setTried(0)
   }
 
   const send = async () => {
+    if (!ready) return setTried((n) => n + 1)
     if (accountId === null) return setOutcome({ ok: false, message: NO_ACCOUNT })
-    if (!ready || cents === null) return
+    if (cents === null) return
     setBusy(true)
     setOutcome(null)
     try {
@@ -754,11 +764,13 @@ function PhotoEntry() {
           <CardContent className="pt-5">
             <form
               className="space-y-4"
+              noValidate
               onSubmit={(e) => {
                 e.preventDefault()
                 void send()
               }}
             >
+              <p className="text-xs text-muted-foreground">Every field is needed.</p>
               <Field label="Where">
                 <Input value={merchant} maxLength={120} onChange={(e) => setMerchant(e.target.value)} required />
               </Field>
@@ -778,9 +790,10 @@ function PhotoEntry() {
                 </Field>
               </div>
               <NotMoney amount={amount} cents={cents} id={amountError} />
-              <Button type="submit" size="lg" className="w-full" disabled={!ready || busy}>
+              <Button type="submit" size="lg" className="w-full" disabled={busy}>
                 {busy ? 'Sending…' : 'Send to review'}
               </Button>
+              {tried > 0 && !ready ? <StillNeeded key={tried} needed={needed} /> : null}
               {outcome !== null ? <Alert tone={outcome.ok ? 'success' : 'error'}>{outcome.message}</Alert> : null}
               {outcome?.ok === true ? (
                 <Button variant="outline" className="w-full" onClick={() => navigate('review')}>

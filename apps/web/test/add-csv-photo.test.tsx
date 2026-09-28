@@ -89,6 +89,41 @@ describe('AddScreen, a receipt photo', () => {
   })
 })
 
+describe('AddScreen, a receipt photo not read (FE-8)', () => {
+  const real = { create: URL.createObjectURL, revoke: URL.revokeObjectURL }
+  beforeEach(() => {
+    URL.createObjectURL = () => 'blob:receipt'
+    URL.revokeObjectURL = () => undefined
+  })
+  afterEach(() => {
+    cleanup()
+    URL.createObjectURL = real.create
+    URL.revokeObjectURL = real.revoke
+  })
+
+  it('keeps Send to review pressable, and says what is still needed when it is pressed too soon', async () => {
+    const fake = createFakeSupabase()
+    renderScreen(<AddScreen />, fake)
+    fireEvent.click(await screen.findByRole('tab', { name: /Photo/ }))
+    pick('Take or choose a receipt photo', new File(['not an image'], 'receipt.jpg', { type: 'image/jpeg' }))
+    await screen.findByText('That file could not be opened as a photo.')
+    expect(screen.getByText('Every field is needed.')).toBeTruthy()
+
+    const send = screen.getByRole<HTMLButtonElement>('button', { name: 'Send to review' })
+    expect(send.disabled).toBe(false)
+    fireEvent.click(send)
+    const missing = await screen.findByText('Still needed: where it was, the total spent and a date no later than today.')
+    expect(missing.getAttribute('role')).toBe('alert')
+    expect(document.activeElement).toBe(missing)
+
+    fireEvent.change(screen.getByLabelText('Where'), { target: { value: 'FARMERS MARKET' } })
+    fireEvent.change(screen.getByLabelText('Total spent'), { target: { value: '12.50' } })
+    fireEvent.click(send)
+    expect(await screen.findByText('Still needed: a date no later than today.')).toBeTruthy()
+    expect(fake.rpcCalls).toEqual([])
+  })
+})
+
 describe('AddScreen, a file the phone cannot read (CR-7)', () => {
   afterEach(cleanup)
 
