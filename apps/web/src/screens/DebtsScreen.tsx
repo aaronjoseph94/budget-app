@@ -40,8 +40,8 @@ export function DebtsScreen() {
     }
   }, [ready])
   return (
-    <div className="-mx-4 space-y-4 bg-debt-page px-4 pb-6 text-debt-ink md:mx-0 md:rounded-xl">
-      <header className="-mx-4 bg-debt-banner px-4 py-5 md:rounded-t-xl">
+    <div className="-mx-4 max-[359px]:-mx-3 space-y-4 bg-debt-page px-4 max-[359px]:px-3 pb-6 text-debt-ink md:mx-0 md:rounded-xl">
+      <header className="-mx-4 max-[359px]:-mx-3 bg-debt-banner px-4 max-[359px]:px-3 py-5 md:rounded-t-xl">
         {/* The banner's only words: large, where white reads at 3.5 to one. */}
         <div className="flex flex-wrap items-center gap-1 text-white">
           <h1 className="font-serif text-4xl italic">Debt payoff</h1>

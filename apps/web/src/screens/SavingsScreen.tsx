@@ -155,7 +155,7 @@ export function SavingsScreen() {
 
   return (
     <div className="space-y-4">
-      <header className="-mx-4 bg-savings-banner px-4 py-5 text-savings-ink md:mx-0 md:rounded-xl">
+      <header className="-mx-4 max-[359px]:-mx-3 bg-savings-banner px-4 max-[359px]:px-3 py-5 text-savings-ink md:mx-0 md:rounded-xl">
         <div className="flex flex-wrap items-center gap-1">
           <h1 className="font-serif text-4xl italic">Savings goals</h1>
           <HelpButton screen="savings" />

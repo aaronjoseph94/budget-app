@@ -72,7 +72,7 @@ export function CalendarScreen({ month }: { month: string | null }) {
 
   return (
     <div className="space-y-4">
-      <header className="-mx-4 flex flex-wrap items-center justify-between gap-x-2 gap-y-3 bg-calendar-band px-4 py-4 md:mx-0 md:rounded-xl">
+      <header className="-mx-4 max-[359px]:-mx-3 flex flex-wrap items-center justify-between gap-x-2 gap-y-3 bg-calendar-band px-4 max-[359px]:px-3 py-4 md:mx-0 md:rounded-xl">
         <div>
           <MonthTitle>{formatMonthTitle(start)}</MonthTitle>
           <p className="mt-1 text-sm font-medium text-calendar-pill-ink">Bill calendar</p>

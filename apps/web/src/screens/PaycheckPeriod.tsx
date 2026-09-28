@@ -133,7 +133,7 @@ export function PaycheckPeriod({
 
   return (
     <>
-      <header className="-mx-4 flex flex-wrap items-center justify-between gap-2 bg-paycheck-band px-4 py-4 text-paycheck-ink md:mx-0 md:rounded-xl">
+      <header className="-mx-4 max-[359px]:-mx-3 flex flex-wrap items-center justify-between gap-2 bg-paycheck-band px-4 max-[359px]:px-3 py-4 text-paycheck-ink md:mx-0 md:rounded-xl">
         <div>
           <div className="flex flex-wrap items-center gap-1">
             <h1 className="text-2xl font-semibold tracking-tight">

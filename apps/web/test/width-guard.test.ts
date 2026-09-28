@@ -120,3 +120,27 @@ describe('a title and its help button', () => {
     expect(offenders).toEqual([])
   })
 })
+
+/**
+ * The page's side gutter is 16 px, and 12 below 360 px (plan §9), which
+ * gave the Month's tables the room they lacked at 320 (N66). A band that
+ * bleeds to the screen's edges takes back exactly the gutter, so each
+ * `-mx-4` has its narrow twin, or it would run 4 px past the screen.
+ */
+describe('the gutter below 360 px', () => {
+  const app = Object.entries(sources).find(([path]) => path.endsWith('/App.tsx'))![1]
+
+  it('is 12 px on the page', () => {
+    expect(app).toMatch(/pt-screen pb-safe mx-auto w-full px-4 [^']*max-\[359px\]:px-3/)
+  })
+
+  it('is taken back exactly by every band that bleeds to the edge', () => {
+    const offenders = Object.entries(sources).flatMap(([path, text]) =>
+      [...text.matchAll(/(["'`])([^"'`]*)\1/g)]
+        .map((m) => m[2]!.split(/\s+/))
+        .filter((tokens) => tokens.includes('-mx-4') && !tokens.includes('max-[359px]:-mx-3'))
+        .map((tokens) => `${path}: ${tokens.join(' ')}`),
+    )
+    expect(offenders).toEqual([])
+  })
+})

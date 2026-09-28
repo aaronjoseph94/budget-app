@@ -230,7 +230,7 @@ export function MonthScreen({ month }: { month: string | null }) {
   return (
     <div className="space-y-4">
       <PeriodSwitch current="month" />
-      <header className="-mx-4 flex flex-wrap items-center justify-between gap-2 bg-title-band px-4 py-4 md:mx-0 md:rounded-xl">
+      <header className="-mx-4 max-[359px]:-mx-3 flex flex-wrap items-center justify-between gap-2 bg-title-band px-4 max-[359px]:px-3 py-4 md:mx-0 md:rounded-xl">
         <MonthTitle>{formatMonthTitle(start)}</MonthTitle>
         {/* The ? sits with the header's buttons, as in the plan's sketch: beside
           the title it broke "September 2026" onto two lines at 320px. With the
@@ -577,7 +577,7 @@ export function Block({
       aria-label={heading}
       className={cn('overflow-hidden rounded-xl border bg-card shadow-sm', tone.rule, className)}
     >
-      <div className={cn('flex flex-wrap items-baseline justify-between gap-x-3 px-4 py-3', tone.band, tone.ink)}>
+      <div className={cn('flex flex-wrap items-baseline justify-between gap-x-3 px-4 py-3 max-[359px]:px-3', tone.band, tone.ink)}>
         <h2 className="text-sm font-semibold uppercase tracking-wide">{heading}</h2>
         <p>
           <Figure className="text-lg font-bold">{formatCents(block.actualTotalCents)}</Figure>
@@ -607,16 +607,18 @@ export function Block({
         </p>
       ) : (
         // A table wider than its card scrolls rather than clip a column. On
-        // a desktop the four cards take the workbook's smaller table type.
+        // a desktop the four cards take the workbook's smaller table type;
+        // below 360 px a 13 px type and 12 px edges keep every column in
+        // view in both of the last column's modes (N66).
         <div className="overflow-x-auto">
-          <table className="w-full text-sm xl:text-xs">
+          <table className="w-full text-sm xl:text-xs max-[359px]:text-[0.8125rem]">
             <thead className={cn(tone.header, tone.ink)}>
               <tr>
-                <th scope="col" className="py-1.5 pl-4 pr-1 text-left text-xs font-medium">
+                <th scope="col" className="py-1.5 pl-4 pr-1 text-left text-xs font-medium max-[359px]:pl-3">
                   Category
                 </th>
                 {[columns.budget, 'Actual', ...(third === null ? [] : [third === 'vs' && compare !== undefined ? compare.label : third])].map((name) => (
-                  <th key={name} scope="col" className="px-1 py-1.5 text-right text-xs font-medium last:pr-4">
+                  <th key={name} scope="col" className="px-1 py-1.5 text-right text-xs font-medium last:pr-4 max-[359px]:last:pr-3">
                     {name}
                   </th>
                 ))}
@@ -631,7 +633,7 @@ export function Block({
                   onClick={onOpen === undefined ? undefined : () => onOpen(r.categoryId)}
                   className={cn('border-t', onOpen !== undefined && 'cursor-pointer hover:bg-accent/60', tone.rule)}
                 >
-                  <th scope="row" className="py-2 pl-4 pr-1 text-left font-normal [overflow-wrap:anywhere]">
+                  <th scope="row" className="py-2 pl-4 pr-1 text-left font-normal [overflow-wrap:anywhere] max-[359px]:pl-3">
                     {onOpen === undefined ? (
                       r.name
                     ) : (
@@ -687,7 +689,7 @@ export function Block({
                     and Left was cut off. */}
                   <td
                     className={cn(
-                      'tnum whitespace-nowrap px-1 py-2 text-right last:pr-4',
+                      'tnum whitespace-nowrap px-1 py-2 text-right last:pr-4 max-[359px]:last:pr-3',
                       r.actualCents < 0 && 'text-spend',
                     )}
                   >
@@ -697,7 +699,7 @@ export function Block({
                     ) : null}
                   </td>
                   {third === null ? null : (
-                    <td className="tnum whitespace-nowrap py-2 pl-1 pr-4 text-right">
+                    <td className="tnum whitespace-nowrap py-2 pl-1 pr-4 text-right max-[359px]:pr-3">
                       {third === 'vs' ? (
                         <VsCell change={changes?.get(r.categoryId)} empty={isEmpty(r)} />
                       ) : (

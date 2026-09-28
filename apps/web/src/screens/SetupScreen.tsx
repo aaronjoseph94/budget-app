@@ -77,9 +77,9 @@ export function SetupScreen() {
   const schedules = usePaySchedules()
 
   return (
-    <div className="-mx-4 bg-setup-canvas pb-6 md:mx-0 md:overflow-hidden md:rounded-xl">
+    <div className="-mx-4 max-[359px]:-mx-3 bg-setup-canvas pb-6 md:mx-0 md:overflow-hidden md:rounded-xl">
       <NameBand />
-      <div className="space-y-6 px-4 pt-5">
+      <div className="space-y-6 px-4 pt-5 max-[359px]:px-3">
         {/* Not before the first load, when every account reads as empty. */}
         {version > 0 && categories.length < FEW_CATEGORIES ? <StarterCard onAdded={setAdded} /> : null}
         {added !== null ? <StarterAdded count={added} /> : null}
@@ -263,7 +263,7 @@ function NameBand() {
   }
 
   return (
-    <header className="bg-setup-band px-4 pb-5 pt-3 text-white">
+    <header className="bg-setup-band px-4 pb-5 pt-3 text-white max-[359px]:px-3">
       <button
         type="button"
         onClick={() => navigate('more')}
