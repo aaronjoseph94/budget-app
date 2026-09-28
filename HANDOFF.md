@@ -118,80 +118,73 @@ starting balance typed each month, savings kept by transfers, pay periods
 from the pay schedule); the 2026-09-24 list, and "do not wait for my
 approval" on the plan.
 
-## 3. The owner's setup — do these in this order
+## 3. What the owner does, in this order
 
 Supabase project ref: `bnodrfghxbavlopxkgju`. More detail for each step is
 in `docs/setup.md`.
 
-**Step 1 — done 2026-09-24.** The owner pasted `0003` to `0014` ("the
-pasting to supabase is done"). Kept below as the record, and for rebuilding
-the project from scratch.
+**Already done (2026-09-24): `0001` to `0014`.** You pasted `0003` to
+`0014` ("the pasting to supabase is done"), and `0001` and `0002` before
+that. Do not run them again.
 
-Supabase
-dashboard → **SQL Editor** → **New query**. Open the first file below on
-GitHub (branch `main-tnlcto`, folder `supabase/migrations`), copy all of it,
-paste, press **Run**, and wait for "Success. No rows returned." Then a new
-query for the next file. **One at a time, in this order, all twelve:**
+**Merging to `main` comes first, and is safe.** `main` deploys itself when
+it changes. Nothing the app needs to open depends on the new updates:
+until you do the three steps below, everything that worked before still
+works, and each new part says in one line that it needs a one-time
+update, with a link to Help. This was checked screen by screen with each
+update missing in turn (A28).
 
-| # | File | What it adds |
-|---|---|---|
-| 1 | `0003_save_import_atomically.sql` | Saving an import in one go |
-| 2 | `0004_one_path_into_the_ledger.sql` | Approving, rules that learn, budgets, the goal, PDF imports |
-| 3 | `0005_category_kinds.sql` | Which of the workbook's lists each category is on |
-| 4 | `0006_recategorise.sql` | Moving a saved charge to another category |
-| 5 | `0007_statement_periods.sql` | The dates each statement covered |
-| 6 | `0008_category_budgets.sql` | Budgets and goals typed on the Month |
-| 7 | `0009_category_plans.sql` | Each bill's monthly amount and day paid |
-| 8 | `0010_month_balances.sql` | Each month's starting bank balance |
-| 9 | `0011_pay_schedules.sql` | When each income pays |
-| 10 | `0012_dismiss_unreadable_lines.sql` | Dismissing a line the reader could not read |
-| 11 | `0013_savings_funds.sql` | Savings funds and their balances |
-| 12 | `0014_debts.sql` | Debts and extra payments |
+**Then three things, about 15 minutes, once. Easiest on a computer.** In
+the app, **Help → One-time updates** checks each one and has **Copy**
+buttons, so there is no need to open GitHub.
 
-`0001` and `0002` are already applied; do not run them again. If one says
-something other than "Success", stop there and do not merge: nothing is
-lost, and the message says which line. Do not use `supabase db push` unless
-you first run `supabase migration repair --status applied 0001 0002
---project-ref bnodrfghxbavlopxkgju` (the CLI does not know 0001 and 0002
-were applied by hand).
+1. **Paste the four new database updates, one at a time.** Supabase →
+   **SQL Editor** → **New query**. In the app, Help → One-time updates →
+   **Copy** beside `0015_savings_goals_order.sql`. Paste, press **Run**,
+   and wait for "Success. No rows returned." Then a new query for
+   `0016_ai_foundation.sql`, then `0017_coach_memory.sql`, then
+   `0018_category_suggestions.sql`. If one says anything other than
+   "Success", stop there: nothing is lost, and the message says which line.
+2. **Paste the AI helper.** Supabase → **Edge Functions** → **Deploy a new
+   function** → **Via Editor**. Name it exactly `ai`. In the app, **Copy**
+   beside "The AI helper", paste it over everything in the editor, keep
+   **Enforce JWT verification** on, and press **Deploy**. There are no new
+   secrets: `GEMINI_API_KEY` and `EXTRA_ORIGINS` are reused if you set them
+   for receipt photos.
+3. **Turn on free AI.** In the app: More → **AI settings** → **Get a free
+   key**. Google AI Studio opens in a new tab: **Create API key**, copy it,
+   come back, paste it, and press **Save & test**. You should see "Works ·
+   key ending …abcd". If you set `GEMINI_API_KEY` for receipts earlier,
+   the screen already says "AI is on" and there is nothing to paste.
 
-**Step 2 — merge `main-tnlcto` into `main`, only after Step 1.** On GitHub:
-**Pull requests → New pull request**, base `main`, compare `main-tnlcto`,
-**Create pull request**, wait for the green check, then **Merge**. `main`
-deploys itself, so merging before Step 1 would put a site live that asks
-for tables that do not exist yet.
+Then **Check again** on One-time updates says "All done".
 
-**Step 3 — Cloudflare Pages** (replaces Netlify). **Workers & Pages →
-Create → Pages → Connect to Git →** `aaronjoseph94/budget-app`. Project name
-`aaron-budget-app`, production branch `main`, framework preset None, build
-command `pnpm --filter @budget/app-client build`, output directory
-`apps/web/dist`. Environment variables: `NODE_VERSION` = `22`,
-`PNPM_VERSION` = `10.33.0` (as `packageManager` in package.json), `VITE_SUPABASE_URL` =
-`https://bnodrfghxbavlopxkgju.supabase.co`, `VITE_SUPABASE_ANON_KEY` = the
-publishable key in `netlify.toml` (public by design). Then in Supabase →
-**Authentication → URL Configuration**: Site URL
-`https://aaron-budget-app.pages.dev`, and add
-`https://aaron-budget-app.pages.dev/**` to Redirect URLs (use the address
-Cloudflare gave, if different). Once it works, delete the Netlify site
-(Site configuration → Delete this site); the next agent then removes
-`netlify.toml` in a commit.
+**Optional:** if you deployed `read-receipt` earlier, paste its new version
+the same way. It moves off a Google model that stops working in
+mid-October. The AI helper reads receipts itself, so this matters only as
+a fallback.
 
-**Step 4 — receipt photos (optional).** Get a key at
-https://aistudio.google.com/apikey. Supabase → **Edge Functions → Deploy a
-new function → Via Editor**, name exactly `read-receipt`, paste
-`supabase/functions/read-receipt/index.ts`, deploy with **Enforce JWT
-verification** on. Then **Edge Functions → Secrets**: `GEMINI_API_KEY` =
-the key. If the site's address is not `aaron-budget-app.pages.dev`, also
-set `EXTRA_ORIGINS` = `https://<the address>`. The key goes only there.
-
-**Step 5 — your password, and sign out old sessions.** **Authentication →
-Users →** the `⋯` on your row → **Reset password** (there is no sign-up
-screen, deliberately). Then the same menu → **Sign out user**, once: a
-sign-in link with a live token was pasted into a chat earlier.
-
-**Step 6 — iPhone.** In Safari open the new address → **Share → Add to
-Home Screen**. If you added the old site to your home screen before, remove
-that icon first: it keeps opening the old Week screen (N24).
+**Still open from before, if not done yet:**
+- **Cloudflare Pages** (replaces Netlify). **Workers & Pages → Create →
+  Pages → Connect to Git →** `aaronjoseph94/budget-app`. Project name
+  `aaron-budget-app`, production branch `main`, framework preset None,
+  build command `pnpm --filter @budget/app-client build`, output directory
+  `apps/web/dist`. Environment variables: `NODE_VERSION` = `22`,
+  `PNPM_VERSION` = `10.33.0`, `VITE_SUPABASE_URL` =
+  `https://bnodrfghxbavlopxkgju.supabase.co`, `VITE_SUPABASE_ANON_KEY` = the
+  publishable key in `netlify.toml` (public by design). Then in Supabase →
+  **Authentication → URL Configuration**: Site URL
+  `https://aaron-budget-app.pages.dev`, and add
+  `https://aaron-budget-app.pages.dev/**` to Redirect URLs. Once it works,
+  delete the Netlify site; the next agent then removes `netlify.toml`.
+  If the Pages project was made earlier with `PNPM_VERSION` `10`, change it
+  to `10.33.0` there (N61.3).
+- **Your password, and signing out old sessions.** **Authentication →
+  Users →** the `⋯` on your row → **Reset password**, then **Sign out
+  user** once: a sign-in link with a live token was pasted into a chat
+  earlier.
+- **iPhone.** In Safari open the site → **Share → Add to Home Screen**.
+  Remove an icon added before 2026-09-23 first (N24).
 
 ## 4. How to check it worked, screen by screen
 
