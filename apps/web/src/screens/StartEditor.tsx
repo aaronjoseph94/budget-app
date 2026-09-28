@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { parseMoneyInput, useAppData } from '../app-data.js'
 import { setMonthBalance } from '../ledger.js'
 import { formatCents, formatForInput, formatMonthName } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
-import { Input } from '../components/ui/form.js'
+import { Input, refusal } from '../components/ui/form.js'
 
 /**
  * The bank balance a month started with, typed where the workbook types it (Jan!D9,
@@ -46,6 +46,7 @@ export function StartEditor({
   const [overdrawn, setOverdrawn] = useState(shown.startsWith('-'))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const errorId = useId()
   const monthName = formatMonthName(month)
   const open = useRef(true)
   useEffect(() => {
@@ -98,6 +99,7 @@ export function StartEditor({
           size="sm"
           autoFocus={autoFocus}
           aria-label={`Starting bank balance for ${monthName}`}
+          {...refusal(errorId, error !== null)}
           value={text}
           disabled={busy}
           onChange={(e) => setText(e.target.value)}
@@ -116,7 +118,11 @@ export function StartEditor({
       <p className="text-xs text-summary-label">
         The bank balance you started {monthName} with. Each month has its own.
       </p>
-      {error !== null ? <Alert tone="error">{error}</Alert> : null}
+      {error !== null ? (
+        <Alert tone="error" id={errorId}>
+          {error}
+        </Alert>
+      ) : null}
       <div className="flex flex-wrap gap-2">
         <Button type="submit" size="sm" disabled={busy}>
           {busy ? 'Saving…' : 'Save'}

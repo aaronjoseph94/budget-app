@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import type { SupabaseClient } from './supabase.js'
 import { Label } from './ui.js'
-import { Input } from './components/ui/form.js'
+import { Input, refusal } from './components/ui/form.js'
 import { Button } from './components/ui/button.js'
 import { Card } from './components/ui/card.js'
 import { Alert } from './components/ui/feedback.js'
@@ -138,7 +138,7 @@ export function SignIn({ supabase, linkRefused = false }: { supabase: SupabaseCl
 
   const busy = attempt.kind === 'working'
   // Both fields are named by the refusal: Supabase will not say which was wrong.
-  const refused = attempt.kind === 'failed' ? { 'aria-invalid': true, 'aria-describedby': reasonId } : {}
+  const refused = refusal(reasonId, attempt.kind === 'failed')
 
   // <main>, as the signed-in app's screens are: a screen reader finds the
   // page by its landmark, and axe flags a page without one (FE-14).

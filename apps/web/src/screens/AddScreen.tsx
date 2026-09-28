@@ -12,7 +12,7 @@ import { atEndOf, CategoryOptions, ListSelect, LISTS_FOR, type CategoryKind } fr
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card.js'
 import { Alert, Badge } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
-import { Field, Input, NativeSelect } from '../components/ui/form.js'
+import { Field, Input, NativeSelect, refusal } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { hashOf, navigate } from '../nav.js'
 import { cn } from '../lib/cn.js'
@@ -575,7 +575,7 @@ function TypedEntry() {
 
 /** An amount typed that is not money marks its field, and the message says why (FE-8). */
 function notMoney(amount: string, cents: number | null, id: string) {
-  return amount.trim().length > 0 && cents === null ? { 'aria-invalid': true, 'aria-describedby': id } : {}
+  return refusal(id, amount.trim().length > 0 && cents === null)
 }
 
 function NotMoney({ amount, cents, id }: { amount: string; cents: number | null; id: string }) {

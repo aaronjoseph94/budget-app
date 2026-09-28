@@ -65,10 +65,13 @@ const NEEDS_UPDATE = /\bone-time update\b/
 export function Alert({
   tone = 'default',
   title,
+  id,
   children,
 }: {
   tone?: 'default' | 'success' | 'error'
   title?: string
+  /** For a field it is about to name it (refusal). */
+  id?: string
   children?: ReactNode
 }) {
   const own = useRef<HTMLDivElement>(null)
@@ -87,7 +90,7 @@ export function Alert({
         ? 'border-income/40 bg-income/5'
         : 'bg-card'
   return (
-    <div ref={own} role={tone === 'error' ? 'alert' : says ? undefined : 'status'} className={cn('rounded-lg border px-4 py-3 text-sm', look)}>
+    <div ref={own} id={id} role={tone === 'error' ? 'alert' : says ? undefined : 'status'} className={cn('rounded-lg border px-4 py-3 text-sm', look)}>
       {title !== undefined ? <p className="font-medium">{title}</p> : null}
       {children !== undefined ? (
         <div className={cn(title !== undefined && 'mt-1', tone === 'error' ? '' : 'text-muted-foreground')}>

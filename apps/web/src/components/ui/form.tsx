@@ -61,6 +61,16 @@ export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElem
   return <label className={cn('text-sm font-medium leading-none', className)} {...props} />
 }
 
+/**
+ * What marks a field refused and ties it to the words saying why, `id`
+ * being theirs (FE-8). One helper where five forms each wrote their own,
+ * and the single-field editors, which said why in an alert, tied theirs to
+ * nothing (CR-14).
+ */
+export function refusal(id: string, refused: boolean): { 'aria-invalid'?: true; 'aria-describedby'?: string } {
+  return refused ? { 'aria-invalid': true, 'aria-describedby': id } : {}
+}
+
 /** A labelled field: label above, control, optional hint below. */
 export function Field({ label, hint, children }: { label: string; hint?: ReactNode; children: ReactNode }) {
   return (

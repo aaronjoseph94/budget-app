@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { PeriodRow } from '@budget/core'
 import { parseMoneyInput, useAppData } from '../app-data.js'
 import { setBudget } from '../ledger.js'
 import { formatCents, formatForInput, formatMonthName } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
-import { Input } from '../components/ui/form.js'
+import { Input, refusal } from '../components/ui/form.js'
 import { cn } from '../lib/cn.js'
 
 /**
@@ -42,6 +42,7 @@ export function BudgetEditor({
   const [applies, setApplies] = useState<'onward' | 'only'>('onward')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const errorId = useId()
   const lower = word.toLowerCase()
   const monthName = formatMonthName(month)
   const open = useRef(true)
@@ -100,6 +101,7 @@ export function BudgetEditor({
           size="sm"
           autoFocus
           aria-label={`${word} for ${row.name} in ${monthName}`}
+          {...refusal(errorId, error !== null)}
           placeholder={`No ${lower}`}
           value={text}
           disabled={busy}
@@ -133,7 +135,11 @@ export function BudgetEditor({
           ? `${monthName} and every month after it, except a month given its own.`
           : `${monthName} only. Other months keep theirs.`}
       </p>
-      {error !== null ? <Alert tone="error">{error}</Alert> : null}
+      {error !== null ? (
+        <Alert tone="error" id={errorId}>
+          {error}
+        </Alert>
+      ) : null}
       <div className="flex flex-wrap gap-2">
         <Button type="submit" size="sm" disabled={busy}>
           {busy ? 'Saving…' : 'Save'}

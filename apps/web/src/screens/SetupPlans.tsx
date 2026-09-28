@@ -4,7 +4,7 @@ import { parseMoneyInput, useAppData } from '../app-data.js'
 import { listPlanHistory, setPlan, type Category, type PlanRow } from '../ledger.js'
 import { formatCents, formatForInput, formatMonthName } from '../format.js'
 import { Button } from '../components/ui/button.js'
-import { Input } from '../components/ui/form.js'
+import { Input, refusal } from '../components/ui/form.js'
 import { Figure } from '../components/ui/type.js'
 
 /**
@@ -199,7 +199,7 @@ export function PlanFields({
   const problemId = useId()
   // The message, tied to the field it is about and marking it (FE-8).
   const about = (help: string) =>
-    problem === help ? { 'aria-invalid': true, 'aria-describedby': problemId } : {}
+    refusal(problemId, problem === help)
   const queue = useRef<Promise<unknown>>(Promise.resolve())
   const monthName = formatMonthName(month)
 

@@ -7,7 +7,7 @@ import { atEndOf, groupByList, ListSelect, type CategoryKind } from '../lists.js
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
-import { Input } from '../components/ui/form.js'
+import { Input, refusal } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { navigate } from '../nav.js'
 import { HelpButton } from '../help/HelpButton.js'
@@ -190,8 +190,7 @@ function BudgetRow({ category, onError }: { category: Category; onError: (m: str
           size="sm"
           inset
           className={`text-right ${problem !== null ? 'border-destructive' : ''}`}
-          aria-invalid={problem !== null ? true : undefined}
-          aria-describedby={problem !== null ? problemId : undefined}
+          {...refusal(problemId, problem !== null)}
           value={text}
           onChange={(e) => {
             setText(e.target.value)

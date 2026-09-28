@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { PeriodRow } from '@budget/core'
 import { readBudgetInput, useAppData } from '../app-data.js'
 import { setWeeklyBudget } from '../ledger.js'
 import { formatCents, formatForInput } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
-import { Input } from '../components/ui/form.js'
+import { Input, refusal } from '../components/ui/form.js'
 
 /**
  * A weekly budget or goal, typed on the Week as the workbook types one on its
@@ -34,6 +34,7 @@ export function WeekBudgetEditor({
   const [text, setText] = useState(formatForInput(row.budgetCents))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const errorId = useId()
   const lower = word.toLowerCase()
   const open = useRef(true)
   useEffect(() => {
@@ -87,6 +88,7 @@ export function WeekBudgetEditor({
           size="sm"
           autoFocus
           aria-label={`Weekly ${lower} for ${row.name}`}
+          {...refusal(errorId, error !== null)}
           placeholder={`No ${lower}`}
           value={text}
           disabled={busy}
@@ -94,7 +96,11 @@ export function WeekBudgetEditor({
         />
       </div>
       <p className="text-xs text-muted-foreground">The same {lower} every week, until you change it.</p>
-      {error !== null ? <Alert tone="error">{error}</Alert> : null}
+      {error !== null ? (
+        <Alert tone="error" id={errorId}>
+          {error}
+        </Alert>
+      ) : null}
       <div className="flex flex-wrap gap-2">
         <Button type="submit" size="sm" disabled={busy}>
           {busy ? 'Saving…' : 'Save'}

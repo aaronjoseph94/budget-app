@@ -133,6 +133,17 @@ describe('Typing a budget on the Month', () => {
     expect(fake.tables.category_budgets).toEqual([])
   })
 
+  it('marks the field it refused, and ties it to the words saying why (CR-14)', async () => {
+    const field = await edit(seeded())
+    expect(field.getAttribute('aria-invalid')).toBeNull()
+    fireEvent.change(field, { target: { value: 'lots' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    const alert = screen.getByRole('alert')
+    expect(field.getAttribute('aria-invalid')).toBe('true')
+    expect(field.getAttribute('aria-describedby')).toBe(alert.id)
+  })
+
   it('says why in words when the database refuses, and keeps what was typed', async () => {
     const fake = seeded()
     fake.fail('POST category_budgets', '23503')

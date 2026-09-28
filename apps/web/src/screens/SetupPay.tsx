@@ -4,7 +4,7 @@ import { useAppData } from '../app-data.js'
 import { listPaySchedules, removePaySchedule, setPaySchedule, type Category, type PayFrequency, type PayScheduleRow } from '../ledger.js'
 import { formatIsoDate } from '../format.js'
 import { Button } from '../components/ui/button.js'
-import { Input, NativeSelect } from '../components/ui/form.js'
+import { Input, NativeSelect, refusal } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 
 /**
@@ -103,7 +103,7 @@ export function PayFields({
   const [problem, setProblem] = useState<string | null>(null)
   const problemId = useId()
   // Every message here is about the pair, so both fields carry it (FE-8).
-  const refused = problem === null ? {} : { 'aria-invalid': true, 'aria-describedby': problemId }
+  const refused = refusal(problemId, problem !== null)
   const queue = useRef<Promise<unknown>>(Promise.resolve())
 
   const commit = (nextFrequency: string, nextDate: string) => {
