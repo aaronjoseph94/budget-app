@@ -165,3 +165,23 @@ describe('a link inside a sentence', () => {
     expect(link).not.toMatch(/SENTENCE_LINK = '[^']*inline-flex/)
   })
 })
+
+/**
+ * A date or month field shares a row only from 360 px up: at 320 half a
+ * row cut Chromium's empty "mm/dd/yyyy" at its edge (N109), and iOS draws
+ * its dates wider still. Below 360 px such a pair stacks.
+ */
+describe('a date beside another field', () => {
+  it('stacks below 360 px', () => {
+    const offenders: string[] = []
+    for (const [path, text] of Object.entries(sources)) {
+      const lines = text.split('\n')
+      lines.forEach((line, i) => {
+        if (!/type="(date|month)"/.test(line)) return
+        const grid = lines.slice(Math.max(0, i - 12), i).reverse().find((l) => /className="grid /.test(l) || /<\/div>/.test(l))
+        if (grid !== undefined && /grid-cols-2/.test(grid) && !/grid-cols-1 [^"]*min-\[360px\]:grid-cols-2/.test(grid)) offenders.push(`${path}:${i + 1}`)
+      })
+    }
+    expect(offenders).toEqual([])
+  })
+})

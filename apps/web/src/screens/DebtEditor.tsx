@@ -101,7 +101,7 @@ export function DebtEditor({
           <Input value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
         {/* The notes on Debt Calculator!J18, J19 and J20. */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
           <Field label="Starting balance ($)" hint="As of the month beside it; an estimate is fine.">
             <Input inputMode="decimal" value={balance} onChange={(e) => setBalance(e.target.value)} />
           </Field>

@@ -109,7 +109,7 @@ export function FundEditor({
           </Field>
         </div>
         {/* Savings!N14's note, and the callout over N13:R13. */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
           <Field label="Start date" hint="When you began saving for it.">
             <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
           </Field>

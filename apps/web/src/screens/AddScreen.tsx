@@ -528,7 +528,7 @@ function TypedEntry() {
           <Field label="What was it?">
             <Input placeholder="e.g. Farmers market" value={merchant} maxLength={120} onChange={(e) => setMerchant(e.target.value)} required />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
             <Field label="Date">
               <Input type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} required />
             </Field>
@@ -762,7 +762,7 @@ function PhotoEntry() {
               <Field label="Where">
                 <Input value={merchant} maxLength={120} onChange={(e) => setMerchant(e.target.value)} required />
               </Field>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
                 <Field label="Total spent">
                   <Input
                     inputMode="decimal"
