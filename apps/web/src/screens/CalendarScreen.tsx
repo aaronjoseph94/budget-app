@@ -179,11 +179,13 @@ function AgendaDay({ day, weekday }: { day: CalendarDay; weekday: number }) {
           </span>
         ))}
         {day.bills.map((b, i) => (
-          <p key={`${b.categoryId}-${i}`} className="flex items-baseline justify-between gap-3 text-sm text-calendar-ink">
+          // The amount drops under the name, and "planned" under the amount,
+          // when they do not fit, as with the phone's text at 200% (N58).
+          <p key={`${b.categoryId}-${i}`} className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm text-calendar-ink">
             <span className="min-w-0 truncate">{b.name}</span>
-            <span className="shrink-0 text-right">
-              <span className="tnum">{formatCents(b.amountCents)}</span>
-              {b.basis === 'planned' ? <span className="ml-1.5 text-xs text-muted-foreground">planned</span> : null}
+            <span className="ml-auto max-w-full text-right">
+              <span className="tnum whitespace-nowrap">{formatCents(b.amountCents)}</span>
+              {b.basis === 'planned' ? <> <span className="text-xs text-muted-foreground">planned</span></> : null}
             </span>
           </p>
         ))}

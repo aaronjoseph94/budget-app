@@ -91,7 +91,7 @@ describe('CalendarScreen', () => {
     renderScreen(<CalendarScreen month={null} />, seeded())
 
     expect(screen.getByRole('heading', { name: 'September 2026' })).toBeTruthy()
-    expect(await week('1 – 5 Sep')).toEqual(['1 – 5 SepWeek total $1,600.00', 'Tue1Rent$1,600.00planned', 'Rent$1,600.00planned'])
+    expect(await week('1 – 5 Sep')).toEqual(['1 – 5 SepWeek total $1,600.00', 'Tue1Rent$1,600.00 planned', 'Rent$1,600.00 planned'])
     expect(await week('6 – 12 Sep')).toEqual([
       '6 – 12 SepWeek total $58.12',
       'Tue8Phone$58.12',
@@ -102,11 +102,11 @@ describe('CalendarScreen', () => {
     // A category name is text, never markup.
     expect(await week('20 – 26 Sep')).toEqual([
       '20 – 26 SepWeek total $11.99',
-      'Sun20<b>Tunes & more</b>$11.99planned',
-      '<b>Tunes & more</b>$11.99planned',
+      'Sun20<b>Tunes & more</b>$11.99 planned',
+      '<b>Tunes & more</b>$11.99 planned',
       'Fri25Day job payday',
     ])
-    expect(await week('27 – 30 Sep')).toEqual(['27 – 30 SepWeek total $300.00', 'Wed30Car loan$300.00planned', 'Car loan$300.00planned'])
+    expect(await week('27 – 30 Sep')).toEqual(['27 – 30 SepWeek total $300.00', 'Wed30Car loan$300.00 planned', 'Car loan$300.00 planned'])
     expect(screen.getByText('Due this month').parentElement?.textContent).toBe('Due this month: $1,970.11')
     expect(screen.queryByText('Groceries')).toBeNull()
   })

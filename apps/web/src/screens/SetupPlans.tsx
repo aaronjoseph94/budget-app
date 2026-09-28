@@ -100,9 +100,9 @@ export function PlanHeadings({ month }: { month: string }) {
   const monthName = formatMonthName(month)
   return (
     <div className="mt-2 space-y-1 border-t border-owed-rule pt-2">
-      <p className="grid grid-cols-[4.5rem_1fr] gap-2 text-xs font-medium text-owed-ink" aria-hidden="true">
+      <p className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-2 text-xs font-medium text-owed-ink" aria-hidden="true">
         <span>Day paid</span>
-        <span>Monthly amount (from {monthName} on)</span>
+        <span className="min-w-0 [overflow-wrap:anywhere]">Monthly amount (from {monthName} on)</span>
       </p>
       <p className="text-xs text-muted-foreground">
         The day of each month it is paid: the 5th is 5. A yearly cost can go in as a monthly share, $100 a year as
@@ -119,9 +119,12 @@ export function PlanHeadings({ month }: { month: string }) {
  */
 export function TotalTile({ label, cents }: { label: string; cents: number }) {
   return (
-    <dl className="flex overflow-hidden rounded-lg border border-owed-rule text-owed-ink">
+    // The figure goes under its label when the two do not fit side by side,
+    // as with the phone's text at 200% (N58): flex-auto, not flex-1, so it
+    // wraps at its full width rather than squeeze beside the label.
+    <dl className="flex flex-wrap overflow-hidden rounded-lg border border-owed-rule text-owed-ink">
       <dt className="flex items-center bg-owed-band px-3 py-2 text-sm font-medium">{label}</dt>
-      <dd className="flex flex-1 items-center justify-end bg-card px-3 py-2">
+      <dd className="flex flex-auto items-center justify-end bg-card px-3 py-2">
         <Figure className="text-xl font-bold">{formatCents(cents)}</Figure>
       </dd>
     </dl>
@@ -243,7 +246,7 @@ export function PlanFields({
 
   return (
     <div className="pb-1 pl-1">
-      <div className="grid grid-cols-[4.5rem_1fr] items-center gap-2">
+      <div className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-2">
         <Input
           size="sm"
           inputMode="numeric"
@@ -260,7 +263,7 @@ export function PlanFields({
           className="w-14 text-center"
         />
         <div className="flex flex-wrap items-center gap-2">
-          <div className="relative w-36">
+          <div className="relative w-36 max-w-full">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
             <Input
               size="sm"

@@ -102,10 +102,12 @@ export function YearGlance({
         ) : (
           <ol className="mt-1 space-y-1.5 text-sm">
             {atAGlance.top3.map((t, i) => (
-              <li key={t.categoryId} className="flex items-center gap-2">
+              // The figure drops under the name when both do not fit, as
+              // with the phone's text at 200%, rather than run off (N58).
+              <li key={t.categoryId} className="flex flex-wrap items-center gap-x-2">
                 <TopRing top={t} rank={i} />
                 <span className="min-w-0 flex-1 break-words [overflow-wrap:anywhere]">{t.name}</span>
-                <span className="tnum shrink-0 text-right">
+                <span className="tnum ml-auto shrink-0 text-right">
                   {formatCents(t.amountCents)} · {formatShare(t.shareBp)}
                 </span>
               </li>

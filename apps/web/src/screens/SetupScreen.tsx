@@ -460,7 +460,10 @@ function CategoryRow({
 
   return (
     <li className="py-1">
-      <div className="flex items-center gap-1">
+      {/* The name keeps at least 4rem beside its four buttons; with the
+        phone's text at 200% that is no longer room for all five, so the
+        buttons wrap under the name rather than run off the screen (N58). */}
+      <div className="flex flex-wrap items-center justify-end gap-1">
         <input
           aria-label={`Rename ${row.name}`}
           value={text}
@@ -472,7 +475,7 @@ function CategoryRow({
             // Back to the stored name; leaving the field then saves nothing.
             if (e.key === 'Escape') setText(row.name)
           }}
-          className="min-w-0 flex-1 rounded-t-md border-b border-input bg-transparent px-1 py-1.5 text-sm outline-none pointer-coarse:min-h-11 focus-visible:ring-2 focus-visible:ring-ring"
+          className="min-w-0 flex-1 basis-16 rounded-t-md border-b border-input bg-transparent px-1 py-1.5 text-sm outline-none pointer-coarse:min-h-11 focus-visible:ring-2 focus-visible:ring-ring"
         />
         <Button variant="ghost" size="icon" aria-label={`Move ${row.name} up`} disabled={list[0]?.id === row.id} onClick={() => step('up')}>
           <Icon name="up" />

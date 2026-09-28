@@ -50,9 +50,11 @@ const FREQUENCIES: readonly PayFrequency[] = ['weekly', 'biweekly', 'monthly']
 export function PayHeadings() {
   return (
     <div className="mt-2 space-y-1 border-t border-income-rule pt-2">
-      <p className="grid grid-cols-[7.5rem_minmax(0,1fr)] gap-2 text-xs font-medium text-income-ink" aria-hidden="true">
-        <span>Paid</span>
-        <span>First payday</span>
+      {/* Laid out as each row is, so the headings sit over their fields and
+        wrap where the fields do. */}
+      <p className="flex flex-wrap gap-x-2 text-xs font-medium text-income-ink" aria-hidden="true">
+        <span className="w-[7.5rem] shrink-0">Paid</span>
+        <span className="min-w-0 flex-1 basis-32">First payday</span>
       </p>
       <p className="text-xs text-muted-foreground">
         How often it pays, and one day it paid. The Paycheck view counts its pay periods from them. Leave both blank
@@ -131,26 +133,31 @@ export function PayFields({
 
   return (
     <div className="pb-1 pl-1">
-      <div className="grid grid-cols-[7.5rem_minmax(0,1fr)] items-center gap-2">
-        <NativeSelect
-          aria-label={`How often ${row.name} pays`}
-          {...refused}
-          value={frequency}
-          onChange={(e) => {
-            setFrequency(e.target.value)
-            commit(e.target.value, date)
-          }}
-          className="h-9 text-sm"
-        >
-          <option value="">Not set</option>
-          {FREQUENCIES.map((f) => (
-            <option key={f} value={f}>
-              {FREQUENCY_WORD[f]}
-            </option>
-          ))}
-        </NativeSelect>
+      {/* Side by side, under their headings, while both fit; with the
+        phone's text at 200% the day and Clear go under the choice, rather
+        than push Clear off the screen (N58). */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="w-[7.5rem] shrink-0">
+          <NativeSelect
+            aria-label={`How often ${row.name} pays`}
+            {...refused}
+            value={frequency}
+            onChange={(e) => {
+              setFrequency(e.target.value)
+              commit(e.target.value, date)
+            }}
+            className="h-9 text-sm"
+          >
+            <option value="">Not set</option>
+            {FREQUENCIES.map((f) => (
+              <option key={f} value={f}>
+                {FREQUENCY_WORD[f]}
+              </option>
+            ))}
+          </NativeSelect>
+        </div>
         {/* Shrinks on a phone rather than push Clear past the card. */}
-        <div className="flex min-w-0 items-center gap-1">
+        <div className="flex min-w-0 flex-1 basis-32 items-center gap-1">
           <Input
             size="sm"
             type="date"
