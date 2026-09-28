@@ -1626,9 +1626,11 @@ Two savings the audit named are not taken:
 
 
 **Updated 2026-09-28, A27 (1df645e):** `@budget/statement-parsers` declares `"sideEffects": false`, so the PDF reader loads with Add: the first load went from 190.79 to 183.76 KB gzipped, and check-bundle.mjs fails if `FlateDecode` is back in it. The zod and Supabase parts are still open.
+
+**Updated 2026-09-28, A28:** part 2, the Supabase client swap, is **declined (option B)**, decided by the engineer under the owner's 2026-09-24 instruction to proceed without questions (ADR 0009): the first load is 184.33 KB of 200 KB with the gate holding it, and the swap touches sign-in and every read and write for one user already inside the budget. It is the first saving to take if the budget is ever reached. Part 1, zod/mini, stays open.
 ---
 
-## N61 — Things from the frontend audit that need the owner or a host setting
+## N61 — Things from the frontend audit that need the owner or a host setting *(1 and 2 settled 2026-09-28, A28)*
 
 **Seen:** 2026-09-24.
 
@@ -1653,6 +1655,20 @@ Two savings the audit named are not taken:
    must be set before `@budget/schema` builds its schemas, which the
    bundler evaluates first. *To settle:* with N60's zod/mini change, or a
    first script that sets zod's global config.
+
+**Updated 2026-09-28, A28.** Decided by the engineer under the owner's
+2026-09-24 instruction to proceed without questions (ADR 0009):
+- **1 settled, option A** (d0bd19c, 3f342a6, 34927fc, 5615908): axe-core
+  4.13.0 is a dev dependency of the app alone, reachable only from
+  `apps/web/test` (a dependency-cruiser rule), and every screen test file
+  runs `expectNoAxeViolations()` over the whole page, WCAG A and AA. Its
+  first run found one real problem, the list on Reports' Overview, fixed
+  with it. No test draws the dark theme (a media query jsdom does not
+  apply), so contrast stays with `contrast.test.ts`, both themes.
+- **2 declined, option B:** no web-vitals. One user, and the synthetic
+  200 KB first-load gate already stops the page growing; a field report
+  would need a new place to send data.
+- 3 and 4 stay open as written.
 
 ---
 
@@ -2831,3 +2847,23 @@ the heading again once the loading title is the same element.
 
 **To settle:** draw the band round the heading in the no-schedule state.
 
+---
+
+## N123 — A28's click-through lives in the scratchpad, not the repository
+
+**Seen:** 2026-09-28, A28. The real-browser walk (sign-in, Getting
+started, a key, a statement, Review's suggestions, Coach, check-in,
+Forecast, Reports, Ask, Help; then every screen with AI off, the helper
+missing, each of 0015 to 0018 missing and every service resting, at 320
+and 390 px, light and dark) ran from the preview harness in the agent's
+scratchpad: 167 checks in each of four runs, none failing, no console
+errors. It found one real problem, fixed in 644640f (the Coach not saying
+why its words were the app's own once the Month had used the day's ask).
+
+**Why not fixed here:** committing it needs Playwright as a dev
+dependency, which is CONSTRAINTS' pending Mobile sweep row; A28 decided
+only axe-core (ADR 0009).
+
+**To settle:** with the Mobile sweep row: add Playwright, move the fake
+client's preview wiring and the walk into `apps/web/e2e`, and run it in
+CI against the preview build.
