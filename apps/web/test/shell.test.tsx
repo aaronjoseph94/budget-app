@@ -102,22 +102,26 @@ describe('Shell', () => {
     go('/more')
 
     await screen.findByRole('heading', { name: 'More' })
-    const groups = screen.getAllByRole('region').map((g) => [
-      within(g).getByRole('heading').textContent,
-      within(g).getAllByRole('listitem').map((li) => li.querySelector('.font-medium')?.textContent),
-    ])
-    expect(groups).toEqual([
+    const expected = [
       ['Plan', ['Paycheck', 'Bill calendar', 'Year', 'Savings', 'Debts', 'Forecast']],
       ['Understand', ['Reports', 'Ask']],
       ['Set up and help', ['Getting started', 'Setup', 'AI settings', 'Settings', 'Help']],
       ['Records', ['All transactions']],
-    ])
-    expect(MORE_GROUPS.map((g) => [g.title, g.items.map((i) => i.label)])).toEqual([
-      ['Plan', ['Paycheck', 'Bill calendar', 'Year', 'Savings', 'Debts', 'Forecast']],
-      ['Understand', ['Reports', 'Ask']],
-      ['Set up and help', ['Getting started', 'Setup', 'AI settings', 'Settings', 'Help']],
-      ['Records', ['All transactions']],
-    ])
+    ] as const
+    // Read as a screen reader reads them: each group by its heading, each
+    // item by the name its link is known by, which starts with its label
+    // and goes on with its hint (CR-10).
+    const regions = screen.getAllByRole('region')
+    expect(regions.map((g) => within(g).getByRole('heading').textContent)).toEqual(expected.map(([title]) => title))
+    regions.forEach((g, i) => {
+      const labels = expected[i]![1]
+      const links = within(g).getAllByRole('link')
+      expect(links.length, expected[i]![0]).toBe(labels.length)
+      labels.forEach((label, j) => {
+        expect(within(g).getByRole('link', { name: new RegExp(`^${label}`) })).toBe(links[j])
+      })
+    })
+    expect(MORE_GROUPS.map((g) => [g.title, g.items.map((i) => i.label)])).toEqual(expected)
 
     expect((await moreItem('Records', 'All transactions')).getAttribute('href')).toBe('#/ledger')
     go('/ledger')
