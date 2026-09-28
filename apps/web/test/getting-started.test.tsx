@@ -73,7 +73,7 @@ describe('Getting started (plan §8.1)', () => {
     continueOn()
     expect(screen.getByRole('heading', { name: 'Your lists' })).toBe(document.activeElement)
     expect(screen.getByText('Step 2 of 9 · about 2 minutes')).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Open Setup' }).getAttribute('href')).toBe('#/setup')
+    expect(await screen.findByRole('button', { name: 'Use the starter list' })).toBeTruthy()
   })
 
   it('sends a step to the end with Do this later, kept in the sign-in, and lists all nine to jump to', async () => {
@@ -124,6 +124,26 @@ describe('Getting started (plan §8.1)', () => {
     expect(await screen.findByText('Saved. Hello, Alex.')).toBeTruthy()
     expect(fake.user.user_metadata['display_name']).toBe('Alex')
     expect(screen.getByText('Done')).toBeTruthy()
+  })
+
+  it('puts Setup’s own editors on the lists, pay and bills steps', async () => {
+    const fake = createFakeSupabase({ categories: [category('pay', 'Day job', 'income'), category('rent', 'Rent', 'bill')] })
+    await fake.signIn()
+    renderStart(fake, { name: 'Alex' })
+
+    expect(await screen.findByRole('heading', { name: 'When you’re paid' })).toBeTruthy()
+    expect(await within(screen.getByRole('region', { name: 'Income' })).findByRole('combobox', { name: 'How often Day job pays' })).toBeTruthy()
+    continueOn()
+    const bills = within(screen.getByRole('region', { name: 'Bills' }))
+    expect(await bills.findByRole('textbox', { name: 'Monthly amount for Rent, from September on' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Debts' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Subscriptions' })).toBeTruthy()
+
+    fireEvent.click(screen.getByText(/^All 9 steps/))
+    fireEvent.click(screen.getByRole('button', { name: /Your lists/ }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Use the starter list' }))
+    expect(await screen.findByText(/^Added \d+ example names$/)).toBeTruthy()
+    expect(within(screen.getByRole('region', { name: 'Variable expenses' })).getByRole('textbox', { name: 'Rename Groceries' })).toBeTruthy()
   })
 
   it('says a step it could not read is can’t check yet, never done, and points to One-time updates', async () => {

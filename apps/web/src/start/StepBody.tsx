@@ -6,6 +6,7 @@ import { hashOf, type Screen } from '../nav.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Field, Input } from '../components/ui/form.js'
+import { SetupLists } from '../screens/SetupScreen.js'
 import { openFromHomeScreen } from './checks.js'
 import type { StepId } from './steps.js'
 
@@ -21,9 +22,6 @@ export interface StepBodyProps {
 
 /** Where each step's editor lives, until this screen holds it itself. */
 const ELSEWHERE: Readonly<Partial<Record<StepId, { readonly screen: Screen; readonly words: string }>>> = {
-  lists: { screen: 'setup', words: 'Open Setup' },
-  pay: { screen: 'setup', words: 'Open Setup' },
-  bills: { screen: 'setup', words: 'Open Setup' },
   goals: { screen: 'savings', words: 'Open Savings' },
   statement: { screen: 'add', words: 'Open Add' },
   balance: { screen: 'month', words: 'Open the Month' },
@@ -34,6 +32,10 @@ const ELSEWHERE: Readonly<Partial<Record<StepId, { readonly screen: Screen; read
 export function StepBody(props: StepBodyProps) {
   if (props.id === 'name') return <NameStep name={props.name} onNamed={props.onNamed} />
   if (props.id === 'phone') return <PhoneStep ticked={props.phoneTicked} onTick={props.onTick} />
+  // Setup's own cards: the starter list and everyday spending, then income, then the three that owe.
+  if (props.id === 'lists') return <SetupLists kinds={['variable']} starter />
+  if (props.id === 'pay') return <SetupLists kinds={['income']} />
+  if (props.id === 'bills') return <SetupLists kinds={['bill', 'debt', 'subscription']} />
   const there = ELSEWHERE[props.id]
   return there === undefined ? null : (
     <a href={hashOf({ screen: there.screen, param: null })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">

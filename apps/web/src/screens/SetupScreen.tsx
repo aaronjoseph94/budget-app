@@ -107,6 +107,41 @@ export function SetupScreen() {
   )
 }
 
+/**
+ * Setup's own cards for some of the lists, as Getting started shows them
+ * one step at a time (plan §8.1): the same editors, reading and saving
+ * exactly as Setup does. With `starter`, the starter list's offer first.
+ */
+export function SetupLists({ kinds, starter = false }: { kinds: readonly CategoryKind[]; starter?: boolean }) {
+  const { categories, version } = useAppData()
+  const lists = new Map(groupByList(categories).map((group) => [group.kind, group.rows]))
+  const [added, setAdded] = useState<number | null>(null)
+  const month = monthBounds(isoDate(todayIso())).start
+  const amounts = useMonthlyAmounts(month)
+  const nudges = useBillNudges(amounts)
+  const schedules = usePaySchedules()
+  const cards = SECTIONS.flatMap((section) => section.cards).filter((card) => kinds.includes(card.kind))
+  return (
+    <div className="space-y-3">
+      {starter && version > 0 && categories.length < FEW_CATEGORIES ? <StarterCard onAdded={setAdded} /> : null}
+      {added !== null ? <StarterAdded count={added} /> : null}
+      {kinds.some((k) => RECURRING.has(k)) ? <AmountsProblem amounts={amounts} /> : null}
+      {kinds.includes('income') && schedules.status === 'failed' ? <Alert tone="error">{schedules.message}</Alert> : null}
+      {cards.map((card) => (
+        <ListCardView
+          key={card.kind}
+          card={card}
+          rows={lists.get(card.kind) ?? []}
+          month={month}
+          amounts={RECURRING.has(card.kind) ? amounts : null}
+          nudges={nudges}
+          schedules={card.kind === 'income' ? schedules : null}
+        />
+      ))}
+    </div>
+  )
+}
+
 /** The lists with the workbook's Day Paid and Monthly Amount columns (Bills!B:D, F:H, J:L). */
 const RECURRING: ReadonlySet<CategoryKind> = new Set(['bill', 'debt', 'subscription'])
 
