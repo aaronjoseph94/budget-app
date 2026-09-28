@@ -253,6 +253,43 @@ describe('Getting started (plan §8.1)', () => {
     expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Starting bank balance for September' }).value).toBe('2400.00')
   })
 
+  it('walks One-time updates first when the AI helper is not installed, and says how long', async () => {
+    const fake = allButName()
+    fake.functions.ai = null
+    renderStart(fake, { name: 'Alex', marks: { ...NO_MARKS, phoneTicked: true } })
+
+    expect(await screen.findByRole('heading', { name: 'Turn on free AI' })).toBeTruthy()
+    expect(screen.getByText(/^First, the one-time updates: about 15 minutes, once/)).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: /\d+ of \d+ in/ })).toBeTruthy()
+    expect(screen.getByText('Not done yet')).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Free Google Gemini' })).toBeNull()
+  })
+
+  it('puts AI settings’ own Gemini card on the step when no key is set up', async () => {
+    const fake = allButName()
+    fake.functions.aiStatus = aiStatusReply()
+    renderStart(fake, { name: 'Alex', marks: { ...NO_MARKS, phoneTicked: true } })
+
+    expect(await screen.findByRole('heading', { name: 'Turn on free AI' })).toBeTruthy()
+    expect(await screen.findByText(/^AI isn’t set up yet/)).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Free Google Gemini' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Get a free key/ }).getAttribute('href')).toBe('https://aistudio.google.com/apikey')
+  })
+
+  it('is done already when the receipts key works, with nothing to paste', async () => {
+    const fake = allButName()
+    const status = aiStatusReply()
+    fake.functions.aiStatus = { ...status, services: status.services.map((s) => (s.provider === 'gemini' ? { ...s, source: 'secret' as const } : s)) }
+    renderStart(fake, { name: 'Alex' })
+    await screen.findByRole('heading', { name: 'Put it on your iPhone' })
+    fireEvent.click(screen.getByText(/^All 9 steps/))
+    fireEvent.click(screen.getByRole('button', { name: /Turn on free AI/ }))
+
+    expect(await screen.findByText('AI is on, using your receipts key.')).toBeTruthy()
+    expect(screen.getByText('Done')).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Free Google Gemini' })).toBeNull()
+  })
+
   it('says a step it could not read is can’t check yet, never done, and points to One-time updates', async () => {
     const fake = allButName()
     fake.fail('pay_schedules', '42P01')

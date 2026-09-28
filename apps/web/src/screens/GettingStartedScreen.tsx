@@ -28,7 +28,8 @@ export function GettingStartedScreen() {
   // copy catches up when Supabase says the user changed.
   const [name, setName] = useState(displayName)
   const [marks, setMarks] = useState<SetupMarks>(setupMarks)
-  const { checks } = useSetupChecks({ name, phoneTicked: marks.phoneTicked })
+  const [again, setAgain] = useState(0)
+  const { checks, ai } = useSetupChecks({ name, phoneTicked: marks.phoneTicked, again })
   const checked = STEP_IDS.every((id) => checks[id] !== null)
   const progress = setupProgress({ steps: STEP_IDS.map((id) => ({ id, check: checks[id] ?? 'unknown' })), later: marks.later })
   const [at, setAt] = useState<StepId | 'end' | null>(null)
@@ -91,7 +92,15 @@ export function GettingStartedScreen() {
             </h2>
             <p className="text-base text-muted-foreground">{STEP_WORDS[at].why}</p>
             <CheckLine check={checks[at]} />
-            <StepBody id={at} name={name} onNamed={setName} phoneTicked={marks.phoneTicked} onTick={tick} />
+            <StepBody
+              id={at}
+              name={name}
+              onNamed={setName}
+              phoneTicked={marks.phoneTicked}
+              onTick={tick}
+              ai={ai}
+              onAiChanged={() => setAgain((n) => n + 1)}
+            />
           </section>
           {problem !== null ? <Alert tone="error">{problem}</Alert> : null}
           <div className="flex flex-wrap items-center gap-2 border-t pt-4">

@@ -1,8 +1,8 @@
 import { useState } from 'react'
+import type { AiView } from '../ai/client.js'
 import { useAppData } from '../app-data.js'
 import { saveDisplayName } from '../profile.js'
 import { ARTICLES, boldParts } from '../help/articles.js'
-import { hashOf, type Screen } from '../nav.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Field, Input } from '../components/ui/form.js'
@@ -10,6 +10,7 @@ import { SetupLists } from '../screens/SetupScreen.js'
 import { openFromHomeScreen } from './checks.js'
 import { GoalsStep } from './GoalsStep.js'
 import { BalanceStep, StatementStep } from './MoneySteps.js'
+import { AiStep } from './AiStep.js'
 import type { StepId } from './steps.js'
 
 export interface StepBodyProps {
@@ -20,11 +21,10 @@ export interface StepBodyProps {
   readonly phoneTicked: boolean
   /** Keep the iPhone step's tick; throws with a sentence when it was not kept. */
   readonly onTick: (ticked: boolean) => Promise<void>
-}
-
-/** Where each step's editor lives, until this screen holds it itself. */
-const ELSEWHERE: Readonly<Partial<Record<StepId, { readonly screen: Screen; readonly words: string }>>> = {
-  ai: { screen: 'ai', words: 'Open AI settings' },
+  /** The AI helper's answer, null while it is asked. */
+  readonly ai: AiView | null
+  /** A key was saved, tested or removed, or the updates pasted: ask the helper again. */
+  readonly onAiChanged: () => void
 }
 
 /** The control each step puts on its screen. */
@@ -38,12 +38,7 @@ export function StepBody(props: StepBodyProps) {
   if (props.id === 'goals') return <GoalsStep />
   if (props.id === 'statement') return <StatementStep />
   if (props.id === 'balance') return <BalanceStep />
-  const there = ELSEWHERE[props.id]
-  return there === undefined ? null : (
-    <a href={hashOf({ screen: there.screen, param: null })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
-      {there.words}
-    </a>
-  )
+  return <AiStep ai={props.ai} onChanged={props.onAiChanged} />
 }
 
 /** Step 1: the name Setup's "My name is" keeps, saved the same way. */
