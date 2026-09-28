@@ -208,3 +208,32 @@ describe('a chart', () => {
     expect(offenders).toEqual([])
   })
 })
+
+/**
+ * A button drawn as underlined words on a line of its own is 44 px to a
+ * finger through LINE_BUTTON, as Button is (FE-1): bare, it is the height
+ * of its text, 16 to 20 px. The Year's were found in the sweep, and
+ * sign-in's "Email me a link instead", which the sweep never opens.
+ */
+function textButtonsUnder44(text: string): string[] {
+  const found: string[] = []
+  for (const m of text.matchAll(/<button\b[\s\S]{0,80}?className=(\{cn\([^)]*\)\}|"[^"]*")/g)) {
+    const classes = m[1]!
+    if (!classes.split(/[\s'"(),{}]+/).includes('underline')) continue
+    if (!classes.includes('LINE_BUTTON') && !/\bmin-h-11\b/.test(classes)) found.push(classes)
+  }
+  return found
+}
+
+describe('a button drawn as a link', () => {
+  it('finds underlined words with no 44 px floor', () => {
+    expect(textButtonsUnder44('<button type="button" className="text-sm underline" onClick')).toEqual(['"text-sm underline"'])
+    expect(textButtonsUnder44("<button type=\"button\" className={cn('text-sm underline', LINE_BUTTON)} onClick")).toEqual([])
+    expect(textButtonsUnder44('<button type="button" className="min-h-11 hover:underline" onClick')).toEqual([])
+  })
+
+  it('is 44 px to a finger everywhere in the app', () => {
+    const offenders = Object.entries(sources).flatMap(([path, text]) => textButtonsUnder44(text).map((c) => `${path}: ${c}`))
+    expect(offenders).toEqual([])
+  })
+})

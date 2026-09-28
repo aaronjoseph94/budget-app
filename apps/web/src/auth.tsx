@@ -4,6 +4,8 @@ import type { SupabaseClient } from './supabase.js'
 import { Label } from './ui.js'
 import { Button } from './components/ui/button.js'
 import { Card } from './components/ui/card.js'
+import { LINE_BUTTON } from './components/ui/link.js'
+import { cn } from './lib/cn.js'
 
 export type SessionState =
   | { readonly status: 'loading' }
@@ -173,9 +175,10 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
               <Button type="submit" disabled={busy}>
                 {busy ? 'Signing in…' : method === 'password' ? 'Sign in' : 'Email me a link'}
               </Button>
+              {/* 44 px for a finger, as the Year's line buttons are (A26). */}
               <button
                 type="button"
-                className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                className={cn('text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground', LINE_BUTTON)}
                 onClick={() => {
                   setMethod(method === 'password' ? 'link' : 'password')
                   setAttempt({ kind: 'idle' })
