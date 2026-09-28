@@ -31,3 +31,14 @@ describe('Button at large text sizes (N58, A26)', () => {
     expect(classes.contains('pointer-coarse:min-w-11')).toBe(true)
   })
 })
+
+// FE-4-NEW: the light scheme's ring is the primary itself, so on a filled
+// button a ring drawn flush was the fill grown 3 px, not a mark of focus.
+describe('Button focus', () => {
+  it('sets its ring apart from its own fill by a gap in the page colour', () => {
+    render(<Button>Add</Button>)
+    const classes = screen.getByRole('button').classList
+    expect(classes.contains('focus-visible:ring-offset-2')).toBe(true)
+    expect(classes.contains('focus-visible:ring-offset-background')).toBe(true)
+  })
+})

@@ -34,7 +34,10 @@ export function Button({ variant = 'default', size = 'default', className, type 
         // label pushed whole screens sideways (N58). It keeps to one line
         // wherever it fits, and wraps only where it would not.
         'inline-flex max-w-full shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors',
-        'outline-none focus-visible:ring-[3px] focus-visible:ring-ring',
+        // The light ring is the primary, the filled button's own colour, so a
+        // ring drawn flush only made it 3 px bigger; a page-coloured gap
+        // between them makes focus plain on every variant (FE-4-NEW).
+        'outline-none focus-visible:ring-[3px] focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         // A finger needs 44px whatever size was asked for (FE-1). A mouse keeps
         // the compact sizes, so the desktop's four-across Month does not grow.
         'pointer-coarse:min-h-11 pointer-coarse:min-w-11',
