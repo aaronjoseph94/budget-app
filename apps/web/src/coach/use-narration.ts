@@ -17,10 +17,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { checkReply, modelPayload, type ModelPayload } from '@budget/savings-coach'
 import { parseNarrateReply, type AiProvider } from '@budget/schema'
 import { useAppData } from '../app-data.js'
-import { askAi, ranOf, type AiView } from '../ai/client.js'
+import { aiStatus, askAi, ranOf, viewOf, type AiState, type AiView } from '../ai/client.js'
 import { readNotes, writeNote } from './ai-cache.js'
 import { fromReply, ownWords, reuse, type Day, type Narration, type Signed } from './narration.js'
 import { sign, sigsByLetter } from './signatures.js'
+import type { SupabaseClient } from '../supabase.js'
 
 export type NarrationStatus = 'loading' | 'own' | 'asking' | 'ai'
 
@@ -50,6 +51,43 @@ export function askedHereToday(asOf: string): boolean {
   }
 }
 
+const WHY_KEY = 'budget.coach.whyOwn'
+
+/** States the helper's status cannot see, because they come of a run: kept for the rest of the day. */
+const ONLY_A_RUN_SAYS: readonly AiState[] = ['all_resting', 'all_failed']
+
+function rememberWhy(asOf: string, state: AiState): void {
+  try {
+    window.localStorage.setItem(WHY_KEY, `${asOf} ${state}`)
+  } catch {
+    // Storage blocked: a later visit asks the helper's status instead.
+  }
+}
+
+function rememberedWhy(asOf: string): AiState | null {
+  try {
+    const [day, state] = (window.localStorage.getItem(WHY_KEY) ?? '').split(' ')
+    return day === asOf ? ((state as AiState | undefined) ?? null) : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Why a later visit shows the app's own words, once today's ask found none
+ * (the Month and the Coach share one ask a day). What is wrong now wins,
+ * from the helper's status, which spends none of the day's calls: a helper
+ * installed since is not still "not installed". Only a run can say that
+ * every service is resting, so that is kept from the ask.
+ */
+async function whyOwnWords(supabase: SupabaseClient, asOf: string): Promise<AiView | null> {
+  const was = rememberedWhy(asOf)
+  if (was === null) return null
+  const now = await aiStatus(supabase)
+  if (now.state !== 'on') return now
+  return ONLY_A_RUN_SAYS.includes(was) ? viewOf(was as Exclude<AiState, 'on'>) : null
+}
+
 function markAsked(asOf: string): void {
   try {
     window.localStorage.setItem(ASKED_KEY, asOf)
@@ -74,6 +112,7 @@ export function useNarration(day: Day | null, asOf: string, auto: boolean): Narr
       const parsed = ran === null ? null : parseNarrateReply(ran.text)
       if (ran === null || parsed === null || !parsed.ok) {
         const view = answer.ok ? REFUSED : answer.view
+        if (!answer.ok) rememberWhy(asOf, answer.view.state)
         setState((s) => ({ ...s, status: s.provider === null ? 'own' : 'ai', view }))
         return
       }
@@ -113,7 +152,11 @@ export function useNarration(day: Day | null, asOf: string, auto: boolean): Narr
       // Refresh only once words have been kept: with none, there is nothing to be stale.
       const canRefresh = !kept.whole && notes.length > 0
       setState({ narration: kept.narration, status: kept.provider === null ? 'own' : 'ai', view: null, provider: kept.provider, canRefresh })
-      if (auto && worth && !askedToday) await ask(day, payload, signed, mine)
+      if (auto && worth && !askedToday) return ask(day, payload, signed, mine)
+      if (!(auto && worth) || kept.provider !== null) return
+      const why = await whyOwnWords(supabase, asOf)
+      if (mine !== run.current || why === null) return
+      setState((s) => (s.status === 'own' ? { ...s, view: why } : s))
     })()
     return () => void ++run.current
   }, [day, asOf, auto, supabase, ask])

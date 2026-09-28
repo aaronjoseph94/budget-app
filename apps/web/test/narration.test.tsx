@@ -183,6 +183,57 @@ describe('the AI’s words on the Coach', () => {
     expect(headings()).toEqual(['Time for a fresh statement', 'Charges waiting for you', 'Running ahead: Dining out'])
   })
 
+  // Today's one automatic ask is used by whichever of the Month and the
+  // Coach opens first; the other still says why the words are the app's own.
+  it('still says why on a later visit, once today’s ask found no AI helper', async () => {
+    const fake = seeded()
+    fake.functions.ai = null
+    renderScreen(<Shell />, fake)
+    expect(await screen.findByText(/The AI helper isn’t installed yet/)).toBeTruthy()
+    cleanup()
+    renderScreen(<Shell />, fake)
+    expect(await screen.findByText(/The AI helper isn’t installed yet/)).toBeTruthy()
+    expect(fake.functions.calls.filter((c) => c['action'] === 'run')).toHaveLength(1)
+  })
+
+  it('still says every service is resting on a later visit, while the helper and a key are there', async () => {
+    const fake = seeded()
+    fake.functions.aiStatus = {
+      ...fake.functions.aiStatus,
+      services: fake.functions.aiStatus.services.map((sv) => (sv.provider === 'gemini' ? { ...sv, source: 'saved' as const, hint: 'k3Yz', status: 'ok' as const } : sv)),
+    }
+    const briefs = helper(fake, () => new Response(JSON.stringify({ ok: false, code: 'all_resting' }), { status: 429, headers: { 'content-type': 'application/json' } }))
+    renderScreen(<Shell />, fake)
+    expect(await screen.findByText(/Every AI service is resting for a while/)).toBeTruthy()
+    cleanup()
+    renderScreen(<Shell />, fake)
+    expect(await screen.findByText(/Every AI service is resting for a while/)).toBeTruthy()
+    expect(briefs).toHaveLength(1)
+  })
+
+  it('says what is wrong now, not what was, once the helper is installed later that day', async () => {
+    const fake = seeded()
+    fake.functions.ai = null
+    renderScreen(<Shell />, fake)
+    expect(await screen.findByText(/The AI helper isn’t installed yet/)).toBeTruthy()
+    cleanup()
+    // Installed since, with no key yet: today's ask is spent, so the Coach says what is left to do.
+    fake.functions.ai = (body) => new Response(JSON.stringify(body['action'] === 'status' ? fake.functions.aiStatus : { ok: false, code: 'not_set_up' }), { headers: { 'content-type': 'application/json' } })
+    renderScreen(<Shell />, fake)
+    expect(await screen.findByRole('link', { name: 'Turn on free AI (2 minutes)' })).toBeTruthy()
+    expect(screen.queryByText(/The AI helper isn’t installed yet/)).toBeNull()
+    cleanup()
+    // Then a key: nothing is wrong now, and today's ask is still spent.
+    fake.functions.aiStatus = {
+      ...fake.functions.aiStatus,
+      services: fake.functions.aiStatus.services.map((sv) => (sv.provider === 'gemini' ? { ...sv, source: 'saved' as const, hint: 'k3Yz', status: 'ok' as const } : sv)),
+    }
+    renderScreen(<Shell />, fake)
+    expect(await screen.findByText('In the app’s own words, from your records.')).toBeTruthy()
+    await waitFor(() => expect(fake.functions.calls.filter((c) => c['action'] === 'status').length).toBeGreaterThan(1))
+    expect(screen.queryByText(/The AI helper isn’t installed yet/)).toBeNull()
+  })
+
   it('works uncached without 0017, asking once a day by itself', async () => {
     const fake = seeded()
     fake.fail('ai_notes', 'PGRST205')
