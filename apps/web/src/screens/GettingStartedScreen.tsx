@@ -81,7 +81,7 @@ export function GettingStartedScreen() {
 
   return (
     <div className="space-y-5 pb-4">
-      <div className="flex items-center gap-1">
+      <div className="flex flex-wrap items-center gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Getting started</h1>
         <HelpButton screen="start" />
       </div>

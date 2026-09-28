@@ -135,7 +135,7 @@ export function PaycheckPeriod({
     <>
       <header className="-mx-4 flex flex-wrap items-center justify-between gap-2 bg-paycheck-band px-4 py-4 text-paycheck-ink md:mx-0 md:rounded-xl">
         <div>
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1">
             <h1 className="text-2xl font-semibold tracking-tight">
               {payPeriod({ schedule, asOf: today }).start === start ? 'This pay period' : 'Pay period'}
             </h1>

@@ -43,7 +43,7 @@ export function ForecastScreen() {
   }, [read, categories])
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-1">
+      <div className="flex flex-wrap items-center gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Forecast</h1>
         <HelpButton screen="forecast" />
       </div>

@@ -70,7 +70,7 @@ export function LedgerScreen() {
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
           {/* More's name for it: one screen, one name. */}
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1">
             <h1 className="text-2xl font-semibold tracking-tight">All transactions</h1>
             <HelpButton screen="ledger" />
           </div>

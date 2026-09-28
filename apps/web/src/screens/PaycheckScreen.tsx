@@ -88,7 +88,7 @@ export function PaycheckScreen({ day }: { day: string | null }) {
 function NoSchedule() {
   return (
     <section aria-label="Paycheck" className="space-y-3 rounded-xl bg-paycheck-band px-4 py-5 text-paycheck-ink">
-      <div className="flex items-center gap-1">
+      <div className="flex flex-wrap items-center gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Paycheck</h1>
         <HelpButton screen="paycheck" />
       </div>

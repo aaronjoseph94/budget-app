@@ -271,7 +271,7 @@ function NameBand() {
       >
         ‹ More
       </button>
-      <div className="flex items-center gap-1">
+      <div className="flex flex-wrap items-center gap-1">
         <h1 className="font-serif text-4xl italic">Start here!</h1>
         <HelpButton screen="setup" />
       </div>

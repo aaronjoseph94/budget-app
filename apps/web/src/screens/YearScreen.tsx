@@ -121,7 +121,7 @@ export function YearScreen({ start: address }: { start: string | null }) {
     <div className="space-y-4">
       <PeriodSwitch current="year" />
       <header className="-mx-4 bg-year-header px-4 py-4 text-year-header-ink md:mx-0 md:rounded-xl">
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           <h1 className="font-serif text-4xl italic">Year</h1>
           <HelpButton screen="year" />
         </div>

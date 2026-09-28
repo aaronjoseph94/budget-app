@@ -127,7 +127,7 @@ export function WeekScreen({ monday }: { monday: string | null }) {
       <PeriodSwitch current="week" />
       <header className="-mx-4 flex flex-wrap items-center justify-between gap-2 bg-title-band px-4 py-4 md:mx-0 md:rounded-xl">
         <div>
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1">
             <h1 className="text-2xl font-semibold tracking-tight">{isThisWeek ? 'This week' : 'Week of'}</h1>
             <HelpButton screen="week" />
           </div>

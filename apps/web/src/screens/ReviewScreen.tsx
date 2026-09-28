@@ -281,7 +281,7 @@ export function ReviewScreen() {
   return (
     <div className="space-y-4">
       <header>
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           <h1 className="text-2xl font-semibold tracking-tight">Review</h1>
           <HelpButton screen="review" />
         </div>

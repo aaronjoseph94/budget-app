@@ -99,3 +99,24 @@ describe('grids on a phone', () => {
     expect(offenders).toEqual([])
   })
 })
+
+
+/**
+ * A screen's title and its ? share a row. With the phone's text at 200%
+ * "All transactions" and its ? were 61 px wider than a 390 px screen
+ * (N58), so the row wraps and the ? drops under the title instead.
+ */
+describe('a title and its help button', () => {
+  it('share a row that wraps', () => {
+    const offenders: string[] = []
+    for (const [path, text] of Object.entries(sources)) {
+      const lines = text.split('\n')
+      lines.forEach((line, i) => {
+        if (!line.includes('<HelpButton') || /^\s*(\*|\/\/)/.test(line)) return
+        const row = lines.slice(Math.max(0, i - 4), i).reverse().find((l) => l.includes('className="flex'))
+        if (row !== undefined && !row.includes('flex-wrap')) offenders.push(`${path}:${i + 1}`)
+      })
+    }
+    expect(offenders).toEqual([])
+  })
+})

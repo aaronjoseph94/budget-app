@@ -69,7 +69,7 @@ export function CheckinScreen() {
       <a href={hashOf({ screen: 'coach', param: null })} className={`${link} text-sm`}>
         ← Coach
       </a>
-      <div className="flex items-center gap-1">
+      <div className="flex flex-wrap items-center gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Your Sunday check-in</h1>
         <HelpButton screen="coach" topic="checkin" />
       </div>

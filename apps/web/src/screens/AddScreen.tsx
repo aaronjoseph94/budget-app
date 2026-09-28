@@ -67,7 +67,7 @@ export function AddScreen() {
   return (
     <div className="space-y-4">
       <header>
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           <h1 className="text-2xl font-semibold tracking-tight">Add</h1>
           <HelpButton screen="add" />
         </div>

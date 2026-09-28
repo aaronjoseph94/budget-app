@@ -233,8 +233,9 @@ export function MonthScreen({ month }: { month: string | null }) {
       <header className="-mx-4 flex flex-wrap items-center justify-between gap-2 bg-title-band px-4 py-4 md:mx-0 md:rounded-xl">
         <MonthTitle>{formatMonthTitle(start)}</MonthTitle>
         {/* The ? sits with the header's buttons, as in the plan's sketch: beside
-          the title it broke "September 2026" onto two lines at 320px. */}
-        <div className="flex items-center gap-1">
+          the title it broke "September 2026" onto two lines at 320px. With the
+          phone's text at 200% the four no longer fit one row, so they wrap. */}
+        <div className="flex flex-wrap items-center gap-1">
           {/* The Bill calendar left the wide bar for More (ADR 0006); from the Month it is one tap, at this month. */}
           <Button variant="outline" size="icon" aria-label="Bill calendar" onClick={() => navigate('calendar', start.slice(0, 7))}>
             <Icon name="bills" />
@@ -582,8 +583,10 @@ export function Block({
           <Figure className="text-lg font-bold">{formatCents(block.actualTotalCents)}</Figure>
           {budgeted ? <span className="tnum text-sm"> of {formatCents(block.budgetTotalCents)}</span> : null}
           {/* Under $1 is the same (F26), and a chip saying so on every quiet list is noise. */}
+          {/* Kept whole where it fits; with the phone's text at 200% it was
+            wider than the card and pushed the Month sideways (N58). */}
           {total === undefined || total.direction === 'same' ? null : (
-            <span className="ml-2 whitespace-nowrap rounded-full bg-card/70 px-2 py-0.5 text-xs font-medium">
+            <span className="ml-2 inline-block max-w-full rounded-full bg-card/70 px-2 py-0.5 text-xs font-medium">
               <span aria-hidden="true">{total.direction === 'more' ? '▲ ' : '▼ '}</span>
               {formatChange(total)}
               <span className="sr-only"> than last month</span>
