@@ -103,6 +103,9 @@ export function describeFailure(kind: string, line?: number): string {
   return line === undefined ? body : `${body} It starts around line ${line}.`
 }
 
+/** How PostgREST and Postgres say a table, column or function is not there: a one-time update not pasted yet. */
+const MISSING_UPDATE = ['PGRST202', 'PGRST204', 'PGRST205', '42P01', '42703', '42883'] as const
+
 /**
  * A database failure as a sentence, without quoting the database.
  *
@@ -123,9 +126,6 @@ export function describeFailure(kind: string, line?: number): string {
  * The code is kept in parentheses. It is meaningless to the reader and exact
  * for anyone they show it to, which is the only way a screenshot is useful.
  */
-/** How PostgREST and Postgres say a table, column or function is not there: a one-time update not pasted yet. */
-const MISSING_UPDATE = ['PGRST202', 'PGRST204', 'PGRST205', '42P01', '42703', '42883'] as const
-
 const WRITE_FAILURES: Record<string, string> = {
   '23505': 'You already have this, so nothing was added.',
   '23514':
