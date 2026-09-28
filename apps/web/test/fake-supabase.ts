@@ -30,6 +30,7 @@ import type {
   UnreadableLine,
 } from '../src/ledger.js'
 import type { SupabaseClient } from '../src/supabase.js'
+import { watchNetwork } from '../src/offline.js'
 import { AI_HELPER_VERSION, type AiStatusReply } from '@budget/schema'
 
 type Row = Readonly<Record<string, unknown>>
@@ -172,6 +173,8 @@ export interface FakeSupabase {
      * naming one with PGRST204, as Postgres and PostgREST refuse each.
      */
     lacks: Readonly<Record<string, readonly string[]>>
+    /** No reply at all, as with the phone off the network: every request's fetch rejects. */
+    offline: boolean
   }
 }
 
@@ -215,7 +218,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     clear_candidate_suggestion: false,
   }
   const failures = new Map<string, string>()
-  const server: FakeSupabase['server'] = { refuse: null, maxRows: null, afterRead: null, hold: null, lacks: {} }
+  const server: FakeSupabase['server'] = { refuse: null, maxRows: null, afterRead: null, hold: null, lacks: {}, offline: false }
   const user = { id: 'u1', email: 'you@example.com', user_metadata: {} as Record<string, unknown> }
   const functions: FakeSupabase['functions'] = {
     // With no key anywhere, a task is turned away as the helper would: not set up.
@@ -347,6 +350,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
   }
 
   async function serve(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+    if (server.offline) throw new TypeError('Failed to fetch')
     const url = new URL(input instanceof Request ? input.url : String(input))
     const method = init?.method ?? 'GET'
     const headers = new Headers(init?.headers)
@@ -599,7 +603,8 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     // A key per client: each test builds its own, and supabase-js warns when
     // two share one in the same window.
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: `fake-${clients++}` },
-    global: { fetch: serve },
+    // Watched as the app's own client is (supabase.ts), so the offline line shows here too.
+    global: { fetch: watchNetwork(serve) },
   })
 
   // A token of the right shape, made here rather than written out: the client

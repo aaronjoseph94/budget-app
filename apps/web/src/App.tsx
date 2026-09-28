@@ -15,6 +15,7 @@ import { Icon, type IconName } from './components/ui/icons.js'
 import { cn } from './lib/cn.js'
 import { todayIso } from './format.js'
 import { checkinDue } from './coach/checkin-seen.js'
+import { OfflineBanner } from './offline.js'
 
 // Each screen but the Month (and More, a list of links) is its own chunk,
 // fetched the first time it opens. The Month opens first (decision 1), and
@@ -207,6 +208,7 @@ export function Shell() {
         </header>
 
         <main ref={main} id="main" tabIndex={-1} className={cn('pt-screen pb-safe mx-auto w-full px-4 outline-none md:pb-12', width)}>
+          <OfflineBanner />
           {loadError !== null ? (
             <div className="mb-4 space-y-2">
               <Alert tone="error" title="Could not load your data">

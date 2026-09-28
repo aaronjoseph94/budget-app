@@ -8,6 +8,7 @@
  */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Env } from './env.js'
+import { watchNetwork } from './offline.js'
 
 export function createSupabase(env: Env): SupabaseClient {
   return createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY, {
@@ -23,6 +24,9 @@ export function createSupabase(env: Env): SupabaseClient {
       // the browser it was asked from; sign-in says so.
       flowType: 'pkce',
     },
+    // Watched so a request that gets no reply says "offline" once, above
+    // the screen, rather than only as each screen's own failure (A26).
+    global: { fetch: watchNetwork((input, init) => fetch(input, init)) },
   })
 }
 
