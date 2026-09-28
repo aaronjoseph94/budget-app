@@ -185,6 +185,9 @@ module.exports = {
       from: { path: '^(packages|apps)/[^/]+/test/' },
       to: { path: 'node_modules/(vitest|@testing-library/[^/]+)/' },
     },
+    // axe-core checks what the app's screen tests draw (ADR 0009). It is a
+    // test tool: nothing in apps/web/src may reach it, so it never ships.
+    { from: { path: '^apps/web/test/' }, to: { path: 'node_modules/axe-core/' } },
     { from: { path: '^(packages/[^/]+/test/|packages/golden-verification/src/)' }, to: { dependencyTypes: ['core'] } },
     // The graph in CAPABILITY-MAP.md. money-primitives has no line: it is the root.
     { from: { path: '^packages/core/' }, to: { path: '^packages/money-primitives/src/' } },
