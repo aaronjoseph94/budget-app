@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react'
-import { timeEquivalent } from '@budget/core'
+import { timeEquivalent, type PeriodComparison, type PeriodSheet } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { recategoriseTransaction, type LedgerRow } from '../ledger.js'
-import { CategoryOptions } from '../lists.js'
+import { CategoryOptions, LIST_HEADING } from '../lists.js'
 import { formatCents, formatIsoDate, formatMinutes, formatMonthName, formatMonthTitle } from '../format.js'
 import { IngestedText } from '../ui.js'
 import { Sheet } from '../components/ui/sheet.js'
@@ -50,6 +50,7 @@ export function MonthCharges({
   charges,
   lastMonth = null,
   toward = null,
+  period = null,
   onClose,
 }: {
   categoryId: string
@@ -64,9 +65,11 @@ export function MonthCharges({
   charges: readonly LedgerRow[]
   lastMonth?: { readonly label: string; readonly cents: number } | null
   toward?: { readonly goalName: string; readonly unitCostCents: number } | null
+  /** A week or a pay period, in place of the month, for the Week and Paycheck (N46, N48). */
+  period?: Period | null
   onClose: () => void
 }) {
-  const monthName = formatMonthTitle(month)
+  const monthName = period?.title ?? formatMonthTitle(month)
   const [moving, setMoving] = useState<string | null>(null)
   const [moved, setMoved] = useState<{ readonly merchant: string; readonly to: string } | null>(null)
   // The newest 30 (the month is read newest first), then all on request: a
@@ -101,7 +104,7 @@ export function MonthCharges({
       ) : null}
       {charges.length === 0 ? (
         <p className="px-4 py-6 text-center text-sm text-muted-foreground">
-          No charges filed here in {formatMonthName(month)}.
+          No charges filed here in {period?.inWords ?? formatMonthName(month)}.
           {basis === 'planned'
             ? ' The amount above is its monthly amount from Setup. A charge filed here counts instead.'
             : null}
@@ -169,6 +172,70 @@ export function MonthCharges({
       ) : null}
     </Sheet>
   )
+}
+
+/** A period other than a month: its dates as a title, and as said in a sentence. */
+export interface Period {
+  readonly title: string
+  readonly inWords: string
+  /** What the comparison line calls the period before, e.g. "Last week". */
+  readonly before: string
+}
+
+/**
+ * An opened row's charges, found by id in the blocks the screen shows, so
+ * its name, list and Actual are the ones on screen. A category gone after a
+ * reload has nothing to show, and the sheet closes rather than show a stale
+ * row. The Month, the Week and Paycheck each open their rows through this
+ * (N46, N48); `rows` are the period's own ledger rows.
+ */
+export function OpenedCharges({
+  blocks,
+  rows,
+  categoryId,
+  month,
+  period = null,
+  compared = null,
+  onClose,
+}: {
+  blocks: PeriodSheet['blocks']
+  rows: readonly LedgerRow[]
+  categoryId: string
+  /** The month holding the period's first day; the Month's own month. */
+  month: string
+  period?: Period | null
+  compared?: Extract<PeriodComparison, { status: 'compared' }> | null
+  onClose: () => void
+}) {
+  const { mainGoal } = useAppData()
+  for (const kind of Object.keys(blocks) as (keyof PeriodSheet['blocks'])[]) {
+    const row = blocks[kind].rows.find((r) => r.categoryId === categoryId)
+    if (row === undefined) continue
+    const before = compared?.blocks[kind].rows.find((r) => r.categoryId === categoryId)
+    // A Variable charge in the main goal's time, when the goal has one (D29).
+    const rate = kind === 'variable' && mainGoal !== null ? mainGoal.unit_cost_cents : null
+    const earlier = period?.before ?? 'Last month'
+    return (
+      <MonthCharges
+        categoryId={categoryId}
+        name={row.name}
+        heading={LIST_HEADING[kind]}
+        month={month}
+        period={period}
+        actualCents={row.actualCents}
+        basis={row.basis}
+        charges={rows.filter((r) => r.category_id === categoryId)}
+        lastMonth={
+          compared === null || before === undefined
+            ? null
+            : { label: compared.sameDays ? `${earlier} (same days)` : earlier, cents: before.beforeCents }
+        }
+        toward={rate === null || mainGoal === null ? null : { goalName: mainGoal.name, unitCostCents: rate }}
+        onClose={onClose}
+      />
+    )
+  }
+  return null
 }
 
 /** A charge's cost in the main goal's time: "= 22 min toward Flight training". */

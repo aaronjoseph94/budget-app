@@ -343,3 +343,21 @@ describe('WeekScreen', () => {
     expect(screen.queryByText('$130.12')).toBeNull()
   })
 })
+
+describe('WeekScreen, a row opened (N46)', () => {
+  it("opens the week's charges filed under it, named with the week's dates, each with Move to…", async () => {
+    renderScreen(<WeekScreen />, seeded())
+    const block = within(await screen.findByRole('region', { name: 'Variable expenses' }))
+    fireEvent.click(block.getByRole('button', { name: 'Eating out' }))
+
+    const sheet = within(screen.getByRole('dialog', { name: 'Eating out' }))
+    expect(sheet.getByText(/^Variable expenses · 9 – 15 Mar ·/)).toBeTruthy()
+    // This week's two, and never last week's.
+    expect(sheet.getAllByRole('button', { name: /^Move to…/ }).map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Move to… (FABRIKAM PIZZA, 11 Mar 2026)',
+      'Move to… (NORTHWIND DINER, 10 Mar 2026)',
+    ])
+    fireEvent.click(sheet.getByRole('button', { name: 'Close' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+})

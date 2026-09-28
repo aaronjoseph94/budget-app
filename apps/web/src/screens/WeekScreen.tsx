@@ -14,6 +14,7 @@ import { latestStatementEnd, listPlanHistory, listTransactions, type LedgerRow, 
 import { categoriesForCore, entriesForCore, plansForCore, weekCategoriesForCore } from '../sheet-input.js'
 import { useEarlier } from '../earlier.js'
 import { formatDateRange, todayIso } from '../format.js'
+import { OpenedCharges } from './MonthCharges.js'
 import { Card, CardContent } from '../components/ui/card.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
@@ -47,6 +48,9 @@ export function WeekScreen({ monday }: { monday: string | null }) {
   // A weekly budget refused after its editor closed, kept until another opens.
   const [unsaved, setUnsaved] = useState<string | null>(null)
   const bounds = useMemo(() => weekBounds(asOf), [asOf])
+  // The category whose charges are open, by id; another week closes it.
+  const [opened, setOpened] = useState<string | null>(null)
+  useEffect(() => setOpened(null), [bounds.start])
 
   useEffect(() => {
     // As on the Month: rows read before the first load brings the categories
@@ -175,6 +179,18 @@ export function WeekScreen({ monday }: { monday: string | null }) {
           comparison={comparison}
           aside={mainGoal !== null ? <GoalCard weekSpentCents={sheet.summary.spentCents} asOf={asOf} /> : <NoGoal />}
           onUnsaved={setUnsaved}
+          onOpen={setOpened}
+        />
+      ) : null}
+      {sheet !== null && here !== null && opened !== null ? (
+        <OpenedCharges
+          blocks={sheet.blocks}
+          rows={here.rows}
+          categoryId={opened}
+          month={monthBounds(bounds.start).start}
+          period={{ title: formatDateRange(bounds.start, bounds.end), inWords: formatDateRange(bounds.start, bounds.end), before: 'Last week' }}
+          compared={comparison !== null && comparison !== 'failed' && comparison.status === 'compared' ? comparison : null}
+          onClose={() => setOpened(null)}
         />
       ) : null}
     </div>

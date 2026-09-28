@@ -13,15 +13,16 @@ import { CompareLine } from './CompareLine.js'
  * every number weekSheet's. `aside` stands where the Month has its charts,
  * as Weekly Budget's own chart well (I3:M18) stands beside its summary.
  *
- * A row opens nothing here: the Month's charges sheet names its month, and
- * the Week has no sheet of its own yet. A budget is typed in its row, and
- * is the weekly one, the same every week.
+ * A row opens its charges for the week, in the Month's sheet named with the
+ * week's dates (N46). A budget is typed in its row, and is the weekly one,
+ * the same every week.
  */
 export function WeekBlocks({
   sheet,
   comparison = null,
   aside,
   onUnsaved,
+  onOpen,
 }: {
   sheet: WeekSheet
   /** Last week beside this one (D26); null while it loads, or where none is shown. */
@@ -29,8 +30,11 @@ export function WeekBlocks({
   aside: ReactNode
   /** A budget refused after its editor closed, or null as another opens. */
   onUnsaved: (message: string | null) => void
+  /** Opens a row's charges; without it a row is not a button. */
+  onOpen?: (categoryId: string) => void
 }) {
   const blockProps = {
+    onOpen,
     onEditStart: () => onUnsaved(null),
     editor: (row: PeriodRow, word: 'Budget' | 'Goal', done: EditorDone) => (
       <WeekBudgetEditor row={row} word={word} onCancel={done.cancel} onSaved={done.saved} onFailedAfterClose={onUnsaved} />

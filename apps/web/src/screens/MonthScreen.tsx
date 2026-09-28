@@ -48,7 +48,7 @@ import { cn } from '../lib/cn.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
 import { useReturnFocus } from '../lib/return-focus.js'
 import { BudgetEditor } from './BudgetEditor.js'
-import { MonthCharges } from './MonthCharges.js'
+import { OpenedCharges } from './MonthCharges.js'
 import { MonthCharts } from './MonthCharts.js'
 import { MonthSummary } from './MonthSummary.js'
 import { HelpButton } from '../help/HelpButton.js'
@@ -337,8 +337,8 @@ export function MonthScreen({ month }: { month: string | null }) {
           </div>
           <TransfersNote cents={sheet.transfersCents} />
           {here !== null && opened !== null ? (
-            <OpenedRow
-              sheet={sheet}
+            <OpenedCharges
+              blocks={sheet.blocks}
               rows={here.rows}
               categoryId={opened}
               month={start}
@@ -350,55 +350,6 @@ export function MonthScreen({ month }: { month: string | null }) {
       ) : null}
     </div>
   )
-}
-
-/**
- * The opened row's charges, found by id in the sheet the screen shows, so its
- * name, list and Actual are the ones on screen. A category gone after a reload
- * has nothing to show, and the sheet closes rather than show a stale row.
- */
-function OpenedRow({
-  sheet,
-  rows,
-  categoryId,
-  month,
-  compared,
-  onClose,
-}: {
-  sheet: PeriodSheet
-  rows: readonly LedgerRow[]
-  categoryId: string
-  month: string
-  compared: Extract<PeriodComparison, { status: 'compared' }> | null
-  onClose: () => void
-}) {
-  const { mainGoal } = useAppData()
-  for (const kind of BLOCKS) {
-    const row = sheet.blocks[kind].rows.find((r) => r.categoryId === categoryId)
-    if (row === undefined) continue
-    const before = compared?.blocks[kind].rows.find((r) => r.categoryId === categoryId)
-    // A Variable charge in the main goal's time, when the goal has one (D29).
-    const rate = kind === 'variable' && mainGoal !== null ? mainGoal.unit_cost_cents : null
-    return (
-      <MonthCharges
-        categoryId={categoryId}
-        name={row.name}
-        heading={LIST_HEADING[kind]}
-        month={month}
-        actualCents={row.actualCents}
-        basis={row.basis}
-        charges={rows.filter((r) => r.category_id === categoryId)}
-        lastMonth={
-          compared === null || before === undefined
-            ? null
-            : { label: compared.sameDays ? 'Last month (same days)' : 'Last month', cents: before.beforeCents }
-        }
-        toward={rate === null || mainGoal === null ? null : { goalName: mainGoal.name, unitCostCents: rate }}
-        onClose={onClose}
-      />
-    )
-  }
-  return null
 }
 
 interface Loaded {
@@ -469,7 +420,6 @@ function ReviewBanner({
 }
 
 export type BlockKind = keyof PeriodSheet['blocks']
-const BLOCKS: readonly BlockKind[] = ['variable', 'bill', 'subscription', 'debt', 'income', 'savings']
 
 /** The workbook's colours per block (§6.6): Bills, Debts and Subscriptions share one set. Written out for Tailwind. */
 const TONE: Record<BlockKind, { band: string; header: string; ink: string; rule: string }> = {
@@ -544,7 +494,7 @@ export function Block({
   /** Given, the band shows the block's total change beside its total. */
   chips?: Readonly<Record<BlockKind, BlockChange>> | undefined
   /** Opens a row's charges; without it a row is not a button. */
-  onOpen?: (categoryId: string) => void
+  onOpen?: ((categoryId: string) => void) | undefined
   /** Called as a budget editor opens, to clear what an earlier one left. */
   onEditStart?: () => void
   /** The form that types a row's budget, in a row of its own under it; without it a budget is only shown. */
