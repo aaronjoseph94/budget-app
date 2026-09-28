@@ -510,4 +510,54 @@ describe('ReviewScreen, a read already out when a card is approved (CR-13)', () 
     expect(cameBack).toBe(false)
     expect(screen.queryByText('CORNER MARKET #12')).toBeNull()
   })
+  it('never draws a card filed by Approve these N again, when an older read answers after it', async () => {
+    const fake = seeded()
+    const data: { current: AppData | null } = { current: null }
+    renderScreen(<><ReviewScreen /><Probe into={data} /></>, fake)
+    const coffee = await row('SQ *LITWARE COFFEE')
+    fireEvent.change(coffee.getByRole('combobox', { name: 'Category' }), { target: { value: 'c2' } })
+    await waitFor(() => expect(data.current?.status).toBe('ready'))
+
+    // As above: an older reload of the queue is out, and the approvals' refresh waits.
+    let releaseLoad = (): void => undefined
+    let releaseRefresh = (): void => undefined
+    let asked = 0
+    let loadHeld = false
+    let refreshHeld = false
+    let approving = false
+    fake.server.hold = (table) => {
+      if (table === 'ingest_candidates' && !loadHeld && ++asked === 2) {
+        loadHeld = true
+        return new Promise<void>((resolve) => (releaseLoad = resolve))
+      }
+      if (table === 'categories' && approving && !refreshHeld) {
+        refreshHeld = true
+        return new Promise<void>((resolve) => (releaseRefresh = resolve))
+      }
+      return null
+    }
+    void data.current?.refresh()
+    await waitFor(() => expect(loadHeld).toBe(true))
+
+    approving = true
+    fireEvent.click(screen.getByRole('button', { name: 'Approve these 2' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Approve all 2' }))
+    await screen.findByText(/^Filed 2\./)
+    await waitFor(() => expect(refreshHeld).toBe(true))
+
+    let cameBack = false
+    const watch = new MutationObserver(() => {
+      if (screen.queryByText('CORNER MARKET #12') !== null || screen.queryByText('SQ *LITWARE COFFEE') !== null) cameBack = true
+    })
+    watch.observe(document.body, { childList: true, subtree: true, characterData: true })
+    fake.tables.ingest_candidates.push({ id: 'p9', posted_on: '2026-03-12', amount_cents: -500, merchant: 'LATE SHOP', merchant_raw: 'LATE SHOP', status: 'pending' })
+    releaseLoad()
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)))
+    releaseRefresh()
+    await screen.findByText('LATE SHOP')
+    watch.disconnect()
+
+    expect(cameBack).toBe(false)
+    expect(screen.queryByText('SQ *LITWARE COFFEE')).toBeNull()
+  })
 })

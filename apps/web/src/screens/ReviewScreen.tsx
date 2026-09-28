@@ -252,6 +252,8 @@ export function ReviewScreen() {
       for (const { row, categoryId } of list) {
         await approveCandidate(supabase, row.id, categoryId)
         done += 1
+        // As in act: a read already out would put the filed card back (CR-13).
+        reads.current += 1
         setRows((now) => now?.filter((r) => r.id !== row.id) ?? null)
       }
       setNote(`Filed ${done}. Future charges from these shops will be filed the same way automatically.`)
