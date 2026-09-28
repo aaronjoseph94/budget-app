@@ -8,11 +8,10 @@
 import type { ReactNode } from 'react'
 import type { ReviewedMonth } from '@budget/savings-coach'
 import type { AiProvider } from '@budget/schema'
-import { hashOf } from '../nav.js'
 import { Section } from '../forecast/parts.js'
 import { CoachText } from '../coach/words.js'
 import { useReview, type ReviewState } from './use-review.js'
-import { SENTENCE_LINK } from '../components/ui/link.js'
+import { LineLink } from '../ai/LineLink.js'
 
 const BY: Readonly<Record<AiProvider, string>> = {
   gemini: 'free Google Gemini',
@@ -45,11 +44,7 @@ function Whose({ state }: { state: ReviewState }) {
     said = (
       <>
         {view.sentence}{' '}
-        {view.help === null ? null : (
-          <a href={hashOf({ screen: 'help', param: view.help })} className={SENTENCE_LINK}>
-            {view.help === 'updates' ? 'Help: One-time updates' : 'Why?'}
-          </a>
-        )}
+        <LineLink view={view} />
       </>
     )
   }

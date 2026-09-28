@@ -47,7 +47,9 @@ describe('the month in review', () => {
       'Dining out: $560.00, $155.00 more than your usual month of $405.00.',
     ])
     expect(within(review).getByText(whole('P', 'One thing to try: Next month, try a weekly limit for Dining out close to its usual, and check it each Sunday.'))).toBeTruthy()
-    expect(await within(review).findByRole('link', { name: 'Why?' })).toBeTruthy()
+    // Not set up: the line names AI settings and links there, not "below" (N99).
+    expect(await within(review).findByText(/Turn on free AI in AI settings, in about 2 minutes\./)).toBeTruthy()
+    expect(within(review).getByRole('link', { name: 'Open AI settings' }).getAttribute('href')).toBe('#/ai')
     expect(fake.functions.calls).toEqual([expect.objectContaining({ action: 'run', task: 'narrate', pack: 'report' })])
   })
 

@@ -50,7 +50,7 @@ const NAMES: Readonly<Record<AiServiceStatus['provider'], string>> = {
 
 const SAID: Readonly<Record<Exclude<AiState, 'on'>, { readonly sentence: string; readonly help: HelpTopic | null }>> = {
   off: { sentence: 'AI is off. Everything still works; the Coach uses the app’s own words.', help: null },
-  not_set_up: { sentence: 'AI isn’t set up yet. Everything still works in the app’s own words. Turn on free AI below, in about 2 minutes.', help: 'free-ai' },
+  not_set_up: { sentence: 'AI isn’t set up yet. Everything still works in the app’s own words. Turn on free AI in AI settings, in about 2 minutes.', help: 'free-ai' },
   not_deployed: { sentence: 'The AI helper isn’t installed yet. Everything else works. One-time updates shows how.', help: 'updates' },
   needs_update: { sentence: 'AI needs a one-time update. Everything else works. One-time updates shows which.', help: 'updates' },
   unreachable: { sentence: 'Couldn’t reach the AI helper. Check your connection and try again; everything else still works.', help: null },
@@ -79,6 +79,13 @@ const STATE_OF: Readonly<Record<AiCode, Exclude<AiState, 'on'>>> = {
   keys_locked: 'keys_locked',
   helper_error: 'helper_error',
 }
+
+/**
+ * Not set up, as AI settings says it, where the free AI card is just below.
+ * Everywhere else "below" pointed at nothing (N99), so the others name AI
+ * settings and link to it (LineLink).
+ */
+export const NOT_SET_UP_HERE = 'AI isn’t set up yet. Everything still works in the app’s own words. Turn on free AI below, in about 2 minutes.'
 
 export function viewOf(state: Exclude<AiState, 'on'>, status: AiStatusReply | null = null): AiView {
   return { state, ...SAID[state], status }

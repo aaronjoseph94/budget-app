@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AiServiceStatus } from '@budget/schema'
 import { useAppData } from '../app-data.js'
-import { aiStatus, type AiView } from '../ai/client.js'
+import { aiStatus, NOT_SET_UP_HERE, type AiView } from '../ai/client.js'
 import { ChoicesPanel } from '../ai/ChoicesPanel.js'
 import { CoachPanel } from '../ai/CoachPanel.js'
 import { KeyCard } from '../ai/KeyCard.js'
@@ -52,7 +52,7 @@ export function AiSettingsScreen() {
           AI now
         </h2>
         <p aria-live="polite" className="text-base font-medium leading-snug">
-          {view === null ? 'Checking the AI helper…' : view.sentence}
+          {view === null ? 'Checking the AI helper…' : view.state === 'not_set_up' ? NOT_SET_UP_HERE : view.sentence}
         </p>
         {view === null || view.help === null ? null : (
           <a

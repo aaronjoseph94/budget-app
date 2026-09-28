@@ -3,6 +3,7 @@ import type { AiProvider } from '@budget/schema'
 import { hashOf } from '../nav.js'
 import { Button } from '../components/ui/button.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
+import { LineLink } from '../ai/LineLink.js'
 import type { NarrationState } from './use-narration.js'
 
 const BY: Readonly<Record<AiProvider, string>> = {
@@ -40,11 +41,7 @@ export function CoachStatus({ state }: { state: NarrationState }) {
     said = (
       <>
         {view.sentence}{' '}
-        {view.help === null ? null : (
-          <a href={hashOf({ screen: 'help', param: view.help })} className={SENTENCE_LINK}>
-            {view.help === 'updates' ? 'Help: One-time updates' : 'Why?'}
-          </a>
-        )}
+        <LineLink view={view} />
       </>
     )
   }

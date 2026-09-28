@@ -9,6 +9,7 @@ import { setWeeklyBudget } from '../ledger.js'
 import { hashOf } from '../nav.js'
 import { Button } from '../components/ui/button.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
+import { LineLink } from '../ai/LineLink.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { Section } from '../forecast/parts.js'
 import { useCoachRead } from '../coach/facts.js'
@@ -120,11 +121,7 @@ function Whose({ state }: { state: CheckinWordsState }) {
     said = (
       <>
         {view.sentence}{' '}
-        {view.help === null ? null : (
-          <a href={hashOf({ screen: 'help', param: view.help })} className={SENTENCE_LINK}>
-            {view.help === 'updates' ? 'Help: One-time updates' : 'Why?'}
-          </a>
-        )}
+        <LineLink view={view} />
       </>
     )
   }
