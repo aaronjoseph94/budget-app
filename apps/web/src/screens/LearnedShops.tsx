@@ -3,7 +3,7 @@ import { useAppData } from '../app-data.js'
 import { forgetShop, listLearnedShops, type LearnedShop } from '../learned-shops.js'
 import { IngestedText } from '../ui.js'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card.js'
-import { Alert, SavedNote } from '../components/ui/feedback.js'
+import { Alert, Loading, SavedNote } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { useFocusDrawn } from '../lib/return-focus.js'
 
@@ -65,7 +65,7 @@ export function LearnedShopsCard() {
       <CardContent className="space-y-3">
         {error !== null ? <Alert tone="error">{error}</Alert> : null}
         {note !== null ? <SavedNote className="text-sm text-income">{note}</SavedNote> : null}
-        {shops === null && error === null ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
+        {shops === null && error === null ? <Loading what="the shops the app has learned" /> : null}
         {shops !== null && shops.length === 0 ? (
           <p className="text-sm text-muted-foreground">None yet. Approve a charge in Review and its shop is learned.</p>
         ) : null}

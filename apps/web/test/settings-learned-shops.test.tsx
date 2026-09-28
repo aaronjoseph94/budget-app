@@ -61,6 +61,13 @@ describe('SettingsScreen, shops filed by themselves (N17)', () => {
     expect(screen.getByRole('button', { name: /Sign out/ })).toBeTruthy()
   })
 
+  it('says it is loading as every screen does, named for what loads', async () => {
+    const fake = seeded()
+    fake.server.hold = (table) => (table === 'merchant_rules' ? new Promise<void>(() => undefined) : null)
+    renderScreen(<SettingsScreen />, fake)
+    expect((await screen.findByRole('status', { name: 'Loading the shops the app has learned' })).textContent).toBe('Loading…')
+  })
+
   it('says none are learned yet', async () => {
     renderScreen(<SettingsScreen />, createFakeSupabase())
     expect(await screen.findByText('None yet. Approve a charge in Review and its shop is learned.')).toBeTruthy()
