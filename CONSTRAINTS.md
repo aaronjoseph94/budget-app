@@ -58,6 +58,7 @@ whether a commit is clean.
 | Browser holds no AI key | No AI service's API host (`generativelanguage.googleapis.com`, `api.groq.com`, `openrouter.ai/api`, `api.openai.com`, `api.anthropic.com`) and no `SERVICE_ROLE` in `apps/web/src` or the built JavaScript (`/setup/` left out: it is the AI helper's own source, never run by the page); `connect-src` is `'self'` and the Supabase project alone | `vitest run` (`no-provider-hosts.test.ts`, `headers.test.ts`) + `node scripts/check-bundle.mjs` | every edit (bundle: CI) |
 | Model text carries no numbers | Every string a model writes is held to ADR 0005's text rule (`ModelProse`: NFKC, then no `\p{N}` or `\p{Sc}`, no markup or link characters, no number word but "one", no product or investing words, at most two line breaks, each field within its length) before it is drawn or kept; the database refuses any digit, in five scripts, and `$ ＄ % ％ € £ ¥ ¢ ₹` in the AI's kept words (`ai_text_is_clean`, 0017) | `vitest run` (`model-prose.test.ts`; `templates.test.ts` holds the app's own words to the same rule) + `scripts/verify-migrations.sh` | every edit (schema: CI) |
 | Brand | The workbook vendor's name is in no tracked file's text or path, in any letter case | `git grep -niI -e "w[i]nky"` + `git ls-files` | every edit |
+| Phone width | No class in `apps/web/src` fixes a width, minimum width, size or basis over 320 px outside a breakpoint; every grid has a column for a phone; every band that bleeds to the screen's edge takes back the 12 px gutter below 360 px; a link inside a sentence takes its 44 px from padding (`SENTENCE_LINK`); a date beside another field stacks below 360 px; every chart is held to a width (A26) | `vitest run` (`width-guard.test.ts`) | every edit |
 
 The web first-load row replaced the pending "≤700 KB gzipped" entry-bundle
 row on 2026-09-24, tighter: the entry had grown from 192.83 to 214.62 KB
@@ -168,6 +169,7 @@ the command to actually run.
 | Web entry charts | Chart code out of the entry chunk (N39: the Month draws its charts on every open, so this is still open) | a lazy MonthCharts, measured |
 | Engine speed | Full recompute over 5,000 transactions ≤50 ms | `calc-engine` rollups |
 | Feedback loop | `gates.sh fast` ≤5s · full ≤90s · CI ≤5 min | CI setup |
+| Mobile sweep | Every screen and every fail-soft state, at 320 and 390 px, with text at 100% and 200%: `scrollWidth ≤ innerWidth`, the phone's bottom bar on screen and uncovered, every control in `main` 44 px tall on a touch screen, every field's text 16 px or more | a Playwright dev dependency, approved (A26: the sweep runs from the preview harness in the scratchpad until then) |
 
 **Why Extraction accuracy stays pending** (2026-09-24). `llm-providers`
 exists now, as `read-receipt` and, from plan A09, the `ai` helper, so the
@@ -182,6 +184,15 @@ through `parseReceiptReply`. What is checked meanwhile is the part that
 does not need the model: every reply is parsed by zod before use, and
 whatever it reads waits in Review. The row moves up when the owner supplies
 20 receipts that may be kept, redacted, as fixtures.
+
+**Why the Mobile sweep is pending** (2026-09-28, A26). It needs a
+browser that lays the page out, and jsdom lays out nothing; Playwright is
+the tool, and a new dev dependency waits for the owner's approval
+(CLAUDE.md). A26 ran it from the preview harness in the scratchpad at 320,
+375, 390, 430, 768 and 1280 px, light and dark, and with text at 200%, and
+fixed what it found; the part of it that reads source rather than a page is
+enforced above, as Phone width. The row moves up with the dependency and a
+CI job that starts the preview and runs the sweep.
 
 **Why Engine speed stays pending** (2026-09-24). Its trigger, rollups over
 the ledger, exists: the Month recomputes `monthSheet` and
