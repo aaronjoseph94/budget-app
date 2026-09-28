@@ -107,7 +107,7 @@ function GridCard({ grid }: { grid: SpendingGrid }) {
             startText: formatDayMonth(first),
             endText: formatDayMonth(last),
           })}
-          className="max-w-2xl"
+          className="mx-auto max-w-md"
         />
       </div>
       <dl className="divide-y">
@@ -200,7 +200,7 @@ function WeekdayCard({ pattern }: { pattern: WeekdayPattern }) {
           description: days.map((x, i) => `${WEEKDAY_NAMES[i]} ${formatCents(x.averageCents)}`).join(', '),
           bars: days.map((x, i) => ({ label: WEEKDAYS[i]!, valueText: formatCents(x.averageCents), goalBp: x.trackBp, actualBp: x.barBp })),
         })}
-        className="max-w-xl"
+        className="mx-auto max-w-md"
       />
       {pattern.allowanceCents === null ? null : (
         <p className="text-muted-foreground">Each track is your daily allowance, {formatCents(pattern.allowanceCents)}.</p>

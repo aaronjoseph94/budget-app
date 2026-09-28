@@ -21,6 +21,12 @@ import { cn } from '../../lib/cn.js'
  *
  * The type is the guard: a plain string does not fit `SvgMarkup`, and
  * eslint refuses `as SvgMarkup` in the app.
+ *
+ * A chart's text is drawn at 12 px for a 300 px chart and grows with it, so
+ * every chart is held to a width by its caller (`max-w-sm` on the Month,
+ * `max-w-md` on the denser Forecast and Reports charts, 18 px text at
+ * most) or by a box of its own: full width on a desktop, the Forecast's and
+ * Reports' labels were twice the page's text (N88, N97).
  */
 export function SvgChart({ svg, className }: { svg: SvgMarkup; className?: string }) {
   return <div className={cn('w-full', className)} dangerouslySetInnerHTML={{ __html: svg }} />

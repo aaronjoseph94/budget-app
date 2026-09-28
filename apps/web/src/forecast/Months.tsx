@@ -49,6 +49,7 @@ export function MonthsAheadCard({ ahead, bars, names }: { ahead: CashFlowAhead; 
             highBp: bars.bps[3 + 3 * i]!,
           })),
         })}
+        className="mx-auto max-w-md"
       />
       <div className="overflow-x-auto">
         <table className="w-full min-w-[18rem] text-sm">

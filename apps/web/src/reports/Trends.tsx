@@ -101,7 +101,7 @@ function TotalsTrend({ trend }: { trend: MonthlyTrend }) {
               startText: formatShortMonth(months[0]!),
               endText: formatShortMonth(months[months.length - 1]!),
             })}
-            className="max-w-xl print:hidden"
+            className="mx-auto max-w-md print:hidden"
           />
           <dl className="divide-y">
             {lines.map((l) => (

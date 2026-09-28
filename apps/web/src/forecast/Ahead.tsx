@@ -42,6 +42,7 @@ export function NextDaysCard({ flow, line, asOf, names }: { flow: CashFlow30; li
               startText: 'Today',
               endText: formatDayMonth(last.date),
             })}
+            className="mx-auto max-w-md"
           />
           <p className="text-muted-foreground">
             {flow.dailyVariableCents === null

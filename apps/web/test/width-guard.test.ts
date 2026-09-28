@@ -185,3 +185,26 @@ describe('a date beside another field', () => {
     expect(offenders).toEqual([])
   })
 })
+
+/**
+ * A chart's labels grow with its width, so on a desktop a full-width chart
+ * drew them at twice the page's text (N88, N97). Each chart is given a
+ * `max-w-*`, or sits in a box that sizes it; those boxes are named here.
+ */
+describe('a chart', () => {
+  // Each sits in a box of its own: the sparkline in w-24, the debt ring in
+  // its caller's className, the Year's lines in a box sized for them.
+  const SIZED_BY_A_BOX = ['reports/Trends.tsx: sparkline', 'screens/DebtsScreen.tsx', 'screens/YearCharts.tsx']
+
+  it('is held to a readable width on a wide screen', () => {
+    const offenders: string[] = []
+    for (const [path, text] of Object.entries(sources)) {
+      for (const m of text.matchAll(/<SvgChart\b[\s\S]*?\/>/g)) {
+        if (/className=(\{cn\(|"[^"]*)max-w-|className=\{cn\([^)]*max-w-/.test(m[0])) continue
+        const where = `${path.replace('../src/', '')}${m[0].includes('sparkline(') ? ': sparkline' : ''}`
+        if (!SIZED_BY_A_BOX.includes(where)) offenders.push(where)
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+})

@@ -165,6 +165,7 @@ function MonthEndCard({ monthEnd, figures, month }: { monthEnd: MonthEndForecast
             midText: `${monthEnd.status === 'rough' ? 'About' : 'Most likely'} ${formatWholeDollars(end.mid)}`,
             todayText: `Today ${formatCents(today)}`,
           })}
+          className="mx-auto max-w-md"
         />
       )}
       <h3 className="pt-1 font-medium">Still to come</h3>
