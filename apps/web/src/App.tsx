@@ -141,7 +141,7 @@ function tabOf(screen: Screen, tabs: readonly Tab[]): Screen {
 
 export function Shell() {
   const { screen, param } = useAddress()
-  const { pendingTotal, loadError, status, refresh } = useAppData()
+  const { supabase, pendingTotal, loadError, status, refresh } = useAppData()
   // Month, Week, Paycheck and Year widen on a desktop to take the workbook's four
   // columns (§6.3, §6.4), and the Bill Calendar to give its seven room for names.
   const wide = screen === 'month' || screen === 'week' || screen === 'paycheck' || screen === 'year' || screen === 'calendar'
@@ -217,10 +217,17 @@ export function Shell() {
               <Alert tone="error" title="Could not load your data">
                 {loadError}
               </Alert>
-              <div className="flex flex-wrap items-center gap-x-4">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                 <Button variant="outline" onClick={() => void refresh()}>
                   Try again
                 </Button>
+                {/* No screen is drawn, so Settings' Sign out is out of reach,
+                  and a refused sign-in is fixed by signing out (FE-7-NEW). */}
+                {status === 'failed' ? (
+                  <Button variant="outline" onClick={() => void supabase.auth.signOut()}>
+                    Sign out
+                  </Button>
+                ) : null}
                 {screen === 'help' ? null : (
                   <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
                     Check the one-time updates
@@ -231,6 +238,9 @@ export function Shell() {
           ) : null}
           {/* No screen until the shared data is read: before then an empty
             list means "not read yet", and screens showed it as "none" (FE-7). */}
+          {/* Each screen names itself; with none drawn yet, the page still
+            has a heading for a screen reader to land on (FE-7-NEW-2). */}
+          {status === 'loading' || (status === 'failed' && screen !== 'help') ? <h1 className="sr-only">Budget</h1> : null}
           {status === 'loading' ? (
             <p role="status" aria-busy="true" aria-label="Loading your budget" className="py-16 text-center text-sm text-muted-foreground">
               Loading…

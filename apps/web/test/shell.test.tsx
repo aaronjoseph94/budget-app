@@ -214,6 +214,31 @@ describe('Shell, before the shared data has loaded (FE-7)', () => {
   })
 })
 
+describe('Shell, when the first load is refused (FE-7-NEW)', () => {
+  it('names the page and offers Sign out, which the message asks for and Settings can no longer give', async () => {
+    const fake = createFakeSupabase()
+    fake.fail('categories', '42501')
+    const signOut = vi.spyOn(fake.client.auth, 'signOut')
+    go('/settings')
+    renderScreen(<Shell />, fake)
+
+    expect(await screen.findByText('Could not load your data')).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 1, name: 'Budget' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
+    expect(signOut).toHaveBeenCalledTimes(1)
+  })
+
+  it('names the page while it loads, too', async () => {
+    const fake = createFakeSupabase()
+    fake.server.hold = (table) => (table === 'categories' ? new Promise<void>(() => undefined) : null)
+    renderScreen(<Shell />, fake)
+
+    await screen.findByRole('status', { name: 'Loading your budget' })
+    expect(screen.getByRole('heading', { level: 1, name: 'Budget' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Sign out' })).toBeNull()
+  })
+})
+
 describe('Shell, skipping the screens bar (FE-10)', () => {
   it('starts with a link that takes focus past the bar to the screen, and keeps the address', async () => {
     go('/week')
