@@ -25,6 +25,7 @@ import { cn } from '../lib/cn.js'
 import { useEarlier } from '../earlier.js'
 import { CompareLine } from './CompareLine.js'
 import { ImportedThrough, PeriodBlocks, TransfersNote } from './MonthScreen.js'
+import { OpenedCharges } from './MonthCharges.js'
 import { FREQUENCY_WORD } from './SetupPay.js'
 import { HelpButton } from '../help/HelpButton.js'
 
@@ -66,6 +67,9 @@ export function PaycheckPeriod({
   const month = monthBounds(start).start
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // The category whose charges are open, by id; another period closes it (N48).
+  const [opened, setOpened] = useState<string | null>(null)
+  useEffect(() => setOpened(null), [start])
   const step = (periods: number) => navigate('paycheck', shiftPayPeriod({ schedule, asOf: start, periods }).start)
 
   useEffect(() => {
@@ -177,9 +181,20 @@ export function PaycheckPeriod({
               </p>
               <p className="text-muted-foreground">Budgets and goals are typed on the Month.</p>
             </section>
-            <PeriodBlocks blocks={sheet.blocks} />
+            <PeriodBlocks blocks={sheet.blocks} onOpen={setOpened} />
           </div>
           <TransfersNote cents={sheet.transfersCents} />
+          {here !== null && opened !== null ? (
+            <OpenedCharges
+              blocks={sheet.blocks}
+              rows={here.rows}
+              categoryId={opened}
+              month={month}
+              period={{ title: formatDateRange(start, end), inWords: formatDateRange(start, end), before: 'Last pay period' }}
+              compared={comparison !== null && comparison !== 'failed' && comparison.status === 'compared' ? comparison : null}
+              onClose={() => setOpened(null)}
+            />
+          ) : null}
         </>
       ) : null}
     </>

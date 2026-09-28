@@ -147,3 +147,25 @@ describe('PaycheckPeriod', () => {
     expect(screen.queryByRole('region', { name: 'Summary' })).toBeNull()
   })
 })
+
+describe('PaycheckPeriod, a row opened (N48)', () => {
+  it("opens the pay period's charges filed under it, named with its dates, each with Move to…", async () => {
+    show(seeded(), null)
+    const block = within(await screen.findByRole('region', { name: 'Variable expenses' }))
+    fireEvent.click(block.getByRole('button', { name: 'Groceries' }))
+
+    const sheet = within(screen.getByRole('dialog', { name: 'Groceries' }))
+    expect(sheet.getByText(/^Variable expenses · 11 – 24 Sep ·/)).toBeTruthy()
+    // The 12th is in this period; the 25th is the next one's.
+    expect(sheet.getAllByRole('button', { name: /^Move to…/ }).map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Move to… (NORTHWIND MARKET, 12 Sep 2026)',
+    ])
+  })
+
+  it('says so when nothing is filed under a bill in the period, whose amount is its share', async () => {
+    show(seeded(), null)
+    const block = within(await screen.findByRole('region', { name: 'Bills' }))
+    fireEvent.click(block.getByRole('button', { name: 'Rent' }))
+    expect(within(screen.getByRole('dialog', { name: 'Rent' })).getByText(/^No charges filed here in 11 – 24 Sep\./)).toBeTruthy()
+  })
+})
