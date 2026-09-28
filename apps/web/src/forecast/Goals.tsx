@@ -9,6 +9,7 @@ import { goalsForCore } from '../coach/goals.js'
 import { useGoalOutlooks } from '../coach/outlook.js'
 import { Section } from './parts.js'
 import { WhatIfPanel } from './WhatIf.js'
+import { SENTENCE_LINK } from '../components/ui/link.js'
 
 /**
  * When each active goal is reached (F33), every active goal with the main
@@ -28,7 +29,7 @@ export function GoalsAheadCard({ read, end, month }: { read: DigestRows; end: Sp
         {funds.missingUpdate ? (
           <p>
             Your goals’ dates need a one-time update.{' '}
-            <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+            <a href={hashOf({ screen: 'help', param: 'updates' })} className={SENTENCE_LINK}>
               See One-time updates
             </a>
           </p>
@@ -45,7 +46,7 @@ export function GoalsAheadCard({ read, end, month }: { read: DigestRows; end: Sp
       <Section title={title}>
         <p>
           No active goal.{' '}
-          <a href={hashOf({ screen: 'savings', param: null })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+          <a href={hashOf({ screen: 'savings', param: null })} className={SENTENCE_LINK}>
             Add one on Savings
           </a>
         </p>

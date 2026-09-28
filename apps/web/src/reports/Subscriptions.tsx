@@ -13,6 +13,7 @@ import { Button } from '../components/ui/button.js'
 import { Badge } from '../components/ui/feedback.js'
 import { notSubscriptionCause, type Dismissals } from '../coach/dismissals.js'
 import { Section } from '../forecast/parts.js'
+import { SENTENCE_LINK } from '../components/ui/link.js'
 
 const CADENCE: Readonly<Record<Cadence, string>> = { weekly: 'Weekly', fortnightly: 'Every two weeks', monthly: 'Monthly', yearly: 'Yearly' }
 
@@ -67,7 +68,7 @@ export function SubscriptionsCard({ series, dismissals }: { series: readonly Rec
       {dismissals.dismissed === null || dismissals.canDismiss || series.length === 0 ? null : dismissals.missingUpdate ? (
         <p>
           Marking one as not a subscription needs a one-time update.{' '}
-          <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+          <a href={hashOf({ screen: 'help', param: 'updates' })} className={SENTENCE_LINK}>
             See One-time updates
           </a>
         </p>

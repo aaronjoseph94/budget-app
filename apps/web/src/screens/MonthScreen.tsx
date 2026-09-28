@@ -26,7 +26,7 @@ import {
   type PlanRow,
 } from '../ledger.js'
 import { LIST_HEADING } from '../lists.js'
-import { navigate } from '../nav.js'
+import { hashOf, navigate } from '../nav.js'
 import { PeriodSwitch } from './PeriodSwitch.js'
 import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
 import {
@@ -45,6 +45,7 @@ import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
+import { SENTENCE_LINK } from '../components/ui/link.js'
 import { useReturnFocus } from '../lib/return-focus.js'
 import { BudgetEditor } from './BudgetEditor.js'
 import { MonthCharges } from './MonthCharges.js'
@@ -597,13 +598,11 @@ export function Block({
       {block.rows.length === 0 ? (
         <p className="px-4 py-3 text-sm text-muted-foreground">
           Nothing on this list yet.{' '}
-          <button
-            type="button"
-            className="font-medium text-foreground underline underline-offset-4"
-            onClick={() => navigate('setup')}
-          >
+          {/* A link, as the tabs are (FE-20): a button is its own box, and
+            20 px tall it was under the 44 px a finger needs. */}
+          <a href={hashOf({ screen: 'setup', param: null })} className={cn(SENTENCE_LINK, 'text-foreground')}>
             Add one in Setup
-          </button>
+          </a>
         </p>
       ) : (
         // A table wider than its card scrolls rather than clip a column. On

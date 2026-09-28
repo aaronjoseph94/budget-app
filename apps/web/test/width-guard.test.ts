@@ -144,3 +144,23 @@ describe('the gutter below 360 px', () => {
     expect(offenders).toEqual([])
   })
 })
+
+/**
+ * A link that follows a sentence's words (`…update.{' '}<a …>`) takes its
+ * 44 px from padding, SENTENCE_LINK, not from a 44 px box that stretched
+ * its line and split the sentence with a gap (N76, N86).
+ */
+describe('a link inside a sentence', () => {
+  it('has no 44 px box', () => {
+    const offenders = Object.entries(sources).flatMap(([path, text]) =>
+      [...text.matchAll(/\{' '\}\s*\n\s*<a [^>]*className="[^"]*inline-flex[^"]*"/g)].map((m) => `${path}: ${m[0].split('\n').pop()!.trim()}`),
+    )
+    expect(offenders).toEqual([])
+  })
+
+  it('is pressed over 44 px through padding: 14 above and below the letters', () => {
+    const link = Object.entries(sources).find(([path]) => path.endsWith('/components/ui/link.ts'))![1]
+    expect(link).toMatch(/SENTENCE_LINK = '[^']*\bpy-3\.5\b[^']*'/)
+    expect(link).not.toMatch(/SENTENCE_LINK = '[^']*inline-flex/)
+  })
+})

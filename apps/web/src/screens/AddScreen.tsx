@@ -19,6 +19,7 @@ import { cn } from '../lib/cn.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { JustTypeIt } from '../add/JustTypeIt.js'
 import type { QuickFill } from '../add/quick-add.js'
+import { SENTENCE_LINK } from '../components/ui/link.js'
 
 type Mode = 'statement' | 'photo' | 'typed'
 type Loaded =
@@ -735,7 +736,7 @@ function PhotoEntry() {
               {state.link === null ? null : (
                 <>
                   {' '}
-                  <a href={PHOTO_LINKS[state.link].href} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+                  <a href={PHOTO_LINKS[state.link].href} className={SENTENCE_LINK}>
                     {PHOTO_LINKS[state.link].words}
                   </a>
                 </>

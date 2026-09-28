@@ -8,6 +8,7 @@ import { formatCents, formatDayMonth, formatMonthTitle } from '../format.js'
 import { hashOf } from '../nav.js'
 import { SvgChart } from '../components/ui/chart.js'
 import { NoStart, Section } from './parts.js'
+import { SENTENCE_LINK } from '../components/ui/link.js'
 
 /**
  * The Forecast's next 30 days (F32): the tightest day, the line, the bills
@@ -98,7 +99,7 @@ export function DebtFreeCard() {
     }
   }, [supabase, version])
   const debts = (
-    <a href={hashOf({ screen: 'debts', param: null })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+    <a href={hashOf({ screen: 'debts', param: null })} className={SENTENCE_LINK}>
       Open Debts
     </a>
   )
@@ -108,7 +109,7 @@ export function DebtFreeCard() {
       {state.status === 'failed' && state.missingUpdate ? (
         <p>
           Your debt-free date needs a one-time update.{' '}
-          <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+          <a href={hashOf({ screen: 'help', param: 'updates' })} className={SENTENCE_LINK}>
             See One-time updates
           </a>
         </p>

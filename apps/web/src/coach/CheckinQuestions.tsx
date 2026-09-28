@@ -14,6 +14,7 @@ import { hashOf } from '../nav.js'
 import { Button } from '../components/ui/button.js'
 import { Section } from '../forecast/parts.js'
 import { readAnswers, saveAnswer, type AnswerRow } from './answers.js'
+import { SENTENCE_LINK } from '../components/ui/link.js'
 
 export interface CheckinAnswers {
   /** Charges answered when the check-in opened; null while they load. */
@@ -65,7 +66,7 @@ export function CheckinQuestions(props: {
       <Section title="Was it planned?">
         <p>
           Your answers need a one-time update.{' '}
-          <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+          <a href={hashOf({ screen: 'help', param: 'updates' })} className={SENTENCE_LINK}>
             See One-time updates
           </a>
         </p>

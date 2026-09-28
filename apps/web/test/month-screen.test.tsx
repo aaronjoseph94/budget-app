@@ -119,8 +119,8 @@ describe('MonthScreen blocks', () => {
     fireEvent.click(block('Bills').getByRole('button', { name: 'Hide empty' }))
     expect(screen.queryByRole('rowheader', { name: 'Rent' })).toBeNull()
     // A list with nothing on it at all points to Setup instead.
-    fireEvent.click(block('Debts').getByRole('button', { name: 'Add one in Setup' }))
-    expect(window.location.hash).toBe('#/setup')
+    // A link: jsdom does not follow its hash, so the address it names is checked.
+    expect(block('Debts').getByRole('link', { name: 'Add one in Setup' }).getAttribute('href')).toBe('#/setup')
   })
 
   it("shows another month's rows only under that month's title", async () => {

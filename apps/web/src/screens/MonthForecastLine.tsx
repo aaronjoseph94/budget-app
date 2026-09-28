@@ -5,6 +5,7 @@ import { useCoachRead } from '../coach/facts.js'
 import { forecastInput } from '../forecast/figures.js'
 import { formatDayMonth, formatWholeDollars } from '../format.js'
 import { hashOf } from '../nav.js'
+import { SENTENCE_LINK } from '../components/ui/link.js'
 
 /**
  * The Month's forecast line (plan §2.2, D27): where this month is heading
@@ -48,7 +49,7 @@ export default function MonthForecastLine() {
       {open ? (
         <p className="text-summary-label">
           End of month counts what has happened and your planned bills; the forecast adds pay still due and spending at your usual pace.{' '}
-          <a href={hashOf({ screen: 'help', param: 'month-end' })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+          <a href={hashOf({ screen: 'help', param: 'month-end' })} className={SENTENCE_LINK}>
             Two month-end figures
           </a>
         </p>

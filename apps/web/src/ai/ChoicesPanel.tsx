@@ -5,6 +5,7 @@ import { Button } from '../components/ui/button.js'
 import { NativeSelect } from '../components/ui/form.js'
 import { hashOf } from '../nav.js'
 import { DAILY_CAPS, moved, readChoices, saveChoices, type AiChoices } from './choices.js'
+import { SENTENCE_LINK } from '../components/ui/link.js'
 
 const NAME: Readonly<Record<AiProvider, string>> = {
   gemini: 'Google Gemini',
@@ -61,7 +62,7 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
           ? 'Choosing the order, paid services and a daily limit needs a one-time update. '
           : 'Couldn’t load your AI choices just now. Check your connection and try again. '}
         {loaded.state === 'missing' ? (
-          <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+          <a href={hashOf({ screen: 'help', param: 'updates' })} className={SENTENCE_LINK}>
             One-time updates
           </a>
         ) : null}

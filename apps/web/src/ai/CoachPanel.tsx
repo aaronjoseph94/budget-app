@@ -3,6 +3,7 @@ import type { Tone } from '@budget/savings-coach'
 import { useAppData } from '../app-data.js'
 import { hashOf } from '../nav.js'
 import { readCoachSettings, saveCoachSettings, type CoachSettings } from './coach-settings.js'
+import { SENTENCE_LINK } from '../components/ui/link.js'
 
 type Loaded = { readonly state: 'loading' } | { readonly state: 'missing' | 'unreachable' } | { readonly state: 'ready'; readonly settings: CoachSettings }
 
@@ -56,7 +57,7 @@ export function CoachPanel() {
             ? 'Choosing the Coach’s tone needs a one-time update. Until then it cheers you on. '
             : 'Couldn’t load the Coach’s tone just now. Check your connection and try again.'}
           {loaded.state === 'missing' ? (
-            <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+            <a href={hashOf({ screen: 'help', param: 'updates' })} className={SENTENCE_LINK}>
               One-time updates
             </a>
           ) : null}

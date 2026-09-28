@@ -23,6 +23,7 @@ import { useGoalOutlooks, type Outlooks } from '../coach/outlook.js'
 import { CheckinLink } from '../coach/CheckinLink.js'
 import { AskBox } from '../coach/AskBox.js'
 import type { ListedGoalRow } from '../ledger.js'
+import { SENTENCE_LINK } from '../components/ui/link.js'
 
 /**
  * The Coach (plan §2.3): the day's line, the main goal's card with the
@@ -184,7 +185,7 @@ function MainOutlook({ outlooks, funds, goal }: { outlooks: Outlooks; funds: Fun
     return funds.missingUpdate ? (
       <p className="text-sm">
         When you will get there needs a one-time update.{' '}
-        <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+        <a href={hashOf({ screen: 'help', param: 'updates' })} className={SENTENCE_LINK}>
           See One-time updates
         </a>
       </p>

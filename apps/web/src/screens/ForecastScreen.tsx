@@ -17,6 +17,7 @@ import { NoStart, Row, Section } from '../forecast/parts.js'
 import { DebtFreeCard, NextDaysCard } from '../forecast/Ahead.js'
 import { GoalsAheadCard } from '../forecast/Goals.js'
 import { MonthsAheadCard } from '../forecast/Months.js'
+import { SENTENCE_LINK } from '../components/ui/link.js'
 
 /**
  * The Forecast (plan §2.5, A13, A14): one sentence, safe to spend, where
@@ -51,7 +52,7 @@ export function ForecastScreen() {
       {figures === 'missing_update' ? (
         <p className="text-sm">
           The forecast needs a one-time update.{' '}
-          <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+          <a href={hashOf({ screen: 'help', param: 'updates' })} className={SENTENCE_LINK}>
             See One-time updates
           </a>
         </p>

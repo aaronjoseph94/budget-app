@@ -6,6 +6,7 @@
 import type { ReactNode } from 'react'
 import { hashOf } from '../nav.js'
 import { Card, CardContent, CardTitle } from '../components/ui/card.js'
+import { SENTENCE_LINK } from '../components/ui/link.js'
 
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -22,7 +23,7 @@ export function NoStart() {
   return (
     <p>
       Type this month’s starting balance to see where you’ll end.{' '}
-      <a href={hashOf({ screen: 'month', param: null })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+      <a href={hashOf({ screen: 'month', param: null })} className={SENTENCE_LINK}>
         Open the Month
       </a>
     </p>

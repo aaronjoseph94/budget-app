@@ -32,6 +32,7 @@ import { useCoachRead } from '../coach/facts.js'
 import { goalsForCore } from '../coach/goals.js'
 import { GoalLever } from '../coach/GoalLever.js'
 import { useGoalOutlooks } from '../coach/outlook.js'
+import { SENTENCE_LINK } from '../components/ui/link.js'
 
 /**
  * The workbook's Savings tab (S16): a yellow card for every goal, with what
@@ -188,7 +189,7 @@ export function SavingsScreen() {
           {goalsOrdered || goals.length === 0 ? null : (
             <p className="text-sm">
               Choosing your main goal, moving goals, and pausing or finishing one need a one-time update.{' '}
-              <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+              <a href={hashOf({ screen: 'help', param: 'updates' })} className={SENTENCE_LINK}>
                 See One-time updates
               </a>
             </p>
