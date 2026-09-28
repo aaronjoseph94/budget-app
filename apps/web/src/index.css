@@ -618,3 +618,30 @@
     animation: none;
   }
 }
+
+/* A row that scrolls inside its own box, as the Month · Week · Pay · Year
+   switch and Reports' tabs do with the phone's text large (plan §9): its
+   right edge fades while there is more to the right, so a hidden "Year"
+   reads as there to scroll to. Tied to the row's own scroll, so a row that
+   fits has no timeline and no fade, and one scrolled to its end has none;
+   a browser without scroll-driven animation shows the row as before. */
+@property --edge-fade {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+@keyframes edge-fade {
+  from {
+    --edge-fade: 2rem;
+  }
+  to {
+    --edge-fade: 0px;
+  }
+}
+@supports (animation-timeline: scroll()) {
+  .edge-fade {
+    mask-image: linear-gradient(to right, #000 calc(100% - var(--edge-fade)), transparent);
+    animation: edge-fade linear both;
+    animation-timeline: scroll(x self);
+  }
+}

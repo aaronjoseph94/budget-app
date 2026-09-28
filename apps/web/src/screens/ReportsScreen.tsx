@@ -79,7 +79,7 @@ export function ReportsScreen({ month }: { month: string | null }) {
         )}
       </nav>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div role="tablist" aria-label="Report" className="flex gap-1 overflow-x-auto print:hidden">
+        <div role="tablist" aria-label="Report" className="edge-fade flex gap-1 overflow-x-auto print:hidden">
           {TABS.map((t) => (
             <button
               key={t.id}
