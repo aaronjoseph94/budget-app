@@ -22,13 +22,16 @@ describe('balanceLine', () => {
     // Three days at 80, 1,500 and 2,920; 10,000 bp at 280, 0 at 1,480, 5,000 at 880.
     const svg = chart()
     expect(svg).toContain('<polyline points="80,280 1500,1480 2920,880" fill="none" stroke="#2B5D6A"')
-    expect(svg).toContain('viewBox="0 0 3000 1760"')
+    // The axis's names sit a row under the tightest day's name: 1,880, and 60 below.
+    expect(svg).toContain('viewBox="0 0 3000 1940"')
   })
 
-  it('marks and names the tightest day, over its point', () => {
+  // Under its point, where the line never goes: it is the lowest. Over
+  // it, the name crossed the line where it rose steeply the next day (N86).
+  it('marks and names the tightest day, under its point', () => {
     const svg = chart()
     expect(svg).toContain('<circle cx="1500" cy="1480" r="50" fill="#B83A3A" class="chart-forecast-low"/>')
-    expect(svg).toContain('<text x="1500" y="1380" text-anchor="middle"')
+    expect(svg).toContain('<text x="1500" y="1700" text-anchor="middle"')
     expect(svg).toContain('>8 Oct: $2,032.52</text>')
     expect(chart({ lowestIndex: null })).not.toContain('<circle')
   })
@@ -37,8 +40,12 @@ describe('balanceLine', () => {
     // Day 30 of 30 steps is at 80 + 2,840; day 1 at 80 + 94.67, 175.
     const svg = chart({ pointsBp: Array.from({ length: 31 }, () => 5_000), lowestIndex: 0 })
     expect(svg).toMatch(/points="80,880 175,880 [^"]* 2920,880"/)
-    expect(svg).toContain('<text x="80" y="1700" fill="#5B6773" class="chart-forecast-ink">Today</text>')
-    expect(svg).toContain('<text x="2920" y="1700" text-anchor="end" fill="#5B6773" class="chart-forecast-ink">24 Oct</text>')
+    // Today's own name, at 880 + 220, is on a row of its own above them.
+    expect(svg).toContain('<text x="0" y="1100" text-anchor="start"')
+    expect(svg).toContain('<text x="80" y="1880" fill="#5B6773" class="chart-forecast-ink">Today</text>')
+    expect(svg).toContain('<text x="2920" y="1880" text-anchor="end" fill="#5B6773" class="chart-forecast-ink">24 Oct</text>')
+    // With no day named there is no row for it.
+    expect(chart({ lowestIndex: null })).toContain('<text x="80" y="1700" fill="#5B6773" class="chart-forecast-ink">Today</text>')
   })
 
   it('draws $0 as a dashed rule when the line reaches it, and one day as a point', () => {

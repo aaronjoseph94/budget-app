@@ -44,13 +44,19 @@ export function balanceLine(input: BalanceLineInput): SvgMarkup {
     marks.push(el('polyline', { points, fill: 'none', stroke: '#2B5D6A', 'stroke-width': 30, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', class: 'chart-forecast-line' }))
   }
   const low = input.lowestIndex
+  let named = false
   if (low !== null && low >= 0 && low < n) {
     const [cx, cy] = [x(low), y(input.pointsBp[low]!)]
     marks.push(el('circle', { cx, cy, r: 50, fill: '#B83A3A', class: 'chart-forecast-low' }))
-    // Over the point, or under it when the point is near the top.
-    if (input.lowestText !== null) marks.push(label(input.lowestText, cx, cy - 100 >= FONT ? cy - 100 : cy + 100 + FONT))
+    // Under the point, where the line never goes, since it is the lowest:
+    // over it, the name crossed the line where it rose steeply the next day
+    // (N86). The first and last days' names then take the row below it.
+    if (input.lowestText !== null) {
+      marks.push(label(input.lowestText, cx, cy + 100 + FONT))
+      named = true
+    }
   }
-  const base = TOP + PLOT + FONT + 100
+  const base = TOP + PLOT + FONT + 100 + (named ? FONT + 60 : 0)
   marks.push(el('text', { x: EDGE, y: base, ...INK }, [input.startText]))
   marks.push(el('text', { x: WIDTH - EDGE, y: base, 'text-anchor': 'end', ...INK }, [input.endText]))
   return frame(input, base + 60, marks)
