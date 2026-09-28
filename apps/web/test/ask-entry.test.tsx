@@ -1,6 +1,7 @@
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
+import { HelpButton } from '../src/help/HelpButton.js'
 import { EXAMPLE_TODAY, forecastFakeWithGoals } from './forecast-seed.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
@@ -30,10 +31,25 @@ beforeAll(async () => {
   await warmScreen('#/ask', 'Ask', { fake: forecastFakeWithGoals(), text: 'Try asking' })
   await warmScreen('#/coach', 'Coach', { fake: forecastFakeWithGoals(), text: 'Ask anything about your money' })
   await warmScreen('#/forecast', 'Forecast')
-  // The help sheet is a chunk of its own, opened by a tap, so the screen's
-  // warming never loads it: under a full run its cold first open lost the
-  // find's one second for Ask about this.
-  await import('../src/help/HelpSheet.js')
+  // The help sheet is a lazy chunk of its own, opened by a tap, so the
+  // screen's warming never loads it. Importing the module was not enough:
+  // React's lazy still suspended on its first render, and under a loaded
+  // full run that lost the find's one second for Ask about this. Opened
+  // once here, the sheet renders at once in the test.
+  render(<HelpButton screen="forecast" />)
+  fireEvent.click(screen.getByRole('button', { name: 'Help with this screen' }))
+  await new Promise<void>((resolve) => {
+    const shown = () => document.body.textContent?.includes('Ask about this') === true
+    if (shown()) return resolve()
+    const watch = new MutationObserver(() => {
+      if (shown()) {
+        watch.disconnect()
+        resolve()
+      }
+    })
+    watch.observe(document.body, { childList: true, subtree: true, characterData: true })
+  })
+  cleanup()
   vi.useRealTimers()
 })
 beforeEach(() => {
