@@ -45,10 +45,10 @@ import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
-import { SENTENCE_LINK } from '../components/ui/link.js'
+import { LINE_BUTTON, SENTENCE_LINK } from '../components/ui/link.js'
 import { useReturnFocus } from '../lib/return-focus.js'
 import { BudgetEditor } from './BudgetEditor.js'
-import { OpenedCharges } from './MonthCharges.js'
+import { NOT_SPENDING, OpenedCharges } from './MonthCharges.js'
 import { MonthCharts } from './MonthCharts.js'
 import { MonthSummary } from './MonthSummary.js'
 import { HelpButton } from '../help/HelpButton.js'
@@ -335,10 +335,11 @@ export function MonthScreen({ month }: { month: string | null }) {
             <PeriodBlocks blocks={sheet.blocks} {...blockProps} />
             <MonthCharts sheet={sheet} className="order-7 md:col-span-2 xl:order-1 xl:col-span-1" />
           </div>
-          <TransfersNote cents={sheet.transfersCents} />
+          <TransfersNote cents={sheet.transfersCents} onOpen={() => setOpened(NOT_SPENDING)} />
           {here !== null && opened !== null ? (
             <OpenedCharges
               blocks={sheet.blocks}
+              transfersCents={sheet.transfersCents}
               rows={here.rows}
               categoryId={opened}
               month={start}
@@ -724,13 +725,28 @@ export function ImportedThrough({ through }: { through: string | null }) {
 }
 
 /** Left out of every block and total above, so said out loud (D9). Nothing when there is none. */
-export function TransfersNote({ cents }: { cents: number }) {
+export function TransfersNote({ cents, onOpen }: { cents: number; onOpen?: (() => void) | undefined }) {
   if (cents === 0) return null
   return (
     <p className="text-sm text-muted-foreground">
       {cents > 0 ? 'Paid to your card: ' : 'Moved out, not spending: '}
       <span className="tnum">{formatMagnitude(cents)}</span> — not counted.
       {cents > 0 ? ' What it paid for is already in the blocks above.' : ''}
+      {/* A purchase filed under Not spending by mistake left every total with
+        no row to reach it by (N26); its charges open here, to be moved back. */}
+      {onOpen === undefined ? null : (
+        <>
+          {' '}
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            onClick={onOpen}
+            className={cn('font-medium text-foreground underline underline-offset-4', LINE_BUTTON)}
+          >
+            See these charges
+          </button>
+        </>
+      )}
     </p>
   )
 }

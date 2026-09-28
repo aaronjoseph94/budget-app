@@ -240,3 +240,31 @@ describe('a charge in the main goal’s time (A08, D29)', () => {
     expect(openRow('Bills', 'Rent').queryByText(/ toward /)).toBeNull()
   })
 })
+
+describe('MonthCharges, Not spending (N26)', () => {
+  it('opens the charges filed under Not spending, so one filed there by mistake can be moved back', async () => {
+    const fake = seeded()
+    fake.tables.transactions.push(tx('t5', '2026-09-15', 50000, 'card', 'CARD PAYMENT THANK YOU'))
+    fake.tables.transactions.push(tx('t6', '2026-09-16', -4200, 'card', 'CONTOSO MARKET'))
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'See these charges' }))
+    const sheet = within(screen.getByRole('dialog', { name: 'Not spending' }))
+    expect(sheet.getAllByRole('button', { name: /^Move to…/ }).map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Move to… (CONTOSO MARKET, 16 Sep 2026)',
+      'Move to… (CARD PAYMENT THANK YOU, 15 Sep 2026)',
+    ])
+
+    fireEvent.click(sheet.getByRole('button', { name: 'Move to… (CONTOSO MARKET, 16 Sep 2026)' }))
+    const options = within(sheet.getByRole('combobox', { name: 'Move to' })).getAllByRole('option').map((o) => o.textContent)
+    // Anywhere but where it is.
+    expect(options).toContain('Groceries')
+    expect(options).not.toContain('Card payments')
+  })
+
+  it('offers nothing to open when nothing is filed there', async () => {
+    renderScreen(<MonthScreen month="2026-09" />, seeded())
+    await screen.findByRole('region', { name: 'Variable expenses' })
+    expect(screen.queryByRole('button', { name: 'See these charges' })).toBeNull()
+  })
+})

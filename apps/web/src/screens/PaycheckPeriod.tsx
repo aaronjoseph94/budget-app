@@ -25,7 +25,7 @@ import { cn } from '../lib/cn.js'
 import { useEarlier } from '../earlier.js'
 import { CompareLine } from './CompareLine.js'
 import { ImportedThrough, PeriodBlocks, TransfersNote } from './MonthScreen.js'
-import { OpenedCharges } from './MonthCharges.js'
+import { NOT_SPENDING, OpenedCharges } from './MonthCharges.js'
 import { FREQUENCY_WORD } from './SetupPay.js'
 import { HelpButton } from '../help/HelpButton.js'
 
@@ -183,10 +183,11 @@ export function PaycheckPeriod({
             </section>
             <PeriodBlocks blocks={sheet.blocks} onOpen={setOpened} />
           </div>
-          <TransfersNote cents={sheet.transfersCents} />
+          <TransfersNote cents={sheet.transfersCents} onOpen={() => setOpened(NOT_SPENDING)} />
           {here !== null && opened !== null ? (
             <OpenedCharges
               blocks={sheet.blocks}
+              transfersCents={sheet.transfersCents}
               rows={here.rows}
               categoryId={opened}
               month={month}

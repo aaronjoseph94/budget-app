@@ -185,6 +185,7 @@ export function WeekScreen({ monday }: { monday: string | null }) {
       {sheet !== null && here !== null && opened !== null ? (
         <OpenedCharges
           blocks={sheet.blocks}
+          transfersCents={sheet.transfersCents}
           rows={here.rows}
           categoryId={opened}
           month={monthBounds(bounds.start).start}

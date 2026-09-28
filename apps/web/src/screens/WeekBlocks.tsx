@@ -5,6 +5,7 @@ import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
 import { ImportedThrough, PeriodBlocks, TransfersNote, type EditorDone } from './MonthScreen.js'
 import { WeekBudgetEditor } from './WeekBudgetEditor.js'
+import { NOT_SPENDING } from './MonthCharges.js'
 import { CompareLine } from './CompareLine.js'
 
 /**
@@ -48,7 +49,7 @@ export function WeekBlocks({
         {aside}
         <PeriodBlocks blocks={sheet.blocks} {...blockProps} />
       </div>
-      <TransfersNote cents={sheet.transfersCents} />
+      <TransfersNote cents={sheet.transfersCents} onOpen={onOpen === undefined ? undefined : () => onOpen(NOT_SPENDING)} />
     </>
   )
 }

@@ -41,7 +41,6 @@ const FIRST = 30
  * refund, or a charge under half a minute, says nothing.
  */
 export function MonthCharges({
-  categoryId,
   name,
   heading,
   month,
@@ -53,7 +52,6 @@ export function MonthCharges({
   period = null,
   onClose,
 }: {
-  categoryId: string
   name: string
   /** The list the category is on, e.g. "Variable expenses". */
   heading: string
@@ -131,7 +129,8 @@ export function MonthCharges({
               {moving === c.id ? (
                 <MoveCharge
                   charge={c}
-                  from={categoryId}
+                  // Its own: Not spending's sheet holds several categories (N26).
+                  from={c.category_id}
                   onCancel={() => setMoving(null)}
                   onMoved={(to) => {
                     setMoving(null)
@@ -174,6 +173,9 @@ export function MonthCharges({
   )
 }
 
+/** Opens Not spending's charges, which have no block of their own (N26). */
+export const NOT_SPENDING = 'not-spending'
+
 /** A period other than a month: its dates as a title, and as said in a sentence. */
 export interface Period {
   readonly title: string
@@ -191,6 +193,7 @@ export interface Period {
  */
 export function OpenedCharges({
   blocks,
+  transfersCents,
   rows,
   categoryId,
   month,
@@ -199,7 +202,10 @@ export function OpenedCharges({
   onClose,
 }: {
   blocks: PeriodSheet['blocks']
+  /** Not spending's figure, core's, for its sheet's title. */
+  transfersCents: number
   rows: readonly LedgerRow[]
+  /** A category's id, or NOT_SPENDING. */
   categoryId: string
   /** The month holding the period's first day; the Month's own month. */
   month: string
@@ -207,7 +213,24 @@ export function OpenedCharges({
   compared?: Extract<PeriodComparison, { status: 'compared' }> | null
   onClose: () => void
 }) {
-  const { mainGoal } = useAppData()
+  const { mainGoal, categories } = useAppData()
+  if (categoryId === NOT_SPENDING) {
+    // A card payment or a move out, filed where nothing counts it: a
+    // purchase filed here by mistake is reached and moved back from here.
+    const kinds = new Map(categories.map((c) => [c.id, c.kind]))
+    return (
+      <MonthCharges
+        name={LIST_HEADING.transfer}
+        heading="Not counted"
+        month={month}
+        period={period}
+        actualCents={transfersCents}
+        basis="real"
+        charges={rows.filter((r) => kinds.get(r.category_id) === 'transfer')}
+        onClose={onClose}
+      />
+    )
+  }
   for (const kind of Object.keys(blocks) as (keyof PeriodSheet['blocks'])[]) {
     const row = blocks[kind].rows.find((r) => r.categoryId === categoryId)
     if (row === undefined) continue
@@ -217,7 +240,6 @@ export function OpenedCharges({
     const earlier = period?.before ?? 'Last month'
     return (
       <MonthCharges
-        categoryId={categoryId}
         name={row.name}
         heading={LIST_HEADING[kind]}
         month={month}

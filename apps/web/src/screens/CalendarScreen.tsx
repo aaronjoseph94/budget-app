@@ -208,7 +208,6 @@ function AgendaDay({ day, weekday, onOpen }: { day: CalendarDay; weekday: number
 function BillCharges({ bill, month, rows, onClose }: { bill: CalendarBill; month: string; rows: readonly LedgerRow[]; onClose: () => void }) {
   return (
     <MonthCharges
-      categoryId={bill.categoryId}
       name={bill.name}
       heading={LIST_HEADING[bill.kind]}
       month={month}

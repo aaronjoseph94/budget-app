@@ -74,7 +74,7 @@ describe('PaycheckPeriod', () => {
       'Bills with no charge yet in this period, and budgets and goals, are September 2026’s. You are paid every two weeks, so each shows 12 months over 26 paydays: two weeks’ share. Charges count as they are.Budgets and goals are typed on the Month.',
     )
     expect(screen.getByText('$500.00').closest('p')?.textContent).toBe(
-      'Paid to your card: $500.00 — not counted. What it paid for is already in the blocks above.',
+      'Paid to your card: $500.00 — not counted. What it paid for is already in the blocks above. See these charges',
     )
   })
 

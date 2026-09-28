@@ -276,7 +276,7 @@ describe('WeekScreen', () => {
     renderScreen(<WeekScreen />, fake)
     expect(await summary('Spent')).toBe('$90.12')
     expect((await cells('Variable expenses', 'Shoes'))[1]).toBe('-40.00')
-    expect(screen.getByText('$15.00').closest('p')?.textContent).toBe('Moved out, not spending: $15.00 — not counted.')
+    expect(screen.getByText('$15.00').closest('p')?.textContent).toBe('Moved out, not spending: $15.00 — not counted. See these charges')
   })
 
   it('shows a readable message when the week cannot be loaded', async () => {

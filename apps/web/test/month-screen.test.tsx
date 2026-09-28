@@ -428,7 +428,7 @@ describe('MonthScreen summary and notes', () => {
 
     const note = (await screen.findByText('$500.00')).closest('p')
     expect(note?.textContent).toBe(
-      'Paid to your card: $500.00 — not counted. What it paid for is already in the blocks above.',
+      'Paid to your card: $500.00 — not counted. What it paid for is already in the blocks above. See these charges',
     )
   })
 
