@@ -4,6 +4,7 @@ import { Shell } from '../src/App.js'
 import { REPORT_TODAY, reportFake } from './report-seed.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /** The month in review's words (plan §2.6, §3.11 feature 10, A15), on F36's example. */
 function go(hash: string) {
@@ -51,6 +52,7 @@ describe('the month in review', () => {
     expect(await within(review).findByText(/Turn on free AI in AI settings, in about 2 minutes\./)).toBeTruthy()
     expect(within(review).getByRole('link', { name: 'Open AI settings' }).getAttribute('href')).toBe('#/ai')
     expect(fake.functions.calls).toEqual([expect.objectContaining({ action: 'run', task: 'narrate', pack: 'report' })])
+    await expectNoAxeViolations()
   })
 
   it('drops a reply with a digit in it and shows the app’s words there, keeping the parts that passed', async () => {

@@ -4,6 +4,7 @@ import { Shell } from '../src/App.js'
 import { REPORT_TODAY, reportFake } from './report-seed.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 function go(hash: string) {
   act(() => {
@@ -44,6 +45,7 @@ describe('Reports, the Overview (plan §2.6, A15)', () => {
     expect(within(totals).getByText('You saved 12% of what came in.')).toBeTruthy()
     expect(screen.queryByText('So far')).toBeNull()
     expect(document.title).toBe('Reports · Budget')
+    await expectNoAxeViolations()
   })
 
   it('names the biggest changes against the usual month, each way', async () => {

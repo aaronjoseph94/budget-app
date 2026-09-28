@@ -4,6 +4,7 @@ import { Shell } from '../src/App.js'
 import { HABITS_TODAY, habitsFake } from './habits-seed.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 function go(hash: string) {
   act(() => {
@@ -50,6 +51,7 @@ describe('Reports, Habits: the spending grid (plan §2.6, A18)', () => {
     // Habits reads to today, so there is no month to step through, and nothing is "so far".
     expect(screen.getByRole('navigation', { name: 'Month' }).classList.contains('hidden')).toBe(true)
     expect(screen.queryByText('So far')).toBeNull()
+    await expectNoAxeViolations()
   })
 
   it('leaves the days before the records blank, never $0, and remembers the tab', async () => {

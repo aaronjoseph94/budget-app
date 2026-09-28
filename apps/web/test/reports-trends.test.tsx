@@ -4,6 +4,7 @@ import { Shell } from '../src/App.js'
 import { TRENDS_TODAY, trendsFake } from './trends-seed.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 function go(hash: string) {
   act(() => {
@@ -47,6 +48,7 @@ describe('Reports, Trends (plan §2.6, A16)', () => {
     // Trends have no month to step through, and nothing is "so far".
     expect(screen.getByRole('navigation', { name: 'Month' }).classList.contains('hidden')).toBe(true)
     expect(screen.queryByText('So far')).toBeNull()
+    await expectNoAxeViolations()
   })
 
   it('sets each category against its usual month, steady ones first', async () => {

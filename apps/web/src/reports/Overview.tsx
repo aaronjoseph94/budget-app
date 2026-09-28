@@ -21,17 +21,18 @@ export function sidesOf(report: Reviewed): { readonly now: string; readonly befo
   return { now: formatDateRange(window.from, window.to), before: formatDateRange(last.window.from, last.window.to) }
 }
 
+// A description list allows one wrapper between it and its terms, so the
+// comparison lines are more descriptions of the same term, set on a row of
+// their own, rather than paragraphs beside it (axe, N61.1).
 function Figure({ label, now, lines }: { label: string; now: number; lines: readonly string[] }) {
   return (
-    <div className="py-2">
-      <div className="flex items-baseline justify-between gap-3">
-        <dt className="min-w-0 font-medium">{label}</dt>
-        <dd className="tnum whitespace-nowrap text-base font-semibold">{formatCents(now)}</dd>
-      </div>
+    <div className="flex flex-wrap items-baseline justify-between gap-x-3 py-2">
+      <dt className="min-w-0 font-medium">{label}</dt>
+      <dd className="tnum whitespace-nowrap text-base font-semibold">{formatCents(now)}</dd>
       {lines.map((line) => (
-        <p key={line} className="text-muted-foreground">
+        <dd key={line} className="basis-full text-muted-foreground">
           {line}
-        </p>
+        </dd>
       ))}
     </div>
   )

@@ -4,6 +4,7 @@ import { Shell } from '../src/App.js'
 import { SHOPS_TODAY, shopsFake } from './shops-seed.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /** Reports → Shops (plan §2.6, A17): every figure core's (F38, F39, F41), from shops-seed's invented records. */
 
@@ -57,6 +58,7 @@ describe('Reports, Shops: top shops', () => {
     // The tab is kept on this device, and the month still steps.
     expect(localStorage.getItem('budget.reports.tab')).toBe('shops')
     expect(screen.getByRole('navigation', { name: 'Month' }).classList.contains('hidden')).toBe(false)
+    await expectNoAxeViolations()
   })
 
   it('says there is nothing to compare with before the records, and that it is too early to call a shop new', async () => {

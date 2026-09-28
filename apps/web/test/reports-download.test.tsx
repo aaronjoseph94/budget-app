@@ -4,6 +4,7 @@ import { Shell } from '../src/App.js'
 import { REPORT_TODAY, reportFake } from './report-seed.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /**
  * Download CSV on Reports (plan A19), on report-seed's August. The writer is
@@ -84,6 +85,7 @@ describe('Reports, Download CSV (plan A19)', () => {
         '2026-08-15,SHOP,Flight fund,Savings,-500.00\r\n' +
         '2026-08-26,SHOP,Groceries,Variable expenses,-300.00\r\n',
     )
+    await expectNoAxeViolations()
   })
 
   it('saves the Overview’s figures, the same ones the screen shows', async () => {
