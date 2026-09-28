@@ -18,8 +18,9 @@ import { cn } from '../lib/cn.js'
  * the real control on it, Continue and Do this later. Whether a step is
  * done is read from the data every time (checks.ts); the order, the count
  * and the next step are core's (setupProgress, F49). Only the steps put
- * off and a hand-ticked iPhone step are kept, in the sign-in's
- * user_metadata (profile.ts), so they follow the owner to another device.
+ * off, a hand-ticked iPhone step and that the guide has been opened are
+ * kept, in the sign-in's user_metadata (profile.ts), so they follow the
+ * owner to another device.
  * The step showing is this screen's alone; the address stays `#/start`.
  */
 export function GettingStartedScreen() {
