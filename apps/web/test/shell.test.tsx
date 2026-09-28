@@ -101,11 +101,10 @@ describe('Shell', () => {
       within(g).getByRole('heading').textContent,
       within(g).getAllByRole('listitem').map((li) => li.querySelector('.font-medium')?.textContent),
     ])
-    // Getting started joins Set up and help when it lands.
     expect(groups).toEqual([
       ['Plan', ['Paycheck', 'Bill calendar', 'Year', 'Savings', 'Debts', 'Forecast']],
       ['Understand', ['Reports', 'Ask']],
-      ['Set up and help', ['Setup', 'AI settings', 'Settings', 'Help']],
+      ['Set up and help', ['Getting started', 'Setup', 'AI settings', 'Settings', 'Help']],
       ['Records', ['All transactions']],
     ])
     expect(MORE_GROUPS.map((g) => [g.title, g.items.map((i) => i.label)])).toEqual([
@@ -285,14 +284,14 @@ describe('Shell, its screens as links (FE-20)', () => {
   })
 })
 
-describe('Shell, an address ahead of the app (ADR 0006)', () => {
-  it('opens a screen not built yet as one line with the way back to the Month, and names it in the title', async () => {
+describe('Shell, Getting started (plan §8.1, A25)', () => {
+  it('opens at its own address, fetched on first use, and names it in the title', async () => {
     go('/start')
     renderScreen(<Shell />, createFakeSupabase())
 
     expect(await screen.findByRole('heading', { name: 'Getting started' })).toBeTruthy()
-    expect(screen.getByText('Getting started is on its way. Everything else works as before.')).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Open the Month' }).getAttribute('href')).toBe('#/month')
+    expect(await screen.findByRole('heading', { name: 'Your name' })).toBeTruthy()
     expect(document.title).toBe('Getting started · Budget')
+    expect(within(phoneBar()).getByRole('link', { name: 'More' }).getAttribute('aria-current')).toBe('page')
   })
 })

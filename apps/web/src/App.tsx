@@ -27,6 +27,7 @@ const CalendarScreen = lazy(() => import('./screens/CalendarScreen.js').then((m)
 const CoachScreen = lazy(() => import('./screens/CoachScreen.js').then((m) => ({ default: m.CoachScreen })))
 const CheckinScreen = lazy(() => import('./screens/CheckinScreen.js').then((m) => ({ default: m.CheckinScreen })))
 const DebtsScreen = lazy(() => import('./screens/DebtsScreen.js').then((m) => ({ default: m.DebtsScreen })))
+const GettingStartedScreen = lazy(() => import('./screens/GettingStartedScreen.js').then((m) => ({ default: m.GettingStartedScreen })))
 const ForecastScreen = lazy(() => import('./screens/ForecastScreen.js').then((m) => ({ default: m.ForecastScreen })))
 const HelpScreen = lazy(() => import('./screens/HelpScreen.js').then((m) => ({ default: m.HelpScreen })))
 const LedgerScreen = lazy(() => import('./screens/LedgerScreen.js').then((m) => ({ default: m.LedgerScreen })))
@@ -280,6 +281,7 @@ function Screens({ screen, param }: { screen: Screen; param: string | null }) {
       {screen === 'year' ? <YearScreen start={param} /> : null}
       {screen === 'help' ? <HelpScreen topic={param} /> : null}
       {screen === 'ai' ? <AiSettingsScreen /> : null}
+      {screen === 'start' ? <GettingStartedScreen /> : null}
       {screen === 'forecast' ? <ForecastScreen /> : null}
       {screen === 'reports' ? <ReportsScreen month={param} /> : null}
       {/* nav.ts reads Ask's param only as a committed Help topic. */}

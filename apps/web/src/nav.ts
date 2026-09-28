@@ -28,7 +28,7 @@ export type Screen = (typeof SCREENS)[number]
  * and More leave it out, so no tab opens a promise, and its address opens
  * one line saying it is on its way.
  */
-const NOT_BUILT: ReadonlySet<Screen> = new Set(['start'])
+const NOT_BUILT: ReadonlySet<Screen> = new Set([])
 
 export function isBuilt(screen: Screen): boolean {
   return !NOT_BUILT.has(screen)
