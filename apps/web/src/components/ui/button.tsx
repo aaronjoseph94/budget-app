@@ -42,6 +42,8 @@ export function Button({ variant = 'default', size = 'default', className, type 
         // the compact sizes, so the desktop's four-across Month does not grow.
         'pointer-coarse:min-h-11 pointer-coarse:min-w-11',
         'disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0',
+        // Greyed the same while a save runs; it keeps focus, where disabled drops it (FE-6).
+        'aria-disabled:opacity-50',
         VARIANTS[variant],
         SIZES[size],
         className,

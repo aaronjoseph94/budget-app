@@ -144,7 +144,8 @@ function SaveFooter({
           to be navigated away from.
         */}
         <Button
-          disabled={saving || result.parsed === 0}
+          disabled={result.parsed === 0}
+          aria-disabled={saving}
           onClick={() => {
             void onSave({
               accepted: result.accepted,

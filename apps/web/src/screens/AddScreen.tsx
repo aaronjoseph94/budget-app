@@ -140,6 +140,7 @@ export function StatementImport() {
   }
 
   const save = async (request: SaveRequest) => {
+    if (saving) return
     if (accountId === null) return setOutcome({ ok: false, message: NO_ACCOUNT })
     setSaving(true)
     setOutcome(null)
@@ -295,7 +296,7 @@ function PdfPreview({
 
       {rec.balances ? (
         <div className="space-y-2">
-          <Button size="lg" className="w-full" disabled={saving} onClick={() => void onSave({ accepted, rejected, parsed, source: 'card_pdf', period })}>
+          <Button size="lg" className="w-full" aria-disabled={saving} onClick={() => void onSave({ accepted, rejected, parsed, source: 'card_pdf', period })}>
             {saving ? 'Saving…' : `Import ${accepted.length} transactions`}
           </Button>
           {outcome !== null ? <Alert tone={outcome.ok ? 'success' : 'error'}>{outcome.message}</Alert> : null}
@@ -423,6 +424,7 @@ function TypedEntry() {
   const ready = needed.length === 0
 
   const submit = async () => {
+    if (busy) return
     // Add stays pressable, and says what is missing, rather than sitting
     // greyed out with no reason given (FE-8).
     if (!ready) return setTried((n) => n + 1)
@@ -551,7 +553,9 @@ function TypedEntry() {
             </div>
           ) : null}
           <NotMoney amount={amount} cents={cents} id={amountError} />
-          <Button type="submit" size="lg" className="w-full" disabled={busy}>
+          {/* aria-disabled, not disabled, while it saves: a disabled button
+            drops focus to the page, and the next Tab started from the top (FE-6). */}
+          <Button type="submit" size="lg" className="w-full" aria-disabled={busy}>
             {busy ? 'Adding…' : 'Add'}
           </Button>
           {tried > 0 && !ready ? <StillNeeded key={tried} needed={needed} /> : null}
@@ -662,6 +666,7 @@ function PhotoEntry() {
   }
 
   const send = async () => {
+    if (busy) return
     if (!ready) return setTried((n) => n + 1)
     if (accountId === null) return setOutcome({ ok: false, message: NO_ACCOUNT })
     if (cents === null) return
@@ -790,7 +795,7 @@ function PhotoEntry() {
                 </Field>
               </div>
               <NotMoney amount={amount} cents={cents} id={amountError} />
-              <Button type="submit" size="lg" className="w-full" disabled={busy}>
+              <Button type="submit" size="lg" className="w-full" aria-disabled={busy}>
                 {busy ? 'Sending…' : 'Send to review'}
               </Button>
               {tried > 0 && !ready ? <StillNeeded key={tried} needed={needed} /> : null}

@@ -151,6 +151,31 @@ describe('AddScreen, telling what is wrong or missing (FE-8)', () => {
   })
 })
 
+describe('AddScreen, focus while it saves (FE-6)', () => {
+  it('keeps Add focusable while it works, so focus stays on it, and adds once however often it is pressed', async () => {
+    const fake = seeded()
+    renderScreen(<AddScreen />, fake)
+    await typeOne('I spent', '7.50', 'Invented kiosk')
+    fireEvent.change(screen.getByRole('combobox', { name: 'Category' }), { target: { value: 'c1' } })
+    // The re-read after the save waits, so the save is caught mid-way.
+    let release = (): void => undefined
+    fake.server.hold = (table) => (table === 'categories' ? new Promise<void>((resolve) => (release = resolve)) : null)
+
+    const add = screen.getByRole<HTMLButtonElement>('button', { name: 'Add' })
+    add.focus()
+    fireEvent.click(add)
+    const working = await screen.findByRole<HTMLButtonElement>('button', { name: 'Adding…' })
+    expect([working.disabled, working.getAttribute('aria-disabled')]).toEqual([false, 'true'])
+    fireEvent.click(working)
+
+    fake.server.hold = null
+    release()
+    expect(await screen.findByText('Added $7.50 — Invented kiosk.')).toBeTruthy()
+    expect(document.activeElement).toBe(add)
+    expect(fake.rpcCalls.map((c) => c.name)).toEqual(['add_typed_transaction'])
+  })
+})
+
 describe('AddScreen, its tabs from the keyboard (FE-15)', () => {
   it('is one stop in the tab order, moved along by the arrow keys, Home and End', async () => {
     renderScreen(<AddScreen />, seeded())
