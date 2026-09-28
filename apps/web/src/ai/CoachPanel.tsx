@@ -4,6 +4,7 @@ import { useAppData } from '../app-data.js'
 import { hashOf } from '../nav.js'
 import { readCoachSettings, saveCoachSettings, type CoachSettings } from './coach-settings.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
+import { SWITCH } from '../components/ui/form.js'
 
 type Loaded = { readonly state: 'loading' } | { readonly state: 'missing' | 'unreachable' } | { readonly state: 'ready'; readonly settings: CoachSettings }
 
@@ -91,7 +92,7 @@ export function CoachPanel() {
               type="checkbox"
               role="switch"
               aria-describedby={ids.shareHint}
-              className="size-6 shrink-0 accent-primary"
+              className={SWITCH}
               checked={loaded.settings.shareShopNames}
               disabled={saving}
               onChange={(e) => void change(loaded.settings, { ...loaded.settings, shareShopNames: e.target.checked })}

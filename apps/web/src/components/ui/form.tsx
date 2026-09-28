@@ -37,6 +37,20 @@ export function NativeSelect({ className, children, ...props }: SelectHTMLAttrib
   )
 }
 
+/**
+ * An on/off switch, for a checkbox with `role="switch"` (N82). The
+ * browser's own box read as "tick to agree"; this is a track with a knob
+ * that slides right and fills with the primary colour when on. Drawn with
+ * backgrounds alone, so it needs no markup beyond the input, and the knob
+ * is the card's colour so it shows on the track in both schemes. The
+ * input's row, its <label>, is the 44 px target.
+ */
+export const SWITCH =
+  'h-7 w-12 shrink-0 cursor-pointer appearance-none rounded-full bg-muted-foreground bg-left bg-no-repeat ' +
+  'bg-[length:1.75rem_1.75rem] [background-image:radial-gradient(circle,var(--card)_55%,transparent_58%)] ' +
+  'transition-[background-position,background-color] motion-reduce:transition-none checked:bg-primary checked:bg-right ' +
+  'outline-none focus-visible:ring-[3px] focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
+
 const CHEVRON = {
   backgroundImage:
     "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")",

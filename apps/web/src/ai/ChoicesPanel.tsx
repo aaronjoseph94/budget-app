@@ -2,7 +2,7 @@ import { useEffect, useId, useState } from 'react'
 import type { AiProvider, AiServiceStatus, AiStatusReply } from '@budget/schema'
 import { useAppData } from '../app-data.js'
 import { Button } from '../components/ui/button.js'
-import { NativeSelect } from '../components/ui/form.js'
+import { NativeSelect, SWITCH } from '../components/ui/form.js'
 import { hashOf } from '../nav.js'
 import { DAILY_CAPS, moved, readChoices, saveChoices, type AiChoices } from './choices.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
@@ -138,7 +138,7 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
             id={ids.paid}
             type="checkbox"
             role="switch"
-            className="size-6 shrink-0 accent-primary"
+            className={SWITCH}
             checked={choices.allowPaid}
             disabled={saving}
             onChange={(e) => void change({ ...choices, allowPaid: e.target.checked })}
