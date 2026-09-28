@@ -1,9 +1,9 @@
 # Handoff — read this first
 
-Rewritten 2026-09-23, when the workbook views build (`docs/workbook-views-plan.md`) was
-finished on branch `main-tnlcto`. It tells the owner and the next agent what
-exists, what the owner has to do before using it, how to check it worked,
-what is still open, and what is left to build.
+Rewritten 2026-09-28, when the AI-first build (`docs/ai-first-plan.md`,
+the owner's list of 2026-09-24) was finished on branch `main-tnlcto`. It
+tells the owner and the next agent what is new, what the owner does after
+it reaches `main`, how to check each screen, and what is still open.
 
 **The owner is not a software engineer.** Explain in plain language. Do not ask
 them to judge engineering choices — make the call, say what you chose and why,
@@ -14,7 +14,9 @@ and only raise what they would actually notice.
 ## 1. Before changing any code
 
 Read, in order: `CLAUDE.md` (the rules), `CONSTRAINTS.md` (what the checks
-enforce), `CAPABILITY-MAP.md` (module boundaries), then this file.
+enforce), `CAPABILITY-MAP.md` (module boundaries), then this file. The
+plan for this phase, and every choice made in it, is
+`docs/ai-first-plan.md`; the AI's rules are ADRs 0004 and 0005.
 The rules in `CLAUDE.md` are binding. The three that matter most:
 
 1. **All arithmetic lives in `packages/core`.** Screens format numbers; they
@@ -23,7 +25,11 @@ The rules in `CLAUDE.md` are binding. The three that matter most:
 2. **Money is integer cents**, `bigint` in Postgres. Never a float.
 3. **Nothing a model reads reaches the ledger unreviewed.** Only an exact
    learned merchant-rule match approves without a person. The database enforces
-   this since migration 0004 — keep it that way.
+   this since migration 0004 — keep it that way. A category the AI suggests
+   in Review waits for the owner's tap like any other.
+
+And one this phase adds: **the AI never supplies a number.** It writes
+around blanks, and the app fills each blank from the engine (ADR 0005).
 
 **Before every commit run `./scripts/gates.sh full`** and commit only when it
 prints `status=GREEN`. It needs `gitleaks` (`scripts/install-gitleaks.sh`) and a
@@ -31,50 +37,86 @@ local PostgreSQL install for the `schema` gate. If a tool is missing it reports
 `MISCONFIGURED` and exits 2 — install the tool, do not remove the gate.
 CI (`.github/workflows/gates.yml`) runs the same gates on every push.
 
-**Never:** commit a key or `.env` file; put `service_role` or the Gemini key
+**Never:** commit a key or `.env` file; put `service_role` or any AI key
 anywhere in `apps/web`; edit a migration that is already applied (write a new
 one); commit a real bank statement or receipt (fixtures are invented — see
 `packages/statement-parsers/test/pdf/make-pdf.ts`); lower a coverage threshold
-or delete a test to make a check pass.
+or delete a test to make a check pass; write the workbook vendor's name
+anywhere (the `brand` gate).
 
-## 2. What exists
+## 2. What is new, in plain words
 
-pnpm monorepo: Vite + React 19 + TypeScript + Tailwind v4, Supabase
-(Postgres, auth, one Edge Function), Vitest. **Everything below is on
-branch `main-tnlcto`.** Branch `main` is what the live site deploys, and it
-has none of the workbook screens until `main-tnlcto` is merged into it (§3).
+Everything below is on branch `main-tnlcto` and reaches the live site when
+it is merged into `main` (§3).
 
-**The app, screen by screen** (phone bar: Month · Week · Add · Review ·
-More; a wide screen puts them all on the top bar):
+- **AI throughout, on a free Google Gemini key.** A Coach that says how the
+  month is going, what changed, what to cut and when you will reach your
+  goals; a Sunday check-in; words on the Month, the Forecast and Reports;
+  suggested categories in Review; "just type it" on Add; receipts; and Ask.
+  Every figure is the app's own. With AI off, not set up or resting, every
+  one of them shows the app's own words instead, and says why in one line.
+- **Paid services too, only if you choose.** Groq and OpenRouter (free),
+  OpenAI and Anthropic (paid, off until you switch **Use paid services**
+  on). AI settings has the order they are tried in and a daily limit.
+- **Forecast:** safe to spend a day, where the month will end, the next
+  30 days, when you will reach each goal, what-ifs, the next three months.
+- **Reports:** the month in review, trends, shops and subscriptions,
+  habits; Save as PDF and Download CSV.
+- **Last month beside this month** on the Month, Week, Paycheck, Year,
+  Savings and Debts.
+- **Savings goals, plural:** add goals, choose the main one, reorder,
+  pause, mark reached.
+- **Help** on every screen (the **?** by each title), **One-time updates**
+  that checks what is installed and has Copy buttons, and **Getting
+  started**, nine short steps.
+- **Phone first:** checked at 320 and 390 px wide, light and dark, and with
+  text at 200%; touch targets 44 px; an offline line.
+- **A critical review of the whole app** fixed rows that opened nothing
+  (Week, Paycheck, Bill calendar, Not spending), added learned shops with
+  **Forget** in Settings, and made every "needs an update" message point
+  to Help.
 
-| Screen | What it is | Workbook tab |
-|---|---|---|
-| Month | Opens first. Summary card (Start, Spent, Left to spend, End of month), the six lists as blocks with Budgeted, Actual and Left, the two charts. Tap a row to see its charges and move one ("Move to…"); tap a budget to type it "from this month on" or "just this month" | Jan–Dec |
-| Week | The same blocks for Monday to Sunday, with weekly budgets typed in the row, and the savings goal | Weekly Budget |
-| Paycheck | The same blocks for one pay period, found from your pay schedule | Paycheck Budget |
-| Bill calendar | Each bill on the day it is due, paydays, and each week's total | Bill Calendar |
-| Year | Twelve months from any start month, Home's "at a glance" cards and charts | Annual Budget, Home |
-| Savings | Every savings goal in your order, the main one first: what is saved, what is left, what to save a month; Add a goal. Choosing the main goal, moving, pausing and marking reached need `0015` | Savings |
-| Debts | One card per debt, when it is paid off, and minimums against snowball and avalanche | Debt Calculator |
-| Setup | Your name, the six lists, when each income pays, each bill's day and monthly amount | START HERE, Bills |
-| Add | A Rogers statement PDF (or a CSV), a receipt photo, or one entry typed by hand (cash, pay, savings moves) | Transactions |
-| Review | Every imported row waits here for a category, and every line the reader could not read | — |
-| All transactions | Every approved row, a month at a time, with search and remove | — |
-| Settings | Weekly budgets, where your savings goals are, sign out | — |
+**What moved, which you will notice:**
+- The phone bar is **Month · Coach · Add · Review · More**. **Week left the
+  bar**: it is the **Week** in the **Month · Week · Pay · Year** switch under
+  the Month's title, and `#/week` still works.
+- On a wide screen the top bar is Month, Week, Coach, Forecast, Reports,
+  Savings, Debts, Review, Add, More. Year and Paycheck are in the switch;
+  the Bill calendar and Setup are in More.
+- **More** is in four groups: Plan, Understand, Set up and help, Records.
+
+**The app, screen by screen:**
+
+| Screen | What it is |
+|---|---|
+| Month | Opens first. The coach line, the summary (Start, Spent, Left to spend, End of month, and a labelled Forecast line), last month's same days beside it, the six lists as blocks, the charts. Tap a row for its charges |
+| Week, Paycheck, Year | The switch under the Month's title. The same blocks for a week, a pay period, twelve months, each beside the one before |
+| Bill calendar | Each bill on its day, paydays, each week's total. A bill opens its charges |
+| Coach | The day's line, your main goal and the others, at most three cards, the check-in, a quote or tip, and Ask |
+| Check-in (`#/coach/checkin`) | From Sunday: last week, a win, one thing to try, a few questions, a one-tap weekly limit |
+| Forecast | Safe to spend, the month's end, the next 30 days, goal dates and what-ifs, three months ahead, the debt-free date |
+| Reports | Overview, Trends, Shops, Habits; Save as PDF, Download CSV |
+| Ask | A question about your money in your own words; the answer's figure is the engine's |
+| Savings, Debts | Every goal in your order; every debt and when it is paid off |
+| Add, Review | A statement, a photo, one typed or "just typed"; everything waits in Review, with suggested categories |
+| Setup, Settings, AI settings | Your lists and bills; weekly budgets, learned shops, sign out; AI on or off, keys, services, limit, tone |
+| Help, Getting started | An article per screen and One-time updates; nine steps to set up |
 
 **Underneath:** all arithmetic is in `packages/core`, checked against the
-workbook's own cached values (121 golden tests); the charts are drawn by
-`packages/chart-specs`; the statement readers are in
-`packages/statement-parsers`; the database is `supabase/migrations/0001` to
-`0014`. Decisions are recorded in `docs/formula-decisions.md` (F1–F23) and
-`docs/divergences.md` (every place the app departs from the workbook, and why).
+workbook's own cached values (121 golden tests, unchanged); the coach's
+words and checks are in `packages/savings-coach`; the CSV writer is
+`packages/report-export`; the AI helper is `supabase/functions/ai`; the
+database is `supabase/migrations/0001` to `0018`. Decisions are recorded in
+`docs/formula-decisions.md` (F1–F49), `docs/divergences.md` and
+`docs/adr/` (0001–0009).
 
-Key decisions, already made by the owner (do not reopen): dates are the
-purchase date (F1); receipt photos use Gemini's free tier
-(`docs/adr/0002-gemini-free-tier-for-receipts.md`); the answers in
-`docs/workbook-views-plan.md` §9a (Month first, a real charge replaces a planned
-bill, card payments are not spending, a starting balance typed each month,
-savings kept by transfers, pay periods from the pay schedule).
+Key decisions already made by the owner (do not reopen): dates are the
+purchase date (F1); Gemini's free tier, privacy trade-off accepted
+(ADR 0002); the answers in `docs/workbook-views-plan.md` §9a (Month first,
+a real charge replaces a planned bill, card payments are not spending, a
+starting balance typed each month, savings kept by transfers, pay periods
+from the pay schedule); the 2026-09-24 list, and "do not wait for my
+approval" on the plan.
 
 ## 3. The owner's setup — do these in this order
 
