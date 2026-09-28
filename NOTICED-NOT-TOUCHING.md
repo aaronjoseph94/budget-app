@@ -1544,7 +1544,7 @@ decision; none is a wrong number, but the owner would notice them.
 
 ---
 
-## N58 — What the frontend audit left of text enlarged to 200% (FE-17)
+## N58 — What the frontend audit left of text enlarged to 200% (FE-17) *(settled 2026-09-28, A26)*
 
 **Seen:** 2026-09-24, fixing FE-17.
 
@@ -1561,6 +1561,17 @@ screen at a time; the audit rated it low.
 **To settle:** measure with the root font at 200% (the preview's
 `zoom.mjs` does it) and let each offender wrap or shrink, checking the
 same screen at normal size.
+
+**Settled:** A26 walked every screen at 320, 375, 390 and 430 px with the
+root font at 200%, and none scrolls sideways now. What gave way: Button is
+never wider than its box and wraps its label (heights are floors); every
+phone grid has `grid-cols-1`; a title and its ? share a row that wraps;
+the Month's chip, a badge and Reports' pairs keep one line where they fit;
+Setup's rows, pay rows and totals, the Year's top three, a calendar bill,
+the Coach's ring and figures and the Week's goal title wrap; the Month's
+title is `min(3rem, 15vw)`; "September", "All transactions" and an email
+break inside a word only where the word alone is wider than the screen.
+`width-guard.test.ts` holds the source-level half.
 
 ---
 
@@ -1720,7 +1731,7 @@ changed, or retire (§12).
 
 ---
 
-## N66 — At 320px the Month's tables already scroll inside their cards
+## N66 — At 320px the Month's tables already scroll inside their cards *(settled 2026-09-28, A26)*
 
 **Seen:** 2026-09-24, checking A03's change column at 320px in the preview.
 
@@ -1738,9 +1749,14 @@ the plan's §9 already calls for a 12px gutter below 360px.
 12px below 360px and let the Category column wrap sooner, then check the
 Month, Week and Paycheck at 320px in both of the Month's column modes.
 
+**Settled:** A26 took the page gutter to 12 px below 360 px (and every
+band that bleeds to the edge with it), and the Month's tables to 12 px
+edges and 13 px type there. Every column of the Month, Week and Paycheck
+is in view at 320 px with Left and with vs last month.
+
 ---
 
-## N67 — At 320px the Debts summary breaks its total mid-number
+## N67 — At 320px the Debts summary breaks its total mid-number *(settled 2026-09-28, A26)*
 
 **Seen:** 2026-09-24, checking A04's line on Debts at 320px in the preview.
 
@@ -1754,6 +1770,10 @@ spans the card and is not affected.
 **To settle:** in A26's mobile sweep, keep figures whole (`whitespace-nowrap`
 on the figure, or the ring under the grid below 360px) and check Debts at
 320px with a six-figure total.
+
+**Settled:** A26: below 360 px the ring goes under the figures and the
+total has its row, so "$19,993.36" reads whole at 320 px with room for a
+sixth figure.
 
 ---
 
@@ -1916,7 +1936,7 @@ by its month so both screens share one.
 
 ---
 
-## N76 — A one-time-update link breaks its sentence at 390px
+## N76 — A one-time-update link breaks its sentence at 390px *(settled 2026-09-28, A26)*
 
 **Seen:** 2026-09-25, in the preview harness: the Coach's "When you will
 get there needs a one-time update. See One-time updates" and Savings'
@@ -1933,8 +1953,12 @@ fix for all of them belongs to the mobile pass.
 inline element (or a full-width block link under the sentence), and
 check both screens at 320 and 390px.
 
+**Settled:** A26: a link after a sentence's words is `SENTENCE_LINK`,
+14 px of padding above and below on an inline link, 44 px or more to
+press (measured) with the line's height unchanged. The width guard holds
+every such link to it.
 
-## N77 — Copy's empty status line leaves a gap on One-time updates
+## N77 — Copy's empty status line leaves a gap on One-time updates *(settled 2026-09-28, A26)*
 
 **Seen:** 2026-09-25, A09, in the preview harness: before Copy is pressed,
 its `aria-live` line is an empty paragraph, which the step's `space-y-2`
@@ -1946,6 +1970,10 @@ spacing of this kind at once.
 **To settle:** in A26, keep the live region but give it no height while
 empty (for example `empty:hidden` on a wrapper that stays mounted), and
 check at 320 and 390px.
+
+**Settled:** A26: the step is a column with gaps and the empty live line
+is `sr-only` until it has words, so it takes no room and stays in the
+accessibility tree.
 
 ## N78 — Every AI surface still needs the helper's version checked *(settled 2026-09-25, A10)*
 
@@ -2023,7 +2051,7 @@ browser), 112 branches against 153, with the report keeping whichever
 arrived first. The app's node tests now compile for the browser too; the
 small movement left is N85.
 
-## N82 — Use paid services looks like a tick box, not a switch
+## N82 — Use paid services looks like a tick box, not a switch *(settled 2026-09-28, A26)*
 
 **Seen:** 2026-09-25, A11, in the preview harness. The control has
 `role="switch"` and a 44 px label row, but draws as the browser's
@@ -2037,7 +2065,11 @@ which sees every screen at once.
 here and anywhere else an on/off choice appears (AI on/off, Share shop
 names, both A12).
 
-## N83 — The Coach cards' action buttons are under 44 px tall
+**Settled:** A26: `SWITCH` in `components/ui/form.tsx` draws a
+`role="switch"` checkbox as a track and knob from backgrounds alone; both
+switches use it and `switch.test.ts` holds every one to it.
+
+## N83 — The Coach cards' action buttons are under 44 px tall *(settled 2026-09-28, A26)*
 
 **Seen:** 2026-09-25, A12, in the preview harness at 320 and 390 px.
 **Import a statement**, **See the Month**, **Why am I seeing this?**
@@ -2049,6 +2081,11 @@ app; changing it is A26's mobile pass, which sees every screen at once.
 
 **To settle:** in A26, give the small size a 44 px minimum height on
 touch screens, or use the default size on the Coach's cards.
+
+**Settled:** already by FE-1's `pointer-coarse:min-h-11` on every Button:
+A26's sweep measured every Coach button at 44 px or more on a touch
+screen at 320 and 390 px. The 32 px measured in the harness then came from
+a desktop pointer, where the compact size is meant.
 
 ## N84 — Share shop names has nothing to hold back yet
 
@@ -2092,7 +2129,7 @@ the floor holds whichever map survives. The merge itself still moves.
 
 ---
 
-## N86 — Two small layout points on the Forecast
+## N86 — Two small layout points on the Forecast *(settled 2026-09-28, A26)*
 
 **Seen:** 2026-09-25, A13, in the preview at 390 px.
 
@@ -2107,6 +2144,9 @@ sideways; the mobile pass (A26) walks every screen for exactly this.
 **To settle:** in A26, put the tightest day's name beside its point on
 the side the line is not going, and the Debts link on a line of its own.
 
+**Settled:** A26: the tightest day is named under its point, where the
+line never goes, the first and last days' names a row below; Open Debts
+is a `SENTENCE_LINK`, so its sentence keeps its lines.
 
 ---
 
@@ -2143,7 +2183,7 @@ first test opens.
 
 ---
 
-## N88 — The Forecast's charts grow with the card on a wide screen
+## N88 — The Forecast's charts grow with the card on a wide screen *(settled 2026-09-28, A26)*
 
 **Seen:** 2026-09-25, A14, in the preview at 1280 px. The range bar, the
 30-day line and the three months' bars scale their drawing, text
@@ -2157,6 +2197,11 @@ would look out of place.
 
 **To settle:** in A26, cap the Forecast charts' drawn width (as the
 Month's charts are held to their column) and look at 768 and 1280 px.
+
+**Settled:** A26: the Forecast's three charts, and Reports' Habits and
+Trends charts, are centred and held to `max-w-md` (18 px labels at most),
+as the Overview's was; the width guard requires a width on every chart
+but the three sized by their own box.
 
 ---
 
@@ -2232,7 +2277,7 @@ over the templates that A16 to A18 add to anyway.
 **To settle:** `print:hidden` on HelpButton; drop "try" from the
 templates' openings, re-running the text-rule tests.
 
-## N93 — Save as PDF is 40 px tall, under the 44 px touch target
+## N93 — Save as PDF is 40 px tall, under the 44 px touch target *(settled 2026-09-28, A26)*
 
 **Seen:** 2026-09-25, A16, in the preview at 320 and 390 px.
 
@@ -2245,6 +2290,10 @@ app, and the mobile pass (A26) is where button sizes are set together.
 
 **To settle:** a 44 px size on the shared Button, or `min-h-11` on this
 one, checked at 320 px.
+
+**Settled:** already by FE-1's touch floor on Button; A26's sweep
+measured Save as PDF at 44 px on a touch screen on every Reports tab. The
+40 px is a mouse's compact size.
 
 ---
 
@@ -2265,7 +2314,7 @@ screen that reads where the records start.
 
 ---
 
-## N95 — Setup's compact editor fields are under 44 px and 16 px
+## N95 — Setup's compact editor fields are under 44 px and 16 px *(settled 2026-09-28, A26)*
 
 **Seen:** 2026-09-26, A17, in the preview at 390 px. Setup's day and
 amount fields, and each row's arrows and list switch, are 36 to 40 px
@@ -2277,6 +2326,11 @@ phase, and the mobile pass (A26) sets sizes across the app together.
 
 **To settle:** raise the shared `Input size="sm"` and Setup's icon
 buttons to 44 px and 16 px text, checked at 320 px.
+
+**Settled:** already on a touch screen, by FIELD's
+`pointer-coarse:min-h-11`, Button's floor and index.css's unlayered 16 px
+rule: A26's sweep found no Setup control under 44 px and no field under
+16 px at 320 or 390 px. With a mouse they stay compact, as meant.
 
 ---
 
@@ -2297,7 +2351,7 @@ equals best) in the digest, and a second template for it.
 
 ---
 
-## N97 — The Habits charts grow with the card on a wide screen
+## N97 — The Habits charts grow with the card on a wide screen *(settled 2026-09-28, A26)*
 
 **Seen:** 2026-09-27, A18, in the preview at 1280 px. The spending grid
 and the weekday bars scale their drawing, text included, to the card, so
@@ -2310,6 +2364,8 @@ wide screen; capping only these would look out of place beside Trends.
 
 **To settle:** with N88, in A26: hold each chart's drawn width to a
 readable size at 768 and 1280 px.
+
+**Settled:** with N88, A26: `max-w-md`, centred.
 
 ---
 
@@ -2326,6 +2382,12 @@ start alone.
 A later run failed the same way on `focus after an editor in a row
 closes`, while another worktree's gates ran beside it (load average
 about 9.5 on 4 cores); the next run passed.
+
+A26 saw it three more times on 2026-09-28, each while another worktree's
+tests ran beside this one's (load average 7 to 9), each passing on the
+next run. Its neighbour in ask-entry, which failed the same way, was a
+lazy component suspending on its first render; opening it once in
+`beforeAll` settled that one, and may be the shape of this one's cause.
 
 **Why not fixed here:** A18 touches nothing on AI settings, and the only
 remedy found so far, a longer wait, is one the rules forbid.
@@ -2503,7 +2565,7 @@ AI, in A27's pass.
 
 ---
 
-## N109 — The Photo tab's date field is clipped at 320 px
+## N109 — The Photo tab's date field is clipped at 320 px *(settled 2026-09-28, A26)*
 
 **Seen:** 2026-09-27, A23's screenshots. The Photo form puts Total spent
 and Date side by side at every width; at 320 px Chromium's empty date
@@ -2515,6 +2577,10 @@ on the typed form; it is A26's mobile pass.
 
 **To settle:** stack the two fields below 360 px, as the plan's §9 does
 for comparison chips.
+
+**Settled:** A26: a date or month field beside another stacks below
+360 px, on the Photo and typed forms, a fund's dates and a debt's month;
+the width guard finds any that does not.
 
 ---
 
@@ -2615,3 +2681,36 @@ and App, which is a change of its own, and a later slice may want it.
 
 **To settle:** remove `NOT_BUILT`, `isBuilt` and `NotYet` in the
 whole-app review (A27) if nothing is planned to use them.
+
+---
+
+## N116 — Paycheck without its one-time update has no title
+
+**Seen:** 2026-09-28, A26's fail-soft sweep (`?missing`: 0011 not pasted).
+Paycheck shows only "Could not load when you are paid" and the older
+sentence naming "0011 in the setup guide" and a code: no `h1`, so a
+screen reader lands on no heading, and the wording is N28's.
+
+**Why not fixed here:** the words are A27's (N28's rest); the missing
+heading goes with them.
+
+**To settle:** in A27, give the failed state the screen's title and the
+"Needs a one-time update" line with its Help link.
+
+---
+
+## N117 — A test file's first open of a lazy piece suspends, whatever is warmed
+
+**Seen:** 2026-09-28, A26. Importing a lazy component's module in
+`beforeAll` does not stop `React.lazy` suspending on its first render;
+under load the retry after the fallback lost a find's one second.
+Rendering the piece once in `beforeAll` does (ask-entry, for the help
+sheet). `help-button.test.tsx` and any test that opens a help sheet or
+another lazy piece first may meet the same.
+
+**Why not fixed here:** only ask-entry failed; warming others blind
+would add setup no failure asked for.
+
+**To settle:** if another such find fails under load, give
+`warm-screen.tsx` a helper that renders a lazy piece once, and use it.
+

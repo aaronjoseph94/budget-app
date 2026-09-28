@@ -195,8 +195,12 @@ means that file from Step 1 was missed.
     weekly budgets, where your savings goals are, sign out.
 11. **Add → Photo** (after Step 4): a cash receipt fills the form; it goes
     to Review like everything else.
-12. **iPhone:** open the Month and look at the ring chart. If it is
-    squashed, tell the next agent (N41: only Chromium was checked here).
+12. **iPhone:** open the Month, the Coach and the Forecast in Safari, and
+    look at the ring chart, the tables and the 30-day line. Then make the
+    text larger (Settings → Display & Brightness → Text Size, or **aA** in
+    Safari) and look again: nothing should need scrolling sideways. If
+    anything is squashed or cut off, tell the next agent which screen (N41:
+    only Chromium was checked here, at 320 to 1280 px and at 200% text).
 
 ## 5. Questions for the owner
 
