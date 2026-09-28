@@ -146,6 +146,46 @@ describe('Getting started (plan §8.1)', () => {
     expect(within(screen.getByRole('region', { name: 'Variable expenses' })).getByRole('textbox', { name: 'Rename Groceries' })).toBeTruthy()
   })
 
+  it('offers the flight-training goal first, filled in, then Add another, through Savings’ own sheet', async () => {
+    const fake = createFakeSupabase({ categories: [category('food', 'Groceries', 'variable')] })
+    await fake.signIn()
+    renderStart(fake, { name: 'Alex' })
+    await screen.findByRole('heading', { name: 'When you’re paid' })
+    fireEvent.click(screen.getByText(/^All 9 steps/))
+    fireEvent.click(screen.getByRole('button', { name: /Your savings goals/ }))
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Add your flight-training goal' }))
+    const sheet = within(screen.getByRole('dialog', { name: 'Add a goal' }))
+    expect(sheet.getByRole<HTMLInputElement>('textbox', { name: 'Name' }).value).toBe('Flight training')
+    expect(sheet.getByLabelText<HTMLInputElement>('Target ($)').value).toBe('30000')
+    expect(sheet.getByLabelText<HTMLInputElement>('Cost of an hour ($)').value).toBe('275')
+    fireEvent.change(sheet.getByLabelText(/^Saved already/), { target: { value: '2750' } })
+    fireEvent.click(sheet.getByRole('button', { name: 'Add goal' }))
+
+    // $30,000.00 less $2,750.00 is 99.09 hours at $275.00: 99 whole hours to go.
+    expect(await screen.findByText('About 99 hours of flight time to go.')).toBeTruthy()
+    expect(screen.getByText('$2,750.00 saved of $30,000.00')).toBeTruthy()
+    expect(screen.getByText('Done')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Add another' }))
+    expect(within(screen.getByRole('dialog', { name: 'Add a goal' })).getByRole<HTMLInputElement>('textbox', { name: 'Name' }).value).toBe('')
+  })
+
+  it('lists every active goal with the main goal leading, and leaves paused ones out', async () => {
+    const goal = (id: string, name: string, sort_order: number, status: 'active' | 'paused') => ({
+      id, name, target_cents: 100_000, saved_cents: 0, target_date: null, unit_cost_cents: null, unit_label: null,
+      created_at: '2026-01-01T00:00:00Z', sort_order, status, reached_on: null,
+    })
+    const fake = createFakeSupabase({ savings_goals: [goal('g1', 'New car', 1, 'active'), goal('g2', 'Holiday', 0, 'active'), goal('g3', 'Bike', 2, 'paused')] })
+    renderStart(fake, { name: 'Alex' })
+    await screen.findByRole('heading', { name: 'Your lists' })
+    fireEvent.click(screen.getByText(/^All 9 steps/))
+    fireEvent.click(screen.getByRole('button', { name: /Your savings goals/ }))
+
+    const lines = (await screen.findAllByText(/saved of \$1,000\.00$/)).map((l) => l.closest('li')?.textContent)
+    expect(lines).toEqual(['HolidayMain goal$0.00 saved of $1,000.00', 'New car$0.00 saved of $1,000.00'])
+    expect(screen.getByRole('button', { name: 'Add another' })).toBeTruthy()
+  })
+
   it('says a step it could not read is can’t check yet, never done, and points to One-time updates', async () => {
     const fake = allButName()
     fake.fail('pay_schedules', '42P01')

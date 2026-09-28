@@ -8,7 +8,14 @@ import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Field, Input } from '../components/ui/form.js'
 import { Sheet } from '../components/ui/sheet.js'
-import { GoalUnitFields, readUnit, unitText } from './GoalUnitFields.js'
+import { GoalUnitFields, readUnit, unitText, type UnitText } from './GoalUnitFields.js'
+
+/** What Add a goal opens with filled in, all of it changeable first: Getting started's flight goal (plan §8.1). */
+export interface GoalPreset {
+  readonly name?: string
+  readonly target?: string
+  readonly unit?: UnitText
+}
 
 /**
  * Add a savings goal (G1): its name, target, what is saved already, if
@@ -21,11 +28,13 @@ import { GoalUnitFields, readUnit, unitText } from './GoalUnitFields.js'
  * there is no place to write, and it is added as the goals were before.
  */
 export function AddGoalSheet({
+  preset = {},
   goalOnFund,
   onClose,
   onSaved,
   onFailedAfterClose,
 }: {
+  preset?: GoalPreset
   /** The ids of the funds that already have a goal: a fund takes one goal (0013). */
   goalOnFund: ReadonlySet<string>
   onClose: () => void
@@ -33,11 +42,11 @@ export function AddGoalSheet({
   onFailedAfterClose: (message: string) => void
 }) {
   const { supabase, userId, categories, goals, goalsOrdered, refresh } = useAppData()
-  const [name, setName] = useState('')
-  const [target, setTarget] = useState('')
+  const [name, setName] = useState(preset.name ?? '')
+  const [target, setTarget] = useState(preset.target ?? '')
   const [saved, setSaved] = useState('')
   const [date, setDate] = useState('')
-  const [unit, setUnit] = useState(unitText(null))
+  const [unit, setUnit] = useState(preset.unit ?? unitText(null))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const open = useRef(true)
