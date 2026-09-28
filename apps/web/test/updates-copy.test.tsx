@@ -59,7 +59,12 @@ describe('Copy on One-time updates', () => {
   it('copies 0016 exactly as committed, and says what to do with it', async () => {
     const fake = createFakeSupabase()
     delete fake.rpcReplies['ai_key_status']
-    fireEvent.click(await nextIs(fake, 'Copy 0016_ai_foundation.sql'))
+    const copy = await nextIs(fake, 'Copy 0016_ai_foundation.sql')
+    // Before Copy, its live line is there but empty, and takes no room (N77).
+    const live = copy.parentElement!.querySelector('[aria-live="polite"]')!
+    expect(live.textContent).toBe('')
+    expect(live.classList.contains('empty:sr-only')).toBe(true)
+    fireEvent.click(copy)
     expect(await screen.findByText('Copied. Now paste it into Supabase.')).toBeTruthy()
     expect(writeText.mock.calls).toEqual([[SITE['/setup/0016_ai_foundation.sql']]])
     expect(asked).toEqual(['/setup/0016_ai_foundation.sql'])

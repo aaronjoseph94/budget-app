@@ -55,11 +55,14 @@ export function CopyFile({ file }: { file: string }) {
     }
   }
   return (
-    <div className="space-y-2">
+    // A column with gaps, not space-y: an empty live line is taken out of
+    // the flow (sr-only), so it leaves no gap under Copy, and stays in the
+    // accessibility tree so "Copied" is still said when it arrives (N77).
+    <div className="flex flex-col items-start gap-2">
       <Button disabled={got.kind !== 'ready'} onClick={() => void (got.kind === 'ready' ? copy(got.text) : undefined)}>
         {got.kind === 'ready' ? `Copy ${file === HELPER_FILE ? 'the AI helper' : file}` : 'Getting the file…'}
       </Button>
-      <p aria-live="polite">
+      <p aria-live="polite" className="empty:sr-only">
         {said === 'copied' ? 'Copied. Now paste it into Supabase.' : said === 'select' ? 'Your browser didn’t allow copying. Select all of the text below and copy it.' : ''}
       </p>
       {said === 'select' && got.kind === 'ready' ? (
