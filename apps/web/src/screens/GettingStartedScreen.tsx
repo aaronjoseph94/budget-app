@@ -18,16 +18,17 @@ import { cn } from '../lib/cn.js'
  * the real control on it, Continue and Do this later. Whether a step is
  * done is read from the data every time (checks.ts); the order, the count
  * and the next step are core's (setupProgress, F49). Only the steps put
- * off are kept, in the sign-in's user_metadata (profile.ts), so they
- * follow the owner to another device. The step showing is this screen's
- * alone; the address stays `#/start`.
+ * off and a hand-ticked iPhone step are kept, in the sign-in's
+ * user_metadata (profile.ts), so they follow the owner to another device.
+ * The step showing is this screen's alone; the address stays `#/start`.
  */
 export function GettingStartedScreen() {
   const { supabase, displayName, setupMarks } = useAppData()
-  // Getting started's own copy, shown at once after a save; the sign-in's
+  // Getting started's own copies, shown at once after a save; the sign-in's
   // copy catches up when Supabase says the user changed.
+  const [name, setName] = useState(displayName)
   const [marks, setMarks] = useState<SetupMarks>(setupMarks)
-  const { checks } = useSetupChecks({ name: displayName, phoneTicked: marks.phoneTicked })
+  const { checks } = useSetupChecks({ name, phoneTicked: marks.phoneTicked })
   const checked = STEP_IDS.every((id) => checks[id] !== null)
   const progress = setupProgress({ steps: STEP_IDS.map((id) => ({ id, check: checks[id] ?? 'unknown' })), later: marks.later })
   const [at, setAt] = useState<StepId | 'end' | null>(null)
@@ -64,6 +65,11 @@ export function GettingStartedScreen() {
     setMarks((m) => ({ ...m, later: next }))
   }
 
+  const tick = async (phoneTicked: boolean) => {
+    await saveSetupMarks(supabase, { phoneTicked })
+    setMarks((m) => ({ ...m, phoneTicked }))
+  }
+
   return (
     <div className="space-y-5 pb-4">
       <div className="flex items-center gap-1">
@@ -85,7 +91,7 @@ export function GettingStartedScreen() {
             </h2>
             <p className="text-base text-muted-foreground">{STEP_WORDS[at].why}</p>
             <CheckLine check={checks[at]} />
-            <StepBody id={at} />
+            <StepBody id={at} name={name} onNamed={setName} phoneTicked={marks.phoneTicked} onTick={tick} />
           </section>
           {problem !== null ? <Alert tone="error">{problem}</Alert> : null}
           <div className="flex flex-wrap items-center gap-2 border-t pt-4">

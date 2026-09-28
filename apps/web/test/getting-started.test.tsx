@@ -111,6 +111,21 @@ describe('Getting started (plan §8.1)', () => {
     expect(screen.getByRole('heading', { name: 'Your name' })).toBeTruthy()
   })
 
+  it('saves the name as Setup does, and reads it as done', async () => {
+    const fake = createFakeSupabase()
+    await fake.signIn()
+    renderStart(fake)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Save' }))
+    expect(await screen.findByText('Type your first name, then press Save.')).toBeTruthy()
+    fireEvent.change(screen.getByRole('textbox', { name: 'Your first name' }), { target: { value: ' Alex ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(await screen.findByText('Saved. Hello, Alex.')).toBeTruthy()
+    expect(fake.user.user_metadata['display_name']).toBe('Alex')
+    expect(screen.getByText('Done')).toBeTruthy()
+  })
+
   it('says a step it could not read is can’t check yet, never done, and points to One-time updates', async () => {
     const fake = allButName()
     fake.fail('pay_schedules', '42P01')
@@ -125,18 +140,39 @@ describe('Getting started (plan §8.1)', () => {
     expect(screen.getByLabelText('6 of 9 done')).toBeTruthy()
   })
 
-  it('ends past the last step with how many are done, and the way back', async () => {
-    renderStart(allButName(), { name: 'Alex' })
+  it('ticks the iPhone step by hand, with Help’s own steps, and ends with how many are done', async () => {
+    const fake = allButName()
+    await fake.signIn()
+    renderStart(fake, { name: 'Alex' })
 
     // Only the iPhone step is left, so it opens there, as the ninth.
     expect(await screen.findByRole('heading', { name: 'Put it on your iPhone' })).toBeTruthy()
     expect(screen.getByText('Step 9 of 9 · about 1 minute')).toBeTruthy()
+    expect(screen.getByText('Add to Home Screen')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Finish' }))
-
     expect(screen.getByRole('heading', { name: '8 of 9 done' })).toBe(document.activeElement)
     expect(screen.getByRole('link', { name: 'Open the Month' }).getAttribute('href')).toBe('#/month')
+
     fireEvent.click(screen.getByRole('button', { name: 'Put it on your iPhone' }))
-    expect(screen.getByRole('heading', { name: 'Put it on your iPhone' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('checkbox', { name: 'It’s on my home screen' }))
+    expect(await screen.findByText('Done')).toBeTruthy()
+    expect(fake.user.user_metadata['setup_phone_ticked']).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Finish' }))
+    expect(screen.getByRole('heading', { name: 'Your coach is ready' })).toBeTruthy()
+  })
+
+  it('sees the app open from the home screen for itself, with nothing to tick', async () => {
+    Object.defineProperty(window.navigator, 'standalone', { value: true, configurable: true })
+    try {
+      renderStart(allButName(), { name: '' })
+      fireEvent.click(await screen.findByText(/^All 9 steps/))
+      fireEvent.click(screen.getByRole('button', { name: /Put it on your iPhone/ }))
+
+      expect(screen.getByText('You’re using the app from your home screen, so this one is done.')).toBeTruthy()
+      expect(screen.getByText('Done')).toBeTruthy()
+    } finally {
+      Reflect.deleteProperty(window.navigator, 'standalone')
+    }
   })
 
   it('celebrates when all nine are done, AI switched off included, and opens the Coach', async () => {
