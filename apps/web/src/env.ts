@@ -13,6 +13,13 @@
  */
 import { z } from 'zod'
 
+// zod's first parse tries `Function('')` to see whether it may compile a
+// faster parser. The Content-Security-Policy refuses eval, so every page
+// load filed a violation, where a real injection's report would hide among
+// them (SEC-NEW-1). The fast path could never run under that policy, so
+// nothing is lost. Set here, where the app's first parse is.
+z.config({ jitless: true })
+
 const EnvSchema = z.object({
   VITE_SUPABASE_URL: z.url({ message: 'VITE_SUPABASE_URL must be the project URL' }),
   VITE_SUPABASE_ANON_KEY: z
