@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ARTICLES, articleFor, boldParts } from '../src/help/articles.js'
 import { HELP_TOPICS } from '../src/help/topics.js'
 import { SCREEN_HELP } from '../src/help/screen-help.js'
-import { SCREENS, isBuilt } from '../src/nav.js'
+import { SCREENS } from '../src/nav.js'
 
 /** The words plan §8 keeps out of Help; a button's own name, in bold, may still say it. */
 const ENGINEERING = /\b(migrations?|edge functions?|postgres|sql|rls|jwt|endpoints?|api|schema|database)\b/i
@@ -61,9 +61,9 @@ describe('Help articles', () => {
     }
   })
 
-  it('has a written article for the ? on every screen built so far', () => {
+  it('has a written article for the ? on every screen', () => {
     for (const screen of SCREENS) {
-      if (screen === 'help' || !isBuilt(screen)) continue
+      if (screen === 'help') continue
       expect(articleFor(SCREEN_HELP[screen]), screen).toBeDefined()
     }
   })

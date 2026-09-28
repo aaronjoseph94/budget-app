@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react'
-import { hashOf, isBuilt, type Screen } from '../nav.js'
+import { hashOf, type Screen } from '../nav.js'
 import { Icon, type IconName } from '../components/ui/icons.js'
 import { HelpButton } from '../help/HelpButton.js'
 
@@ -54,7 +54,7 @@ export const MORE_GROUPS: readonly { readonly title: string; readonly items: rea
 ]
 
 export function MoreScreen() {
-  const groups = MORE_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => isBuilt(i.screen)) })).filter((g) => g.items.length > 0)
+  const groups = MORE_GROUPS
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-1">

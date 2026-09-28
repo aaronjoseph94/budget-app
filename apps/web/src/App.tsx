@@ -3,7 +3,7 @@ import { readEnv } from './env.js'
 import { createSupabase } from './supabase.js'
 import { NotConfigured, SignIn, useSession } from './auth.js'
 import { AppDataProvider, useAppData } from './app-data.js'
-import { HOME, hashOf, isBuilt, navigate, useAddress, type Screen } from './nav.js'
+import { HOME, hashOf, navigate, useAddress, type Screen } from './nav.js'
 import { HELP_TOPICS } from './help/topics.js'
 import { MonthScreen } from './screens/MonthScreen.js'
 import { MoreScreen } from './screens/MoreScreen.js'
@@ -104,22 +104,19 @@ const PHONE_TABS: readonly Tab[] = [
 /**
  * Wide screens: the Coach, Forecast and Reports beside the views. Paycheck
  * and Year are in the switch; the Bill calendar and Setup in More (ADR 0006).
- * A screen not built yet keeps its place here and shows when it lands.
  */
-const DESKTOP_TABS: readonly Tab[] = (
-  [
-    { screen: 'month', label: 'Month', icon: 'calendar' },
-    { screen: 'week', label: 'Week', icon: 'week' },
-    { screen: 'coach', label: 'Coach', icon: 'sparkles' },
-    { screen: 'forecast', label: 'Forecast', icon: 'trend' },
-    { screen: 'reports', label: 'Reports', icon: 'report' },
-    { screen: 'savings', label: 'Savings', icon: 'piggy' },
-    { screen: 'debts', label: 'Debts', icon: 'card' },
-    { screen: 'review', label: 'Review', icon: 'inbox' },
-    { screen: 'add', label: 'Add', icon: 'plus' },
-    { screen: 'more', label: 'More', icon: 'menu' },
-  ] as const
-).filter((t) => isBuilt(t.screen))
+const DESKTOP_TABS: readonly Tab[] = [
+  { screen: 'month', label: 'Month', icon: 'calendar' },
+  { screen: 'week', label: 'Week', icon: 'week' },
+  { screen: 'coach', label: 'Coach', icon: 'sparkles' },
+  { screen: 'forecast', label: 'Forecast', icon: 'trend' },
+  { screen: 'reports', label: 'Reports', icon: 'report' },
+  { screen: 'savings', label: 'Savings', icon: 'piggy' },
+  { screen: 'debts', label: 'Debts', icon: 'card' },
+  { screen: 'review', label: 'Review', icon: 'inbox' },
+  { screen: 'add', label: 'Add', icon: 'plus' },
+  { screen: 'more', label: 'More', icon: 'menu' },
+]
 
 interface Tab {
   readonly screen: Screen
@@ -324,7 +321,6 @@ function Screens({ screen, param }: { screen: Screen; param: string | null }) {
       {screen === 'coach' && param === null ? <CoachScreen /> : null}
       {/* nav.ts reads no other param on the Coach. */}
       {screen === 'coach' && param === 'checkin' ? <CheckinScreen /> : null}
-      {isBuilt(screen) ? null : <NotYet name={SCREEN_NAME[screen]} />}
     </Suspense>
   )
 }
@@ -351,19 +347,6 @@ const SCREEN_NAME: Record<Screen, string> = {
   help: 'Help',
   start: 'Getting started',
   ai: 'AI settings',
-}
-
-/** One line, and the way back, for an address that is ahead of the app. */
-function NotYet({ name }: { name: string }) {
-  return (
-    <div className="space-y-3 py-8">
-      <h1 className="text-2xl font-semibold tracking-tight">{name}</h1>
-      <p className="text-muted-foreground">{name} is on its way. Everything else works as before.</p>
-      <a href={hashOf({ screen: 'month', param: null })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
-        Open the Month
-      </a>
-    </div>
-  )
 }
 
 /**

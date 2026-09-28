@@ -22,18 +22,6 @@ export const SCREENS = [
 ] as const
 export type Screen = (typeof SCREENS)[number]
 
-/**
- * Screens whose address already reads (ADR 0006) but whose slice has not
- * landed. Each slice takes its screen out as it adds it. Until then the bars
- * and More leave it out, so no tab opens a promise, and its address opens
- * one line saying it is on its way.
- */
-const NOT_BUILT: ReadonlySet<Screen> = new Set([])
-
-export function isBuilt(screen: Screen): boolean {
-  return !NOT_BUILT.has(screen)
-}
-
 /** What a bare or unreadable address opens: Month first (plan §9a, decision 1). */
 export const HOME: Screen = 'month'
 
