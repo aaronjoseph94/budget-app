@@ -1,9 +1,10 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import { MORE_GROUPS } from '../src/screens/MoreScreen.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { warmScreen } from './warm-screen.js'
 
 // Wednesday 23 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 23, 12)
@@ -21,6 +22,10 @@ const deskBar = () => screen.getAllByRole('navigation', { name: 'Screens' })[0]!
 /** An item in one of More's groups, once More is showing. */
 const moreItem = async (group: string, name: string) =>
   within(await screen.findByRole('region', { name: group })).getByRole('link', { name: new RegExp(`^${name}`) })
+
+// The Coach is the lazy screen these tests open cold, and under load its
+// first render lost a find's one second (N87).
+beforeAll(() => warmScreen('#/coach', 'Coach'))
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })

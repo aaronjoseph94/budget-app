@@ -1,8 +1,9 @@
 import { act, cleanup, screen, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { warmScreen } from './warm-screen.js'
 
 /** The Coach tab's dot (plan §2.1, §2.4, A20): from Sunday until the week's check-in is opened on this device. */
 function go(hash: string) {
@@ -15,6 +16,10 @@ function go(hash: string) {
 const phoneBar = () => screen.getAllByRole('navigation', { name: 'Screens' })[1]!
 const coachTab = () => within(phoneBar()).getByRole('link', { name: /^Coach/ })
 const on = (day: number) => vi.setSystemTime(new Date(2026, 8, day, 12))
+
+// The Coach is the lazy screen these tests open cold, and under load its
+// first render lost a find's one second (N87).
+beforeAll(() => warmScreen('#/coach', 'Coach'))
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
