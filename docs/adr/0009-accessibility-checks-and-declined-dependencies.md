@@ -21,7 +21,8 @@ the "Ask first" list:
    82 KB of realtime and storage code the app never calls.
 
 On 2026-09-24 the owner wrote "do the below without asking me questions",
-and later "keep going and push to main when done". That instruction does
+and, as item 10, "Test everything and push to github main" (both quoted
+in `docs/ai-first-plan.md` §1). That instruction does
 not name dependencies, so each is decided here on its merits, and the rule
 behind "Ask first" (that nothing ships to the phone that nobody chose) is
 kept.
@@ -61,7 +62,7 @@ feels slow, the Safari developer tools on a Mac read the same figures
 from the phone directly.
 
 **N60.2: option B, keep `@supabase/supabase-js`.** The unused code is in
-chunks the first load does not need, and the first load is 184.34 KB of
+chunks the first load does not need, and the first load is 184.33 KB of
 the 200 KB budget with the gate holding it there. Replacing the client
 touches sign-in, every read and every write, and trades one maintained
 package for two lower-level ones whose sign-in handling the app would then

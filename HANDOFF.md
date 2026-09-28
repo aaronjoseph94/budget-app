@@ -115,8 +115,8 @@ purchase date (F1); Gemini's free tier, privacy trade-off accepted
 (ADR 0002); the answers in `docs/workbook-views-plan.md` §9a (Month first,
 a real charge replaces a planned bill, card payments are not spending, a
 starting balance typed each month, savings kept by transfers, pay periods
-from the pay schedule); the 2026-09-24 list, and "do not wait for my
-approval" on the plan.
+from the pay schedule); the 2026-09-24 list, including "do the below
+without asking me questions" (quoted in `docs/ai-first-plan.md` §1).
 
 ## 3. What the owner does, in this order
 
