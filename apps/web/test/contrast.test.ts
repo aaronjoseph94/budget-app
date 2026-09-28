@@ -50,6 +50,27 @@ describe.each([
   })
 })
 
+/** `fg` laid over `bg` at `alpha`, as `bg-destructive/5` draws it on a card. */
+function over(fg: string, bg: string, alpha: number): string {
+  const channel = (hex: string, i: number) => parseInt(hex.slice(i, i + 2), 16)
+  return `#${[1, 3, 5].map((i) => Math.round(alpha * channel(fg, i) + (1 - alpha) * channel(bg, i)).toString(16).padStart(2, '0')).join('')}`
+}
+
+// FE-7-NEW-2: an error Alert is red words on a 5% red tint, and #e7000b
+// read at 4.26:1 there, under the 4.5 that text needs.
+describe.each([
+  ['light', light],
+  ['dark', dark],
+])('%s scheme, error text', (_, scheme) => {
+  it.each(['card', 'background', 'muted'])('reads at 4.5:1 or more on --%s and on its own tint over it', (surface) => {
+    const red = pick(scheme, 'destructive')
+    const ground = pick(scheme, surface)
+    expect(ratio(red, ground)).toBeGreaterThanOrEqual(4.5)
+    // On muted the tint is not used, and the dark red reads at 4.34 there.
+    if (surface !== 'muted') expect(ratio(red, over(red, ground, 0.05))).toBeGreaterThanOrEqual(4.5)
+  })
+})
+
 describe('the focus ring', () => {
   it('is drawn at full strength, not faded to half', async () => {
     const sources = import.meta.glob('../src/**/*.tsx', { query: '?raw', import: 'default', eager: true })

@@ -65,7 +65,7 @@
   --muted-foreground: oklch(0.52 0 0);
   --accent: oklch(0.96 0 0);
   --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: #c0141a; /* error words on their 5% tint: 5.7:1, where #e7000b was 4.3 (FE-7-NEW-2) */
   --border: oklch(0.922 0 0);
   --input: #8a8a8a; /* a field's only edge: 3.4:1 on a card, where --border is 1.25 (FE-5) */
   --ring: #2b5d6a; /* the primary: 7.2:1 on a card, where #9abdb7 at half strength was 1.4 (FE-4) */
@@ -206,7 +206,7 @@
     --muted-foreground: oklch(0.708 0 0);
     --accent: oklch(0.269 0 0);
     --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
+    --destructive: #ff6467; /* oklch(0.704 0.191 22.216), as a hex the contrast test can read */
     --border: oklch(1 0 0 / 10%);
     --input: #7a7a7a;
     --ring: #5b8b83;
