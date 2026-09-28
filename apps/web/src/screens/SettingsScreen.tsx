@@ -11,6 +11,7 @@ import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { navigate } from '../nav.js'
 import { HelpButton } from '../help/HelpButton.js'
+import { LearnedShopsCard } from './LearnedShops.js'
 
 const ProgressLine = lazy(() => import('../start/ProgressLine.js').then((m) => ({ default: m.ProgressLine })))
 
@@ -53,6 +54,7 @@ export function SettingsScreen() {
       </Card>
       <BudgetsCard />
       <GoalsCard />
+      <LearnedShopsCard />
       <Card>
         <CardHeader>
           <CardTitle as="h2">Account</CardTitle>

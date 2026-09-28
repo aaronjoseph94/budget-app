@@ -42,7 +42,7 @@ export interface FakeTables {
   /** A suggested category (0018) may be left out; it reads as none. */
   ingest_candidates: (Omit<PendingCandidate, 'category_id' | 'category_source'> &
     Partial<Pick<PendingCandidate, 'category_id' | 'category_source'>> & { readonly status: string })[]
-  merchant_rules: { readonly match_merchant: string; readonly category_id: string }[]
+  merchant_rules: { readonly id?: string; readonly match_merchant: string; readonly category_id: string }[]
   /**
    * A goal from before 0013 may leave out its fund's columns; they read as
    * null. One may leave out when it was made and 0015's columns too; they
