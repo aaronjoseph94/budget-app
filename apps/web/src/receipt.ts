@@ -31,8 +31,11 @@ const MESSAGES: Record<string, string> = {
   no_total: 'The total could not be found on that receipt. You can type it in below.',
   model_output_invalid: 'The reading came back in a form the app cannot trust, so it was not used. Try again, or type it in.',
   rate_limited: 'Too many receipts in a short time for the free tier. Wait a minute and try again.',
-  not_configured: 'Receipt reading is not set up yet — the Gemini key has not been added in Supabase. See docs/setup.md.',
-  model_not_found: 'The Gemini model this uses has been retired. Set GEMINI_MODEL in Supabase to a current one.',
+  // read-receipt answers only when the AI helper is missing or waits for
+  // its update, so the fix for both is that update, not a Supabase secret
+  // or a file in the repository (N108).
+  not_configured: 'Reading receipt photos needs a one-time update, so the photo was not read. Type it in below meanwhile.',
+  model_not_found: 'Reading receipt photos needs a one-time update, so the photo was not read. Type it in below meanwhile.',
   not_signed_in: 'You are not signed in any more. Sign in again and retry.',
   provider_unreachable: 'Could not reach Gemini. Check your connection and try again.',
   provider_error: 'Gemini could not read that photo right now. Try again in a moment.',
@@ -150,7 +153,7 @@ async function viaReadReceipt(supabase: SupabaseClient, photo: ReceiptPhoto): Pr
     } catch {
       code = ''
     }
-    return { ok: false, message: MESSAGES[code] ?? fallback, link: null }
+    return { ok: false, message: MESSAGES[code] ?? fallback, link: code === 'not_configured' || code === 'model_not_found' ? 'updates' : null }
   }
 
   const replyText = typeof data === 'object' && data !== null && 'reply' in data ? data.reply : null

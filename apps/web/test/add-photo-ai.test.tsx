@@ -82,6 +82,20 @@ describe('AddScreen, a receipt photo read by the AI helper', () => {
     expect(await screen.findByText('Sent to Review. Pick a category there and it counts.')).toBeTruthy()
   })
 
+  it.each(['not_configured', 'model_not_found'])(
+    'when read-receipt answers %s, points to One-time updates, never to Supabase or a file (N108)',
+    async (code) => {
+      const fake = createFakeSupabase()
+      fake.functions.ai = null
+      fake.functions.readReceipt = () => json({ ok: false, code }, 503)
+      await takePhoto(fake)
+
+      const said = await screen.findByText(/^Reading receipt photos needs a one-time update, so the photo was not read\./)
+      expect(said.textContent).not.toMatch(/Supabase|GEMINI|docs/)
+      expect(screen.getByRole('link', { name: 'See One-time updates' }).getAttribute('href')).toBe('#/help/updates')
+    },
+  )
+
   it('with AI off, sends the photo nowhere else and points to AI settings', async () => {
     const fake = createFakeSupabase()
     fake.functions.ai = () => json({ ok: false, code: 'ai_off' }, 409)
