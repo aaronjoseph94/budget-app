@@ -189,53 +189,47 @@ a fallback.
 ## 4. How to check it worked, screen by screen
 
 Nothing has been run against the real Supabase yet: this environment cannot
-reach it. The whole walk below was run in a stand-in (the screen tests' fake
-database) with invented data, and the owner's statement was read by the app
-in memory; the real run is the owner's. Any failure shows a sentence, often
-ending in a code like `(code 23514)` that names the cause (`format.ts`); a
-sentence saying "a database update that has not been applied yet (00NN …)"
-means that file from Step 1 was missed.
+reach it. Every step below was walked in a stand-in (the screen tests' fake
+database and a fake AI) with invented data, at 320 and 390 px, light and
+dark, with no errors (A28). The real run is the owner's. Any failure shows
+a sentence; one that says it "needs a one-time update" links to Help →
+One-time updates, which names what is missing.
 
-1. **Sign in** with the password from Step 5. The **Month** opens on this
-   month and, with no lists yet, says "Start in Setup".
-2. **Setup.** Type your name. Press **Use the starter list**: the workbook's
-   names appear under Income, Savings, Bills, Debts, Subscriptions and
-   Variable expenses, plus Card payments under Not spending. Rename or
-   remove what does not fit. On your pay row pick how often it pays and the
-   first payday. On each bill type the day paid and the monthly amount;
-   "Fixed monthly bills" adds them up.
-3. **Add → Statement →** the Rogers PDF. Expect "80 transactions · Matches
-   your statement" for Aug 8 – Sep 7 2026, then **Import**: "80 waiting for
-   review".
-4. **Review.** Pick a category for each row and **Approve**. Each shop is
-   learned: the next statement files it without asking. File "PAYMENT, THANK
-   YOU" under Card payments and interest under Card interest & fees.
-   Import the same PDF again: nothing new appears (if Review doubles, the
-   dedupe hash is broken; fix the hash, never the screen).
-5. **Month (August).** Your charges sit in their blocks; rent shows
-   "planned" until a real rent charge exists. Tap **Type your starting bank
-   balance** and End of month appears. Tap a pencil to type a budget. Tap a
-   row to see its charges and **Move to…** another category. The card
-   payment is a line under the blocks, never spending.
-6. **Add → Type it**, "I received": your pay, under your income. It shows
-   on the Month's Income block, and on Paycheck.
-7. **Week, Paycheck, Bill calendar, Year** (More on a phone): the same
-   charges in a week, a pay period, a calendar and twelve months. A weekly
-   budget is typed in the Week's row.
-8. **Savings.** **Add a goal**, or pick a fund → **Set a goal**. Transfers typed to that fund
-   afterwards add to it.
-9. **Debts.** **Add a debt**: balance, month, minimum, rate. The card shows
-   when it is paid off, and the three ways to pay compare.
-10. **All transactions** and **Settings** (More): every approved row;
-    weekly budgets, where your savings goals are, sign out.
-11. **Add → Photo** (after Step 4): a cash receipt fills the form; it goes
-    to Review like everything else.
-12. **iPhone:** open the Month, the Coach and the Forecast in Safari, and
-    look at the ring chart, the tables and the 30-day line. Then make the
-    text larger (Settings → Display & Brightness → Text Size, or **aA** in
-    Safari) and look again: nothing should need scrolling sideways. If
-    anything is squashed or cut off, tell the next agent which screen (N41:
-    only Chromium was checked here, at 320 to 1280 px and at 200% text).
+1. **Sign in.** With no lists yet, the app opens **Getting started**:
+   "Step 1 of 9". Do the steps, or **Do this later** on any.
+2. **Help → One-time updates** says "All done" after §3's steps.
+3. **AI settings** says "AI is on, using free Google Gemini" (or "your
+   receipts key"), and under More AI services, "Today: 0 of 40".
+4. **Add → Statement →** the card statement PDF. Expect "Matches your
+   statement", then **Import**: "N waiting for review".
+5. **Review → Suggest categories.** Rows show "✨ Suggested", already
+   picked. Nothing is filed until you press **Approve**, or **Approve
+   these N** and confirm. Each shop is learned. Import the same PDF again:
+   nothing new appears.
+6. **Month.** The coach line above the summary, "By 24 Sep … · by 24 Aug"
+   beside it, and after you type **Start**, End of month and a
+   **Forecast** line. Switch a block to **vs last month**.
+7. **Coach.** A line saying whose words these are; your main goal with its
+   hours and date; at most three cards, each with **Why am I seeing
+   this?** and **✕**; a quote with its source; **Ask anything**.
+8. **Coach → the check-in** (from Sunday): last week, a win, questions
+   about a few charges, and a one-tap weekly limit.
+9. **Forecast.** Safe to spend a day, the month's end as a range (or
+   "rough" early in a month or with little history), the next 30 days,
+   goal dates with **What if** chips, three months ahead.
+10. **Reports.** Overview (the month in review, Income, Spent and Saved,
+    biggest changes, this month against last), Trends, Shops, Habits;
+    **Save as PDF** and **Download CSV**.
+11. **Ask.** "How much did I spend eating out this month?" gets the
+    engine's figure and "I read that as: …".
+12. **Help.** Search "forecast"; each screen's **?** opens its article.
+13. **With AI off** (AI settings → the switch), every screen above still
+    works, in the app's own words.
+14. **iPhone:** open the Month, the Coach and the Forecast in Safari, and
+    look at the ring, the tables and the 30-day line. Then make the text
+    larger (**aA** in Safari) and look again: nothing should need scrolling
+    sideways. Only Chromium could be checked here (N41); tell the next
+    agent which screen if anything is squashed or cut off.
 
 ## 5. Questions for the owner
 
@@ -247,80 +241,72 @@ any of them and the next agent records it and builds it.
    stores a starting balance per month only. **In use: A — not shown.**
    B — work each week's start out from the month's typed start and that
    month's rows before the week. C — type a start for every week (needs a
-   database update).
+   one-time update).
 2. **Do payments you record move a debt's balance? (N53)** The workbook's Debt
    Calculator takes balances from its payoff schedule alone. **In use:
    A — the schedule only, as in the workbook.** B — link a debt to a Debts-list
    category and let recorded payments replace the schedule's. C — show
    recorded payments beside the schedule without changing it. B or C
-   needs a database update.
+   needs a one-time update.
 3. **The Year's "Biggest expense" and "Top 3" (F18).** An engineering
    default, told here so it is not a surprise. **In use: each category's
    real total over the Year's months, a real charge replacing a planned
    bill, planned bills counted only from the month they were set up and
    only up to this month.** The workbook instead counts twelve times each monthly
-   amount plus everything logged, so a bill set up in October counts all
-   year and a card-paid bill counts twice. Say if you want the workbook's measure,
-   or planned bills counted for the whole year.
+   amount plus everything logged. Say if you want the workbook's measure.
 
-Things to know, which follow the workbook or a recorded choice (details in the
-N-entries named): with no starting balance typed there is no End of month,
-where the workbook counts from $0 (D17, N37; say if you would rather have
-the workbook's $0); End of month reads low until pay is typed (N37); a negative
-End of month shows its minus sign but is not coloured, as the workbook colours
-only Left to spend (N37); the Year opens on January of this year (N43);
-"Best savings month" with nothing saved shows January at $0.00 (N43); the
-Year's column chart stacks expenses on top of income, as the workbook's does, so
-a column's full height means nothing on its own (N43); Debts' "Paid this
-month" is what the payoff schedule pays, not what you recorded (N57); the
-Year's debt chart shows today's balances (N57); snowball and avalanche
-assume no extra money (N57); a bill charged just
+Things to know, which follow the workbook or a recorded choice (details in
+the N-entries named): with no starting balance typed there is no End of
+month and no forecast balance (D17, N37); End of month reads low until pay
+is typed (N37); the Year opens on January of this year (N43); Debts' "Paid
+this month" is what the payoff schedule pays (N57); a bill charged just
 after a month ends can count planned in one month and twice in the next
-(N36, a question if it happens); a fund's monthly figure falls as it fills
-(N54); a fund past its goal shows a negative monthly figure (N55).
+(N36); a fund's monthly figure falls as it fills (N54). Your records start
+on 8 August 2026, so trends and ranges say "not enough months yet" or
+"rough" until about November.
 
 ## 6. What is left, most important first
 
 Details in `NOTICED-NOT-TOUCHING.md`; each entry says what would settle it.
 
 1. **The owner's real run** (§3 and §4). Until then nothing has touched the
-   hosted database.
-2. **Receipt accuracy is unmeasured** (N6): ≥20 labelled receipts, ≥90%
-   valid, ≥98% exact amounts, no live calls in CI.
-3. **The rest of the plan's order** (`CAPABILITY-MAP.md`): the savings
-   coach (weekly limits, streaks, the flight goal's tradeoffs), then
-   natural-language entry, reminders and the forecast, the Sankey, export.
-4. **Week, Paycheck and the Bill calendar open nothing on a tap** (N46,
-   N48, N51): moving a charge is done from the Month. The Week has no
-   address of its own and no charts.
-5. **Coverage is thin on sign-in, the CSV screen and the photo path** (N5).
-6. **A statement's first days of a month** (N23): August says "imported up
-   to 7 Sep" while August 1–7 came from a statement not imported.
-7. **"Always file" moves the shop's rule, not its other charges** (N25); a
-   charge filed under Not spending cannot be opened from the Month (N26);
-   a learned shop has no screen to forget it (N17).
-8. **Small:** CSV column guessing can pick the wrong column (the CSV screen);
-   the Postgres `ingested_text` check is looser than zod's; the receipts
-   bucket is not forced private if it already existed; the bundle is 758 kB
-   (213 kB gzipped, N7); a card purchase typed by hand and also imported
-   counts twice (the screen says so); `transactions.posted_on` holds the
-   purchase date (F1) despite its name; CI actions are pinned to tags (N1);
-   CLAUDE.md's stack line names three libraries the app does not use (N8,
-   the owner's file).
-9. **Not built, by the owner's choice:** 50/30/20, Net Worth, Financial
-   Freedom, the Spending Tracker's extra groups (`docs/workbook-views-plan.md` §9a).
+   hosted database or a real AI service.
+2. **The workbook vendor's name in old commits** (N64). It is gone from
+   every file; rewriting the history of earlier pushes, which the owner
+   asked for, is the step taken when this branch goes to `main`, followed
+   by a gate over commit messages and history.
+3. **Receipt accuracy is unmeasured** (N6): ≥20 labelled receipts that may
+   be kept, redacted, are needed.
+4. **Retire `read-receipt`** once the AI helper is live (N107).
+5. **Not built:** due reminders, the Sankey, the Excel workbook with
+   charts (a new dependency); 50/30/20, Net Worth, Financial Freedom, by
+   the owner's choice (`docs/workbook-views-plan.md` §9a).
+6. **Tidying with no visible change** (N118): shared loading code for the
+   period screens, the Week's and Paycheck's near-copy summaries, and
+   splitting `ledger.ts`, AddScreen and MonthScreen.
+7. **Small:** vitest's moderate advisory, a major upgrade (N62, by
+   2026-12-31); CI actions pinned to tags (N1); `transactions.posted_on`
+   holds the purchase date (F1) despite its name; CLAUDE.md's stack line
+   names libraries the app does not use (N8, the owner's file).
+
+Settled in A28, the owner's decision delegated to the engineer: axe-core
+checks every screen test (N61.1); field monitoring with web-vitals and a
+slimmer Supabase client were declined, with reasons (N61.2, N60.2;
+ADR 0009).
 
 ## 7. Things to know about how this code is written
 
 - Comments explain *why*, often with the bug that motivated them. Keep that.
   If code changes, change the comment — a comment that lies is worse than none.
-- Commits are small and each one passes the gates on its own. The
-  previous agent checked this by stashing everything else and re-running the
-  gates before each commit.
+- Commits are small and each one passes the gates on its own.
 - Tailwind classes are joined with a plain `cn()` (no tailwind-merge). A base
   component must never set a style a caller would override — use a prop
   (see `src/lib/cn.ts`).
 - The PDF reader is hand-written on purpose (no pdf.js). A misread cannot pass
   silently because every import is reconciled against the statement's own
-  printed totals and refused if they differ. If Rogers changes its layout, the
-  column boundaries are in `packages/statement-parsers/src/formats/rogers.ts`.
+  printed totals and refused if they differ.
+- Every AI surface has the app's own words underneath, and every new read
+  fails on its own (plan §3.10): a screen never waits on the AI.
+- Screen tests use a fake Supabase client (`apps/web/test/fake-supabase.ts`)
+  and end with an axe check (`apps/web/test/axe.ts`). The preview harness
+  that drives them in a browser lives in the agent's scratchpad, not here.
