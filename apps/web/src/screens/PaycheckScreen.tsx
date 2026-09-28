@@ -53,6 +53,16 @@ export function PaycheckScreen({ day }: { day: string | null }) {
     <div className="space-y-4">
       {/* First, so it is there while the schedule loads, fails or is missing. */}
       <PeriodSwitch current="paycheck" />
+      {/* The period's own header names it once it is found; until then,
+        when when you are paid could not be read, and with no schedule, the
+        screen keeps its title for a screen reader to land on (N116). One
+        header in one place, so a help sheet opened while it loads stays. */}
+      {driving === undefined ? (
+        <div className="flex flex-wrap items-center gap-1">
+          <h1 className="text-2xl font-semibold tracking-tight">Paycheck</h1>
+          <HelpButton screen="paycheck" />
+        </div>
+      ) : null}
       {error !== null ? <Alert tone="error" title="Could not load when you are paid">{error}</Alert> : null}
       {/* A first load that failed is said above the screen, by App, as on the Month. */}
       {schedules === null && error === null && (version > 0 || loadError === null) ? (
@@ -88,10 +98,6 @@ export function PaycheckScreen({ day }: { day: string | null }) {
 function NoSchedule() {
   return (
     <section aria-label="Paycheck" className="space-y-3 rounded-xl bg-paycheck-band px-4 py-5 text-paycheck-ink">
-      <div className="flex flex-wrap items-center gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Paycheck</h1>
-        <HelpButton screen="paycheck" />
-      </div>
       <p className="text-sm">
         This shows your budget one pay period at a time. It needs to know when you are paid: in Setup, give an Income
         row how often it pays and a first payday.

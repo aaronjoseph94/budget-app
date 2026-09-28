@@ -81,4 +81,14 @@ describe('PaycheckScreen', () => {
     )
     expect(screen.queryByRole('button', { name: 'Open Setup' })).toBeNull()
   })
+
+  it('keeps its title when when you are paid cannot be read (N116)', async () => {
+    const fake = seeded([])
+    fake.fail('pay_schedules', 'PGRST205')
+    renderScreen(<PaycheckScreen day={null} />, fake)
+
+    await screen.findByRole('alert')
+    expect(screen.getByRole('heading', { level: 1, name: 'Paycheck' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'See One-time updates' }).getAttribute('href')).toBe('#/help/updates')
+  })
 })
