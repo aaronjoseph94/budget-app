@@ -245,6 +245,38 @@ describe('Getting started (plan §8.1)', () => {
     ])
   })
 
+  it('writes every starter budget with Accept all, and says when there is no whole month to take one from', async () => {
+    const fake = createFakeSupabase({
+      categories: [category('food', 'Groceries', 'variable'), category('coffee', 'Coffee', 'variable')],
+      ingest_batches: [{ id: 'b1', source: 'card_pdf', created_at: '2026-08-02T10:00:00Z', period_start: '2026-08-01', period_end: '2026-08-31' }],
+      transactions: [
+        { id: 'f08', posted_on: '2026-08-12', amount_cents: -10_000, merchant_raw: 'MARKET', category_id: 'food', source: 'card_pdf' },
+        { id: 'c08', posted_on: '2026-08-14', amount_cents: -2_000, merchant_raw: 'CAFE', category_id: 'coffee', source: 'card_pdf' },
+      ],
+    })
+    await fake.signIn()
+    renderStart(fake, { name: 'Alex' })
+    await screen.findByRole('heading', { name: 'When you’re paid' })
+    fireEvent.click(screen.getByText(/^All 9 steps/))
+    fireEvent.click(screen.getByRole('button', { name: /This month’s starting balance/ }))
+
+    const offers = within(await screen.findByRole('region', { name: 'Starter budgets' }))
+    fireEvent.click(await offers.findByRole('button', { name: 'Accept all 2' }))
+    expect(await offers.findByText('Every spending category already has a budget, or nothing to base one on.')).toBeTruthy()
+    expect(fake.tables.category_budgets.map((b) => [b.category_id, b.month, b.applies, b.budget_cents])).toEqual([
+      ['coffee', '2026-09-01', 'onward', 2_000],
+      ['food', '2026-09-01', 'onward', 10_000],
+    ])
+    cleanup()
+
+    // Records only from this month: nothing is offered yet, and the step says why.
+    renderStart(allButName(), { name: 'Alex' })
+    await screen.findByRole('heading', { name: 'Put it on your iPhone' })
+    fireEvent.click(screen.getByText(/^All 9 steps/))
+    fireEvent.click(screen.getByRole('button', { name: /This month’s starting balance/ }))
+    expect(await screen.findByText(/^Once a whole month of your records is in, this offers a budget/)).toBeTruthy()
+  })
+
   it('says in one line when starter budgets need a one-time update, and the balance still works', async () => {
     const fake = allButName()
     fake.fail('category_budgets', '42P01')

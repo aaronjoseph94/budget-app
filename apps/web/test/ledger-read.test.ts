@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   countPendingBetween,
+  hasImportedStatement,
   latestStatementEnd,
   listBudgetHistory,
   listTransactions,
@@ -157,5 +158,22 @@ describe('countPendingBetween', () => {
     const fake = createFakeSupabase()
     fake.fail('ingest_candidates', '42501')
     await expect(countPendingBetween(fake.client, SEPTEMBER)).rejects.toThrow(/does not allow this/)
+  })
+})
+
+describe('hasImportedStatement', () => {
+  const batch = (id: string, source: 'card_csv' | 'card_xlsx' | 'card_pdf' | 'receipt_photo' | 'typed') => ({ id, source, created_at: '2026-09-02T10:00:00Z' })
+
+  it('counts a card statement, and never a typed row or a receipt photo', async () => {
+    expect(await hasImportedStatement(createFakeSupabase({ ingest_batches: [batch('b1', 'typed'), batch('b2', 'receipt_photo')] }).client)).toBe(false)
+    for (const source of ['card_csv', 'card_xlsx', 'card_pdf'] as const) {
+      expect(await hasImportedStatement(createFakeSupabase({ ingest_batches: [batch('b1', 'typed'), batch('b2', source)] }).client)).toBe(true)
+    }
+  })
+
+  it('says so when the imports cannot be read', async () => {
+    const fake = createFakeSupabase()
+    fake.fail('ingest_batches', '42501')
+    await expect(hasImportedStatement(fake.client)).rejects.toThrow(/does not allow this/)
   })
 })
