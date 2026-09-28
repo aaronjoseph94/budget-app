@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { Suspense, lazy, useId, useState } from 'react'
 import { SPENDING_LISTS } from '@budget/core'
 import { readBudgetInput, useAppData } from '../app-data.js'
 import { ensureCategory, setWeeklyBudget, type Category } from '../ledger.js'
@@ -12,6 +12,8 @@ import { Icon } from '../components/ui/icons.js'
 import { navigate } from '../nav.js'
 import { HelpButton } from '../help/HelpButton.js'
 
+const ProgressLine = lazy(() => import('../start/ProgressLine.js').then((m) => ({ default: m.ProgressLine })))
+
 export function SettingsScreen() {
   const { supabase, email } = useAppData()
   return (
@@ -23,6 +25,21 @@ export function SettingsScreen() {
         </div>
         <p className="text-sm text-muted-foreground">Budgets, your savings goals, and your account.</p>
       </header>
+      <Card>
+        <CardHeader>
+          <CardTitle as="h2">Getting started</CardTitle>
+          <CardDescription>
+            <Suspense fallback="One step at a time">
+              <ProgressLine fallback="One step at a time" />
+            </Suspense>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button variant="outline" onClick={() => navigate('start')}>
+            <Icon name="check" /> Open Getting started
+          </Button>
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle as="h2">Your lists</CardTitle>

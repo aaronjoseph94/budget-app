@@ -1,6 +1,10 @@
+import { Suspense, lazy } from 'react'
 import { hashOf, isBuilt, type Screen } from '../nav.js'
 import { Icon, type IconName } from '../components/ui/icons.js'
 import { HelpButton } from '../help/HelpButton.js'
+
+// Getting started's count reads nine answers; fetched only when More opens.
+const ProgressLine = lazy(() => import('../start/ProgressLine.js').then((m) => ({ default: m.ProgressLine })))
 
 interface Item {
   readonly screen: Screen
@@ -73,7 +77,15 @@ export function MoreScreen() {
                   <Icon name={item.icon} className="size-5 shrink-0 text-muted-foreground" />
                   <span className="min-w-0 flex-1">
                     <span className="block font-medium">{item.label}</span>
-                    <span className="block text-sm text-muted-foreground">{item.hint}</span>
+                    <span className="block text-sm text-muted-foreground">
+                      {item.screen === 'start' ? (
+                        <Suspense fallback={item.hint}>
+                          <ProgressLine fallback={item.hint} />
+                        </Suspense>
+                      ) : (
+                        item.hint
+                      )}
+                    </span>
                   </span>
                   <Icon name="chevronRight" className="size-4 shrink-0 text-muted-foreground" />
                 </a>

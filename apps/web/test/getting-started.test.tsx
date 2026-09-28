@@ -1,7 +1,10 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppDataProvider } from '../src/app-data.js'
 import { FirstRun, Shell } from '../src/App.js'
+import { MoreScreen } from '../src/screens/MoreScreen.js'
+import { SettingsScreen } from '../src/screens/SettingsScreen.js'
 import { GettingStartedScreen } from '../src/screens/GettingStartedScreen.js'
 import { NO_MARKS, type SetupMarks } from '../src/profile.js'
 import type { Category } from '../src/ledger.js'
@@ -386,5 +389,30 @@ describe('the first sign-in (plan §8.1)', () => {
     signInTo(createFakeSupabase())
     expect(await screen.findByRole('heading', { name: 'Review' })).toBeTruthy()
     expect(window.location.hash).toBe('#/review')
+  })
+})
+
+describe('Getting started’s progress on More and Settings (plan §8.1)', () => {
+  function renderWith(screenToShow: ReactNode, fake: FakeSupabase, marks: SetupMarks = NO_MARKS) {
+    return render(
+      <AppDataProvider supabase={fake.client} userId="u1" email="you@example.com" displayName="Alex" setupMarks={marks}>
+        {screenToShow}
+      </AppDataProvider>,
+    )
+  }
+
+  it('says how many are done under Getting started on More, once every answer is in', async () => {
+    renderWith(<MoreScreen />, allButName())
+    const item = screen.getByRole('link', { name: /^Getting started/ })
+    expect(item.textContent).toBe('Getting startedOne step at a time')
+    await waitFor(() => expect(item.textContent).toBe('Getting started8 of 9 done'))
+  })
+
+  it('gives Settings a Getting started card with the same line, and All done once all nine are', async () => {
+    renderWith(<SettingsScreen />, allButName(), { ...NO_MARKS, phoneTicked: true })
+    const card = screen.getByRole('heading', { name: 'Getting started' }).closest('div')!.parentElement!
+    expect(await within(card).findByText('All done')).toBeTruthy()
+    fireEvent.click(within(card).getByRole('button', { name: 'Open Getting started' }))
+    expect(window.location.hash).toBe('#/start')
   })
 })
