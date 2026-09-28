@@ -139,9 +139,12 @@ function Summary({
 }) {
   const t = status.totals
   return (
-    <section aria-label="Debt summary" className="grid grid-cols-[1fr_auto] gap-4 rounded-xl bg-card p-4 shadow-sm">
+    // Below 360 px the ring goes under the figures, and the total has the
+    // row to itself: beside the ring a five-figure total broke mid-number
+    // (N67).
+    <section aria-label="Debt summary" className="grid grid-cols-1 gap-4 rounded-xl bg-card p-4 shadow-sm min-[360px]:grid-cols-[1fr_auto]">
       <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
-        <Stat label="Current debt total">
+        <Stat label="Current debt total" className="max-[359px]:col-span-2">
           <Figure className="text-2xl font-bold">{formatCents(t.balanceCents)}</Figure>
         </Stat>
         <Stat label="Debt-free by">
@@ -157,9 +160,9 @@ function Summary({
           </span>
         </Stat>
       </dl>
-      <Ring label="All debts" paidBp={t.progressBp ?? 10_000} className="w-24" />
+      <Ring label="All debts" paidBp={t.progressBp ?? 10_000} className="w-24 max-[359px]:mx-auto" />
       {vs === null ? null : (
-        <div role="group" aria-label="Compared with a month ago" className="col-span-2 border-t border-current/20 pt-3 text-sm">
+        <div role="group" aria-label="Compared with a month ago" className="border-t border-current/20 pt-3 text-sm min-[360px]:col-span-2">
           {/* The total now is Current debt total, above; this names the one it is set against. */}
           <p>
             End of {formatMonthName(vs.monthAgo)}: <span className="tnum font-semibold">{formatCents(vs.total.beforeCents)}</span>
@@ -170,7 +173,7 @@ function Summary({
         </div>
       )}
       {leftOut.length > 0 ? (
-        <p className="col-span-2 text-xs">Not in these totals, because they are never paid off: {leftOut.join(', ')}.</p>
+        <p className="text-xs min-[360px]:col-span-2">Not in these totals, because they are never paid off: {leftOut.join(', ')}.</p>
       ) : null}
     </section>
   )
@@ -258,9 +261,9 @@ function Ring({ label, paidBp, className }: { label: string; paidBp: number; cla
   )
 }
 
-function Stat({ label, children }: { label: string; children: ReactNode }) {
+function Stat({ label, className, children }: { label: string; className?: string; children: ReactNode }) {
   return (
-    <div>
+    <div className={className}>
       <dt className="text-xs text-debt-label">{label}</dt>
       <dd>{children}</dd>
     </div>

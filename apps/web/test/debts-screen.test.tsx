@@ -79,6 +79,10 @@ describe('DebtsScreen', () => {
       'Payoff progress', '63%$346.98 of $550.00',
     ])
     expect(within(summary).getByRole('img', { name: 'All debts: paid and left' })).toBeTruthy()
+    // Below 360 px the ring goes under, and the total has its row (N67):
+    // jsdom lays nothing out, so the classes that decide it.
+    expect(summary.className).toMatch(/(^|\s)grid-cols-1(\s|$)/)
+    expect(summary.querySelector('dt')!.parentElement!.className).toContain('max-[359px]:col-span-2')
   })
 
   it('names a debt that is never paid off, and plans the rest', async () => {
