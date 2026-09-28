@@ -5,7 +5,9 @@ import { formatBasisPoints, formatCents } from '../format.js'
 import { Card, CardContent, CardTitle } from '../components/ui/card.js'
 import { Badge, Progress } from '../components/ui/feedback.js'
 import { Icon } from '../components/ui/icons.js'
-import { hashOf, navigate } from '../nav.js'
+import { hashOf } from '../nav.js'
+import { SENTENCE_LINK } from '../components/ui/link.js'
+import { cn } from '../lib/cn.js'
 
 /**
  * The main goal on the Week (F45): how far along it is, what each week needs
@@ -87,9 +89,10 @@ export function NoGoal() {
     <Card className="order-0 xl:order-1">
       <CardContent className="pt-5 text-sm text-muted-foreground">
         {goals.length === 0 ? 'No savings goal yet.' : 'No active savings goal.'}{' '}
-        <button type="button" className="font-medium text-foreground underline underline-offset-4" onClick={() => navigate('savings')}>
+        {/* A link in the sentence, 44 px to press by its padding (N76). */}
+        <a href={hashOf({ screen: 'savings', param: null })} className={cn(SENTENCE_LINK, 'text-foreground')}>
           {goals.length === 0 ? 'Add a goal' : 'Resume or add one'}
-        </button>{' '}
+        </a>{' '}
         to see what each week needs to reach it.
       </CardContent>
     </Card>

@@ -9,6 +9,7 @@ import { useFunds } from '../funds.js'
 import { useDebts } from '../debts.js'
 import { CompareLine } from './CompareLine.js'
 import { DebtsChart, SavingsGoalsChart, TopRing, YearPie } from './YearCharts.js'
+import { LINE_BUTTON } from '../components/ui/link.js'
 
 /**
  * The workbook's Home, as the top of the Year (plan §2, §6.4): white cards on
@@ -45,7 +46,7 @@ export function YearGlance({
       <Card className="sm:col-span-2 lg:col-span-4">
         <h2 className="text-2xl text-home-ink">{displayName === '' ? 'Hi!' : `Hi, ${displayName}!`}</h2>
         {displayName === '' ? (
-          <button type="button" className="mt-1 text-sm underline underline-offset-4" onClick={() => navigate('setup')}>
+          <button type="button" className={cn('mt-1 text-sm underline underline-offset-4', LINE_BUTTON)} onClick={() => navigate('setup')}>
             Add your name in Setup
           </button>
         ) : null}
@@ -70,7 +71,7 @@ export function YearGlance({
           {start === null ? (
             <button
               type="button"
-              className="mt-2 text-left text-xs underline underline-offset-4"
+              className={cn('mt-2 text-left text-xs underline underline-offset-4', LINE_BUTTON)}
               onClick={() => navigate('month', sheet.startMonth.slice(0, 7))}
             >
               Type {startMonth}&rsquo;s starting balance on the Month to see these
@@ -124,7 +125,7 @@ export function YearGlance({
           funds.funds.funds.some((f) => f.figures !== null) ? (
             <SavingsGoalsChart funds={funds.funds.funds} />
           ) : (
-            <button type="button" className="text-left text-sm underline underline-offset-4" onClick={() => navigate('savings')}>
+            <button type="button" className={cn('text-left text-sm underline underline-offset-4', LINE_BUTTON)} onClick={() => navigate('savings')}>
               Set a goal for a savings fund to see it here
             </button>
           )
@@ -137,7 +138,7 @@ export function YearGlance({
         {debts.status === 'failed' ? <p className="text-sm">{debts.message}</p> : null}
         {debts.status === 'ready' ? (
           debts.debts.status === null ? (
-            <button type="button" className="text-left text-sm underline underline-offset-4" onClick={() => navigate('debts')}>
+            <button type="button" className={cn('text-left text-sm underline underline-offset-4', LINE_BUTTON)} onClick={() => navigate('debts')}>
               {debts.debts.rows.length === 0
                 ? 'Add your debts to see them here'
                 : 'None of your debts is ever paid off at its minimum. Open Debts to see why'}

@@ -12,6 +12,7 @@ import { Icon } from '../components/ui/icons.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { hashOf } from '../nav.js'
 import { cn } from '../lib/cn.js'
+import { SENTENCE_LINK } from '../components/ui/link.js'
 
 /**
  * Getting started (`#/start`, plan §8.1): one step per screen, each with
@@ -177,7 +178,7 @@ function CheckLine({ check }: { check: SetupCheck | null }) {
       {check === 'unknown' ? (
         <p className="text-sm text-muted-foreground">
           This part could not be read just now. If it keeps saying so, a one-time update may be missing:{' '}
-          <a href={hashOf({ screen: 'help', param: 'updates' })} className="font-medium underline underline-offset-4">
+          <a href={hashOf({ screen: 'help', param: 'updates' })} className={SENTENCE_LINK}>
             One-time updates
           </a>
           .

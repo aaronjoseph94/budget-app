@@ -10,3 +10,10 @@
  * to 47 in the preview). A link on a line of its own keeps the box.
  */
 export const SENTENCE_LINK = 'py-3.5 font-medium underline underline-offset-4'
+
+/**
+ * A button that reads as a link on a line of its own, as the Year's "Add
+ * your debts to see them here": 44 px tall for a finger, as Button is
+ * (FE-1), the words centred on it, a mouse keeping the line's own height.
+ */
+export const LINE_BUTTON = 'pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:items-center'

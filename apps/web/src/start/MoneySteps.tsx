@@ -9,6 +9,7 @@ import { StatementImport } from '../screens/AddScreen.js'
 import { StartEditor } from '../screens/StartEditor.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
+import { SENTENCE_LINK } from '../components/ui/link.js'
 
 /**
  * Step 6, your first statement and filing it: Add's own statement reader,
@@ -96,7 +97,7 @@ function Unread({ missingUpdate, what }: { missingUpdate: boolean; what: string 
   return (
     <p className="text-sm text-muted-foreground">
       {missingUpdate ? `${what} needs a one-time update. ` : `${what} could not be read just now. `}
-      <a href={hashOf({ screen: 'help', param: 'updates' })} className="font-medium underline underline-offset-4">
+      <a href={hashOf({ screen: 'help', param: 'updates' })} className={SENTENCE_LINK}>
         One-time updates
       </a>
     </p>

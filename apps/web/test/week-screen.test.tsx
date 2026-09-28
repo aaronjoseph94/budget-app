@@ -188,8 +188,8 @@ describe('WeekScreen', () => {
     vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
     renderScreen(<WeekScreen />, seeded())
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Add a goal' }))
-    expect(window.location.hash).toBe('#/savings')
+    // A link: jsdom does not follow its hash, so the address it names is checked.
+    expect((await screen.findByRole('link', { name: 'Add a goal' })).getAttribute('href')).toBe('#/savings')
   })
 
   it('shows the main goal, with how many others there are, and none that is paused (G1)', async () => {
@@ -219,8 +219,7 @@ describe('WeekScreen', () => {
     renderScreen(<WeekScreen />, fake)
 
     expect(await screen.findByText(/^No active savings goal\./)).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Resume or add one' }))
-    expect(window.location.hash).toBe('#/savings')
+    expect(screen.getByRole('link', { name: 'Resume or add one' }).getAttribute('href')).toBe('#/savings')
   })
 
   it('without budgets, shows the spend and the money in', async () => {

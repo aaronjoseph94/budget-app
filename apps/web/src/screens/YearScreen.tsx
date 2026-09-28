@@ -31,6 +31,7 @@ import { AnnualCharts } from './YearCharts.js'
 import { YearGlance } from './YearGlance.js'
 import { PeriodSwitch } from './PeriodSwitch.js'
 import { HelpButton } from '../help/HelpButton.js'
+import { LINE_BUTTON } from '../components/ui/link.js'
 
 /**
  * The workbook's Annual Budget (plan §6.4): twelve months from a start month the
@@ -408,7 +409,7 @@ function YearTotals({ sheet, thisMonth }: { sheet: YearSheet; thisMonth: string 
       {sheet.startingBalanceCents === null ? (
         <button
           type="button"
-          className="mt-3 text-left text-xs text-summary-label underline underline-offset-4"
+          className={cn('mt-3 text-left text-xs text-summary-label underline underline-offset-4', LINE_BUTTON)}
           onClick={() => navigate('month', sheet.startMonth.slice(0, 7))}
         >
           Type {formatMonthName(sheet.startMonth)}&rsquo;s starting balance on the Month to see these
