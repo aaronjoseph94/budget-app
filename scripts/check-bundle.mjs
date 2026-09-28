@@ -19,6 +19,10 @@
 //    setup/ is left out, since it is the helper's own source, and is never
 //    run by the page; apps/web/test/no-provider-hosts.test.ts checks the
 //    app's source the same way.
+// 6. The PDF statement reader loads with Add, not with the first screen:
+//    no first-load file holds its `FlateDecode` (PERF-3). The package's
+//    barrel is read by the Month's path for its small helpers, and without
+//    "sideEffects": false the reader came along with them.
 //
 // Built into a temporary folder, so the working tree is untouched.
 import { execFileSync } from 'node:child_process'
@@ -63,6 +67,11 @@ try {
   }
   if (first.length === 0) {
     console.log('FAIL: no entry script found in index.html')
+    failed = true
+  }
+  const reader = first.filter((file) => readFileSync(join(out, file), 'utf8').includes('FlateDecode'))
+  if (reader.length > 0) {
+    console.log(`FAIL: the PDF statement reader is in the first load, in ${reader.join(', ')}`)
     failed = true
   }
   if (total > BUDGET_KB) {
