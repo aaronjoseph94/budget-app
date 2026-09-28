@@ -3,7 +3,7 @@ import type { AiView } from '../ai/client.js'
 import { useAppData } from '../app-data.js'
 import { saveDisplayName } from '../profile.js'
 import { ARTICLES, boldParts } from '../help/articles.js'
-import { Alert } from '../components/ui/feedback.js'
+import { Alert, SavedNote } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Field, Input } from '../components/ui/form.js'
 import { SetupLists } from '../screens/SetupScreen.js'
@@ -80,9 +80,7 @@ function NameStep({ name, onNamed }: { name: string; onNamed: (name: string) => 
         {busy ? 'Saving…' : 'Save'}
       </Button>
       {said === null ? null : said.ok ? (
-        <p role="status" className="text-sm text-income">
-          {said.text}
-        </p>
+        <SavedNote className="text-sm text-income">{said.text}</SavedNote>
       ) : (
         <Alert tone="error">{said.text}</Alert>
       )}

@@ -13,7 +13,7 @@ import {
 import { atEndOf, groupByList, LIST_HEADING, LISTS, starterList, type CategoryKind } from '../lists.js'
 import { saveDisplayName } from '../profile.js'
 import { formatMonthTitle, todayIso } from '../format.js'
-import { Alert } from '../components/ui/feedback.js'
+import { Alert, SavedNote } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
@@ -385,7 +385,7 @@ function ListCardView({
           </ul>
         </>
       )}
-      {note !== null ? <p role="status" className="mt-2 text-xs text-owed-ink">{note}</p> : null}
+      {note !== null ? <SavedNote className="mt-2 text-xs text-owed-ink">{note}</SavedNote> : null}
       {totals !== null && total !== undefined && rows.length > 0 ? (
         <div className="mt-3">
           <TotalTile label={total.label} cents={totals[total.field]} />

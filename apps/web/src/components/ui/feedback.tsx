@@ -85,6 +85,24 @@ export function Alert({
   )
 }
 
+/**
+ * A note that something was saved, kept on screen where it was said and
+ * said through the app's one status region. A role="status" mounted with
+ * its words already in it is often not read out at all (FE-16). Drawn
+ * alone, with no region above it, it is its own status, as before.
+ */
+export function SavedNote({ className, children }: { className?: string; children: string }) {
+  const announce = useAnnounce()
+  useEffect(() => {
+    announce?.(children)
+  }, [announce, children])
+  return (
+    <p role={announce === null ? 'status' : undefined} className={className}>
+      {children}
+    </p>
+  )
+}
+
 /** A centred empty state: what is missing, and the one thing to do about it. */
 export function Empty({ icon, title, children }: { icon?: ReactNode; title: string; children?: ReactNode }) {
   return (

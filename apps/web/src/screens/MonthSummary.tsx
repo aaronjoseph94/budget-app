@@ -1,6 +1,7 @@
 import { useRef, useState, type ReactNode } from 'react'
 import type { PeriodComparison, PeriodSheet } from '@budget/core'
 import { formatBasisPoints, formatCents, formatChange, formatDayMonth, formatMonthName } from '../format.js'
+import { SavedNote } from '../components/ui/feedback.js'
 import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
 import { useReturnFocus } from '../lib/return-focus.js'
@@ -108,11 +109,7 @@ export function MonthSummary({
           onFailedAfterClose={onUnsaved}
         />
       ) : null}
-      {note !== null ? (
-        <p role="status" className="mt-3 text-xs text-summary-label">
-          {note}
-        </p>
-      ) : null}
+      {note !== null ? <SavedNote className="mt-3 text-xs text-summary-label">{note}</SavedNote> : null}
     </section>
   )
 }

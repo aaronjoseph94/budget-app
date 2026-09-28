@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MonthScreen } from '../src/screens/MonthScreen.js'
+import { AnnounceProvider } from '../src/components/ui/announce.js'
 import { useAddress } from '../src/nav.js'
 import type { BudgetRow, Category } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
@@ -267,5 +268,25 @@ describe('Typing a budget on the Month', () => {
     answerMoved()
     expect(await screen.findByRole('heading', { name: 'October 2026' })).toBeTruthy()
     expect((await screen.findByRole('alert')).textContent).toBe(lost)
+  })
+})
+
+describe('Saying a saved budget (FE-16)', () => {
+  it('writes it into the app\'s status region, there from the start, and keeps it on screen', async () => {
+    renderScreen(
+      <AnnounceProvider>
+        <MonthScreen month="2026-09" />
+      </AnnounceProvider>,
+      seeded(),
+    )
+    const region = screen.getByTestId('announcer')
+    fireEvent.click(await screen.findByRole('button', { name: /^Budget for Groceries, / }))
+    fireEvent.change(screen.getByRole('textbox', { name: /^Budget for Groceries in / }), { target: { value: '250' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(region.textContent).toBe('Groceries: $250.00 from September on.'))
+    // On screen still, and not a second status arriving already full.
+    expect(variable().getByText('Groceries: $250.00 from September on.').getAttribute('role')).toBeNull()
+    expect(screen.getAllByRole('status')).toEqual([region])
   })
 })

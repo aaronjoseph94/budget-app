@@ -40,7 +40,7 @@ import {
   formatMonthTitle,
   todayIso,
 } from '../format.js'
-import { Alert } from '../components/ui/feedback.js'
+import { Alert, SavedNote } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
@@ -728,11 +728,7 @@ export function Block({
           </table>
         </div>
       )}
-      {note !== null ? (
-        <p role="status" className={cn('border-t px-4 py-2 text-xs', tone.rule, tone.ink)}>
-          {note}
-        </p>
-      ) : null}
+      {note !== null ? <SavedNote className={cn('border-t px-4 py-2 text-xs', tone.rule, tone.ink)}>{note}</SavedNote> : null}
       {empty > 0 ? (
         <button
           type="button"

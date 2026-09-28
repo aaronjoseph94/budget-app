@@ -7,7 +7,7 @@ import { formatCents, formatMonthName, todayIso } from '../format.js'
 import { hashOf } from '../nav.js'
 import { StatementImport } from '../screens/AddScreen.js'
 import { StartEditor } from '../screens/StartEditor.js'
-import { Alert } from '../components/ui/feedback.js'
+import { Alert, SavedNote } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
 
@@ -80,9 +80,7 @@ export function BalanceStep() {
           />
         ) : null}
         {note === null ? null : note.ok ? (
-          <p role="status" className="mt-2 text-sm text-income">
-            {note.text}
-          </p>
+          <SavedNote className="mt-2 text-sm text-income">{note.text}</SavedNote>
         ) : (
           <Alert tone="error">{note.text}</Alert>
         )}
