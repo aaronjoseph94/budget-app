@@ -64,8 +64,9 @@ export function YearScreen({ start: address }: { start: string | null }) {
     setError(null)
     Promise.all([
       listTransactions(supabase, { from: start, to: end }),
-      listBudgetHistory(supabase, last),
-      listPlanHistory(supabase, last, 'month'),
+      // Worded for the year: under "Could not load this year" they said "this month" (N42).
+      listBudgetHistory(supabase, last, 'year'),
+      listPlanHistory(supabase, last, 'year'),
       getMonthBalance(supabase, start),
     ])
       .then(([rows, budgets, plans, balance]) => live && setLoaded({ start, rows, budgets, plans, balance }))

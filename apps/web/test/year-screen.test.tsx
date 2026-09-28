@@ -265,6 +265,19 @@ describe('YearScreen', () => {
     expect(screen.queryByRole('region', { name: 'Income by month' })).toBeNull()
   })
 
+  it('says the year, not the month, when its budgets or monthly amounts cannot be read (N42)', async () => {
+    for (const table of ['category_budgets', 'category_plans']) {
+      cleanup()
+      const fake = seeded()
+      fake.fail(table, '42P01')
+      renderScreen(<YearScreen start="2026-01" />, fake)
+
+      const alert = (await screen.findByRole('alert')).textContent ?? ''
+      expect(alert, table).toMatch(/need a one-time update, so this year cannot be shown\./)
+      expect(alert, table).not.toMatch(/month/)
+    }
+  })
+
   it("draws each fund's balance today against its goal, as Home's savings-goals chart, whatever year is shown (D23)", async () => {
     const fake = seeded()
     // 1,000.00 typed at the end of 1 March; the 500.00 on the 12th adds to it.

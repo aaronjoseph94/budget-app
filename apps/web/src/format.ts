@@ -225,8 +225,12 @@ export function describeMoveFailure(error: WriteError | null | undefined): strin
   return body === undefined ? describeWriteFailure(error) : `${body} (code ${code})`
 }
 
-/** What the Month was doing with budgets and goals when a request failed. */
-export type BudgetAction = 'read' | 'save'
+/**
+ * What was being done with budgets and goals when a request failed: the
+ * Month's read ('read') or save, or the Year's or Paycheck's read, whose
+ * sentences name the year and the pay period rather than "this month" (N42).
+ */
+export type BudgetAction = 'read' | 'year' | 'paycheck' | 'save'
 
 /**
  * Why the Month's budgets and goals could not be read or saved (0008).
@@ -247,6 +251,18 @@ const BUDGET_FAILURES: Readonly<Record<BudgetAction, Readonly<Record<string, str
     '': 'Could not reach the database to read your budgets. Check your connection and try again.',
     PGRST301: 'Your session expired. Sign in again to see this month.',
   },
+  year: {
+    PGRST205: `${NOT_APPLIED}, so this year cannot be shown.`,
+    '42P01': `${NOT_APPLIED}, so this year cannot be shown.`,
+    '': 'Could not reach the database to read your budgets. Check your connection and try again.',
+    PGRST301: 'Your session expired. Sign in again to see this year.',
+  },
+  paycheck: {
+    PGRST205: `${NOT_APPLIED}, so this pay period cannot be shown.`,
+    '42P01': `${NOT_APPLIED}, so this pay period cannot be shown.`,
+    '': 'Could not reach the database to read your budgets. Check your connection and try again.',
+    PGRST301: 'Your session expired. Sign in again to see this pay period.',
+  },
   save: {
     PGRST205: `${NOT_APPLIED}. Nothing was saved.`,
     '42P01': `${NOT_APPLIED}. Nothing was saved.`,
@@ -261,7 +277,12 @@ export function describeBudgetFailure(action: BudgetAction, error: WriteError | 
   if (body !== undefined) return code === '' ? body : `${body} (code ${code})`
   return action === 'save'
     ? describeWriteFailure(error)
-    : `Your budgets could not be read, so this month is not shown. Try again. (code ${code})`
+    : `Your budgets could not be read, so ${budgetShownBy(action)} not shown. Try again. (code ${code})`
+}
+
+/** What a failed read of budgets leaves unshown, for its sentence. */
+export function budgetShownBy(reader: Exclude<BudgetAction, 'save'>): string {
+  return reader === 'year' ? 'this year is' : reader === 'paycheck' ? 'this pay period is' : 'this month is'
 }
 
 /**
@@ -282,7 +303,7 @@ export function describeBudgetFailure(action: BudgetAction, error: WriteError | 
  * ('week') is the same, and its sentences name the week, as Paycheck's
  * ('paycheck') name its pay period and the Bill Calendar's ('calendar') it.
  */
-export type PlanAction = 'read' | 'month' | 'week' | 'paycheck' | 'calendar' | 'save'
+export type PlanAction = 'read' | 'month' | 'week' | 'paycheck' | 'calendar' | 'year' | 'save'
 const PLANS_NOT_APPLIED = 'Monthly amounts need a one-time update'
 const PLAN_FAILURES: Readonly<Record<PlanAction, Readonly<Record<string, string>>>> = {
   month: {
@@ -302,6 +323,12 @@ const PLAN_FAILURES: Readonly<Record<PlanAction, Readonly<Record<string, string>
     '42P01': `${PLANS_NOT_APPLIED}, so this pay period cannot be shown.`,
     '': 'Could not reach the database to read your monthly amounts. Check your connection and try again.',
     PGRST301: 'Your session expired. Sign in again to see this pay period.',
+  },
+  year: {
+    PGRST205: `${PLANS_NOT_APPLIED}, so this year cannot be shown.`,
+    '42P01': `${PLANS_NOT_APPLIED}, so this year cannot be shown.`,
+    '': 'Could not reach the database to read your monthly amounts. Check your connection and try again.',
+    PGRST301: 'Your session expired. Sign in again to see this year.',
   },
   calendar: {
     PGRST205: `${PLANS_NOT_APPLIED}, so this calendar cannot be shown.`,
@@ -336,6 +363,7 @@ export function describePlanFailure(action: PlanAction, error: WriteError | null
 export function shownBy(reader: PlanAction): string {
   if (reader === 'paycheck') return 'this pay period is'
   if (reader === 'calendar') return 'this calendar is'
+  if (reader === 'year') return 'this year is'
   return reader === 'month' ? 'this month is' : reader === 'week' ? 'this week is' : 'they are'
 }
 

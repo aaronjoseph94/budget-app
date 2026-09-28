@@ -74,7 +74,7 @@ export function PaycheckPeriod({
     setError(null)
     Promise.all([
       listTransactions(supabase, { from: start, to: end }),
-      listBudgetHistory(supabase, month),
+      listBudgetHistory(supabase, month, 'paycheck'),
       listPlanHistory(supabase, month, 'paycheck'),
       latestStatementEnd(supabase),
     ])

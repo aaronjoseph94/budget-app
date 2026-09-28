@@ -16,6 +16,7 @@ import {
   type StatementPeriod,
 } from '@budget/statement-parsers'
 import {
+  budgetShownBy,
   describeBalanceFailure,
   describeBudgetFailure,
   describeDebtFailure,
@@ -27,6 +28,7 @@ import {
   describeWriteFailure,
   scheduleShownBy,
   shownBy,
+  type BudgetAction,
   type PlanAction,
   type ScheduleAction,
   type WriteError,
@@ -811,7 +813,11 @@ export interface BudgetRow {
  * read whole (readAll): everything that month's budgets can come from. A
  * later month's never reaches back, so none is read.
  */
-export async function listBudgetHistory(supabase: SupabaseClient, through: string): Promise<readonly BudgetRow[]> {
+export async function listBudgetHistory(
+  supabase: SupabaseClient,
+  through: string,
+  reader: Exclude<BudgetAction, 'save'> = 'read',
+): Promise<readonly BudgetRow[]> {
   const rows = await readAll<BudgetRow>(
     (from, to) =>
       supabase
@@ -822,8 +828,8 @@ export async function listBudgetHistory(supabase: SupabaseClient, through: strin
         .order('id', { ascending: true })
         .range(from, to),
     {
-      changed: 'Your budgets changed while this month was being read, so nothing is shown. Try again.',
-      describe: (error) => describeBudgetFailure('read', error),
+      changed: `Your budgets changed while they were being read, so ${budgetShownBy(reader)} not shown. Try again.`,
+      describe: (error) => describeBudgetFailure(reader, error),
     },
   )
   return rows.map((r) => ({ ...r, budget_cents: r.budget_cents === null ? null : Number(r.budget_cents) }))

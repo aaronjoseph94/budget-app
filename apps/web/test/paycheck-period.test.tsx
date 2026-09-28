@@ -126,6 +126,16 @@ describe('PaycheckPeriod', () => {
     expect(screen.getByText(/12 months over 52 paydays: a week’s share\./)).toBeTruthy()
   })
 
+  it('says the pay period, not the month, when its budgets cannot be read (N48)', async () => {
+    const fake = seeded()
+    fake.fail('category_budgets', '42P01')
+    show(fake, null)
+
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Budgets need a one-time update, so this pay period cannot be shown. (code 42P01)',
+    )
+  })
+
   it('says which pay period cannot be shown when its monthly amounts cannot be read', async () => {
     const fake = seeded()
     fake.fail('category_plans', 'PGRST205')

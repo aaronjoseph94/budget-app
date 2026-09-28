@@ -105,7 +105,7 @@ describe('listBudgetHistory', () => {
       fake.server.afterRead = null
     }
     await expect(listBudgetHistory(fake.client, '2026-09-01')).rejects.toThrow(
-      'Your budgets changed while this month was being read, so nothing is shown. Try again.',
+      'Your budgets changed while they were being read, so this month is not shown. Try again.',
     )
   })
 })
