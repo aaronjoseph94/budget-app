@@ -82,7 +82,7 @@ the review queue, merchant rules that learn. Its "Ends with" waits on the
 owner pasting migrations 0003 onwards into the hosted project (HANDOFF.md).
 Ends with: a real statement imported and categorised.
 
-**Phase 2 — Weekly truth** ✅ *built, except the contribution grid (a coach piece)*
+**Phase 2 — Weekly truth** ✅ *built; the contribution grid is Reports → Habits (A18)*
 Weekly rollups in the engine, the weekly screen, categories, budget vs. actual,
 the contribution grid. Ends with: the real answer to "how am I doing this week".
 
@@ -96,7 +96,7 @@ funds and the debt screen from Phase 7 (not net worth or retirement).
 The coach is not wasted by waiting: it will read the same month figures.
 Ends with: the owner's statement filling the workbook's month, year and setup views.
 
-**The AI-first phase** ← *next (the owner's list of 2026-09-24; `docs/ai-first-plan.md`)*
+**The AI-first phase** ✅ *built 2026-09-28 (the owner's list of 2026-09-24; `docs/ai-first-plan.md`); ends when the owner runs it (HANDOFF §3)*
 Realises the coach (Phase 3) and the reports (Phase 6), with the forecast
 from Phase 5 and the provider interface, failover and natural-language entry
 from Phase 4. The AI helper and five AI services, free Gemini first (ADR
@@ -112,24 +112,24 @@ the Sankey, the Excel workbook.
 Ends with: a Coach that argues with the owner in plain words, every figure
 from the engine, on a free AI tier, and a report worth showing someone.
 
-**Phase 3 — The coach** *(realised by the AI-first phase)*
+**Phase 3 — The coach** ✅ *built by the AI-first phase*
 Weekly limits, proven-floor targets, savings capacity, interrogation loop,
 tradeoff framing in flight hours, goal tracking.
 Ends with: a Sunday check-in that argues with the user.
 
-**Phase 4 — Photos and natural language** *(photos and typed entry built, the receipt function not yet deployed; natural language, the provider interface and failover realised by the AI-first phase)*
+**Phase 4 — Photos and natural language** ✅ *built by the AI-first phase: the AI helper with five services and failover, "just type it", receipts through the helper; deployed by the owner (HANDOFF §3)*
 Provider interface, the picker, failover, receipt capture, typed entry.
 Ends with: three ways in, one review queue.
 
-**Phase 5 — Commitments** *(bills, recurring amounts and the Bill calendar built; the forecast realised by the AI-first phase; reminders not)*
+**Phase 5 — Commitments** 🟡 *bills, recurring amounts, the Bill calendar and the forecast built; due reminders not*
 Bills, recurring, the calendar, due reminders, forecast.
 Ends with: nothing is a surprise.
 
-**Phase 6 — Seeing it** *(the Month and Year charts built; reports, trends, Save as PDF and CSV realised by the AI-first phase; the Sankey and the Excel workbook not)*
+**Phase 6 — Seeing it** 🟡 *charts, Reports, trends, Save as PDF and CSV built; the Sankey and the Excel workbook not*
 Sankey, charts, reports, Excel and PDF export.
 Ends with: a report worth showing someone.
 
-**Phase 7 — The rest of the workbook** *(snowball/avalanche and savings funds built; net worth and retirement deferred, above)*
+**Phase 7 — The rest of the workbook** 🟡 *snowball/avalanche, savings funds and many goals built; net worth and retirement deferred, above*
 Snowball/avalanche, sinking funds beyond the flying goal, net worth,
 retirement. Ends with: full parity, plus everything the workbook could not do.
 

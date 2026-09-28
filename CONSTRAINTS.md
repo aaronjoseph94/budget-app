@@ -1,6 +1,6 @@
 # Constraints
 
-Last reviewed: 2026-09-24
+Last reviewed: 2026-09-28
 
 This file is the project's quality bar.
 
@@ -240,8 +240,10 @@ model is never auto-approved.** Auto-approved rows are stamped
 
 | Metric | Today | Direction |
 |---|---|---|
-| Golden assertion count | 121 (the tests in `packages/core/test/golden`, 2026-09-23) | must not fall |
-| Total tests | 1110 (`vitest run`, 2026-09-23) | must not fall |
+| Golden assertion count | 121 (the tests in `packages/core/test/golden`, unchanged, re-counted 2026-09-28) | must not fall |
+| Total tests | 2666 in 282 files (`vitest run`, 2026-09-28, A28) | must not fall |
+| Screen accessibility | every screen test file runs an axe check (`apps/web/test/axe.ts`, ADR 0009): 91 files and the helper's own test; the 9 that draw nothing are left out; WCAG A and AA, colour contrast left to `contrast.test.ts` | every new screen test file adds one |
+| Web first load | 184.33 KB gzipped of the 200 KB budget (2026-09-28) | measured by the bundle gate |
 
 ## Exceptions
 
