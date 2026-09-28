@@ -4,6 +4,7 @@ import { ANSWER_WORDS, ASK_CATALOGUE, type AskRead } from '@budget/savings-coach
 import { formatDateRange, formatDayMonth, formatMonthTitle } from '../format.js'
 import { hashOf, type Screen } from '../nav.js'
 import { Card, CardContent } from '../components/ui/card.js'
+import { SENTENCE_LINK } from '../components/ui/link.js'
 import { CoachText, figureText, type Named } from '../coach/words.js'
 import type { ReadBy } from './read.js'
 
@@ -93,7 +94,7 @@ function NoAnswer({ answer, missingUpdate }: { answer: Exclude<Answer, { status:
       return missingUpdate ? (
         <p>
           {answer.what === 'forecast' ? 'The forecast' : 'Your payoff plan'} needs a one-time update.{' '}
-          <a href={hashOf({ screen: 'help', param: 'updates' })} className={link}>
+          <a href={hashOf({ screen: 'help', param: 'updates' })} className={SENTENCE_LINK}>
             See One-time updates
           </a>
         </p>

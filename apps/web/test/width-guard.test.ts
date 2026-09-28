@@ -152,10 +152,27 @@ describe('the gutter below 360 px', () => {
  * 16 px tall to a finger.
  */
 describe('a link inside a sentence', () => {
+  // After `{' '}`, past any comment or `{… ? null : (` above the link, its
+  // className in any form: the Week's and the Month's sit under a comment
+  // and add a colour, and the Coach's line and Review's bar name theirs
+  // in a constant.
+  const AFTER_WORDS = /\{' '\}\s*\n(?:\s*\{\/\*[\s\S]*?\*\/\}\s*\n|\s*\{[^\n]*\? null : \(\s*\n)*\s*<a [^>]*?className=(\{[^}]*\}|"[^"]*")/g
+  const notSentenceLinks = (text: string) => [...text.matchAll(AFTER_WORDS)].map((m) => m[1]!).filter((c) => !c.includes('SENTENCE_LINK'))
+
+  it('finds one that is not, past a comment and inside cn()', () => {
+    expect(notSentenceLinks("done.{' '}\n  <a href=\"#/x\" className=\"underline\">")).toEqual(['"underline"'])
+    expect(notSentenceLinks("done.{' '}\n  {/* why */}\n  <a href={hashOf({ screen: 'x' })} className={cn('underline')}>")).toEqual(["{cn('underline')}"])
+    expect(notSentenceLinks("done.{' '}\n  {/* why */}\n  <a href=\"#/x\" className={cn(SENTENCE_LINK, 'text-foreground')}>")).toEqual([])
+    expect(notSentenceLinks("{sentence}{' '}\n  {help === null ? null : (\n    <a href={x} className={link}>")).toEqual(['{link}'])
+  })
+
   it('is SENTENCE_LINK', () => {
-    const offenders = Object.entries(sources).flatMap(([path, text]) =>
-      [...text.matchAll(/\{' '\}\s*\n\s*<a [^>]*className="[^"]*"/g)].map((m) => `${path}: ${m[0].split('\n').pop()!.trim()}`),
-    )
+    let links = 0
+    const offenders = Object.entries(sources).flatMap(([path, text]) => {
+      links += [...text.matchAll(AFTER_WORDS)].length
+      return notSentenceLinks(text).map((c) => `${path}: ${c}`)
+    })
+    expect(links).toBeGreaterThanOrEqual(20)
     expect(offenders).toEqual([])
   })
 

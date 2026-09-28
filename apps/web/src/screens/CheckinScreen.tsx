@@ -8,6 +8,7 @@ import { formatCents, formatDateRange, formatDayMonth, todayIso } from '../forma
 import { setWeeklyBudget } from '../ledger.js'
 import { hashOf } from '../nav.js'
 import { Button } from '../components/ui/button.js'
+import { SENTENCE_LINK } from '../components/ui/link.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { Section } from '../forecast/parts.js'
 import { useCoachRead } from '../coach/facts.js'
@@ -120,7 +121,7 @@ function Whose({ state }: { state: CheckinWordsState }) {
       <>
         {view.sentence}{' '}
         {view.help === null ? null : (
-          <a href={hashOf({ screen: 'help', param: view.help })} className={link}>
+          <a href={hashOf({ screen: 'help', param: view.help })} className={SENTENCE_LINK}>
             {view.help === 'updates' ? 'Help: One-time updates' : 'Why?'}
           </a>
         )}
@@ -186,7 +187,7 @@ function TryThis({ figures, facts, words }: { figures: CheckinFigures; facts: Ch
           {state === 'saved' ? (
             <p role="status">
               Done: {name}’s weekly budget is {formatCents(limit.limitCents)}. It shows on the{' '}
-              <a href={hashOf({ screen: 'week', param: null })} className={link}>
+              <a href={hashOf({ screen: 'week', param: null })} className={SENTENCE_LINK}>
                 Week
               </a>
               .

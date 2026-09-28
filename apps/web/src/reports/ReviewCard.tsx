@@ -12,6 +12,7 @@ import { hashOf } from '../nav.js'
 import { Section } from '../forecast/parts.js'
 import { CoachText } from '../coach/words.js'
 import { useReview, type ReviewState } from './use-review.js'
+import { SENTENCE_LINK } from '../components/ui/link.js'
 
 const BY: Readonly<Record<AiProvider, string>> = {
   gemini: 'free Google Gemini',
@@ -20,8 +21,6 @@ const BY: Readonly<Record<AiProvider, string>> = {
   openai: 'OpenAI',
   anthropic: 'Anthropic',
 }
-
-const link = 'inline-flex min-h-11 items-center font-medium underline underline-offset-4'
 
 /** The AI's mark, said as words to a screen reader. */
 function Mark({ ai }: { ai: boolean }) {
@@ -47,7 +46,7 @@ function Whose({ state }: { state: ReviewState }) {
       <>
         {view.sentence}{' '}
         {view.help === null ? null : (
-          <a href={hashOf({ screen: 'help', param: view.help })} className={link}>
+          <a href={hashOf({ screen: 'help', param: view.help })} className={SENTENCE_LINK}>
             {view.help === 'updates' ? 'Help: One-time updates' : 'Why?'}
           </a>
         )}

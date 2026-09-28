@@ -2,17 +2,17 @@ import type { ReactNode } from 'react'
 import { hashOf } from '../nav.js'
 import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
+import { SENTENCE_LINK } from '../components/ui/link.js'
 import type { Stopped } from './suggestions.js'
 import type { SuggestStatus } from './use-suggestions.js'
 
-const link = 'inline-flex min-h-11 items-center font-medium underline underline-offset-4'
 const UPDATES = hashOf({ screen: 'help', param: 'updates' })
 
 function Updates({ children }: { children: string }) {
   return (
     <>
       {children}{' '}
-      <a href={UPDATES} className={link}>
+      <a href={UPDATES} className={SENTENCE_LINK}>
         See One-time updates
       </a>
     </>
@@ -41,7 +41,7 @@ function stopLine(stopped: Stopped): ReactNode {
       return (
         <>
           {view.state === 'off' ? 'AI is off, so nothing is suggested.' : 'Turn on free AI to have categories suggested.'}{' '}
-          <a href={AI} className={link}>
+          <a href={AI} className={SENTENCE_LINK}>
             {view.state === 'off' ? 'Turn AI back on' : 'Turn on free AI (2 minutes)'}
           </a>
         </>
@@ -52,7 +52,7 @@ function stopLine(stopped: Stopped): ReactNode {
       return (
         <>
           The AI is resting. Try Suggest categories again later.{' '}
-          <a href={hashOf({ screen: 'help', param: 'ai-rests' })} className={link}>
+          <a href={hashOf({ screen: 'help', param: 'ai-rests' })} className={SENTENCE_LINK}>
             Why?
           </a>
         </>
@@ -74,7 +74,7 @@ function said(status: SuggestStatus): ReactNode {
       return (
         <>
           Suggestions are off while Share shop names is off.{' '}
-          <a href={AI} className={link}>
+          <a href={AI} className={SENTENCE_LINK}>
             AI settings
           </a>
         </>

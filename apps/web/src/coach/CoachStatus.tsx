@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import type { AiProvider } from '@budget/schema'
 import { hashOf } from '../nav.js'
 import { Button } from '../components/ui/button.js'
+import { SENTENCE_LINK } from '../components/ui/link.js'
 import type { NarrationState } from './use-narration.js'
 
 const BY: Readonly<Record<AiProvider, string>> = {
@@ -11,8 +12,6 @@ const BY: Readonly<Record<AiProvider, string>> = {
   openai: 'OpenAI',
   anthropic: 'Anthropic',
 }
-
-const link = 'inline-flex min-h-11 items-center font-medium underline underline-offset-4'
 
 /**
  * One line under the Coach's title saying whose words these are (plan
@@ -32,7 +31,7 @@ export function CoachStatus({ state }: { state: NarrationState }) {
     said = (
       <>
         The app’s own words.{' '}
-        <a href={hashOf({ screen: 'ai', param: null })} className={link}>
+        <a href={hashOf({ screen: 'ai', param: null })} className={SENTENCE_LINK}>
           {view.state === 'off' ? 'Turn AI back on' : 'Turn on free AI (2 minutes)'}
         </a>
       </>
@@ -42,7 +41,7 @@ export function CoachStatus({ state }: { state: NarrationState }) {
       <>
         {view.sentence}{' '}
         {view.help === null ? null : (
-          <a href={hashOf({ screen: 'help', param: view.help })} className={link}>
+          <a href={hashOf({ screen: 'help', param: view.help })} className={SENTENCE_LINK}>
             {view.help === 'updates' ? 'Help: One-time updates' : 'Why?'}
           </a>
         )}
