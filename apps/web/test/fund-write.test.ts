@@ -82,7 +82,7 @@ describe('savings funds', () => {
     )
     fake.fail('savings_goals', 'PGRST204')
     await expect(linkFund(fake.client, { goalId: 'g1', categoryId: 'flight', asOf: '2026-09-23' })).rejects.toThrow(
-      'Savings funds need a database update that has not been applied yet (0013 in the setup guide). Nothing was saved. (code PGRST204)',
+      'Savings funds need a one-time update. Nothing was saved. (code PGRST204)',
     )
     expect(fake.tables.savings_goals).toHaveLength(1)
   })
@@ -91,7 +91,7 @@ describe('savings funds', () => {
     const early = withFunds()
     early.fail('savings_goals', '42703')
     await expect(listFunds(early.client)).rejects.toThrow(
-      'Savings funds need a database update that has not been applied yet (0013 in the setup guide), so your funds cannot be shown. (code 42703)',
+      'Savings funds need a one-time update, so your funds cannot be shown. (code 42703)',
     )
     const odd = withFunds()
     odd.fail('transactions', '42501')

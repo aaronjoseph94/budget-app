@@ -261,7 +261,7 @@ describe('YearScreen', () => {
     renderScreen(<YearScreen start="2026-01" />, fake)
 
     const alert = await screen.findByRole('alert')
-    expect(alert.textContent).toMatch(/Could not load this year.*0008/)
+    expect(alert.textContent).toMatch(/Could not load this year.*Budgets need a one-time update/)
     expect(screen.queryByRole('region', { name: 'Income by month' })).toBeNull()
   })
 

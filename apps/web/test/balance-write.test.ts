@@ -46,10 +46,10 @@ describe('setMonthBalance and getMonthBalance', () => {
     const unapplied = createFakeSupabase()
     unapplied.fail('month_balances', 'PGRST205')
     await expect(getMonthBalance(unapplied.client, '2026-09-01')).rejects.toThrow(
-      'Starting balances need a database update that has not been applied yet (0010 in the setup guide), so this month cannot be shown. (code PGRST205)',
+      'Starting balances need a one-time update, so this month cannot be shown. (code PGRST205)',
     )
     await expect(setMonthBalance(unapplied.client, typed('2026-09-01', 100))).rejects.toThrow(
-      'Starting balances need a database update that has not been applied yet (0010 in the setup guide). Nothing was saved. (code PGRST205)',
+      'Starting balances need a one-time update. Nothing was saved. (code PGRST205)',
     )
     const offline = createFakeSupabase()
     offline.fail('month_balances', '')

@@ -87,7 +87,7 @@ describe('SetupScreen, when income is paid', () => {
     fake.fail('pay_schedules', 'PGRST205')
     renderScreen(<SetupScreen />, fake)
     expect((await screen.findByRole('alert')).textContent).toBe(
-      'Pay schedules need a database update that has not been applied yet (0011 in the setup guide), so when you are paid is not shown. Your lists still work. (code PGRST205)',
+      'Pay schedules need a one-time update, so when you are paid is not shown. Your lists still work. (code PGRST205) See One-time updates',
     )
     const card = await income()
     expect(card.getByRole('textbox', { name: 'Rename Day job' })).toBeTruthy()

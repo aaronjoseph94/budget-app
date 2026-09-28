@@ -258,7 +258,7 @@ describe('MonthScreen budgets and goals', () => {
 
     expect((await screen.findByRole('alert')).textContent).toBe(
       'Could not load this month' +
-        'Budgets need a database update that has not been applied yet (0008 in the setup guide), so this month cannot be shown. (code PGRST205)',
+        'Budgets need a one-time update, so this month cannot be shown. (code PGRST205) See One-time updates',
     )
     expect(screen.queryByRole('region')).toBeNull()
   })
@@ -318,7 +318,7 @@ describe('MonthScreen planned amounts', () => {
 
     expect((await screen.findByRole('alert')).textContent).toBe(
       'Could not load this month' +
-        'Monthly amounts need a database update that has not been applied yet (0009 in the setup guide), so this month cannot be shown. (code PGRST205)',
+        'Monthly amounts need a one-time update, so this month cannot be shown. (code PGRST205) See One-time updates',
     )
     expect(screen.queryByRole('region')).toBeNull()
   })
@@ -417,7 +417,7 @@ describe('MonthScreen summary and notes', () => {
 
     expect((await screen.findByRole('alert')).textContent).toBe(
       'Could not load this month' +
-        'Starting balances need a database update that has not been applied yet (0010 in the setup guide), so this month cannot be shown. (code PGRST205)',
+        'Starting balances need a one-time update, so this month cannot be shown. (code PGRST205) See One-time updates',
     )
     expect(screen.queryByRole('region')).toBeNull()
     expect(screen.queryByText('Type your starting bank balance')).toBeNull()

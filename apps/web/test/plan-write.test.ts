@@ -54,7 +54,7 @@ describe('setPlan', () => {
     const unapplied = withLists()
     unapplied.fail('category_plans', 'PGRST205')
     await expect(setPlan(unapplied.client, september(100))).rejects.toThrow(
-      'Monthly amounts need a database update that has not been applied yet (0009 in the setup guide). Nothing was saved. (code PGRST205)',
+      'Monthly amounts need a one-time update. Nothing was saved. (code PGRST205)',
     )
     const refused = withLists()
     refused.fail('category_plans', '42501')
@@ -116,7 +116,7 @@ describe('listPlanHistory', () => {
     const fake = withLists()
     fake.fail('category_plans', 'PGRST205')
     await expect(listPlanHistory(fake.client, '2026-09-01', 'read')).rejects.toThrow(
-      'Monthly amounts need a database update that has not been applied yet (0009 in the setup guide), so they are not shown. Your lists still work. (code PGRST205)',
+      'Monthly amounts need a one-time update, so they are not shown. Your lists still work. (code PGRST205)',
     )
   })
 })

@@ -37,12 +37,12 @@ describe('recategoriseTransaction', () => {
   })
 
   // The owner has not pasted 0006 yet; the app must say that, not "code PGRST202".
-  it('says the database update is missing when the function is not there yet', async () => {
+  it('says a one-time update is missing when the function is not there yet', async () => {
     const fake = withCharge()
     delete fake.rpcReplies['recategorise_transaction']
     await expect(
       recategoriseTransaction(fake.client, { transactionId: 't1', categoryId: 'groceries', learn: true }),
-    ).rejects.toThrow(/^Moving a charge needs a database update that has not been applied yet \(0006 in the setup guide\)/)
+    ).rejects.toThrow(/^Moving a charge needs a one-time update/)
   })
 })
 

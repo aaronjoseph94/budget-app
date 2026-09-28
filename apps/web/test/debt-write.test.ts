@@ -76,8 +76,8 @@ describe('debts', () => {
     const fake = withDebts()
     fake.fail('debts', 'PGRST205')
     await expect(listDebts(fake.client)).rejects.toThrow(
-      'Debts need a database update that has not been applied yet (0014 in the setup guide), so your debts cannot be shown. (code PGRST205)',
+      'Debts need a one-time update, so your debts cannot be shown. (code PGRST205)',
     )
-    await expect(saveDebt(fake.client, { userId: 'u1', debtId: null, sortOrder: 0 }, edit())).rejects.toThrow(/0014 in the setup guide\)\. Nothing was saved/)
+    await expect(saveDebt(fake.client, { userId: 'u1', debtId: null, sortOrder: 0 }, edit())).rejects.toThrow(/need a one-time update\. Nothing was saved/)
   })
 })

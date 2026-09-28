@@ -67,7 +67,7 @@ describe('SetupScreen, reading monthly amounts', () => {
 
     const alert = await screen.findByRole('alert')
     expect(alert.textContent).toBe(
-      'Monthly amounts need a database update that has not been applied yet (0009 in the setup guide), so they are not shown. Your lists still work. (code PGRST205)',
+      'Monthly amounts need a one-time update, so they are not shown. Your lists still work. (code PGRST205) See One-time updates',
     )
     expect(screen.getAllByRole('alert')).toHaveLength(1)
     const field = (await card('Bills')).getByRole('textbox', { name: 'Rename Phone' })

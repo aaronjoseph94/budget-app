@@ -1,6 +1,7 @@
 import { useEffect, useRef, type HTMLAttributes, type ReactNode } from 'react'
 import { cn } from '../../lib/cn.js'
 import { useAnnounce } from './announce.js'
+import { SENTENCE_LINK } from './link.js'
 
 /** shadcn/ui Badge. */
 const BADGE = {
@@ -49,10 +50,17 @@ export function Progress({ basisPoints, tone = 'default' }: { basisPoints: numbe
   )
 }
 
+/** A failure that a one-time update fixes, in the app's words for it (format.ts). */
+const NEEDS_UPDATE = /\bone-time update\b/
+
 /**
  * shadcn/ui Alert. `role="alert"` on failures so a screen reader announces
  * them. A success is said through the app's one status region, when there
  * is one, rather than as a status that arrives already full (FE-16).
+ *
+ * A failure worded as needing a one-time update carries the way to it,
+ * Help → One-time updates, wherever it shows (plan §8.2, N28, N69): those
+ * sentences once named a file "in the setup guide" and linked nowhere.
  */
 export function Alert({
   tone = 'default',
@@ -71,6 +79,7 @@ export function Alert({
   useEffect(() => {
     if (says) announce(own.current?.textContent ?? '')
   }, [says, announce, title, words])
+  const updates = tone === 'error' && words !== null && NEEDS_UPDATE.test(words)
   const look =
     tone === 'error'
       ? 'border-destructive/40 bg-destructive/5 text-destructive'
@@ -80,7 +89,19 @@ export function Alert({
   return (
     <div ref={own} role={tone === 'error' ? 'alert' : says ? undefined : 'status'} className={cn('rounded-lg border px-4 py-3 text-sm', look)}>
       {title !== undefined ? <p className="font-medium">{title}</p> : null}
-      {children !== undefined ? <div className={cn(title !== undefined && 'mt-1', tone === 'error' ? '' : 'text-muted-foreground')}>{children}</div> : null}
+      {children !== undefined ? (
+        <div className={cn(title !== undefined && 'mt-1', tone === 'error' ? '' : 'text-muted-foreground')}>
+          {children}
+          {updates ? (
+            <>
+              {' '}
+              <a href="#/help/updates" className={SENTENCE_LINK}>
+                See One-time updates
+              </a>
+            </>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   )
 }

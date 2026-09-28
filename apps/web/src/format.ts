@@ -123,6 +123,9 @@ export function describeFailure(kind: string, line?: number): string {
  * The code is kept in parentheses. It is meaningless to the reader and exact
  * for anyone they show it to, which is the only way a screenshot is useful.
  */
+/** How PostgREST and Postgres say a table, column or function is not there: a one-time update not pasted yet. */
+const MISSING_UPDATE = ['PGRST202', 'PGRST204', 'PGRST205', '42P01', '42703', '42883'] as const
+
 const WRITE_FAILURES: Record<string, string> = {
   '23505': 'You already have this, so nothing was added.',
   '23514':
@@ -134,6 +137,9 @@ const WRITE_FAILURES: Record<string, string> = {
   '28000': 'You are not signed in any more. Sign in again and retry — nothing was saved.',
   PGRST301: 'Your session expired. Sign in again and retry — nothing was saved.',
   '': 'Could not reach the database. Check your connection and try again — nothing was saved.',
+  // A table, column or function that a one-time update adds, not there yet
+  // (N28): said as what it is, where "something went wrong" said nothing.
+  ...Object.fromEntries(MISSING_UPDATE.map((code) => [code, 'This needs a one-time update, so nothing was saved.'])),
 }
 
 export interface WriteError {
@@ -209,7 +215,7 @@ export function describeSetupFailure(action: SetupAction, error: WriteError | nu
 const MOVE_FAILURES: Readonly<Record<string, string>> = {
   '42501': 'That charge or that category is no longer there — it may have changed on another device. Nothing was moved.',
   PGRST202:
-    'Moving a charge needs a database update that has not been applied yet (0006 in the setup guide). Nothing was moved.',
+    'Moving a charge needs a one-time update. Nothing was moved.',
   '23514': 'That move breaks a rule the ledger follows, so nothing was moved.',
 }
 
@@ -226,14 +232,14 @@ export type BudgetAction = 'read' | 'save'
  * Why the Month's budgets and goals could not be read or saved (0008).
  *
  * PGRST205, or 42P01 from an older PostgREST, is the table not existing:
- * 0008 has not been pasted yet, which is the owner's to do, so say where
- * rather than leave a bare code (N28). The import wording is wrong for both
+ * 0008 has not been pasted yet, which is the owner's to do, so say it needs
+ * a one-time update, which links to Help (N28), rather than leave a bare code. The import wording is wrong for both
  * of 0008's refusals: a category removed elsewhere is 23503, and the only
  * CHECK the Month can meet is a negative amount (23514). A save otherwise
  * falls back to that wording, whose connection and sign-in sentences hold
  * for any write; a read saves nothing, so it never does.
  */
-const NOT_APPLIED = 'Budgets need a database update that has not been applied yet (0008 in the setup guide)'
+const NOT_APPLIED = 'Budgets need a one-time update'
 const BUDGET_FAILURES: Readonly<Record<BudgetAction, Readonly<Record<string, string>>>> = {
   read: {
     PGRST205: `${NOT_APPLIED}, so this month cannot be shown.`,
@@ -277,7 +283,7 @@ export function describeBudgetFailure(action: BudgetAction, error: WriteError | 
  * ('paycheck') name its pay period and the Bill Calendar's ('calendar') it.
  */
 export type PlanAction = 'read' | 'month' | 'week' | 'paycheck' | 'calendar' | 'save'
-const PLANS_NOT_APPLIED = 'Monthly amounts need a database update that has not been applied yet (0009 in the setup guide)'
+const PLANS_NOT_APPLIED = 'Monthly amounts need a one-time update'
 const PLAN_FAILURES: Readonly<Record<PlanAction, Readonly<Record<string, string>>>> = {
   month: {
     PGRST205: `${PLANS_NOT_APPLIED}, so this month cannot be shown.`,
@@ -346,7 +352,7 @@ export function shownBy(reader: PlanAction): string {
  * the key to the category, 23503, for one removed there.
  */
 export type ScheduleAction = 'read' | 'paycheck' | 'calendar' | 'save'
-const SCHEDULES_NOT_APPLIED = 'Pay schedules need a database update that has not been applied yet (0011 in the setup guide)'
+const SCHEDULES_NOT_APPLIED = 'Pay schedules need a one-time update'
 const SCHEDULE_FAILURES: Readonly<Record<ScheduleAction, Readonly<Record<string, string>>>> = {
   read: {
     PGRST205: `${SCHEDULES_NOT_APPLIED}, so when you are paid is not shown. Your lists still work.`,
@@ -400,8 +406,7 @@ export type BalanceAction = 'read' | 'save'
  * a save; a save otherwise falls back to the import wording, whose
  * connection and sign-in sentences hold for any write.
  */
-const BALANCE_NOT_APPLIED =
-  'Starting balances need a database update that has not been applied yet (0010 in the setup guide)'
+const BALANCE_NOT_APPLIED = 'Starting balances need a one-time update'
 const BALANCE_FAILURES: Readonly<Record<BalanceAction, Readonly<Record<string, string>>>> = {
   read: {
     PGRST205: `${BALANCE_NOT_APPLIED}, so this month cannot be shown.`,
@@ -438,7 +443,7 @@ export type FundAction = 'read' | 'save'
  * on one fund or a goal name already used, and 23503 for a category removed
  * elsewhere. A read never says "nothing was saved" (N28).
  */
-const FUNDS_NOT_APPLIED = 'Savings funds need a database update that has not been applied yet (0013 in the setup guide)'
+const FUNDS_NOT_APPLIED = 'Savings funds need a one-time update'
 const FUND_FAILURES: Readonly<Record<FundAction, Readonly<Record<string, string>>>> = {
   read: {
     '42703': `${FUNDS_NOT_APPLIED}, so your funds cannot be shown.`,
@@ -475,7 +480,7 @@ export type DebtAction = 'read' | 'save' | 'extra'
  * (23514); the screen checks both before sending, so 23514 here is another
  * device's change. 23503 is a debt removed elsewhere.
  */
-const DEBTS_NOT_APPLIED = 'Debts need a database update that has not been applied yet (0014 in the setup guide)'
+const DEBTS_NOT_APPLIED = 'Debts need a one-time update'
 const DEBT_FAILURES: Readonly<Record<DebtAction, Readonly<Record<string, string>>>> = {
   read: {
     PGRST205: `${DEBTS_NOT_APPLIED}, so your debts cannot be shown.`,

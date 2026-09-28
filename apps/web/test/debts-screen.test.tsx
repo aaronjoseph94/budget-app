@@ -108,7 +108,7 @@ describe('DebtsScreen', () => {
     const fake = seeded()
     fake.fail('debts', 'PGRST205')
     renderScreen(<DebtsScreen />, fake)
-    expect(await screen.findByText(/0014 in the setup guide/)).toBeTruthy()
+    expect(await screen.findByText(/Debts need a one-time update/)).toBeTruthy()
   })
 })
 

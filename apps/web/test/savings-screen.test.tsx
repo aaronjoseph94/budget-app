@@ -124,6 +124,6 @@ describe('SavingsScreen', () => {
       if (table === 'savings_goals') fake.fail('savings_goals', '42703')
     }
     renderScreen(<SavingsScreen />, fake)
-    expect(await screen.findByText(/0013 in the setup guide\), so your funds cannot be shown/)).toBeTruthy()
+    expect(await screen.findByText(/need a one-time update, so your funds cannot be shown/)).toBeTruthy()
   })
 })

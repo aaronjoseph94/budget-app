@@ -65,7 +65,7 @@ describe('setBudget', () => {
     const unapplied = withFood()
     unapplied.fail('category_budgets', 'PGRST205')
     await expect(setBudget(unapplied.client, september('onward', 100))).rejects.toThrow(
-      'Budgets need a database update that has not been applied yet (0008 in the setup guide). Nothing was saved. (code PGRST205)',
+      'Budgets need a one-time update. Nothing was saved. (code PGRST205)',
     )
     const refused = withFood()
     refused.fail('category_budgets', '42501')

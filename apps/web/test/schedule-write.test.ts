@@ -50,9 +50,9 @@ describe('pay schedules', () => {
     )
     fake.fail('pay_schedules', 'PGRST205')
     await expect(setPaySchedule(fake.client, pay('2026-09-11', 'weekly'))).rejects.toThrow(
-      'Pay schedules need a database update that has not been applied yet (0011 in the setup guide). Nothing was saved. (code PGRST205)',
+      'Pay schedules need a one-time update. Nothing was saved. (code PGRST205)',
     )
-    await expect(removePaySchedule(fake.client, 'pay')).rejects.toThrow('(0011 in the setup guide). Nothing was saved.')
+    await expect(removePaySchedule(fake.client, 'pay')).rejects.toThrow('need a one-time update. Nothing was saved.')
     expect(fake.tables.pay_schedules).toEqual([])
   })
 
@@ -60,10 +60,10 @@ describe('pay schedules', () => {
     const setup = withLists()
     setup.fail('pay_schedules', 'PGRST205')
     await expect(listPaySchedules(setup.client, 'read')).rejects.toThrow(
-      'Pay schedules need a database update that has not been applied yet (0011 in the setup guide), so when you are paid is not shown. Your lists still work. (code PGRST205)',
+      'Pay schedules need a one-time update, so when you are paid is not shown. Your lists still work. (code PGRST205)',
     )
     await expect(listPaySchedules(setup.client, 'paycheck')).rejects.toThrow(
-      '(0011 in the setup guide), so no pay period can be shown. (code PGRST205)',
+      'need a one-time update, so no pay period can be shown. (code PGRST205)',
     )
     const odd = withLists()
     odd.fail('pay_schedules', '42501')

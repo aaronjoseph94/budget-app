@@ -77,7 +77,7 @@ describe('PaycheckScreen', () => {
     renderScreen(<PaycheckScreen day={null} />, fake)
 
     expect((await screen.findByRole('alert')).textContent).toContain(
-      'Pay schedules need a database update that has not been applied yet (0011 in the setup guide), so no pay period can be shown. (code PGRST205)',
+      'Pay schedules need a one-time update, so no pay period can be shown. (code PGRST205)',
     )
     expect(screen.queryByRole('button', { name: 'Open Setup' })).toBeNull()
   })

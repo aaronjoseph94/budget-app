@@ -239,9 +239,9 @@ describe('describeSetupFailure', () => {
 describe('describeBudgetFailure', () => {
   it('names the update a read is missing, and never words a read as a save', () => {
     expect(describeBudgetFailure('read', { code: 'PGRST205' })).toBe(
-      'Budgets need a database update that has not been applied yet (0008 in the setup guide), so this month cannot be shown. (code PGRST205)',
+      'Budgets need a one-time update, so this month cannot be shown. (code PGRST205)',
     )
-    expect(describeBudgetFailure('read', { code: '42P01' })).toContain('(0008 in the setup guide)')
+    expect(describeBudgetFailure('read', { code: '42P01' })).toContain('need a one-time update')
     expect(describeBudgetFailure('read', {})).toBe(
       'Could not reach the database to read your budgets. Check your connection and try again.',
     )
@@ -256,7 +256,7 @@ describe('describeBudgetFailure', () => {
 
 describe('describePlanFailure', () => {
   it('names the update a read is missing, and never words a read as a save', () => {
-    expect(describePlanFailure('read', { code: '42P01' })).toContain('(0009 in the setup guide), so they are not shown.')
+    expect(describePlanFailure('read', { code: '42P01' })).toContain('need a one-time update, so they are not shown.')
     expect(describePlanFailure('read', {})).toBe(
       'Could not reach the database to read your monthly amounts. Check your connection and try again.',
     )
@@ -272,8 +272,8 @@ describe('describePlanFailure', () => {
   })
 
   it('says the Month is not shown when it cannot read them, since it shows no month without them', () => {
-    expect(describePlanFailure('month', { code: 'PGRST205' })).toContain('(0009 in the setup guide), so this month cannot be shown.')
-    expect(describePlanFailure('month', { code: '42P01' })).toContain('(0009 in the setup guide), so this month cannot be shown.')
+    expect(describePlanFailure('month', { code: 'PGRST205' })).toContain('need a one-time update, so this month cannot be shown.')
+    expect(describePlanFailure('month', { code: '42P01' })).toContain('need a one-time update, so this month cannot be shown.')
     expect(describePlanFailure('month', {})).toBe(
       'Could not reach the database to read your monthly amounts. Check your connection and try again.',
     )
@@ -290,7 +290,7 @@ describe('describePlanFailure', () => {
   })
 
   it('says the Week is not shown when it cannot read them, and never names a month', () => {
-    expect(describePlanFailure('week', { code: 'PGRST205' })).toContain('(0009 in the setup guide), so this week cannot be shown.')
+    expect(describePlanFailure('week', { code: 'PGRST205' })).toContain('need a one-time update, so this week cannot be shown.')
     expect(describePlanFailure('week', { code: 'PGRST301' })).toBe(
       'Your session expired. Sign in again to see this week. (code PGRST301)',
     )
@@ -303,7 +303,7 @@ describe('describePlanFailure', () => {
   })
 
   it('says the Bill Calendar is not shown when it cannot read them, or when it is paid', () => {
-    expect(describePlanFailure('calendar', { code: 'PGRST205' })).toContain('(0009 in the setup guide), so this calendar cannot be shown.')
+    expect(describePlanFailure('calendar', { code: 'PGRST205' })).toContain('need a one-time update, so this calendar cannot be shown.')
     expect(describePlanFailure('calendar', { code: 'XX000' })).toBe(
       'Your monthly amounts could not be read, so this calendar is not shown. Try again. (code XX000)',
     )
@@ -321,7 +321,7 @@ describe('describePlanFailure', () => {
 
   it("says a list can't have an amount, and never that the numbers did not add up", () => {
     expect(describePlanFailure('save', { code: '23514' })).toMatch(/^That list can't have a monthly amount/)
-    expect(describePlanFailure('save', { code: '42P01' })).toContain('(0009 in the setup guide). Nothing was saved.')
+    expect(describePlanFailure('save', { code: '42P01' })).toContain('need a one-time update. Nothing was saved.')
     expect(describePlanFailure('save', { code: '28000' })).toBe(describeWriteFailure({ code: '28000' }))
   })
 })
@@ -330,7 +330,7 @@ describe('describeBalanceFailure', () => {
   it('names the update a read is missing, says the Month is not shown, and never words a read as a save', () => {
     for (const code of ['PGRST205', '42P01']) {
       expect(describeBalanceFailure('read', { code })).toBe(
-        `Starting balances need a database update that has not been applied yet (0010 in the setup guide), so this month cannot be shown. (code ${code})`,
+        `Starting balances need a one-time update, so this month cannot be shown. (code ${code})`,
       )
     }
     expect(describeBalanceFailure('read', {})).toBe(
@@ -350,7 +350,7 @@ describe('describeBalanceFailure', () => {
   it('says nothing was saved when the update is missing, and otherwise uses the everyday wording', () => {
     for (const code of ['PGRST205', '42P01']) {
       expect(describeBalanceFailure('save', { code })).toBe(
-        `Starting balances need a database update that has not been applied yet (0010 in the setup guide). Nothing was saved. (code ${code})`,
+        `Starting balances need a one-time update. Nothing was saved. (code ${code})`,
       )
     }
     expect(describeBalanceFailure('save', { code: '28000' })).toBe(describeWriteFailure({ code: '28000' }))

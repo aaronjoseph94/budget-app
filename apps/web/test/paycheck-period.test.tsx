@@ -132,7 +132,7 @@ describe('PaycheckPeriod', () => {
     show(fake, null)
 
     expect((await screen.findByRole('alert')).textContent).toContain(
-      'Monthly amounts need a database update that has not been applied yet (0009 in the setup guide), so this pay period cannot be shown. (code PGRST205)',
+      'Monthly amounts need a one-time update, so this pay period cannot be shown. (code PGRST205)',
     )
     expect(screen.queryByRole('region', { name: 'Summary' })).toBeNull()
   })

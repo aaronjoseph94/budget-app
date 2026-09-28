@@ -74,6 +74,6 @@ describe('useDebts', () => {
     fake.fail('debt_extra_payments', 'PGRST205')
     const { result } = renderDebts(fake)
     await waitFor(() => expect(result.current.status).toBe('failed'))
-    expect(result.current).toMatchObject({ message: expect.stringContaining('(0014 in the setup guide)') })
+    expect(result.current).toMatchObject({ message: expect.stringContaining('need a one-time update') })
   })
 })
