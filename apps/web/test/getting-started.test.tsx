@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppDataProvider } from '../src/app-data.js'
 import { GettingStartedScreen } from '../src/screens/GettingStartedScreen.js'
@@ -53,6 +53,7 @@ afterEach(() => {
   cleanup()
   vi.useRealTimers()
   vi.restoreAllMocks()
+  window.location.hash = ''
 })
 
 describe('Getting started (plan §8.1)', () => {
@@ -73,6 +74,41 @@ describe('Getting started (plan §8.1)', () => {
     expect(screen.getByRole('heading', { name: 'Your lists' })).toBe(document.activeElement)
     expect(screen.getByText('Step 2 of 9 · about 2 minutes')).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Open Setup' }).getAttribute('href')).toBe('#/setup')
+  })
+
+  it('sends a step to the end with Do this later, kept in the sign-in, and lists all nine to jump to', async () => {
+    const fake = createFakeSupabase()
+    await fake.signIn()
+    renderStart(fake)
+    await screen.findByRole('heading', { name: 'Your name' })
+
+    continueOn()
+    fireEvent.click(screen.getByRole('button', { name: 'Do this later' }))
+
+    expect(await screen.findByRole('heading', { name: 'When you’re paid' })).toBeTruthy()
+    expect(fake.user.user_metadata['setup_later']).toEqual(['lists'])
+    // Lists is now the ninth step, and pay the second.
+    expect(screen.getByText('Step 2 of 9 · about 1 minute')).toBeTruthy()
+    const all = within(screen.getByText(/^All 9 steps/).closest('details')!)
+    expect(all.getAllByRole('button').map((b) => b.textContent?.replace(/:.*$/, ''))).toEqual([
+      '·Your name', '·When you’re paid', '·Your bills', '·Your savings goals', '·Your first statement',
+      '·This month’s starting balance', '·Turn on free AI', '·Put it on your iPhone', '·Your lists',
+    ])
+    fireEvent.click(all.getByRole('button', { name: /Your savings goals/ }))
+    expect(screen.getByRole('heading', { name: 'Your savings goals' })).toBe(document.activeElement)
+  })
+
+  it('keeps the step where it was, and says so, when Do this later cannot be saved', async () => {
+    const fake = createFakeSupabase()
+    await fake.signIn()
+    fake.fail('auth/user', '500')
+    renderStart(fake)
+    await screen.findByRole('heading', { name: 'Your name' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Do this later' }))
+
+    expect(await screen.findByText('That was not saved. Check your connection and try again.')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Your name' })).toBeTruthy()
   })
 
   it('says a step it could not read is can’t check yet, never done, and points to One-time updates', async () => {
@@ -99,5 +135,17 @@ describe('Getting started (plan §8.1)', () => {
 
     expect(screen.getByRole('heading', { name: '8 of 9 done' })).toBe(document.activeElement)
     expect(screen.getByRole('link', { name: 'Open the Month' }).getAttribute('href')).toBe('#/month')
+    fireEvent.click(screen.getByRole('button', { name: 'Put it on your iPhone' }))
+    expect(screen.getByRole('heading', { name: 'Put it on your iPhone' })).toBeTruthy()
+  })
+
+  it('celebrates when all nine are done, AI switched off included, and opens the Coach', async () => {
+    renderStart(allButName(), { name: 'Alex', marks: { ...NO_MARKS, phoneTicked: true } })
+
+    expect(await screen.findByRole('heading', { name: 'Your coach is ready' })).toBeTruthy()
+    // The plane's flight is index.css's start-fly, which reduced motion turns off.
+    expect(screen.getByRole('region', { name: 'Your coach is ready' }).querySelector('svg')?.getAttribute('class')).toContain('start-fly')
+    fireEvent.click(screen.getByRole('button', { name: 'Open the Coach' }))
+    expect(window.location.hash).toBe('#/coach')
   })
 })

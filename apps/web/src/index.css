@@ -601,3 +601,20 @@
     animation: none;
   }
 }
+
+/* Getting started's finish: a paper plane flies in (plan §8.1); with
+   reduced motion it is simply there. */
+@keyframes start-fly {
+  from {
+    opacity: 0;
+    transform: translate(-3rem, 1.5rem) rotate(-12deg);
+  }
+}
+.start-fly {
+  animation: start-fly 1.2s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .start-fly {
+    animation: none;
+  }
+}
