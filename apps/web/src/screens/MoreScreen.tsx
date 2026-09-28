@@ -43,7 +43,7 @@ export const MORE_GROUPS: readonly { readonly title: string; readonly items: rea
       { screen: 'start', label: 'Getting started', hint: 'One step at a time', icon: 'check' },
       { screen: 'setup', label: 'Setup', hint: 'Your name, and your lists', icon: 'list' },
       { screen: 'ai', label: 'AI settings', hint: 'Turn on free AI, and choose services', icon: 'sparkles' },
-      { screen: 'settings', label: 'Settings', hint: 'Weekly budgets, your goal, signing out', icon: 'settings' },
+      { screen: 'settings', label: 'Settings', hint: 'Weekly budgets, your savings goals, signing out', icon: 'settings' },
       { screen: 'help', label: 'Help', hint: 'How each screen works, and what to do next', icon: 'help' },
     ],
   },

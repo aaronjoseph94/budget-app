@@ -124,6 +124,8 @@ describe('Shell', () => {
       })
     })
     expect(MORE_GROUPS.map((g) => [g.title, g.items.map((i) => i.label)])).toEqual(expected)
+    // Goals are plural (G1): Settings lists every goal, so its hint says so.
+    expect((await moreItem('Set up and help', 'Settings')).textContent).toContain('your savings goals')
 
     expect((await moreItem('Records', 'All transactions')).getAttribute('href')).toBe('#/ledger')
     go('/ledger')
