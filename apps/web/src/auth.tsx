@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import type { SupabaseClient } from './supabase.js'
 import { Label } from './ui.js'
+import { Input } from './components/ui/form.js'
 import { Button } from './components/ui/button.js'
 import { Card } from './components/ui/card.js'
 import { Alert } from './components/ui/feedback.js'
@@ -177,9 +178,11 @@ export function SignIn({ supabase, linkRefused = false }: { supabase: SupabaseCl
               void submit()
             }}
           >
+            {/* The app's own field: 44 px tall and 16 px text, where these were
+              41 px and 14 (FE-1). */}
             <label className="block">
               <Label>Email address</Label>
-              <input
+              <Input
                 type="email"
                 required
                 autoComplete="email"
@@ -187,21 +190,21 @@ export function SignIn({ supabase, linkRefused = false }: { supabase: SupabaseCl
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 {...refused}
-                className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground"
+                className="mt-1"
               />
             </label>
 
             {method === 'password' ? (
               <label className="mt-3 block">
                 <Label>Password</Label>
-                <input
+                <Input
                   type="password"
                   required
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   {...refused}
-                  className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground"
+                  className="mt-1"
                 />
               </label>
             ) : null}

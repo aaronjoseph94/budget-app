@@ -105,3 +105,13 @@ describe('the sign-in page (FE-14)', () => {
     expect(screen.getByRole('main').textContent).toContain('Email address')
   })
 })
+
+describe('the sign-in fields (FE-1)', () => {
+  it('are the app\'s own fields, 44 px tall for a finger', () => {
+    render(<SignIn supabase={createFakeSupabase().client} />)
+    for (const name of ['Email address', 'Password']) {
+      const classes = screen.getByLabelText(name).classList
+      expect([classes.contains('h-11'), classes.contains('pointer-coarse:min-h-11')], name).toEqual([true, true])
+    }
+  })
+})

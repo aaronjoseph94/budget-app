@@ -67,6 +67,14 @@ afterEach(() => {
 })
 
 describe('Typing a budget on the Month', () => {
+  it('gives each choice of months 44 px for a finger (FE-1)', async () => {
+    await edit(seeded())
+    for (const name of ['From this month on', 'Just this month']) {
+      const choice = screen.getByRole('radio', { name }).closest('label')!
+      expect(choice.classList.contains('pointer-coarse:min-h-11'), name).toBe(true)
+    }
+  })
+
   it('saves "from this month on" by default, re-reads the month, and says what it did', async () => {
     const fake = seeded()
     const field = await edit(fake)

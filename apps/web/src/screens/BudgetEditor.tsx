@@ -112,7 +112,8 @@ export function BudgetEditor({
           <label
             key={choice}
             className={cn(
-              'flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm',
+              // 44 px for a finger, as every other control has (FE-1).
+              'flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm pointer-coarse:min-h-11',
               applies === choice && 'border-primary bg-primary/10',
             )}
           >
