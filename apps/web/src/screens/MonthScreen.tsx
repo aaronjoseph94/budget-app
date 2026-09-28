@@ -280,10 +280,17 @@ export function MonthScreen({ month }: { month: string | null }) {
         the first step unsaid, so it is said once, here. */}
       {version > 0 && categories.length === 0 ? (
         <section aria-label="Start here" className="rounded-xl border bg-card p-4 shadow-sm">
-          <p className="text-sm">Start in Setup: your lists, when you are paid, and your bills.</p>
-          <Button className="mt-3" size="sm" onClick={() => navigate('setup')}>
-            Open Setup
-          </Button>
+          <p className="text-sm">
+            New here? Getting started sets up your lists, pay, bills and goals one step at a time, a few minutes each.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button size="sm" onClick={() => navigate('start')}>
+              Get started
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => navigate('setup')}>
+              Open Setup
+            </Button>
+          </div>
         </section>
       ) : null}
 

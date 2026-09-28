@@ -3,7 +3,7 @@ import { readEnv } from './env.js'
 import { createSupabase } from './supabase.js'
 import { NotConfigured, SignIn, useSession } from './auth.js'
 import { AppDataProvider, useAppData } from './app-data.js'
-import { hashOf, isBuilt, useAddress, type Screen } from './nav.js'
+import { HOME, hashOf, isBuilt, navigate, useAddress, type Screen } from './nav.js'
 import { HELP_TOPICS } from './help/topics.js'
 import { MonthScreen } from './screens/MonthScreen.js'
 import { MoreScreen } from './screens/MoreScreen.js'
@@ -63,9 +63,29 @@ function Configured({ env }: { env: Parameters<typeof createSupabase>[0] }) {
       displayName={displayNameOf(session.session.user.user_metadata)}
       setupMarks={setupMarksOf(session.session.user.user_metadata)}
     >
+      <FirstRun />
       <Shell />
     </AppDataProvider>
   )
+}
+
+/**
+ * The first sign-in opens Getting started (plan §8.1): a new account, read
+ * with no category at all, opened at the Month with no address of its
+ * own, and the guide never opened. Asked once, when the shared data is
+ * first read; the guide marks itself opened, so later sign-ins open the
+ * Month as before.
+ */
+export function FirstRun() {
+  const { status, categories, setupMarks } = useAppData()
+  const { screen, param } = useAddress()
+  const asked = useRef(false)
+  useEffect(() => {
+    if (asked.current || status !== 'ready') return
+    asked.current = true
+    if (categories.length === 0 && !setupMarks.opened && screen === HOME && param === null) navigate('start')
+  }, [status, categories.length, setupMarks.opened, screen, param])
+  return null
 }
 
 /**

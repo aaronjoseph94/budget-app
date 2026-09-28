@@ -37,6 +37,13 @@ export function GettingStartedScreen() {
   // The first step shown is the first not done, once every answer is in.
   if (at === null && checked) setAt(progress.next === null ? 'end' : stepOf(progress.next))
 
+  useEffect(() => {
+    if (setupMarks.opened) return
+    // So the first sign-in does not open the guide again. Not kept this
+    // time, it opens once more at the next sign-in, which does no harm.
+    saveSetupMarks(supabase, { opened: true }).catch(() => undefined)
+  }, [supabase, setupMarks.opened])
+
   const heading = useRef<HTMLHeadingElement>(null)
   const moved = useRef(false)
   useEffect(() => {

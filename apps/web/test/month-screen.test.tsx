@@ -554,11 +554,13 @@ describe('MonthScreen while another month loads', () => {
 describe('MonthScreen, on a first run', () => {
   // Six empty blocks each saying "Add one in Setup" left the first step
   // unsaid: an account with no categories is sent to Setup once, at the top.
-  it('with no categories at all, says to start in Setup, and opens it', async () => {
+  it('with no categories at all, offers Getting started first, and Setup beside it', async () => {
     renderScreen(<MonthScreen month={null} />, createFakeSupabase())
 
     const start = await screen.findByRole('region', { name: 'Start here' })
-    expect(start.textContent).toContain('Start in Setup: your lists, when you are paid, and your bills.')
+    expect(start.textContent).toContain('New here? Getting started sets up your lists, pay, bills and goals one step at a time')
+    fireEvent.click(within(start).getByRole('button', { name: 'Get started' }))
+    expect(window.location.hash).toBe('#/start')
     fireEvent.click(within(start).getByRole('button', { name: 'Open Setup' }))
     expect(window.location.hash).toBe('#/setup')
   })
