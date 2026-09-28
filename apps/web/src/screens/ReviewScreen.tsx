@@ -188,6 +188,10 @@ export function ReviewScreen() {
     // here as well read it twice per approval (PERF-2). It is off the list at
     // once, so a refresh that fails does not leave it showing.
     if (done) {
+      // A read already out was asked before this action, and would put the
+      // card back, Approve working, when it lands (CR-13). Only reads begun
+      // from here on may draw the queue.
+      reads.current += 1
       setRows((now) => now?.filter((r) => r.id !== row.id) ?? null)
       await refresh()
     }

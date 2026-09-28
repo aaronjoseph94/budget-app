@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { useAppData, type AppData } from '../src/app-data.js'
 import { ReviewScreen } from '../src/screens/ReviewScreen.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
@@ -428,5 +429,70 @@ describe('ReviewScreen, what an approval asks the server (PERF-2)', () => {
     expect(count(opened, 'ingest_unreadable_lines')).toBe(1)
     expect(asked.slice(opened).filter((t) => t.startsWith('POST') || t === 'accounts')).toEqual([])
     expect(fake.rpcCalls.map((c) => c.name)).toEqual(['approve_candidate'])
+  })
+})
+
+describe('ReviewScreen, a read already out when a card is approved (CR-13)', () => {
+  function Probe({ into }: { into: { current: AppData | null } }) {
+    into.current = useAppData()
+    return null
+  }
+
+  it('never draws the approved card again, even when an older read of the queue answers after it', async () => {
+    const fake = seeded()
+    const data: { current: AppData | null } = { current: null }
+    renderScreen(<><ReviewScreen /><Probe into={data} /></>, fake)
+    const market = await row('CORNER MARKET #12')
+    await waitFor(() => expect(data.current?.status).toBe('ready'))
+
+    // A reload of the queue is out, as after the previous approval, and
+    // answers late: it lists the queue as it was when it was asked. The
+    // refresh itself reads the queue's size first; its reload is the second.
+    let releaseLoad = (): void => undefined
+    let releaseRefresh = (): void => undefined
+    let asked = 0
+    let loadHeld = false
+    let refreshHeld = false
+    let approving = false
+    fake.server.hold = (table) => {
+      if (table === 'ingest_candidates' && !loadHeld && ++asked === 2) {
+        loadHeld = true
+        return new Promise<void>((resolve) => (releaseLoad = resolve))
+      }
+      // The approval's own refresh waits too, so the old read lands first.
+      if (table === 'categories' && approving && !refreshHeld) {
+        refreshHeld = true
+        return new Promise<void>((resolve) => (releaseRefresh = resolve))
+      }
+      return null
+    }
+    void data.current?.refresh()
+    await waitFor(() => expect(loadHeld).toBe(true))
+
+    approving = true
+    fireEvent.click(market.getByRole('button', { name: /Approve/ }))
+    await screen.findByText(/^Added\./)
+    await waitFor(() => expect(refreshHeld).toBe(true))
+    expect(screen.queryByText('CORNER MARKET #12')).toBeNull()
+
+    // From here on the card must not be drawn again, however briefly.
+    let cameBack = false
+    const watch = new MutationObserver(() => {
+      if (screen.queryByText('CORNER MARKET #12') !== null) cameBack = true
+    })
+    watch.observe(document.body, { childList: true, subtree: true, characterData: true })
+    // Arrives only with a read asked after the approval, so once it shows,
+    // the old read and the approval's refresh have both been answered.
+    fake.tables.ingest_candidates.push({ id: 'p9', posted_on: '2026-03-12', amount_cents: -500, merchant: 'LATE SHOP', merchant_raw: 'LATE SHOP', status: 'pending' })
+    // The old read is let go first. Whenever it lands, before the
+    // approval's reload or after, the card must stay gone.
+    releaseLoad()
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)))
+    releaseRefresh()
+    await screen.findByText('LATE SHOP')
+    watch.disconnect()
+
+    expect(cameBack).toBe(false)
+    expect(screen.queryByText('CORNER MARKET #12')).toBeNull()
   })
 })
