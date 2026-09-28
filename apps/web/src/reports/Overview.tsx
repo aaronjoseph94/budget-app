@@ -157,11 +157,14 @@ export function PairsCard({ report, nameOf }: { report: Reviewed; nameOf: (id: s
           </p>
           <dl className="divide-y">
             {rows.map((r) => (
-              <div key={r.categoryId} className="flex items-baseline justify-between gap-3 py-2">
-                <dt className="min-w-0 truncate" title={r.name}>
+              // The name counts as 6rem when the line is laid out, so at normal
+              // size it truncates beside the figures as before, and with the
+              // phone's text at 200% the figures go under it (N58).
+              <div key={r.categoryId} className="flex flex-wrap items-baseline justify-between gap-x-3 py-2">
+                <dt className="min-w-0 flex-1 basis-24 truncate" title={r.name}>
                   {r.name}
                 </dt>
-                <dd className="tnum whitespace-nowrap">
+                <dd className="tnum ml-auto text-right">
                   {formatCents(r.nowCents)} · {formatCents(r.beforeCents)}
                 </dd>
               </div>

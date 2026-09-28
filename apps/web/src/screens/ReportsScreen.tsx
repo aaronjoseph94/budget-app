@@ -69,7 +69,7 @@ export function ReportsScreen({ month }: { month: string | null }) {
         <a href={hashOf({ screen: 'reports', param: step(-1) })} aria-label="Previous month" className="inline-flex size-11 items-center justify-center rounded-md hover:bg-secondary print:invisible">
           <Icon name="chevronLeft" className="size-5" />
         </a>
-        <h2 className="min-w-0 flex-1 text-center text-lg font-semibold">{formatMonthTitle(shown)}</h2>
+        <h2 className="min-w-0 flex-1 text-center text-lg font-semibold [overflow-wrap:anywhere]">{formatMonthTitle(shown)}</h2>
         {shown < thisMonth ? (
           <a href={hashOf({ screen: 'reports', param: step(1) })} aria-label="Next month" className="inline-flex size-11 items-center justify-center rounded-md hover:bg-secondary print:invisible">
             <Icon name="chevronRight" className="size-5" />

@@ -20,7 +20,10 @@ export function Badge({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap',
+        // One line wherever it fits, as nowrap kept it, but never wider than
+        // its box: with the phone's text at 200% "Based on 6 months" ran off
+        // a 320 px screen (N58).
+        'inline-flex max-w-full shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
         BADGE[variant],
         className,
       )}

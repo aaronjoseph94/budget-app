@@ -1,0 +1,24 @@
+import { cleanup, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it } from 'vitest'
+import { Badge } from '../src/components/ui/feedback.js'
+import { MonthTitle } from '../src/components/ui/type.js'
+
+afterEach(cleanup)
+
+// With the phone's text at 200% a 320 px screen holds about 160 px of
+// normal-size text (N58, A26). jsdom lays nothing out, so these check the
+// classes that decide it; the preview harness measured the result.
+describe('shared pieces with the phone’s text at 200%', () => {
+  it('a badge keeps one line where it fits, but is never wider than its box', () => {
+    render(<Badge>Based on 6 months</Badge>)
+    const classes = screen.getByText('Based on 6 months').classList
+    expect(classes.contains('max-w-full')).toBe(true)
+    expect(classes.contains('shrink-0')).toBe(true)
+    expect(classes.contains('whitespace-nowrap')).toBe(false)
+  })
+
+  it('the Month’s title may break inside "September" only where it cannot fit', () => {
+    render(<MonthTitle>September 2026</MonthTitle>)
+    expect(screen.getByRole('heading', { level: 1 }).classList.contains('[overflow-wrap:anywhere]')).toBe(true)
+  })
+})

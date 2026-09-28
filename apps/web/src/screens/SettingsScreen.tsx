@@ -56,7 +56,8 @@ export function SettingsScreen() {
       <Card>
         <CardHeader>
           <CardTitle as="h2">Account</CardTitle>
-          <CardDescription>{email}</CardDescription>
+          {/* An address is one long word: it breaks only where it cannot fit. */}
+          <CardDescription className="[overflow-wrap:anywhere]">{email}</CardDescription>
         </CardHeader>
         <CardContent>
           <Button variant="outline" onClick={() => void supabase.auth.signOut()}>

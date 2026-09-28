@@ -10,7 +10,9 @@ import { cn } from '../../lib/cn.js'
  * caller has nothing to override (see lib/cn.ts).
  */
 export function MonthTitle({ children }: { children: ReactNode }) {
-  return <h1 className="font-title text-5xl font-bold leading-none text-title-ink">{children}</h1>
+  // "September" alone is wider than a 320 px phone with its text at 200%;
+  // only then does the word break (N58).
+  return <h1 className="font-title text-5xl font-bold leading-none text-title-ink [overflow-wrap:anywhere]">{children}</h1>
 }
 
 /**

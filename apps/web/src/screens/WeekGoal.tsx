@@ -38,8 +38,8 @@ export function GoalCard({ weekSpentCents, asOf }: { weekSpentCents: number; asO
 
   return (
     <Card className="order-0 xl:order-1">
-      <div className="flex items-center justify-between gap-2 p-5 pb-3">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 p-5 pb-3">
+        <div className="flex min-w-0 items-center gap-2">
           <Icon name={goal.unit_cost_cents === null ? 'piggy' : 'plane'} className="size-4 text-muted-foreground" />
           <CardTitle as="h2">{goal.name}</CardTitle>
         </div>
