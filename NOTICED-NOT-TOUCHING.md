@@ -414,7 +414,7 @@ and look at each screen on a phone.
 
 ---
 
-## N17 — Removing a category is refused for more than charges *(settled in part 2026-09-23, S6)*
+## N17 — Removing a category is refused for more than charges *(settled 2026-09-28, A27)*
 
 **Seen:** 2026-09-23, S2b.
 
@@ -438,6 +438,8 @@ category and has no screen to move or forget it, so removing is refused with
 nothing the owner can do. It needs a list of learned shops (Settings or
 Setup), reading `merchant_rules`, with a way to re-point or delete one.
 
+
+**Settled, A27 (a7561a4):** Settings lists every learned shop with the category it files to, and **Forget** deletes the rule under 0001's own-rows policy; a refusal is said in words. A category held only by a shop rule can now be freed.
 ---
 
 ## N18 — Two of Setup's messages wait on monthly amounts *(settled 2026-09-23, S9)*
@@ -672,7 +674,7 @@ that normalised merchant in a date range in one transaction.
 
 ---
 
-## N26 — A charge filed under Not spending cannot be opened from the Month
+## N26 — A charge filed under Not spending cannot be opened from the Month *(settled 2026-09-28, A27)*
 
 **Seen:** 2026-09-23, S6.
 
@@ -689,6 +691,8 @@ one sum over possibly several categories, so it needs its own design.
 **To settle:** make the footnote open a sheet listing that month's Not
 spending charges, each with "Move to…", as a Month row does.
 
+
+**Settled, A27 (e3e0c75):** the "Paid to your card" line ends **See these charges**, which opens the period's Not spending charges in the charges sheet, each with Move to…, on the Month, the Week and Paycheck. Setup's "tap its row" sentence still names the Month's row, which for a Not spending category is this line now.
 ---
 
 ## N27 — An income source with a pay schedule can move off Income *(settled 2026-09-23, S15b and S15c)*
@@ -724,7 +728,7 @@ needed for either screen and was not built.
 
 ---
 
-## N28 — A read that meets a missing column says "nothing was saved" *(settled in part 2026-09-23, S8)*
+## N28 — A read that meets a missing column says "nothing was saved" *(settled 2026-09-28, A27)*
 
 **Seen:** 2026-09-23, Sitting B (Review reads 0012's `dismissed_at`).
 
@@ -755,6 +759,8 @@ sentences too (`describeBalanceFailure`): a missing `month_balances` says
 0010 has not been applied, and its read shows no month rather than ask for
 a balance that may be stored.
 
+
+**Settled, A27 (5abae23):** every "needs a database update (00NN in the setup guide)" sentence says "needs a one-time update", any error alert worded so links to Help → One-time updates, and describeWriteFailure reads 42P01, 42703, 42883, PGRST202, PGRST204 and PGRST205 as a missing update.
 ---
 
 ## N29 — ROADMAP still says the month view is not built *(settled 2026-09-23, completion pass)*
@@ -1107,7 +1113,7 @@ shape, give `.spec-chart` an explicit `aspect-ratio` from the viewBox.
 
 ---
 
-## N42 — A failed read on the Year says "this month"
+## N42 — A failed read on the Year says "this month" *(settled 2026-09-28, A27)*
 
 **Seen:** 2026-09-23, S14 (the Year screen).
 
@@ -1123,6 +1129,8 @@ giving them a Year wording is a change to the Month's messages too.
 **To settle:** give both a `'year'` reader, as `describePlanFailure`
 already has `'month'` and `'read'`, and pass it from the Year.
 
+
+**Settled, A27 (80a5cb0):** budgets take a reader (`year`, `paycheck`), monthly amounts gain `year`, and the Year passes both.
 ---
 
 ## N43 — Three Year defaults the owner has not been told *(written for the owner 2026-09-23, completion pass)*
@@ -1209,7 +1217,7 @@ cover both.
 
 ---
 
-## N46 — What the Week does not have that the Month does
+## N46 — What the Week does not have that the Month does *(settled in part 2026-09-28, A27)*
 
 **Seen:** 2026-09-23, S15.
 
@@ -1228,6 +1236,8 @@ engine; each of these is its own screen change.
 **To settle:** give `MonthCharges` and `MonthCharts` a period word and use
 them on the Week, and add `#/week/YYYY-MM-DD` (the Monday) to `nav.ts`.
 
+
+**Settled in part, A27 (c444840, e3e0c75):** a Week row opens its charges for the week, named with its dates, and Not spending opens too. Still open: the charts and an address for the week are unchanged from above (the address was since settled by ADR 0006's `#/week/YYYY-MM-DD`).
 ---
 
 ## N47 — Weekly goals on Income and Savings are typed on the Week only
@@ -1249,7 +1259,7 @@ drop the weekly budgets card from Settings now the Week types them.
 
 ---
 
-## N48 — What the Paycheck view does not have that the Month does
+## N48 — What the Paycheck view does not have that the Month does *(settled in part 2026-09-28, A27)*
 
 **Seen:** 2026-09-23, S15b.
 
@@ -1275,6 +1285,8 @@ wait on N46's.
 **To settle:** after N46 and N42, give the Paycheck view the Week's
 answers; keep the chosen source in the address or on the device.
 
+
+**Settled in part, A27 (7b69589, 80a5cb0):** rows open their charges for the pay period, and a failed budgets read names the pay period. Still open: charts, a review line, and keeping the chosen income source.
 ---
 
 ## N49 — The plan names Bill Calendar!Q14 where D5 changes Q20 *(settled in part 2026-09-23, completion pass)*
@@ -1325,7 +1337,7 @@ should stop at the first pay date or the calendar should run back too.
 
 ---
 
-## N51 — What the Bill Calendar does not have yet
+## N51 — What the Bill Calendar does not have yet *(settled in part 2026-09-28, A27)*
 
 **Seen:** 2026-09-23, S15c.
 
@@ -1349,6 +1361,8 @@ waits on the owner's answer to N36.
 **To settle:** with N46 and N48, give the Week, Paycheck and the calendar
 one way to open a row's charges; give Year an icon of its own.
 
+
+**Settled in part, A27 (5e993bd):** each bill's name on the calendar, phone list and wide grid, opens its charges for the month. Still open: N36's card-paid bill across a month end, and keeping the month per device. The sheet's figure is the calendar's for the bill pressed (N119).
 ---
 
 ## N52 — What 0013 leaves for the Savings screen to handle *(settled in part 2026-09-23, S16)*
@@ -1610,6 +1624,8 @@ Two savings the audit named are not taken:
 **To settle:** each in its own change, re-measured with
 `node scripts/check-bundle.mjs`; lower its budget after each.
 
+
+**Updated 2026-09-28, A27 (1df645e):** `@budget/statement-parsers` declares `"sideEffects": false`, so the PDF reader loads with Add: the first load went from 190.79 to 183.76 KB gzipped, and check-bundle.mjs fails if `FlateDecode` is back in it. The zod and Supabase parts are still open.
 ---
 
 ## N61 — Things from the frontend audit that need the owner or a host setting
@@ -1685,6 +1701,8 @@ larger than the fix commits around them; the audit rated them low.
 **To settle:** one slice each, with the existing screen tests as the
 check that nothing moved.
 
+
+**Updated 2026-09-28, A27:** CR-10's Shell assertion reads link names (a9dbf7d), and CR-14's field-error helper is `refusal()` (ccb3d67). CR-2, CR-3 and CR-8 stay open as N118 says; AddScreen is now about 800 lines, MonthScreen about 830 and ledger.ts about 1,310.
 ---
 
 ## N64 — The brand gate checks the files, not history
@@ -1796,7 +1814,7 @@ Month, not a comparison on these five screens.
 
 ---
 
-## N69 — The one-time update messages still name a file and "the setup guide"
+## N69 — The one-time update messages still name a file and "the setup guide" *(settled 2026-09-28, A27)*
 
 **Seen:** 2026-09-24, building A06's One-time updates.
 
@@ -1812,6 +1830,8 @@ wording.
 **To settle:** in A27, reword each to "Needs a one-time update" with a link
 to `#/help/updates`, and update the tests that pin the old sentences.
 
+
+**Settled, A27 (5abae23):** see N28.
 ---
 
 ## N70 — One-time updates links to the repository by name
@@ -2399,7 +2419,7 @@ draw.
 
 ---
 
-## N99 — "Turn on free AI below" is said where nothing is below
+## N99 — "Turn on free AI below" is said where nothing is below *(settled 2026-09-28, A27)*
 
 **Seen:** 2026-09-27, A20, in the preview harness. The helper's
 `not_set_up` sentence ("…Turn on free AI below, in about 2 minutes.")
@@ -2415,6 +2435,8 @@ AI settings too, outside the slice.
 than AI settings ("Turn on free AI in AI settings, in about 2
 minutes"), with the link to AI settings itself.
 
+
+**Settled, A27 (9781ef1):** the sentence names AI settings, and the Coach, the check-in and the month in review link there through one `LineLink`; AI settings keeps "below".
 ---
 
 ## N100 — The impulse share is not yet a fact on the Coach's daily cards
@@ -2549,7 +2571,7 @@ read-receipt may be deleted in Supabase → Edge Functions, and
 
 ---
 
-## N108 — read-receipt's own messages still name Gemini and docs/setup.md
+## N108 — read-receipt's own messages still name Gemini and docs/setup.md *(settled 2026-09-28, A27)*
 
 **Seen:** 2026-09-27, A23. When read-receipt is the one answering, its
 reasons are the old ones: "the Gemini key has not been added in
@@ -2563,6 +2585,8 @@ rewording of every such message is A27's (N28's rest).
 **To settle:** point both at Help → One-time updates, or at Turn on free
 AI, in A27's pass.
 
+
+**Settled, A27 (e37e5ef):** `not_configured` and `model_not_found` from read-receipt say reading receipt photos needs a one-time update, with the link.
 ---
 
 ## N109 — The Photo tab's date field is clipped at 320 px *(settled 2026-09-28, A26)*
@@ -2670,7 +2694,7 @@ the reason.
 
 ---
 
-## N115 — Nothing is left behind nav.ts's NOT_BUILT
+## N115 — Nothing is left behind nav.ts's NOT_BUILT *(settled 2026-09-28, A27)*
 
 **Seen:** 2026-09-28, A25. Getting started was the last screen whose
 address read before its slice landed. `NOT_BUILT` is now empty, so
@@ -2682,9 +2706,11 @@ and App, which is a change of its own, and a later slice may want it.
 **To settle:** remove `NOT_BUILT`, `isBuilt` and `NotYet` in the
 whole-app review (A27) if nothing is planned to use them.
 
+
+**Settled, A27 (26a0f57):** `NOT_BUILT`, `isBuilt` and `NotYet` are gone.
 ---
 
-## N116 — Paycheck without its one-time update has no title
+## N116 — Paycheck without its one-time update has no title *(settled 2026-09-28, A27)*
 
 **Seen:** 2026-09-28, A26's fail-soft sweep (`?missing`: 0011 not pasted).
 Paycheck shows only "Could not load when you are paid" and the older
@@ -2697,6 +2723,8 @@ heading goes with them.
 **To settle:** in A27, give the failed state the screen's title and the
 "Needs a one-time update" line with its Help link.
 
+
+**Settled, A27 (8e29b45, 5abae23):** Paycheck keeps its title and ? while it loads, fails or has no schedule, and the failure links to One-time updates.
 ---
 
 ## N117 — A test file's first open of a lazy piece suspends, whatever is warmed
@@ -2713,4 +2741,93 @@ would add setup no failure asked for.
 
 **To settle:** if another such find fails under load, give
 `warm-screen.tsx` a helper that renders a lazy piece once, and use it.
+
+---
+
+## N118 — Audit leftovers A27 left on purpose (CR-2, CR-3, CR-8, PERF-6, FE-17)
+
+**Seen:** 2026-09-28, A27, re-checking the 21 leftovers of the frontend
+audit. Sixteen are fixed in A27's commits. These five are not:
+
+- **CR-2** (the Week's and Paycheck's near-copy summaries, and the period
+  pieces living in MonthScreen) and **CR-8** (AddScreen, MonthScreen and
+  ledger.ts past 800 lines): moving them is several hundred changed lines,
+  well past one commit's 300, with nothing the owner would notice. A27
+  moved one piece the other way round: the row lookup now lives beside the
+  charges sheet (`OpenedCharges`), shared by three screens.
+- **CR-3** (eight copies of the version-0 load guard, six of the editors'
+  save skeleton): as CR-2, upkeep only, and the guard is harmless.
+- **PERF-6** (a size-matched fallback for the title font, N59): it needs
+  Caveat measured against the font Safari on the owner's iPhone falls
+  back to, and WebKit cannot run here (N41). The preload keeps the title
+  still in the lab.
+- **FE-17** (text at 200%): re-measured at 320 and 390 px on twelve
+  screens after A27; no page scrolls sideways. The Month's, Week's and
+  Paycheck's tables scroll inside their own cards, as A26 chose. Nothing
+  left to fix; recorded for completeness.
+
+**To settle:** a refactor slice of its own for CR-2, CR-3 and CR-8, one
+file per commit behind barrels; PERF-6 with N59 on the iPhone.
+
+---
+
+## N119 — A bill opened on the calendar shows that day's amount as its figure
+
+**Seen:** 2026-09-28, A27 (N51). The sheet's title figure is the
+calendar's for the bill pressed: its charge that day, or its monthly
+amount. A bill charged twice in a month is two entries on the calendar,
+each opening the same list of the month's charges under its own day's
+figure. The list is right; the figure beside the title is one day's.
+
+**Why not fixed here:** the month's total for the category is
+`monthSheet`'s, which the calendar does not read; reading budgets and
+balances too for one figure is a change to the calendar's reads.
+
+**To settle:** give the calendar's bill a month total from core, or
+title the sheet with the day ("Phone · 8 Sep").
+
+---
+
+## N120 — Two AI panels say "See One-time updates in Help" without a link
+
+**Seen:** 2026-09-28, A27. AI settings' Coach tone and order panels
+answer a save refused for a missing update with "That needs a one-time
+update first. See One-time updates in Help." in a plain line, so the
+owner has to find Help themselves. The alerts A27 reworded link there.
+
+**Why not fixed here:** the panels' problem line is a live region of
+text shared with other refusals; adding a link is its own small change.
+
+**To settle:** render the needs-update case with the One-time updates
+link, as `LineLink` does.
+
+---
+
+## N121 — Forgetting a shop drops focus, and has no undo
+
+**Seen:** 2026-09-28, A27 (N17). Forget disables every Forget button
+while it works, and the row goes when it is done, so focus falls to the
+page (as FE-6 found elsewhere). A shop forgotten by mistake is learned
+again only by approving its next charge.
+
+**Why not fixed here:** the slice's list is a first version; the focus
+pattern for a removed row (focus the next row's Forget) and an undo are
+their own change.
+
+**To settle:** move focus to the next row's Forget, or the note, after
+a forget; consider an Undo in the note for a few seconds.
+
+---
+
+## N122 — Paycheck without a schedule has its title above its band
+
+**Seen:** 2026-09-28, A27 (N116). To keep one title while the schedule
+loads, fails or is missing (so a help sheet opened while it loads stays
+open), the "Paycheck" heading now sits above the lavender band that
+says to set a pay schedule, rather than inside it.
+
+**Why not fixed here:** a look, not a function; the band could carry
+the heading again once the loading title is the same element.
+
+**To settle:** draw the band round the heading in the no-schedule state.
 

@@ -1194,6 +1194,15 @@ None has a workbook cell, so each is an engineering default, labelled "Decided b
 - **Do:** read every screen against the owner's list and fix what does not hold. Already known: rows on the Week, Paycheck and Bill calendar open their charges (N46, N48, N51); a Not spending charge opens and can be moved (N26); a learned-shops list in Settings with **Forget** (N17; a delete under 0001's own-rows policy, or a sentence if it is refused); every "database update (00NN…)" message reworded to "Needs a one-time update" with a link to Help (N28's rest); the Year's failed reads say "year" (N42); empty, loading and error states made consistent.
 - **Tests:** one per fix, deterministic; existing tests changed only where wording changed.
 - **Acceptance:** each N-entry fixed is marked settled with its commit; new findings not fixed are written up in NOTICED.
+- **Changed while building (2026-09-28).** Each decided by the engineer under the owner's 2026-09-24 instruction to proceed without questions.
+  - **The audit's 21 leftovers first,** most severe first: CR-13 (an approved Review card coming back) was the first commit. Sixteen are fixed, each in its own commit with its test; CR-2, CR-3, CR-8 and PERF-6 are left on purpose and FE-17 was re-measured and found met (N118).
+  - **One charges sheet for every period.** The Month's sheet takes a period, and the row lookup moved beside it (`OpenedCharges`), so the Week, Paycheck and Not spending open the same sheet; the Bill calendar opens it for a bill, titled with the calendar's figure for that bill (N119).
+  - **Not spending** opens from its own line ("See these charges"), not a block: it is left out of every total, and a block would read as one more list to budget.
+  - **"Needs a one-time update" links itself.** Rather than a link written into each screen, an error alert whose words say it needs a one-time update carries the link to Help → One-time updates, wherever it shows; the sentences live in `format.ts` as plain text.
+  - **Learned shops** are a card in Settings, not Setup: Setup is lists and amounts, and a learned shop is a habit of the app's. Forget is a plain delete under 0001's policy; no migration was needed.
+  - **Consistent states:** every screen's loading line is one `Loading` status named for what loads; saved notes are said through the one status region (FE-16); Paycheck keeps its title in every state.
+  - **Goals plural:** nothing in this slice speaks of the flight goal alone; the charges sheet's "time toward" line already uses the main goal and its own unit.
+  - **Commits:** 28 fixes and this record, each within 300 lines. **First load:** 190.13 KB gzipped before the slice, 183.76 KB after (PERF-3).
 
 ### A28: Everything tested, clicked through, and handed over (owner item 10)
 
