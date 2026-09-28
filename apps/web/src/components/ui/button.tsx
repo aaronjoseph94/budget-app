@@ -11,10 +11,12 @@ const VARIANTS = {
   link: 'text-primary underline-offset-4 hover:underline',
 } as const
 
+// Heights are floors, not fixed, so a label that has to wrap grows the
+// button instead of spilling out of it.
 const SIZES = {
-  default: 'h-10 px-4 py-2',
-  sm: 'h-8 rounded-md px-3 text-xs',
-  lg: 'h-12 rounded-lg px-6 text-base',
+  default: 'min-h-10 px-4 py-2',
+  sm: 'min-h-8 rounded-md px-3 py-1 text-xs',
+  lg: 'min-h-12 rounded-lg px-6 py-2 text-base',
   icon: 'size-10',
 } as const
 
@@ -28,7 +30,10 @@ export function Button({ variant = 'default', size = 'default', className, type 
     <button
       type={type}
       className={cn(
-        'inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors',
+        // Never wider than its box: with the phone's text at 200% an unbroken
+        // label pushed whole screens sideways (N58). It keeps to one line
+        // wherever it fits, and wraps only where it would not.
+        'inline-flex max-w-full shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors',
         'outline-none focus-visible:ring-[3px] focus-visible:ring-ring',
         // A finger needs 44px whatever size was asked for (FE-1). A mouse keeps
         // the compact sizes, so the desktop's four-across Month does not grow.
