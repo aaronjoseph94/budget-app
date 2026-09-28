@@ -39,7 +39,7 @@ export function YearGlance({
   return (
     <section
       aria-label="Year at a glance"
-      className="-mx-4 grid gap-3 bg-home-canvas p-4 sm:grid-cols-2 md:mx-0 md:rounded-xl lg:grid-cols-4"
+      className="-mx-4 grid grid-cols-1 gap-3 bg-home-canvas p-4 sm:grid-cols-2 md:mx-0 md:rounded-xl lg:grid-cols-4"
     >
       {/* Home!C4, the name typed on START HERE with the workbook's "!". */}
       <Card className="sm:col-span-2 lg:col-span-4">

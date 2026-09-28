@@ -194,7 +194,7 @@ export function SavingsScreen() {
             </p>
           )}
           {active.length === 0 ? null : (
-            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {active.map((goal) => (
                 <li key={goal.id}>{cardOf(goal)}</li>
               ))}
@@ -203,7 +203,7 @@ export function SavingsScreen() {
           {withoutGoal.length === 0 ? null : (
             <div className="space-y-2">
               <h2 className="text-sm font-medium">Funds with no goal yet</h2>
-              <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {withoutGoal.map((fund) => (
                   <li key={fund.categoryId}>
                     <FundCard fund={fund} goal={goalOf(fund)} comparison={comparison} onEdit={() => setEditing(fund.categoryId)}>
@@ -221,7 +221,7 @@ export function SavingsScreen() {
           {folded.length === 0 ? null : (
             <details className="rounded-xl border bg-card px-4 shadow-sm">
               <summary className="flex min-h-11 cursor-pointer items-center font-medium">Reached and paused ({folded.length})</summary>
-              <ul className="grid gap-4 pb-4 sm:grid-cols-2 lg:grid-cols-3">
+              <ul className="grid grid-cols-1 gap-4 pb-4 sm:grid-cols-2 lg:grid-cols-3">
                 {folded.map((goal) => (
                   <li key={goal.id}>{cardOf(goal)}</li>
                 ))}

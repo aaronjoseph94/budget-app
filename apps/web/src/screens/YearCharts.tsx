@@ -186,7 +186,7 @@ export function AnnualCharts({ sheet, wide, className }: { sheet: YearSheet; wid
   return (
     <section
       aria-label="Year charts"
-      className={cn('grid gap-6 rounded-xl border bg-card p-4 shadow-sm', wide && 'grid-cols-4', className)}
+      className={cn('grid gap-6 rounded-xl border bg-card p-4 shadow-sm', wide ? 'grid-cols-4' : 'grid-cols-1', className)}
     >
       <Chart title="Income and expenses by month" className={cn(wide && 'col-span-2')}>
         {/* Text scales with a chart, so it stops at about a phone's width. */}

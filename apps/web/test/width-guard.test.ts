@@ -67,3 +67,35 @@ describe('the width guard', () => {
     expect(offenders).toEqual([])
   })
 })
+
+/**
+ * A grid given columns only behind a breakpoint has, on a phone, one
+ * implicit column as wide as its widest unbreakable content, not as wide
+ * as the screen: with text at 200% the Week's blocks ran 12 px past it and
+ * the Year's glance cards 126 (N58). `grid-cols-1` is one column that
+ * shrinks to the screen. Read one quoted class list at a time, so a
+ * column count chosen in code (the Year's charts) is the sweep's to see.
+ */
+function phoneGridsWithoutColumns(text: string): string[] {
+  const found: string[] = []
+  for (const m of text.matchAll(/(["'`])([^"'`]*)\1/g)) {
+    const tokens = m[2]!.split(/\s+/)
+    if (!tokens.includes('grid')) continue
+    const cols = tokens.filter((t) => /(^|:)grid-cols-/.test(t))
+    if (cols.length > 0 && cols.every((t) => t.includes(':'))) found.push(m[2]!)
+  }
+  return found
+}
+
+describe('grids on a phone', () => {
+  it('finds a grid whose columns wait for a breakpoint', () => {
+    expect(phoneGridsWithoutColumns('<ul className="grid gap-4 sm:grid-cols-2">')).toEqual(['grid gap-4 sm:grid-cols-2'])
+    expect(phoneGridsWithoutColumns('<ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">')).toEqual([])
+    expect(phoneGridsWithoutColumns('<p className="grid gap-2">')).toEqual([])
+  })
+
+  it('gives every such grid a column that fits the screen', () => {
+    const offenders = Object.entries(sources).flatMap(([path, text]) => phoneGridsWithoutColumns(text).map((c) => `${path}: ${c}`))
+    expect(offenders).toEqual([])
+  })
+})

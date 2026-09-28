@@ -27,7 +27,7 @@ export function MonthCharts({ sheet, className }: { sheet: PeriodSheet; classNam
 
   return (
     <section aria-label="Charts" className={cn('rounded-xl border bg-card p-4 shadow-sm', className)}>
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-1">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-1">
         <div className="space-y-2">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-income-ink">Income against goals</h2>
           {drawn.income === null ? (

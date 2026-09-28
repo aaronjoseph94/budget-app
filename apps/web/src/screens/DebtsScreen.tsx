@@ -78,7 +78,7 @@ export function DebtsScreen() {
           {state.debts.rows.length === 0 ? (
             <p className="rounded-xl bg-card p-4 text-sm shadow-sm">No debts yet. Add one to see when it is paid off.</p>
           ) : (
-            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {state.debts.rows.map((row) => (
                 <li key={row.id}>
                   <DebtCard

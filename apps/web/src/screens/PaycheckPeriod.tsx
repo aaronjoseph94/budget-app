@@ -162,7 +162,7 @@ export function PaycheckPeriod({
       {sheet !== null && typeof sheet !== 'string' ? (
         <>
           <ImportedThrough through={sheet.importedThrough} />
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             <Summary sheet={sheet} comparison={comparison} />
             {/* Where the workbook's chart well stands (I3:M18): the owner was told a
               share is about $738 of $1,600 rent, and this says how it is found. */}

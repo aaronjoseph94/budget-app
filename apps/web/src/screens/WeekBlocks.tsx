@@ -39,7 +39,7 @@ export function WeekBlocks({
   return (
     <>
       <ImportedThrough through={sheet.importedThrough} />
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <WeekSummary sheet={sheet} comparison={comparison} />
         {aside}
         <PeriodBlocks blocks={sheet.blocks} {...blockProps} />

@@ -312,7 +312,7 @@ export function MonthScreen({ month }: { month: string | null }) {
             panel H3:K18 is, from 1280px: below that a card is too narrow for
             three columns of amounts, and two columns hold them. The page is
             in phone order, which is the order a screen reader follows. */}
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             <MonthSummary
               sheet={sheet}
               month={start}

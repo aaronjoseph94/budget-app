@@ -217,7 +217,7 @@ function ColumnMapping({ mapping }: { mapping: Mapping }) {
       {analysis !== null ? (
         <Card className="p-4">
           <Label>What the file looks like</Label>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <OptionSelect
               label="Column separator"
               value={delimiter}
