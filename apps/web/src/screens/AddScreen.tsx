@@ -106,7 +106,8 @@ export function AddScreen() {
   )
 }
 
-function StatementImport() {
+/** A statement, read and saved into Review: Add's first tab, and Getting started's statement step. */
+export function StatementImport() {
   const { supabase, userId, accountId, refresh } = useAppData()
   const [loaded, setLoaded] = useState<Loaded>({ kind: 'none' })
   const [saving, setSaving] = useState(false)

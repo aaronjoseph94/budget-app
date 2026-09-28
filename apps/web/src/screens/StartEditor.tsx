@@ -26,13 +26,17 @@ export function StartEditor({
   month,
   start,
   onCancel,
+  autoFocus = true,
   onSaved,
   onFailedAfterClose,
 }: {
   /** The month's first day. */
   month: string
   start: number | null
-  onCancel: () => void
+  /** The Month's Cancel; Getting started, which holds the editor open, has none. */
+  onCancel?: () => void
+  /** On the Month the editor opens on a tap, so it takes the keyboard; on Getting started it waits for one. */
+  autoFocus?: boolean
   onSaved: (note: string) => void
   onFailedAfterClose: (message: string) => void
 }) {
@@ -83,7 +87,7 @@ export function StartEditor({
         void save(false)
       }}
       onKeyDown={(e) => {
-        if (e.key === 'Escape' && !busy) onCancel()
+        if (e.key === 'Escape' && !busy) onCancel?.()
       }}
     >
       <div className="relative">
@@ -92,7 +96,7 @@ export function StartEditor({
           inputMode="decimal"
           inset
           size="sm"
-          autoFocus
+          autoFocus={autoFocus}
           aria-label={`Starting bank balance for ${monthName}`}
           value={text}
           disabled={busy}
@@ -117,9 +121,11 @@ export function StartEditor({
         <Button type="submit" size="sm" disabled={busy}>
           {busy ? 'Saving…' : 'Save'}
         </Button>
-        <Button variant="ghost" size="sm" disabled={busy} onClick={onCancel}>
-          Cancel
-        </Button>
+        {onCancel === undefined ? null : (
+          <Button variant="ghost" size="sm" disabled={busy} onClick={onCancel}>
+            Cancel
+          </Button>
+        )}
         {start === null ? null : (
           <Button variant="outline" size="sm" className="ml-auto" disabled={busy} onClick={() => void save(true)}>
             Clear balance

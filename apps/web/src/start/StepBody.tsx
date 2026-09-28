@@ -9,6 +9,7 @@ import { Field, Input } from '../components/ui/form.js'
 import { SetupLists } from '../screens/SetupScreen.js'
 import { openFromHomeScreen } from './checks.js'
 import { GoalsStep } from './GoalsStep.js'
+import { BalanceStep, StatementStep } from './MoneySteps.js'
 import type { StepId } from './steps.js'
 
 export interface StepBodyProps {
@@ -23,8 +24,6 @@ export interface StepBodyProps {
 
 /** Where each step's editor lives, until this screen holds it itself. */
 const ELSEWHERE: Readonly<Partial<Record<StepId, { readonly screen: Screen; readonly words: string }>>> = {
-  statement: { screen: 'add', words: 'Open Add' },
-  balance: { screen: 'month', words: 'Open the Month' },
   ai: { screen: 'ai', words: 'Open AI settings' },
 }
 
@@ -37,6 +36,8 @@ export function StepBody(props: StepBodyProps) {
   if (props.id === 'pay') return <SetupLists kinds={['income']} />
   if (props.id === 'bills') return <SetupLists kinds={['bill', 'debt', 'subscription']} />
   if (props.id === 'goals') return <GoalsStep />
+  if (props.id === 'statement') return <StatementStep />
+  if (props.id === 'balance') return <BalanceStep />
   const there = ELSEWHERE[props.id]
   return there === undefined ? null : (
     <a href={hashOf({ screen: there.screen, param: null })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">

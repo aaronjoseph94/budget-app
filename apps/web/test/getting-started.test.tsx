@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppDataProvider } from '../src/app-data.js'
 import { GettingStartedScreen } from '../src/screens/GettingStartedScreen.js'
@@ -184,6 +184,73 @@ describe('Getting started (plan §8.1)', () => {
     const lines = (await screen.findAllByText(/saved of \$1,000\.00$/)).map((l) => l.closest('li')?.textContent)
     expect(lines).toEqual(['HolidayMain goal$0.00 saved of $1,000.00', 'New car$0.00 saved of $1,000.00'])
     expect(screen.getByRole('button', { name: 'Add another' })).toBeTruthy()
+  })
+
+  it('brings in a statement with Add’s own reader, and says what still waits in Review', async () => {
+    const fake = allButName()
+    fake.tables.ingest_candidates.push(
+      { id: 'c1', posted_on: '2026-09-10', amount_cents: -1_250, merchant: 'CORNER CAFE', merchant_raw: 'CORNER CAFE', status: 'pending' },
+      { id: 'c2', posted_on: '2026-09-11', amount_cents: -4_000, merchant: 'MARKET', merchant_raw: 'MARKET', status: 'pending' },
+    )
+    renderStart(fake, { name: 'Alex' })
+
+    expect(await screen.findByRole('heading', { name: 'Your first statement' })).toBeTruthy()
+    expect(screen.getByText('Choose a statement')).toBeTruthy()
+    expect(screen.getByText('2 charges are waiting in Review.')).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Open Review' }).getAttribute('href')).toBe('#/review')
+    expect(screen.getByText('Not done yet')).toBeTruthy()
+  })
+
+  it('types this month’s starting balance with the Month’s own editor, and offers starter budgets only on Accept', async () => {
+    const fake = createFakeSupabase({
+      categories: [category('food', 'Groceries', 'variable'), category('coffee', 'Coffee', 'variable'), category('rent', 'Rent', 'bill')],
+      ingest_batches: [{ id: 'b1', source: 'card_pdf', created_at: '2026-06-02T10:00:00Z', period_start: '2026-06-01', period_end: '2026-06-30' }],
+      transactions: [
+        ...[['06', 10_000, 2_000], ['07', 12_000, 2_250], ['08', 11_000, 2_100]].flatMap(([m, food, coffee]) => [
+          { id: `f${m}`, posted_on: `2026-${m}-12`, amount_cents: -Number(food), merchant_raw: 'MARKET', category_id: 'food', source: 'card_pdf' },
+          { id: `c${m}`, posted_on: `2026-${m}-14`, amount_cents: -Number(coffee), merchant_raw: 'CAFE', category_id: 'coffee', source: 'card_pdf' },
+          { id: `r${m}`, posted_on: `2026-${m}-01`, amount_cents: -150_000, merchant_raw: 'LANDLORD', category_id: 'rent', source: 'card_pdf' },
+        ]),
+      ],
+      // Rent's budget is in effect, so it is never offered.
+      category_budgets: [{ id: 'x1', category_id: 'rent', month: '2026-08-01', applies: 'onward', budget_cents: 150_000 }],
+    })
+    await fake.signIn()
+    renderStart(fake, { name: 'Alex' })
+    await screen.findByRole('heading', { name: 'When you’re paid' })
+    fireEvent.click(screen.getByText(/^All 9 steps/))
+    fireEvent.click(screen.getByRole('button', { name: /This month’s starting balance/ }))
+
+    fireEvent.change(await screen.findByRole('textbox', { name: 'Starting bank balance for September' }), { target: { value: '2400' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    expect(await screen.findByText('September started at $2,400.00.')).toBeTruthy()
+    expect(fake.tables.month_balances.map((b) => [b.month, b.starting_balance_cents])).toEqual([['2026-09-01', 240_000]])
+    expect(await screen.findByText('Done')).toBeTruthy()
+
+    // Coffee's usual month is $21.00, rounded up to $25.00; Groceries' $110.00. Same place on the list: by id.
+    const offers = within(await screen.findByRole('region', { name: 'Starter budgets' }))
+    expect(offers.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Coffee$25.00Accept', 'Groceries$110.00Accept'])
+    expect(offers.getByRole('button', { name: 'Accept all 2' })).toBeTruthy()
+    expect(fake.tables.category_budgets).toHaveLength(1)
+    fireEvent.click(offers.getByRole('button', { name: 'Accept $25.00 for Coffee' }))
+    expect(await offers.findByText('Groceries')).toBeTruthy()
+    await waitFor(() => expect(offers.queryByText('Coffee')).toBeNull())
+    expect(fake.tables.category_budgets.map((b) => [b.category_id, b.month, b.applies, b.budget_cents])).toEqual([
+      ['rent', '2026-08-01', 'onward', 150_000],
+      ['coffee', '2026-09-01', 'onward', 2_500],
+    ])
+  })
+
+  it('says in one line when starter budgets need a one-time update, and the balance still works', async () => {
+    const fake = allButName()
+    fake.fail('category_budgets', '42P01')
+    renderStart(fake, { name: 'Alex' })
+    await screen.findByRole('heading', { name: 'Put it on your iPhone' })
+    fireEvent.click(screen.getByText(/^All 9 steps/))
+    fireEvent.click(screen.getByRole('button', { name: /This month’s starting balance/ }))
+
+    expect(await screen.findByText(/^Starter budgets needs a one-time update\./)).toBeTruthy()
+    expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Starting bank balance for September' }).value).toBe('2400.00')
   })
 
   it('says a step it could not read is can’t check yet, never done, and points to One-time updates', async () => {
