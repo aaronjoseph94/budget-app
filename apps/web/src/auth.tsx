@@ -4,13 +4,33 @@ import type { SupabaseClient } from './supabase.js'
 import { Label } from './ui.js'
 import { Button } from './components/ui/button.js'
 import { Card } from './components/ui/card.js'
+import { Alert } from './components/ui/feedback.js'
 import { LINE_BUTTON } from './components/ui/link.js'
 import { cn } from './lib/cn.js'
 
 export type SessionState =
   | { readonly status: 'loading' }
-  | { readonly status: 'signed-out' }
+  | { readonly status: 'signed-out'; readonly linkRefused: boolean }
   | { readonly status: 'signed-in'; readonly session: Session }
+
+/** Said on sign-in when the page was opened from an emailed link that did not sign in. */
+export const LINK_REFUSED =
+  'That sign-in link only works once, and only in the browser that asked for it. Ask for a new link here, or use your password.'
+
+/**
+ * Whether the page was opened from a sign-in link, and, if so, takes the
+ * link's one-time code out of the address. A link opened in another browser
+ * (on an iPhone, the Home Screen app's links open in Safari) cannot be
+ * exchanged there, and it left the plain sign-in form with the code still
+ * in the address bar and no reason given (SEC-NEW-2).
+ */
+function cameFromLink(): boolean {
+  const url = new URL(window.location.href)
+  if (!url.searchParams.has('code')) return false
+  url.searchParams.delete('code')
+  window.history.replaceState(window.history.state, '', url.toString())
+  return true
+}
 
 /**
  * The current session, restored from storage and kept current.
@@ -24,19 +44,27 @@ export function useSession(supabase: SupabaseClient): SessionState {
   useEffect(() => {
     let live = true
 
+    // getSession waits for the client to finish with the address, a link's
+    // exchange included, so its answer says whether the link signed in.
     void supabase.auth.getSession().then(({ data }) => {
       if (!live) return
+      // Read only now: a link that did sign in has its code taken out by the client.
+      const refused = data.session === null && cameFromLink()
       setState(
         data.session === null
-          ? { status: 'signed-out' }
+          ? { status: 'signed-out', linkRefused: refused }
           : { status: 'signed-in', session: data.session },
       )
     })
 
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!live) return
-      setState(
-        session === null ? { status: 'signed-out' } : { status: 'signed-in', session },
+      // The first event can come after getSession's answer, and a null
+      // session must not wipe the reason a link did not sign in.
+      setState((was) =>
+        session === null
+          ? { status: 'signed-out', linkRefused: was.status === 'signed-out' && was.linkRefused }
+          : { status: 'signed-in', session },
       )
     })
 
@@ -69,7 +97,7 @@ type Method = 'password' | 'link'
  * person's financial history; accounts are made in the Supabase dashboard, so
  * a public URL cannot be used to register against this project at all.
  */
-export function SignIn({ supabase }: { supabase: SupabaseClient }) {
+export function SignIn({ supabase, linkRefused = false }: { supabase: SupabaseClient; linkRefused?: boolean }) {
   const [method, setMethod] = useState<Method>('password')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -120,6 +148,12 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
         Your statements and your spending, visible only to you.
       </p>
 
+      {linkRefused && attempt.kind === 'idle' ? (
+        <div className="mt-6">
+          <Alert tone="error">{LINK_REFUSED}</Alert>
+        </div>
+      ) : null}
+
       <Card className="mt-8 p-5">
         {attempt.kind === 'link-sent' ? (
           <div>
@@ -127,7 +161,8 @@ export function SignIn({ supabase }: { supabase: SupabaseClient }) {
             <p className="mt-2 text-sm">
               A sign-in link is on its way to{' '}
               <strong className="font-medium">{attempt.email}</strong>. Open it on this device, in
-              this same browser, and you are in.
+              this same browser, and you are in. If you asked from the app on your Home Screen, sign in there with
+              your password instead: its links open in another browser.
             </p>
             <div className="mt-4">
               <Button variant="outline" onClick={() => setAttempt({ kind: 'idle' })}>

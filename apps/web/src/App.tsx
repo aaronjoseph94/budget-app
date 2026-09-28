@@ -54,7 +54,7 @@ function Configured({ env }: { env: Parameters<typeof createSupabase>[0] }) {
   if (session.status === 'loading') {
     return <p className="py-16 text-center text-sm text-muted-foreground">Loading…</p>
   }
-  if (session.status === 'signed-out') return <SignIn supabase={supabase} />
+  if (session.status === 'signed-out') return <SignIn supabase={supabase} linkRefused={session.linkRefused} />
 
   return (
     <AppDataProvider
