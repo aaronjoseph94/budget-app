@@ -1,7 +1,7 @@
 # One-time setup
 
-Settings that live in the Supabase and Netlify dashboards rather than in this
-repository. They are recorded here because a setting nobody wrote down is
+Settings that live in the Supabase, Cloudflare and Netlify dashboards rather
+than in this repository. They are recorded here because a setting nobody wrote down is
 found again by hitting the same wall twice.
 
 ## Supabase: database migrations, in order
@@ -30,10 +30,18 @@ refused rather than applied twice.
 | `0013_savings_funds.sql` | Linking a savings goal to one of your Savings-list funds, with the date saving started and the date the amount you typed was true, so transfers you record after it can add to it. Your existing goal keeps working as it is. Needed by the Savings screen, and by the Year's savings chart |
 | `0014_debts.sql` | Your debts for the Debt Calculator: each one's starting balance, minimum payment, interest rate and start month, and any extra payments by month. Needed by the Debts screen, and by the Year's debt chart |
 | `0015_savings_goals_order.sql` | Which of your savings goals is the main one (the one the Coach and the Week show), the order Savings lists them in, and pausing a goal or marking it reached. Your goals stay as they are: the oldest leads until you choose another. Without it, goals are added, edited and shown as before, and only those choices wait |
+| `0016_ai_foundation.sql` | Where AI keeps your settings (on or off, the order services are tried, paid services, the daily limit, the coach's tone, sharing shop names), your AI keys, locked so the browser can never read them, and today's use. Without it, AI settings and the AI's words say they need a one-time update, and every screen uses the app's own words |
+| `0017_coach_memory.sql` | Where the Coach keeps the AI's checked words (never a digit or a currency sign: the database refuses them), the cards you dismissed, and your check-in answers. Without it, AI words still show but are asked for afresh, ✕ on a card is hidden, and the check-in's questions say they need the update |
+| `0018_category_suggestions.sql` | Where Review keeps the category the AI suggested for a row, until you approve or change it. Without it, Review works as before and says suggestions need the update |
 
-**Paste them in number order, all of them, before `main-tnlcto` is merged
-into `main`.** `main` deploys itself, and the app on this branch already
-reads what `0005` to `0014` add. Without `0008`, the Month says "Budgets
+**`0015` to `0018` can be pasted after `main-tnlcto` is merged into
+`main`.** Nothing the app needs to open depends on them: each new part
+says in one line that it needs a one-time update until its file is in
+(HANDOFF §3). In the app, **Help → One-time updates** shows which are
+missing and has a **Copy** button for each, so GitHub is not needed.
+`0001` to `0014` are already in, and the paragraph below is kept as the
+record of what each of them does when missing: the app reads what `0005`
+to `0014` add. Without `0008`, the Month says "Budgets
 need a database update that has not been applied yet" and shows no month.
 Without `0009`, Setup says the same of monthly amounts and shows none, and
 your lists still work; the Month says it too, and shows no month. Without
@@ -75,7 +83,48 @@ empty database before and after the change, and dumping the schema each
 time, gives byte-identical files. The old wording may still be in the SQL
 Editor's history of what you pasted.
 
+## AI: the helper and a free key
+
+Every AI feature (the Coach's words, the check-in, Forecast and Reports
+sentences, suggestions in Review, "just type it", receipts and Ask) goes
+through one Edge Function, `ai`, called "the AI helper" in the app. Chosen
+in `docs/adr/0004-ai-providers-and-keys.md`; the rules that keep numbers
+out of the AI's words are `docs/adr/0005-grounded-ai-text.md`. Everything
+works without it, in the app's own words. About 15 minutes, once, easiest
+on a computer, after `0015` to `0018` above.
+
+1. **Paste the helper.** Supabase → **Edge Functions** → **Deploy a new
+   function** → **Via Editor**. Name it exactly `ai`. In the app, Help →
+   One-time updates → **Copy** beside "The AI helper" (the file is
+   `supabase/functions/ai/index.ts`), paste it over everything in the
+   editor, keep **Enforce JWT verification** on, and press **Deploy**.
+2. **No new secrets.** It reuses `GEMINI_API_KEY` and `EXTRA_ORIGINS` if
+   they are set for receipt photos (below). `AI_KEYS_ROOT` is optional: set
+   to a long random value, it lets keys pasted in the app survive a change
+   of Supabase's own keys; without it, such a change asks you to paste the
+   key again.
+3. **Turn on free AI.** In the app: More → **AI settings** → **Get a free
+   key** (Google AI Studio, **Create API key**), paste it, and press
+   **Save & test**: "Works · key ending …abcd". A key pasted here is
+   encrypted by the helper and stored where the browser cannot read it;
+   the app only ever shows its last four characters.
+
+**More services, optional.** AI settings → **More AI services** takes a key
+for Groq and OpenRouter (free) and for OpenAI and Anthropic (paid). Paid
+services are never asked until **Use paid services** is switched on. The
+order they are tried in, a daily limit (40 by default, 10 to 150), the
+coach's tone, and whether shop names are shared are set there too. Free
+services may keep and read what they are sent (ADR 0002, ADR 0004); the AI
+is never sent an amount, a balance or a date, and **What the AI sees**
+lists exactly what it is sent.
+
+**Check it:** One-time updates says "All done", and AI settings says "AI is
+on, using free Google Gemini" (or "your receipts key").
+
 ## Receipt photos: Gemini (optional)
+
+The AI helper above reads receipts itself, and falls back to this older
+function. It is needed only if the helper is not installed.
 
 Needed only for the Photo option on the Add screen. Everything else works
 without it. Chosen in docs/adr/0002-gemini-free-tier-for-receipts.md.
