@@ -5,7 +5,7 @@ import { listPaySchedules, listPlanHistory, listTransactions, type LedgerRow, ty
 import { navigate } from '../nav.js'
 import { categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
 import { formatCents, formatDateRange, formatMonthTitle, todayIso } from '../format.js'
-import { Alert } from '../components/ui/feedback.js'
+import { Alert, Loading } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
@@ -107,7 +107,7 @@ export function CalendarScreen({ month }: { month: string | null }) {
       {typeof calendar === 'string' ? <Alert tone="error" title="Could not show this calendar">{calendar}</Alert> : null}
       {/* A first load that failed is said above the screen, by App, as on the Month. */}
       {calendar === null && error === null && (version > 0 || loadError === null) ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>
+        <Loading what="this calendar" />
       ) : null}
 
       {calendar !== null && typeof calendar !== 'string' ? (

@@ -6,7 +6,7 @@ import type { DebtRow } from '../ledger.js'
 import { formatBasisPoints, formatCents, formatChange, formatMonthName, formatMonthTitle, formatRate } from '../format.js'
 import { DebtEditor } from './DebtEditor.js'
 import { DebtStrategies } from './DebtStrategies.js'
-import { Alert } from '../components/ui/feedback.js'
+import { Alert, Loading } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { SvgChart } from '../components/ui/chart.js'
 import { Figure } from '../components/ui/type.js'
@@ -57,7 +57,7 @@ export function DebtsScreen() {
         A card you pay off from your bank can go here too, but give it no monthly amount on the Month&rsquo;s Debts
         list: what you bought on it is already counted there.
       </p>
-      {state.status === 'loading' ? <p className="py-8 text-center text-sm">Loading…</p> : null}
+      {state.status === 'loading' ? <Loading what="your debts" /> : null}
       {notice !== null ? <Alert tone={notice.ok ? 'success' : 'error'}>{notice.text}</Alert> : null}
       {state.status === 'failed' ? <Alert tone="error" title="Could not load your debts">{state.message}</Alert> : null}
       {state.status === 'ready' ? (

@@ -23,7 +23,7 @@ import {
 import { navigate } from '../nav.js'
 import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
 import { formatAmount, formatCents, formatMonthName, formatMonthTitle, formatShortMonth, MONTH_NAMES, todayIso } from '../format.js'
-import { Alert } from '../components/ui/feedback.js'
+import { Alert, Loading } from '../components/ui/feedback.js'
 import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
 import { useWide } from '../lib/wide.js'
@@ -148,7 +148,7 @@ export function YearScreen({ start: address }: { start: string | null }) {
         </Alert>
       ) : null}
       {sheet === null && error === null && (version > 0 || loadError === null) ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>
+        <Loading what="this year" />
       ) : null}
       {pendingTotal > 0 ? (
         <button

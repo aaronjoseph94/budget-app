@@ -17,7 +17,7 @@ import type { BudgetRow, Category, LedgerRow, PayScheduleRow, PlanRow } from '..
 import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
 import { formatCents, formatDateRange, formatMonthTitle, todayIso } from '../format.js'
 import { navigate } from '../nav.js'
-import { Alert } from '../components/ui/feedback.js'
+import { Alert, Loading } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 import { Figure } from '../components/ui/type.js'
@@ -161,7 +161,7 @@ export function PaycheckPeriod({
 
       {error !== null ? <Alert tone="error" title="Could not load this pay period">{error}</Alert> : null}
       {typeof sheet === 'string' ? <Alert tone="error" title="Could not show this pay period">{sheet}</Alert> : null}
-      {sheet === null && error === null ? <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p> : null}
+      {sheet === null && error === null ? <Loading what="this pay period" /> : null}
 
       {sheet !== null && typeof sheet !== 'string' ? (
         <>

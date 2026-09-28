@@ -23,7 +23,7 @@ import { formatBasisPoints, formatCents, formatIsoDate, todayIso } from '../form
 import { FundEditor } from './FundEditor.js'
 import { AddGoalSheet } from './AddGoalSheet.js'
 import { GoalActions } from './GoalActions.js'
-import { Alert, Badge } from '../components/ui/feedback.js'
+import { Alert, Badge, Loading } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 import { Figure } from '../components/ui/type.js'
@@ -163,7 +163,7 @@ export function SavingsScreen() {
         </div>
         <p className="mt-1 text-sm">Your goals: what each needs, and what to put in it each month to get there by its date.</p>
       </header>
-      {state.status === 'loading' ? <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p> : null}
+      {state.status === 'loading' ? <Loading what="your savings goals" /> : null}
       {notice !== null ? <Alert tone={notice.ok ? 'success' : 'error'}>{notice.text}</Alert> : null}
       {state.status === 'failed' ? <Alert tone="error" title="Could not load your savings funds">{state.message}</Alert> : null}
       {comparison === null ? null : (

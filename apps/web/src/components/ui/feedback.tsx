@@ -127,6 +127,20 @@ export function SavedNote({ className, children }: { className?: string; childre
   )
 }
 
+/**
+ * A screen's read under way, the same everywhere: "Loading…" to the eye,
+ * and a busy status named for what is loading to a screen reader, as the
+ * Week's card and the app's first load already were. Each screen had its
+ * own bare line, some in another colour, and none said what was loading.
+ */
+export function Loading({ what }: { what: string }) {
+  return (
+    <p role="status" aria-busy="true" aria-label={`Loading ${what}`} className="py-8 text-center text-sm text-muted-foreground">
+      Loading…
+    </p>
+  )
+}
+
 /** A centred empty state: what is missing, and the one thing to do about it. */
 export function Empty({ icon, title, children }: { icon?: ReactNode; title: string; children?: ReactNode }) {
   return (

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAppData } from '../app-data.js'
 import { listPaySchedules, type PayScheduleRow } from '../ledger.js'
 import { navigate } from '../nav.js'
-import { Alert } from '../components/ui/feedback.js'
+import { Alert, Loading } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { NativeSelect } from '../components/ui/form.js'
 import { PaycheckPeriod } from './PaycheckPeriod.js'
@@ -66,7 +66,7 @@ export function PaycheckScreen({ day }: { day: string | null }) {
       {error !== null ? <Alert tone="error" title="Could not load when you are paid">{error}</Alert> : null}
       {/* A first load that failed is said above the screen, by App, as on the Month. */}
       {schedules === null && error === null && (version > 0 || loadError === null) ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>
+        <Loading what="when you are paid" />
       ) : null}
       {schedules !== null && driving === undefined ? <NoSchedule /> : null}
       {driving !== undefined ? (

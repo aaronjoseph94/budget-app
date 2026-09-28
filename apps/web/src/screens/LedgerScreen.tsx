@@ -5,7 +5,7 @@ import { deleteTransaction, listTransactions, type LedgerRow } from '../ledger.j
 import { formatCents, formatIsoDate, formatMonthTitle, todayIso } from '../format.js'
 import { IngestedText } from '../ui.js'
 import { Card } from '../components/ui/card.js'
-import { Alert, Badge, Empty } from '../components/ui/feedback.js'
+import { Alert, Badge, Empty, Loading } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
@@ -114,7 +114,7 @@ export function LedgerScreen() {
 
       {error !== null ? <Alert tone="error" title="Something went wrong">{error}</Alert> : null}
 
-      {rows === null && error === null ? <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p> : null}
+      {rows === null && error === null ? <Loading what="this month’s transactions" /> : null}
 
       {visible !== null && visible.length === 0 ? (
         <Card>

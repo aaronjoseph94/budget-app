@@ -40,7 +40,7 @@ import {
   formatMonthTitle,
   todayIso,
 } from '../format.js'
-import { Alert, SavedNote } from '../components/ui/feedback.js'
+import { Alert, Loading, SavedNote } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
@@ -275,7 +275,7 @@ export function MonthScreen({ month }: { month: string | null }) {
         screen reads nothing without it. A later reload that failed leaves
         the categories in place, so a month still loads, and says so. */}
       {sheet === null && error === null && (version > 0 || loadError === null) ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>
+        <Loading what="this month" />
       ) : null}
 
       {/* A first run: six empty blocks each saying "Add one in Setup" left
