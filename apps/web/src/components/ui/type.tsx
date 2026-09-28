@@ -10,9 +10,11 @@ import { cn } from '../../lib/cn.js'
  * caller has nothing to override (see lib/cn.ts).
  */
 export function MonthTitle({ children }: { children: ReactNode }) {
-  // "September" alone is wider than a 320 px phone with its text at 200%;
-  // only then does the word break (N58).
-  return <h1 className="font-title text-5xl font-bold leading-none text-title-ink [overflow-wrap:anywhere]">{children}</h1>
+  // 3rem, but never more than 15% of the screen's width: with the phone's
+  // text at 200% "September" was wider than the screen and broke inside
+  // the word (N58). At normal size 15vw is 3rem or more from 320 px up, so
+  // nothing changes there. Where even that cannot fit, the word may break.
+  return <h1 className="font-title text-[min(3rem,15vw)] font-bold leading-none text-title-ink [overflow-wrap:anywhere]">{children}</h1>
 }
 
 /**

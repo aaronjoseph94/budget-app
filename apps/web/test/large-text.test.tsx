@@ -17,8 +17,10 @@ describe('shared pieces with the phone’s text at 200%', () => {
     expect(classes.contains('whitespace-nowrap')).toBe(false)
   })
 
-  it('the Month’s title may break inside "September" only where it cannot fit', () => {
+  it('the Month’s title shrinks to the screen before "September" breaks', () => {
     render(<MonthTitle>September 2026</MonthTitle>)
-    expect(screen.getByRole('heading', { level: 1 }).classList.contains('[overflow-wrap:anywhere]')).toBe(true)
+    const classes = screen.getByRole('heading', { level: 1 }).classList
+    expect(classes.contains('text-[min(3rem,15vw)]')).toBe(true)
+    expect(classes.contains('[overflow-wrap:anywhere]')).toBe(true)
   })
 })
