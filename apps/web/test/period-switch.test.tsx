@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Wednesday 23 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 23, 12)
@@ -56,6 +57,7 @@ describe('the Month · Week · Pay · Year switch (ADR 0006)', () => {
     renderScreen(<Shell />, createFakeSupabase())
     await screen.findByRole('heading', { name: 'Savings goals' })
     expect(screen.queryByRole('navigation', { name: 'Views' })).toBeNull()
+    await expectNoAxeViolations()
   })
 
   it('puts the Week one tap from the Month, which still opens first', async () => {

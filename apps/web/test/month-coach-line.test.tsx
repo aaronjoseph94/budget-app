@@ -5,6 +5,7 @@ import type { Category, LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import type { NarrateDaily } from '@budget/schema'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Thursday 24 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 24, 12)
@@ -82,6 +83,7 @@ describe('the Month’s coach line (D27)', () => {
     const line = await screen.findByText(whole('You’ve spent $160.00 less than by this day last month. Nice going! Open the Coach.'))
     fireEvent.click(line)
     expect(window.location.hash).toBe('#/coach')
+    await expectNoAxeViolations()
   })
 
   it('speaks in the tone the owner chose, and in the Cheerleader’s without 0016', async () => {

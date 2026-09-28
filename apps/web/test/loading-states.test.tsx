@@ -11,6 +11,7 @@ import { YearScreen } from '../src/screens/YearScreen.js'
 import { Loading } from '../src/components/ui/feedback.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
@@ -23,10 +24,11 @@ afterEach(() => {
 })
 
 describe('a screen loading', () => {
-  it('says so to the eye, and names what is loading to a screen reader', () => {
+  it('says so to the eye, and names what is loading to a screen reader', async () => {
     render(<Loading what="this month" />)
     const status = screen.getByRole('status', { name: 'Loading this month' })
     expect([status.textContent, status.getAttribute('aria-busy')]).toEqual(['Loading…', 'true'])
+    await expectNoAxeViolations()
   })
 
   // Each screen's own read is held, so it stays loading.

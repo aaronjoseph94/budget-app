@@ -4,6 +4,7 @@ import { SettingsScreen } from '../src/screens/SettingsScreen.js'
 import type { Category } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 afterEach(cleanup)
 
@@ -29,6 +30,7 @@ describe('SettingsScreen, shops filed by themselves (N17)', () => {
       '<b>FABRIKAM FITNESS</b>Old gymForget',
       'CONTOSO MARKETGroceriesForget',
     ])
+    await expectNoAxeViolations()
   })
 
   it('forgets one, which leaves its category free to remove, and says what happens next', async () => {

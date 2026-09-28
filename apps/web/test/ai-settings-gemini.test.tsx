@@ -5,6 +5,7 @@ import { Shell } from '../src/App.js'
 import { aiStatusReply, createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /**
  * AI settings' free Gemini card (plan §8.3, A10): get a key, paste it,
@@ -85,6 +86,7 @@ describe('the free Gemini card, with no key yet', () => {
     fireEvent.click(card.getByRole('button', { name: 'Show' }))
     expect(field.getAttribute('type')).toBe('text')
     expect(card.queryByRole('button', { name: 'Remove key' })).toBeNull()
+    await expectNoAxeViolations()
   })
 
   it('sends the key once, empties the field, says it works, and never shows the key', async () => {

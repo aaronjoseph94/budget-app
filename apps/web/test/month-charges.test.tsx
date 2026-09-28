@@ -4,6 +4,7 @@ import { MonthScreen } from '../src/screens/MonthScreen.js'
 import type { Category, LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 const TODAY = new Date(2026, 8, 23, 12)
 
@@ -64,6 +65,7 @@ describe('Month row charges', () => {
     // Another category's charge and August's are not in it.
     expect(sheet.queryByText('TAILSPIN GRILL')).toBeNull()
     expect(sheet.queryByText('NORTHWIND FOODS')).toBeNull()
+    await expectNoAxeViolations()
   })
 
   it('shows a shop name written as markup as text, never as markup', async () => {

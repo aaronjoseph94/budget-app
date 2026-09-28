@@ -4,6 +4,7 @@ import { useAppData, type AppData } from '../src/app-data.js'
 import { ReviewScreen } from '../src/screens/ReviewScreen.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 function seeded(): FakeSupabase {
   return createFakeSupabase({
@@ -50,6 +51,7 @@ describe('ReviewScreen', () => {
     expect(market.getByRole<HTMLSelectElement>('combobox', { name: 'Category' }).value).toBe('c1')
     expect(market.getByText('Suggested')).toBeTruthy()
     expect((await row('ADVENTURE WORKS REFUND')).getByText('$25.00')).toBeTruthy()
+    await expectNoAxeViolations()
   })
 
   it("groups the picker under the workbook's lists, each in its own order, then by name", async () => {

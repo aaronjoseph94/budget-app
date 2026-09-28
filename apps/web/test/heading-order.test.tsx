@@ -4,6 +4,7 @@ import { Shell } from '../src/App.js'
 import type { Category } from '../src/ledger.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /**
  * Each screen's headings, in order, never skip a level: a screen reader
@@ -59,5 +60,6 @@ describe('heading levels', () => {
     await screen.findByRole('heading', { name: last })
 
     expect(skips()).toEqual([])
+    await expectNoAxeViolations()
   })
 })

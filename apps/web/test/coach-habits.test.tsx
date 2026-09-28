@@ -4,6 +4,7 @@ import { Shell } from '../src/App.js'
 import { HABITS_TODAY, habitsFake } from './habits-seed.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /**
  * The Coach's habit wins (plan A18, F40), on the Habits seed: five whole
@@ -55,6 +56,7 @@ describe('the Coach’s habit wins', () => {
     const why = await screen.findByRole('dialog')
     expect(within(why).getByText('Left to spend in the last whole week').nextSibling?.textContent).toBe('$150.00')
     expect(within(why).getByText('The last whole week began').nextSibling?.textContent).toBe('14 Sep')
+    await expectNoAxeViolations()
   })
 
   it('opens Reports on Habits from the card', async () => {

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { AddScreen } from '../src/screens/AddScreen.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 function seeded(): FakeSupabase {
   const fake = createFakeSupabase({
@@ -37,6 +38,7 @@ describe('AddScreen, what it is for', () => {
     expect(await screen.findByText(/or one by hand: cash, pay or a move to savings\./)).toBeTruthy()
     fireEvent.click(screen.getByRole('tab', { name: /Type it/ }))
     expect(screen.getByText(/^For what a card statement never shows: cash, pay and moves to savings\./)).toBeTruthy()
+    await expectNoAxeViolations()
   })
 })
 

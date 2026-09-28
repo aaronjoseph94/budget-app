@@ -4,6 +4,7 @@ import { Shell } from '../src/App.js'
 import { EXAMPLE_TODAY, forecastFake } from './forecast-seed.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 function go(hash: string) {
   act(() => {
@@ -44,6 +45,7 @@ describe('the Forecast (plan §2.5, A13)', () => {
     expect(within(safe).getByText(whole('P', '$502.85 a day for 7 days, today included'))).toBeTruthy()
     expect(fake.functions.calls).toEqual([])
     expect(document.title).toBe('Forecast · Budget')
+    await expectNoAxeViolations()
   })
 
   it('asks for this month’s start rather than a daily figure without one (D17)', async () => {

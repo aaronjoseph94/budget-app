@@ -5,6 +5,7 @@ import { Shell } from '../src/App.js'
 import { aiStatusReply, createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /**
  * AI settings' other four services (plan §8.3, A11): Groq and OpenRouter
@@ -68,6 +69,7 @@ describe('More AI services', () => {
     }
     for (const free of ['Groq', 'OpenRouter']) expect(card(free).getByText(/Free services may keep what they are sent, and people there may read it\.$/)).toBeTruthy()
     for (const paid of ['OpenAI', 'Anthropic']) expect(card(paid).getByText(/bills you for each use\. Tried only when Use paid services is on\.$/)).toBeTruthy()
+    await expectNoAxeViolations()
   })
 
   it('saves a Groq key for Groq, empties the field, and shows the key nowhere', async () => {

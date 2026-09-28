@@ -4,6 +4,7 @@ import { SetupScreen } from '../src/screens/SetupScreen.js'
 import { addCategories, type Category } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 const category = (id: string, name: string, kind: Category['kind'], sortOrder: number): Category => ({
   id,
@@ -56,6 +57,7 @@ describe('SetupScreen, the lists', () => {
     expect(within(screen.getByRole('region', { name: 'Debts' })).getByText('Nothing here yet.')).toBeTruthy()
     // Plan §3.3: the card itself is not a Debts row, or its purchases count twice.
     expect(within(screen.getByRole('region', { name: 'Debts' })).getByText(/^What loans .* its purchases are already counted\.$/)).toBeTruthy()
+    await expectNoAxeViolations()
   })
 })
 

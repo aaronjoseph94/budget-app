@@ -5,6 +5,7 @@ import { Shell } from '../src/App.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /**
  * One-time updates' Copy button (ADR 0007): the committed file, fetched
@@ -70,6 +71,7 @@ describe('Copy on One-time updates', () => {
     expect(asked).toEqual(['/setup/0016_ai_foundation.sql'])
     // GitHub stays the way round.
     expect(screen.getByRole('link', { name: 'Open 0016_ai_foundation.sql on GitHub' })).toBeTruthy()
+    await expectNoAxeViolations()
   })
 
   it('copies the AI helper when it is next', async () => {

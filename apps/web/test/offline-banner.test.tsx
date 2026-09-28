@@ -5,6 +5,7 @@ import { OfflineBanner } from '../src/offline.js'
 import { createSupabase } from '../src/supabase.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Wednesday 23 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 23, 12)
@@ -41,6 +42,7 @@ describe('the offline line (plan §9, A26)', () => {
     // client's own backoff, not slack for a slow test.
     expect(await screen.findByRole('heading', { name: 'September 2026' }, { timeout: 3000 })).toBeTruthy()
     expect(screen.queryByText(LINE)).toBeNull()
+    await expectNoAxeViolations()
   })
 
   it('stays away when the server answers with a refusal: that is not being offline', async () => {

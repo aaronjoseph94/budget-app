@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { useAppData } from '../src/app-data.js'
 import { createFakeSupabase, type FakeTables } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 afterEach(cleanup)
 
@@ -38,6 +39,7 @@ describe('the shared load, reading every savings goal (F45)', () => {
     })
     renderScreen(<Goals />, fake)
     await said('ready: Travel · Travel, Flight training, House, Car · ordered')
+    await expectNoAxeViolations()
   })
 
   it('leads with the oldest when every goal shares a place, as the one goal read before did', async () => {

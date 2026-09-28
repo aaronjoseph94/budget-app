@@ -5,6 +5,7 @@ import type { Category, LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /**
  * ✕ on the Coach's cards (plan §2.3, A12): a dismissal is kept by its
@@ -75,6 +76,7 @@ describe('dismissing an insight', () => {
     cleanup()
     renderScreen(<Shell />, fake)
     expect(await headings()).toEqual(['Time for a fresh statement', 'Charges waiting for you'])
+    await expectNoAxeViolations()
   })
 
   it('brings back a new cause for the same thing', async () => {

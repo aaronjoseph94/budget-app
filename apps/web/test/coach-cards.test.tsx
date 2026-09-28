@@ -5,6 +5,7 @@ import type { Category, LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Thursday 24 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 24, 12)
@@ -93,6 +94,7 @@ describe('the Coach, in the app’s own words', () => {
     expect(cards.map((c) => within(c).getAllByRole('button')[1]!.textContent)).toEqual(['Import a statement', 'Open Review', 'See the Month'])
     // ✕ on each, kept by its cause in 0017's insight_dismissals.
     expect(cards.map((c) => within(c).getAllByRole('button')[0]!.getAttribute('aria-label'))).toEqual(Array(3).fill('Dismiss this insight'))
+    await expectNoAxeViolations()
   })
 
   it('speaks in the tone the owner chose in AI settings', async () => {

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DebtsScreen } from '../src/screens/DebtsScreen.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Wednesday 23 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 23, 12)
@@ -49,6 +50,7 @@ describe('DebtsScreen, typing debts', () => {
       apr_basis_points: 1_999, start_date: '2026-09-01', sort_order: 5,
     })
     expect(await screen.findByRole('region', { name: 'Line <of> credit' })).toBeTruthy()
+    await expectNoAxeViolations()
   })
 
   it('refuses what 0014 would before sending, and says why', async () => {

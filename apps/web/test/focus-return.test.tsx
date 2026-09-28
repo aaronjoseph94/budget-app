@@ -6,6 +6,7 @@ import { ReviewScreen } from '../src/screens/ReviewScreen.js'
 import type { Category } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /**
  * Where keyboard focus goes when what held it goes away (FE-6). Left alone
@@ -42,6 +43,7 @@ describe('focus after an editor in a row closes', () => {
     fireEvent.keyDown(field, { key: 'Escape' })
 
     expect(document.activeElement).toBe(screen.getByRole('button', { name: /^Budget for Groceries, / }))
+    await expectNoAxeViolations()
   })
 
   it('goes back to the budget button once a budget is saved', async () => {

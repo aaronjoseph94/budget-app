@@ -4,6 +4,7 @@ import { Shell } from '../src/App.js'
 import { aiStatusReply, createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Wednesday 23 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 23, 12)
@@ -46,6 +47,7 @@ describe('AI settings says what is true, whatever the helper does', () => {
     await open(fake, 'The AI helper isn’t installed yet. Everything else works. One-time updates shows how.')
     expect(screen.getByRole('link', { name: 'Open One-time updates' }).getAttribute('href')).toBe('#/help/updates')
     expect(screen.queryByRole('region', { name: /AI services/ })).toBeNull()
+    await expectNoAxeViolations()
   })
 
   it('says a one-time update is needed when 0016 is not in', async () => {

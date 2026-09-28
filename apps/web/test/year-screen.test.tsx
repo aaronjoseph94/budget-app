@@ -4,6 +4,7 @@ import { YearScreen } from '../src/screens/YearScreen.js'
 import type { Category, LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Wednesday 23 September 2026, local noon: the gate is September. Only Date is faked.
 const TODAY = new Date(2026, 8, 23, 12)
@@ -83,6 +84,7 @@ describe('YearScreen', () => {
     expect(current.map((r) => r.querySelector('th')?.textContent)).toEqual(['September 2026'])
     // Annual's #F5F1E1 (conditional-format rules 2-5), not the alternating row colour.
     expect(current[0]!.className).toContain('bg-year-today')
+    await expectNoAxeViolations()
   })
 
   it('counts planned bills up to this month only, and real rows in every month', async () => {

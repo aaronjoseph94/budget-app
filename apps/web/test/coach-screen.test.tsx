@@ -4,6 +4,7 @@ import { Shell } from '../src/App.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Wednesday 23 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 23, 12)
@@ -56,6 +57,7 @@ describe('the Coach’s flight card', () => {
     expect(screen.getByText(para('$12,650.00 saved of $30,000.00'))).toBeTruthy()
     expect(screen.getByText('42%')).toBeTruthy()
     expect(document.title).toBe('Coach · Budget')
+    await expectNoAxeViolations()
   })
 
   // Hand-derived: 8,450.00 typed at the end of 1 September and 200.00 moved in

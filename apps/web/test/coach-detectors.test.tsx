@@ -5,6 +5,7 @@ import type { Category, LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /**
  * The Coach's detector cards (plan A17, F38, F39): SPOTIFY's price went up
@@ -71,6 +72,7 @@ describe('the Coach’s detector cards', () => {
     expect(within(why).getByText('The latest charge').nextSibling?.textContent).toBe('$12.99')
     expect(within(why).getByText('The charge before').nextSibling?.textContent).toBe('$11.99')
     expect(within(why).getByText('Next charge expected').nextSibling?.textContent).toBe('15 Oct')
+    await expectNoAxeViolations()
   })
 
   it('opens Reports from a detector card', async () => {

@@ -9,6 +9,7 @@ import { GettingStartedScreen } from '../src/screens/GettingStartedScreen.js'
 import { NO_MARKS, type SetupMarks } from '../src/profile.js'
 import type { Category } from '../src/ledger.js'
 import { aiStatusReply, createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /**
  * Getting started (plan §8.1, A25): one step per screen, whether each is
@@ -68,6 +69,7 @@ describe('Getting started (plan §8.1)', () => {
     expect(screen.getByText('Step 1 of 9 · under a minute')).toBeTruthy()
     expect(screen.getByText('Not done yet')).toBeTruthy()
     expect(screen.getByText(/Nothing breaks if you stop here/)).toBeTruthy()
+    await expectNoAxeViolations()
   })
 
   it('walks the steps with Continue, each read from its title', async () => {

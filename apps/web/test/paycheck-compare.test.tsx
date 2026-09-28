@@ -4,6 +4,7 @@ import { PaycheckScreen } from '../src/screens/PaycheckScreen.js'
 import type { Category, LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Thursday 24 September 2026, local noon. Paid every two weeks from Friday
 // 18 September, so the period is 18 Sep – 1 Oct and the one before 4 – 17 Sep.
@@ -52,6 +53,7 @@ describe('the Paycheck beside the last pay period (D26)', () => {
     const s = await line()
     expect(s.getByText(text('18 – 24 Sep: $445.38 spent · 4 – 10 Sep: $465.38'))).toBeTruthy()
     expect(s.getByText(text('▼ $20.00 less (4%)'))).toBeTruthy()
+    await expectNoAxeViolations()
   })
 
   it('says which statement to import when the period before starts before the records (F24)', async () => {

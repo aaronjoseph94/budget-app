@@ -4,6 +4,7 @@ import { Shell } from '../src/App.js'
 import { EXAMPLE_TODAY, forecastFakeWithGoals } from './forecast-seed.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 function go(hash: string) {
   act(() => {
@@ -71,5 +72,6 @@ describe('what if, on the Forecast (plan §2.5, A14, F35)', () => {
     expect(rpc).not.toHaveBeenCalled()
     expect(fake.functions.calls).toHaveLength(calls)
     expect(JSON.stringify(fake.tables)).toBe(before)
+    await expectNoAxeViolations()
   })
 })

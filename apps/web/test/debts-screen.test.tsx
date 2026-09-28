@@ -4,6 +4,7 @@ import { DebtsScreen } from '../src/screens/DebtsScreen.js'
 import type { DebtRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Wednesday 23 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 23, 12)
@@ -46,6 +47,7 @@ describe('DebtsScreen', () => {
     await screen.findByRole('region', { name: 'Debt summary' })
     expect(screen.getByText(/separate from the Month’s Debts list, which counts the payments you make/)).toBeTruthy()
     expect(screen.getByText(/give it no monthly amount on the Month’s Debts list/)).toBeTruthy()
+    await expectNoAxeViolations()
   })
 
   it("gives each debt a card in the screen's order, its name as text", async () => {

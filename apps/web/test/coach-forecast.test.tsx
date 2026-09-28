@@ -4,6 +4,7 @@ import { Shell } from '../src/App.js'
 import { EXAMPLE_TODAY, forecastFake } from './forecast-seed.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 function go(hash: string) {
   act(() => {
@@ -43,6 +44,7 @@ describe('the Coach’s forecast card (plan A13)', () => {
     expect(within(card).queryByRole('button', { name: 'Dismiss this insight' })).toBeNull()
     fireEvent.click(within(card).getByRole('button', { name: 'Open the Forecast' }))
     expect(window.location.hash).toBe('#/forecast')
+    await expectNoAxeViolations()
   })
 
   it('lists the engine’s figures behind it', async () => {

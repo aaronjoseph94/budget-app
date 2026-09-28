@@ -6,6 +6,7 @@ import { AddScreen } from '../src/screens/AddScreen.js'
 import type { PdfImport } from '../src/pdf-import.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /**
  * A PDF statement on Add, from the reader's answer on. The reader and the
@@ -66,6 +67,7 @@ describe('AddScreen, a PDF statement', () => {
     expect(screen.getByText('Purchases: statement says $72.09, read $62.09')).toBeTruthy()
     expect(screen.queryByRole('button', { name: /^Import/ })).toBeNull()
     expect(fake.rpcCalls).toEqual([])
+    await expectNoAxeViolations()
   })
 
   it('imports one that adds up, and says where each row went', async () => {

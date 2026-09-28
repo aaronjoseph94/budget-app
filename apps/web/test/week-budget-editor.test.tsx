@@ -4,6 +4,7 @@ import { isoDate, periodSheet, type PeriodRow } from '@budget/core'
 import { WeekBudgetEditor } from '../src/screens/WeekBudgetEditor.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /** Groceries' row as core gives it, with the budget in cents or none. */
 const row = (budgetCents: number | null): PeriodRow =>
@@ -44,6 +45,7 @@ describe('WeekBudgetEditor', () => {
 
     await waitFor(() => expect(done.saved).toHaveBeenCalledWith('Groceries: $1,250.50 every week.'))
     expect(fake.tables.categories[0]?.weekly_budget_cents).toBe(125050)
+    await expectNoAxeViolations()
   })
 
   it('clears to no budget, never $0, and offers no clear when none is set', async () => {

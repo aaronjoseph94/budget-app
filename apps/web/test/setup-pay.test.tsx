@@ -4,6 +4,7 @@ import { SetupScreen } from '../src/screens/SetupScreen.js'
 import type { Category } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /**
  * When each income source pays, in Setup's Income card (S15b): START
@@ -34,6 +35,7 @@ describe('SetupScreen, when income is paid', () => {
     expect(card.getByLabelText<HTMLInputElement>('First payday for Side work').value).toBe('2026-09-04')
     expect(card.getByRole<HTMLSelectElement>('combobox', { name: 'How often Day job pays' }).value).toBe('')
     expect(screen.queryByRole('combobox', { name: 'How often Rent pays' })).toBeNull()
+    await expectNoAxeViolations()
   })
 
   it('saves once both halves are there, and says what it saved', async () => {

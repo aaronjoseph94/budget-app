@@ -5,6 +5,7 @@ import { AppDataProvider, useAppData } from '../src/app-data.js'
 import { reportOf, useReportRead } from '../src/reports/read.js'
 import type { FakeSupabase } from './fake-supabase.js'
 import { reportFake } from './report-seed.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /** What a month's review reads (plan A15), handed to core's monthReport; the figures are F36's worked example. */
 
@@ -31,6 +32,7 @@ describe('useReportRead', () => {
     expect(historyStart).toBe('2026-02-01')
     if (!('totals' in report)) throw new Error(report.status)
     expect([report.status, report.totals.spentCents, report.usualMonths]).toEqual(['complete', 206_000, 6])
+    await expectNoAxeViolations()
   })
 
   it('says when a one-time update is missing, and when a read failed for another reason', async () => {

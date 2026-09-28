@@ -4,6 +4,7 @@ import { Shell } from '../src/App.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /**
  * The Coach's quote (plan §2.3, §4), from the committed library. With the
@@ -66,6 +67,7 @@ describe('the Coach’s quote', () => {
     expect(card.getByText('Wilbur Wright, Some Aeronautical Experiments (1901), Address to the Western Society of Engineers, Chicago')).toBeTruthy()
     // Remembered in an effect after the card is drawn, so awaited, not assumed.
     await waitFor(() => expect(JSON.parse(window.localStorage.getItem(KEY) ?? '{}')).toEqual({ 'watch-the-birds': '2026-09-23' }))
+    await expectNoAxeViolations()
   })
 
   it('never shows what this device showed in the fortnight before, and keeps today’s pick all day', async () => {

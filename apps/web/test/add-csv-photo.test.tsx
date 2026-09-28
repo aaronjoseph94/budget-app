@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AddScreen } from '../src/screens/AddScreen.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /**
  * A CSV statement and a receipt photo on Add, through the real readers and
@@ -41,6 +42,7 @@ describe('AddScreen, a CSV statement', () => {
     const unreadable = call?.args.p_unreadable as readonly unknown[]
     // parsed == accepted + rejected, as every import must balance (CLAUDE.md).
     expect([call?.name, call?.args.p_source, call?.args.p_parsed, rows.length, unreadable.length]).toEqual(['save_import', 'card_csv', 3, 2, 1])
+    await expectNoAxeViolations()
   })
 
   it('points a photo dropped on Statement to the Photo tab, and reads nothing', async () => {

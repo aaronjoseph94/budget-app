@@ -4,6 +4,7 @@ import { YearScreen } from '../src/screens/YearScreen.js'
 import type { Category, LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Thursday 24 September 2026, local noon. The Year shown is January to December 2026.
 const TODAY = new Date(2026, 8, 24, 12)
@@ -59,6 +60,7 @@ describe('the Year against last year (D26)', () => {
     expect(figure(c, 'Spent')).toBe('$150.00 · was $120.00 · $30.00 more (25%)')
     expect(figure(c, 'Income')).toBe('$2,000.00 · was $1,500.00 · $500.00 more (33%)')
     expect(figure(c, 'Saved')).toBe('$30.00 · was $0.00 · $30.00 more')
+    await expectNoAxeViolations()
   })
 
   it('shows no comparison when a year earlier lies before the records, and says what to import (F24)', async () => {

@@ -6,6 +6,7 @@ import { SCREEN_HELP } from '../src/help/screen-help.js'
 import type { Category } from '../src/ledger.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 function go(hash: string) {
   act(() => {
@@ -72,5 +73,6 @@ describe('the ? beside every screen’s title', () => {
       createFakeSupabase({ categories: [pay], pay_schedules: [{ id: 's1', category_id: 'c1', first_pay_date: '2026-09-11', frequency: 'biweekly' }] }),
     )
     await opensItsArticle('/paycheck', 'paycheck', 'This pay period')
+    await expectNoAxeViolations()
   })
 })

@@ -6,6 +6,7 @@ import type { Category, LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /**
  * The Coach's words from the AI (plan A12): the app's own first, the AI's
@@ -113,6 +114,7 @@ describe('the AI’s words on the Coach', () => {
     expect(headings()).toEqual(['✨ Written by AI: A quick one', '✨ Written by AI: A quick one', '✨ Written by AI: Busy month for Dining out'])
     expect(screen.getByText(whole('P', 'You spent $300.00 more on it than last month.'))).toBeTruthy()
     expect(screen.getByText('✨ Words by AI (free Google Gemini) from your numbers. Every figure is the app’s own.').getAttribute('aria-live')).toBe('polite')
+    await expectNoAxeViolations()
   })
 
   it('keeps the checked words with no figure, and reuses them the next time, drawn with today’s figures', async () => {

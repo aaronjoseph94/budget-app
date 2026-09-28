@@ -4,6 +4,7 @@ import { PaycheckPeriod } from '../src/screens/PaycheckPeriod.js'
 import type { Category, PayScheduleRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Wednesday 23 September 2026, local noon. Paid every two weeks from Friday
 // 11 September, so this pay period is 11 to 24 September. Only Date is faked.
@@ -76,6 +77,7 @@ describe('PaycheckPeriod', () => {
     expect(screen.getByText('$500.00').closest('p')?.textContent).toBe(
       'Paid to your card: $500.00 — not counted. What it paid for is already in the blocks above. See these charges',
     )
+    await expectNoAxeViolations()
   })
 
   it('says why Left to spend is taken from nothing when Variable expenses have no budgets, as the Month and Week do', async () => {

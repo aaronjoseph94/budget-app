@@ -4,6 +4,7 @@ import { Shell } from '../src/App.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /** The Coach tab's dot (plan §2.1, §2.4, A20): from Sunday until the week's check-in is opened on this device. */
 function go(hash: string) {
@@ -58,6 +59,7 @@ describe('the Coach tab’s dot', () => {
     expect(coachTab().querySelector('span.rounded-full.bg-primary')).toBeNull()
     go('/coach')
     expect(await screen.findByRole('link', { name: /^Your weekly check-in/ })).toBeTruthy()
+    await expectNoAxeViolations()
   })
 
   it('stays gone for the rest of the week, and comes back next Sunday', async () => {

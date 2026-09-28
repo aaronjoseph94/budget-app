@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MonthScreen } from '../src/screens/MonthScreen.js'
 import { EXAMPLE_TODAY, forecastFake } from './forecast-seed.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /** An element whose whole text is `s`, however it is split into spans. */
 const whole = (tag: string, s: string) => (_: string, el: Element | null) => el?.tagName === tag && el.textContent === s
@@ -28,6 +29,7 @@ describe('the Month’s forecast line (D27, plan A13)', () => {
     expect(forecast.getAttribute('href')).toBe('#/forecast')
     // F7: 2,000.00 + 2,100.00 − 2,180.00 − 300.00, the card's own figure, under its own label.
     expect(within(summary).getByText('End of month').nextElementSibling?.textContent).toBe('$1,620.00')
+    await expectNoAxeViolations()
   })
 
   it('says in one line how the two differ, with the way to Help', async () => {

@@ -6,6 +6,7 @@ import { useAddress } from '../src/nav.js'
 import type { BudgetRow, Category } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Wednesday 23 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 23, 12)
@@ -74,6 +75,7 @@ describe('Typing a budget on the Month', () => {
       const choice = screen.getByRole('radio', { name }).closest('label')!
       expect(choice.classList.contains('pointer-coarse:min-h-11'), name).toBe(true)
     }
+    await expectNoAxeViolations()
   })
 
   it('saves "from this month on" by default, re-reads the month, and says what it did', async () => {

@@ -4,6 +4,7 @@ import { WeekScreen as Week } from '../src/screens/WeekScreen.js'
 import { useAddress } from '../src/nav.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Wednesday 11 March 2026, local noon: the week is Monday 9 to Sunday 15.
 // Only Date is faked, so promises and the waits in findBy* run normally.
@@ -67,6 +68,7 @@ describe('WeekScreen', () => {
     expect(screen.getByText(/5 days left/)).toBeTruthy()
     expect(await cells('Variable expenses', 'Groceries')).toEqual(['150.00', '64.12', '85.88'])
     expect(await cells('Variable expenses', 'Eating out')).toEqual(['60.00', '66.00', '-6.00'])
+    await expectNoAxeViolations()
   })
 
   it('says how many wait for review, and the banner opens Review', async () => {

@@ -4,6 +4,7 @@ import { Shell } from '../src/App.js'
 import { EXAMPLE_TODAY, forecastFakeWithGoals } from './forecast-seed.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 function go(hash: string) {
   act(() => {
@@ -44,6 +45,7 @@ describe('when you’ll reach your goals, on the Forecast (plan §2.5, A14)', ()
     expect(within(within(card).getByRole('list')).getAllByRole('heading').map((h) => h.textContent)).toEqual(['Flight training', 'Emergency'])
     expect(within(card).getByText('Most likely May 2030.')).toBeTruthy()
     expect(within(card).getByText('No date at your current pace: in a usual month, nothing is moved into it.')).toBeTruthy()
+    await expectNoAxeViolations()
   })
 
   it('says its goals’ dates need a one-time update when the funds cannot be read, and the rest shows', async () => {

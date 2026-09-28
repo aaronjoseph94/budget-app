@@ -5,6 +5,7 @@ import { AskScreen } from '../src/screens/AskScreen.js'
 import { aiStatusReply, type FakeSupabase } from './fake-supabase.js'
 import { EXAMPLE_TODAY, forecastFakeWithGoals } from './forecast-seed.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /**
  * Ask (plan A24) on the Forecast's worked example, invented data only:
@@ -76,6 +77,7 @@ describe('Ask with AI off', () => {
     expect(within(card).getByRole('link', { name: 'See it on the Month' }).getAttribute('href')).toBe('#/month/2026-08')
     expect(screen.getByText(/The app read your question itself\./)).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Turn on free AI (2 minutes)' }).getAttribute('href')).toBe('#/ai')
+    await expectNoAxeViolations()
   })
 
   it('answers a suggested question with no call to the AI', async () => {

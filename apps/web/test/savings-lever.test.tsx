@@ -4,6 +4,7 @@ import { SavingsScreen } from '../src/screens/SavingsScreen.js'
 import type { Category, LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase, type FakeTables } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Wednesday 23 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 23, 12)
@@ -74,6 +75,7 @@ describe('what to trim, on each active goal’s Savings card (A08, F34)', () => 
     ).toBeTruthy()
     const travel = screen.getByRole('region', { name: 'Travel' })
     expect(within(travel).getByText('Trim Dining out by $100.00 a month, and that alone gets you there in 39 weeks.')).toBeTruthy()
+    await expectNoAxeViolations()
   })
 
   it('gives a paused goal no lever', async () => {

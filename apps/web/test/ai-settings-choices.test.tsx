@@ -4,6 +4,7 @@ import { Shell } from '../src/App.js'
 import { aiStatusReply, createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /**
  * AI settings' Try in this order, Use paid services and Daily limit (plan
@@ -48,6 +49,7 @@ describe('Try in this order', () => {
   it('lists the services in the owner’s saved order, any it leaves out after', async () => {
     const order = await open(createFakeSupabase({ ai_settings: [{ user_id: 'u1', provider_order: ['openrouter', 'gemini'] }] }))
     expect(names(order)).toEqual(['1. OpenRouter', '2. Google Gemini', '3. Groq', '4. OpenAI', '5. Anthropic'])
+    await expectNoAxeViolations()
   })
 
   it('moves a service up or down, saving the whole order, with nothing to move past either end', async () => {

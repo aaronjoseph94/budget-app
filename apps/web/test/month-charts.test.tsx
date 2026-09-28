@@ -4,6 +4,7 @@ import { MonthScreen } from '../src/screens/MonthScreen.js'
 import type { Category, LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Wednesday 23 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 23, 12)
@@ -73,6 +74,7 @@ describe('MonthCharts', () => {
       `Groceries: $80.00, 80% of spending. ${NAME}: $20.00, 20% of spending. Clothing is not drawn: refunds were more than spending.`,
     )
     expect((await charts()).getByText(/^Not in the ring, as refunds were more than spending: Clothing \(-\$40\.00\)\.$/)).toBeTruthy()
+    await expectNoAxeViolations()
   })
 
   // The chart is markup the app puts into the page; a name inside it that

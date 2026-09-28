@@ -4,6 +4,7 @@ import { Shell } from '../src/App.js'
 import { CHECKIN_TODAY, checkinFake } from './checkin-seed.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /** The Sunday check-in (plan §2.4, A20) on F42's example, with the app's own words. */
 function go(hash: string) {
@@ -58,6 +59,7 @@ describe('the Sunday check-in', () => {
     expect(within(section('Your goal')).getByText('46 h of 109 h')).toBeTruthy()
     expect(await screen.findByText(/^AI is off\. Everything still works; the Coach uses the app’s own words\./)).toBeTruthy()
     expect(fake.functions.calls).toEqual([expect.objectContaining({ action: 'run', task: 'narrate', pack: 'checkin' })])
+    await expectNoAxeViolations()
   })
 
   it('shows the AI’s words where they pass, the app’s own where one fails, and keeps them with no figure', async () => {

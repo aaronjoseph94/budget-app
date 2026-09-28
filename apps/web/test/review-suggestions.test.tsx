@@ -4,6 +4,7 @@ import type { CategoriseBrief } from '@budget/schema'
 import { ReviewScreen } from '../src/screens/ReviewScreen.js'
 import { aiStatusReply, createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /** Review's suggested categories (plan A21). Shop names are invented. */
 function seeded(): FakeSupabase {
@@ -68,6 +69,7 @@ describe('Review shows suggested categories', () => {
     expect((await picker('CORNER MARKET #12')).value).toBe('c1')
     expect((await picker('SQ *LITWARE COFFEE')).value).toBe('')
     expect(fake.rpcCalls.map((c) => c.name)).not.toContain('approve_candidate')
+    await expectNoAxeViolations()
   })
 
   it('approves a suggestion as the owner’s pick, and sends another category when the owner changes it', async () => {

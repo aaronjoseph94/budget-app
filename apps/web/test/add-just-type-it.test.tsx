@@ -4,6 +4,7 @@ import type { QuickAddBrief } from '@budget/schema'
 import { AddScreen } from '../src/screens/AddScreen.js'
 import { aiStatusReply, createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /** Just type it on Add (plan A22). Sunday 27 September 2026 is today; shop names are invented. */
 const TODAY = new Date(2026, 8, 27, 12)
@@ -68,6 +69,7 @@ describe('Just type it with AI off', () => {
     expect(fake.rpcCalls.map((c) => [c.name, c.args.p_amount_cents, c.args.p_posted_on, c.args.p_category])).toEqual([
       ['add_typed_transaction', -450, '2026-09-26', 'c-coffee'],
     ])
+    await expectNoAxeViolations()
   })
 
   it('files a shop by its learned rule and asks the AI nothing when nothing is empty', async () => {

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { LedgerScreen } from '../src/screens/LedgerScreen.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
@@ -32,6 +33,7 @@ describe('LedgerScreen', () => {
     // A card payment is money in here, and never on the Month, so the
     // totals say what they add, lest they read as the Month's Spent.
     expect(screen.getByText(/Every row as it is, card payments and savings moves included/)).toBeTruthy()
+    await expectNoAxeViolations()
   })
 })
 

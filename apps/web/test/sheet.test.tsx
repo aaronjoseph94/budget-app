@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { Sheet } from '../src/components/ui/sheet.js'
+import { expectNoAxeViolations } from './axe.js'
 
 function Opener({ title = 'Groceries' }: { title?: string }) {
   const [open, setOpen] = useState(false)
@@ -29,13 +30,14 @@ function open(): HTMLElement {
 afterEach(cleanup)
 
 describe('Sheet', () => {
-  it('is a modal dialog named by its title, and takes focus when it opens', () => {
+  it('is a modal dialog named by its title, and takes focus when it opens', async () => {
     render(<Opener />)
     open()
     const dialog = screen.getByRole('dialog', { name: 'Groceries' })
     expect(dialog.getAttribute('aria-modal')).toBe('true')
     expect(document.activeElement).toBe(dialog)
     expect(document.body.style.overflow).toBe('hidden')
+    await expectNoAxeViolations()
   })
 
   it('closes on Escape, the close button and the backdrop, giving focus and scrolling back', () => {

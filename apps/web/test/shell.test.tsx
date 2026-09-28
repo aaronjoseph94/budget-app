@@ -5,6 +5,7 @@ import { MORE_GROUPS } from '../src/screens/MoreScreen.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Wednesday 23 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 23, 12)
@@ -50,6 +51,7 @@ describe('Shell', () => {
     const labels = within(phoneBar()).getAllByRole('link').map((b) => b.textContent)
     expect(labels).toEqual(['Month', 'Coach', 'Add', 'Review', 'More'])
     expect(within(phoneBar()).getByRole('link', { name: 'Month' }).getAttribute('aria-current')).toBe('page')
+    await expectNoAxeViolations()
   })
 
   it('gives every tab on the desktop bar an icon of its own', async () => {

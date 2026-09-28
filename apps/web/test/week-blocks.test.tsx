@@ -4,6 +4,7 @@ import { isoDate, weekSheet, type WeekCategory } from '@budget/core'
 import { WeekBlocks } from '../src/screens/WeekBlocks.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 const cat = (id: string, name: string, kind: WeekCategory['kind'], weeklyBudgetCents: number | null = null): WeekCategory => ({
   id, name, kind, sortOrder: 0, weeklyBudgetCents,
@@ -111,5 +112,6 @@ describe('WeekBlocks', () => {
     expect(await region('Variable expenses').findByText('Groceries: $200.00 every week.')).toBeTruthy()
     expect(fake.tables.categories[0]?.weekly_budget_cents).toBe(20000)
     expect(screen.queryByRole('textbox', { name: 'Weekly budget for Groceries' })).toBeNull()
+    await expectNoAxeViolations()
   })
 })

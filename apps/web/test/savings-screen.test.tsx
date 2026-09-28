@@ -4,6 +4,7 @@ import { SavingsScreen } from '../src/screens/SavingsScreen.js'
 import type { Category, LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Wednesday 23 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 23, 12)
@@ -69,6 +70,7 @@ describe('SavingsScreen', () => {
     expect(names).toEqual(['Flight training', 'Travel <b>fund</b>', 'House'])
     // A name is text, never markup.
     expect(screen.getByRole('heading', { name: 'Travel <b>fund</b>' })).toBeTruthy()
+    await expectNoAxeViolations()
   })
 
   it("shows a fund's goal, its balance kept by transfers, what it needs, and a month's share", async () => {

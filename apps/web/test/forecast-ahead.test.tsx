@@ -4,6 +4,7 @@ import { Shell } from '../src/App.js'
 import { EXAMPLE_TODAY, forecastFake } from './forecast-seed.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 function go(hash: string) {
   act(() => {
@@ -58,6 +59,7 @@ describe('the next three months on the Forecast (plan §2.5, A14, F35)', () => {
     expect(rowOf(card, 'Best case end')).toEqual(['$4,770', '$6,130', '$7,490'])
     // Each row's name stays in view as the months scroll sideways on a narrow phone.
     expect(within(card).getAllByRole('rowheader').every((th) => th.classList.contains('sticky'))).toBe(true)
+    await expectNoAxeViolations()
   })
 
   it('shows what each month leaves over, and no ends, without this month’s start (D17)', async () => {

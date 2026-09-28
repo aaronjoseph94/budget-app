@@ -4,6 +4,7 @@ import { Shell } from '../src/App.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 beforeAll(() => warmScreen('#/help/updates', 'One-time updates'))
 
@@ -36,6 +37,7 @@ describe('One-time updates', () => {
     expect(screen.getAllByText('✓')).toHaveLength(15)
     expect(screen.queryByText(/^Next: paste/)).toBeNull()
     expect(screen.getByRole('button', { name: 'Check again' })).toBeTruthy()
+    await expectNoAxeViolations()
   })
 
   it('names a table not there (PGRST205) as the next file to paste, with where to find it', async () => {

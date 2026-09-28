@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AddScreen } from '../src/screens/AddScreen.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /**
  * Add → Photo through the AI helper (plan A23), on the real screen and the
@@ -64,6 +65,7 @@ describe('AddScreen, a receipt photo read by the AI helper', () => {
     expect(await screen.findByText('Sent to Review. Pick a category there and it counts.')).toBeTruthy()
     expect(fake.rpcCalls.map((c) => [c.name, c.args.p_source])).toEqual([['save_import', 'receipt_photo']])
     expect((fake.rpcCalls[0]?.args.p_rows as { amount_cents: number }[])[0]?.amount_cents).toBe(-1423)
+    await expectNoAxeViolations()
   })
 
   it('with neither the helper nor read-receipt deployed, says so in one line pointing to One-time updates, and the receipt can be typed', async () => {

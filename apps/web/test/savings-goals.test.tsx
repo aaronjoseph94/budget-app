@@ -4,6 +4,7 @@ import { SavingsScreen } from '../src/screens/SavingsScreen.js'
 import type { Category } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase, type FakeTables } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Wednesday 23 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 23, 12)
@@ -47,6 +48,7 @@ describe('Savings, with more than one goal (G1)', () => {
     expect(within(travel).getByText('Main goal')).toBeTruthy()
     expect(within(screen.getByRole('region', { name: 'Flight training' })).queryByText('Main goal')).toBeNull()
     expect(screen.getByRole('heading', { name: 'Funds with no goal yet' })).toBeTruthy()
+    await expectNoAxeViolations()
   })
 
   it('folds the paused and reached goals away, each saying which it is', async () => {

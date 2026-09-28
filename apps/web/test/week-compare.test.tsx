@@ -5,6 +5,7 @@ import { useAddress } from '../src/nav.js'
 import type { Category, LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Thursday 24 September 2026, local noon: the week is Monday 21 to Sunday 27.
 const TODAY = new Date(2026, 8, 24, 12)
@@ -55,6 +56,7 @@ describe('the Week beside last week (D26)', () => {
     const s = await line()
     expect(s.getByText(text('21 – 24 Sep: $40.00 spent · 14 – 17 Sep: $65.00'))).toBeTruthy()
     expect(s.getByText(text('▼ $25.00 less (38%)'))).toBeTruthy()
+    await expectNoAxeViolations()
   })
 
   it('sets a week already over whole against the whole week before', async () => {

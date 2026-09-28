@@ -5,6 +5,7 @@ import { SettingsScreen } from '../src/screens/SettingsScreen.js'
 import type { Category } from '../src/ledger.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 afterEach(cleanup)
 
@@ -47,6 +48,7 @@ describe('AppData refresh, answered out of order (CR-1)', () => {
     })
     expect(data.current?.categories.find((c) => c.id === 'c2')?.weekly_budget_cents).toBe(20000)
     expect(restaurants.value).toBe('200.00')
+    await expectNoAxeViolations()
   })
 })
 

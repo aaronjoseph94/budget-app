@@ -5,6 +5,7 @@ import { HelpButton } from '../src/help/HelpButton.js'
 import { EXAMPLE_TODAY, forecastFakeWithGoals } from './forecast-seed.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /**
  * The ways into Ask (plan A24): the Coach's ask box, "Ask about this" in a
@@ -75,6 +76,7 @@ describe('the Coach’s ask box', () => {
     expect(await screen.findByText(sentence(DINING))).toBeTruthy()
     expect(window.location.hash).toBe('#/ask')
     expect(screen.getByRole<HTMLInputElement>('textbox', { name: 'Your question' }).value).toBe('How much did I spend on dining out in August?')
+    await expectNoAxeViolations()
   })
 })
 

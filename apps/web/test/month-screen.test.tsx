@@ -6,6 +6,7 @@ import { useAddress } from '../src/nav.js'
 import type { BudgetRow, Category, LedgerRow, PlanRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Wednesday 23 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 23, 12)
@@ -94,6 +95,7 @@ describe('MonthScreen blocks', () => {
     expect(cells('Savings', 'Flight fund')).toEqual(['', '300.00', '300.00'])
     // The card payment is in no block.
     expect(screen.queryByText('Card payments')).toBeNull()
+    await expectNoAxeViolations()
   })
 
   it('shows a return with its minus sign, and a category name as text, never markup', async () => {

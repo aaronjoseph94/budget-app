@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DebtsScreen } from '../src/screens/DebtsScreen.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Wednesday 23 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 23, 12)
@@ -51,6 +52,7 @@ describe('DebtsScreen, extra payments', () => {
     fireEvent.click(within(august as HTMLElement).getByRole('button', { name: 'Remove' }))
     await waitFor(() => expect(within(extras).queryByText('August 2026')).toBeNull())
     expect(fake.tables.debt_extra_payments.map((e) => e.month)).toEqual(['2026-10-01'])
+    await expectNoAxeViolations()
   })
 
   it('keeps one extra a month, replacing its amount, and moves the payoff month', async () => {

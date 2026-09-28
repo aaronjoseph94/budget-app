@@ -5,6 +5,7 @@ import { useAddress } from '../src/nav.js'
 import type { Category, LedgerRow, PayScheduleRow, PlanRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Wednesday 23 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 23, 12)
@@ -85,6 +86,7 @@ describe('CalendarScreen', () => {
     expect(await total()).toBe('Due this month: $1,970.11')
     // Said on the pill itself: a lone figure in a band means nothing to the eye.
     expect(screen.getByText('Due this month').className).not.toContain('sr-only')
+    await expectNoAxeViolations()
   })
 
   it("lays this month's bills on their days, real charges in place of the plan, with paydays and week totals", async () => {

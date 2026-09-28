@@ -4,6 +4,7 @@ import { SettingsScreen } from '../src/screens/SettingsScreen.js'
 import type { Category } from '../src/ledger.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 afterEach(cleanup)
 
@@ -19,6 +20,7 @@ describe('SettingsScreen, adding a category', () => {
     fireEvent.click(screen.getByRole('button', { name: /Add/ }))
 
     await waitFor(() => expect(fake.tables.categories).toMatchObject([{ name: 'Rent', kind: 'bill', sort_order: 0 }]))
+    await expectNoAxeViolations()
   })
 })
 

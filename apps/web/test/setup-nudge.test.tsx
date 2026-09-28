@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SetupScreen } from '../src/screens/SetupScreen.js'
 import { renderScreen } from './render-screen.js'
 import { SHOPS_TODAY, shopsFake } from './shops-seed.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /**
  * Setup's "Looks like a monthly bill: add it?" (plan A17, F38): SPOTIFY
@@ -44,6 +45,7 @@ describe('Setup’s monthly bill nudge', () => {
     await waitFor(() => expect(fake.tables.category_plans).toMatchObject([{ category_id: 'music', effective_month: '2026-09-01', planned_cents: 1_299, due_day: 14 }]))
     await waitFor(() => expect(card.queryByText('Looks like a monthly bill: add it?')).toBeNull())
     expect(writes).toBe(1)
+    await expectNoAxeViolations()
   })
 
   it('offers nothing for a shop marked not a subscription, or a category with an amount', async () => {

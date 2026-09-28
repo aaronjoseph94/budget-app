@@ -4,6 +4,7 @@ import { PaycheckScreen } from '../src/screens/PaycheckScreen.js'
 import type { Category, PayScheduleRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Wednesday 23 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 23, 12)
@@ -42,6 +43,7 @@ describe('PaycheckScreen', () => {
     )
     fireEvent.click(screen.getByRole('button', { name: 'Open Setup' }))
     expect(window.location.hash).toBe('#/setup')
+    await expectNoAxeViolations()
   })
 
   it('reads a schedule on an income source only, not one left on a category moved off Income (N27)', async () => {

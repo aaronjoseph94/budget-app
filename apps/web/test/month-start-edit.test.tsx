@@ -5,6 +5,7 @@ import { useAddress } from '../src/nav.js'
 import type { Category } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Wednesday 23 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 23, 12)
@@ -66,6 +67,7 @@ describe('Typing the starting balance on the Month', () => {
 
     renderScreen(<MonthScreen month="2026-10" />, fake)
     expect(await screen.findByRole('button', { name: 'Starting balance for October, none typed' })).toBeTruthy()
+    await expectNoAxeViolations()
   })
 
   it('types an overdrawn start with the tick box, and opens one again that way', async () => {

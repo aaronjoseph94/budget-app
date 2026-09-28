@@ -4,6 +4,7 @@ import { SetupScreen } from '../src/screens/SetupScreen.js'
 import type { Category, PlanRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /**
  * The workbook's Bills tab inside Setup (S9): each Bills, Debts and Subscriptions
@@ -74,6 +75,7 @@ describe('SetupScreen, reading monthly amounts', () => {
     fireEvent.change(field, { target: { value: 'Mobile' } })
     fireEvent.blur(field)
     await waitFor(() => expect(fake.tables.categories.find((c) => c.id === 'phone')?.name).toBe('Mobile'))
+    await expectNoAxeViolations()
   })
 
   it('says so when an amount names a category that is not there, rather than total without it', async () => {

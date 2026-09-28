@@ -5,6 +5,7 @@ import { cents as asCents } from '@budget/money-primitives'
 import type { AskRead } from '@budget/savings-coach'
 import { AnswerCard } from '../src/ask/AnswerCard.js'
 import { suggestions } from '../src/ask/suggest.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /** Ask's answer card (plan A24): it draws core's answer in the app's words, and formats; it never computes. */
 type Read = Extract<AskRead, { kind: 'intent' }>
@@ -29,13 +30,14 @@ function card(answer: Answer, read: Read = SPEND, names = ['Dining out'], missin
 afterEach(cleanup)
 
 describe('AnswerCard', () => {
-  it('says what it read, the figure, the sentence, the days and where to see the whole', () => {
+  it('says what it read, the figure, the sentence, the days and where to see the whole', async () => {
     card(answered(line('spent_in', ['Dining out'], { amount: cents(105_400) })))
     expect(screen.getByText('I read that as: How much you spent · Dining out · August 2026')).toBeTruthy()
     expect(screen.getByText('$1,054.00', { selector: 'p' })).toBeTruthy()
     expect(screen.getByText(sentence('You spent $1,054.00 on Dining out.'))).toBeTruthy()
     expect(screen.getByText('1 – 31 Aug')).toBeTruthy()
     expect(screen.getByRole('link', { name: 'See it on the Month' }).getAttribute('href')).toBe('#/month/2026-08')
+    await expectNoAxeViolations()
   })
 
   it('marks what the AI read, and names both windows of a comparison', () => {

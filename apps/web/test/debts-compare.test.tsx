@@ -4,6 +4,7 @@ import { DebtsScreen } from '../src/screens/DebtsScreen.js'
 import type { DebtRow } from '../src/ledger.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Wednesday 23 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 23, 12)
@@ -48,6 +49,7 @@ describe('Debts against a month ago (D26)', () => {
     expect(vs.getByText((_, el) => el?.tagName === 'P' && el.textContent === '▼ $148.98 less (42%)')).toBeTruthy()
     expect(within(screen.getByRole('region', { name: 'Car' })).getByText((_, el) => el?.tagName === 'P' && el.textContent === '▼ $50.00 less (100%) than at the end of August')).toBeTruthy()
     expect(within(screen.getByRole('region', { name: "Next year's" })).getByText('About the same as at the end of August')).toBeTruthy()
+    await expectNoAxeViolations()
   })
 
   it('draws no comparison for a debt that is never paid off, which has no schedule', async () => {

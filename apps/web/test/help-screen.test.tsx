@@ -7,6 +7,7 @@ import { ARTICLES, type Article } from '../src/help/articles.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 function go(hash: string) {
   act(() => {
@@ -38,6 +39,7 @@ describe('Help', () => {
     expect(titles()).toEqual(ARTICLES.map((a) => a.title))
     const first = within(screen.getByRole('list')).getAllByRole('link')[0]
     expect(first?.getAttribute('href')).toBe('#/help/start')
+    await expectNoAxeViolations()
   })
 
   it('narrows the list as the owner types, on every word, in any letter case', async () => {

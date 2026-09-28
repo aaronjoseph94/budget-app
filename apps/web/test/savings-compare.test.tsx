@@ -4,6 +4,7 @@ import { SavingsScreen } from '../src/screens/SavingsScreen.js'
 import type { Category, LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Thursday 24 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 24, 12)
@@ -63,6 +64,7 @@ describe('Savings, saved this month against last (D26)', () => {
     const fund = within(await screen.findByRole('group', { name: 'Flight training compared with last month' }))
     expect(fund.getByText(text('1 – 24 Sep: $125.00 saved · 1 – 24 Aug: $50.00'))).toBeTruthy()
     expect(fund.getByText(text('▲ $75.00 more (150%)'))).toBeTruthy()
+    await expectNoAxeViolations()
   })
 
   it('says which statement to import when last month starts before the records, with no fund lines (F24)', async () => {

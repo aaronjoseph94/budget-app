@@ -4,6 +4,7 @@ import { Shell } from '../src/App.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 /**
  * AI settings' How the Coach talks (plan §8.3, A12): the tone and Share
@@ -42,6 +43,7 @@ describe('How the Coach talks', () => {
     expect(panel.getByRole<HTMLInputElement>('radio', { name: /Straight talker/ }).checked).toBe(false)
     expect(panel.getByRole<HTMLInputElement>('switch', { name: 'Share shop names with the AI' }).checked).toBe(true)
     expect(panel.getByRole('link', { name: 'What the AI sees' }).getAttribute('href')).toBe('#/help/ai-sees')
+    await expectNoAxeViolations()
   })
 
   it('reads back what the owner chose', async () => {

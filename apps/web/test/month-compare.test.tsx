@@ -4,6 +4,7 @@ import { MonthScreen } from '../src/screens/MonthScreen.js'
 import type { Category, LedgerRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Thursday 24 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 24, 12)
@@ -64,6 +65,7 @@ describe('the Month beside last month (D26)', () => {
     expect(s.getByText((_, el) => el?.tagName === 'P' && el.textContent === '▼ $160.00 less (14%)')).toBeTruthy()
     // The Month's own Spent is the whole month, and has no change under it.
     expect(within(screen.getByRole('region', { name: 'Summary' })).getAllByText('$1,020.00')).toHaveLength(2)
+    await expectNoAxeViolations()
   })
 
   it('names both months for a month already over', async () => {

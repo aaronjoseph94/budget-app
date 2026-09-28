@@ -4,6 +4,7 @@ import { SavingsScreen } from '../src/screens/SavingsScreen.js'
 import type { Category } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
+import { expectNoAxeViolations } from './axe.js'
 
 // Wednesday 23 September 2026, local noon. Only Date is faked.
 const TODAY = new Date(2026, 8, 23, 12)
@@ -48,6 +49,7 @@ describe('SavingsScreen, setting and linking goals', () => {
     expect(fake.tables.savings_goals[0]).toMatchObject({ category_id: 'flight', balance_as_of: '2026-09-23', saved_cents: 250_000 })
     await waitFor(async () => expect(within(await card('Flight training')).queryByText('$2,500.00')).toBeTruthy())
     expect(within(await card('Travel')).queryByRole('button', { name: /^Use/ })).toBeNull()
+    await expectNoAxeViolations()
   })
 
   it('edits a goal with what is saved filled in as the kept balance, and writes it as of today (N52)', async () => {

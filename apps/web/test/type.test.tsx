@@ -3,6 +3,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { within } from '@testing-library/dom'
 import { afterEach, describe, expect, it } from 'vitest'
 import { Figure, MonthTitle } from '../src/components/ui/type.js'
+import { expectNoAxeViolations } from './axe.js'
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true })
 
@@ -27,11 +28,12 @@ function render(node: ReactNode): HTMLElement {
 describe('MonthTitle', () => {
   // The month title is the page's heading, not decoration: a screen reader
   // lands on it first, so it must be the one level-1 heading.
-  it('is the page heading, in the handwritten face and its readable ink', () => {
+  it('is the page heading, in the handwritten face and its readable ink', async () => {
     const el = render(<MonthTitle>September 2026</MonthTitle>)
     const heading = within(el).getByRole('heading', { level: 1, name: 'September 2026' })
     expect(heading.classList.contains('font-title')).toBe(true)
     expect(heading.classList.contains('text-title-ink')).toBe(true)
+    await expectNoAxeViolations()
   })
 })
 
