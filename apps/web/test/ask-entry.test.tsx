@@ -30,6 +30,10 @@ beforeAll(async () => {
   await warmScreen('#/ask', 'Ask', { fake: forecastFakeWithGoals(), text: 'Try asking' })
   await warmScreen('#/coach', 'Coach', { fake: forecastFakeWithGoals(), text: 'Ask anything about your money' })
   await warmScreen('#/forecast', 'Forecast')
+  // The help sheet is a chunk of its own, opened by a tap, so the screen's
+  // warming never loads it: under a full run its cold first open lost the
+  // find's one second for Ask about this.
+  await import('../src/help/HelpSheet.js')
   vi.useRealTimers()
 })
 beforeEach(() => {
