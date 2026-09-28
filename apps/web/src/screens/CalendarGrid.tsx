@@ -1,9 +1,33 @@
-import type { BillCalendar, CalendarDay } from '@budget/core'
+import type { BillCalendar, CalendarBill, CalendarDay } from '@budget/core'
 import { formatAmount, formatCents } from '../format.js'
 import { cn } from '../lib/cn.js'
 
 /** Sunday first, as the workbook's B6:N6 are. */
 export const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const
+
+/** Opens a bill's charges for the month (N51); without it a bill's name is only text. */
+export type OpenBill = (bill: CalendarBill) => void
+
+/**
+ * A bill's name, as a button that opens its charges when there is a way to.
+ * 44 px to a finger, as the Month's row names are, and never markup.
+ */
+export function BillName({ bill, onOpen, className }: { bill: CalendarBill; onOpen?: OpenBill | undefined; className?: string }) {
+  if (onOpen === undefined) return <span className={className}>{bill.name}</span>
+  return (
+    <button
+      type="button"
+      aria-haspopup="dialog"
+      onClick={() => onOpen(bill)}
+      className={cn(
+        'rounded-sm text-left underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-11',
+        className,
+      )}
+    >
+      {bill.name}
+    </button>
+  )
+}
 
 /**
  * The workbook's Bill Calendar grid (B6:Q43), for a screen wide enough for names:
@@ -12,7 +36,7 @@ export const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday',
  * that day (C8), and every bill on it with its amount (B9:C13), all as
  * plain text. A table, so a screen reader reads each day under its weekday.
  */
-export function MonthGrid({ calendar, className }: { calendar: BillCalendar; className?: string }) {
+export function MonthGrid({ calendar, className, onOpen }: { calendar: BillCalendar; className?: string; onOpen?: OpenBill }) {
   return (
     <table className={cn('w-full table-fixed border-collapse overflow-hidden rounded-xl bg-card text-sm shadow-sm', className)}>
       <caption className="caption-bottom bg-background px-4 pt-2 text-left text-xs text-muted-foreground">
@@ -44,7 +68,7 @@ export function MonthGrid({ calendar, className }: { calendar: BillCalendar; cla
                 <td key={weekday} className="border border-calendar-rule bg-muted/40" />
               ) : (
                 <td key={weekday} className="h-24 border border-calendar-rule p-1.5 align-top">
-                  <GridDay day={day} />
+                  <GridDay day={day} onOpen={onOpen} />
                 </td>
               ),
             )}
@@ -59,7 +83,7 @@ export function MonthGrid({ calendar, className }: { calendar: BillCalendar; cla
   )
 }
 
-function GridDay({ day }: { day: CalendarDay }) {
+function GridDay({ day, onOpen }: { day: CalendarDay; onOpen?: OpenBill | undefined }) {
   return (
     <div className="space-y-1">
       <div className="flex flex-wrap items-start justify-between gap-1">
@@ -74,7 +98,7 @@ function GridDay({ day }: { day: CalendarDay }) {
       {day.bills.map((b, i) => (
         <p key={`${b.categoryId}-${i}`} className="flex flex-wrap items-baseline justify-between gap-x-1 text-xs leading-tight text-calendar-ink">
           {/* On a narrow column the amount drops under the name rather than split it. */}
-          <span className="max-w-full break-words">{b.name}</span>
+          <BillName bill={b} onOpen={onOpen} className="max-w-full break-words" />
           <span className={cn('tnum shrink-0', b.basis === 'planned' && 'italic')}>
             {formatAmount(b.amountCents)}
             {b.basis === 'planned' ? <span className="sr-only"> planned</span> : null}

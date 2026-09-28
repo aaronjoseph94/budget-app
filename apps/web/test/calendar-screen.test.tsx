@@ -217,3 +217,26 @@ describe('CalendarScreen while another month loads', () => {
     expect(await total()).toBe('Due this month: $1,966.99')
   })
 })
+
+describe('CalendarScreen, a bill opened (N51)', () => {
+  it("opens the bill's charges for the month, each with Move to…", async () => {
+    renderScreen(<CalendarScreen month="2026-09" />, seeded())
+    const agenda = within(await screen.findByRole('region', { name: 'Week of 6 – 12 Sep' }))
+    fireEvent.click(agenda.getByRole('button', { name: 'Phone' }))
+
+    const sheet = within(screen.getByRole('dialog', { name: 'Phone' }))
+    expect(sheet.getByText(/^Bills · September 2026 ·/)).toBeTruthy()
+    expect(sheet.getAllByRole('button', { name: /^Move to…/ }).map((b) => b.getAttribute('aria-label'))).toEqual([
+      'Move to… (SYNTHETIC SHOP, 8 Sep 2026)',
+    ])
+  })
+
+  it('says a planned bill has nothing charged yet, and that its amount is from Setup', async () => {
+    renderScreen(<CalendarScreen month="2026-09" />, seeded())
+    const agenda = within(await screen.findByRole('region', { name: 'Week of 1 – 5 Sep' }))
+    fireEvent.click(agenda.getByRole('button', { name: 'Rent' }))
+
+    const sheet = within(screen.getByRole('dialog', { name: 'Rent' }))
+    expect(sheet.getByText(/^No charges filed here in September\. The amount above is its monthly amount from Setup\./)).toBeTruthy()
+  })
+})

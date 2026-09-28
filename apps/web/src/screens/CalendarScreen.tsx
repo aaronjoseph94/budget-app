@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { billCalendar, isoDate, monthBounds, shiftMonth, type BillCalendar, type CalendarDay } from '@budget/core'
+import { billCalendar, isoDate, monthBounds, shiftMonth, type BillCalendar, type CalendarBill, type CalendarDay } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { listPaySchedules, listPlanHistory, listTransactions, type LedgerRow, type PayScheduleRow, type PlanRow } from '../ledger.js'
 import { navigate } from '../nav.js'
@@ -10,7 +10,9 @@ import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
-import { CompactGrid, MonthGrid, WEEKDAYS } from './CalendarGrid.js'
+import { BillName, CompactGrid, MonthGrid, WEEKDAYS, type OpenBill } from './CalendarGrid.js'
+import { MonthCharges } from './MonthCharges.js'
+import { LIST_HEADING } from '../lists.js'
 import { HelpButton } from '../help/HelpButton.js'
 
 /**
@@ -29,6 +31,9 @@ export function CalendarScreen({ month }: { month: string | null }) {
   const step = (months: number) => navigate('calendar', shiftMonth(start, months).slice(0, 7))
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // The bill whose charges are open; another month closes it (N51).
+  const [opened, setOpened] = useState<CalendarBill | null>(null)
+  useEffect(() => setOpened(null), [start])
 
   useEffect(() => {
     // As on the Month: nothing is read before the first load brings the
@@ -110,11 +115,12 @@ export function CalendarScreen({ month }: { month: string | null }) {
           {/* Phones get the month as a picture with the list under it; a
             wider screen has room for the workbook's grid, names and all. */}
           <CompactGrid calendar={calendar} className="md:hidden" />
-          <MonthGrid calendar={calendar} className="hidden md:table" />
-          <Agenda calendar={calendar} className="md:hidden" />
+          <MonthGrid calendar={calendar} className="hidden md:table" onOpen={setOpened} />
+          <Agenda calendar={calendar} className="md:hidden" onOpen={setOpened} />
           <Undated calendar={calendar} />
         </>
       ) : null}
+      {here !== null && opened !== null ? <BillCharges bill={opened} month={start} rows={here.rows} onClose={() => setOpened(null)} /> : null}
     </div>
   )
 }
@@ -130,7 +136,7 @@ interface Loaded {
  * The calendar as a list, a week at a time: each day with something on it,
  * its bills and who is paid, and the week's total (the workbook's Q8).
  */
-export function Agenda({ calendar, className }: { calendar: BillCalendar; className?: string }) {
+export function Agenda({ calendar, className, onOpen }: { calendar: BillCalendar; className?: string; onOpen?: OpenBill }) {
   return (
     <div className={cn('space-y-3', className)}>
       {calendar.weeks.map((week) => {
@@ -154,7 +160,7 @@ export function Agenda({ calendar, className }: { calendar: BillCalendar; classN
             ) : (
               <ul className="divide-y">
                 {busy.map(({ d, weekday }) => (
-                  <AgendaDay key={d.date} day={d} weekday={weekday} />
+                  <AgendaDay key={d.date} day={d} weekday={weekday} onOpen={onOpen} />
                 ))}
               </ul>
             )}
@@ -165,7 +171,7 @@ export function Agenda({ calendar, className }: { calendar: BillCalendar; classN
   )
 }
 
-function AgendaDay({ day, weekday }: { day: CalendarDay; weekday: number }) {
+function AgendaDay({ day, weekday, onOpen }: { day: CalendarDay; weekday: number; onOpen?: OpenBill | undefined }) {
   return (
     <li className="flex gap-3 px-4 py-2.5">
       <span className="w-10 shrink-0 text-center leading-tight text-calendar-day">
@@ -182,7 +188,7 @@ function AgendaDay({ day, weekday }: { day: CalendarDay; weekday: number }) {
           // The amount drops under the name, and "planned" under the amount,
           // when they do not fit, as with the phone's text at 200% (N58).
           <p key={`${b.categoryId}-${i}`} className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm text-calendar-ink">
-            <span className="min-w-0 truncate">{b.name}</span>
+            <BillName bill={b} onOpen={onOpen} className="min-w-0 truncate" />
             <span className="ml-auto max-w-full text-right">
               <span className="tnum whitespace-nowrap">{formatCents(b.amountCents)}</span>
               {b.basis === 'planned' ? <> <span className="text-xs text-muted-foreground">planned</span></> : null}
@@ -191,6 +197,26 @@ function AgendaDay({ day, weekday }: { day: CalendarDay; weekday: number }) {
         ))}
       </div>
     </li>
+  )
+}
+
+/**
+ * A bill's charges in the calendar's month, in the Month's sheet, each with
+ * Move to… (N51). Its amount is the calendar's for that bill: the charge, or
+ * the monthly amount while nothing is charged (D5).
+ */
+function BillCharges({ bill, month, rows, onClose }: { bill: CalendarBill; month: string; rows: readonly LedgerRow[]; onClose: () => void }) {
+  return (
+    <MonthCharges
+      categoryId={bill.categoryId}
+      name={bill.name}
+      heading={LIST_HEADING[bill.kind]}
+      month={month}
+      actualCents={bill.amountCents}
+      basis={bill.basis}
+      charges={rows.filter((r) => r.category_id === bill.categoryId)}
+      onClose={onClose}
+    />
   )
 }
 
