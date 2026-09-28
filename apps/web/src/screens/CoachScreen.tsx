@@ -112,9 +112,11 @@ function GoalsCard({ funds, outlooks, words }: { funds: FundsState; outlooks: Ou
         <CardTitle as="h2">{mainGoal.name}</CardTitle>
       </div>
       <CardContent className="space-y-4">
-        <div className="flex items-center gap-4">
+        {/* The figures go under the ring when there is not room for 8rem
+          of them beside it, as with the phone's text at 200% (N58). */}
+        <div className="flex flex-wrap items-center gap-4">
           <Ring basisPoints={main.progressBp} />
-          <div className="min-w-0 space-y-1">
+          <div className="min-w-0 flex-1 basis-32 space-y-1">
             {main.hours !== null ? (
               <p>
                 <span className="tnum text-2xl font-bold">
@@ -147,7 +149,8 @@ function GoalsCard({ funds, outlooks, words }: { funds: FundsState; outlooks: Ou
                       <span className="min-w-0 truncate font-medium" title={name}>
                         {name}
                       </span>
-                      <span className="tnum whitespace-nowrap text-muted-foreground">
+                      {/* Whole on its line where it fits; it may break at "of". */}
+                      <span className="tnum max-w-full text-muted-foreground">
                         {formatCents(f.savedCents)} of {formatCents(f.targetCents)}
                       </span>
                     </p>

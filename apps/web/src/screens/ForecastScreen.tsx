@@ -105,7 +105,9 @@ function SafeCard({ safe, names }: { safe: SafeToSpend; names: (id: string) => s
         <NoStart />
       ) : (
         <p>
-          <span className="tnum text-3xl font-bold">{formatCents(safe.perDayCents)}</span>
+          {/* This card's big figures may break inside only when they cannot
+            fit their line at all, as Figure does (FE-17, N58). */}
+          <span className="tnum text-3xl font-bold [overflow-wrap:anywhere]">{formatCents(safe.perDayCents)}</span>
           <span className="text-muted-foreground"> a day for {safe.days === 1 ? 'today' : `${safe.days} days, today included`}</span>
         </p>
       )}
@@ -138,9 +140,9 @@ function MonthEndCard({ monthEnd, figures, month }: { monthEnd: MonthEndForecast
     <Section title={`End of ${name}`}>
       <div className="flex flex-wrap items-center gap-2">
         {end === null ? null : monthEnd.status === 'rough' ? (
-          <span className="tnum text-3xl font-bold">About {formatWholeDollars(end.mid)}</span>
+          <span className="tnum text-3xl font-bold [overflow-wrap:anywhere]">About {formatWholeDollars(end.mid)}</span>
         ) : (
-          <span className="tnum text-3xl font-bold">
+          <span className="tnum text-3xl font-bold [overflow-wrap:anywhere]">
             {formatWholeDollars(end.low)} to {formatWholeDollars(end.high)}
           </span>
         )}

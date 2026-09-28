@@ -225,7 +225,8 @@ function Goals({ facts, words }: { facts: CheckinFacts; words: Checkin }) {
               <span className="min-w-0 truncate font-medium" title={goal.name}>
                 {goal.name}
               </span>
-              <span className="tnum whitespace-nowrap text-muted-foreground">
+              {/* Whole on its line where it fits; it may break at "of" (N58). */}
+              <span className="tnum max-w-full text-muted-foreground">
                 {f.hours === null ? `${formatCents(f.savedCents)} of ${formatCents(f.targetCents)}` : `${f.hours.saved} h of ${f.hours.target} h`}
               </span>
             </li>
