@@ -188,6 +188,12 @@ describe('SetupScreen, removing a category', () => {
 })
 
 describe('SetupScreen, your name', () => {
+  it('draws a ring round the name field when it has focus, not only a whiter underline (FE-3)', () => {
+    renderScreen(<SetupScreen />, seeded(), 'Sam')
+    const classes = screen.getByRole('textbox', { name: 'My name is' }).classList
+    expect([classes.contains('focus-visible:ring-2'), classes.contains('focus-visible:ring-white/70')]).toEqual([true, true])
+  })
+
   it('saves your name to your sign-in when you leave the field', async () => {
     const fake = seeded()
     await fake.signIn()

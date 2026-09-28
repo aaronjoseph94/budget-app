@@ -289,7 +289,9 @@ function NameBand() {
           onKeyDown={(e) => {
             if (e.key === 'Enter') e.currentTarget.blur()
           }}
-          className="min-w-0 flex-1 border-b border-white/80 bg-transparent pb-1 italic pointer-coarse:min-h-11 text-setup-band-ink outline-none placeholder:text-setup-band-ink/60 focus-visible:border-white"
+          // A ring, as '‹ More' beside it has: focus only whitened the
+          // underline, a change of 1.36 to one (FE-3).
+          className="min-w-0 flex-1 rounded-sm border-b border-white/80 bg-transparent pb-1 italic pointer-coarse:min-h-11 text-setup-band-ink outline-none placeholder:text-setup-band-ink/60 focus-visible:border-white focus-visible:ring-2 focus-visible:ring-white/70"
           placeholder="your first name"
         />
         {state === 'saved' ? <Icon name="check" className="size-4 shrink-0" aria-label="Saved" /> : null}
