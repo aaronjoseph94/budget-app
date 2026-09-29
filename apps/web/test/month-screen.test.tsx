@@ -238,8 +238,29 @@ describe('MonthScreen budgets and goals', () => {
     await screen.findByRole('region', { name: 'Variable expenses' })
 
     const over = block('Variable expenses').getByText('-5.00')
-    expect(over.className.split(' ')).toEqual(expect.arrayContaining(['rounded-full', 'bg-spend', 'text-spend-foreground']))
+    // Mockup A's rose pill with white words (ADR 0010), keeping its minus sign.
+    expect(over.className.split(' ')).toEqual(expect.arrayContaining(['rounded-full', 'bg-summary-negative', 'text-summary-negative-ink']))
     expect(block('Savings').getByText('-200.00').tagName).toBe('TD')
+  })
+
+  // Hand-derived, by core's goalBars: groceries 100.00 of 200.00 is 5,000 bp;
+  // dining 25.00 past its 20.00 fills the track, in rose; clothing's refund
+  // draws nothing; pay 2,500.00 of 3,000.00 is 8,333 bp. The Variable head:
+  // 85.00 of 220.00, 3,864 bp. Only Variable and Income have mini bars (P1 item 5).
+  it("draws each list's head bar and its rows' mini bars from core, on Variable and Income only", async () => {
+    renderScreen(<MonthScreen month="2026-09" />, budgeted())
+    await screen.findByRole('region', { name: 'Variable expenses' })
+
+    const fill = (bar: Element | null | undefined) => (bar?.firstElementChild as HTMLElement | null)?.style.width ?? 'none'
+    const mini = (name: string, row: string) => block(name).getByRole('rowheader', { name: row }).querySelector('[aria-hidden="true"]')
+    expect(fill(mini('Variable expenses', 'Groceries'))).toBe('50%')
+    expect(fill(mini('Variable expenses', '<b>Dinner & drinks</b>'))).toBe('100%')
+    expect(mini('Variable expenses', '<b>Dinner & drinks</b>')?.firstElementChild?.className).toContain('bg-spend-bar')
+    expect(fill(mini('Variable expenses', 'Clothing'))).toBe('none')
+    expect(fill(mini('Income', 'Pay'))).toBe('83.33%')
+    expect(mini('Bills', 'Phone')).toBeNull()
+    expect(fill(block('Variable expenses').getByRole('heading').closest('div')?.parentElement?.nextElementSibling)).toBe('38.64%')
+    await expectNoAxeViolations()
   })
 
   // Hand-derived for October: groceries 200.00 from July, dining back to

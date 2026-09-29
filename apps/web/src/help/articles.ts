@@ -96,6 +96,7 @@ export const ARTICLES: readonly Article[] = [
       'Tap **Year** to see twelve months side by side.',
       'Use the arrows beside the title to step back or forward one month, week or pay period.',
       'Tap a row to see the charges behind it.',
+      'Tap a budget to type it: every budget you can type is underlined with dots, and a pencil marks a row with none yet.',
     ],
     done: 'you can move between the four views and step back to last month.',
     stuck:

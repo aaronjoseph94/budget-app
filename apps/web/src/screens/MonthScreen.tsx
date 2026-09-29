@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
+  goalBars,
   historyStart,
   isoDate,
   monthBounds,
@@ -316,12 +317,6 @@ export function MonthScreen({ month }: { month: string | null }) {
               </Suspense>
             </ErrorBoundary>
           )}
-          {/* Phones: the block every statement changes first, and the charts
-            last (§6.2). Four columns on a desktop in the workbook's own arrangement,
-            Jan!B3:V44 (§6.3), the charts second on the top row as the workbook's
-            panel H3:K18 is, from 1280px: below that a card is too narrow for
-            three columns of amounts, and two columns hold them. The page is
-            in phone order, which is the order a screen reader follows. */}
           <MonthSummary
             sheet={sheet}
             month={start}
@@ -339,9 +334,13 @@ export function MonthScreen({ month }: { month: string | null }) {
             onUnsaved={setStartUnsaved}
           />
           {vsLabel === null ? null : <ThirdSwitch third={third} vsLabel={vsLabel} onChange={chooseThird} />}
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <PeriodBlocks blocks={sheet.blocks} {...blockProps} />
-            <MonthCharts sheet={sheet} className="order-7 md:col-span-2 xl:order-1 xl:col-span-1" />
+          {/* Phones: the block every statement changes first, and the charts
+            last (§6.2). Two columns from 768px; from 1280px Mockup A's
+            layout, the lists two across and the charts in a column on the
+            right. The page stays in phone order, which a screen reader follows. */}
+          <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,17rem)] xl:gap-5 min-[1400px]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,20rem)]">
+            <PeriodBlocks blocks={sheet.blocks} inListOrder {...blockProps} />
+            <MonthCharts sheet={sheet} className="order-7 md:col-span-2 xl:col-span-1 xl:col-start-3 xl:row-span-3 xl:row-start-1" />
           </div>
           <TransfersNote cents={sheet.transfersCents} onOpen={() => setOpened(NOT_SPENDING)} />
           {here !== null && opened !== null ? (
@@ -436,24 +435,60 @@ function ReviewBanner({
 
 export type BlockKind = keyof PeriodSheet['blocks']
 
-/** The workbook's colours per block (§6.6): Bills, Debts and Subscriptions share one set. Written out for Tailwind. */
-const TONE: Record<BlockKind, { band: string; header: string; ink: string; rule: string }> = {
-  income: { band: 'bg-income-band', header: 'bg-income-header', ink: 'text-income-ink', rule: 'border-income-rule' },
-  savings: {
-    band: 'bg-savings-band',
-    header: 'bg-savings-header',
-    ink: 'text-savings-ink',
-    rule: 'border-savings-rule',
+/**
+ * Each list's hue on every screen (ADR 0010): orange Variable, sky Bills,
+ * violet Subscriptions, rose Debts, green Income, amber Savings. `bar` and
+ * `icon` carry no words; every word on the list's surfaces is its `ink`.
+ * Orange draws its icon in #ea580c, as the review asks for any orange mark.
+ * Written out for Tailwind.
+ */
+const TONE: Record<BlockKind, { header: string; ink: string; rule: string; tile: string; icon: string; bar: string; glyph: IconName }> = {
+  income: { header: 'bg-income-header', ink: 'text-income-ink', rule: 'border-income-rule', tile: 'bg-income-tile', icon: 'text-income-accent', bar: 'bg-income-accent', glyph: 'dollar' },
+  savings: { header: 'bg-savings-header', ink: 'text-savings-ink', rule: 'border-savings-rule', tile: 'bg-savings-tile', icon: 'text-savings-accent', bar: 'bg-savings-accent', glyph: 'piggy' },
+  bill: { header: 'bg-bills-header', ink: 'text-bills-ink', rule: 'border-bills-rule', tile: 'bg-bills-tile', icon: 'text-bills-accent', bar: 'bg-bills-accent', glyph: 'home' },
+  debt: { header: 'bg-debts-header', ink: 'text-debts-ink', rule: 'border-debts-rule', tile: 'bg-debts-tile', icon: 'text-debts-accent', bar: 'bg-debts-accent', glyph: 'card' },
+  subscription: {
+    header: 'bg-subscriptions-header',
+    ink: 'text-subscriptions-ink',
+    rule: 'border-subscriptions-rule',
+    tile: 'bg-subscriptions-tile',
+    icon: 'text-subscriptions-accent',
+    bar: 'bg-subscriptions-accent',
+    glyph: 'monitor',
   },
-  bill: { band: 'bg-owed-band', header: 'bg-owed-header', ink: 'text-owed-ink', rule: 'border-owed-rule' },
-  debt: { band: 'bg-owed-band', header: 'bg-owed-header', ink: 'text-owed-ink', rule: 'border-owed-rule' },
-  subscription: { band: 'bg-owed-band', header: 'bg-owed-header', ink: 'text-owed-ink', rule: 'border-owed-rule' },
-  variable: {
-    band: 'bg-variable-band',
-    header: 'bg-variable-header',
-    ink: 'text-variable-ink',
-    rule: 'border-variable-rule',
-  },
+  variable: { header: 'bg-variable-header', ink: 'text-variable-ink', rule: 'border-variable-rule', tile: 'bg-variable-tile', icon: 'text-variable-large', bar: 'bg-variable-accent', glyph: 'bag' },
+}
+
+/** Mini bars under each name on these lists only: on the others every row is usually all paid, and a full bar is noise (design-review P1 item 5). */
+const MINI_BARS: ReadonlySet<BlockKind> = new Set(['variable', 'income'])
+
+/**
+ * A bar's filled length, in basis points of its track, from core's goalBars
+ * over one Actual and its Budget or Goal: the Actual's share of the larger of
+ * the two, so an Actual past its budget fills the track. Null where nothing
+ * can be drawn (money back out, or nothing at all). The screen never divides.
+ */
+function filledBp(budgetCents: number | null, actualCents: number): number | null {
+  return goalBars({ rows: [{ categoryId: 'bar', budgetCents, actualCents }] }).bars[0]?.actualBp ?? null
+}
+
+/**
+ * The mini bar under a row's name: its Actual against its own budget or
+ * goal (filledBp), in rose where a spending row is over (core's Left below
+ * zero), as its Left pill is.
+ */
+function MiniBar({ row, fill }: { row: Row; fill: string }) {
+  const over = row.remainingCents !== null && row.remainingCents < 0
+  return <Bar bp={filledBp(row.budgetCents, row.actualCents)} fill={over ? 'bg-spend-bar' : fill} className="mt-1.5 h-[3px] w-full max-w-40" />
+}
+
+/** A bar with no words, drawn from basis points. */
+function Bar({ bp, fill, className }: { bp: number | null; fill: string; className: string }) {
+  return (
+    <span aria-hidden="true" className={cn('block overflow-hidden rounded-full bg-track', className)}>
+      {bp === null ? null : <span className={cn('block h-full rounded-full', fill)} style={{ width: `${bp / 100}%` }} />}
+    </span>
+  )
 }
 
 /**
@@ -523,6 +558,7 @@ export function Block({
   const openers = useRef(new Map<string, HTMLButtonElement>())
   useReturnFocus(editing, (id) => openers.current.get(id))
   const tone = TONE[kind]
+  const bars = MINI_BARS.has(kind)
   const columns = COLUMNS[kind]
   const word = columns.budget === 'Goal' ? 'Goal' : 'Budget'
   const heading = LIST_HEADING[kind]
@@ -539,26 +575,36 @@ export function Block({
   const budgeted = block.rows.some((r) => r.budgetCents !== null)
 
   return (
-    <section
-      aria-label={heading}
-      className={cn('overflow-hidden rounded-xl border bg-card shadow-sm', tone.rule, className)}
-    >
-      <div className={cn('flex flex-wrap items-baseline justify-between gap-x-3 px-4 py-3 max-[359px]:px-3', tone.band, tone.ink)}>
-        <h2 className="text-sm font-semibold uppercase tracking-wide">{heading}</h2>
-        <p>
-          <Figure className="text-lg font-bold">{formatCents(block.actualTotalCents)}</Figure>
-          {budgeted ? <span className="tnum text-sm"> of {formatCents(block.budgetTotalCents)}</span> : null}
-          {/* Under $1 is the same (F26), and a chip saying so on every quiet list is noise. */}
-          {/* Kept whole where it fits; with the phone's text at 200% it was
-            wider than the card and pushed the Month sideways (N58). */}
-          {total === undefined || total.direction === 'same' ? null : (
-            <span className="ml-2 inline-block max-w-full rounded-full bg-card/70 px-2 py-0.5 text-xs font-medium">
-              <span aria-hidden="true">{total.direction === 'more' ? '▲ ' : '▼ '}</span>
-              {formatChange(total)}
-              <span className="sr-only"> than last month</span>
-            </span>
-          )}
-        </p>
+    <section aria-label={heading} className={cn('overflow-hidden rounded-xl border bg-card', className)}>
+      {/* Mockup A's list card head: an icon tile in the list's hue, the name,
+        "$Actual of $Budget", and a bar of the Actual against the budget
+        total, from core's goalBars. The design's % pill is not drawn: no
+        engine output gives a block's Actual over its budget, and the screen
+        does not divide (NOTES.md). */}
+      <div className="flex flex-col gap-3.5 px-4 pt-4 pb-3.5 max-[359px]:px-3 md:px-5 md:pt-5">
+        <div className="flex items-center gap-3.5">
+          <span aria-hidden="true" className={cn('flex size-12 shrink-0 items-center justify-center rounded-lg', tone.tile, tone.icon)}>
+            <Icon name={tone.glyph} className="size-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-lg font-semibold leading-snug">{heading}</h2>
+            <p className="text-[0.9375rem] text-muted-foreground">
+              <Figure className="font-semibold text-foreground">{formatCents(block.actualTotalCents)}</Figure>
+              {budgeted ? <span className="tnum"> of {formatCents(block.budgetTotalCents)}</span> : null}
+              {/* Under $1 is the same (F26), and a chip saying so on every quiet list is noise. */}
+              {/* Kept whole where it fits; with the phone's text at 200% it was
+                wider than the card and pushed the Month sideways (N58). */}
+              {total === undefined || total.direction === 'same' ? null : (
+                <span className={cn('ml-2 inline-block max-w-full rounded-full px-2 py-0.5 text-xs font-medium', tone.tile, tone.ink)}>
+                  <span aria-hidden="true">{total.direction === 'more' ? '▲ ' : '▼ '}</span>
+                  {formatChange(total)}
+                  <span className="sr-only"> than last month</span>
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+        {budgeted ? <Bar bp={filledBp(block.budgetTotalCents, block.actualTotalCents)} fill={tone.bar} className="h-2" /> : null}
       </div>
       {block.rows.length === 0 ? (
         <p className="px-4 py-3 text-sm text-muted-foreground">
@@ -575,14 +621,14 @@ export function Block({
         // below 360 px a 13 px type and 12 px edges keep every column in
         // view in both of the last column's modes (N66).
         <div className="overflow-x-auto">
-          <table className="w-full text-sm xl:text-xs max-[359px]:text-[0.8125rem]">
+          <table className="w-full text-sm max-[359px]:text-[0.8125rem]">
             <thead className={cn(tone.header, tone.ink)}>
               <tr>
-                <th scope="col" className="py-1.5 pl-4 pr-1 text-left text-xs font-medium max-[359px]:pl-3">
+                <th scope="col" className="py-2.5 pl-4 pr-1 text-left font-medium max-[359px]:pl-3 min-[1400px]:pl-5">
                   Category
                 </th>
                 {[columns.budget, 'Actual', ...(third === null ? [] : [third === 'vs' && compare !== undefined ? compare.label : third])].map((name) => (
-                  <th key={name} scope="col" className="px-1 py-1.5 text-right text-xs font-medium last:pr-4 max-[359px]:last:pr-3">
+                  <th key={name} scope="col" className="px-1 py-2.5 text-right font-medium last:pr-4 max-[359px]:last:pr-3 min-[1400px]:last:pr-5">
                     {name}
                   </th>
                 ))}
@@ -595,11 +641,14 @@ export function Block({
                 <tr
                   key={r.categoryId}
                   onClick={onOpen === undefined ? undefined : () => onOpen(r.categoryId)}
-                  className={cn('border-t', onOpen !== undefined && 'cursor-pointer hover:bg-accent/60', tone.rule)}
+                  className={cn('border-t', onOpen !== undefined && 'cursor-pointer hover:bg-accent')}
                 >
-                  <th scope="row" className="py-2 pl-4 pr-1 text-left font-normal [overflow-wrap:anywhere] max-[359px]:pl-3">
+                  <th scope="row" className="py-2.5 pl-4 pr-1 text-left font-medium [overflow-wrap:anywhere] max-[359px]:pl-3 min-[1400px]:pl-5">
                     {onOpen === undefined ? (
-                      r.name
+                      <>
+                        {r.name}
+                        {bars ? <MiniBar row={r} fill={tone.bar} /> : null}
+                      </>
                     ) : (
                       <button
                         type="button"
@@ -608,9 +657,10 @@ export function Block({
                           e.stopPropagation()
                           onOpen(r.categoryId)
                         }}
-                        className="break-words rounded-sm text-left underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:-my-2 pointer-coarse:flex pointer-coarse:min-h-11 pointer-coarse:w-full pointer-coarse:items-center"
+                        className="break-words rounded-sm text-left underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:-my-2 pointer-coarse:flex pointer-coarse:min-h-11 pointer-coarse:w-full pointer-coarse:flex-col pointer-coarse:justify-center"
                       >
-                        {r.name}
+                        <span className="block">{r.name}</span>
+                        {bars ? <MiniBar row={r} fill={tone.bar} /> : null}
                       </button>
                     )}
                   </th>
@@ -674,7 +724,7 @@ export function Block({
                 </tr>,
                 // The budget is typed in a row of its own, under the one tapped.
                 editor !== undefined && editing === r.categoryId ? (
-                  <tr key={`${r.categoryId} budget`} className={cn('border-t', tone.rule)}>
+                  <tr key={`${r.categoryId} budget`} className="border-t">
                     <td colSpan={third === null ? 3 : 4} className="px-4 py-3">
                       {editor(r, word, {
                         cancel: () => setEditing(null),
@@ -693,13 +743,13 @@ export function Block({
           </table>
         </div>
       )}
-      {note !== null ? <SavedNote className={cn('border-t px-4 py-2 text-xs', tone.rule, tone.ink)}>{note}</SavedNote> : null}
+      {note !== null ? <SavedNote className={cn('border-t px-4 py-2 text-xs md:px-5', tone.ink)}>{note}</SavedNote> : null}
       {empty > 0 ? (
         <button
           type="button"
           aria-expanded={showEmpty}
           onClick={() => setShowEmpty((v) => !v)}
-          className={cn('w-full border-t px-4 py-2 text-left text-xs font-medium pointer-coarse:min-h-11', tone.rule, tone.ink)}
+          className={cn('w-full border-t px-4 py-2.5 text-left text-sm font-medium pointer-coarse:min-h-11 md:px-5', tone.ink)}
         >
           {showEmpty ? 'Hide empty' : `Show ${empty} empty`}
         </button>
@@ -715,16 +765,22 @@ export function Block({
  */
 export function PeriodBlocks({
   blocks,
+  inListOrder = false,
   ...blockProps
-}: { blocks: PeriodSheet['blocks'] } & Omit<Parameters<typeof Block>[0], 'kind' | 'block' | 'className'>) {
+}: {
+  blocks: PeriodSheet['blocks']
+  /** Keep phone order on a desktop too, as the Month's two columns beside its charts do (Mockup A). */
+  inListOrder?: boolean
+} & Omit<Parameters<typeof Block>[0], 'kind' | 'block' | 'className'>) {
+  const at = (phone: string, workbook: string) => (inListOrder ? phone : `${phone} ${workbook}`)
   return (
     <>
-      <Block kind="variable" block={blocks.variable} {...blockProps} className="order-1 xl:order-7" />
-      <Block kind="bill" block={blocks.bill} {...blockProps} className="order-2 xl:order-4" />
-      <Block kind="subscription" block={blocks.subscription} {...blockProps} className="order-3 xl:order-6" />
-      <Block kind="debt" block={blocks.debt} {...blockProps} className="order-4 xl:order-5" />
-      <Block kind="income" block={blocks.income} {...blockProps} className="order-5 xl:order-2" />
-      <Block kind="savings" block={blocks.savings} {...blockProps} className="order-6 xl:order-3" />
+      <Block kind="variable" block={blocks.variable} {...blockProps} className={at('order-1', 'xl:order-7')} />
+      <Block kind="bill" block={blocks.bill} {...blockProps} className={at('order-2', 'xl:order-4')} />
+      <Block kind="subscription" block={blocks.subscription} {...blockProps} className={at('order-3', 'xl:order-6')} />
+      <Block kind="debt" block={blocks.debt} {...blockProps} className={at('order-4', 'xl:order-5')} />
+      <Block kind="income" block={blocks.income} {...blockProps} className={at('order-5', 'xl:order-2')} />
+      <Block kind="savings" block={blocks.savings} {...blockProps} className={at('order-6', 'xl:order-3')} />
     </>
   )
 }
@@ -781,8 +837,8 @@ export function TransfersNote({ cents, onOpen }: { cents: number; onOpen?: (() =
 
 /**
  * A row's Left (Budget − Actual) or Difference (Actual − Goal), from core.
- * Overspent is the workbook's pill (Jan!V22:V44, cream on red), in the darker red
- * that makes its text readable, with the minus sign the workbook's format hid (D8).
+ * Overspent is the workbook's pill (Jan!V22:V44), drawn as Mockup A's rose pill
+ * with white words (ADR 0010, 4.70 to one), with the minus sign the workbook's format hid (D8).
  * A fund short of its goal keeps its minus sign without the pill, as the workbook
  * marks only spending. Blank where core gives none, and on an empty row.
  */
@@ -790,7 +846,7 @@ function Third({ row, column, empty }: { row: Row; column: 'Left' | 'Difference'
   const value = column === 'Left' ? row.remainingCents : row.differenceCents
   if (value === null || empty) return null
   if (column === 'Left' && value < 0) {
-    return <span className="rounded-full bg-spend px-1.5 py-0.5 text-spend-foreground">{formatAmount(value)}</span>
+    return <span className="rounded-full bg-summary-negative px-2 py-0.5 font-semibold text-summary-negative-ink min-[1400px]:px-2.5 min-[1400px]:py-1">{formatAmount(value)}</span>
   }
   return <>{formatAmount(value)}</>
 }
