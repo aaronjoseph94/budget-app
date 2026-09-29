@@ -383,8 +383,9 @@ describe('MonthScreen planned amounts', () => {
     renderScreen(<MonthScreen month="2026-09" />, planned())
     await screen.findByRole('region', { name: 'Bills' })
 
-    expect(cells('Bills', 'Rent')).toEqual(['', '1,600.00planned', ''])
-    expect(cells('Bills', 'Phone')).toEqual(['', '55.00', ''])
+    expect(cells('Bills', 'Rent')).toEqual(['', '1,600.00planned', '0.00'])
+    // Its 50.00 plan stands as its budget (F51): 5.00 over.
+    expect(cells('Bills', 'Phone')).toEqual(['', '55.00', '-5.00'])
     expect(band('Bills')).toBe('$1,655.00')
     // Starts in October, so nothing here yet.
     expect(block('Subscriptions').queryByRole('rowheader', { name: 'Music' })).toBeNull()
@@ -399,9 +400,9 @@ describe('MonthScreen planned amounts', () => {
     await screen.findByRole('heading', { name: 'October 2026' })
 
     expect((await loaded('Bills')).getByRole('rowheader', { name: 'Rent' })).toBeTruthy()
-    expect(cells('Bills', 'Rent')).toEqual(['', '1,700.00planned', ''])
-    expect(cells('Bills', 'Phone')).toEqual(['', '50.00planned', ''])
-    expect(cells('Subscriptions', 'Music')).toEqual(['', '11.99planned', ''])
+    expect(cells('Bills', 'Rent')).toEqual(['', '1,700.00planned', '0.00'])
+    expect(cells('Bills', 'Phone')).toEqual(['', '50.00planned', '0.00'])
+    expect(cells('Subscriptions', 'Music')).toEqual(['', '11.99planned', '0.00'])
     const summary = within(screen.getByRole('region', { name: 'Summary' }))
     expect(summary.getByText('Spent').nextSibling?.textContent).toBe('$1,761.99')
   })

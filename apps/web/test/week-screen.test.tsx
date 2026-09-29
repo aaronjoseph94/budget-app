@@ -135,7 +135,7 @@ describe('WeekScreen', () => {
     renderScreen(<WeekScreen />, fake)
 
     expect(await summary('Spent')).toBe('$1,730.12')
-    expect(await cells('Bills', 'Rent')).toEqual(['', '1,600.00planned', ''])
+    expect(await cells('Bills', 'Rent')).toEqual(['', '1,600.00planned', '0.00'])
   })
 
   // Monday 23 February to Sunday 1 March: the rent typed from March, due on
@@ -150,7 +150,7 @@ describe('WeekScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Previous week' }))
     await waitFor(async () => expect(await summary('Spent')).toBe('$99.99'))
     fireEvent.click(screen.getByRole('button', { name: 'Previous week' }))
-    await waitFor(async () => expect(await cells('Bills', 'Rent')).toEqual(['', '1,700.00planned', '']))
+    await waitFor(async () => expect(await cells('Bills', 'Rent')).toEqual(['', '1,700.00planned', '0.00']))
   })
 
   // Hand-derived: 8,450 of 30,000 is 28% with 21,550 to go; 21,550 over the

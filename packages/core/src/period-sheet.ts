@@ -26,6 +26,10 @@
  *   app's is Budget − Actual where a budget is set and null where none is.
  *   Income has Goal and Actual only (M8:P16). A budget total (D21, J21, O21,
  *   T21, O9, T9) adds the budgets set, as SUM skips a blank.
+ * - F51 and D30, the owner's choice: on a bill, debt or subscription with no
+ *   budget typed, the amount F8 counts in the window stands as its effective
+ *   budget, which the pill, the card head and Left use. A typed budget, $0
+ *   included, wins. `budgetCents` and the budget total stay typed only.
  * - F7, Spent and the ending balance. `Jan!D11 =SUM(C19,I19,N19,S19)`: Bills
  *   + Debts + Subscriptions + Variable expenses, never savings. `Jan!D15
  *   =D9+N5-D11-S5`: the typed start + income − spent − saved. The workbook reads a
@@ -160,16 +164,24 @@ export interface MonthSheetInput extends Omit<PeriodSheetInput, 'from' | 'to' | 
 export interface PeriodRow {
   readonly categoryId: string
   readonly name: string
-  /** Budgeted, or on Income and Savings the Goal. Null is no budget, not $0. */
+  /** Budgeted, or on Income and Savings the Goal, as typed. Null is no budget, not $0. */
   readonly budgetCents: Cents | null
+  /**
+   * F51: the typed budget, or on a bill, debt or subscription with none
+   * typed the monthly amount counted in the window (F8, F15). Null: neither.
+   */
+  readonly effectiveBudgetCents: Cents | null
+  /** Where `effectiveBudgetCents` came from: typed ($0 too), a plan, or nothing. */
+  readonly budgetBasis: 'typed' | 'planned' | 'none'
   /** As the workbook shows it: spent, received or saved, positive; below zero after refunds. */
   readonly actualCents: Cents
   /** What made the Actual: ledger rows, a bill's planned amount (F3), or nothing. */
   readonly basis: 'real' | 'planned' | 'none'
   /**
    * Budget − Actual (Jan!V22), below zero when overspent, on Variable
-   * expenses, Bills, Debts and Subscriptions. Null on Income and Savings, and
-   * on a bill, debt or subscription with no budget (F16).
+   * expenses, Bills, Debts and Subscriptions; on the last three over the
+   * effective budget (F51). Null on Income and Savings, and on a bill, debt
+   * or subscription with no effective budget (F16).
    */
   readonly remainingCents: Cents | null
   /** Actual − Goal (F6, Jan!V10), below zero when short of the goal. Savings only; null elsewhere. */
@@ -187,6 +199,8 @@ export interface PeriodBlock {
   readonly rows: readonly PeriodRow[]
   /** The rows' budgets or goals added up (Jan!D21, J21, O21, T21, O9, T9); a row with none adds nothing. */
   readonly budgetTotalCents: Cents
+  /** The rows' effective budgets added up (F51): what the card head and its % pill are over. */
+  readonly effectiveBudgetTotalCents: Cents
   readonly actualTotalCents: Cents
 }
 
@@ -321,13 +335,20 @@ export function periodSheet(input: PeriodSheetInput): PeriodSheet {
         const real = byCategory.get(c.id)
         const budget = budgets.get(c.id)
         const budgetCents = budget === undefined ? null : budget
+        // What F8 counts in the window, whether or not real rows replace it (F3).
+        const planned = OWED.has(kind) ? plannedHere(plans.get(c.id)) : null
+        // F51: a typed budget, $0 too, wins; else the plan stands on these lists.
+        const effective = budgetCents !== null ? budgetCents : planned
+        const budgetBasis: PeriodRow['budgetBasis'] = budgetCents !== null ? 'typed' : planned !== null ? 'planned' : 'none'
         const row = (actualCents: Cents, basis: PeriodRow['basis']) => ({
           categoryId: c.id,
           name: c.name,
           budgetCents,
+          effectiveBudgetCents: effective,
+          budgetBasis,
           actualCents,
           basis,
-          remainingCents: remaining(kind, budgetCents, actualCents),
+          remainingCents: remaining(kind, effective, actualCents),
           differenceCents: difference(kind, budgetCents, actualCents),
         })
         if (real !== undefined) {
@@ -337,7 +358,6 @@ export function periodSheet(input: PeriodSheetInput): PeriodSheet {
           return row(kind === 'income' ? net : cents(ZERO_CENTS - net), 'real')
         }
         // F3: the planned amount only when no real row is in the window.
-        const planned = OWED.has(kind) ? plannedHere(plans.get(c.id)) : null
         return planned === null ? row(ZERO_CENTS, 'none') : row(planned, 'planned')
       })
     // F17: a share is of the rows above zero, so a refund-heavy row is left
@@ -349,6 +369,7 @@ export function periodSheet(input: PeriodSheetInput): PeriodSheet {
     return {
       rows,
       budgetTotalCents: sumCents(present(rows.map((r) => r.budgetCents))),
+      effectiveBudgetTotalCents: sumCents(present(rows.map((r) => r.effectiveBudgetCents))),
       actualTotalCents: sumCents(rows.map((r) => r.actualCents)),
     }
   }

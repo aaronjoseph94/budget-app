@@ -480,14 +480,15 @@ describe('periodSheet budgets, Remaining and Difference (suite)', () => {
   const columns = (block: keyof typeof s.blocks) =>
     s.blocks[block].rows.map((r) => [r.categoryId, r.budgetCents, r.actualCents, r.remainingCents, r.differenceCents])
 
-  it('gives each spending row Budget − Actual, and a bill with no budget none (F5, F16)', () => {
+  it("gives each spending row Budget − Actual, and a bill with no budget its plan's (F5, F16, F51)", () => {
     expect(columns('variable')).toEqual([
       ['fuel', null, 6_000, -6_000, null],
       ['food', 10_000, 7_000, 3_000, null],
     ])
     expect(columns('bill')).toEqual([
       ['rent', 115_000, 120_000, -5_000, null],
-      ['phone', null, 4_000, null, null],
+      // No budget typed: its 50.00 plan, due on the 12th, stands as its budget (F51).
+      ['phone', null, 4_000, 1_000, null],
     ])
     expect(columns('debt')).toEqual([['loan', 10_000, 10_000, 0, null]])
     expect(columns('subscription')).toEqual([['music', 1_200, 999, 201, null]])
@@ -532,6 +533,81 @@ describe('periodSheet budgets, Remaining and Difference (suite)', () => {
   })
 })
 
+describe('periodSheet effective budgets: a plan stands where no budget is typed (suite, F51)', () => {
+  const PLANS = [plan('rent', 160_000, 1), plan('phone', 6_000, 12), plan('loan', 25_000, 20), plan('music', 1_199, 12)]
+  const columns = (s: ReturnType<typeof periodSheet>, block: keyof ReturnType<typeof periodSheet>['blocks']) =>
+    s.blocks[block].rows.map((r) => [r.categoryId, r.budgetCents, r.effectiveBudgetCents, r.budgetBasis, r.actualCents, r.remainingCents])
+
+  // Hand-derived, September. Rent: none typed, its 1,600.00 plan stands and
+  // is its Actual: left 0. Phone: 70.00 typed wins over its 60.00 plan, 55.00
+  // paid, 15.00 left. Loan: $0 typed wins, 250.00 paid, −250.00. Music: its
+  // 11.99 plan, left 0. Bills: 1,655.00 of 1,670.00 effective, 70.00 typed.
+  const month = periodSheet({
+    ...BASE,
+    plans: PLANS,
+    budgets: [
+      { categoryId: 'phone', budgetCents: 7_000 },
+      { categoryId: 'loan', budgetCents: 0 },
+      { categoryId: 'food', budgetCents: 10_000 },
+    ],
+    entries: [row('2026-09-05', -5_500, 'phone'), row('2026-09-20', -25_000, 'loan'), row('2026-09-03', -3_000, 'food')],
+  })
+
+  it('takes a planned amount as the budget of a bill, debt or subscription with none typed, and a typed one, $0 too, over it', () => {
+    expect(columns(month, 'bill')).toEqual([
+      ['rent', null, 160_000, 'planned', 160_000, 0],
+      ['phone', 7_000, 7_000, 'typed', 5_500, 1_500],
+    ])
+    expect(columns(month, 'debt')).toEqual([['loan', 0, 0, 'typed', 25_000, -25_000]])
+    expect(columns(month, 'subscription')).toEqual([['music', null, 1_199, 'planned', 1_199, 0]])
+  })
+
+  it('totals the effective budgets beside the typed ones, which stay as the workbook has them', () => {
+    const { bill, debt, subscription, variable } = month.blocks
+    expect([bill, debt, subscription].map((b) => [b.budgetTotalCents, b.effectiveBudgetTotalCents, b.actualTotalCents])).toEqual([
+      [7_000, 167_000, 165_500],
+      [0, 0, 25_000],
+      [0, 1_199, 1_199],
+    ])
+    // Variable, Income and Savings are as typed; Left to spend is Variable's alone (F5).
+    expect(columns(month, 'variable')).toEqual([
+      ['fuel', null, null, 'none', 0, 0],
+      ['food', 10_000, 10_000, 'typed', 3_000, 7_000],
+    ])
+    expect(variable.effectiveBudgetTotalCents).toBe(10_000)
+    expect(month.summary.leftToSpendCents).toBe(7_000)
+    expect(month.blocks.income.rows[0]).toMatchObject({ effectiveBudgetCents: null, budgetBasis: 'none' })
+  })
+
+  it('lets a plan stand past a typed "no budget", and gives none for a stopped plan or no plan', () => {
+    const s = periodSheet({
+      ...BASE,
+      categories: [...CATEGORIES, cat('water', 'bill', 2)],
+      plans: [plan('rent', 160_000, 1), plan('phone', null, 12)],
+      budgets: [{ categoryId: 'rent', budgetCents: null }],
+      entries: [row('2026-09-12', -4_000, 'phone'), row('2026-09-14', -3_000, 'water')],
+    })
+    expect(columns(s, 'bill')).toEqual([
+      ['rent', null, 160_000, 'planned', 160_000, 0],
+      ['phone', null, null, 'none', 4_000, null],
+      ['water', null, null, 'none', 3_000, null],
+    ])
+    expect(s.blocks.bill.effectiveBudgetTotalCents).toBe(160_000)
+  })
+
+  it('counts a plan as the budget in a partial window only where F8 counts it, real rows or not', () => {
+    // 7–13 September: only Music is due (the 12th). Rent is due on the 1st,
+    // so its payment this week stands against no budget.
+    const s = owed(PLANS, [row('2026-09-08', -160_000, 'rent'), row('2026-09-12', -1_000, 'music')], '2026-09-07', '2026-09-13')
+    expect(columns(s, 'bill')).toEqual([
+      ['rent', null, null, 'none', 160_000, null],
+      ['phone', null, 6_000, 'planned', 6_000, 0],
+    ])
+    expect(columns(s, 'subscription')).toEqual([['music', null, 1_199, 'planned', 1_000, 199]])
+    expect(columns(s, 'debt')).toEqual([['loan', null, null, 'none', 0, null]])
+  })
+})
+
 describe('weekSheet (suite)', () => {
   const weekly = (c: PeriodCategory, weeklyBudgetCents: number | null) => ({ ...c, weeklyBudgetCents })
   const categories = CATEGORIES.map((c) =>
@@ -572,5 +648,16 @@ describe('weekSheet (suite)', () => {
     expect(s.blocks.debt.rows[0]).toMatchObject({ actualCents: 0, basis: 'none' })
     expect(week('2026-01-21', [], history).blocks.debt.rows[0]).toMatchObject({ actualCents: 25_000, basis: 'planned' })
     expect(() => week('2026-01-28', [], [typed('gone', '2026-01', 100, 1)])).toThrow(/category gone/)
+  })
+
+  it("takes a bill's amount due in the week as its budget, and a typed weekly $0 over it (F51)", () => {
+    const history = [typed('rent', '2026-01', 160_000, 1), typed('rent', '2026-02', 170_000, 1), typed('loan', '2026-01', 25_000, 20)]
+    // 26 January to 1 February: February's rent is due; the loan's weekly $0 is typed but its 20th is not in the week.
+    const s = week('2026-01-28', [], history)
+    expect(s.blocks.bill.rows[0]).toMatchObject({ effectiveBudgetCents: 170_000, budgetBasis: 'planned', remainingCents: 0 })
+    expect(s.blocks.bill).toMatchObject({ budgetTotalCents: 0, effectiveBudgetTotalCents: 170_000 })
+    // 19 to 25 January: the loan is due, and its typed $0 wins.
+    const loan = week('2026-01-21', [], history).blocks.debt.rows[0]
+    expect(loan).toMatchObject({ effectiveBudgetCents: 0, budgetBasis: 'typed', actualCents: 25_000, remainingCents: -25_000 })
   })
 })

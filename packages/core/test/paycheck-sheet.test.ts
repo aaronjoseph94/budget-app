@@ -60,6 +60,15 @@ describe('paycheckSheet (suite)', () => {
     expect(sheet.month).toBe('2026-09-01')
   })
 
+  it("takes a bill's share as its budget where none is typed, and a typed budget's share over it (F51)", () => {
+    const sheet = sheetFor('biweekly', '2026-09-11', '2026-09-23', { plans: [RENT] })
+    expect(row(sheet, 'bill', 'rent')).toMatchObject({ budgetCents: null, effectiveBudgetCents: 73_846, budgetBasis: 'planned', remainingCents: 0 })
+    // 100000 × 12 ÷ 26 = 46153.85… → 46154 typed; 46154 − 73846 left.
+    const typed = sheetFor('biweekly', '2026-09-11', '2026-09-23', { plans: [RENT], budgets: [budget('rent', '2026-09-01', 100_000)] })
+    expect(row(typed, 'bill', 'rent')).toMatchObject({ effectiveBudgetCents: 46_154, budgetBasis: 'typed', remainingCents: -27_692 })
+    expect(typed.blocks.bill.effectiveBudgetTotalCents).toBe(46_154)
+  })
+
   it('shares by 52 for weekly pay, and not at all for monthly', () => {
     expect(row(sheetFor('weekly', '2026-09-18', '2026-09-23', { plans: [RENT] }), 'bill', 'rent')?.actualCents).toBe(36_923)
     const monthly = sheetFor('monthly', '2026-01-15', '2026-09-23', { plans: [RENT] })

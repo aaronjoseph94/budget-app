@@ -94,7 +94,7 @@ describe('WeekBlocks', () => {
     expect(band('Variable expenses')).toBe('$130.12 of $210.00')
     expect(cells('Variable expenses', 'Groceries')).toEqual(['150.00', '64.12', '85.88'])
     expect(cells('Variable expenses', 'Eating out')).toEqual(['60.00', '66.00', '-6.00'])
-    expect(cells('Bills', 'Rent')).toEqual(['', '1,600.00planned', ''])
+    expect(cells('Bills', 'Rent')).toEqual(['', '1,600.00planned', '0.00'])
     expect(cells('Income', 'Pay')).toEqual(['500.00', '25.00'])
     // 200.00 saved against a 150.00 weekly goal (F6).
     expect(cells('Savings', 'Flight fund')).toEqual(['150.00', '200.00', '50.00'])
