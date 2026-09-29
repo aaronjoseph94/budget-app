@@ -12,8 +12,9 @@ import { DebtsChart, SavingsGoalsChart, TopRing, YearPie } from './YearCharts.js
 import { LINE_BUTTON } from '../components/ui/link.js'
 
 /**
- * The workbook's Home, as the top of the Year (plan §2, §6.4): white cards on
- * Home's blue-grey canvas, each number core's (yearSheet, F12, F18).
+ * The workbook's Home, as the top of the Year (plan §2, §6.4), in Mockup A's
+ * cards: four across from 1280px, two from 640px, each number core's
+ * (yearSheet, F12, F18).
  *
  * Home's cards read today's calendar year; these read the Year shown, so
  * they agree with the tables below them. "Left over" is income less
@@ -38,13 +39,11 @@ export function YearGlance({
   const funds = useFunds()
   const debts = useDebts()
   return (
-    <section
-      aria-label="Year at a glance"
-      className="-mx-4 max-[359px]:-mx-3 grid grid-cols-1 gap-3 bg-home-canvas p-4 max-[359px]:px-3 sm:grid-cols-2 md:mx-0 md:rounded-xl lg:grid-cols-4"
-    >
-      {/* Home!C4, the name typed on START HERE with the workbook's "!". */}
-      <Card className="sm:col-span-2 lg:col-span-4">
-        <h2 className="text-2xl text-home-ink">{displayName === '' ? 'Hi!' : `Hi, ${displayName}!`}</h2>
+    <section aria-label="Year at a glance" className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 xl:grid-cols-4">
+      {/* Home!C4, the name typed on START HERE with the workbook's "!": the
+        one wide card, white to the accent's tint as the Month's hero. */}
+      <Card tint className="sm:col-span-2 xl:col-span-4">
+        <h2 className="text-2xl font-semibold">{displayName === '' ? 'Hi!' : `Hi, ${displayName}!`}</h2>
         {displayName === '' ? (
           <button type="button" className={cn('mt-1 text-sm underline underline-offset-4', LINE_BUTTON)} onClick={() => navigate('setup')}>
             Add your name in Setup
@@ -54,7 +53,7 @@ export function YearGlance({
       {/* Home's "Annual Totals" card (G9:H18): its pie, whose legend names
         the three totals with their shares. */}
       <Card>
-        <h3 className="mb-2 text-xs font-medium text-muted-foreground">Annual totals</h3>
+        <h3 className={cn(TITLE, 'mb-3')}>Annual totals</h3>
         <YearPie sheet={sheet} palette="home" />
       </Card>
       <VsLastYear comparison={comparison} />
@@ -80,35 +79,35 @@ export function YearGlance({
         </Card>
       )}
       <Card>
-        <h3 className="text-xs font-medium text-muted-foreground">Biggest expense</h3>
+        <h3 className={cn(TITLE, 'mb-1')}>Biggest expense</h3>
         {atAGlance.biggest === null ? (
           <p className="mt-1 text-sm">Nothing spent yet</p>
         ) : (
-          <p className="mt-1">
-            <span className="block break-words font-medium [overflow-wrap:anywhere]">{atAGlance.biggest.name}</span>
-            <Figure className="text-lg">{formatCents(atAGlance.biggest.amountCents)}</Figure>
+          <p>
+            <span className="block break-words font-semibold [overflow-wrap:anywhere]">{atAGlance.biggest.name}</span>
+            <Figure className="text-xl font-bold">{formatCents(atAGlance.biggest.amountCents)}</Figure>
           </p>
         )}
-        <h3 className="mt-3 text-xs font-medium text-muted-foreground">Best savings month</h3>
-        <p className="mt-1">
-          <span className="block font-medium">{formatMonthTitle(best.month)}</span>
-          <Figure className="text-lg">{formatCents(best.savedCents)}</Figure>
-          {best.goalCents > 0 ? <span className="tnum text-xs"> of {formatCents(best.goalCents)}</span> : null}
+        <h3 className={cn(TITLE, 'mt-4 mb-1')}>Best savings month</h3>
+        <p>
+          <span className="block font-semibold">{formatMonthTitle(best.month)}</span>
+          <Figure className="text-xl font-bold">{formatCents(best.savedCents)}</Figure>
+          {best.goalCents > 0 ? <span className="tnum text-[0.8125rem] text-muted-foreground"> of {formatCents(best.goalCents)}</span> : null}
         </p>
       </Card>
-      <Card className="lg:col-span-2">
-        <h3 className="text-xs font-medium text-muted-foreground">Top 3 expenses</h3>
+      <Card className="sm:col-span-2 xl:col-span-1">
+        <h3 className={cn(TITLE, 'mb-3')}>Top 3 expenses</h3>
         {atAGlance.top3.length === 0 ? (
           <p className="mt-1 text-sm">Nothing spent yet</p>
         ) : (
-          <ol className="mt-1 space-y-1.5 text-sm">
+          <ol className="space-y-3 text-sm">
             {atAGlance.top3.map((t, i) => (
               // The figure drops under the name when both do not fit, as
               // with the phone's text at 200%, rather than run off (N58).
               <li key={t.categoryId} className="flex flex-wrap items-center gap-x-2">
                 <TopRing top={t} rank={i} />
-                <span className="min-w-0 flex-1 break-words [overflow-wrap:anywhere]">{t.name}</span>
-                <span className="tnum ml-auto shrink-0 text-right">
+                <span className="min-w-0 flex-1 basis-20 break-words font-medium [overflow-wrap:anywhere]">{t.name}</span>
+                <span className="tnum ml-auto shrink-0 text-right text-muted-foreground">
                   {formatCents(t.amountCents)} · {formatShare(t.shareBp)}
                 </span>
               </li>
@@ -117,8 +116,8 @@ export function YearGlance({
         )}
       </Card>
       {/* Home's "Savings Goals" card (O3:P11): each fund today, whichever year is shown. */}
-      <Card className="sm:col-span-2 lg:col-span-4">
-        <h3 className="mb-2 text-xs font-medium text-muted-foreground">Savings goals today</h3>
+      <Card className="sm:col-span-2">
+        <h3 className={cn(TITLE, 'mb-3')}>Savings goals today</h3>
         {funds.status === 'loading' ? <p className="text-sm">Loading…</p> : null}
         {funds.status === 'failed' ? <p className="text-sm">{funds.message}</p> : null}
         {funds.status === 'ready' ? (
@@ -132,8 +131,8 @@ export function YearGlance({
         ) : null}
       </Card>
       {/* Home's debt chart (J12:M23, chart4): each debt today, whichever year is shown. */}
-      <Card className="sm:col-span-2 lg:col-span-4">
-        <h3 className="mb-2 text-xs font-medium text-muted-foreground">Debts today</h3>
+      <Card className="sm:col-span-2">
+        <h3 className={cn(TITLE, 'mb-3')}>Debts today</h3>
         {debts.status === 'loading' ? <p className="text-sm">Loading…</p> : null}
         {debts.status === 'failed' ? <p className="text-sm">{debts.message}</p> : null}
         {debts.status === 'ready' ? (
@@ -152,9 +151,17 @@ export function YearGlance({
   )
 }
 
-function Card({ className, children }: { className?: string; children: ReactNode }) {
-  return <div className={cn('rounded-xl bg-home-card p-4 text-home-ink shadow-sm', className)}>{children}</div>
+/**
+ * Mockup A's card: white, or the accent's tint for the one hero, a 1px edge, 16px
+ * corners, no shadow, 20px by 22px inside from 768px.
+ */
+function Card({ tint = false, className, children }: { tint?: boolean; className?: string; children: ReactNode }) {
+  const fill = tint ? 'bg-linear-to-r from-card to-primary-tint' : 'bg-card'
+  return <div className={cn('min-w-0 rounded-xl border p-4 md:px-[1.375rem] md:py-5', fill, className)}>{children}</div>
 }
+
+/** A card's name: Mockup A's 15px muted label. */
+const TITLE = 'text-[0.9375rem] font-medium text-muted-foreground'
 
 /** One label and its amount; a balance with no start typed has none (D17). */
 function Amount({
@@ -170,8 +177,8 @@ function Amount({
 }) {
   return (
     <div className={className}>
-      <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-      <dd className="text-lg font-bold">
+      <dt className="text-[0.8125rem] text-muted-foreground">{label}</dt>
+      <dd className="text-xl font-bold">
         {cents === null ? <span className="text-sm font-medium">Not yet</span> : <Figure>{formatCents(cents)}</Figure>}
       </dd>
       {hint === null ? null : <dd className="text-xs text-muted-foreground">{hint}</dd>}
@@ -191,8 +198,8 @@ function VsLastYear({ comparison }: { comparison: PeriodComparison | 'failed' | 
   if (comparison === null || (comparison !== 'failed' && comparison.status === 'not_started')) return null
   const range = (w: { from: string; to: string }) => `${formatIsoDate(w.from)} – ${formatIsoDate(w.to)}`
   return (
-    <Card className="sm:col-span-2">
-      <h3 className="text-xs font-medium text-muted-foreground">vs last year</h3>
+    <Card>
+      <h3 className={cn(TITLE, 'mb-2')}>vs last year</h3>
       {comparison === 'failed' || comparison.status === 'before_records' ? (
         <CompareLine comparison={comparison} label="Compared with last year" earlier="last year" day={formatIsoDate} />
       ) : (

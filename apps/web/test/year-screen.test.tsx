@@ -212,6 +212,23 @@ describe('YearScreen', () => {
     ])
   })
 
+  it("draws the glance as Mockup A's cards: edged, no shadow, the greeting the one tinted card", async () => {
+    renderScreen(<YearScreen start="2026-01" />, seeded(), 'Robin')
+
+    const glance = await screen.findByRole('region', { name: 'Year at a glance' })
+    expect(glance.className).not.toMatch(/bg-home-canvas/)
+    const cards = [...glance.children]
+    expect(cards.length).toBeGreaterThan(4)
+    for (const card of cards) {
+      const classes = card.className.split(' ')
+      expect(classes).toEqual(expect.arrayContaining(['rounded-xl', 'border']))
+      expect(classes.some((c) => c.startsWith('shadow'))).toBe(false)
+    }
+    const hero = within(glance).getByRole('heading', { name: 'Hi, Robin!' }).parentElement!
+    expect(hero.className.split(' ')).toEqual(expect.arrayContaining(['from-card', 'to-primary-tint']))
+    expect(cards.filter((c) => c.className.includes('to-primary-tint'))).toEqual([hero])
+  })
+
   it("draws Annual's income and expenses by month and each list against its goal", async () => {
     renderScreen(<YearScreen start="2026-01" />, seeded())
 
