@@ -4,24 +4,29 @@ import { cn } from '../lib/cn.js'
 import { Count, Dot, labelOf } from './marks.js'
 import { SIDEBAR_GROUPS, litOf } from './places.js'
 import type { SidebarState } from './sidebar-state.js'
+import { SidebarFoot } from './SidebarFoot.js'
 
 /**
  * The wide screen's navigation (ADR 0011): a 72px rail of icons from
  * 768px, and from 1024px, unless folded, the 248px sidebar with each
  * group's name. Plan is always open; the other groups fold, as the owner
  * last left them on this device, and until then open when they hold the
- * screen showing. Hidden below 768px, where the phone bar is.
+ * screen showing. At its foot, the main goal and the owner. Hidden below
+ * 768px, where the phone bar is.
  */
 export function Sidebar({
   screen,
   state,
   pendingTotal,
   dot,
+  ready,
 }: {
   screen: Screen
   state: SidebarState
   pendingTotal: number
   dot: boolean
+  /** Whether the shared data is read, which the foot's goal and name need. */
+  ready: boolean
 }) {
   const lit = litOf(screen)
   const folded = state.folded
@@ -104,6 +109,7 @@ export function Sidebar({
           )
         })}
       </nav>
+      {ready ? <SidebarFoot folded={folded} /> : null}
     </aside>
   )
 }

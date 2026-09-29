@@ -33,6 +33,7 @@ afterEach(() => {
   cleanup()
   vi.useRealTimers()
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
   window.localStorage.clear()
   window.location.hash = ''
 })
@@ -118,6 +119,53 @@ describe('the sidebar (ADR 0011)', () => {
     expect(fold('Inbox').getAttribute('aria-label')).toBe('Inbox, 1 waiting')
     fireEvent.click(fold('Inbox'))
     expect(fold('Inbox').getAttribute('aria-label')).toBeNull()
+  })
+})
+
+describe('the sidebar’s foot (ADR 0011)', () => {
+  const wide = () => vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener: () => undefined, removeEventListener: () => undefined }))
+  const withGoal = () => {
+    const fake = createFakeSupabase()
+    fake.tables.categories.push({ id: 'c4', name: 'Flight fund', kind: 'savings', sort_order: 0, weekly_budget_cents: null })
+    fake.tables.transactions.push({ id: 't9', posted_on: '2026-03-05', amount_cents: -20_000, merchant_raw: 'TO FLIGHT FUND', category_id: 'c4', source: 'typed' })
+    fake.tables.savings_goals.push({
+      id: 'g1', name: 'Flight training', target_cents: 3_000_000, saved_cents: 845_000, target_date: null,
+      unit_cost_cents: 27_500, unit_label: 'flight time', category_id: 'c4', start_date: null, balance_as_of: '2026-03-01',
+    })
+    return fake
+  }
+
+  // Hand-derived: 8,450.00 typed at the end of 1 March and 200.00 moved in
+  // on the 5th is 8,650.00 (D16), as the Week and Savings say; 8,650 of
+  // 30,000 is 28.8%, shown as 29%.
+  it('shows the main goal from 1024px, with its fund’s balance, linking to Savings', async () => {
+    wide()
+    renderScreen(<Shell />, withGoal())
+    const card = (await within(screen.getByRole('complementary', { name: 'Sidebar' })).findByText('$8,650.00 of $30,000.00')).closest('a')!
+    expect(card.parentElement?.tagName).toBe('ASIDE')
+    expect(within(card).getByText('Flight training')).toBeTruthy()
+    expect(within(card).getByText('29%')).toBeTruthy()
+    expect(card.getAttribute('href')).toBe('#/savings')
+    await expectNoAxeViolations()
+  })
+
+  it('reads no goal on a narrower screen, where the rail has no room for it', async () => {
+    renderScreen(<Shell />, withGoal())
+    await screen.findByRole('heading', { name: 'September 2026' })
+    expect(screen.getByRole('complementary', { name: 'Sidebar' }).textContent).not.toContain('Flight training')
+  })
+
+  it('names the owner, and signs out', async () => {
+    const fake = createFakeSupabase()
+    const signOut = vi.spyOn(fake.client.auth, 'signOut')
+    renderScreen(<Shell />, fake, 'Sam')
+    await screen.findByRole('heading', { name: 'September 2026' })
+    const aside = within(screen.getByRole('complementary', { name: 'Sidebar' }))
+    expect(aside.getByText('Sam')).toBeTruthy()
+    expect(aside.getByText('you@example.com')).toBeTruthy()
+    expect(aside.getByText('S').getAttribute('aria-hidden')).toBe('true')
+    fireEvent.click(aside.getByRole('button', { name: 'Sign out' }))
+    expect(signOut).toHaveBeenCalledTimes(1)
   })
 })
 

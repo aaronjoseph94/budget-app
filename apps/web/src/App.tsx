@@ -156,7 +156,7 @@ export function Shell() {
         >
           Skip to content
         </a>
-        <Sidebar screen={screen} state={sidebar} pendingTotal={pendingTotal} dot={dot} />
+        <Sidebar screen={screen} state={sidebar} pendingTotal={pendingTotal} dot={dot} ready={status === 'ready'} />
         {/* From 768px the screen sits in a white panel on the grey canvas, beside
           the rail or the sidebar (ADR 0010, 0011); on a phone it is the panel. */}
         <div className={cn('md:py-3 md:pl-[72px] md:pr-3 print:p-0', !sidebar.folded && 'lg:pl-[248px]')}>
