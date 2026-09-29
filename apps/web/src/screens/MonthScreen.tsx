@@ -322,24 +322,24 @@ export function MonthScreen({ month }: { month: string | null }) {
             panel H3:K18 is, from 1280px: below that a card is too narrow for
             three columns of amounts, and two columns hold them. The page is
             in phone order, which is the order a screen reader follows. */}
+          <MonthSummary
+            sheet={sheet}
+            month={start}
+            comparison={comparison}
+            // This month only, and only with a start typed: no balance without one (D17).
+            forecast={
+              coachRead === null || sheet.summary.startingBalanceCents === null ? null : (
+                <ErrorBoundary key={start}>
+                  <Suspense fallback={null}>
+                    <MonthForecastLine />
+                  </Suspense>
+                </ErrorBoundary>
+              )
+            }
+            onUnsaved={setStartUnsaved}
+          />
+          {vsLabel === null ? null : <ThirdSwitch third={third} vsLabel={vsLabel} onChange={chooseThird} />}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <MonthSummary
-              sheet={sheet}
-              month={start}
-              comparison={comparison}
-              // This month only, and only with a start typed: no balance without one (D17).
-              forecast={
-                coachRead === null || sheet.summary.startingBalanceCents === null ? null : (
-                  <ErrorBoundary key={start}>
-                    <Suspense fallback={null}>
-                      <MonthForecastLine />
-                    </Suspense>
-                  </ErrorBoundary>
-                )
-              }
-              onUnsaved={setStartUnsaved}
-            />
-            {vsLabel === null ? null : <ThirdSwitch third={third} vsLabel={vsLabel} onChange={chooseThird} />}
             <PeriodBlocks blocks={sheet.blocks} {...blockProps} />
             <MonthCharts sheet={sheet} className="order-7 md:col-span-2 xl:order-1 xl:col-span-1" />
           </div>
@@ -390,7 +390,8 @@ type Earlier =
  * Where charges not filed yet live on the Month: one line at the top, with
  * their count and no amount, because nothing unreviewed is counted (CLAUDE.md
  * invariant 3). Tapping it opens Review. This month's count when it has any;
- * otherwise the queue's, which is then all from other months.
+ * otherwise the queue's, which is then all from other months. In waiting's
+ * amber (design-review P1 item 4, ADR 0010), never a list's orange.
  */
 function ReviewBanner({
   month,
@@ -406,24 +407,29 @@ function ReviewBanner({
     <button
       type="button"
       onClick={() => navigate('review')}
-      className="flex w-full items-center gap-3 rounded-xl border bg-card px-4 py-3 text-left shadow-sm transition-colors hover:bg-accent"
+      className="flex w-full items-center gap-3.5 rounded-lg border border-waiting-border bg-waiting px-4 py-3.5 text-left text-waiting-ink transition-colors hover:brightness-[0.98] md:px-[1.125rem]"
     >
-      <span className="rounded-full bg-warning/15 p-2 text-warning">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-sm bg-waiting-tile text-waiting-icon">
         <Icon name="inbox" className="size-4" />
       </span>
-      <span className="flex-1 text-sm">
+      <span className="flex-1 md:text-base">
         {pendingHere > 0 ? (
           <>
-            <span className="font-medium">
+            <span className="font-semibold">
               Not filed yet: {pendingHere} from {formatMonthName(month)} waiting for review
             </span>{' '}
-            <span className="text-muted-foreground">— not counted below</span>
+            — not counted below
           </>
         ) : (
-          <span className="text-muted-foreground">{pendingTotal} from other months waiting for review</span>
+          <>{pendingTotal} from other months waiting for review</>
         )}
       </span>
-      <Icon name="chevronRight" className="size-4 text-muted-foreground" />
+      {/* Mockup A's "Review ›". The whole banner is the one button to Review,
+        and its name already says so, so a screen reader hears it once. */}
+      <span aria-hidden="true" className="hidden shrink-0 items-center gap-1 font-medium min-[480px]:flex">
+        Review
+        <Icon name="chevronRight" className="size-3.5" />
+      </span>
     </button>
   )
 }
@@ -848,7 +854,7 @@ function ThirdSwitch({
     <div
       role="group"
       aria-label="Last column"
-      className="order-0 flex flex-wrap items-center gap-1.5 md:col-span-2 xl:col-span-4"
+      className="flex flex-wrap items-center gap-1.5"
     >
       <span className="mr-1 text-xs font-medium text-muted-foreground">Last column</span>
       {options.map((o) => (

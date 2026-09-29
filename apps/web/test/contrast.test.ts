@@ -124,6 +124,10 @@ const TEXT: readonly (readonly [text: string, surface: string, least?: number, a
   ['variable-large', 'card', 3],
   ['variable-large', 'variable-band', 3],
   ['waiting-ink', 'waiting'],
+  // The Month's hero stat card ends on the accent's tint (step 3).
+  ['foreground', 'primary-tint'],
+  ['canvas-muted', 'primary-tint'],
+  ['summary-value', 'card'],
   ['waiting-ink', 'waiting-tile'],
   // The screens' own sets.
   ['white', 'setup-band'],

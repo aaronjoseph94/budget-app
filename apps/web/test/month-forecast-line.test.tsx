@@ -29,6 +29,8 @@ describe('the Month’s forecast line (D27, plan A13)', () => {
     expect(forecast.getAttribute('href')).toBe('#/forecast')
     // F7: 2,000.00 + 2,100.00 − 2,180.00 − 300.00, the card's own figure, under its own label.
     expect(within(summary).getByText('End of month').nextElementSibling?.textContent).toBe('$1,620.00')
+    // Under End of month, on its card (design-review P1 item 3).
+    expect(within(summary).getByText('End of month').parentElement?.contains(forecast)).toBe(true)
     await expectNoAxeViolations()
   })
 

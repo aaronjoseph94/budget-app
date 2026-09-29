@@ -33,7 +33,7 @@ export default function MonthForecastLine() {
   return (
     <div className="mt-3 border-t border-summary-label/30 pt-3 text-sm text-summary-value">
       <p className="flex flex-wrap items-center gap-x-1">
-        <a href={hashOf({ screen: 'forecast', param: null })} className="inline-flex min-h-11 items-center gap-1 underline-offset-4 hover:underline">
+        <a href={hashOf({ screen: 'forecast', param: null })} className="inline-flex min-h-11 flex-wrap items-center gap-x-1 underline-offset-4 hover:underline">
           <span className="font-medium">Forecast:</span>{' '}<span className="tnum font-semibold">{figure}</span>
         </a>
         <button

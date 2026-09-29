@@ -355,15 +355,19 @@ describe('MonthScreen summary and notes', () => {
 
   // Hand-derived. From 2,400.00: + pay 2,500.00 − spent 140.00 − saved
   // 300.00 = 4,460.00 (F7). The 500.00 card payment is in none of it.
-  it("shows the workbook's four numbers in its order, End of month from the start typed for the month", async () => {
+  // In design-review P1 item 3's order, Left to spend first (Mockup A); the workbook's was Start, Spent, Left, End.
+  it("shows the workbook's four numbers in Mockup A's order, End of month from the start typed for the month", async () => {
     const fake = seeded()
     fake.tables.month_balances.push(balance('m1', '2026-09-01', 240_000))
     renderScreen(<MonthScreen month="2026-09" />, fake)
 
     const summary = within(await screen.findByRole('region', { name: 'Summary' }))
-    expect(summary.getAllByRole('term').map((t) => t.textContent)).toEqual(['Start', 'Spent', 'Left to spend', 'End of month'])
+    expect(summary.getAllByRole('term').map((t) => t.textContent)).toEqual(['Left to spend', 'End of month', 'Start', 'Spent'])
     expect(figure(summary, 'Start').textContent).toBe('$2,400.00')
     expect(figure(summary, 'End of month').textContent).toBe('$4,460.00')
+    // One hero, in the accent's gradient; the other three stay white (design-review P2 item 6).
+    const cards = summary.getAllByRole('term').map((t) => t.parentElement!.className.includes('bg-linear-to-b'))
+    expect(cards).toEqual([true, false, false, false])
   })
 
   it("asks for the start, and shows no End of month, when none is typed for this month, even with last month's (D17)", async () => {

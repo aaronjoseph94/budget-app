@@ -2,6 +2,7 @@ import { useRef, useState, type ReactNode } from 'react'
 import type { PeriodComparison, PeriodSheet } from '@budget/core'
 import { formatBasisPoints, formatCents, formatChange, formatDayMonth, formatMonthName } from '../format.js'
 import { SavedNote } from '../components/ui/feedback.js'
+import { Icon, type IconName } from '../components/ui/icons.js'
 import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
 import { useReturnFocus } from '../lib/return-focus.js'
@@ -12,7 +13,8 @@ import { StartEditor } from './StartEditor.js'
  * month (D9, D11, D13, D15), each of them core's. The workbook's labels were
  * pictures that did not survive the export, so these name what its formulas
  * and its D9 note ("Type in the Bank Balance you started the month with!")
- * say each number is, in the workbook's order, two to a row as in the plan's sketch.
+ * say each number is. Mockup A draws them as four stat cards, in design-review
+ * P1 item 3's order: Left to spend, End of month, Start and Spent.
  *
  * Start is the balance typed for this month (decision 6), and is typed by
  * tapping it. With none typed the card asks for it where the number would
@@ -53,34 +55,16 @@ export function MonthSummary({
   useReturnFocus(editing ? true : null, () => opener.current)
   const [note, setNote] = useState<string | null>(null)
   return (
-    <section
-      aria-label="Summary"
-      className="order-0 rounded-xl border bg-summary p-4 shadow-sm md:col-span-2 xl:order-1 xl:col-span-1"
-    >
-      {/* One card of four on a desktop, beside the charts (§6.3): too narrow
-        for two amounts side by side, so the four stack. */}
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-3 xl:grid-cols-1">
-        <Entry label="Start">
-          <button
-            type="button"
-            ref={opener}
-            aria-label={`Starting balance for ${formatMonthName(month)}, ${start === null ? 'none typed' : formatCents(start)}`}
-            aria-expanded={editing}
-            onClick={() => {
-              setNote(null)
-              onUnsaved(null)
-              setEditing(true)
-            }}
-            className="rounded-sm text-left underline decoration-dotted underline-offset-4 outline-none hover:decoration-solid focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-11"
-          >
-            {start === null ? <Waiting>Type your starting bank balance</Waiting> : <Figure>{formatCents(start)}</Figure>}
-          </button>
-        </Entry>
-        <Entry label="Spent">
-          <Figure>{formatCents(spentCents)}</Figure>
-        </Entry>
+    <section aria-label="Summary" className="space-y-3">
+      {/* Mockup A's four stat cards, in design-review P1 item 3's order: Left
+        to spend first, as the one card with the accent's gradient, then End
+        of month with the forecast under it, Start and Spent. Two across on
+        a phone, one below 360 px, four from 1280 px. */}
+      <dl className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 md:gap-4 xl:grid-cols-4">
         <Entry
           label="Left to spend"
+          icon="sparkles"
+          hero
           // The workbook takes a blank budget as $0, so every dollar spent comes off
           // (F5). Only Variable expenses count here, so the hint names them.
           hint={noBudgets ? 'No budgets on Variable expenses yet.' : null}
@@ -91,36 +75,83 @@ export function MonthSummary({
             {formatCents(left)}
           </Figure>
         </Entry>
-        <Entry label="End of month">
+        <Entry label="End of month" icon="calendar" extra={forecast}>
           {end === null ? <Waiting>Shown once Start is typed</Waiting> : <Figure>{formatCents(end)}</Figure>}
         </Entry>
+        <Entry label="Start" icon="wallet">
+          <button
+            type="button"
+            ref={opener}
+            aria-label={`Starting balance for ${formatMonthName(month)}, ${start === null ? 'none typed' : formatCents(start)}`}
+            aria-expanded={editing}
+            onClick={() => {
+              setNote(null)
+              onUnsaved(null)
+              setEditing(true)
+            }}
+            className="rounded-sm text-left underline decoration-dotted decoration-2 underline-offset-[6px] outline-none hover:decoration-solid focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-11"
+          >
+            {start === null ? <Waiting>Type your starting bank balance</Waiting> : <Figure>{formatCents(start)}</Figure>}
+          </button>
+        </Entry>
+        <Entry label="Spent" icon="bag">
+          <Figure>{formatCents(spentCents)}</Figure>
+        </Entry>
       </dl>
-      {forecast}
       <LastMonth comparison={comparison} />
       {editing ? (
-        <StartEditor
-          month={month}
-          start={start}
-          onCancel={() => setEditing(false)}
-          onSaved={(saved) => {
-            setEditing(false)
-            setNote(saved)
-          }}
-          onFailedAfterClose={onUnsaved}
-        />
+        <div className="rounded-xl border bg-card p-4">
+          <StartEditor
+            month={month}
+            start={start}
+            onCancel={() => setEditing(false)}
+            onSaved={(saved) => {
+              setEditing(false)
+              setNote(saved)
+            }}
+            onFailedAfterClose={onUnsaved}
+          />
+        </div>
       ) : null}
-      {note !== null ? <SavedNote className="mt-3 text-xs text-summary-label">{note}</SavedNote> : null}
+      {note !== null ? <SavedNote className="text-xs text-muted-foreground">{note}</SavedNote> : null}
     </section>
   )
 }
 
-/** One of the card's four: its label, then its number, then any hint. */
-function Entry({ label, hint = null, children }: { label: string; hint?: string | null; children: ReactNode }) {
+/**
+ * One stat card: its label with an icon tile in the accent, then its
+ * number, then any hint or line under it. Only the hero takes a gradient
+ * (design-review P2 item 6); its words take `canvas-muted`, as #6b7280 reads
+ * 4.27 to one on the accent's tint where the gradient ends (ADR 0010). The
+ * tiles take the accent, never a list's hue, which names a list (ADR 0010).
+ */
+function Entry({
+  label,
+  icon,
+  hero = false,
+  hint = null,
+  extra = null,
+  children,
+}: {
+  label: string
+  icon: IconName
+  hero?: boolean
+  hint?: string | null
+  extra?: ReactNode
+  children: ReactNode
+}) {
+  const quiet = hero ? 'text-canvas-muted' : 'text-muted-foreground'
   return (
-    <div>
-      <dt className="text-xs font-medium text-summary-label">{label}</dt>
-      <dd className="text-2xl font-bold text-summary-value">{children}</dd>
-      {hint === null ? null : <dd className="mt-0.5 text-xs text-summary-label">{hint}</dd>}
+    <div className={cn('min-w-0 rounded-xl border p-4 md:px-6 md:pt-5 md:pb-6', hero ? 'bg-linear-to-b from-card to-primary-tint' : 'bg-card')}>
+      <dt className={cn('flex items-center justify-between gap-2 text-sm md:text-base', quiet)}>
+        {label}
+        <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
+          <Icon name={icon} className="size-[1.125rem]" />
+        </span>
+      </dt>
+      <dd className="mt-1 text-2xl font-bold tracking-[-0.02em] text-foreground xl:text-[2rem]">{children}</dd>
+      {hint === null ? null : <dd className={cn('mt-1 text-sm', quiet)}>{hint}</dd>}
+      {extra === null ? null : <dd>{extra}</dd>}
     </div>
   )
 }
@@ -138,7 +169,7 @@ function Waiting({ children }: { children: ReactNode }) {
 function LastMonth({ comparison }: { comparison: PeriodComparison | 'failed' | null }) {
   if (comparison === null || (comparison !== 'failed' && comparison.status === 'not_started')) return null
   const line = (children: ReactNode) => (
-    <div role="group" aria-label="Compared with last month" className="mt-3 border-t border-summary-label/30 pt-3 text-sm text-summary-value">
+    <div role="group" aria-label="Compared with last month" className="rounded-xl border bg-card px-4 py-3 text-sm text-summary-value md:px-6">
       {children}
     </div>
   )
