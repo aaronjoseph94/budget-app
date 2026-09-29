@@ -2867,3 +2867,21 @@ only axe-core (ADR 0009).
 **To settle:** with the Mobile sweep row: add Playwright, move the fake
 client's preview wiring and the walk into `apps/web/e2e`, and run it in
 CI against the preview build.
+
+---
+
+## N124 — Charts carry the workbook's colours in their own attributes
+
+**Seen:** 2026-09-29, Mockup A step 1. `packages/chart-specs` writes each
+mark's colour into the SVG as an attribute (the workbook's pastels and
+inks), and `index.css` repaints them on the page from the tokens, which
+are now Mockup A's (ADR 0010). On screen the charts follow the new
+palette; a chart saved out of the page (Reports' Save as PDF prints the
+page, so it is fine; a copied SVG is not) keeps the old colours.
+
+**Why not fixed here:** step 1 is the tokens; chart-specs belongs to the
+steps that restyle each chart (3, 5, 8), and its colours are not in any
+golden case.
+
+**To settle:** when a step restyles a chart, set its attributes to the
+light token values, so the page and an exported file agree again.

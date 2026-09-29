@@ -123,36 +123,29 @@
   --waiting-icon: #d97706;
   --waiting-tile: #fef3c7;
 
-  /* START HERE: its teal header band, the grey canvas under its white cards,
-     and the teal of its section labels. #F3F9FA is the name cell's ink. */
-  --setup-band: #2b5d6a;
-  --setup-band-ink: #f3f9fa;
-  --setup-canvas: #f3f3f3;
-  --setup-label: #2b5d6a;
+  /* The screens' own sets, in Mockup A's values until each screen's step
+     restyles it (ADR 0010): Setup's accent header, the Year's slate header
+     and today's row, the Year's glance cards, the Paycheck's accent tint,
+     the Bill calendar in Bills' sky, Savings in amber, Debts in rose with
+     the violet of its chart. */
+  --setup-band: #4338ca;
+  --setup-band-ink: #ffffff;
+  --setup-canvas: #f9fafb;
+  --setup-label: #4f46e5;
 
-  /* Annual Budget: its #456464 header band, whose title ink is #FFFBE8,
-     its rows (#FFFEFA, the card, and #FFFDFB) and the current month's
-     #F5F1E1 (conditional-format rules 2-5). */
-  --year-header: #456464;
-  --year-header-ink: #fffbe8;
-  --year-row-alt: #fffdfb;
-  --year-today: #f5f1e1;
+  --year-header: #374151;
+  --year-header-ink: #ffffff;
+  --year-row-alt: #f9fafb;
+  --year-today: #fefce8;
 
-  /* Home, the Year's top: its canvas, white cards, and the greeting's
-     Helvetica Neue #343434, which is used for every word on them. */
-  --home-canvas: #ecf1f5;
+  --home-canvas: #f9fafb;
   --home-card: #ffffff;
-  --home-ink: #343434;
-  /* The Year's charts: Annual's axis text #616F7C, darkened to read on the
-     card, its #CCCCCC gridline, and the grey track of Home's top-3 rings. */
-  --year-chart-ink: #5b6773;
-  --year-chart-rule: #cccccc;
-  --home-track: #f3f5f6;
-  /* Paycheck Budget's lavender header band and summary panel (A1, D9:D15);
-     its #909ED5 and #B2BCE2 text read at 2.4 and 1.7 to one, so an ink of
-     the same hue that reads at 6.3. */
-  --paycheck-band: #f1f3ff;
-  --paycheck-ink: #4a5591;
+  --home-ink: #111827;
+  --year-chart-ink: #6b7280;
+  --year-chart-rule: #e5e7eb;
+  --home-track: #f3f4f6;
+  --paycheck-band: #eef0ff;
+  --paycheck-ink: #4338ca;
   /* Habits' spending grid (A18): a neutral for a day with nothing spent,
      then one red hue from light to dark, each step told apart for normal
      and colour-blind vision with the dataviz palette validator. */
@@ -161,44 +154,28 @@
   --heat-2: #da6448;
   --heat-3: #a42f1a;
   --heat-4: #5e120d;
-  /* Bill Calendar's header band and pills (F5FEFF, E6F9FC), its bill text
-     (135D5C) and day numbers (3E4D5B). Its pill text A4BCBF, week totals
-     6E8AA3 and white-on-6CAC8F payday pill read at 1.8, 3.5 and 2.7 to one,
-     so darker inks of the same hues, and a darker green behind the white. */
-  --calendar-band: #f5feff;
-  --calendar-pill: #e6f9fc;
-  --calendar-pill-ink: #41666a;
-  --calendar-ink: #135d5c;
-  --calendar-day: #3e4d5b;
-  --calendar-total: #4e6e8c;
-  --calendar-head: #616f7c;
-  --calendar-rule: #bed3e9;
-  --payday: #3d7a5e;
+  --calendar-band: #f0f9ff;
+  --calendar-pill: #e0f2fe;
+  --calendar-pill-ink: #0369a1;
+  --calendar-ink: #0369a1;
+  --calendar-day: #111827;
+  --calendar-total: #4b5563;
+  --calendar-head: #4b5563;
+  --calendar-rule: #e5e7eb;
+  --payday: #047857;
   --payday-ink: #ffffff;
-  /* Savings: the workbook's banner (B1:AC2), a card's title strip (C4) and its
-     Amount Needed cell (B9). Their gold inks (#FFD452, #FAC935) read at
-     1.3 and 1.5 to one, so the savings ink carries every word (5.6 to one
-     on the banner, 6.2 on the strip and the cell), and #FAC935 is the bar
-     (plan 6.6). */
-  --savings-banner: #feeaa9;
-  --savings-title: #fff7de;
-  --savings-needed: #fff7dd;
-  --savings-bar: #fac935;
-  /* Home's savings-goals chart (chart5): its goal and, as D23 draws it, the saved part. */
-  --savings-chart-goal: #feea8d;
-  --savings-chart-saved: #ebd15c;
-  /* Debt Calculator: its banner (B1:Z4, #688F9D, which only the big white
-     title sits on, at 3.5 to one), its page (#F7F5EC) and its Caveat
-     summary labels (B8, B12, B18, B20), whose #E46F67 reads at 3.1 to one,
-     so a darker coral at 5.0. Home's debt chart (chart4, D25): what is left
-     #9171D7, over #C8B6EB; #9171D7 reads at 3.8 on white, so a purple ink
-     of its hue carries every word (7.7). */
-  --debt-banner: #688f9d;
-  --debt-page: #f7f5ec;
-  --debt-label: #b8413a;
-  --debt-ink: #5b3fa8;
-  --debt-left: #9171d7;
-  --debt-paid: #c8b6eb;
+  --savings-banner: #fffbeb;
+  --savings-title: #fef3c7;
+  --savings-needed: #fffbeb;
+  --savings-bar: #f59e0b;
+  --savings-chart-goal: #fde68a;
+  --savings-chart-saved: #f59e0b;
+  --debt-banner: #be123c;
+  --debt-page: #f9fafb;
+  --debt-label: #be123c;
+  --debt-ink: #111827;
+  --debt-left: #8b5cf6;
+  --debt-paid: #ede9fe;
 }
 
 /*
@@ -294,46 +271,46 @@
     --waiting-icon: #f59e0b;
     --waiting-tile: #3d3112;
 
-    --setup-band: #1f4751;
-    --setup-band-ink: #f3f9fa;
-    --setup-canvas: #11100e;
-    --setup-label: #b8d8e0;
+    --setup-band: #312e81;
+    --setup-band-ink: #ffffff;
+    --setup-canvas: #131418;
+    --setup-label: #a5b4fc;
 
-    --year-header: #253b3b;
-    --year-header-ink: #fffbe8;
-    --year-row-alt: #22211c;
-    --year-today: #3b3625;
+    --year-header: #2a2c33;
+    --year-header-ink: #f3f4f6;
+    --year-row-alt: #1a1b20;
+    --year-today: #2a2610;
 
-    --home-canvas: #14181b;
-    --home-card: #1e2327;
-    --home-ink: #e9ecee;
-    --year-chart-ink: #c3ccd4;
-    --year-chart-rule: #4a4d50;
-    --home-track: #2c3237;
-    --paycheck-band: #1c1f33;
-    --paycheck-ink: #d4d9f5;
-    --calendar-band: #172b2d;
-    --calendar-pill: #1f3a3e;
-    --calendar-pill-ink: #cfeff2;
-    --calendar-ink: #bfe3e1;
-    --calendar-day: #d0d9e2;
-    --calendar-total: #c4d2de;
-    --calendar-head: #aab6c2;
-    --calendar-rule: #33475a;
-    --payday: #2f6b50;
+    --home-canvas: #131418;
+    --home-card: #17181c;
+    --home-ink: #f3f4f6;
+    --year-chart-ink: #9ca3af;
+    --year-chart-rule: #2a2c33;
+    --home-track: #2a2c33;
+    --paycheck-band: #181a2e;
+    --paycheck-ink: #c7d2fe;
+    --calendar-band: #16232d;
+    --calendar-pill: #0f2a3a;
+    --calendar-pill-ink: #7dd3fc;
+    --calendar-ink: #7dd3fc;
+    --calendar-day: #f3f4f6;
+    --calendar-total: #9ca3af;
+    --calendar-head: #9ca3af;
+    --calendar-rule: #2a2c33;
+    --payday: #065f46;
     --payday-ink: #ffffff;
-    --savings-banner: #3d3417;
-    --savings-title: #36301a;
-    --savings-needed: #3a331b;
-    --savings-bar: #c9a22e;
-    --savings-chart-goal: #4a4222;
-    --savings-chart-saved: #c9b04a;
-    --debt-banner: #2d434b;
-    --debt-page: #1b1a16;
-    --debt-label: #f0b3ad;
-    --debt-ink: #d9cdf5;
-    --debt-left: #a58be0;
-    --debt-paid: #3e3558;
+    --savings-banner: #2a2210;
+    --savings-title: #3d3112;
+    --savings-needed: #2a2210;
+    --savings-bar: #f59e0b;
+    --savings-chart-goal: #5a4a14;
+    --savings-chart-saved: #f59e0b;
+    --debt-banner: #881337;
+    --debt-page: #131418;
+    --debt-label: #fda4af;
+    --debt-ink: #f3f4f6;
+    --debt-left: #a78bfa;
+    --debt-paid: #2e1065;
     /* On a dark card more reads lighter, so the steps run the other way. */
     --heat-0: #34312e;
     --heat-1: #852c1d;
@@ -512,9 +489,9 @@
 /*
  * Charts from chart-specs (components/ui/chart.tsx). Each is drawn at a
  * designed width and scaled to its card, text included. Its marks carry
- * the workbook's colours as attributes, which an exported file keeps; these rules
- * outrank them on the page, so a chart follows the block tokens above into
- * dark mode. In light mode each token is the same colour as the attribute.
+ * colours as attributes, which an exported file keeps; these rules outrank
+ * them on the page, so a chart takes the tokens above in both schemes. The
+ * attributes are still the workbook's colours (NOTICED-NOT-TOUCHING).
  */
 .spec-chart {
   display: block;
