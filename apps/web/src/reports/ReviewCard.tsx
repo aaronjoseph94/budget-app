@@ -56,7 +56,9 @@ export function ReviewCard({ report, nameOf }: { report: ReviewedMonth; nameOf: 
   if (state === null) return null
   const { review, facts } = state
   return (
-    <Section title="The month in review">
+    // Mockup A tints the review to the accent, the one tinted card on the
+    // screen; its muted words take canvas-muted there (ADR 0010).
+    <Section title="The month in review" large className="bg-linear-to-br from-card to-primary-tint [--muted-foreground:var(--canvas-muted)]">
       <div aria-live="polite" className="space-y-3">
         <p className="text-lg font-medium leading-snug [overflow-wrap:anywhere]">
           <Mark ai={review.headline.ai} />

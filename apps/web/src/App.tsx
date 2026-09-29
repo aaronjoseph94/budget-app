@@ -131,9 +131,9 @@ export function Shell() {
   // Month, Week, Paycheck and Year widen on a desktop to take the workbook's four
   // columns (§6.3, §6.4), the Bill Calendar to give its seven room for names,
   // the Coach for its insights and goal side by side (Mockup A step 7), and the
-  // Forecast for its sections two across (step 8).
+  // Forecast and Reports for their sections two across (step 8).
   const wide =
-    screen === 'month' || screen === 'week' || screen === 'paycheck' || screen === 'year' || screen === 'calendar' || (screen === 'coach' && param === null) || screen === 'forecast'
+    screen === 'month' || screen === 'week' || screen === 'paycheck' || screen === 'year' || screen === 'calendar' || (screen === 'coach' && param === null) || screen === 'forecast' || screen === 'reports'
   const width = wide ? 'max-w-3xl lg:max-w-7xl' : 'max-w-3xl'
   const main = useRef<HTMLElement>(null)
   const sidebar = useSidebarState()

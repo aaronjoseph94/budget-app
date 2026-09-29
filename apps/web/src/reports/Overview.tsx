@@ -51,7 +51,7 @@ export function TotalsCard({ report, historyStart }: { report: Reviewed; history
   }
   const { totals } = report
   return (
-    <Section title="Income, Spent and Saved">
+    <Section title="Income, Spent and Saved" large>
       <p className="text-muted-foreground">
         {last === null ? sides.now : `${sides.now}, against ${sides.before}`}
       </p>
@@ -110,7 +110,7 @@ export function MoversCard({ report, nameOf }: { report: Reviewed; nameOf: (id: 
       </div>
     )
   return (
-    <Section title="Biggest changes">
+    <Section title="Biggest changes" large>
       {report.usualMonths === 0 ? (
         <p>Your usual month needs a whole month of records before this one. Check back next month.</p>
       ) : up.length + down.length === 0 ? (
@@ -136,7 +136,7 @@ export function PairsCard({ report, nameOf }: { report: Reviewed; nameOf: (id: s
   if (report.lastMonth.status !== 'compared') return null
   const rows = report.pairs.map((p) => ({ ...p, name: nameOf(p.categoryId) }))
   return (
-    <Section title="This month and last, by category">
+    <Section title="This month and last, by category" large>
       {rows.length === 0 ? (
         <p>No Variable expenses in either month.</p>
       ) : (

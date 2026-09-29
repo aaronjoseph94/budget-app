@@ -49,7 +49,7 @@ export function DownloadCard({
   }
   return (
     <div className="print:hidden">
-      <Section title="Download CSV">
+      <Section title="Download CSV" large>
         <p>Keep this month in a spreadsheet: every charge, or the figures above. The file is made on this device.</p>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => save('charges')}>

@@ -18,6 +18,7 @@ describe('the edge fade', () => {
 
   it('is on the Month · Week · Pay · Year switch and on Reports’ tabs', () => {
     expect(source('/screens/PeriodSwitch.tsx')).toMatch(/className="edge-fade [^"]*overflow-x-auto/)
-    expect(source('/screens/ReportsScreen.tsx')).toMatch(/role="tablist"[^>]*className="edge-fade [^"]*overflow-x-auto/)
+    // Reports' tabs scroll in the box around their segmented control, as the switch's do (Mockup A step 8).
+    expect(source('/screens/ReportsScreen.tsx')).toMatch(/className="edge-fade [^"]*overflow-x-auto[^"]*">\s*<div role="tablist"/)
   })
 })

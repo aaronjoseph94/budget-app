@@ -88,6 +88,45 @@ describe('Reports, the Overview (plan §2.6, A15)', () => {
     expect(screen.queryByRole('link', { name: 'Next month' })).toBeNull()
   })
 
+  it('sets "So far" beside the title and the review over the sections two across (Mockup A)', async () => {
+    go('/reports')
+    renderScreen(<Shell />, reportFake())
+
+    const totals = await card('Income, Spent and Saved')
+    const title = screen.getByRole('heading', { level: 1, name: 'Reports' })
+    expect(title.parentElement?.contains(screen.getByText('So far'))).toBe(true)
+    const review = await card('The month in review')
+    expect(review.className).toContain('to-primary-tint')
+    const grid = totals.parentElement as HTMLElement
+    expect(grid.className).toContain('xl:grid-cols-2')
+    expect(grid.contains(review)).toBe(false)
+    for (const name of ['Biggest changes', 'This month and last, by category', 'Download CSV']) expect(grid.contains(await card(name))).toBe(true)
+    await expectNoAxeViolations()
+  })
+
+  it('moves along the tabs with the arrow keys, Home and End, remembering the one chosen, with one tab stop', async () => {
+    go('/reports')
+    renderScreen(<Shell />, reportFake())
+    await card('Income, Spent and Saved')
+
+    const tab = (name: string) => screen.getByRole('tab', { name })
+    expect(screen.getAllByRole('tab').map((t) => t.tabIndex)).toEqual([0, -1, -1, -1])
+    fireEvent.keyDown(tab('Overview'), { key: 'ArrowRight' })
+    expect(tab('Trends').getAttribute('aria-selected')).toBe('true')
+    expect(document.activeElement).toBe(tab('Trends'))
+    expect(screen.getAllByRole('tab').map((t) => t.tabIndex)).toEqual([-1, 0, -1, -1])
+    expect(localStorage.getItem('budget.reports.tab')).toBe('trends')
+    fireEvent.keyDown(tab('Trends'), { key: 'End' })
+    expect(document.activeElement).toBe(tab('Habits'))
+    fireEvent.keyDown(tab('Habits'), { key: 'ArrowRight' })
+    expect(document.activeElement).toBe(tab('Overview'))
+    fireEvent.keyDown(tab('Overview'), { key: 'ArrowLeft' })
+    expect(document.activeElement).toBe(tab('Habits'))
+    fireEvent.keyDown(tab('Habits'), { key: 'Home' })
+    expect(tab('Overview').getAttribute('aria-selected')).toBe('true')
+    expect(localStorage.getItem('budget.reports.tab')).toBe('overview')
+  })
+
   it('says there is nothing to review before the records start', async () => {
     go('/reports/2026-01')
     renderScreen(<Shell />, reportFake())
