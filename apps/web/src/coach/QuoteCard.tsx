@@ -33,9 +33,9 @@ export function QuoteCard({ entry, why, asOf }: { entry: LibraryEntry | null; wh
   if (entry === null) return null
   return (
     <section aria-label="A quote for today">
-      <figure className="space-y-2 rounded-xl border bg-card p-4 shadow-sm">
+      <figure className="space-y-2.5 rounded-xl border bg-muted p-4 md:px-6 md:py-[1.375rem]">
         {entry.kind === 'tip' ? <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">A tip</p> : null}
-        <blockquote className="whitespace-pre-line text-base leading-relaxed [overflow-wrap:anywhere]">
+        <blockquote className="whitespace-pre-line text-base leading-relaxed [overflow-wrap:anywhere] md:text-[1.0625rem]">
           {entry.kind === 'quote' ? `“${entry.text}”` : entry.text}
         </blockquote>
         <figcaption className="space-y-1 text-sm text-muted-foreground">

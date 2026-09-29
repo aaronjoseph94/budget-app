@@ -47,7 +47,7 @@ export function CoachStatus({ state }: { state: NarrationState }) {
   }
   return (
     <div className="flex flex-wrap items-center gap-x-3">
-      <p aria-live="polite" className="min-w-0 flex-1 text-xs text-muted-foreground">
+      <p aria-live="polite" className="min-w-0 flex-1 text-xs text-muted-foreground md:text-sm">
         {said}
       </p>
       {state.canRefresh ? (

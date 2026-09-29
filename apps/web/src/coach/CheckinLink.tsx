@@ -18,16 +18,20 @@ export function CheckinLink() {
   return (
     <a
       href={hashOf({ screen: 'coach', param: 'checkin' })}
-      className="flex min-h-11 items-center gap-3 rounded-xl border bg-card p-4 text-card-foreground shadow-sm transition-colors hover:bg-muted/60"
+      className="flex min-h-11 items-center gap-3.5 rounded-xl border bg-linear-to-r from-card to-primary-tint p-4 text-card-foreground transition-colors hover:to-primary-soft md:px-5"
     >
+      <span aria-hidden="true" className="hidden size-10 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary min-[480px]:flex">
+        <Icon name="check" className="size-[1.125rem]" />
+      </span>
       <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-2 font-medium">
+        <span className="flex items-center gap-2 font-semibold">
           {due ? 'Your Sunday check-in is ready' : 'Your weekly check-in'}
           {due ? <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-primary" /> : null}
         </span>
-        <span className="block text-sm text-muted-foreground">The week of {formatDateRange(week.start, week.end)}</span>
+        {/* On the accent's tint, muted words take `canvas-muted` (ADR 0010). */}
+        <span className="block text-sm text-canvas-muted">The week of {formatDateRange(week.start, week.end)}</span>
       </span>
-      <Icon name="chevronRight" className="size-5 shrink-0 text-muted-foreground" />
+      <Icon name="chevronRight" className="size-5 shrink-0 text-canvas-muted" />
     </a>
   )
 }

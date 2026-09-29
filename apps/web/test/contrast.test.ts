@@ -133,6 +133,8 @@ const TEXT: readonly (readonly [text: string, surface: string, least?: number, a
   ['waiting-ink', 'waiting-tile'],
   // The Week's goal card: its time line on the soft accent (step 4).
   ['foreground', 'primary-soft'],
+  // The Coach's check-in link, hovered, ends on the soft accent (step 7).
+  ['canvas-muted', 'primary-soft'],
   // The screens' own sets.
   ['white', 'setup-band'],
   ['setup-band-ink', 'setup-band'],

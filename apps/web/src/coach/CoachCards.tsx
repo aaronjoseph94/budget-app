@@ -5,6 +5,7 @@ import { navigate } from '../nav.js'
 import { rememberTab } from '../reports/tab.js'
 import { Button } from '../components/ui/button.js'
 import { Card } from '../components/ui/card.js'
+import { Icon, type IconName } from '../components/ui/icons.js'
 import type { CardText, Narration, Words } from './narration.js'
 import { CoachText } from './words.js'
 import { WhySheet } from './WhySheet.js'
@@ -121,6 +122,20 @@ const ACTION: Readonly<Record<CardAction, { readonly label: string; readonly go:
 }
 
 /**
+ * Each card's icon, by where its action goes: in Mockup A's tile, in the
+ * accent, since a list's hue names a list, never a mood (ADR 0010).
+ */
+const ICON: Readonly<Record<CardAction, IconName>> = {
+  import: 'upload',
+  review: 'inbox',
+  see_month: 'calendar',
+  goals: 'piggy',
+  forecast: 'trend',
+  shops: 'bag',
+  habits: 'report',
+}
+
+/**
  * The forecast's card on the Coach (plan §2.3, A13): where the month is
  * heading, in the app's words or the AI's, and the way to the Forecast.
  * Never dismissed: it is not an insight but the day's outlook.
@@ -140,26 +155,32 @@ function InsightCard({ card, text, onDismiss }: { card: CoachCard; text: CardTex
   const [why, setWhy] = useState(false)
   const action = ACTION[card.action]
   return (
-    <Card className="words-in space-y-2 p-4">
-      <div className="flex items-start gap-2">
-        <h2 className="min-w-0 flex-1 font-semibold [overflow-wrap:anywhere]">
-          <Said words={text.title} />
-        </h2>
+    <Card className="words-in space-y-2.5 p-4 shadow-none md:px-[1.375rem] md:py-5">
+      <div className="flex items-start gap-3">
+        {/* Below 480px the tile gives its width to the words. */}
+        <span aria-hidden="true" className="hidden size-10 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary min-[480px]:flex">
+          <Icon name={ICON[card.action]} className="size-[1.125rem]" />
+        </span>
+        <div className="min-w-0 flex-1 space-y-1">
+          <h2 className="text-base font-semibold [overflow-wrap:anywhere] md:text-[1.0625rem]">
+            <Said words={text.title} />
+          </h2>
+          <p className="text-sm [overflow-wrap:anywhere] md:text-[0.9375rem]">
+            <CoachText text={text.body.text} facts={text.body.names} />
+          </p>
+          {text.tryThis === null ? null : (
+            <p className="text-sm text-muted-foreground [overflow-wrap:anywhere] md:text-[0.9375rem]">
+              <CoachText text={text.tryThis.text} facts={text.tryThis.names} />
+            </p>
+          )}
+        </div>
         {onDismiss === null ? null : (
-          <Button variant="ghost" size="icon" className="-mr-2 -mt-2 min-h-11 min-w-11 shrink-0" aria-label="Dismiss this insight" onClick={onDismiss}>
+          <Button variant="ghost" size="icon" className="-mr-2 -mt-2 min-h-11 min-w-11 shrink-0 text-muted-foreground" aria-label="Dismiss this insight" onClick={onDismiss}>
             ✕
           </Button>
         )}
       </div>
-      <p className="text-sm [overflow-wrap:anywhere]">
-        <CoachText text={text.body.text} facts={text.body.names} />
-      </p>
-      {text.tryThis === null ? null : (
-        <p className="text-sm text-muted-foreground [overflow-wrap:anywhere]">
-          <CoachText text={text.tryThis.text} facts={text.tryThis.names} />
-        </p>
-      )}
-      <div className="flex flex-wrap items-center gap-2 pt-1">
+      <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2 min-[480px]:pl-[3.25rem]">
         <Button size="sm" variant="outline" onClick={action.go}>
           {action.label}
         </Button>

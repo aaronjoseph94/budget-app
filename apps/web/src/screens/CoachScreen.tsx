@@ -5,7 +5,7 @@ import { goalSavedCents, useFunds, type FundsState } from '../funds.js'
 import { formatBasisPoints, formatCents } from '../format.js'
 import { hashOf, navigate } from '../nav.js'
 import { Button } from '../components/ui/button.js'
-import { Card, CardContent, CardTitle } from '../components/ui/card.js'
+import { MonthTitle } from '../components/ui/type.js'
 import { Progress } from '../components/ui/feedback.js'
 import { Icon } from '../components/ui/icons.js'
 import { HelpButton } from '../help/HelpButton.js'
@@ -48,31 +48,47 @@ export function CoachScreen() {
   const narrated = useNarration(day, asOf, true)
   const { narration } = narrated
   const quote = narration?.quote ?? null
+  // Mockup A: one column, the goal card after the day's line. From 1280px the
+  // goal card stands in a right column of its own, not sticky, and Ask closes
+  // the left column, so neither is ever out of reach (design-review P2 item 11).
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Coach</h1>
-        <HelpButton screen="coach" />
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,7fr)_minmax(18.75rem,4fr)] xl:grid-rows-[auto_1fr] xl:gap-x-6 xl:gap-y-5">
+      <div className="min-w-0 space-y-3 xl:col-start-1">
+        <div className="flex flex-wrap items-center gap-1">
+          <MonthTitle>Coach</MonthTitle>
+          <HelpButton screen="coach" />
+        </div>
+        <CoachStatus state={narrated} />
+        <DayLine words={narration?.line ?? null} className="pt-1 text-lg font-medium leading-snug md:text-[1.375rem] md:tracking-[-0.01em]" />
       </div>
-      <CoachStatus state={narrated} />
-      <DayLine words={narration?.line ?? null} className="text-lg font-medium leading-snug" />
-      <GoalsCard funds={funds} outlooks={outlooks} words={narration?.goal ?? null} />
-      <CheckinLink />
-      <CoachCards
-        digest={digest}
-        cards={day?.cards ?? null}
-        narration={narration}
-        onDismiss={dismissals.canDismiss ? (card) => void dismissals.dismiss(card.fact.cause) : null}
-      />
-      <ForecastCard cards={day?.cards ?? null} narration={narration} />
-      {/* Picked once the facts are in, so the day's pick does not change under the owner. */}
-      {digest === null ? null : (
-        <QuoteCard entry={quote === null ? pick.entry : (pick.shortlist.find((e) => e.id === quote.id) ?? pick.entry)} why={quote?.why ?? null} asOf={asOf} />
-      )}
-      <AskBox />
+      <div className="min-w-0 self-start xl:col-start-2 xl:row-span-2 xl:row-start-1">
+        <GoalsCard funds={funds} outlooks={outlooks} words={narration?.goal ?? null} />
+      </div>
+      <div className="min-w-0 space-y-4 self-start xl:col-start-1 xl:row-start-2 xl:space-y-5">
+        <CheckinLink />
+        <CoachCards
+          digest={digest}
+          cards={day?.cards ?? null}
+          narration={narration}
+          onDismiss={dismissals.canDismiss ? (card) => void dismissals.dismiss(card.fact.cause) : null}
+        />
+        <ForecastCard cards={day?.cards ?? null} narration={narration} />
+        {/* Picked once the facts are in, so the day's pick does not change under the owner. */}
+        {digest === null ? null : (
+          <QuoteCard entry={quote === null ? pick.entry : (pick.shortlist.find((e) => e.id === quote.id) ?? pick.entry)} why={quote?.why ?? null} asOf={asOf} />
+        )}
+        <AskBox />
+      </div>
     </div>
   )
 }
+
+/**
+ * Mockup A's goal card, white to the accent's tint. Muted words on the tint
+ * take `canvas-muted`, as #6b7280 reads 4.27 where it ends (ADR 0010); set
+ * once here, so the pace lines drawn inside the card take it too.
+ */
+const GOAL_CARD = 'rounded-xl border bg-linear-to-b from-card to-primary-tint p-5 [--muted-foreground:var(--canvas-muted)] md:px-6 md:py-[1.375rem]'
 
 /**
  * The main goal (F45), large, with the other active goals listed under it.
@@ -84,8 +100,8 @@ function GoalsCard({ funds, outlooks, words }: { funds: FundsState; outlooks: Ou
   const { goals, mainGoal } = useAppData()
   if (mainGoal === null) {
     return (
-      <Card>
-        <CardContent className="space-y-2 pt-5 text-sm">
+      <section aria-label="Your main goal" className={GOAL_CARD}>
+        <div className="space-y-2 text-sm">
           <p className="font-medium">{goals.length === 0 ? 'No goal yet.' : 'No active goal.'}</p>
           <p className="text-muted-foreground">
             {goals.length === 0
@@ -95,8 +111,8 @@ function GoalsCard({ funds, outlooks, words }: { funds: FundsState; outlooks: Ou
           <a href={hashOf({ screen: 'savings', param: null })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
             {goals.length === 0 ? 'Add a goal' : 'Open Savings'}
           </a>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     )
   }
 
@@ -107,12 +123,12 @@ function GoalsCard({ funds, outlooks, words }: { funds: FundsState; outlooks: Ou
   const [main, ...others] = figures
   if (main === undefined) return null
   return (
-    <Card>
-      <div className="flex items-center gap-2 p-5 pb-3">
-        <Icon name={mainGoal.unit_cost_cents === null ? 'piggy' : 'plane'} className="size-4 text-muted-foreground" />
-        <CardTitle as="h2">{mainGoal.name}</CardTitle>
+    <section aria-label={mainGoal.name} className={GOAL_CARD}>
+      <div className="flex items-center gap-2 pb-4">
+        <Icon name={mainGoal.unit_cost_cents === null ? 'piggy' : 'plane'} className="size-4 shrink-0 text-primary" />
+        <h2 className="min-w-0 text-lg font-semibold leading-snug [overflow-wrap:anywhere]">{mainGoal.name}</h2>
       </div>
-      <CardContent className="space-y-4">
+      <div className="space-y-4">
         {/* The figures go under the ring when there is not room for 8rem
           of them beside it, as with the phone's text at 200% (N58). */}
         <div className="flex flex-wrap items-center gap-4">
@@ -120,14 +136,13 @@ function GoalsCard({ funds, outlooks, words }: { funds: FundsState; outlooks: Ou
           <div className="min-w-0 flex-1 basis-32 space-y-1">
             {main.hours !== null ? (
               <p>
-                <span className="tnum text-2xl font-bold">
-                  {main.hours.saved} h of {main.hours.target} h
-                </span>
+                <span className="tnum text-2xl font-bold tracking-[-0.02em]">{main.hours.saved} h</span>
+                <span className="tnum text-[0.9375rem] font-medium text-muted-foreground"> of {main.hours.target} h</span>
                 <span className="block text-sm text-muted-foreground">of {mainGoal.unit_label ?? 'your goal'}</span>
               </p>
             ) : null}
             <p className="text-sm">
-              <span className="tnum font-medium">{formatCents(main.savedCents)}</span>
+              <span className="tnum font-semibold">{formatCents(main.savedCents)}</span>
               <span className="text-muted-foreground"> saved of {formatCents(main.targetCents)}</span>
             </p>
           </div>
@@ -140,7 +155,7 @@ function GoalsCard({ funds, outlooks, words }: { funds: FundsState; outlooks: Ou
         <MainOutlook outlooks={outlooks} funds={funds} goal={mainGoal} />
         {others.length === 0 ? null : (
           <div className="border-t pt-3">
-            <h3 className="text-sm font-medium">Your other goals</h3>
+            <h3 className="text-sm font-semibold">Your other goals</h3>
             <ul className="mt-2 space-y-3">
               {others.map((f) => {
                 const name = active.find((g) => g.id === f.id)?.name
@@ -168,8 +183,8 @@ function GoalsCard({ funds, outlooks, words }: { funds: FundsState; outlooks: Ou
             </a>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   )
 }
 
@@ -205,7 +220,7 @@ function MainOutlook({ outlooks, funds, goal }: { outlooks: Outlooks; funds: Fun
     <div className="space-y-3">
       <GoalPace forecast={outlook.forecast} targetDate={goal.target_date} />
       {top === undefined || category === undefined ? null : (
-        <div className="space-y-2 rounded-lg bg-muted/60 p-3">
+        <div className="space-y-2.5 rounded-lg bg-primary-soft px-3.5 py-3">
           <GoalLever lever={top} categoryName={category.name} unitLabel={goal.unit_label} />
           <Button variant="outline" size="sm" onClick={() => navigate('forecast')}>
             What if… <Icon name="chevronRight" className="size-4" />
@@ -226,7 +241,7 @@ function Ring({ basisPoints }: { basisPoints: number }) {
   return (
     <div className="relative size-24 shrink-0">
       <svg viewBox="0 0 100 100" className="size-24 -rotate-90" aria-hidden="true">
-        <circle cx="50" cy="50" r="42" fill="none" strokeWidth="10" className="stroke-secondary" />
+        <circle cx="50" cy="50" r="42" fill="none" strokeWidth="10" className="stroke-primary-soft" />
         <circle
           cx="50"
           cy="50"

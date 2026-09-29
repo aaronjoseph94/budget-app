@@ -14,7 +14,7 @@ export function AskBox() {
   const [text, setText] = useState('')
   return (
     <form
-      className="space-y-2"
+      className="space-y-2.5 rounded-xl border bg-card p-4 md:px-[1.375rem] md:py-5"
       onSubmit={(e) => {
         e.preventDefault()
         if (text.trim() === '') return
@@ -22,8 +22,8 @@ export function AskBox() {
         navigate('ask')
       }}
     >
-      <label htmlFor="coach-ask" className="flex items-center gap-1.5 text-sm font-medium">
-        <Icon name="sparkles" className="size-4 shrink-0" /> Ask anything about your money
+      <label htmlFor="coach-ask" className="flex items-center gap-1.5 text-[0.9375rem] font-semibold">
+        <Icon name="sparkles" className="size-4 shrink-0 text-primary" /> Ask anything about your money
       </label>
       <div className="flex gap-2">
         <Input
@@ -36,7 +36,7 @@ export function AskBox() {
           enterKeyHint="go"
           onChange={(e) => setText(e.target.value)}
         />
-        <Button type="submit" variant="outline" className="min-h-11 shrink-0">
+        <Button type="submit" className="min-h-11 shrink-0 px-4">
           Ask
         </Button>
       </div>

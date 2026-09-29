@@ -60,6 +60,24 @@ describe('the Coach’s flight card', () => {
     await expectNoAxeViolations()
   })
 
+  // Mockup A (step 7): the goal card alone is the wide screen's right column,
+  // after the day's line on a phone; Ask closes the rest, never below the fold
+  // of a sticky column (design-review P2 item 11).
+  it('puts the goal card before the check-in, and Ask after the insights, in a column of its own', async () => {
+    go('/coach')
+    renderScreen(<Shell />, withGoal(1_265_000))
+
+    const goal = await screen.findByRole('region', { name: 'Flight training' })
+    const checkin = screen.getByRole('link', { name: /check-in/ })
+    const insights = await screen.findByRole('region', { name: 'Insights' })
+    const ask = screen.getByLabelText('Ask anything about your money')
+    const follows = (a: Element, b: Element) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0
+    expect(follows(goal, checkin) && follows(checkin, insights) && follows(insights, ask)).toBe(true)
+    expect(goal.parentElement?.contains(checkin)).toBe(false)
+    expect(checkin.parentElement?.contains(ask)).toBe(true)
+    expect(goal.className).not.toMatch(/\bsticky\b/)
+  })
+
   // Hand-derived: 8,450.00 typed at the end of 1 September and 200.00 moved in
   // on the 5th (D16) is 8,650.00; × 60 ÷ 275.00 = 1,887.27, 1,887 min, 31 h.
   it("counts a fund's goal at the balance its transfers keep, as Savings does", async () => {
