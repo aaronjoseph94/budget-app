@@ -66,7 +66,7 @@
   /* The six lists, one hue each on every screen (ADR 0010): orange is
      Variable, sky Bills, violet Subscriptions, rose Debts, green Income,
      amber Savings. ACCENT draws bars, icons and rules, never words; INK is
-     every word on the list's own surfaces. #f97316 is 3.0 to one on white,
+     every word on the list's own surfaces. #f97316 is 2.80 to one on white,
      and #ea580c 3.56, so `variable-large` is for large orange words only.
      `owed` is the workbook's one set for bills, debts and subscriptions,
      grey until the screens that read it move to their three hues.
@@ -191,7 +191,7 @@
     --card: #17181c;
     --card-foreground: #f3f4f6;
     --primary: #818cf8;
-    --primary-foreground: #1e1b4b; /* white on #818cf8 is 2.9 */
+    --primary-foreground: #1e1b4b; /* white on #818cf8 is 2.98 */
     --primary-soft: #1e1b4b;
     --primary-tint: #181a2e;
     --secondary: #2a2c33;

@@ -100,7 +100,7 @@ light and dark, for every text token on every surface it is used on:
 4.5:1 for text, 3:1 for large text (24px, or 18.66px bold), a control's
 edge and the focus ring.
 
-- **Orange text.** #F97316 is 3.0:1 on white, so it is never text. The
+- **Orange text.** #F97316 is 2.80:1 on white, so it is never text. The
   design review's #EA580C is 3.56:1: enough for large text and icons, not
   for body text. So orange words at body size use the pill ink #C2410C
   (5.18 on white, 4.52 on its tile), and #EA580C, as `variable-large`, is
@@ -119,7 +119,7 @@ edge and the focus ring.
 - **Dark mode** lifts every ink (#6EE7B7, #FDA4AF, #FCD34D …); each passes
   4.5 on #17181C and on its own tile. A filled button in dark mode takes a
   dark ink on the lighter fill (#1E1B4B on #818CF8, 5.36), since white on
-  #818CF8 is 2.9.
+  #818CF8 is 2.98.
 
 ## Why
 
