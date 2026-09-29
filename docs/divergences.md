@@ -863,3 +863,28 @@ tests.
 save, and the savings coach's idea is that a charge priced in hours of the
 goal is felt where dollars are not (`docs/ideas/savings-coach.md`,
 "Tradeoff framing").
+
+---
+
+## D30 — A planned bill's monthly amount counts as its budget
+
+**Date:** 2026-09-29
+**Sheet / cells:** every month tab's Budgeted column on Bills, Debts and
+Subscriptions (Jan!D22:D44, J22:J44, O22:O44) and totals (D21, J21, O21);
+Weekly Budget!D22; formula decisions F50, F51
+**Settled:** Owner chose, 2026-09-29: "Use planned amount as budget. A
+bill's monthly amount counts as its budget, so Bills shows about 100% when
+bills are paid as planned, like the mockup."
+
+**Workbook behaviour.** The Budgeted column is typed only. A bill with a
+Monthly Amount and nothing typed there is blank, and its total skips it,
+while the Actual beside it counts the planned amount (F3).
+
+**Chosen behaviour.** The list's % pill, its "$X of $Y", the row's
+Budgeted cell (marked "planned") and its Left take the planned amount as
+the budget where none is typed (F51). A typed budget, $0 included, wins.
+**The workbook's own figures do not change:** the typed budgets and their
+totals, Left to spend, the Year and every golden test.
+
+**Why.** Bills are usually planned and rarely budgeted, so the pill read
+"2422%" for bills paid exactly as planned (N130).

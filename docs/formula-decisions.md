@@ -2425,3 +2425,46 @@ $300.00"), and returns the one as a share of the other in basis points.
 **Worked examples.** $348.00 of $300.00 is **11,600 bp (116%)**; $0.05 of
 $200.00 is 2.5 bp, **3**; $0.01 of $300.00 is **0**; $150.00 of no budget,
 or of $0.00, is **no pill**; −$45.99 of $300.00 is **no pill**.
+
+---
+
+## F51 — A planned bill's monthly amount stands as its budget (amends F50 and F16)
+
+**Decided 2026-09-29. Owner chose, 2026-09-29.** Asked what a list's % pill
+should do when its spending includes rows with no budget typed (N130: the
+preview's Bills read "$1,695.50 of $70.00" and "2422%"), the owner answered:
+"Use planned amount as budget. A bill's monthly amount counts as its
+budget, so Bills shows about 100% when bills are paid as planned, like the
+mockup." The workbook's Budgeted column is typed only (Jan!D22:D44,
+J22:J44, O22:O44; Weekly Budget!D22; its totals D21, J21, O21), so this is
+a divergence (D30).
+
+**The rule.** On a Bills, Debts or Subscriptions row with **no budget typed**
+for the window, the monthly amount that counts in the window stands as the
+row's **effective budget**: in a month every amount in effect (F8, F10); in a
+week only one due on one of its days (F8), at its own month's amount (D13);
+in a pay period its share (F15). A **typed budget always wins, $0
+included**. A typed "no budget" (D12) is no budget, so the plan stands. A
+stopped amount, or none, gives none. Variable, Income and Savings rows are
+unchanged. periodSheet does this, so the Month, the Week and Paycheck agree.
+
+**Which figures use it.** periodSheet gives each row `effectiveBudgetCents`
+with `budgetBasis` ('typed', 'planned' or 'none'), and each list
+`effectiveBudgetTotalCents`.
+- The % pill and the "$X of $Y" beside it: both over the effective total,
+  so they agree (F50's rule, a new total).
+- The row's Budgeted cell shows the planned amount marked "planned", as
+  the Actual column marks one.
+- A bill, debt or subscription's Left (the app's own column, F16) is the
+  effective budget − Actual, so a row paid as planned shows 0.00.
+- **Unchanged:** `budgetCents` and `budgetTotalCents` stay typed only, as
+  the workbook's cells and the golden tests have them, and the Year
+  (Annual Budget) and the answers read those. Left to spend counts Variable
+  rows only (F5), so it cannot move.
+
+**Worked examples.** A month: Rent planned 1,600.00, none typed, no real
+row: Budgeted **1,600.00 planned**, Actual 1,600.00 planned, Left **0.00**.
+Phone typed 70.00 and paid 55.00: Left 15.00. Bills: **$1,655.00 of
+$1,670.00, 9,910 bp (99%)**. Rent typed $0: effective 0, Left −1,600.00.
+A week without Rent's due day: no planned budget, and the row's real
+payment, if any, stands against none.
