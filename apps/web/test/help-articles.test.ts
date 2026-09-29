@@ -112,6 +112,17 @@ describe('Help articles', () => {
     expect(articleFor('coach')?.related).toContain('checkin')
   })
 
+  // ADR 0011: More is a phone's; a computer has the sidebar. AI settings is
+  // in no sidebar group yet (N136), so its steps still go through More.
+  it('never sends a computer to More for a screen the sidebar holds, nor to the old bar at the top', () => {
+    for (const a of ARTICLES) {
+      const text = [a.summary, a.done, a.stuck, ...a.steps].join(' ')
+      expect(text, a.id).not.toMatch(/bar at the top/)
+      for (const m of text.matchAll(/open \*\*More\*\*, then \*\*([^*]+)\*\*/gi)) expect(m[1], a.id).toBe('AI settings')
+    }
+    expect(articleFor('reports')?.steps[0]).toBe('Open **Reports** (on a phone, under **More**).')
+  })
+
   it('finds no article for a topic not written yet', () => {
     expect(articleFor('start')?.title).toBe('Start here')
     expect(articleFor('nowhere')).toBeUndefined()

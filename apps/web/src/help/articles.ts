@@ -53,7 +53,7 @@ export const ARTICLES: readonly Article[] = [
     summary:
       'Getting started walks you through setting up, one step at a time: your name, lists, pay, bills, savings goals, first statement, this month’s starting balance, free AI and your iPhone. A few minutes each, and nothing breaks if you stop part way.',
     steps: [
-      'Open **More**, then **Getting started**, which says how many of the nine steps are done.',
+      'Open **Getting started** from **Settings**, or from **More** on a phone, and it says how many of the nine steps are done.',
       'Do what the step shows, then press **Continue**.',
       'To leave a step for now, press **Do this later**, which moves it to the end.',
       'To go to any step, open **All 9 steps** and tap it.',
@@ -163,10 +163,10 @@ export const ARTICLES: readonly Article[] = [
     steps: [
       'On the **Month**, tap a row’s Budgeted figure.',
       'Type the amount, and choose **From this month on** or **Just this month**.',
-      'For a bill, open **More**, then **Setup**, and type its **Monthly amount**.',
+      'For a bill, open **Setup** (on a phone, under **More**), and type its **Monthly amount**.',
       'Choose its **Day paid**.',
       'To see every bill by its day, tap the calendar button beside the Month’s title.',
-      'For weekly budgets, open **More**, then **Settings**, and type them under **Weekly budgets**.',
+      'For weekly budgets, open **Settings** (on a phone, under **More**), and type them under **Weekly budgets**.',
     ],
     done: 'each row on the Month shows Budgeted, Actual and Left, and the Bill calendar shows your bills on their days.',
     stuck:
@@ -179,7 +179,7 @@ export const ARTICLES: readonly Article[] = [
     summary:
       'Each goal has a fund, a category on your Savings list, and money you move into the fund counts toward the goal. Your main goal is the one the Coach and the Week show.',
     steps: [
-      'Open **More**, then **Savings**.',
+      'Open **Savings** (on a phone, under **More**).',
       'Read each goal’s card: what is saved, what is left, what to save a month, and one thing to trim to get there sooner.',
       'Press **Make main goal** on the goal you want the Coach and the Week to show.',
       'Press the up and down arrows on a goal to put your goals in the order you like.',
@@ -197,7 +197,7 @@ export const ARTICLES: readonly Article[] = [
     summary:
       'Save for anything, not only flying: a trip, a car, a rainy-day fund. Each goal gets its own fund on your Savings list. About 2 minutes.',
     steps: [
-      'Open **More**, then **Savings**.',
+      'Open **Savings** (on a phone, under **More**).',
       'Press **Add a goal**.',
       'Type the goal’s name and its target.',
       'Type what is saved already and a target date, if you have them.',
@@ -215,7 +215,7 @@ export const ARTICLES: readonly Article[] = [
     summary:
       'The loans and card balances you are paying down, and when each is paid off. These are separate from the Month’s Debts list, which counts each month’s payments.',
     steps: [
-      'Open **More**, then **Debts**.',
+      'Open **Debts** (on a phone, under **More**).',
       'Press **Add a debt**.',
       'Type its starting balance, the month beside it, its minimum payment and its APR.',
       'Press **Save debt**.',
@@ -269,7 +269,7 @@ export const ARTICLES: readonly Article[] = [
     summary:
       'The Forecast says where this month is heading, how much is safe to spend each day, when you will reach each of your goals and how the next three months look, worked out by the app from your own records, your planned bills and the pay still to come.',
     steps: [
-      'Open **Forecast** from **More**, or press **Open the Forecast** or **What if…** on the Coach.',
+      'Open **Forecast** (on a phone, under **More**), or press **Open the Forecast** or **What if…** on the Coach.',
       'Read the sentence at the top, then **Safe to spend**: what you can spend each day, today included, once your bills and savings are counted.',
       'Read where the month ends: a range, or one rough figure early in the month or with little history, with what is still to come under it.',
       'Read **The next 30 days**: your balance day by day, the tightest day ahead, and the bills due this week.',
@@ -305,7 +305,7 @@ export const ARTICLES: readonly Article[] = [
     summary:
       'Reports reviews a month: what came in, what you spent and what you saved, against last month and your usual month, the categories that moved most, and a short review in words with one thing to try. Trends shows how your months have moved, and which spending is creeping up. Habits shows your everyday spending day by day, your weeks within budget and your best months.',
     steps: [
-      'Open **Reports** from **More**, or from the bar at the top on a wide screen.',
+      'Open **Reports** (on a phone, under **More**).',
       'Press **‹** or **›** to choose a month; this month is marked **So far** and set against the same days of last month.',
       'Read **The month in review**: a headline, three points and one thing to try next month.',
       'Read **Income, Spent and Saved**, each against last month and your usual month, then **Biggest changes** and **This month and last, by category**, with a list of the same figures under the bars.',
@@ -341,7 +341,7 @@ export const ARTICLES: readonly Article[] = [
     summary:
       'Ask a question in your own words, such as “How much did I spend on coffee in August?”, and get the answer from your own records: how much, against last time, where it went, your subscriptions, where the month ends, what is safe to spend, when you reach your goals, what a saving would do, and your debt-free date.',
     steps: [
-      'Open **Ask** from **More**, type in the box at the bottom of the **Coach**, or press **Ask about this** in any screen’s **?**.',
+      'Open **Ask** from **More** on a phone, type in the box at the bottom of the **Coach**, or press **Ask about this** in any screen’s **?**.',
       'Type your question and press **Ask**, or tap one of the questions under **Try asking**.',
       'Read **I read that as**, to check the app understood which categories and which days you meant.',
       'Read the answer: the figure, a sentence and, where there is one, the list under it.',
@@ -437,7 +437,7 @@ export const ARTICLES: readonly Article[] = [
       'Open **Add** and bring in your latest statement if the last one ended a while ago.',
       'On the **Month**, check that **Start** shows the balance your bank showed on the 1st.',
       'Tap the row that looks wrong to see each charge behind it.',
-      'If one charge is there twice, typed once and imported once, open **More**, then **All transactions**, and remove the typed one.',
+      'If one charge is there twice, typed once and imported once, open **All transactions** (on a phone, under **More**), and remove the typed one.',
     ],
     done: 'each row’s charges add up to what you expected.',
     stuck:
