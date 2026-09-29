@@ -98,6 +98,26 @@ describe('MonthScreen blocks', () => {
     await expectNoAxeViolations()
   })
 
+  // Mockup A: each list's tile and head in its own hue (ADR 0010), and from
+  // 1280px the lists two across with the charts in a third column of their own.
+  it('draws each list in its hue, and the charts beside the lists from 1280px', async () => {
+    renderScreen(<MonthScreen month={null} />, seeded())
+    await screen.findByRole('region', { name: 'Variable expenses' })
+
+    const hues = { 'Variable expenses': 'variable', Bills: 'bills', Subscriptions: 'subscriptions', Debts: 'debts', Income: 'income', Savings: 'savings' }
+    for (const [name, hue] of Object.entries(hues)) {
+      const region = screen.getByRole('region', { name })
+      expect(region.querySelector('[aria-hidden="true"]')?.className).toContain(`bg-${hue}-tile`)
+      // A list with no rows has no table, so no head.
+      const head = region.querySelector('thead')
+      if (head !== null) expect(head.className).toContain(`bg-${hue}-header`)
+    }
+    expect(document.querySelectorAll('thead').length).toBe(5)
+    const charts = screen.getByRole('region', { name: 'Charts' })
+    expect(charts.className.split(' ')).toEqual(expect.arrayContaining(['xl:col-start-3', 'xl:row-start-1']))
+    expect(charts.parentElement?.className).toContain('xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,17rem)]')
+  })
+
   it('shows a return with its minus sign, and a category name as text, never markup', async () => {
     renderScreen(<MonthScreen month="2026-09" />, seeded())
 
@@ -489,6 +509,8 @@ describe('MonthScreen summary and notes', () => {
 
     const banner = await screen.findByRole('button', { name: /Not filed yet: 2 from September waiting for review/ })
     expect(banner.textContent).toContain('— not counted below')
+    // Waiting's amber, never a list's orange (design-review P1 item 4).
+    expect(banner.className.split(' ')).toEqual(expect.arrayContaining(['bg-waiting', 'border-waiting-border', 'text-waiting-ink']))
     expect(screen.queryByText('$13.49')).toBeNull()
     fireEvent.click(banner)
     expect(window.location.hash).toBe('#/review')

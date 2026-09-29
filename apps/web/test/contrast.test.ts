@@ -127,6 +127,8 @@ const TEXT: readonly (readonly [text: string, surface: string, least?: number, a
   // The Month's hero stat card ends on the accent's tint (step 3).
   ['foreground', 'primary-tint'],
   ['canvas-muted', 'primary-tint'],
+  // …and starts on the card, so its words read at both ends of the gradient.
+  ['canvas-muted', 'card'],
   ['summary-value', 'card'],
   ['waiting-ink', 'waiting-tile'],
   // The screens' own sets.
