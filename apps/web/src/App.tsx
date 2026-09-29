@@ -159,9 +159,9 @@ export function Shell() {
         <Sidebar screen={screen} state={sidebar} pendingTotal={pendingTotal} dot={dot} />
         {/* From 768px the screen sits in a white panel on the grey canvas, beside
           the rail or the sidebar (ADR 0010, 0011); on a phone it is the panel. */}
-        <div className="md:py-3 md:pl-[72px] md:pr-3 lg:pl-[248px] print:p-0">
+        <div className={cn('md:py-3 md:pl-[72px] md:pr-3 print:p-0', !sidebar.folded && 'lg:pl-[248px]')}>
           <div className="md:min-h-[calc(100dvh-1.5rem)] md:rounded-xl md:border md:bg-background print:border-0">
-            <TopBar screen={screen} param={param} onSearch={openHelpSearch} />
+            <TopBar screen={screen} param={param} folded={sidebar.folded} onFold={() => sidebar.setFolded(!sidebar.folded)} onSearch={openHelpSearch} />
             {/* A 16 px gutter, 12 below 360 px (plan §9): at 320 the Month's
               tables were 18 px wider than their cards (N66). Every band that
               bleeds to the edge takes back the same (-mx-4, and -mx-3 there). */}

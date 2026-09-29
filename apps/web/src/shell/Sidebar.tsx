@@ -7,10 +7,10 @@ import type { SidebarState } from './sidebar-state.js'
 
 /**
  * The wide screen's navigation (ADR 0011): a 72px rail of icons from
- * 768px, and from 1024px the 248px sidebar with each group's name and
- * each item's word. Plan is always open; the other groups fold, as the
- * owner last left them on this device, and until then open when they hold
- * the screen showing. Hidden below 768px, where the phone bar is.
+ * 768px, and from 1024px, unless folded, the 248px sidebar with each
+ * group's name. Plan is always open; the other groups fold, as the owner
+ * last left them on this device, and until then open when they hold the
+ * screen showing. Hidden below 768px, where the phone bar is.
  */
 export function Sidebar({
   screen,
@@ -24,14 +24,18 @@ export function Sidebar({
   dot: boolean
 }) {
   const lit = litOf(screen)
-  // Shown only in the full sidebar, from 1024px.
-  const full = 'hidden lg:flex'
-  const words = 'hidden lg:inline'
+  const folded = state.folded
+  // Shown only in the full sidebar: from 1024px, and not folded.
+  const full = folded ? 'hidden' : 'hidden lg:flex'
+  const words = folded ? 'hidden' : 'hidden lg:inline'
   return (
     <aside
       id="sidebar"
       aria-label="Sidebar"
-      className="fixed inset-y-0 left-0 z-20 hidden w-[72px] flex-col gap-2 bg-canvas px-3 pb-4 pt-5 md:flex lg:w-[248px] lg:px-4 print:hidden"
+      className={cn(
+        'fixed inset-y-0 left-0 z-20 hidden w-[72px] flex-col gap-2 bg-canvas px-3 pb-4 pt-5 md:flex print:hidden',
+        !folded && 'lg:w-[248px] lg:px-4',
+      )}
     >
       <a href={hashOf({ screen: 'month', param: null })} aria-label="Budget" className="flex items-center justify-center gap-3 rounded-md px-1 pb-3 lg:justify-start">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
@@ -46,7 +50,7 @@ export function Sidebar({
           const open = !folds || state.isOpen(g.title, g.items.some((i) => i.screen === lit))
           const waiting = g.items.some((i) => i.screen === 'review') && pendingTotal > 0
           return (
-            <div key={g.title} role="group" aria-labelledby={`${id}-name`} className={cn('flex flex-col gap-0.5', n > 0 && 'border-t pt-3 lg:border-t-0 lg:pt-0')}>
+            <div key={g.title} role="group" aria-labelledby={`${id}-name`} className={cn('flex flex-col gap-0.5', n > 0 && 'border-t pt-3', n > 0 && !folded && 'lg:border-t-0 lg:pt-0')}>
               {folds ? (
                 <button
                   id={`${id}-name`}
@@ -67,7 +71,7 @@ export function Sidebar({
                 </p>
               )}
               {/* Closed, a group's list is hidden in the full sidebar only: the rail shows every item. */}
-              <ul id={id} className={cn('flex flex-col gap-0.5', !open && 'lg:hidden')}>
+              <ul id={id} className={cn('flex flex-col gap-0.5', !open && !folded && 'lg:hidden')}>
                 {g.items.map((item) => {
                   const active = item.screen === lit
                   return (
@@ -78,18 +82,19 @@ export function Sidebar({
                         aria-label={labelOf(item, pendingTotal, dot)}
                         title={item.label}
                         className={cn(
-                          'relative flex min-h-11 items-center justify-center gap-3 rounded-lg border px-3 text-base font-medium transition-colors lg:justify-start',
+                          'relative flex min-h-11 items-center justify-center gap-3 rounded-lg border px-3 text-base font-medium transition-colors',
+                          !folded && 'lg:justify-start',
                           active ? 'border-border bg-card' : 'border-transparent hover:bg-card',
                         )}
                       >
                         <Icon name={item.icon} className={cn('size-5 shrink-0', active ? 'text-primary' : 'text-muted-foreground')} />
                         <span className={cn(words, 'min-w-0 flex-1 truncate')}>{item.label}</span>
                         {item.screen === 'review' && pendingTotal > 0 ? (
-                          <span className="absolute right-0.5 top-0.5 lg:static">
+                          <span className={cn('absolute right-0.5 top-0.5', !folded && 'lg:static')}>
                             <Count n={pendingTotal} />
                           </span>
                         ) : null}
-                        {item.screen === 'coach' && dot ? <Dot className="absolute right-1.5 top-1.5 lg:static" /> : null}
+                        {item.screen === 'coach' && dot ? <Dot className={cn('absolute right-1.5 top-1.5', !folded && 'lg:static')} /> : null}
                       </a>
                     </li>
                   )

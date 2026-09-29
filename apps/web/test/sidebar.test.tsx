@@ -68,7 +68,7 @@ describe('the sidebar (ADR 0011)', () => {
     fireEvent.click(fold('Money'))
     fireEvent.click(fold('Money'))
     expect(fold('Setup').getAttribute('aria-expanded')).toBe('true')
-    expect(JSON.parse(window.localStorage.getItem(SIDEBAR_KEY) ?? '{}')).toEqual({ open: { Setup: true, Money: false } })
+    expect(JSON.parse(window.localStorage.getItem(SIDEBAR_KEY) ?? '{}')).toEqual({ folded: false, open: { Setup: true, Money: false } })
     first.unmount()
 
     // Opened again, even on a screen in Money, as the owner left them.

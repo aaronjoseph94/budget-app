@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
+import { SIDEBAR_KEY } from '../src/shell/sidebar-state.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { expectNoAxeViolations } from './axe.js'
@@ -22,6 +23,7 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(TODAY)
   vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
+  window.localStorage.clear()
 })
 
 afterEach(() => {
@@ -91,5 +93,26 @@ describe('the top bar (ADR 0011)', () => {
     const header = screen.getByRole('navigation', { name: 'Breadcrumb' }).closest('header')!
     expect(within(header).getByRole('link', { name: 'Add' }).getAttribute('href')).toBe('#/add')
     expect([header.classList.contains('hidden'), header.classList.contains('md:flex')]).toEqual([true, true])
+  })
+
+  it('folds the sidebar to the rail from its toggle, and remembers it on this device', async () => {
+    const first = renderScreen(<Shell />, createFakeSupabase())
+    await screen.findByRole('heading', { name: 'September 2026' })
+    const toggle = screen.getByRole('button', { name: 'Toggle sidebar' })
+    const aside = screen.getByRole('complementary', { name: 'Sidebar' })
+    expect([toggle.getAttribute('aria-expanded'), toggle.getAttribute('aria-controls')]).toEqual(['true', aside.id])
+    expect(aside.classList.contains('lg:w-[248px]')).toBe(true)
+
+    fireEvent.click(toggle)
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    expect(aside.classList.contains('lg:w-[248px]')).toBe(false)
+    // Folded, every item keeps its name, and no group folds away.
+    expect(within(aside).getByRole('link', { name: 'Month' }).querySelector('span')?.classList.contains('lg:inline')).toBe(false)
+    expect(JSON.parse(window.localStorage.getItem(SIDEBAR_KEY) ?? '{}')).toEqual({ folded: true, open: {} })
+    first.unmount()
+
+    renderScreen(<Shell />, createFakeSupabase())
+    await screen.findByRole('heading', { name: 'September 2026' })
+    expect(screen.getByRole('button', { name: 'Toggle sidebar' }).getAttribute('aria-expanded')).toBe('false')
   })
 })

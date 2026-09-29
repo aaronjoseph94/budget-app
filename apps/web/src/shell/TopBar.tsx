@@ -5,17 +5,23 @@ import { cn } from '../lib/cn.js'
 import { crumbsOf } from './places.js'
 
 /**
- * The white panel's top bar, from 768px (ADR 0011): where this screen
- * sits, "Search or jump to…" and + Add. Search opens Help's search for
- * now; ⌘K and Ctrl+K do the same from anywhere (App.tsx).
+ * The white panel's top bar, from 768px (ADR 0011): the sidebar toggle,
+ * where this screen sits, "Search or jump to…" and + Add. The toggle folds
+ * the sidebar to the rail, and shows from 1024px, where there is a
+ * sidebar to fold. Search opens Help's search for now; ⌘K and Ctrl+K do
+ * the same from anywhere (App.tsx).
  */
 export function TopBar({
   screen,
   param,
+  folded,
+  onFold,
   onSearch,
 }: {
   screen: Screen
   param: string | null
+  folded: boolean
+  onFold: () => void
   onSearch: () => void
 }) {
   const crumbs = crumbsOf(screen, param)
@@ -23,6 +29,17 @@ export function TopBar({
   const tall = 'pointer-coarse:min-h-11 pointer-coarse:min-w-11'
   return (
     <header className="safe-top sticky top-0 z-10 hidden min-h-16 items-center gap-3.5 border-b bg-background/85 px-5 backdrop-blur md:flex md:rounded-t-xl print:hidden">
+      <button
+        type="button"
+        aria-label="Toggle sidebar"
+        aria-expanded={!folded}
+        aria-controls="sidebar"
+        onClick={onFold}
+        className={cn('hidden size-9 items-center justify-center rounded-md hover:bg-accent lg:flex', tall)}
+      >
+        <Icon name="sidebar" className="size-[18px]" />
+      </button>
+      <span aria-hidden="true" className="hidden h-5 w-px bg-border lg:block" />
       <nav aria-label="Breadcrumb" className="min-w-0">
         <ol className="flex items-center gap-2 text-base text-muted-foreground">
           <li>

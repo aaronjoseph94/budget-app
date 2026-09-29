@@ -1,18 +1,19 @@
 import { useCallback, useState } from 'react'
 
 /**
- * What the owner chose for the sidebar on this device (ADR 0011): which
- * groups are open. Kept in browser storage,
+ * What the owner chose for the sidebar on this device (ADR 0011): whether it
+ * is folded to the rail, and which groups are open. Kept in browser storage,
  * read and written inside try/catch: a private window or blocked storage
  * throws, and then the choice lasts only until the page reloads.
  */
 export const SIDEBAR_KEY = 'budget.sidebar'
 
 interface Chosen {
+  readonly folded: boolean
   readonly open: Readonly<Record<string, boolean>>
 }
 
-const NONE: Chosen = { open: {} }
+const NONE: Chosen = { folded: false, open: {} }
 
 function isRecordOfBooleans(value: unknown): value is Record<string, boolean> {
   return typeof value === 'object' && value !== null && Object.values(value).every((v) => typeof v === 'boolean')
@@ -25,8 +26,8 @@ function readChosen(): Chosen {
     if (raw === null) return NONE
     const value: unknown = JSON.parse(raw)
     if (typeof value !== 'object' || value === null) return NONE
-    const { open } = value as { open?: unknown }
-    return { open: isRecordOfBooleans(open) ? open : {} }
+    const { folded, open } = value as { folded?: unknown; open?: unknown }
+    return { folded: folded === true, open: isRecordOfBooleans(open) ? open : {} }
   } catch {
     return NONE
   }
@@ -42,9 +43,11 @@ function writeChosen(chosen: Chosen): boolean {
 }
 
 export interface SidebarState {
+  readonly folded: boolean
   /** Whether a group is open: as chosen, else `unchosen`. */
   readonly isOpen: (title: string, unchosen: boolean) => boolean
   readonly setOpen: (title: string, open: boolean) => void
+  readonly setFolded: (folded: boolean) => void
 }
 
 export function useSidebarState(): SidebarState {
@@ -57,7 +60,9 @@ export function useSidebarState(): SidebarState {
     })
   }, [])
   return {
+    folded: chosen.folded,
     isOpen: (title, unchosen) => chosen.open[title] ?? unchosen,
     setOpen: (title, open) => choose((was) => ({ ...was, open: { ...was.open, [title]: open } })),
+    setFolded: (folded) => choose((was) => ({ ...was, folded })),
   }
 }
