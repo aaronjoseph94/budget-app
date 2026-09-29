@@ -73,6 +73,18 @@ describe('SavingsScreen', () => {
     await expectNoAxeViolations()
   })
 
+  it("sets Mockup A's title row and each card's strip: the heading, Add a goal beside it, a tile before the name", async () => {
+    renderScreen(<SavingsScreen />, seeded())
+    const flight = await card('Flight training')
+    const header = screen.getByRole('heading', { level: 1, name: 'Savings goals' }).closest('header')!
+    expect(within(header).getByRole('button', { name: 'Add a goal' })).toBeTruthy()
+    // The tile is drawing only: a plane for a goal counted in hours, a piggy bank for the rest.
+    const tile = (region: HTMLElement) => region.querySelector('h2')!.parentElement!.previousElementSibling!
+    expect(tile(flight).getAttribute('aria-hidden')).toBe('true')
+    expect(tile(flight).parentElement!.className).toContain('bg-savings-title')
+    expect(tile(await card('House')).getAttribute('aria-hidden')).toBe('true')
+  })
+
   it("shows a fund's goal, its balance kept by transfers, what it needs, and a month's share", async () => {
     renderScreen(<SavingsScreen />, seeded())
     expect(lines(await card('Flight training'))).toEqual([

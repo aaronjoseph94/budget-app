@@ -176,6 +176,10 @@ const TEXT: readonly (readonly [text: string, surface: string, least?: number, a
   ['savings-ink', 'savings-banner'],
   ['savings-ink', 'savings-title'],
   ['savings-ink', 'savings-needed'],
+  // Savings (step 9): a goal's name in ink on its amber strip, and Saved
+  // this month's words where its tint ends.
+  ['foreground', 'savings-title'],
+  ['foreground', 'savings-band'],
   ['white', 'debt-banner'],
   ['debt-label', 'debt-page'],
   ['debt-label', 'card'],

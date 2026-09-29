@@ -25,8 +25,8 @@ import { AddGoalSheet } from './AddGoalSheet.js'
 import { GoalActions } from './GoalActions.js'
 import { Alert, Badge, Loading } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
-import { Icon } from '../components/ui/icons.js'
-import { Figure } from '../components/ui/type.js'
+import { Icon, type IconName } from '../components/ui/icons.js'
+import { Figure, MonthTitle } from '../components/ui/type.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { useCoachRead } from '../coach/facts.js'
 import { goalsForCore } from '../coach/goals.js'
@@ -59,7 +59,7 @@ export function SavingsScreen() {
     const top = outlooks.status === 'ready' ? outlooks.byGoal.get(goal.id)?.levers.offered[0] : undefined
     const category = top === undefined ? undefined : categories.find((c) => c.id === top.categoryId)
     return top === undefined || category === undefined ? null : (
-      <div className="rounded-lg bg-savings-header px-3 py-2">
+      <div className="rounded-lg border px-3 py-2">
         <GoalLever lever={top} categoryName={category.name} unitLabel={goal.unit_label} />
       </div>
     )
@@ -87,7 +87,7 @@ export function SavingsScreen() {
     ) : goal.status === 'reached' ? (
       <Badge variant="outline">Reached{goal.reached_on === null ? '' : ` ${formatIsoDate(goal.reached_on)}`}</Badge>
     ) : active.length > 1 && goal.id === mainGoal?.id ? (
-      <Badge>Main goal</Badge>
+      <Badge variant="default">Main goal</Badge>
     ) : null
   const cardOf = (goal: ListedGoalRow) => {
     const row = ready?.goals.find((g) => g.id === goal.id)
@@ -123,7 +123,7 @@ export function SavingsScreen() {
       )
     }
     // Saved a moment ago, and the funds not read again yet.
-    return <p className="rounded-xl border bg-card p-4 text-sm shadow-sm">{goal.name}: loading…</p>
+    return <p className="rounded-xl border bg-card p-4 text-sm">{goal.name}: loading…</p>
   }
 
   // A goal on no fund gets the Savings fund of its name, made when there is none.
@@ -154,27 +154,38 @@ export function SavingsScreen() {
     }
   }
 
+  // Mockup A: the Month's title row, with Add a goal on its right from 640px;
+  // then the month's saving, the goals three across from 1280px, the funds
+  // with no goal, and the folded goals, in the order a phone reads them.
   return (
-    <div className="space-y-4">
-      <header className="-mx-4 max-[359px]:-mx-3 bg-savings-banner px-4 max-[359px]:px-3 py-5 text-savings-ink md:mx-0 md:rounded-xl">
-        <div className="flex flex-wrap items-center gap-1">
-          <h1 className="font-serif text-4xl italic">Savings goals</h1>
-          <HelpButton screen="savings" />
+    <div className="space-y-4 xl:space-y-5">
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-1">
+            <MonthTitle>Savings goals</MonthTitle>
+            <HelpButton screen="savings" />
+          </div>
+          <p className="text-muted-foreground md:text-base">Your goals: what each needs, and what to put in it each month to get there by its date.</p>
         </div>
-        <p className="mt-1 text-sm">Your goals: what each needs, and what to put in it each month to get there by its date.</p>
+        {ready === null ? null : (
+          <Button className="w-full sm:w-auto" onClick={() => setAdding(true)}>
+            <Icon name="plus" /> Add a goal
+          </Button>
+        )}
       </header>
       {state.status === 'loading' ? <Loading what="your savings goals" /> : null}
       {notice !== null ? <Alert tone={notice.ok ? 'success' : 'error'}>{notice.text}</Alert> : null}
       {state.status === 'failed' ? <Alert tone="error" title="Could not load your savings funds">{state.message}</Alert> : null}
       {comparison === null ? null : (
         // A card but not a region: the regions on this screen are the funds.
-        <div className="rounded-xl border bg-card p-4 text-sm shadow-sm">
-          <h2 className="font-medium">Saved this month</h2>
+        // Tinted to Savings' amber, the list it counts (ADR 0010).
+        <div className="rounded-xl border bg-linear-to-r from-card to-savings-band p-4 text-sm md:px-6 md:py-5">
+          <h2 className="font-semibold md:text-base">Saved this month</h2>
           <CompareLine comparison={comparison} label="Compared with last month" earlier="last month" pick={(c) => c.summary.saved} word="saved" />
         </div>
       )}
       {state.status === 'ready' && state.funds.funds.length === 0 && goals.length === 0 ? (
-        <div className="rounded-xl border bg-card p-4 text-sm shadow-sm">
+        <div className="rounded-xl border bg-card p-4 text-sm">
           <p>Your Savings list has no funds yet. Each fund on it gets a card here.</p>
           <Button variant="outline" size="sm" className="mt-3" onClick={() => navigate('setup')}>
             Add funds in Setup
@@ -183,9 +194,6 @@ export function SavingsScreen() {
       ) : null}
       {ready === null ? null : (
         <>
-          <Button className="w-full sm:w-auto" onClick={() => setAdding(true)}>
-            <Icon name="plus" /> Add a goal
-          </Button>
           {goalsOrdered || goals.length === 0 ? null : (
             <p className="text-sm">
               Choosing your main goal, moving goals, and pausing or finishing one need a one-time update.{' '}
@@ -195,7 +203,7 @@ export function SavingsScreen() {
             </p>
           )}
           {active.length === 0 ? null : (
-            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 xl:gap-5">
               {active.map((goal) => (
                 <li key={goal.id}>{cardOf(goal)}</li>
               ))}
@@ -203,8 +211,8 @@ export function SavingsScreen() {
           )}
           {withoutGoal.length === 0 ? null : (
             <div className="space-y-2">
-              <h2 className="text-sm font-medium">Funds with no goal yet</h2>
-              <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <h2 className="text-sm font-semibold text-muted-foreground">Funds with no goal yet</h2>
+              <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 xl:gap-5">
                 {withoutGoal.map((fund) => (
                   <li key={fund.categoryId}>
                     <FundCard fund={fund} goal={goalOf(fund)} comparison={comparison} onEdit={() => setEditing(fund.categoryId)}>
@@ -220,9 +228,9 @@ export function SavingsScreen() {
             </div>
           )}
           {folded.length === 0 ? null : (
-            <details className="rounded-xl border bg-card px-4 shadow-sm">
-              <summary className="flex min-h-11 cursor-pointer items-center font-medium">Reached and paused ({folded.length})</summary>
-              <ul className="grid grid-cols-1 gap-4 pb-4 sm:grid-cols-2 lg:grid-cols-3">
+            <details className="rounded-xl border bg-card px-4 md:px-6">
+              <summary className="flex min-h-14 cursor-pointer items-center font-semibold">Reached and paused ({folded.length})</summary>
+              <ul className="grid grid-cols-1 gap-4 pb-4 sm:grid-cols-2 xl:grid-cols-3 xl:gap-5 md:pb-6">
                 {folded.map((goal) => (
                   <li key={goal.id}>{cardOf(goal)}</li>
                 ))}
@@ -298,9 +306,9 @@ function FundCard({
   const f = fund.figures
   return (
     <section aria-label={fund.name} className={CARD}>
-      <Title name={fund.name} badge={badge} />
+      <Title name={fund.name} badge={badge} icon={goal === null || goal.unit_cost_cents === null ? 'piggy' : 'plane'} />
       {f === null || goal === null ? (
-        <div className="space-y-3 px-4 py-4 text-sm">
+        <div className="space-y-3 px-4 py-4 text-sm md:px-5">
           <p>No goal yet.</p>
           <div className="flex flex-wrap gap-y-2">
             {children}
@@ -310,7 +318,7 @@ function FundCard({
           </div>
         </div>
       ) : (
-        <div className="space-y-3 px-4 py-4">
+        <div className="space-y-3 px-4 py-4 md:px-5">
           <GoalFigures figures={f} goal={goal} />
           {lever}
           {/* This fund's line only when there is one; the card above says why when there is not. */}
@@ -334,13 +342,20 @@ function FundCard({
   )
 }
 
-const CARD = 'overflow-hidden rounded-xl border border-savings-rule bg-card text-savings-ink shadow-sm'
+/** Mockup A's goal card: white, an amber title strip, the words in ink. */
+const CARD = 'overflow-hidden rounded-xl border bg-card'
 
-function Title({ name, badge }: { name: string; badge: ReactNode }) {
+/** The strip: Savings' icon tile, a plane for a goal counted in hours as the sidebar draws it, the name and its badge. */
+function Title({ name, badge, icon }: { name: string; badge: ReactNode; icon: IconName }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-savings-title px-4 py-2">
-      <h2 className="min-w-0 break-words text-3xl font-bold [overflow-wrap:anywhere]">{name}</h2>
-      {badge}
+    <div className="flex items-center gap-3 bg-savings-title px-4 py-3 md:px-5">
+      <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-savings-tile text-savings-accent">
+        <Icon name={icon} className="size-[1.125rem]" />
+      </span>
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
+        <h2 className="min-w-0 break-words text-lg font-semibold leading-tight [overflow-wrap:anywhere]">{name}</h2>
+        {badge}
+      </div>
     </div>
   )
 }
@@ -368,8 +383,8 @@ function LooseGoalCard({
 }) {
   return (
     <section aria-label={`${goal.name}, on no fund`} className={CARD}>
-      <Title name={goal.name} badge={badge} />
-      <div className="space-y-3 px-4 py-4">
+      <Title name={goal.name} badge={badge} icon={goal.unit_cost_cents === null ? 'piggy' : 'plane'} />
+      <div className="space-y-3 px-4 py-4 md:px-5">
         <p className="text-sm">On no savings fund yet, so money moved to savings does not count toward it.</p>
         <Button variant="outline" size="sm" onClick={onMakeFund}>
           Make it a fund
@@ -388,11 +403,11 @@ function GoalFigures({ figures: f, goal }: { figures: FundFigures; goal: FundRow
     <>
       <p>
         <Figure className="text-3xl font-bold">{formatCents(f.balanceCents)}</Figure>
-        <span className="tnum text-sm"> saved of {formatCents(f.goalCents)}</span>
+        <span className="tnum text-sm text-muted-foreground"> saved of {formatCents(f.goalCents)}</span>
       </p>
       <Bar figures={f} />
-      <div className="rounded-lg bg-savings-needed px-3 py-2">
-        <p className="text-xs font-medium">Amount needed{f.reached ? ' · goal reached' : ''}</p>
+      <div className="rounded-lg bg-savings-needed px-3 py-2.5">
+        <p className="text-xs font-medium text-savings-ink">Amount needed{f.reached ? ' · goal reached' : ''}</p>
         <Figure className="text-2xl font-bold">{formatCents(f.plan.amountNeededCents)}</Figure>
       </div>
       <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
@@ -403,7 +418,7 @@ function GoalFigures({ figures: f, goal }: { figures: FundFigures; goal: FundRow
           {f.plan.monthlyContributionCents === null ? '—' : <span className="tnum font-semibold">{formatCents(f.plan.monthlyContributionCents)}</span>}
         </Item>
       </dl>
-      {f.plan.status === 'planned' ? null : <p className="text-sm">{WHY_NO_MONTHLY[f.plan.status]}</p>}
+      {f.plan.status === 'planned' ? null : <p className="text-sm text-muted-foreground">{WHY_NO_MONTHLY[f.plan.status]}</p>}
       <Kept figures={f} goal={goal} />
     </>
   )
@@ -416,14 +431,14 @@ const WHY_NO_MONTHLY: Readonly<Record<Exclude<SavingsFundPlan['status'], 'planne
   'under-a-month': 'The goal date is less than a month after the start date, so there is no monthly figure.',
 }
 
-/** The card's bar: #FAC935 over the savings rule, its length core's basis points. */
+/** The card's bar: Savings' amber over its tile, its length core's basis points. */
 function Bar({ figures }: { figures: FundFigures }) {
   return (
     <div className="flex items-center gap-2">
-      <div className="h-3 flex-1 overflow-hidden rounded-full bg-savings-rule" role="presentation">
+      <div className="h-2 flex-1 overflow-hidden rounded-full bg-savings-tile" role="presentation">
         <div className="h-full rounded-full bg-savings-bar" style={{ width: `${figures.progressBp / 100}%` }} />
       </div>
-      <span className="tnum text-xs font-medium">{formatBasisPoints(figures.progressBp)}</span>
+      <span className="tnum text-xs font-semibold">{formatBasisPoints(figures.progressBp)}</span>
     </div>
   )
 }
@@ -435,7 +450,7 @@ function Kept({ figures, goal }: { figures: FundFigures; goal: FundRow }) {
       ? null
       : goalProgress({ name: goal.name, targetCents: goal.target_cents, savedCents: figures.balanceCents, unitCostCents: goal.unit_cost_cents }).unitsRemaining
   return (
-    <div className="space-y-1 text-xs">
+    <div className="space-y-3 text-xs text-muted-foreground">
       {goal.balance_as_of === null ? null : (
         <p>
           {formatCents(goal.saved_cents)} typed on {formatIsoDate(goal.balance_as_of)}
@@ -448,7 +463,7 @@ function Kept({ figures, goal }: { figures: FundFigures; goal: FundRow }) {
         </p>
       )}
       {units !== null && units > 0 ? (
-        <p className="rounded-lg bg-savings-header px-2 py-1.5 text-sm">
+        <p className="rounded-lg bg-primary-soft px-3 py-2 text-sm text-foreground">
           About {units} hours of {goal.unit_label ?? 'your goal'} to go.
         </p>
       ) : null}
@@ -459,7 +474,7 @@ function Kept({ figures, goal }: { figures: FundFigures; goal: FundRow }) {
 function Item({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
-      <dt className="text-xs">{label}</dt>
+      <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd>{children}</dd>
     </div>
   )

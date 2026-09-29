@@ -171,7 +171,7 @@
   --payday: #047857;
   --payday-ink: #ffffff;
   --savings-banner: #fffbeb;
-  --savings-title: #fef3c7;
+  --savings-title: #fffbeb; /* Mockup A's amber strip; the icon tile #fef3c7 sits on it */
   --savings-needed: #fffbeb;
   --savings-bar: #f59e0b;
   --savings-chart-goal: #fef3c7;
@@ -308,7 +308,7 @@
     --payday: #065f46;
     --payday-ink: #ffffff;
     --savings-banner: #2a2210;
-    --savings-title: #3d3112;
+    --savings-title: #2a2210;
     --savings-needed: #2a2210;
     --savings-bar: #f59e0b;
     --savings-chart-goal: #3d3112;
