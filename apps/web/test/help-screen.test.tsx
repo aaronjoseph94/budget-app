@@ -28,8 +28,10 @@ afterEach(() => {
   window.location.hash = ''
 })
 
+/** The screen's own part of the page, past the sidebar's lists; the whole page where Help is drawn alone. */
+const onScreen = () => within(screen.queryByRole('main') ?? document.body)
 const titles = () =>
-  within(screen.getByRole('list')).getAllByRole('link').map((a) => a.querySelector('.font-medium')?.textContent)
+  within(onScreen().getByRole('list')).getAllByRole('link').map((a) => a.querySelector('.font-medium')?.textContent)
 
 describe('Help', () => {
   it('lists every article in order, each a link to its own address', async () => {
@@ -37,7 +39,7 @@ describe('Help', () => {
     renderScreen(<Shell />, createFakeSupabase())
     await screen.findByRole('heading', { level: 1, name: 'Help' })
     expect(titles()).toEqual(ARTICLES.map((a) => a.title))
-    const first = within(screen.getByRole('list')).getAllByRole('link')[0]
+    const first = within(onScreen().getByRole('list')).getAllByRole('link')[0]
     expect(first?.getAttribute('href')).toBe('#/help/start')
     await expectNoAxeViolations()
   })
@@ -54,7 +56,7 @@ describe('Help', () => {
     expect(titles()).toEqual(['Put it on your iPhone'])
 
     fireEvent.change(search, { target: { value: 'zeppelin' } })
-    expect(screen.queryByRole('list')).toBeNull()
+    expect(onScreen().queryByRole('list')).toBeNull()
     expect(screen.getByText('Nothing matches “zeppelin”. Try one word, such as “statement”.')).toBeTruthy()
 
     fireEvent.change(search, { target: { value: '  ' } })

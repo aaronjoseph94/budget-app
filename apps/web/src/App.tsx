@@ -13,6 +13,7 @@ import { Button } from './components/ui/button.js'
 import { AnnounceProvider } from './components/ui/announce.js'
 import { Icon, type IconName } from './components/ui/icons.js'
 import { Count, Dot, labelOf } from './shell/marks.js'
+import { Sidebar } from './shell/Sidebar.js'
 import { SCREEN_NAME } from './shell/places.js'
 import { cn } from './lib/cn.js'
 import { todayIso } from './format.js'
@@ -103,23 +104,6 @@ const PHONE_TABS: readonly Tab[] = [
   { screen: 'more', label: 'More', icon: 'menu' },
 ]
 
-/**
- * Wide screens: the Coach, Forecast and Reports beside the views. Paycheck
- * and Year are in the switch; the Bill calendar and Setup in More (ADR 0006).
- */
-const DESKTOP_TABS: readonly Tab[] = [
-  { screen: 'month', label: 'Month', icon: 'calendar' },
-  { screen: 'week', label: 'Week', icon: 'week' },
-  { screen: 'coach', label: 'Coach', icon: 'sparkles' },
-  { screen: 'forecast', label: 'Forecast', icon: 'trend' },
-  { screen: 'reports', label: 'Reports', icon: 'report' },
-  { screen: 'savings', label: 'Savings', icon: 'piggy' },
-  { screen: 'debts', label: 'Debts', icon: 'card' },
-  { screen: 'review', label: 'Review', icon: 'inbox' },
-  { screen: 'add', label: 'Add', icon: 'plus' },
-  { screen: 'more', label: 'More', icon: 'menu' },
-]
-
 interface Tab {
   readonly screen: Screen
   readonly label: string
@@ -154,7 +138,7 @@ export function Shell() {
   return (
     <AnnounceProvider>
       <div className="min-h-full md:bg-canvas">
-        {/* Past the desktop bar's tabs, in one key (FE-10). Focus
+        {/* Past the sidebar's links, in one key (FE-10). Focus
           is moved by hand: following the link would set the address to
           #main, which the app reads as a request for the Month. */}
         <a
@@ -167,49 +151,11 @@ export function Shell() {
         >
           Skip to content
         </a>
-        {/* From 768px the screen sits in a white panel on the grey canvas
-          (ADR 0010); on a phone the screen is the panel. */}
-        <div className="md:p-3 print:p-0">
+        <Sidebar screen={screen} pendingTotal={pendingTotal} dot={dot} />
+        {/* From 768px the screen sits in a white panel on the grey canvas, beside
+          the rail or the sidebar (ADR 0010, 0011); on a phone it is the panel. */}
+        <div className="md:py-3 md:pl-[72px] md:pr-3 lg:pl-[248px] print:p-0">
           <div className="md:min-h-[calc(100dvh-1.5rem)] md:rounded-xl md:border md:bg-background print:border-0">
-            <header className="safe-top sticky top-0 z-20 hidden border-b bg-background/85 backdrop-blur md:block md:rounded-t-xl print:hidden">
-              {/* The bar takes the wide width on every screen: a narrow screen's
-                768 held nine tabs' words only by running past its edge. */}
-              <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 lg:max-w-7xl">
-                <span className="font-semibold tracking-tight">Budget</span>
-                <nav aria-label="Screens" className="flex gap-1">
-                  {DESKTOP_TABS.map((t) => {
-                    const active = tabOf(screen, DESKTOP_TABS) === t.screen
-                    return (
-                      <a
-                        key={t.screen}
-                        href={hashOf({ screen: t.screen, param: null })}
-                        aria-current={active ? 'page' : undefined}
-                        aria-label={labelOf(t, pendingTotal, dot)}
-                        className={cn(
-                          'relative flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5 rounded-md px-1.5 text-[11px] font-medium transition-colors',
-                          'xl:flex-row xl:gap-2 xl:px-3 xl:text-sm',
-                          active ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
-                        )}
-                      >
-                        <Icon name={t.icon} className="size-4" />
-                        {/* A tablet's 768 once showed the icons alone, 40x28 and
-                          unnamed to the eye (FE-1). Each keeps its word now, small
-                          and under its icon, as the phone's bar has it, 44px tall;
-                          from 1280px there is room to set them beside the icons. */}
-                        <span>{t.label}</span>
-                        {t.screen === 'review' && pendingTotal > 0 ? (
-                          <span className="absolute -right-1 top-0 xl:static">
-                            <Count n={pendingTotal} />
-                          </span>
-                        ) : null}
-                        {t.screen === 'coach' && dot ? <Dot className="absolute right-1 top-1 xl:static" /> : null}
-                      </a>
-                    )
-                  })}
-                </nav>
-              </div>
-            </header>
-
             {/* A 16 px gutter, 12 below 360 px (plan §9): at 320 the Month's
               tables were 18 px wider than their cards (N66). Every band that
               bleeds to the edge takes back the same (-mx-4, and -mx-3 there). */}

@@ -178,7 +178,7 @@ describe('the Sunday check-in', () => {
     expect(fake.tables.coach_answers).toEqual([expect.objectContaining({ transaction_id: 'sushi', answer: 'impulse', asked_week: '2026-09-21' })])
     expect(screen.getByText('Over the last 8 weeks you called 100% of 1 charge impulse.')).toBeTruthy()
     // Still asked on screen, marked, rather than giving way to the next charge.
-    expect(screen.getAllByRole('group')).toHaveLength(3)
+    expect(within(screen.getByRole('main')).getAllByRole('group')).toHaveLength(3)
   })
 
   it('without 0017, replaces only the questions with one line pointing to Help', async () => {

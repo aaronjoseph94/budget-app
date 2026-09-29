@@ -17,7 +17,7 @@ function go(hash: string) {
   })
 }
 
-/** The phone's bottom bar comes after the desktop one. */
+/** The phone's bottom bar comes after the wide screen's sidebar (ADR 0011). */
 const phoneBar = () => screen.getAllByRole('navigation', { name: 'Screens' })[1]!
 const deskBar = () => screen.getAllByRole('navigation', { name: 'Screens' })[0]!
 /** An item in one of More's groups, once More is showing. */
@@ -54,7 +54,7 @@ describe('Shell', () => {
     await expectNoAxeViolations()
   })
 
-  it('gives every tab on the desktop bar an icon of its own', async () => {
+  it('gives every item in the sidebar an icon of its own', async () => {
     renderScreen(<Shell />, createFakeSupabase())
     await screen.findByRole('heading', { name: 'September 2026' })
 
@@ -78,13 +78,18 @@ describe('Shell', () => {
     expect(window.location.hash).toBe('#/month/2026-01')
   })
 
-  it('puts the Coach on the wide bar beside the views, and Paycheck, Year, the Bill calendar and Setup elsewhere', async () => {
+  it('groups the sidebar Plan, Money, Coach, Inbox and Setup, as Mockup A does (ADR 0011)', async () => {
     go('/coach')
     renderScreen(<Shell />, createFakeSupabase())
     await screen.findByRole('heading', { name: 'Coach', level: 1 })
 
-    expect(within(deskBar()).getAllByRole('link').map((b) => b.textContent)).toEqual([
-      'Month', 'Week', 'Coach', 'Forecast', 'Reports', 'Savings', 'Debts', 'Review', 'Add', 'More',
+    const groups = within(deskBar()).getAllByRole('group')
+    expect(groups.map((g) => [document.getElementById(g.getAttribute('aria-labelledby') ?? '')?.textContent, within(g).getAllByRole('link').map((b) => b.getAttribute('aria-label'))])).toEqual([
+      ['Plan', ['Month', 'Week', 'Paycheck', 'Bill calendar', 'Year']],
+      ['Money', ['Savings', 'Debts', 'All transactions']],
+      ['Coach', ['Coach', 'Forecast', 'Reports']],
+      ['Inbox', ['Review', 'Add']],
+      ['Setup', ['Setup', 'Settings', 'Help']],
     ])
     expect(within(deskBar()).getByRole('link', { name: 'Coach' }).getAttribute('aria-current')).toBe('page')
     expect(within(phoneBar()).getByRole('link', { name: 'Coach' }).getAttribute('aria-current')).toBe('page')
@@ -132,14 +137,14 @@ describe('Shell', () => {
     expect(within(phoneBar()).getByRole('link', { name: 'More' }).getAttribute('aria-current')).toBe('page')
   })
 
-  it('opens the Year, fetched on first use, from More, and lights the Month while it shows', async () => {
+  it('opens the Year, fetched on first use, from More, and lights the Month on a phone and the Year in the sidebar', async () => {
     renderScreen(<Shell />, createFakeSupabase())
     go('/more')
     expect((await moreItem('Plan', 'Year')).getAttribute('href')).toBe('#/year')
     go('/year')
     expect(await screen.findByRole('heading', { name: 'Year' })).toBeTruthy()
     expect(within(phoneBar()).getByRole('link', { name: 'Month' }).getAttribute('aria-current')).toBe('page')
-    expect(within(deskBar()).getByRole('link', { name: 'Month' }).getAttribute('aria-current')).toBe('page')
+    expect(within(deskBar()).getByRole('link', { name: 'Year' }).getAttribute('aria-current')).toBe('page')
   })
 
   it('opens Savings from More on a phone, and from the bar on a desktop', async () => {
@@ -162,15 +167,15 @@ describe('Shell', () => {
     expect(within(phoneBar()).getByRole('link', { name: 'More' }).getAttribute('aria-current')).toBe('page')
   })
 
-  it('opens the Bill calendar from More, at this month, and lights More while it shows', async () => {
+  it('opens the Bill calendar from More, at this month, and lights More on a phone and itself in the sidebar', async () => {
     renderScreen(<Shell />, createFakeSupabase())
     go('/more')
     expect((await moreItem('Plan', 'Bill calendar')).getAttribute('href')).toBe('#/calendar')
     go('/calendar')
     // Fetched on first use now (PERF-3), so its heading is waited for too.
-    expect(await screen.findByText('Bill calendar')).toBeTruthy()
+    expect(await within(screen.getByRole('main')).findByText('Bill calendar')).toBeTruthy()
     expect(await screen.findByRole('heading', { name: 'September 2026' })).toBeTruthy()
-    expect(within(deskBar()).getByRole('link', { name: 'More' }).getAttribute('aria-current')).toBe('page')
+    expect(within(deskBar()).getByRole('link', { name: 'Bill calendar' }).getAttribute('aria-current')).toBe('page')
     expect(within(phoneBar()).getByRole('link', { name: 'More' }).getAttribute('aria-current')).toBe('page')
   })
 
@@ -314,7 +319,8 @@ describe('Shell, its screens as links (FE-20)', () => {
       '#/month', '#/coach', '#/add', '#/review', '#/more',
     ])
     expect(within(deskBar()).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual([
-      '#/month', '#/week', '#/coach', '#/forecast', '#/reports', '#/savings', '#/debts', '#/review', '#/add', '#/more',
+      '#/month', '#/week', '#/paycheck', '#/calendar', '#/year', '#/savings', '#/debts', '#/ledger',
+      '#/coach', '#/forecast', '#/reports', '#/review', '#/add', '#/setup', '#/settings', '#/help',
     ])
 
     go('/more')
