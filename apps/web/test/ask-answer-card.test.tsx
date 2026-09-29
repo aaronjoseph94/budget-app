@@ -40,6 +40,17 @@ describe('AnswerCard', () => {
     await expectNoAxeViolations()
   })
 
+  // Mockup A (step 7): the figure at 40px in a flat card tinted to the accent,
+  // whose muted words take canvas-muted on the tint (ADR 0010).
+  it('draws the figure large in a tinted card, with the muted words darkened for the tint', () => {
+    card(answered(line('spent_in', ['Dining out'], { amount: cents(105_400) })))
+    const figure = screen.getByText('$1,054.00', { selector: 'p' })
+    expect(figure.className.split(' ')).toContain('text-[2.5rem]')
+    const tinted = figure.closest('.to-primary-tint')
+    expect(tinted?.className).toContain('[--muted-foreground:var(--canvas-muted)]')
+    expect(tinted?.className.split(' ')).not.toContain('shadow-sm')
+  })
+
   it('marks what the AI read, and names both windows of a comparison', () => {
     const compare: Read = { ...SPEND, intent: 'compare', period: { kind: 'this_month' } }
     card(

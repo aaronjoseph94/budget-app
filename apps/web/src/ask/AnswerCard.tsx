@@ -115,9 +115,11 @@ export function AnswerCard(props: {
   children?: ReactNode
 }) {
   const { read, answer } = props
+  // Mockup A's answer card, white to the accent's tint. Muted words on the
+  // tint take `canvas-muted`, as #6b7280 reads 4.27 where it ends (ADR 0010).
   return (
-    <Card>
-      <CardContent className="space-y-3 pt-5">
+    <Card flat className="bg-linear-to-b from-card to-primary-tint [--muted-foreground:var(--canvas-muted)]">
+      <CardContent className="space-y-3 pt-5 md:px-6 md:pt-6">
         <ReadAs read={read} by={props.by} names={props.names} answer={answer} />
         {answer.status === 'answered' ? <Answered answer={answer} /> : <NoAnswer answer={answer} missingUpdate={props.missingUpdate} />}
         {props.children}
@@ -135,8 +137,8 @@ function Answered({ answer }: { answer: Extract<Answer, { status: 'answered' }> 
   const listed = rows.filter((r) => r.say !== 'goal')
   return (
     <>
-      {figure === undefined ? null : <p className="tnum text-3xl font-bold [overflow-wrap:anywhere]">{figureText(figure)}</p>}
-      <p className="text-base leading-snug [overflow-wrap:anywhere]">
+      {figure === undefined ? null : <p className="tnum text-[2.5rem] font-bold leading-tight tracking-[-0.02em] [overflow-wrap:anywhere]">{figureText(figure)}</p>}
+      <p className="text-base leading-snug [overflow-wrap:anywhere] md:text-[1.0625rem]">
         <LineText line={main} under={rows[0]} />
       </p>
       {now === null ? null : (
@@ -147,9 +149,9 @@ function Answered({ answer }: { answer: Extract<Answer, { status: 'answered' }> 
       )}
       {cutFrom === null ? null : <p className="text-sm text-muted-foreground">Your records start on {formatDayMonth(cutFrom)}, so this counts from then.</p>}
       {listed.length === 0 ? null : (
-        <ul className="divide-y text-sm">
+        <ul className="divide-y border-t text-sm md:text-[0.9375rem]">
           {listed.map((line, i) => (
-            <li key={i} className="py-2 [overflow-wrap:anywhere]">
+            <li key={i} className="py-2.5 [overflow-wrap:anywhere]">
               <LineText line={line} />
             </li>
           ))}

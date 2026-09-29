@@ -9,6 +9,7 @@ import { Button } from '../components/ui/button.js'
 import { Card, CardContent } from '../components/ui/card.js'
 import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
+import { MonthTitle } from '../components/ui/type.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { ARTICLES, articleFor } from '../help/articles.js'
 import type { HelpTopic } from '../help/topics.js'
@@ -130,10 +131,10 @@ export function AskScreen({ topic }: { topic: HelpTopic | null }) {
         ← Coach
       </a>
       <div className="flex flex-wrap items-center gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Ask</h1>
+        <MonthTitle>Ask</MonthTitle>
         <HelpButton screen="ask" />
       </div>
-      <p className="text-sm text-muted-foreground">
+      <p className="-mt-2 text-muted-foreground md:text-[0.9375rem]">
         {about === undefined ? 'Ask about your money in your own words.' : `About: ${about.title}.`} The app works out every figure from your own records.
       </p>
       <form
@@ -149,7 +150,7 @@ export function AskScreen({ topic }: { topic: HelpTopic | null }) {
         <div className="flex gap-2">
           <Input
             id="ask-question"
-            className="min-w-0 flex-1"
+            className="min-h-12 min-w-0 flex-1"
             placeholder="e.g. coffee in August?"
             value={text}
             maxLength={300}
@@ -157,7 +158,7 @@ export function AskScreen({ topic }: { topic: HelpTopic | null }) {
             enterKeyHint="go"
             onChange={(e) => setText(e.target.value)}
           />
-          <Button type="submit" className="min-h-11 shrink-0" disabled={busy}>
+          <Button type="submit" className="min-h-12 shrink-0 px-4" disabled={busy}>
             <Icon name="sparkles" className="size-4" /> {busy ? 'Reading…' : 'Ask'}
           </Button>
         </div>
@@ -180,11 +181,11 @@ export function AskScreen({ topic }: { topic: HelpTopic | null }) {
       {asked !== null && asked.read.read.kind === 'cannot' ? null : <Suggestions topic={topic} onAsk={(q) => void ask(q, true)} />}
       {recent.length === 0 ? null : (
         <section aria-label="Your last questions" className="space-y-1">
-          <h2 className="text-sm font-medium">Your last questions</h2>
+          <h2 className="text-[0.9375rem] font-semibold">Your last questions</h2>
           <ul>
             {recent.map((q) => (
               <li key={q}>
-                <button type="button" className="min-h-11 w-full text-left text-sm underline-offset-4 hover:underline [overflow-wrap:anywhere]" onClick={() => void ask(q, false)}>
+                <button type="button" className="min-h-11 w-full text-left text-muted-foreground underline-offset-4 hover:text-foreground hover:underline [overflow-wrap:anywhere] md:text-[0.9375rem]" onClick={() => void ask(q, false)}>
                   {q}
                 </button>
               </li>
@@ -258,7 +259,7 @@ function NotAnIntent({ read, topic, onAsk }: { read: Exclude<AskRead, { kind: 'i
 function Suggestions({ topic, onAsk, bare = false }: { topic: HelpTopic | null; onAsk: (q: string) => void; bare?: boolean }) {
   return (
     <section aria-label="Suggested questions" className="space-y-2">
-      {bare ? null : <h2 className="text-sm font-medium">Try asking</h2>}
+      {bare ? null : <h2 className="text-[0.9375rem] font-semibold">Try asking</h2>}
       <div className="flex flex-wrap gap-2">
         {suggestions(topic).map((q) => (
           <Button key={q} variant="outline" size="sm" className="h-auto min-h-11 whitespace-normal text-left" onClick={() => onAsk(q)}>
