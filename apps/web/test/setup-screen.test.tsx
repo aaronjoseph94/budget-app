@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SetupScreen } from '../src/screens/SetupScreen.js'
 import { addCategories, type Category } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
@@ -35,19 +35,26 @@ async function namesOn(list: string): Promise<string[]> {
     .map((li) => within(li).queryByRole<HTMLInputElement>('textbox', { name: /^Rename / })?.value ?? li.textContent ?? '')
 }
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
 
 describe('SetupScreen, the lists', () => {
   it("shows every list under the workbook's headings, each in its own order, then by name", async () => {
     renderScreen(<SetupScreen />, seeded())
 
     expect(screen.getByRole('heading', { level: 1, name: 'Start here!' })).toBeTruthy()
-    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
-      'Income',
-      'Savings',
-      'Recurring expenses',
-      'Variable expenses',
-      'Not spending',
+    // Mockup A: each list's card is its own section, the workbook's section
+    // named over its title.
+    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => [h.previousElementSibling?.textContent, h.textContent])).toEqual([
+      ['Source', 'Income'],
+      ['Savings', 'Savings'],
+      ['Recurring expenses', 'Bills'],
+      ['Recurring expenses', 'Debts'],
+      ['Recurring expenses', 'Subscriptions'],
+      ['Variable expenses', 'Variable expenses'],
+      ['Not spending', 'Not spending'],
     ])
     await waitFor(async () => expect(await namesOn('Bills')).toEqual(['Phone', 'Rent']))
     expect(await namesOn('Income')).toEqual(['Pay'])
@@ -58,6 +65,27 @@ describe('SetupScreen, the lists', () => {
     // Plan §3.3: the card itself is not a Debts row, or its purchases count twice.
     expect(within(screen.getByRole('region', { name: 'Debts' })).getByText(/^What loans .* its purchases are already counted\.$/)).toBeTruthy()
     await expectNoAxeViolations()
+  })
+})
+
+describe('SetupScreen, the columns', () => {
+  const at1280 = (matches: boolean) =>
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: matches && query === '(min-width: 1280px)', addEventListener: () => undefined, removeEventListener: () => undefined }))
+  const titles = () => screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
+
+  it('keeps the workbook\'s order in one column below 1280px', () => {
+    at1280(false)
+    renderScreen(<SetupScreen />, seeded())
+    expect(titles()).toEqual(['Income', 'Savings', 'Bills', 'Debts', 'Subscriptions', 'Variable expenses', 'Not spending'])
+  })
+
+  it('puts the lists with columns on the left from 1280px, each column read top to bottom', () => {
+    at1280(true)
+    renderScreen(<SetupScreen />, seeded())
+    expect(titles()).toEqual(['Income', 'Bills', 'Debts', 'Subscriptions', 'Savings', 'Variable expenses', 'Not spending'])
+    const [left, right] = [...(screen.getByRole('region', { name: 'Income' }).parentElement?.parentElement?.children ?? [])]
+    expect(left?.contains(screen.getByRole('region', { name: 'Subscriptions' }))).toBe(true)
+    expect(right?.contains(screen.getByRole('region', { name: 'Savings' }))).toBe(true)
   })
 })
 
@@ -193,7 +221,8 @@ describe('SetupScreen, your name', () => {
   it('draws a ring round the name field when it has focus, not only a whiter underline (FE-3)', () => {
     renderScreen(<SetupScreen />, seeded(), 'Sam')
     const classes = screen.getByRole('textbox', { name: 'My name is' }).classList
-    expect([classes.contains('focus-visible:ring-2'), classes.contains('focus-visible:ring-white/70')]).toEqual([true, true])
+    // Mockup A: the field on the accent tint has its own edge and the app's accent ring.
+    expect([classes.contains('focus-visible:ring-[3px]'), classes.contains('focus-visible:ring-ring')]).toEqual([true, true])
   })
 
   it('saves your name to your sign-in when you leave the field', async () => {

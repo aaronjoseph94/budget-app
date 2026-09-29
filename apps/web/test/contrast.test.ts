@@ -127,6 +127,11 @@ const TEXT: readonly (readonly [text: string, surface: string, least?: number, a
   // The Month's hero stat card ends on the accent's tint (step 3).
   ['foreground', 'primary-tint'],
   ['canvas-muted', 'primary-tint'],
+  // Setup's name card on the tint (step 11): its focus ring and the saved ✓
+  // are marks, at 3 to one. The field's edge there is `canvas-muted`,
+  // measured above, since `input` reads 2.99 on the tint.
+  ['ring', 'primary-tint', 3],
+  ['income', 'primary-tint', 3],
   // …and starts on the card, so its words read at both ends of the gradient.
   ['canvas-muted', 'card'],
   ['summary-value', 'card'],

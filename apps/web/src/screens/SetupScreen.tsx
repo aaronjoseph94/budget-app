@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { Fragment, useId, useState, type ReactNode } from 'react'
 import { useAppData } from '../app-data.js'
 import { appendToLists, isoDate, monthBounds, moveInList, type BillNudge, type BillsTotals } from '@budget/core'
 import {
@@ -17,6 +17,10 @@ import { Alert, SavedNote } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
+import { MonthTitle } from '../components/ui/type.js'
+import { LIST_TONE } from '../list-tone.js'
+import { cn } from '../lib/cn.js'
+import { useFourAcross } from '../lib/wide.js'
 import { navigate } from '../nav.js'
 import { PlanFields, PlanHeadings, TotalTile, useMonthlyAmounts, type MonthlyAmounts } from './SetupPlans.js'
 import { useBillNudges } from '../bill-nudges.js'
@@ -25,8 +29,8 @@ import { HelpButton } from '../help/HelpButton.js'
 
 interface ListCard {
   readonly kind: CategoryKind
-  /** The column heading the workbook puts on the card, emoji and all (START HERE row 7 and 17). */
-  readonly header?: readonly [emoji: string, text: string]
+  /** Said over the title in place of the section's name: the workbook's column heading (START HERE row 7). */
+  readonly eyebrow?: string
   /** Short help, from the note the workbook attaches to the card's heading cell. */
   readonly hint: string
 }
@@ -36,20 +40,19 @@ interface ListCard {
  * order the workbook has them. "Not spending" is the app's own and comes last.
  */
 const SECTIONS: readonly { readonly label: string; readonly cards: readonly ListCard[] }[] = [
-  { label: 'Income', cards: [{ kind: 'income', header: ['💵', 'Source'], hint: 'What type of income do you receive?' }] },
+  { label: 'Income', cards: [{ kind: 'income', eyebrow: 'Source', hint: 'What type of income do you receive?' }] },
   { label: 'Savings', cards: [{ kind: 'savings', hint: 'What are your savings goals?' }] },
   {
     label: 'Recurring expenses',
     cards: [
-      { kind: 'bill', header: ['🏠', 'Bills'], hint: 'What bills do you pay each month? Their amounts usually stay the same.' },
+      { kind: 'bill', hint: 'What bills do you pay each month? Their amounts usually stay the same.' },
       {
         kind: 'debt',
-        header: ['💳', 'Debts'],
         // The workbook's note (D17) invites every open credit line; the second
         // sentence is the plan's (§3.3), so the Rogers card is not put here.
         hint: 'What loans are you paying off from the bank? A card you pay off from your bank is not a monthly debt payment here — its purchases are already counted.',
       },
-      { kind: 'subscription', header: ['💻', 'Subscriptions'], hint: 'What are you subscribed to? A statement shows them.' },
+      { kind: 'subscription', hint: 'What are you subscribed to? A statement shows them.' },
     ],
   },
   { label: 'Variable expenses', cards: [{ kind: 'variable', hint: 'What transactions have varied amounts?' }] },
@@ -75,37 +78,58 @@ export function SetupScreen() {
   const amounts = useMonthlyAmounts(month)
   const nudges = useBillNudges(amounts)
   const schedules = usePaySchedules()
+  // From 1280px, Mockup A's two columns: the lists with columns on the left,
+  // the name-only lists on the right. Each column is read top to bottom, so
+  // the order a keyboard moves in is the order they are seen in; narrower,
+  // one column in the workbook's order.
+  const twoColumns = useFourAcross()
+
+  const view = ({ card, group }: { card: ListCard; group: string }) => (
+    <Fragment key={card.kind}>
+      {card.kind === 'income' && schedules.status === 'failed' ? <Alert tone="error">{schedules.message}</Alert> : null}
+      {card.kind === 'bill' ? <AmountsProblem amounts={amounts} /> : null}
+      <ListCardView
+        card={card}
+        group={group}
+        rows={lists.get(card.kind) ?? []}
+        month={month}
+        amounts={RECURRING.has(card.kind) ? amounts : null}
+        nudges={nudges}
+        schedules={card.kind === 'income' ? schedules : null}
+      />
+      {card.kind === 'subscription' ? <FixedTotal amounts={amounts} month={month} /> : null}
+    </Fragment>
+  )
+  const cards = SECTIONS.flatMap((section) => section.cards.map((card) => ({ card, group: section.label })))
 
   return (
-    <div className="-mx-4 max-[359px]:-mx-3 bg-setup-canvas pb-6 md:mx-0 md:overflow-hidden md:rounded-xl">
+    <div className="space-y-5">
+      {/* The sidebar and the rail list Setup from 768px, and More is a phone's screen. */}
+      <button
+        type="button"
+        onClick={() => navigate('more')}
+        className="-mb-2 inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4 md:hidden"
+      >
+        ‹ More
+      </button>
       <NameBand />
-      <div className="space-y-6 px-4 pt-5 max-[359px]:px-3">
-        {/* Not before the first load, when every account reads as empty. */}
-        {version > 0 && categories.length < FEW_CATEGORIES ? <StarterCard onAdded={setAdded} /> : null}
-        {added !== null ? <StarterAdded count={added} /> : null}
-        {SECTIONS.map((section) => (
-          <section key={section.label} className="space-y-2">
-            <h2 className="text-xl font-medium text-setup-label">{section.label}</h2>
-            {section.label === 'Recurring expenses' ? <AmountsProblem amounts={amounts} /> : null}
-            {section.label === 'Income' && schedules.status === 'failed' ? <Alert tone="error">{schedules.message}</Alert> : null}
-            {section.cards.map((card) => (
-              <ListCardView
-                key={card.kind}
-                card={card}
-                rows={lists.get(card.kind) ?? []}
-                month={month}
-                amounts={RECURRING.has(card.kind) ? amounts : null}
-                nudges={nudges}
-                schedules={card.kind === 'income' ? schedules : null}
-              />
-            ))}
-            {section.label === 'Recurring expenses' ? <FixedTotal amounts={amounts} month={month} /> : null}
-          </section>
-        ))}
-      </div>
+      {/* Not before the first load, when every account reads as empty. */}
+      {version > 0 && categories.length < FEW_CATEGORIES ? <StarterCard onAdded={setAdded} /> : null}
+      {added !== null ? <StarterAdded count={added} /> : null}
+      {twoColumns ? (
+        <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start gap-5">
+          <div className="space-y-5">{cards.filter((c) => WITH_COLUMNS.has(c.card.kind)).map(view)}</div>
+          <div className="space-y-5">{cards.filter((c) => !WITH_COLUMNS.has(c.card.kind)).map(view)}</div>
+        </div>
+      ) : (
+        <div className="space-y-5">{cards.map(view)}</div>
+      )}
     </div>
   )
 }
+
+/** The lists whose rows carry fields in columns: the wide column from 1280px. */
+const WITH_COLUMNS: ReadonlySet<CategoryKind> = new Set(['income', 'bill', 'debt', 'subscription'])
 
 /**
  * Setup's own cards for some of the lists, as Getting started shows them
@@ -130,7 +154,9 @@ export function SetupLists({ kinds, starter = false }: { kinds: readonly Categor
       {cards.map((card) => (
         <ListCardView
           key={card.kind}
+          level={3}
           card={card}
+          group={SECTIONS.find((section) => section.cards.includes(card))?.label ?? ''}
           rows={lists.get(card.kind) ?? []}
           month={month}
           amounts={RECURRING.has(card.kind) ? amounts : null}
@@ -210,7 +236,7 @@ function StarterCard({ onAdded }: { onAdded: (count: number) => void }) {
   }
 
   return (
-    <section aria-label="Starter list" className="rounded-xl bg-card px-4 py-4 shadow-sm">
+    <section aria-label="Starter list" className="rounded-xl border bg-card p-5">
       <p className="text-sm">
         Fill your lists with example names — Rent, Groceries, Netflix and the rest — plus Card payments and
         Card interest &amp; fees for your statement. Names you already have stay as they are.
@@ -240,13 +266,18 @@ function StarterAdded({ count }: { count: number }) {
   )
 }
 
-/** The teal band: "Start here!" and "My name is ___". */
+/**
+ * Mockup A's header card, tinted to the accent: "Start here!" and "My name
+ * is ___", a field with its own edge and a ✓ once saved. Muted words and
+ * the field's edge take `canvas-muted`, which reads on the tint.
+ */
 function NameBand() {
   const { supabase, displayName } = useAppData()
   const [name, setName] = useState(displayName)
   const [saved, setSaved] = useState(displayName)
   const [state, setState] = useState<'idle' | 'saved'>('idle')
   const [message, setMessage] = useState<string | null>(null)
+  const field = useId()
 
   const commit = async () => {
     const trimmed = name.trim()
@@ -263,21 +294,17 @@ function NameBand() {
   }
 
   return (
-    <header className="bg-setup-band px-4 pb-5 pt-3 text-white max-[359px]:px-3">
-      <button
-        type="button"
-        onClick={() => navigate('more')}
-        className="-ml-1 mb-2 rounded px-1 text-sm text-setup-band-ink/90 outline-none pointer-coarse:min-h-11 pointer-coarse:min-w-11 focus-visible:ring-2 focus-visible:ring-white/70"
-      >
-        ‹ More
-      </button>
+    <header className="rounded-xl bg-primary-tint px-4 py-5 sm:px-6 [--input:var(--canvas-muted)] [--muted-foreground:var(--canvas-muted)]">
       <div className="flex flex-wrap items-center gap-1">
-        <h1 className="font-serif text-4xl italic">Start here!</h1>
+        <MonthTitle>Start here!</MonthTitle>
         <HelpButton screen="setup" />
       </div>
-      <label className="mt-4 flex items-baseline gap-3 text-setup-band-ink">
-        <span className="shrink-0 text-sm italic">My name is</span>
-        <input
+      <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+        <label htmlFor={field} className="shrink-0 text-base">
+          My name is
+        </label>
+        <Input
+          id={field}
           value={name}
           maxLength={60}
           autoComplete="given-name"
@@ -289,13 +316,11 @@ function NameBand() {
           onKeyDown={(e) => {
             if (e.key === 'Enter') e.currentTarget.blur()
           }}
-          // A ring, as '‹ More' beside it has: focus only whitened the
-          // underline, a change of 1.36 to one (FE-3).
-          className="min-w-0 flex-1 rounded-sm border-b border-white/80 bg-transparent pb-1 italic pointer-coarse:min-h-11 text-setup-band-ink outline-none placeholder:text-setup-band-ink/60 focus-visible:border-white focus-visible:ring-2 focus-visible:ring-white/70"
+          className="w-auto min-w-0 flex-1 basis-40 sm:max-w-64"
           placeholder="your first name"
         />
-        {state === 'saved' ? <Icon name="check" className="size-4 shrink-0" aria-label="Saved" /> : null}
-      </label>
+        {state === 'saved' ? <Icon name="check" className="size-5 shrink-0 text-income" aria-label="Saved" /> : null}
+      </div>
       {message !== null ? (
         <div className="mt-3">
           <Alert tone="error">{message}</Alert>
@@ -307,6 +332,8 @@ function NameBand() {
 
 function ListCardView({
   card,
+  group,
+  level = 2,
   rows,
   month,
   amounts,
@@ -314,6 +341,10 @@ function ListCardView({
   schedules,
 }: {
   card: ListCard
+  /** The workbook's section the card sits in, said over its title. */
+  group: string
+  /** An h2 on Setup; an h3 under Getting started's step. */
+  level?: 2 | 3
   rows: readonly Category[]
   /** This month's first day. */
   month: string
@@ -334,6 +365,10 @@ function ListCardView({
   const paid = schedules?.status === 'ready' ? schedules.byCategory : null
   const totals = amounts?.status === 'ready' ? amounts.totals : null
   const total = CARD_TOTAL[card.kind]
+  const titleId = useId()
+  const Title = level === 2 ? 'h2' : 'h3'
+  const eyebrow = card.eyebrow ?? group
+  const tone = card.kind === 'transfer' ? NOT_SPENDING_TONE : LIST_TONE[card.kind]
 
   /** Run one write, then reload, or show why it was refused. */
   const write = async (change: () => Promise<unknown>): Promise<boolean> => {
@@ -356,14 +391,22 @@ function ListCardView({
   }
 
   return (
-    <section aria-label={heading} className="rounded-xl bg-card px-4 pb-3 pt-3 shadow-sm">
-      {card.header !== undefined ? (
-        <h3 className="text-base font-medium text-setup-label">
-          <span aria-hidden="true">{card.header[0]} </span>
-          {card.header[1]}
-        </h3>
-      ) : null}
-      <p className="mt-0.5 text-xs text-muted-foreground">{card.hint}</p>
+    <section aria-labelledby={titleId} className="@container rounded-xl border bg-card px-4 pb-4 pt-5 sm:px-5">
+      {/* Mockup A's list card head: an icon tile in the list's hue, the
+        workbook's heading over the title (Source, or the section), and the
+        workbook's note. */}
+      <div className="flex items-start gap-3">
+        <span aria-hidden="true" className={cn('flex size-10 shrink-0 items-center justify-center rounded-lg', tone.tile, tone.icon)}>
+          <Icon name={tone.glyph} className="size-5" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{eyebrow}</p>
+          <Title id={titleId} className="text-lg font-semibold leading-tight">
+            {heading}
+          </Title>
+          <p className="mt-0.5 text-sm text-muted-foreground">{card.hint}</p>
+        </div>
+      </div>
       {message !== null ? (
         <div className="mt-2">
           <Alert tone="error">{message}</Alert>
@@ -415,6 +458,9 @@ function ListCardView({
     </section>
   )
 }
+
+/** Not spending has no hue of its own (ADR 0010): a grey tile. */
+const NOT_SPENDING_TONE = { tile: 'bg-secondary', icon: 'text-muted-foreground', glyph: 'move' } as const
 
 /** One category: its name, edited where it stands, and anything its list adds on a line below. */
 function CategoryRow({

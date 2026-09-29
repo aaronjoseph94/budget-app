@@ -47,6 +47,7 @@ import {
 import { Alert, Loading, SavedNote } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Icon, type IconName } from '../components/ui/icons.js'
+import { LIST_TONE as TONE } from '../list-tone.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
 import { LINE_BUTTON, SENTENCE_LINK } from '../components/ui/link.js'
@@ -447,29 +448,6 @@ export function WaitingBanner({ children }: { children: ReactNode }) {
 }
 
 export type BlockKind = keyof PeriodSheet['blocks']
-
-/**
- * Each list's hue on every screen (ADR 0010): orange Variable, sky Bills,
- * violet Subscriptions, rose Debts, green Income, amber Savings. `bar` and
- * `icon` carry no words; every word on the list's surfaces is its `ink`.
- * Orange draws its icon in #ea580c, as the review asks for any orange mark.
- * Written out for Tailwind.
- */
-const TONE: Record<BlockKind, { header: string; ink: string; tile: string; icon: string; bar: string; glyph: IconName }> = {
-  income: { header: 'bg-income-header', ink: 'text-income-ink', tile: 'bg-income-tile', icon: 'text-income-accent', bar: 'bg-income-accent', glyph: 'dollar' },
-  savings: { header: 'bg-savings-header', ink: 'text-savings-ink', tile: 'bg-savings-tile', icon: 'text-savings-accent', bar: 'bg-savings-accent', glyph: 'piggy' },
-  bill: { header: 'bg-bills-header', ink: 'text-bills-ink', tile: 'bg-bills-tile', icon: 'text-bills-accent', bar: 'bg-bills-accent', glyph: 'home' },
-  debt: { header: 'bg-debts-header', ink: 'text-debts-ink', tile: 'bg-debts-tile', icon: 'text-debts-accent', bar: 'bg-debts-accent', glyph: 'card' },
-  subscription: {
-    header: 'bg-subscriptions-header',
-    ink: 'text-subscriptions-ink',
-    tile: 'bg-subscriptions-tile',
-    icon: 'text-subscriptions-accent',
-    bar: 'bg-subscriptions-accent',
-    glyph: 'monitor',
-  },
-  variable: { header: 'bg-variable-header', ink: 'text-variable-ink', tile: 'bg-variable-tile', icon: 'text-variable-large', bar: 'bg-variable-accent', glyph: 'bag' },
-}
 
 /** Mini bars under each name on these lists only: on the others every row is usually all paid, and a full bar is noise (design-review P1 item 5). */
 const MINI_BARS: ReadonlySet<BlockKind> = new Set(['variable', 'income'])
