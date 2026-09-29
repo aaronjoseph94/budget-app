@@ -153,7 +153,7 @@ export function Shell() {
 
   return (
     <AnnounceProvider>
-      <div className="min-h-full">
+      <div className="min-h-full md:bg-canvas">
         {/* Past the desktop bar's tabs, in one key (FE-10). Focus
           is moved by hand: following the link would set the address to
           #main, which the app reads as a request for the Month. */}
@@ -167,88 +167,94 @@ export function Shell() {
         >
           Skip to content
         </a>
-        <header className="safe-top sticky top-0 z-20 hidden border-b bg-background/85 backdrop-blur md:block print:hidden">
-          {/* The bar takes the wide width on every screen: a narrow screen's
-            768 held nine tabs' words only by running past its edge. */}
-          <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 lg:max-w-7xl">
-            <span className="font-semibold tracking-tight">Budget</span>
-            <nav aria-label="Screens" className="flex gap-1">
-              {DESKTOP_TABS.map((t) => {
-                const active = tabOf(screen, DESKTOP_TABS) === t.screen
-                return (
-                  <a
-                    key={t.screen}
-                    href={hashOf({ screen: t.screen, param: null })}
-                    aria-current={active ? 'page' : undefined}
-                    aria-label={labelOf(t, pendingTotal, dot)}
-                    className={cn(
-                      'relative flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5 rounded-md px-1.5 text-[11px] font-medium transition-colors',
-                      'xl:flex-row xl:gap-2 xl:px-3 xl:text-sm',
-                      active ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
-                    )}
-                  >
-                    <Icon name={t.icon} className="size-4" />
-                    {/* A tablet's 768 once showed the icons alone, 40x28 and
-                      unnamed to the eye (FE-1). Each keeps its word now, small
-                      and under its icon, as the phone's bar has it, 44px tall;
-                      from 1280px there is room to set them beside the icons. */}
-                    <span>{t.label}</span>
-                    {t.screen === 'review' && pendingTotal > 0 ? (
-                      <span className="absolute -right-1 top-0 xl:static">
-                        <Count n={pendingTotal} />
-                      </span>
-                    ) : null}
-                    {t.screen === 'coach' && dot ? <Dot className="absolute right-1 top-1 xl:static" /> : null}
-                  </a>
-                )
-              })}
-            </nav>
-          </div>
-        </header>
-
-        {/* A 16 px gutter, 12 below 360 px (plan §9): at 320 the Month's
-          tables were 18 px wider than their cards (N66). Every band that
-          bleeds to the edge takes back the same (-mx-4, and -mx-3 there). */}
-        <main ref={main} id="main" tabIndex={-1} className={cn('pt-screen pb-safe mx-auto w-full px-4 outline-none max-[359px]:px-3 md:pb-12', width)}>
-          <OfflineBanner />
-          {loadError !== null ? (
-            <div className="mb-4 space-y-2">
-              <Alert tone="error" title="Could not load your data">
-                {loadError}
-              </Alert>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                <Button variant="outline" onClick={() => void refresh()}>
-                  Try again
-                </Button>
-                {/* No screen is drawn, so Settings' Sign out is out of reach,
-                  and a refused sign-in is fixed by signing out (FE-7-NEW). */}
-                {status === 'failed' ? (
-                  <Button variant="outline" onClick={() => void supabase.auth.signOut()}>
-                    Sign out
-                  </Button>
-                ) : null}
-                {screen === 'help' ? null : (
-                  <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
-                    Check the one-time updates
-                  </a>
-                )}
+        {/* From 768px the screen sits in a white panel on the grey canvas
+          (ADR 0010); on a phone the screen is the panel. */}
+        <div className="md:p-3 print:p-0">
+          <div className="md:min-h-[calc(100dvh-1.5rem)] md:rounded-xl md:border md:bg-background print:border-0">
+            <header className="safe-top sticky top-0 z-20 hidden border-b bg-background/85 backdrop-blur md:block md:rounded-t-xl print:hidden">
+              {/* The bar takes the wide width on every screen: a narrow screen's
+                768 held nine tabs' words only by running past its edge. */}
+              <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 lg:max-w-7xl">
+                <span className="font-semibold tracking-tight">Budget</span>
+                <nav aria-label="Screens" className="flex gap-1">
+                  {DESKTOP_TABS.map((t) => {
+                    const active = tabOf(screen, DESKTOP_TABS) === t.screen
+                    return (
+                      <a
+                        key={t.screen}
+                        href={hashOf({ screen: t.screen, param: null })}
+                        aria-current={active ? 'page' : undefined}
+                        aria-label={labelOf(t, pendingTotal, dot)}
+                        className={cn(
+                          'relative flex min-h-11 min-w-11 flex-col items-center justify-center gap-0.5 rounded-md px-1.5 text-[11px] font-medium transition-colors',
+                          'xl:flex-row xl:gap-2 xl:px-3 xl:text-sm',
+                          active ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground',
+                        )}
+                      >
+                        <Icon name={t.icon} className="size-4" />
+                        {/* A tablet's 768 once showed the icons alone, 40x28 and
+                          unnamed to the eye (FE-1). Each keeps its word now, small
+                          and under its icon, as the phone's bar has it, 44px tall;
+                          from 1280px there is room to set them beside the icons. */}
+                        <span>{t.label}</span>
+                        {t.screen === 'review' && pendingTotal > 0 ? (
+                          <span className="absolute -right-1 top-0 xl:static">
+                            <Count n={pendingTotal} />
+                          </span>
+                        ) : null}
+                        {t.screen === 'coach' && dot ? <Dot className="absolute right-1 top-1 xl:static" /> : null}
+                      </a>
+                    )
+                  })}
+                </nav>
               </div>
-            </div>
-          ) : null}
-          {/* No screen until the shared data is read: before then an empty
-            list means "not read yet", and screens showed it as "none" (FE-7). */}
-          {/* Each screen names itself; with none drawn yet, the page still
-            has a heading for a screen reader to land on (FE-7-NEW-2). */}
-          {status === 'loading' || (status === 'failed' && screen !== 'help') ? <h1 className="sr-only">Budget</h1> : null}
-          {status === 'loading' ? (
-            <p role="status" aria-busy="true" aria-label="Loading your budget" className="py-16 text-center text-sm text-muted-foreground">
-              Loading…
-            </p>
-          ) : null}
-          {/* Help needs none of it, and is where a missing one-time update is
-            found, so it still opens when the first read failed. */}
-          {status === 'ready' || (status === 'failed' && screen === 'help') ? <Screens screen={screen} param={param} /> : null}
-        </main>
+            </header>
+
+            {/* A 16 px gutter, 12 below 360 px (plan §9): at 320 the Month's
+              tables were 18 px wider than their cards (N66). Every band that
+              bleeds to the edge takes back the same (-mx-4, and -mx-3 there). */}
+            <main ref={main} id="main" tabIndex={-1} className={cn('pt-screen pb-safe mx-auto w-full px-4 outline-none max-[359px]:px-3 md:pb-12', width)}>
+              <OfflineBanner />
+              {loadError !== null ? (
+                <div className="mb-4 space-y-2">
+                  <Alert tone="error" title="Could not load your data">
+                    {loadError}
+                  </Alert>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                    <Button variant="outline" onClick={() => void refresh()}>
+                      Try again
+                    </Button>
+                    {/* No screen is drawn, so Settings' Sign out is out of reach,
+                      and a refused sign-in is fixed by signing out (FE-7-NEW). */}
+                    {status === 'failed' ? (
+                      <Button variant="outline" onClick={() => void supabase.auth.signOut()}>
+                        Sign out
+                      </Button>
+                    ) : null}
+                    {screen === 'help' ? null : (
+                      <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+                        Check the one-time updates
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+              {/* No screen until the shared data is read: before then an empty
+                list means "not read yet", and screens showed it as "none" (FE-7). */}
+              {/* Each screen names itself; with none drawn yet, the page still
+                has a heading for a screen reader to land on (FE-7-NEW-2). */}
+              {status === 'loading' || (status === 'failed' && screen !== 'help') ? <h1 className="sr-only">Budget</h1> : null}
+              {status === 'loading' ? (
+                <p role="status" aria-busy="true" aria-label="Loading your budget" className="py-16 text-center text-sm text-muted-foreground">
+                  Loading…
+                </p>
+              ) : null}
+              {/* Help needs none of it, and is where a missing one-time update is
+                found, so it still opens when the first read failed. */}
+              {status === 'ready' || (status === 'failed' && screen === 'help') ? <Screens screen={screen} param={param} /> : null}
+            </main>
+          </div>
+        </div>
 
         {/* Phones: a bottom tab bar within thumb reach, clear of the home indicator. */}
         <nav
