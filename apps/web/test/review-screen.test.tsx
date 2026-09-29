@@ -563,3 +563,39 @@ describe('ReviewScreen, a read already out when a card is approved (CR-13)', () 
     expect(screen.queryByText('SQ *LITWARE COFFEE')).toBeNull()
   })
 })
+
+describe('ReviewScreen, in Mockup A (step 10)', () => {
+  it("puts waiting's count and Approve these N on the title row, and each row's picker, Approve and ✕ on one line", async () => {
+    const fake = seeded()
+    fake.tables.merchant_rules.push({ match_merchant: 'LITWARE COFFEE', category_id: 'c2' })
+    renderScreen(<ReviewScreen />, fake)
+
+    const header = await screen.findByRole('banner')
+    await within(header).findByRole('button', { name: 'Approve these 2' })
+    // The count is the line under the title's number, drawn in waiting's amber; heard once.
+    const count = within(header).getByText('3')
+    expect([count.getAttribute('aria-hidden'), count.className.includes('bg-waiting-tile')]).toEqual(['true', true])
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Review')
+
+    const coffee = await row('SQ *LITWARE COFFEE')
+    const line = coffee.getByRole('combobox', { name: 'Category' }).parentElement!.parentElement!
+    expect(line.className).toContain('min-[480px]:grid-cols-[minmax(0,1fr)_auto_auto]')
+    expect(within(line).getByRole('button', { name: /Approve/ })).toBeTruthy()
+    expect(within(line).getByRole('button', { name: 'Not a real transaction — remove' })).toBeTruthy()
+    // Opening the question still approves nothing.
+    fireEvent.click(within(header).getByRole('button', { name: 'Approve these 2' }))
+    expect(await screen.findByRole('group', { name: 'Approve these 2?' })).toBeTruthy()
+    expect(fake.rpcCalls.map((c) => c.name)).not.toContain('approve_candidate')
+  })
+
+  it("draws the lines that could not be read in waiting's amber", async () => {
+    const fake = seeded()
+    fake.tables.ingest_batches.push({ id: 'b1', source: 'card_pdf', created_at: '2026-09-20T12:00:00+00:00' })
+    fake.tables.ingest_unreadable_lines.push({ id: 'l1', batch_id: 'b1', source_line: 4, reason: 'missing_amount' })
+    renderScreen(<ReviewScreen />, fake)
+
+    const section = await screen.findByRole('region', { name: '1 line could not be read' })
+    expect(['bg-waiting', 'border-waiting-border'].every((c) => section.className.split(' ').includes(c))).toBe(true)
+    await expectNoAxeViolations()
+  })
+})

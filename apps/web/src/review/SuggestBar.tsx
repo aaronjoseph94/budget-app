@@ -98,26 +98,30 @@ function said(status: SuggestStatus): ReactNode {
   }
 }
 
+/** Whether Review offers to ask for suggestions now. */
+export function suggestOffered(status: SuggestStatus, waiting: number): boolean {
+  return waiting > 0 && status.kind !== 'asking' && status.kind !== 'missing' && status.kind !== 'no_shop_names'
+}
+
 /**
- * Review's one line about suggested categories, and the button that asks
- * for them (plan §2.8, A21). Whatever happens here, the queue below works
- * as it always has: this line is the only thing a missing update, a missing
- * helper or a resting AI changes.
+ * Review's one line about suggested categories (plan §2.8, A21). Whatever
+ * happens here, the queue below works as it always has: this line is the
+ * only thing a missing update, a missing helper or a resting AI changes.
+ * It stays on the page, empty and hidden, so what it later says is heard.
  */
-export function SuggestBar({ status, waiting, onSuggest }: { status: SuggestStatus; waiting: number; onSuggest: () => void }) {
-  const line = said(status)
-  const offer = waiting > 0 && status.kind !== 'asking' && status.kind !== 'missing' && status.kind !== 'no_shop_names'
-  if (line === null && !offer) return null
+export function SuggestLine({ status }: { status: SuggestStatus }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-      <p aria-live="polite" className="min-w-0 flex-1 basis-48 text-sm text-muted-foreground">
-        {line}
-      </p>
-      {offer ? (
-        <Button variant="outline" className="min-h-11" onClick={onSuggest}>
-          <Icon name="sparkles" /> Suggest categories
-        </Button>
-      ) : null}
-    </div>
+    <p aria-live="polite" className="text-sm text-muted-foreground empty:hidden">
+      {said(status)}
+    </p>
+  )
+}
+
+/** The button that asks for them, on Review's title row (Mockup A). */
+export function SuggestButton({ onSuggest }: { onSuggest: () => void }) {
+  return (
+    <Button variant="outline" className="min-h-11 shadow-none" onClick={onSuggest}>
+      <Icon name="sparkles" className="text-primary" /> Suggest categories
+    </Button>
   )
 }

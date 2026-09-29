@@ -128,8 +128,10 @@ describe('Review asks the AI for categories', () => {
     renderScreen(<ReviewScreen />, fake)
 
     const line = await screen.findByText(/Suggested a category for 2 rows\. Check each before you approve it\./)
-    // At 320 px the line kept one word a row beside the button; it keeps 12rem and the button wraps under it.
-    expect(line.className.split(' ')).toContain('basis-48')
+    // At 320 px the line kept one word a row beside the button. Since Mockup A
+    // (step 10) the button sits on the title row and the line has a row of its own,
+    // outside it.
+    expect(line.closest('header')).toBeNull()
     expect((await row('CORNER MARKET #12')).getByText('✨ Suggested: Groceries')).toBeTruthy()
     expect((await picker('SQ *LITWARE COFFEE')).value).toBe('c2')
     expect(runs(fake)).toHaveLength(1)

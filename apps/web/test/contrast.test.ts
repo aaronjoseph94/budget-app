@@ -131,6 +131,9 @@ const TEXT: readonly (readonly [text: string, surface: string, least?: number, a
   ['canvas-muted', 'card'],
   ['summary-value', 'card'],
   ['waiting-ink', 'waiting-tile'],
+  // Review's unreadable lines: ink and muted words on waiting's amber (step 10).
+  ['foreground', 'waiting'],
+  ['muted-foreground', 'waiting'],
   // The Week's goal card: its time line on the soft accent (step 4).
   ['foreground', 'primary-soft'],
   // The Coach's check-in link, hovered, ends on the soft accent (step 7).

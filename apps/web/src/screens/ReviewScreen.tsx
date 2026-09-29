@@ -27,8 +27,9 @@ import { cn } from '../lib/cn.js'
 import { useFocusDrawn } from '../lib/return-focus.js'
 import { navigate } from '../nav.js'
 import { HelpButton } from '../help/HelpButton.js'
-import { ApproveAll } from '../review/ApproveAll.js'
-import { SuggestBar } from '../review/SuggestBar.js'
+import { ApproveAll, ApproveAllButton } from '../review/ApproveAll.js'
+import { SuggestButton, SuggestLine, suggestOffered } from '../review/SuggestBar.js'
+import { MonthTitle } from '../components/ui/type.js'
 import { useSuggestions } from '../review/use-suggestions.js'
 
 const NEW_CATEGORY = '__new__'
@@ -288,26 +289,41 @@ export function ReviewScreen() {
   }
 
   return (
-    <div className="space-y-4">
-      <header>
-        <div className="flex flex-wrap items-center gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Review</h1>
-          <HelpButton screen="review" />
+    // Mockup A: the Month's title with waiting's amber count, Suggest
+    // categories and Approve these N on the title row's right; each row a
+    // flat card, and the unreadable lines in waiting's amber (ADR 0010).
+    <div className="space-y-4 md:space-y-5">
+      <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <MonthTitle>Review</MonthTitle>
+            {/* The line under the title says the number; this is its picture. */}
+            {rows !== null && total > 0 ? (
+              <span aria-hidden="true" className="tnum flex h-7 min-w-7 items-center justify-center rounded-full bg-waiting-tile px-2 text-sm font-semibold text-waiting-ink">
+                {total}
+              </span>
+            ) : null}
+            <HelpButton screen="review" />
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground md:text-base">
+            {rows === null ? 'Loading…' : total === 0 ? 'Nothing waiting.' : `${total} waiting for a category.`} Nothing reaches your
+            budget until you approve it.
+          </p>
         </div>
-        <p className="text-sm text-muted-foreground">
-          {rows === null ? 'Loading…' : total === 0 ? 'Nothing waiting.' : `${total} waiting for a category.`} Nothing reaches your
-          budget until you approve it.
-        </p>
+        {suggestOffered(suggestions.status, suggestions.waiting) || (ready.length >= 2 && !confirming) ? (
+          <div className="flex flex-wrap gap-2">
+            {suggestOffered(suggestions.status, suggestions.waiting) ? <SuggestButton onSuggest={suggestions.suggest} /> : null}
+            {ready.length >= 2 && !confirming ? <ApproveAllButton n={ready.length} busy={busy !== null} onOpen={() => setConfirming(true)} /> : null}
+          </div>
+        ) : null}
       </header>
 
-      <SuggestBar status={suggestions.status} waiting={suggestions.waiting} onSuggest={suggestions.suggest} />
+      <SuggestLine status={suggestions.status} />
 
-      {ready.length >= 2 || (confirming && ready.length > 0) ? (
+      {confirming && ready.length > 0 ? (
         <ApproveAll
           items={ready.map((r) => ({ id: r.row.id, shop: r.row.merchant_raw, category: r.name }))}
-          open={confirming}
           busy={busy !== null}
-          onOpen={() => setConfirming(true)}
           onConfirm={() => void approveAll(ready)}
           onCancel={() => setConfirming(false)}
         />
@@ -321,7 +337,7 @@ export function ReviewScreen() {
       </div>
 
       {rows !== null && rows.length === 0 && unreadable?.total === 0 ? (
-        <Card>
+        <Card flat>
           <Empty icon={<Icon name="check" />} title="All caught up">
             Import a statement and anything it finds that you have not categorised before will wait here.
           </Empty>
@@ -413,21 +429,25 @@ const ReviewRow = memo(function ReviewRow({
 
   return (
     <li>
-      <Card className={cn('p-4 transition-opacity', busy && 'opacity-60')}>
+      <Card flat className={cn('p-4 transition-opacity md:px-5 md:py-[1.125rem]', busy && 'opacity-60')}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="font-medium leading-snug">
+            {/* As the statement printed it, in the mockup's fixed-width face. */}
+            <p className="font-mono text-[0.9375rem] font-semibold leading-snug [overflow-wrap:anywhere]">
               <IngestedText>{row.merchant_raw}</IngestedText>
             </p>
-            <p className="mt-0.5 text-xs text-muted-foreground">{formatIsoDate(row.posted_on)}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground md:text-[0.8125rem]">{formatIsoDate(row.posted_on)}</p>
           </div>
-          <span className={cn('tnum shrink-0 font-semibold', row.amount_cents < 0 ? 'text-foreground' : 'text-income')}>
+          <span className={cn('tnum shrink-0 text-lg font-bold tracking-[-0.01em]', row.amount_cents < 0 ? 'text-foreground' : 'text-income')}>
             {formatCents(row.amount_cents)}
           </span>
         </div>
 
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="flex-1">
+        {/* The picker, Approve and ✕ on one line from 480px; on a narrower
+          phone the picker takes its own line. A new category's name and
+          list stack under the picker, in the order they are filled in. */}
+        <div className="mt-3.5 flex flex-col gap-2 min-[480px]:grid min-[480px]:grid-cols-[minmax(0,1fr)_auto_auto] min-[480px]:items-start">
+          <div className="flex min-w-0 flex-col gap-2">
             <NativeSelect
               aria-label="Category"
               value={categoryId}
@@ -438,45 +458,42 @@ const ReviewRow = memo(function ReviewRow({
               <CategoryOptions categories={categories} />
               <option value={NEW_CATEGORY}>+ New category…</option>
             </NativeSelect>
-          </div>
-          {creating ? (
-            <>
-              <Input
-                autoFocus
-                placeholder="Category name, e.g. Groceries"
-                value={newName}
-                maxLength={60}
-                onChange={(e) => setNewName(e.target.value)}
-                className="flex-1"
-              />
-              <div className="sm:w-44">
+            {creating ? (
+              <>
+                <Input
+                  autoFocus
+                  placeholder="Category name, e.g. Groceries"
+                  value={newName}
+                  maxLength={60}
+                  onChange={(e) => setNewName(e.target.value)}
+                />
                 <ListSelect value={newKind} onChange={setNewKind} disabled={busy} />
-              </div>
-            </>
-          ) : null}
-          <div className="flex gap-2">
+              </>
+            ) : null}
+          </div>
+          <div className="flex gap-2 min-[480px]:contents">
             <Button
-              className="flex-1 sm:flex-none"
+              className="min-h-11 flex-1 min-[480px]:flex-none"
               disabled={!ready || busy}
               onClick={() => onApprove(row, creating && newKind !== '' ? { name: newName.trim(), kind: newKind } : undefined)}
             >
               <Icon name="check" /> Approve
             </Button>
-            <Button variant="outline" size="icon" aria-label="Not a real transaction — remove" disabled={busy} onClick={() => onReject(row)}>
-              <Icon name="x" />
+            <Button variant="outline" size="icon" className="size-11 shadow-none" aria-label="Not a real transaction — remove" disabled={busy} onClick={() => onReject(row)}>
+              <Icon name="x" className="text-muted-foreground" />
             </Button>
           </div>
         </div>
         {suggestion === 'rule' ? (
-          <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
-            <Badge variant="outline">
+          <p className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground md:text-[0.8125rem]">
+            <Badge variant="outline" className="px-2.5">
               <Icon name="sparkles" className="size-3" /> Suggested
             </Badge>
             How you filed this merchant last time.
           </p>
         ) : suggestion === 'model' ? (
-          <div className="mt-2 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
-            <Badge variant="outline" className="max-w-full min-w-0">
+          <div className="mt-3 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground md:text-[0.8125rem]">
+            <Badge variant="outline" className="max-w-full min-w-0 px-2.5">
               <span className="truncate">✨ Suggested: {suggestedName}</span>
             </Badge>
             <span>By AI from the shop’s name. Check it.</span>
@@ -485,7 +502,7 @@ const ReviewRow = memo(function ReviewRow({
             </Button>
           </div>
         ) : suggestion === 'similar' ? (
-          <p className="mt-2 text-xs text-muted-foreground">You filed a similar shop under {suggestedName}.</p>
+          <p className="mt-3 text-xs text-muted-foreground md:text-[0.8125rem]">You filed a similar shop under {suggestedName}.</p>
         ) : null}
       </Card>
     </li>
@@ -520,11 +537,12 @@ function UnreadableLines({
   onDismiss: (lineId: string) => void
 }) {
   return (
-    <section aria-labelledby="unreadable-title">
-      <Card className="p-4">
+    // Waiting's amber (ADR 0010): lines left out, waiting for the owner.
+    <section aria-labelledby="unreadable-title" className="rounded-xl border border-waiting-border bg-waiting p-4 md:px-5 md:py-[1.125rem]">
+      <div>
         <div className="flex items-center gap-2">
-          <Icon name="alert" className="size-4 text-warning" />
-          <h2 id="unreadable-title" className="font-medium">
+          <Icon name="alert" className="size-[1.125rem] shrink-0 text-waiting-icon" />
+          <h2 id="unreadable-title" className="font-semibold md:text-base">
             {page.total === 1 ? '1 line could not be read' : `${page.total} lines could not be read`}
           </h2>
         </div>
@@ -544,13 +562,13 @@ function UnreadableLines({
                 .map((line) => {
                   const where = `${batch.source === 'card_pdf' ? 'Row' : 'Line'} ${line.source_line}`
                   return (
-                    <li key={line.id} className={cn('flex flex-wrap items-start gap-3 text-sm', busy === line.id && 'opacity-60')}>
+                    <li key={line.id} className={cn('flex flex-wrap items-center gap-3 text-sm', busy === line.id && 'opacity-60')}>
                       <span className="tnum w-16 shrink-0 text-muted-foreground">{where}</span>
                       <span className="flex-1">{describeReason(line.reason)}</span>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="-my-1"
+                        className="shadow-none"
                         aria-label={`Dismiss ${where.toLowerCase()}`}
                         disabled={busy !== null}
                         onClick={() => onDismiss(line.id)}
@@ -568,7 +586,7 @@ function UnreadableLines({
             Showing {page.lines.length} of {page.total}.
           </p>
         ) : null}
-      </Card>
+      </div>
     </section>
   )
 }

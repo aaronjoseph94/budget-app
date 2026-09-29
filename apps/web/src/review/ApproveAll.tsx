@@ -9,30 +9,30 @@ export interface ApproveItem {
   readonly category: string
 }
 
+/** Approve these N, on the title row: it only opens the question below. */
+export function ApproveAllButton({ n, busy, onOpen }: { n: number; busy: boolean; onOpen: () => void }) {
+  return (
+    <Button className="min-h-11" disabled={busy} onClick={onOpen}>
+      Approve these {n}
+    </Button>
+  )
+}
+
 /**
- * Approve these N (plan §2.8, §3.9; ADR 0008): every row it will file,
- * each with the category it goes under, and one question. Nothing is
- * approved until **Approve all N** is tapped, and then each row is
- * approved on its own, as a tap on its Approve would.
+ * Approve these N (plan §2.8, §3.9; ADR 0008), once asked: every row it
+ * will file, each with the category it goes under, and one question.
+ * Nothing is approved until **Approve all N** is tapped, and then each row
+ * is approved on its own, as a tap on its Approve would.
  */
-export function ApproveAll({ items, open, busy, onOpen, onConfirm, onCancel }: {
+export function ApproveAll({ items, busy, onConfirm, onCancel }: {
   items: readonly ApproveItem[]
-  open: boolean
   busy: boolean
-  onOpen: () => void
   onConfirm: () => void
   onCancel: () => void
 }) {
   const n = items.length
-  if (!open) {
-    return (
-      <Button variant="outline" className="w-full sm:w-auto" disabled={busy} onClick={onOpen}>
-        Approve these {n}
-      </Button>
-    )
-  }
   return (
-    <Card className="p-4" role="group" aria-labelledby="approve-all-title">
+    <Card flat className="p-4 md:px-5" role="group" aria-labelledby="approve-all-title">
       <h2 id="approve-all-title" className="font-medium">
         Approve these {n}?
       </h2>
