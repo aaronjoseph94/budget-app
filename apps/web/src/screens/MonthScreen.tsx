@@ -341,7 +341,7 @@ export function MonthScreen({ month }: { month: string | null }) {
             layout, the lists two across and the charts in a column on the
             right. The page stays in phone order, which a screen reader follows. */}
           <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,17rem)] xl:gap-5 min-[1400px]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,20rem)]">
-            <PeriodBlocks blocks={sheet.blocks} inListOrder {...blockProps} />
+            <PeriodBlocks blocks={sheet.blocks} {...blockProps} />
             <MonthCharts sheet={sheet} className="order-7 md:col-span-2 xl:col-span-1 xl:col-start-3 xl:row-span-3 xl:row-start-1" />
           </div>
           <TransfersNote cents={sheet.transfersCents} onOpen={() => setOpened(NOT_SPENDING)} />
@@ -548,7 +548,6 @@ export function Block({
   onOpen,
   onEditStart,
   editor,
-  fourAcross = false,
   className,
 }: {
   kind: BlockKind
@@ -563,8 +562,6 @@ export function Block({
   onEditStart?: () => void
   /** The form that types a row's budget, in a row of its own under it; without it a budget is only shown. */
   editor?: (row: Row, word: BudgetWord, done: EditorDone) => ReactNode
-  /** Four cards across from 1280px, as the Week and Paycheck lay them: the smaller table type there, and none of the Month's wider edges. */
-  fourAcross?: boolean
   className: string
 }) {
   const [showEmpty, setShowEmpty] = useState(false)
@@ -574,9 +571,9 @@ export function Block({
   const openers = useRef(new Map<string, HTMLButtonElement>())
   useReturnFocus(editing, (id) => openers.current.get(id))
   const tone = TONE[kind]
-  // From 1400px the Month's two-across cards grow their edges back to the mockup's 20px.
-  const left = fourAcross ? '' : 'min-[1400px]:pl-5'
-  const right = fourAcross ? '' : 'min-[1400px]:pr-5'
+  // From 1400px the two-across cards grow their edges back to the mockup's 20px.
+  const left = 'min-[1400px]:pl-5'
+  const right = 'min-[1400px]:pr-5'
   const bars = MINI_BARS.has(kind)
   const columns = COLUMNS[kind]
   const word = columns.budget === 'Goal' ? 'Goal' : 'Budget'
@@ -643,13 +640,11 @@ export function Block({
           </a>
         </p>
       ) : (
-        // A table wider than its card scrolls rather than clip a column. On
-        // a desktop the Week's and Paycheck's four-across cards take the
-        // workbook's smaller table type (fourAcross);
-        // below 360 px a 13 px type and 12 px edges keep every column in
+        // A table wider than its card scrolls rather than clip a column.
+        // Below 360 px a 13 px type and 12 px edges keep every column in
         // view in both of the last column's modes (N66).
         <div className="overflow-x-auto">
-          <table className={cn('w-full text-sm max-[359px]:text-[0.8125rem]', fourAcross && 'xl:text-xs')}>
+          <table className="w-full text-sm max-[359px]:text-[0.8125rem]">
             {/* Beside the rail, 768 to 1023px, a 13px head keeps "Budgeted" and an
               overspent Left inside a two-across card. */}
             <thead className={cn(tone.header, tone.ink, 'md:max-lg:text-[0.8125rem]')}>
@@ -658,7 +653,7 @@ export function Block({
                   Category
                 </th>
                 {[columns.budget, 'Actual', ...(third === null ? [] : [third === 'vs' && compare !== undefined ? compare.label : third])].map((name) => (
-                  <th key={name} scope="col" className={cn('px-1 py-2.5 text-right font-medium last:pr-4 max-[359px]:last:pr-3', !fourAcross && 'min-[1400px]:last:pr-5')}>
+                  <th key={name} scope="col" className="px-1 py-2.5 text-right font-medium last:pr-4 max-[359px]:last:pr-3 min-[1400px]:last:pr-5">
                     {name}
                   </th>
                 ))}
@@ -733,8 +728,7 @@ export function Block({
                     and Left was cut off. */}
                   <td
                     className={cn(
-                      'tnum whitespace-nowrap px-1 py-2 text-right last:pr-4 max-[359px]:last:pr-3',
-                      !fourAcross && 'min-[1400px]:last:pr-5',
+                      'tnum whitespace-nowrap px-1 py-2 text-right last:pr-4 max-[359px]:last:pr-3 min-[1400px]:last:pr-5',
                       r.actualCents < 0 && 'text-spend',
                     )}
                   >
@@ -748,7 +742,7 @@ export function Block({
                       {third === 'vs' ? (
                         <VsCell change={changes?.get(r.categoryId)} empty={isEmpty(r)} />
                       ) : (
-                        <Third row={r} column={third} empty={isEmpty(r)} roomy={!fourAcross} />
+                        <Third row={r} column={third} empty={isEmpty(r)} />
                       )}
                     </td>
                   )}
@@ -790,29 +784,25 @@ export function Block({
 }
 
 /**
- * The six blocks in the workbook's order, as the Month, the Week and Paycheck all
- * lay them out: phone order first, which a screen reader follows, and
- * the workbook's four-across arrangement from 1280px (CR-2: each had its own copy).
+ * The six blocks in list order, as the Month, the Week and Paycheck all lay
+ * them (Mockup A): the order a phone shows and a screen reader follows,
+ * two across from 768px in the grid the screen gives them. The workbook's
+ * four-across order retired with step 4 (CR-2: each had its own copy).
  */
 export function PeriodBlocks({
   blocks,
-  inListOrder = false,
   ...blockProps
 }: {
   blocks: PeriodSheet['blocks']
-  /** Keep phone order on a desktop too, as the Month's two columns beside its charts do (Mockup A). */
-  inListOrder?: boolean
 } & Omit<Parameters<typeof Block>[0], 'kind' | 'block' | 'className'>) {
-  const at = (phone: string, workbook: string) => (inListOrder ? phone : `${phone} ${workbook}`)
-  const fourAcross = !inListOrder
   return (
     <>
-      <Block kind="variable" block={blocks.variable} {...blockProps} fourAcross={fourAcross} className={at('order-1', 'xl:order-7')} />
-      <Block kind="bill" block={blocks.bill} {...blockProps} fourAcross={fourAcross} className={at('order-2', 'xl:order-4')} />
-      <Block kind="subscription" block={blocks.subscription} {...blockProps} fourAcross={fourAcross} className={at('order-3', 'xl:order-6')} />
-      <Block kind="debt" block={blocks.debt} {...blockProps} fourAcross={fourAcross} className={at('order-4', 'xl:order-5')} />
-      <Block kind="income" block={blocks.income} {...blockProps} fourAcross={fourAcross} className={at('order-5', 'xl:order-2')} />
-      <Block kind="savings" block={blocks.savings} {...blockProps} fourAcross={fourAcross} className={at('order-6', 'xl:order-3')} />
+      <Block kind="variable" block={blocks.variable} {...blockProps} className="order-1" />
+      <Block kind="bill" block={blocks.bill} {...blockProps} className="order-2" />
+      <Block kind="subscription" block={blocks.subscription} {...blockProps} className="order-3" />
+      <Block kind="debt" block={blocks.debt} {...blockProps} className="order-4" />
+      <Block kind="income" block={blocks.income} {...blockProps} className="order-5" />
+      <Block kind="savings" block={blocks.savings} {...blockProps} className="order-6" />
     </>
   )
 }
@@ -875,11 +865,11 @@ export function TransfersNote({ cents, onOpen }: { cents: number; onOpen?: (() =
  * A fund short of its goal keeps its minus sign without the pill, as the workbook
  * marks only spending. Blank where core gives none, and on an empty row.
  */
-function Third({ row, column, empty, roomy }: { row: Row; column: 'Left' | 'Difference'; empty: boolean; roomy: boolean }) {
+function Third({ row, column, empty }: { row: Row; column: 'Left' | 'Difference'; empty: boolean }) {
   const value = column === 'Left' ? row.remainingCents : row.differenceCents
   if (value === null || empty) return null
   if (column === 'Left' && value < 0) {
-    return <span className={cn('rounded-full bg-summary-negative px-1.5 py-0.5 font-semibold text-summary-negative-ink', roomy && 'min-[1400px]:px-2.5 min-[1400px]:py-1')}>{formatAmount(value)}</span>
+    return <span className="rounded-full bg-summary-negative px-1.5 py-0.5 font-semibold text-summary-negative-ink min-[1400px]:px-2.5 min-[1400px]:py-1">{formatAmount(value)}</span>
   }
   return <>{formatAmount(value)}</>
 }

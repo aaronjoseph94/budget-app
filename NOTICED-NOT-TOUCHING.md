@@ -2916,7 +2916,7 @@ Week and Paycheck all have it.
 
 ---
 
-## N126 — The Week and Paycheck already wear the Month's list cards
+## N126 — The Week and Paycheck already wear the Month's list cards *(settled 2026-09-29)*
 
 **Seen:** 2026-09-29, Mockup A step 3. `Block` is shared, so the Week's
 and Paycheck's lists took the new card head, hues, mini bars and rose
@@ -2934,6 +2934,12 @@ the smaller type again (`fourAcross`), and the Month's Variable card no
 longer runs over at 768 px. At 1280 px, beside the sidebar, three to five
 of the Week's and Paycheck's tables still scroll inside their cards by a
 few pixels, as they did before step 3; step 4's grid settles it.
+
+**Settled, 2026-09-29, step 4:** the Week and Paycheck lay their lists two
+across in list order, as the Month does, so the four-across layout, its
+smaller table type and `fourAcross` are gone. Measured in the preview at
+320, 390, 768, 1280 and 1440 px, light and dark: no table scrolls inside
+its card on either screen, and no page scrolls sideways.
 
 ---
 
@@ -2966,3 +2972,19 @@ to `Block` can take both.
 
 **Settled, 2026-09-29, with the % pill:** `TONE` has no `rule`, and
 `Block`'s comments speak of the card head.
+
+---
+
+## N129 — The `paycheck` colour set is drawn by nothing
+
+**Seen:** 2026-09-29, Mockup A step 4. Paycheck's summary, its title band
+and the no-schedule note were the last users of `paycheck-band` and
+`paycheck-ink`. The set is still defined in apps/web/src/index.css (light
+and dark) and measured by apps/web/test/contrast.test.ts.
+
+**Why not fixed here:** removing tokens is its own change, and other
+retired workbook sets (`title-band`, `summary`) may be in the same state
+once their screens' steps land.
+
+**To settle:** after step 12, remove every token no class uses, with its
+contrast rows, in one commit.

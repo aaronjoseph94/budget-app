@@ -8,6 +8,7 @@ import { NativeSelect } from '../components/ui/form.js'
 import { PaycheckPeriod } from './PaycheckPeriod.js'
 import { PeriodSwitch } from './PeriodSwitch.js'
 import { HelpButton } from '../help/HelpButton.js'
+import { MonthTitle } from '../components/ui/type.js'
 
 /**
  * The workbook's Paycheck Budget (S15b): the pay period of an income source with a
@@ -59,8 +60,8 @@ export function PaycheckScreen({ day }: { day: string | null }) {
         header in one place, so a help sheet opened while it loads stays. */}
       {driving === undefined ? (
         <div className="flex flex-wrap items-center gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Paycheck</h1>
-          <HelpButton screen="paycheck" />
+          <MonthTitle>Paycheck</MonthTitle>
+          <HelpButton screen="paycheck" className="text-muted-foreground" />
         </div>
       ) : null}
       {error !== null ? <Alert tone="error" title="Could not load when you are paid">{error}</Alert> : null}
@@ -76,15 +77,20 @@ export function PaycheckScreen({ day }: { day: string | null }) {
           row={driving.row}
           chooser={
             paid.length > 1 ? (
-              <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-medium text-muted-foreground">Pay periods from</span>
-                <NativeSelect value={driving.source.id} onChange={(e) => setChosen(e.target.value)} className="h-9 text-sm">
-                  {paid.map(({ source }) => (
-                    <option key={source.id} value={source.id}>
-                      {source.name}
-                    </option>
-                  ))}
-                </NativeSelect>
+              // Beside the card's heading, as Mockup A draws it; on its tint the
+              // words take canvas-muted. The field fills a 12rem box, as it fills
+              // any box it is given, and keeps its 44px height.
+              <label className="flex flex-wrap items-center gap-2">
+                <span className="text-sm text-canvas-muted">Pay periods from</span>
+                <span className="w-48 max-w-full">
+                  <NativeSelect value={driving.source.id} onChange={(e) => setChosen(e.target.value)} className="h-9 text-sm">
+                    {paid.map(({ source }) => (
+                      <option key={source.id} value={source.id}>
+                        {source.name}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </span>
               </label>
             ) : null
           }
@@ -97,7 +103,7 @@ export function PaycheckScreen({ day }: { day: string | null }) {
 /** With no income source paid on a schedule there is no period: said plainly, with the way there. */
 function NoSchedule() {
   return (
-    <section aria-label="Paycheck" className="space-y-3 rounded-xl bg-paycheck-band px-4 py-5 text-paycheck-ink">
+    <section aria-label="Paycheck" className="space-y-3 rounded-xl border bg-card p-4 md:px-6 md:py-5">
       <p className="text-sm">
         This shows your budget one pay period at a time. It needs to know when you are paid: in Setup, give an Income
         row how often it pays and a first payday.

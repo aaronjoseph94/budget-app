@@ -126,3 +126,11 @@ and the amber Review count.
   as the mockup draws the Period screen. The workbook's four-across order
   (Summary, Income, Savings, Bills … Variable last) retires with it, and
   so does the smaller table type it needed (N126).
+- **Paycheck follows the Week:** the same title row and stat cards, and
+  "How this period is counted" as the wide tinted card, its name now a
+  visible heading (it was the card's name for a screen reader only), with
+  "Pay periods from" beside it as the mockup draws it. The pay-period
+  lavender (`paycheck-band`) leaves the screen; nothing else draws it, and
+  its tokens are left for a clean-up of their own (N129).
+- **With every caller in list order,** `PeriodBlocks` has one layout and
+  `Block` one table type; `inListOrder` and `fourAcross` are removed.

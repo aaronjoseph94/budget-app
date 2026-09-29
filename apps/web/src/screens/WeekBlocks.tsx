@@ -51,7 +51,7 @@ export function WeekBlocks({
       </div>
       <ImportedThrough through={sheet.importedThrough} />
       <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:gap-5">
-        <PeriodBlocks blocks={sheet.blocks} inListOrder {...blockProps} />
+        <PeriodBlocks blocks={sheet.blocks} {...blockProps} />
       </div>
       <TransfersNote cents={sheet.transfersCents} onOpen={onOpen === undefined ? undefined : () => onOpen(NOT_SPENDING)} />
     </>

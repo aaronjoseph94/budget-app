@@ -71,12 +71,35 @@ describe('PaycheckPeriod', () => {
 
     expect(screen.getByRole('heading', { name: 'This pay period' })).toBeTruthy()
     expect(screen.getByText('11 – 24 Sep · Day job, paid bi-weekly')).toBeTruthy()
+    // Mockup A shows the card's name as its heading, which it had only for a screen reader.
     expect(screen.getByRole('region', { name: 'How this period is counted' }).textContent).toBe(
+      'How this period is counted' +
       'Bills with no charge yet in this period, and budgets and goals, are September 2026’s. You are paid every two weeks, so each shows 12 months over 26 paydays: two weeks’ share. Charges count as they are.Budgets and goals are typed on the Month.',
     )
     expect(screen.getByText('$500.00').closest('p')?.textContent).toBe(
       'Paid to your card: $500.00 — not counted. What it paid for is already in the blocks above. See these charges',
     )
+    await expectNoAxeViolations()
+  })
+
+  // Mockup A, step 4: the Week's stat cards, the wide tinted card beside
+  // them, the Month's stepper with the period's dates, and the lists two
+  // across in list order.
+  it('draws the summary as stat cards, how it is counted as a wide tinted card, and the lists in list order', async () => {
+    show(seeded(), null)
+    await screen.findByRole('region', { name: 'Variable expenses' })
+
+    const card = (label: string) => within(screen.getByRole('region', { name: 'Summary' })).getByText(label).closest('div')!
+    expect(card('Left to spend').className.split(' ')).toEqual(expect.arrayContaining(['bg-linear-to-b', 'to-primary-tint']))
+    expect(card('Spent').className.split(' ')).toEqual(expect.arrayContaining(['rounded-xl', 'bg-card']))
+    const counted = screen.getByRole('region', { name: 'How this period is counted' })
+    expect(counted.className.split(' ')).toEqual(expect.arrayContaining(['bg-linear-to-b', 'to-primary-tint']))
+    expect(within(counted).getByRole('heading', { level: 2 }).textContent).toBe('How this period is counted')
+    expect(screen.getByRole('button', { name: 'Next pay period' }).previousElementSibling?.textContent).toBe('11 – 24 Sep')
+    const lists = ['Variable expenses', 'Bills', 'Subscriptions', 'Debts', 'Income', 'Savings'].map((name) => screen.getByRole('region', { name }))
+    expect(lists.map((r) => r.className.split(' ').find((c) => c.startsWith('order-')))).toEqual(['order-1', 'order-2', 'order-3', 'order-4', 'order-5', 'order-6'])
+    expect(lists.some((r) => r.className.includes('xl:order-'))).toBe(false)
+    expect(within(lists[0]!).getByRole('table').className).not.toContain('xl:text-xs')
     await expectNoAxeViolations()
   })
 

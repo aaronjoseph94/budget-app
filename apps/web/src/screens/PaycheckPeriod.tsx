@@ -18,13 +18,13 @@ import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore } from 
 import { formatCents, formatDateRange, formatMonthTitle, todayIso } from '../format.js'
 import { navigate } from '../nav.js'
 import { Alert, Loading } from '../components/ui/feedback.js'
-import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
-import { Figure } from '../components/ui/type.js'
+import { Figure, MonthTitle } from '../components/ui/type.js'
+import { StatCard } from './MonthSummary.js'
 import { cn } from '../lib/cn.js'
 import { useEarlier } from '../earlier.js'
 import { CompareLine } from './CompareLine.js'
-import { ImportedThrough, PeriodBlocks, TransfersNote } from './MonthScreen.js'
+import { ImportedThrough, PeriodBlocks, StepButton, TransfersNote } from './MonthScreen.js'
 import { NOT_SPENDING, OpenedCharges } from './MonthCharges.js'
 import { FREQUENCY_WORD } from './SetupPay.js'
 import { HelpButton } from '../help/HelpButton.js'
@@ -137,25 +137,24 @@ export function PaycheckPeriod({
 
   return (
     <>
-      <header className="-mx-4 max-[359px]:-mx-3 flex flex-wrap items-center justify-between gap-2 bg-paycheck-band px-4 max-[359px]:px-3 py-4 text-paycheck-ink md:mx-0 md:rounded-xl">
-        <div>
+      {/* Mockup A's title row, as the Month's and the Week's. */}
+      <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-1">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {payPeriod({ schedule, asOf: today }).start === start ? 'This pay period' : 'Pay period'}
-            </h1>
-            <HelpButton screen="paycheck" />
+            <MonthTitle>{payPeriod({ schedule, asOf: today }).start === start ? 'This pay period' : 'Pay period'}</MonthTitle>
+            <HelpButton screen="paycheck" className="text-muted-foreground" />
           </div>
-          <p className="text-sm">
+          <p className="text-muted-foreground md:text-base">
             {formatDateRange(start, end)} · {source.name}, paid {FREQUENCY_WORD[schedule.frequency].toLowerCase()}
           </p>
         </div>
-        <div className="flex gap-1">
-          <Button variant="outline" size="icon" aria-label="Previous pay period" onClick={() => step(-1)}>
-            <Icon name="chevronLeft" />
-          </Button>
-          <Button variant="outline" size="icon" aria-label="Next pay period" onClick={() => step(1)}>
-            <Icon name="chevronRight" />
-          </Button>
+        <div className="flex items-stretch rounded-md border bg-card">
+          <StepButton label="Previous pay period" icon="chevronLeft" onClick={() => step(-1)} />
+          <span className="flex items-center gap-2 border-x px-3.5 text-[0.9375rem] font-medium whitespace-nowrap">
+            <Icon name="calendar" className="size-4 text-muted-foreground" />
+            <span className="tnum">{formatDateRange(start, end)}</span>
+          </span>
+          <StepButton label="Next pay period" icon="chevronRight" onClick={() => step(1)} />
         </div>
       </header>
 
@@ -165,22 +164,31 @@ export function PaycheckPeriod({
 
       {sheet !== null && typeof sheet !== 'string' ? (
         <>
-          <ImportedThrough through={sheet.importedThrough} />
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
             <Summary sheet={sheet} comparison={comparison} />
             {/* Where the workbook's chart well stands (I3:M18): the owner was told a
-              share is about $738 of $1,600 rent, and this says how it is found. */}
+              share is about $738 of $1,600 rent, and this says how it is found.
+              Mockup A's wide card tinted to the accent, its muted words in
+              canvas-muted (ADR 0010). */}
             <section
-              aria-label="How this period is counted"
-              className="order-7 space-y-3 rounded-xl border bg-card p-4 text-sm shadow-sm md:col-span-2 xl:order-1 xl:col-span-1"
+              aria-labelledby="pay-counted"
+              className="min-w-0 space-y-3 rounded-xl border bg-linear-to-b from-card to-primary-tint p-4 text-[0.9375rem] md:px-6 md:py-[1.375rem]"
             >
-              {chooser}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 id="pay-counted" className="text-lg font-semibold leading-snug">
+                  How this period is counted
+                </h2>
+                {chooser}
+              </div>
               <p>
                 Bills with no charge yet in this period, and budgets and goals, are {formatMonthTitle(sheet.month)}’s.{' '}
                 {SHARE[schedule.frequency]} Charges count as they are.
               </p>
-              <p className="text-muted-foreground">Budgets and goals are typed on the Month.</p>
+              <p className="text-canvas-muted">Budgets and goals are typed on the Month.</p>
             </section>
+          </div>
+          <ImportedThrough through={sheet.importedThrough} />
+          <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:gap-5">
             <PeriodBlocks blocks={sheet.blocks} onOpen={setOpened} />
           </div>
           <TransfersNote cents={sheet.transfersCents} onOpen={() => setOpened(NOT_SPENDING)} />
@@ -212,36 +220,38 @@ interface Loaded {
 }
 
 /**
- * Paycheck Budget's lavender summary panel (D9:D15): Money Spent and Left to
- * Spend, both core's. Its Starting and Ending Balance are not shown, as on
- * the Week: no balance is typed for a period (D17, N45). Under them, the
- * period before by the same number of days (D26).
+ * Paycheck Budget's summary panel (D9:D15): Money Spent and Left to Spend,
+ * both core's, as the Week's stat cards draw them. Its Starting and Ending
+ * Balance are not shown, as on the Week: no balance is typed for a period
+ * (D17, N45). Under Spent, the period before by the same number of days
+ * (D26).
  */
 function Summary({ sheet, comparison }: { sheet: PaycheckSheet; comparison: PeriodComparison | 'failed' | null }) {
   const { spentCents, leftToSpendCents: left } = sheet.summary
   const noBudgets = sheet.blocks.variable.rows.every((r) => r.budgetCents === null)
   return (
-    <section aria-label="Summary" className="order-0 rounded-xl border bg-paycheck-band p-4 text-paycheck-ink shadow-sm xl:order-0">
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-3 xl:grid-cols-1">
-        <div>
-          <dt className="text-xs font-medium">Spent</dt>
-          <dd className="text-2xl font-bold">
-            <Figure>{formatCents(spentCents)}</Figure>
-          </dd>
-        </div>
-        <div>
-          <dt className="text-xs font-medium">Left to spend</dt>
-          <dd className="text-2xl font-bold">
-            <Figure className={cn(left < 0 && '-mx-1.5 rounded-lg bg-summary-negative px-1.5 text-summary-negative-ink')}>
-              {formatCents(left)}
-            </Figure>
-          </dd>
-          {/* As the Month and Week say it (F5), and where a budget is typed,
-            since this view shows budgets and takes none. */}
-          {noBudgets ? <dd className="mt-0.5 text-xs">No budgets on Variable expenses yet. They are typed on the Month.</dd> : null}
-        </div>
+    <section aria-label="Summary">
+      <dl className="grid h-full grid-cols-1 gap-3 min-[480px]:grid-cols-2 md:gap-4">
+        <StatCard
+          label="Spent"
+          icon="bag"
+          extra={<CompareLine comparison={comparison} label="Compared with the last pay period" earlier="the last pay period" />}
+        >
+          <Figure>{formatCents(spentCents)}</Figure>
+        </StatCard>
+        {/* As the Month and Week say it (F5), and where a budget is typed,
+          since this view shows budgets and takes none. */}
+        <StatCard
+          label="Left to spend"
+          icon="sparkles"
+          hero
+          hint={noBudgets ? 'No budgets on Variable expenses yet. They are typed on the Month.' : null}
+        >
+          <Figure className={cn(left < 0 && '-mx-1.5 rounded-lg bg-summary-negative px-1.5 text-summary-negative-ink')}>
+            {formatCents(left)}
+          </Figure>
+        </StatCard>
       </dl>
-      <CompareLine comparison={comparison} label="Compared with the last pay period" earlier="the last pay period" />
     </section>
   )
 }

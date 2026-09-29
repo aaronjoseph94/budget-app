@@ -60,7 +60,10 @@ describe('PaycheckScreen', () => {
     )
 
     expect(await screen.findByText('11 – 24 Sep · Day job, paid bi-weekly')).toBeTruthy()
-    fireEvent.change(await screen.findByRole('combobox', { name: 'Pay periods from' }), { target: { value: 'side' } })
+    const chooser = await screen.findByRole('combobox', { name: 'Pay periods from' })
+    // Beside the card's heading, in a box of its own, as Mockup A draws it.
+    expect(chooser.parentElement?.className).toContain('w-48')
+    fireEvent.change(chooser, { target: { value: 'side' } })
     expect(await screen.findByText('1 – 30 Sep · Side work, paid monthly')).toBeTruthy()
     expect(screen.getByText(/You are paid monthly/)).toBeTruthy()
   })
