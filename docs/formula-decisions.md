@@ -2405,7 +2405,7 @@ $300.00"), and returns the one as a share of the other in basis points.
 **Chosen: A.**
 
 - **The share:** Actual × 10,000 over the budget, rounded half-up to a
-  basis point as F17 rounds, exact for any amount (BigInt). Not capped:
+  basis point as F17 rounds, worked exactly in BigInt. Not capped:
   $348 of $300 is 11,600, drawn "116%", where `goalBars` and
   `goalProgress` stop at 10,000.
 - **Nothing spent** against a budget is 0, drawn "0%".
@@ -2414,6 +2414,10 @@ $300.00"), and returns the one as a share of the other in basis points.
 - **A negative budget or a fraction of a cent** is refused, as `resolveBudgets`
   refuses one; a negative budget cannot reach the screen through the
   database (0008's check).
+- **A share past 2^53 − 1 basis points** (about $9 billion of a 1¢
+  budget) is refused rather than given approximately: it cannot become
+  a number exactly. *(Added 2026-09-29 in review: the first version
+  claimed "exact for any amount" and silently rounded there.)*
 - **The two totals are the card's own.** The budget total adds the budgets
   set, so a row with none adds nothing to it, while its spending is in the
   Actual (F16); the pill agrees with the two figures beside it.

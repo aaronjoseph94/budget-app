@@ -276,4 +276,12 @@ describe('budgetUsedBp (F50, a list\'s % pill)', () => {
     expect(() => used(-100.5, 30_000)).toThrow(RangeError)
     expect(() => used(-100, 300.5)).toThrow(RangeError)
   })
+
+  it('refuses a share too large to give exactly, rather than round it', () => {
+    // 900,719,925,474 of 1 is 9,007,199,254,740,000 bp, under 2^53: exact.
+    expect(used(900_719_925_474, 1)).toBe(9_007_199_254_740_000)
+    // 900,719,925,475 of 1 is 9,007,199,254,750,000 bp, past 2^53 - 1: a
+    // double would give a nearby number, so it is refused.
+    expect(() => used(900_719_925_475, 1)).toThrow(RangeError)
+  })
 })

@@ -51,7 +51,11 @@ export function budgetUsedBp(input: BudgetUsedInput): BudgetUsedOutput {
   const budget = input.budgetCents === null ? null : cents(input.budgetCents)
   if (budget !== null && budget < 0) throw new RangeError(`A budget cannot be negative, received ${budget}`)
   if (budget === null || budget === 0 || actual < 0) return { usedBp: null }
-  return { usedBp: shareOf(actual, budget) }
+  // Exact in BigInt; a quotient past 2^53 - 1 would round as it became a
+  // number, so it is refused rather than given approximately.
+  const usedBp = shareOf(actual, budget)
+  if (!Number.isSafeInteger(usedBp)) throw new RangeError(`A share of ${actual} over ${budget} is too large to give exactly`)
+  return { usedBp }
 }
 
 export interface GoalBarsInput {
