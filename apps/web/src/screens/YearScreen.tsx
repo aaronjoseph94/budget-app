@@ -24,12 +24,14 @@ import { navigate } from '../nav.js'
 import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
 import { formatAmount, formatCents, formatMonthName, formatMonthTitle, formatShortMonth, MONTH_NAMES, todayIso } from '../format.js'
 import { Alert, Loading } from '../components/ui/feedback.js'
-import { Figure } from '../components/ui/type.js'
+import { Figure, MonthTitle } from '../components/ui/type.js'
+import { NativeSelect } from '../components/ui/form.js'
 import { cn } from '../lib/cn.js'
 import { useWide } from '../lib/wide.js'
 import { AnnualCharts } from './YearCharts.js'
 import { YearGlance } from './YearGlance.js'
 import { PeriodSwitch } from './PeriodSwitch.js'
+import { WaitingBanner } from './MonthScreen.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { LINE_BUTTON } from '../components/ui/link.js'
 
@@ -122,20 +124,30 @@ export function YearScreen({ start: address }: { start: string | null }) {
   return (
     <div className="space-y-4">
       <PeriodSwitch current="year" />
-      <header className="-mx-4 max-[359px]:-mx-3 bg-year-header px-4 max-[359px]:px-3 py-4 text-year-header-ink md:mx-0 md:rounded-xl">
-        <div className="flex flex-wrap items-center gap-1">
-          <h1 className="font-serif text-4xl italic">Year</h1>
-          <HelpButton screen="year" />
+      {/* Mockup A's title row, as the Month's: the title with its ?, the
+        twelve months under it, and on the right the start picker. It wraps,
+        so on a phone the picker drops under the title. */}
+      <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-1">
+            <MonthTitle>Year</MonthTitle>
+            <HelpButton screen="year" className="text-muted-foreground" />
+          </div>
+          <p className="text-muted-foreground md:text-base">
+            {formatMonthTitle(start)} to {formatMonthTitle(last)}
+          </p>
         </div>
-        <p className="mt-1 text-sm">
-          {formatMonthTitle(start)} to {formatMonthTitle(last)}
-        </p>
+        <StartPicker start={start} today={today} />
       </header>
-      <StartPicker start={start} today={today} />
       <p className="text-sm text-muted-foreground">
         Planned bills count up to {formatMonthTitle(thisMonth)}, this month. Later months show only what was charged or
         typed.
       </p>
+      {pendingTotal > 0 ? (
+        <WaitingBanner>
+          <span className="font-semibold">{pendingTotal} waiting for review</span> — not counted below
+        </WaitingBanner>
+      ) : null}
 
       {error !== null ? (
         <Alert tone="error" title="Could not load this year">
@@ -150,16 +162,6 @@ export function YearScreen({ start: address }: { start: string | null }) {
       {sheet === null && error === null && (version > 0 || loadError === null) ? (
         <Loading what="this year" />
       ) : null}
-      {pendingTotal > 0 ? (
-        <button
-          type="button"
-          onClick={() => navigate('review')}
-          className="w-full rounded-xl border bg-card px-4 py-3 text-left text-sm shadow-sm hover:bg-accent"
-        >
-          {pendingTotal} waiting for review — not counted below
-        </button>
-      ) : null}
-
       {sheet !== null && typeof sheet !== 'string' ? (
         <>
           <YearGlance sheet={sheet} wide={wide} comparison={comparison} />
@@ -226,32 +228,38 @@ function StartPicker({ start, today }: { start: string; today: string }) {
   const thisYear = Number(today.slice(0, 4))
   const from = Math.min(thisYear - 5, Number(year))
   const years = Array.from({ length: Math.max(thisYear + 1, Number(year)) - from + 1 }, (_, i) => String(from + i))
-  const select = 'rounded-md border border-input bg-card px-2 py-1.5 pointer-coarse:min-h-11'
+  // Mockup A's two select pills: the native picker, a wheel on a phone,
+  // 44px tall with the chevron the app's selects draw. A field is as wide
+  // as its box, so each box is as wide as its longest choice.
   return (
-    <div className="flex flex-wrap items-center gap-2 text-sm">
+    <div className="flex flex-wrap items-center gap-2.5 md:text-base">
       <span className="font-medium">Starts in</span>
-      <select
-        aria-label="Start month"
-        className={select}
-        value={month}
-        onChange={(e) => navigate('year', `${year}-${e.target.value}`)}
-      >
-        {MONTH_NAMES.map((name, i) => (
-          <option key={name} value={String(i + 1).padStart(2, '0')}>
-            {name}
-          </option>
-        ))}
-      </select>
-      <select
-        aria-label="Start year"
-        className={select}
-        value={year}
-        onChange={(e) => navigate('year', `${e.target.value}-${month}`)}
-      >
-        {years.map((y) => (
-          <option key={y}>{y}</option>
-        ))}
-      </select>
+      <div className="w-max">
+        <NativeSelect
+          aria-label="Start month"
+          className="font-medium"
+          value={month}
+          onChange={(e) => navigate('year', `${year}-${e.target.value}`)}
+        >
+          {MONTH_NAMES.map((name, i) => (
+            <option key={name} value={String(i + 1).padStart(2, '0')}>
+              {name}
+            </option>
+          ))}
+        </NativeSelect>
+      </div>
+      <div className="w-max">
+        <NativeSelect
+          aria-label="Start year"
+          className="font-medium"
+          value={year}
+          onChange={(e) => navigate('year', `${e.target.value}-${month}`)}
+        >
+          {years.map((y) => (
+            <option key={y}>{y}</option>
+          ))}
+        </NativeSelect>
+      </div>
     </div>
   )
 }

@@ -87,6 +87,24 @@ describe('YearScreen', () => {
     await expectNoAxeViolations()
   })
 
+  it("has the Month's title row, two 44px start pills and the amber review line", async () => {
+    const fake = seeded()
+    fake.tables.ingest_candidates.push({ id: 'c1', posted_on: '2026-09-10', amount_cents: -1349, merchant: 'SHOP', merchant_raw: 'SHOP', status: 'pending' })
+    renderScreen(<YearScreen start="2026-01" />, fake)
+
+    const title = await screen.findByRole('heading', { level: 1, name: 'Year' })
+    expect(title.className).not.toMatch(/font-serif|italic/)
+    for (const name of ['Start month', 'Start year']) {
+      const pill = screen.getByRole('combobox', { name })
+      expect(pill.className.split(' ').filter((c) => /^h-/.test(c)), name).toEqual(['h-11'])
+    }
+    const banner = await screen.findByRole('button', { name: '1 waiting for review — not counted below' })
+    // Waiting's amber, as on the Month and the Week (ADR 0010).
+    expect(banner.className.split(' ')).toEqual(expect.arrayContaining(['bg-waiting', 'border-waiting-border', 'text-waiting-ink']))
+    fireEvent.click(banner)
+    expect(window.location.hash).toBe('#/review')
+  })
+
   it('counts planned bills up to this month only, and real rows in every month', async () => {
     renderScreen(<YearScreen start="2026-01" />, seeded())
     await screen.findByRole('region', { name: 'Income by month' })

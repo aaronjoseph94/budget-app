@@ -124,7 +124,7 @@
   --waiting-tile: #fef3c7;
 
   /* The screens' own sets, in Mockup A's values until each screen's step
-     restyles it (ADR 0010): Setup's accent header, the Year's slate header
+     restyles it (ADR 0010): Setup's accent header, the Year's chosen chip
      and today's row, the Year's glance cards, the Paycheck's accent tint,
      the Bill calendar in Bills' sky, Savings in amber, Debts in rose with
      the violet of its chart. */
@@ -133,7 +133,7 @@
   --setup-canvas: #f9fafb;
   --setup-label: #4f46e5;
 
-  --year-header: #374151;
+  --year-header: #111827; /* the chosen table chip: ink, words in the card's white */
   --year-header-ink: #ffffff;
   --year-row-alt: #f9fafb;
   --year-today: #fefce8;
@@ -276,8 +276,8 @@
     --setup-canvas: #131418;
     --setup-label: #a5b4fc;
 
-    --year-header: #2a2c33;
-    --year-header-ink: #f3f4f6;
+    --year-header: #f3f4f6;
+    --year-header-ink: #17181c;
     --year-row-alt: #1a1b20;
     --year-today: #2a2610;
 
