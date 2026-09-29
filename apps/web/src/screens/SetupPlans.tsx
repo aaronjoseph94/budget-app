@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { billsTotals, isoDate, resolvePlans, type BillNudge, type BillsTotals, type ResolvedPlan } from '@budget/core'
 import { parseMoneyInput, useAppData } from '../app-data.js'
 import { listPlanHistory, setPlan, type Category, type PlanRow } from '../ledger.js'
@@ -99,33 +99,57 @@ export function useMonthlyAmounts(month: string): MonthlyAmounts {
 export function PlanHeadings({ month }: { month: string }) {
   const monthName = formatMonthName(month)
   return (
-    <div className="mt-2 space-y-1 border-t border-owed-rule pt-2">
-      <p className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-2 text-xs font-medium text-owed-ink" aria-hidden="true">
-        <span>Day paid</span>
-        <span className="min-w-0 [overflow-wrap:anywhere]">Monthly amount (from {monthName} on)</span>
-      </p>
-      <p className="text-xs text-muted-foreground">
+    <>
+      <p className="mt-3 px-4 text-sm text-muted-foreground sm:px-5">
         The day of each month it is paid: the 5th is 5. A yearly cost can go in as a monthly share, $100 a year as
         $8.34 a month; if your card is charged for it once a year, leave the amount blank instead.
       </p>
-    </div>
+      <ColumnHeads>
+        <span className="flex min-w-0 gap-2 @2xl:w-[17rem]">
+          <span className="w-[4.5rem] shrink-0">Day paid</span>
+          <span className="min-w-0 [overflow-wrap:anywhere]">Monthly amount (from {monthName} on)</span>
+        </span>
+      </ColumnHeads>
+    </>
   )
 }
 
 /**
- * One of the workbook's total tiles (Bills!D32, H32, L32 and H36): the label on the
- * card's pink, the figure beside it, from core's billsTotals.
- * To the cent (D8), where the workbook's "$"#,##0 shows Netflix's 17.99 as $18.
+ * Mockup A's column heads, a grey strip across the card. From the card's
+ * `@2xl` (42rem) the fields sit on the name's line, so the heads name that column
+ * too and keep the row's buttons' room; narrower, the fields go under the
+ * name and the heads sit over them alone.
  */
-export function TotalTile({ label, cents }: { label: string; cents: number }) {
+export function ColumnHeads({ children }: { children: ReactNode }) {
+  return (
+    <p
+      aria-hidden="true"
+      className="mt-3 flex items-end gap-1 border-y bg-muted px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:px-5"
+    >
+      <span className="hidden min-w-0 flex-1 @2xl:block">Name</span>
+      {children}
+      <span className={`hidden @2xl:block ${ROW_BUTTONS}`} />
+    </p>
+  )
+}
+
+/** The room a row's four buttons take, so the column heads keep it too. */
+const ROW_BUTTONS = 'w-[10.75rem] shrink-0 pointer-coarse:w-[11rem]'
+
+/**
+ * One of the workbook's total tiles (Bills!D32, H32, L32): Mockup A's total
+ * row across the foot of the card, on the list's tint, from core's
+ * billsTotals. To the cent (D8), where the workbook's "$"#,##0 shows
+ * Netflix's 17.99 as $18.
+ */
+export function TotalTile({ label, cents, tint }: { label: string; cents: number; tint: string }) {
   return (
     // The figure goes under its label when the two do not fit side by side,
-    // as with the phone's text at 200% (N58): flex-auto, not flex-1, so it
-    // wraps at its full width rather than squeeze beside the label.
-    <dl className="flex flex-wrap overflow-hidden rounded-lg border border-owed-rule text-owed-ink">
-      <dt className="flex items-center bg-owed-band px-3 py-2 text-sm font-medium">{label}</dt>
-      <dd className="flex flex-auto items-center justify-end bg-card px-3 py-2">
-        <Figure className="text-xl font-bold">{formatCents(cents)}</Figure>
+    // as with the phone's text at 200% (N58).
+    <dl className={`flex flex-wrap items-center justify-between gap-x-3 border-b px-4 py-3 sm:px-5 ${tint}`}>
+      <dt className="text-base font-semibold">{label}</dt>
+      <dd>
+        <Figure className="text-base font-bold">{formatCents(cents)}</Figure>
       </dd>
     </dl>
   )
@@ -245,62 +269,65 @@ export function PlanFields({
   }
 
   return (
-    <div className="pb-1 pl-1">
-      <div className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-2">
-        <Input
-          size="sm"
-          inputMode="numeric"
-          maxLength={2}
-          aria-label={`Day paid for ${row.name}`}
-          placeholder="Day"
-          {...about(DAY_HELP)}
-          value={day}
-          onChange={(e) => setDay(e.target.value)}
-          onBlur={() => commit('day')}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') e.currentTarget.blur()
-          }}
-          className="w-14 text-center"
-        />
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative w-36 max-w-full">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
-            <Input
-              size="sm"
-              inset
-              inputMode="decimal"
-              aria-label={`Monthly amount for ${row.name}, from ${monthName} on`}
-              placeholder="None"
-              {...about(AMOUNT_HELP)}
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              onBlur={() => commit('amount')}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') e.currentTarget.blur()
-              }}
-              className="tnum"
-            />
-          </div>
-          {storedCents === null ? null : (
-            <Button
-              variant="ghost"
-              size="sm"
-              aria-label={`Stop ${row.name} from ${monthName}`}
-              onClick={() => save(null, dayNow(), `${row.name}: no monthly amount from ${monthName} on.`)}
-            >
-              {/* A phone has room for the word alone; the headings above name the month. */}
-              Stop<span className="hidden sm:inline">&nbsp;from {monthName}</span>
-            </Button>
-          )}
+    // On the name's line from the card's @2xl, where this wrapper steps aside
+    // and its parts join the row; narrower, a line of its own under the name.
+    <div className="order-2 basis-full pt-1 @2xl:contents">
+      <div className="flex items-center gap-2 @2xl:order-1 @2xl:w-[17rem] @2xl:shrink-0">
+        {/* A field's width is its box's: Input's w-full is not overridden (lib/cn.ts). */}
+        <div className="w-[4.5rem] shrink-0">
+          <Input
+            size="sm"
+            inputMode="numeric"
+            maxLength={2}
+            aria-label={`Day paid for ${row.name}`}
+            placeholder="Day"
+            {...about(DAY_HELP)}
+            value={day}
+            onChange={(e) => setDay(e.target.value)}
+            onBlur={() => commit('day')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.currentTarget.blur()
+            }}
+            className="text-center"
+          />
         </div>
+        <div className="relative w-32 min-w-0 shrink">
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+          <Input
+            size="sm"
+            inset
+            inputMode="decimal"
+            aria-label={`Monthly amount for ${row.name}, from ${monthName} on`}
+            placeholder="None"
+            {...about(AMOUNT_HELP)}
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            onBlur={() => commit('amount')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.currentTarget.blur()
+            }}
+            className="tnum text-right"
+          />
+        </div>
+        {storedCents === null ? null : (
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-label={`Stop ${row.name} from ${monthName}`}
+            onClick={() => save(null, dayNow(), `${row.name}: no monthly amount from ${monthName} on.`)}
+          >
+            {/* The word alone where the heads above name the month. */}
+            Stop<span className="hidden sm:inline @2xl:hidden">&nbsp;from {monthName}</span>
+          </Button>
+        )}
       </div>
       {problem !== null ? (
-        <p id={problemId} role="alert" className="mt-1 text-xs text-destructive">
+        <p id={problemId} role="alert" className="mt-1 text-xs text-destructive @2xl:order-3 @2xl:basis-full">
           {problem}
         </p>
       ) : null}
       {nudge !== undefined && storedCents === null ? (
-        <div className="mt-2 space-y-1 rounded-md bg-muted/60 p-2 text-sm">
+        <div className="mt-2 space-y-1 rounded-md bg-muted/60 p-2 text-sm @2xl:order-3 @2xl:basis-full">
           {filled ? (
             <>
               <p>Filled in from your charges. Check the day and the amount, then save.</p>
@@ -336,7 +363,7 @@ export function PlanFields({
       ) : null}
       {/* F8: a blank day counts in a whole month, never in a week. */}
       {storedCents !== null && storedDay === null ? (
-        <p className="mt-1 text-xs text-owed-ink">Add a day paid so this shows in weeks.</p>
+        <p className="mt-1 text-xs text-muted-foreground @2xl:order-3 @2xl:basis-full">Add a day paid so this shows in weeks.</p>
       ) : null}
     </div>
   )

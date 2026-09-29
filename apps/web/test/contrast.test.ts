@@ -132,6 +132,10 @@ const TEXT: readonly (readonly [text: string, surface: string, least?: number, a
   // measured above, since `input` reads 2.99 on the tint.
   ['ring', 'primary-tint', 3],
   ['income', 'primary-tint', 3],
+  // …and each recurring card's total, in ink on its list's tint.
+  ['foreground', 'bills-header'],
+  ['foreground', 'debts-header'],
+  ['foreground', 'subscriptions-header'],
   // …and starts on the card, so its words read at both ends of the gradient.
   ['canvas-muted', 'card'],
   ['summary-value', 'card'],

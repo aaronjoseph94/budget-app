@@ -101,6 +101,11 @@ describe('SetupScreen, changing a list', () => {
 
     await waitFor(async () => expect(await namesOn('Bills')).toEqual(['Mobile', 'Rent']))
     expect(fake.tables.categories.find((c) => c.id === 'c4')?.name).toBe('Mobile')
+    // Mockup A's ✓ beside the saved name (design-review P2 item 12), gone at the next keystroke.
+    const row = within(screen.getByRole('textbox', { name: 'Rename Mobile' }).closest('li')!)
+    expect(row.getByLabelText('Saved')).toBeTruthy()
+    fireEvent.change(screen.getByRole('textbox', { name: 'Rename Mobile' }), { target: { value: 'Mobile phone' } })
+    expect(row.queryByLabelText('Saved')).toBeNull()
   })
 
   it('puts the old name back for an empty name or Escape, and saves nothing', async () => {

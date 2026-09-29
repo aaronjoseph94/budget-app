@@ -343,6 +343,9 @@ describe("SetupScreen, the workbook's total tiles", () => {
     expect(await tile('Fixed monthly bills')).toBe('$1,696.99')
     expect(screen.getByText('Bills, debts and subscriptions together, in September 2026.')).toBeTruthy()
     expect((await card('Variable expenses')).queryByText(/ total$/)).toBeNull()
+    // Mockup A: each total runs across its card's foot on the list's own tint.
+    const tints = ['Bills', 'Debts', 'Subscriptions'].map((list) => screen.getByText(`${list} total`).parentElement?.className.match(/bg-[a-z]+-header/)?.[0])
+    expect(tints).toEqual(['bg-bills-header', 'bg-debts-header', 'bg-subscriptions-header'])
   })
 
   it('follows a saved amount, a stop and a later month', async () => {

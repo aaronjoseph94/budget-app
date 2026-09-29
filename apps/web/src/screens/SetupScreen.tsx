@@ -12,12 +12,12 @@ import {
 } from '../ledger.js'
 import { atEndOf, groupByList, LIST_HEADING, LISTS, starterList, type CategoryKind } from '../lists.js'
 import { saveDisplayName } from '../profile.js'
-import { formatMonthTitle, todayIso } from '../format.js'
+import { formatCents, formatMonthTitle, todayIso } from '../format.js'
 import { Alert, SavedNote } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
-import { MonthTitle } from '../components/ui/type.js'
+import { Figure, MonthTitle } from '../components/ui/type.js'
 import { LIST_TONE } from '../list-tone.js'
 import { cn } from '../lib/cn.js'
 import { useFourAcross } from '../lib/wide.js'
@@ -172,10 +172,10 @@ export function SetupLists({ kinds, starter = false }: { kinds: readonly Categor
 const RECURRING: ReadonlySet<CategoryKind> = new Set(['bill', 'debt', 'subscription'])
 
 /** The tile under each recurring card, and the total its list adds to (Bills!D32, H32, L32). */
-const CARD_TOTAL: Readonly<Partial<Record<CategoryKind, { label: string; field: keyof BillsTotals }>>> = {
-  bill: { label: 'Bills total', field: 'billsCents' },
-  debt: { label: 'Debts total', field: 'debtsCents' },
-  subscription: { label: 'Subscriptions total', field: 'subscriptionsCents' },
+const CARD_TOTAL: Readonly<Partial<Record<CategoryKind, { label: string; field: keyof BillsTotals; tint: string }>>> = {
+  bill: { label: 'Bills total', field: 'billsCents', tint: 'bg-bills-header' },
+  debt: { label: 'Debts total', field: 'debtsCents', tint: 'bg-debts-header' },
+  subscription: { label: 'Subscriptions total', field: 'subscriptionsCents', tint: 'bg-subscriptions-header' },
 }
 
 /**
@@ -185,10 +185,19 @@ const CARD_TOTAL: Readonly<Partial<Record<CategoryKind, { label: string; field: 
  */
 function FixedTotal({ amounts, month }: { amounts: MonthlyAmounts; month: string }) {
   if (amounts.status !== 'ready' || amounts.totals === null) return null
+  // Mockup A's foot card, white to the accent's tint as each screen's one hero.
   return (
-    <section aria-label="Fixed monthly bills" className="space-y-1 pt-1">
-      <TotalTile label="Fixed monthly bills" cents={amounts.totals.allFixedCents} />
-      <p className="text-xs text-muted-foreground">Bills, debts and subscriptions together, in {formatMonthTitle(month)}.</p>
+    <section
+      aria-label="Fixed monthly bills"
+      className="rounded-xl border bg-gradient-to-r from-card to-primary-tint px-5 py-4 [--muted-foreground:var(--canvas-muted)]"
+    >
+      <dl className="flex flex-wrap items-center justify-between gap-x-4">
+        <dt className="text-lg font-semibold">Fixed monthly bills</dt>
+        <dd>
+          <Figure className="text-[2rem] font-bold leading-tight">{formatCents(amounts.totals.allFixedCents)}</Figure>
+        </dd>
+      </dl>
+      <p className="text-sm text-muted-foreground">Bills, debts and subscriptions together, in {formatMonthTitle(month)}.</p>
     </section>
   )
 }
@@ -391,11 +400,11 @@ function ListCardView({
   }
 
   return (
-    <section aria-labelledby={titleId} className="@container rounded-xl border bg-card px-4 pb-4 pt-5 sm:px-5">
+    <section aria-labelledby={titleId} className="@container rounded-xl border bg-card pb-4 pt-5">
       {/* Mockup A's list card head: an icon tile in the list's hue, the
         workbook's heading over the title (Source, or the section), and the
         workbook's note. */}
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-3 px-4 sm:px-5">
         <span aria-hidden="true" className={cn('flex size-10 shrink-0 items-center justify-center rounded-lg', tone.tile, tone.icon)}>
           <Icon name={tone.glyph} className="size-5" />
         </span>
@@ -408,17 +417,17 @@ function ListCardView({
         </div>
       </div>
       {message !== null ? (
-        <div className="mt-2">
+        <div className="mt-2 px-4 sm:px-5">
           <Alert tone="error">{message}</Alert>
         </div>
       ) : null}
       {rows.length === 0 ? (
-        <p className="py-3 text-sm text-muted-foreground">Nothing here yet.</p>
+        <p className="px-4 py-3 text-sm text-muted-foreground sm:px-5">Nothing here yet.</p>
       ) : (
         <>
           {plans !== null ? <PlanHeadings month={month} /> : null}
           {paid !== null ? <PayHeadings /> : null}
-          <ul className="mt-2 divide-y">
+          <ul className={cn('divide-y border-b', plans === null && paid === null && 'mt-3 border-t')}>
             {rows.map((row) => (
               <CategoryRow key={row.id} row={row} list={rows} write={write}>
                 {plans !== null ? (
@@ -430,14 +439,12 @@ function ListCardView({
           </ul>
         </>
       )}
-      {note !== null ? <SavedNote className="mt-2 text-xs text-owed-ink">{note}</SavedNote> : null}
       {totals !== null && total !== undefined && rows.length > 0 ? (
-        <div className="mt-3">
-          <TotalTile label={total.label} cents={totals[total.field]} />
-        </div>
+        <TotalTile label={total.label} cents={totals[total.field]} tint={total.tint} />
       ) : null}
+      {note !== null ? <SavedNote className="mt-2 px-4 text-xs text-muted-foreground sm:px-5">{note}</SavedNote> : null}
       <form
-        className="mt-2 flex gap-2"
+        className="mt-3 flex gap-2 px-4 sm:px-5"
         onSubmit={(e) => {
           e.preventDefault()
           void add()
@@ -458,6 +465,9 @@ function ListCardView({
     </section>
   )
 }
+
+/** A row's buttons: after the name, and after its fields from the card's @2xl. */
+const BUTTON_ORDER = 'order-1 @2xl:order-2'
 
 /** Not spending has no hue of its own (ADR 0010): a grey tile. */
 const NOT_SPENDING_TONE = { tile: 'bg-secondary', icon: 'text-muted-foreground', glyph: 'move' } as const
@@ -480,6 +490,8 @@ function CategoryRow({
   // Follow a rename from elsewhere during render, not in an effect: a mount
   // effect can run after the first keystroke and put the old name back.
   const [shown, setShown] = useState(row.name)
+  // Mockup A's ✓ once a new name is saved (design-review P2 item 12), gone at the next keystroke.
+  const [saved, setSaved] = useState(false)
   if (shown !== row.name) {
     setShown(row.name)
     setText(row.name)
@@ -492,7 +504,8 @@ function CategoryRow({
       setText(row.name)
       return
     }
-    if (!(await write(() => renameCategory(supabase, row.id, name)))) setText(row.name)
+    if (await write(() => renameCategory(supabase, row.id, name))) setSaved(true)
+    else setText(row.name)
   }
 
   const step = (direction: 'up' | 'down') => {
@@ -507,33 +520,41 @@ function CategoryRow({
   }
 
   return (
-    <li className="py-1">
+    <li className="px-4 py-2 sm:px-5">
       {/* The name keeps at least 4rem beside its four buttons; with the
         phone's text at 200% that is no longer room for all five, so the
-        buttons wrap under the name rather than run off the screen (N58). */}
+        buttons wrap under the name rather than run off the screen (N58).
+        A list's fields come under the name, or between the name and the
+        buttons from the card's @2xl (SetupPlans, SetupPay). */}
       <div className="flex flex-wrap items-center justify-end gap-1">
         <input
           aria-label={`Rename ${row.name}`}
           value={text}
           maxLength={60}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value)
+            setSaved(false)
+          }}
           onBlur={() => void rename()}
           onKeyDown={(e) => {
             if (e.key === 'Enter') e.currentTarget.blur()
             // Back to the stored name; leaving the field then saves nothing.
             if (e.key === 'Escape') setText(row.name)
           }}
-          className="min-w-0 flex-1 basis-16 rounded-t-md border-b border-input bg-transparent px-1 py-1.5 text-sm outline-none pointer-coarse:min-h-11 focus-visible:ring-2 focus-visible:ring-ring"
+          // The rule under the name is its only edge, so it keeps the field
+          // grey's 3:1 (FE-5) rather than the card's fainter border.
+          className="order-0 min-w-0 flex-1 basis-16 rounded-t-md border-b border-input bg-transparent px-1 py-1.5 text-base outline-none pointer-coarse:min-h-11 focus-visible:ring-2 focus-visible:ring-ring"
         />
-        <Button variant="ghost" size="icon" aria-label={`Move ${row.name} up`} disabled={list[0]?.id === row.id} onClick={() => step('up')}>
+        {saved ? <Icon name="check" className="order-0 size-4 shrink-0 text-income" aria-label="Saved" /> : null}
+        <Button variant="ghost" size="icon" className={BUTTON_ORDER} aria-label={`Move ${row.name} up`} disabled={list[0]?.id === row.id} onClick={() => step('up')}>
           <Icon name="up" />
         </Button>
-        <Button variant="ghost" size="icon" aria-label={`Move ${row.name} down`} disabled={list.at(-1)?.id === row.id} onClick={() => step('down')}>
+        <Button variant="ghost" size="icon" className={BUTTON_ORDER} aria-label={`Move ${row.name} down`} disabled={list.at(-1)?.id === row.id} onClick={() => step('down')}>
           <Icon name="down" />
         </Button>
         {/* A native picker under an icon: on a phone it opens the system wheel.
           The picker is invisible, so its focus is drawn on the icon (FE-3). */}
-        <span className="relative inline-flex size-10 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring pointer-coarse:size-11">
+        <span className="relative order-1 inline-flex size-10 shrink-0 @2xl:order-2 items-center justify-center rounded-md text-muted-foreground hover:bg-accent has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring pointer-coarse:size-11">
           <Icon name="move" className="size-4" />
           <select
             aria-label={`Move ${row.name} to another list`}
@@ -557,14 +578,14 @@ function CategoryRow({
         <Button
           variant="ghost"
           size="icon"
-          className="text-muted-foreground"
+          className={cn('text-muted-foreground', BUTTON_ORDER)}
           aria-label={`Remove ${row.name}`}
           onClick={() => void write(() => removeCategory(supabase, row.id))}
         >
           <Icon name="trash" />
         </Button>
+        {children}
       </div>
-      {children}
     </li>
   )
 }

@@ -6,6 +6,7 @@ import { formatIsoDate } from '../format.js'
 import { Button } from '../components/ui/button.js'
 import { Input, NativeSelect, refusal } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
+import { ColumnHeads } from './SetupPlans.js'
 
 /**
  * When each income source pays, inside Setup's Income card: START HERE's
@@ -49,18 +50,19 @@ const FREQUENCIES: readonly PayFrequency[] = ['weekly', 'biweekly', 'monthly']
 /** The two columns' headings, and the workbook's note on them (START HERE!C7, E7), shortened. */
 export function PayHeadings() {
   return (
-    <div className="mt-2 space-y-1 border-t border-income-rule pt-2">
-      {/* Laid out as each row is, so the headings sit over their fields and
-        wrap where the fields do. */}
-      <p className="flex flex-wrap gap-x-2 text-xs font-medium text-income-ink" aria-hidden="true">
-        <span className="w-[7.5rem] shrink-0">Paid</span>
-        <span className="min-w-0 flex-1 basis-32">First payday</span>
-      </p>
-      <p className="text-xs text-muted-foreground">
+    <>
+      <p className="mt-3 px-4 text-sm text-muted-foreground sm:px-5">
         How often it pays, and one day it paid. The Paycheck view counts its pay periods from them. Leave both blank
         if it pays at no set time.
       </p>
-    </div>
+      <ColumnHeads>
+        {/* Laid out as each row's fields are, so each head sits over its field. */}
+        <span className="flex min-w-0 flex-wrap gap-x-2 @2xl:w-[20.5rem] @2xl:flex-nowrap">
+          <span className="w-[7.5rem] shrink-0">How often</span>
+          <span className="min-w-0 flex-1">First payday</span>
+        </span>
+      </ColumnHeads>
+    </>
   )
 }
 
@@ -132,11 +134,12 @@ export function PayFields({
   }
 
   return (
-    <div className="pb-1 pl-1">
-      {/* Side by side, under their headings, while both fit; with the
-        phone's text at 200% the day and Clear go under the choice, rather
-        than push Clear off the screen (N58). */}
-      <div className="flex flex-wrap items-center gap-2">
+    // On the name's line from the card's @2xl, as Setup's monthly amounts are.
+    <div className="order-2 basis-full pt-1 @2xl:contents">
+      {/* Side by side while both fit; with the phone's text at 200% the day
+        and Clear go under the choice, rather than push Clear off the
+        screen (N58). */}
+      <div className="flex flex-wrap items-center gap-2 @2xl:order-1 @2xl:w-[20.5rem] @2xl:shrink-0 @2xl:flex-nowrap">
         <div className="w-[7.5rem] shrink-0">
           <NativeSelect
             aria-label={`How often ${row.name} pays`}
@@ -186,7 +189,7 @@ export function PayFields({
         </div>
       </div>
       {problem !== null ? (
-        <p id={problemId} role="alert" className="mt-1 text-xs text-destructive">
+        <p id={problemId} role="alert" className="mt-1 text-xs text-destructive @2xl:order-3 @2xl:basis-full">
           {problem}
         </p>
       ) : null}
