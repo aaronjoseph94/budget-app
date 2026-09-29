@@ -3020,6 +3020,9 @@ still defined and measured.
 `owed-rule` and `income-rule` on its cards; the `setup` set is still
 defined and measured, and `owed` is still the Year's Expenses.
 
+**Also (2026-09-29, step 12):** every step of the README has landed, so
+this clean-up is now due.
+
 **To settle:** after step 12, remove every token no class uses, with its
 contrast rows, in one commit.
 
@@ -3144,3 +3147,38 @@ cards), which is a change to how a row works, not its look.
 **To settle:** below a card width of about 24rem, put the four buttons
 under the name, as a phone at 200% text already does (N58), and check
 1280 and 1440 in light and dark.
+
+---
+
+## N136 — On a computer, AI settings has no way in once AI is on
+
+**Seen:** 2026-09-29, Mockup A step 12. ADR 0011 says AI settings lights
+Settings, "which links to it", but SettingsScreen has shortcuts to
+Getting started and Setup only. The sidebar and rail have no item for it
+and More is a phone's, so on a computer the only ways in are the "Turn on
+free AI" and "Open AI settings" links, shown while AI is off or not set
+up. With AI on, choosing services, the tone or shop names has no link.
+Help's four AI settings articles therefore still say "Open More, then AI
+settings".
+
+**Why not fixed here:** it adds a link to Settings, a navigation change,
+not the restyle of Help.
+
+**To settle:** give Settings an "Open AI settings" shortcut beside Open
+Setup, as ADR 0011 already describes, with a screen test; then Help's
+four steps can say "Open **AI settings** from **Settings**".
+
+---
+
+## N137 — Getting started says "come back any time from More" on a computer
+
+**Seen:** 2026-09-29, Mockup A step 12. Under each step: "Nothing breaks
+if you stop here. You can come back any time from More." On a computer
+More is not in the sidebar (ADR 0011); Getting started is reached from
+Settings or the Month's button there.
+
+**Why not fixed here:** the sentence is the screen's own copy, which a
+restyle keeps.
+
+**To settle:** say "from Settings, or More on a phone", as Help's Start
+here now does, and change getting-started.test's matcher with it.

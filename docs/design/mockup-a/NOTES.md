@@ -472,3 +472,41 @@ and the amber Review count.
 - **No figure is missing.** Every figure is core's, as before:
   `billsTotals` for each card's total and Fixed monthly bills,
   `resolvePlans` for the fields, today's calls from the helper.
+
+## 2026-09-29 — Step 12, Help, Getting started and Sign in
+
+- **Help's list beside the article from 1024px,** 18rem wide, 20rem from
+  1280px, drawn only on a wide screen (`useWide`), as the Year draws one
+  layout, not both. Beside an article the list shows titles alone, in a
+  nav named "Help articles", the open one lit (`aria-current="page"`);
+  "Help" over it is words, not a heading, so the article's title stays the
+  page's only h1. "‹ Help" leaves there, since the list is the way back.
+  `#/help` alone keeps the centred list with each summary; only the list
+  standing alone takes ⌘K's search, so the ask is never spent on a list
+  about to be replaced.
+- **An article's steps are a card,** "You're done when…" (with the
+  mockup's check, in the accent, not Income's green) and "Stuck?" two
+  across where the column allows. No Help card keeps a shadow, the ?
+  sheet's words list included.
+- **Help's wording** (the step's fourth item): steps that said "Open More,
+  then Savings" and Reports' "from the bar at the top on a wide screen"
+  described the look before the sidebar. Each now names the screen and
+  says it is under More on a phone. AI settings' steps still say More: on
+  a computer nothing else leads to it once AI is on (N136).
+- **Getting started:** the Month's title; an empty segment in the track
+  grey (it was the near-white hover fill, near invisible), the step showing
+  a taller ringed segment. The step is the one hero, white to the accent's
+  tint, its muted words and field edges in `canvas-muted`. From 1280px
+  "All 9 steps" lies open beside it, still the same details, so Help's
+  "open All 9 steps" stays true; narrower, folded under the buttons.
+- **Sign in:** the sidebar's wallet tile, "Budget" and its line centred
+  over the one card with a shadow (README), on the canvas washed with the
+  accent's tint at the top. Field names bold, not small capitals; Sign in
+  runs the card's width. "Check your email" is the card's heading.
+- **Copy left out:** Help's "ARTICLE" over the title, the "✨ Ask about
+  this" pill beside Related (the ? sheet keeps it; adding it here is new
+  behaviour), the search box's magnifier (as on All transactions), and the
+  sign-in's "Accounts are made in the Supabase dashboard. There is no
+  sign-up here.", which is auth.tsx's comment, not its copy.
+- **No figure is missing.** Getting started's count and order are core's
+  `setupProgress`, as before; Help and Sign in show no figures.
