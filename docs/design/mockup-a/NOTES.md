@@ -318,3 +318,53 @@ and the amber Review count.
   `monthEndForecast`, `safeToSpend`, `cashFlow30`, `cashFlowAhead`,
   `scaleSeries`, the goal outlooks and `whatIf`, `debtPlan`, and
   `monthReport` and the Trends, Shops and Habits reads.
+
+## 2026-09-29 — Step 9, Savings and Debts
+
+- **Both title rows are the Month's:** the serif italic titles, Savings'
+  yellow banner and Debts' rose banner and grey page go. Add a goal and
+  Add a debt sit on the title row's right from 640px, as the mockup draws
+  them, full width under the words on a phone. Both screens widen with
+  the sidebar, their cards three across from 1280px.
+- **Goal cards** are white with Savings' amber title strip
+  (`savings-title`, now #FFFBEB), an icon tile in Savings' tile and
+  accent, and the name at 18px in ink. The tile is a plane for a goal
+  counted in hours and a piggy bank for the rest, as the sidebar's goal
+  card chooses. Figures are in ink and labels muted; the bar is amber on
+  its tile; "Amount needed" keeps Savings' ink on its band. The hours
+  line sits on the accent's soft fill, as the mockup draws it, and the
+  lever in a plain bordered box. Saved this month is tinted to Savings'
+  amber, the list it counts. "Main goal" takes the filled accent badge.
+- **Every goal action stays**, as it was laid out: Edit goal, Make main
+  goal and the arrows on one line; Pause, Mark as reached and Remove on
+  the next. The mockup draws Remove as a bin alone and leaves Mark as
+  reached out of sight; the app keeps both words.
+- **The debt summary** is one wide card tinted to the accent, the one
+  hero on the screen, as on the Month, the Week and the Forecast. Two by
+  two beside the ring until 1280px (design review P2 item 13), four across
+  from there. Below 640px the total takes a row of its own: beside the
+  ring at 390px it broke inside the number, as it did before this step.
+- **Hues on Debts (ADR 0010).** The mockup draws the rings and the chosen
+  plan in violet, which ADR 0010 keeps for Subscriptions. They take the
+  accent instead, as the mockup's other non-list tints did in steps 3–8.
+  Each debt's tile and labels take Debts' rose, as the Year's Debts today
+  already draws these same debts. The screen's first line says these are
+  not the Month's Debts list; rose here means "a debt", the one meaning
+  the hue has everywhere.
+- **The rings (N124):** chart-specs' `debtRing` keeps its shape and takes
+  new colours: what is paid in the accent #4F46E5 over the neutral track
+  #E5E7EB, the centre in ink. The accent's soft fill was tried as the
+  track and vanished where the summary's tint ends.
+- **The chosen plan is Minimums only.** The app has no plan to choose:
+  the summary and the Forecast's debt-free line both follow `debtPlan`,
+  which is Minimums only. So that card is the one tinted. The
+  mockup tints Avalanche, which was only its sample; saying which plan is
+  cheapest would take a comparison core does not give, and choosing a
+  plan is a feature, not a restyle. The tint has no word of its own; its
+  date matches the summary's Debt-free by above it.
+- **Left as it was:** "A card you pay off from your bank…" stays under
+  the intro, where the mockup moves it to the foot, since it qualifies
+  the first sentence.
+- **Copy:** nothing new. No figure is missing: every figure is core's, as
+  before (`savingsFunds`, `goalProgress`, `periodComparison`, the levers,
+  `debtPlan`, `debtStatus`, `debtBalanceChange`, `payoffStrategies`).

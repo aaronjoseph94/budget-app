@@ -2902,6 +2902,10 @@ sparklines, spending grid labels and weekday track now carry Mockup A's
 colours in their attributes. Only the Debts screen's ring (step 9) still
 carries the workbook's.
 
+**Settled, 2026-09-29, step 9:** the Debts screen's rings now carry
+Mockup A's accent and track in their attributes. No chart carries the
+workbook's colours any more.
+
 ---
 
 ## N125 — No engine output gives a list's Actual over its budget *(settled 2026-09-29)*
@@ -3006,6 +3010,10 @@ once their screens' steps land.
 (no striped rows), `home-canvas` (no grey behind the glance), `home-card`
 (the glance cards are `card`), or `summary-label` and `summary` in its
 totals panel. They are still defined and measured.
+
+**Also (2026-09-29, step 9):** Savings and Debts no longer draw
+`savings-banner`, `debt-banner`, `debt-page` or `debt-label`; they are
+still defined and measured.
 
 **To settle:** after step 12, remove every token no class uses, with its
 contrast rows, in one commit.
