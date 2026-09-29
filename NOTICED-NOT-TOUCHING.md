@@ -3001,7 +3001,7 @@ contrast rows, in one commit.
 
 ---
 
-## N130 — A list whose bills mostly have no budget shows a very large % pill
+## N130 — A list whose bills mostly have no budget shows a very large % pill *(settled 2026-09-29)*
 
 **Seen:** 2026-09-29, review of the % pill (F50). In the preview's Week,
 Bills reads "$1,695.50 of $70.00" and its pill "2422%": Rent and the
@@ -3019,3 +3019,14 @@ decision (F50), not a restyle; changing it needs the owner's choice.
 B: no pill on a list where any row with spending has no budget; C: take
 a planned bill's amount as its budget for the head and the pill. Record
 the answer as an amendment to F50.
+
+**Settled 2026-09-29, the owner's choice C:** "Use planned amount as
+budget. A bill's monthly amount counts as its budget, so Bills shows about
+100% when bills are paid as planned, like the mockup." F51 and D30 record
+the rule: on a bill, debt or subscription with no budget typed, the amount
+F8 counts in the window stands as its budget; a typed one, $0 included,
+wins. Core gives each row `effectiveBudgetCents` and each list
+`effectiveBudgetTotalCents`; the pill, "$X of $Y", the head bar, the
+Budgeted cell (marked "planned") and Left read them on the Month, the Week
+and Paycheck. The typed totals, Left to spend, the Year and the golden
+tests are unchanged.

@@ -170,7 +170,7 @@ export const ARTICLES: readonly Article[] = [
     ],
     done: 'each row on the Month shows Budgeted, Actual and Left, and the Bill calendar shows your bills on their days.',
     stuck:
-      'A bill with no charge yet this month counts its planned amount. When the real charge comes in, it takes the planned amount’s place, so it is never counted twice. When a shop charges a Bills, Debts or Subscriptions row every month and that row has no monthly amount, Setup says **Looks like a monthly bill: add it?** Press **Fill it in**, check the day and the amount, then press **Save**; nothing is saved until you do.',
+      'A bill with no charge yet this month counts its planned amount. When the real charge comes in, it takes the planned amount’s place, so it is never counted twice. With no budget typed, a bill’s planned amount is its budget, marked planned, so a bill paid as planned is 100% and 0.00 left; a budget you type, even $0.00, is used instead. When a shop charges a Bills, Debts or Subscriptions row every month and that row has no monthly amount, Setup says **Looks like a monthly bill: add it?** Press **Fill it in**, check the day and the amount, then press **Save**; nothing is saved until you do.',
     related: ['periods', 'wrong-number', 'start'],
   },
   {

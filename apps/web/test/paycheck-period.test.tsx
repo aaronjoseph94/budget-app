@@ -62,9 +62,9 @@ describe('PaycheckPeriod', () => {
     expect(await summary('Spent')).toBe('$801.45')
     expect(await summary('Left to spend')).toBe('$231.92')
     expect(screen.queryByText(/No budgets on Variable expenses/)).toBeNull()
-    expect(await cells('Bills', 'Rent')).toEqual(['', '738.46planned', '0.00'])
+    expect(await cells('Bills', 'Rent')).toEqual(['738.46planned', '738.46planned', '0.00'])
     // Its share, 17.99 × 12 ÷ 26 = 8.30, stands as its budget (F51): 9.69 over.
-    expect(await cells('Subscriptions', 'Streaming')).toEqual(['', '17.99', '-9.69'])
+    expect(await cells('Subscriptions', 'Streaming')).toEqual(['8.30planned', '17.99', '-9.69'])
     expect(await cells('Variable expenses', 'Groceries')).toEqual(['276.92', '45.00', '231.92'])
     expect(await cells('Income', 'Day job')).toEqual(['2,307.69', '2,500.00'])
     // Typed on the Month, so shown here and not typed.
@@ -127,7 +127,7 @@ describe('PaycheckPeriod', () => {
 
     expect(await cells('Variable expenses', 'Groceries')).toEqual(['276.92', '20.00', '256.92'])
     // 25 September's payday is in September: its amounts are September's.
-    expect(await cells('Bills', 'Rent')).toEqual(['', '738.46planned', '0.00'])
+    expect(await cells('Bills', 'Rent')).toEqual(['738.46planned', '738.46planned', '0.00'])
     expect(screen.getByRole('heading', { name: 'Pay period' })).toBeTruthy()
     expect(screen.getByText('25 Sep – 8 Oct · Day job, paid bi-weekly')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Next pay period' }))
@@ -138,7 +138,7 @@ describe('PaycheckPeriod', () => {
 
   it('shows the whole monthly amount to someone paid monthly, and a week’s share to someone paid weekly', async () => {
     show(seeded(), null, { ...BIWEEKLY, first_pay_date: '2026-01-15', frequency: 'monthly' })
-    expect(await cells('Bills', 'Rent')).toEqual(['', '1,600.00planned', '0.00'])
+    expect(await cells('Bills', 'Rent')).toEqual(['1,600.00planned', '1,600.00planned', '0.00'])
     // 15 September to 14 October: the 12th's 45.00 is in the period before.
     expect(await cells('Variable expenses', 'Groceries')).toEqual(['600.00', '20.00', '580.00'])
     expect(screen.getByText('15 Sep – 14 Oct · Day job, paid monthly')).toBeTruthy()
@@ -147,7 +147,7 @@ describe('PaycheckPeriod', () => {
 
     // Weekly from Friday 18 September: 1600.00 × 12 ÷ 52 = 369.23; 600.00 → 138.46.
     show(seeded(), null, { ...BIWEEKLY, first_pay_date: '2026-09-18', frequency: 'weekly' })
-    expect(await cells('Bills', 'Rent')).toEqual(['', '369.23planned', '0.00'])
+    expect(await cells('Bills', 'Rent')).toEqual(['369.23planned', '369.23planned', '0.00'])
     expect(await cells('Variable expenses', 'Groceries')).toEqual(['138.46', '', '138.46'])
     expect(screen.getByText(/12 months over 52 paydays: a week’s share\./)).toBeTruthy()
   })

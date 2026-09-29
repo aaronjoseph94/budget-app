@@ -102,6 +102,11 @@ and the amber Review count.
 - **Whole percentages,** by the app's one percentage helper, so 99.6%
   reads "100%" while the list is not yet over; the Left column and its
   rose pill say which rows are.
+- **Amended by the owner's choice (N130, F51):** on Bills, Debts and
+  Subscriptions a planned amount stands as a row's budget where none is
+  typed, so the pill, "$X of $Y" and the bar are over the effective total,
+  and the Budgeted cell shows the plan marked "planned", as the Actual
+  column does. Bills paid as planned read about 100%, as the mockup draws.
 
 ## 2026-09-29 — Step 4, the Week and Paycheck
 

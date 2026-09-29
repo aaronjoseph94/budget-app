@@ -377,16 +377,42 @@ function planned(): FakeSupabase {
 }
 
 describe('MonthScreen planned amounts', () => {
-  // Hand-derived. Bills: rent planned 1,600.00 + phone real 55.00 = 1,655.00.
+  // Hand-derived, by core's budgetUsedBp over the effective total (F50, F51):
+  // Bills 1,655.00 of 1,650.00 is 10,030 bp, "100%", where typed budgets
+  // alone gave none. Phone's typed 100.00 then wins over its 50.00 plan:
+  // 45.00 left, and 1,655.00 of 1,700.00 is 9,735 bp, "97%", its bar 97.35%.
+  it("takes a bill's planned amount as its budget in the pill, the head, Budgeted and Left, and a typed one over it", async () => {
+    const pill = (name: string) => block(name).getByRole('heading').closest('div')?.nextElementSibling?.textContent
+    renderScreen(<MonthScreen month="2026-09" />, planned())
+    await screen.findByRole('region', { name: 'Bills' })
+    expect(pill('Bills')).toBe('100% of the budget')
+    expect(block('Bills').getByRole('button', { name: 'Budget for Rent, none set, $1,600.00 planned' }).textContent).toBe('1,600.00planned')
+    cleanup()
+
+    const fake = planned()
+    fake.tables.category_budgets.push(budget('b1', 'phone', '2026-09-01', 'onward', 10000))
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+    await screen.findByRole('region', { name: 'Bills' })
+    expect(band('Bills')).toBe('$1,655.00 of $1,700.00')
+    expect(pill('Bills')).toBe('97% of the budget')
+    const bar = block('Bills').getByRole('heading').closest('div')?.parentElement?.nextElementSibling?.firstElementChild as HTMLElement
+    expect(bar.style.width).toBe('97.35%')
+    expect(cells('Bills', 'Phone')).toEqual(['100.00', '55.00', '45.00'])
+    expect(block('Bills').getByRole('button', { name: 'Budget for Phone, $100.00' })).toBeTruthy()
+    await expectNoAxeViolations()
+  })
+
+  // Hand-derived. Bills: rent planned 1,600.00 + phone real 55.00 = 1,655.00,
+  // of their plans 1,600.00 + 50.00 = 1,650.00 standing as budgets (F51).
   // Spent: variable 85.00 + 1,655.00 = 1,740.00 (F7).
   it('counts a monthly amount where nothing real is filed, says so, and puts it in Spent', async () => {
     renderScreen(<MonthScreen month="2026-09" />, planned())
     await screen.findByRole('region', { name: 'Bills' })
 
-    expect(cells('Bills', 'Rent')).toEqual(['', '1,600.00planned', '0.00'])
+    expect(cells('Bills', 'Rent')).toEqual(['1,600.00planned', '1,600.00planned', '0.00'])
     // Its 50.00 plan stands as its budget (F51): 5.00 over.
-    expect(cells('Bills', 'Phone')).toEqual(['', '55.00', '-5.00'])
-    expect(band('Bills')).toBe('$1,655.00')
+    expect(cells('Bills', 'Phone')).toEqual(['50.00planned', '55.00', '-5.00'])
+    expect(band('Bills')).toBe('$1,655.00 of $1,650.00')
     // Starts in October, so nothing here yet.
     expect(block('Subscriptions').queryByRole('rowheader', { name: 'Music' })).toBeNull()
     const summary = within(screen.getByRole('region', { name: 'Summary' }))
@@ -400,9 +426,9 @@ describe('MonthScreen planned amounts', () => {
     await screen.findByRole('heading', { name: 'October 2026' })
 
     expect((await loaded('Bills')).getByRole('rowheader', { name: 'Rent' })).toBeTruthy()
-    expect(cells('Bills', 'Rent')).toEqual(['', '1,700.00planned', '0.00'])
-    expect(cells('Bills', 'Phone')).toEqual(['', '50.00planned', '0.00'])
-    expect(cells('Subscriptions', 'Music')).toEqual(['', '11.99planned', '0.00'])
+    expect(cells('Bills', 'Rent')).toEqual(['1,700.00planned', '1,700.00planned', '0.00'])
+    expect(cells('Bills', 'Phone')).toEqual(['50.00planned', '50.00planned', '0.00'])
+    expect(cells('Subscriptions', 'Music')).toEqual(['11.99planned', '11.99planned', '0.00'])
     const summary = within(screen.getByRole('region', { name: 'Summary' }))
     expect(summary.getByText('Spent').nextSibling?.textContent).toBe('$1,761.99')
   })

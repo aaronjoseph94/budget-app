@@ -494,6 +494,25 @@ function MiniBar({ row, fill }: { row: Row; fill: string }) {
   return <Bar bp={filledBp(row.budgetCents, row.actualCents)} fill={over ? 'bg-spend-bar' : fill} className="mt-1.5 h-[3px] w-full max-w-40" />
 }
 
+/**
+ * A row's Budgeted or Goal: as typed, or a bill's planned amount standing as
+ * its budget, marked "planned" on a line of its own (F51). Blank with neither.
+ */
+function BudgetCell({ row }: { row: Row }) {
+  if (row.effectiveBudgetCents === null) return null
+  return (
+    <>
+      {formatAmount(row.effectiveBudgetCents)}
+      {/* An inline-block word takes no underline from the budget button around it. */}
+      {row.budgetBasis === 'planned' ? (
+        <span className="block leading-none">
+          <span className="inline-block text-xs leading-none text-muted-foreground xl:text-[0.625rem]">planned</span>
+        </span>
+      ) : null}
+    </>
+  )
+}
+
 /** A bar with no words, drawn from basis points. */
 function Bar({ bp, fill, className }: { bp: number | null; fill: string; className: string }) {
   return (
@@ -587,11 +606,12 @@ export function Block({
   const empty = block.rows.filter(isEmpty).length
   const shown = showEmpty ? block.rows : block.rows.filter((r) => !isEmpty(r))
   // "of $0.00" would read as a budget of nothing, so the head names a budget
-  // total only once a budget or goal is set on the list.
-  const budgeted = block.rows.some((r) => r.budgetCents !== null)
-  // The % pill: the Actual over the budget total, from core (F50); null, no
-  // pill, with no budget, a $0 one, or an Actual refunds took below zero.
-  const used = budgetUsedBp({ actualCents: block.actualTotalCents, budgetCents: block.budgetTotalCents }).usedBp
+  // total only once a budget or goal is set on the list, or a bill's planned
+  // amount stands as one (F51).
+  const budgeted = block.rows.some((r) => r.effectiveBudgetCents !== null)
+  // The % pill: the Actual over the same total as the head, from core (F50,
+  // F51); null, no pill, with no budget, a $0 one, or an Actual below zero.
+  const used = budgetUsedBp({ actualCents: block.actualTotalCents, budgetCents: block.effectiveBudgetTotalCents }).usedBp
 
   return (
     <section aria-label={heading} className={cn('overflow-hidden rounded-xl border bg-card', className)}>
@@ -608,7 +628,7 @@ export function Block({
             <h2 className="text-lg font-semibold leading-snug">{heading}</h2>
             <p className="text-[0.9375rem] text-muted-foreground">
               <Figure className="font-semibold text-foreground">{formatCents(block.actualTotalCents)}</Figure>
-              {budgeted ? <span className="tnum"> of {formatCents(block.budgetTotalCents)}</span> : null}
+              {budgeted ? <span className="tnum"> of {formatCents(block.effectiveBudgetTotalCents)}</span> : null}
               {/* Under $1 is the same (F26), and a chip saying so on every quiet list is noise. */}
               {/* Kept whole where it fits; with the phone's text at 200% it was
                 wider than the card and pushed the Month sideways (N58). */}
@@ -628,7 +648,7 @@ export function Block({
             </span>
           )}
         </div>
-        {budgeted ? <Bar bp={filledBp(block.budgetTotalCents, block.actualTotalCents)} fill={tone.bar} className="h-2" /> : null}
+        {budgeted ? <Bar bp={filledBp(block.effectiveBudgetTotalCents, block.actualTotalCents)} fill={tone.bar} className="h-2" /> : null}
       </div>
       {block.rows.length === 0 ? (
         <p className="px-4 py-3 text-sm text-muted-foreground">
@@ -690,10 +710,12 @@ export function Block({
                     )}
                   </th>
                   {/* Its own tap: the budget is typed here, in the row, and the
-                    charges do not open. A pencil where none is set yet. */}
+                    charges do not open. A pencil where none is set yet; a
+                    bill's planned amount where it stands as the budget (F51),
+                    marked as the Actual marks one. */}
                   <td className="tnum whitespace-nowrap px-1 py-2 text-right">
                     {editor === undefined ? (
-                      r.budgetCents === null ? '' : formatAmount(r.budgetCents)
+                      <BudgetCell row={r} />
                     ) : (
                       <button
                         type="button"
@@ -701,7 +723,7 @@ export function Block({
                           if (el === null) openers.current.delete(r.categoryId)
                           else openers.current.set(r.categoryId, el)
                         }}
-                        aria-label={`${word} for ${r.name}, ${r.budgetCents === null ? 'none set' : formatCents(r.budgetCents)}`}
+                        aria-label={`${word} for ${r.name}, ${r.budgetCents === null ? 'none set' : formatCents(r.budgetCents)}${r.budgetBasis === 'planned' && r.effectiveBudgetCents !== null ? `, ${formatCents(r.effectiveBudgetCents)} planned` : ''}`}
                         aria-expanded={editing === r.categoryId}
                         onClick={(e) => {
                           e.stopPropagation()
@@ -711,13 +733,15 @@ export function Block({
                         }}
                         // A finger gets the whole cell, 44px tall, not the
                         // 14px pencil or the amount's own width (FE-1).
-                        className="rounded-sm underline decoration-dotted underline-offset-4 outline-none hover:decoration-solid focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:-my-2 pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:w-full pointer-coarse:min-w-11 pointer-coarse:items-center pointer-coarse:justify-end"
-                      >
-                        {r.budgetCents === null ? (
-                          <Icon name="pencil" className="inline size-3.5 opacity-60" />
-                        ) : (
-                          formatAmount(r.budgetCents)
+                        // A planned amount stacks over its word, as in the Actual column.
+                        className={cn(
+                          'rounded-sm underline decoration-dotted underline-offset-4 outline-none hover:decoration-solid focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:-my-2 pointer-coarse:inline-flex pointer-coarse:min-h-11 pointer-coarse:w-full pointer-coarse:min-w-11',
+                          r.budgetBasis === 'planned'
+                            ? 'pointer-coarse:flex-col pointer-coarse:items-end pointer-coarse:justify-center'
+                            : 'pointer-coarse:items-center pointer-coarse:justify-end',
                         )}
+                      >
+                        {r.budgetBasis === 'none' ? <Icon name="pencil" className="inline size-3.5 opacity-60" /> : <BudgetCell row={r} />}
                       </button>
                     )}
                   </td>
