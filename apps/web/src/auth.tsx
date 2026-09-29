@@ -5,6 +5,7 @@ import { Label } from './ui.js'
 import { Input, refusal } from './components/ui/form.js'
 import { Button } from './components/ui/button.js'
 import { Card } from './components/ui/card.js'
+import { Icon } from './components/ui/icons.js'
 import { Alert } from './components/ui/feedback.js'
 import { LINE_BUTTON } from './components/ui/link.js'
 import { cn } from './lib/cn.js'
@@ -142,105 +143,113 @@ export function SignIn({ supabase, linkRefused = false }: { supabase: SupabaseCl
 
   // <main>, as the signed-in app's screens are: a screen reader finds the
   // page by its landmark, and axe flags a page without one (FE-14).
+  // Mockup A: a centred card on the canvas, washed with the accent's tint at
+  // the top; muted words off the card take the grey measured on both.
   return (
-    <main className="mx-auto flex min-h-full w-full max-w-md flex-col justify-center px-4 py-12">
-      <h1 className="text-2xl font-semibold tracking-tight">Budget</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Your statements and your spending, visible only to you.
-      </p>
-
-      {linkRefused && attempt.kind === 'idle' ? (
-        <div className="mt-6">
-          <Alert tone="error">{LINK_REFUSED}</Alert>
+    <main className="flex min-h-dvh flex-col items-center justify-center bg-linear-to-b from-primary-tint to-canvas px-4 py-12 [--muted-foreground:var(--canvas-muted)]">
+      <div className="w-full max-w-[26rem]">
+        <div className="flex flex-col items-center text-center">
+          <span className="flex size-14 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <Icon name="wallet" className="size-7" />
+          </span>
+          <h1 className="mt-4 text-[1.75rem] font-bold leading-tight tracking-[-0.02em]">Budget</h1>
+          <p className="mt-1 text-muted-foreground">Your statements and your spending, visible only to you.</p>
         </div>
-      ) : null}
 
-      <Card className="mt-8 p-5">
-        {attempt.kind === 'link-sent' ? (
-          <div>
-            <Label>Check your email</Label>
-            <p className="mt-2 text-sm">
-              A sign-in link is on its way to{' '}
-              <strong className="font-medium">{attempt.email}</strong>. Open it on this device, in
-              this same browser, and you are in. If you asked from the app on your Home Screen, sign in there with
-              your password instead: its links open in another browser.
-            </p>
-            <div className="mt-4">
-              <Button variant="outline" onClick={() => setAttempt({ kind: 'idle' })}>
-                Back
-              </Button>
-            </div>
+        {linkRefused && attempt.kind === 'idle' ? (
+          <div className="mt-6">
+            <Alert tone="error">{LINK_REFUSED}</Alert>
           </div>
-        ) : (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              void submit()
-            }}
-          >
-            {/* The app's own field: 44 px tall and 16 px text, where these were
-              41 px and 14 (FE-1). */}
-            <label className="block">
-              <Label>Email address</Label>
-              <Input
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                {...refused}
-                className="mt-1"
-              />
-            </label>
+        ) : null}
 
-            {method === 'password' ? (
-              <label className="mt-3 block">
-                <Label>Password</Label>
+        {/* The one card in the app with a shadow (Mockup A). */}
+        <Card flat className="mt-7 p-6 shadow-[0_10px_30px_rgba(17,24,39,.06)] sm:p-7">
+          {attempt.kind === 'link-sent' ? (
+            <div>
+              <h2 className="font-semibold">Check your email</h2>
+              <p className="mt-2 text-sm">
+                A sign-in link is on its way to{' '}
+                <strong className="font-medium">{attempt.email}</strong>. Open it on this device, in
+                this same browser, and you are in. If you asked from the app on your Home Screen, sign in there with
+                your password instead: its links open in another browser.
+              </p>
+              <div className="mt-4">
+                <Button variant="outline" onClick={() => setAttempt({ kind: 'idle' })}>
+                  Back
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                void submit()
+              }}
+            >
+              {/* The app's own field: 44 px tall and 16 px text, where these were
+                41 px and 14 (FE-1). */}
+              <label className="block">
+                <span className="text-sm font-semibold">Email address</span>
                 <Input
-                  type="password"
+                  type="email"
                   required
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
                   {...refused}
-                  className="mt-1"
+                  className="mt-1.5"
                 />
               </label>
-            ) : null}
 
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <Button type="submit" disabled={busy}>
-                {busy ? 'Signing in…' : method === 'password' ? 'Sign in' : 'Email me a link'}
-              </Button>
-              {/* 44 px for a finger, as the Year's line buttons are (A26). */}
-              <button
-                type="button"
-                className={cn('text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground', LINE_BUTTON)}
-                onClick={() => {
-                  setMethod(method === 'password' ? 'link' : 'password')
-                  setAttempt({ kind: 'idle' })
-                }}
-              >
-                {method === 'password' ? 'Email me a link instead' : 'Use a password instead'}
-              </button>
-            </div>
+              {method === 'password' ? (
+                <label className="mt-4 block">
+                  <span className="text-sm font-semibold">Password</span>
+                  <Input
+                    type="password"
+                    required
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    {...refused}
+                    className="mt-1.5"
+                  />
+                </label>
+              ) : null}
 
-            {attempt.kind === 'failed' ? (
-              <p ref={reason} id={reasonId} role="alert" tabIndex={-1} className="mt-3 text-sm text-spend outline-none">
-                {attempt.message}
-              </p>
-            ) : null}
+              <div className="mt-5 flex flex-col items-center gap-2">
+                <Button type="submit" size="lg" disabled={busy} className="w-full">
+                  {busy ? 'Signing in…' : method === 'password' ? 'Sign in' : 'Email me a link'}
+                </Button>
+                {/* 44 px for a finger, as the Year's line buttons are (A26). */}
+                <button
+                  type="button"
+                  className={cn('text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground', LINE_BUTTON)}
+                  onClick={() => {
+                    setMethod(method === 'password' ? 'link' : 'password')
+                    setAttempt({ kind: 'idle' })
+                  }}
+                >
+                  {method === 'password' ? 'Email me a link instead' : 'Use a password instead'}
+                </button>
+              </div>
 
-            {method === 'link' ? (
-              <p className="mt-3 text-xs text-muted-foreground">
-                Emailed links are limited to a few per hour on this project’s mail settings. A
-                password has no such limit.
-              </p>
-            ) : null}
-          </form>
-        )}
-      </Card>
+              {attempt.kind === 'failed' ? (
+                <p ref={reason} id={reasonId} role="alert" tabIndex={-1} className="mt-3 text-sm text-spend outline-none">
+                  {attempt.message}
+                </p>
+              ) : null}
+
+              {method === 'link' ? (
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Emailed links are limited to a few per hour on this project’s mail settings. A
+                  password has no such limit.
+                </p>
+              ) : null}
+            </form>
+          )}
+        </Card>
+      </div>
     </main>
   )
 }

@@ -106,6 +106,17 @@ describe('the sign-in page (FE-14)', () => {
     render(<SignIn supabase={createFakeSupabase().client} />)
     expect(screen.getByRole('main').textContent).toContain('Email address')
   })
+
+  // Mockup A: the name over a centred card, which holds the whole form.
+  it('names itself Budget over one card holding the form, with no axe violations', async () => {
+    render(<SignIn supabase={createFakeSupabase().client} />)
+    const title = screen.getByRole('heading', { level: 1, name: 'Budget' })
+    const form = screen.getByRole('button', { name: 'Sign in' }).closest('form')!
+    expect(title.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(form.contains(screen.getByLabelText('Email address'))).toBe(true)
+    expect(form.contains(screen.getByRole('button', { name: 'Email me a link instead' }))).toBe(true)
+    await expectNoAxeViolations()
+  })
 })
 
 describe('the sign-in fields (FE-1)', () => {
