@@ -87,6 +87,17 @@ describe('the top bar (ADR 0011)', () => {
     expect(window.location.hash).toBe('')
   })
 
+  it('takes ⌘K from the browser, and on a Mac leaves Ctrl+K to the text field it deletes a line in', async () => {
+    renderScreen(<Shell />, createFakeSupabase())
+    await screen.findByRole('heading', { name: 'September 2026' })
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) AppleWebKit/605.1.15')
+    // fireEvent returns false when the handler prevented the default.
+    expect(fireEvent.keyDown(window, { key: 'k', ctrlKey: true })).toBe(true)
+    expect(window.location.hash).toBe('')
+    expect(fireEvent.keyDown(window, { key: 'k', metaKey: true })).toBe(false)
+    expect(window.location.hash).toBe('#/help')
+  })
+
   it('offers + Add, and shows from 768px only, where the phone bar has its own Add', async () => {
     renderScreen(<Shell />, createFakeSupabase())
     await screen.findByRole('heading', { name: 'September 2026' })

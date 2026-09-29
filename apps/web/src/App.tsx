@@ -291,11 +291,16 @@ function openHelpSearch(): void {
   navigate('help')
 }
 
-/** ⌘K on a Mac, Ctrl+K elsewhere, from any screen, as the top bar's search says. */
+/**
+ * ⌘K on a Mac, Ctrl+K elsewhere, from any screen, as the top bar's search
+ * says. A Mac's Ctrl+K is left alone: in a text field it deletes to the end
+ * of the line, and taking it would leave the screen and its typing.
+ */
 function useSearchKey(): void {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || e.key.toLowerCase() !== 'k') return
+      const mac = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent)
+      if (!(mac ? e.metaKey : e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || e.key.toLowerCase() !== 'k') return
       e.preventDefault()
       openHelpSearch()
     }
