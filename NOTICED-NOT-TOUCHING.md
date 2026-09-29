@@ -2896,6 +2896,12 @@ savings-goal bars and debt bars now carry Mockup A's colours in their
 attributes. The Forecast's and Reports' charts, and the Debts screen's
 ring (step 9), still carry the workbook's.
 
+**Progress (2026-09-29, step 8):** the Forecast's range bar, 30-day line
+and months-ahead bands, and Reports' paired bars, trend lines,
+sparklines, spending grid labels and weekday track now carry Mockup A's
+colours in their attributes. Only the Debts screen's ring (step 9) still
+carries the workbook's.
+
 ---
 
 ## N125 — No engine output gives a list's Actual over its budget *(settled 2026-09-29)*
@@ -2962,6 +2968,11 @@ before step 3.
 **To settle:** draw the legend and labels as HTML beside the SVG, from
 the same core figures, or give chart-specs a narrow layout with larger
 text units, with its own tests.
+
+**Also (2026-09-29, step 8):** the Forecast's charts in half-width cards
+and on a phone write their labels as small: the range bar's "Today …" and
+"Most likely …" and the 30-day line's dates come out near 8 to 10 px at
+390 px, as they did in the full-width card before.
 
 ---
 

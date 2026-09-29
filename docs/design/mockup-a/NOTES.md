@@ -265,3 +265,56 @@ and the amber Review count.
   `goalsProgress`, the goal forecasts, the check-in's figures and
   `impulseShare`, and `answerQuery`'s answer. Nothing sent to or read from
   the AI changed, and every ✨ keeps its words for a screen reader.
+
+## 2026-09-29 — Step 8, the Forecast and Reports
+
+- **Safe to spend and the month's end are stat cards,** side by side from
+  640px, in the Month's look (the accent tile, a 32px figure from
+  1280px). Safe to spend is the one card tinted to the accent, as Left to
+  spend is on the Month; the mockup's green and sky tints name lists (ADR
+  0010). Each keeps its title as a heading (`StatSection`), since the
+  cards hold sentences, badges and a drawing, not one term.
+- **The range is chart-specs' `rangeBar`** (design-review P2 item 9), drawn
+  from `forecastFigures`' basis points, the same `scaleSeries` that places
+  the figures; it was already, and now sits in the month's end card. Its
+  colours changed, never its shape.
+- **"Still to come" is its own card,** as the mockup draws it, beside the
+  next 30 days. The sections lie two across from 1280px; from 1024 to
+  1279px, beside the sidebar, two would leave each near 340px, so they
+  stay one across there, as the Coach does. Debt-free runs across the
+  foot. Forecast and Reports widen as the Coach does.
+- **`Section` gains `large`,** Mockup A's section card: flat, an 18px title,
+  24px sides and 15px words. Every card on the Forecast and every tab of
+  Reports uses it; the check-in keeps its own.
+- **The what-if answer** sits on the accent's soft fill, its muted words in
+  `canvas-muted`; the goals are split by rules, their names semibold.
+- **"Range", "Rough" and "So far"** take a new accent Badge (`accent`: the
+  accent on its soft fill, already in the contrast test), not the mockup's
+  sky, which names Bills.
+- **Reports' title row** is the Month's: the title, its ? and "So far"
+  beside them; on the right the month stepper and Save as PDF. The
+  stepper's middle keeps the month's full name as its heading ("September
+  2026", the mockup's "Sep 2026"), since it is the printed page's title.
+  "So far" still leaves with the stepper on Trends and Habits (P2 item
+  10); the tests that said so still pass.
+- **The tabs are a segmented control** like the Views switch, with one tab
+  stop; the arrow keys, Home and End choose along them, wrapping, as
+  Add's do, and the choice is still remembered (`rememberTab`). Below
+  640px the tabs narrow their sides so all four fit at 390px; at 320px
+  they scroll in their own box, fading at the edge, as before.
+- **The review runs across the top** tinted to the accent, the one tinted
+  card on Reports; the Overview's other cards, and every card on Trends,
+  Shops and Habits, lie two across from 1280px.
+- **Charts (N124):** the Forecast's and Reports' charts now carry Mockup A's
+  light tokens in their attributes, as the page already painted them.
+  "This month and last" stays chart-specs' paired bars, where the mockup
+  draws HTML bars; a restyle keeps a chart's shape.
+- **Copy left out:** the mockup's "The month in review, trends, shops and
+  habits" under the Reports title, and its small-capitals "THE MONTH IN
+  REVIEW", are not the app's; the review keeps its card title. The
+  Debt-free card keeps "Open Debts" as the sentence's link, where the
+  mockup draws a button.
+- **No figure is missing.** Every figure is core's, as before:
+  `monthEndForecast`, `safeToSpend`, `cashFlow30`, `cashFlowAhead`,
+  `scaleSeries`, the goal outlooks and `whatIf`, `debtPlan`, and
+  `monthReport` and the Trends, Shops and Habits reads.
