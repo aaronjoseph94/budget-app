@@ -195,7 +195,7 @@ function DebtCard({
 }) {
   return (
     <section aria-label={row.name} className="overflow-hidden rounded-xl bg-card shadow-sm">
-      <h2 className="break-words px-4 pt-3 font-title text-3xl font-bold [overflow-wrap:anywhere]">{row.name}</h2>
+      <h2 className="break-words px-4 pt-3 text-3xl font-bold [overflow-wrap:anywhere]">{row.name}</h2>
       <div className="grid grid-cols-[1fr_auto] items-start gap-3 px-4 py-3">
         <div>
           <p className="text-xs text-debt-label">Balance today</p>

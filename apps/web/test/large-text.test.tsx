@@ -22,7 +22,7 @@ describe('shared pieces with the phone’s text at 200%', () => {
   it('the Month’s title shrinks to the screen before "September" breaks', () => {
     render(<MonthTitle>September 2026</MonthTitle>)
     const classes = screen.getByRole('heading', { level: 1 }).classList
-    expect(classes.contains('text-[min(3rem,15vw)]')).toBe(true)
+    expect(classes.contains('text-[min(2rem,15vw)]')).toBe(true)
     expect(classes.contains('[overflow-wrap:anywhere]')).toBe(true)
   })
 })

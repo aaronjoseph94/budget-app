@@ -5,9 +5,8 @@
 // 1. First-load JavaScript: the entry script and every chunk index.html
 //    preloads beside it, gzipped, must stay within BUDGET. The Month opens
 //    first (decision 1) and waits for all of it (PERF-3, PERF-8).
-// 2. The Month's title font is asked for with the page, not only once the
-//    CSS naming it has arrived: the title is the largest thing the first
-//    screen paints, and the font's late swap moved it (PERF-6).
+// 2. (Retired with the title font, ADR 0010: the app loads no font file,
+//    so there is no preload to check. PERF-6 cannot recur.)
 // 3. Only the two public values may be compiled in. The build is run with a
 //    probe VITE_ variable that no code reads; finding its value in the
 //    output means every VITE_ variable in the environment ships (SEC-4).
@@ -61,10 +60,6 @@ try {
   const named = [...new Set(shipped.match(/VITE_[A-Z0-9_]+/g) ?? [])].filter((n) => n !== 'VITE_SUPABASE_URL' && n !== 'VITE_SUPABASE_ANON_KEY')
 
   let failed = false
-  if (!/<link rel="preload" href="\/fonts\/caveat-700-latin\.woff2" as="font" type="font\/woff2" crossorigin/.test(html)) {
-    console.log('FAIL: index.html does not preload the title font, /fonts/caveat-700-latin.woff2')
-    failed = true
-  }
   if (first.length === 0) {
     console.log('FAIL: no entry script found in index.html')
     failed = true

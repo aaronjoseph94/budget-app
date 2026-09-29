@@ -402,7 +402,7 @@ function YearTotals({ sheet, thisMonth }: { sheet: YearSheet; thisMonth: string 
         {rows.map(([label, value]) => (
           <div key={label}>
             <dt className="text-xs font-medium text-summary-label">{label}</dt>
-            <dd className="font-numbers tnum text-lg font-bold text-summary-value">{value}</dd>
+            <dd className="tnum text-lg font-bold text-summary-value">{value}</dd>
           </div>
         ))}
       </dl>

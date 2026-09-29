@@ -339,7 +339,7 @@ const CARD = 'overflow-hidden rounded-xl border border-savings-rule bg-card text
 function Title({ name, badge }: { name: string; badge: ReactNode }) {
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-savings-title px-4 py-2">
-      <h2 className="min-w-0 break-words font-title text-3xl font-bold [overflow-wrap:anywhere]">{name}</h2>
+      <h2 className="min-w-0 break-words text-3xl font-bold [overflow-wrap:anywhere]">{name}</h2>
       {badge}
     </div>
   )

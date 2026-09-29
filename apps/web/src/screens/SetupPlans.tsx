@@ -114,7 +114,7 @@ export function PlanHeadings({ month }: { month: string }) {
 
 /**
  * One of the workbook's total tiles (Bills!D32, H32, L32 and H36): the label on the
- * card's pink, the figure in Comfortaa beside it, from core's billsTotals.
+ * card's pink, the figure beside it, from core's billsTotals.
  * To the cent (D8), where the workbook's "$"#,##0 shows Netflix's 17.99 as $18.
  */
 export function TotalTile({ label, cents }: { label: string; cents: number }) {

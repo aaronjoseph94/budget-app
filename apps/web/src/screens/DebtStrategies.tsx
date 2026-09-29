@@ -16,7 +16,7 @@ const PLANS: readonly { key: PayoffStrategy; name: string; how: string }[] = [
 export function DebtStrategies({ strategies }: { strategies: PayoffStrategies }) {
   return (
     <section aria-label="Payoff plans" className="space-y-3 rounded-xl bg-card p-4 shadow-sm">
-      <h2 className="font-title text-3xl font-bold">Ways to pay it off</h2>
+      <h2 className="text-3xl font-bold">Ways to pay it off</h2>
       <p className="text-sm">The same amount each month, spent three ways: what you pay now, plus what a paid-off debt frees up.</p>
       <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {PLANS.map((p) => {
