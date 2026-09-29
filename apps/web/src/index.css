@@ -154,14 +154,20 @@
   --heat-2: #da6448;
   --heat-3: #a42f1a;
   --heat-4: #5e120d;
-  --calendar-band: #f0f9ff;
-  --calendar-pill: #e0f2fe;
+  /* The Bill calendar (step 6): Mockup A's sky tint behind the weekday
+     names and the month's pill, their words and the week totals in Bills'
+     ink, bill names in the ink, today in the Year's yellow, and the days
+     of other months in the hover grey. */
+  --calendar-band: #eff6ff;
+  --calendar-pill: #eff6ff;
   --calendar-pill-ink: #0369a1;
-  --calendar-ink: #0369a1;
+  --calendar-ink: #111827;
   --calendar-day: #111827;
-  --calendar-total: #4b5563;
-  --calendar-head: #4b5563;
+  --calendar-total: #0369a1;
+  --calendar-head: #0369a1;
   --calendar-rule: #e5e7eb;
+  --calendar-today: #fefce8;
+  --calendar-off: #f9fafb;
   --payday: #047857;
   --payday-ink: #ffffff;
   --savings-banner: #fffbeb;
@@ -289,14 +295,16 @@
     --home-track: #2a2c33;
     --paycheck-band: #181a2e;
     --paycheck-ink: #c7d2fe;
-    --calendar-band: #16232d;
-    --calendar-pill: #0f2a3a;
+    --calendar-band: #12202c;
+    --calendar-pill: #12202c;
     --calendar-pill-ink: #7dd3fc;
-    --calendar-ink: #7dd3fc;
+    --calendar-ink: #f3f4f6;
     --calendar-day: #f3f4f6;
-    --calendar-total: #9ca3af;
-    --calendar-head: #9ca3af;
+    --calendar-total: #7dd3fc;
+    --calendar-head: #7dd3fc;
     --calendar-rule: #2a2c33;
+    --calendar-today: #2a2610;
+    --calendar-off: #131418;
     --payday: #065f46;
     --payday-ink: #ffffff;
     --savings-banner: #2a2210;
@@ -370,6 +378,8 @@
   --color-calendar-total: var(--calendar-total);
   --color-calendar-head: var(--calendar-head);
   --color-calendar-rule: var(--calendar-rule);
+  --color-calendar-today: var(--calendar-today);
+  --color-calendar-off: var(--calendar-off);
   --color-payday: var(--payday);
   --color-payday-ink: var(--payday-ink);
   --color-title-ink: var(--title-ink);

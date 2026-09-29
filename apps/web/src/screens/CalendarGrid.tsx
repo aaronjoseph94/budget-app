@@ -29,77 +29,91 @@ export function BillName({ bill, onOpen, className }: { bill: CalendarBill; onOp
   )
 }
 
+/** A bill's rule in its list's hue (ADR 0010): sky Bills, violet Subscriptions, rose Debts. */
+export const RULE: Record<CalendarBill['kind'], string> = {
+  bill: 'border-bills-accent',
+  subscription: 'border-subscriptions-accent',
+  debt: 'border-debts-accent',
+}
+
 /**
  * The workbook's Bill Calendar grid (B6:Q43), for a screen wide enough for names:
  * seven day columns, Sunday first, and each week's total in the last column
  * (Q8). A day shows its number, a green pill for each income source paid
- * that day (C8), and every bill on it with its amount (B9:C13), all as
- * plain text. A table, so a screen reader reads each day under its weekday.
+ * that day (C8), and its bills with their amounts (B9:C13), each on a rule
+ * in its list's hue, all as plain text. Today is tinted.
+ * A table, so a screen reader reads each day under its weekday.
  */
-export function MonthGrid({ calendar, className, onOpen }: { calendar: BillCalendar; className?: string; onOpen?: OpenBill }) {
+export function MonthGrid({ calendar, today, className, onOpen }: { calendar: BillCalendar; today: string; className?: string; onOpen?: OpenBill }) {
+  const cell = 'border border-calendar-rule px-1 xl:px-3'
   return (
-    <table className={cn('w-full table-fixed border-collapse overflow-hidden rounded-xl bg-card text-sm shadow-sm', className)}>
-      <caption className="caption-bottom bg-background px-4 pt-2 text-left text-xs text-muted-foreground">
-        Bills and paydays by day, with each week’s total. Amounts in italics are planned: nothing has been charged for
-        them yet this month.
-      </caption>
-      <thead>
-        <tr>
-          {WEEKDAYS.map((name) => (
-            <th
-              key={name}
-              scope="col"
-              className="border border-calendar-rule px-1 py-2 text-[0.625rem] font-medium uppercase tracking-[0.1em] text-calendar-head xl:tracking-[0.25em]"
-            >
-              {/* The workbook spells them out letter by letter ("S U N D A Y"); spacing does it here, so a screen reader still says the day. */}
-              {name}
+    <div className={cn('overflow-hidden rounded-xl border bg-card', className)}>
+      {/* Its outer edges hidden, so the card's own edge is the only one. */}
+      <table className="w-full table-fixed border-collapse text-sm [border-style:hidden]">
+        <caption className="caption-bottom border-t px-4 py-3 text-left text-[0.8125rem] text-muted-foreground">
+          Bills and paydays by day, with each week’s total. Amounts in italics are planned: nothing has been charged for
+          them yet this month.
+        </caption>
+        <thead className="bg-calendar-band text-calendar-head">
+          <tr>
+            {WEEKDAYS.map((name) => (
+              <th key={name} scope="col" className={cn(cell, 'py-2.5 text-left text-[0.625rem] font-semibold uppercase xl:text-xs xl:tracking-[0.08em]')}>
+                {name}
+              </th>
+            ))}
+            <th scope="col" className={cn(cell, 'w-24 py-2.5 text-right text-[0.625rem] font-semibold uppercase xl:w-28 xl:text-xs xl:tracking-[0.08em]')}>
+              Week
             </th>
-          ))}
-          <th scope="col" className="w-24 border border-calendar-rule px-1 py-2 text-xs font-medium text-calendar-head">
-            Week
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {calendar.weeks.map((week, i) => (
-          <tr key={i}>
-            {week.days.map((day, weekday) =>
-              day === null ? (
-                <td key={weekday} className="border border-calendar-rule bg-muted/40" />
-              ) : (
-                <td key={weekday} className="h-24 border border-calendar-rule p-1.5 align-top">
-                  <GridDay day={day} onOpen={onOpen} />
-                </td>
-              ),
-            )}
-            <td className="border border-calendar-rule px-1.5 text-center align-middle">
-              <span className="sr-only">Week total </span>
-              <span className="tnum font-bold text-calendar-total">{formatCents(week.totalCents)}</span>
-            </td>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {calendar.weeks.map((week, i) => (
+            <tr key={i}>
+              {week.days.map((day, weekday) =>
+                day === null ? (
+                  <td key={weekday} className={cn(cell, 'bg-calendar-off')} />
+                ) : (
+                  <td
+                    key={weekday}
+                    aria-current={day.date === today ? 'date' : undefined}
+                    className={cn(cell, 'h-28 py-2.5 align-top', day.date === today && 'bg-calendar-today')}
+                  >
+                    <GridDay day={day} today={day.date === today} onOpen={onOpen} />
+                  </td>
+                ),
+              )}
+              <td className={cn(cell, 'text-right align-middle')}>
+                <span className="sr-only">Week total </span>
+                <span className="tnum font-bold text-calendar-total">{formatCents(week.totalCents)}</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
 
-function GridDay({ day, onOpen }: { day: CalendarDay; onOpen?: OpenBill | undefined }) {
+function GridDay({ day, today, onOpen }: { day: CalendarDay; today: boolean; onOpen?: OpenBill | undefined }) {
   return (
-    <div className="space-y-1">
-      <div className="flex flex-wrap items-start justify-between gap-1">
-        <span className="font-bold text-calendar-day">{day.day}</span>
+    <div className="space-y-1.5">
+      <div className="flex flex-wrap items-center justify-between gap-1">
+        <span className={cn('tnum font-semibold', today ? 'text-primary' : 'text-calendar-day')}>{day.day}</span>
         {day.paydays.map((p) => (
-          <span key={p.categoryId} className="max-w-full truncate rounded-full bg-payday px-1.5 text-[0.6875rem] font-semibold text-payday-ink">
+          <span key={p.categoryId} className="max-w-full truncate rounded-full bg-payday px-2 py-px text-[0.6875rem] font-semibold text-payday-ink">
             <span className="sr-only">Payday: </span>
             {p.name}
           </span>
         ))}
       </div>
       {day.bills.map((b, i) => (
-        <p key={`${b.categoryId}-${i}`} className="flex flex-wrap items-baseline justify-between gap-x-1 text-xs leading-tight text-calendar-ink">
-          {/* On a narrow column the amount drops under the name rather than split it. */}
+        <p
+          key={`${b.categoryId}-${i}`}
+          className={cn('flex flex-wrap items-baseline justify-between gap-x-1.5 border-l-[3px] pl-1 text-xs leading-snug text-calendar-ink xl:pl-1.5 xl:text-[0.8125rem]', RULE[b.kind])}
+        >
+          {/* On a narrow column the amount drops under the name rather than cut it short. */}
           <BillName bill={b} onOpen={onOpen} className="max-w-full break-words" />
-          <span className={cn('tnum shrink-0', b.basis === 'planned' && 'italic')}>
+          <span className={cn('tnum shrink-0 text-muted-foreground', b.basis === 'planned' && 'italic')}>
             {formatAmount(b.amountCents)}
             {b.basis === 'planned' ? <span className="sr-only"> planned</span> : null}
           </span>
@@ -111,13 +125,14 @@ function GridDay({ day, onOpen }: { day: CalendarDay; onOpen?: OpenBill | undefi
 
 /**
  * The same month on a phone, whose seven columns have no room for names: a
- * day's number, green when someone is paid, and a dot for each bill. The
+ * day's number, green when someone is paid, today's in the accent on its
+ * tint, and a dot for each bill. The
  * list under it says what each is, so this is a picture of it, hidden from
  * a screen reader, which reads the list.
  */
-export function CompactGrid({ calendar, className }: { calendar: BillCalendar; className?: string }) {
+export function CompactGrid({ calendar, today, className }: { calendar: BillCalendar; today: string; className?: string }) {
   return (
-    <div aria-hidden="true" className={cn('rounded-xl border bg-card p-2 shadow-sm', className)}>
+    <div aria-hidden="true" className={cn('rounded-xl border bg-card p-2', className)}>
       <div className="grid grid-cols-7 text-center text-[0.6875rem] font-medium text-calendar-head">
         {WEEKDAYS.map((name) => (
           <span key={name} className="py-1">
@@ -134,7 +149,7 @@ export function CompactGrid({ calendar, className }: { calendar: BillCalendar; c
                   <span
                     className={cn(
                       'flex size-7 items-center justify-center rounded-full text-sm font-semibold',
-                      day.paydays.length > 0 ? 'bg-payday text-payday-ink' : 'text-calendar-day',
+                      day.paydays.length > 0 ? 'bg-payday text-payday-ink' : day.date === today ? 'bg-calendar-today text-primary' : 'text-calendar-day',
                     )}
                   >
                     {day.day}

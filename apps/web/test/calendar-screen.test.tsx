@@ -197,6 +197,22 @@ describe('CalendarScreen', () => {
   })
 })
 
+describe('CalendarScreen, Mockup A grid (step 6)', () => {
+  it('draws each bill on a rule in its list’s hue and tints today', async () => {
+    renderScreen(<CalendarScreen month="2026-09" />, seeded())
+
+    const rule = (name: string) => screen.getAllByRole('button', { name }).map((b) => b.parentElement?.className ?? '')
+    await screen.findByRole('table')
+    // Each twice: in the grid and in the phone's agenda.
+    expect(rule('Rent').map((c) => c.includes('border-bills-accent'))).toEqual([true, true])
+    expect(rule('Car loan').map((c) => c.includes('border-debts-accent'))).toEqual([true, true])
+    expect(rule('<b>Tunes & more</b>').map((c) => c.includes('border-subscriptions-accent'))).toEqual([true, true])
+    const today = document.querySelector('td[aria-current="date"]')
+    expect(today?.textContent).toBe('23')
+    expect(today?.className).toContain('bg-calendar-today')
+  })
+})
+
 describe('CalendarScreen while another month loads', () => {
   function Routed() {
     return <CalendarScreen month={useAddress().param} />

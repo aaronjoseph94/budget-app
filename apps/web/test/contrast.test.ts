@@ -163,6 +163,11 @@ const TEXT: readonly (readonly [text: string, surface: string, least?: number, a
   ['calendar-total', 'card'],
   ['calendar-total', 'calendar-band'],
   ['calendar-head', 'calendar-band'],
+  // The Bill calendar's today (step 6): its number in the accent, the bills'
+  // names in the ink and their amounts muted.
+  ['primary', 'calendar-today'],
+  ['calendar-ink', 'calendar-today'],
+  ['muted-foreground', 'calendar-today'],
   ['payday-ink', 'payday'],
   ['savings-ink', 'savings-banner'],
   ['savings-ink', 'savings-title'],

@@ -4,14 +4,14 @@ import { useAppData } from '../app-data.js'
 import { listPaySchedules, listPlanHistory, listTransactions, type LedgerRow, type PayScheduleRow, type PlanRow } from '../ledger.js'
 import { navigate } from '../nav.js'
 import { categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
-import { formatCents, formatDateRange, formatMonthTitle, todayIso } from '../format.js'
+import { formatCents, formatDateRange, formatMonthTitle, formatShortMonth, todayIso } from '../format.js'
 import { Alert, Loading } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
-import { Icon } from '../components/ui/icons.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
-import { BillName, CompactGrid, MonthGrid, WEEKDAYS, type OpenBill } from './CalendarGrid.js'
+import { BillName, CompactGrid, MonthGrid, RULE, WEEKDAYS, type OpenBill } from './CalendarGrid.js'
 import { MonthCharges } from './MonthCharges.js'
+import { StepButton } from './MonthScreen.js'
 import { LIST_HEADING } from '../lists.js'
 import { HelpButton } from '../help/HelpButton.js'
 
@@ -27,7 +27,8 @@ import { HelpButton } from '../help/HelpButton.js'
  */
 export function CalendarScreen({ month }: { month: string | null }) {
   const { supabase, categories, loadError, version } = useAppData()
-  const { start, end } = monthBounds(isoDate(month === null ? todayIso() : `${month}-01`))
+  const today = todayIso()
+  const { start, end } = monthBounds(isoDate(month === null ? today : `${month}-01`))
   const step = (months: number) => navigate('calendar', shiftMonth(start, months).slice(0, 7))
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -77,29 +78,32 @@ export function CalendarScreen({ month }: { month: string | null }) {
 
   return (
     <div className="space-y-4">
-      <header className="-mx-4 max-[359px]:-mx-3 flex flex-wrap items-center justify-between gap-x-2 gap-y-3 bg-calendar-band px-4 max-[359px]:px-3 py-4 md:mx-0 md:rounded-xl">
-        <div>
-          <MonthTitle>{formatMonthTitle(start)}</MonthTitle>
-          <p className="mt-1 text-sm font-medium text-calendar-pill-ink">Bill calendar</p>
+      {/* Mockup A's title row, as on the Month: the title with its ?, the
+        screen's name under it, and on the right the month's pill and the
+        stepper. Everything wraps, so a phone drops them under the title. */}
+      <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-1">
+            <MonthTitle>{formatMonthTitle(start)}</MonthTitle>
+            <HelpButton screen="calendar" className="text-muted-foreground" />
+          </div>
+          <p className="mt-1 text-base text-muted-foreground">Bill calendar</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           {calendar !== null && typeof calendar !== 'string' ? (
             // Named on the pill, not only to a screen reader: the workbook's J3 sits
-            // under its own heading, and a bare figure in the band said nothing.
-            <p className="flex flex-col rounded-2xl bg-calendar-pill px-3 py-1 leading-tight text-calendar-pill-ink">
-              <span className="text-[11px] font-medium">Due this month</span>
+            // under its own heading, and a bare figure said nothing.
+            <p className="flex flex-col items-end rounded-lg bg-calendar-pill px-3.5 py-2 leading-tight text-calendar-pill-ink">
+              <span className="text-xs font-medium">Due this month</span>
               <span className="sr-only">: </span>
-              <Figure className="text-lg font-bold">{formatCents(calendar.totalCents)}</Figure>
+              <Figure className="text-xl font-bold">{formatCents(calendar.totalCents)}</Figure>
             </p>
           ) : null}
-          <Button variant="outline" size="icon" aria-label="Previous month" onClick={() => step(-1)}>
-            <Icon name="chevronLeft" />
-          </Button>
-          <Button variant="outline" size="icon" aria-label="Next month" onClick={() => step(1)}>
-            <Icon name="chevronRight" />
-          </Button>
-          {/* With the buttons, as on the Month, so the title keeps its line. */}
-          <HelpButton screen="calendar" />
+          <div className="flex items-stretch rounded-md border bg-card">
+            <StepButton label="Previous month" icon="chevronLeft" onClick={() => step(-1)} />
+            <span className="tnum flex items-center border-x px-3.5 text-[0.9375rem] font-medium whitespace-nowrap">{formatShortMonth(start)}</span>
+            <StepButton label="Next month" icon="chevronRight" onClick={() => step(1)} />
+          </div>
         </div>
       </header>
 
@@ -114,8 +118,8 @@ export function CalendarScreen({ month }: { month: string | null }) {
         <>
           {/* Phones get the month as a picture with the list under it; a
             wider screen has room for the workbook's grid, names and all. */}
-          <CompactGrid calendar={calendar} className="md:hidden" />
-          <MonthGrid calendar={calendar} className="hidden md:table" onOpen={setOpened} />
+          <CompactGrid calendar={calendar} today={today} className="md:hidden" />
+          <MonthGrid calendar={calendar} today={today} className="hidden md:block" onOpen={setOpened} />
           <Agenda calendar={calendar} className="md:hidden" onOpen={setOpened} />
           <Undated calendar={calendar} />
         </>
@@ -147,10 +151,10 @@ export function Agenda({ calendar, className, onOpen }: { calendar: BillCalendar
         const busy = days.filter(({ d }) => d.bills.length > 0 || d.paydays.length > 0)
         const range = formatDateRange(first.d.date, last.d.date)
         return (
-          <section key={first.d.date} aria-label={`Week of ${range}`} className="rounded-xl border bg-card shadow-sm">
+          <section key={first.d.date} aria-label={`Week of ${range}`} className="rounded-xl border bg-card">
             <h2 className="flex items-baseline justify-between gap-2 border-b border-calendar-rule px-4 py-2.5 text-sm">
               <span className="font-medium text-calendar-day">{range}</span>
-              <span className="tnum font-semibold text-calendar-total">
+              <span className="tnum font-bold text-calendar-total">
                 <span className="sr-only">Week total </span>
                 {formatCents(week.totalCents)}
               </span>
@@ -187,7 +191,10 @@ function AgendaDay({ day, weekday, onOpen }: { day: CalendarDay; weekday: number
         {day.bills.map((b, i) => (
           // The amount drops under the name, and "planned" under the amount,
           // when they do not fit, as with the phone's text at 200% (N58).
-          <p key={`${b.categoryId}-${i}`} className="flex flex-wrap items-baseline justify-between gap-x-3 text-sm text-calendar-ink">
+          <p
+            key={`${b.categoryId}-${i}`}
+            className={cn('flex flex-wrap items-baseline justify-between gap-x-3 border-l-[3px] pl-2 text-sm text-calendar-ink', RULE[b.kind])}
+          >
             <BillName bill={b} onOpen={onOpen} className="min-w-0 truncate" />
             <span className="ml-auto max-w-full text-right">
               <span className="tnum whitespace-nowrap">{formatCents(b.amountCents)}</span>
@@ -223,14 +230,14 @@ function BillCharges({ bill, month, rows, onClose }: { bill: CalendarBill; month
 function Undated({ calendar }: { calendar: BillCalendar }) {
   if (calendar.undated.length === 0) return null
   return (
-    <section aria-label="No day paid" className="space-y-2 rounded-xl border bg-card p-4 text-sm shadow-sm">
-      <h2 className="font-medium">No day paid</h2>
+    <section aria-label="No day paid" className="space-y-2.5 rounded-xl border bg-card p-4 md:px-6 md:py-5">
+      <h2 className="text-lg font-semibold">No day paid</h2>
       <p className="text-muted-foreground">
         These have a monthly amount but no day paid, so they are not on the calendar or in its totals. The Month still counts them.
       </p>
-      <ul className="space-y-1 text-calendar-ink">
+      <ul className="text-calendar-ink">
         {calendar.undated.map((b) => (
-          <li key={b.categoryId} className="flex justify-between gap-3">
+          <li key={b.categoryId} className="flex justify-between gap-3 border-t py-2">
             <span className="min-w-0 truncate">{b.name}</span>
             <span className="tnum shrink-0">{formatCents(b.amountCents)}</span>
           </li>
