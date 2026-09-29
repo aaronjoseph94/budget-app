@@ -83,7 +83,7 @@ export function PaycheckScreen({ day }: { day: string | null }) {
               <label className="flex flex-wrap items-center gap-2">
                 <span className="text-sm text-canvas-muted">Pay periods from</span>
                 <span className="w-48 max-w-full">
-                  <NativeSelect value={driving.source.id} onChange={(e) => setChosen(e.target.value)} className="h-9 text-sm">
+                  <NativeSelect value={driving.source.id} onChange={(e) => setChosen(e.target.value)} className="text-sm">
                     {paid.map(({ source }) => (
                       <option key={source.id} value={source.id}>
                         {source.name}

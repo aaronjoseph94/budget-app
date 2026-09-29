@@ -63,6 +63,8 @@ describe('PaycheckScreen', () => {
     const chooser = await screen.findByRole('combobox', { name: 'Pay periods from' })
     // Beside the card's heading, in a box of its own, as Mockup A draws it.
     expect(chooser.parentElement?.className).toContain('w-48')
+    // The field's own 44px height, with no second height class to fight it.
+    expect(chooser.className.split(' ').filter((c) => /^h-/.test(c))).toEqual(['h-11'])
     fireEvent.change(chooser, { target: { value: 'side' } })
     expect(await screen.findByText('1 – 30 Sep · Side work, paid monthly')).toBeTruthy()
     expect(screen.getByText(/You are paid monthly/)).toBeTruthy()
