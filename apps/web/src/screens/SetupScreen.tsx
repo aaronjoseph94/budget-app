@@ -312,22 +312,24 @@ function NameBand() {
         <label htmlFor={field} className="shrink-0 text-base">
           My name is
         </label>
-        <Input
-          id={field}
-          value={name}
-          maxLength={60}
-          autoComplete="given-name"
-          onChange={(e) => {
-            setName(e.target.value)
-            setState('idle')
-          }}
-          onBlur={() => void commit()}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') e.currentTarget.blur()
-          }}
-          className="w-auto min-w-0 flex-1 basis-40 sm:max-w-64"
-          placeholder="your first name"
-        />
+        {/* A field's width is its box's: Input's w-full is not overridden (lib/cn.ts). */}
+        <div className="min-w-0 flex-1 basis-40 sm:max-w-64">
+          <Input
+            id={field}
+            value={name}
+            maxLength={60}
+            autoComplete="given-name"
+            onChange={(e) => {
+              setName(e.target.value)
+              setState('idle')
+            }}
+            onBlur={() => void commit()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.currentTarget.blur()
+            }}
+            placeholder="your first name"
+          />
+        </div>
         {state === 'saved' ? <Icon name="check" className="size-5 shrink-0 text-income" aria-label="Saved" /> : null}
       </div>
       {message !== null ? (

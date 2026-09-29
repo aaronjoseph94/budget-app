@@ -34,6 +34,9 @@ describe('SettingsScreen, adding a category', () => {
 
     const list = await screen.findByRole<HTMLSelectElement>('combobox', { name: 'Which list' })
     expect(list.value).toBe('variable')
+    // From 640px the row reads name, list, Add: the list's box takes the second column
+    // explicitly, since a row-only placement would put it before the name.
+    expect(list.parentElement?.classList.contains('sm:col-start-2')).toBe(true)
     fireEvent.change(screen.getByPlaceholderText('New category'), { target: { value: 'Rent' } })
     fireEvent.change(list, { target: { value: 'bill' } })
     fireEvent.click(screen.getByRole('button', { name: /Add/ }))

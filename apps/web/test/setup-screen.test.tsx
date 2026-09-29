@@ -228,6 +228,8 @@ describe('SetupScreen, your name', () => {
     const classes = screen.getByRole('textbox', { name: 'My name is' }).classList
     // Mockup A: the field on the accent tint has its own edge and the app's accent ring.
     expect([classes.contains('focus-visible:ring-[3px]'), classes.contains('focus-visible:ring-ring')]).toEqual([true, true])
+    // cn() is a plain join, so the field carries one width only; its box sets the rest.
+    expect([...classes].filter((c) => /^w-/.test(c))).toEqual(['w-full'])
   })
 
   it('saves your name to your sign-in when you leave the field', async () => {
