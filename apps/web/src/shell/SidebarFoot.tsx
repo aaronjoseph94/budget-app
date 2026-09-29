@@ -7,6 +7,7 @@ import { Icon } from '../components/ui/icons.js'
 import { Progress } from '../components/ui/feedback.js'
 import { useWide } from '../lib/wide.js'
 import { cn } from '../lib/cn.js'
+import { RING_INSET } from './marks.js'
 
 /**
  * The sidebar's foot (ADR 0011): the main goal, from 1024px and unfolded,
@@ -43,7 +44,7 @@ function MainGoal() {
   return (
     <a
       href={hashOf({ screen: 'savings', param: null })}
-      className="flex flex-col gap-2.5 rounded-xl border bg-card p-3.5 transition-colors hover:bg-accent"
+      className={cn(RING_INSET, 'flex flex-col gap-2.5 rounded-xl border bg-card p-3.5 transition-colors hover:bg-accent')}
     >
       <span className="flex items-center gap-2">
         <Icon name={goal.unit_cost_cents === null ? 'piggy' : 'plane'} className="size-4 shrink-0 text-primary" />
@@ -75,7 +76,7 @@ function Owner({ folded }: { folded: boolean }) {
         type="button"
         aria-label="Sign out"
         onClick={() => void supabase.auth.signOut()}
-        className={cn(full, 'size-11 shrink-0 items-center justify-center rounded-md text-canvas-muted hover:bg-card hover:text-foreground')}
+        className={cn(full, RING_INSET, 'size-11 shrink-0 items-center justify-center rounded-md text-canvas-muted hover:bg-card hover:text-foreground')}
       >
         <Icon name="logout" className="size-[18px]" />
       </button>

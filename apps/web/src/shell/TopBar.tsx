@@ -3,6 +3,7 @@ import { Icon } from '../components/ui/icons.js'
 import { LINE_BUTTON } from '../components/ui/link.js'
 import { cn } from '../lib/cn.js'
 import { crumbsOf } from './places.js'
+import { RING } from './marks.js'
 
 /**
  * The white panel's top bar, from 768px (ADR 0011): the sidebar toggle,
@@ -35,7 +36,7 @@ export function TopBar({
         aria-expanded={!folded}
         aria-controls="sidebar"
         onClick={onFold}
-        className={cn('hidden size-9 items-center justify-center rounded-md hover:bg-accent lg:flex', tall)}
+        className={cn(RING, 'hidden size-9 items-center justify-center rounded-md hover:bg-accent lg:flex', tall)}
       >
         <Icon name="sidebar" className="size-[18px]" />
       </button>
@@ -43,7 +44,7 @@ export function TopBar({
       <nav aria-label="Breadcrumb" className="min-w-0">
         <ol className="flex items-center gap-2 text-base text-muted-foreground">
           <li>
-            <a href={hashOf({ screen: crumbs.parent.screen, param: null })} className={cn(LINE_BUTTON, 'rounded-sm hover:text-foreground')}>
+            <a href={hashOf({ screen: crumbs.parent.screen, param: null })} className={cn(LINE_BUTTON, RING, 'rounded-sm hover:text-foreground')}>
               {crumbs.parent.label}
             </a>
           </li>
@@ -60,7 +61,7 @@ export function TopBar({
         type="button"
         onClick={onSearch}
         aria-keyshortcuts="Meta+K Control+K"
-        className={cn('flex h-10 items-center gap-2.5 rounded-md border px-3 text-[15px] text-muted-foreground hover:bg-accent md:w-[min(360px,30vw)]', tall)}
+        className={cn(RING, 'flex h-10 items-center gap-2.5 rounded-md border px-3 text-[15px] text-muted-foreground hover:bg-accent md:w-[min(360px,30vw)]', tall)}
       >
         <Icon name="search" className="size-4 shrink-0" />
         <span className="min-w-0 flex-1 truncate text-left">Search or jump to…</span>
@@ -70,7 +71,7 @@ export function TopBar({
       </button>
       <a
         href={hashOf({ screen: 'add', param: null })}
-        className={cn('inline-flex h-10 shrink-0 items-center gap-1.5 rounded-md bg-primary px-4 text-[15px] font-medium text-primary-foreground hover:bg-primary/90', tall)}
+        className={cn(RING, 'inline-flex h-10 shrink-0 items-center gap-1.5 rounded-md bg-primary px-4 text-[15px] font-medium text-primary-foreground hover:bg-primary/90', tall)}
       >
         <Icon name="plus" className="size-4" />
         Add

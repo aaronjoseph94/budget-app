@@ -116,6 +116,17 @@ describe('the top bar (ADR 0011)', () => {
     expect(screen.getByRole('button', { name: 'Toggle sidebar' }).getAttribute('aria-expanded')).toBe('false')
   })
 
+  it('draws the accent focus ring on every control in the sidebar and the top bar (README: focus = --ring)', async () => {
+    renderScreen(<Shell />, createFakeSupabase())
+    await screen.findByRole('heading', { name: 'September 2026' })
+    const header = screen.getByRole('navigation', { name: 'Breadcrumb' }).closest('header')!
+    const aside = screen.getByRole('complementary', { name: 'Sidebar' })
+    const controls = [...aside.querySelectorAll('a, button'), ...header.querySelectorAll('a, button')]
+    expect(controls.length).toBeGreaterThan(20)
+    const bare = controls.filter((c) => !c.classList.contains('focus-visible:ring-ring')).map((c) => c.getAttribute('aria-label') ?? c.textContent)
+    expect(bare).toEqual([])
+  })
+
   it('gives Ask and AI settings a way back on the page, and lights their parent in the sidebar (P1 item 2)', async () => {
     go('/ask')
     renderScreen(<Shell />, createFakeSupabase())

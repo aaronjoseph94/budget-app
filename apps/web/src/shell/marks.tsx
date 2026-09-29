@@ -1,6 +1,14 @@
 import type { Screen } from '../nav.js'
 import { cn } from '../lib/cn.js'
 
+/**
+ * The focus ring the README keeps (--ring, the accent), for the shell's own
+ * controls. Inside the sidebar it is drawn inside the control: the list
+ * scrolls, and a ring outside an item would be cut off at its edges.
+ */
+export const RING = 'outline-none focus-visible:ring-[3px] focus-visible:ring-ring'
+export const RING_INSET = 'outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring'
+
 /** "Review, 3 waiting" to a screen reader, rather than the badge read as "Review3"; the Coach's dot as words. */
 export function labelOf(t: { readonly screen: Screen; readonly label: string }, pendingTotal: number, dot: boolean): string {
   if (t.screen === 'coach' && dot) return `${t.label}, check-in ready`

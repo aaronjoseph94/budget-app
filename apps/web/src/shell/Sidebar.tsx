@@ -1,7 +1,7 @@
 import { hashOf, type Screen } from '../nav.js'
 import { Icon } from '../components/ui/icons.js'
 import { cn } from '../lib/cn.js'
-import { Count, Dot, labelOf } from './marks.js'
+import { Count, Dot, RING_INSET, labelOf } from './marks.js'
 import { SIDEBAR_GROUPS, litOf } from './places.js'
 import type { SidebarState } from './sidebar-state.js'
 import { SidebarFoot } from './SidebarFoot.js'
@@ -42,7 +42,7 @@ export function Sidebar({
         !folded && 'lg:w-[248px] lg:px-4',
       )}
     >
-      <a href={hashOf({ screen: 'month', param: null })} aria-label="Budget" className="flex items-center justify-center gap-3 rounded-md px-1 pb-3 lg:justify-start">
+      <a href={hashOf({ screen: 'month', param: null })} aria-label="Budget" className={cn(RING_INSET, 'flex items-center justify-center gap-3 rounded-md px-1 pb-3 lg:justify-start')}>
         <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
           <Icon name="wallet" className="size-5" />
         </span>
@@ -64,7 +64,7 @@ export function Sidebar({
                   aria-controls={id}
                   aria-label={!open && waiting ? `${g.title}, ${pendingTotal} waiting` : undefined}
                   onClick={() => state.setOpen(g.title, !open)}
-                  className={cn(full, 'min-h-11 w-full items-center gap-2 rounded-md px-1 text-[13px] font-medium text-canvas-muted hover:text-foreground')}
+                  className={cn(full, RING_INSET, 'min-h-11 w-full items-center gap-2 rounded-md px-1 text-[13px] font-medium text-canvas-muted hover:text-foreground')}
                 >
                   <span className="flex-1 text-left">{g.title}</span>
                   {!open && waiting ? <Count n={pendingTotal} /> : null}
@@ -87,6 +87,7 @@ export function Sidebar({
                         aria-label={labelOf(item, pendingTotal, dot)}
                         title={item.label}
                         className={cn(
+                          RING_INSET,
                           'relative flex min-h-11 items-center justify-center gap-3 rounded-lg border px-3 text-base font-medium transition-colors',
                           !folded && 'lg:justify-start',
                           active ? 'border-border bg-card' : 'border-transparent hover:bg-card',
