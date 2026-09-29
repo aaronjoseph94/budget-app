@@ -3,6 +3,8 @@ import type { AiProvider, AiServiceStatus } from '@budget/schema'
 import { useAppData } from '../app-data.js'
 import { Button } from '../components/ui/button.js'
 import { Input, NativeSelect } from '../components/ui/form.js'
+import { Badge } from '../components/ui/feedback.js'
+import { cn } from '../lib/cn.js'
 import { hashOf } from '../nav.js'
 import { chooseModel, COMPANY, forgetKey, saveKey, testKey, type KeyResult } from './keys.js'
 
@@ -126,7 +128,7 @@ export function KeyCard({
             href={card.getKey}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-11 items-center rounded-md border bg-card px-4 text-base font-medium shadow-sm hover:bg-accent"
+            className="inline-flex min-h-11 items-center rounded-md border bg-card px-4 text-base font-medium hover:bg-accent"
           >
             {card.getLabel}
           </a>
@@ -175,15 +177,18 @@ export function KeyCard({
       <h2 id={ids.title} className="text-lg font-semibold">
         {card.title}
       </h2>
-      <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">
-        {provider === 'gemini' ? 'Recommended' : service.tier === 'free' ? 'Free' : 'Paid'}
-      </span>
+      {/* Mockup A: Recommended in the accent; Free and Paid as quiet outlined chips. */}
+      {provider === 'gemini' ? (
+        <Badge variant="accent">Recommended</Badge>
+      ) : (
+        <Badge variant="outline">{service.tier === 'free' ? 'Free' : 'Paid'}</Badge>
+      )}
     </div>
   )
 
   if (outdated) {
     return (
-      <section aria-labelledby={ids.title} className="space-y-2 rounded-xl border bg-card p-4 shadow-sm">
+      <section aria-labelledby={ids.title} className={cn('space-y-2', CARD)}>
         {heading}
         <p className="text-base">The AI helper you installed is an older copy, so it can’t take a key yet. Everything else works.</p>
         <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
@@ -194,7 +199,7 @@ export function KeyCard({
   }
 
   return (
-    <section aria-labelledby={ids.title} className="space-y-4 rounded-xl border bg-card p-4 shadow-sm">
+    <section aria-labelledby={ids.title} className={cn('space-y-4', CARD)}>
       {heading}
       {already ? (
         <p className="text-base">
@@ -253,6 +258,9 @@ export function KeyCard({
     </section>
   )
 }
+
+/** Mockup A's card: flat, 16px corners, 20 to 24px in. */
+const CARD = 'rounded-xl border bg-card p-5 sm:p-6'
 
 /** What the card says of a saved key, from its last test. */
 function savedSays(company: string, status: NonNullable<AiServiceStatus['status']>, ending: string): string {

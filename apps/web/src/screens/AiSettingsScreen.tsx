@@ -6,6 +6,8 @@ import { ChoicesPanel } from '../ai/ChoicesPanel.js'
 import { CoachPanel } from '../ai/CoachPanel.js'
 import { KeyCard } from '../ai/KeyCard.js'
 import { Button } from '../components/ui/button.js'
+import { Icon } from '../components/ui/icons.js'
+import { MonthTitle } from '../components/ui/type.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { isOlder } from '../help/updates.js'
 import { hashOf } from '../nav.js'
@@ -42,61 +44,78 @@ export function AiSettingsScreen() {
 
   const status = view?.status ?? null
   return (
-    <div className="space-y-4">
+    // Mockup A: a reading width of its own, the status across the top, then
+    // from 1280px the keys on the left and the choices and the Coach's tone
+    // on the right, each column read top to bottom.
+    <div className="max-w-5xl space-y-5">
       {/* AI settings has no sidebar item of its own; its way back is on the page (design-review P1 item 2). */}
-      <a href={hashOf({ screen: 'settings', param: null })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+      <a href={hashOf({ screen: 'settings', param: null })} className="-mb-2 inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
         ← Settings
       </a>
       <div className="flex flex-wrap items-center gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">AI settings</h1>
+        <MonthTitle>AI settings</MonthTitle>
         <HelpButton screen="ai" />
       </div>
-      <section aria-labelledby="ai-now" className="space-y-3 rounded-xl border bg-card p-4 shadow-sm">
+      {/* The one card tinted to the accent, as each screen's one hero is; its
+        tile is the accent's, not the mockup's green, which names Income. */}
+      <section
+        aria-labelledby="ai-now"
+        className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl border bg-gradient-to-r from-card to-primary-tint p-5 sm:px-6 [--muted-foreground:var(--canvas-muted)]"
+      >
         <h2 id="ai-now" className="sr-only">
           AI now
         </h2>
-        <p aria-live="polite" className="text-base font-medium leading-snug">
-          {view === null ? 'Checking the AI helper…' : view.state === 'not_set_up' ? NOT_SET_UP_HERE : view.sentence}
-        </p>
-        {view === null || view.help === null ? null : (
-          <a
-            href={hashOf({ screen: 'help', param: view.help })}
-            className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4"
-          >
-            {view.help === 'updates' ? 'Open One-time updates' : 'Show me how'}
-          </a>
-        )}
+        <span aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
+          <Icon name="sparkles" className="size-5" />
+        </span>
+        <div className="min-w-0 flex-1 basis-56">
+          <p aria-live="polite" className="text-lg font-semibold leading-snug">
+            {view === null ? 'Checking the AI helper…' : view.state === 'not_set_up' ? NOT_SET_UP_HERE : view.sentence}
+          </p>
+          {view === null || view.help === null ? null : (
+            <a
+              href={hashOf({ screen: 'help', param: view.help })}
+              className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4"
+            >
+              {view.help === 'updates' ? 'Open One-time updates' : 'Show me how'}
+            </a>
+          )}
+        </div>
         <Button variant="outline" disabled={view === null} onClick={() => void check()}>
           {view === null ? 'Checking…' : 'Check again'}
         </Button>
       </section>
-      {status === null ? null : (
-        <>
-          <KeyCard
-            service={status.services.find((s) => s.provider === 'gemini') ?? GEMINI_NONE}
-            outdated={isOlder(status.version)}
-            allowPaid={status.allowPaid}
-            onChanged={() => void check(true)}
-          />
-          <details className="group rounded-xl border bg-card px-4 shadow-sm">
-            <summary className="flex min-h-11 cursor-pointer items-center py-2 text-base font-medium">
-              More AI services: Groq, OpenRouter, and paid ones
-            </summary>
-            <div className="space-y-4 pb-4">
-              <p className="text-sm text-muted-foreground">
-                Optional. When Gemini is busy or out of free uses, the next service with a key answers instead.
-              </p>
-              {status.services
-                .filter((s) => s.provider !== 'gemini')
-                .map((s) => (
-                  <KeyCard key={s.provider} service={s} outdated={isOlder(status.version)} allowPaid={status.allowPaid} onChanged={() => void check(true)} />
-                ))}
-            </div>
-          </details>
-          <ChoicesPanel status={status} onChanged={() => void check(true)} />
-        </>
-      )}
-      <CoachPanel />
+      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
+        {status === null ? null : (
+          <div className="space-y-5">
+            <KeyCard
+              service={status.services.find((s) => s.provider === 'gemini') ?? GEMINI_NONE}
+              outdated={isOlder(status.version)}
+              allowPaid={status.allowPaid}
+              onChanged={() => void check(true)}
+            />
+            <details className="group rounded-xl border bg-card px-5 sm:px-6">
+              <summary className="flex min-h-11 cursor-pointer items-center py-4 text-lg font-semibold leading-snug">
+                More AI services: Groq, OpenRouter, and paid ones
+              </summary>
+              <div className="space-y-4 pb-5">
+                <p className="text-sm text-muted-foreground">
+                  Optional. When Gemini is busy or out of free uses, the next service with a key answers instead.
+                </p>
+                {status.services
+                  .filter((s) => s.provider !== 'gemini')
+                  .map((s) => (
+                    <KeyCard key={s.provider} service={s} outdated={isOlder(status.version)} allowPaid={status.allowPaid} onChanged={() => void check(true)} />
+                  ))}
+              </div>
+            </details>
+          </div>
+        )}
+        <div className="space-y-5">
+          {status === null ? null : <ChoicesPanel status={status} onChanged={() => void check(true)} />}
+          <CoachPanel />
+        </div>
+      </div>
     </div>
   )
 }

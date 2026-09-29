@@ -40,6 +40,26 @@ async function open(fake: FakeSupabase, sentence: string) {
   return screen.findByText(sentence)
 }
 
+describe('AI settings, Mockup A', () => {
+  it('puts the status across the top, then the keys beside the choices and the tone from 1280px', async () => {
+    await open(createFakeSupabase(), 'AI isn’t set up yet. Everything still works in the app’s own words. Turn on free AI below, in about 2 minutes.')
+    const status = screen.getByRole('region', { name: 'AI now' })
+    expect(status.className).toContain('to-primary-tint')
+    const gemini = await screen.findByRole('region', { name: 'Free Google Gemini' })
+    const columns = gemini.parentElement!.parentElement!
+    expect(columns.className).toContain('xl:grid-cols-2')
+    const [left, right] = [...columns.children]
+    expect(left?.contains(gemini)).toBe(true)
+    expect(right?.contains(await screen.findByRole('region', { name: 'Try in this order' }))).toBe(true)
+    expect(right?.contains(await screen.findByRole('region', { name: 'How the Coach talks' }))).toBe(true)
+    expect(within(gemini).getByText('Recommended').className).toContain('bg-primary-soft')
+    // The key field still shows nothing typed back: a password field, empty.
+    const field = within(gemini).getByLabelText('Step 2: paste it here') as HTMLInputElement
+    expect([field.type, field.value]).toEqual(['password', ''])
+    await expectNoAxeViolations()
+  })
+})
+
 describe('AI settings says what is true, whatever the helper does', () => {
   it('says the helper is not installed yet, and opens One-time updates', async () => {
     const fake = createFakeSupabase()

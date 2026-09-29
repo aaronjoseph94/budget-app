@@ -132,10 +132,10 @@ export function Shell() {
   // columns (§6.3, §6.4), the Bill Calendar to give its seven room for names,
   // the Coach for its insights and goal side by side (Mockup A step 7), and the
   // Forecast and Reports for their sections two across (step 8), and Savings
-  // and Debts for their cards three across (step 9), and Setup and Settings
-  // for their cards in columns (step 11).
+  // and Debts for their cards three across (step 9), and Setup, Settings and
+  // AI settings for their cards in columns (step 11).
   const wide =
-    screen === 'month' || screen === 'week' || screen === 'paycheck' || screen === 'year' || screen === 'calendar' || (screen === 'coach' && param === null) || screen === 'forecast' || screen === 'reports' || screen === 'savings' || screen === 'debts' || screen === 'setup' || screen === 'settings'
+    screen === 'month' || screen === 'week' || screen === 'paycheck' || screen === 'year' || screen === 'calendar' || (screen === 'coach' && param === null) || screen === 'forecast' || screen === 'reports' || screen === 'savings' || screen === 'debts' || screen === 'setup' || screen === 'settings' || screen === 'ai'
   const width = wide ? 'max-w-3xl lg:max-w-7xl' : 'max-w-3xl'
   const main = useRef<HTMLElement>(null)
   const sidebar = useSidebarState()
