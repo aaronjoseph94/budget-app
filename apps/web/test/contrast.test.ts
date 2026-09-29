@@ -180,6 +180,10 @@ const TEXT: readonly (readonly [text: string, surface: string, least?: number, a
   // this month's words where its tint ends.
   ['foreground', 'savings-title'],
   ['foreground', 'savings-band'],
+  // Debts (step 9): each debt's labels in Debts' ink on its card, and the
+  // rings' centre figure where the summary's accent tint ends.
+  ['debts-ink', 'card'],
+  ['debt-ink', 'primary-tint'],
   ['white', 'debt-banner'],
   ['debt-label', 'debt-page'],
   ['debt-label', 'card'],

@@ -83,6 +83,12 @@ describe('SavingsScreen', () => {
     expect(tile(flight).getAttribute('aria-hidden')).toBe('true')
     expect(tile(flight).parentElement!.className).toContain('bg-savings-title')
     expect(tile(await card('House')).getAttribute('aria-hidden')).toBe('true')
+    // The plane's outline starts at its tail (icons.tsx); Travel, a goal in
+    // dollars, and House, with no goal, draw the same piggy bank.
+    const drawing = (region: HTMLElement) => tile(region).querySelector('path')!.getAttribute('d')
+    expect(drawing(flight)).toMatch(/^M17\.8 19\.2 /)
+    expect(drawing(await card('Travel <b>fund</b>'))).toBe(drawing(await card('House')))
+    expect(drawing(await card('House'))).not.toBe(drawing(flight))
   })
 
   it("shows a fund's goal, its balance kept by transfers, what it needs, and a month's share", async () => {
