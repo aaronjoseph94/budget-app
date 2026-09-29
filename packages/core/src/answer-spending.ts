@@ -229,9 +229,10 @@ export function budgetLeft(base: SpendingBase, week: boolean, ids: readonly stri
     const row = spending.get(id)
     const category = base.categories.find((c) => c.id === id) ?? unknown(id)
     // Only spending has a Left; a question about pay or savings has none to give. A row
-    // with no budget has none either, though the workbook reads its Left against $0.
+    // with no budget has none either, though the workbook reads its Left against $0. A
+    // bill's plan standing as its budget (F51) is one, so the answer agrees with the Month.
     if (row === undefined || !SPENDING.has(category.kind)) return []
-    return [leftOf(row.budgetCents === null ? null : row.remainingCents, [row.name], false)]
+    return [leftOf(row.effectiveBudgetCents === null ? null : row.remainingCents, [row.name], false)]
   })
   const [main, ...rows] = lines
   if (main === undefined) return { main: leftOf(sheet.blocks.variable.remainingTotalCents, [], true), rows: [] }

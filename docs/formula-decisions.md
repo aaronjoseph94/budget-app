@@ -2459,8 +2459,12 @@ with `budgetBasis` ('typed', 'planned' or 'none'), and each list
   effective budget − Actual, so a row paid as planned shows 0.00.
 - **Unchanged:** `budgetCents` and `budgetTotalCents` stay typed only, as
   the workbook's cells and the golden tests have them, and the Year
-  (Annual Budget) and the answers read those. Left to spend counts Variable
-  rows only (F5), so it cannot move.
+  (Annual Budget) reads those. Left to spend counts Variable rows only
+  (F5), so it cannot move.
+- **Amended 2026-09-29 (review):** the answer to "how much is left" on a
+  bill (F48's budgetLeft) is the Month's Left, so it reads the effective
+  budget too: Rent planned 1,500.00 and paid 1,500.00 answers "0.00 left",
+  not "no budget", as the row beside it shows.
 
 **Worked examples.** A month: Rent planned 1,600.00, none typed, no real
 row: Budgeted **1,600.00 planned**, Actual 1,600.00 planned, Left **0.00**.

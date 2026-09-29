@@ -54,6 +54,13 @@ describe('budgetLeft (F48)', () => {
     })
   })
 
+  it('gives a bill with no budget typed the Left over its plan, as the Month shows it (F51)', () => {
+    // Rent: its 1,500.00 plan stands as its budget, 1,500.00 paid on the 1st: 0.00 left.
+    expect(budgetLeft(BASE, false, ['rent']).main).toEqual({ say: 'left', names: ['Rent'], figures: { left: cents(0) } })
+    // A bill with no plan and no budget still has none.
+    expect(budgetLeft({ ...BASE, planHistory: [] }, false, ['rent']).main).toEqual({ say: 'no_budget', names: ['Rent'], figures: {} })
+  })
+
   it('has nothing to say of pay or savings, which have no Left', () => {
     expect(budgetLeft(BASE, false, ['pay']).main.say).toBe('left_all')
   })
