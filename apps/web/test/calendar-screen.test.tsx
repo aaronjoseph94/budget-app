@@ -221,6 +221,9 @@ describe('CalendarScreen, Mockup A grid (step 6)', () => {
     const today = document.querySelector('td[aria-current="date"]')
     expect(today?.textContent).toBe('23')
     expect(today?.className).toContain('bg-calendar-today')
+    // The phone's dotted month marks the same day.
+    const places = [...document.querySelectorAll('div[aria-hidden="true"] > div:not(:first-child) > div > span')]
+    expect(places.filter((n) => n.classList.contains('bg-calendar-today')).map((n) => n.textContent)).toEqual(['23'])
   })
 
   it('shows two bills in a crowded day, then "+N more", which opens the whole day in a sheet (design-review P2 item 8)', async () => {
@@ -228,7 +231,10 @@ describe('CalendarScreen, Mockup A grid (step 6)', () => {
 
     const first = within((await cellOf('1')) ?? document.body)
     expect(first.getAllByRole('button').map((b) => b.textContent)).toEqual(['Rent', 'Water', '+1 more on 1 Sep 2026'])
-    fireEvent.click(first.getByRole('button', { name: '+1 more on 1 Sep 2026' }))
+    const more = first.getByRole('button', { name: '+1 more on 1 Sep 2026' })
+    // A click focuses a button in a browser; fireEvent does not, so it is done here.
+    more.focus()
+    fireEvent.click(more)
 
     const day = within(screen.getByRole('dialog', { name: '1 Sep 2026' }))
     expect(day.getAllByRole('paragraph').map((p) => p.textContent)).toEqual([
@@ -238,8 +244,11 @@ describe('CalendarScreen, Mockup A grid (step 6)', () => {
     ])
     fireEvent.click(day.getByRole('button', { name: 'News' }))
     expect(screen.queryByRole('dialog', { name: '1 Sep 2026' })).toBeNull()
-    expect(screen.getByRole('dialog', { name: 'News' })).toBeTruthy()
+    const charges = screen.getByRole('dialog', { name: 'News' })
     await expectNoAxeViolations()
+    // Its charges closed, focus goes back to "+1 more", not to the page.
+    fireEvent.click(within(charges).getByRole('button', { name: 'Close' }))
+    expect(document.activeElement).toBe(more)
   })
 })
 
