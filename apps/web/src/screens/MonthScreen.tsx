@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
+  budgetUsedBp,
   goalBars,
   historyStart,
   isoDate,
@@ -32,6 +33,7 @@ import { PeriodSwitch } from './PeriodSwitch.js'
 import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
 import {
   formatAmount,
+  formatBasisPoints,
   formatCents,
   formatChange,
   formatDateRange,
@@ -442,21 +444,20 @@ export type BlockKind = keyof PeriodSheet['blocks']
  * Orange draws its icon in #ea580c, as the review asks for any orange mark.
  * Written out for Tailwind.
  */
-const TONE: Record<BlockKind, { header: string; ink: string; rule: string; tile: string; icon: string; bar: string; glyph: IconName }> = {
-  income: { header: 'bg-income-header', ink: 'text-income-ink', rule: 'border-income-rule', tile: 'bg-income-tile', icon: 'text-income-accent', bar: 'bg-income-accent', glyph: 'dollar' },
-  savings: { header: 'bg-savings-header', ink: 'text-savings-ink', rule: 'border-savings-rule', tile: 'bg-savings-tile', icon: 'text-savings-accent', bar: 'bg-savings-accent', glyph: 'piggy' },
-  bill: { header: 'bg-bills-header', ink: 'text-bills-ink', rule: 'border-bills-rule', tile: 'bg-bills-tile', icon: 'text-bills-accent', bar: 'bg-bills-accent', glyph: 'home' },
-  debt: { header: 'bg-debts-header', ink: 'text-debts-ink', rule: 'border-debts-rule', tile: 'bg-debts-tile', icon: 'text-debts-accent', bar: 'bg-debts-accent', glyph: 'card' },
+const TONE: Record<BlockKind, { header: string; ink: string; tile: string; icon: string; bar: string; glyph: IconName }> = {
+  income: { header: 'bg-income-header', ink: 'text-income-ink', tile: 'bg-income-tile', icon: 'text-income-accent', bar: 'bg-income-accent', glyph: 'dollar' },
+  savings: { header: 'bg-savings-header', ink: 'text-savings-ink', tile: 'bg-savings-tile', icon: 'text-savings-accent', bar: 'bg-savings-accent', glyph: 'piggy' },
+  bill: { header: 'bg-bills-header', ink: 'text-bills-ink', tile: 'bg-bills-tile', icon: 'text-bills-accent', bar: 'bg-bills-accent', glyph: 'home' },
+  debt: { header: 'bg-debts-header', ink: 'text-debts-ink', tile: 'bg-debts-tile', icon: 'text-debts-accent', bar: 'bg-debts-accent', glyph: 'card' },
   subscription: {
     header: 'bg-subscriptions-header',
     ink: 'text-subscriptions-ink',
-    rule: 'border-subscriptions-rule',
     tile: 'bg-subscriptions-tile',
     icon: 'text-subscriptions-accent',
     bar: 'bg-subscriptions-accent',
     glyph: 'monitor',
   },
-  variable: { header: 'bg-variable-header', ink: 'text-variable-ink', rule: 'border-variable-rule', tile: 'bg-variable-tile', icon: 'text-variable-large', bar: 'bg-variable-accent', glyph: 'bag' },
+  variable: { header: 'bg-variable-header', ink: 'text-variable-ink', tile: 'bg-variable-tile', icon: 'text-variable-large', bar: 'bg-variable-accent', glyph: 'bag' },
 }
 
 /** Mini bars under each name on these lists only: on the others every row is usually all paid, and a full bar is noise (design-review P1 item 5). */
@@ -516,7 +517,8 @@ export interface EditorDone {
 }
 
 /**
- * One block: its heading and "$Actual of $Budget" on the band, then a row
+ * One block: its heading, "$Actual of $Budget" and its % pill in the card
+ * head, then a row
  * per category on the list with the workbook's columns. A row with no budget and
  * nothing in the period folds behind "Show N empty". Cells leave out the "$",
  * as the plan's phone sketch does (§6.2): with it, three columns of amounts
@@ -542,7 +544,7 @@ export function Block({
   block: PeriodBlock
   /** Given, the third column is each row's change against the earlier window, headed with `label` (D26). */
   compare?: { readonly label: string; readonly blocks: Readonly<Record<BlockKind, BlockChange>> } | undefined
-  /** Given, the band shows the block's total change beside its total. */
+  /** Given, the card head shows the block's total change beside its total. */
   chips?: Readonly<Record<BlockKind, BlockChange>> | undefined
   /** Opens a row's charges; without it a row is not a button. */
   onOpen?: ((categoryId: string) => void) | undefined
@@ -576,17 +578,19 @@ export function Block({
   const total = chips?.[kind].total
   const empty = block.rows.filter(isEmpty).length
   const shown = showEmpty ? block.rows : block.rows.filter((r) => !isEmpty(r))
-  // "of $0.00" would read as a budget of nothing, so the band names a budget
+  // "of $0.00" would read as a budget of nothing, so the head names a budget
   // total only once a budget or goal is set on the list.
   const budgeted = block.rows.some((r) => r.budgetCents !== null)
+  // The % pill: the Actual over the budget total, from core (F50); null, no
+  // pill, with no budget, a $0 one, or an Actual refunds took below zero.
+  const used = budgetUsedBp({ actualCents: block.actualTotalCents, budgetCents: block.budgetTotalCents }).usedBp
 
   return (
     <section aria-label={heading} className={cn('overflow-hidden rounded-xl border bg-card', className)}>
       {/* Mockup A's list card head: an icon tile in the list's hue, the name,
-        "$Actual of $Budget", and a bar of the Actual against the budget
-        total, from core's goalBars. The design's % pill is not drawn: no
-        engine output gives a block's Actual over its budget, and the screen
-        does not divide (NOTES.md). */}
+        "$Actual of $Budget", the % pill in the tile's colour and the list's
+        ink, and a bar of the Actual against the budget total, from core's
+        goalBars. */}
       <div className="flex flex-col gap-3.5 px-4 pt-4 pb-3.5 max-[359px]:px-3 md:px-5 md:pt-5">
         <div className="flex items-center gap-3.5">
           <span aria-hidden="true" className={cn('flex size-12 shrink-0 items-center justify-center rounded-lg', tone.tile, tone.icon)}>
@@ -609,6 +613,12 @@ export function Block({
               )}
             </p>
           </div>
+          {used === null ? null : (
+            <span className={cn('tnum shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold', tone.tile, tone.ink)}>
+              {formatBasisPoints(used)}
+              <span className="sr-only"> of the {word.toLowerCase()}</span>
+            </span>
+          )}
         </div>
         {budgeted ? <Bar bp={filledBp(block.budgetTotalCents, block.actualTotalCents)} fill={tone.bar} className="h-2" /> : null}
       </div>

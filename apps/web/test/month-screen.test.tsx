@@ -289,6 +289,52 @@ describe('MonthScreen budgets and goals', () => {
     await expectNoAxeViolations()
   })
 
+  // Hand-derived, by core's budgetUsedBp (F50), drawn as whole percentages:
+  // Variable 85.00 of 220.00 is 3,864 bp, "39%"; Bills 55.00 of 1,600.00 is
+  // 344 bp, "3%"; Income 2,500.00 of 3,000.00 is 8,333 bp; Savings 300.00 of
+  // 500.00 is 6,000 bp. Subscriptions has no budget, so no pill.
+  it("puts each list's Actual over its budget in a pill in the list's colours, from core", async () => {
+    renderScreen(<MonthScreen month="2026-09" />, budgeted())
+    await screen.findByRole('region', { name: 'Variable expenses' })
+
+    const pill = (name: string) => block(name).getByRole('heading').closest('div')?.nextElementSibling ?? null
+    expect(pill('Variable expenses')?.textContent).toBe('39% of the budget')
+    expect(pill('Bills')?.textContent).toBe('3% of the budget')
+    expect(pill('Income')?.textContent).toBe('83% of the goal')
+    expect(pill('Savings')?.textContent).toBe('60% of the goal')
+    expect(pill('Subscriptions')).toBeNull()
+    expect(block('Subscriptions').queryByText(/%/)).toBeNull()
+    // The tile's colour and the list's ink (ADR 0010), as the mockup draws it.
+    expect(pill('Variable expenses')?.className.split(' ')).toEqual(
+      expect.arrayContaining(['rounded-full', 'tnum', 'bg-variable-tile', 'text-variable-ink']),
+    )
+    expect(pill('Income')?.className.split(' ')).toEqual(expect.arrayContaining(['bg-income-tile', 'text-income-ink']))
+    await expectNoAxeViolations()
+  })
+
+  // Hand-derived: Variable 85.00 against groceries' 50.00 alone is 17,000 bp,
+  // past 100% and not capped. A bill budgeted at $0 has no pill (no division
+  // by zero), and a list refunds took below zero has none either (F50).
+  it('draws the pill past 100%, and none on a $0 budget or an Actual below zero', async () => {
+    const fake = seeded()
+    fake.tables.transactions = fake.tables.transactions.filter((t) => t.category_id !== 'fund')
+    fake.tables.transactions.push(tx('t10', '2026-09-20', 7000, 'fund'))
+    fake.tables.category_budgets.push(
+      budget('b1', 'groceries', '2026-09-01', 'onward', 5000),
+      budget('b2', 'phone', '2026-09-01', 'onward', 0),
+      budget('b3', 'fund', '2026-09-01', 'onward', 50000),
+    )
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+    await screen.findByRole('region', { name: 'Variable expenses' })
+
+    expect(band('Variable expenses')).toBe('$85.00 of $50.00')
+    expect(block('Variable expenses').getByText('170%').textContent).toBe('170% of the budget')
+    expect(band('Bills')).toBe('$55.00 of $0.00')
+    expect(block('Bills').queryByText(/%/)).toBeNull()
+    expect(band('Savings')).toBe('-$70.00 of $500.00')
+    expect(block('Savings').queryByText(/%/)).toBeNull()
+  })
+
   // Hand-derived for October: groceries 200.00 from July, dining back to
   // August's 50.00, clothing 99.99 from October; nothing spent. 349.99.
   it('carries a budget into later months, and a "just this month" one into none', async () => {

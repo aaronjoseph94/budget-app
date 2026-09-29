@@ -57,7 +57,8 @@ and the amber Review count.
   so its name matches what it shows.
 - **No % pill on the lists** (N125, a blocker): no engine output gives it.
   The bars are drawn: each is core's `goalBars` over one Actual and its
-  budget, which the screen turns into a width.
+  budget, which the screen turns into a width. *(Since drawn: see the %
+  pill below.)*
 - **Mini bars on Variable and Income only** (P1 item 5), rose where core's
   Left is below zero.
 - **One pen** (P1 item 5) was already the app's rule; Help's Month article
@@ -85,3 +86,19 @@ and the amber Review count.
 - **Beside the rail, 768 to 1023 px, the Month's table head is 13 px** and
   the overspent pill keeps 6 px sides below 1400 px, so the Variable card
   holds its columns with several rows over budget.
+
+## 2026-09-29 — The % pill (N125)
+
+- **The engine gives it** (F50): the orchestrator allowed this one engine
+  slice ahead of step 4. `budgetUsedBp` is the list's Actual total over
+  its budget total, the two figures the card head prints beside it.
+- **Drawn as the mockup does:** a round pill after the name, in the list's
+  tile colour with its ink (ADR 0010, measured ink on tile), 14px
+  semibold, "116%". A screen reader hears "116% of the budget", or "of
+  the goal" on Income and Savings.
+- **No pill** with no budget or a $0 one, or when refunds took the Actual
+  below zero (F50). The bar under it still shows 100% at most; the pill
+  is where the overspending shows as a number.
+- **Whole percentages,** by the app's one percentage helper, so 99.6%
+  reads "100%" while the list is not yet over; the Left column and its
+  rose pill say which rows are.

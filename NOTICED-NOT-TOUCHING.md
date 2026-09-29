@@ -2893,7 +2893,7 @@ carry the workbook's, for steps 5 and 8.
 
 ---
 
-## N125 — No engine output gives a list's Actual over its budget
+## N125 — No engine output gives a list's Actual over its budget *(settled 2026-09-29)*
 
 **Seen:** 2026-09-29, Mockup A step 3. The Month's list cards in Mockup A
 carry a % pill ("79%") and the Week's the same. It is a block's Actual
@@ -2907,6 +2907,12 @@ alone. A screen may not divide (invariant 1), so the pill is not drawn.
 **To settle:** give `PeriodBlock` (and `PeriodRow`) a `usedBp`, the Actual
 over the budget half-up and uncapped, null with no budget, with worked
 cases; then draw the pill from it on the Month, the Week and Paycheck.
+
+**Settled, 2026-09-29 (7bbcdec and the commit after it):** core's
+`budgetUsedBp` (F50) gives a list's Actual total over its budget total,
+half-up and uncapped, null with no budget, a $0 one or an Actual below
+zero. `Block` draws it as the pill on every list card, so the Month, the
+Week and Paycheck all have it.
 
 ---
 
@@ -2948,7 +2954,7 @@ text units, with its own tests.
 
 ---
 
-## N128 — Two leftovers in the Month's list cards
+## N128 — Two leftovers in the Month's list cards *(settled 2026-09-29)*
 
 **Seen:** 2026-09-29, review of Mockup A step 3. `TONE` in
 apps/web/src/screens/MonthScreen.tsx still carries a `rule` per list that
@@ -2957,3 +2963,6 @@ doc comment still speaks of "the band", which the new card head replaced.
 
 **Why not fixed here:** neither changes what anyone sees; the next edit
 to `Block` can take both.
+
+**Settled, 2026-09-29, with the % pill:** `TONE` has no `rule`, and
+`Block`'s comments speak of the card head.
