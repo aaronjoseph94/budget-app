@@ -45,11 +45,12 @@ function Figures({ figures, dismissals }: { figures: ShopFigures; dismissals: Di
   const { categories } = useAppData()
   const nameOf = useCallback((id: string) => categories.find((c) => c.id === id)?.name ?? 'its category', [categories])
   return (
-    <>
+    // Two across from 1280px, as the Overview's sections (Mockup A step 8).
+    <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2 xl:gap-5">
       <TopShopsCard figures={figures} />
       <SubscriptionsCard series={figures.series} dismissals={dismissals} />
       <SecondLookCard unusual={figures.unusual} nameOf={nameOf} />
-    </>
+    </div>
   )
 }
 
@@ -66,7 +67,7 @@ function TopShopsCard({ figures }: { figures: ShopFigures }) {
   const { top, historyStart } = figures
   const before = top.before === null ? null : formatMonthName(top.before.from)
   return (
-    <Section title="Top shops">
+    <Section title="Top shops" large>
       <p className="text-muted-foreground">
         {formatDateRange(top.now.from, top.now.to)}
         {top.before === null ? '' : `, against ${formatDateRange(top.before.from, top.before.to)}`}. Charges less refunds.

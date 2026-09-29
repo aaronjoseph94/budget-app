@@ -46,12 +46,13 @@ export function HabitsPanel({ asOf }: { asOf: string }) {
       {figures === 'loading' ? <p className="text-sm text-muted-foreground">Working out your habits…</p> : null}
       {figures === 'failed' ? <Failed missingUpdate={read.status === 'failed' && read.missingUpdate} /> : null}
       {typeof figures === 'object' ? (
-        <>
+        // Two across from 1280px, as the Overview's sections (Mockup A step 8).
+        <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2 xl:gap-5">
           <GridCard grid={figures.grid} />
           <StreakCard streaks={figures.streaks} />
           <WeekdayCard pattern={figures.pattern} />
           <BestsCard bests={figures.bests} nameOf={nameOf} />
-        </>
+        </div>
       ) : null}
     </div>
   )
@@ -74,7 +75,7 @@ function dayText(day: GridDay, weekday: string): string {
 function GridCard({ grid }: { grid: SpendingGrid }) {
   if (grid.weeks.length === 0) {
     return (
-      <Section title="Your spending grid">
+      <Section title="Your spending grid" large>
         <p>Bring in a statement or add a charge, and each day’s everyday spending shows here.</p>
       </Section>
     )
@@ -86,7 +87,7 @@ function GridCard({ grid }: { grid: SpendingGrid }) {
     return `Week of ${formatDayMonth(w.start)}: ${formatCents(w.spentCents)} · ${w.days.map((x, d) => dayText(x, WEEKDAYS[d]!)).join(', ')}`
   }
   return (
-    <Section title="Your spending grid">
+    <Section title="Your spending grid" large>
       <p className="text-muted-foreground">
         Everyday spending (Variable expenses), each day of the last {grid.weeks.length} weeks. {allowanceText(grid)}
       </p>
@@ -136,7 +137,7 @@ const weeksText = (n: number) => (n === 1 ? '1 week' : `${n} weeks`)
 function StreakCard({ streaks }: { streaks: Streaks }) {
   if (streaks.status === 'no_budget') {
     return (
-      <Section title="Weeks within budget">
+      <Section title="Weeks within budget" large>
         <p>Set a weekly budget for your everyday spending, and each week you stay within it counts toward a streak.</p>
         <a href={hashOf({ screen: 'week', param: null })} className={link}>
           Open the Week
@@ -147,13 +148,13 @@ function StreakCard({ streaks }: { streaks: Streaks }) {
   const { weeks, current, best, bestEnded } = streaks
   if (weeks.length === 0) {
     return (
-      <Section title="Weeks within budget">
+      <Section title="Weeks within budget" large>
         <p>Streaks start once your records hold a whole week, Monday to Sunday.</p>
       </Section>
     )
   }
   return (
-    <Section title="Weeks within budget">
+    <Section title="Weeks within budget" large>
       {current > 0 && current === best ? <p className="font-medium">Your best run yet. Keep it going!</p> : null}
       <dl className="divide-y">
         <Row label="In a row now" value={weeksText(current)} />
@@ -175,7 +176,7 @@ function StreakCard({ streaks }: { streaks: Streaks }) {
 function WeekdayCard({ pattern }: { pattern: WeekdayPattern }) {
   if (pattern.status === 'not_enough') {
     return (
-      <Section title="Which weekday costs most">
+      <Section title="Which weekday costs most" large>
         <p>
           {pattern.possibleFrom === null
             ? 'Bring in a statement or add a charge to begin; this needs four whole weeks of records.'
@@ -187,7 +188,7 @@ function WeekdayCard({ pattern }: { pattern: WeekdayPattern }) {
   const { days, costliest, weeks, from, to } = pattern
   const span = `the last ${weeks} whole weeks, ${formatDayMonth(from)} to ${formatDayMonth(to)}`
   return (
-    <Section title="Which weekday costs most">
+    <Section title="Which weekday costs most" large>
       <p>
         {costliest === null
           ? `Nothing spent on any weekday over ${span}.`
@@ -212,7 +213,7 @@ function WeekdayCard({ pattern }: { pattern: WeekdayPattern }) {
 function BestsCard({ bests, nameOf }: { bests: PersonalBests; nameOf: (id: string) => string }) {
   if (bests.status === 'not_enough') {
     return (
-      <Section title="Personal bests">
+      <Section title="Personal bests" large>
         <p>
           {bests.possibleFrom === null
             ? 'Bring in a statement or add a charge to begin; a best needs three whole months of records.'
@@ -223,7 +224,7 @@ function BestsCard({ bests, nameOf }: { bests: PersonalBests; nameOf: (id: strin
   }
   const month = formatMonthTitle(bests.month)
   return (
-    <Section title="Personal bests">
+    <Section title="Personal bests" large>
       {bests.bests.length === 0 ? (
         <p>No personal best in {month}. One shows when a category’s whole month is its lowest of the last {bests.months}.</p>
       ) : (

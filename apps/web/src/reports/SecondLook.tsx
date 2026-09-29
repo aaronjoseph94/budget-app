@@ -64,7 +64,7 @@ function flagsOf(unusual: UnusualCharges, nameOf: (id: string) => string): Flag[
 export function SecondLookCard({ unusual, nameOf }: { unusual: UnusualCharges; nameOf: (id: string) => string }) {
   const flags = flagsOf(unusual, nameOf)
   return (
-    <Section title="Worth a second look">
+    <Section title="Worth a second look" large>
       <p className="text-muted-foreground">Pointed out for you to check. Nothing is hidden, and every charge still counts in your totals.</p>
       {flags.length === 0 ? (
         <p>Nothing unusual in these days.</p>

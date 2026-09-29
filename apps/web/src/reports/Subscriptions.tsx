@@ -24,7 +24,7 @@ export function SubscriptionsCard({ series, dismissals }: { series: readonly Rec
     if (!(await dismissals.dismiss(cause))) setProblem('That could not be saved. Check your connection and try again.')
   }
   return (
-    <Section title="Subscriptions and regular charges">
+    <Section title="Subscriptions and regular charges" large>
       <p className="text-muted-foreground">Charges that come at steady gaps for a steady amount. The next date is a guess from the gaps so far.</p>
       {series.length === 0 ? (
         <p>None found yet. A charge shows here once it has come three times at steady gaps.</p>

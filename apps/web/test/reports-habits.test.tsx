@@ -54,6 +54,16 @@ describe('Reports, Habits: the spending grid (plan §2.6, A18)', () => {
     await expectNoAxeViolations()
   })
 
+  it('lays its four cards two across from 1280px, as the Overview’s sections (Mockup A)', async () => {
+    go('/reports')
+    renderScreen(<Shell />, habitsFake())
+    await openHabits()
+
+    const grid = (await card('Your spending grid')).parentElement as HTMLElement
+    expect(grid.className).toContain('xl:grid-cols-2')
+    for (const name of ['Weeks within budget', 'Which weekday costs most', 'Personal bests']) expect((await card(name)).parentElement).toBe(grid)
+  })
+
   it('leaves the days before the records blank, never $0, and remembers the tab', async () => {
     go('/reports')
     renderScreen(<Shell />, habitsFake('2026-08-08'))

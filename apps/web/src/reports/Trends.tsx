@@ -62,10 +62,11 @@ export function TrendsPanel({ asOf }: { asOf: string }) {
       {figures === 'loading' ? <p className="text-sm text-muted-foreground">Working out your trends…</p> : null}
       {figures === 'failed' ? <Failed missingUpdate={read.status === 'failed' && read.missingUpdate} /> : null}
       {typeof figures === 'object' ? (
-        <>
+        // Two across from 1280px, as the Overview's sections (Mockup A step 8).
+        <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2 xl:gap-5">
           <TotalsTrend trend={figures.totals} />
           <CategoryTrends months={figures.totals.months} trends={figures.categories} label={figures.totals.spent.label} nameOf={nameOf} />
-        </>
+        </div>
       ) : null}
     </div>
   )
@@ -85,7 +86,7 @@ function TotalsTrend({ trend }: { trend: MonthlyTrend }) {
       ? `${formatShortMonth(months[i]!)}: no records`
       : `${formatShortMonth(months[i]!)}: ${lines.map((l) => `${l.name.toLowerCase()} ${formatCents(l.line.points[i]!)}`).join(', ')}`
   return (
-    <Section title="Income, Spent and Saved">
+    <Section title="Income, Spent and Saved" large>
       <p className="text-muted-foreground">The last {months.length} whole months, {span}</p>
       {!drawn ? (
         <p>Nothing to draw yet: a trend starts from your first whole month of records. {notYet(trend.spent.label)}</p>
@@ -132,7 +133,7 @@ function notYet(label: TrendLabel): string {
 function CategoryTrends(props: { months: readonly string[]; trends: readonly CategoryTrend[]; label: TrendLabel; nameOf: (id: string) => string }) {
   const { months, trends, nameOf } = props
   return (
-    <Section title="Each category against its usual month">
+    <Section title="Each category against its usual month" large>
       <p className="text-muted-foreground">Variable expenses, month by month. The dashed line is your usual month.</p>
       {trends.length === 0 ? (
         <p>No everyday spending (Variable expenses) in these months yet. {notYet(props.label)}</p>
