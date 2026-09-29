@@ -27,7 +27,7 @@ import { Alert, Loading } from '../components/ui/feedback.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
 import { NativeSelect } from '../components/ui/form.js'
 import { cn } from '../lib/cn.js'
-import { useWide } from '../lib/wide.js'
+import { useFourAcross } from '../lib/wide.js'
 import { AnnualCharts } from './YearCharts.js'
 import { YearGlance } from './YearGlance.js'
 import { PeriodSwitch } from './PeriodSwitch.js'
@@ -56,7 +56,7 @@ export function YearScreen({ start: address }: { start: string | null }) {
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [group, setGroup] = useState<GroupKey>('income')
-  const wide = useWide()
+  const wide = useFourAcross()
 
   useEffect(() => {
     // As on the Month (N35): rows read before the app's first load name
@@ -166,10 +166,11 @@ export function YearScreen({ start: address }: { start: string | null }) {
         <>
           <YearGlance sheet={sheet} wide={wide} comparison={comparison} />
           {wide ? (
-            // Annual's own arrangement on its cream: the totals panel and
-            // Income, Expenses and Savings across the top (A6:X21), then
+            // Design-review P2 item 7: from 1280px all seven tables at once,
+            // four across in Annual's arrangement: the totals panel and
+            // Income, Expenses and Savings (A6:X21), the chart row, then
             // Bills, Debts, Subscriptions and Variable expenses (B25:X41).
-            <div className="grid grid-cols-4 gap-4 rounded-xl bg-muted p-4">
+            <div className="grid grid-cols-4 gap-3 min-[1400px]:gap-4">
               <YearTotals sheet={sheet} thisMonth={thisMonth} />
               {GROUPS.slice(0, 3).map((g) => (
                 <YearTable key={g.key} sheet={sheet} group={g.key} thisMonth={thisMonth} compact />
@@ -182,6 +183,8 @@ export function YearScreen({ start: address }: { start: string | null }) {
             </div>
           ) : (
             <>
+              {/* Narrower, the chips choose one table; from 1024px it has
+                the charts beside it, as Mockup A draws them. */}
               <div role="group" aria-label="Table" className="flex flex-wrap gap-1.5">
                 {GROUPS.map((g) => (
                   <button
@@ -190,16 +193,18 @@ export function YearScreen({ start: address }: { start: string | null }) {
                     aria-pressed={group === g.key}
                     onClick={() => setGroup(g.key)}
                     className={cn(
-                      'rounded-full border px-3 py-1.5 text-xs font-medium pointer-coarse:min-h-11',
-                      group === g.key ? 'border-year-header bg-year-header text-year-header-ink' : 'bg-card',
+                      'h-11 rounded-full border px-4 text-sm font-medium outline-none focus-visible:ring-[3px] focus-visible:ring-ring',
+                      group === g.key ? 'border-year-header bg-year-header text-year-header-ink' : 'bg-card hover:bg-accent',
                     )}
                   >
                     {g.label}
                   </button>
                 ))}
               </div>
-              <YearTable sheet={sheet} group={group} thisMonth={thisMonth} />
-              <AnnualCharts sheet={sheet} wide={false} />
+              <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-5">
+                <YearTable sheet={sheet} group={group} thisMonth={thisMonth} />
+                <AnnualCharts sheet={sheet} wide={false} />
+              </div>
             </>
           )}
         </>
@@ -265,56 +270,37 @@ function StartPicker({ start, today }: { start: string; today: string }) {
 }
 
 type GroupKey = keyof YearGroups
-type Tone = 'income' | 'savings' | 'owed' | 'variable'
+type Tone = 'income' | 'savings' | 'bills' | 'debts' | 'subscriptions' | 'variable' | 'expenses'
 
 /**
  * Annual's seven cards: Income, Expenses and Savings across the top (H3:X21)
  * and Bills, Debts, Subscriptions and Variable expenses below (B25:X41),
- * each in its Month block's colours. Expenses are the four added (P10, Q10).
+ * each in its list's hue (ADR 0010). Expenses are the four added (P10, Q10),
+ * so they are no one list and take the neutral grey, never Debts' rose.
  */
 const GROUPS: readonly { key: GroupKey; label: string; heading: string; budget: 'Goal' | 'Budgeted'; tone: Tone }[] = [
   { key: 'income', label: 'Income', heading: 'Income', budget: 'Goal', tone: 'income' },
-  { key: 'expenses', label: 'Expenses', heading: 'Expenses', budget: 'Budgeted', tone: 'owed' },
+  { key: 'expenses', label: 'Expenses', heading: 'Expenses', budget: 'Budgeted', tone: 'expenses' },
   { key: 'savings', label: 'Savings', heading: 'Savings', budget: 'Goal', tone: 'savings' },
-  { key: 'bill', label: 'Bills', heading: 'Bills', budget: 'Budgeted', tone: 'owed' },
-  { key: 'debt', label: 'Debts', heading: 'Debts', budget: 'Budgeted', tone: 'owed' },
-  { key: 'subscription', label: 'Subscriptions', heading: 'Subscriptions', budget: 'Budgeted', tone: 'owed' },
+  { key: 'bill', label: 'Bills', heading: 'Bills', budget: 'Budgeted', tone: 'bills' },
+  { key: 'debt', label: 'Debts', heading: 'Debts', budget: 'Budgeted', tone: 'debts' },
+  { key: 'subscription', label: 'Subscriptions', heading: 'Subscriptions', budget: 'Budgeted', tone: 'subscriptions' },
   { key: 'variable', label: 'Variable', heading: 'Variable expenses', budget: 'Budgeted', tone: 'variable' },
 ]
 
-const TONE: Record<Tone, { band: string; header: string; total: string; ink: string; rule: string }> = {
-  income: {
-    band: 'bg-income-band',
-    header: 'bg-income-header',
-    total: 'bg-income-total',
-    ink: 'text-income-ink',
-    rule: 'border-income-rule',
-  },
-  savings: {
-    band: 'bg-savings-band',
-    header: 'bg-savings-header',
-    total: 'bg-savings-total',
-    ink: 'text-savings-ink',
-    rule: 'border-savings-rule',
-  },
-  owed: {
-    band: 'bg-owed-band',
-    header: 'bg-owed-header',
-    total: 'bg-owed-total',
-    ink: 'text-owed-ink',
-    rule: 'border-owed-rule',
-  },
-  variable: {
-    band: 'bg-variable-band',
-    header: 'bg-variable-header',
-    total: 'bg-variable-total',
-    ink: 'text-variable-ink',
-    rule: 'border-variable-rule',
-  },
+/** Each table's dot (no words), and its tinted head and total row with the list's ink. Written out for Tailwind. */
+const TONE: Record<Tone, { dot: string; header: string; ink: string }> = {
+  income: { dot: 'bg-income-accent', header: 'bg-income-header', ink: 'text-income-ink' },
+  savings: { dot: 'bg-savings-accent', header: 'bg-savings-header', ink: 'text-savings-ink' },
+  bills: { dot: 'bg-bills-accent', header: 'bg-bills-header', ink: 'text-bills-ink' },
+  debts: { dot: 'bg-debts-accent', header: 'bg-debts-header', ink: 'text-debts-ink' },
+  subscriptions: { dot: 'bg-subscriptions-accent', header: 'bg-subscriptions-header', ink: 'text-subscriptions-ink' },
+  variable: { dot: 'bg-variable-accent', header: 'bg-variable-header', ink: 'text-variable-ink' },
+  expenses: { dot: 'bg-owed-accent', header: 'bg-owed-header', ink: 'text-owed-ink' },
 }
 
 /**
- * One card: its heading and Actual total on the band, then a row a month.
+ * One card: its dot, heading and Actual total on the card head, then a row a month.
  * A zero stays blank, as the workbook's `"$"#,##0.00;;` leaves it, so a month the
  * gate has not reached reads as not yet rather than as $0; a negative keeps
  * its minus sign (D8). The totals row adds twelve months (D7).
@@ -335,23 +321,28 @@ function YearTable({
   const tone = TONE[g.tone]
   const total = sheet.totals[group]
   const blank = (c: number) => (c === 0 ? '' : formatAmount(c))
+  // Four across, the cells keep 10px sides (12px from 1400px) and 4px between, and the type is
+  // 12px until 1400px, so no month or figure wraps; one table alone has
+  // Mockup A's 20px sides and 15px type.
+  const left = compact ? 'pl-2.5 min-[1400px]:pl-3' : 'pl-4 md:pl-5'
+  const right = compact ? 'pr-2.5 min-[1400px]:pr-3' : 'pr-4 md:pr-5'
+  const gap = compact ? 'px-1' : 'px-2'
   return (
-    <section
-      aria-label={`${g.heading} by month`}
-      className={cn('overflow-hidden rounded-xl border bg-card shadow-sm', tone.rule)}
-    >
-      <div className={cn('flex items-baseline justify-between gap-3 px-4 py-3', tone.band, tone.ink)}>
-        <h2 className="text-sm font-semibold uppercase tracking-wide">{g.heading}</h2>
-        <Figure className="text-lg font-bold">{formatCents(total.actualCents)}</Figure>
+    <section aria-label={`${g.heading} by month`} className="min-w-0 overflow-hidden rounded-xl border bg-card">
+      <div className={cn('flex flex-wrap items-center gap-x-3 gap-y-1 py-4', left, right)}>
+        <span aria-hidden="true" className={cn('size-3 shrink-0 rounded-[4px]', tone.dot)} />
+        <h2 className={cn('flex-1 font-semibold', compact ? 'text-base' : 'text-lg')}>{g.heading}</h2>
+        {/* Drops under the name before it would break inside the number. */}
+        <Figure className={cn('shrink-0 font-bold', compact ? 'text-base' : 'text-lg')}>{formatCents(total.actualCents)}</Figure>
       </div>
-      <table className={cn('w-full', compact ? 'text-xs' : 'text-sm')}>
+      <table className={cn('w-full', compact ? 'text-xs whitespace-nowrap min-[1400px]:text-[0.8125rem]' : 'text-sm md:text-[0.9375rem]')}>
         <thead className={cn(tone.header, tone.ink)}>
           <tr>
             {['Month', g.budget, 'Actual'].map((name, i) => (
               <th
                 key={name}
                 scope="col"
-                className={cn('px-1 py-1.5 text-xs font-medium', i === 0 ? 'pl-4 text-left' : 'text-right last:pr-4')}
+                className={cn(gap, 'py-2.5 font-medium', i === 0 ? cn(left, 'text-left') : 'text-right', i === 2 && right)}
               >
                 {name}
               </th>
@@ -359,27 +350,30 @@ function YearTable({
           </tr>
         </thead>
         <tbody>
-          {sheet.months.map((m) => (
-            <tr
-              key={m.month}
-              aria-current={m.month === thisMonth ? 'date' : undefined}
-              className={cn('border-t', tone.rule, m.month === thisMonth ? 'bg-year-today' : 'even:bg-year-row-alt')}
-            >
-              <th scope="row" className="py-1.5 pl-4 pr-1 text-left font-normal">
-                {compact ? formatShortMonth(m.month) : formatMonthTitle(m.month)}
-              </th>
-              <td className="tnum px-1 py-1.5 text-right">{blank(m[group].budgetCents)}</td>
-              <td className={cn('tnum py-1.5 pl-1 pr-4 text-right', m[group].actualCents < 0 && 'text-spend')}>
-                {blank(m[group].actualCents)}
-              </td>
-            </tr>
-          ))}
-          <tr className={cn('border-t font-semibold', tone.rule, tone.total, tone.ink)}>
-            <th scope="row" className="py-1.5 pl-4 pr-1 text-left">
+          {sheet.months.map((m) => {
+            const now = m.month === thisMonth
+            return (
+              <tr
+                key={m.month}
+                aria-current={now ? 'date' : undefined}
+                className={cn('border-t', now && 'bg-year-today font-semibold')}
+              >
+                <th scope="row" className={cn('py-2.5 text-left', gap, left, now ? 'font-semibold' : 'font-normal')}>
+                  {compact ? formatShortMonth(m.month) : formatMonthTitle(m.month)}
+                </th>
+                <td className={cn('tnum py-2.5 text-right font-normal text-muted-foreground', gap)}>{blank(m[group].budgetCents)}</td>
+                <td className={cn('tnum py-2.5 text-right', gap, right, m[group].actualCents < 0 && 'text-spend')}>
+                  {blank(m[group].actualCents)}
+                </td>
+              </tr>
+            )
+          })}
+          <tr className={cn('border-t font-semibold', tone.header)}>
+            <th scope="row" className={cn('py-3 text-left', gap, left)}>
               Total
             </th>
-            <td className="tnum px-1 py-1.5 text-right">{formatAmount(total.budgetCents)}</td>
-            <td className="tnum py-1.5 pl-1 pr-4 text-right">{formatAmount(total.actualCents)}</td>
+            <td className={cn('tnum py-3 text-right', gap)}>{formatAmount(total.budgetCents)}</td>
+            <td className={cn('tnum py-3 text-right', gap, right)}>{formatAmount(total.actualCents)}</td>
           </tr>
         </tbody>
       </table>
@@ -390,8 +384,8 @@ function YearTable({
 /**
  * Annual's left panel (A6:F21): the start and current month, then the
  * year's totals, Left over (F12, decision 15) and the balances (D18, D20),
- * in the Month summary card's colours, which are the workbook's for both. Until
- * the start month's balance is typed, it says where to type it.
+ * as Mockup A's white card. Until the start month's balance is typed, it
+ * says where to type it.
  */
 function YearTotals({ sheet, thisMonth }: { sheet: YearSheet; thisMonth: string }) {
   const rows: readonly [string, string][] = [
@@ -405,12 +399,12 @@ function YearTotals({ sheet, thisMonth }: { sheet: YearSheet; thisMonth: string 
     ['Ending balance', sheet.endingBalanceCents === null ? 'Not yet' : formatCents(sheet.endingBalanceCents)],
   ]
   return (
-    <section aria-label="Year totals" className="rounded-xl border bg-summary p-4 shadow-sm">
-      <dl className="space-y-2.5">
+    <section aria-label="Year totals" className="min-w-0 rounded-xl border bg-card px-5 py-4">
+      <dl className="space-y-3">
         {rows.map(([label, value]) => (
           <div key={label}>
-            <dt className="text-xs font-medium text-summary-label">{label}</dt>
-            <dd className="tnum text-lg font-bold text-summary-value">{value}</dd>
+            <dt className="text-[0.8125rem] text-muted-foreground">{label}</dt>
+            <dd className="tnum text-lg font-bold">{value}</dd>
           </div>
         ))}
       </dl>
@@ -418,7 +412,7 @@ function YearTotals({ sheet, thisMonth }: { sheet: YearSheet; thisMonth: string 
       {sheet.startingBalanceCents === null ? (
         <button
           type="button"
-          className={cn('mt-3 text-left text-xs text-summary-label underline underline-offset-4', LINE_BUTTON)}
+          className={cn('mt-3 text-left text-xs text-muted-foreground underline underline-offset-4', LINE_BUTTON)}
           onClick={() => navigate('month', sheet.startMonth.slice(0, 7))}
         >
           Type {formatMonthName(sheet.startMonth)}&rsquo;s starting balance on the Month to see these

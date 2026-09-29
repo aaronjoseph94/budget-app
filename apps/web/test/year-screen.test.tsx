@@ -281,6 +281,8 @@ describe('YearScreen', () => {
       'Income by month', 'Expenses by month', 'Savings by month', 'Bills by month',
       'Debts by month', 'Subscriptions by month', 'Variable expenses by month',
     ])
+    // Four across, with no panel behind them (Mockup A has none).
+    expect(screen.getByRole('region', { name: 'Year totals' }).parentElement?.className).toBe('grid grid-cols-4 gap-3 min-[1400px]:gap-4')
     // No picking one table, and Left over once, in the panel, not again above it.
     expect(screen.queryByRole('group', { name: 'Table' })).toBeNull()
     expect(screen.getAllByText('Left over')).toHaveLength(1)
@@ -290,6 +292,32 @@ describe('YearScreen', () => {
       name: 'Income, expenses and savings',
     })
     expect([...annual.querySelectorAll('path')].map((p) => p.getAttribute('fill'))).toEqual(['#D7EEEB', '#F9D7D2', '#F7EAA9'])
+  })
+
+  it('keeps the chips from 1024px to 1279px, each table in its list\'s hue, with the charts beside it', async () => {
+    // Beside the sidebar but under 1280px: one table at a time (design-review P2 item 7).
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query.includes('1024px'), addEventListener: () => undefined, removeEventListener: () => undefined,
+    }))
+    renderScreen(<YearScreen start="2026-01" />, seeded())
+
+    const chips = within(await screen.findByRole('group', { name: 'Table' })).getAllByRole('button')
+    expect(chips.map((c) => c.textContent)).toEqual(['Income', 'Expenses', 'Savings', 'Bills', 'Debts', 'Subscriptions', 'Variable'])
+    for (const chip of chips) expect(chip.className.split(' ')).toContain('h-11')
+    expect(screen.queryByRole('region', { name: 'Year totals' })).toBeNull()
+    const hue = async (chip: string, name: string) => {
+      fireEvent.click(screen.getByRole('button', { name: chip }))
+      const table = await screen.findByRole('region', { name })
+      return [table.querySelector('[aria-hidden="true"]')?.className.match(/bg-[a-z]+-accent/)?.[0], table.querySelector('thead')?.className]
+    }
+    expect(await hue('Bills', 'Bills by month')).toEqual(['bg-bills-accent', 'bg-bills-header text-bills-ink'])
+    expect(await hue('Debts', 'Debts by month')).toEqual(['bg-debts-accent', 'bg-debts-header text-debts-ink'])
+    expect(await hue('Subscriptions', 'Subscriptions by month')).toEqual(['bg-subscriptions-accent', 'bg-subscriptions-header text-subscriptions-ink'])
+    // Expenses are the four lists added, no one list, so grey rather than Debts' rose.
+    expect(await hue('Expenses', 'Expenses by month')).toEqual(['bg-owed-accent', 'bg-owed-header text-owed-ink'])
+    const table = screen.getByRole('region', { name: 'Expenses by month' })
+    expect(table.parentElement?.className).toContain('lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]')
+    expect(table.parentElement?.contains(screen.getByRole('region', { name: 'Year charts' }))).toBe(true)
   })
 
   it('shows no year when a read fails, and says why', async () => {

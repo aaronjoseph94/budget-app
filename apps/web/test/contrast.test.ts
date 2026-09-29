@@ -143,6 +143,12 @@ const TEXT: readonly (readonly [text: string, surface: string, least?: number, a
   ['year-header-ink', 'year-header'],
   ['foreground', 'year-row-alt'],
   ['foreground', 'year-today'],
+  // The Year's tables (step 5): a budget in muted words on today's row, and
+  // each Total row's words in the ink on its list's tinted head.
+  ['muted-foreground', 'year-today'],
+  ...(['income', 'savings', 'bills', 'debts', 'subscriptions', 'variable', 'owed'] as const).map(
+    (list) => ['foreground', `${list}-header`] as const,
+  ),
   ['home-ink', 'home-card'],
   ['home-ink', 'home-canvas'],
   ['muted-foreground', 'home-canvas'],
