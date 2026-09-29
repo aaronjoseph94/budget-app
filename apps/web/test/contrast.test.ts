@@ -131,6 +131,8 @@ const TEXT: readonly (readonly [text: string, surface: string, least?: number, a
   ['canvas-muted', 'card'],
   ['summary-value', 'card'],
   ['waiting-ink', 'waiting-tile'],
+  // The Week's goal card: its time line on the soft accent (step 4).
+  ['foreground', 'primary-soft'],
   // The screens' own sets.
   ['white', 'setup-band'],
   ['setup-band-ink', 'setup-band'],

@@ -59,14 +59,28 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-// N126: the Week's lists share the Month's cards, but lie four across from
-// 1280px. There they keep the smaller table type, and none of the Month's
-// wider 1400px edges, or every table ran past its card at 1440px.
-it("keeps the four-across cards' smaller table and edges on a desktop", () => {
+// N126, step 4: Mockup A lays the Week's lists two across in list order, as
+// the Month does, so they take the Month's table type and its 1400px edges,
+// and none is ordered by the workbook's four-across layout any more.
+it("lays the lists two across in list order, with the Month's table", () => {
   show(sheet(CATEGORIES, WEEK))
   const table = region('Variable expenses').getByRole('table')
-  expect(table.className).toContain('xl:text-xs')
-  expect(table.innerHTML).not.toContain('min-[1400px]')
+  expect(table.className).not.toContain('xl:text-xs')
+  expect(table.innerHTML).toContain('min-[1400px]')
+  const lists = screen.getAllByRole('region').filter((r) => r.querySelector('table, p') && r.getAttribute('aria-label') !== 'Summary')
+  expect(lists.map((r) => r.getAttribute('aria-label'))).toEqual(['Variable expenses', 'Bills', 'Subscriptions', 'Debts', 'Income', 'Savings'])
+  expect(lists.some((r) => r.className.includes('xl:order-'))).toBe(false)
+  expect(lists[0]?.parentElement?.className.split(' ')).toEqual(expect.arrayContaining(['md:grid-cols-2']))
+})
+
+// Mockup A's stat cards, as the Month's: Left to spend the hero, with the
+// accent's gradient, and Spent white, each with its label beside a tile.
+it('draws Spent and Left to spend as stat cards, Left to spend the hero', () => {
+  show(sheet(CATEGORIES, WEEK))
+  const card = (label: string) => region('Summary').getByText(label).closest('div')!
+  expect(card('Left to spend').className.split(' ')).toEqual(expect.arrayContaining(['rounded-xl', 'bg-linear-to-b', 'to-primary-tint']))
+  expect(card('Spent').className.split(' ')).toEqual(expect.arrayContaining(['rounded-xl', 'bg-card']))
+  expect(card('Spent').querySelector('dt [aria-hidden="true"]')?.className).toContain('bg-primary-soft')
 })
 
 describe('WeekBlocks', () => {

@@ -102,3 +102,27 @@ and the amber Review count.
 - **Whole percentages,** by the app's one percentage helper, so 99.6%
   reads "100%" while the list is not yet over; the Left column and its
   rose pill say which rows are.
+
+## 2026-09-29 — Step 4, the Week and Paycheck
+
+- **The title row, stepper and review line are the Month's,** shared, not
+  copied (`StepButton`, `WaitingBanner`). The stepper's middle names the
+  period's dates, as the mockup does, though the line under the title
+  says them too.
+- **Spent and Left to spend are the Month's stat cards** (`StatCard`):
+  Left to spend the one hero with the accent's gradient, as on the Month,
+  Spent white; tiles in the accent, not the mockup's rose and green, which
+  name lists (ADR 0010). One across below 480 px, since Spent carries the
+  comparison under it, as the mockup puts it.
+- **Left to spend's bar and "$X of $Y in weekly budgets" are left out,**
+  as on the Month: the words are not the app's, and no engine output
+  gives the Actual of the budgeted rows alone.
+- **The goal card is wide and tinted,** white to the accent's tint, with a
+  ring drawn from `goalProgress`'s basis points and the percentage inside
+  it; its muted words take `canvas-muted`, as on the Month's hero. The
+  time line sits on the soft accent (`foreground` on `primary-soft`,
+  added to the contrast test).
+- **The lists lie two across in list order,** as the Month lays them and
+  as the mockup draws the Period screen. The workbook's four-across order
+  (Summary, Income, Savings, Bills … Variable last) retires with it, and
+  so does the smaller table type it needed (N126).

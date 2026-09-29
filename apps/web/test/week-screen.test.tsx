@@ -165,12 +165,17 @@ describe('WeekScreen', () => {
 
     expect(await screen.findByText('Flight training')).toBeTruthy()
     expect(screen.getByText('28%')).toBeTruthy()
+    // Mockup A's wide card tinted to the accent, its ring drawn from core's 2,817 bp.
+    const card = screen.getByRole('region', { name: 'Flight training' })
+    expect(card.className.split(' ')).toEqual(expect.arrayContaining(['bg-linear-to-b', 'to-primary-tint']))
+    expect(card.querySelector('circle[pathLength]')?.getAttribute('stroke-dasharray')).toBe('28.17 100')
     expect(screen.getByText('$8,450.00')).toBeTruthy()
     expect(screen.getByText('of $30,000.00 · $21,550.00 to go')).toBeTruthy()
     expect(screen.getByText('$10,775.00')).toBeTruthy()
     expect(await screen.findByText('28 min')).toBeTruthy()
     // The owner's one goal: nothing else to point to (G1).
     expect(screen.queryByRole('link', { name: /other goal/ })).toBeNull()
+    await expectNoAxeViolations()
   })
 
   // Hand-derived: 8,450.00 typed at the end of 1 March, and 200.00 moved in

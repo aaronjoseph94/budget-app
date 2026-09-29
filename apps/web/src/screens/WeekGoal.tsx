@@ -2,8 +2,6 @@ import { goalProgress, isoDate, requiredWeeklyContribution, timeEquivalent } fro
 import { useAppData } from '../app-data.js'
 import { goalSavedCents, useFunds } from '../funds.js'
 import { formatBasisPoints, formatCents } from '../format.js'
-import { Card, CardContent, CardTitle } from '../components/ui/card.js'
-import { Badge, Progress } from '../components/ui/feedback.js'
 import { Icon } from '../components/ui/icons.js'
 import { hashOf } from '../nav.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
@@ -16,7 +14,8 @@ import { cn } from '../lib/cn.js'
  * Savings lists. Every
  * figure is packages/core's (goalProgress, requiredWeeklyContribution,
  * timeEquivalent). On a desktop it stands where Weekly Budget has its chart
- * well, beside the summary.
+ * well, beside the summary: Mockup A's wide card tinted to the accent, with
+ * a ring drawn from goalProgress's basis points and the percentage in it.
  */
 export function GoalCard({ weekSpentCents, asOf }: { weekSpentCents: number; asOf: string }) {
   const { mainGoal: goal, goals } = useAppData()
@@ -38,43 +37,51 @@ export function GoalCard({ weekSpentCents, asOf }: { weekSpentCents: number; asO
       ? requiredWeeklyContribution(saving, isoDate(asOf), isoDate(goal.target_date))
       : null
 
+  const bp = progress.percentCompleteBasisPoints
   return (
-    <Card className="order-0 xl:order-1">
-      <div className="flex flex-wrap items-center justify-between gap-2 p-5 pb-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <Icon name={goal.unit_cost_cents === null ? 'piggy' : 'plane'} className="size-4 text-muted-foreground" />
-          <CardTitle as="h2">{goal.name}</CardTitle>
+    <section aria-label={goal.name} className={WIDE}>
+      <div className="flex flex-col items-start gap-4 min-[480px]:flex-row min-[480px]:items-center md:gap-5">
+        <span className="relative flex size-24 shrink-0 items-center justify-center">
+          {/* The ring is the percentage beside it, drawn: a track in the soft
+            accent and an arc of core's basis points, a length of 100. */}
+          <svg aria-hidden="true" viewBox="0 0 100 100" className="absolute inset-0 size-full -rotate-90">
+            <circle cx="50" cy="50" r="42" fill="none" strokeWidth="10" className="stroke-primary-soft" />
+            <circle cx="50" cy="50" r="42" fill="none" strokeWidth="10" strokeLinecap="round" pathLength={100} strokeDasharray={`${bp / 100} 100`} className="stroke-primary" />
+          </svg>
+          <span className="tnum text-lg font-semibold">{formatBasisPoints(bp)}</span>
+        </span>
+        <div className="min-w-0 flex-1 space-y-1.5 text-[0.9375rem]">
+          <div className="flex min-w-0 items-center gap-2">
+            <Icon name={goal.unit_cost_cents === null ? 'piggy' : 'plane'} className="size-4 text-primary" />
+            <h2 className="text-lg font-semibold leading-snug">{goal.name}</h2>
+          </div>
+          <p>
+            <span className="tnum font-semibold">{formatCents(savedCents)}</span>
+            <span className="text-canvas-muted"> of {formatCents(goal.target_cents)} · {formatCents(progress.remainingCents)} to go</span>
+          </p>
+          {perWeek !== null ? (
+            <p className="text-canvas-muted">
+              Save <span className="tnum font-semibold text-foreground">{formatCents(perWeek)}</span> a week to get there by your date.
+            </p>
+          ) : null}
+          {spentAsTime !== null ? (
+            <p className="w-fit max-w-full rounded-sm bg-primary-soft px-2.5 py-1.5 text-sm">
+              This week&apos;s spending is{' '}
+              <span className="font-semibold">
+                {spentAsTime.hours > 0 ? `${spentAsTime.hours} h ` : ''}
+                {spentAsTime.minutes} min
+              </span>{' '}
+              of {goal.unit_label ?? 'your goal'}.
+            </p>
+          ) : null}
+          {others === 0 ? null : (
+            <a href={hashOf({ screen: 'savings', param: null })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+              {others === 1 ? '1 other goal' : `${others} other goals`}
+            </a>
+          )}
         </div>
-        <Badge variant="outline">{formatBasisPoints(progress.percentCompleteBasisPoints)}</Badge>
       </div>
-      <CardContent className="space-y-3">
-        <Progress basisPoints={progress.percentCompleteBasisPoints} />
-        <p className="text-sm">
-          <span className="tnum font-medium">{formatCents(savedCents)}</span>
-          <span className="text-muted-foreground"> of {formatCents(goal.target_cents)} · {formatCents(progress.remainingCents)} to go</span>
-        </p>
-        {perWeek !== null ? (
-          <p className="text-sm text-muted-foreground">
-            Save <span className="tnum font-medium text-foreground">{formatCents(perWeek)}</span> a week to get there by your date.
-          </p>
-        ) : null}
-        {spentAsTime !== null ? (
-          <p className="rounded-lg bg-muted px-3 py-2 text-sm">
-            This week&apos;s spending is{' '}
-            <span className="font-medium">
-              {spentAsTime.hours > 0 ? `${spentAsTime.hours} h ` : ''}
-              {spentAsTime.minutes} min
-            </span>{' '}
-            of {goal.unit_label ?? 'your goal'}.
-          </p>
-        ) : null}
-        {others === 0 ? null : (
-          <a href={hashOf({ screen: 'savings', param: null })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
-            {others === 1 ? '1 other goal' : `${others} other goals`}
-          </a>
-        )}
-      </CardContent>
-    </Card>
+    </section>
   )
 }
 
@@ -86,15 +93,16 @@ export function GoalCard({ weekSpentCents, asOf }: { weekSpentCents: number; asO
 export function NoGoal() {
   const { goals } = useAppData()
   return (
-    <Card className="order-0 xl:order-1">
-      <CardContent className="pt-5 text-sm text-muted-foreground">
-        {goals.length === 0 ? 'No savings goal yet.' : 'No active savings goal.'}{' '}
-        {/* A link in the sentence, 44 px to press by its padding (N76). */}
-        <a href={hashOf({ screen: 'savings', param: null })} className={cn(SENTENCE_LINK, 'text-foreground')}>
-          {goals.length === 0 ? 'Add a goal' : 'Resume or add one'}
-        </a>{' '}
-        to see what each week needs to reach it.
-      </CardContent>
-    </Card>
+    <div className={cn(WIDE, 'text-[0.9375rem] text-canvas-muted')}>
+      {goals.length === 0 ? 'No savings goal yet.' : 'No active savings goal.'}{' '}
+      {/* A link in the sentence, 44 px to press by its padding (N76). */}
+      <a href={hashOf({ screen: 'savings', param: null })} className={cn(SENTENCE_LINK, 'text-foreground')}>
+        {goals.length === 0 ? 'Add a goal' : 'Resume or add one'}
+      </a>{' '}
+      to see what each week needs to reach it.
+    </div>
   )
 }
+
+/** Mockup A's wide card, white to the accent's tint; muted words on it take `canvas-muted` (ADR 0010). */
+const WIDE = 'min-w-0 rounded-xl border bg-linear-to-b from-card to-primary-tint p-4 md:px-6 md:py-[1.375rem]'

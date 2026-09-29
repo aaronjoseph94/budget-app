@@ -61,7 +61,7 @@ export function MonthSummary({
         of month with the forecast under it, Start and Spent. Two across on
         a phone, one below 360 px, four from 1280 px. */}
       <dl className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 md:gap-4 xl:grid-cols-4">
-        <Entry
+        <StatCard
           label="Left to spend"
           icon="sparkles"
           hero
@@ -74,11 +74,11 @@ export function MonthSummary({
           >
             {formatCents(left)}
           </Figure>
-        </Entry>
-        <Entry label="End of month" icon="calendar" extra={forecast}>
+        </StatCard>
+        <StatCard label="End of month" icon="calendar" extra={forecast}>
           {end === null ? <Waiting>Shown once Start is typed</Waiting> : <Figure>{formatCents(end)}</Figure>}
-        </Entry>
-        <Entry label="Start" icon="wallet">
+        </StatCard>
+        <StatCard label="Start" icon="wallet">
           <button
             type="button"
             ref={opener}
@@ -93,10 +93,10 @@ export function MonthSummary({
           >
             {start === null ? <Waiting>Type your starting bank balance</Waiting> : <Figure>{formatCents(start)}</Figure>}
           </button>
-        </Entry>
-        <Entry label="Spent" icon="bag">
+        </StatCard>
+        <StatCard label="Spent" icon="bag">
           <Figure>{formatCents(spentCents)}</Figure>
-        </Entry>
+        </StatCard>
       </dl>
       <LastMonth comparison={comparison} />
       {editing ? (
@@ -125,7 +125,7 @@ export function MonthSummary({
  * 4.27 to one on the accent's tint where the gradient ends (ADR 0010). The
  * tiles take the accent, never a list's hue, which names a list (ADR 0010).
  */
-function Entry({
+export function StatCard({
   label,
   icon,
   hero = false,
