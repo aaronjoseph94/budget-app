@@ -50,6 +50,9 @@ describe('the Month · Week · Pay · Year switch (ADR 0006)', () => {
       ['Year', '#/year'],
     ])
     expect(links.filter((a) => a.getAttribute('aria-current') === 'page').map((a) => a.textContent)).toEqual([current])
+    // Mockup A's segmented control: the view showing lifted onto the card,
+    // the others in the grey that reads on the canvas (ADR 0010).
+    for (const a of links) expect(a.classList.contains(a.textContent === current ? 'bg-card' : 'text-canvas-muted')).toBe(true)
   })
 
   it('is on no other screen', async () => {
@@ -77,5 +80,17 @@ describe('the Month header', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Bill calendar' }))
     expect(window.location.hash).toBe('#/calendar/2026-08')
+  })
+
+  it('names the month between its arrows, with the ? beside the title', async () => {
+    go('/month/2026-08')
+    renderScreen(<Shell />, createFakeSupabase())
+    const title = await screen.findByRole('heading', { name: 'August 2026', level: 1 })
+
+    expect(within(title.parentElement!).getByRole('button', { name: 'Help with this screen' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Previous month' }).nextElementSibling?.textContent).toBe('Aug 2026')
+    fireEvent.click(screen.getByRole('button', { name: 'Next month' }))
+    expect(window.location.hash).toBe('#/month/2026-09')
+    await expectNoAxeViolations()
   })
 })

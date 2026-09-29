@@ -38,11 +38,12 @@ import {
   formatMagnitude,
   formatMonthName,
   formatMonthTitle,
+  formatShortMonth,
   todayIso,
 } from '../format.js'
 import { Alert, Loading, SavedNote } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
-import { Icon } from '../components/ui/icons.js'
+import { Icon, type IconName } from '../components/ui/icons.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
 import { LINE_BUTTON, SENTENCE_LINK } from '../components/ui/link.js'
@@ -231,23 +232,31 @@ export function MonthScreen({ month }: { month: string | null }) {
   return (
     <div className="space-y-4">
       <PeriodSwitch current="month" />
-      <header className="-mx-4 max-[359px]:-mx-3 flex flex-wrap items-center justify-between gap-2 bg-title-band px-4 max-[359px]:px-3 py-4 md:mx-0 md:rounded-xl">
-        <MonthTitle>{formatMonthTitle(start)}</MonthTitle>
-        {/* The ? sits with the header's buttons, as in the plan's sketch: beside
-          the title it broke "September 2026" onto two lines at 320px. With the
-          phone's text at 200% the four no longer fit one row, so they wrap. */}
-        <div className="flex flex-wrap items-center gap-1">
+      {/* Mockup A's title row: the title with its ?, where the statements end
+        under it, and on the right the Bill calendar and the month stepper.
+        Everything wraps, so at 320px or with the phone's text at 200% the
+        controls drop under the title rather than push the page sideways. */}
+      <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-1">
+            <MonthTitle>{formatMonthTitle(start)}</MonthTitle>
+            <HelpButton screen="month" className="text-muted-foreground" />
+          </div>
+          {sheet !== null && typeof sheet !== 'string' ? <ImportedThrough through={sheet.importedThrough} /> : null}
+        </div>
+        <div className="flex items-center gap-2">
           {/* The Bill calendar left the wide bar for More (ADR 0006); from the Month it is one tap, at this month. */}
           <Button variant="outline" size="icon" aria-label="Bill calendar" onClick={() => navigate('calendar', start.slice(0, 7))}>
             <Icon name="bills" />
           </Button>
-          <Button variant="outline" size="icon" aria-label="Previous month" onClick={() => step(-1)}>
-            <Icon name="chevronLeft" />
-          </Button>
-          <Button variant="outline" size="icon" aria-label="Next month" onClick={() => step(1)}>
-            <Icon name="chevronRight" />
-          </Button>
-          <HelpButton screen="month" />
+          <div className="flex items-stretch rounded-md border bg-card">
+            <StepButton label="Previous month" icon="chevronLeft" onClick={() => step(-1)} />
+            <span className="flex items-center gap-2 border-x px-3.5 text-[0.9375rem] font-medium whitespace-nowrap">
+              <Icon name="calendar" className="size-4 text-muted-foreground" />
+              <span className="tnum">{formatShortMonth(start)}</span>
+            </span>
+            <StepButton label="Next month" icon="chevronRight" onClick={() => step(1)} />
+          </div>
         </div>
       </header>
 
@@ -307,7 +316,6 @@ export function MonthScreen({ month }: { month: string | null }) {
               </Suspense>
             </ErrorBoundary>
           )}
-          <ImportedThrough through={sheet.importedThrough} />
           {/* Phones: the block every statement changes first, and the charts
             last (§6.2). Four columns on a desktop in the workbook's own arrangement,
             Jan!B3:V44 (§6.3), the charts second on the top row as the workbook's
@@ -712,6 +720,20 @@ export function PeriodBlocks({
       <Block kind="income" block={blocks.income} {...blockProps} className="order-5 xl:order-2" />
       <Block kind="savings" block={blocks.savings} {...blockProps} className="order-6 xl:order-3" />
     </>
+  )
+}
+
+/** One end of the month stepper: 44px square, as the mockup draws it, with its own hover. */
+function StepButton({ label, icon, onClick }: { label: string; icon: IconName; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      className="flex size-11 items-center justify-center outline-none first:rounded-l-md last:rounded-r-md hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring"
+    >
+      <Icon name={icon} className="size-4" />
+    </button>
   )
 }
 

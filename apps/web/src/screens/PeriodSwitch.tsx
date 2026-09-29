@@ -19,20 +19,24 @@ const VIEWS: readonly { screen: Screen; label: string }[] = [
  * about 68px each at 320px; at large text sizes the row scrolls inside its
  * own box rather than the page sideways, its right edge fading while there
  * is more to see (edge-fade, index.css).
+ *
+ * Mockup A's segmented control: the four on the canvas grey, the one
+ * showing lifted onto the card. Words on the canvas take `canvas-muted`,
+ * as #6b7280 reads 4.40 to one there (ADR 0010).
  */
 export function PeriodSwitch({ current }: { current: 'month' | 'week' | 'paycheck' | 'year' }) {
   return (
     <nav aria-label="Views" className="edge-fade -mx-1 overflow-x-auto px-1">
-      <div className="grid w-full min-w-max grid-cols-4 gap-1 rounded-lg bg-muted p-1 md:max-w-md">
+      <div className="grid w-full min-w-max grid-cols-4 gap-1 rounded-md bg-canvas p-1 sm:inline-grid sm:w-auto">
         {VIEWS.map((v) => (
           <a
             key={v.screen}
             href={hashOf({ screen: v.screen, param: null })}
             aria-current={v.screen === current ? 'page' : undefined}
             className={cn(
-              'flex min-h-11 min-w-16 items-center justify-center rounded-md px-3 text-sm font-medium transition-colors',
+              'flex min-h-9 min-w-16 items-center justify-center rounded-sm px-3.5 text-sm font-medium transition-colors pointer-coarse:min-h-11 sm:min-w-22',
               'outline-none focus-visible:ring-[3px] focus-visible:ring-ring',
-              v.screen === current ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+              v.screen === current ? 'bg-card text-foreground shadow-sm' : 'text-canvas-muted hover:text-foreground',
             )}
           >
             {v.label}
