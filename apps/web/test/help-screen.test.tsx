@@ -98,6 +98,11 @@ describe('Help', () => {
     expect(onScreen().queryByRole('link', { name: '‹ Help' })).toBeNull()
     fireEvent.change(within(list).getByRole('searchbox', { name: 'Search help' }), { target: { value: 'add to home screen' } })
     expect(within(list).getAllByRole('link').map((a) => a.textContent)).toEqual(['Put it on your iPhone'])
+    // cn is a plain join: the carded steps carry one left padding, not two.
+    const steps = onScreen().getByRole('article').querySelector('ol')!
+    expect(steps.className.split(' ').filter((c) => c.startsWith('pl-'))).toEqual(['pl-11'])
+    // Only the sign-in card has a shadow (Mockup A).
+    expect(onScreen().getByRole('article').closest('main')!.querySelectorAll('[class*="rounded-xl"][class*="shadow"]')).toHaveLength(0)
     await expectNoAxeViolations()
   })
 

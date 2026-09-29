@@ -10,7 +10,7 @@ import { navigate } from '../nav.js'
  */
 export function Finish({ headingRef }: { headingRef: RefObject<HTMLHeadingElement | null> }) {
   return (
-    <section aria-labelledby="start-finish" className="space-y-4 overflow-hidden rounded-xl border bg-card p-5 text-center shadow-sm">
+    <section aria-labelledby="start-finish" className="space-y-4 overflow-hidden rounded-xl border bg-card p-5 text-center">
       <div aria-hidden="true" className="flex justify-center py-2">
         <Icon name="plane" className="start-fly size-12 text-primary" />
       </div>

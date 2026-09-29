@@ -173,7 +173,7 @@ function StarterOffers({ month }: { month: string }) {
           <p className="text-sm text-muted-foreground">
             What you usually spend, rounded up to $5. Nothing is saved until you press Accept; each applies from this month on, and you can change it on the Month.
           </p>
-          <ul className="divide-y rounded-xl border bg-card px-4 shadow-sm">
+          <ul className="divide-y rounded-xl border bg-card px-4">
             {offers.map((offer) => (
               <li key={offer.categoryId} className="flex min-w-0 items-center gap-3 py-2">
                 <span className="min-w-0 flex-1 truncate" title={nameOf(offer.categoryId)}>

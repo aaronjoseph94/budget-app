@@ -25,7 +25,7 @@ export function ArticleBody({ article, carded = false }: { article: Article; car
       <p className={cn('text-muted-foreground', carded && 'text-base')}>
         <HelpText text={article.summary} />
       </p>
-      <ol className={cn('list-decimal space-y-2 pl-6 marker:font-semibold', carded && 'rounded-xl border bg-card py-5 pl-11 pr-6')}>
+      <ol className={cn('list-decimal space-y-2 marker:font-semibold', carded ? 'rounded-xl border bg-card py-5 pl-11 pr-6' : 'pl-6')}>
         {article.steps.map((step) => (
           <li key={step} className="pl-1">
             <HelpText text={step} />

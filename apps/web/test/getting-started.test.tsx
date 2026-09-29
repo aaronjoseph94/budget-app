@@ -110,17 +110,21 @@ describe('Getting started (plan §8.1)', () => {
     let wide = false
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: wide && query === '(min-width: 1280px)', addEventListener: () => undefined, removeEventListener: () => undefined }))
     renderStart(createFakeSupabase())
-    const step = (await screen.findByRole('heading', { name: 'Your name' })).closest('section')!
+    await screen.findByRole('heading', { name: 'Your name' })
     const folded = screen.getByText(/^All 9 steps/).closest('details')!
     expect(folded.open).toBe(false)
     cleanup()
 
     wide = true
     renderStart(createFakeSupabase())
-    await screen.findByRole('heading', { name: 'Your name' })
+    // The step card of this render: one taken before cleanup is detached and holds nothing.
+    const step = (await screen.findByRole('heading', { name: 'Your name' })).closest('section')!
     const beside = screen.getByText(/^All 9 steps/).closest('details')!
     expect(beside.open).toBe(true)
     expect(step.contains(beside)).toBe(false)
+    expect(step.parentElement!.contains(beside)).toBe(false)
+    // Only the sign-in card has a shadow (Mockup A).
+    expect(document.querySelectorAll('[class*="rounded-xl"][class*="shadow"]')).toHaveLength(0)
     expect(within(beside).getAllByRole('button').filter((b) => b.getAttribute('aria-current') === 'step').map((b) => b.textContent?.replace(/:.*$/, ''))).toEqual(['·Your name'])
     await expectNoAxeViolations()
   })

@@ -62,7 +62,7 @@ export function UpdatesPanel() {
   const next = checked === null ? null : nextStep(checked)
   const helperOld = checked?.some((c) => c.update.file === HELPER_FILE && c.state === 'old') === true
   return (
-    <section aria-labelledby="updates-status" className="space-y-3 rounded-xl border bg-card p-4 shadow-sm">
+    <section aria-labelledby="updates-status" className="space-y-3 rounded-xl border bg-card p-4">
       <h2 id="updates-status" className="font-semibold" aria-live="polite">
         {checked === null ? 'Checking…' : next?.kind === 'done' ? 'All done' : `${count} of ${checked.length} in`}
       </h2>

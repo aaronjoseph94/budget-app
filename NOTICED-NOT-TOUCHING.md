@@ -3182,3 +3182,19 @@ restyle keeps.
 
 **To settle:** say "from Settings, or More on a phone", as Help's Start
 here now does, and change getting-started.test's matcher with it.
+
+---
+
+## N138 — Three cards outside step 12 still carry a shadow
+
+**Seen:** 2026-09-29, review of Mockup A step 12. The README makes the
+sign-in card the only card with a shadow. The review removed the ones left
+in Getting started's steps and Help's One-time updates panel, but three
+more sit on screens earlier steps restyled: More's list
+(`MoreScreen.tsx`), the Month's "Start here" card (`MonthScreen.tsx`) and
+the Month's Coach line (`MonthCoachLine.tsx`).
+
+**Why not fixed here:** they belong to steps already on the branch.
+
+**To settle:** drop `shadow-sm` from those three, with a screen test that
+no `rounded-xl` element there has a shadow, and check 390 and 1440.

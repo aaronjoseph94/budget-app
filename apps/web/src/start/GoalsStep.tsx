@@ -38,7 +38,7 @@ export function GoalsStep() {
   return (
     <div className="space-y-3">
       {active.length === 0 ? null : (
-        <ul className="divide-y rounded-xl border bg-card px-4 shadow-sm">
+        <ul className="divide-y rounded-xl border bg-card px-4">
           {active.map((goal) => (
             <GoalLine key={goal.id} goal={goal} main={active.length > 1 && goal.id === mainGoal?.id} saved={saved(goal)} />
           ))}
