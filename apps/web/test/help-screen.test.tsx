@@ -25,6 +25,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
   window.location.hash = ''
 })
 
@@ -80,6 +81,24 @@ describe('Help', () => {
       ['Why does a number look wrong?', '#/help/wrong-number'],
     ])
     expect(within(page).getByRole('link', { name: '‹ Help' }).getAttribute('href')).toBe('#/help')
+  })
+
+  // Mockup A: from 1024px an article has the list beside it, the one open lit.
+  it('sets the list beside an article on a wide screen, its own article marked as the page', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(min-width: 1024px)', addEventListener: () => undefined, removeEventListener: () => undefined }))
+    go('/help/review')
+    renderScreen(<Shell />, createFakeSupabase())
+    await screen.findByRole('heading', { level: 1, name: 'Why things wait in Review' })
+    expect(onScreen().getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    const list = onScreen().getByRole('navigation', { name: 'Help articles' })
+    const links = within(list).getAllByRole('link')
+    expect(links.map((a) => a.textContent)).toEqual(ARTICLES.map((a) => a.title))
+    expect(links.filter((a) => a.getAttribute('aria-current') === 'page').map((a) => a.getAttribute('href'))).toEqual(['#/help/review'])
+    // The list is the way back, so the article drops its own.
+    expect(onScreen().queryByRole('link', { name: '‹ Help' })).toBeNull()
+    fireEvent.change(within(list).getByRole('searchbox', { name: 'Search help' }), { target: { value: 'add to home screen' } })
+    expect(within(list).getAllByRole('link').map((a) => a.textContent)).toEqual(['Put it on your iPhone'])
+    await expectNoAxeViolations()
   })
 
   it('opens the list, saying so, for a topic whose article is not written yet', async () => {
