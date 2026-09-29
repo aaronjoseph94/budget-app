@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0;background:light-dark(#F4F4F6,#0F1013);}a{color:inherit;}button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit;}</style>
+</helmet>
+<div data-screen-label="Savings" style="--canvas:light-dark(#F4F4F6,#0F1013);--card:light-dark(#FFFFFF,#17181C);--border:light-dark(#E5E7EB,#2A2C33);--ink:light-dark(#111827,#F3F4F6);--muted:light-dark(#6B7280,#9CA3AF);--track:light-dark(#E5E7EB,#2A2C33);--hover:light-dark(#F9FAFB,#1F2026);--accent:light-dark(#4F46E5,#818CF8);--accent-soft:light-dark(#EEF2FF,#1E1B4B);--amber:#F59E0B;--amber-tile:light-dark(#FEF3C7,#3D3112);--amber-tint:light-dark(#FFFBEB,#2A2210);--amber-ink:light-dark(#B45309,#FCD34D);--green:#10B981;color-scheme:{{ scheme }};display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh;background:var(--canvas);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,'SF Pro Text','Segoe UI',sans-serif;font-size:15px;line-height:1.45;">
+  <div style="position:sticky;top:0;height:100vh;"><dc-import name="Sidebar" active="savings" count="{{ 3 }}" hint-size="100%,100%" style="display:block;height:100%;"></dc-import></div>
+  <main style="margin:12px 12px 12px 0;background:var(--card);border:1px solid var(--border);border-radius:16px;min-width:0;display:flex;flex-direction:column;overflow:hidden;">
+    <dc-import name="Topbar" crumb="Savings" hint-size="100%,64px" style="display:block;"></dc-import>
+    <div style="padding:28px 28px 40px;display:flex;flex-direction:column;gap:20px;">
+      <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;"><h1 style="margin:0;font-size:32px;font-weight:700;letter-spacing:-0.02em;line-height:1.15;">Savings goals</h1><button aria-label="Help with this screen" style="width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;color:var(--muted);" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"></path><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></button></div>
+          <p style="margin:6px 0 0;font-size:16px;color:var(--muted);">Your goals: what each needs, and what to put in it each month to get there by its date.</p>
+        </div>
+        <button style="display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 16px;border-radius:10px;background:var(--accent);color:#FFFFFF;font-weight:500;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Add a goal</button>
+      </header>
+
+      <section style="border:1px solid var(--border);border-radius:16px;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:linear-gradient(to right,var(--card),var(--amber-tint));">
+        <div><h2 style="margin:0;font-size:16px;font-weight:600;">Saved this month</h2><p style="margin:2px 0 0;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums;">Sep 1–24: <b style="color:var(--ink);">$1,150.00</b> saved · Aug 1–24: <b style="color:var(--ink);">$1,000.00</b></p></div>
+        <span style="font-weight:600;color:var(--green);">▲ $150.00 more (15%)</span>
+      </section>
+
+      <ul style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px;align-items:start;">
+        <sc-for list="{{ goals }}" as="g" hint-placeholder-count="3">
+          <li>
+            <section aria-label="{{ g.name }}" style="border:1px solid var(--border);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;">
+              <div style="padding:18px 22px 14px;background:var(--amber-tint);display:flex;align-items:center;gap:12px;">
+                <span style="width:40px;height:40px;border-radius:12px;background:var(--amber-tile);color:var(--amber-ink);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><sc-for list="{{ g.icon }}" as="p" hint-placeholder-count="2"><path d="{{ p }}"></path></sc-for></svg></span>
+                <h2 style="margin:0;flex:1;font-size:18px;font-weight:600;min-width:0;overflow-wrap:anywhere;">{{ g.name }}</h2>
+                <sc-if value="{{ g.main }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;font-weight:600;background:var(--accent);color:#FFFFFF;border-radius:999px;padding:3px 10px;">Main goal</span></sc-if>
+              </div>
+              <div style="padding:18px 22px 22px;display:flex;flex-direction:column;gap:14px;">
+                <p style="margin:0;"><span style="font-size:28px;font-weight:700;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;">{{ g.saved }}</span> <span style="font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums;">saved of {{ g.target }}</span></p>
+                <div style="display:flex;align-items:center;gap:10px;"><div style="flex:1;height:10px;border-radius:5px;background:var(--amber-tile);overflow:hidden;"><div style="height:100%;width:{{ g.pct }};background:var(--amber);border-radius:5px;"></div></div><span style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;">{{ g.pct }}</span></div>
+                <div style="background:var(--amber-tint);border-radius:12px;padding:12px 14px;"><p style="margin:0;font-size:13px;font-weight:500;color:var(--amber-ink);">Amount needed</p><p style="margin:0;font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;">{{ g.needed }}</p></div>
+                <dl style="margin:0;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;font-size:14px;">
+                  <div><dt style="font-size:12px;color:var(--muted);">Start date</dt><dd style="margin:0;">{{ g.start }}</dd></div><div><dt style="font-size:12px;color:var(--muted);">Goal date</dt><dd style="margin:0;">{{ g.end }}</dd></div>
+                  <div><dt style="font-size:12px;color:var(--muted);">Months remaining</dt><dd style="margin:0;">{{ g.months }}</dd></div><div><dt style="font-size:12px;color:var(--muted);">Monthly contribution</dt><dd style="margin:0;font-weight:600;font-variant-numeric:tabular-nums;">{{ g.monthly }}</dd></div>
+                </dl>
+                <p style="margin:0;font-size:13px;color:var(--muted);">{{ g.kept }}</p>
+                <sc-if value="{{ g.hasHours }}" hint-placeholder-val="{{ false }}"><p style="margin:0;background:var(--accent-soft);border-radius:8px;padding:8px 12px;font-size:14px;">About <b>37 hours</b> of flight time to go.</p></sc-if>
+                <sc-if value="{{ g.hasLever }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:14px;border:1px solid var(--border);border-radius:8px;padding:8px 12px;">Trim Restaurants by $60.00 a month to get there 3 weeks sooner. That’s 24 min of flight time a month.</p></sc-if>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-top:4px;">
+                  <button style="height:36px;padding:0 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:500;" style-hover="background:var(--hover);">Edit goal</button>
+                  <sc-if value="{{ g.notMain }}" hint-placeholder-val="{{ true }}"><button style="height:36px;padding:0 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:500;" style-hover="background:var(--hover);">Make main goal</button></sc-if>
+                  <button style="height:36px;padding:0 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:500;" style-hover="background:var(--hover);">Pause</button>
+                  <span style="margin-left:auto;display:flex;"><button aria-label="Move {{ g.name }} up" style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"></path></svg></button><button aria-label="Move {{ g.name }} down" style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></button><button aria-label="Remove {{ g.name }}" style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg></button></span>
+                </div>
+              </div>
+            </section>
+          </li>
+        </sc-for>
+        <li>
+          <section aria-label="Car Repair Fund" style="border:1px dashed var(--border);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:12px;min-height:200px;justify-content:center;">
+            <h2 style="margin:0;font-size:14px;font-weight:600;color:var(--muted);">Funds with no goal yet</h2>
+            <p style="margin:0;font-size:18px;font-weight:600;">Car Repair Fund</p>
+            <p style="margin:0;font-size:14px;color:var(--muted);">No goal yet. $100.00 moved in this month.</p>
+            <button style="align-self:flex-start;height:40px;padding:0 14px;border-radius:10px;background:var(--ink);color:var(--card);font-weight:500;font-size:14px;">Set a goal</button>
+          </section>
+        </li>
+      </ul>
+
+      <details style="border:1px solid var(--border);border-radius:16px;padding:0 22px;">
+        <summary style="display:flex;align-items:center;min-height:52px;cursor:pointer;font-weight:600;">Reached and paused (1)</summary>
+        <div style="padding:0 0 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;"><span style="font-weight:500;">New laptop</span><span style="font-size:12px;font-weight:500;border:1px solid var(--border);border-radius:999px;padding:2px 8px;color:var(--muted);">Reached Aug 12, 2026</span><span style="font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums;">$1,800.00 of $1,800.00</span><button style="margin-left:auto;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:500;">Resume</button></div>
+      </details>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;scheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const PLANE = ['M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'];
+const PIGGY = ['M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z', 'M16 10h.01', 'M2 8v1a2 2 0 0 0 2 2h1'];
+class Component extends DCLogic {
+  renderVals() {
+    return { scheme: this.props.scheme ?? 'light', goals: [
+      { name: 'Flight training', icon: PLANE, main: true, notMain: false, saved: '$11,480.00', target: '$30,000.00', pct: '38%', needed: '$18,520.00', start: 'Jan 1, 2026', end: 'Jun 1, 2028', months: '20', monthly: '$926.00', kept: '$10,000.00 typed on Aug 8, 2026, and $1,480.00 moved in since.', hasHours: true, hasLever: true },
+      { name: 'Emergency Fund', icon: PIGGY, main: false, notMain: true, saved: '$3,400.00', target: '$5,000.00', pct: '68%', needed: '$1,600.00', start: 'Aug 1, 2026', end: 'Mar 1, 2027', months: '5', monthly: '$320.00', kept: '$2,400.00 typed on Aug 8, 2026, and $1,000.00 moved in since.', hasHours: false, hasLever: false },
+      { name: 'Travel Fund', icon: PIGGY, main: false, notMain: true, saved: '$650.00', target: '$2,000.00', pct: '33%', needed: '$1,350.00', start: 'Aug 1, 2026', end: 'Not set', months: '—', monthly: '—', kept: 'No dates yet. Add a start date and a goal date to see what to save each month.', hasHours: false, hasLever: false },
+    ] };
+  }
+}
+</script>
+</body>
+</html>

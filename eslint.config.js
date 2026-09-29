@@ -47,7 +47,10 @@ const NO_WEAK_ASSERTIONS = [
 ]
 
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/node_modules/**', '**/*.d.ts'] },
+  // docs/design holds design references handed over as built files (their
+  // support.js is a generated runtime): read by people, never imported, never
+  // shipped. The app's own code is linted exactly as before.
+  { ignores: ['**/dist/**', '**/node_modules/**', '**/*.d.ts', 'docs/design/**'] },
   {
     // CONSTRAINTS.md's Floor forbids `eslint-disable`, but nothing enforced it:
     // every gate whose mechanism is eslint — Engine purity, Float money, Weak

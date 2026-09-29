@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0;background:light-dark(#F4F4F6,#0F1013);}a{color:inherit;}button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit;}</style>
+</helmet>
+<div data-screen-label="Forecast" style="--canvas:light-dark(#F4F4F6,#0F1013);--card:light-dark(#FFFFFF,#17181C);--border:light-dark(#E5E7EB,#2A2C33);--ink:light-dark(#111827,#F3F4F6);--muted:light-dark(#6B7280,#9CA3AF);--track:light-dark(#E5E7EB,#2A2C33);--hover:light-dark(#F9FAFB,#1F2026);--accent:light-dark(#4F46E5,#818CF8);--accent-soft:light-dark(#EEF2FF,#1E1B4B);--accent-tint:light-dark(#EEF0FF,#181A2E);--green:#10B981;--green-tile:light-dark(#D1FAE5,#123326);--green-tint:light-dark(#ECFDF5,#122019);--sky:#0EA5E9;--sky-tile:light-dark(#E0F2FE,#0F2A3A);--sky-tint:light-dark(#EFF6FF,#12202C);--rose:#E11D48;--rose-tile:light-dark(#FFE4E6,#3D1A22);color-scheme:{{ scheme }};display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh;background:var(--canvas);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,'SF Pro Text','Segoe UI',sans-serif;font-size:15px;line-height:1.45;">
+  <div style="position:sticky;top:0;height:100vh;"><dc-import name="Sidebar" active="forecast" count="{{ 3 }}" hint-size="100%,100%" style="display:block;height:100%;"></dc-import></div>
+  <main style="margin:12px 12px 12px 0;background:var(--card);border:1px solid var(--border);border-radius:16px;min-width:0;display:flex;flex-direction:column;overflow:hidden;">
+    <dc-import name="Topbar" crumb="Forecast" hint-size="100%,64px" style="display:block;"></dc-import>
+    <div style="padding:28px 28px 40px;display:flex;flex-direction:column;gap:20px;">
+      <header>
+        <div style="display:flex;align-items:center;gap:8px;"><h1 style="margin:0;font-size:32px;font-weight:700;letter-spacing:-0.02em;line-height:1.15;">Forecast</h1><button aria-label="Help with this screen" style="width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;color:var(--muted);" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"></path><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></button></div>
+        <p style="margin:8px 0 0;font-size:20px;font-weight:500;line-height:1.4;text-wrap:pretty;max-width:60ch;">✨ At this pace, September ends near <b>$2,650</b>. Safe to spend: <b>$38.20</b> a day.</p>
+      </header>
+
+      <section aria-label="Summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;">
+        <div style="border:1px solid var(--border);border-radius:16px;padding:22px 24px 24px;background:linear-gradient(to bottom,var(--card),var(--green-tint));display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:16px;color:var(--muted);">Safe to spend</span><span style="width:40px;height:40px;border-radius:12px;background:var(--green-tile);color:var(--green);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span></div>
+          <div style="font-size:32px;font-weight:700;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;">$38.20 <span style="font-size:16px;font-weight:500;color:var(--muted);">a day</span></div>
+          <span style="font-size:15px;color:var(--muted);">for 7 days, today included</span>
+          <span style="font-size:14px;color:var(--muted);margin-top:6px;text-wrap:pretty;">Pay from Side Hustle is not counted: give it a pay schedule in Setup, or a goal on the Month.</span>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:16px;padding:22px 24px 24px;background:linear-gradient(to bottom,var(--card),var(--sky-tint));display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:16px;color:var(--muted);">End of September</span><span style="width:40px;height:40px;border-radius:12px;background:var(--sky-tile);color:var(--sky);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 7 13.5 15.5 8.5 10.5 2 17"></path><path d="M16 7h6v6"></path></svg></span></div>
+          <div style="font-size:32px;font-weight:700;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;">$2,510 to $2,790</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;"><span style="font-size:12px;font-weight:600;background:var(--sky-tile);color:var(--sky);border-radius:999px;padding:3px 10px;">Range</span><span style="font-size:12px;font-weight:500;border:1px solid var(--border);border-radius:999px;padding:3px 10px;color:var(--muted);">Based on 2 months</span></div>
+          <span style="font-size:15px;color:var(--muted);">Most likely $2,650.</span>
+          <div style="position:relative;height:36px;margin-top:8px;">
+            <div style="position:absolute;left:0;right:0;top:15px;height:6px;border-radius:3px;background:var(--track);"></div>
+            <div style="position:absolute;left:58%;width:30%;top:12px;height:12px;border-radius:6px;background:var(--sky-tile);"></div>
+            <div style="position:absolute;left:73%;top:8px;width:4px;height:20px;border-radius:2px;background:var(--sky);"></div>
+            <div style="position:absolute;left:calc(88% - 8px);top:10px;width:16px;height:16px;border-radius:8px;background:var(--card);border:2px solid var(--ink);box-sizing:border-box;"></div>
+            <span style="position:absolute;left:0;top:0;font-size:11px;color:var(--muted);">$0</span>
+            <span style="position:absolute;right:0;bottom:-4px;font-size:11px;color:var(--muted);white-space:nowrap;">Today $3,096.83</span>
+            <span style="position:absolute;left:58%;bottom:-4px;font-size:11px;color:var(--muted);white-space:nowrap;">Most likely $2,650</span>
+          </div>
+        </div>
+      </section>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:20px;align-items:start;">
+        <section style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:14px;">
+          <h2 style="margin:0;font-size:18px;font-weight:600;">Still to come</h2>
+          <dl style="margin:0;display:flex;flex-direction:column;">
+            <sc-for list="{{ toCome }}" as="r" hint-placeholder-count="5"><div style="display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--border);"><dt style="color:var(--muted);">{{ r.label }}</dt><dd style="margin:0;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap;">{{ r.value }}</dd></div></sc-for>
+          </dl>
+        </section>
+
+        <section style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:14px;">
+          <div><h2 style="margin:0;font-size:18px;font-weight:600;">The next 30 days</h2><p style="margin:4px 0 0;font-size:15px;">Today: <b style="font-variant-numeric:tabular-nums;">$3,096.83</b>. Tightest day ahead: <b>Oct 1</b>, at <b style="font-variant-numeric:tabular-nums;">$1,411.83</b>.</p></div>
+          <svg viewBox="0 0 400 140" width="100%" height="140" aria-label="Your balance from today to Oct 24; lowest on Oct 1, at $1,411.83." role="img">
+            <line x1="0" y1="120" x2="400" y2="120" stroke="var(--track)" stroke-width="1"></line>
+            <path d="M0 40 L40 46 L80 54 L110 60 L140 118 L170 108 L200 48 L240 56 L280 66 L320 74 L360 82 L400 88" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></path>
+            <circle cx="140" cy="118" r="5" fill="var(--rose)"></circle>
+            <text x="150" y="112" font-size="11" fill="var(--muted)" font-family="inherit">Oct 1: $1,411.83</text>
+            <text x="0" y="136" font-size="11" fill="var(--muted)">Today</text><text x="400" y="136" font-size="11" fill="var(--muted)" text-anchor="end">Oct 24</text>
+          </svg>
+          <p style="margin:0;font-size:14px;color:var(--muted);">Counts $41.20 a day of everyday spending, your average over the last 30 days.</p>
+          <h3 style="margin:6px 0 0;font-size:15px;font-weight:600;">Bills due in the next 7 days</h3>
+          <ul style="list-style:none;margin:0;padding:0;">
+            <sc-for list="{{ bills }}" as="b" hint-placeholder-count="3"><li style="display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--border);"><span><span style="color:var(--muted);">{{ b.date }}</span> {{ b.name }}<sc-if value="{{ b.notSeen }}" hint-placeholder-val="{{ false }}"><span style="display:block;font-size:12px;color:var(--muted);">Due, not seen yet</span></sc-if></span><span style="font-weight:500;font-variant-numeric:tabular-nums;">{{ b.amount }}</span></li></sc-for>
+          </ul>
+        </section>
+
+        <section style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:14px;">
+          <h2 style="margin:0;font-size:18px;font-weight:600;">When you’ll reach your goals</h2>
+          <sc-for list="{{ goals }}" as="g" hint-placeholder-count="3"><div style="padding:10px 0;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:4px;"><h3 style="margin:0;font-size:15px;font-weight:600;">{{ g.name }}</h3><p style="margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:15px;">{{ g.pace }}<span style="font-size:12px;font-weight:500;border:1px solid var(--border);border-radius:999px;padding:2px 8px;color:var(--muted);">{{ g.chip }}</span></p><p style="margin:0;font-size:14px;color:var(--muted);">{{ g.line }}</p></div></sc-for>
+          <div style="border-top:1px solid var(--border);padding-top:14px;display:flex;flex-direction:column;gap:12px;">
+            <h3 style="margin:0;font-size:15px;font-weight:600;">What if…</h3>
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted);">For the goal<span style="display:inline-flex;align-items:center;justify-content:space-between;height:44px;padding:0 12px;border:1px solid var(--border);border-radius:10px;color:var(--ink);font-weight:500;font-size:15px;">Flight training<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></span></label>
+            <div role="group" aria-label="What if you trimmed" style="display:flex;gap:8px;flex-wrap:wrap;">
+              <sc-for list="{{ chips }}" as="c" hint-placeholder-count="6"><button aria-pressed="{{ c.on }}" onClick="{{ c.pick }}" style="height:40px;padding:0 14px;border-radius:999px;border:1px solid {{ c.border }};background:{{ c.bg }};color:{{ c.ink }};font-size:14px;font-weight:500;">{{ c.label }}</button></sc-for>
+            </div>
+            <div aria-live="polite" style="background:var(--accent-soft);border-radius:12px;padding:14px 16px;font-size:15px;display:flex;flex-direction:column;gap:6px;">
+              <sc-if value="{{ noPick }}" hint-placeholder-val="{{ false }}"><p style="margin:0;color:var(--muted);">Tap one to see what it changes.</p></sc-if>
+              <sc-if value="{{ picked }}" hint-placeholder-val="{{ true }}">
+                <p style="margin:0;">Trim {{ w.name }} by <b style="font-variant-numeric:tabular-nums;">{{ w.monthly }}</b> a month (<span style="font-variant-numeric:tabular-nums;">{{ w.weekly }}</span> a week).</p>
+                <p style="margin:0;"><b>Flight training:</b> {{ w.date }}</p>
+                <p style="margin:0;color:var(--muted);">That’s {{ w.minutes }} of flight time a month.</p>
+                <p style="margin:0;color:var(--muted);">End of September: <span style="font-variant-numeric:tabular-nums;">{{ w.end }}</span> with {{ w.kept }} kept this month.</p>
+              </sc-if>
+            </div>
+          </div>
+        </section>
+
+        <section style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:14px;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><h2 style="margin:0;font-size:18px;font-weight:600;flex:1;">The next three months</h2><span style="font-size:12px;font-weight:600;background:var(--sky-tile);color:var(--sky);border-radius:999px;padding:3px 10px;">Range</span><span style="font-size:12px;font-weight:500;border:1px solid var(--border);border-radius:999px;padding:3px 10px;color:var(--muted);">Based on 2 months</span></div>
+          <p style="margin:0;font-size:14px;color:var(--muted);">Where each month ends, worst case to best case. Not a promise.</p>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:end;height:150px;padding:0 8px;">
+            <sc-for list="{{ ahead }}" as="a" hint-placeholder-count="3"><div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;height:100%;"><span style="font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;">{{ a.mid }}</span><div style="position:relative;width:56px;height:{{ a.h }};border-radius:8px;background:var(--sky-tile);"><div style="position:absolute;left:0;right:0;bottom:{{ a.lowPct }};height:{{ a.bandH }};border-radius:8px;background:var(--sky);opacity:.35;"></div><div style="position:absolute;left:0;right:0;bottom:{{ a.midPct }};height:4px;background:var(--ink);"></div></div><span style="font-size:13px;color:var(--muted);">{{ a.m }}</span></div></sc-for>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:14px;">
+            <thead><tr style="color:var(--muted);"><th scope="col" style="text-align:left;padding:8px 0;font-weight:500;"></th><th scope="col" style="text-align:right;padding:8px 0 8px 12px;font-weight:500;">Oct</th><th scope="col" style="text-align:right;padding:8px 0 8px 12px;font-weight:500;">Nov</th><th scope="col" style="text-align:right;padding:8px 0 8px 12px;font-weight:500;">Dec</th></tr></thead>
+            <tbody><sc-for list="{{ lines }}" as="l" hint-placeholder-count="8"><tr style="border-top:1px solid var(--border);font-weight:{{ l.weight }};"><th scope="row" style="text-align:left;padding:8px 0;font-weight:400;color:var(--muted);">{{ l.label }}</th><td style="text-align:right;padding:8px 0 8px 12px;font-variant-numeric:tabular-nums;white-space:nowrap;">{{ l.a }}</td><td style="text-align:right;padding:8px 0 8px 12px;font-variant-numeric:tabular-nums;white-space:nowrap;">{{ l.b }}</td><td style="text-align:right;padding:8px 0 8px 12px;font-variant-numeric:tabular-nums;white-space:nowrap;">{{ l.c }}</td></tr></sc-for></tbody>
+          </table>
+        </section>
+      </div>
+
+      <section style="border:1px solid var(--border);border-radius:16px;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div><h2 style="margin:0;font-size:18px;font-weight:600;">Debt-free</h2><p style="margin:4px 0 0;font-size:15px;">Debt-free by <b>May 2034</b> on your payoff plan.</p></div>
+        <a href="Debts.dc.html" style="display:inline-flex;align-items:center;height:40px;padding:0 14px;border:1px solid var(--border);border-radius:10px;font-weight:500;font-size:14px;text-decoration:none;">Open Debts</a>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;scheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const CHIPS = [
+  ['Restaurants −25%', 'Restaurants', '$62.50', '$14.42', 'Feb 2028 – Apr 2028, 4 weeks sooner.', '25 min', '$2,570 to $2,850', '$62.50'],
+  ['Restaurants −10%', 'Restaurants', '$25.00', '$5.77', 'about Jul 2028, 2 weeks sooner.', '10 min', '$2,535 to $2,815', '$25.00'],
+  ['Restaurants to your best month', 'Restaurants', '$91.35', '$21.08', 'Jan 2028 – Mar 2028, 6 weeks sooner.', '37 min', '$2,600 to $2,880', '$91.35'],
+  ['Groceries −25%', 'Groceries', '$121.55', '$28.05', 'Nov 2027 – Feb 2028, 8 weeks sooner.', '49 min', '$2,630 to $2,910', '$121.55'],
+  ['Groceries −10%', 'Groceries', '$48.62', '$11.22', 'Apr 2028 – Jun 2028, 3 weeks sooner.', '19 min', '$2,560 to $2,840', '$48.62'],
+  ['Groceries to your best month', 'Groceries', '$74.20', '$17.12', 'Feb 2028 – Apr 2028, 5 weeks sooner.', '30 min', '$2,585 to $2,865', '$74.20'],
+];
+class Component extends DCLogic {
+  state = { pick: 0 };
+  renderVals() {
+    const p = this.state.pick;
+    const w = p === null ? null : CHIPS[p];
+    return {
+      scheme: this.props.scheme ?? 'light',
+      toCome: [['Pay still due', '$2,250.00'], ['Bills not charged yet (already in Spent)', '$5.88'], ['Spending at your usual pace', 'about $270'], ['Savings still planned', '$100.00'], ['Spent by the end of September', 'about $3,690']].map(([label, value]) => ({ label, value })),
+      bills: [['Sep 26', 'Car Insurance', '$142.00', true], ['Sep 27', 'Dropbox', '$11.99', true], ['Sep 28', 'Phone', '$65.00', false], ['Oct 1', 'Rent', '$1,600.00', true]].map(([date, name, amount, notSeen]) => ({ date, name, amount, notSeen })),
+      goals: [['Flight training', 'At your pace: Jun 2028 – Nov 2028', 'Based on 2 months', 'Most likely Aug 2028. To reach it by Jun 1, 2028: $207.00 a week.'], ['Emergency Fund', 'At your pace: about Mar 2027', 'Based on 2 months', 'Most likely Mar 2027.'], ['Travel Fund', 'At your pace: about Jul 2027', 'Rough: 2 months', 'Too few months for a range yet.']].map(([name, pace, chip, line]) => ({ name, pace, chip, line })),
+      chips: CHIPS.map((c, i) => ({ label: c[0], on: p === i, pick: () => this.setState({ pick: p === i ? null : i }), bg: p === i ? 'var(--accent)' : 'var(--card)', ink: p === i ? '#FFFFFF' : 'var(--ink)', border: p === i ? 'var(--accent)' : 'var(--border)' })),
+      noPick: w === null, picked: w !== null, w: w === null ? {} : { name: w[1], monthly: w[2], weekly: w[3], date: w[4], minutes: w[5], end: w[6], kept: w[7] },
+      ahead: [['Oct', '$3,110', '82%', '40%', '30%', '55%'], ['Nov', '$3,560', '94%', '48%', '32%', '64%'], ['Dec', '$3,020', '80%', '30%', '38%', '52%']].map(([m, mid, h, lowPct, bandH, midPct]) => ({ m, mid, h, lowPct, bandH, midPct })),
+      lines: [['Pay', '$7,095.00', '$7,095.00', '$7,095.00'], ['Bills', '$1,991.00', '$1,991.00', '$1,991.00'], ['Everyday spending', 'about $1,240', 'about $1,240', 'about $1,640'], ['Savings', '$1,250.00', '$1,250.00', '$1,250.00'], ['Left over', 'about $2,614', 'about $2,614', 'about $2,214'], ['Worst case end', '$2,020', '$2,470', '$1,830'], ['Most likely end', '$3,110', '$3,560', '$3,020'], ['Best case end', '$3,710', '$4,160', '$3,720']].map(([label, a, b, c], i) => ({ label, a, b, c, weight: i === 4 || i === 6 ? 600 : 400 })),
+    };
+  }
+}
+</script>
+</body>
+</html>

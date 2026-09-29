@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0;background:light-dark(#F4F4F6,#0F1013);}a{color:inherit;}button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit;}</style>
+</helmet>
+<div data-screen-label="Debts" style="--canvas:light-dark(#F4F4F6,#0F1013);--card:light-dark(#FFFFFF,#17181C);--border:light-dark(#E5E7EB,#2A2C33);--ink:light-dark(#111827,#F3F4F6);--muted:light-dark(#6B7280,#9CA3AF);--track:light-dark(#E5E7EB,#2A2C33);--hover:light-dark(#F9FAFB,#1F2026);--accent:light-dark(#4F46E5,#818CF8);--rose:#E11D48;--rose-tile:light-dark(#FFE4E6,#3D1A22);--rose-tint:light-dark(#FFF1F2,#241418);--rose-ink:light-dark(#BE123C,#FDA4AF);--violet:#8B5CF6;--violet-tile:light-dark(#EDE9FE,#2E1065);--green:#10B981;color-scheme:{{ scheme }};display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh;background:var(--canvas);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,'SF Pro Text','Segoe UI',sans-serif;font-size:15px;line-height:1.45;">
+  <div style="position:sticky;top:0;height:100vh;"><dc-import name="Sidebar" active="debts" count="{{ 3 }}" hint-size="100%,100%" style="display:block;height:100%;"></dc-import></div>
+  <main style="margin:12px 12px 12px 0;background:var(--card);border:1px solid var(--border);border-radius:16px;min-width:0;display:flex;flex-direction:column;overflow:hidden;">
+    <dc-import name="Topbar" crumb="Debts" hint-size="100%,64px" style="display:block;"></dc-import>
+    <div style="padding:28px 28px 40px;display:flex;flex-direction:column;gap:20px;">
+      <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div style="max-width:70ch;">
+          <div style="display:flex;align-items:center;gap:8px;"><h1 style="margin:0;font-size:32px;font-weight:700;letter-spacing:-0.02em;line-height:1.15;">Debt payoff</h1><button aria-label="Help with this screen" style="width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;color:var(--muted);" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"></path><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></button></div>
+          <p style="margin:6px 0 0;font-size:16px;color:var(--muted);text-wrap:pretty;">These are the loans and card balances you are paying down, to plan when each is paid off; they are separate from the Month’s Debts list, which counts the payments you make each month.</p>
+        </div>
+        <button style="display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 16px;border-radius:10px;background:var(--accent);color:#FFFFFF;font-weight:500;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Add a debt</button>
+      </header>
+
+      <section aria-label="Debt summary" style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;background:linear-gradient(to right,var(--card),var(--violet-tile));display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr)) auto;gap:18px;align-items:center;">
+        <div><div style="font-size:14px;color:var(--muted);">Current debt total</div><div style="font-size:32px;font-weight:700;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;">$19,875.00</div><div style="font-size:13px;color:var(--muted);">End of August: $20,487.40 · <b style="color:var(--green);">▼ $612.40 less (3%)</b></div></div>
+        <div><div style="font-size:14px;color:var(--muted);">Debt-free by</div><div style="font-size:22px;font-weight:600;">May 2034</div></div>
+        <div><div style="font-size:14px;color:var(--muted);">Paid this month</div><div style="font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;">$379.50</div></div>
+        <div><div style="font-size:14px;color:var(--muted);">Payoff progress</div><div style="font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;">27%</div><div style="font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;">$7,225.00 of $27,100.00</div></div>
+        <div style="position:relative;width:96px;height:96px;"><svg viewBox="0 0 100 100" width="96" height="96" style="transform:rotate(-90deg);"><circle cx="50" cy="50" r="40" fill="none" stroke="var(--violet-tile)" stroke-width="14"></circle><circle cx="50" cy="50" r="40" fill="none" stroke="var(--violet)" stroke-width="14" pathLength="100" stroke-dasharray="27 100"></circle></svg><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:600;font-variant-numeric:tabular-nums;">27%</span></div>
+      </section>
+
+      <ul style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;">
+        <sc-for list="{{ debts }}" as="d" hint-placeholder-count="3">
+          <li><section aria-label="{{ d.name }}" style="border:1px solid var(--border);border-radius:16px;padding:20px 22px;display:flex;flex-direction:column;gap:14px;">
+            <div style="display:flex;align-items:center;gap:12px;"><span style="width:40px;height:40px;border-radius:12px;background:var(--rose-tile);color:var(--rose);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"></path><path d="M2 10h20"></path></svg></span><h2 style="margin:0;font-size:18px;font-weight:600;">{{ d.name }}</h2></div>
+            <div style="display:flex;align-items:center;gap:16px;">
+              <div style="flex:1;"><div style="font-size:13px;color:var(--rose-ink);">Balance today</div><div style="font-size:26px;font-weight:700;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;">{{ d.balance }}</div><div style="font-size:13px;color:var(--muted);">{{ d.vs }}</div></div>
+              <div style="position:relative;width:72px;height:72px;flex-shrink:0;"><svg viewBox="0 0 100 100" width="72" height="72" style="transform:rotate(-90deg);"><circle cx="50" cy="50" r="40" fill="none" stroke="var(--violet-tile)" stroke-width="14"></circle><circle cx="50" cy="50" r="40" fill="none" stroke="var(--violet)" stroke-width="14" pathLength="100" stroke-dasharray="{{ d.dash }}"></circle></svg><span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;">{{ d.pct }}</span></div>
+            </div>
+            <dl style="margin:0;display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;font-size:14px;">
+              <div><dt style="font-size:12px;color:var(--rose-ink);">Starting balance</dt><dd style="margin:0;font-variant-numeric:tabular-nums;">{{ d.start }}</dd></div><div><dt style="font-size:12px;color:var(--rose-ink);">APR</dt><dd style="margin:0;font-variant-numeric:tabular-nums;">{{ d.apr }}</dd></div>
+              <div><dt style="font-size:12px;color:var(--rose-ink);">Minimum payment</dt><dd style="margin:0;font-variant-numeric:tabular-nums;">{{ d.min }}</dd></div><div><dt style="font-size:12px;color:var(--rose-ink);">Paid off in</dt><dd style="margin:0;font-weight:600;">{{ d.paidOff }}</dd></div>
+            </dl>
+            <button style="align-self:flex-start;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:500;" style-hover="background:var(--hover);">Edit</button>
+          </section></li>
+        </sc-for>
+      </ul>
+
+      <section aria-label="Payoff plans" style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:14px;">
+        <div><h2 style="margin:0;font-size:18px;font-weight:600;">Ways to pay it off</h2><p style="margin:4px 0 0;font-size:15px;color:var(--muted);">The same amount each month, spent three ways: what you pay now, plus what a paid-off debt frees up.</p></div>
+        <ul style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">
+          <sc-for list="{{ plans }}" as="p" hint-placeholder-count="3"><li style="border:1px solid var(--border);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;background:{{ p.bg }};"><h3 style="margin:0;font-size:16px;font-weight:600;">{{ p.name }}</h3><div><div style="font-size:12px;color:var(--muted);">Debt-free by</div><div style="font-size:20px;font-weight:600;">{{ p.date }}</div></div><div><div style="font-size:12px;color:var(--muted);">Interest paid</div><div style="font-variant-numeric:tabular-nums;">{{ p.interest }}</div></div><p style="margin:0;font-size:13px;color:var(--muted);">{{ p.how }}</p></li></sc-for>
+        </ul>
+      </section>
+      <p style="margin:0;font-size:13px;color:var(--muted);max-width:80ch;">A card you pay off from your bank can go here too, but give it no monthly amount on the Month’s Debts list: what you bought on it is already counted there.</p>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;scheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return { scheme: this.props.scheme ?? 'light',
+      debts: [['Car Loan', '$9,845.00', '▼ $229.50 less than at the end of August', '30 100', '30%', '$14,000.00', '6.9%', '$229.50', 'Jun 2030'], ['Credit Card 1', '$1,910.00', '▼ $150.00 less than at the end of August', '40 100', '40%', '$3,200.00', '19.99%', '$150.00', 'Mar 2028'], ['Student Loan', '$8,120.00', 'About the same as at the end of August', '18 100', '18%', '$9,900.00', '4.5%', '$103.85', 'May 2034']].map(([name, balance, vs, dash, pct, start, apr, min, paidOff]) => ({ name, balance, vs, dash, pct, start, apr, min, paidOff })),
+      plans: [['Minimums only', 'May 2034', '$4,812.20', 'Each debt pays its own minimum until it is paid off.', 'transparent'], ['Snowball', 'Nov 2031', '$3,640.15', 'When a debt is paid off, its payment goes to the smallest balance left.', 'transparent'], ['Avalanche', 'Sep 2031', '$3,402.90', 'When a debt is paid off, its payment goes to the highest APR left.', 'var(--violet-tile)']].map(([name, date, interest, how, bg]) => ({ name, date, interest, how, bg })) };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<nav aria-label="Screens" style="height:100%;box-sizing:border-box;display:flex;flex-direction:column;padding:20px 16px 16px;gap:8px;font-family:ui-sans-serif,system-ui,-apple-system,'SF Pro Text','Segoe UI',sans-serif;color:var(--ink,#111827);">
+  <a href="#" style="display:flex;align-items:center;gap:12px;padding:4px 4px 12px;text-decoration:none;color:inherit;">
+    <span style="width:40px;height:40px;border-radius:10px;background:var(--accent,#4F46E5);color:#FFFFFF;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg></span>
+    <sc-if value="{{ full }}" hint-placeholder-val="{{ true }}"><span style="font-size:18px;font-weight:600;letter-spacing:-0.01em;">Budget</span></sc-if>
+  </a>
+  <div style="flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;display:flex;flex-direction:column;gap:14px;">
+    <sc-for list="{{ groups }}" as="g" hint-placeholder-count="4">
+      <div style="display:flex;flex-direction:column;gap:2px;">
+        <sc-if value="{{ full }}" hint-placeholder-val="{{ true }}"><div style="font-size:13px;font-weight:500;color:var(--muted,#6B7280);padding:0 4px 6px;">{{ g.title }}</div></sc-if>
+        <sc-for list="{{ g.items }}" as="n" hint-placeholder-count="5">
+          <a href="#" aria-label="{{ n.aria }}" aria-current="{{ n.current }}" title="{{ n.label }}" style="position:relative;display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:12px;text-decoration:none;color:inherit;font-size:16px;font-weight:500;background:{{ n.bg }};border:1px solid {{ n.border }};box-sizing:border-box;justify-content:{{ justify }};" style-hover="background:var(--card,#FFFFFF);">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="{{ n.color }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><sc-for list="{{ n.paths }}" as="p" hint-placeholder-count="2"><path d="{{ p }}"></path></sc-for></svg>
+            <sc-if value="{{ full }}" hint-placeholder-val="{{ true }}"><span style="flex:1;min-width:0;">{{ n.label }}</span></sc-if>
+            <sc-if value="{{ n.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="min-width:22px;height:22px;padding:0 6px;box-sizing:border-box;border-radius:11px;background:#F97316;color:#FFFFFF;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;position:{{ badgePos }};top:4px;right:4px;">{{ n.badge }}</span></sc-if>
+          </a>
+        </sc-for>
+      </div>
+    </sc-for>
+  </div>
+  <sc-if value="{{ full }}" hint-placeholder-val="{{ true }}">
+    <a href="#" aria-label="Flight training, 38% saved" style="display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:14px;border:1px solid var(--border,#E5E7EB);background:var(--card,#FFFFFF);text-decoration:none;color:inherit;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent,#4F46E5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"></path></svg>
+        <span style="flex:1;font-size:15px;font-weight:600;">Flight training</span>
+        <span style="font-size:14px;color:var(--muted,#6B7280);font-variant-numeric:tabular-nums;">38%</span>
+      </div>
+      <div style="height:6px;border-radius:3px;background:var(--track,#E5E7EB);overflow:hidden;"><div style="height:100%;width:38%;border-radius:3px;background:var(--accent,#4F46E5);"></div></div>
+      <span style="font-size:13px;color:var(--muted,#6B7280);font-variant-numeric:tabular-nums;">$11,480.00 of $30,000.00</span>
+    </a>
+  </sc-if>
+  <div style="display:flex;align-items:center;gap:12px;padding:8px 4px 0;justify-content:{{ justify }};">
+    <span style="width:40px;height:40px;border-radius:20px;background:var(--accent-soft,#EEF2FF);color:var(--accent,#4F46E5);font-weight:600;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">A</span>
+    <sc-if value="{{ full }}" hint-placeholder-val="{{ true }}">
+      <span style="flex:1;min-width:0;display:flex;flex-direction:column;"><span style="font-size:15px;font-weight:600;">Aaron</span><span style="font-size:13px;color:var(--muted,#6B7280);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">aaron@example.com</span></span>
+      <button aria-label="Sign out" style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--muted,#6B7280);background:none;border:0;cursor:pointer;" style-hover="background:var(--card,#FFFFFF);"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="m16 17 5-5-5-5"></path><path d="M21 12H9"></path></svg></button>
+    </sc-if>
+  </div>
+</nav>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:248,&quot;height&quot;:900},&quot;active&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;month&quot;,&quot;week&quot;,&quot;paycheck&quot;,&quot;calendar&quot;,&quot;year&quot;,&quot;savings&quot;,&quot;debts&quot;,&quot;ledger&quot;,&quot;coach&quot;,&quot;forecast&quot;,&quot;reports&quot;,&quot;review&quot;,&quot;add&quot;,&quot;setup&quot;,&quot;settings&quot;,&quot;help&quot;],&quot;default&quot;:&quot;month&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;collapsed&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;count&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:3,&quot;min&quot;:0,&quot;max&quot;:99,&quot;tsType&quot;:&quot;number&quot;}}">
+const CAL = ['M8 2v4', 'M16 2v4', 'M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z', 'M3 10h18'];
+const P = {
+  month: CAL,
+  week: [...CAL, 'M17 14h-6', 'M13 18H7'],
+  paycheck: ['M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1', 'M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4'],
+  calendar: [...CAL, 'M8 14h.01', 'M12 14h.01', 'M16 14h.01', 'M8 18h.01', 'M12 18h.01', 'M16 18h.01'],
+  year: ['M3 3v16a2 2 0 0 0 2 2h16', 'M18 17V9', 'M13 17V5', 'M8 17v-3'],
+  savings: ['M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z', 'M16 10h.01', 'M2 8v1a2 2 0 0 0 2 2h1'],
+  debts: ['M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z', 'M2 10h20'],
+  ledger: ['M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z', 'M14 2v4a2 2 0 0 0 2 2h4', 'M10 9H8', 'M16 13H8', 'M16 17H8'],
+  review: ['M22 12h-6l-2 3h-4l-2-3H2', 'M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z'],
+  add: ['M5 12h14', 'M12 5v14'],
+  coach: ['M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z'],
+  forecast: ['M22 7 13.5 15.5 8.5 10.5 2 17', 'M16 7h6v6'],
+  reports: ['M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z', 'M21.21 15.89A10 10 0 1 1 8 2.83'],
+  setup: ['M3 12h.01', 'M3 18h.01', 'M3 6h.01', 'M8 12h13', 'M8 18h13', 'M8 6h13'],
+  settings: ['M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z', 'M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z'],
+  help: ['M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z', 'M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3', 'M12 17h.01'],
+};
+// Each item's icon colour, as the screenshot has them; the Month takes the accent.
+const C = { month: 'var(--accent,#4F46E5)', week: '#F97316', paycheck: '#6366F1', calendar: '#14B8A6', year: '#14B8A6', savings: '#F59E0B', debts: '#E11D48', ledger: '#6366F1', review: '#F97316', add: '#6366F1', coach: '#8B5CF6', forecast: '#0EA5E9', reports: '#0EA5E9', setup: '#F97316', settings: '#F97316', help: '#6B7280' };
+const GROUPS = [
+  { title: 'Plan', items: [['month', 'Month'], ['week', 'Week'], ['paycheck', 'Paycheck'], ['calendar', 'Bill calendar'], ['year', 'Year']] },
+  { title: 'Money', items: [['savings', 'Savings'], ['debts', 'Debts'], ['ledger', 'All transactions']] },
+  { title: 'Coach', items: [['coach', 'Coach'], ['forecast', 'Forecast'], ['reports', 'Reports']] },
+  { title: 'Inbox', items: [['review', 'Review'], ['add', 'Add']] },
+  { title: 'Setup', items: [['setup', 'Setup'], ['settings', 'Settings'], ['help', 'Help']] },
+];
+class Component extends DCLogic {
+  renderVals() {
+    const active = this.props.active ?? 'month';
+    const full = !this.props.collapsed;
+    const count = String(this.props.count ?? 3);
+    const groups = GROUPS.map((g) => ({
+      title: g.title,
+      items: g.items.map(([key, label]) => {
+        const on = key === active;
+        const hasBadge = key === 'review' && count !== '0';
+        return { key, label, paths: P[key], color: C[key], current: on ? 'page' : null, aria: hasBadge ? `${label}, ${count} waiting` : label,
+          hasBadge, badge: count, bg: on ? 'var(--card,#FFFFFF)' : 'transparent', border: on ? 'var(--border,#E5E7EB)' : 'transparent' };
+      }),
+    }));
+    return { full, groups, justify: full ? 'flex-start' : 'center', badgePos: full ? 'static' : 'absolute' };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0;background:light-dark(#F4F4F6,#0F1013);}a{color:inherit;}button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit;}input{font:inherit;}</style>
+</helmet>
+<main data-screen-label="Sign in" style="--canvas:light-dark(#F4F4F6,#0F1013);--card:light-dark(#FFFFFF,#17181C);--border:light-dark(#E5E7EB,#2A2C33);--input:light-dark(#D1D5DB,#3A3D46);--ink:light-dark(#111827,#F3F4F6);--muted:light-dark(#6B7280,#9CA3AF);--accent:light-dark(#4F46E5,#818CF8);--accent-soft:light-dark(#EEF2FF,#1E1B4B);--accent-tint:light-dark(#EEF0FF,#181A2E);color-scheme:{{ scheme }};min-height:100vh;display:flex;align-items:center;justify-content:center;padding:48px 16px;box-sizing:border-box;background:radial-gradient(1200px 600px at 50% -10%,var(--accent-tint),var(--canvas));color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,'SF Pro Text','Segoe UI',sans-serif;font-size:15px;line-height:1.45;">
+  <div style="width:100%;max-width:420px;display:flex;flex-direction:column;gap:24px;">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;">
+      <span style="width:56px;height:56px;border-radius:16px;background:var(--accent);color:#FFFFFF;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"></path><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg></span>
+      <div><h1 style="margin:0;font-size:28px;font-weight:700;letter-spacing:-0.02em;">Budget</h1><p style="margin:6px 0 0;font-size:16px;color:var(--muted);">Your statements and your spending, visible only to you.</p></div>
+    </div>
+    <form style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:16px;box-shadow:0 10px 30px rgba(17,24,39,.06);">
+      <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:600;">Email address<input type="email" autocomplete="email" placeholder="you@example.com" style="height:44px;padding:0 12px;border:1px solid var(--input);border-radius:10px;background:var(--card);color:var(--ink);font-size:16px;font-weight:400;outline:none;"></label>
+      <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:600;">Password<input type="password" autocomplete="current-password" style="height:44px;padding:0 12px;border:1px solid var(--input);border-radius:10px;background:var(--card);color:var(--ink);font-size:16px;font-weight:400;outline:none;"></label>
+      <button type="submit" style="height:48px;border-radius:12px;background:var(--accent);color:#FFFFFF;font-weight:600;font-size:16px;">Sign in</button>
+      <button type="button" style="align-self:center;min-height:44px;font-size:14px;color:var(--muted);text-decoration:underline;text-underline-offset:4px;" style-hover="color:var(--ink);">Email me a link instead</button>
+    </form>
+    <p style="margin:0;text-align:center;font-size:13px;color:var(--muted);">Accounts are made in the Supabase dashboard. There is no sign-up here.</p>
+  </div>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;scheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;string&quot;}}"></script>
+</body>
+</html>

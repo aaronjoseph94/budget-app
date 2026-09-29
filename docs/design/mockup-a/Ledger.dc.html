@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0;background:light-dark(#F4F4F6,#0F1013);}a{color:inherit;}button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit;}input{font:inherit;}</style>
+</helmet>
+<div data-screen-label="All transactions" style="--canvas:light-dark(#F4F4F6,#0F1013);--card:light-dark(#FFFFFF,#17181C);--border:light-dark(#E5E7EB,#2A2C33);--input:light-dark(#D1D5DB,#3A3D46);--ink:light-dark(#111827,#F3F4F6);--muted:light-dark(#6B7280,#9CA3AF);--track:light-dark(#E5E7EB,#2A2C33);--hover:light-dark(#F9FAFB,#1F2026);--accent:light-dark(#4F46E5,#818CF8);--accent-soft:light-dark(#EEF2FF,#1E1B4B);--rose:#E11D48;--rose-tint:light-dark(#FFF1F2,#241418);--green:#10B981;--green-tint:light-dark(#ECFDF5,#122019);--green-ink:light-dark(#047857,#6EE7B7);color-scheme:{{ scheme }};display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh;background:var(--canvas);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,'SF Pro Text','Segoe UI',sans-serif;font-size:15px;line-height:1.45;">
+  <div style="position:sticky;top:0;height:100vh;"><dc-import name="Sidebar" active="ledger" count="{{ 3 }}" hint-size="100%,100%" style="display:block;height:100%;"></dc-import></div>
+  <main style="margin:12px 12px 12px 0;background:var(--card);border:1px solid var(--border);border-radius:16px;min-width:0;display:flex;flex-direction:column;overflow:hidden;">
+    <dc-import name="Topbar" crumb="All transactions" hint-size="100%,64px" style="display:block;"></dc-import>
+    <div style="padding:28px 28px 40px;display:flex;flex-direction:column;gap:20px;max-width:960px;">
+      <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;"><h1 style="margin:0;font-size:32px;font-weight:700;letter-spacing:-0.02em;line-height:1.15;">All transactions</h1><button aria-label="Help with this screen" style="width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;color:var(--muted);" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"></path><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></button></div>
+          <p style="margin:6px 0 0;font-size:16px;color:var(--muted);">September 2026 · every approved charge and payment</p>
+        </div>
+        <div style="display:flex;align-items:center;border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+          <button aria-label="Previous month" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+          <span style="display:flex;align-items:center;height:44px;padding:0 14px;border-left:1px solid var(--border);border-right:1px solid var(--border);font-weight:500;">Sep 2026</span>
+          <button aria-label="Next month" disabled style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;opacity:.4;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></button>
+        </div>
+      </header>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div style="border:1px solid var(--border);border-radius:16px;padding:18px 22px;background:linear-gradient(to bottom,var(--card),var(--rose-tint));"><p style="margin:0;font-size:14px;color:var(--muted);">Money out</p><p style="margin:0;font-size:26px;font-weight:700;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;">$4,869.15</p></div>
+        <div style="border:1px solid var(--border);border-radius:16px;padding:18px 22px;background:linear-gradient(to bottom,var(--card),var(--green-tint));"><p style="margin:0;font-size:14px;color:var(--muted);">Money in</p><p style="margin:0;font-size:26px;font-weight:700;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;color:var(--green-ink);">$7,170.00</p></div>
+        <p style="grid-column:1 / -1;margin:0;font-size:13px;color:var(--muted);">Every row as it is, card payments and savings moves included. The Month counts spending by list.</p>
+      </div>
+      <label style="display:flex;align-items:center;gap:10px;height:44px;padding:0 14px;border:1px solid var(--input);border-radius:10px;color:var(--muted);"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg><input placeholder="Search merchant or category" style="flex:1;min-width:0;border:0;outline:none;background:transparent;color:var(--ink);font-size:15px;"></label>
+      <sc-for list="{{ days }}" as="d" hint-placeholder-count="3">
+        <section style="display:flex;flex-direction:column;gap:8px;">
+          <h2 style="margin:0;padding:0 4px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);">{{ d.date }}</h2>
+          <ul style="list-style:none;margin:0;padding:0;border:1px solid var(--border);border-radius:16px;overflow:hidden;">
+            <sc-for list="{{ d.rows }}" as="r" hint-placeholder-count="2">
+              <li style="display:flex;align-items:center;gap:14px;padding:12px 18px;border-top:1px solid var(--border);" style-hover="background:var(--hover);">
+                <div style="flex:1;min-width:0;"><p style="margin:0;font-weight:500;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.merchant }}</p><div style="display:flex;align-items:center;gap:8px;margin-top:3px;"><span style="font-size:12px;font-weight:500;background:var(--track);border-radius:999px;padding:2px 8px;">{{ r.category }}</span><sc-if value="{{ r.typed }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--muted);">added by hand</span></sc-if></div></div>
+                <span style="font-weight:600;font-variant-numeric:tabular-nums;color:{{ r.color }};">{{ r.amount }}</span>
+                <button aria-label="Remove this transaction" style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg></button>
+              </li>
+            </sc-for>
+          </ul>
+        </section>
+      </sc-for>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;scheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const row = (merchant, category, amount, typed = false) => ({ merchant, category, amount, typed, color: amount.startsWith('+') ? 'var(--green-ink)' : 'var(--ink)' });
+    return { scheme: this.props.scheme ?? 'light', days: [
+      { date: 'Sep 24, 2026', rows: [row('SAFEWAY #4471', 'Groceries', '−$64.87'), row('TIM HORTONS #2231', 'Restaurants', '−$12.45'), row('Coffee', 'Restaurants', '−$4.50', true)] },
+      { date: 'Sep 22, 2026', rows: [row('CREDIT CARD 1 PAYMENT', 'Credit Card 1', '−$150.00'), row('THE KEG STEAKHOUSE', 'Restaurants', '−$121.40')] },
+      { date: 'Sep 20, 2026', rows: [row('Side Hustle', 'Side Hustle', '+$845.00', true), row('CAR LOAN PMT', 'Car Loan', '−$229.50')] },
+      { date: 'Sep 18, 2026', rows: [row('GAS BILL ONLINE PMT', 'Gas Bill', '−$38.40'), row('CARD INTEREST', 'Card interest & fees', '−$9.12')] },
+    ] };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0;background:light-dark(#F4F4F6,#0F1013);}a{color:inherit;}button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit;}</style>
+</helmet>
+<div data-screen-label="Reports" style="--canvas:light-dark(#F4F4F6,#0F1013);--card:light-dark(#FFFFFF,#17181C);--border:light-dark(#E5E7EB,#2A2C33);--ink:light-dark(#111827,#F3F4F6);--muted:light-dark(#6B7280,#9CA3AF);--track:light-dark(#E5E7EB,#2A2C33);--hover:light-dark(#F9FAFB,#1F2026);--accent:light-dark(#4F46E5,#818CF8);--accent-soft:light-dark(#EEF2FF,#1E1B4B);--accent-tint:light-dark(#EEF0FF,#181A2E);--green:#10B981;--green-tile:light-dark(#D1FAE5,#123326);--rose:#E11D48;--rose-tile:light-dark(#FFE4E6,#3D1A22);--amber:#F59E0B;--amber-tile:light-dark(#FEF3C7,#3D3112);--heat0:light-dark(#F3F4F6,#23252B);--heat1:light-dark(#FDBA74,#7C2D12);--heat2:light-dark(#F97316,#C2410C);--heat3:light-dark(#C2410C,#F97316);--heat4:light-dark(#7C2D12,#FDBA74);color-scheme:{{ scheme }};display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh;background:var(--canvas);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,'SF Pro Text','Segoe UI',sans-serif;font-size:15px;line-height:1.45;">
+  <div style="position:sticky;top:0;height:100vh;"><dc-import name="Sidebar" active="reports" count="{{ 3 }}" hint-size="100%,100%" style="display:block;height:100%;"></dc-import></div>
+  <main style="margin:12px 12px 12px 0;background:var(--card);border:1px solid var(--border);border-radius:16px;min-width:0;display:flex;flex-direction:column;overflow:hidden;">
+    <dc-import name="Topbar" crumb="Reports" hint-size="100%,64px" style="display:block;"></dc-import>
+    <div style="padding:28px 28px 40px;display:flex;flex-direction:column;gap:20px;">
+      <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;"><h1 style="margin:0;font-size:32px;font-weight:700;letter-spacing:-0.02em;line-height:1.15;">Reports</h1><button aria-label="Help with this screen" style="width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;color:var(--muted);" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"></path><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></button><span style="font-size:12px;font-weight:600;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:3px 10px;">So far</span></div>
+          <p style="margin:6px 0 0;font-size:16px;color:var(--muted);">The month in review, trends, shops and habits</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <sc-if value="{{ monthly }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;align-items:center;border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+            <a href="#" aria-label="Previous month" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></a>
+            <span style="display:flex;align-items:center;height:44px;padding:0 14px;border-left:1px solid var(--border);border-right:1px solid var(--border);font-weight:500;">Sep 2026</span>
+            <span aria-hidden="true" style="width:44px;height:44px;"></span>
+          </div>
+          </sc-if>
+          <button style="display:inline-flex;align-items:center;height:44px;padding:0 14px;border:1px solid var(--border);border-radius:10px;font-weight:500;font-size:14px;" style-hover="background:var(--hover);">Save as PDF</button>
+        </div>
+      </header>
+
+      <div role="tablist" aria-label="Report" style="display:inline-flex;gap:4px;background:var(--canvas);border-radius:10px;padding:4px;width:max-content;">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4"><button role="tab" aria-selected="{{ t.on }}" onClick="{{ t.pick }}" style="height:36px;padding:0 16px;border-radius:8px;font-size:14px;font-weight:500;background:{{ t.bg }};color:{{ t.ink }};box-shadow:{{ t.shadow }};">{{ t.label }}</button></sc-for>
+      </div>
+
+      <sc-if value="{{ isOverview }}" hint-placeholder-val="{{ true }}">
+        <div role="tabpanel" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:20px;align-items:start;">
+          <section style="grid-column:1 / -1;border:1px solid var(--border);border-radius:16px;padding:24px 28px;background:linear-gradient(to right,var(--card),var(--accent-tint));display:flex;flex-direction:column;gap:12px;">
+            <h2 style="margin:0;font-size:14px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.02em;">The month in review</h2>
+            <p style="margin:0;font-size:22px;font-weight:500;line-height:1.4;letter-spacing:-0.01em;text-wrap:pretty;">A win on Groceries: <b>$112.40 less</b> than usual. Keep an eye on Restaurants: <b>$64.10 more</b> than usual.</p>
+            <ul style="margin:0;padding-left:20px;font-size:15px;display:flex;flex-direction:column;gap:4px;"><li>Spent so far $3,419.15. That is $84.10 less than by this day in August.</li><li>Saved so far $1,150.00, 20% of what came in.</li><li>Restaurants so far: $291.35, $64.10 more than usual by this day.</li></ul>
+            <p style="margin:0;font-size:15px;"><b>One thing to try:</b> Next month, try a weekly limit for Restaurants close to its usual, and check it each Sunday.</p>
+            <p style="margin:0;font-size:13px;color:var(--muted);">In the app’s own words. The AI reviews a month once it is over.</p>
+          </section>
+          <section style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:12px;">
+            <h2 style="margin:0;font-size:18px;font-weight:600;">Income, Spent and Saved</h2><p style="margin:0;font-size:14px;color:var(--muted);">Sep 1–24, against Aug 1–24</p>
+            <dl style="margin:0;"><sc-for list="{{ totals }}" as="t" hint-placeholder-count="3"><div style="padding:12px 0;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr auto;gap:2px 12px;"><dt style="font-weight:500;">{{ t.label }}</dt><dd style="margin:0;font-weight:600;font-variant-numeric:tabular-nums;text-align:right;">{{ t.now }}</dd><dd style="margin:0;grid-column:1 / -1;font-size:14px;color:var(--muted);">{{ t.line }}</dd></div></sc-for></dl>
+            <p style="margin:0;font-size:15px;">You saved <b>20%</b> of what came in.</p>
+            <p style="margin:0;font-size:14px;color:var(--muted);">Your usual month is set beside a whole month, once this one is over.</p>
+          </section>
+          <section style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:12px;">
+            <h2 style="margin:0;font-size:18px;font-weight:600;">Biggest changes</h2>
+            <h3 style="margin:4px 0 0;font-size:14px;font-weight:600;color:var(--muted);">More than usual</h3>
+            <div style="padding:10px 0;border-top:1px solid var(--border);"><div style="display:flex;justify-content:space-between;gap:12px;"><span style="font-weight:500;">Restaurants</span><span style="font-weight:600;font-variant-numeric:tabular-nums;">$291.35</span></div><p style="margin:2px 0 0;font-size:14px;color:var(--muted);">$64.10 more than usual by this day ($227.25)</p></div>
+            <h3 style="margin:4px 0 0;font-size:14px;font-weight:600;color:var(--muted);">Less than usual</h3>
+            <div style="padding:10px 0;border-top:1px solid var(--border);"><div style="display:flex;justify-content:space-between;gap:12px;"><span style="font-weight:500;">Groceries</span><span style="font-weight:600;font-variant-numeric:tabular-nums;">$486.20</span></div><p style="margin:2px 0 0;font-size:14px;color:var(--muted);">$112.40 less than usual by this day ($598.60)</p></div>
+            <div style="padding:10px 0;border-top:1px solid var(--border);"><div style="display:flex;justify-content:space-between;gap:12px;"><span style="font-weight:500;">Clothing</span><span style="font-weight:600;font-variant-numeric:tabular-nums;">$64.99</span></div><p style="margin:2px 0 0;font-size:14px;color:var(--muted);">$38.01 less than usual by this day ($103.00)</p></div>
+            <p style="margin:0;font-size:14px;color:var(--muted);">Against your usual month over the month before, Variable expenses only.</p>
+          </section>
+          <section style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:14px;">
+            <h2 style="margin:0;font-size:18px;font-weight:600;">This month and last, by category</h2><p style="margin:0;font-size:14px;color:var(--muted);">Each row: Sep 1–24 in colour, then Aug 1–24 faded.</p>
+            <sc-for list="{{ pairs }}" as="p" hint-placeholder-count="5"><div style="display:flex;flex-direction:column;gap:5px;"><div style="display:flex;justify-content:space-between;font-size:14px;"><span style="font-weight:500;">{{ p.name }}</span><span style="color:var(--muted);font-variant-numeric:tabular-nums;">{{ p.now }} · {{ p.before }}</span></div><div style="height:8px;border-radius:4px;background:var(--track);overflow:hidden;"><div style="height:100%;width:{{ p.nowPct }};background:var(--accent);border-radius:4px;"></div></div><div style="height:8px;border-radius:4px;background:var(--track);overflow:hidden;"><div style="height:100%;width:{{ p.beforePct }};background:var(--accent);opacity:.4;border-radius:4px;"></div></div></div></sc-for>
+          </section>
+          <section style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:12px;">
+            <h2 style="margin:0;font-size:18px;font-weight:600;">Download CSV</h2><p style="margin:0;font-size:15px;">Keep this month in a spreadsheet: every charge, or the figures above. The file is made on this device.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;"><button style="height:40px;padding:0 14px;border:1px solid var(--border);border-radius:10px;font-weight:500;font-size:14px;" style-hover="background:var(--hover);">Download charges</button><button style="height:40px;padding:0 14px;border:1px solid var(--border);border-radius:10px;font-weight:500;font-size:14px;" style-hover="background:var(--hover);">Download summary</button></div>
+          </section>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isTrends }}" hint-placeholder-val="{{ false }}">
+        <div role="tabpanel" style="display:flex;flex-direction:column;gap:20px;">
+          <div role="group" aria-label="Months shown" style="display:flex;gap:6px;"><button aria-pressed="true" style="height:40px;padding:0 16px;border-radius:10px;background:var(--ink);color:var(--card);font-weight:500;font-size:14px;">6 months</button><button aria-pressed="false" style="height:40px;padding:0 16px;border-radius:10px;border:1px solid var(--border);font-weight:500;font-size:14px;">12 months</button></div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:20px;align-items:start;">
+            <section style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:12px;">
+              <h2 style="margin:0;font-size:18px;font-weight:600;">Income, Spent and Saved</h2><p style="margin:0;font-size:14px;color:var(--muted);">The last 6 whole months, Mar 2026 to Aug 2026</p>
+              <svg viewBox="0 0 400 160" width="100%" height="160" role="img" aria-label="Income, Spent and Saved by month; only August has records.">
+                <line x1="0" y1="140" x2="400" y2="140" stroke="var(--track)"></line>
+                <sc-for list="{{ trendDots }}" as="d" hint-placeholder-count="3"><circle cx="{{ d.x }}" cy="{{ d.y }}" r="6" fill="{{ d.color }}"></circle><text x="{{ d.x }}" y="{{ d.ty }}" font-size="11" fill="var(--muted)" text-anchor="middle">{{ d.label }}</text></sc-for>
+                <text x="0" y="156" font-size="11" fill="var(--muted)">Mar</text><text x="400" y="156" font-size="11" fill="var(--muted)" text-anchor="end">Aug</text>
+              </svg>
+              <dl style="margin:0;"><sc-for list="{{ trendLabels }}" as="t" hint-placeholder-count="3"><div style="display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--border);"><dt style="color:var(--muted);">{{ t.label }}</dt><dd style="margin:0;font-weight:500;text-align:right;">{{ t.value }}</dd></div></sc-for></dl>
+            </section>
+            <section style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:6px;">
+              <h2 style="margin:0;font-size:18px;font-weight:600;">Each category against its usual month</h2><p style="margin:0 0 8px;font-size:14px;color:var(--muted);">Variable expenses, month by month. The dashed line is your usual month.</p>
+              <sc-for list="{{ catTrends }}" as="c" hint-placeholder-count="4"><div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--border);"><div style="flex:1;min-width:0;"><p style="margin:0;font-weight:500;">{{ c.name }}</p><p style="margin:0;font-size:14px;color:{{ c.labelColor }};font-weight:{{ c.labelWeight }};">{{ c.label }}</p><p style="margin:0;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums;">{{ c.latest }}</p></div><svg viewBox="0 0 96 32" width="96" height="32" aria-hidden="true"><line x1="0" y1="16" x2="96" y2="16" stroke="var(--muted)" stroke-dasharray="3 3"></line><path d="{{ c.path }}" fill="none" stroke="var(--accent)" stroke-width="2"></path><circle cx="90" cy="{{ c.last }}" r="3" fill="var(--accent)"></circle></svg></div></sc-for>
+            </section>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isShops }}" hint-placeholder-val="{{ false }}">
+        <div role="tabpanel" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:20px;align-items:start;">
+          <section style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:8px;">
+            <h2 style="margin:0;font-size:18px;font-weight:600;">Top shops</h2><p style="margin:0 0 6px;font-size:14px;color:var(--muted);">Sep 1–24, against Aug 1–24. Charges less refunds.</p>
+            <sc-for list="{{ shops }}" as="s" hint-placeholder-count="5"><div style="display:flex;align-items:baseline;gap:12px;padding:10px 0;border-top:1px solid var(--border);"><div style="flex:1;min-width:0;"><p style="margin:0;font-weight:500;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;">{{ s.shop }}</p><p style="margin:0;font-size:14px;color:var(--muted);">{{ s.line }}</p></div><span style="font-weight:600;font-variant-numeric:tabular-nums;">{{ s.now }}</span></div></sc-for>
+            <h3 style="margin:10px 0 0;font-size:15px;font-weight:600;">New this month</h3>
+            <div style="display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--border);"><span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;">THE KEG STEAKHOUSE</span><span style="font-weight:500;font-variant-numeric:tabular-nums;">$121.40</span></div>
+          </section>
+          <section style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:8px;">
+            <h2 style="margin:0;font-size:18px;font-weight:600;">Subscriptions and regular charges</h2><p style="margin:0 0 6px;font-size:14px;color:var(--muted);">Charges that come at steady gaps for a steady amount. The next date is a guess from the gaps so far.</p>
+            <sc-for list="{{ subs }}" as="s" hint-placeholder-count="3"><div style="padding:12px 0;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px;"><div style="display:flex;align-items:center;gap:10px;"><span style="flex:1;font-weight:500;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;">{{ s.shop }}</span><sc-if value="{{ s.isNew }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;font-weight:600;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:2px 8px;">New</span></sc-if><span style="font-weight:600;font-variant-numeric:tabular-nums;">{{ s.price }}</span></div><p style="margin:0;font-size:14px;color:var(--muted);">{{ s.line }}</p><sc-if value="{{ s.rose }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:14px;font-weight:600;color:var(--rose);">{{ s.change }}</p></sc-if><button style="align-self:flex-start;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:500;" style-hover="background:var(--hover);">Not a subscription</button></div></sc-for>
+          </section>
+          <section style="grid-column:1 / -1;border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:8px;">
+            <h2 style="margin:0;font-size:18px;font-weight:600;">Worth a second look</h2><p style="margin:0 0 6px;font-size:14px;color:var(--muted);">Pointed out for you to check. Nothing is hidden, and every charge still counts in your totals.</p>
+            <div style="padding:12px 0;border-top:1px solid var(--border);"><p style="margin:0;font-weight:500;">Bigger than usual: THE KEG STEAKHOUSE</p><p style="margin:2px 0 0;font-size:14px;">$121.40 on Sep 22. A usual charge in Restaurants is about $18.60.</p></div>
+            <div style="padding:12px 0;border-top:1px solid var(--border);"><p style="margin:0;font-weight:500;">Possible repeat charge: SAFEWAY #4471</p><p style="margin:2px 0 0;font-size:14px;">$64.87 on Sep 24, and the same again on Sep 24.</p><p style="margin:2px 0 0;font-size:14px;color:var(--muted);">If one was a mistake, ask the shop for a refund.</p></div>
+          </section>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isHabits }}" hint-placeholder-val="{{ false }}">
+        <div role="tabpanel" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:20px;align-items:start;">
+          <section style="grid-column:1 / -1;border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:14px;">
+            <h2 style="margin:0;font-size:18px;font-weight:600;">Your spending grid</h2><p style="margin:0;font-size:14px;color:var(--muted);">Everyday spending (Variable expenses), each day of the last 7 weeks. Against $41.43 a day: your weekly budgets spread over the week.</p>
+            <div style="display:grid;grid-template-columns:36px repeat(7,minmax(0,1fr));gap:4px;max-width:560px;">
+              <sc-for list="{{ grid }}" as="c" hint-placeholder-count="56"><div title="{{ c.title }}" style="height:28px;border-radius:5px;background:{{ c.bg }};display:flex;align-items:center;font-size:12px;color:var(--muted);">{{ c.label }}</div></sc-for>
+            </div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);"><span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:14px;border-radius:3px;background:var(--heat0);"></span>nothing spent</span><span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:14px;border-radius:3px;background:var(--heat1);"></span>up to half</span><span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:14px;border-radius:3px;background:var(--heat2);"></span>up to the allowance</span><span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:14px;border-radius:3px;background:var(--heat3);"></span>up to 1½×</span><span style="display:flex;align-items:center;gap:6px;"><span style="width:14px;height:14px;border-radius:3px;background:var(--heat4);"></span>over 1½×</span></div>
+            <dl style="margin:0;"><sc-for list="{{ gridRows }}" as="r" hint-placeholder-count="5"><div style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--border);font-size:14px;"><dt style="color:var(--muted);">{{ r.label }}</dt><dd style="margin:0;font-weight:500;font-variant-numeric:tabular-nums;">{{ r.value }}</dd></div></sc-for></dl>
+          </section>
+          <section style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:10px;">
+            <h2 style="margin:0;font-size:18px;font-weight:600;">Weeks within budget</h2><p style="margin:0;font-weight:600;color:var(--green);">Your best run yet. Keep it going!</p>
+            <dl style="margin:0;"><div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--border);"><dt style="color:var(--muted);">In a row now</dt><dd style="margin:0;font-weight:500;">3 weeks</dd></div><div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--border);"><dt style="color:var(--muted);">Your longest run</dt><dd style="margin:0;font-weight:500;">3 weeks</dd></div></dl>
+            <p style="margin:0;font-size:14px;color:var(--muted);">A week counts when the Week’s Left to spend stays at $0.00 or more.</p>
+            <ul style="list-style:none;margin:0;padding:0;font-size:14px;display:flex;flex-direction:column;gap:6px;"><li>Week of Sep 14: <span style="color:var(--green);">✓</span> within budget, $27.70 left</li><li>Week of Sep 7: <span style="color:var(--green);">✓</span> within budget, $63.15 left</li><li>Week of Aug 31: <span style="color:var(--green);">✓</span> within budget, $8.40 left</li><li>Week of Aug 24: <span style="color:var(--rose);">✗</span> $12.40 over</li><li>Week of Aug 17: <span style="color:var(--green);">✓</span> within budget, $41.90 left</li></ul>
+          </section>
+          <section style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:14px;">
+            <h2 style="margin:0;font-size:18px;font-weight:600;">Which weekday costs most</h2><p style="margin:0;font-size:15px;"><b>Saturday</b> costs most: <b>$68.20</b> on average, over the last 6 whole weeks, Aug 10 to Sep 20.</p>
+            <sc-for list="{{ weekdays }}" as="w" hint-placeholder-count="7"><div style="display:grid;grid-template-columns:36px 1fr 70px;align-items:center;gap:10px;font-size:14px;"><span style="color:var(--muted);">{{ w.d }}</span><div style="height:10px;border-radius:5px;background:var(--track);overflow:hidden;"><div style="height:100%;width:{{ w.pct }};background:{{ w.color }};border-radius:5px;"></div></div><span style="text-align:right;font-variant-numeric:tabular-nums;">{{ w.avg }}</span></div></sc-for>
+            <p style="margin:0;font-size:14px;color:var(--muted);">Each track is your daily allowance, $41.43.</p>
+            <h2 style="margin:10px 0 0;font-size:18px;font-weight:600;">Personal bests</h2><p style="margin:0;font-size:15px;color:var(--muted);">A best needs three whole months of records: check back in November 2026.</p>
+          </section>
+        </div>
+      </sc-if>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;tab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;overview&quot;,&quot;trends&quot;,&quot;shops&quot;,&quot;habits&quot;],&quot;default&quot;:&quot;overview&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;scheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const HEAT = ['var(--heat0)', 'var(--heat1)', 'var(--heat2)', 'var(--heat3)', 'var(--heat4)'];
+const LEVELS = [[0,1,2,1,0,3,4],[1,1,0,2,1,4,3],[0,2,1,1,2,3,2],[1,0,1,2,1,4,4],[2,1,1,0,1,3,2],[1,2,0,1,1,4,3],[0,1,2,1,-1,-1,-1]];
+class Component extends DCLogic {
+  state = { tab: 'overview' };
+  renderVals() {
+    const tab = this.tab = this.props.tab && !this.state.tabSet ? this.props.tab : this.state.tab;
+    const t = this.state.tabSet ? this.state.tab : (this.props.tab ?? this.state.tab);
+    const tabs = ['overview', 'trends', 'shops', 'habits'].map((k) => ({ label: k[0].toUpperCase() + k.slice(1), on: t === k, pick: () => this.setState({ tab: k, tabSet: true }), bg: t === k ? 'var(--card)' : 'transparent', ink: t === k ? 'var(--ink)' : 'var(--muted)', shadow: t === k ? '0 1px 2px rgba(0,0,0,.08)' : 'none' }));
+    const grid = [];
+    ['Mon', '', 'Wed', '', 'Fri', '', 'Sun'].forEach((d, di) => { grid.push({ label: d, bg: 'transparent', title: '' }); LEVELS.forEach((w, wi) => { const l = w[di]; grid.push({ label: '', bg: l < 0 ? 'transparent' : HEAT[l], title: l < 0 ? 'to come' : `week ${wi + 1}` }); }); });
+    return {
+      scheme: this.props.scheme ?? 'light', tabs, monthly: t === 'overview' || t === 'shops',
+      isOverview: t === 'overview', isTrends: t === 'trends', isShops: t === 'shops', isHabits: t === 'habits',
+      totals: [['Income', '$5,720.00', 'Aug 1–24: $5,595.00 · $125.00 more'], ['Spent', '$3,419.15', 'Aug 1–24: $3,503.25 · $84.10 less'], ['Saved', '$1,150.00', 'Aug 1–24: $1,000.00 · $150.00 more']].map(([label, now, line]) => ({ label, now, line })),
+      pairs: [['Groceries', '$486.20', '$598.60', '81%', '100%'], ['Restaurants', '$291.35', '$227.25', '49%', '38%'], ['Gas', '$132.40', '$140.65', '22%', '23%'], ['Clothing', '$64.99', '$103.00', '11%', '17%'], ['Movie Theater', '$28.50', '$14.25', '5%', '2%']].map(([name, now, before, nowPct, beforePct]) => ({ name, now, before, nowPct, beforePct })),
+      trendDots: [['Income $7,095', 'var(--green)', 30, 20], ['Spent $3,942', 'var(--rose)', 82, 72], ['Saved $1,250', 'var(--amber)', 118, 108]].map(([label, color, y, ty]) => ({ label, color, x: 400, y, ty })),
+      trendLabels: [['Income', 'Not enough months yet: check back in December 2026'], ['Spent', 'Not enough months yet: check back in December 2026'], ['Saved', 'Not enough months yet: check back in December 2026']].map(([label, value]) => ({ label, value })),
+      catTrends: [['Restaurants', 'Not enough months yet', 'Aug 2026 $286.40 · usual $222.30', 'M60 22 L90 8', 8, false], ['Groceries', 'Not enough months yet', 'Aug 2026 $615.66 · usual $598.60', 'M60 14 L90 12', 12, false], ['Gas', 'Not enough months yet', 'Aug 2026 $132.18 · usual $140.65', 'M60 12 L90 18', 18, false], ['Clothing', 'Not enough months yet', 'Aug 2026 $45.00 · usual $103.00', 'M60 10 L90 24', 24, false]].map(([name, label, latest, path, last, rising]) => ({ name, label, latest, path, last, labelColor: rising ? 'var(--rose)' : 'var(--muted)', labelWeight: rising ? 600 : 400 })),
+      shops: [['SUPERSTORE 1560', '2 charges · $18.40 more than August', '$254.14'], ['SAFEWAY #4471', '3 charges · about the same as August', '$229.46'], ['COSTCO WHOLESALE', '1 charge · $31.20 less than August', '$131.06'], ['THE KEG STEAKHOUSE', '1 charge', '$121.40'], ['SHELL C12003', '2 charges · $6.10 more than August', '$90.30']].map(([shop, line, now]) => ({ shop, line, now })),
+      subs: [['NETFLIX.COM', '$17.99', 'Monthly · next about Oct 9 · $215.88 a year', false, false, ''], ['SPOTIFY', '$11.99', 'Monthly · next about Oct 14 · $143.88 a year', true, false, 'Price went up from $10.99 to $11.99'], ['DROPBOX', '$11.99', 'Monthly · next about Oct 27 · $143.88 a year', false, true, '']].map(([shop, price, line, rose, isNew, change]) => ({ shop, price, line, rose, isNew, change })),
+      grid, gridRows: [['Days with no everyday spending', '9 of 46'], ['Days up to half the allowance', '14'], ['Days up to the allowance', '10'], ['Days up to one and a half times the allowance', '7'], ['Days over one and a half times the allowance', '6']].map(([label, value]) => ({ label, value })),
+      weekdays: [['Mon', '$31.10', '45%'], ['Tue', '$24.80', '36%'], ['Wed', '$38.90', '56%'], ['Thu', '$29.40', '43%'], ['Fri', '$52.60', '76%'], ['Sat', '$68.20', '98%'], ['Sun', '$41.30', '60%']].map(([d, avg, pct]) => ({ d, avg, pct, color: d === 'Sat' ? 'var(--rose)' : 'var(--accent)' })),
+    };
+  }
+}
+</script>
+</body>
+</html>

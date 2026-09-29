@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0;background:light-dark(#F4F4F6,#0F1013);}a{color:inherit;}button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit;}</style>
+</helmet>
+<div data-screen-label="{{ v.label }}" style="--canvas:light-dark(#F4F4F6,#0F1013);--card:light-dark(#FFFFFF,#17181C);--border:light-dark(#E5E7EB,#2A2C33);--ink:light-dark(#111827,#F3F4F6);--muted:light-dark(#6B7280,#9CA3AF);--faint:light-dark(#9CA3AF,#6B7280);--track:light-dark(#E5E7EB,#2A2C33);--hover:light-dark(#F9FAFB,#1F2026);--accent:light-dark(#4F46E5,#818CF8);--accent-soft:light-dark(#EEF2FF,#1E1B4B);--accent-tint:light-dark(#EEF0FF,#181A2E);--amber-bg:light-dark(#FFFBEB,#2A2210);--amber-border:light-dark(#FDE68A,#5A4A14);--amber-ink:light-dark(#92400E,#FCD34D);--amber-tile:light-dark(#FEF3C7,#3D3112);--amber:#D97706;--rose:#E11D48;--rose-tile:light-dark(#FFE4E6,#3D1A22);--rose-tint:light-dark(#FFF1F2,#241418);--green:#10B981;--green-tile:light-dark(#D1FAE5,#123326);--green-tint:light-dark(#ECFDF5,#122019);--sky:#0EA5E9;--sky-tile:light-dark(#E0F2FE,#0F2A3A);--sky-tint:light-dark(#EFF6FF,#12202C);--orange:#F97316;--orange-tile:light-dark(#FFEDD5,#3A2210);--violet:#8B5CF6;--violet-tile:light-dark(#EDE9FE,#2E1065);color-scheme:{{ scheme }};display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh;background:var(--canvas);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,'SF Pro Text','Segoe UI',sans-serif;font-size:15px;line-height:1.45;">
+  <div style="position:sticky;top:0;height:100vh;"><dc-import name="Sidebar" active="{{ view }}" count="{{ 3 }}" hint-size="100%,100%" style="display:block;height:100%;"></dc-import></div>
+  <main style="margin:12px 12px 12px 0;background:var(--card);border:1px solid var(--border);border-radius:16px;min-width:0;display:flex;flex-direction:column;overflow:hidden;">
+    <dc-import name="Topbar" crumb="{{ v.label }}" hint-size="100%,64px" style="display:block;"></dc-import>
+    <div style="padding:28px 28px 40px;display:flex;flex-direction:column;gap:20px;">
+
+      <nav aria-label="Views" style="display:inline-grid;grid-template-columns:repeat(4,minmax(88px,1fr));gap:4px;background:var(--canvas);border-radius:10px;padding:4px;width:max-content;">
+        <a href="Month.dc.html" style="height:36px;padding:0 14px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;text-decoration:none;color:var(--muted);">Month</a>
+        <button aria-current="{{ v.weekCur }}" onClick="{{ goWeek }}" style="height:36px;padding:0 14px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;background:{{ v.weekBg }};color:{{ v.weekInk }};box-shadow:{{ v.weekShadow }};">Week</button>
+        <button aria-current="{{ v.payCur }}" onClick="{{ goPay }}" style="height:36px;padding:0 14px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;background:{{ v.payBg }};color:{{ v.payInk }};box-shadow:{{ v.payShadow }};">Pay</button>
+        <a href="Year.dc.html" style="height:36px;padding:0 14px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;text-decoration:none;color:var(--muted);">Year</a>
+      </nav>
+
+      <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;"><h1 style="margin:0;font-size:32px;font-weight:700;letter-spacing:-0.02em;line-height:1.15;">{{ v.title }}</h1><button aria-label="Help with this screen" style="width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;color:var(--muted);" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"></path><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></button></div>
+          <p style="margin:6px 0 0;font-size:16px;color:var(--muted);">{{ v.sub }}</p>
+        </div>
+        <div style="display:flex;align-items:center;border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+          <button aria-label="{{ v.prev }}" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+          <span style="display:flex;align-items:center;gap:8px;height:44px;padding:0 14px;border-left:1px solid var(--border);border-right:1px solid var(--border);font-weight:500;font-size:15px;white-space:nowrap;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"></path><path d="M16 2v4"></path><path d="M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"></path><path d="M3 10h18"></path></svg>{{ v.range }}</span>
+          <button aria-label="{{ v.next }}" disabled="{{ v.nextDisabled }}" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;opacity:{{ v.nextOpacity }};" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></button>
+        </div>
+      </header>
+
+      <a href="Review.dc.html" style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:12px;background:var(--amber-bg);border:1px solid var(--amber-border);color:var(--amber-ink);text-decoration:none;">
+        <span style="width:32px;height:32px;border-radius:8px;background:var(--amber-tile);color:var(--amber);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg></span>
+        <span style="flex:1;font-size:16px;"><b style="font-weight:600;">3 waiting for review.</b> They are not counted below until you approve them.</span>
+        <span style="display:flex;align-items:center;gap:4px;font-size:15px;font-weight:500;">Review<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></span>
+      </a>
+
+      <section aria-label="Summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;">
+        <div style="border:1px solid var(--border);border-radius:16px;padding:22px 24px 24px;background:linear-gradient(to bottom,var(--card),var(--rose-tint));display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:16px;color:var(--muted);">Spent</span><span style="width:40px;height:40px;border-radius:12px;background:var(--rose-tile);color:var(--rose);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg></span></div>
+          <div style="font-size:32px;font-weight:700;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;">{{ v.spent }}</div>
+          <span style="font-size:15px;color:var(--muted);font-variant-numeric:tabular-nums;text-wrap:pretty;">{{ v.compare }}</span>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:16px;padding:22px 24px 24px;background:linear-gradient(to bottom,var(--card),var(--green-tint));display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:16px;color:var(--muted);">Left to spend</span><span style="width:40px;height:40px;border-radius:12px;background:var(--green-tile);color:var(--green);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path></svg></span></div>
+          <div style="font-size:32px;font-weight:700;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;">{{ v.left }}</div>
+          <div style="height:8px;border-radius:4px;background:var(--green-tile);overflow:hidden;margin-top:4px;"><div style="height:100%;width:{{ v.leftPct }};border-radius:4px;background:var(--green);"></div></div>
+          <span style="font-size:15px;color:var(--muted);font-variant-numeric:tabular-nums;text-wrap:pretty;">{{ v.leftNote }}</span>
+        </div>
+
+        <sc-if value="{{ isWeek }}" hint-placeholder-val="{{ true }}">
+          <section aria-label="Flight training" style="grid-column:span 2;border:1px solid var(--border);border-radius:16px;padding:22px 24px;background:linear-gradient(to bottom,var(--card),var(--accent-tint));display:flex;gap:20px;align-items:center;">
+            <div style="position:relative;width:96px;height:96px;flex-shrink:0;">
+              <svg viewBox="0 0 100 100" width="96" height="96" style="transform:rotate(-90deg);"><circle cx="50" cy="50" r="42" fill="none" stroke="var(--accent-soft)" stroke-width="10"></circle><circle cx="50" cy="50" r="42" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round" pathLength="100" stroke-dasharray="38 100"></circle></svg>
+              <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;">38%</span>
+            </div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;">
+              <div style="display:flex;align-items:center;gap:8px;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"></path></svg><h2 style="margin:0;font-size:18px;font-weight:600;">Flight training</h2></div>
+              <p style="margin:0;font-size:15px;"><b style="font-variant-numeric:tabular-nums;">$11,480.00</b> <span style="color:var(--muted);">of $30,000.00 · $18,520.00 to go</span></p>
+              <p style="margin:0;font-size:15px;color:var(--muted);">Save <b style="color:var(--ink);font-variant-numeric:tabular-nums;">$248.00</b> a week to get there by your date.</p>
+              <p style="margin:0;display:inline-block;width:max-content;max-width:100%;background:var(--accent-soft);border-radius:8px;padding:6px 10px;font-size:14px;">This week’s spending is <b>3 h 20 min</b> of flight time.</p>
+              <a href="Savings.dc.html" style="font-size:14px;font-weight:500;text-underline-offset:4px;">2 other goals</a>
+            </div>
+          </section>
+        </sc-if>
+        <sc-if value="{{ isPay }}" hint-placeholder-val="{{ false }}">
+          <section aria-label="How this period is counted" style="grid-column:span 2;border:1px solid var(--border);border-radius:16px;padding:22px 24px;background:linear-gradient(to bottom,var(--card),var(--accent-tint));display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+              <h2 style="margin:0;font-size:18px;font-weight:600;">How this period is counted</h2>
+              <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);">Pay periods from<span style="display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--ink);font-weight:500;">Income 1<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></span></label>
+            </div>
+            <p style="margin:0;font-size:15px;text-wrap:pretty;">Bills with no charge yet in this period, and budgets and goals, are September 2026’s. You are paid every two weeks, so each shows 12 months over 26 paydays: two weeks’ share. Charges count as they are.</p>
+            <p style="margin:0;font-size:15px;color:var(--muted);">Budgets and goals are typed on the Month.</p>
+          </section>
+        </sc-if>
+      </section>
+
+      <p style="margin:0;font-size:14px;color:var(--muted);">Statement imported up to Sep 18, 2026</p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:20px;align-items:start;">
+        <sc-for list="{{ blocks }}" as="b" hint-placeholder-count="2">
+          <section aria-label="{{ b.title }}" style="border:1px solid var(--border);border-radius:16px;background:var(--card);overflow:hidden;">
+            <div style="padding:20px 20px 16px;display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;align-items:center;gap:14px;">
+                <span style="width:48px;height:48px;border-radius:12px;background:{{ b.tile }};color:{{ b.color }};display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><sc-for list="{{ b.icon }}" as="p" hint-placeholder-count="2"><path d="{{ p }}"></path></sc-for></svg></span>
+                <div style="flex:1;min-width:0;"><h2 style="margin:0;font-size:18px;font-weight:600;">{{ b.title }}</h2><p style="margin:2px 0 0;font-size:15px;color:var(--muted);font-variant-numeric:tabular-nums;"><b style="color:var(--ink);font-weight:600;">{{ b.actual }}</b> {{ b.ofText }}</p></div>
+                <sc-if value="{{ b.hasPct }}" hint-placeholder-val="{{ true }}"><span style="border-radius:999px;padding:6px 12px;background:{{ b.tile }};color:{{ b.pillInk }};font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;">{{ b.pct }}</span></sc-if>
+              </div>
+              <div style="height:8px;border-radius:4px;background:var(--track);overflow:hidden;"><div style="height:100%;width:{{ b.pctW }};border-radius:4px;background:{{ b.color }};"></div></div>
+            </div>
+            <sc-if value="{{ b.empty }}" hint-placeholder-val="{{ false }}"><p style="margin:0;padding:0 20px 20px;font-size:15px;color:var(--muted);">Nothing on this list {{ v.inWords }}. <a href="Setup.dc.html" style="color:var(--ink);font-weight:500;text-underline-offset:4px;">Add one in Setup</a></p></sc-if>
+            <sc-if value="{{ b.hasRows }}" hint-placeholder-val="{{ true }}">
+            <table style="width:100%;border-collapse:collapse;font-size:15px;">
+              <thead><tr style="background:{{ b.head }};color:{{ b.pillInk }};"><th scope="col" style="text-align:left;padding:12px 20px;font-weight:500;">Category</th><th scope="col" style="text-align:right;padding:12px;font-weight:500;">{{ b.budgetWord }}</th><th scope="col" style="text-align:right;padding:12px;font-weight:500;">Actual</th><th scope="col" style="text-align:right;padding:12px 20px;font-weight:500;">{{ b.thirdWord }}</th></tr></thead>
+              <tbody>
+                <sc-for list="{{ b.rows }}" as="r" hint-placeholder-count="4">
+                  <tr style="border-top:1px solid var(--border);" style-hover="background:var(--hover);">
+                    <th scope="row" style="text-align:left;padding:14px 20px 12px;font-weight:500;"><button aria-haspopup="dialog" style="display:flex;flex-direction:column;gap:6px;max-width:100%;"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">{{ r.name }}</span><span style="display:block;width:160px;max-width:100%;height:3px;border-radius:2px;background:var(--track);overflow:hidden;"><span style="display:block;height:100%;width:{{ r.pct }};background:{{ r.barColor }};"></span></span></button></th>
+                    <td style="text-align:right;padding:12px;font-variant-numeric:tabular-nums;"><button aria-label="Budget for {{ r.name }}" style="text-decoration:underline dotted;text-decoration-color:var(--faint);text-underline-offset:4px;">{{ r.budget }}</button><sc-if value="{{ r.noBudget }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--faint)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path></svg></sc-if></td>
+                    <td style="text-align:right;padding:12px;font-variant-numeric:tabular-nums;line-height:1.2;">{{ r.actual }}<sc-if value="{{ r.planned }}" hint-placeholder-val="{{ false }}"><span style="display:block;font-size:12px;color:var(--muted);">planned</span></sc-if></td>
+                    <td style="text-align:right;padding:12px 20px;font-variant-numeric:tabular-nums;"><span style="display:inline-block;border-radius:999px;padding:{{ r.leftPad }};background:{{ r.leftBg }};color:{{ r.leftInk }};font-weight:{{ r.leftWeight }};">{{ r.left }}</span></td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+            <sc-if value="{{ b.hasHidden }}" hint-placeholder-val="{{ false }}"><button style="width:100%;padding:12px 20px;border-top:1px solid var(--border);font-size:14px;font-weight:500;color:{{ b.pillInk }};text-align:left;">Show {{ b.hidden }} empty</button></sc-if>
+            </sc-if>
+          </section>
+        </sc-for>
+      </div>
+      <p style="margin:0;font-size:14px;color:var(--muted);">Paid to your card: <span style="font-variant-numeric:tabular-nums;">{{ v.transfers }}</span> — not counted. What it paid for is already in the blocks above.</p>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;week&quot;,&quot;paycheck&quot;],&quot;default&quot;:&quot;week&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;scheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const ICON = {
+  variable: ['M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z', 'M3 6h18', 'M16 10a4 4 0 0 1-8 0'],
+  bill: ['M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8', 'M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'],
+  subscription: ['M4 5h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z', 'M8 21h8', 'M12 18v3'],
+  debt: ['M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z', 'M2 10h20'],
+  income: ['M12 2v20', 'M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'],
+  savings: ['M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z', 'M16 10h.01', 'M2 8v1a2 2 0 0 0 2 2h1'],
+};
+const TONE = {
+  variable: { color: 'var(--orange)', tile: 'var(--orange-tile)', head: 'light-dark(#FFF7ED,#2A1F15)', pillInk: 'light-dark(#C2410C,#FDBA74)' },
+  bill: { color: 'var(--sky)', tile: 'var(--sky-tile)', head: 'light-dark(#F0F9FF,#16232D)', pillInk: 'light-dark(#0369A1,#7DD3FC)' },
+  subscription: { color: 'var(--violet)', tile: 'var(--violet-tile)', head: 'light-dark(#F5F3FF,#1E1730)', pillInk: 'light-dark(#6D28D9,#C4B5FD)' },
+  debt: { color: 'var(--rose)', tile: 'var(--rose-tile)', head: 'var(--rose-tint)', pillInk: 'light-dark(#BE123C,#FDA4AF)' },
+  income: { color: 'var(--green)', tile: 'var(--green-tile)', head: 'var(--green-tint)', pillInk: 'light-dark(#047857,#6EE7B7)' },
+  savings: { color: '#F59E0B', tile: 'var(--amber-tile)', head: 'var(--amber-bg)', pillInk: 'light-dark(#B45309,#FCD34D)' },
+};
+const num = (s) => Number(String(s).replace(/,/g, '')) || 0;
+const VIEWS = {
+  week: {
+    label: 'Week', title: 'This week', sub: 'Sep 21–27, 2026 · 3 days left', range: 'Sep 21–27', prev: 'Previous week', next: 'Next week', nextDisabled: true, nextOpacity: .4,
+    spent: '$347.29', compare: 'Sep 21–24: $347.29 spent · Sep 14–17: $242.60 · ▲ $104.69 more (43%)', left: '$7.71', leftPct: '98%', leftNote: '$347.29 of $355.00 in weekly budgets', inWords: 'this week', transfers: '$0.00',
+    blocks: [
+      ['variable', 'Variable expenses', '$347.29', 'of $355.00', 98, false, 0, [['Restaurants', '60.00', '133.85', '-73.85'], ['Groceries', '190.00', '177.24', '12.76'], ['Gas', '45.00', '36.20', '8.80'], ['Clothing', '30.00', '', '30.00'], ['Movie Theater', '10.00', '', '10.00'], ['Game Night', '15.00', '', '15.00'], ['Card interest & fees', '5.00', '', '5.00']]],
+      ['bill', 'Bills', '$142.00', 'due this week', 100, false, 6, [['Car Insurance', '142.00', '142.00', '0.00', true]]],
+      ['subscription', 'Subscriptions', '$11.99', 'due this week', 100, false, 2, [['Dropbox', '11.99', '11.99', '0.00', true]]],
+      ['debt', 'Debts', '$150.00', 'due this week', 100, false, 1, [['Credit Card 1', '150.00', '150.00', '0.00']]],
+      ['income', 'Income', '$845.00', 'this week', 100, true, 3, [['Side Hustle', '', '845.00', '']]],
+      ['savings', 'Savings', '$0.00', 'this week', 0, true, 0, []],
+    ],
+  },
+  paycheck: {
+    label: 'Paycheck', title: 'This pay period', sub: 'Sep 15–29, 2026 · Income 1, paid every two weeks', range: 'Sep 15–29', prev: 'Previous pay period', next: 'Next pay period', nextDisabled: false, nextOpacity: 1,
+    spent: '$1,979.03', compare: 'Sep 15–24: $1,979.03 spent · Sep 1–10: $2,104.40 · ▼ $125.37 less (6%)', left: '$279.80', leftPct: '59%', leftNote: '$398.65 of $678.45 budgeted for this pay', inWords: 'in this pay period', transfers: '$1,450.00',
+    blocks: [
+      ['variable', 'Variable expenses', '$398.65', 'of $678.45', 59, false, 0, [['Restaurants', '115.38', '172.75', '-57.37'], ['Groceries', '369.23', '177.24', '191.99'], ['Gas', '83.08', '36.20', '46.88'], ['Clothing', '55.38', '', '55.38'], ['Movie Theater', '18.46', '', '18.46'], ['Game Night', '27.69', '', '27.69'], ['Card interest & fees', '9.23', '12.46', '-3.23']]],
+      ['bill', 'Bills', '$948.55', 'of $937.84', 100, false, 0, [['Rent', '738.46', '738.46', '0.00', true], ['Electricity Bill', '41.54', '41.54', '0.00', true], ['Water Bill', '20.77', '20.77', '0.00', true], ['Gas Bill', '27.69', '38.40', '-10.71'], ['Phone', '25.38', '25.38', '0.00', true], ['Car Insurance', '65.54', '65.54', '0.00', true], ['Gym Membership', '18.46', '18.46', '0.00', true]]],
+      ['subscription', 'Subscriptions', '$19.36', 'of $19.36', 100, false, 0, [['Netflix', '8.30', '8.30', '0.00', true], ['Spotify', '5.53', '5.53', '0.00', true], ['Dropbox', '5.53', '5.53', '0.00', true]]],
+      ['debt', 'Debts', '$613.47', 'of $357.70', 100, false, 0, [['Credit Card 1', '69.23', '150.00', '-80.77'], ['Credit Card 2', '34.62', '34.62', '0.00', true], ['Car Loan', '150.00', '325.00', '-175.00'], ['Student Loan', '103.85', '103.85', '0.00', true]]],
+      ['income', 'Income', '$3,095.00', 'of $3,323.07 goal', 93, true, 0, [['Income 1', '2,076.92', '2,250.00', ''], ['Income 2', '276.92', '', ''], ['Side Hustle', '553.85', '845.00', ''], ['Freelance Work', '415.38', '', '']]],
+      ['savings', 'Savings', '$0.00', 'of $576.92 goal', 0, true, 0, [['Flight training', '184.62', '', '-184.62'], ['Emergency Fund', '230.77', '', '-230.77'], ['Travel Fund', '115.38', '', '-115.38'], ['Car Repair Fund', '46.15', '', '-46.15']]],
+    ],
+  },
+};
+class Component extends DCLogic {
+  state = { view: null };
+  renderVals() {
+    const view = this.state.view ?? this.props.view ?? 'week';
+    const V = VIEWS[view];
+    const on = (k) => view === k;
+    const seg = (k) => ({ [`${k}Cur`]: on(k) ? 'page' : null, [`${k}Bg`]: on(k) ? 'var(--card)' : 'transparent', [`${k}Ink`]: on(k) ? 'var(--ink)' : 'var(--muted)', [`${k}Shadow`]: on(k) ? '0 1px 2px rgba(0,0,0,.08)' : 'none' });
+    const blocks = V.blocks.map(([kind, title, actual, ofText, pct, goal, hidden, rows]) => {
+      const t = TONE[kind];
+      return { title, actual, ofText, pct: `${pct}%`, pctW: `${Math.min(100, pct)}%`, hasPct: !goal || kind === 'savings', icon: ICON[kind], ...t,
+        budgetWord: goal ? 'Goal' : 'Budgeted', thirdWord: goal ? 'Difference' : 'Left', empty: rows.length === 0, hasRows: rows.length > 0, hasHidden: hidden > 0, hidden,
+        rows: rows.map(([name, budget, actual, left, planned]) => {
+          const b = num(budget), a = num(actual);
+          const share = b > 0 ? Math.min(100, Math.round((a / b) * 100)) : a > 0 ? 100 : 0;
+          const over = !goal && left.startsWith('-');
+          return { name, budget, actual, left: left.replace('-', '−'), planned: !!planned, noBudget: budget === '', pct: `${share}%`, barColor: over ? 'var(--rose)' : t.color,
+            leftPad: over ? '4px 10px' : '0', leftBg: over ? 'var(--rose)' : 'transparent', leftInk: over ? '#FFFFFF' : 'var(--ink)', leftWeight: over ? 600 : 400 };
+        }) };
+    });
+    return { scheme: this.props.scheme ?? 'light', view, v: { ...V, ...seg('week'), ...seg('pay') , payCur: on('paycheck') ? 'page' : null, payBg: on('paycheck') ? 'var(--card)' : 'transparent', payInk: on('paycheck') ? 'var(--ink)' : 'var(--muted)', payShadow: on('paycheck') ? '0 1px 2px rgba(0,0,0,.08)' : 'none' },
+      isWeek: view === 'week', isPay: view === 'paycheck', goWeek: () => this.setState({ view: 'week' }), goPay: () => this.setState({ view: 'paycheck' }), blocks };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0;background:light-dark(#F4F4F6,#0F1013);}a{color:inherit;}button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit;}input{font:inherit;}</style>
+</helmet>
+<div data-screen-label="Setup" style="--canvas:light-dark(#F4F4F6,#0F1013);--card:light-dark(#FFFFFF,#17181C);--border:light-dark(#E5E7EB,#2A2C33);--input:light-dark(#D1D5DB,#3A3D46);--ink:light-dark(#111827,#F3F4F6);--muted:light-dark(#6B7280,#9CA3AF);--track:light-dark(#E5E7EB,#2A2C33);--hover:light-dark(#F9FAFB,#1F2026);--accent:light-dark(#4F46E5,#818CF8);--accent-soft:light-dark(#EEF2FF,#1E1B4B);--accent-tint:light-dark(#EEF0FF,#181A2E);--green-tile:light-dark(#D1FAE5,#123326);--green-ink:light-dark(#047857,#6EE7B7);--amber-bg:light-dark(#FFFBEB,#2A2210);--amber-ink:light-dark(#92400E,#FCD34D);color-scheme:{{ scheme }};display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh;background:var(--canvas);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,'SF Pro Text','Segoe UI',sans-serif;font-size:15px;line-height:1.45;">
+  <div style="position:sticky;top:0;height:100vh;"><dc-import name="Sidebar" active="setup" count="{{ 3 }}" hint-size="100%,100%" style="display:block;height:100%;"></dc-import></div>
+  <main style="margin:12px 12px 12px 0;background:var(--card);border:1px solid var(--border);border-radius:16px;min-width:0;display:flex;flex-direction:column;overflow:hidden;">
+    <dc-import name="Topbar" crumb="Setup" hint-size="100%,64px" style="display:block;"></dc-import>
+    <div style="padding:28px 28px 40px;display:flex;flex-direction:column;gap:24px;">
+      <header style="border-radius:16px;padding:26px 28px;background:linear-gradient(135deg,var(--accent-soft),var(--accent-tint));display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;"><h1 style="margin:0;font-size:32px;font-weight:700;letter-spacing:-0.02em;line-height:1.15;">Start here!</h1><button aria-label="Help with this screen" style="width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;color:var(--muted);" style-hover="background:var(--card);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"></path><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></button></div>
+          <p style="margin:6px 0 0;font-size:16px;color:var(--muted);">Your name, and every category under the list it belongs to, which decides where its charges are counted.</p>
+        </div>
+        <label style="display:flex;align-items:center;gap:10px;font-size:15px;">My name is<input value="Aaron" style="height:44px;width:200px;padding:0 12px;border:1px solid var(--input);border-radius:10px;background:var(--card);color:var(--ink);font-size:16px;outline:none;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--green-ink)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-label="Saved"><path d="M20 6 9 17l-5-5"></path></svg></label>
+      </header>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px;align-items:start;">
+        <sc-for list="{{ cards }}" as="c" hint-placeholder-count="6">
+          <section aria-label="{{ c.heading }}" style="border:1px solid var(--border);border-radius:16px;overflow:hidden;grid-column:{{ c.span }};">
+            <div style="padding:18px 20px 14px;display:flex;align-items:flex-start;gap:12px;">
+              <span style="width:40px;height:40px;border-radius:12px;background:{{ c.tile }};color:{{ c.color }};display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><sc-for list="{{ c.icon }}" as="p" hint-placeholder-count="2"><path d="{{ p }}"></path></sc-for></svg></span>
+              <div style="flex:1;min-width:0;"><p style="margin:0;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);">{{ c.section }}</p><h2 style="margin:0;font-size:18px;font-weight:600;">{{ c.heading }}</h2><p style="margin:4px 0 0;font-size:14px;color:var(--muted);text-wrap:pretty;">{{ c.hint }}</p></div>
+            </div>
+            <sc-if value="{{ c.recurring }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:minmax(0,1fr) 90px 120px 152px;gap:8px;padding:8px 20px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-top:1px solid var(--border);background:var(--hover);"><span>Name</span><span>Day paid</span><span>Monthly</span><span></span></div></sc-if>
+            <sc-if value="{{ c.income }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:minmax(0,1fr) 120px 130px 152px;gap:8px;padding:8px 20px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-top:1px solid var(--border);background:var(--hover);"><span>Name</span><span>How often</span><span>First payday</span><span></span></div></sc-if>
+            <ul style="list-style:none;margin:0;padding:0;">
+              <sc-for list="{{ c.rows }}" as="r" hint-placeholder-count="4">
+                <li style="display:grid;grid-template-columns:{{ c.cols }};gap:8px;align-items:center;padding:6px 20px;border-top:1px solid var(--border);">
+                  <input aria-label="Rename {{ r.name }}" value="{{ r.name }}" style="height:40px;min-width:0;padding:0 8px;border:0;border-bottom:1px solid transparent;border-radius:6px;background:transparent;color:var(--ink);font-size:15px;outline:none;" style-hover="background:var(--hover);">
+                  <sc-if value="{{ c.recurring }}" hint-placeholder-val="{{ false }}"><input aria-label="Day paid for {{ r.name }}" value="{{ r.day }}" style="height:36px;padding:0 10px;border:1px solid var(--input);border-radius:8px;background:var(--card);color:var(--ink);font-size:14px;outline:none;min-width:0;"><input aria-label="Monthly amount for {{ r.name }}" value="{{ r.amount }}" style="height:36px;padding:0 10px;border:1px solid var(--input);border-radius:8px;background:var(--card);color:var(--ink);font-size:14px;text-align:right;outline:none;min-width:0;font-variant-numeric:tabular-nums;"></sc-if>
+                  <sc-if value="{{ c.income }}" hint-placeholder-val="{{ false }}"><span style="height:36px;display:inline-flex;align-items:center;justify-content:space-between;gap:6px;padding:0 10px;border:1px solid var(--input);border-radius:8px;font-size:14px;color:{{ r.freqColor }};">{{ r.freq }}<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></span><input aria-label="First payday for {{ r.name }}" value="{{ r.first }}" style="height:36px;padding:0 10px;border:1px solid var(--input);border-radius:8px;background:var(--card);color:var(--ink);font-size:14px;outline:none;min-width:0;"></sc-if>
+                  <span style="display:flex;justify-content:flex-end;gap:2px;color:var(--muted);">
+                    <button aria-label="Move {{ r.name }} up" style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"></path></svg></button>
+                    <button aria-label="Move {{ r.name }} down" style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg></button>
+                    <button aria-label="Move {{ r.name }} to another list" style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"></path><path d="M20 7H4"></path><path d="m8 21-4-4 4-4"></path><path d="M4 17h16"></path></svg></button>
+                    <button aria-label="Remove {{ r.name }}" style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg></button>
+                  </span>
+                </li>
+              </sc-for>
+            </ul>
+            <sc-if value="{{ c.hasTotal }}" hint-placeholder-val="{{ false }}"><div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-top:1px solid var(--border);background:{{ c.tint }};font-weight:600;"><span>{{ c.totalLabel }}</span><span style="font-variant-numeric:tabular-nums;">{{ c.total }}</span></div></sc-if>
+            <form style="display:flex;gap:8px;padding:12px 20px 16px;border-top:1px solid var(--border);"><input aria-label="New {{ c.heading }} category" placeholder="Add to {{ c.heading }}" style="flex:1;min-width:0;height:40px;padding:0 12px;border:1px solid var(--input);border-radius:10px;background:var(--card);color:var(--ink);font-size:15px;outline:none;"><button type="submit" style="display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px;border:1px solid var(--border);border-radius:10px;font-weight:500;font-size:14px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>Add</button></form>
+          </section>
+        </sc-for>
+      </div>
+      <section aria-label="Fixed monthly bills" style="border:1px solid var(--border);border-radius:16px;padding:20px 24px;background:linear-gradient(to right,var(--card),var(--accent-tint));display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;"><div><h2 style="margin:0;font-size:18px;font-weight:600;">Fixed monthly bills</h2><p style="margin:2px 0 0;font-size:14px;color:var(--muted);">Bills, debts and subscriptions together, in September 2026.</p></div><span style="font-size:28px;font-weight:700;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;">$2,412.47</span></section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;scheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const I = {
+  income: ['M12 2v20', 'M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'],
+  savings: ['M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z', 'M16 10h.01', 'M2 8v1a2 2 0 0 0 2 2h1'],
+  bill: ['M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8', 'M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'],
+  debt: ['M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z', 'M2 10h20'],
+  subscription: ['M4 5h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z', 'M8 21h8', 'M12 18v3'],
+  variable: ['M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z', 'M3 6h18', 'M16 10a4 4 0 0 1-8 0'],
+  transfer: ['m16 3 4 4-4 4', 'M20 7H4', 'm8 21-4-4 4-4', 'M4 17h16'],
+};
+const T = {
+  income: ['#10B981', 'light-dark(#D1FAE5,#123326)', 'light-dark(#ECFDF5,#122019)'], savings: ['#F59E0B', 'light-dark(#FEF3C7,#3D3112)', 'light-dark(#FFFBEB,#2A2210)'],
+  bill: ['#0EA5E9', 'light-dark(#E0F2FE,#0F2A3A)', 'light-dark(#F0F9FF,#16232D)'], debt: ['#E11D48', 'light-dark(#FFE4E6,#3D1A22)', 'light-dark(#FFF1F2,#241418)'],
+  subscription: ['#8B5CF6', 'light-dark(#EDE9FE,#2E1065)', 'light-dark(#F5F3FF,#1E1730)'], variable: ['#F97316', 'light-dark(#FFEDD5,#3A2210)', 'light-dark(#FFF7ED,#2A1F15)'], transfer: ['#6B7280', 'light-dark(#F3F4F6,#23252B)', 'transparent'],
+};
+const CARDS = [
+  ['income', 'Income', 'Source', 'What type of income do you receive?', [['Income 1', 'Every two weeks', 'Sep 1, 2026'], ['Income 2', 'Monthly', 'Sep 1, 2026'], ['Side Hustle', 'Not set', ''], ['Freelance Work', 'Not set', '']], 'span 2'],
+  ['savings', 'Savings', 'Savings', 'What are your savings goals?', [['Flight training'], ['Emergency Fund'], ['Travel Fund'], ['Car Repair Fund']], 'auto'],
+  ['variable', 'Variable expenses', 'Variable expenses', 'What transactions have varied amounts?', [['Groceries'], ['Restaurants'], ['Gas'], ['Clothing'], ['Movie Theater'], ['Game Night'], ['Card interest & fees']], 'auto'],
+  ['bill', 'Bills', 'Recurring expenses', 'What bills do you pay each month? Their amounts usually stay the same.', [['Rent', '1', '1,600.00'], ['Electricity Bill', '12', '90.00'], ['Water Bill', '15', '45.00'], ['Phone', '28', '65.00'], ['Car Insurance', '26', '142.00'], ['Gym Membership', '5', '49.00']], 'span 2', 'Bills total', '$1,991.00'],
+  ['debt', 'Debts', 'Recurring expenses', 'What loans are you paying off from the bank? A card you pay off from your bank is not a monthly debt payment here — its purchases are already counted.', [['Credit Card 1', '22', '150.00'], ['Car Loan', '20', '229.50']], 'span 2', 'Debts total', '$379.50'],
+  ['subscription', 'Subscriptions', 'Recurring expenses', 'What are you subscribed to? A statement shows them.', [['Netflix', '9', '17.99'], ['Spotify', '14', '11.99'], ['Dropbox', '27', '11.99']], 'span 2', 'Subscriptions total', '$41.97'],
+  ['transfer', 'Not spending', 'Not spending', 'Money that only moves, like paying off your card. Never counted as spending or income.', [['Card payments']], 'auto'],
+];
+class Component extends DCLogic {
+  renderVals() {
+    return { scheme: this.props.scheme ?? 'light', cards: CARDS.map(([kind, heading, section, hint, rows, span, totalLabel, total]) => {
+      const recurring = ['bill', 'debt', 'subscription'].includes(kind), income = kind === 'income';
+      return { heading, section, hint, icon: I[kind], color: T[kind][0], tile: T[kind][1], tint: T[kind][2], span, recurring, income, hasTotal: !!total, totalLabel, total,
+        cols: recurring ? 'minmax(0,1fr) 90px 120px 152px' : income ? 'minmax(0,1fr) 120px 130px 152px' : 'minmax(0,1fr) 152px',
+        rows: rows.map(([name, a, b]) => ({ name, day: a, amount: b, freq: a, first: b, freqColor: a === 'Not set' ? 'var(--muted)' : 'var(--ink)' })) };
+    }) };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0;background:light-dark(#F4F4F6,#0F1013);}a{color:inherit;}button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit;}input{font:inherit;}</style>
+</helmet>
+<div data-screen-label="Help" style="--canvas:light-dark(#F4F4F6,#0F1013);--card:light-dark(#FFFFFF,#17181C);--border:light-dark(#E5E7EB,#2A2C33);--input:light-dark(#D1D5DB,#3A3D46);--ink:light-dark(#111827,#F3F4F6);--muted:light-dark(#6B7280,#9CA3AF);--track:light-dark(#E5E7EB,#2A2C33);--hover:light-dark(#F9FAFB,#1F2026);--accent:light-dark(#4F46E5,#818CF8);--accent-soft:light-dark(#EEF2FF,#1E1B4B);--accent-tint:light-dark(#EEF0FF,#181A2E);--green-ink:light-dark(#047857,#6EE7B7);--rose:#E11D48;color-scheme:{{ scheme }};display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh;background:var(--canvas);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,'SF Pro Text','Segoe UI',sans-serif;font-size:15px;line-height:1.45;">
+  <div style="position:sticky;top:0;height:100vh;"><dc-import name="Sidebar" active="help" count="{{ 3 }}" hint-size="100%,100%" style="display:block;height:100%;"></dc-import></div>
+  <main style="margin:12px 12px 12px 0;background:var(--card);border:1px solid var(--border);border-radius:16px;min-width:0;display:flex;flex-direction:column;overflow:hidden;">
+    <dc-import name="Topbar" crumb="Help" hint-size="100%,64px" style="display:block;"></dc-import>
+    <div style="padding:28px 28px 40px;display:grid;grid-template-columns:minmax(260px,320px) minmax(0,1fr);gap:24px;align-items:start;">
+      <aside style="display:flex;flex-direction:column;gap:14px;position:sticky;top:12px;">
+        <header><h1 style="margin:0;font-size:32px;font-weight:700;letter-spacing:-0.02em;line-height:1.15;">Help</h1><p style="margin:6px 0 0;font-size:16px;color:var(--muted);">Short answers, one step at a time.</p></header>
+        <label style="display:flex;align-items:center;gap:10px;height:44px;padding:0 14px;border:1px solid var(--input);border-radius:10px;color:var(--muted);"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg><input type="search" aria-label="Search help" placeholder="Search help, such as “budget”" style="flex:1;min-width:0;border:0;outline:none;background:transparent;color:var(--ink);font-size:15px;"></label>
+        <ul style="list-style:none;margin:0;padding:0;border:1px solid var(--border);border-radius:16px;overflow:hidden;max-height:calc(100vh - 220px);overflow-y:auto;">
+          <sc-for list="{{ articles }}" as="a" hint-placeholder-count="8"><li><button aria-current="{{ a.current }}" onClick="{{ a.pick }}" style="width:100%;display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px solid var(--border);background:{{ a.bg }};font-size:14px;font-weight:{{ a.weight }};" style-hover="background:var(--hover);"><span style="flex:1;min-width:0;">{{ a.title }}</span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></button></li></sc-for>
+        </ul>
+      </aside>
+      <article style="display:flex;flex-direction:column;gap:20px;max-width:760px;">
+        <header><p style="margin:0;font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);">Article</p><h2 style="margin:4px 0 0;font-size:28px;font-weight:700;letter-spacing:-0.02em;">{{ art.title }}</h2><p style="margin:6px 0 0;font-size:16px;color:var(--muted);">{{ art.summary }}</p></header>
+        <sc-if value="{{ art.isUpdates }}" hint-placeholder-val="{{ false }}">
+          <section style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:12px;background:linear-gradient(to bottom,var(--card),var(--accent-tint));">
+            <h3 aria-live="polite" style="margin:0;font-size:18px;font-weight:600;">4 of 6 in</h3>
+            <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:14px;">
+              <sc-for list="{{ updates }}" as="u" hint-placeholder-count="6"><li style="display:flex;gap:10px;"><span aria-hidden="true" style="width:16px;text-align:center;font-weight:700;color:{{ u.color }};">{{ u.sign }}</span><span><span style="display:block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;">{{ u.file }}</span><span style="display:block;color:var(--muted);">{{ u.adds }}</span></span></li></sc-for>
+            </ul>
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;font-size:14px;display:flex;flex-direction:column;gap:8px;"><p style="margin:0;">Next: paste <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;">0017_coach_memory.sql</span>, then each file after it in number order, one at a time.</p><div style="display:flex;gap:8px;flex-wrap:wrap;"><button style="height:36px;padding:0 12px;border-radius:8px;background:var(--accent);color:#FFFFFF;font-weight:500;">Copy 0017_coach_memory.sql</button><a href="#" style="display:inline-flex;align-items:center;height:36px;font-weight:500;text-underline-offset:4px;">Open it on GitHub</a></div></div>
+            <button style="align-self:flex-start;height:40px;padding:0 14px;border:1px solid var(--border);border-radius:10px;font-weight:500;font-size:14px;background:var(--card);">Check again</button>
+          </section>
+        </sc-if>
+        <section style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:12px;">
+          <p style="margin:0;font-size:16px;">{{ art.what }}</p>
+          <ol style="margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px;"><sc-for list="{{ art.steps }}" as="s" hint-placeholder-count="4"><li>{{ s }}</li></sc-for></ol>
+        </section>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <section style="border:1px solid var(--border);border-radius:16px;padding:18px 22px;"><h3 style="margin:0 0 6px;font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--green-ink)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>You’re done when…</h3><p style="margin:0;font-size:15px;">{{ art.done }}</p></section>
+          <section style="border:1px solid var(--border);border-radius:16px;padding:18px 22px;"><h3 style="margin:0 0 6px;font-size:16px;font-weight:600;">Stuck?</h3><p style="margin:0;font-size:15px;">{{ art.stuck }}</p></section>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;"><a href="Ask.dc.html" style="display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 16px;border:1px solid var(--border);border-radius:10px;font-weight:500;text-decoration:none;">✨ Ask about this</a><sc-for list="{{ art.related }}" as="r" hint-placeholder-count="2"><span style="display:inline-flex;align-items:center;height:44px;padding:0 16px;border:1px solid var(--border);border-radius:999px;font-size:14px;font-weight:500;color:var(--muted);">{{ r }}</span></sc-for></div>
+      </article>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;scheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const TITLES = ['Start here', 'One-time updates', 'Month, Week, Pay and Year', 'Bring in a statement', 'Why things wait in Review', 'Add: a statement, a photo, or type it', 'Budgets and bills', 'Savings and your goals', 'Add a savings goal', 'Debts', 'What the Coach does, and never does', 'The Sunday check-in', 'How the forecast works', 'Two month-end figures', 'Reports and trends', 'Comparisons with last month', 'Ask about your money', 'Turn on free AI', 'More AI services, paid ones too', 'What the AI sees, and how the Coach talks', 'Why the AI sometimes rests', 'Why does a number look wrong?', 'Messages with a code in brackets', 'Put it on your iPhone', 'Words the app uses'];
+const ART = {
+  'One-time updates': { summary: 'What is installed, and the one thing to paste next.', what: 'The app checks each database update and the AI helper, and says which are in. Everything that worked before still works until you paste them.', steps: ['In Supabase, open the SQL Editor, then New query.', 'Press Copy beside the next file here, paste it, and press Run.', 'Wait for “Success. No rows returned.”, then do the next file.', 'Come back and press Check again.'], done: 'This page says “All done”.', stuck: 'If a file says anything other than Success, stop there: nothing is lost, and the message says which line.', related: ['Turn on free AI', 'Start here'] },
+  default: { summary: 'Three ways to put money in: a statement from your bank, a receipt photo, or one entry typed by hand.', what: 'Add is how anything reaches your budget. A statement fills the Month with what you really spent; a photo or a typed line adds what a card statement never shows.', steps: ['Open Add and choose Statement, Photo or Type it.', 'For a statement, pick the PDF or CSV your bank gave you. It is read on this device.', 'Check the totals match your statement, then press Import.', 'Everything new waits in Review for a category.'], done: 'Review shows the charges waiting, and the Month says how many are not counted yet.', stuck: 'If the statement “does not add up”, nothing is imported: the totals printed on it did not match what was read. Try the PDF instead of the CSV, or the other way round.', related: ['Why things wait in Review', 'Bring in a statement'] },
+};
+class Component extends DCLogic {
+  state = { pick: 'Add: a statement, a photo, or type it' };
+  renderVals() {
+    const cur = this.state.pick;
+    const a = ART[cur] ?? ART.default;
+    return { scheme: this.props.scheme ?? 'light',
+      articles: TITLES.map((t) => ({ title: t, current: t === cur ? 'page' : null, pick: () => this.setState({ pick: t }), bg: t === cur ? 'var(--accent-tint)' : 'transparent', weight: t === cur ? 600 : 500 })),
+      art: { ...a, title: cur, isUpdates: cur === 'One-time updates' },
+      updates: [['0015_savings_goals_order.sql', 'Several goals, in your order', true], ['0016_ai_foundation.sql', 'AI settings, keys and the daily limit', true], ['0017_coach_memory.sql', 'The Coach’s memory: dismissals, answers, kept words', false], ['0018_category_suggestions.sql', 'Suggested categories in Review', false], ['The AI helper', 'Everything the AI does', true], ['read-receipt (new version)', 'Receipt photos, as a fallback', true]].map(([file, adds, ok]) => ({ file, adds, sign: ok ? '✓' : '✗', color: ok ? 'var(--green-ink)' : 'var(--rose)' })) };
+  }
+}
+</script>
+</body>
+</html>

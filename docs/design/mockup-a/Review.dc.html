@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0;background:light-dark(#F4F4F6,#0F1013);}a{color:inherit;}button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit;}select{font:inherit;}</style>
+</helmet>
+<div data-screen-label="Review" style="--canvas:light-dark(#F4F4F6,#0F1013);--card:light-dark(#FFFFFF,#17181C);--border:light-dark(#E5E7EB,#2A2C33);--input:light-dark(#D1D5DB,#3A3D46);--ink:light-dark(#111827,#F3F4F6);--muted:light-dark(#6B7280,#9CA3AF);--track:light-dark(#E5E7EB,#2A2C33);--hover:light-dark(#F9FAFB,#1F2026);--accent:light-dark(#4F46E5,#818CF8);--accent-soft:light-dark(#EEF2FF,#1E1B4B);--amber-bg:light-dark(#FFFBEB,#2A2210);--amber-border:light-dark(#FDE68A,#5A4A14);--amber:#D97706;--green:#10B981;--green-tile:light-dark(#D1FAE5,#123326);--green-ink:light-dark(#047857,#6EE7B7);--orange:#F97316;color-scheme:{{ scheme }};display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh;background:var(--canvas);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,'SF Pro Text','Segoe UI',sans-serif;font-size:15px;line-height:1.45;">
+  <div style="position:sticky;top:0;height:100vh;"><dc-import name="Sidebar" active="review" count="{{ 3 }}" hint-size="100%,100%" style="display:block;height:100%;"></dc-import></div>
+  <main style="margin:12px 12px 12px 0;background:var(--card);border:1px solid var(--border);border-radius:16px;min-width:0;display:flex;flex-direction:column;overflow:hidden;">
+    <dc-import name="Topbar" crumb="Review" hint-size="100%,64px" style="display:block;"></dc-import>
+    <div style="padding:28px 28px 40px;display:flex;flex-direction:column;gap:20px;max-width:960px;">
+      <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;"><h1 style="margin:0;font-size:32px;font-weight:700;letter-spacing:-0.02em;line-height:1.15;">Review</h1><span style="min-width:28px;height:28px;padding:0 8px;box-sizing:border-box;border-radius:14px;background:var(--orange);color:#FFFFFF;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;">{{ count }}</span><button aria-label="Help with this screen" style="width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;color:var(--muted);" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"></path><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></button></div>
+          <p style="margin:6px 0 0;font-size:16px;color:var(--muted);">{{ waitingText }} Nothing reaches your budget until you approve it.</p>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button style="display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 14px;border:1px solid var(--border);border-radius:10px;font-weight:500;font-size:14px;" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path></svg>Suggest categories</button>
+          <sc-if value="{{ canApproveAll }}" hint-placeholder-val="{{ true }}"><button onClick="{{ approveAll }}" style="height:44px;padding:0 16px;border-radius:10px;background:var(--accent);color:#FFFFFF;font-weight:500;font-size:14px;">Approve these {{ count }}</button></sc-if>
+        </div>
+      </header>
+      <p aria-live="polite" style="margin:0;font-size:14px;color:var(--muted);">✨ Suggested a category for 2 rows. Check each before you approve it.</p>
+
+      <sc-if value="{{ hasNote }}" hint-placeholder-val="{{ false }}"><p role="status" style="margin:0;padding:12px 16px;border-radius:12px;background:var(--green-tile);color:var(--green-ink);font-weight:500;">{{ note }}</p></sc-if>
+
+      <sc-if value="{{ hasRows }}" hint-placeholder-val="{{ true }}">
+      <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px;">
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="3">
+          <li style="border:1px solid var(--border);border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+              <div><p style="margin:0;font-weight:600;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:15px;">{{ r.merchant }}</p><p style="margin:2px 0 0;font-size:13px;color:var(--muted);">{{ r.date }} · Card statement (PDF)</p></div>
+              <span style="font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-0.01em;">{{ r.amount }}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;">
+              <label style="display:contents;"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Category</span><select style="height:44px;padding:0 12px;border:1px solid var(--input);border-radius:10px;background:var(--card);color:var(--ink);font-size:15px;outline:none;min-width:0;"><option>{{ r.category }}</option><option>Choose a category…</option><option>+ New category…</option></select></label>
+              <button onClick="{{ r.approve }}" style="display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 16px;border-radius:10px;background:var(--accent);color:#FFFFFF;font-weight:500;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Approve</button>
+              <button aria-label="Not a real transaction — remove" onClick="{{ r.reject }}" style="width:44px;height:44px;border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--muted);" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+            </div>
+            <p style="margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted);"><span style="display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:999px;padding:3px 10px;font-weight:500;color:var(--ink);">{{ r.badge }}</span>{{ r.hint }}<sc-if value="{{ r.ai }}" hint-placeholder-val="{{ false }}"><button style="text-decoration:underline;text-underline-offset:3px;font-weight:500;color:var(--ink);">Not this</button></sc-if></p>
+          </li>
+        </sc-for>
+      </ul>
+      </sc-if>
+      <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}">
+        <section style="border:1px solid var(--border);border-radius:16px;padding:48px 24px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;">
+          <span style="width:48px;height:48px;border-radius:24px;background:var(--green-tile);color:var(--green-ink);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>
+          <p style="margin:0;font-weight:600;font-size:17px;">All caught up</p><p style="margin:0;max-width:44ch;color:var(--muted);">Import a statement and anything it finds that you have not categorised before will wait here.</p>
+          <a href="Month.dc.html" style="margin-top:8px;display:inline-flex;align-items:center;height:40px;padding:0 14px;border:1px solid var(--border);border-radius:10px;font-weight:500;font-size:14px;text-decoration:none;">See this month</a>
+        </section>
+      </sc-if>
+
+      <section aria-labelledby="unreadable-title" style="border:1px solid var(--amber-border);background:var(--amber-bg);border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:center;gap:8px;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path></svg><h2 id="unreadable-title" style="margin:0;font-size:16px;font-weight:600;">2 lines could not be read</h2></div>
+        <p style="margin:0;font-size:14px;color:var(--muted);text-wrap:pretty;">These were left out of your budget. Find each one on the statement, and if it is a real charge, add it yourself with Add, then Type it. Dismiss a line once you have dealt with it. A PDF statement's rows are counted from its first transaction.</p>
+        <p style="margin:4px 0 0;font-size:13px;font-weight:500;color:var(--muted);">Card statement (PDF) · imported Sep 19, 2026</p>
+        <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:14px;">
+          <li style="display:flex;align-items:center;gap:12px;"><span style="width:56px;color:var(--muted);">Row 14</span><span style="flex:1;">The amount could not be read as money.</span><button style="height:36px;padding:0 12px;border:1px solid var(--border);border-radius:8px;font-weight:500;background:var(--card);">Dismiss</button></li>
+          <li style="display:flex;align-items:center;gap:12px;"><span style="width:56px;color:var(--muted);">Row 31</span><span style="flex:1;">The date was missing or not a real date.</span><button style="height:36px;padding:0 12px;border:1px solid var(--border);border-radius:8px;font-weight:500;background:var(--card);">Dismiss</button></li>
+        </ul>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;scheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const ROWS = [
+  { id: 'a', merchant: 'AMZN MKTP CA*2K4LM', date: 'Sep 22, 2026', amount: '−$34.99', category: 'Clothing', badge: '✨ Suggested: Clothing', hint: 'By AI from the shop’s name. Check it.', ai: true },
+  { id: 'b', merchant: 'SQ *CEDAR COFFEE', date: 'Sep 23, 2026', amount: '−$6.75', category: 'Restaurants', badge: '✨ Suggested', hint: 'How you filed this merchant last time.', ai: false },
+  { id: 'c', merchant: 'PETRO-CANADA 4410', date: 'Sep 23, 2026', amount: '−$52.10', category: 'Gas', badge: 'Similar shop', hint: 'You filed a similar shop under Gas.', ai: false },
+];
+class Component extends DCLogic {
+  state = { gone: [], note: null };
+  act(id, note) { this.setState((s) => ({ gone: [...s.gone, id], note })); }
+  renderVals() {
+    const rows = ROWS.filter((r) => !this.state.gone.includes(r.id));
+    return { scheme: this.props.scheme ?? 'light', count: String(rows.length), waitingText: rows.length === 0 ? 'Nothing waiting.' : `${rows.length} waiting for a category.`,
+      canApproveAll: rows.length >= 2, approveAll: () => this.setState({ gone: ROWS.map((r) => r.id), note: `Filed ${rows.length}. Future charges from these shops will be filed the same way automatically.` }),
+      hasNote: this.state.note !== null, note: this.state.note ?? '', hasRows: rows.length > 0, empty: rows.length === 0,
+      rows: rows.map((r) => ({ ...r, approve: () => this.act(r.id, 'Added. Future charges from this merchant will be filed the same way automatically.'), reject: () => this.act(r.id, 'Removed from the queue. It will not be counted.') })) };
+  }
+}
+</script>
+</body>
+</html>

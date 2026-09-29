@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0;background:light-dark(#F4F4F6,#0F1013);}a{color:inherit;}button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit;}</style>
+</helmet>
+<div data-screen-label="Bill calendar" style="--canvas:light-dark(#F4F4F6,#0F1013);--card:light-dark(#FFFFFF,#17181C);--border:light-dark(#E5E7EB,#2A2C33);--ink:light-dark(#111827,#F3F4F6);--muted:light-dark(#6B7280,#9CA3AF);--faint:light-dark(#9CA3AF,#6B7280);--track:light-dark(#E5E7EB,#2A2C33);--hover:light-dark(#F9FAFB,#1F2026);--accent:light-dark(#4F46E5,#818CF8);--accent-soft:light-dark(#EEF2FF,#1E1B4B);--green:#10B981;--green-tile:light-dark(#D1FAE5,#123326);--sky:#0EA5E9;--sky-tile:light-dark(#E0F2FE,#0F2A3A);--sky-tint:light-dark(#EFF6FF,#12202C);--sky-ink:light-dark(#0369A1,#7DD3FC);--violet:#8B5CF6;--rose:#E11D48;--today:light-dark(#FEFCE8,#2A2610);--off:light-dark(#F9FAFB,#131418);color-scheme:{{ scheme }};display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh;background:var(--canvas);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,'SF Pro Text','Segoe UI',sans-serif;font-size:15px;line-height:1.45;">
+  <div style="position:sticky;top:0;height:100vh;"><dc-import name="Sidebar" active="calendar" count="{{ 3 }}" hint-size="100%,100%" style="display:block;height:100%;"></dc-import></div>
+  <main style="margin:12px 12px 12px 0;background:var(--card);border:1px solid var(--border);border-radius:16px;min-width:0;display:flex;flex-direction:column;overflow:hidden;">
+    <dc-import name="Topbar" crumb="Bill calendar" hint-size="100%,64px" style="display:block;"></dc-import>
+    <div style="padding:28px 28px 40px;display:flex;flex-direction:column;gap:20px;">
+      <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;"><h1 style="margin:0;font-size:32px;font-weight:700;letter-spacing:-0.02em;line-height:1.15;">September 2026</h1><button aria-label="Help with this screen" style="width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;color:var(--muted);" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"></path><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></button></div>
+          <p style="margin:6px 0 0;font-size:16px;color:var(--muted);">Bill calendar · each bill on its day, paydays, and each week’s total</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="display:flex;flex-direction:column;align-items:flex-end;padding:8px 14px;border-radius:12px;background:var(--sky-tint);color:var(--sky-ink);line-height:1.2;"><span style="font-size:12px;font-weight:500;">Due this month</span><span style="font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;">$2,406.59</span></div>
+          <div style="display:flex;align-items:center;border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+            <button aria-label="Previous month" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+            <span style="display:flex;align-items:center;height:44px;padding:0 14px;border-left:1px solid var(--border);border-right:1px solid var(--border);font-weight:500;">Sep 2026</span>
+            <button aria-label="Next month" style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></button>
+          </div>
+        </div>
+      </header>
+
+      <div style="border:1px solid var(--border);border-radius:16px;overflow:hidden;">
+        <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr)) 110px;border-bottom:1px solid var(--border);background:var(--sky-tint);color:var(--sky-ink);font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;">
+          <sc-for list="{{ weekdays }}" as="w" hint-placeholder-count="7"><div style="padding:10px 12px;">{{ w }}</div></sc-for><div style="padding:10px 12px;text-align:right;border-left:1px solid var(--border);">Week</div>
+        </div>
+        <sc-for list="{{ weeks }}" as="wk" hint-placeholder-count="5">
+          <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr)) 110px;border-bottom:1px solid var(--border);">
+            <sc-for list="{{ wk.days }}" as="d" hint-placeholder-count="7">
+              <div style="min-height:112px;padding:10px 12px;border-right:1px solid var(--border);background:{{ d.bg }};display:flex;flex-direction:column;gap:6px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;"><span style="font-weight:600;font-variant-numeric:tabular-nums;color:{{ d.numColor }};">{{ d.num }}</span><sc-if value="{{ d.payday }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;font-weight:600;background:var(--green);color:#FFFFFF;border-radius:999px;padding:2px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">{{ d.paydayName }}</span></sc-if></div>
+                <sc-for list="{{ d.bills }}" as="b" hint-placeholder-count="1">
+                  <button aria-haspopup="dialog" style="display:flex;justify-content:space-between;gap:6px;font-size:13px;line-height:1.3;width:100%;border-left:3px solid {{ b.color }};padding-left:6px;" style-hover="text-decoration:underline;"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ b.name }}</span><span style="font-variant-numeric:tabular-nums;color:var(--muted);font-style:{{ b.style }};">{{ b.amount }}</span></button>
+                </sc-for>
+              </div>
+            </sc-for>
+            <div style="display:flex;align-items:center;justify-content:flex-end;padding:10px 12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--sky-ink);">{{ wk.total }}</div>
+          </div>
+        </sc-for>
+        <p style="margin:0;padding:12px 16px;font-size:13px;color:var(--muted);">Bills and paydays by day, with each week’s total. Amounts in italics are planned: nothing has been charged for them yet this month.</p>
+      </div>
+
+      <section aria-label="No day paid" style="border:1px solid var(--border);border-radius:16px;padding:20px 24px;display:flex;flex-direction:column;gap:10px;">
+        <h2 style="margin:0;font-size:18px;font-weight:600;">No day paid</h2>
+        <p style="margin:0;font-size:15px;color:var(--muted);">These have a monthly amount but no day paid, so they are not on the calendar or in its totals. The Month still counts them.</p>
+        <ul style="list-style:none;margin:0;padding:0;font-size:15px;"><li style="display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--border);"><span>Credit Card 2</span><span style="font-variant-numeric:tabular-nums;">$75.00</span></li></ul>
+        <a href="Setup.dc.html" style="align-self:flex-start;display:inline-flex;align-items:center;height:40px;padding:0 14px;border:1px solid var(--border);border-radius:10px;font-weight:500;font-size:14px;text-decoration:none;">Add a day paid in Setup</a>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;scheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const COLOR = { bill: 'var(--sky)', sub: 'var(--violet)', debt: 'var(--rose)' };
+// September 2026 starts on a Tuesday. [day, kind, name, amount, planned]
+const EVENTS = [[1,'bill','Rent','1,600.00'],[5,'bill','Gym Membership','49.00',1],[9,'sub','Netflix','17.99'],[12,'bill','Electricity Bill','84.12'],[14,'sub','Spotify','11.99'],[15,'bill','Water Bill','45.00',1],[18,'bill','Gas Bill','38.40'],[20,'debt','Car Loan','229.50',1],[22,'debt','Credit Card 1','150.00'],[26,'bill','Car Insurance','142.00',1],[27,'sub','Dropbox','11.99',1],[28,'bill','Phone','65.00']];
+const PAY = { 1: 'Income 2', 15: 'Income 1', 30: 'Income 1' };
+const sum = (days) => days.reduce((a, d) => a + (d.n ? EVENTS.filter((e) => e[0] === d.n).reduce((x, e) => x + Number(e[3].replace(',', '')), 0) : 0), 0);
+const money = (n) => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+class Component extends DCLogic {
+  renderVals() {
+    const cells = [];
+    for (let i = 0; i < 2; i++) cells.push({ n: 0 });
+    for (let d = 1; d <= 30; d++) cells.push({ n: d });
+    while (cells.length % 7) cells.push({ n: 0 });
+    const weeks = [];
+    for (let i = 0; i < cells.length; i += 7) {
+      const days = cells.slice(i, i + 7);
+      weeks.push({ total: money(sum(days)), days: days.map((c) => c.n === 0 ? { num: '', bg: 'var(--off)', numColor: 'var(--faint)', payday: false, bills: [] } : {
+        num: String(c.n), bg: c.n === 24 ? 'var(--today)' : 'transparent', numColor: c.n === 24 ? 'var(--accent)' : 'var(--ink)', payday: !!PAY[c.n], paydayName: PAY[c.n] ?? '',
+        bills: EVENTS.filter((e) => e[0] === c.n).map((e) => ({ name: e[2], amount: e[3], color: COLOR[e[1]], style: e[4] ? 'italic' : 'normal' })) }) });
+    }
+    return { scheme: this.props.scheme ?? 'light', weekdays: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'], weeks };
+  }
+}
+</script>
+</body>
+</html>

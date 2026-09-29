@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0;background:light-dark(#F4F4F6,#0F1013);}a{color:inherit;}button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit;}input{font:inherit;}</style>
+</helmet>
+<div data-screen-label="Getting started" style="--canvas:light-dark(#F4F4F6,#0F1013);--card:light-dark(#FFFFFF,#17181C);--border:light-dark(#E5E7EB,#2A2C33);--input:light-dark(#D1D5DB,#3A3D46);--ink:light-dark(#111827,#F3F4F6);--muted:light-dark(#6B7280,#9CA3AF);--track:light-dark(#E5E7EB,#2A2C33);--hover:light-dark(#F9FAFB,#1F2026);--accent:light-dark(#4F46E5,#818CF8);--accent-soft:light-dark(#EEF2FF,#1E1B4B);--accent-tint:light-dark(#EEF0FF,#181A2E);--green:#10B981;--green-ink:light-dark(#047857,#6EE7B7);color-scheme:{{ scheme }};display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh;background:var(--canvas);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,'SF Pro Text','Segoe UI',sans-serif;font-size:15px;line-height:1.45;">
+  <div style="position:sticky;top:0;height:100vh;"><dc-import name="Sidebar" active="settings" count="{{ 3 }}" hint-size="100%,100%" style="display:block;height:100%;"></dc-import></div>
+  <main style="margin:12px 12px 12px 0;background:var(--card);border:1px solid var(--border);border-radius:16px;min-width:0;display:flex;flex-direction:column;overflow:hidden;">
+    <dc-import name="Topbar" crumb="Getting started" hint-size="100%,64px" style="display:block;"></dc-import>
+    <div style="padding:28px 28px 40px;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:start;">
+      <div style="display:flex;flex-direction:column;gap:20px;max-width:720px;">
+        <header>
+          <div style="display:flex;align-items:center;gap:8px;"><h1 style="margin:0;font-size:32px;font-weight:700;letter-spacing:-0.02em;line-height:1.15;">Getting started</h1><button aria-label="Help with this screen" style="width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;color:var(--muted);" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"></path><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></button></div>
+          <p style="margin:6px 0 0;font-size:16px;color:var(--muted);">Step {{ s.n }} of 9 · {{ s.time }}</p>
+        </header>
+        <ol aria-label="{{ done }} of 9 done" style="list-style:none;margin:0;padding:0;display:flex;gap:6px;">
+          <sc-for list="{{ bar }}" as="b" hint-placeholder-count="9"><li aria-hidden="true" style="flex:1;height:6px;border-radius:3px;background:{{ b.bg }};box-shadow:{{ b.ring }};"></li></sc-for>
+        </ol>
+        <section style="border:1px solid var(--border);border-radius:16px;padding:24px 28px;display:flex;flex-direction:column;gap:14px;background:linear-gradient(to bottom,var(--card),var(--accent-tint));">
+          <h2 style="margin:0;font-size:26px;font-weight:700;letter-spacing:-0.02em;line-height:1.2;">{{ s.title }}</h2>
+          <p style="margin:0;font-size:16px;color:var(--muted);text-wrap:pretty;">{{ s.why }}</p>
+          <p style="margin:0;display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:{{ s.checkColor }};"><sc-if value="{{ s.isDone }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></sc-if>{{ s.check }}</p>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:12px;">
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:600;">{{ s.fieldLabel }}<input value="{{ s.fieldValue }}" placeholder="{{ s.placeholder }}" style="height:44px;padding:0 12px;border:1px solid var(--input);border-radius:10px;background:var(--card);color:var(--ink);font-size:16px;font-weight:400;outline:none;max-width:360px;"></label>
+            <p style="margin:0;font-size:14px;color:var(--muted);">{{ s.fieldHint }}</p>
+            <button style="align-self:flex-start;height:40px;padding:0 14px;border:1px solid var(--border);border-radius:10px;font-weight:500;font-size:14px;">Save</button>
+          </div>
+        </section>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <button onClick="{{ next }}" style="height:48px;padding:0 20px;border-radius:12px;background:var(--accent);color:#FFFFFF;font-weight:600;font-size:16px;">{{ s.cta }}</button>
+          <button onClick="{{ next }}" style="height:48px;padding:0 16px;border-radius:12px;font-weight:500;font-size:16px;color:var(--muted);" style-hover="background:var(--hover);">Do this later</button>
+        </div>
+        <p style="margin:0;font-size:14px;color:var(--muted);">Nothing breaks if you stop here. You can come back any time from More.</p>
+      </div>
+      <aside style="border:1px solid var(--border);border-radius:16px;overflow:hidden;position:sticky;top:12px;">
+        <h2 style="margin:0;padding:14px 18px;font-size:14px;font-weight:600;border-bottom:1px solid var(--border);">All 9 steps · {{ done }} done</h2>
+        <ol style="list-style:none;margin:0;padding:0;">
+          <sc-for list="{{ steps }}" as="t" hint-placeholder-count="9"><li><button aria-current="{{ t.current }}" onClick="{{ t.go }}" style="width:100%;display:flex;align-items:center;gap:10px;min-height:44px;padding:8px 18px;border-top:1px solid var(--border);font-size:14px;font-weight:{{ t.weight }};background:{{ t.bg }};" style-hover="background:var(--hover);"><span aria-hidden="true" style="width:18px;text-align:center;color:{{ t.markColor }};font-weight:700;">{{ t.mark }}</span><span style="flex:1;min-width:0;">{{ t.title }}</span><sc-if value="{{ t.later }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--muted);">Later</span></sc-if></button></li></sc-for>
+        </ol>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;scheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const STEPS = [
+  ['Your name', 'So the app, and the Coach, can talk to you by name.', 'under a minute', 'done', 'Your first name', 'Aaron', '', 'Saved. Hello, Aaron.'],
+  ['Your lists', 'Every charge is filed under a category, and each category sits on a list, as in your workbook. The starter list fills them with names you can rename.', 'about 2 minutes', 'done', 'Add to Variable expenses', '', 'e.g. Groceries', '31 names on your lists. Rename any of them in Setup.'],
+  ['When you’re paid', 'Your paydays tell the Paycheck view and the Forecast when money comes in.', 'about 1 minute', 'done', 'First payday for Income 1', 'Sep 1, 2026', '', 'Paid every two weeks.'],
+  ['Your bills', 'A bill’s monthly amount counts on the Month until its real charge arrives, so nothing due is forgotten.', 'about 3 minutes', 'done', 'Rent, monthly amount', '1,600.00', '', 'Day paid: the 1st.'],
+  ['Your savings goals', 'The Coach shows how far each goal has come, and what would get you there sooner.', 'about 2 minutes', 'done', 'Goal name', 'Flight training', '', 'Target $30,000.00 by Jun 1, 2028.'],
+  ['Your first statement', 'Your card statement fills the Month with what you really spent. Each charge waits in Review for you to file it.', 'about 5 minutes', 'done', 'Statement', 'Statement_Sep_2026.pdf', '', '42 transactions imported, 3 waiting in Review.'],
+  ['This month’s starting balance', 'With what your bank showed on the 1st, the Month can say where the month will end, and the Forecast what is safe to spend.', 'about 1 minute', 'not_done', 'Starting bank balance for September', '', '4,250.00', 'The bank balance you started September with. Each month has its own.'],
+  ['Turn on free AI', 'Free Google Gemini writes the Coach’s tips and reads your receipts and questions. Everything works without it too.', 'under 2 minutes', 'later', 'Gemini key', '', 'Paste your key', 'Google AI Studio opens in a new tab. Press Create API key, then copy it.'],
+  ['Put it on your iPhone', 'Open the app from your home screen like any other app. Optional: skip it on a computer.', 'about 1 minute', 'not_done', 'It’s on my home screen', '', '', 'In Safari: Share, then Add to Home Screen.'],
+];
+class Component extends DCLogic {
+  state = { at: 6 };
+  renderVals() {
+    const at = this.state.at, s = STEPS[at];
+    const done = STEPS.filter((x) => x[3] === 'done').length;
+    return { scheme: this.props.scheme ?? 'light', done: String(done),
+      s: { n: String(at + 1), title: s[0], why: s[1], time: s[2], isDone: s[3] === 'done', check: s[3] === 'done' ? 'Done' : 'Not done yet', checkColor: s[3] === 'done' ? 'var(--green-ink)' : 'var(--muted)', fieldLabel: s[4], fieldValue: s[5], placeholder: s[6], fieldHint: s[7], cta: at === 8 ? 'Finish' : 'Continue' },
+      next: () => this.setState({ at: Math.min(8, at + 1) }),
+      bar: STEPS.map((x, i) => ({ bg: x[3] === 'done' ? 'var(--accent)' : 'var(--track)', ring: i === at ? '0 0 0 2px var(--card), 0 0 0 4px var(--accent)' : 'none' })),
+      steps: STEPS.map((x, i) => ({ title: x[0], current: i === at ? 'step' : null, go: () => this.setState({ at: i }), weight: i === at ? 600 : 400, bg: i === at ? 'var(--accent-tint)' : 'transparent', mark: x[3] === 'done' ? '✓' : '·', markColor: x[3] === 'done' ? 'var(--green-ink)' : 'var(--muted)', later: x[3] === 'later' })) };
+  }
+}
+</script>
+</body>
+</html>

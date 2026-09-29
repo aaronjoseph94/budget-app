@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0;background:light-dark(#F4F4F6,#0F1013);}a{color:inherit;}button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit;}input,select{font:inherit;}</style>
+</helmet>
+<div data-screen-label="Settings" style="--canvas:light-dark(#F4F4F6,#0F1013);--card:light-dark(#FFFFFF,#17181C);--border:light-dark(#E5E7EB,#2A2C33);--input:light-dark(#D1D5DB,#3A3D46);--ink:light-dark(#111827,#F3F4F6);--muted:light-dark(#6B7280,#9CA3AF);--track:light-dark(#E5E7EB,#2A2C33);--hover:light-dark(#F9FAFB,#1F2026);--accent:light-dark(#4F46E5,#818CF8);--accent-soft:light-dark(#EEF2FF,#1E1B4B);--accent-tint:light-dark(#EEF0FF,#181A2E);--green-ink:light-dark(#047857,#6EE7B7);color-scheme:{{ scheme }};display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh;background:var(--canvas);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,'SF Pro Text','Segoe UI',sans-serif;font-size:15px;line-height:1.45;">
+  <div style="position:sticky;top:0;height:100vh;"><dc-import name="Sidebar" active="settings" count="{{ 3 }}" hint-size="100%,100%" style="display:block;height:100%;"></dc-import></div>
+  <main style="margin:12px 12px 12px 0;background:var(--card);border:1px solid var(--border);border-radius:16px;min-width:0;display:flex;flex-direction:column;overflow:hidden;">
+    <dc-import name="Topbar" crumb="Settings" hint-size="100%,64px" style="display:block;"></dc-import>
+    <div style="padding:28px 28px 40px;display:flex;flex-direction:column;gap:20px;">
+      <header>
+        <div style="display:flex;align-items:center;gap:8px;"><h1 style="margin:0;font-size:32px;font-weight:700;letter-spacing:-0.02em;line-height:1.15;">Settings</h1><button aria-label="Help with this screen" style="width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;color:var(--muted);" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"></path><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></button></div>
+        <p style="margin:6px 0 0;font-size:16px;color:var(--muted);">Budgets, your savings goals, and your account.</p>
+      </header>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;">
+        <sc-for list="{{ links }}" as="l" hint-placeholder-count="3">
+          <section style="border:1px solid var(--border);border-radius:16px;padding:20px 22px;display:flex;flex-direction:column;gap:10px;"><h2 style="margin:0;font-size:17px;font-weight:600;">{{ l.title }}</h2><p style="margin:0;font-size:14px;color:var(--muted);">{{ l.desc }}</p><a href="{{ l.href }}" style="margin-top:auto;align-self:flex-start;display:inline-flex;align-items:center;height:40px;padding:0 14px;border:1px solid var(--border);border-radius:10px;font-weight:500;font-size:14px;text-decoration:none;" style-hover="background:var(--hover);">{{ l.cta }}</a></section>
+        </sc-for>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:20px;align-items:start;">
+        <section style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:14px;">
+          <div><h2 style="margin:0;font-size:18px;font-weight:600;">Weekly budgets</h2><p style="margin:4px 0 0;font-size:14px;color:var(--muted);">A limit per category, per week, on the lists the Week counts as spending. Leave one blank for no limit.</p></div>
+          <sc-for list="{{ lists }}" as="g" hint-placeholder-count="2">
+            <div style="display:flex;flex-direction:column;gap:6px;"><h3 style="margin:0;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);">{{ g.heading }}</h3>
+              <ul style="list-style:none;margin:0;padding:0;border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+                <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="4"><li style="display:flex;align-items:center;gap:12px;padding:8px 12px;border-top:1px solid var(--border);"><span style="flex:1;font-weight:500;">{{ r.name }}</span><sc-if value="{{ r.saved }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--green-ink)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></sc-if><span style="position:relative;width:128px;"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--muted);pointer-events:none;">$</span><input aria-label="Weekly budget for {{ r.name }}" placeholder="No limit" value="{{ r.value }}" style="width:100%;box-sizing:border-box;height:36px;padding:0 10px 0 22px;border:1px solid var(--input);border-radius:8px;background:var(--card);color:var(--ink);font-size:14px;text-align:right;outline:none;font-variant-numeric:tabular-nums;"></span></li></sc-for>
+              </ul>
+            </div>
+          </sc-for>
+          <form style="display:grid;grid-template-columns:1fr 11rem auto;gap:8px;"><input placeholder="New category" style="height:40px;padding:0 12px;border:1px solid var(--input);border-radius:10px;background:var(--card);color:var(--ink);outline:none;min-width:0;"><select style="height:40px;padding:0 10px;border:1px solid var(--input);border-radius:10px;background:var(--card);color:var(--ink);outline:none;"><option>Variable expenses</option><option>Bills</option><option>Debts</option><option>Subscriptions</option></select><button style="height:40px;padding:0 14px;border:1px solid var(--border);border-radius:10px;font-weight:500;font-size:14px;">+ Add</button></form>
+          <p style="margin:0;font-size:13px;color:var(--muted);">Budgets save when you leave the field.</p>
+        </section>
+        <div style="display:flex;flex-direction:column;gap:20px;">
+          <section style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:12px;">
+            <div><h2 style="margin:0;font-size:18px;font-weight:600;">Shops filed by themselves</h2><p style="margin:4px 0 0;font-size:14px;color:var(--muted);text-wrap:pretty;">Each shop you have approved or moved with “Always file” is filed the same way from then on. Forget one and its next charge waits in Review again. Charges already filed stay where they are.</p></div>
+            <ul style="list-style:none;margin:0;padding:0;border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+              <sc-for list="{{ shops }}" as="s" hint-placeholder-count="4"><li style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-top:1px solid var(--border);"><div style="flex:1;min-width:0;"><p style="margin:0;font-weight:500;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;">{{ s.shop }}</p><p style="margin:0;font-size:13px;color:var(--muted);">{{ s.category }}</p></div><button style="height:36px;padding:0 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:500;" style-hover="background:var(--hover);">Forget</button></li></sc-for>
+            </ul>
+            <button style="height:40px;border:1px solid var(--border);border-radius:10px;font-weight:500;font-size:14px;" style-hover="background:var(--hover);">Show all 42</button>
+          </section>
+          <section style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:12px;"><span style="width:44px;height:44px;border-radius:22px;background:var(--accent-soft);color:var(--accent);font-weight:600;display:flex;align-items:center;justify-content:center;">A</span><div><h2 style="margin:0;font-size:18px;font-weight:600;">Account</h2><p style="margin:0;font-size:14px;color:var(--muted);overflow-wrap:anywhere;">aaron@example.com</p></div></div>
+            <button style="display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px;border:1px solid var(--border);border-radius:10px;font-weight:500;font-size:14px;" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="m16 17 5-5-5-5"></path><path d="M21 12H9"></path></svg>Sign out</button>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;scheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return { scheme: this.props.scheme ?? 'light',
+      links: [['Getting started', '6 of 9 done', 'Open Getting started', 'Start.dc.html'], ['Your lists', 'Your name, and which list each category is on.', 'Open Setup', 'Setup.dc.html'], ['Your savings goals', '3 goals. Your main goal is Flight training, which the Coach and the Week show.', 'Open Savings', 'Savings.dc.html']].map(([title, desc, cta, href]) => ({ title, desc, cta, href })),
+      lists: [{ heading: 'Variable expenses', rows: [['Groceries', '190.00', true], ['Restaurants', '60.00', false], ['Gas', '45.00', false], ['Clothing', '30.00', false], ['Movie Theater', '10.00', false], ['Game Night', '15.00', false], ['Card interest & fees', '5.00', false]].map(([name, value, saved]) => ({ name, value, saved })) }, { heading: 'Subscriptions', rows: [['Netflix', '', false], ['Spotify', '', false], ['Dropbox', '', false]].map(([name, value, saved]) => ({ name, value, saved })) }],
+      shops: [['SAFEWAY #4471', 'Groceries'], ['SUPERSTORE 1560', 'Groceries'], ['TIM HORTONS #2231', 'Restaurants'], ['SHELL C12003', 'Gas']].map(([shop, category]) => ({ shop, category })) };
+  }
+}
+</script>
+</body>
+</html>

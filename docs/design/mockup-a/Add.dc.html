@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0;background:light-dark(#F4F4F6,#0F1013);}a{color:inherit;}button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit;}input,select{font:inherit;}</style>
+</helmet>
+<div data-screen-label="Add" style="--canvas:light-dark(#F4F4F6,#0F1013);--card:light-dark(#FFFFFF,#17181C);--border:light-dark(#E5E7EB,#2A2C33);--input:light-dark(#D1D5DB,#3A3D46);--ink:light-dark(#111827,#F3F4F6);--muted:light-dark(#6B7280,#9CA3AF);--track:light-dark(#E5E7EB,#2A2C33);--hover:light-dark(#F9FAFB,#1F2026);--accent:light-dark(#4F46E5,#818CF8);--accent-soft:light-dark(#EEF2FF,#1E1B4B);--accent-tint:light-dark(#EEF0FF,#181A2E);--green:#10B981;--green-tile:light-dark(#D1FAE5,#123326);--green-ink:light-dark(#047857,#6EE7B7);--rose:#E11D48;color-scheme:{{ scheme }};display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh;background:var(--canvas);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,'SF Pro Text','Segoe UI',sans-serif;font-size:15px;line-height:1.45;">
+  <div style="position:sticky;top:0;height:100vh;"><dc-import name="Sidebar" active="add" count="{{ 3 }}" hint-size="100%,100%" style="display:block;height:100%;"></dc-import></div>
+  <main style="margin:12px 12px 12px 0;background:var(--card);border:1px solid var(--border);border-radius:16px;min-width:0;display:flex;flex-direction:column;overflow:hidden;">
+    <dc-import name="Topbar" crumb="Add" hint-size="100%,64px" style="display:block;"></dc-import>
+    <div style="padding:28px 28px 40px;display:flex;flex-direction:column;gap:20px;max-width:920px;">
+      <header>
+        <div style="display:flex;align-items:center;gap:8px;"><h1 style="margin:0;font-size:32px;font-weight:700;letter-spacing:-0.02em;line-height:1.15;">Add</h1><button aria-label="Help with this screen" style="width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;color:var(--muted);" style-hover="background:var(--hover);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"></path><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg></button></div>
+        <p style="margin:6px 0 0;font-size:16px;color:var(--muted);">A statement from your bank, a receipt photo, or one by hand: cash, pay or a move to savings.</p>
+      </header>
+      <div role="tablist" aria-label="How to add" style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--canvas);border-radius:12px;padding:4px;">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3"><button role="tab" aria-selected="{{ t.on }}" onClick="{{ t.pick }}" style="height:44px;border-radius:9px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:500;background:{{ t.bg }};color:{{ t.ink }};box-shadow:{{ t.shadow }};"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><sc-for list="{{ t.icon }}" as="p" hint-placeholder-count="2"><path d="{{ p }}"></path></sc-for></svg>{{ t.label }}</button></sc-for>
+      </div>
+
+      <sc-if value="{{ isStatement }}" hint-placeholder-val="{{ true }}">
+        <div role="tabpanel" style="display:flex;flex-direction:column;gap:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;"><span style="display:flex;align-items:center;gap:8px;font-weight:500;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path></svg>Statement_Sep_2026.pdf</span><button style="height:36px;padding:0 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-weight:500;" style-hover="background:var(--hover);">Choose another</button></div>
+          <section style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;background:linear-gradient(to bottom,var(--card),var(--accent-tint));display:flex;flex-direction:column;gap:14px;">
+            <p style="margin:0;font-size:14px;color:var(--muted);">Statement · Aug 19, 2026 – Sep 18, 2026</p>
+            <h2 style="margin:0;display:flex;align-items:center;gap:10px;font-size:22px;font-weight:600;flex-wrap:wrap;">42 transactions<span style="display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;background:var(--green-tile);color:var(--green-ink);border-radius:999px;padding:4px 10px;"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>Matches your statement</span></h2>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"><div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;"><p style="margin:0;font-size:13px;color:var(--muted);">Purchases</p><p style="margin:0;font-weight:600;font-variant-numeric:tabular-nums;">$2,418.55</p></div><div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;"><p style="margin:0;font-size:13px;color:var(--muted);">Payments &amp; credits</p><p style="margin:0;font-weight:600;font-variant-numeric:tabular-nums;">$1,450.00</p></div></div>
+            <div style="border:1px solid var(--border);border-radius:12px;padding:12px 14px;background:var(--card);font-size:14px;"><p style="margin:0;font-weight:500;">2 rows could not be read</p><p style="margin:2px 0 0;color:var(--muted);">They will be recorded so nothing goes missing silently.</p></div>
+            <button style="height:48px;border-radius:12px;background:var(--accent);color:#FFFFFF;font-weight:600;font-size:16px;">Import 42 transactions</button>
+            <p style="margin:0;text-align:center;font-size:13px;color:var(--muted);">Merchants you have filed before go straight in. New ones wait for you in Review.</p>
+          </section>
+          <section style="border:1px solid var(--border);border-radius:16px;overflow:hidden;">
+            <ul style="list-style:none;margin:0;padding:0;"><sc-for list="{{ preview }}" as="r" hint-placeholder-count="6"><li style="display:flex;align-items:baseline;gap:14px;padding:11px 20px;border-top:1px solid var(--border);font-size:14px;"><span style="width:52px;color:var(--muted);font-variant-numeric:tabular-nums;">{{ r.date }}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;">{{ r.merchant }}</span><span style="font-variant-numeric:tabular-nums;color:{{ r.color }};">{{ r.amount }}</span></li></sc-for></ul>
+          </section>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isPhoto }}" hint-placeholder-val="{{ false }}">
+        <div role="tabpanel" style="display:flex;flex-direction:column;gap:16px;">
+          <label style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border:2px dashed var(--input);border-radius:16px;padding:48px 24px;text-align:center;cursor:pointer;" style-hover="background:var(--hover);">
+            <span style="width:48px;height:48px;border-radius:24px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><path d="M15 13a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"></path></svg></span>
+            <span style="font-weight:600;font-size:16px;">Take or choose a receipt photo</span><span style="font-size:14px;color:var(--muted);">Flat, in good light, with the total visible</span>
+            <span style="margin-top:8px;max-width:46ch;font-size:13px;color:var(--muted);">The photo goes only to an AI service that reads photos, such as free Google Gemini, and is not stored. A free service may use it to improve its products.</span>
+          </label>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isTyped }}" hint-placeholder-val="{{ false }}">
+        <div role="tabpanel" style="border:1px solid var(--border);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:18px;">
+          <form style="display:flex;flex-direction:column;gap:8px;">
+            <label for="just-type-it" style="display:flex;align-items:center;gap:6px;font-weight:600;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path></svg>Just type it</label>
+            <div style="display:flex;gap:8px;"><input id="just-type-it" value="coffee 4.50 yesterday" style="flex:1;min-width:0;height:44px;padding:0 12px;border:1px solid var(--input);border-radius:10px;background:var(--card);color:var(--ink);outline:none;"><button style="height:44px;padding:0 14px;border:1px solid var(--border);border-radius:10px;font-weight:500;">Fill in</button></div>
+            <p aria-live="polite" style="margin:0;font-size:14px;color:var(--muted);">✨ The AI filled in the rest. Check each field, then press Add.</p>
+          </form>
+          <hr style="border:0;border-top:1px solid var(--border);margin:0;">
+          <form style="display:flex;flex-direction:column;gap:14px;">
+            <fieldset style="border:0;margin:0;padding:4px;display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--canvas);border-radius:10px;"><legend style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Money out or in</legend><label style="height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:500;background:var(--card);border:2px solid var(--accent);box-shadow:0 1px 2px rgba(0,0,0,.06);"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>I spent</label><label style="height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:500;color:var(--muted);border:2px solid transparent;">I received</label></fieldset>
+            <p style="margin:0;font-size:13px;color:var(--muted);">Every field is needed.</p>
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500;">Amount<input value="4.50" inputmode="decimal" style="height:44px;padding:0 12px;border:1px solid var(--input);border-radius:10px;background:var(--card);color:var(--ink);font-size:16px;outline:none;"><span style="display:flex;align-items:center;gap:4px;font-size:13px;color:var(--accent);"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path></svg>Read by AI: check it</span></label>
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500;">What was it?<input value="Coffee" style="height:44px;padding:0 12px;border:1px solid var(--input);border-radius:10px;background:var(--card);color:var(--ink);font-size:16px;outline:none;"></label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500;">Date<input type="date" value="2026-09-23" style="height:44px;padding:0 12px;border:1px solid var(--input);border-radius:10px;background:var(--card);color:var(--ink);font-size:16px;outline:none;"></label>
+              <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500;">Category<select style="height:44px;padding:0 12px;border:1px solid var(--input);border-radius:10px;background:var(--card);color:var(--ink);font-size:16px;outline:none;"><optgroup label="Variable expenses"><option>Restaurants</option><option>Groceries</option></optgroup><option>+ New…</option></select></label>
+            </div>
+            <button type="submit" style="height:48px;border-radius:12px;background:var(--accent);color:#FFFFFF;font-weight:600;font-size:16px;">Add</button>
+            <p style="margin:0;font-size:13px;color:var(--muted);text-wrap:pretty;">For what a card statement never shows: cash, pay and moves to savings. A card purchase typed here and later imported from your statement would count twice.</p>
+          </form>
+        </div>
+      </sc-if>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;tab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;statement&quot;,&quot;photo&quot;,&quot;typed&quot;],&quot;default&quot;:&quot;statement&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;scheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const TABS = [['statement', 'Statement', ['M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z', 'M14 2v4a2 2 0 0 0 2 2h4']], ['photo', 'Photo', ['M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z', 'M15 13a3 3 0 1 1-6 0 3 3 0 0 1 6 0z']], ['typed', 'Type it', ['M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z']]];
+class Component extends DCLogic {
+  state = { tab: null };
+  renderVals() {
+    const t = this.state.tab ?? this.props.tab ?? 'statement';
+    return { scheme: this.props.scheme ?? 'light',
+      tabs: TABS.map(([k, label, icon]) => ({ label, icon, on: t === k, pick: () => this.setState({ tab: k }), bg: t === k ? 'var(--card)' : 'transparent', ink: t === k ? 'var(--ink)' : 'var(--muted)', shadow: t === k ? '0 1px 2px rgba(0,0,0,.08)' : 'none' })),
+      isStatement: t === 'statement', isPhoto: t === 'photo', isTyped: t === 'typed',
+      preview: [['Sep 18', 'GAS BILL ONLINE PMT', '−$38.40'], ['Sep 18', 'CARD INTEREST', '−$12.46'], ['Sep 17', 'SAFEWAY #4471', '−$76.19'], ['Sep 16', 'PETRO-CANADA 4410', '−$41.88'], ['Sep 15', 'PAYMENT - THANK YOU', '+$1,450.00'], ['Sep 14', 'SPOTIFY', '−$11.99']].map(([date, merchant, amount]) => ({ date, merchant, amount, color: amount.startsWith('+') ? 'var(--green-ink)' : 'var(--ink)' })) };
+  }
+}
+</script>
+</body>
+</html>
