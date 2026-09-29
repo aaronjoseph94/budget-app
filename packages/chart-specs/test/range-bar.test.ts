@@ -22,9 +22,9 @@ describe('rangeBar', () => {
   it('draws the range as a bar with a notch at its most likely end, and today as a dot', () => {
     // 0 bp at 80, 5,000 at 80 + 1,420 = 1,500, 10,000 at 2,920; today 2,500 at 790.
     const svg = chart()
-    expect(svg).toContain('<rect x="80" y="260" width="2840" height="120" rx="60" fill="#2B5D6A" class="chart-forecast-range"/>')
-    expect(svg).toContain('<line x1="1500" y1="260" x2="1500" y2="380" stroke="#FFFEFA"')
-    expect(svg).toContain('<circle cx="790" cy="320" r="50"')
+    expect(svg).toContain('<rect x="80" y="260" width="2840" height="120" rx="60" fill="#4F46E5" class="chart-forecast-range"/>')
+    expect(svg).toContain('<line x1="1500" y1="260" x2="1500" y2="380" stroke="#FFFFFF"')
+    expect(svg).toContain('<circle cx="790" cy="320" r="50" fill="#FFFFFF" stroke="#111827"')
     expect(svg).toContain('viewBox="0 0 3000 640"')
   })
 
@@ -39,7 +39,7 @@ describe('rangeBar', () => {
     // 6,000 bp at 80 + 1,704 = 1,784; the bar is 120 wide, centred there.
     const svg = chart({ lowBp: 6_000, midBp: 6_000, highBp: 6_000 })
     expect(svg).toContain('<rect x="1724" y="260" width="120" height="120"')
-    expect(svg).not.toContain('stroke="#FFFEFA" stroke-width="20"')
+    expect(svg).not.toContain('stroke="#FFFFFF" stroke-width="20"')
   })
 
   it('marks $0 when it is on the scale, and leaves today out when not given', () => {

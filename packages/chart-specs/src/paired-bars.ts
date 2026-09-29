@@ -34,9 +34,9 @@ const ROUND = 40
 /** Room at the end of each bar for its amount. */
 const AMOUNT = 900
 
-const INK = { fill: '#5B6773', class: 'chart-forecast-ink' } as const
-const NOW = { fill: '#2B5D6A', class: 'chart-report-now' } as const
-const BEFORE = { fill: '#8FB0B8', class: 'chart-report-before' } as const
+const INK = { fill: '#6B7280', class: 'chart-forecast-ink' } as const
+const NOW = { fill: '#4F46E5', class: 'chart-report-now' } as const
+const BEFORE = { fill: '#A7A3F2', class: 'chart-report-before' } as const
 
 export function pairedBars(input: PairedBarsInput): SvgMarkup {
   const rows = input.rows.map((r, i) => row(r, KEY + i * ROW, input))

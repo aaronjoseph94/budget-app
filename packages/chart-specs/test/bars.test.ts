@@ -43,7 +43,7 @@ describe('incomeBars', () => {
       [390, '#D1FAE5', 2_000],
       [390, '#10B981', 3_000],
     ])
-    expect(svg).toContain('<line x1="2000" y1="390" x2="2000" y2="490" stroke="#FFFEFA"')
+    expect(svg).toContain('<line x1="2000" y1="390" x2="2000" y2="490" stroke="#FFFFFF"')
     // An Actual that meets its Goal exactly ends where the track does: no notch.
     expect(chart([bar('Pay', 10_000, 10_000)])).not.toContain('<line')
   })
@@ -119,9 +119,9 @@ describe('weekdayBars', () => {
     // A $2.50 Monday against $30.00 is 833 bp: 250 of 3,000 units.
     const svg = week([bar('Mon', 10_000, 833), bar('Sat', 10_000, 8_417)])
     expect(rects(svg)).toEqual([
-      [390, '#FFEFE6', 3_000],
+      [390, '#FFEDD5', 3_000],
       [390, '#A42F1A', 250],
-      [730, '#FFEFE6', 3_000],
+      [730, '#FFEDD5', 3_000],
       [730, '#A42F1A', 2_525],
     ])
     expect(svg).toContain('>Daily allowance</text>')

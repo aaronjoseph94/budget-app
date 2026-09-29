@@ -32,9 +32,9 @@ const PLOT = 1_200
 const BASE = TOP + PLOT
 const SWATCH = 100
 
-const INK = { fill: '#5B6773', class: 'chart-forecast-ink' } as const
-const BAND = { fill: '#C9DCE1', class: 'chart-forecast-band' } as const
-const BAR = { fill: '#2B5D6A', class: 'chart-forecast-range' } as const
+const INK = { fill: '#6B7280', class: 'chart-forecast-ink' } as const
+const BAND = { fill: '#CAC7F7', class: 'chart-forecast-band' } as const
+const BAR = { fill: '#4F46E5', class: 'chart-forecast-range' } as const
 
 export function bandBars(input: BandBarsInput): SvgMarkup {
   const y = (bp: number) => BASE - lengthOf(bp, PLOT)
@@ -59,7 +59,7 @@ export function bandBars(input: BandBarsInput): SvgMarkup {
   })
   return frame(input, BASE + 220, [
     key(),
-    el('line', { x1: 0, y1: zero, x2: WIDTH, y2: zero, stroke: '#A8A29E', 'stroke-width': 10, class: 'chart-forecast-rule' }),
+    el('line', { x1: 0, y1: zero, x2: WIDTH, y2: zero, stroke: '#6B7280', 'stroke-width': 10, class: 'chart-forecast-rule' }),
     ...columns,
   ])
 }

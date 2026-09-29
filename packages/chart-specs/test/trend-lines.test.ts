@@ -28,15 +28,15 @@ describe('trendLines', () => {
     const svg = lines()
     expect(svg).toContain('<polyline points="80,260 1500,1460 2920,860" fill="none"')
     expect(svg).toContain('viewBox="0 0 3000 1740"')
-    expect(svg).toContain('<text x="80" y="1680" fill="#5B6773" class="chart-forecast-ink">Jun</text>')
-    expect(svg).toContain('<text x="2920" y="1680" text-anchor="end" fill="#5B6773" class="chart-forecast-ink">Aug</text>')
+    expect(svg).toContain('<text x="80" y="1680" fill="#6B7280" class="chart-forecast-ink">Jun</text>')
+    expect(svg).toContain('<text x="2920" y="1680" text-anchor="end" fill="#6B7280" class="chart-forecast-ink">Aug</text>')
   })
 
   it('breaks a line at a month with no records, rather than drawing it at $0', () => {
     // Six months at 80, 648, 1,216, 1,784, 2,352 and 2,920: the first two a run, the fourth alone, the last a run.
     const svg = lines({ series: [{ name: 'Spent', pointsBp: [5_000, 5_000, null, 10_000, null, 0], tone: 'spent' }] })
     expect(svg).toContain('<polyline points="80,860 648,860" fill="none"')
-    expect(svg).toContain('<circle cx="1784" cy="260" r="40" fill="#B83A3A" class="chart-trend-spent-dot"/>')
+    expect(svg).toContain('<circle cx="1784" cy="260" r="40" fill="#BE123C" class="chart-trend-spent-dot"/>')
     expect(svg).toContain('<circle cx="2920" cy="1460" r="40"')
     expect(svg.match(/<polyline/g)).toHaveLength(1)
     // A line of nothing but gaps draws nothing.
@@ -51,15 +51,15 @@ describe('trendLines', () => {
         { name: 'Saved', pointsBp: [0, 10_000], tone: 'saved' },
       ],
     })
-    expect(svg).toContain('stroke="#4F6E69" stroke-dasharray="90 40" class="chart-trend-income"')
-    expect(svg).toContain('stroke="#7C5512" stroke-dasharray="20 40" class="chart-trend-saved"')
+    expect(svg).toContain('stroke="#047857" stroke-dasharray="90 40" class="chart-trend-income"')
+    expect(svg).toContain('stroke="#B45309" stroke-dasharray="20 40" class="chart-trend-saved"')
     // Three keys a third of the width apart.
-    expect(svg).toContain('<line x1="1000" y1="80" x2="1200" y2="80" stroke-width="30" stroke="#B83A3A"')
-    expect(svg).toContain('<text x="2260" y="120" fill="#5B6773" class="chart-forecast-ink">Saved</text>')
+    expect(svg).toContain('<line x1="1000" y1="80" x2="1200" y2="80" stroke-width="30" stroke="#BE123C"')
+    expect(svg).toContain('<text x="2260" y="120" fill="#6B7280" class="chart-forecast-ink">Saved</text>')
   })
 
   it('draws $0 as a dashed rule where it sits', () => {
-    expect(lines({ zeroBp: 2_500 })).toContain('<line x1="80" y1="1160" x2="2920" y2="1160" stroke="#A8A29E"')
+    expect(lines({ zeroBp: 2_500 })).toContain('<line x1="80" y1="1160" x2="2920" y2="1160" stroke="#6B7280"')
   })
 
   it('writes every name as text, never as markup', () => {
@@ -75,8 +75,8 @@ describe('sparkline', () => {
     const svg = spark()
     expect(svg).toContain('viewBox="0 0 3000 720"')
     expect(svg).toContain('<polyline points="60,60 1500,660 2940,360" fill="none"')
-    expect(svg).toContain('<circle cx="2940" cy="360" r="60" fill="#2B5D6A" class="chart-trend-last"/>')
-    expect(svg).toContain('<line x1="60" y1="180" x2="2940" y2="180" stroke="#A8A29E"')
+    expect(svg).toContain('<circle cx="2940" cy="360" r="60" fill="#4F46E5" class="chart-trend-last"/>')
+    expect(svg).toContain('<line x1="60" y1="180" x2="2940" y2="180" stroke="#6B7280"')
   })
 
   it('leaves the usual level off when there is none, and dots no latest month that is a gap', () => {

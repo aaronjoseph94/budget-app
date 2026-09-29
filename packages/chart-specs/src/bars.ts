@@ -78,9 +78,9 @@ const DEBTS: Palette = {
  * is no allowance to draw, so no track and no key.
  */
 const WEEKDAYS: Palette = {
-  goal: { fill: '#FFEFE6', class: 'chart-variable-track' },
+  goal: { fill: '#FFEDD5', class: 'chart-variable-track' },
   actual: { fill: '#A42F1A', class: 'chart-heat-3' },
-  ink: { fill: '#5B6773', class: 'chart-forecast-ink' },
+  ink: { fill: '#6B7280', class: 'chart-forecast-ink' },
   keys: ['Daily allowance', 'Average'],
 }
 const KEY = 220
@@ -142,7 +142,7 @@ function row(bar: IncomeBar, top: number, { goal: GOAL, actual: ACTUAL, ink: INK
   if (goal > 0) marks.push(el('rect', { x: 0, y: barTop, width: goal, height: BAR, rx: ROUND, ...GOAL }))
   if (actual > 0) marks.push(el('rect', { x: 0, y: barTop, width: actual, height: BAR, rx: ROUND, ...ACTUAL }))
   if (goal > 0 && actual > goal) {
-    const notch = { stroke: '#FFFEFA', 'stroke-width': 20, class: 'chart-surface-gap' }
+    const notch = { stroke: '#FFFFFF', 'stroke-width': 20, class: 'chart-surface-gap' }
     marks.push(el('line', { x1: goal, y1: barTop, x2: goal, y2: barTop + BAR, ...notch }))
   }
   const room = WIDTH - textUnits(bar.valueText) - 60

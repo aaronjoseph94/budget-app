@@ -41,21 +41,21 @@ describe('heatGrid', () => {
 
   it('labels the rows it is given, and keys the levels from less to more', () => {
     const svg = grid()
-    expect(svg).toContain('<text x="0" y="110" fill="#5B6773" class="chart-forecast-ink">Mon</text>')
-    expect(svg).toContain('<text x="0" y="310" fill="#5B6773" class="chart-forecast-ink">Wed</text>')
+    expect(svg).toContain('<text x="0" y="110" fill="#6B7280" class="chart-forecast-ink">Mon</text>')
+    expect(svg).toContain('<text x="0" y="310" fill="#6B7280" class="chart-forecast-ink">Wed</text>')
     expect(svg).not.toContain('></text>')
     // "Less" is 4 characters, 280 units, then 60 before the first square.
     expect(svg).toContain('>Less</text>')
     expect(svg).toContain('<rect x="700" y="920" width="80" height="80" rx="16" fill="#E8E5E1" class="chart-heat-0"/>')
-    expect(svg).toContain('<text x="1260" y="990" fill="#5B6773" class="chart-forecast-ink">More</text>')
+    expect(svg).toContain('<text x="1260" y="990" fill="#6B7280" class="chart-forecast-ink">More</text>')
   })
 
   it('names the first week under its column, and the last only when there is room', () => {
-    expect(grid()).toContain('<text x="360" y="860" fill="#5B6773" class="chart-forecast-ink">3 Aug</text>')
+    expect(grid()).toContain('<text x="360" y="860" fill="#6B7280" class="chart-forecast-ink">3 Aug</text>')
     expect(grid()).not.toContain('>10 Aug</text>')
     const six = Array.from({ length: 6 }, () => [day(0), day(0), day(0), day(0), day(0), day(0), day(0)])
     // Six columns end at 360 + 600 − 20 = 940.
-    expect(grid({ weeks: six })).toContain('<text x="940" y="860" text-anchor="end" fill="#5B6773" class="chart-forecast-ink">10 Aug</text>')
+    expect(grid({ weeks: six })).toContain('<text x="940" y="860" text-anchor="end" fill="#6B7280" class="chart-forecast-ink">10 Aug</text>')
   })
 
   it('writes every text as text, never as markup, and refuses a level it has no colour for', () => {

@@ -34,7 +34,12 @@ const BAR = 120
 /** The narrowest a range is drawn, so a rough forecast's one figure still shows. */
 const LEAST = 120
 
-const INK = { fill: '#5B6773', class: 'chart-forecast-ink' }
+/**
+ * The Forecast's and Reports' charts carry Mockup A's light tokens in their
+ * attributes, as the page paints them (N124): muted ink #6B7280, the accent
+ * #4F46E5 and its fades, the card #FFFFFF, the ink #111827 for today's ring.
+ */
+const INK = { fill: '#6B7280', class: 'chart-forecast-ink' }
 
 export function rangeBar(input: RangeBarInput): SvgMarkup {
   const at = (bp: number) => EDGE + lengthOf(bp, SPAN)
@@ -42,21 +47,21 @@ export function rangeBar(input: RangeBarInput): SvgMarkup {
   const width = Math.max(LEAST, high - low)
   const left = high - low >= LEAST ? low : Math.max(0, mid - LEAST / 2)
   const marks: SvgNode[] = [
-    el('rect', { x: EDGE, y: BAR_TOP + 40, width: SPAN, height: 40, rx: 20, fill: '#E7E5E4', class: 'chart-forecast-track' }),
+    el('rect', { x: EDGE, y: BAR_TOP + 40, width: SPAN, height: 40, rx: 20, fill: '#F3F4F6', class: 'chart-forecast-track' }),
   ]
   if (input.zeroBp !== null) {
     const zero = at(input.zeroBp)
-    marks.push(el('line', { x1: zero, y1: BAR_TOP - 40, x2: zero, y2: BAR_TOP + BAR + 40, stroke: '#A8A29E', 'stroke-width': 10, 'stroke-dasharray': '30 20', class: 'chart-forecast-rule' }))
+    marks.push(el('line', { x1: zero, y1: BAR_TOP - 40, x2: zero, y2: BAR_TOP + BAR + 40, stroke: '#6B7280', 'stroke-width': 10, 'stroke-dasharray': '30 20', class: 'chart-forecast-rule' }))
   }
-  marks.push(el('rect', { x: left, y: BAR_TOP, width, height: BAR, rx: BAR / 2, fill: '#2B5D6A', class: 'chart-forecast-range' }))
+  marks.push(el('rect', { x: left, y: BAR_TOP, width, height: BAR, rx: BAR / 2, fill: '#4F46E5', class: 'chart-forecast-range' }))
   // The most likely end, as a notch in the card's colour; none on one rough figure.
   if (high - low >= LEAST) {
-    marks.push(el('line', { x1: mid, y1: BAR_TOP, x2: mid, y2: BAR_TOP + BAR, stroke: '#FFFEFA', 'stroke-width': 20, class: 'chart-surface-gap' }))
+    marks.push(el('line', { x1: mid, y1: BAR_TOP, x2: mid, y2: BAR_TOP + BAR, stroke: '#FFFFFF', 'stroke-width': 20, class: 'chart-surface-gap' }))
   }
   marks.push(label(input.midText, mid, BAR_TOP + BAR + FONT + 100))
   if (input.todayBp !== null && input.todayText !== null) {
     const today = at(input.todayBp)
-    marks.push(el('circle', { cx: today, cy: BAR_TOP + BAR / 2, r: 50, fill: '#FFFEFA', stroke: '#5B6773', 'stroke-width': 30, class: 'chart-forecast-today' }))
+    marks.push(el('circle', { cx: today, cy: BAR_TOP + BAR / 2, r: 50, fill: '#FFFFFF', stroke: '#111827', 'stroke-width': 30, class: 'chart-forecast-today' }))
     marks.push(label(input.todayText, today, FONT + 40))
   }
   return frame(input, BAR_TOP + BAR + FONT + 140, marks)

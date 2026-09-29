@@ -28,7 +28,7 @@ const SPAN = WIDTH - 2 * EDGE
 const TOP = FONT + 160
 const PLOT = 1_200
 
-const INK = { fill: '#5B6773', class: 'chart-forecast-ink' }
+const INK = { fill: '#6B7280', class: 'chart-forecast-ink' }
 
 export function balanceLine(input: BalanceLineInput): SvgMarkup {
   const n = input.pointsBp.length
@@ -37,17 +37,17 @@ export function balanceLine(input: BalanceLineInput): SvgMarkup {
   const marks: SvgNode[] = []
   if (input.zeroBp !== null) {
     const zero = y(input.zeroBp)
-    marks.push(el('line', { x1: EDGE, y1: zero, x2: WIDTH - EDGE, y2: zero, stroke: '#A8A29E', 'stroke-width': 10, 'stroke-dasharray': '30 20', class: 'chart-forecast-rule' }))
+    marks.push(el('line', { x1: EDGE, y1: zero, x2: WIDTH - EDGE, y2: zero, stroke: '#6B7280', 'stroke-width': 10, 'stroke-dasharray': '30 20', class: 'chart-forecast-rule' }))
   }
   const points = input.pointsBp.map((bp, i) => `${x(i)},${y(bp)}`).join(' ')
   if (n > 0) {
-    marks.push(el('polyline', { points, fill: 'none', stroke: '#2B5D6A', 'stroke-width': 30, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', class: 'chart-forecast-line' }))
+    marks.push(el('polyline', { points, fill: 'none', stroke: '#4F46E5', 'stroke-width': 30, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', class: 'chart-forecast-line' }))
   }
   const low = input.lowestIndex
   let named = false
   if (low !== null && low >= 0 && low < n) {
     const [cx, cy] = [x(low), y(input.pointsBp[low]!)]
-    marks.push(el('circle', { cx, cy, r: 50, fill: '#B83A3A', class: 'chart-forecast-low' }))
+    marks.push(el('circle', { cx, cy, r: 50, fill: '#BE123C', class: 'chart-forecast-low' }))
     // Under the point, where the line never goes, since it is the lowest:
     // over it, the name crossed the line where it rose steeply the next day
     // (N86). The first and last days' names then take the row below it.

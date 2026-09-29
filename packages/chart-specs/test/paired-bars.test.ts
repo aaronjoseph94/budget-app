@@ -21,10 +21,10 @@ describe('pairedBars', () => {
   it('draws this month above last month for each row, on one scale, each amount at its bar’s end', () => {
     const svg = chart()
     // Row one from 220: the label at 340, this month at 390, last month at 520; 8,036 bp of 2,100 is 1,688.
-    expect(svg).toContain('<text x="0" y="340" fill="#5B6773" class="chart-forecast-ink">Dining out</text>')
-    expect(svg).toContain('<rect x="0" y="390" width="2100" height="100" rx="40" fill="#2B5D6A" class="chart-report-now"/>')
+    expect(svg).toContain('<text x="0" y="340" fill="#6B7280" class="chart-forecast-ink">Dining out</text>')
+    expect(svg).toContain('<rect x="0" y="390" width="2100" height="100" rx="40" fill="#4F46E5" class="chart-report-now"/>')
     expect(svg).toContain('<text x="2160" y="480"')
-    expect(svg).toContain('<rect x="0" y="520" width="1688" height="100" rx="40" fill="#8FB0B8" class="chart-report-before"/>')
+    expect(svg).toContain('<rect x="0" y="520" width="1688" height="100" rx="40" fill="#A7A3F2" class="chart-report-before"/>')
     expect(svg).toContain('<text x="1748" y="610"')
     expect(svg).toContain('viewBox="0 0 3000 1160"')
   })

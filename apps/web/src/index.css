@@ -501,8 +501,9 @@
  * designed width and scaled to its card, text included. Its marks carry
  * colours as attributes, which an exported file keeps; these rules outrank
  * them on the page, so a chart takes the tokens above in both schemes. The
- * Month's and the Year's carry Mockup A's colours in their attributes too;
- * the other charts' are still the workbook's until their steps (N124).
+ * Month's, the Year's, the Forecast's and Reports' carry Mockup A's colours
+ * in their attributes too; the Debts screen's ring is still the workbook's
+ * until step 9 (N124).
  */
 .spec-chart {
   display: block;

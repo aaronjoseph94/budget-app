@@ -42,7 +42,7 @@ const KEY = DATES + 60
 /** The last column is named only from this many weeks, so it never runs into the first. */
 const ROOM = 6
 
-const INK = { fill: '#5B6773', class: 'chart-forecast-ink' } as const
+const INK = { fill: '#6B7280', class: 'chart-forecast-ink' } as const
 const LEVELS = [
   { fill: '#E8E5E1', class: 'chart-heat-0' },
   { fill: '#EBA591', class: 'chart-heat-1' },

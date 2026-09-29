@@ -31,13 +31,13 @@ const SPAN = WIDTH - 2 * EDGE
 const KEY = 260
 const PLOT = 1_200
 
-const INK = { fill: '#5B6773', class: 'chart-forecast-ink' } as const
-const RULE = { stroke: '#A8A29E', 'stroke-width': 10, 'stroke-dasharray': '30 20', class: 'chart-forecast-rule' } as const
+const INK = { fill: '#6B7280', class: 'chart-forecast-ink' } as const
+const RULE = { stroke: '#6B7280', 'stroke-width': 10, 'stroke-dasharray': '30 20', class: 'chart-forecast-rule' } as const
 /** Each line has its own colour and dash, so colour is never the only way to tell them apart. */
 const TONE = {
-  income: { stroke: '#4F6E69', 'stroke-dasharray': '90 40', class: 'chart-trend-income' },
-  spent: { stroke: '#B83A3A', 'stroke-dasharray': 'none', class: 'chart-trend-spent' },
-  saved: { stroke: '#7C5512', 'stroke-dasharray': '20 40', class: 'chart-trend-saved' },
+  income: { stroke: '#047857', 'stroke-dasharray': '90 40', class: 'chart-trend-income' },
+  spent: { stroke: '#BE123C', 'stroke-dasharray': 'none', class: 'chart-trend-spent' },
+  saved: { stroke: '#B45309', 'stroke-dasharray': '20 40', class: 'chart-trend-saved' },
 } as const
 
 /** The x of month i of n, evenly across, on whole units. */
@@ -126,9 +126,9 @@ export function sparkline(input: SparklineInput): SvgMarkup {
     const level = y(input.usualBp)
     marks.push(el('line', { x1: SPARK_EDGE, y1: level, x2: WIDTH - SPARK_EDGE, y2: level, ...RULE }))
   }
-  const line = { stroke: '#2B5D6A', 'stroke-width': 40, class: 'chart-trend-line' }
+  const line = { stroke: '#4F46E5', 'stroke-width': 40, class: 'chart-trend-line' }
   marks.push(...runs(input.pointsBp, (i, bp) => [x(i), y(bp)], line, 50))
   const last = input.pointsBp[n - 1]
-  if (n > 0 && last !== null && last !== undefined) marks.push(el('circle', { cx: x(n - 1), cy: y(last), r: 60, fill: '#2B5D6A', class: 'chart-trend-last' }))
+  if (n > 0 && last !== null && last !== undefined) marks.push(el('circle', { cx: x(n - 1), cy: y(last), r: 60, fill: '#4F46E5', class: 'chart-trend-last' }))
   return frame(input, SPARK + 2 * SPARK_EDGE, marks)
 }
