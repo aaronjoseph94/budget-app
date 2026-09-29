@@ -218,3 +218,17 @@ describe('AddScreen, its tabs from the keyboard (FE-15)', () => {
     expect(screen.getByRole('tabpanel').textContent).toContain('Choose a statement')
   })
 })
+
+describe('AddScreen, in Mockup A (step 10)', () => {
+  it("takes the Month's title, and draws its tabs on the canvas with muted words measured there", async () => {
+    renderScreen(<AddScreen />, seeded())
+    const tabs = await screen.findAllByRole('tab')
+    expect(screen.getByRole('heading', { level: 1, name: 'Add' }).className).toContain('font-bold')
+    expect(screen.getByRole('tablist').className).toContain('bg-canvas')
+    expect(tabs.map((t) => [t.className.includes('bg-card'), t.className.includes('text-canvas-muted')])).toEqual([
+      [true, false],
+      [false, true],
+      [false, true],
+    ])
+  })
+})

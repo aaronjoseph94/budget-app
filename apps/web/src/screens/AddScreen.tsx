@@ -9,11 +9,12 @@ import { readReceipt, type ReceiptLink } from '../receipt.js'
 import { formatCents, formatDayMonth, formatIsoDate, todayIso } from '../format.js'
 import { IngestedText } from '../ui.js'
 import { atEndOf, CategoryOptions, ListSelect, LISTS_FOR, type CategoryKind } from '../lists.js'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card.js'
+import { Card, CardContent, CardDescription, CardTitle } from '../components/ui/card.js'
 import { Alert, Badge } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Field, Input, NativeSelect, refusal } from '../components/ui/form.js'
-import { Icon } from '../components/ui/icons.js'
+import { Icon, type IconName } from '../components/ui/icons.js'
+import { MonthTitle } from '../components/ui/type.js'
 import { hashOf, navigate } from '../nav.js'
 import { cn } from '../lib/cn.js'
 import { HelpButton } from '../help/HelpButton.js'
@@ -66,15 +67,17 @@ export function AddScreen() {
     choose(next)
   }
   return (
-    <div className="space-y-4">
+    // Mockup A: the Month's title, the tabs as a segmented control on the
+    // canvas grey, and each way in as flat cards.
+    <div className="space-y-4 md:space-y-5">
       <header>
         <div className="flex flex-wrap items-center gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Add</h1>
+          <MonthTitle>Add</MonthTitle>
           <HelpButton screen="add" />
         </div>
-        <p className="text-sm text-muted-foreground">A statement from your bank, a receipt photo, or one by hand: cash, pay or a move to savings.</p>
+        <p className="mt-1 text-sm text-muted-foreground md:text-base">A statement from your bank, a receipt photo, or one by hand: cash, pay or a move to savings.</p>
       </header>
-      <div role="tablist" aria-label="How to add" className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
+      <div role="tablist" aria-label="How to add" className="grid grid-cols-3 gap-1 rounded-lg bg-canvas p-1">
         {MODES.map((m, i) => (
           <button
             key={m}
@@ -90,8 +93,9 @@ export function AddScreen() {
             onClick={() => setMode(m)}
             onKeyDown={onKey}
             className={cn(
-              'flex min-h-11 items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition-colors',
-              mode === m ? 'bg-card shadow-sm' : 'text-muted-foreground',
+              'flex min-h-11 items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition-colors md:text-[0.9375rem]',
+              // Muted words on the canvas take canvas-muted (ADR 0010), as Reports' tabs do.
+              mode === m ? 'bg-card text-foreground shadow-sm' : 'text-canvas-muted hover:text-foreground',
             )}
           >
             {/* shrink-0: at 320px "Statement" filled its tab and squeezed its icon to 9px (DT-6).
@@ -171,7 +175,7 @@ export function StatementImport() {
   if (loaded.kind === 'none') return <FilePicker onFile={(f) => void onFile(f)} />
   if (loaded.kind === 'reading') {
     return (
-      <Card>
+      <Card flat>
         <div className="py-10 text-center text-sm text-muted-foreground">Reading {loaded.name}…</div>
       </Card>
     )
@@ -246,12 +250,15 @@ function PdfPreview({
     <div className="space-y-4">
       {header}
 
-      <Card>
-        <CardHeader>
+      {/* Mockup A: one card tinted to the accent holds the statement's
+        figures and its Import; its muted words take canvas-muted, measured
+        on the tint (ADR 0010). */}
+      <Card flat className="space-y-3.5 bg-linear-to-b from-card to-primary-tint p-5 [--muted-foreground:var(--canvas-muted)] md:px-6 md:py-[1.375rem]">
+        <div className="space-y-2">
           <CardDescription>
             Statement · {formatIsoDate(period.from)} – {formatIsoDate(period.to)}
           </CardDescription>
-          <CardTitle as="h2" className="flex items-center gap-2">
+          <CardTitle as="h2" className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xl leading-tight md:text-[1.375rem]">
             {accepted.length} transactions
             {rec.balances ? (
               <Badge variant="income">
@@ -263,55 +270,54 @@ function PdfPreview({
               </Badge>
             )}
           </CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-3 text-sm">
-          <div className="rounded-lg bg-muted p-3">
-            <p className="text-xs text-muted-foreground">Purchases</p>
-            <p className="tnum font-semibold">{formatCents(rec.parsedPurchasesCents)}</p>
-          </div>
-          <div className="rounded-lg bg-muted p-3">
-            <p className="text-xs text-muted-foreground">Payments &amp; credits</p>
-            <p className="tnum font-semibold">{formatCents(rec.parsedPaymentsCents)}</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {!rec.balances ? (
-        <Alert tone="error" title="Nothing will be imported from this file">
-          <p>
-            The transactions read from this PDF do not add up to the totals printed on the statement, which means something
-            was misread. Importing it would put wrong numbers in your budget.
-          </p>
-          <ul className="mt-2 space-y-1">
-            {rec.discrepancies.map((d) => (
-              <li key={d.what} className="tnum">
-                {DISCREPANCY[d.what]}: statement says {formatCents(d.statementCents)}, read {formatCents(d.parsedCents)}
-              </li>
-            ))}
-          </ul>
-        </Alert>
-      ) : null}
-
-      {rejected.length > 0 ? (
-        <Alert title={`${rejected.length} rows could not be read`}>They will be recorded so nothing goes missing silently.</Alert>
-      ) : null}
-
-      {rec.balances ? (
-        <div className="space-y-2">
-          <Button size="lg" className="w-full" aria-disabled={saving} onClick={() => void onSave({ accepted, rejected, parsed, source: 'card_pdf', period })}>
-            {saving ? 'Saving…' : `Import ${accepted.length} transactions`}
-          </Button>
-          {outcome !== null ? <Alert tone={outcome.ok ? 'success' : 'error'}>{outcome.message}</Alert> : null}
-          {outcome?.ok === true ? (
-            <Button variant="outline" className="w-full" onClick={() => navigate('review')}>
-              Go to review
-            </Button>
-          ) : null}
-          <p className="text-center text-xs text-muted-foreground">
-            Merchants you have filed before go straight in. New ones wait for you in Review.
-          </p>
         </div>
-      ) : null}
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="rounded-lg border bg-card px-3.5 py-3">
+            <p className="text-xs text-muted-foreground md:text-[0.8125rem]">Purchases</p>
+            <p className="tnum font-semibold md:text-base">{formatCents(rec.parsedPurchasesCents)}</p>
+          </div>
+          <div className="rounded-lg border bg-card px-3.5 py-3">
+            <p className="text-xs text-muted-foreground md:text-[0.8125rem]">Payments &amp; credits</p>
+            <p className="tnum font-semibold md:text-base">{formatCents(rec.parsedPaymentsCents)}</p>
+          </div>
+        </div>
+        {!rec.balances ? (
+          <Alert tone="error" title="Nothing will be imported from this file">
+            <p>
+              The transactions read from this PDF do not add up to the totals printed on the statement, which means something
+              was misread. Importing it would put wrong numbers in your budget.
+            </p>
+            <ul className="mt-2 space-y-1">
+              {rec.discrepancies.map((d) => (
+                <li key={d.what} className="tnum">
+                  {DISCREPANCY[d.what]}: statement says {formatCents(d.statementCents)}, read {formatCents(d.parsedCents)}
+                </li>
+              ))}
+            </ul>
+          </Alert>
+        ) : null}
+  
+        {rejected.length > 0 ? (
+          <Alert title={`${rejected.length} rows could not be read`}>They will be recorded so nothing goes missing silently.</Alert>
+        ) : null}
+  
+        {rec.balances ? (
+          <div className="space-y-2">
+            <Button size="lg" className="w-full" aria-disabled={saving} onClick={() => void onSave({ accepted, rejected, parsed, source: 'card_pdf', period })}>
+              {saving ? 'Saving…' : `Import ${accepted.length} transactions`}
+            </Button>
+            {outcome !== null ? <Alert tone={outcome.ok ? 'success' : 'error'}>{outcome.message}</Alert> : null}
+            {outcome?.ok === true ? (
+              <Button variant="outline" className="w-full" onClick={() => navigate('review')}>
+                Go to review
+              </Button>
+            ) : null}
+            <p className="text-center text-xs text-muted-foreground md:text-[0.8125rem]">
+              Merchants you have filed before go straight in. New ones wait for you in Review.
+            </p>
+          </div>
+        ) : null}
+      </Card>
 
       <PreviewList rows={accepted} />
     </div>
@@ -326,12 +332,13 @@ const DISCREPANCY: Record<string, string> = {
 
 function PreviewList({ rows }: { rows: readonly AcceptedRow[] }) {
   return (
-    <Card className="overflow-hidden">
+    <Card flat className="overflow-hidden">
       <ul className="divide-y">
         {rows.map((row) => (
-          <li key={row.line} className="flex items-baseline gap-3 px-4 py-2.5 text-sm">
-            <span className="tnum w-14 shrink-0 text-xs text-muted-foreground">{formatDayMonth(row.postedOn)}</span>
-            <span className="min-w-0 flex-1 truncate">
+          <li key={row.line} className="flex items-baseline gap-3 px-4 py-2.5 text-sm md:gap-3.5 md:px-5">
+            <span className="tnum w-14 shrink-0 text-xs text-muted-foreground md:text-sm">{formatDayMonth(row.postedOn)}</span>
+            {/* As the statement printed it, in the mockup's fixed-width face. */}
+            <span className="min-w-0 flex-1 truncate font-mono">
               <IngestedText>{row.merchantRaw}</IngestedText>
             </span>
             <span className={cn('tnum shrink-0', row.amountCents > 0 && 'text-income')}>{formatCents(row.amountCents)}</span>
@@ -339,6 +346,15 @@ function PreviewList({ rows }: { rows: readonly AcceptedRow[] }) {
         ))}
       </ul>
     </Card>
+  )
+}
+
+/** A picker's round icon, on the accent's soft fill as Mockup A draws it. */
+function PickerTile({ icon }: { icon: IconName }) {
+  return (
+    <span className="flex size-12 items-center justify-center rounded-full bg-primary-soft text-primary">
+      <Icon name={icon} className="size-5" />
+    </span>
   )
 }
 
@@ -358,16 +374,14 @@ function FilePicker({ onFile }: { onFile: (file: File) => void }) {
         if (file !== undefined) onFile(file)
       }}
       className={cn(
-        'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed bg-card px-6 py-12 text-center transition-colors',
+        'flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed bg-card px-6 py-12 text-center transition-colors hover:bg-muted',
         // The input inside is hidden, so its focus is drawn on the label (FE-3).
         'has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring',
-        over ? 'border-primary bg-accent' : 'border-border',
+        over ? 'border-primary bg-accent' : 'border-input',
       )}
     >
-      <span className="rounded-full bg-muted p-3">
-        <Icon name="upload" />
-      </span>
-      <span className="font-medium">Choose a statement</span>
+      <PickerTile icon="upload" />
+      <span className="font-semibold md:text-base">Choose a statement</span>
       <span className="text-sm text-muted-foreground">PDF or CSV from your bank</span>
       <input
         type="file"
@@ -464,8 +478,8 @@ function TypedEntry() {
   }
 
   return (
-    <Card>
-      <CardContent className="space-y-4 pt-5">
+    <Card flat>
+      <CardContent className="space-y-4 pt-5 md:space-y-[1.125rem] md:px-6 md:pt-[1.375rem] md:pb-[1.375rem]">
         <JustTypeIt onFill={fill} />
         <hr className="border-border" />
         {/* noValidate: the browser's own bubble would stop the press before
@@ -481,7 +495,7 @@ function TypedEntry() {
           {/* Radios, not two buttons: this decides the sign written to the
             ledger, so a screen reader must hear which is chosen, and the eye
             must see more than the card fill, which is 1.08:1 on the track (FE-2). */}
-          <fieldset className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+          <fieldset className="grid grid-cols-2 gap-1 rounded-md bg-canvas p-1">
             <legend className="sr-only">Money out or in</legend>
             {(['spent', 'received'] as const).map((d) => (
               <label
@@ -489,7 +503,7 @@ function TypedEntry() {
                 className={cn(
                   'flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-md border-2 text-sm font-medium',
                   'has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring',
-                  direction === d ? 'border-primary bg-card text-foreground shadow-sm' : 'border-transparent text-muted-foreground',
+                  direction === d ? 'border-primary bg-card text-foreground shadow-sm' : 'border-transparent text-canvas-muted',
                 )}
               >
                 <input
@@ -710,11 +724,9 @@ function PhotoEntry() {
 
   if (state.kind === 'none') {
     return (
-      <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed bg-card px-6 py-12 text-center has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring">
-        <span className="rounded-full bg-muted p-3">
-          <Icon name="camera" />
-        </span>
-        <span className="font-medium">Take or choose a receipt photo</span>
+      <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-input bg-card px-6 py-12 text-center transition-colors hover:bg-muted has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring">
+        <PickerTile icon="camera" />
+        <span className="font-semibold md:text-base">Take or choose a receipt photo</span>
         <span className="text-sm text-muted-foreground">Flat, in good light, with the total visible</span>
         <input
           type="file"
@@ -767,8 +779,8 @@ function PhotoEntry() {
       </div>
 
       {state.kind !== 'reading' ? (
-        <Card>
-          <CardContent className="pt-5">
+        <Card flat>
+          <CardContent className="pt-5 md:px-6 md:pt-[1.375rem] md:pb-[1.375rem]">
             <form
               className="space-y-4"
               noValidate

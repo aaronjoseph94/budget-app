@@ -81,8 +81,8 @@ export function JustTypeIt({ onFill }: { onFill: (fill: QuickFill) => void }) {
         void go()
       }}
     >
-      <label htmlFor="just-type-it" className="flex items-center gap-1.5 text-sm font-medium">
-        <Icon name="sparkles" className="size-4 shrink-0" /> Just type it
+      <label htmlFor="just-type-it" className="flex items-center gap-1.5 text-sm font-semibold md:text-base">
+        <Icon name="sparkles" className="size-4 shrink-0 text-primary" /> Just type it
       </label>
       <div className="flex gap-2">
         <Input

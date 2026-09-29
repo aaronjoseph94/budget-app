@@ -77,7 +77,12 @@ describe('AddScreen, a PDF statement', () => {
     renderScreen(<AddScreen />, fake)
     await choose()
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Import 2 transactions' }))
+    const importing = await screen.findByRole('button', { name: 'Import 2 transactions' })
+    // Mockup A (step 10): the figures and the Import share one card tinted to the accent.
+    const card = importing.closest('.to-primary-tint')!
+    expect(card.textContent).toContain('Matches your statement')
+    expect(card.textContent).toContain('Payments & credits')
+    fireEvent.click(importing)
     expect(await screen.findByText('1 waiting for review, 1 you already had.')).toBeTruthy()
     expect(fake.rpcCalls.map((c) => [c.name, c.args.p_source, c.args.p_parsed])).toEqual([['save_import', 'card_pdf', 2]])
   })
