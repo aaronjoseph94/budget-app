@@ -4,9 +4,10 @@ import { useAppData } from '../app-data.js'
 import { listPaySchedules, listPlanHistory, listTransactions, type LedgerRow, type PayScheduleRow, type PlanRow } from '../ledger.js'
 import { navigate } from '../nav.js'
 import { categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
-import { formatCents, formatDateRange, formatMonthTitle, formatShortMonth, todayIso } from '../format.js'
+import { formatCents, formatDateRange, formatIsoDate, formatMonthTitle, formatShortMonth, todayIso } from '../format.js'
 import { Alert, Loading } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
+import { Sheet } from '../components/ui/sheet.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
 import { BillName, CompactGrid, MonthGrid, RULE, WEEKDAYS, type OpenBill } from './CalendarGrid.js'
@@ -34,7 +35,12 @@ export function CalendarScreen({ month }: { month: string | null }) {
   const [error, setError] = useState<string | null>(null)
   // The bill whose charges are open; another month closes it (N51).
   const [opened, setOpened] = useState<CalendarBill | null>(null)
-  useEffect(() => setOpened(null), [start])
+  // The day whose bills did not all fit its cell, open in a sheet.
+  const [day, setDay] = useState<{ day: CalendarDay; weekday: number } | null>(null)
+  useEffect(() => {
+    setOpened(null)
+    setDay(null)
+  }, [start])
 
   useEffect(() => {
     // As on the Month: nothing is read before the first load brings the
@@ -119,10 +125,25 @@ export function CalendarScreen({ month }: { month: string | null }) {
           {/* Phones get the month as a picture with the list under it; a
             wider screen has room for the workbook's grid, names and all. */}
           <CompactGrid calendar={calendar} today={today} className="md:hidden" />
-          <MonthGrid calendar={calendar} today={today} className="hidden md:block" onOpen={setOpened} />
+          <MonthGrid calendar={calendar} today={today} className="hidden md:block" onOpen={setOpened} onOpenDay={(d, weekday) => setDay({ day: d, weekday })} />
           <Agenda calendar={calendar} className="md:hidden" onOpen={setOpened} />
           <Undated calendar={calendar} />
         </>
+      ) : null}
+      {day !== null ? (
+        <Sheet title={formatIsoDate(day.day.date)} subtitle="Bill calendar" onClose={() => setDay(null)}>
+          {/* The day as the agenda lists it; a bill opens its charges in place of the day. */}
+          <ul>
+            <AgendaDay
+              day={day.day}
+              weekday={day.weekday}
+              onOpen={(bill) => {
+                setDay(null)
+                setOpened(bill)
+              }}
+            />
+          </ul>
+        </Sheet>
       ) : null}
       {here !== null && opened !== null ? <BillCharges bill={opened} month={start} rows={here.rows} onClose={() => setOpened(null)} /> : null}
     </div>

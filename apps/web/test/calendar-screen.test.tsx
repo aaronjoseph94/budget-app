@@ -198,6 +198,17 @@ describe('CalendarScreen', () => {
 })
 
 describe('CalendarScreen, Mockup A grid (step 6)', () => {
+  /** Two more on the 1st, beside Rent: a bill and a subscription. */
+  function crowded(): FakeSupabase {
+    const fake = seeded()
+    fake.tables.categories.push(cat('water', 'Water', 'bill', 3), cat('news', 'News', 'subscription', 1))
+    fake.tables.category_plans.push(plan('p6', 'water', 4000, 1), plan('p7', 'news', 900, 1))
+    return fake
+  }
+
+  const cellOf = async (n: string) =>
+    (await screen.findAllByRole('cell')).find((c) => c.firstElementChild?.firstElementChild?.firstElementChild?.textContent === n)
+
   it('draws each bill on a rule in its list’s hue and tints today', async () => {
     renderScreen(<CalendarScreen month="2026-09" />, seeded())
 
@@ -210,6 +221,25 @@ describe('CalendarScreen, Mockup A grid (step 6)', () => {
     const today = document.querySelector('td[aria-current="date"]')
     expect(today?.textContent).toBe('23')
     expect(today?.className).toContain('bg-calendar-today')
+  })
+
+  it('shows two bills in a crowded day, then "+N more", which opens the whole day in a sheet (design-review P2 item 8)', async () => {
+    renderScreen(<CalendarScreen month="2026-09" />, crowded())
+
+    const first = within((await cellOf('1')) ?? document.body)
+    expect(first.getAllByRole('button').map((b) => b.textContent)).toEqual(['Rent', 'Water', '+1 more on 1 Sep 2026'])
+    fireEvent.click(first.getByRole('button', { name: '+1 more on 1 Sep 2026' }))
+
+    const day = within(screen.getByRole('dialog', { name: '1 Sep 2026' }))
+    expect(day.getAllByRole('paragraph').map((p) => p.textContent)).toEqual([
+      'Rent$1,600.00 planned',
+      'Water$40.00 planned',
+      'News$9.00 planned',
+    ])
+    fireEvent.click(day.getByRole('button', { name: 'News' }))
+    expect(screen.queryByRole('dialog', { name: '1 Sep 2026' })).toBeNull()
+    expect(screen.getByRole('dialog', { name: 'News' })).toBeTruthy()
+    await expectNoAxeViolations()
   })
 })
 

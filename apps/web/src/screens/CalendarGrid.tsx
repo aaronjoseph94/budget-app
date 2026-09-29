@@ -1,5 +1,5 @@
 import type { BillCalendar, CalendarBill, CalendarDay } from '@budget/core'
-import { formatAmount, formatCents } from '../format.js'
+import { formatAmount, formatCents, formatIsoDate } from '../format.js'
 import { cn } from '../lib/cn.js'
 
 /** Sunday first, as the workbook's B6:N6 are. */
@@ -36,15 +36,33 @@ export const RULE: Record<CalendarBill['kind'], string> = {
   debt: 'border-debts-accent',
 }
 
+/** Opens a day with more on it than its cell shows (design-review P2 item 8). */
+export type OpenDay = (day: CalendarDay, weekday: number) => void
+
+/** Bills a cell shows before "+N more" (design-review P2 item 8). */
+const SHOWN = 2
+
 /**
  * The workbook's Bill Calendar grid (B6:Q43), for a screen wide enough for names:
  * seven day columns, Sunday first, and each week's total in the last column
  * (Q8). A day shows its number, a green pill for each income source paid
  * that day (C8), and its bills with their amounts (B9:C13), each on a rule
- * in its list's hue, all as plain text. Today is tinted.
- * A table, so a screen reader reads each day under its weekday.
+ * in its list's hue, all as plain text; after two, "+N more" opens the day.
+ * Today is tinted. A table, so a screen reader reads each day under its weekday.
  */
-export function MonthGrid({ calendar, today, className, onOpen }: { calendar: BillCalendar; today: string; className?: string; onOpen?: OpenBill }) {
+export function MonthGrid({
+  calendar,
+  today,
+  className,
+  onOpen,
+  onOpenDay,
+}: {
+  calendar: BillCalendar
+  today: string
+  className?: string
+  onOpen?: OpenBill
+  onOpenDay?: OpenDay
+}) {
   const cell = 'border border-calendar-rule px-1 xl:px-3'
   return (
     <div className={cn('overflow-hidden rounded-xl border bg-card', className)}>
@@ -78,7 +96,7 @@ export function MonthGrid({ calendar, today, className, onOpen }: { calendar: Bi
                     aria-current={day.date === today ? 'date' : undefined}
                     className={cn(cell, 'h-28 py-2.5 align-top', day.date === today && 'bg-calendar-today')}
                   >
-                    <GridDay day={day} today={day.date === today} onOpen={onOpen} />
+                    <GridDay day={day} today={day.date === today} onOpen={onOpen} onOpenDay={onOpenDay && (() => onOpenDay(day, weekday))} />
                   </td>
                 ),
               )}
@@ -94,7 +112,10 @@ export function MonthGrid({ calendar, today, className, onOpen }: { calendar: Bi
   )
 }
 
-function GridDay({ day, today, onOpen }: { day: CalendarDay; today: boolean; onOpen?: OpenBill | undefined }) {
+function GridDay({ day, today, onOpen, onOpenDay }: { day: CalendarDay; today: boolean; onOpen?: OpenBill | undefined; onOpenDay?: (() => void) | undefined }) {
+  // Every bill when there is nowhere to open the day, so none is lost.
+  const shown = onOpenDay === undefined ? day.bills : day.bills.slice(0, SHOWN)
+  const more = day.bills.slice(shown.length)
   return (
     <div className="space-y-1.5">
       <div className="flex flex-wrap items-center justify-between gap-1">
@@ -106,7 +127,7 @@ function GridDay({ day, today, onOpen }: { day: CalendarDay; today: boolean; onO
           </span>
         ))}
       </div>
-      {day.bills.map((b, i) => (
+      {shown.map((b, i) => (
         <p
           key={`${b.categoryId}-${i}`}
           className={cn('flex flex-wrap items-baseline justify-between gap-x-1.5 border-l-[3px] pl-1 text-xs leading-snug text-calendar-ink xl:pl-1.5 xl:text-[0.8125rem]', RULE[b.kind])}
@@ -119,6 +140,16 @@ function GridDay({ day, today, onOpen }: { day: CalendarDay; today: boolean; onO
           </span>
         </p>
       ))}
+      {more.length > 0 && onOpenDay !== undefined ? (
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          onClick={onOpenDay}
+          className="rounded-sm pl-2 text-xs font-medium text-primary underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-11"
+        >
+          +{more.length} more <span className="sr-only">on {formatIsoDate(day.date)}</span>
+        </button>
+      ) : null}
     </div>
   )
 }
