@@ -194,6 +194,25 @@ describe('WeekScreen', () => {
     expect(screen.getByText('of $30,000.00 · $21,350.00 to go')).toBeTruthy()
   })
 
+  // Hand-derived: 100.00 typed at the end of 1 March, and 500.00 taken out on
+  // the 5th: -400.00, which core gives as -133 bp. The ring draws no arc: a
+  // negative dash length is invalid SVG, which draws the whole ring.
+  it('draws no arc on the ring when withdrawals took the fund below zero', async () => {
+    const fake = seeded()
+    fake.tables.categories.push({ id: 'c4', name: 'Flight fund', kind: 'savings', sort_order: 0, weekly_budget_cents: null })
+    fake.tables.transactions.push({ id: 't9', posted_on: '2026-03-05', amount_cents: 50_000, merchant_raw: 'FROM FLIGHT FUND', category_id: 'c4', source: 'typed' })
+    fake.tables.savings_goals.push({
+      id: 'g1', name: 'Flight training', target_cents: 3_000_000, saved_cents: 10_000, target_date: null,
+      unit_cost_cents: null, unit_label: null, category_id: 'c4', start_date: null, balance_as_of: '2026-03-01',
+    })
+    renderScreen(<WeekScreen />, fake)
+
+    expect(await screen.findByText('-$400.00')).toBeTruthy()
+    const card = screen.getByRole('region', { name: 'Flight training' })
+    expect(card.querySelectorAll('circle')).toHaveLength(1)
+    expect(card.querySelector('circle[stroke-dasharray]')).toBeNull()
+  })
+
   // Goals are added on Savings now (G1), not in Settings.
   it('without a goal, offers to add one where the goal would be', async () => {
     vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)

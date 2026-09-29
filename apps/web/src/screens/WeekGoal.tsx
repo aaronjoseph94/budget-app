@@ -42,11 +42,15 @@ export function GoalCard({ weekSpentCents, asOf }: { weekSpentCents: number; asO
     <section aria-label={goal.name} className={WIDE}>
       <div className="flex flex-col items-start gap-4 min-[480px]:flex-row min-[480px]:items-center md:gap-5">
         <span className="relative flex size-24 shrink-0 items-center justify-center">
-          {/* The ring is the percentage beside it, drawn: a track in the soft
-            accent and an arc of core's basis points, a length of 100. */}
+          {/* The ring is the percentage in it, drawn: a track in the soft
+            accent and an arc of core's basis points, a length of 100. No
+            arc at 0 or below, where withdrawals took a fund under zero: a
+            negative dash is invalid and would draw the whole ring. */}
           <svg aria-hidden="true" viewBox="0 0 100 100" className="absolute inset-0 size-full -rotate-90">
             <circle cx="50" cy="50" r="42" fill="none" strokeWidth="10" className="stroke-primary-soft" />
-            <circle cx="50" cy="50" r="42" fill="none" strokeWidth="10" strokeLinecap="round" pathLength={100} strokeDasharray={`${bp / 100} 100`} className="stroke-primary" />
+            {bp > 0 ? (
+              <circle cx="50" cy="50" r="42" fill="none" strokeWidth="10" strokeLinecap="round" pathLength={100} strokeDasharray={`${bp / 100} 100`} className="stroke-primary" />
+            ) : null}
           </svg>
           <span className="tnum text-lg font-semibold">{formatBasisPoints(bp)}</span>
         </span>
