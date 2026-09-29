@@ -2988,3 +2988,24 @@ once their screens' steps land.
 
 **To settle:** after step 12, remove every token no class uses, with its
 contrast rows, in one commit.
+
+---
+
+## N130 — A list whose bills mostly have no budget shows a very large % pill
+
+**Seen:** 2026-09-29, review of the % pill (F50). In the preview's Week,
+Bills reads "$1,695.50 of $70.00" and its pill "2422%": Rent and the
+Water Bill are planned with no budget, so they add to the Actual but not
+to the budget total (F16), and only Phone's $70.00 is budgeted. The pill
+agrees with the two figures beside it, as F50 chose, and the card head
+already printed "of $70.00" before the pill; the pill makes the gap
+louder. Mockup A's Bills card instead reads "$142.00 due this week" at
+100%.
+
+**Why not fixed here:** which total a list's pill is over is a formula
+decision (F50), not a restyle; changing it needs the owner's choice.
+
+**To settle:** put options to the owner, for example A: keep F50 as is;
+B: no pill on a list where any row with spending has no budget; C: take
+a planned bill's amount as its budget for the head and the pill. Record
+the answer as an amendment to F50.
