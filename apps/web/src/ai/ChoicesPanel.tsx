@@ -3,6 +3,7 @@ import type { AiProvider, AiServiceStatus, AiStatusReply } from '@budget/schema'
 import { useAppData } from '../app-data.js'
 import { Button } from '../components/ui/button.js'
 import { NativeSelect, SWITCH } from '../components/ui/form.js'
+import { Icon } from '../components/ui/icons.js'
 import { hashOf } from '../nav.js'
 import { DAILY_CAPS, moved, readChoices, saveChoices, type AiChoices } from './choices.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
@@ -89,90 +90,92 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
   const services = choices.order.flatMap((p) => byProvider.get(p) ?? [])
 
   return (
-    <div className="space-y-4">
-      <section aria-labelledby={ids.order} className="space-y-2">
-        <h2 id={ids.order} className="px-1 text-sm font-medium text-muted-foreground">
-          Try in this order
-        </h2>
-        <ol className="divide-y overflow-hidden rounded-xl border bg-card shadow-sm">
-          {services.map((s, i) => (
-            <li key={s.provider} className="flex items-center gap-2 py-2 pl-4 pr-2">
-              <span className="min-w-0 flex-1">
-                <span className="block font-medium">
-                  {i + 1}. {NAME[s.provider]}
-                  <span className="ml-2 rounded-full bg-secondary px-2 py-0.5 text-xs font-normal">{s.tier === 'free' ? 'Free' : 'Paid'}</span>
+    <div className="space-y-2">
+      {/* Mockup A: the order, paid services and the daily limit in one card, split by rules. */}
+      <div className="divide-y rounded-xl border bg-card px-5 sm:px-6">
+        <section aria-labelledby={ids.order} className="space-y-3 pb-5 pt-5 sm:pt-6">
+          <h2 id={ids.order} className="text-lg font-semibold leading-tight">
+            Try in this order
+          </h2>
+          <ol className="divide-y overflow-hidden rounded-lg border">
+            {services.map((s, i) => (
+              <li key={s.provider} className="flex items-center gap-2 py-2 pl-4 pr-2">
+                <span className="min-w-0 flex-1">
+                  <span className="block font-medium">
+                    {i + 1}. {NAME[s.provider]}
+                    <span className="ml-2 rounded-full border px-2 py-0.5 text-xs font-normal">{s.tier === 'free' ? 'Free' : 'Paid'}</span>
+                  </span>
+                  <span className="block text-sm text-muted-foreground">{keyLine(s)}</span>
                 </span>
-                <span className="block text-sm text-muted-foreground">{keyLine(s)}</span>
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="min-h-11 min-w-11 shrink-0 text-lg"
-                aria-label={`Move ${NAME[s.provider]} up`}
-                disabled={saving || i === 0}
-                onClick={() => void change({ ...choices, order: moved(choices.order, s.provider, -1) })}
-              >
-                ↑
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="min-h-11 min-w-11 shrink-0 text-lg"
-                aria-label={`Move ${NAME[s.provider]} down`}
-                disabled={saving || i === services.length - 1}
-                onClick={() => void change({ ...choices, order: moved(choices.order, s.provider, 1) })}
-              >
-                ↓
-              </Button>
-            </li>
-          ))}
-        </ol>
-        <p className="px-1 text-sm text-muted-foreground">When one is busy or out of free uses, the next is asked.</p>
-      </section>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="min-h-11 min-w-11 shrink-0 text-muted-foreground"
+                  aria-label={`Move ${NAME[s.provider]} up`}
+                  disabled={saving || i === 0}
+                  onClick={() => void change({ ...choices, order: moved(choices.order, s.provider, -1) })}
+                >
+                  <Icon name="up" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="min-h-11 min-w-11 shrink-0 text-muted-foreground"
+                  aria-label={`Move ${NAME[s.provider]} down`}
+                  disabled={saving || i === services.length - 1}
+                  onClick={() => void change({ ...choices, order: moved(choices.order, s.provider, 1) })}
+                >
+                  <Icon name="down" />
+                </Button>
+              </li>
+            ))}
+          </ol>
+          <p className="text-sm text-muted-foreground">When one is busy or out of free uses, the next is asked.</p>
+        </section>
 
-      <section aria-label="Use paid services" className="space-y-1 rounded-xl border bg-card p-4 shadow-sm">
-        {/* The whole row is the switch's label, so the target is the row's 44 px, not the box's. */}
-        <label htmlFor={ids.paid} className="flex min-h-11 cursor-pointer items-center gap-3">
-          <span className="flex-1 text-base font-medium">Use paid services</span>
-          <input
-            id={ids.paid}
-            type="checkbox"
-            role="switch"
-            className={SWITCH}
-            checked={choices.allowPaid}
+        <section aria-label="Use paid services" className="space-y-1 py-4">
+          {/* The whole row is the switch's label, so the target is the row's 44 px, not the box's. */}
+          <label htmlFor={ids.paid} className="flex min-h-11 cursor-pointer items-center gap-3">
+            <span className="flex-1 text-base font-semibold">Use paid services</span>
+            <input
+              id={ids.paid}
+              type="checkbox"
+              role="switch"
+              className={SWITCH}
+              checked={choices.allowPaid}
+              disabled={saving}
+              onChange={(e) => void change({ ...choices, allowPaid: e.target.checked })}
+            />
+          </label>
+          <p className="text-sm text-muted-foreground">
+            {choices.allowPaid
+              ? 'On: OpenAI and Anthropic are asked, in the order above, when their key is saved. They bill you for each use.'
+              : 'Off: OpenAI and Anthropic are never asked, even with a key saved, so nothing is billed.'}
+          </p>
+        </section>
+
+        <section aria-label="Daily limit" className="space-y-2 pb-5 pt-4 sm:pb-6">
+          <label htmlFor={ids.cap} className="block text-base font-semibold">
+            Daily limit
+          </label>
+          <NativeSelect
+            id={ids.cap}
+            aria-describedby={ids.capHint}
+            value={String(choices.dailyCap)}
             disabled={saving}
-            onChange={(e) => void change({ ...choices, allowPaid: e.target.checked })}
-          />
-        </label>
-        <p className="text-sm text-muted-foreground">
-          {choices.allowPaid
-            ? 'On: OpenAI and Anthropic are asked, in the order above, when their key is saved. They bill you for each use.'
-            : 'Off: OpenAI and Anthropic are never asked, even with a key saved, so nothing is billed.'}
-        </p>
-      </section>
-
-      <section aria-label="Daily limit" className="space-y-2 rounded-xl border bg-card p-4 shadow-sm">
-        <label htmlFor={ids.cap} className="block text-base font-medium">
-          Daily limit
-        </label>
-        <NativeSelect
-          id={ids.cap}
-          aria-describedby={ids.capHint}
-          value={String(choices.dailyCap)}
-          disabled={saving}
-          onChange={(e) => void change({ ...choices, dailyCap: Number(e.target.value) })}
-        >
-          {[...new Set([...DAILY_CAPS, choices.dailyCap])].sort((a, b) => a - b).map((n) => (
-            <option key={n} value={n}>
-              {n} AI calls a day
-            </option>
-          ))}
-        </NativeSelect>
-        <p id={ids.capHint} className="text-sm text-muted-foreground">
-          Today: {status.today.used} of {status.today.cap}. Resets overnight. Past the limit, the app uses its own words until tomorrow.
-        </p>
-      </section>
-
+            onChange={(e) => void change({ ...choices, dailyCap: Number(e.target.value) })}
+          >
+            {[...new Set([...DAILY_CAPS, choices.dailyCap])].sort((a, b) => a - b).map((n) => (
+              <option key={n} value={n}>
+                {n} AI calls a day
+              </option>
+            ))}
+          </NativeSelect>
+          <p id={ids.capHint} className="text-sm text-muted-foreground">
+            Today: {status.today.used} of {status.today.cap}. Resets overnight. Past the limit, the app uses its own words until tomorrow.
+          </p>
+        </section>
+      </div>
       <p aria-live="polite" className="px-1 text-base font-medium text-destructive">
         {problem}
       </p>

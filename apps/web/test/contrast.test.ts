@@ -136,6 +136,8 @@ const TEXT: readonly (readonly [text: string, surface: string, least?: number, a
   ['foreground', 'bills-header'],
   ['foreground', 'debts-header'],
   ['foreground', 'subscriptions-header'],
+  // AI settings' chosen tone: its words on the accent's soft fill.
+  ['canvas-muted', 'primary-soft'],
   // …and starts on the card, so its words read at both ends of the gradient.
   ['canvas-muted', 'card'],
   ['summary-value', 'card'],

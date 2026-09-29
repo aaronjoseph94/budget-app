@@ -69,8 +69,10 @@ describe('AI settings says what is true, whatever the helper does', () => {
     expect(screen.getByRole('link', { name: 'Show me how' }).getAttribute('href')).toBe('#/help/free-ai')
     const services = within(await screen.findByRole('region', { name: 'Try in this order' }))
     expect(services.getAllByRole('listitem').map((li) => li.textContent)).toEqual([
-      '1. Google GeminiFreeNo key yet↑↓', '2. GroqFreeNo key yet↑↓', '3. OpenRouterFreeNo key yet↑↓', '4. OpenAIPaidNo key yet↑↓', '5. AnthropicPaidNo key yet↑↓',
+      '1. Google GeminiFreeNo key yet', '2. GroqFreeNo key yet', '3. OpenRouterFreeNo key yet', '4. OpenAIPaidNo key yet', '5. AnthropicPaidNo key yet',
     ])
+    // Mockup A's chevrons in place of the ↑ ↓ glyphs; each still names what it moves.
+    expect(services.getAllByRole('button').map((b) => [b.getAttribute('aria-label'), b.querySelector('svg') !== null])).toContainEqual(['Move Groq up', true])
     expect(screen.getByText(/^Today: 0 of 40\. Resets overnight\./)).toBeTruthy()
   })
 

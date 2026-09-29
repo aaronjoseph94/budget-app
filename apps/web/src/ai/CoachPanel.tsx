@@ -47,8 +47,8 @@ export function CoachPanel() {
   }
 
   return (
-    <section aria-labelledby={ids.title} className="space-y-3 rounded-xl border bg-card p-4 shadow-sm">
-      <h2 id={ids.title} className="text-base font-medium">
+    <section aria-labelledby={ids.title} className="space-y-3 rounded-xl border bg-card p-5 sm:p-6">
+      <h2 id={ids.title} className="text-lg font-semibold leading-tight">
         How the Coach talks
       </h2>
       {loaded.state === 'loading' ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
@@ -66,10 +66,15 @@ export function CoachPanel() {
       ) : null}
       {loaded.state === 'ready' ? (
         <>
-          <fieldset className="space-y-1">
+          <fieldset className="space-y-2">
             <legend className="sr-only">Tone</legend>
             {TONES.map((t) => (
-              <label key={t.tone} className="flex min-h-11 cursor-pointer items-start gap-3 py-1">
+              // Mockup A's option cards; the chosen one on the accent's soft fill, edged in
+              // the accent, its muted words in canvas-muted, which reads there.
+              <label
+                key={t.tone}
+                className="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border px-4 py-3 has-[:checked]:border-primary has-[:checked]:bg-primary-soft has-[:checked]:[--muted-foreground:var(--canvas-muted)]"
+              >
                 <input
                   type="radio"
                   name="coach-tone"
@@ -79,14 +84,14 @@ export function CoachPanel() {
                   onChange={() => void change(loaded.settings, { ...loaded.settings, tone: t.tone })}
                 />
                 <span className="min-w-0">
-                  <span className="block text-base font-medium">{t.name}</span>
+                  <span className="block text-base font-semibold">{t.name}</span>
                   <span className="block text-sm text-muted-foreground">{t.says}</span>
                 </span>
               </label>
             ))}
           </fieldset>
           <label htmlFor={ids.share} className="flex min-h-11 cursor-pointer items-center gap-3 border-t pt-3">
-            <span className="flex-1 text-base font-medium">Share shop names with the AI</span>
+            <span className="flex-1 text-base font-semibold">Share shop names with the AI</span>
             <input
               id={ids.share}
               type="checkbox"
