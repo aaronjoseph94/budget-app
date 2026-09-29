@@ -2885,3 +2885,38 @@ golden case.
 
 **To settle:** when a step restyles a chart, set its attributes to the
 light token values, so the page and an exported file agree again.
+
+**Progress (2026-09-29, step 3):** the Month's income bars and
+Variable-expenses donut now carry Mockup A's green and six hues in their
+attributes. The Year's, the Forecast's, Reports' and Home's charts still
+carry the workbook's, for steps 5 and 8.
+
+---
+
+## N125 — No engine output gives a list's Actual over its budget
+
+**Seen:** 2026-09-29, Mockup A step 3. The Month's list cards in Mockup A
+carry a % pill ("79%") and the Week's the same. It is a block's Actual
+over its budget total, which can pass 100%. Core has no such output for
+a month: `goalBars` and `goalProgress` stop at 10,000 bp, `shareBp` is a
+row's part of its block, and `usedBasisPoints` is the Week summary's
+alone. A screen may not divide (invariant 1), so the pill is not drawn.
+
+**Why not fixed here:** a restyle step may not add engine code.
+
+**To settle:** give `PeriodBlock` (and `PeriodRow`) a `usedBp`, the Actual
+over the budget half-up and uncapped, null with no budget, with worked
+cases; then draw the pill from it on the Month, the Week and Paycheck.
+
+---
+
+## N126 — The Week and Paycheck already wear the Month's list cards
+
+**Seen:** 2026-09-29, Mockup A step 3. `Block` is shared, so the Week's
+and Paycheck's lists took the new card head, hues, mini bars and rose
+pill with the Month's. Their own summaries, goal card and layout wait for
+step 4. From 768 to 1023 px, beside the rail, a Variable card with three
+overspent rows is a few pixels wider than its column, and its table
+scrolls inside the card (never the page).
+
+**Why not fixed here:** step 4 restyles those screens and their grid.
