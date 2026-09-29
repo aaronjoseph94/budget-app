@@ -2891,6 +2891,11 @@ Variable-expenses donut now carry Mockup A's green and six hues in their
 attributes. The Year's, the Forecast's, Reports' and Home's charts still
 carry the workbook's, for steps 5 and 8.
 
+**Progress (2026-09-29, step 5):** the Year's pie, columns, top 3 rings,
+savings-goal bars and debt bars now carry Mockup A's colours in their
+attributes. The Forecast's and Reports' charts, and the Debts screen's
+ring (step 9), still carry the workbook's.
+
 ---
 
 ## N125 — No engine output gives a list's Actual over its budget *(settled 2026-09-29)*
@@ -2985,6 +2990,11 @@ and dark) and measured by apps/web/test/contrast.test.ts.
 **Why not fixed here:** removing tokens is its own change, and other
 retired workbook sets (`title-band`, `summary`) may be in the same state
 once their screens' steps land.
+
+**Also (2026-09-29, step 5):** the Year no longer draws `year-row-alt`
+(no striped rows), `home-canvas` (no grey behind the glance), `home-card`
+(the glance cards are `card`), or `summary-label` and `summary` in its
+totals panel. They are still defined and measured.
 
 **To settle:** after step 12, remove every token no class uses, with its
 contrast rows, in one commit.

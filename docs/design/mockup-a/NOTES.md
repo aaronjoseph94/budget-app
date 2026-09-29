@@ -134,3 +134,54 @@ and the amber Review count.
   its tokens are left for a clean-up of their own (N129).
 - **With every caller in list order,** `PeriodBlocks` has one layout and
   `Block` one table type; `inListOrder` and `fourAcross` are removed.
+
+## 2026-09-29 — Step 5, the Year
+
+- **The title row is the Month's** (`MonthTitle`, the ? beside it, the
+  twelve months under it); the slate band and its serif italic title go.
+  "Planned bills count up to…" stays a line of its own under the row,
+  where the mockup joins it to the dates with " · ": two sentences that
+  each stand alone read better apart, and a phone wraps them anyway.
+- **Starts in** is two 44px select pills on the right of the title row,
+  still the native picker a phone shows as a wheel (`NativeSelect`, with
+  the app's darker field edge, ADR 0010).
+- **The review line is the amber `WaitingBanner`**, as on the Month and
+  the Week (design-review P1 item 4), in the Year's own words. The mockup
+  put it as a grey link inside the greeting card; one waiting colour won.
+- **Glance cards** are Mockup A's: white, a 1px edge, 16px corners, no
+  shadow, 15px muted names and 20px bold figures. The greeting is the one
+  card tinted to the accent (P2 item 6). One across on a phone, two from
+  640px, four from 1280px.
+- **Left over and the balances stay in their own card** below 1280px and
+  in the totals panel from 1280px, where the mockup puts them inside "vs
+  last year". "vs last year" is left out altogether while its comparison
+  loads or has nothing to compare yet, and it would take the balances
+  with it.
+- **The tables (P2 item 7):** chips choosing one table below 1280px, the
+  charts beside it from 1024px as the mockup draws them; from 1280px all
+  seven tables four across with the totals panel, as Annual lays them, so
+  eight cards fill two rows. The 1280px test is `useFourAcross`; `useWide`
+  stays 1024px for the sidebar. Four across, the tables keep 12px type
+  until 1400px and 10px sides, so no month or figure wraps beside the
+  sidebar at 1280px.
+- **Each list's hue (ADR 0010):** Bills sky, Debts rose, Subscriptions
+  violet, as on the Month. The mockup draws Debts violet and Expenses
+  rose; **Expenses are the four lists added, no one list, so they take the
+  neutral grey** (`owed`) in the table and the charts, never Debts' rose.
+- **No striped rows**; this month's row is today's yellow and bold, as the
+  mockup draws it. `year-row-alt` is now drawn by nothing (N129).
+- **Charts (N124):** colours only, written into the file and repainted
+  from the tokens in dark mode. The pie keeps its shape (the mockup draws
+  a donut) and chart-specs' own legend; "Against goals and budgets" stays
+  chart-specs' Goal-beside-Actual columns (grey Goal, accent Actual) where
+  the mockup draws a bar per list in its hue, since a restyle changes
+  chart-specs' colours only. The top 3 rings take the donut's first three
+  chart hues by rank. Debts today moved to classes of its own
+  (`chart-debts-*`) so the Debts screen's ring keeps its colours until
+  step 9.
+- **Copy left out:** the mockup's chart subtitles "Income in green,
+  expenses in rose" and "Each list's actual against its goal or budget
+  over the year" are not the app's; the charts keep their own keys.
+- **No figure is missing.** Every figure the mockup shows is yearSheet's,
+  periodComparison's, fund or debt status, or core's `partShares`,
+  `stackedColumns`, `goalBars` and F18's `shareBp`, as before.
