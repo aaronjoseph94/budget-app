@@ -2,61 +2,67 @@
 
 /*
  * shadcn/ui design tokens, on the "zinc" base as shadcn ships it for
- * Tailwind v4, with the workbook's colours in place of zinc where the workbook has one
- * (plan §6.6). The component files in src/components/ui are shadcn's
- * copy-paste components adapted to this app, and read only these names.
+ * Tailwind v4, with Mockup A's values in place of zinc (ADR 0010). The
+ * component files in src/components/ui are shadcn's copy-paste components
+ * adapted to this app, and read only these names.
+ *
+ * The neutral scale: `canvas` is the grey frame behind the panel, shown
+ * from 768px; `background` and `card` are the white panel and its cards,
+ * and on a phone the whole screen is the panel. Muted words (#6B7280) read
+ * 4.83 to one on white but 4.40 on the canvas, so words that sit on the
+ * canvas take `canvas-muted`. `primary` is Mockup A's accent, indigo, with
+ * `primary-soft` and `primary-tint` for its fills; shadcn's own `accent`
+ * is its hover fill. `track` is a bar's empty part.
  *
  * Two additions shadcn does not have, because a budget needs them: `spend`
  * and `income`, for the direction money moved. Red and green are never the
  * ONLY signal — every amount also carries its sign — so the colours help
- * rather than carry the meaning. `spend` is the darker red the workbook's overspent
- * pill needs for its cream text to be readable; the workbook's own #DC5454 stays,
- * as `spend-bar`, for bars that carry no text.
+ * rather than carry the meaning. `spend-bar` is for bars that carry no text.
  *
- * Then the workbook's own sets. Each month block has six: band (the big-total strip),
- * header (column headings), total (the totals row), ink, accent and rule.
- * INK is for every word and number. ACCENT is for fills, bars and decoration
- * only — the workbook writes its headings in these pastels, at 1.3 to 1.9 to one on
- * their bands, which nobody can read (decision 10). Bills, debts and
- * subscriptions share `owed`, as the workbook colours all three alike.
- *
- * Page and card are shadcn's `background` and `card`; `summary` is the
- * month's four-number card. Every text colour here was measured against
- * every background it is meant for: 4.5 to one for text, 3 for the title.
+ * Then the named sets: the six lists' hues, waiting, and the screens' own.
+ * INK is for every word and number; ACCENT is for fills, bars and icons
+ * only. Every text colour here is measured by test/contrast.test.ts
+ * against every surface it is used on: 4.5 to one for text, 3 for large
+ * text, a control's edge and the focus ring.
  */
 :root {
-  --radius: 0.75rem;
-  --background: #fffcfa;
-  --foreground: oklch(0.145 0 0);
-  --card: #fffefa;
-  --card-foreground: oklch(0.145 0 0);
-  --primary: #2b5d6a; /* START HERE's header band */
-  --primary-foreground: #fffefa;
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: #f7f5ec; /* the Transactions and Bills page */
-  --muted-foreground: oklch(0.52 0 0);
-  --accent: oklch(0.96 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: #c0141a; /* error words on their 5% tint: 5.7:1, where #e7000b was 4.3 (FE-7-NEW-2) */
-  --border: oklch(0.922 0 0);
-  --input: #8a8a8a; /* a field's only edge: 3.4:1 on a card, where --border is 1.25 (FE-5) */
-  --ring: #2b5d6a; /* the primary: 7.2:1 on a card, where #9abdb7 at half strength was 1.4 (FE-4) */
-  --spend: #b83a3a;
-  --spend-foreground: #fffefa;
-  --spend-bar: #dc5454;
-  --income: #4f6e69;
-  --warning: oklch(0.7 0.16 70);
+  --radius: 1rem;
+  --canvas: #f4f4f6;
+  --canvas-muted: #5f6673; /* 5.26 on the canvas, where #6b7280 is 4.40 */
+  --background: #ffffff;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --primary: #4f46e5; /* Mockup A's accent, indigo */
+  --primary-foreground: #ffffff;
+  --primary-soft: #eef2ff;
+  --primary-tint: #eef0ff;
+  --secondary: #f3f4f6;
+  --secondary-foreground: #111827;
+  --muted: #f9fafb;
+  --muted-foreground: #6b7280;
+  --accent: #f9fafb; /* the hover fill */
+  --accent-foreground: #111827;
+  --destructive: #be123c;
+  --destructive-foreground: #ffffff;
+  --border: #e5e7eb;
+  --track: #e5e7eb;
+  --input: #868c96; /* a field's only edge: 3.4:1 on a card, where Mockup A's #d1d5db is 1.5 (FE-5) */
+  --ring: #4f46e5;
+  --spend: #be123c;
+  --spend-foreground: #ffffff;
+  --spend-bar: #e11d48;
+  --income: #047857;
+  --warning: #92400e; /* on its own 15% tint: 5.6, where #b45309 is 4.1 */
 
-  --summary: #faffff;
-  --summary-label: #4e6e8c;
-  --summary-value: #4a7069;
-  /* A negative Left to spend: Jan!D13:E14's conditional fill, and in place
-     of its #DD766B (2.74 to one) a red that reads at 5.84. */
-  --summary-negative: #ffefed;
-  --summary-negative-ink: #a33a3a;
-  --title-band: #f6fdfc;
-  --title-ink: #5b7a75;
+  --summary: #ffffff;
+  --summary-label: #6b7280;
+  --summary-value: #111827;
+  /* A negative Left to spend: Mockup A's rose pill, white on #e11d48 (4.70). */
+  --summary-negative: #e11d48;
+  --summary-negative-ink: #ffffff;
+  --title-band: #ffffff;
+  --title-ink: #111827;
   --income-band: #eff9f8;
   --income-header: #f6fdfd;
   --income-total: #d7eeeb;
@@ -161,41 +167,46 @@
 }
 
 /*
- * The workbook has no dark mode. Each colour keeps its hue: bands sit at about 15%
- * lightness, the page and cards darker still, and inks at about 85%, so a
- * block still reads as its block.
+ * Mockup A's dark values (ADR 0010): the canvas darkest, the panel and
+ * cards above it, and every ink lifted so it reads on them.
  */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #171412;
-    --foreground: oklch(0.985 0 0);
-    --card: #1f1e19;
-    --card-foreground: oklch(0.985 0 0);
-    --primary: #b8d8e0;
-    --primary-foreground: #163036;
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: #312f26;
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: #ff6467; /* oklch(0.704 0.191 22.216), as a hex the contrast test can read */
-    --border: oklch(1 0 0 / 10%);
-    --input: #7a7a7a;
-    --ring: #5b8b83;
-    --spend: #df9a9a;
-    --spend-foreground: #2e0f0f;
-    --spend-bar: #db5757;
-    --income: #c4d4d2;
-    --warning: oklch(0.8 0.15 75);
+    --canvas: #0f1013;
+    --canvas-muted: #9ca3af;
+    --background: #17181c;
+    --foreground: #f3f4f6;
+    --card: #17181c;
+    --card-foreground: #f3f4f6;
+    --primary: #818cf8;
+    --primary-foreground: #1e1b4b; /* white on #818cf8 is 2.9 */
+    --primary-soft: #1e1b4b;
+    --primary-tint: #181a2e;
+    --secondary: #2a2c33;
+    --secondary-foreground: #f3f4f6;
+    --muted: #1f2026;
+    --muted-foreground: #9ca3af;
+    --accent: #1f2026;
+    --accent-foreground: #f3f4f6;
+    --destructive: #fda4af;
+    --destructive-foreground: #4c0519;
+    --border: #2a2c33;
+    --track: #2a2c33;
+    --input: #6b7280;
+    --ring: #818cf8;
+    --spend: #fda4af;
+    --spend-foreground: #4c0519;
+    --spend-bar: #f43f5e;
+    --income: #6ee7b7;
+    --warning: #fcd34d;
 
-    --summary: #182525;
-    --summary-label: #c4d2de;
-    --summary-value: #d1e1de;
-    --summary-negative: #3d1f1c;
-    --summary-negative-ink: #f0b8b0;
-    --title-band: #1b322e;
-    --title-ink: #d3dedd;
+    --summary: #17181c;
+    --summary-label: #9ca3af;
+    --summary-value: #f3f4f6;
+    --summary-negative: #e11d48;
+    --summary-negative-ink: #ffffff;
+    --title-band: #17181c;
+    --title-ink: #f3f4f6;
     --income-band: #193431;
     --income-header: #203c3c;
     --income-total: #274945;
@@ -271,10 +282,18 @@
 }
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  /* Mockup A's radii on the classes screens already use: cards 16, icon
+     tiles 12, buttons and fields 10 (ADR 0010). */
+  --radius-sm: calc(var(--radius) - 8px);
+  --radius-md: calc(var(--radius) - 6px);
+  --radius-lg: calc(var(--radius) - 4px);
+  --radius-xl: var(--radius);
+  --color-canvas: var(--canvas);
+  --color-canvas-muted: var(--canvas-muted);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-tint: var(--primary-tint);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-track: var(--track);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

@@ -78,3 +78,63 @@ describe('the focus ring', () => {
     expect(faded).toEqual([])
   })
 })
+
+/**
+ * Every text token on every surface a screen draws it on (ADR 0010), in
+ * both schemes: 4.5 to one for text, 3 where the words are large (24px, or
+ * 18.66px bold). `white` is a class that names no token, as `text-white`.
+ * A pair laid over its surface at an opacity carries it as a fourth entry.
+ */
+const TEXT: readonly (readonly [text: string, surface: string, least?: number, alpha?: number])[] = [
+  ['foreground', 'background'],
+  ['foreground', 'card'],
+  ['foreground', 'muted'],
+  ['foreground', 'secondary'],
+  ['foreground', 'accent'],
+  ['foreground', 'canvas'],
+  ['muted-foreground', 'background'],
+  ['muted-foreground', 'card'],
+  ['muted-foreground', 'muted'],
+  ['muted-foreground', 'accent'],
+  ['canvas-muted', 'canvas'],
+  ['secondary-foreground', 'secondary'],
+  ['accent-foreground', 'accent'],
+  ['primary', 'card'],
+  ['primary', 'canvas'],
+  ['primary-foreground', 'primary'],
+  ['primary', 'primary-soft'],
+  ['destructive-foreground', 'destructive'],
+  ['spend', 'card'],
+  ['spend-foreground', 'spend'],
+  ['income', 'card'],
+  ['warning', 'card'],
+  ['summary-label', 'summary'],
+  ['summary-value', 'summary'],
+  ['summary-negative-ink', 'summary-negative'],
+  ['title-ink', 'title-band'],
+]
+
+/** `fg` over `bg` at `alpha`, or `fg` itself at full strength. */
+function laid(fg: string, bg: string, alpha: number | undefined): string {
+  return alpha === undefined ? fg : over(fg, bg, alpha)
+}
+
+function hex(scheme: Map<string, string>, name: string): string {
+  return name === 'white' ? '#ffffff' : pick(scheme, name)
+}
+
+describe.each([
+  ['light', light],
+  ['dark', dark],
+])('%s scheme, words on their surfaces (ADR 0010)', (_, scheme) => {
+  const rows = TEXT.map(([text, surface, least = 4.5, alpha]) => ({ text, surface, least, alpha }))
+  it.each(rows)('--$text reads on --$surface', ({ text, surface, least, alpha }) => {
+    const ground = hex(scheme, surface)
+    expect(ratio(laid(hex(scheme, text), ground, alpha), ground)).toBeGreaterThanOrEqual(least)
+  })
+  // The warning Alert is its words on a 15% tint of the same colour.
+  it.each(['card', 'background'])('draws warning words at 4.5:1 or more on their own tint over --%s', (surface) => {
+    const amber = pick(scheme, 'warning')
+    expect(ratio(amber, over(amber, pick(scheme, surface), 0.15))).toBeGreaterThanOrEqual(4.5)
+  })
+})

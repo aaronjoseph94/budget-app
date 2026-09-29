@@ -7,7 +7,7 @@ const VARIANTS = {
   secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
   outline: 'border bg-card shadow-sm hover:bg-accent hover:text-accent-foreground',
   ghost: 'hover:bg-accent hover:text-accent-foreground',
-  destructive: 'bg-destructive text-white shadow-sm hover:bg-destructive/90',
+  destructive: 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90',
   link: 'text-primary underline-offset-4 hover:underline',
 } as const
 
