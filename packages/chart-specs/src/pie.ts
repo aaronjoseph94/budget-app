@@ -151,12 +151,12 @@ export function debtRing(input: DebtRingInput): SvgMarkup {
   const c = WIDTH / 2
   const paid = lengthOf(input.paidBp, 10_000)
   const marks: SvgNode[] = [
-    el('path', { d: sector(c, c, RING, RING / 2, 0, 10_000), fill: '#9171D7', 'fill-rule': 'evenodd', class: 'chart-debt-left' }),
+    el('path', { d: sector(c, c, RING, RING / 2, 0, 10_000), fill: '#E5E7EB', 'fill-rule': 'evenodd', class: 'chart-debt-left' }),
   ]
   if (paid > 0) {
-    marks.push(el('path', { d: sector(c, c, RING, RING / 2, 0, paid), fill: '#C8B6EB', 'fill-rule': 'evenodd', class: 'chart-debt-paid' }))
+    marks.push(el('path', { d: sector(c, c, RING, RING / 2, 0, paid), fill: '#4F46E5', 'fill-rule': 'evenodd', class: 'chart-debt-paid' }))
   }
-  const text = { x: c, y: c + 150, 'text-anchor': 'middle', 'font-size': FONT * 4, fill: '#5B3FA8', class: 'chart-debt-ink' }
+  const text = { x: c, y: c + 150, 'text-anchor': 'middle', 'font-size': FONT * 4, fill: '#111827', class: 'chart-debt-ink' }
   return frame(input, WIDTH, [...marks, el('text', text, [input.centreText])])
 }
 

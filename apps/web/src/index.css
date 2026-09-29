@@ -180,8 +180,8 @@
   --debt-page: #f9fafb;
   --debt-label: #be123c;
   --debt-ink: #111827;
-  --debt-left: #8b5cf6;
-  --debt-paid: #ede9fe;
+  --debt-left: #e5e7eb; /* the rings' track, as `track` (step 9): the soft accent vanished on the tint */
+  --debt-paid: #4f46e5; /* and what is paid, in the accent */
 }
 
 /*
@@ -317,8 +317,8 @@
     --debt-page: #131418;
     --debt-label: #fda4af;
     --debt-ink: #f3f4f6;
-    --debt-left: #a78bfa;
-    --debt-paid: #2e1065;
+    --debt-left: #2a2c33;
+    --debt-paid: #818cf8;
     /* On a dark card more reads lighter, so the steps run the other way. */
     --heat-0: #34312e;
     --heat-1: #852c1d;

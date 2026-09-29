@@ -9,7 +9,8 @@ import { DebtStrategies } from './DebtStrategies.js'
 import { Alert, Loading } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { SvgChart } from '../components/ui/chart.js'
-import { Figure } from '../components/ui/type.js'
+import { Icon } from '../components/ui/icons.js'
+import { Figure, MonthTitle } from '../components/ui/type.js'
 import { HelpButton } from '../help/HelpButton.js'
 
 /**
@@ -39,21 +40,33 @@ export function DebtsScreen() {
       return null
     }
   }, [ready])
+  const add = () => {
+    setNotice(null)
+    setEditing('new')
+  }
+  // Mockup A: the Month's title row, Add a debt on its right from 640px; the
+  // summary as one wide card, the debts three across from 1280px, the plans.
   return (
-    <div className="-mx-4 max-[359px]:-mx-3 space-y-4 bg-debt-page px-4 max-[359px]:px-3 pb-6 text-debt-ink md:mx-0 md:rounded-xl">
-      <header className="-mx-4 max-[359px]:-mx-3 bg-debt-banner px-4 max-[359px]:px-3 py-5 md:rounded-t-xl">
-        {/* The banner's only words: large, where white reads at 3.5 to one. */}
-        <div className="flex flex-wrap items-center gap-1 text-white">
-          <h1 className="font-serif text-4xl italic">Debt payoff</h1>
-          <HelpButton screen="debts" />
+    <div className="space-y-4 xl:space-y-5">
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="max-w-3xl space-y-2">
+          <div className="flex flex-wrap items-center gap-1">
+            <MonthTitle>Debt payoff</MonthTitle>
+            <HelpButton screen="debts" />
+          </div>
+          {/* Plan 3.3: the debts here are not the Month's Debts list. */}
+          <p className="text-muted-foreground md:text-base">
+            These are the loans and card balances you are paying down, to plan when each is paid off; they are separate
+            from the Month&rsquo;s Debts list, which counts the payments you make each month.
+          </p>
         </div>
+        {state.status === 'ready' ? (
+          <Button className="w-full sm:w-auto" onClick={add}>
+            <Icon name="plus" /> Add a debt
+          </Button>
+        ) : null}
       </header>
-      {/* Plan 3.3: the debts here are not the Month's Debts list. */}
-      <p className="text-sm">
-        These are the loans and card balances you are paying down, to plan when each is paid off; they are separate
-        from the Month&rsquo;s Debts list, which counts the payments you make each month.
-      </p>
-      <p className="text-xs">
+      <p className="text-xs text-muted-foreground">
         A card you pay off from your bank can go here too, but give it no monthly amount on the Month&rsquo;s Debts
         list: what you bought on it is already counted there.
       </p>
@@ -76,9 +89,9 @@ export function DebtsScreen() {
             />
           )}
           {state.debts.rows.length === 0 ? (
-            <p className="rounded-xl bg-card p-4 text-sm shadow-sm">No debts yet. Add one to see when it is paid off.</p>
+            <p className="rounded-xl border bg-card p-4 text-sm">No debts yet. Add one to see when it is paid off.</p>
           ) : (
-            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 xl:gap-5">
               {state.debts.rows.map((row) => (
                 <li key={row.id}>
                   <DebtCard
@@ -92,14 +105,6 @@ export function DebtsScreen() {
               ))}
             </ul>
           )}
-          <Button
-            onClick={() => {
-              setNotice(null)
-              setEditing('new')
-            }}
-          >
-            Add a debt
-          </Button>
           {state.debts.strategies === null ? null : <DebtStrategies strategies={state.debts.strategies} />}
         </>
       ) : null}
@@ -141,28 +146,35 @@ function Summary({
   return (
     // Below 360 px the ring goes under the figures, and the total has the
     // row to itself: beside the ring a five-figure total broke mid-number
-    // (N67).
-    <section aria-label="Debt summary" className="grid grid-cols-1 gap-4 rounded-xl bg-card p-4 shadow-sm min-[360px]:grid-cols-[1fr_auto]">
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
-        <Stat label="Current debt total" className="max-[359px]:col-span-2">
-          <Figure className="text-2xl font-bold">{formatCents(t.balanceCents)}</Figure>
+    // (N67); below 640px beside the ring it did too, so it has its row there
+    // as well. Mockup A's one wide card, tinted to the accent as each screen's
+    // one hero is; two by two beside the ring until 1280px (design review
+    // P2 item 13), four across from there. Muted words take canvas-muted
+    // on the tint (ADR 0010).
+    <section
+      aria-label="Debt summary"
+      className="grid grid-cols-1 items-center gap-4 rounded-xl border bg-linear-to-r from-card to-primary-tint p-4 min-[360px]:grid-cols-[1fr_auto] md:px-6 md:py-5 [--muted-foreground:var(--canvas-muted)]"
+    >
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-4 xl:grid-cols-4">
+        <Stat label="Current debt total" muted className="max-[359px]:col-span-2 max-sm:col-span-2">
+          <Figure className="text-2xl font-bold md:text-[2rem] md:leading-tight">{formatCents(t.balanceCents)}</Figure>
         </Stat>
-        <Stat label="Debt-free by">
+        <Stat label="Debt-free by" muted>
           <span className="text-lg font-semibold">{leftOut.length > 0 ? 'Not until every minimum covers its interest' : formatMonthTitle(debtFree)}</span>
         </Stat>
-        <Stat label="Paid this month">
-          <span className="tnum">{formatCents(t.paymentCents)}</span>
+        <Stat label="Paid this month" muted>
+          <span className="tnum text-lg font-semibold">{formatCents(t.paymentCents)}</span>
         </Stat>
-        <Stat label="Payoff progress">
-          <span className="tnum">{t.progressBp === null ? '—' : formatBasisPoints(t.progressBp)}</span>
-          <span className="tnum block text-xs">
+        <Stat label="Payoff progress" muted>
+          <span className="tnum text-lg font-semibold">{t.progressBp === null ? '—' : formatBasisPoints(t.progressBp)}</span>
+          <span className="tnum block text-xs text-muted-foreground">
             {formatCents(t.paidCents)} of {formatCents(t.startingBalanceCents)}
           </span>
         </Stat>
       </dl>
       <Ring label="All debts" paidBp={t.progressBp ?? 10_000} className="w-24 max-[359px]:mx-auto" />
       {vs === null ? null : (
-        <div role="group" aria-label="Compared with a month ago" className="border-t border-current/20 pt-3 text-sm min-[360px]:col-span-2">
+        <div role="group" aria-label="Compared with a month ago" className="border-t pt-3 text-sm min-[360px]:col-span-2">
           {/* The total now is Current debt total, above; this names the one it is set against. */}
           <p>
             End of {formatMonthName(vs.monthAgo)}: <span className="tnum font-semibold">{formatCents(vs.total.beforeCents)}</span>
@@ -173,7 +185,7 @@ function Summary({
         </div>
       )}
       {leftOut.length > 0 ? (
-        <p className="text-xs min-[360px]:col-span-2">Not in these totals, because they are never paid off: {leftOut.join(', ')}.</p>
+        <p className="text-xs text-muted-foreground min-[360px]:col-span-2">Not in these totals, because they are never paid off: {leftOut.join(', ')}.</p>
       ) : null}
     </section>
   )
@@ -194,19 +206,26 @@ function DebtCard({
   onEdit: () => void
 }) {
   return (
-    <section aria-label={row.name} className="overflow-hidden rounded-xl bg-card shadow-sm">
-      <h2 className="break-words px-4 pt-3 text-3xl font-bold [overflow-wrap:anywhere]">{row.name}</h2>
-      <div className="grid grid-cols-[1fr_auto] items-start gap-3 px-4 py-3">
+    // Each debt in Debts' rose, its tile and labels, as the Year draws these
+    // debts (ADR 0010); its ring in the accent, as the summary's.
+    <section aria-label={row.name} className="overflow-hidden rounded-xl border bg-card">
+      <div className="flex items-center gap-3 px-4 pt-4 md:px-5">
+        <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-debts-tile text-debts-accent">
+          <Icon name="card" className="size-[1.125rem]" />
+        </span>
+        <h2 className="min-w-0 break-words text-lg font-semibold leading-tight [overflow-wrap:anywhere]">{row.name}</h2>
+      </div>
+      <div className="grid grid-cols-[1fr_auto] items-start gap-3 px-4 py-3 md:px-5">
         <div>
-          <p className="text-xs text-debt-label">Balance today</p>
+          <p className="text-xs text-debts-ink">Balance today</p>
           {/* No standing is a debt never paid off: its balance is not worked out. */}
           <Figure className="text-2xl font-bold">{standing === null ? '—' : formatCents(standing.balanceCents)}</Figure>
-          {standing === null ? <p className="text-xs">Not worked out, since it is never paid off</p> : null}
+          {standing === null ? <p className="text-xs text-muted-foreground">Not worked out, since it is never paid off</p> : null}
           {standing !== null && standing.month === null ? (
-            <p className="text-xs">Starts {formatMonthTitle(row.start_date)}</p>
+            <p className="text-xs text-muted-foreground">Starts {formatMonthTitle(row.start_date)}</p>
           ) : null}
           {vs === null || monthAgo === null ? null : (
-            <p className="text-xs">
+            <p className="text-xs text-muted-foreground">
               {vs.direction === 'same' ? (
                 `About the same as at the end of ${formatMonthName(monthAgo)}`
               ) : (
@@ -219,7 +238,7 @@ function DebtCard({
         </div>
         {standing === null ? null : <Ring label={row.name} paidBp={standing.progressBp ?? 10_000} className="w-20" />}
       </div>
-      <dl className="grid grid-cols-2 gap-x-3 gap-y-2 px-4 pb-4 text-sm">
+      <dl className="grid grid-cols-2 gap-x-3 gap-y-2 px-4 pb-4 text-sm md:px-5">
         <Stat label="Starting balance">
           <span className="tnum">{formatCents(row.starting_balance_cents)}</span>
         </Stat>
@@ -229,9 +248,11 @@ function DebtCard({
         <Stat label="Minimum payment">
           <span className="tnum">{formatCents(row.minimum_payment_cents)}</span>
         </Stat>
-        <Stat label="Paid off in">{standing === null ? 'Never' : formatMonthTitle(standing.paidOffIn)}</Stat>
+        <Stat label="Paid off in">
+          <span className="font-semibold">{standing === null ? 'Never' : formatMonthTitle(standing.paidOffIn)}</span>
+        </Stat>
       </dl>
-      <div className="px-4 pb-4">
+      <div className="px-4 pb-4 md:px-5">
         <Button variant="outline" size="sm" onClick={onEdit}>
           Edit
         </Button>
@@ -261,10 +282,11 @@ function Ring({ label, paidBp, className }: { label: string; paidBp: number; cla
   )
 }
 
-function Stat({ label, className, children }: { label: string; className?: string; children: ReactNode }) {
+/** A label and its figure: the label in Debts' ink on a debt's card, `muted` on the summary. */
+function Stat({ label, muted = false, className, children }: { label: string; muted?: boolean; className?: string; children: ReactNode }) {
   return (
     <div className={className}>
-      <dt className="text-xs text-debt-label">{label}</dt>
+      <dt className={muted ? 'text-sm text-muted-foreground' : 'text-xs text-debts-ink'}>{label}</dt>
       <dd>{children}</dd>
     </div>
   )

@@ -87,6 +87,22 @@ describe('DebtsScreen', () => {
     expect(summary.querySelector('dt')!.parentElement!.className).toContain('max-[359px]:col-span-2')
   })
 
+  it("sets Mockup A's title row, and tints the summary and the plan it follows", async () => {
+    renderScreen(<DebtsScreen />, seeded())
+    const summary = await screen.findByRole('region', { name: 'Debt summary' })
+    const header = screen.getByRole('heading', { level: 1, name: 'Debt payoff' }).closest('header')!
+    expect(within(header).getByRole('button', { name: 'Add a debt' })).toBeTruthy()
+    expect(summary.className).toContain('to-primary-tint')
+    // Two by two beside the ring until 1280px, four across from there (P2 item 13).
+    expect(summary.querySelector('dl')!.className).toMatch(/(^|\s)grid-cols-2(\s|$)/)
+    expect(summary.querySelector('dl')!.className).toContain('xl:grid-cols-4')
+    // Minimums only is the plan the summary's debt-free month follows, and the one tinted.
+    const plans = screen.getByRole('region', { name: 'Payoff plans' })
+    const tinted = within(plans).getAllByRole('listitem').filter((c) => c.className.includes('bg-primary-tint'))
+    expect(tinted.map((c) => c.getAttribute('aria-label'))).toEqual(['Minimums only'])
+    expect(within(tinted[0]!).getByText('May 2027')).toBeTruthy()
+  })
+
   it('names a debt that is never paid off, and plans the rest', async () => {
     const fake = seeded()
     fake.tables.debts.push(debt('card', 'Store card', 100_000, 1_000, 2_400, '2026-01-01', 3))
