@@ -3,8 +3,8 @@
  *
  * chart12 stacks Actual on top of Goal in columns numbered 1 to 7. Here each
  * income row is a named horizontal bar, its Actual drawn over a track as long
- * as its Goal (D8), in chart12's own colours: #CCE2DF for the Goal, #9ABDB7
- * for the Actual. Every length is basis points of one scale that core chose
+ * as its Goal (D8), in Income's green (ADR 0010, N124): #D1FAE5 for the Goal,
+ * #10B981 for the Actual, and #047857 for words. Every length is basis points of one scale that core chose
  * (`goalBars`, F17), so bars compare across rows as chart12's single axis
  * lets them. An Actual beyond its Goal runs past its track, and a notch in
  * the card's colour marks where the Goal ended.
@@ -40,9 +40,9 @@ interface Palette {
 }
 
 const INCOME: Palette = {
-  goal: { fill: '#CCE2DF', class: 'chart-income-goal' },
-  actual: { fill: '#9ABDB7', class: 'chart-income-actual' },
-  ink: { fill: '#4F6E69', class: 'chart-income-ink' },
+  goal: { fill: '#D1FAE5', class: 'chart-income-goal' },
+  actual: { fill: '#10B981', class: 'chart-income-actual' },
+  ink: { fill: '#047857', class: 'chart-income-ink' },
   keys: ['Goal', 'Actual'],
 }
 

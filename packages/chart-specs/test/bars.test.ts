@@ -30,18 +30,18 @@ describe('incomeBars', () => {
     // 5,700 of 5,700; 325 of 400, at 570 and 702 bp of the scale; a row
     // with no goal and nothing in yet.
     expect(rects(chart([bar('Pay', 10_000, 10_000), bar('Side', 702, 570), bar('Gift', null, 0)]))).toEqual([
-      [390, '#CCE2DF', 3_000],
-      [390, '#9ABDB7', 3_000],
-      [730, '#CCE2DF', 211],
-      [730, '#9ABDB7', 171],
+      [390, '#D1FAE5', 3_000],
+      [390, '#10B981', 3_000],
+      [730, '#D1FAE5', 211],
+      [730, '#10B981', 171],
     ])
   })
 
   it('runs an Actual past its track, and notches where the Goal ended', () => {
     const svg = chart([bar('Pay', 6_667, 10_000)])
     expect(rects(svg)).toEqual([
-      [390, '#CCE2DF', 2_000],
-      [390, '#9ABDB7', 3_000],
+      [390, '#D1FAE5', 2_000],
+      [390, '#10B981', 3_000],
     ])
     expect(svg).toContain('<line x1="2000" y1="390" x2="2000" y2="490" stroke="#FFFEFA"')
     // An Actual that meets its Goal exactly ends where the track does: no notch.
@@ -57,8 +57,8 @@ describe('incomeBars', () => {
 
   it('draws no bar for money back out, and no track without a goal', () => {
     expect(rects(chart([bar('Pay', 10_000, null), bar('Side', null, 4_000)]))).toEqual([
-      [390, '#CCE2DF', 3_000],
-      [730, '#9ABDB7', 1_200],
+      [390, '#D1FAE5', 3_000],
+      [730, '#10B981', 1_200],
     ])
     expect(chart([bar('Pay', 10_000, null)])).not.toContain('<line')
   })
@@ -66,7 +66,7 @@ describe('incomeBars', () => {
   it('names Goal and Actual in a key, and makes room for every row', () => {
     const svg = chart([bar('Pay', 10_000, 10_000), bar('Side', 702, 570)])
     expect(svg).toContain('viewBox="0 0 3000 920"')
-    expect(svg).toMatch(/fill="#CCE2DF" class="chart-income-goal"\/><text x="160" y="120" [^>]*>Goal</)
+    expect(svg).toMatch(/fill="#D1FAE5" class="chart-income-goal"\/><text x="160" y="120" [^>]*>Goal</)
     expect(svg).toMatch(/>Actual<\/text>/)
     expect([...svg.matchAll(/<text x="0" y="(\d+)"/g)].map((m) => m[1])).toEqual(['340', '680'])
   })
@@ -86,7 +86,7 @@ describe('savingsGoalBars', () => {
       [1070, '#FEEA8D', 3_000],
     ])
     expect(svg).toContain('class="chart-savings-ink">Saved</text>')
-    expect(svg).not.toContain('#9ABDB7')
+    expect(svg).not.toContain('#10B981')
   })
 
   it('writes a fund name with < and & as text, never as a tag', () => {

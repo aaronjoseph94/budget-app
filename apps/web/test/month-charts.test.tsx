@@ -68,7 +68,7 @@ describe('MonthCharts', () => {
     // Groceries is the list's first row and takes the workbook's palest coral; the
     // oddly named one is its third row and takes the third step, though
     // Clothing between them has no slice (Jan chart13's colours by row).
-    expect([...doughnut.querySelectorAll('path')].map((p) => p.getAttribute('fill'))).toEqual(['#FFE3DE', '#FFB8AE'])
+    expect([...doughnut.querySelectorAll('path')].map((p) => p.getAttribute('fill'))).toEqual(['#F97316', '#8B5CF6'])
     expect(texts(doughnut)).toEqual(['Groceries', '$80.00 · 80%', NAME, '$20.00 · 20%'])
     expect(doughnut.querySelector('desc')?.textContent).toBe(
       `Groceries: $80.00, 80% of spending. ${NAME}: $20.00, 20% of spending. Clothing is not drawn: refunds were more than spending.`,
@@ -97,8 +97,8 @@ describe('MonthCharts', () => {
     // of 3,000 is 8,333 bp of it, 2,500 units of 3,000.
     const widths = [...bars.querySelectorAll('rect[rx="40"]')].map((r) => [r.getAttribute('fill'), r.getAttribute('width')])
     expect(widths).toEqual([
-      ['#CCE2DF', '3000'],
-      ['#9ABDB7', '2500'],
+      ['#D1FAE5', '3000'],
+      ['#10B981', '2500'],
     ])
     expect(bars.querySelector('desc')?.textContent).toBe('Pay: $2,500.00 of a $3,000.00 goal.')
   })
@@ -111,9 +111,9 @@ describe('MonthCharts', () => {
     // 500 of the 3,000.00 scale is 1,667 bp, 500 units of 3,000; no track.
     const widths = [...bars.querySelectorAll('rect[rx="40"]')].map((r) => [r.getAttribute('fill'), r.getAttribute('width')])
     expect(widths).toEqual([
-      ['#CCE2DF', '3000'],
-      ['#9ABDB7', '2500'],
-      ['#9ABDB7', '500'],
+      ['#D1FAE5', '3000'],
+      ['#10B981', '2500'],
+      ['#10B981', '500'],
     ])
     expect(bars.querySelector('desc')?.textContent).toBe(
       'Pay: $2,500.00 of a $3,000.00 goal. Side hustle: $500.00, no goal.',

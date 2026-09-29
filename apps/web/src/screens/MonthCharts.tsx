@@ -3,12 +3,11 @@ import { goalBars, type PeriodRow, type PeriodSheet } from '@budget/core'
 import { incomeBars, spendingDoughnut, type SvgMarkup } from '@budget/chart-specs'
 import { formatCents, formatShare } from '../format.js'
 import { SvgChart } from '../components/ui/chart.js'
-import { cn } from '../lib/cn.js'
 
 /**
  * The workbook's chart panel, Jan!H3:K18: the income chart (chart12) and the
  * Variable-expenses doughnut (chart13), drawn by chart-specs from the month
- * core computed. Every length and angle is core's basis points (`goalBars`,
+ * core computed, in Mockup A's green and six hues. Every length and angle is core's basis points (`goalBars`,
  * `shareBp`, F17); this screen only formats the amounts written beside them.
  *
  * An income source shows once it has a goal or money in, as its row does in
@@ -26,10 +25,12 @@ export function MonthCharts({ sheet, className }: { sheet: PeriodSheet; classNam
   const drawn = useMemo(() => draw(id, income, variable, refunded), [id, sheet])
 
   return (
-    <section aria-label="Charts" className={cn('rounded-xl border bg-card p-4 shadow-sm', className)}>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-1">
-        <div className="space-y-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-income-ink">Income against goals</h2>
+    // Mockup A's right column: each chart a card of its own, side by side
+    // on a tablet and stacked from 1280px, beside the lists.
+    <section aria-label="Charts" className={className}>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-1 xl:gap-5">
+        <div className="space-y-4 rounded-xl border bg-card p-4 md:px-6 md:pt-5 md:pb-6">
+          <h2 className="text-lg font-semibold">Income against goals</h2>
           {drawn.income === null ? (
             <p className="text-sm text-muted-foreground">No income or goals this month yet.</p>
           ) : (
@@ -38,10 +39,8 @@ export function MonthCharts({ sheet, className }: { sheet: PeriodSheet; classNam
             <SvgChart svg={drawn.income} className="max-w-sm" />
           )}
         </div>
-        <div className="space-y-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-variable-ink">
-            Variable expenses by category
-          </h2>
+        <div className="space-y-4 rounded-xl border bg-card p-4 md:px-6 md:pt-5 md:pb-6">
+          <h2 className="text-lg font-semibold">Variable expenses by category</h2>
           {drawn.spending === null ? (
             <p className="text-sm text-muted-foreground">Nothing spent on Variable expenses this month yet.</p>
           ) : (

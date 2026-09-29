@@ -4,11 +4,10 @@
  *
  * Colour follows the category's row on its list, as chart13's colours follow
  * the row (dPt idx 0–22), so a category keeps its colour whichever others
- * have spending. The workbook's 23 colours run from the palest coral to the darkest,
- * then a near-white peach; the app has no 23-row limit (D11), so the 24th row
- * starts the scale again. Neighbouring steps are close, so slices are parted
- * by a gap in the card's colour and each is named in the legend: colour is
- * never the only way to tell them apart.
+ * have spending. Mockup A's six hues take the place of the workbook's 23
+ * corals, and the seventh row starts them again, so two rows six apart share
+ * a hue: slices are parted by a gap in the card's colour and each is named in
+ * the legend, so colour is never the only way to tell them apart.
  *
  * Slices run clockwise from twelve o'clock in list order, as a spreadsheet
  * doughnut draws its rows, and the hole is half the ring (holeSize 50).
@@ -16,12 +15,12 @@
 import { WIDTH, type ChartFrame, fit, frame, lengthOf, textUnits } from './frame.js'
 import { type SvgMarkup, type SvgNode, el } from './svg.js'
 
-/** Jan chart13's point colours, idx 0–22, as the workbook stores them. #841809 is there twice. */
-export const CORAL_SCALE = [
-  '#FFE3DE', '#F9D8D3', '#FFB8AE', '#FCAFA5', '#F2A095', '#F49285', '#ED8779', '#EB7C6D',
-  '#EA7363', '#E06655', '#D55B4A', '#CF513F', '#BF412F', '#B73826', '#B22F1D', '#A12514',
-  '#911E0E', '#841809', '#841809', '#6F1306', '#620F03', '#4C0B02', '#FFF3EB',
-] as const
+/**
+ * Mockup A's six chart hues (ADR 0010, step 3): orange, pink, violet, blue,
+ * teal and green, the palette its Variable-expenses donut draws. Written
+ * into the file itself, so a chart saved out of the page keeps them (N124).
+ */
+export const SLICE_HUES = ['#F97316', '#EC4899', '#8B5CF6', '#3B82F6', '#14B8A6', '#22C55E'] as const
 
 export interface DoughnutSlice {
   /** The category's name, as typed. Escaped; never markup. */
@@ -48,10 +47,10 @@ const GAP = 20
 const ROW = 200
 const SWATCH = 100
 
-export function coralFor(listIndex: number): string {
+export function hueFor(listIndex: number): string {
   if (!Number.isInteger(listIndex) || listIndex < 0)
     throw new RangeError(`A list position must be a whole number from 0, received ${listIndex}`)
-  return CORAL_SCALE[listIndex % CORAL_SCALE.length]!
+  return SLICE_HUES[listIndex % SLICE_HUES.length]!
 }
 
 export function spendingDoughnut(input: DoughnutInput): SvgMarkup {
@@ -66,21 +65,21 @@ export function spendingDoughnut(input: DoughnutInput): SvgMarkup {
     if (to > from) {
       const d = ring(from, to)
       slices.push(
-        el('path', { d, fill: coralFor(s.listIndex), ...SURFACE }, [el('title', {}, [`${s.label}: ${s.valueText}`])]),
+        el('path', { d, fill: hueFor(s.listIndex), ...SURFACE }, [el('title', {}, [`${s.label}: ${s.valueText}`])]),
       )
     }
     from = to
   }
   // Nothing to share: the empty ring the workbook's chart draws with every Actual
-  // at 0, in the list's paler band so it reads as waiting, not as a slice.
-  const track = { d: ring(0, 10_000), 'fill-rule': 'evenodd', fill: '#FFEFE6', class: 'chart-variable-track' }
+  // at 0, in the list's tile so it reads as waiting, not as a slice.
+  const track = { d: ring(0, 10_000), 'fill-rule': 'evenodd', fill: '#FFEDD5', class: 'chart-variable-track' }
   const body = slices.length > 0 ? slices : [el('path', track)]
   const legend = input.slices.map((s, i) => {
     const y = legendTop + i * ROW
     const room = WIDTH - SWATCH - 60 - textUnits(s.valueText) - 60
     return el('g', {}, [
       el('title', {}, [`${s.label}: ${s.valueText}`]),
-      el('rect', { x: 0, y: y - 90, width: SWATCH, height: SWATCH, rx: 20, fill: coralFor(s.listIndex) }),
+      el('rect', { x: 0, y: y - 90, width: SWATCH, height: SWATCH, rx: 20, fill: hueFor(s.listIndex) }),
       el('text', { x: SWATCH + 60, y, fill: INK, class: 'chart-variable-ink' }, [fit(s.label, room)]),
       el(
         'text',
@@ -99,11 +98,11 @@ export function spendingDoughnut(input: DoughnutInput): SvgMarkup {
   return frame(input, height + 40, [el('g', {}, body), ...legend])
 }
 
-/** Variable expenses' ink (§6.6), readable on the card. */
-const INK = '#91452D'
+/** Variable expenses' ink (ADR 0010), readable on the card. */
+const INK = '#C2410C'
 const SURFACE = {
   'fill-rule': 'evenodd',
-  stroke: '#FFFEFA',
+  stroke: '#FFFFFF',
   'stroke-width': GAP,
   'stroke-linejoin': 'round',
   class: 'chart-surface-gap',

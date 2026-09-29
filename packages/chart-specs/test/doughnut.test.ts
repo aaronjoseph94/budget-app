@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { coralFor, spendingDoughnut, type DoughnutSlice } from '../src/doughnut.js'
+import { hueFor, spendingDoughnut, type DoughnutSlice } from '../src/doughnut.js'
 
 /** Suite tests: coordinates worked by hand on the 3,000-unit grid, ring centred at (1500, 720). */
 
@@ -31,8 +31,8 @@ describe('spendingDoughnut', () => {
   it("draws each slice clockwise from twelve o'clock, the long way round past half", () => {
     // A quarter: from the top to three o'clock, outer radius 700, hole 350.
     expect(paths(chart([slice('a', 2_500, 0), slice('b', 7_500, 1)]))).toEqual([
-      ['M1500 20A700 700 0 0 1 2200 720L1850 720A350 350 0 0 0 1500 370Z', '#FFE3DE'],
-      ['M2200 720A700 700 0 1 1 1500 20L1500 370A350 350 0 1 0 1850 720Z', '#F9D8D3'],
+      ['M1500 20A700 700 0 0 1 2200 720L1850 720A350 350 0 0 0 1500 370Z', '#F97316'],
+      ['M2200 720A700 700 0 1 1 1500 20L1500 370A350 350 0 1 0 1850 720Z', '#EC4899'],
     ])
   })
 
@@ -41,7 +41,7 @@ describe('spendingDoughnut', () => {
     expect(paths(chart([slice('a', 10_000, 9)]))).toEqual([
       [
         'M1500 20A700 700 0 0 1 1500 1420 A700 700 0 0 1 1500 20 Z M1500 370A350 350 0 0 1 1500 1070 A350 350 0 0 1 1500 370 Z',
-        '#E06655',
+        '#3B82F6',
       ],
     ])
   })
@@ -79,16 +79,16 @@ describe('spendingDoughnut', () => {
 
   it('draws the empty ring and no legend with nothing to share', () => {
     const svg = chart([])
-    expect(svg).toContain('fill="#FFEFE6" class="chart-variable-track"')
+    expect(svg).toContain('fill="#FFEDD5" class="chart-variable-track"')
     expect(svg).not.toContain('<text')
   })
 })
 
-describe('coralFor', () => {
-  // Jan chart13 colours by row: idx 0 the palest, 21 the darkest, 22 a peach.
-  it("takes the workbook's colour for the row, and starts again after the 23rd", () => {
-    const expected = ['#FFE3DE', '#F9D8D3', '#841809', '#841809', '#4C0B02', '#FFF3EB', '#FFE3DE']
-    expect([0, 1, 17, 18, 21, 22, 23].map(coralFor)).toEqual(expected)
-    expect(() => coralFor(-1)).toThrow(RangeError)
+describe('hueFor', () => {
+  // By row, as Jan chart13 colours, in Mockup A's six hues (N124).
+  it("takes Mockup A's hue for the row, and starts again after the sixth", () => {
+    const expected = ['#F97316', '#EC4899', '#8B5CF6', '#3B82F6', '#14B8A6', '#22C55E', '#F97316', '#3B82F6']
+    expect([0, 1, 2, 3, 4, 5, 6, 9].map(hueFor)).toEqual(expected)
+    expect(() => hueFor(-1)).toThrow(RangeError)
   })
 })

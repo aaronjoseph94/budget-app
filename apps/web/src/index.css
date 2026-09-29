@@ -491,7 +491,8 @@
  * designed width and scaled to its card, text included. Its marks carry
  * colours as attributes, which an exported file keeps; these rules outrank
  * them on the page, so a chart takes the tokens above in both schemes. The
- * attributes are still the workbook's colours (NOTICED-NOT-TOUCHING).
+ * Month's two carry Mockup A's colours in their attributes too; the other
+ * charts' are still the workbook's until their steps (N124).
  */
 .spec-chart {
   display: block;
@@ -511,7 +512,7 @@
   fill: var(--variable-ink);
 }
 .spec-chart .chart-variable-track {
-  fill: var(--variable-header);
+  fill: var(--variable-tile);
 }
 .spec-chart .chart-owed-ink {
   fill: var(--owed-ink);
