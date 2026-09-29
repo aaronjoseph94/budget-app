@@ -113,10 +113,14 @@ describe('the top bar (ADR 0011)', () => {
     const aside = screen.getByRole('complementary', { name: 'Sidebar' })
     expect([toggle.getAttribute('aria-expanded'), toggle.getAttribute('aria-controls')]).toEqual(['true', aside.id])
     expect(aside.classList.contains('lg:w-[248px]')).toBe(true)
+    expect(screen.getByRole('main').parentElement!.parentElement!.classList.contains('lg:pl-[248px]')).toBe(true)
 
     fireEvent.click(toggle)
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
     expect(aside.classList.contains('lg:w-[248px]')).toBe(false)
+    // The panel takes back the sidebar's width, leaving room for the rail only.
+    const panel = screen.getByRole('main').parentElement!.parentElement!
+    expect([panel.classList.contains('md:pl-[72px]'), panel.classList.contains('lg:pl-[248px]')]).toEqual([true, false])
     // Folded, every item keeps its name, and no group folds away.
     expect(within(aside).getByRole('link', { name: 'Month' }).querySelector('span')?.classList.contains('lg:inline')).toBe(false)
     expect(JSON.parse(window.localStorage.getItem(SIDEBAR_KEY) ?? '{}')).toEqual({ folded: true, open: {} })

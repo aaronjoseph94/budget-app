@@ -146,7 +146,17 @@ describe('the sidebar’s foot (ADR 0011)', () => {
     expect(within(card).getByText('Flight training')).toBeTruthy()
     expect(within(card).getByText('29%')).toBeTruthy()
     expect(card.getAttribute('href')).toBe('#/savings')
+    // The bar is core's 2,883 basis points, drawn as they are.
+    expect((card.querySelector('[role="presentation"] > div') as HTMLElement).style.width).toBe('28.83%')
     await expectNoAxeViolations()
+  })
+
+  it('leaves the goal out when the sidebar is folded to the rail', async () => {
+    wide()
+    window.localStorage.setItem(SIDEBAR_KEY, JSON.stringify({ folded: true, open: {} }))
+    renderScreen(<Shell />, withGoal())
+    await screen.findByRole('heading', { name: 'September 2026' })
+    expect(screen.getByRole('complementary', { name: 'Sidebar' }).textContent).not.toContain('Flight training')
   })
 
   it('reads no goal on a narrower screen, where the rail has no room for it', async () => {
