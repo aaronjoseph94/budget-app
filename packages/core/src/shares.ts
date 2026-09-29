@@ -13,6 +13,9 @@
  * exists. What a share is, and how it rounds, is F17: of the rows above
  * zero, half-up to a basis point as F13 rounds, so a refund is never drawn
  * as spending.
+ *
+ * A list's % pill (F50) is not a chart and no cell prints it, but it is the
+ * same division: an Actual over its budget, half-up, here uncapped.
  */
 import { type Cents, ZERO_CENTS, addCents, cents, sumCents } from '@budget/money-primitives'
 
@@ -24,6 +27,31 @@ import { type Cents, ZERO_CENTS, addCents, cents, sumCents } from '@budget/money
 export function shareOf(part: Cents, whole: Cents): number {
   if (part < 0 || whole <= 0) throw new RangeError(`A share needs a part of zero or more of a whole above zero`)
   return Number((BigInt(part) * 20_000n + BigInt(whole)) / (2n * BigInt(whole)))
+}
+
+export interface BudgetUsedInput {
+  /** A list's Actual total, as periodSheet gives it: below zero after refunds. */
+  readonly actualCents: number
+  /** Its budget total; null or 0 when none is set. */
+  readonly budgetCents: number | null
+}
+
+export interface BudgetUsedOutput {
+  /** The Actual over the budget in basis points, half-up, past 10,000 uncapped. Null: no pill. */
+  readonly usedBp: number | null
+}
+
+/**
+ * A list's % pill (F50): how much of its budget its Actual is, 11,600 for
+ * 116%. Null with no budget or a $0 one, so nothing is divided by zero, and
+ * when refunds took the Actual below zero, which no share describes.
+ */
+export function budgetUsedBp(input: BudgetUsedInput): BudgetUsedOutput {
+  const actual = cents(input.actualCents)
+  const budget = input.budgetCents === null ? null : cents(input.budgetCents)
+  if (budget !== null && budget < 0) throw new RangeError(`A budget cannot be negative, received ${budget}`)
+  if (budget === null || budget === 0 || actual < 0) return { usedBp: null }
+  return { usedBp: shareOf(actual, budget) }
 }
 
 export interface GoalBarsInput {

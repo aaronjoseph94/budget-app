@@ -172,8 +172,11 @@ export {
 
 export {
   goalBars,
+  budgetUsedBp,
   partShares,
   stackedColumns,
+  type BudgetUsedInput,
+  type BudgetUsedOutput,
   type GoalBar,
   type GoalBarsInput,
   type GoalBarsOutput,

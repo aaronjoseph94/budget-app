@@ -2376,3 +2376,48 @@ in order, how many are done, the next one and whether the guide is finished.
 pay schedule's read failed, step 5 was put off, then step 9. The order is
 1, 2, 3, 4, 6, 7, 8, 5, 9; **3 of 9 done**; the next step is 3 ("can't
 check yet"). Putting 5 off again gives 1, 2, 3, 4, 6, 7, 8, 9, 5.
+
+
+---
+
+## F50 — A list's % pill: how much of its budget its Actual is
+
+**Decided 2026-09-29. Engineering default. Not from the workbook.** Decided
+by the engineer under the owner's 2026-09-29 instruction to restyle the app
+to Mockup A (ADR 0010), which draws a % pill on each list card of the
+Month, the Week and Paycheck (N125). The month tabs print a list's Budget
+total (Jan!D21, J21, O21, T21, O9, T9) and Actual total, never one over
+the other, so there is no cell to follow.
+
+`budgetUsedBp` in core takes a list's Actual total and budget total, as
+periodSheet gives them and as the card head prints them ("$348.00 of
+$300.00"), and returns the one as a share of the other in basis points.
+
+**Options considered, for an Actual refunds took below zero**
+
+- **A — no pill.** The card head already prints the Actual with its minus
+  sign; a share of a budget that nothing was spent against says nothing
+  more.
+- **B — a negative share,** "−15%". It reads as a discount, or as 15% of
+  the budget given back, which is not what happened: the refunds were for
+  spending in an earlier window.
+
+**Chosen: A.**
+
+- **The share:** Actual × 10,000 over the budget, rounded half-up to a
+  basis point as F17 rounds, exact for any amount (BigInt). Not capped:
+  $348 of $300 is 11,600, drawn "116%", where `goalBars` and
+  `goalProgress` stop at 10,000.
+- **Nothing spent** against a budget is 0, drawn "0%".
+- **No budget, or a $0 one:** null, no pill. Nothing is divided by zero.
+- **Actual below zero:** null, no pill (A above).
+- **A negative budget or a fraction of a cent** is refused, as `resolveBudgets`
+  refuses one; a negative budget cannot reach the screen through the
+  database (0008's check).
+- **The two totals are the card's own.** The budget total adds the budgets
+  set, so a row with none adds nothing to it, while its spending is in the
+  Actual (F16); the pill agrees with the two figures beside it.
+
+**Worked examples.** $348.00 of $300.00 is **11,600 bp (116%)**; $0.05 of
+$200.00 is 2.5 bp, **3**; $0.01 of $300.00 is **0**; $150.00 of no budget,
+or of $0.00, is **no pill**; −$45.99 of $300.00 is **no pill**.

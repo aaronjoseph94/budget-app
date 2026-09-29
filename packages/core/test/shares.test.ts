@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { cents, isoDate } from '@budget/money-primitives'
 import { periodSheet, type PeriodCategory, type PeriodEntry, type PeriodPlan } from '../src/period-sheet.js'
-import { goalBars, partShares, shareOf, stackedColumns } from '../src/shares.js'
+import { budgetUsedBp, goalBars, partShares, shareOf, stackedColumns } from '../src/shares.js'
 
 /**
  * Suite tests, worked by hand. The workbook's charts print no number and the
@@ -226,5 +226,54 @@ describe('stackedColumns (F19, the Year stacked column)', () => {
     const out = stackedColumns({ columns: [col('jan', 0, 0), col('feb', -1, 0)] })
     expect(out.scaleCents).toBe(0)
     expect(out.columns.flatMap((c) => c.parts)).toEqual([null, null, null, null])
+  })
+})
+
+describe('budgetUsedBp (F50, a list\'s % pill)', () => {
+  const used = (actualCents: number, budgetCents: number | null) => budgetUsedBp({ actualCents, budgetCents }).usedBp
+
+  it('gives the Actual over the budget in basis points, past 100% uncapped', () => {
+    // $348 of $300 is 116%; $900 of $300 is 300%; $150 of $300 is 50%.
+    expect(used(34_800, 30_000)).toBe(11_600)
+    expect(used(90_000, 30_000)).toBe(30_000)
+    expect(used(15_000, 30_000)).toBe(5_000)
+  })
+
+  it('rounds half-up to a basis point, as F17 does', () => {
+    // 5 of 20,000 cents is 2.5 bp: half-up gives 3 where half-even gives 2.
+    expect(used(5, 20_000)).toBe(3)
+    // 1 of 30,000 is a third of a basis point, down; 2 of 3 is 6,666.67, up.
+    expect(used(1, 30_000)).toBe(0)
+    expect(used(2, 3)).toBe(6_667)
+    // 20,001 of 20,000 is 10,000.5 bp, up.
+    expect(used(20_001, 20_000)).toBe(10_001)
+  })
+
+  it('is exact past the largest integer a double multiplies safely', () => {
+    // x 10,000 passes 2^53, where a double's rounding, either way, gives one less.
+    expect(used(8_323_058_873_777_179, 13_525)).toBe(6_153_832_808_707_711)
+  })
+
+  it('gives 0% for nothing spent against a budget', () => {
+    expect(used(0, 30_000)).toBe(0)
+  })
+
+  it('gives null, no pill, with no budget or a $0 one, never a division by zero', () => {
+    expect(used(12_345, null)).toBeNull()
+    expect(used(12_345, 0)).toBeNull()
+    expect(used(0, 0)).toBeNull()
+  })
+
+  it('gives null when refunds took the Actual below zero', () => {
+    expect(used(-4_599, 30_000)).toBeNull()
+    expect(used(-1, 30_000)).toBeNull()
+  })
+
+  it('refuses a negative budget or a fraction of a cent', () => {
+    expect(() => used(100, -1)).toThrow(RangeError)
+    // Before the refund's null: a bad input is refused whatever the Actual.
+    expect(() => used(-5, -1)).toThrow(RangeError)
+    expect(() => used(-100.5, 30_000)).toThrow(RangeError)
+    expect(() => used(-100, 300.5)).toThrow(RangeError)
   })
 })
