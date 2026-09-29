@@ -112,6 +112,19 @@ const TEXT: readonly (readonly [text: string, surface: string, least?: number, a
   ['summary-value', 'summary'],
   ['summary-negative-ink', 'summary-negative'],
   ['title-ink', 'title-band'],
+  // Each list's ink on its own surfaces and on a card; its accent never carries words.
+  ...(['variable', 'bills', 'subscriptions', 'debts', 'income', 'savings'] as const).flatMap((list) =>
+    ['card', 'band', 'header', 'tile'].map((surface) => [`${list}-ink`, surface === 'card' ? 'card' : `${list}-${surface}`] as const),
+  ),
+  ...(['variable', 'income', 'savings', 'owed'] as const).flatMap((list) =>
+    ['band', 'header', 'total'].map((surface) => [`${list}-ink`, `${list}-${surface}`] as const),
+  ),
+  ['owed-ink', 'card'],
+  // #ea580c, for large orange words only (ADR 0010).
+  ['variable-large', 'card', 3],
+  ['variable-large', 'variable-band', 3],
+  ['waiting-ink', 'waiting'],
+  ['waiting-ink', 'waiting-tile'],
 ]
 
 /** `fg` over `bg` at `alpha`, or `fg` itself at full strength. */
