@@ -3085,3 +3085,38 @@ the step restyles, and the two lines should change together.
 
 **To settle:** draw the ✨ in an `aria-hidden` span in both lines, and
 extend their tests to check the accessible text.
+
+---
+
+## N133 — Review's "✨ Suggested: …" badge reads the sparkle aloud
+
+**Seen:** 2026-09-29, Mockup A step 10. The AI's suggestion on a Review
+row (`ReviewRow` in apps/web/src/screens/ReviewScreen.tsx) and the
+suggestions line (`said` in apps/web/src/review/SuggestBar.tsx) write "✨"
+inside their text, so a screen reader says the emoji's name, and neither
+has the sr-only "Written by AI:" other ✨ lines carry. The words beside
+the badge ("By AI from the shop’s name. Check it.") already say who
+suggested it, so nothing is hidden.
+
+**Why not fixed here:** it changes what a screen reader hears, not the
+look this step restyles; it belongs with N132.
+
+**To settle:** with N132, draw each ✨ in an `aria-hidden` span with its
+own sr-only words, and extend review-suggestions.test to check the
+accessible text.
+
+---
+
+## N134 — A Review row cannot say which import it came from
+
+**Seen:** 2026-09-29, Mockup A step 10. Mockup A writes "Sep 22, 2026 ·
+Card statement (PDF)" under each shop on Review. `listPending`
+(apps/web/src/ledger.ts) reads no batch, so the row knows its date but
+not its source; the unreadable lines already say theirs.
+
+**Why not fixed here:** it changes what the queue reads from the
+database, not how it looks.
+
+**To settle:** read `batch_id` and the batch's `source` with the queue,
+and write the source after the date in the words `SOURCE` already has;
+with a test that a receipt photo's row says "Receipt photo".

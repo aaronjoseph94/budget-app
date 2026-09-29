@@ -368,3 +368,51 @@ and the amber Review count.
 - **Copy:** nothing new. No figure is missing: every figure is core's, as
   before (`savingsFunds`, `goalProgress`, `periodComparison`, the levers,
   `debtPlan`, `debtStatus`, `debtBalanceChange`, `payoffStrategies`).
+
+## 2026-09-29 — Step 10, Add, Review and All transactions
+
+- **Titles and steppers are the Month's:** `MonthTitle` on all three, and
+  All transactions takes the Bill calendar's "‹ Sep 2026 ›" stepper
+  (`StepButton`), so the month shown is named between the arrows.
+- **Add's tabs** keep their icons and their keys (arrows, Home, End, one
+  tab stop) and sit on the canvas grey, the unchosen words in
+  `canvas-muted`, as Reports' tabs do (ADR 0010). I spent / I received
+  sits on the canvas grey the same way.
+- **A PDF statement's card** holds its figures, the rows not read and
+  Import, tinted to the accent as each screen's one hero is; its muted
+  words take `canvas-muted`. "Matches your statement" keeps the app's
+  green success badge.
+- **Shops are in the fixed-width face** on all three screens, as the
+  mockup draws every string a statement printed; typed names are drawn
+  the same way, since the ledger does not tell them apart by face.
+- **Review's count** beside the title is waiting's amber, not the
+  mockup's orange (ADR 0011), and hidden from a screen reader, since the
+  line under the title says the number.
+- **Suggest categories and Approve these N** sit on the title row's
+  right. Approve these N is filled, as the mockup draws it; it still only
+  opens the question, and nothing is filed until Approve all N. The
+  suggestions line stays on the page, empty and hidden, so what it later
+  says is heard (it used to arrive with its words already in it).
+- **Picker, Approve and ✕ on one line from 480px.** Below that the picker
+  takes its own line, as before: at 320px one line left the picker near
+  100px, too narrow to read "Choose a category…". A new category's name
+  and list stack under the picker, so the tab order still runs picker,
+  name, list, Approve.
+- **The unreadable lines** sit in waiting's amber card (#FFFBEB, #FDE68A
+  edge, the #D97706 icon); ink and muted words on it are measured.
+- **Money out and Money in stay white,** where the mockup tints them rose
+  and green: those hues name Debts and Income (ADR 0010), and these totals
+  are every row. Money in keeps the app's green figure, as before.
+- **Width:** the three screens keep the app's centred reading width
+  (48rem), where the mockup sets 920 to 960px to the left of the panel.
+  At 1440px Review's two buttons therefore wrap under its title.
+- **Copy left out:** "· Card statement (PDF)" on each Review row (the
+  queue does not read each row's import; N134), the "Similar shop" badge,
+  and "every approved charge and payment" under All transactions' month.
+  The search box has no magnifier: the field's padding is its own, and
+  `cn` cannot override it from outside.
+- **Seen only in tests:** the preview has no way to hand Add a PDF, so the
+  tinted statement card was checked by add-statement.test, not by eye.
+- **No figure is missing.** Every figure is the engine's or the import's
+  as before: the reconciliation's totals, the queue's count, and
+  `summariseImport` on All transactions. Nothing about approving changed.
