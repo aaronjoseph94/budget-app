@@ -10,6 +10,7 @@ import { hashOf } from '../nav.js'
 import { Button } from '../components/ui/button.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
 import { LineLink } from '../ai/LineLink.js'
+import { MonthTitle } from '../components/ui/type.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { Section } from '../forecast/parts.js'
 import { useCoachRead } from '../coach/facts.js'
@@ -17,7 +18,7 @@ import { checkinFigures, type CheckinFigures } from '../coach/checkin.js'
 import { useCheckinWords, type CheckinWordsState } from '../coach/use-checkin-words.js'
 import { markCheckinSeen } from '../coach/checkin-seen.js'
 import { CoachText } from '../coach/words.js'
-import { CheckinQuestions, useCheckinAnswers } from '../coach/CheckinQuestions.js'
+import { CHECKIN_CARD, CheckinQuestions, useCheckinAnswers } from '../coach/CheckinQuestions.js'
 
 const link = 'inline-flex min-h-11 items-center font-medium underline underline-offset-4'
 
@@ -72,7 +73,10 @@ export function CheckinScreen() {
         ← Coach
       </a>
       <div className="flex flex-wrap items-center gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Your Sunday check-in</h1>
+        <MonthTitle>
+          {/* Whole, never broken at its hyphen, where the line has room for it. */}
+          Your Sunday <span className="whitespace-nowrap">check-in</span>
+        </MonthTitle>
         <HelpButton screen="coach" topic="checkin" />
       </div>
       {figures === 'failed' ? <p className="text-muted-foreground">The check-in did not load. Reload to try again.</p> : null}
@@ -80,7 +84,7 @@ export function CheckinScreen() {
         figures === 'failed' ? null : <p className="text-muted-foreground">Looking back at last week…</p>
       ) : (
         <>
-          <p className="text-sm text-muted-foreground">The week of {formatDateRange(figures.recap.week.start, figures.recap.week.end)}</p>
+          <p className="-mt-2 text-muted-foreground">The week of {formatDateRange(figures.recap.week.start, figures.recap.week.end)}</p>
           <LastWeek figures={figures} facts={facts} words={words} />
           <CheckinQuestions questions={figures.questions} week={figures.recap.week.start} answers={answers} impulse={impulse} shops={shops} />
           <TryThis figures={figures} facts={facts} words={words} />
@@ -131,7 +135,8 @@ function Whose({ state }: { state: CheckinWordsState }) {
 function LastWeek({ figures, facts, words }: { figures: CheckinFigures; facts: CheckinFacts; words: Checkin }) {
   const { recap } = figures
   return (
-    <Section title="Last week">
+    // Tinted to the accent, not the mockup's green, which names Income (ADR 0010).
+    <Section title="Last week" flat className={`${CHECKIN_CARD} bg-linear-to-b from-card to-primary-tint`}>
       {recap.status === 'not_covered' ? (
         <p>
           {recap.coveredFrom === null
@@ -172,13 +177,13 @@ function TryThis({ figures, facts, words }: { figures: CheckinFigures; facts: Ch
     }
   }
   return (
-    <Section title="One thing to try">
+    <Section title="One thing to try" flat className={CHECKIN_CARD}>
       <p className="[overflow-wrap:anywhere]">
         <Said part={words.tryThis} facts={facts} />
       </p>
       {limit === null || name === null ? null : (
-        <div className="space-y-2 rounded-lg bg-muted/60 p-3">
-          <p className="font-medium [overflow-wrap:anywhere]">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-primary-soft p-3 md:px-4">
+          <p className="min-w-0 font-semibold [overflow-wrap:anywhere]">
             Keep {name} under <span className="tnum">{formatCents(limit.limitCents)}</span> next week?
           </p>
           {state === 'saved' ? (
@@ -211,7 +216,7 @@ function Goals({ facts, words }: { facts: CheckinFacts; words: Checkin }) {
     goals: active.map((g) => ({ id: g.id, targetCents: g.target_cents, savedCents: goalSavedCents(g, funds), unitCostCents: g.unit_cost_cents })),
   })
   return (
-    <Section title={active.length === 1 ? 'Your goal' : 'Your goals'}>
+    <Section title={active.length === 1 ? 'Your goal' : 'Your goals'} flat className={CHECKIN_CARD}>
       <p className="[overflow-wrap:anywhere]">
         <Said part={words.goal} facts={facts} />
       </p>

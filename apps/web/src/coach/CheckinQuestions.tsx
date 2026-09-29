@@ -5,13 +5,13 @@
  * 0017 the questions give way to one line pointing to One-time updates,
  * and the rest of the check-in still shows.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type KeyboardEvent } from 'react'
 import type { CheckinAnswer, CheckinQuestion, ImpulseShare } from '@budget/core'
 import type { IsoDate } from '@budget/money-primitives'
 import { useAppData } from '../app-data.js'
 import { formatBasisPoints, formatCents, formatDayMonth } from '../format.js'
 import { hashOf } from '../nav.js'
-import { Button } from '../components/ui/button.js'
+import { cn } from '../lib/cn.js'
 import { Section } from '../forecast/parts.js'
 import { readAnswers, saveAnswer, type AnswerRow } from './answers.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
@@ -46,6 +46,9 @@ export function useCheckinAnswers(): CheckinAnswers {
   return { ...state, save }
 }
 
+/** Mockup A's 18px card title on the check-in's cards, which are flat (step 7). */
+export const CHECKIN_CARD = '[&_h2]:text-lg'
+
 const CHOICES: readonly { readonly answer: CheckinAnswer; readonly label: string }[] = [
   { answer: 'planned', label: 'Planned' },
   { answer: 'impulse', label: 'Impulse' },
@@ -63,7 +66,7 @@ export function CheckinQuestions(props: {
   const { questions, week, answers, impulse, shops } = props
   if (answers.status === 'missing') {
     return (
-      <Section title="Was it planned?">
+      <Section title="Was it planned?" flat className={CHECKIN_CARD}>
         <p>
           Your answers need a one-time update.{' '}
           <a href={hashOf({ screen: 'help', param: 'updates' })} className={SENTENCE_LINK}>
@@ -75,13 +78,13 @@ export function CheckinQuestions(props: {
   }
   if (answers.status === 'failed') {
     return (
-      <Section title="Was it planned?">
+      <Section title="Was it planned?" flat className={CHECKIN_CARD}>
         <p className="text-muted-foreground">Your answers did not load. Reload to try again.</p>
       </Section>
     )
   }
   return (
-    <Section title="Was it planned?">
+    <Section title="Was it planned?" flat className={CHECKIN_CARD}>
       {questions.length === 0 ? <p className="text-muted-foreground">No everyday charges of $20.00 or more to ask about last week.</p> : null}
       <ul className="space-y-4">
         {questions.map((q) => (
@@ -106,14 +109,43 @@ function Question({ question, week, answers, shop }: { question: CheckinQuestion
       <p className="[overflow-wrap:anywhere]">
         Was <span className="font-medium">{shop}</span>, <span className="tnum font-medium">{formatCents(question.chargeCents)}</span> on {formatDayMonth(question.postedOn)}, planned?
       </p>
-      <div role="group" aria-label={`${shop}: planned, impulse or needed`} className="grid grid-cols-3 gap-2">
+      {/* Mockup A's segmented control, three across. Each answer is a button
+        that says whether it is chosen; the arrow keys, Home and End move
+        between the three and never answer, since an answer is saved. */}
+      <div role="group" aria-label={`${shop}: planned, impulse or needed`} className="grid grid-cols-3 gap-1 rounded-md border bg-canvas p-1 sm:max-w-md">
         {CHOICES.map((c) => (
-          <Button key={c.answer} className="px-2" variant={chosen === c.answer ? 'default' : 'outline'} aria-pressed={chosen === c.answer} onClick={() => void choose(c.answer)}>
+          <button
+            key={c.answer}
+            type="button"
+            aria-pressed={chosen === c.answer}
+            onKeyDown={onArrow}
+            onClick={() => void choose(c.answer)}
+            className={cn(
+              'min-h-11 min-w-0 rounded-sm px-2 text-sm font-medium transition-colors [overflow-wrap:anywhere]',
+              'outline-none focus-visible:ring-[3px] focus-visible:ring-ring',
+              chosen === c.answer ? 'bg-primary text-primary-foreground' : 'bg-card text-foreground hover:bg-muted',
+            )}
+          >
             {c.label}
-          </Button>
+          </button>
         ))}
       </div>
       {failed ? <p role="alert">That answer wasn’t kept. Try again.</p> : null}
     </li>
   )
+}
+
+/** Moves focus along a question's three answers with the arrow keys, Home and End, wrapping. */
+function onArrow(e: KeyboardEvent<HTMLButtonElement>) {
+  const answers = [...(e.currentTarget.parentElement?.querySelectorAll('button') ?? [])]
+  const at = answers.indexOf(e.currentTarget)
+  const to =
+    e.key === 'ArrowRight' ? (at + 1) % answers.length
+    : e.key === 'ArrowLeft' ? (at + answers.length - 1) % answers.length
+    : e.key === 'Home' ? 0
+    : e.key === 'End' ? answers.length - 1
+    : null
+  if (to === null) return
+  e.preventDefault()
+  answers[to]?.focus()
 }

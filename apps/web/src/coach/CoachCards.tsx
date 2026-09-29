@@ -155,7 +155,7 @@ function InsightCard({ card, text, onDismiss }: { card: CoachCard; text: CardTex
   const [why, setWhy] = useState(false)
   const action = ACTION[card.action]
   return (
-    <Card className="words-in space-y-2.5 p-4 shadow-none md:px-[1.375rem] md:py-5">
+    <Card flat className="words-in space-y-2.5 p-4 md:px-[1.375rem] md:py-5">
       <div className="flex items-start gap-3">
         {/* Below 480px the tile gives its width to the words. */}
         <span aria-hidden="true" className="hidden size-10 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary min-[480px]:flex">

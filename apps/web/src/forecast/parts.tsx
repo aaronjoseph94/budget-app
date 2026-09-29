@@ -8,9 +8,10 @@ import { hashOf } from '../nav.js'
 import { Card, CardContent, CardTitle } from '../components/ui/card.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
 
-export function Section({ title, children }: { title: string; children: ReactNode }) {
+/** `flat` and `className` let a screen restyle the card, as the check-in does (Mockup A step 7). */
+export function Section({ title, children, flat = false, className }: { title: string; children: ReactNode; flat?: boolean; className?: string }) {
   return (
-    <Card>
+    <Card flat={flat} className={className}>
       <div className="p-5 pb-2">
         <CardTitle as="h2">{title}</CardTitle>
       </div>

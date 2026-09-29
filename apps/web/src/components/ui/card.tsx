@@ -1,9 +1,12 @@
 import type { HTMLAttributes } from 'react'
 import { cn } from '../../lib/cn.js'
 
-/** shadcn/ui Card and its parts. */
-export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('rounded-xl border bg-card text-card-foreground shadow-sm', className)} {...props} />
+/**
+ * shadcn/ui Card and its parts. `flat` is Mockup A's card, with no shadow;
+ * a prop, not an override, since cn does not resolve conflicting classes.
+ */
+export function Card({ className, flat = false, ...props }: HTMLAttributes<HTMLDivElement> & { flat?: boolean }) {
+  return <div className={cn('rounded-xl border bg-card text-card-foreground', !flat && 'shadow-sm', className)} {...props} />
 }
 
 export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {

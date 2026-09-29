@@ -181,6 +181,31 @@ describe('the Sunday check-in', () => {
     expect(within(screen.getByRole('main')).getAllByRole('group')).toHaveLength(3)
   })
 
+  // Mockup A (step 7): the answers are a segmented control the arrow keys move
+  // along, wrapping, with Home and End; moving never answers, since an answer is saved.
+  it('moves along the three answers with the arrow keys, Home and End, and answers only on a press', async () => {
+    const fake = checkinFake()
+    renderScreen(<Shell />, fake)
+
+    const group = await screen.findByRole('group', { name: 'SUSHI PLACE: planned, impulse or needed' })
+    const [planned, impulse, needed] = within(group).getAllByRole('button')
+    expect([planned, impulse, needed].map((b) => b?.textContent)).toEqual(['Planned', 'Impulse', 'Needed'])
+    planned!.focus()
+    fireEvent.keyDown(planned!, { key: 'ArrowRight' })
+    expect(document.activeElement).toBe(impulse)
+    fireEvent.keyDown(impulse!, { key: 'End' })
+    expect(document.activeElement).toBe(needed)
+    fireEvent.keyDown(needed!, { key: 'ArrowRight' })
+    expect(document.activeElement).toBe(planned)
+    fireEvent.keyDown(planned!, { key: 'ArrowLeft' })
+    expect(document.activeElement).toBe(needed)
+    fireEvent.keyDown(needed!, { key: 'Home' })
+    expect(document.activeElement).toBe(planned)
+    expect(fake.tables.coach_answers).toEqual([])
+    expect(within(group).getAllByRole('button').map((b) => b.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'false'])
+    await expectNoAxeViolations()
+  })
+
   it('without 0017, replaces only the questions with one line pointing to Help', async () => {
     const fake = checkinFake()
     fake.fail('coach_answers', '42P01')
