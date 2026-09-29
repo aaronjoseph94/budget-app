@@ -473,27 +473,28 @@ const ReviewRow = memo(function ReviewRow({
           </div>
           <div className="flex gap-2 min-[480px]:contents">
             <Button
-              className="min-h-11 flex-1 min-[480px]:flex-none"
+              size="tall"
+              className="flex-1 min-[480px]:flex-none"
               disabled={!ready || busy}
               onClick={() => onApprove(row, creating && newKind !== '' ? { name: newName.trim(), kind: newKind } : undefined)}
             >
               <Icon name="check" /> Approve
             </Button>
-            <Button variant="outline" size="icon" className="size-11 shadow-none" aria-label="Not a real transaction — remove" disabled={busy} onClick={() => onReject(row)}>
+            <Button variant="outline" size="icon-lg" flat aria-label="Not a real transaction — remove" disabled={busy} onClick={() => onReject(row)}>
               <Icon name="x" className="text-muted-foreground" />
             </Button>
           </div>
         </div>
         {suggestion === 'rule' ? (
           <p className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground md:text-[0.8125rem]">
-            <Badge variant="outline" className="px-2.5">
+            <Badge variant="outline">
               <Icon name="sparkles" className="size-3" /> Suggested
             </Badge>
             How you filed this merchant last time.
           </p>
         ) : suggestion === 'model' ? (
           <div className="mt-3 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground md:text-[0.8125rem]">
-            <Badge variant="outline" className="max-w-full min-w-0 px-2.5">
+            <Badge variant="outline" className="max-w-full min-w-0">
               <span className="truncate">✨ Suggested: {suggestedName}</span>
             </Badge>
             <span>By AI from the shop’s name. Check it.</span>
@@ -568,7 +569,7 @@ function UnreadableLines({
                       <Button
                         variant="outline"
                         size="sm"
-                        className="shadow-none"
+                        flat
                         aria-label={`Dismiss ${where.toLowerCase()}`}
                         disabled={busy !== null}
                         onClick={() => onDismiss(line.id)}

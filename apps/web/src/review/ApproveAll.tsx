@@ -12,7 +12,7 @@ export interface ApproveItem {
 /** Approve these N, on the title row: it only opens the question below. */
 export function ApproveAllButton({ n, busy, onOpen }: { n: number; busy: boolean; onOpen: () => void }) {
   return (
-    <Button className="min-h-11" disabled={busy} onClick={onOpen}>
+    <Button size="tall" disabled={busy} onClick={onOpen}>
       Approve these {n}
     </Button>
   )

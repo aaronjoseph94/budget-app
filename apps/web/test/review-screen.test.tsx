@@ -581,7 +581,9 @@ describe('ReviewScreen, in Mockup A (step 10)', () => {
     const line = coffee.getByRole('combobox', { name: 'Category' }).parentElement!.parentElement!
     expect(line.className).toContain('min-[480px]:grid-cols-[minmax(0,1fr)_auto_auto]')
     expect(within(line).getByRole('button', { name: /Approve/ })).toBeTruthy()
-    expect(within(line).getByRole('button', { name: 'Not a real transaction — remove' })).toBeTruthy()
+    // Flat and 44px by prop: cn is a plain join, so an override would leave two shadows or sizes.
+    const reject = within(line).getByRole('button', { name: 'Not a real transaction — remove' }).className.split(' ')
+    expect([reject.includes('shadow-sm'), reject.filter((c) => /^size-/.test(c))]).toEqual([false, ['size-11']])
     // Opening the question still approves nothing.
     fireEvent.click(within(header).getByRole('button', { name: 'Approve these 2' }))
     expect(await screen.findByRole('group', { name: 'Approve these 2?' })).toBeTruthy()

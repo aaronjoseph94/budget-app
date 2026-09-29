@@ -296,11 +296,11 @@ function PdfPreview({
             </ul>
           </Alert>
         ) : null}
-  
+
         {rejected.length > 0 ? (
           <Alert title={`${rejected.length} rows could not be read`}>They will be recorded so nothing goes missing silently.</Alert>
         ) : null}
-  
+
         {rec.balances ? (
           <div className="space-y-2">
             <Button size="lg" className="w-full" aria-disabled={saving} onClick={() => void onSave({ accepted, rejected, parsed, source: 'card_pdf', period })}>

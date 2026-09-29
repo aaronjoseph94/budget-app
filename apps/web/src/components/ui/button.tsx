@@ -3,13 +3,17 @@ import { cn } from '../../lib/cn.js'
 
 /** shadcn/ui Button, with its variants as plain maps instead of cva. */
 const VARIANTS = {
-  default: 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90',
+  default: 'bg-primary text-primary-foreground hover:bg-primary/90',
   secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-  outline: 'border bg-card shadow-sm hover:bg-accent hover:text-accent-foreground',
+  outline: 'border bg-card hover:bg-accent hover:text-accent-foreground',
   ghost: 'hover:bg-accent hover:text-accent-foreground',
-  destructive: 'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90',
+  destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
   link: 'text-primary underline-offset-4 hover:underline',
 } as const
+
+// The variants that lift off the page; `flat` (Mockup A) leaves the shadow
+// off, a prop rather than a shadow-none override, which cn cannot resolve.
+const SHADOWED: ReadonlySet<string> = new Set(['default', 'outline', 'destructive'])
 
 // Heights are floors, not fixed, so a label that has to wrap grows the
 // button instead of spilling out of it.
@@ -17,15 +21,19 @@ const SIZES = {
   default: 'min-h-10 px-4 py-2',
   sm: 'min-h-8 rounded-md px-3 py-1 text-xs',
   lg: 'min-h-12 rounded-lg px-6 py-2 text-base',
+  // 44px on every pointer, for Mockup A's rows and title rows.
+  tall: 'min-h-11 px-4 py-2',
   icon: 'size-10',
+  'icon-lg': 'size-11',
 } as const
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   readonly variant?: keyof typeof VARIANTS
   readonly size?: keyof typeof SIZES
+  readonly flat?: boolean
 }
 
-export function Button({ variant = 'default', size = 'default', className, type = 'button', ...props }: ButtonProps) {
+export function Button({ variant = 'default', size = 'default', flat = false, className, type = 'button', ...props }: ButtonProps) {
   return (
     <button
       type={type}
@@ -45,6 +53,7 @@ export function Button({ variant = 'default', size = 'default', className, type 
         // Greyed the same while a save runs; it keeps focus, where disabled drops it (FE-6).
         'aria-disabled:opacity-50',
         VARIANTS[variant],
+        !flat && SHADOWED.has(variant) && 'shadow-sm',
         SIZES[size],
         className,
       )}
