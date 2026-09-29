@@ -326,7 +326,8 @@ function YearTable({
   // Mockup A's 20px sides and 15px type.
   const left = compact ? 'pl-2.5 min-[1400px]:pl-3' : 'pl-4 md:pl-5'
   const right = compact ? 'pr-2.5 min-[1400px]:pr-3' : 'pr-4 md:pr-5'
-  const gap = compact ? 'px-1' : 'px-2'
+  // Below 360px the cells close up to 4px between, so a month's full name fits.
+  const gap = compact ? 'px-1' : 'px-1 min-[360px]:px-2'
   return (
     <section aria-label={`${g.heading} by month`} className="min-w-0 overflow-hidden rounded-xl border bg-card">
       <div className={cn('flex flex-wrap items-center gap-x-3 gap-y-1 py-4', left, right)}>
