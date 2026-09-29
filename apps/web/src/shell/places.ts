@@ -93,3 +93,21 @@ export function litOf(screen: Screen): Screen | null {
   if (SIDEBAR_GROUPS.some((g) => g.items.some((i) => i.screen === screen))) return screen
   return PARENT[screen] ?? null
 }
+
+export interface Crumbs {
+  readonly parent: { readonly label: string; readonly screen: Screen }
+  readonly current: string
+}
+
+/**
+ * The top bar's breadcrumb: "Budget › Month" for a screen with an item of
+ * its own, and its parent for one without, "Coach › Ask", "Coach ›
+ * Check-in", "Settings › AI settings".
+ */
+export function crumbsOf(screen: Screen, param: string | null): Crumbs {
+  if (screen === 'coach' && param === 'checkin') return { parent: { label: 'Coach', screen: 'coach' }, current: 'Check-in' }
+  const parent = PARENT[screen]
+  return parent === undefined
+    ? { parent: { label: 'Budget', screen: 'month' }, current: SCREEN_NAME[screen] }
+    : { parent: { label: SCREEN_NAME[parent], screen: parent }, current: SCREEN_NAME[screen] }
+}

@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes, LabelHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react'
+import type { InputHTMLAttributes, LabelHTMLAttributes, ReactNode, Ref, SelectHTMLAttributes } from 'react'
 import { cn } from '../../lib/cn.js'
 
 /**
@@ -20,7 +20,7 @@ export function Input({
   size = 'default',
   inset = false,
   ...props
-}: Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> & { size?: 'default' | 'sm'; inset?: boolean }) {
+}: Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> & { size?: 'default' | 'sm'; inset?: boolean; ref?: Ref<HTMLInputElement> }) {
   return (
     <input
       className={cn(FIELD, size === 'sm' ? 'h-9' : 'h-11', inset ? 'pl-6 pr-3' : 'px-3', className)}

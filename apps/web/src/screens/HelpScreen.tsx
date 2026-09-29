@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { articleFor, searchArticles, type Article } from '../help/articles.js'
 import { hashOf } from '../nav.js'
 import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { ArticleBody, HelpText } from '../help/ArticleBody.js'
 import { UpdatesPanel } from '../help/UpdatesPanel.js'
+import { useHelpSearchFocus } from '../help/search-focus.js'
 
 /**
  * Help (plan §8.2): `#/help` lists every article with a search box, and
@@ -20,6 +21,8 @@ export function HelpScreen({ topic }: { topic: string | null }) {
 function HelpIndex({ unwritten }: { unwritten: boolean }) {
   const [query, setQuery] = useState('')
   const found = searchArticles(query)
+  const box = useRef<HTMLInputElement>(null)
+  useHelpSearchFocus(box)
   return (
     <div className="space-y-4">
       <header>
@@ -32,6 +35,7 @@ function HelpIndex({ unwritten }: { unwritten: boolean }) {
         </p>
       ) : null}
       <Input
+        ref={box}
         type="search"
         aria-label="Search help"
         placeholder="Search help, such as “budget”"

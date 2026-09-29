@@ -14,6 +14,8 @@ import { AnnounceProvider } from './components/ui/announce.js'
 import { Icon, type IconName } from './components/ui/icons.js'
 import { Count, Dot, labelOf } from './shell/marks.js'
 import { Sidebar } from './shell/Sidebar.js'
+import { TopBar } from './shell/TopBar.js'
+import { askForHelpSearch } from './help/search-focus.js'
 import { useSidebarState } from './shell/sidebar-state.js'
 import { SCREEN_NAME } from './shell/places.js'
 import { cn } from './lib/cn.js'
@@ -136,6 +138,7 @@ export function Shell() {
   // Read again on every move: opening the check-in marks it seen. Not on
   // the Coach itself, whose own card says the check-in is ready.
   const dot = useMemo(() => screen !== 'coach' && checkinDue(todayIso()), [screen, param])
+  useSearchKey()
 
   return (
     <AnnounceProvider>
@@ -158,6 +161,7 @@ export function Shell() {
           the rail or the sidebar (ADR 0010, 0011); on a phone it is the panel. */}
         <div className="md:py-3 md:pl-[72px] md:pr-3 lg:pl-[248px] print:p-0">
           <div className="md:min-h-[calc(100dvh-1.5rem)] md:rounded-xl md:border md:bg-background print:border-0">
+            <TopBar screen={screen} param={param} onSearch={openHelpSearch} />
             {/* A 16 px gutter, 12 below 360 px (plan §9): at 320 the Month's
               tables were 18 px wider than their cards (N66). Every band that
               bleeds to the edge takes back the same (-mx-4, and -mx-3 there). */}
@@ -281,6 +285,25 @@ function Screens({ screen, param }: { screen: Screen; param: string | null }) {
   )
 }
 
+/** "Search or jump to…": Help, its search box focused, for now (ADR 0011). */
+function openHelpSearch(): void {
+  askForHelpSearch()
+  navigate('help')
+}
+
+/** ⌘K on a Mac, Ctrl+K elsewhere, from any screen, as the top bar's search says. */
+function useSearchKey(): void {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || e.key.toLowerCase() !== 'k') return
+      e.preventDefault()
+      openHelpSearch()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+}
+
 /**
  * A screen changed only its hash, so the page kept the title "Budget" and
  * focus stayed on the tab pressed: a screen reader said nothing had
@@ -296,7 +319,8 @@ function useAnnounceScreen(screen: Screen, main: { readonly current: HTMLElement
       // The tabs are links now (FE-20), so the scroll navigate() gave them
       // happens here, for however the screen was reached.
       window.scrollTo({ top: 0 })
-      main.current?.focus({ preventScroll: true })
+      // Unless the new screen has put focus in itself, as Help's search does.
+      if (main.current?.contains(document.activeElement) !== true) main.current?.focus({ preventScroll: true })
     }
     shown.current = screen
   }, [screen, main])
