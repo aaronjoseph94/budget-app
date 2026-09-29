@@ -190,3 +190,38 @@ and the amber Review count.
 - **No figure is missing.** Every figure the mockup shows is yearSheet's,
   periodComparison's, fund or debt status, or core's `partShares`,
   `stackedColumns`, `goalBars` and F18's `shareBp`, as before.
+
+## 2026-09-29 — Step 6, the Bill calendar
+
+- **The calendar's own tokens take Mockup A's values** (`calendar-*`):
+  the sky tint #EFF6FF behind the weekday names and the month's pill,
+  Bills' ink #0369A1 for their words and the week totals, bill names in
+  the ink, and two new ones, `calendar-today` (the Year's yellow) and
+  `calendar-off` (the hover grey on other months' days). Dark values are
+  the mockup's too. Today's number, names and amounts on the tint are in
+  the contrast test.
+- **The title row is the Month's:** the ? beside the title, "Bill
+  calendar" under it, and the pill and a "‹ Sep 2026 ›" stepper on the
+  right (`StepButton`, shared). The mockup's line "Bill calendar · each
+  bill on its day, paydays, and each week’s total" is not the app's
+  copy, so the app keeps "Bill calendar" alone.
+- **Each bill's rule is its list's hue** (ADR 0010): sky Bills, violet
+  Subscriptions, rose Debts, in the grid and in the phone's agenda. The
+  phone's dotted grid keeps one colour of dot, as its legend says "a bill
+  due"; the agenda under it carries the hues.
+- **The payday pill keeps its darker green** (#047857, white words, 5.5:1).
+  The mockup's #10B981 with white reads 2.5:1.
+- **Names wrap instead of being cut short.** The mockup ends a long name
+  with "…" ("Credit …"); two cards named "Credit Card 1" and "Credit
+  Card 2" would then read alike. A name wraps and its amount drops under
+  it. Below 1280px the grid keeps the smaller 12px bill lines and 10px
+  weekday names it had, so "Wednesday" fits beside the rail.
+- **"+N more" after two bills** (design-review P2 item 8) opens the day in
+  the app's sheet, listed as the agenda lists it. N is a count of bills
+  left over, not a money figure. A bill in the sheet opens its charges
+  in place of the day.
+- **Today** is tinted and its number is in the accent, with
+  `aria-current="date"`. On the phone's dotted grid, today's number gets
+  the same colours unless it is a payday, whose green wins.
+- **No figure is missing.** Each figure the screen shows comes from
+  `billCalendar`: the day's bills, the week totals and the month's total.

@@ -3030,3 +3030,22 @@ wins. Core gives each row `effectiveBudgetCents` and each list
 Budgeted cell (marked "planned") and Left read them on the Month, the Week
 and Paycheck. The typed totals, Left to spend, the Year and the golden
 tests are unchanged.
+
+---
+
+## N131 — Payday pills cut their names short in the Bill calendar's narrow grid
+
+**Seen:** 2026-09-29, Mockup A step 6. From 768 to about 1100px the grid's
+day columns are near 80px wide, and a payday pill beside the day's number
+shows "Incom…" or "Side H…". A screen reader hears the whole name ("Payday:
+Income 1"), and the sheet and the phone's agenda write it out, but at
+that width a sighted reader cannot tell two income sources apart. It was
+the same before step 6.
+
+**Why not fixed here:** step 6 is a restyle, and the fix changes the
+cell's layout (the pill under the number, or the name wrapping), which
+changes how tall every week's row is.
+
+**To settle:** below 1280px put the pill on its own line under the
+number and let the name wrap, then check 768, 1024 and 1280 in light and
+dark.
