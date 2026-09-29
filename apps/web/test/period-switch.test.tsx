@@ -55,6 +55,31 @@ describe('the Month · Week · Pay · Year switch (ADR 0006)', () => {
     for (const a of links) expect(a.classList.contains(a.textContent === current ? 'bg-card' : 'text-canvas-muted')).toBe(true)
   })
 
+  // The design review's Accessibility list: the Views switch takes the arrow
+  // keys as the Add screen's tabs do, wrapping at each end, with Home and End.
+  it('moves along the four with the arrow keys, Home and End', async () => {
+    go('/month')
+    renderScreen(<Shell />, createFakeSupabase())
+    await screen.findByRole('heading', { name: 'September 2026', level: 1 })
+    const [month, week, , year] = (await views()).getAllByRole('link')
+
+    month!.focus()
+    fireEvent.keyDown(month!, { key: 'ArrowRight' })
+    expect(document.activeElement).toBe(week)
+    fireEvent.keyDown(week!, { key: 'ArrowLeft' })
+    expect(document.activeElement).toBe(month)
+    fireEvent.keyDown(month!, { key: 'ArrowLeft' })
+    expect(document.activeElement).toBe(year)
+    fireEvent.keyDown(year!, { key: 'ArrowRight' })
+    expect(document.activeElement).toBe(month)
+    fireEvent.keyDown(month!, { key: 'End' })
+    expect(document.activeElement).toBe(year)
+    fireEvent.keyDown(year!, { key: 'Home' })
+    expect(document.activeElement).toBe(month)
+    // Focus only moves; the hash is the Month's until a link is followed.
+    expect(window.location.hash).toBe('#/month')
+  })
+
   it('is on no other screen', async () => {
     go('/savings')
     renderScreen(<Shell />, createFakeSupabase())

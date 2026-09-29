@@ -1,3 +1,4 @@
+import type { KeyboardEvent } from 'react'
 import { hashOf, type Screen } from '../nav.js'
 import { cn } from '../lib/cn.js'
 
@@ -8,6 +9,21 @@ const VIEWS: readonly { screen: Screen; label: string }[] = [
   { screen: 'paycheck', label: 'Pay' },
   { screen: 'year', label: 'Year' },
 ]
+
+/** Moves focus along the switch's links with the arrow keys, Home and End. */
+function onArrow(e: KeyboardEvent<HTMLAnchorElement>) {
+  const links = [...(e.currentTarget.parentElement?.querySelectorAll('a') ?? [])]
+  const at = links.indexOf(e.currentTarget)
+  const to =
+    e.key === 'ArrowRight' ? (at + 1) % links.length
+    : e.key === 'ArrowLeft' ? (at + links.length - 1) % links.length
+    : e.key === 'Home' ? 0
+    : e.key === 'End' ? links.length - 1
+    : null
+  if (to === null) return
+  e.preventDefault()
+  links[to]?.focus()
+}
 
 /**
  * Month · Week · Pay · Year, at the top of those four screens, so the Week
@@ -23,6 +39,10 @@ const VIEWS: readonly { screen: Screen; label: string }[] = [
  * Mockup A's segmented control: the four on the canvas grey, the one
  * showing lifted onto the card. Words on the canvas take `canvas-muted`,
  * as #6b7280 reads 4.40 to one there (ADR 0010).
+ *
+ * The arrow keys, Home and End move along the four, as the Add screen's
+ * tabs do (design review, Accessibility); Enter opens the one reached. Each
+ * stays a link in the tab order, so nothing is lost to a keyboard without them.
  */
 export function PeriodSwitch({ current }: { current: 'month' | 'week' | 'paycheck' | 'year' }) {
   return (
@@ -33,6 +53,7 @@ export function PeriodSwitch({ current }: { current: 'month' | 'week' | 'paychec
             key={v.screen}
             href={hashOf({ screen: v.screen, param: null })}
             aria-current={v.screen === current ? 'page' : undefined}
+            onKeyDown={onArrow}
             className={cn(
               'flex min-h-9 min-w-16 items-center justify-center rounded-sm px-3.5 text-sm font-medium transition-colors pointer-coarse:min-h-11 sm:min-w-22',
               'outline-none focus-visible:ring-[3px] focus-visible:ring-ring',
