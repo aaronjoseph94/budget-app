@@ -72,3 +72,16 @@ and the amber Review count.
 - **Layout:** two across from 768 px; from 1280 px the lists two across
   and the charts in a right column (17rem, 20rem from 1400 px, where the
   pill and the table's side padding also grow back to the mockup's).
+
+## 2026-09-29 — Step 3, the review
+
+- **The Views switch takes the arrow keys** (design review,
+  Accessibility), wrapping, with Home and End. It stays four links in the
+  tab order rather than becoming a tab list with one stop: it navigates
+  to another screen, and a link says so to a screen reader.
+- **Four across keeps the small table.** The Week's and Paycheck's cards
+  lie four across from 1280 px, so they keep the workbook's smaller
+  table type and none of the Month's 1400 px edges (`fourAcross`).
+- **Beside the rail, 768 to 1023 px, the Month's table head is 13 px** and
+  the overspent pill keeps 6 px sides below 1400 px, so the Variable card
+  holds its columns with several rows over budget.

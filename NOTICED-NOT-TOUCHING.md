@@ -2920,3 +2920,40 @@ overspent rows is a few pixels wider than its column, and its table
 scrolls inside the card (never the page).
 
 **Why not fixed here:** step 4 restyles those screens and their grid.
+
+**Progress (2026-09-29, step 3 review):** the Month's larger table type
+had also reached the Week and Paycheck, whose tables then ran past all
+six four-across cards at 1280 px and three at 1440 px. Their cards keep
+the smaller type again (`fourAcross`), and the Month's Variable card no
+longer runs over at 768 px. At 1280 px, beside the sidebar, three to five
+of the Week's and Paycheck's tables still scroll inside their cards by a
+few pixels, as they did before step 3; step 4's grid settles it.
+
+---
+
+## N127 — The Month's charts write their words small in the desktop column
+
+**Seen:** 2026-09-29, review of Mockup A step 3. A chart-specs chart is
+drawn 3,000 units wide and scaled to its card, text included. In the
+17rem to 20rem column from 1280 px the income bars' labels and the
+donut's legend come out near 8 px, where the mockup writes them at 14 px
+as HTML beside the drawing. It was as small in the four-across layout
+before step 3.
+
+**Why not fixed here:** a restyle step changes chart-specs' colours only.
+
+**To settle:** draw the legend and labels as HTML beside the SVG, from
+the same core figures, or give chart-specs a narrow layout with larger
+text units, with its own tests.
+
+---
+
+## N128 — Two leftovers in the Month's list cards
+
+**Seen:** 2026-09-29, review of Mockup A step 3. `TONE` in
+apps/web/src/screens/MonthScreen.tsx still carries a `rule` per list that
+nothing reads since the cards dropped their tinted edge, and `Block`'s
+doc comment still speaks of "the band", which the new card head replaced.
+
+**Why not fixed here:** neither changes what anyone sees; the next edit
+to `Block` can take both.
