@@ -405,6 +405,28 @@ function ReviewBanner({
 }) {
   if (pendingHere === 0 && pendingTotal === 0) return null
   return (
+    <WaitingBanner>
+      {pendingHere > 0 ? (
+        <>
+          <span className="font-semibold">
+            Not filed yet: {pendingHere} from {formatMonthName(month)} waiting for review
+          </span>{' '}
+          — not counted below
+        </>
+      ) : (
+        <>{pendingTotal} from other months waiting for review</>
+      )}
+    </WaitingBanner>
+  )
+}
+
+/**
+ * Waiting's amber line, one button to Review, as the Month, the Week and
+ * Paycheck draw it (ADR 0010): an inbox tile, the words, and Mockup A's
+ * "Review ›".
+ */
+export function WaitingBanner({ children }: { children: ReactNode }) {
+  return (
     <button
       type="button"
       onClick={() => navigate('review')}
@@ -413,20 +435,9 @@ function ReviewBanner({
       <span className="flex size-8 shrink-0 items-center justify-center rounded-sm bg-waiting-tile text-waiting-icon">
         <Icon name="inbox" className="size-4" />
       </span>
-      <span className="flex-1 md:text-base">
-        {pendingHere > 0 ? (
-          <>
-            <span className="font-semibold">
-              Not filed yet: {pendingHere} from {formatMonthName(month)} waiting for review
-            </span>{' '}
-            — not counted below
-          </>
-        ) : (
-          <>{pendingTotal} from other months waiting for review</>
-        )}
-      </span>
-      {/* Mockup A's "Review ›". The whole banner is the one button to Review,
-        and its name already says so, so a screen reader hears it once. */}
+      <span className="flex-1 md:text-base">{children}</span>
+      {/* The whole banner is the one button to Review, and its name already
+        says so, so a screen reader hears "Review" once. */}
       <span aria-hidden="true" className="hidden shrink-0 items-center gap-1 font-medium min-[480px]:flex">
         Review
         <Icon name="chevronRight" className="size-3.5" />
@@ -806,14 +817,15 @@ export function PeriodBlocks({
   )
 }
 
-/** One end of the month stepper: 44px square, as the mockup draws it, with its own hover. */
-function StepButton({ label, icon, onClick }: { label: string; icon: IconName; onClick: () => void }) {
+/** One end of a period stepper: 44px square, as the mockup draws it, with its own hover. */
+export function StepButton({ label, icon, onClick, disabled = false }: { label: string; icon: IconName; onClick: () => void; disabled?: boolean }) {
   return (
     <button
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="flex size-11 items-center justify-center outline-none first:rounded-l-md last:rounded-r-md hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring"
+      disabled={disabled}
+      className="flex size-11 items-center justify-center outline-none first:rounded-l-md last:rounded-r-md hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40"
     >
       <Icon name={icon} className="size-4" />
     </button>

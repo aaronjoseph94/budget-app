@@ -15,9 +15,10 @@ import { categoriesForCore, entriesForCore, plansForCore, weekCategoriesForCore 
 import { useEarlier } from '../earlier.js'
 import { formatDateRange, todayIso } from '../format.js'
 import { OpenedCharges } from './MonthCharges.js'
+import { StepButton, WaitingBanner } from './MonthScreen.js'
+import { MonthTitle } from '../components/ui/type.js'
 import { Card, CardContent } from '../components/ui/card.js'
 import { Alert } from '../components/ui/feedback.js'
-import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 import { navigate } from '../nav.js'
 import { WeekBlocks } from './WeekBlocks.js'
@@ -129,42 +130,34 @@ export function WeekScreen({ monday }: { monday: string | null }) {
   return (
     <div className="space-y-4">
       <PeriodSwitch current="week" />
-      <header className="-mx-4 max-[359px]:-mx-3 flex flex-wrap items-center justify-between gap-2 bg-title-band px-4 max-[359px]:px-3 py-4 md:mx-0 md:rounded-xl">
-        <div>
+      {/* Mockup A's title row, as the Month's: the title with its ?, the
+        dates under it, and on the right the week stepper with its dates.
+        It wraps, so at 320px the stepper drops under the title. */}
+      <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-1">
-            <h1 className="text-2xl font-semibold tracking-tight">{isThisWeek ? 'This week' : 'Week of'}</h1>
-            <HelpButton screen="week" />
+            <MonthTitle>{isThisWeek ? 'This week' : 'Week of'}</MonthTitle>
+            <HelpButton screen="week" className="text-muted-foreground" />
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground md:text-base">
             {formatDateRange(bounds.start, bounds.end)}
             {isThisWeek && sheet !== null ? ` · ${sheet.daysLeft} ${sheet.daysLeft === 1 ? 'day' : 'days'} left` : ''}
           </p>
         </div>
-        <div className="flex gap-1">
-          <Button variant="outline" size="icon" aria-label="Previous week" onClick={() => step(-1)}>
-            <Icon name="chevronLeft" />
-          </Button>
-          <Button variant="outline" size="icon" aria-label="Next week" disabled={isThisWeek} onClick={() => step(1)}>
-            <Icon name="chevronRight" />
-          </Button>
+        <div className="flex items-stretch rounded-md border bg-card">
+          <StepButton label="Previous week" icon="chevronLeft" onClick={() => step(-1)} />
+          <span className="flex items-center gap-2 border-x px-3.5 text-[0.9375rem] font-medium whitespace-nowrap">
+            <Icon name="calendar" className="size-4 text-muted-foreground" />
+            <span className="tnum">{formatDateRange(bounds.start, bounds.end)}</span>
+          </span>
+          <StepButton label="Next week" icon="chevronRight" disabled={isThisWeek} onClick={() => step(1)} />
         </div>
       </header>
 
       {pendingTotal > 0 ? (
-        <button
-          type="button"
-          onClick={() => navigate('review')}
-          className="flex w-full items-center gap-3 rounded-xl border bg-card px-4 py-3 text-left shadow-sm transition-colors hover:bg-accent"
-        >
-          <span className="rounded-full bg-warning/15 p-2 text-warning">
-            <Icon name="inbox" className="size-4" />
-          </span>
-          <span className="flex-1 text-sm">
-            <span className="font-medium">{pendingTotal} waiting for review.</span>{' '}
-            <span className="text-muted-foreground">They are not counted below until you approve them.</span>
-          </span>
-          <Icon name="chevronRight" className="size-4 text-muted-foreground" />
-        </button>
+        <WaitingBanner>
+          <span className="font-semibold">{pendingTotal} waiting for review.</span> They are not counted below until you approve them.
+        </WaitingBanner>
       ) : null}
 
       {error !== null ? <Alert tone="error" title="Could not load this week">{error}</Alert> : null}

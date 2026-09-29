@@ -76,6 +76,8 @@ describe('WeekScreen', () => {
     renderScreen(<WeekScreen />, seeded())
 
     const banner = await screen.findByRole('button', { name: /2 waiting for review/ })
+    // Waiting's amber, as on the Month (ADR 0010), never a list's orange.
+    expect(banner.className.split(' ')).toEqual(expect.arrayContaining(['bg-waiting', 'border-waiting-border', 'text-waiting-ink']))
     fireEvent.click(banner)
     expect(window.location.hash).toBe('#/review')
   })
@@ -115,6 +117,8 @@ describe('WeekScreen', () => {
 
     expect(await summary('Left to spend')).toBe('-$60.12')
     expect(screen.getByRole('button', { name: 'Next week' })).toHaveProperty('disabled', true)
+    // Mockup A's stepper: the week's dates between its two arrows.
+    expect(screen.getByRole('button', { name: 'Next week' }).previousElementSibling?.textContent).toBe('9 – 15 Mar')
 
     fireEvent.click(screen.getByRole('button', { name: 'Previous week' }))
     await screen.findByRole('heading', { name: 'Week of' })
