@@ -321,6 +321,16 @@ describe('YearScreen', () => {
     expect(table.parentElement?.contains(screen.getByRole('region', { name: 'Year charts' }))).toBe(true)
   })
 
+  it("shows all seven tables from 1280px, where the glance's xl classes go four across too", async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query === '(min-width: 1280px)', addEventListener: () => undefined, removeEventListener: () => undefined,
+    }))
+    renderScreen(<YearScreen start="2026-01" />, seeded())
+
+    expect(await screen.findByRole('region', { name: 'Year totals' })).toBeTruthy()
+    expect(screen.queryByRole('group', { name: 'Table' })).toBeNull()
+  })
+
   it.each([false, true])('gives each table cell one padding class a side (four across: %s)', async (fourAcross) => {
     vi.stubGlobal('matchMedia', () => ({ matches: fourAcross, addEventListener: () => undefined, removeEventListener: () => undefined }))
     renderScreen(<YearScreen start="2026-01" />, seeded())
