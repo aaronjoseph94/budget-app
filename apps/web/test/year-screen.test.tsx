@@ -321,6 +321,23 @@ describe('YearScreen', () => {
     expect(table.parentElement?.contains(screen.getByRole('region', { name: 'Year charts' }))).toBe(true)
   })
 
+  it.each([false, true])('gives each table cell one padding class a side (four across: %s)', async (fourAcross) => {
+    vi.stubGlobal('matchMedia', () => ({ matches: fourAcross, addEventListener: () => undefined, removeEventListener: () => undefined }))
+    renderScreen(<YearScreen start="2026-01" />, seeded())
+
+    const cells = [...(await screen.findByRole('region', { name: 'Income by month' })).querySelectorAll('th, td')]
+    expect(cells).toHaveLength(42)
+    for (const cell of cells) {
+      // cn() joins as written, so a px-* beside a pl-* sets that side twice and
+      // the stylesheet's order picks one: min-[360px]:px-2 pulled the table in
+      // from its card's 16px edge on a phone.
+      const sides = cell.className.split(' ').filter((c) => /(^|:)p[xlr]-/.test(c))
+      expect(sides.filter((c) => /(^|:)px-/.test(c)), sides.join(' ')).toEqual([])
+      const keys = sides.map((c) => c.replace(/-[^-:]+$/, ''))
+      expect(new Set(keys).size, sides.join(' ')).toBe(keys.length)
+    }
+  })
+
   it('shows no year when a read fails, and says why', async () => {
     const fake = seeded()
     fake.fail('category_budgets', 'PGRST205')

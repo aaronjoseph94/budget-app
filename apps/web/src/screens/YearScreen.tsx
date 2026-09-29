@@ -288,7 +288,10 @@ const GROUPS: readonly { key: GroupKey; label: string; heading: string; budget: 
   { key: 'variable', label: 'Variable', heading: 'Variable expenses', budget: 'Budgeted', tone: 'variable' },
 ]
 
-/** Each table's dot (no words), and its tinted head and total row with the list's ink. Written out for Tailwind. */
+/**
+ * Each table's dot (no words), its head tinted in the list's colour with the
+ * list's ink, and its Total row on that tint in the ink. Written out for Tailwind.
+ */
 const TONE: Record<Tone, { dot: string; header: string; ink: string }> = {
   income: { dot: 'bg-income-accent', header: 'bg-income-header', ink: 'text-income-ink' },
   savings: { dot: 'bg-savings-accent', header: 'bg-savings-header', ink: 'text-savings-ink' },
@@ -321,13 +324,17 @@ function YearTable({
   const tone = TONE[g.tone]
   const total = sheet.totals[group]
   const blank = (c: number) => (c === 0 ? '' : formatAmount(c))
-  // Four across, the cells keep 10px sides (12px from 1400px) and 4px between, and the type is
-  // 12px until 1400px, so no month or figure wraps; one table alone has
-  // Mockup A's 20px sides and 15px type.
+  // Four across, the table keeps 10px at the card's edges (12px from 1400px)
+  // and 4px each side of a cell within, and the type is 12px until 1400px,
+  // so no month or figure wraps. One table alone has 16px at its edges (20px
+  // from 768px, as Mockup A draws it), 8px each side within, 4px below 360px
+  // so the table stays inside its card, and 14px type, 15px from 768px.
   const left = compact ? 'pl-2.5 min-[1400px]:pl-3' : 'pl-4 md:pl-5'
   const right = compact ? 'pr-2.5 min-[1400px]:pr-3' : 'pr-4 md:pr-5'
-  // Below 360px the cells close up to 4px between, so a month's full name fits.
-  const gap = compact ? 'px-1' : 'px-1 min-[360px]:px-2'
+  const [inL, inR] = compact ? ['pl-1', 'pr-1'] : ['pl-1 min-[360px]:pl-2', 'pr-1 min-[360px]:pr-2']
+  // One class a side: cn() is a plain join, and a px-* under a breakpoint
+  // outranks a pl-* without one, which pulled the table in from its edges.
+  const sides = [cn(left, inR), cn(inL, inR), cn(inL, right)] as const
   return (
     <section aria-label={`${g.heading} by month`} className="min-w-0 overflow-hidden rounded-xl border bg-card">
       <div className={cn('flex flex-wrap items-center gap-x-3 gap-y-1 py-4', left, right)}>
@@ -343,7 +350,7 @@ function YearTable({
               <th
                 key={name}
                 scope="col"
-                className={cn(gap, 'py-2.5 font-medium', i === 0 ? cn(left, 'text-left') : 'text-right', i === 2 && right)}
+                className={cn(sides[i], 'py-2.5 font-medium', i === 0 ? 'text-left' : 'text-right')}
               >
                 {name}
               </th>
@@ -359,22 +366,22 @@ function YearTable({
                 aria-current={now ? 'date' : undefined}
                 className={cn('border-t', now && 'bg-year-today font-semibold')}
               >
-                <th scope="row" className={cn('py-2.5 text-left', gap, left, now ? 'font-semibold' : 'font-normal')}>
+                <th scope="row" className={cn('py-2.5 text-left', sides[0], now ? 'font-semibold' : 'font-normal')}>
                   {compact ? formatShortMonth(m.month) : formatMonthTitle(m.month)}
                 </th>
-                <td className={cn('tnum py-2.5 text-right font-normal text-muted-foreground', gap)}>{blank(m[group].budgetCents)}</td>
-                <td className={cn('tnum py-2.5 text-right', gap, right, m[group].actualCents < 0 && 'text-spend')}>
+                <td className={cn('tnum py-2.5 text-right font-normal text-muted-foreground', sides[1])}>{blank(m[group].budgetCents)}</td>
+                <td className={cn('tnum py-2.5 text-right', sides[2], m[group].actualCents < 0 && 'text-spend')}>
                   {blank(m[group].actualCents)}
                 </td>
               </tr>
             )
           })}
           <tr className={cn('border-t font-semibold', tone.header)}>
-            <th scope="row" className={cn('py-3 text-left', gap, left)}>
+            <th scope="row" className={cn('py-3 text-left', sides[0])}>
               Total
             </th>
-            <td className={cn('tnum py-3 text-right', gap)}>{formatAmount(total.budgetCents)}</td>
-            <td className={cn('tnum py-3 text-right', gap, right)}>{formatAmount(total.actualCents)}</td>
+            <td className={cn('tnum py-3 text-right', sides[1])}>{formatAmount(total.budgetCents)}</td>
+            <td className={cn('tnum py-3 text-right', sides[2])}>{formatAmount(total.actualCents)}</td>
           </tr>
         </tbody>
       </table>
