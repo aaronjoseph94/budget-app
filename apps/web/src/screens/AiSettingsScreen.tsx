@@ -43,6 +43,10 @@ export function AiSettingsScreen() {
   const status = view?.status ?? null
   return (
     <div className="space-y-4">
+      {/* AI settings has no sidebar item of its own; its way back is on the page (design-review P1 item 2). */}
+      <a href={hashOf({ screen: 'settings', param: null })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+        ← Settings
+      </a>
       <div className="flex flex-wrap items-center gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">AI settings</h1>
         <HelpButton screen="ai" />

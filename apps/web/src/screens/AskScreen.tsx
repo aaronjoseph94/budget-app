@@ -125,6 +125,10 @@ export function AskScreen({ topic }: { topic: HelpTopic | null }) {
 
   return (
     <div className="space-y-4">
+      {/* Ask has no sidebar item of its own; its way back is on the page (design-review P1 item 2). */}
+      <a href={hashOf({ screen: 'coach', param: null })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+        ← Coach
+      </a>
       <div className="flex flex-wrap items-center gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Ask</h1>
         <HelpButton screen="ask" />

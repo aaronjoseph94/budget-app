@@ -115,4 +115,19 @@ describe('the top bar (ADR 0011)', () => {
     await screen.findByRole('heading', { name: 'September 2026' })
     expect(screen.getByRole('button', { name: 'Toggle sidebar' }).getAttribute('aria-expanded')).toBe('false')
   })
+
+  it('gives Ask and AI settings a way back on the page, and lights their parent in the sidebar (P1 item 2)', async () => {
+    go('/ask')
+    renderScreen(<Shell />, createFakeSupabase())
+    await screen.findByRole('heading', { name: 'Ask', level: 1 })
+    const sidebar = screen.getAllByRole('navigation', { name: 'Screens' })[0]!
+    expect(within(screen.getByRole('main')).getByRole('link', { name: '← Coach' }).getAttribute('href')).toBe('#/coach')
+    expect(within(sidebar).getByRole('link', { name: /^Coach/ }).getAttribute('aria-current')).toBe('page')
+
+    go('/ai')
+    await screen.findByRole('heading', { name: 'AI settings', level: 1 })
+    expect(within(screen.getByRole('main')).getByRole('link', { name: '← Settings' }).getAttribute('href')).toBe('#/settings')
+    expect(within(sidebar).getByRole('link', { name: 'Settings' }).getAttribute('aria-current')).toBe('page')
+    await expectNoAxeViolations()
+  })
 })
