@@ -59,6 +59,16 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
+// N126: the Week's lists share the Month's cards, but lie four across from
+// 1280px. There they keep the smaller table type, and none of the Month's
+// wider 1400px edges, or every table ran past its card at 1440px.
+it("keeps the four-across cards' smaller table and edges on a desktop", () => {
+  show(sheet(CATEGORIES, WEEK))
+  const table = region('Variable expenses').getByRole('table')
+  expect(table.className).toContain('xl:text-xs')
+  expect(table.innerHTML).not.toContain('min-[1400px]')
+})
+
 describe('WeekBlocks', () => {
   // Hand-derived. Variable: 64.12 + 66.00 = 130.12 of 210.00; Rent's 1,600.00
   // is due on the 10th, in the week; Spent 1,730.12. Left: 85.88 − 6.00 = 79.88.

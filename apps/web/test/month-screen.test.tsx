@@ -241,6 +241,12 @@ describe('MonthScreen budgets and goals', () => {
     // Mockup A's rose pill with white words (ADR 0010), keeping its minus sign.
     expect(over.className.split(' ')).toEqual(expect.arrayContaining(['rounded-full', 'bg-summary-negative', 'text-summary-negative-ink']))
     expect(block('Savings').getByText('-200.00').tagName).toBe('TD')
+    // Two across, the Month keeps its 14px table on a desktop, and from 1400px
+    // the Left head and its figures take the same 20px edge, so they line up.
+    const table = block('Variable expenses').getByRole('table')
+    expect(table.className).not.toContain('xl:text-xs')
+    expect(block('Variable expenses').getByRole('columnheader', { name: 'Left' }).className).toContain('min-[1400px]:last:pr-5')
+    expect(over.closest('td')?.className).toContain('min-[1400px]:pr-5')
   })
 
   // Hand-derived, by core's goalBars: groceries 100.00 of 200.00 is 5,000 bp;
