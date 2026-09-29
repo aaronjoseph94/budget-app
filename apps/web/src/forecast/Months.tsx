@@ -15,7 +15,7 @@ export function MonthsAheadCard({ ahead, bars, names }: { ahead: CashFlowAhead; 
   const title = 'The next three months'
   if (ahead.status === 'too_early' || bars === null) {
     return (
-      <Section title={title}>
+      <Section title={title} large>
         <p>{ahead.checkBackOn === null ? 'Import a statement to see the months ahead.' : `Too early to tell: check back on ${formatIsoDate(ahead.checkBackOn)}, once a whole month of records is in.`}</p>
       </Section>
     )
@@ -25,9 +25,9 @@ export function MonthsAheadCard({ ahead, bars, names }: { ahead: CashFlowAhead; 
   const shown = (m: AheadMonth): Spread => m.balance ?? m.net
   const range = (s: Spread) => (s.low === s.high ? `about ${formatWholeDollars(s.mid)}` : `${formatWholeDollars(s.low)} to ${formatWholeDollars(s.high)}`)
   return (
-    <Section title={title}>
+    <Section title={title} large>
       <div className="flex flex-wrap items-center gap-2">
-        <Badge>{rough ? 'Rough' : 'Range'}</Badge>
+        <Badge variant="accent">{rough ? 'Rough' : 'Range'}</Badge>
         <Badge variant="outline">{`Based on ${ahead.completeMonths} ${ahead.completeMonths === 1 ? 'month' : 'months'}`}</Badge>
       </div>
       <p className="text-muted-foreground">

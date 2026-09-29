@@ -25,7 +25,7 @@ export function GoalsAheadCard({ read, end, month }: { read: DigestRows; end: Sp
   const title = 'When you’ll reach your goals'
   if (funds.status === 'failed') {
     return (
-      <Section title={title}>
+      <Section title={title} large>
         {funds.missingUpdate ? (
           <p>
             Your goals’ dates need a one-time update.{' '}
@@ -39,11 +39,11 @@ export function GoalsAheadCard({ read, end, month }: { read: DigestRows; end: Sp
       </Section>
     )
   }
-  if (core === null || outlooks.status === 'loading') return <Section title={title}><p className="text-muted-foreground">Working out your goals’ dates…</p></Section>
-  if (outlooks.status === 'failed') return <Section title={title}><p className="text-muted-foreground">Your goals’ dates did not load. Reload to try again.</p></Section>
+  if (core === null || outlooks.status === 'loading') return <Section title={title} large><p className="text-muted-foreground">Working out your goals’ dates…</p></Section>
+  if (outlooks.status === 'failed') return <Section title={title} large><p className="text-muted-foreground">Your goals’ dates did not load. Reload to try again.</p></Section>
   if (core.length === 0) {
     return (
-      <Section title={title}>
+      <Section title={title} large>
         <p>
           No active goal.{' '}
           <a href={hashOf({ screen: 'savings', param: null })} className={SENTENCE_LINK}>
@@ -54,11 +54,11 @@ export function GoalsAheadCard({ read, end, month }: { read: DigestRows; end: Sp
     )
   }
   return (
-    <Section title={title}>
-      <ul className="space-y-3">
+    <Section title={title} large>
+      <ul className="divide-y border-t">
         {core.map((g) => (
-          <li key={g.id} className="space-y-1">
-            <h3 className="font-medium [overflow-wrap:anywhere]">{g.name}</h3>
+          <li key={g.id} className="space-y-1 py-3">
+            <h3 className="font-semibold [overflow-wrap:anywhere]">{g.name}</h3>
             {outlooks.byGoal.has(g.id) ? <GoalPace forecast={outlooks.byGoal.get(g.id)!.forecast} targetDate={g.targetDate} /> : null}
           </li>
         ))}

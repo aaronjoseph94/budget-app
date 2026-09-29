@@ -7,6 +7,8 @@ import { SENTENCE_LINK } from './link.js'
 const BADGE = {
   default: 'bg-primary text-primary-foreground',
   secondary: 'bg-secondary text-secondary-foreground',
+  // Mockup A's accent pill: "Range" on the Forecast, "So far" on Reports (step 8).
+  accent: 'bg-primary-soft text-primary',
   outline: 'border text-foreground',
   spend: 'bg-spend/12 text-spend',
   income: 'bg-income/12 text-income',

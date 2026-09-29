@@ -20,7 +20,7 @@ export function NextDaysCard({ flow, line, asOf, names }: { flow: CashFlow30; li
   const dates = [asOf, ...flow.days.map((d) => d.date)]
   const last = flow.days.at(-1)
   return (
-    <Section title="The next 30 days">
+    <Section title="The next 30 days" large>
       {lowest === null || todayCents === null || line === null || last === undefined ? (
         <NoStart />
       ) : (
@@ -51,11 +51,11 @@ export function NextDaysCard({ flow, line, asOf, names }: { flow: CashFlow30; li
           </p>
         </>
       )}
-      <h3 className="pt-1 font-medium">Bills due in the next 7 days</h3>
+      <h3 className="pt-1 font-semibold">Bills due in the next 7 days</h3>
       {flow.billsNext7.length === 0 ? (
         <p className="text-muted-foreground">None.</p>
       ) : (
-        <ul className="divide-y">
+        <ul className="divide-y border-t">
           {flow.billsNext7.map((b) => (
             <li key={`${b.date} ${b.categoryId}`} className="flex items-baseline justify-between gap-3 py-2">
               <span className="min-w-0">
@@ -105,7 +105,7 @@ export function DebtFreeCard() {
     </a>
   )
   return (
-    <Section title="Debt-free">
+    <Section title="Debt-free" large>
       {state.status === 'loading' ? <p className="text-muted-foreground">Loading your payoff plan…</p> : null}
       {state.status === 'failed' && state.missingUpdate ? (
         <p>

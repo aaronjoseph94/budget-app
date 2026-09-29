@@ -19,7 +19,7 @@ export function WhatIfPanel({ goals, outlooks, end, month, asOf }: { goals: read
   const outlook = goal === undefined ? undefined : outlooks.get(goal.id)
   return (
     <>
-      <h3 className="border-t pt-3 font-medium">What if…</h3>
+      <h3 className="border-t pt-4 font-semibold">What if…</h3>
       {goals.length > 1 && goal !== undefined ? (
         <label className="block space-y-1">
           <span className="text-muted-foreground">For the goal</span>
@@ -82,7 +82,8 @@ function WhatIfChips(props: { goal: CoreGoal; outlook: GoalOutlook; end: Spread 
           </button>
         ))}
       </div>
-      <div aria-live="polite" className="space-y-1">
+      {/* The answer on the accent's soft fill, as Mockup A sets it; its muted words take canvas-muted there (ADR 0010). */}
+      <div aria-live="polite" className={cn('space-y-1', lever !== undefined && result !== null && 'rounded-lg bg-primary-soft px-4 py-3 [--muted-foreground:var(--canvas-muted)]')}>
         {lever === undefined || result === null ? (
           <p className="text-muted-foreground">Tap one to see what it changes.</p>
         ) : (

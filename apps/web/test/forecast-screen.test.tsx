@@ -66,11 +66,32 @@ describe('the Forecast (plan §2.5, A13)', () => {
     expect(within(card).getByText('Based on 3 months')).toBeTruthy()
     expect(within(card).getByText('Most likely $3,310.')).toBeTruthy()
     expect(within(card).getByRole('img', { name: 'Where September ends' })).toBeTruthy()
-    expect(valueOf(card, 'Pay still due')).toBe('$2,100.00')
-    expect(valueOf(card, 'Bills not charged yet (already in Spent)')).toBe('$140.00')
-    expect(valueOf(card, 'Spending at your usual pace')).toBe('about $210')
-    expect(valueOf(card, 'Savings still planned')).toBe('$200.00')
-    expect(valueOf(card, 'Spent by the end of September')).toBe('about $2,390')
+    // What is still to come is a card of its own beside the next 30 days (Mockup A step 8).
+    const toCome = screen.getByRole('heading', { name: 'Still to come' }).closest('div.rounded-xl') as HTMLElement
+    expect(valueOf(toCome, 'Pay still due')).toBe('$2,100.00')
+    expect(valueOf(toCome, 'Bills not charged yet (already in Spent)')).toBe('$140.00')
+    expect(valueOf(toCome, 'Spending at your usual pace')).toBe('about $210')
+    expect(valueOf(toCome, 'Savings still planned')).toBe('$200.00')
+    expect(valueOf(toCome, 'Spent by the end of September')).toBe('about $2,390')
+  })
+
+  it('sets Safe to spend and the month’s end side by side as stat cards, over the sections two across (Mockup A)', async () => {
+    go('/forecast')
+    renderScreen(<Shell />, forecastFake())
+
+    const safe = (await screen.findByRole('heading', { name: 'Safe to spend' })).closest('div.rounded-xl') as HTMLElement
+    const end = screen.getByRole('heading', { name: 'End of September' }).closest('div.rounded-xl') as HTMLElement
+    expect(safe.parentElement).toBe(end.parentElement)
+    expect(safe.parentElement?.className).toContain('sm:grid-cols-2')
+    // Only Safe to spend is tinted to the accent; the month's end is a white card.
+    expect(safe.className).toContain('to-primary-tint')
+    expect(end.className).not.toContain('to-primary-tint')
+    const sections = ['Still to come', 'The next 30 days', 'When you’ll reach your goals', 'The next three months'].map(
+      (name) => screen.getByRole('heading', { name }).closest('div.rounded-xl')?.parentElement,
+    )
+    expect(new Set(sections).size).toBe(1)
+    expect(sections[0]?.className).toContain('xl:grid-cols-2')
+    await expectNoAxeViolations()
   })
 
   it('forecasts no balance for the month’s end without a start (D17), and still shows the Spent', async () => {
@@ -81,7 +102,8 @@ describe('the Forecast (plan §2.5, A13)', () => {
     expect(within(card).queryByText('$3,280 to $3,340')).toBeNull()
     expect(within(card).queryByRole('img')).toBeNull()
     expect(within(card).getByText('Type this month’s starting balance to see where you’ll end.')).toBeTruthy()
-    expect(valueOf(card, 'Spent by the end of September')).toBe('about $2,390')
+    const toCome = screen.getByRole('heading', { name: 'Still to come' }).closest('div.rounded-xl') as HTMLElement
+    expect(valueOf(toCome, 'Spent by the end of September')).toBe('about $2,390')
   })
 
   it('walks the next 30 days to the tightest day, and lists the bills due this week', async () => {
