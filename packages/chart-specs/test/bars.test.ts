@@ -75,15 +75,15 @@ describe('incomeBars', () => {
 describe('savingsGoalBars', () => {
   const funds = (bars: IncomeBar[]) => savingsGoalBars({ id: 'funds', title: 'Savings goals', description: 'd', bars })
 
-  it("draws each fund's balance over its goal in Home's colours, keyed Goal and Saved (D23)", () => {
+  it("draws each fund's balance over its goal in Savings' amber, keyed Goal and Saved (D23)", () => {
     // 43% of one fund's goal; one reached; one with nothing in it yet.
     const svg = funds([bar('Flight', 10_000, 4_317), bar('Car', 10_000, 10_000), bar('House', 10_000, null)])
     expect(rects(svg)).toEqual([
-      [390, '#FEEA8D', 3_000],
-      [390, '#EBD15C', 1_295],
-      [730, '#FEEA8D', 3_000],
-      [730, '#EBD15C', 3_000],
-      [1070, '#FEEA8D', 3_000],
+      [390, '#FEF3C7', 3_000],
+      [390, '#F59E0B', 1_295],
+      [730, '#FEF3C7', 3_000],
+      [730, '#F59E0B', 3_000],
+      [1070, '#FEF3C7', 3_000],
     ])
     expect(svg).toContain('class="chart-savings-ink">Saved</text>')
     expect(svg).not.toContain('#10B981')
@@ -102,12 +102,12 @@ describe('debtBars', () => {
     // card a fifth the size, untouched.
     const svg = debtBars({ id: 'debts', title: 'Debts', description: 'd', bars: [bar('Loan', 10_000, 5_000), bar('Card <1>', 2_000, 2_000)] })
     expect(rects(svg)).toEqual([
-      [390, '#C8B6EB', 3_000],
-      [390, '#9171D7', 1_500],
-      [730, '#C8B6EB', 600],
-      [730, '#9171D7', 600],
+      [390, '#FFE4E6', 3_000],
+      [390, '#E11D48', 1_500],
+      [730, '#FFE4E6', 600],
+      [730, '#E11D48', 600],
     ])
-    expect(svg).toContain('class="chart-debt-ink">Left to pay</text>')
+    expect(svg).toContain('class="chart-debts-ink">Left to pay</text>')
     expect(svg).toContain('>Card &lt;1&gt;</text>')
   })
 })

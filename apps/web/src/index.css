@@ -143,7 +143,7 @@
   --home-ink: #111827;
   --year-chart-ink: #6b7280;
   --year-chart-rule: #e5e7eb;
-  --home-track: #f3f4f6;
+  --home-track: #e5e7eb;
   --paycheck-band: #eef0ff;
   --paycheck-ink: #4338ca;
   /* Habits' spending grid (A18): a neutral for a day with nothing spent,
@@ -168,7 +168,7 @@
   --savings-title: #fef3c7;
   --savings-needed: #fffbeb;
   --savings-bar: #f59e0b;
-  --savings-chart-goal: #fde68a;
+  --savings-chart-goal: #fef3c7;
   --savings-chart-saved: #f59e0b;
   --debt-banner: #be123c;
   --debt-page: #f9fafb;
@@ -303,7 +303,7 @@
     --savings-title: #3d3112;
     --savings-needed: #2a2210;
     --savings-bar: #f59e0b;
-    --savings-chart-goal: #5a4a14;
+    --savings-chart-goal: #3d3112;
     --savings-chart-saved: #f59e0b;
     --debt-banner: #881337;
     --debt-page: #131418;
@@ -491,8 +491,8 @@
  * designed width and scaled to its card, text included. Its marks carry
  * colours as attributes, which an exported file keeps; these rules outrank
  * them on the page, so a chart takes the tokens above in both schemes. The
- * Month's two carry Mockup A's colours in their attributes too; the other
- * charts' are still the workbook's until their steps (N124).
+ * Month's and the Year's carry Mockup A's colours in their attributes too;
+ * the other charts' are still the workbook's until their steps (N124).
  */
 .spec-chart {
   display: block;
@@ -534,6 +534,33 @@
 }
 .spec-chart .chart-debt-paid {
   fill: var(--debt-paid);
+}
+/* The Year's (step 5): its pie in Income's green, the grey and Savings'
+   amber; its columns in green and grey, Goal grey beside Actual in the
+   accent; its debts in Debts' rose. */
+.spec-chart .chart-pie-0,
+.spec-chart .chart-year-income {
+  fill: var(--income-accent);
+}
+.spec-chart .chart-pie-1,
+.spec-chart .chart-year-expenses,
+.spec-chart .chart-year-goal {
+  fill: var(--owed-accent);
+}
+.spec-chart .chart-pie-2 {
+  fill: var(--savings-accent);
+}
+.spec-chart .chart-year-actual {
+  fill: var(--primary);
+}
+.spec-chart .chart-debts-left {
+  fill: var(--debts-accent);
+}
+.spec-chart .chart-debts-track {
+  fill: var(--debts-tile);
+}
+.spec-chart .chart-debts-ink {
+  fill: var(--debts-ink);
 }
 .spec-chart .chart-home-ink {
   fill: var(--home-ink);

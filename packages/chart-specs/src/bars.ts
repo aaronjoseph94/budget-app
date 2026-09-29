@@ -48,25 +48,27 @@ const INCOME: Palette = {
 
 /**
  * Home's savings-goals chart (chart5, D23): what each fund holds over a
- * track as long as its goal, in Home's #EBD15C over #FEEA8D, and the
- * savings ink for words, since #EBD15C, Home's label colour, reads at 1.5
- * to one on white.
+ * track as long as its goal, in Savings' amber #F59E0B over its tile
+ * #FEF3C7, and the savings ink #B45309 for words, since the amber reads at
+ * 2.1 to one on white (ADR 0010, N124).
  */
 const SAVINGS: Palette = {
-  goal: { fill: '#FEEA8D', class: 'chart-savings-goal' },
-  actual: { fill: '#EBD15C', class: 'chart-savings-saved' },
-  ink: { fill: '#7C5512', class: 'chart-savings-ink' },
+  goal: { fill: '#FEF3C7', class: 'chart-savings-goal' },
+  actual: { fill: '#F59E0B', class: 'chart-savings-saved' },
+  ink: { fill: '#B45309', class: 'chart-savings-ink' },
   keys: ['Goal', 'Saved'],
 }
 /**
- * Home's debt chart (chart4, D25): what is left of each debt, #9171D7, over
- * a track as long as its starting balance, #C8B6EB, and a purple ink of the
- * chart's hue for words, since #9171D7 reads at 3.8 to one on white.
+ * Home's debt chart (chart4, D25): what is left of each debt in Debts'
+ * rose #E11D48, over a track as long as its starting balance in its tile
+ * #FFE4E6, and the debts ink #BE123C for words (ADR 0010, N124). Its
+ * classes are its own, so the Debts screen's ring keeps its colours until
+ * its own step.
  */
 const DEBTS: Palette = {
-  goal: { fill: '#C8B6EB', class: 'chart-debt-paid' },
-  actual: { fill: '#9171D7', class: 'chart-debt-left' },
-  ink: { fill: '#5B3FA8', class: 'chart-debt-ink' },
+  goal: { fill: '#FFE4E6', class: 'chart-debts-track' },
+  actual: { fill: '#E11D48', class: 'chart-debts-left' },
+  ink: { fill: '#BE123C', class: 'chart-debts-ink' },
   keys: ['Starting balance', 'Left to pay'],
 }
 /**

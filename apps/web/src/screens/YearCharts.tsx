@@ -20,8 +20,9 @@ function useChartId(): string {
 const said = (parts: readonly string[]) => parts.join('. ') + '.'
 
 /**
- * The Year's income, expenses and savings as a pie: Home's chart3 in Home's
- * colours at the top, Annual's chart41 in Annual's on a desktop.
+ * The Year's income, expenses and savings as a pie: Home's chart3 at the
+ * top, Annual's chart41 in the chart row on a desktop, both in Mockup A's
+ * colours.
  */
 export function YearPie({ sheet, palette }: { sheet: YearSheet; palette: 'home' | 'annual' }) {
   const id = useChartId()
@@ -186,7 +187,7 @@ export function AnnualCharts({ sheet, wide, className }: { sheet: YearSheet; wid
   return (
     <section
       aria-label="Year charts"
-      className={cn('grid gap-6 rounded-xl border bg-card p-4 shadow-sm', wide ? 'grid-cols-4' : 'grid-cols-1', className)}
+      className={cn('grid min-w-0 gap-6 rounded-xl border bg-card p-4 md:px-6 md:py-[1.375rem]', wide ? 'grid-cols-4' : 'grid-cols-1', className)}
     >
       <Chart title="Income and expenses by month" className={cn(wide && 'col-span-2')}>
         {/* Text scales with a chart, so it stops at about a phone's width. */}
@@ -207,7 +208,8 @@ export function AnnualCharts({ sheet, wide, className }: { sheet: YearSheet; wid
 function Chart({ title, className, children }: { title: string; className?: string; children: ReactNode }) {
   return (
     <div className={cn('space-y-2', className)}>
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-year-chart-ink">{title}</h2>
+      {/* Mockup A's card title: 18px, in the ink. */}
+      <h2 className="text-lg font-semibold">{title}</h2>
       {children}
     </div>
   )

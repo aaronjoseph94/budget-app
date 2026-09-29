@@ -181,9 +181,10 @@ describe('YearScreen', () => {
     expect(pie.querySelector('desc')?.textContent).toBe(
       'Income: $2,500.00 · 14%. Expenses: $14,550.00 · 83%. Savings: $500.00 · 3%.',
     )
-    // Home's pastels, outlined in Home's label colours.
+    // Mockup A's green, the grey for Expenses (no one list) and Savings'
+    // amber, each slice parted by a line in the card's colour.
     expect([...pie.querySelectorAll('path')].map((p) => [p.getAttribute('fill'), p.getAttribute('stroke')])).toEqual([
-      ['#D4F8E8', '#36976E'], ['#FFDCE1', '#D66375'], ['#FFECD9', '#FFD05C'],
+      ['#10B981', '#FFFFFF'], ['#9CA3AF', '#FFFFFF'], ['#F59E0B', '#FFFFFF'],
     ])
     expect([said('Left over'), said('Starting balance'), said('Ending balance')]).toEqual([
       '-$12,550.00', '$1,000.00', '-$11,550.00',
@@ -198,8 +199,8 @@ describe('YearScreen', () => {
     }
     expect(said('Biggest expense')).toBe('Rent$14,400.00')
     expect(said('Best savings month')).toBe('March 2026$500.00')
-    // 14,400 of 14,550 is 9,897 bp; 150 of it 103 bp. Each has Home's ring
-    // in its rank's colour, drawn to its share.
+    // 14,400 of 14,550 is 9,897 bp; 150 of it 103 bp. Each has a ring in
+    // its rank's chart hue, drawn to its share.
     const top = glance.getAllByRole('listitem')
     expect(top.map((li) => [...li.querySelectorAll(':scope > span')].map((s) => s.textContent))).toEqual([
       ['Rent', '$14,400.00 · 99%'],
@@ -207,8 +208,8 @@ describe('YearScreen', () => {
     ])
     const rings = top.map((li) => within(li).getByRole('img'))
     expect(rings.map((r) => [r.querySelector('title')?.textContent, r.querySelectorAll('path')[1]?.getAttribute('fill')])).toEqual([
-      ['Rent', '#FFAC9E'],
-      ['Groceries', '#A9D4D4'],
+      ['Rent', '#F97316'],
+      ['Groceries', '#EC4899'],
     ])
   })
 
@@ -248,8 +249,8 @@ describe('YearScreen', () => {
     // 1,400 units, and Bills' 14,400.00 is 4,000 bp, 560 units, with no goal bar.
     const bars = (i: number) =>
       [...[...totals.querySelectorAll('g')][i]!.querySelectorAll('rect')].map((r) => [r.getAttribute('fill'), r.getAttribute('height')])
-    expect(bars(1)).toEqual([['#517070', '1400'], ['#E6E1CE', '97']])
-    expect(bars(4)).toEqual([['#E6E1CE', '560']])
+    expect(bars(1)).toEqual([['#9CA3AF', '1400'], ['#4F46E5', '97']])
+    expect(bars(4)).toEqual([['#4F46E5', '560']])
     // A phone has Home's pie above; Annual's joins the charts on a desktop.
     expect(charts.queryByRole('img', { name: 'Income, expenses and savings' })).toBeNull()
   })
@@ -287,11 +288,11 @@ describe('YearScreen', () => {
     expect(screen.queryByRole('group', { name: 'Table' })).toBeNull()
     expect(screen.getAllByText('Left over')).toHaveLength(1)
     expect((await rowsOf('Bills by month'))[8]).toEqual(['Sep 2026', '', '1,600.00'])
-    // Annual's pie in the chart row, in Annual's own colours.
+    // Annual's pie in the chart row, in Mockup A's colours as Home's is.
     const annual = within(screen.getByRole('region', { name: 'Year charts' })).getByRole('img', {
       name: 'Income, expenses and savings',
     })
-    expect([...annual.querySelectorAll('path')].map((p) => p.getAttribute('fill'))).toEqual(['#D7EEEB', '#F9D7D2', '#F7EAA9'])
+    expect([...annual.querySelectorAll('path')].map((p) => p.getAttribute('fill'))).toEqual(['#10B981', '#9CA3AF', '#F59E0B'])
   })
 
   it('keeps the chips from 1024px to 1279px, each table in its list\'s hue, with the charts beside it', async () => {
@@ -354,7 +355,7 @@ describe('YearScreen', () => {
     const chart = await screen.findByRole('img', { name: 'Savings goals' })
     expect(chart.textContent).toContain('Flight fund: $1,500.00 of $6,000.00')
     // 1,500 of 6,000 is 2,500 bp: 750 of the 3,000-unit track.
-    expect(chart.innerHTML).toMatch(/width="750" height="100" rx="40" fill="#EBD15C"/)
+    expect(chart.innerHTML).toMatch(/width="750" height="100" rx="40" fill="#F59E0B"/)
   })
 
   it('offers to set a goal when no savings fund has one', async () => {
@@ -378,8 +379,8 @@ describe('YearScreen, debts', () => {
     expect(chart.textContent).toContain('Loan: $3.02 left of $300.00. Car <b>: $500.00 left of $600.00.')
     // The scale is $600.00: the loan's track is half of 3,000 units, and
     // the car's $500.00 is 8,333 bp, 2,500 units.
-    expect(chart.innerHTML).toMatch(/width="1500" height="100" rx="40" fill="#C8B6EB"/)
-    expect(chart.innerHTML).toMatch(/width="2500" height="100" rx="40" fill="#9171D7"/)
+    expect(chart.innerHTML).toMatch(/width="1500" height="100" rx="40" fill="#FFE4E6"/)
+    expect(chart.innerHTML).toMatch(/width="2500" height="100" rx="40" fill="#E11D48"/)
   })
 
   it('offers to add debts when there are none', async () => {

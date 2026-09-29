@@ -6,12 +6,12 @@
  * pie, F18's `shareBp` for a ring. Slices run clockwise from twelve o'clock
  * in the order given, as a spreadsheet pie draws its rows.
  *
- * The pie comes in two of the workbook's palettes, Annual's and Home's. Home's
- * writes each percentage on its slice in #36976E, #D66375 or #FFD05C, and
- * the last is 1.5 to one on its peach; here those colours outline the
- * slices, and every percentage is in the legend in a readable ink
- * (decision 10). A part with no share (nothing above zero) has no slice
- * but keeps its legend row, so the three are always named.
+ * The workbook drew it in two palettes, Annual's and Home's; Mockup A draws
+ * both alike (ADR 0010, N124): Income's green, the neutral grey for
+ * Expenses, which are no one list, and Savings' amber, and every
+ * percentage in the legend in each one's ink. A part with no share
+ * (nothing above zero) has no slice but keeps its legend row, so the three
+ * are always named.
  */
 import { FONT, WIDTH, type ChartFrame, fit, frame, lengthOf, textUnits } from './frame.js'
 import { type SvgMarkup, type SvgNode, el } from './svg.js'
@@ -26,23 +26,23 @@ export interface PieSlice {
 }
 
 export interface PieInput extends ChartFrame {
-  /** Annual's colours (chart41) or Home's (chart3). */
+  /** Where it is drawn: Annual's chart row (chart41) or Home's card (chart3). Both are Mockup A's colours. */
   readonly palette: 'annual' | 'home'
   /** Income, Expenses and Savings, in that order: the palette is by position. */
   readonly slices: readonly PieSlice[]
 }
 
-const PALETTES = {
-  annual: { fills: ['#D7EEEB', '#F9D7D2', '#F7EAA9'], edges: null },
-  home: { fills: ['#D4F8E8', '#FFDCE1', '#FFECD9'], edges: ['#36976E', '#D66375', '#FFD05C'] },
-} as const
-/** The Month's income, owed and savings inks (§6.6), readable on the card. */
+const MOCKUP_A = { fills: ['#10B981', '#9CA3AF', '#F59E0B'] }
+const PALETTES = { annual: MOCKUP_A, home: MOCKUP_A } as const
+/** Income's, the grey's and Savings' inks (ADR 0010), readable on the card. */
 const INKS = [
-  { fill: '#4F6E69', class: 'chart-income-ink' },
-  { fill: '#A63428', class: 'chart-owed-ink' },
-  { fill: '#7C5512', class: 'chart-savings-ink' },
+  { fill: '#047857', class: 'chart-income-ink' },
+  { fill: '#374151', class: 'chart-owed-ink' },
+  { fill: '#B45309', class: 'chart-savings-ink' },
 ] as const
 
+/** Slices parted by a line in the card's colour, as the donut's are. */
+const GAP = { stroke: '#FFFFFF', 'stroke-width': 20, 'stroke-linejoin': 'round', class: 'chart-surface-gap' } as const
 const R = 800
 const CX = WIDTH / 2
 const CY = R + 40
@@ -58,10 +58,9 @@ export function yearPie(input: PieInput): SvgMarkup {
     if (s.shareBp === null) return
     // Half-up shares can add to a basis point over the whole (F17).
     const to = Math.min(from + lengthOf(s.shareBp, 10_000), 10_000)
-    const edge = palette.edges === null ? {} : { stroke: palette.edges[i]!, 'stroke-width': 20 }
     if (to > from) {
       marks.push(
-        el('path', { d: sector(CX, CY, R, 0, from, to), fill: palette.fills[i]!, ...edge, class: `chart-pie-${i}` }, [
+        el('path', { d: sector(CX, CY, R, 0, from, to), fill: palette.fills[i]!, ...GAP, class: `chart-pie-${i} chart-surface-gap` }, [
           el('title', {}, [`${s.label}: ${s.valueText}`]),
         ]),
       )
@@ -95,14 +94,18 @@ export function yearPie(input: PieInput): SvgMarkup {
 export interface ShareRingInput extends ChartFrame {
   /** From core (F18's `shareBp`): the category's part of the Year's spending. */
   readonly shareBp: number
-  /** Which of the three it is, 0–2: Home's coral, teal and sand. */
+  /** Which of the three it is, 0–2: Mockup A's orange, pink and violet. */
   readonly rank: number
   /** What the hole says, e.g. "57%". */
   readonly centreText: string
 }
 
-/** Home chart9–11's colours, and the #F3F5F6 track of "Other Expenses". */
-export const TOP3_COLOURS = ['#FFAC9E', '#A9D4D4', '#DEC894'] as const
+/**
+ * The first three of Mockup A's chart hues (the donut's), by rank, in place
+ * of Home chart9–11's coral, teal and sand (N124); the track is the grey of
+ * a bar's empty part.
+ */
+export const TOP3_COLOURS = ['#F97316', '#EC4899', '#8B5CF6'] as const
 const RING = 1400
 const HOLE = 1050
 
@@ -115,7 +118,7 @@ export function shareRing(input: ShareRingInput): SvgMarkup {
   const marks: SvgNode[] = [
     el('path', {
       d: sector(c, c, RING, HOLE, 0, 10_000),
-      fill: '#F3F5F6',
+      fill: '#E5E7EB',
       'fill-rule': 'evenodd',
       class: 'chart-ring-track',
     }),
@@ -126,7 +129,7 @@ export function shareRing(input: ShareRingInput): SvgMarkup {
     y: c + 180,
     'text-anchor': 'middle',
     'font-size': FONT * 5,
-    fill: '#343434',
+    fill: '#111827',
     class: 'chart-home-ink',
   }
   return frame(input, WIDTH, [...marks, el('text', text, [input.centreText])])

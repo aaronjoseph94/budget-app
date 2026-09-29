@@ -2,10 +2,13 @@
  * The Year's column charts, from Annual Budget's chart row:
  *
  * - chart40, "Monthly Income vs Expenses": a column a month, income Actual
- *   (#D7EEEB) with expense Actual (#F9D7D2) stacked on it, as the workbook stacks
- *   them (F19).
- * - chart42, "Annual Totals": Goal (#517070) beside Actual (#E6E1CE) for
- *   Income, Savings and the four spending lists.
+ *   in Income's green (#10B981) with expense Actual in the neutral grey
+ *   (#9CA3AF) stacked on it, as the workbook stacks them (F19). Expenses are
+ *   no one list, so never Debts' rose (ADR 0010).
+ * - chart42, "Annual Totals": Goal in the grey beside Actual in Mockup A's
+ *   accent (#4F46E5) for Income, Savings and the four spending lists.
+ *
+ * Colours are Mockup A's since step 5, written into the file (N124).
  *
  * Every length is basis points of one scale that core chose (`stackedColumns`,
  * `goalBars`, F19); this file only turns them into rectangles. The workbook's value
@@ -52,13 +55,13 @@ const TOP = KEY + 40
 const PLOT = 1400
 const BASE = TOP + PLOT
 const SWATCH = 100
-/** Annual's axis text #616F7C, darkened to #5B6773 to read on the card. */
-const INK = { fill: '#5B6773', class: 'chart-year-ink' } as const
+/** Mockup A's muted words, #6B7280, 4.83 to one on the card. */
+const INK = { fill: '#6B7280', class: 'chart-year-ink' } as const
 
-const INCOME = { fill: '#D7EEEB', class: 'chart-year-income' } as const
-const EXPENSES = { fill: '#F9D7D2', class: 'chart-year-expenses' } as const
-const GOAL = { fill: '#517070', class: 'chart-year-goal' } as const
-const ACTUAL = { fill: '#E6E1CE', class: 'chart-year-actual' } as const
+const INCOME = { fill: '#10B981', class: 'chart-year-income' } as const
+const EXPENSES = { fill: '#9CA3AF', class: 'chart-year-expenses' } as const
+const GOAL = { fill: '#9CA3AF', class: 'chart-year-goal' } as const
+const ACTUAL = { fill: '#4F46E5', class: 'chart-year-actual' } as const
 
 export function incomeExpenseColumns(input: IncomeExpenseInput): SvgMarkup {
   const step = Math.floor(WIDTH / Math.max(input.columns.length, 1))
@@ -140,7 +143,7 @@ function baseline(): SvgNode {
     y1: BASE,
     x2: WIDTH,
     y2: BASE,
-    stroke: '#CCCCCC',
+    stroke: '#E5E7EB',
     'stroke-width': 10,
     class: 'chart-year-rule',
   })
