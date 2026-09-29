@@ -123,3 +123,15 @@ describe('LedgerScreen, finding a transaction', () => {
     expect(screen.getByText('CORNER MARKET')).toBeTruthy()
   })
 })
+
+describe('LedgerScreen, in Mockup A (step 10)', () => {
+  it("takes the Month's title and a ‹ Sep 2026 › stepper that names the month it shows", async () => {
+    await open(seeded())
+    expect(screen.getByRole('heading', { level: 1, name: 'All transactions' }).className).toContain('font-bold')
+    const stepper = screen.getByRole('button', { name: 'Previous month' }).parentElement!
+    expect(stepper.textContent).toBe('Sep 2026')
+    fireEvent.click(within(stepper).getByRole('button', { name: 'Previous month' }))
+    await screen.findByText('AUGUST CAFE')
+    expect(stepper.textContent).toBe('Aug 2026')
+  })
+})
