@@ -133,10 +133,11 @@ export function Shell() {
   // the Coach for its insights and goal side by side (Mockup A step 7), and the
   // Forecast and Reports for their sections two across (step 8), and Savings
   // and Debts for their cards three across (step 9), and Setup, Settings and
-  // AI settings for their cards in columns (step 11), and a Help article
-  // for the list beside it (step 12).
+  // AI settings for their cards in columns (step 11), a Help article for
+  // the list beside it and Getting started for its steps beside the step
+  // (step 12).
   const wide =
-    screen === 'month' || screen === 'week' || screen === 'paycheck' || screen === 'year' || screen === 'calendar' || (screen === 'coach' && param === null) || screen === 'forecast' || screen === 'reports' || screen === 'savings' || screen === 'debts' || screen === 'setup' || screen === 'settings' || screen === 'ai' || (screen === 'help' && param !== null)
+    screen === 'month' || screen === 'week' || screen === 'paycheck' || screen === 'year' || screen === 'calendar' || (screen === 'coach' && param === null) || screen === 'forecast' || screen === 'reports' || screen === 'savings' || screen === 'debts' || screen === 'setup' || screen === 'settings' || screen === 'ai' || (screen === 'help' && param !== null) || screen === 'start'
   const width = wide ? 'max-w-3xl lg:max-w-7xl' : 'max-w-3xl'
   const main = useRef<HTMLElement>(null)
   const sidebar = useSidebarState()

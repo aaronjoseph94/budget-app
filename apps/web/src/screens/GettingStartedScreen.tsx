@@ -12,6 +12,8 @@ import { Icon } from '../components/ui/icons.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { hashOf } from '../nav.js'
 import { cn } from '../lib/cn.js'
+import { useFourAcross } from '../lib/wide.js'
+import { MonthTitle } from '../components/ui/type.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
 
 /**
@@ -80,50 +82,61 @@ export function GettingStartedScreen() {
     setMarks((m) => ({ ...m, phoneTicked }))
   }
 
+  const stepping = at !== null && at !== 'end'
+  const wide = useFourAcross()
   return (
-    <div className="space-y-5 pb-4">
-      <div className="flex flex-wrap items-center gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Getting started</h1>
-        <HelpButton screen="start" />
+    // From 1280px every step sits beside the step, as Mockup A draws it.
+    <div className={cn('mx-auto max-w-3xl pb-4', stepping && 'xl:grid xl:max-w-none xl:grid-cols-[minmax(0,48rem)_19rem] xl:items-start xl:justify-between xl:gap-10')}>
+      <div className="space-y-5">
+        <div className="flex flex-wrap items-center gap-1">
+          <MonthTitle>Getting started</MonthTitle>
+          <HelpButton screen="start" />
+        </div>
+        {at === null ? (
+          <p role="status" className="py-8 text-center text-sm text-muted-foreground">
+            Checking what is set up…
+          </p>
+        ) : at === 'end' ? (
+          <End progress={progress} headingRef={heading} onGo={go} />
+        ) : (
+          <>
+            <StepBar progress={progress} at={at} />
+            {/* The one hero, white to the accent's tint; on it muted words and a
+              field's edge take the greys measured there (ADR 0010). */}
+            <section
+              aria-labelledby="start-step"
+              className="space-y-3 rounded-xl border bg-linear-to-b from-card to-primary-tint p-5 [--input:var(--canvas-muted)] [--muted-foreground:var(--canvas-muted)] sm:p-7"
+            >
+              <h2 id="start-step" ref={heading} tabIndex={-1} className="text-2xl font-bold leading-tight tracking-tight outline-none sm:text-[1.75rem]">
+                {STEP_WORDS[at].title}
+              </h2>
+              <p className="text-base text-muted-foreground">{STEP_WORDS[at].why}</p>
+              <CheckLine check={checks[at]} />
+              <StepBody
+                id={at}
+                name={name}
+                onNamed={setName}
+                phoneTicked={marks.phoneTicked}
+                onTick={tick}
+                ai={ai}
+                onAiChanged={() => setAgain((n) => n + 1)}
+              />
+            </section>
+            {problem !== null ? <Alert tone="error">{problem}</Alert> : null}
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="lg" onClick={() => go(after(at))}>
+                {after(at) === 'end' ? 'Finish' : 'Continue'}
+              </Button>
+              <Button size="lg" variant="ghost" onClick={() => void later(at)}>
+                Do this later
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">Nothing breaks if you stop here. You can come back any time from More.</p>
+            {wide ? null : <AllSteps progress={progress} at={at} onGo={go} open={false} />}
+          </>
+        )}
       </div>
-      {at === null ? (
-        <p role="status" className="py-8 text-center text-sm text-muted-foreground">
-          Checking what is set up…
-        </p>
-      ) : at === 'end' ? (
-        <End progress={progress} headingRef={heading} onGo={go} />
-      ) : (
-        <>
-          <StepBar progress={progress} at={at} />
-          <section aria-labelledby="start-step" className="space-y-3">
-            <h2 id="start-step" ref={heading} tabIndex={-1} className="text-2xl font-semibold leading-tight tracking-tight outline-none">
-              {STEP_WORDS[at].title}
-            </h2>
-            <p className="text-base text-muted-foreground">{STEP_WORDS[at].why}</p>
-            <CheckLine check={checks[at]} />
-            <StepBody
-              id={at}
-              name={name}
-              onNamed={setName}
-              phoneTicked={marks.phoneTicked}
-              onTick={tick}
-              ai={ai}
-              onAiChanged={() => setAgain((n) => n + 1)}
-            />
-          </section>
-          {problem !== null ? <Alert tone="error">{problem}</Alert> : null}
-          <div className="flex flex-wrap items-center gap-2 border-t pt-4">
-            <Button size="lg" onClick={() => go(after(at))}>
-              {after(at) === 'end' ? 'Finish' : 'Continue'}
-            </Button>
-            <Button size="lg" variant="ghost" onClick={() => void later(at)}>
-              Do this later
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground">Nothing breaks if you stop here. You can come back any time from More.</p>
-          <AllSteps progress={progress} at={at} onGo={go} />
-        </>
-      )}
+      {stepping && wide ? <AllSteps progress={progress} at={at} onGo={go} open /> : null}
     </div>
   )
 }
@@ -140,18 +153,19 @@ function StepBar({ progress, at }: { progress: SetupProgress; at: StepId }) {
   const step = progress.steps.find((s) => s.id === at)
   return (
     <div className="space-y-2">
-      <p className="text-sm font-medium text-muted-foreground">
+      <p className="text-muted-foreground">
         Step {step?.position} of {progress.total} · {STEP_WORDS[at].time}
       </p>
-      <ol aria-label={`${progress.done} of ${progress.total} done`} className="flex gap-1">
+      {/* Mockup A: the current step a ringed segment, taller than the rest. */}
+      <ol aria-label={`${progress.done} of ${progress.total} done`} className="flex h-3 items-center gap-1.5">
         {progress.steps.map((s) => (
           <li
             key={s.id}
             aria-hidden="true"
             className={cn(
-              'h-1.5 flex-1 rounded-full',
-              s.check === 'done' ? 'bg-primary' : 'bg-muted',
-              s.id === at && 'ring-2 ring-ring ring-offset-1 ring-offset-background',
+              'flex-1 rounded-full',
+              s.id === at ? 'h-3 border-2 border-ring' : 'h-1.5',
+              s.check === 'done' ? 'bg-primary' : s.id === at ? 'bg-primary-soft' : 'bg-track',
             )}
           />
         ))}
@@ -189,20 +203,24 @@ function CheckLine({ check }: { check: SetupCheck | null }) {
 }
 
 /** Every step, to jump to any of them: no one has to go in order. */
-function AllSteps({ progress, at, onGo }: { progress: SetupProgress; at: StepId; onGo: (to: StepId) => void }) {
+function AllSteps({ progress, at, onGo, open }: { progress: SetupProgress; at: StepId; onGo: (to: StepId) => void; open: boolean }) {
+  // Beside the step (from 1280px) it starts open, and still folds.
   return (
-    <details className="rounded-xl border bg-card px-4 shadow-sm">
-      <summary className="flex min-h-11 cursor-pointer items-center text-sm font-medium">
+    <details open={open} className="overflow-hidden rounded-xl border bg-card">
+      <summary className="flex min-h-11 cursor-pointer items-center px-4 text-sm font-semibold">
         All {progress.total} steps · {progress.done} done
       </summary>
-      <ol className="divide-y pb-2">
+      <ol className="divide-y border-t">
         {progress.steps.map((s) => (
           <li key={s.id}>
             <button
               type="button"
               aria-current={s.id === at ? 'step' : undefined}
               onClick={() => onGo(stepOf(s.id))}
-              className="flex min-h-11 w-full items-center gap-2 text-left text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className={cn(
+                'flex min-h-11 w-full items-center gap-2 px-4 py-2 text-left text-sm outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+                s.id === at && 'bg-primary-tint hover:bg-primary-tint',
+              )}
             >
               <span aria-hidden="true" className={cn('w-4 shrink-0 text-center', s.check === 'done' ? 'text-income' : 'text-muted-foreground')}>
                 {s.check === 'done' ? '✓' : s.check === 'unknown' ? '?' : '·'}
@@ -232,13 +250,13 @@ function End({
   const left = progress.steps.filter((s) => s.check !== 'done')
   return (
     <section aria-labelledby="start-end" className="space-y-3">
-      <h2 id="start-end" ref={headingRef} tabIndex={-1} className="text-2xl font-semibold tracking-tight outline-none">
+      <h2 id="start-end" ref={headingRef} tabIndex={-1} className="text-2xl font-bold tracking-tight outline-none">
         {progress.done} of {progress.total} done
       </h2>
       <p className="text-base text-muted-foreground">
         Everything you set up is working now. The rest can wait: the app works with what it has, and says what it is missing.
       </p>
-      <ul className="divide-y rounded-xl border bg-card px-4 shadow-sm">
+      <ul className="divide-y rounded-xl border bg-card px-4">
         {left.map((s) => (
           <li key={s.id}>
             <button

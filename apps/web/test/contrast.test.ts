@@ -132,6 +132,9 @@ const TEXT: readonly (readonly [text: string, surface: string, least?: number, a
   // measured above, since `input` reads 2.99 on the tint.
   ['ring', 'primary-tint', 3],
   ['income', 'primary-tint', 3],
+  // Getting started's step card ends on the tint (step 12): "Done" is words
+  // in the income ink there, and the side list's lit step is ink on it.
+  ['income', 'primary-tint'],
   // …and each recurring card's total, in ink on its list's tint.
   ['foreground', 'bills-header'],
   ['foreground', 'debts-header'],

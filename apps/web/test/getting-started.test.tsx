@@ -58,6 +58,7 @@ afterEach(() => {
   cleanup()
   vi.useRealTimers()
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
   window.location.hash = ''
 })
 
@@ -102,6 +103,26 @@ describe('Getting started (plan §8.1)', () => {
     ])
     fireEvent.click(all.getByRole('button', { name: /Your savings goals/ }))
     expect(screen.getByRole('heading', { name: 'Your savings goals' })).toBe(document.activeElement)
+  })
+
+  // Mockup A: from 1280px every step lies open beside the step; narrower it is folded under it.
+  it('lays all nine open beside the step from 1280px, the step showing marked, and folded under it narrower', async () => {
+    let wide = false
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: wide && query === '(min-width: 1280px)', addEventListener: () => undefined, removeEventListener: () => undefined }))
+    renderStart(createFakeSupabase())
+    const step = (await screen.findByRole('heading', { name: 'Your name' })).closest('section')!
+    const folded = screen.getByText(/^All 9 steps/).closest('details')!
+    expect(folded.open).toBe(false)
+    cleanup()
+
+    wide = true
+    renderStart(createFakeSupabase())
+    await screen.findByRole('heading', { name: 'Your name' })
+    const beside = screen.getByText(/^All 9 steps/).closest('details')!
+    expect(beside.open).toBe(true)
+    expect(step.contains(beside)).toBe(false)
+    expect(within(beside).getAllByRole('button').filter((b) => b.getAttribute('aria-current') === 'step').map((b) => b.textContent?.replace(/:.*$/, ''))).toEqual(['·Your name'])
+    await expectNoAxeViolations()
   })
 
   it('keeps the step where it was, and says so, when Do this later cannot be saved', async () => {
