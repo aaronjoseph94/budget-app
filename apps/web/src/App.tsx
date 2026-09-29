@@ -12,6 +12,8 @@ import { Alert } from './components/ui/feedback.js'
 import { Button } from './components/ui/button.js'
 import { AnnounceProvider } from './components/ui/announce.js'
 import { Icon, type IconName } from './components/ui/icons.js'
+import { Count, Dot, labelOf } from './shell/marks.js'
+import { SCREEN_NAME } from './shell/places.js'
 import { cn } from './lib/cn.js'
 import { todayIso } from './format.js'
 import { checkinDue } from './coach/checkin-seen.js'
@@ -325,30 +327,6 @@ function Screens({ screen, param }: { screen: Screen; param: string | null }) {
   )
 }
 
-/** Each screen's name, as its tab or More names it. */
-const SCREEN_NAME: Record<Screen, string> = {
-  month: 'Month',
-  week: 'Week',
-  review: 'Review',
-  add: 'Add',
-  more: 'More',
-  ledger: 'All transactions',
-  settings: 'Settings',
-  setup: 'Setup',
-  year: 'Year',
-  paycheck: 'Paycheck',
-  calendar: 'Bill calendar',
-  savings: 'Savings',
-  debts: 'Debts',
-  coach: 'Coach',
-  forecast: 'Forecast',
-  reports: 'Reports',
-  ask: 'Ask',
-  help: 'Help',
-  start: 'Getting started',
-  ai: 'AI settings',
-}
-
 /**
  * A screen changed only its hash, so the page kept the title "Budget" and
  * focus stayed on the tab pressed: a screen reader said nothing had
@@ -368,23 +346,4 @@ function useAnnounceScreen(screen: Screen, main: { readonly current: HTMLElement
     }
     shown.current = screen
   }, [screen, main])
-}
-
-/** "Review, 3 waiting" to a screen reader, rather than the badge read as "Review3"; the Coach's dot as words. */
-function labelOf(t: Tab, pendingTotal: number, dot: boolean): string {
-  if (t.screen === 'coach' && dot) return `${t.label}, check-in ready`
-  return t.screen === 'review' && pendingTotal > 0 ? `${t.label}, ${pendingTotal} waiting` : t.label
-}
-
-/** The Coach's dot: the Sunday check-in is ready (plan §2.1). Said in the tab's label, so hidden here. */
-function Dot({ className }: { className: string }) {
-  return <span aria-hidden="true" className={cn('size-2 rounded-full bg-primary', className)} />
-}
-
-function Count({ n }: { n: number }) {
-  return (
-    <span className="tnum rounded-full bg-spend px-1.5 text-[10px] font-semibold leading-4 text-spend-foreground">
-      {n > 99 ? '99+' : n}
-    </span>
-  )
 }
