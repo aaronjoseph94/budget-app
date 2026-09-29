@@ -8,6 +8,25 @@ import { expectNoAxeViolations } from './axe.js'
 
 afterEach(cleanup)
 
+describe('SettingsScreen, Mockup A', () => {
+  it('lays the three shortcuts across, then budgets beside the shops and the account', async () => {
+    renderScreen(<SettingsScreen />, createFakeSupabase())
+
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Settings')
+    const cardOf = (title: string) => screen.getByRole('heading', { level: 2, name: title }).parentElement!
+    const shortcuts = cardOf('Getting started').parentElement!
+    expect(shortcuts.className).toContain('lg:grid-cols-3')
+    expect([...shortcuts.children].map((c) => c.querySelector('h2')?.textContent)).toEqual(['Getting started', 'Your lists', 'Your savings goals'])
+    const pair = cardOf('Weekly budgets').parentElement!
+    expect(pair.className).toContain('xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]')
+    expect(pair.lastElementChild?.contains(cardOf('Shops filed by themselves'))).toBe(true)
+    expect(pair.lastElementChild?.contains(cardOf('Account'))).toBe(true)
+    // The address and Sign out share the account card's one row.
+    expect(within(cardOf('Account')).getByRole('button', { name: 'Sign out' })).toBeTruthy()
+    await screen.findByText(/None yet|Learned shops/)
+  })
+})
+
 describe('SettingsScreen, adding a category', () => {
   it('adds it to the list chosen, starting from Variable expenses', async () => {
     const fake = createFakeSupabase()
