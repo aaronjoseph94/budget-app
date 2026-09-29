@@ -3,14 +3,29 @@ import { Icon } from '../components/ui/icons.js'
 import { cn } from '../lib/cn.js'
 import { Count, Dot, labelOf } from './marks.js'
 import { SIDEBAR_GROUPS, litOf } from './places.js'
+import type { SidebarState } from './sidebar-state.js'
 
 /**
  * The wide screen's navigation (ADR 0011): a 72px rail of icons from
  * 768px, and from 1024px the 248px sidebar with each group's name and
- * each item's word. Hidden below 768px, where the phone bar is.
+ * each item's word. Plan is always open; the other groups fold, as the
+ * owner last left them on this device, and until then open when they hold
+ * the screen showing. Hidden below 768px, where the phone bar is.
  */
-export function Sidebar({ screen, pendingTotal, dot }: { screen: Screen; pendingTotal: number; dot: boolean }) {
+export function Sidebar({
+  screen,
+  state,
+  pendingTotal,
+  dot,
+}: {
+  screen: Screen
+  state: SidebarState
+  pendingTotal: number
+  dot: boolean
+}) {
   const lit = litOf(screen)
+  // Shown only in the full sidebar, from 1024px.
+  const full = 'hidden lg:flex'
   const words = 'hidden lg:inline'
   return (
     <aside
@@ -27,12 +42,32 @@ export function Sidebar({ screen, pendingTotal, dot }: { screen: Screen; pending
       <nav aria-label="Screens" className="flex min-h-0 flex-1 flex-col gap-3.5 overflow-y-auto [scrollbar-width:none]">
         {SIDEBAR_GROUPS.map((g, n) => {
           const id = `sidebar-${g.title.toLowerCase()}`
+          const folds = g.title !== 'Plan'
+          const open = !folds || state.isOpen(g.title, g.items.some((i) => i.screen === lit))
+          const waiting = g.items.some((i) => i.screen === 'review') && pendingTotal > 0
           return (
             <div key={g.title} role="group" aria-labelledby={`${id}-name`} className={cn('flex flex-col gap-0.5', n > 0 && 'border-t pt-3 lg:border-t-0 lg:pt-0')}>
-              <p id={`${id}-name`} className={cn(words, 'px-1 pb-1.5 text-[13px] font-medium text-canvas-muted')}>
-                {g.title}
-              </p>
-              <ul id={id} className="flex flex-col gap-0.5">
+              {folds ? (
+                <button
+                  id={`${id}-name`}
+                  type="button"
+                  aria-expanded={open}
+                  aria-controls={id}
+                  aria-label={!open && waiting ? `${g.title}, ${pendingTotal} waiting` : undefined}
+                  onClick={() => state.setOpen(g.title, !open)}
+                  className={cn(full, 'min-h-11 w-full items-center gap-2 rounded-md px-1 text-[13px] font-medium text-canvas-muted hover:text-foreground')}
+                >
+                  <span className="flex-1 text-left">{g.title}</span>
+                  {!open && waiting ? <Count n={pendingTotal} /> : null}
+                  <Icon name={open ? 'up' : 'down'} className="size-4" />
+                </button>
+              ) : (
+                <p id={`${id}-name`} className={cn(words, 'px-1 pb-1.5 text-[13px] font-medium text-canvas-muted')}>
+                  {g.title}
+                </p>
+              )}
+              {/* Closed, a group's list is hidden in the full sidebar only: the rail shows every item. */}
+              <ul id={id} className={cn('flex flex-col gap-0.5', !open && 'lg:hidden')}>
                 {g.items.map((item) => {
                   const active = item.screen === lit
                   return (

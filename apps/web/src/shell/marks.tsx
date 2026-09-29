@@ -12,10 +12,10 @@ export function Dot({ className }: { className: string }) {
   return <span aria-hidden="true" className={cn('size-2 rounded-full bg-primary', className)} />
 }
 
-/** How many wait for review. */
+/** How many wait for review, in waiting's amber, as the Review banner is (design-review P1 item 4). */
 export function Count({ n }: { n: number }) {
   return (
-    <span className="tnum rounded-full bg-spend px-1.5 text-[10px] font-semibold leading-4 text-spend-foreground">
+    <span className="tnum rounded-full bg-waiting-tile px-1.5 text-[10px] font-semibold leading-4 text-waiting-ink">
       {n > 99 ? '99+' : n}
     </span>
   )

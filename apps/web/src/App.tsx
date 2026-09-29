@@ -14,6 +14,7 @@ import { AnnounceProvider } from './components/ui/announce.js'
 import { Icon, type IconName } from './components/ui/icons.js'
 import { Count, Dot, labelOf } from './shell/marks.js'
 import { Sidebar } from './shell/Sidebar.js'
+import { useSidebarState } from './shell/sidebar-state.js'
 import { SCREEN_NAME } from './shell/places.js'
 import { cn } from './lib/cn.js'
 import { todayIso } from './format.js'
@@ -130,6 +131,7 @@ export function Shell() {
   const wide = screen === 'month' || screen === 'week' || screen === 'paycheck' || screen === 'year' || screen === 'calendar'
   const width = wide ? 'max-w-3xl lg:max-w-7xl' : 'max-w-3xl'
   const main = useRef<HTMLElement>(null)
+  const sidebar = useSidebarState()
   useAnnounceScreen(screen, main)
   // Read again on every move: opening the check-in marks it seen. Not on
   // the Coach itself, whose own card says the check-in is ready.
@@ -151,7 +153,7 @@ export function Shell() {
         >
           Skip to content
         </a>
-        <Sidebar screen={screen} pendingTotal={pendingTotal} dot={dot} />
+        <Sidebar screen={screen} state={sidebar} pendingTotal={pendingTotal} dot={dot} />
         {/* From 768px the screen sits in a white panel on the grey canvas, beside
           the rail or the sidebar (ADR 0010, 0011); on a phone it is the panel. */}
         <div className="md:py-3 md:pl-[72px] md:pr-3 lg:pl-[248px] print:p-0">
