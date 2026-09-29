@@ -1,7 +1,8 @@
 # ADR 0006 — Navigation for an AI-first app
 
 **Date:** 2026-09-24 · **Decided by:** the engineer under the owner's
-2026-09-24 instruction to proceed without questions · **Status:** accepted
+2026-09-24 instruction to proceed without questions · **Status:** accepted;
+its wide bar is replaced by ADR 0011's sidebar and rail (2026-09-29)
 **Extends:** ADR 0003 (hand-rolled hash navigation), which stays: no router
 library, addresses in the `#hash`, anything unreadable opens the Month
 **Plan:** `docs/ai-first-plan.md` §2.1 and slice A05
