@@ -75,7 +75,9 @@ describe('the Coach’s flight card', () => {
     expect(follows(goal, checkin) && follows(checkin, insights) && follows(insights, ask)).toBe(true)
     expect(goal.parentElement?.contains(checkin)).toBe(false)
     expect(checkin.parentElement?.contains(ask)).toBe(true)
+    // Neither the card nor the column holding it may stick, at any width.
     expect(goal.className).not.toMatch(/\bsticky\b/)
+    expect(goal.parentElement?.className).not.toMatch(/\bsticky\b/)
   })
 
   // Hand-derived: 8,450.00 typed at the end of 1 September and 200.00 moved in
