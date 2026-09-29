@@ -225,3 +225,43 @@ and the amber Review count.
   the same colours unless it is a payday, whose green wins.
 - **No figure is missing.** Each figure the screen shows comes from
   `billCalendar`: the day's bills, the week totals and the month's total.
+
+## 2026-09-29 — Step 7, the Coach, the check-in and Ask
+
+- **Two columns from 1280px** (design-review P2 item 11): the insights on
+  the left and the goal card alone on the right, the Coach widening as the
+  Month does. Of the review's two fixes, Ask moves to the foot of the left
+  column, and the goal card is **not** sticky: a sticky card taller than
+  the screen hides its own foot. From 1024 to 1279px, beside the sidebar,
+  two columns would leave the insights near 400px, so the Coach stays one
+  column there. On a phone the order is unchanged.
+- **Tiles and tints in the accent.** Each insight's tile is the accent's
+  soft fill, its icon chosen by where the card's action goes, not the
+  mockup's rose, violet, amber and sky, which name lists (ADR 0010). The
+  check-in's Last week is tinted to the accent, not green, and its win
+  line is bold ink, not green.
+- **Muted words on a tint** take `canvas-muted`, set once on the goal card
+  and Ask's answer card (`[--muted-foreground:var(--canvas-muted)]`), so
+  the pace lines and dates drawn inside follow it.
+- **The quote** sits on the quiet grey (`muted`), not the mockup's canvas
+  grey, where muted words read 4.40 (ADR 0010).
+- **Check-in answers** are a three-across segmented control. The arrow
+  keys, Home and End move between the three, wrapping, and never answer,
+  since an answer is saved as it is pressed; each stays a button in the
+  tab order that says whether it is chosen, as the Views switch keeps its
+  links.
+- **Card gains `flat`,** Mockup A's card with no shadow, as a prop, since
+  `cn` does not resolve a `shadow-none` against `shadow-sm`. The Coach's
+  insights, the check-in's cards and Ask's answer use it.
+- **Copy left out:** "Today’s insights" over the cards and the "Main goal"
+  badge on the Coach's goal card are not this screen's copy, and the
+  review does not ask for them. Ask keeps its "← Coach" line (P1 item 2),
+  which the mockup leaves out.
+- **Left as they are:** Ask's suggestion chips keep the small button's
+  corners and type, which a caller cannot override (`cn`), where the
+  mockup draws 14px pills; the check-in and Ask stay centred in the
+  panel at their reading width, where the mockup sets them to the left.
+- **No figure is missing.** Every figure is core's, as before:
+  `goalsProgress`, the goal forecasts, the check-in's figures and
+  `impulseShare`, and `answerQuery`'s answer. Nothing sent to or read from
+  the AI changed, and every ✨ keeps its words for a screen reader.

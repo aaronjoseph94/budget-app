@@ -3049,3 +3049,20 @@ changes how tall every week's row is.
 **To settle:** below 1280px put the pill on its own line under the
 number and let the name wrap, then check 768, 1024 and 1280 in light and
 dark.
+
+---
+
+## N132 — "✨ Words by AI" lines read the sparkle aloud
+
+**Seen:** 2026-09-29, Mockup A step 7. The Coach's status line
+(apps/web/src/coach/CoachStatus.tsx) and the check-in's closing line
+(`Whose` in apps/web/src/screens/CheckinScreen.tsx) write "✨ Words by AI
+(…)" as one string, so a screen reader says the emoji's name before the
+words. The words already say the AI wrote them, so nothing is hidden, but
+every other ✨ in the app is `aria-hidden` with its own sr-only words.
+
+**Why not fixed here:** it changes what a screen reader hears, not what
+the step restyles, and the two lines should change together.
+
+**To settle:** draw the ✨ in an `aria-hidden` span in both lines, and
+extend their tests to check the accessible text.
