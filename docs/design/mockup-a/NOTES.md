@@ -416,3 +416,59 @@ and the amber Review count.
 - **No figure is missing.** Every figure is the engine's or the import's
   as before: the reconciliation's totals, the queue's count, and
   `summariseImport` on All transactions. Nothing about approving changed.
+
+## 2026-09-29 — Step 11, Setup, Settings and AI settings
+
+- **Setup's own look goes:** the teal band, its serif italic title and
+  the grey page. "Start here!" is the Month's title on a card tinted to
+  the accent, the name in a field of its own. On the tint the app's field
+  grey reads 2.99 to one, so the field's edge and the muted words there
+  take `canvas-muted`, measured. The mockup's line under the title ("Your
+  name, and every category under the list it belongs to…") is the
+  source's doc comment, not its copy, so it is left out.
+- **Each list is its own card,** its section named over its title in
+  small capitals ("Source" over Income, "Recurring expenses" over Bills,
+  Debts and Subscriptions), with an icon tile in the list's hue from the
+  Month's table, now `list-tone.ts`. Not spending has no hue and takes a
+  grey tile. Each card is now an h2; the workbook's five section headings
+  became the words over the titles.
+- **Two columns from 1280px,** the lists with fields on the left and the
+  name-only lists on the right, each read top to bottom, so a keyboard
+  moves in the order they are seen. The mockup pairs them row by row
+  (Variable beside Bills); that order would leave the keyboard jumping
+  between columns. Narrower, one column in the workbook's order.
+- **Fields on the name's line from the card's own width** (a container
+  query at 42rem), so it follows the card, not the screen: beside the
+  rail at 768px, and in the left column at 1280px, the fields stay under
+  the name, since beside four buttons the name had 70px. The workbook's
+  notes on the columns stay above the heads, which the mockup drops.
+- **P2 item 12:** the rule under each name stays the field grey, not a
+  fainter one, since it is the field's only edge (FE-5, 3:1). A saved
+  name gets the name card's ✓, named "Saved", gone at the next keystroke.
+- **Totals** run across each card's foot on the list's tint; Fixed monthly
+  bills is the page's one hero, white to the accent's tint.
+- **"‹ More"** shows only below 768px, where More is reachable; Setup is
+  in the sidebar and the rail from there. Stop drops "from September"
+  where the heads above name the month; its accessible name keeps it.
+- **Settings** takes Mockup A's section cards (Forecast's `Section
+  large`): the three shortcuts across from 1024px, Weekly budgets beside
+  the learned shops and the account from 1280px. Learned shops are in the
+  fixed-width face, as step 10 set. The piggy bank beside "Your savings
+  goals" goes, as the mockup draws none; the buttons keep their icons.
+- **AI settings:** the status is the one hero, tinted to the accent, not
+  the mockup's green (Income's); its tile is a sparkle, which says nothing
+  about whether AI is on, since the sentence beside it says that. The
+  mockup's subtitle ("Turn on free AI, choose services, and how the Coach
+  talks.") is not the app's copy and is left out. Keys on the left, the
+  order, paid services, the daily limit (one card, as drawn) and the tone
+  on the right from 1280px. The order's ↑ ↓ became the app's chevrons.
+- **Switches** were already the app's `SWITCH` checkbox with
+  role="switch"; unchanged. **The key field** is unchanged: a password
+  field emptied the moment it is sent, never shown back beyond the last
+  four characters the helper reports.
+- **Left as they are:** the name fields in Setup's narrow right column
+  show about 14 characters at 1280 to 1440px, where the mockup's are
+  wider (N135); card titles made with `CardTitle` elsewhere keep 16px.
+- **No figure is missing.** Every figure is core's, as before:
+  `billsTotals` for each card's total and Fixed monthly bills,
+  `resolvePlans` for the fields, today's calls from the helper.

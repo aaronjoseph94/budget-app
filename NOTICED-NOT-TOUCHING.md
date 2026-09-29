@@ -3015,6 +3015,11 @@ totals panel. They are still defined and measured.
 `savings-banner`, `debt-banner`, `debt-page` or `debt-label`; they are
 still defined and measured.
 
+**Also (2026-09-29, step 11):** Setup no longer draws `setup-band`,
+`setup-band-ink`, `setup-canvas` or `setup-label`, nor `owed-band`,
+`owed-rule` and `income-rule` on its cards; the `setup` set is still
+defined and measured, and `owed` is still the Year's Expenses.
+
 **To settle:** after step 12, remove every token no class uses, with its
 contrast rows, in one commit.
 
@@ -3120,3 +3125,22 @@ database, not how it looks.
 **To settle:** read `batch_id` and the batch's `source` with the queue,
 and write the source after the date in the words `SOURCE` already has;
 with a test that a receipt photo's row says "Receipt photo".
+
+---
+
+## N135 — Setup's narrow column cuts long names short
+
+**Seen:** 2026-09-29, Mockup A step 11. From 1280px Savings, Variable
+expenses and Not spending sit in the right third, where each name field
+has about 110px beside its four buttons: "Card interest & fees" shows as
+"Card interest & fee". The field scrolls, and its accessible name is the
+whole name, but a sighted reader sees it cut. The mockup draws the same
+column with the same buttons and shorter names.
+
+**Why not fixed here:** the fix changes the row's layout (the move and
+remove buttons into a menu, or the name on a line of its own in narrow
+cards), which is a change to how a row works, not its look.
+
+**To settle:** below a card width of about 24rem, put the four buttons
+under the name, as a phone at 200% text already does (N58), and check
+1280 and 1440 in light and dark.
