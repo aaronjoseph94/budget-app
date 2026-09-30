@@ -2978,6 +2978,22 @@ and on a phone write their labels as small: the range bar's "Today …" and
 "Most likely …" and the 30-day line's dates come out near 8 to 10 px at
 390 px, as they did in the full-width card before.
 
+**Not settled, 2026-09-30, the final sweep.** Measured in the preview:
+every chart's text is chart-specs' one `FONT` (120 units, 12 px at the
+designed 300 px), scaled to the width the chart is drawn at. The Month's
+two charts are drawn 222 px wide in the desktop column (8.9 px text) and
+324 px on a phone (13 px); the Year's small charts 229 to 256 px (9 to
+10 px); the Forecast's and the Year's wide ones 448 px (17.9 px, the 18 px
+`chart.tsx` aims at). One constant serves them all, so raising it for the
+Month would push the wide charts past 24 px, and `fit` and `textUnits`
+measure names at that same size, so a size for one chart alone is new
+code, not a constant. Within the rule that a restyle changes chart text
+only through chart-specs' layout constants, it stays open.
+
+**To settle (unchanged):** give chart-specs a narrow layout with larger
+text units, or draw the Month's legend and labels as HTML beside the SVG,
+each with its own tests.
+
 ---
 
 ## N128 — Two leftovers in the Month's list cards *(settled 2026-09-29)*
