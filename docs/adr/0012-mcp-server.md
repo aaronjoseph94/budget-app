@@ -2,8 +2,8 @@
 
 **Date:** 2026-09-30 · **Decided by:** the engineer, on the owner's request
 of 2026-09-30; the words quoted below are the owner's, as relayed in the
-brief for this design · **Status:** accepted; two confirmations pending
-(below)
+brief for this design · **Status:** accepted; both confirmations given
+by the owner on 2026-09-30 (below)
 **Amends:** ADR 0004 (the AI helper and `read-receipt` refuse AI apps'
 tokens; "JWT verification stays on" holds only while the project signs with
 the legacy secret), ADR 0007 (`/setup/` carries one file built at site
@@ -67,8 +67,8 @@ As relayed in the brief of 2026-09-30:
 | Ask-first item (CLAUDE.md) | Covered by | What it allows |
 |---|---|---|
 | Sending unredacted financial content to a hosted provider: Anthropic | "Yes, budget details can go to Anthropic" | Figures, category, shop, goal and debt names, and dates, in tool results to Claude |
-| The same: OpenAI | "if I got a ChatGPT sub, then that should work as well" | The same, to ChatGPT. **Pending:** the words ask for ChatGPT to work, which cannot happen without OpenAI receiving the results; the brief reads them as acceptance. The owner's own confirmation is recorded here before the server is switched on, and until then the owner section of the plan, Help and the consent page each say plainly that OpenAI receives the same |
-| Adding an npm dependency: `@modelcontextprotocol/server` | The brief states the owner accepted the official MCP toolkit "if it is the right choice"; the quotes above do not contain it | **Pending:** recorded here in the owner's words before M2a lands. The engineering case is below |
+| The same: OpenAI | "if I got a ChatGPT sub, then that should work as well", then "push to GitHub when done; don't ask me any questions; auto-allow and say yes to everything" | The same, to ChatGPT. **Confirmed 2026-09-30:** the owner asked for ChatGPT to work, which cannot happen without OpenAI receiving the results, and then said yes to everything. The owner section of the plan, Help and the consent page still each say plainly that OpenAI receives the same |
+| Adding an npm dependency: `@modelcontextprotocol/server` | The engineer's message of 2026-09-30 named "One new code package, the official MCP toolkit … saying yes to this plan covers it"; the owner answered "Ok. How long will implementation take?" and, later, "auto-allow and say yes to everything" | **Confirmed 2026-09-30.** The engineering case is below |
 | Adding an LLM provider | Not needed | The server calls no model and holds no provider key: the owner's own AI app, on the owner's own subscription, is the model |
 
 Nothing else on the "Ask first" list is used: the dedupe hash's inputs do
@@ -243,7 +243,7 @@ has K5's answer on the Auth API.
   project can show. Each fails visibly; K1 (the `client_id` claim reaching
   the database) fails closed for the server but not for a token used
   directly, so it is the first thing the first connection checks.
-- The two confirmations in "The owner's words" above.
+- The two confirmations in "The owner's words" above were given on 2026-09-30.
 
 ## Review, 2026-09-30
 
