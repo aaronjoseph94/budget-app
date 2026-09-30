@@ -5,7 +5,8 @@
  * into Supabase. The file is fetched from the site itself, so this plugin
  * puts exactly the committed files there, byte for byte, and nothing else:
  * every migration numbered 0015 or later (the owner pasted 0001–0014 on
- * 2026-09-24), and the AI helper's source as ai-function.ts. Nothing from
+ * 2026-09-24), the AI helper's source as ai-function.ts, and read-receipt's
+ * as read-receipt-function.ts (the MCP plan's M1b). Nothing from
  * the environment is read. The list is worked out from the folder, so a
  * new migration joins when it is committed.
  *
@@ -30,6 +31,7 @@ export function setupFiles(repo: URL = REPO): ReadonlyMap<string, URL> {
   return new Map([
     ...migrations.map((name): [string, URL] => [name, new URL(name, folder)]),
     ['ai-function.ts', new URL('supabase/functions/ai/index.ts', repo)],
+    ['read-receipt-function.ts', new URL('supabase/functions/read-receipt/index.ts', repo)],
   ])
 }
 

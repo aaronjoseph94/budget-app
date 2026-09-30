@@ -13,10 +13,11 @@ const committed = (path: string) => readFileSync(new URL(path, repo))
 const expected = [
   ...readdirSync(new URL('supabase/migrations/', repo)).filter((n) => /^\d{4}_/.test(n) && n >= '0015').sort(),
   'ai-function.ts',
+  'read-receipt-function.ts',
 ]
 
 describe('the files under /setup/', () => {
-  it('are every migration from 0015 on, and the AI helper, and nothing else', () => {
+  it('are every migration from 0015 on, the AI helper and read-receipt, and nothing else', () => {
     expect([...setupFiles().keys()]).toEqual(expected)
     expect(expected).toContain('0016_ai_foundation.sql')
     expect(expected).not.toContain('0014_debts.sql')
@@ -29,6 +30,7 @@ describe('the files under /setup/', () => {
       expect(answer?.body?.equals(readFileSync(source)), name).toBe(true)
     }
     expect(serveSetup('/setup/ai-function.ts')?.body?.equals(committed('supabase/functions/ai/index.ts'))).toBe(true)
+    expect(serveSetup('/setup/read-receipt-function.ts')?.body?.equals(committed('supabase/functions/read-receipt/index.ts'))).toBe(true)
   })
 
   it('answer 404 for anything else under /setup/, and leave every other path to the app', () => {

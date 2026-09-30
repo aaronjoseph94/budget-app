@@ -4,7 +4,9 @@
 // browser (CLAUDE.md): it lives in this function's secrets as GEMINI_API_KEY
 // and is read here and nowhere else.
 //
-// Deliberately thin. It checks who is asking and what they sent, forwards the
+// Deliberately thin. It checks who is asking (Supabase's auth server, asked
+// with the caller's own token, as the AI helper does; an AI app's token is
+// refused, ADR 0012) and what they sent, forwards the
 // image to ONE hardcoded endpoint, and returns the model's reply as text. It
 // does not interpret the reply and it writes nothing: the app parses the reply
 // with zod (packages/schema/src/receipt.ts) and whatever it reads goes to the
@@ -50,6 +52,8 @@ const ORIGINS = [
 // The secrets this function reads, parsed at the "env loading" boundary.
 // Every one is optional: a missing key is the not_configured reply, not a crash.
 const EnvSchema = z.object({
+  SUPABASE_URL: z.string().regex(/^https?:\/\/[A-Za-z0-9.-]+(:\d+)?$/).optional(),
+  SUPABASE_ANON_KEY: z.string().min(1).optional(),
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().optional(),
   EXTRA_ORIGINS: z.string().optional(),
@@ -114,9 +118,45 @@ function reply(status: number, body: unknown, origin: string | null, origins: Se
 // The one place this file writes a log line, and all it can say: a fixed
 // code and numbers. Never the image, the prompt, the reply, an amount or a
 // merchant (CLAUDE.md); the types leave no room for them.
-type LogCode = 'provider_unreachable' | 'provider_status'
+type LogCode = 'provider_unreachable' | 'provider_status' | 'auth_unreachable' | 'auth_status'
 function log(code: LogCode, counts: Record<string, number> = {}): void {
   console.log(JSON.stringify({ fn: 'read-receipt', code, ...counts }))
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
+ * Whether the caller is the owner, signed in: the auth server's answer to
+ * their own token, which checks its signature, expiry and session. The
+ * public anon key names no user, so it is refused, as is an AI app's token
+ * (it carries client_id, which the owner's own sign-in never has) and one
+ * whose payload cannot be read.
+ */
+async function whoIs(project: string, anonKey: string, bearer: string, fetchFn: typeof fetch): Promise<'owner' | 'not_signed_in' | 'auth_unreachable'> {
+  let res: Response
+  try {
+    res = await fetchFn(`${project}/auth/v1/user`, {
+      method: 'GET',
+      headers: { apikey: anonKey, Authorization: bearer },
+    })
+  } catch {
+    log('auth_unreachable')
+    return 'auth_unreachable'
+  }
+  if (res.status === 401 || res.status === 403) return 'not_signed_in'
+  if (!res.ok) {
+    log('auth_status', { status: res.status })
+    return 'auth_unreachable'
+  }
+  const user: unknown = await res.json().catch(() => null)
+  const id = typeof user === 'object' && user !== null && 'id' in user ? user.id : null
+  if (typeof id !== 'string' || !UUID.test(id)) return 'not_signed_in'
+  try {
+    const claims: unknown = JSON.parse(atob((bearer.split('.')[1] ?? '').replace(/-/g, '+').replace(/_/g, '/')))
+    return typeof claims === 'object' && claims !== null && !('client_id' in claims && claims.client_id !== null) ? 'owner' : 'not_signed_in'
+  } catch {
+    return 'not_signed_in'
+  }
 }
 
 export async function handle(
@@ -137,14 +177,16 @@ export async function handle(
   // browser would already hide the answer from it, but not the cost of asking.
   if (origin !== null && !origins.has(origin)) return send(403, { ok: false, code: 'origin_not_allowed' })
 
-  // Supabase verifies the user's token before this runs (keep "Enforce JWT
-  // verification" on). This is a second check that one was sent at all.
-  if (!req.headers.get('authorization')?.startsWith('Bearer ')) {
-    return send(401, { ok: false, code: 'not_signed_in' })
-  }
+  // Who is asking is checked below, with the auth server, whether or not
+  // the gateway's "Enforce JWT verification" is on.
+  const bearer = req.headers.get('authorization')
+  if (bearer === null || !/^Bearer \S+$/.test(bearer)) return send(401, { ok: false, code: 'not_signed_in' })
 
   const key = env.GEMINI_API_KEY
   if (key === undefined || key === '') return send(503, { ok: false, code: 'not_configured' })
+  const project = env.SUPABASE_URL
+  const anonKey = env.SUPABASE_ANON_KEY
+  if (project === undefined || anonKey === undefined) return send(503, { ok: false, code: 'not_configured' })
 
   const model = env.GEMINI_MODEL ?? DEFAULT_MODEL
   if (!MODEL_NAME.test(model)) return send(503, { ok: false, code: 'not_configured' })
@@ -157,6 +199,9 @@ export async function handle(
   } catch {
     return send(400, { ok: false, code: 'bad_request' })
   }
+
+  const who = await whoIs(project, anonKey, bearer, fetchFn)
+  if (who !== 'owner') return send(who === 'not_signed_in' ? 401 : 503, { ok: false, code: who })
 
   let upstream: Response
   try {
@@ -208,6 +253,8 @@ if (typeof Deno !== 'undefined') {
     handle(
       req,
       {
+        SUPABASE_URL: Deno.env.get('SUPABASE_URL'),
+        SUPABASE_ANON_KEY: Deno.env.get('SUPABASE_ANON_KEY'),
         GEMINI_API_KEY: Deno.env.get('GEMINI_API_KEY'),
         GEMINI_MODEL: Deno.env.get('GEMINI_MODEL'),
         EXTRA_ORIGINS: Deno.env.get('EXTRA_ORIGINS'),

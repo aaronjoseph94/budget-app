@@ -95,7 +95,7 @@ async function run(w: World = {}, env: Record<string, string | undefined> = ENV)
   const { calls, fetchFn, when } = await world(w, env)
   const req = new Request(`${PROJECT}/functions/v1/ai`, {
     method: 'POST',
-    headers: { authorization: 'Bearer caller-token', 'content-type': 'application/json' },
+    headers: { authorization: 'Bearer e30.e30.caller-token', 'content-type': 'application/json' },
     body: JSON.stringify({ action: 'run', task: 'test' }),
   })
   const pending = handle(req, env, fetchFn)

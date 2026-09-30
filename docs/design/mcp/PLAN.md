@@ -1362,6 +1362,17 @@ created it in M9, and imported `packages/ai-apps` from
 - **Estimate:** about 230 lines.
 - **Done:** §2.13's helper cases, each seen RED by removing its check;
   One-time updates shows the AI helper as "old" and offers `read-receipt`.
+- **As built (2026-09-30):** a token whose payload cannot be read is
+  refused too, after Auth accepts it, so the functions' tests now send a
+  placeholder token with an empty payload (`e30.e30.…`) instead of plain
+  text. `read-receipt` asks Auth after it has read the body and just before
+  it would spend the key, like `ai`; Auth unreachable is a new
+  `auth_unreachable` (503), which the app shows as its general "not
+  available right now", and `SUPABASE_URL` or `SUPABASE_ANON_KEY` missing
+  (Supabase sets both) is `not_configured`. One-time updates shows
+  `read-receipt`'s Copy, with "or delete it" and its GitHub link, whenever
+  the AI helper is the next step, installing or pasting again; its test is
+  in `updates-copy.test.tsx`. The helper is `2026-09-30.1`.
 
 ### M2a: The server's skeleton, with the SDK (the dependency commit)
 

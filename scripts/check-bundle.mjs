@@ -11,11 +11,11 @@
 //    probe VITE_ variable that no code reads; finding its value in the
 //    output means every VITE_ variable in the environment ships (SEC-4).
 // 4. The one-time updates under setup/ (ADR 0007) are exactly every
-//    migration from 0015 on and the AI helper, each byte for byte as
+//    migration from 0015 on, the AI helper and read-receipt, each byte for byte as
 //    committed: nothing more is published, and nothing is changed on the way.
 // 5. The JavaScript a browser runs names no AI service's API host and no
 //    service-role key: every AI call goes through the `ai` helper (ADR 0004).
-//    setup/ is left out, since it is the helper's own source, and is never
+//    setup/ is left out, since it is the functions' own source, and is never
 //    run by the page; apps/web/test/no-provider-hosts.test.ts checks the
 //    app's source the same way.
 // 6. The PDF statement reader loads with Add, not with the first screen:
@@ -87,6 +87,7 @@ try {
   const sources = new Map([
     ...readdirSync(migrations).filter((n) => /^\d{4}_[a-z0-9_]+\.sql$/.test(n) && n >= '0015').map((n) => [n, join(migrations, n)]),
     ['ai-function.ts', join(import.meta.dirname, '..', 'supabase', 'functions', 'ai', 'index.ts')],
+    ['read-receipt-function.ts', join(import.meta.dirname, '..', 'supabase', 'functions', 'read-receipt', 'index.ts')],
   ])
   const setup = join(out, 'setup')
   const published = existsSync(setup) ? readdirSync(setup).sort() : []

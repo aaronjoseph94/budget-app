@@ -3,7 +3,7 @@ import { useAppData } from '../app-data.js'
 import { Button } from '../components/ui/button.js'
 import { cn } from '../lib/cn.js'
 import { CopyFile, isCopyable } from './CopyFile.js'
-import { FIRST_FILE, HELPER_FILE, checkUpdates, nextStep, type Checked } from './updates.js'
+import { FIRST_FILE, HELPER_FILE, READ_RECEIPT_FILE, checkUpdates, nextStep, type Checked } from './updates.js'
 
 /** Where each committed file can be opened and copied (HANDOFF §3, step 1). */
 const REPO = 'https://github.com/aaronjoseph94/budget-app/blob/main/'
@@ -123,6 +123,23 @@ export function UpdatesPanel() {
             >
               Open {next.file === HELPER_FILE ? 'the AI helper' : next.file} on GitHub
             </a>
+          ) : null}
+          {next.kind === 'paste' && next.file === HELPER_FILE ? (
+            <>
+              <p>
+                If Edge Functions also lists read-receipt, paste its new version over it the same way, or delete it. The AI
+                helper reads receipts without it, and its older copy lets anyone with the app’s public key use your Gemini key.
+              </p>
+              <CopyFile file={READ_RECEIPT_FILE} />
+              <a
+                href={`${REPO}supabase/functions/read-receipt/index.ts`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-11 items-center font-medium underline underline-offset-4"
+              >
+                Open read-receipt on GitHub
+              </a>
+            </>
           ) : null}
         </div>
       )}

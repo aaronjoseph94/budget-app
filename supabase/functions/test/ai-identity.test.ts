@@ -12,7 +12,7 @@ import { VERSION, handle } from '../ai/index.js'
 const PROJECT = 'https://project.supabase.co'
 const SITE = 'https://aaron-budget-app.pages.dev'
 const USER = '6f1c2d3e-4a5b-4c6d-8e7f-001122334455'
-const TOKEN = 'Bearer caller-token-SECRETTOKEN'
+const TOKEN = 'Bearer e30.e30.caller-token-SECRETTOKEN'
 const ENV = { SUPABASE_URL: PROJECT, SUPABASE_ANON_KEY: 'anon-key-for-tests' }
 
 type Call = { url: string; init: RequestInit }
@@ -102,6 +102,24 @@ describe('the AI helper learns who is calling from the auth server', () => {
       const { res, body } = await run(request(), ENV, respond)
       expect([res.status, body.code]).toEqual([401, 'not_signed_in'])
     }
+  })
+
+  it('says not_signed_in to the public anon key, which the auth server names no user for', async () => {
+    const anon: Respond = () => new Response(JSON.stringify({ code: 403, msg: 'invalid claim: missing sub claim' }), { status: 403 })
+    const { res, body, calls } = await run(request({ auth: 'Bearer e30.e30.anon-key-for-tests' }), ENV, anon)
+    expect([res.status, body]).toEqual([401, { ok: false, code: 'not_signed_in' }])
+    expect(calls.map((c) => c.url)).toEqual([`${PROJECT}/auth/v1/user`])
+  })
+
+  // An AI app the owner connected (ADR 0012) must never spend the owner's AI keys.
+  it('says not_signed_in to an AI app’s token, which carries client_id, even when the auth server accepts it', async () => {
+    const claims = (c: object) => `Bearer e30.${Buffer.from(JSON.stringify(c)).toString('base64url')}.sig`
+    for (const auth of [claims({ sub: USER, client_id: '0a1b2c3d-4e5f-4a6b-8c7d-99aabbccddee' }), claims({ client_id: '' }), 'Bearer e30.not-json.sig', 'Bearer no-payload']) {
+      const { res, body, calls } = await run(request({ auth, body: { action: 'status' } }))
+      expect([auth, res.status, body]).toEqual([auth, 401, { ok: false, code: 'not_signed_in' }])
+      expect(calls.map((c) => c.url)).toEqual([`${PROJECT}/auth/v1/user`])
+    }
+    expect((await run(request({ auth: claims({ sub: USER, client_id: null }) }))).res.status).toBe(200)
   })
 
   it('says helper_error when it cannot ask, never that the caller is signed out', async () => {

@@ -28,6 +28,13 @@ type Check =
 /** The AI helper's source, as One-time updates names it and /setup/ serves it (ADR 0007). */
 export const HELPER_FILE = 'ai-function.ts'
 
+/**
+ * read-receipt's source, offered beside the AI helper to paste again or
+ * delete: the app reads receipts through the helper, and a copy from before
+ * 2026-09-30 lets anyone holding the app's public key spend the Gemini key.
+ */
+export const READ_RECEIPT_FILE = 'read-receipt-function.ts'
+
 export interface Update {
   readonly file: string
   /** What it adds, in the owner's words. */

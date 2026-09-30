@@ -52,7 +52,7 @@ async function ask(body: unknown, world: World = {}, env: Record<string, string 
   }) as typeof fetch
   const req = new Request(`${PROJECT}/functions/v1/ai`, {
     method: 'POST',
-    headers: { authorization: 'Bearer caller-token', 'content-type': 'application/json' },
+    headers: { authorization: 'Bearer e30.e30.caller-token', 'content-type': 'application/json' },
     body: JSON.stringify(body),
   })
   const res = await handle(req, env, fetchFn)

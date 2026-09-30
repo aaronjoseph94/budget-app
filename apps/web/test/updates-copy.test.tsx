@@ -19,6 +19,7 @@ const committed = (path: string) => readFileSync(`${ROOT}${path}`, 'utf8')
 const SITE: Record<string, string> = {
   '/setup/0016_ai_foundation.sql': committed('supabase/migrations/0016_ai_foundation.sql'),
   '/setup/ai-function.ts': committed('supabase/functions/ai/index.ts'),
+  '/setup/read-receipt-function.ts': committed('supabase/functions/read-receipt/index.ts'),
 }
 let asked: string[] = []
 // A static host answers a path it does not have with the app's own page.
@@ -80,6 +81,25 @@ describe('Copy on One-time updates', () => {
     fireEvent.click(await nextIs(fake, 'Copy the AI helper'))
     await screen.findByText('Copied. Now paste it into Supabase.')
     expect(writeText.mock.calls).toEqual([[SITE['/setup/ai-function.ts']]])
+  })
+
+  // Its older copy took the public key as a sign-in (ADR 0012); the helper reads receipts without it.
+  it('offers read-receipt beside the AI helper, to paste again or delete, and never with a migration', async () => {
+    const fake = createFakeSupabase()
+    fake.functions.ai = () => new Response(JSON.stringify({ ok: true, version: '2026-09-27.5' }), { headers: { 'content-type': 'application/json' } })
+    fireEvent.click(await nextIs(fake, 'Copy read-receipt'))
+    await screen.findByText('Copied. Now paste it into Supabase.')
+    expect(writeText.mock.calls).toEqual([[SITE['/setup/read-receipt-function.ts']]])
+    expect(screen.getByText(/^If Edge Functions also lists read-receipt, .* or delete it\./)).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Open read-receipt on GitHub' }).getAttribute('href')).toBe(
+      'https://github.com/aaronjoseph94/budget-app/blob/main/supabase/functions/read-receipt/index.ts',
+    )
+    await expectNoAxeViolations()
+    cleanup()
+    const migration = createFakeSupabase()
+    delete migration.rpcReplies['ai_key_status']
+    await nextIs(migration, 'Copy 0016_ai_foundation.sql')
+    expect(screen.queryByText(/read-receipt/)).toBeNull()
   })
 
   it('shows the text to select by hand when the browser refuses the clipboard', async () => {

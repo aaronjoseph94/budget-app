@@ -3244,3 +3244,20 @@ nothing in the MCP plan relies on a new reading of it.
 **To settle:** say "every string the app's own AI writes for the app to
 show or keep", and name ingested text (a receipt's reading, an AI app's
 added words) as held to `IngestedTextSchema` instead.
+
+---
+
+## N140 — read-receipt took the public anon key as a sign-in *(settled 2026-09-30)*
+
+**Seen:** 2026-09-30, the MCP plan's review (PLAN.md §6, finding 7).
+`read-receipt` checked only that a `Bearer ` header was there and relied
+on the gateway's "Enforce JWT verification", which accepts the app's
+public anon key. So anyone holding that key, which every visitor's browser
+has, could spend the owner's Gemini key; turning the gateway check off, as
+the signing-key step may, would have opened it to anyone at all.
+
+**Settled in M1b:** it now asks `/auth/v1/user` with the caller's own
+token, as the AI helper does, and refuses the anon key, a token the auth
+server refuses, and an AI app's token (`client_id`). A copy deployed before
+2026-09-30 still has the hole until it is pasted again or deleted; One-time
+updates offers both beside the AI helper's step.

@@ -10,20 +10,26 @@ import { handle } from '../read-receipt/index.js'
  */
 
 const KEY = 'test-not-a-real-key-0001'
-const ENV = { GEMINI_API_KEY: KEY }
+const PROJECT = 'https://project.supabase.co'
+const ENV = { GEMINI_API_KEY: KEY, SUPABASE_URL: PROJECT, SUPABASE_ANON_KEY: 'anon-key-for-tests' }
+const USER = '6f1c2d3e-4a5b-4c6d-8e7f-001122334455'
 const SITE = 'https://aaron-budget-app.pages.dev'
 // A marker in the image, so a log line that carried it would be caught.
 const IMAGE = 'SECRETIMAGEBYTES' + 'A'.repeat(200)
 const REPLY = '{"readable":true,"merchant":"SYNTHETIC CAFE","total":"14.23","date":"2026-09-20"}'
 
 type Call = { url: string; init: RequestInit }
-function fakeFetch(respond: Respond) {
+const signedIn = () => new Response(JSON.stringify({ id: USER }), { status: 200 })
+// Gemini's calls in `calls`, the auth server's in `auth`.
+function fakeFetch(respond: Respond, who: Respond) {
   const calls: Call[] = []
+  const auth: Call[] = []
   const fn = (async (url: string | URL | Request, init?: RequestInit) => {
-    calls.push({ url: String(url), init: init ?? {} })
-    return respond()
+    const isAuth = String(url) === `${PROJECT}/auth/v1/user`
+    ;(isAuth ? auth : calls).push({ url: String(url), init: init ?? {} })
+    return isAuth ? who() : respond()
   }) as typeof fetch
-  return { fn, calls }
+  return { fn, calls, auth }
 }
 const gemini = (text: unknown = REPLY) => () =>
   new Response(
@@ -38,7 +44,7 @@ function request(opts: { method?: string; origin?: string | null; auth?: string 
   const headers = new Headers({ 'content-type': 'application/json' })
   const origin = opts.origin === undefined ? SITE : opts.origin
   if (origin !== null) headers.set('origin', origin)
-  const auth = opts.auth === undefined ? 'Bearer user-token' : opts.auth
+  const auth = opts.auth === undefined ? 'Bearer e30.e30.user-token' : opts.auth
   if (auth !== null) headers.set('authorization', auth)
   const method = opts.method ?? 'POST'
   const body = opts.body === undefined ? { image: IMAGE, mimeType: 'image/jpeg' } : opts.body
@@ -50,10 +56,10 @@ function request(opts: { method?: string; origin?: string | null; auth?: string 
 }
 
 type Respond = () => Response | Promise<Response>
-async function run(req: Request, env: Record<string, string | undefined> = ENV, respond: Respond = gemini()) {
-  const f = fakeFetch(respond)
+async function run(req: Request, env: Record<string, string | undefined> = ENV, respond: Respond = gemini(), who: Respond = signedIn) {
+  const f = fakeFetch(respond, who)
   const res = await handle(req, env, f.fn)
-  return { res, body: res.status === 204 ? null : await res.json(), calls: f.calls }
+  return { res, body: res.status === 204 ? null : await res.json(), calls: f.calls, auth: f.auth }
 }
 
 describe('read-receipt refuses before spending the key', () => {
@@ -83,7 +89,7 @@ describe('read-receipt refuses before spending the key', () => {
   })
 
   it('refuses a request with no bearer token', async () => {
-    for (const auth of [null, 'Basic abc']) {
+    for (const auth of [null, 'Basic abc', 'Bearer ']) {
       const { res, body, calls } = await run(request({ auth }))
       expect([res.status, body.code]).toEqual([401, 'not_signed_in'])
       expect(calls).toHaveLength(0)
@@ -91,7 +97,7 @@ describe('read-receipt refuses before spending the key', () => {
   })
 
   it('says not_configured with no key, an empty key, or a model name that is not a Gemini id', async () => {
-    const envs = [{}, { GEMINI_API_KEY: '' }, { ...ENV, GEMINI_MODEL: 'evil.example/x' }, { ...ENV, GEMINI_MODEL: '' }]
+    const envs = [{}, { ...ENV, GEMINI_API_KEY: '' }, { ...ENV, GEMINI_MODEL: 'evil.example/x' }, { ...ENV, GEMINI_MODEL: '' }, { GEMINI_API_KEY: KEY }, { ...ENV, SUPABASE_URL: 'https://evil.example/path' }]
     for (const env of envs) {
       const { res, body, calls } = await run(request(), env)
       expect([res.status, body.code]).toEqual([503, 'not_configured'])
@@ -106,6 +112,43 @@ describe('read-receipt refuses before spending the key', () => {
       expect([res.status, out.code]).toEqual([400, 'bad_request'])
       expect(calls).toHaveLength(0)
     }
+  })
+})
+
+// It relied on the gateway alone, which accepts the public anon key, so
+// anyone with the app's public key could spend the Gemini key (ADR 0012).
+describe('read-receipt asks the auth server who is calling, and serves only the owner', () => {
+  it('asks /auth/v1/user with the caller’s own token and the public key, then reads the receipt', async () => {
+    const { res, calls, auth } = await run(request())
+    expect([res.status, calls.length]).toEqual([200, 1])
+    expect(auth.map((c) => [c.url, new Headers(c.init.headers).get('authorization'), new Headers(c.init.headers).get('apikey')])).toEqual([
+      [`${PROJECT}/auth/v1/user`, 'Bearer e30.e30.user-token', 'anon-key-for-tests'],
+    ])
+  })
+
+  it('refuses the public anon key, a token the auth server refuses, and an AI app’s token, before spending the key', async () => {
+    const claims = (c: object) => `Bearer e30.${Buffer.from(JSON.stringify(c)).toString('base64url')}.sig`
+    const refused = () => new Response('{}', { status: 403 })
+    for (const [auth, who] of [
+      ['Bearer e30.e30.anon-key-for-tests', refused],
+      ['Bearer e30.e30.user-token', () => new Response('{}', { status: 401 })],
+      ['Bearer e30.e30.user-token', () => new Response(JSON.stringify({ id: 'not-a-uuid' }))],
+      [claims({ sub: USER, client_id: '0a1b2c3d-4e5f-4a6b-8c7d-99aabbccddee' }), signedIn],
+      ['Bearer e30.not-json.sig', signedIn],
+    ] as const) {
+      const { res, body, calls } = await run(request({ auth }), ENV, gemini(), who)
+      expect([auth, res.status, body]).toEqual([auth, 401, { ok: false, code: 'not_signed_in' }])
+      expect(calls).toHaveLength(0)
+    }
+  })
+
+  it('says auth_unreachable when it cannot ask, never that the caller is signed out', async () => {
+    vi.spyOn(console, 'log').mockImplementation(() => undefined)
+    for (const who of [() => Promise.reject(new TypeError('offline')), () => new Response('{}', { status: 500 })]) {
+      const { res, body, calls } = await run(request(), ENV, gemini(), who)
+      expect([res.status, body, calls.length]).toEqual([503, { ok: false, code: 'auth_unreachable' }, 0])
+    }
+    vi.restoreAllMocks()
   })
 })
 
@@ -172,6 +215,7 @@ describe('read-receipt logs codes and counts only', () => {
   it('never logs the image, the prompt, the reply or the key, on any path', async () => {
     const outcomes: Respond[] = [gemini(), () => new Response(REPLY, { status: 500 }), () => new Response(REPLY, { status: 404 }), () => Promise.reject(new TypeError(REPLY))]
     for (const respond of outcomes) await run(request(), ENV, respond)
+    await run(request(), ENV, gemini(), () => new Response(REPLY, { status: 502 }))
     await run(request({ body: { image: IMAGE, mimeType: 'text/html' } }))
 
     expect(lines.length).toBeGreaterThan(0)

@@ -27,7 +27,7 @@
 import { z } from 'npm:zod@4.6.5'
 
 /** Which copy is deployed, so One-time updates can tell an old paste from this one. */
-export const VERSION = '2026-09-27.5'
+export const VERSION = '2026-09-30.1'
 
 // Browsers allowed to call this, as read-receipt's: the Cloudflare and
 // Netlify sites and a local dev server, plus exact https origins in the
@@ -275,9 +275,12 @@ const obj = (v: unknown): Record<string, unknown> => (typeof v === 'object' && v
 const list = (v: unknown): readonly unknown[] => (Array.isArray(v) ? v : [])
 
 /**
- * Who is calling: the auth server's answer to the caller's own token.
- * "Enforce JWT verification" has already checked the token's signature;
- * this is what turns it into a user id the body cannot forge.
+ * Who is calling: the auth server's answer to the caller's own token,
+ * which checks its signature, expiry and session; this is what turns it
+ * into a user id the body cannot forge. Then an AI app the owner connected
+ * (ADR 0012) is refused, so it can never spend the owner's AI keys: its
+ * token, from Supabase's OAuth server, carries a client_id claim that the
+ * owner's own sign-in never has. A payload that cannot be read is refused.
  */
 type Who = { readonly user: string } | { readonly code: Code }
 
@@ -303,7 +306,18 @@ async function whoIs(env: Env, bearer: string, fetchFn: typeof fetch): Promise<W
   }
   const user: unknown = await res.json().catch(() => null)
   const id = typeof user === 'object' && user !== null && 'id' in user ? user.id : null
-  return typeof id === 'string' && UUID.test(id) ? { user: id.toLowerCase() } : { code: 'not_signed_in' }
+  if (typeof id !== 'string' || !UUID.test(id)) return { code: 'not_signed_in' }
+  return fromAnAiApp(bearer) ? { code: 'not_signed_in' } : { user: id.toLowerCase() }
+}
+
+function fromAnAiApp(bearer: string): boolean {
+  try {
+    const part = bearer.split('.')[1] ?? ''
+    const claims: unknown = JSON.parse(atob(part.replace(/-/g, '+').replace(/_/g, '/')))
+    return typeof claims !== 'object' || claims === null || ('client_id' in claims && claims.client_id !== null)
+  } catch {
+    return true
+  }
 }
 
 // The services, their tier, whether every model on the list reads a

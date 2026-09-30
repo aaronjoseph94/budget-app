@@ -47,7 +47,7 @@ async function narrate(data: unknown = BRIEF, pack = 'daily') {
   }) as typeof fetch
   const req = new Request(`${PROJECT}/functions/v1/ai`, {
     method: 'POST',
-    headers: { authorization: 'Bearer caller-token', 'content-type': 'application/json' },
+    headers: { authorization: 'Bearer e30.e30.caller-token', 'content-type': 'application/json' },
     body: JSON.stringify({ action: 'run', task: 'narrate', pack, data }),
   })
   const res = await handle(req, ENV, fetchFn)
