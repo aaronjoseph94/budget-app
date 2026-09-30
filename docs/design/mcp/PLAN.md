@@ -249,3 +249,233 @@ The server computes every figure with `packages/core`, from rows the
 database returns under the owner's own row-level security. It holds no
 provider key, calls no model, and never uses `service_role`.
 
+### 2.2 Transport and runtime
+
+**Where it runs:** a Supabase Edge Function named `mcp`, at
+`https://bnodrfghxbavlopxkgju.supabase.co/functions/v1/mcp`. Supabase is
+where the app's server code already lives, it reaches PostgREST on the same
+project, and the owner already deploys functions by pasting. Cloudflare
+Pages stays static (ADR 0001).
+
+**Protocol library:** the official TypeScript SDK,
+`@modelcontextprotocol/server` **2.2.0**, pinned exactly. Its
+`createMcpHandler(factory, { legacy: 'stateless', responseMode: 'json' })`
+serves both protocol eras in use: the 2025-06-18 and 2025-11-25 revisions
+(`initialize`, sessions optional) and 2026-07-28 (`server/discover`, the
+`Mcp-Method` headers, `resultType`, cache hints). Its only dependencies are
+`zod ^4.2.0` and `@modelcontextprotocol/core` 2.2.0, whose only dependency
+is zod (checked in both packages' `package.json` on the npm registry,
+2026-09-30; 2.2.0 was published 2026-09-28). Supabase's MCP guide now
+shows `@supabase/server`'s `withOAuthProtectedResource()` for this job.
+Rejected: mcp-lite (last release before the 2026 revision),
+hand-written JSON-RPC (we would own conformance for two protocol eras of a
+spec that moved twice this year), and `@supabase/server` (needs `jose` and
+supabase-js, for what `whoIs` plus about twenty lines already does).
+
+- **Stateless.** No sessions, no sampling, nothing kept between requests.
+  A 2026-07-28 request is answered as one JSON body (`responseMode:
+  'json'`). A 2025-era request goes through the SDK's stateless fallback,
+  which `responseMode` does not govern and which may answer as a
+  one-message server-sent event stream; the spec requires clients to
+  accept either, and nothing streams for longer than the request. `GET`
+  and `DELETE` on `/mcp` answer 405. Request bodies are capped at 64 KB
+  (`maxRequestBodySize`).
+- **Nothing is cacheable.** The 2026-07-28 revision puts cache hints only
+  on list and resource results: `tools/list` goes out with the SDK's
+  default `{ ttlMs: 0, cacheScope: 'private' }`, and a tool's result
+  carries no hint, so no client is told it may keep a figure. Every
+  response also carries `Cache-Control: no-store`, so no proxy keeps one
+  either (CLAUDE.md: never cache a derived money value).
+- **Outbound calls** go only to `SUPABASE_URL`'s `/auth/v1/user` and
+  `/rest/v1/rpc/ai_app_*`, with `redirect: 'error'`, so the owner's token
+  can never follow a redirect anywhere else.
+- **Paths served** (from the function's view, `/mcp…`):
+  - `POST /mcp`: the MCP endpoint; needs a token.
+  - `GET /mcp/.well-known/oauth-protected-resource`: the RFC 9728 metadata;
+    no token.
+  - `GET /mcp/health`: `{ ok, version, tools }`, where `tools` is the count
+    the server registers, so a deploy that cannot load the SDK or convert a
+    schema shows at once. No token; CORS for the app's origins only, so
+    One-time updates can check it.
+- **Where the code lives:** a new package, **`packages/ai-apps`** (module
+  `ai-apps`, CAPABILITY-MAP.md). Ordinary TypeScript that imports
+  `@budget/core`, `@budget/money-primitives`, `@budget/statement-parsers`,
+  `@budget/schema`, `zod` and the SDK by their package names, tested by
+  vitest on Node like every package. `src/handle.ts` exports
+  `handle(req, env, fetchFn)`; `src/deno.ts` calls `Deno.serve` only when
+  `Deno` exists, as the `ai` helper does.
+- **The pasteable file is built, not committed.** `packages/ai-apps/build.ts`
+  exports `bundleMcpFunction(): Promise<string>`, which runs vite's
+  `build()` API (vite is already the app's build tool; §3, M3) over
+  `src/deno.ts` with `write: false`, no minifying, the `zod` and SDK imports
+  rewritten to `npm:zod@4.6.5` and `npm:@modelcontextprotocol/server@2.2.0`
+  and left external, and a first-line banner naming the file and its
+  version. `apps/web/setup-files.ts` (ADR 0007) emits the result as
+  `setup/mcp-function.ts` when the site is built, and the dev server
+  answers it the same way. So the file the owner copies is always built
+  from the same commit as the site that offers it.
+  - **Why not a committed file:** a generated file would change by
+    thousands of lines on every source change (CLAUDE.md's 300-line rule),
+    could go stale unless a freshness gate caught it, and would sit under
+    `supabase/functions/`, where CONSTRAINTS.md says a function imports zod
+    alone. Built at site build, none of that applies, and nothing
+    generated is tracked.
+  - **What is checked:** `scripts/check-bundle.mjs` holds `setup/` to its
+    list, now including `mcp-function.ts`, and checks that file's only
+    imports are the two pinned `npm:` URLs and that it holds no
+    `SERVICE_ROLE`, `SECRET_KEYS` or AI service host. A test in
+    `packages/ai-apps/test` builds it, imports it (vitest aliases the two
+    `npm:` names to the installed packages), and runs `initialize`,
+    `server/discover` and `tools/list` through its `handle`.
+- **Size and time.** The research put the SDK at 224–348 KB; the 2.2.0
+  tarballs say more. Deno resolves the SDK's `_shims` export to its Node
+  build, which brings a vendored JSON Schema validator (ajv 8.18.0, 274 KB),
+  so the SDK a cold start fetches and compiles is about 800 KB of
+  unminified JavaScript (336 KB of protocol code, 104 KB of server, 80 KB
+  of `core`, the validator), plus our own file, expected near 150 KB with
+  the core and parser pieces. Compiling that is a cold-start cost, not a
+  per-request one; each request's own work is well inside the free plan's
+  2 s of CPU and 150 s of wall clock. Measured after the first deploy (K4,
+  §2.14).
+- **Environment** (parsed with zod: the env boundary): `SUPABASE_URL`,
+  `SUPABASE_ANON_KEY` (both provided by Supabase), and the optional
+  `EXTRA_ORIGINS` the other functions read. The schema has no field for a
+  service key, and a test fails if the source names one.
+- **Origin.** Claude and ChatGPT call from their servers and send no
+  `Origin`. A request that sends one is refused with 403 unless it is one of
+  the app's origins (the spec's DNS-rebinding rule). CORS headers are sent
+  on `/mcp/health` only.
+
+### 2.3 Sign-in (auth)
+
+#### Primary: Supabase Auth's OAuth 2.1 server, with dynamic registration
+
+**Why:** ChatGPT's developer mode offers OAuth, no sign-in, or a mix of
+the two, and no API-key header (OpenAI's developer-mode guide); claude.ai
+accepts a fixed header only in a beta for "a limited set of organizations"
+(Anthropic's connector authentication guide). Supabase's own OAuth 2.1 server is on
+every plan, including Free, at no extra charge; its access tokens are the
+owner's ordinary Supabase JWTs with an added `client_id` claim, so
+row-level security sees the owner and works unchanged. Every popular client
+registers itself by Dynamic Client Registration (DCR), which Supabase
+supports. Rejected: a separate identity service (a new service and cost,
+and its tokens would not be Supabase JWTs, so the server would need
+`service_role` to act for the owner, which CLAUDE.md forbids), and a
+personal token alone (it locks out ChatGPT and claude.ai).
+
+**What Supabase does not do, and what covers it:**
+
+| Gap | Cover |
+|---|---|
+| No Client ID Metadata Documents (CIMD); `client_id` must be a UUID | DCR, which Claude and ChatGPT fall back to when CIMD is not advertised; the owner must pick **Register automatically** in Claude's dialog (§1) |
+| No RFC 9207 `iss` in the redirect back | Claude does not require it. ChatGPT then uses a per-connection callback, `https://chatgpt.com/connector/oauth/{callback_id}`, instead of its stable one (OpenAI's auth guide), and the consent allowlist accepts that form (§2.10). Gemini CLI 0.61+ requires it, hence the fallback below |
+| Redirect addresses match exactly, port included (Supabase discussion 41695, June 2026) | Claude's and ChatGPT's callbacks are fixed https addresses. Desktop tools whose loopback port changes per sign-in are expected to fail until Supabase applies RFC 8252's port rule (§1's table) |
+| No custom scopes; `resource` is said to be validated but not copied into `aud` (research; K8) | The server requires `client_id` instead of an audience (below). Optional hardening: a Custom Access Token hook setting `aud` to the server's address (§5) |
+| Tokens carry the owner's full power at the Data API, the Auth API and every RPC ("full access to user data (same as regular session tokens)", Supabase's OAuth flows guide) | The database refuses every write from a token carrying `client_id` except the one add function (0019), and lets it read only inside a counted `ai_app_*` call (0020); the `ai` and `read-receipt` helpers refuse such tokens (M1b). The Auth API cannot be scoped (K5, §4) |
+| Open DCR: anyone can register a client named "Claude" with any https redirect | The consent page allows only Claude's and ChatGPT's exact callback addresses, and only within 15 minutes of the owner pressing **Connect a new AI app** (§2.10) |
+
+**Discovery.** The metadata at `…/functions/v1/mcp/.well-known/oauth-protected-resource`:
+
+```json
+{
+  "resource": "https://bnodrfghxbavlopxkgju.supabase.co/functions/v1/mcp",
+  "authorization_servers": ["https://bnodrfghxbavlopxkgju.supabase.co/auth/v1"],
+  "scopes_supported": ["email"],
+  "bearer_methods_supported": ["header"]
+}
+```
+
+Both addresses are built from `SUPABASE_URL`, never from the request.
+`resource` must equal the address the owner pastes, exactly, and there is
+one authorization server only (Claude uses the first). No custom scope is
+ever advertised: Supabase refuses a sign-in that asks for one.
+
+**The challenge.** A request with no token, or one the checks below
+refuse, gets `401` with
+`WWW-Authenticate: Bearer resource_metadata="<the metadata URL>", scope="email"`,
+plus `, error="invalid_token"` when a token was sent. Never 403 for a bad
+token: Claude treats a 403 without `insufficient_scope` as final. Serving
+`/.well-known` at the project's root is impossible on Supabase, so this
+header is how every client finds the sign-in.
+
+**The token check, on every request:**
+
+1. `GET {SUPABASE_URL}/auth/v1/user` with the caller's token and the anon
+   `apikey`, the `ai` helper's `whoIs` (`supabase/functions/ai/index.ts`,
+   lines 284–307). Supabase checks the signature, the expiry, that the user
+   exists and that the session still exists, so a revoked grant fails at
+   once. A 401 or 403 from Auth becomes our 401 challenge; anything else,
+   503.
+2. Then, and only then, decode the same token's payload (base64url, no
+   verification of our own) and require: `iss` equals
+   `${SUPABASE_URL}/auth/v1`; `role` is `authenticated`; **`client_id` is a
+   UUID**. A token without `client_id` is the owner's own browser session,
+   not an AI app: `403` with a plain message. Anon, publishable and secret
+   keys fail step 1 or 2.
+3. Requiring `client_id` stands in for audience checking: in this project,
+   every OAuth client exists only to reach this server. Registering an
+   OAuth app in this project for any other purpose would weaken this (§4).
+
+**Data access** uses the same token: `POST {SUPABASE_URL}/rest/v1/rpc/<fn>`
+with `apikey: <anon key>` and `Authorization: Bearer <caller's token>`, so
+PostgREST applies row-level security as the owner. The token goes nowhere
+but this project's Auth and PostgREST.
+
+**Signing keys.** ChatGPT asks for the OpenID scopes Supabase advertises,
+and Supabase issues an ID token only with an asymmetric signing key. The
+project's published key set holds one ES256 key (live probe, 2026-09-30,
+repeated in review), but whether it is the current key cannot be seen from
+outside. One-time updates reads the `alg` in the header of the owner's own
+session token, locally, and shows the "signing key" step until it says
+ES256 (§1, step 3). Supabase's signing-keys guide warns that rotating
+while a function has Verify JWT on "might break your app", so step 3 turns
+it off first for `ai` and `read-receipt`, which after M1b both identify
+every caller through `/auth/v1/user` themselves.
+
+#### Fallback F1, designed and not built: a personal key that wraps a grant
+
+**For:** clients that cannot finish Supabase's OAuth (Gemini CLI 0.61+
+until its issue 29477 is fixed), and scripts that can only send a header.
+**Not for:** ChatGPT (no API keys) or claude.ai (outside the header beta).
+
+- The owner registers one **public** OAuth client in Supabase ("Budget app
+  keys", redirect `https://aaron-budget-app.pages.dev/oauth/key-callback`),
+  and the consent allowlist gains that one exact address.
+- **Making a key, in the app:** the app runs PKCE against that client; the
+  owner approves on the same consent page; the app makes `bmcp_` plus 32
+  random bytes (base64url), seals the refresh token with AES-256-GCM under
+  an HKDF key derived from the personal key, additional data
+  `user_id:key_id` (ADR 0004's sealing, keyed by the token instead of a
+  server root), and stores `sha256(key)`, the ciphertext, a label, an
+  expiry and a `lease_until` through an owner-only function. The table has
+  RLS, the owner policy, and every grant revoked from `anon` and
+  `authenticated`, like `ai_provider_keys`. The key is shown once.
+- **Using a key, in the server:** an anon-granted SECURITY DEFINER function
+  takes the **raw** key and hashes it in SQL (keyed by the hash, a leaked
+  hash would be a working key), and claims it with one conditional
+  `UPDATE … SET lease_until = now() + '20 s' WHERE key_hash = … AND
+  revoked_at IS NULL AND expires_at > now() AND (lease_until IS NULL OR
+  lease_until < now()) RETURNING …`. The server decrypts, refreshes at
+  `/auth/v1/oauth/token` as a public client when the cached access token
+  has under 60 s left, stores the rotated refresh token back, and from then
+  on is identical to the primary path: a real owner JWT with `client_id`.
+- **Revoking:** the app deletes the row and calls `revokeGrant`.
+- **Why not built now:** Claude and ChatGPT, the owner's two asks, do not
+  need it; it adds a table, a sealed secret, a lease and a second callback
+  page. **Build it** as its own slice when the owner wants a client that
+  cannot sign in, or if Claude or ChatGPT stop supporting DCR.
+
+**Fallback F2, only if Supabase's OAuth server becomes unavailable:**
+anon-granted SECURITY DEFINER functions taking the raw key, limited to
+adding a pending candidate and reading a bounded snapshot, filtered by the
+user id on the key's row. This is **not** "row-level security with the
+caller's own JWT", so it would be a recorded divergence the owner accepts
+first. Not planned.
+
+**Not possible at all:** minting a user JWT in the function (it needs the
+legacy JWT secret or a trusted private key, either of which can mint a
+`service_role` token); holding `service_role` and passing a user id; a
+custom Postgres role through the token hook (only `anon` and
+`authenticated` are allowed); storing a raw refresh token as the personal
+key.
+
