@@ -2321,7 +2321,8 @@ begin
   if n <> 11 then raise exception '% functions were guarded, not the 11 the browser could call', n; end if;
   -- And any such function added later must carry the guard too.
   select count(*) into n from pg_proc
-   where pronamespace = 'public'::regnamespace and prosecdef and proname <> '_not_an_ai_app'
+   where pronamespace = 'public'::regnamespace and prosecdef
+     and proname not in ('_not_an_ai_app', '_ai_app_gate', 'ai_app_add_candidate') -- 0020's, gated instead
      and has_function_privilege('authenticated', oid, 'execute')
      and strpos(prosrc, 'public._not_an_ai_app();') = 0;
   if n <> 0 then raise exception '% SECURITY DEFINER functions the browser may call have no guard', n; end if;
@@ -2389,6 +2390,11 @@ insert into public.ai_provider_state (user_id, provider, model, last_code) value
 insert into public.coach_answers (user_id, transaction_id, answer, asked_week)
   select user_id, id, 'planned', '2026-09-28' from public.transactions
    where user_id = '11111111-1111-4111-8111-111111111111' limit 1;
+-- And 0020's three: the switch, a count and a last use.
+insert into public.ai_app_access (user_id, time_zone) values ('11111111-1111-4111-8111-111111111111', 'UTC');
+insert into public.ai_app_usage (user_id, day, kind, calls) values ('11111111-1111-4111-8111-111111111111', '2026-01-01', 'read', 1);
+insert into public.ai_app_last_use (user_id, client_id, last_used_at)
+  values ('11111111-1111-4111-8111-111111111111', '99999999-9999-4999-8999-999999999999', now());
 create role wide_user nologin;
 grant authenticated to wide_user;
 grant all on all tables in schema public to wide_user;
@@ -2406,7 +2412,9 @@ declare
   n int;
 begin
   for t in select tablename from pg_tables where schemaname = 'public' order by tablename loop
+    -- With 0020's read flag on, so the rows it may not change are in sight.
     perform set_config('request.jwt.claims', ai_app, true);
+    perform set_config('budget.ai_app_read', 'on', true);
     execute format('select count(*) from public.%I where user_id = auth.uid()', t) into n;
     if n = 0 then raise exception 'the first user has no % row to try writing', t; end if;
     begin
@@ -2461,5 +2469,264 @@ begin
     if sqlerrm not like 'Paste 0018 first%' then raise; end if;
   end;
   raise notice '0019 says to paste 0018 first when it is missing';
+end $$;
+rollback;
+
+-- ---------------------------------------------------------------------------
+-- 0020: what an AI app may do. Only through the ai_app_* functions, each
+-- gated and counted; the one write leaves a pending row and checks its hash.
+-- ---------------------------------------------------------------------------
+-- The hash SQL rebuilds is dedupe.ts's: literals made by computeDedupeHash.
+insert into public.ai_app_access (user_id, enabled, time_zone) values ('22222222-2222-4222-8222-222222222222', true, 'UTC');
+insert into public.accounts (id, user_id, name) values ('aaaaaaaa-0000-4000-8000-000000000301', '22222222-2222-4222-8222-222222222222', 'Theirs for AI');
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000000301', '22222222-2222-4222-8222-222222222222', 'Their lunch', 'variable'),
+  ('cccccccc-0000-4000-8000-000000000302', '11111111-1111-4111-8111-111111111111', 'Moved for AI', 'transfer'),
+  ('cccccccc-0000-4000-8000-000000000303', '11111111-1111-4111-8111-111111111111', 'Lunch for AI', 'variable');
+create table verify.ai_hash as select
+  public._ai_app_dedupe_hash('aaaaaaaa-0000-4000-8000-000000000001', (now() at time zone 'UTC')::date - 1, -1250, 'Lunch at Subway', 1) as lunch,
+  public._ai_app_dedupe_hash('aaaaaaaa-0000-4000-8000-000000000001', (now() at time zone 'UTC')::date - 1, -999, 'Ledger coffee', 1) as ledger,
+  public._ai_app_dedupe_hash('aaaaaaaa-0000-4000-8000-000000000001', (now() at time zone 'UTC')::date - 1, -1250, 'Lunch at Subwai', 1) as other_words,
+  public._ai_app_dedupe_hash('aaaaaaaa-0000-4000-8000-000000000001', (now() at time zone 'UTC')::date - 1, -1251, 'Lunch at Subway', 1) as other_amount;
+grant select on verify.ai_hash to app_user;
+insert into public.transactions (user_id, account_id, posted_on, amount_cents, merchant, merchant_raw, category_id, dedupe_hash, dedupe_hash_v, source)
+  select '11111111-1111-4111-8111-111111111111', 'aaaaaaaa-0000-4000-8000-000000000001', (now() at time zone 'UTC')::date - 1,
+         -999, 'Ledger coffee', 'Ledger coffee', 'cccccccc-0000-4000-8000-000000000303', ledger, 1, 'typed' from verify.ai_hash;
+do $$
+declare
+  f text;
+begin
+  if public._ai_app_dedupe_hash('aaaaaaaa-0000-4000-8000-000000000001', '2026-09-29', -1250, 'Lunch at Subway', 1)
+       <> '2ad325760b37229a52c8c13682fee3d31f11a2301ad7ff83eb99ef6b4a2746cf'
+     or public._ai_app_dedupe_hash('aaaaaaaa-0000-4000-8000-000000000001', '2026-09-29', -1250, 'Lunch at Subway', 2)
+       <> 'a37ba14cf3c5b8d4ceeaf5f62d492008fa9a84a93306aa6de42603a2caf2c652' then
+    raise exception 'the add checks a hash other than dedupe.ts''s version 1';
+  end if;
+  foreach f in array array['_ai_app_gate(text)', 'ai_app_read(text[],date,date)', 'ai_app_review(integer)',
+    'ai_app_search(text,date,date,bigint,bigint,text[],text,text,integer)',
+    'ai_app_add_candidate(uuid,date,bigint,text,integer,text,integer,text)'] loop
+    if (select provolatile from pg_proc where oid = ('public.' || f)::regprocedure) <> 'v' then
+      raise exception '% is not VOLATILE, so PostgREST would run it read-only and the gate could not count', f;
+    end if;
+    if has_function_privilege('anon', 'public.' || f, 'execute') then raise exception 'the anonymous role can call %', f; end if;
+  end loop;
+  if has_function_privilege('authenticated', 'public._ai_app_dedupe_hash(uuid,date,bigint,text,integer)', 'execute') then
+    raise exception 'the browser can call the internal hash';
+  end if;
+  select string_agg(tablename, ', ') into f from pg_tables t where schemaname = 'public' and not exists (
+    select 1 from pg_policies p where p.schemaname = 'public' and p.tablename = t.tablename
+       and p.policyname = 'ai_apps_read_through_the_gate' and p.permissive = 'RESTRICTIVE' and p.cmd = 'SELECT');
+  if f is not null then raise exception 'tables an AI app could read outside the gate: %', f; end if;
+  raise notice 'the add checks dedupe.ts''s hash; every ai_app_* function is volatile; every table reads only through the gate';
+end $$;
+
+set role app_user;
+do $$
+declare
+  owner_ text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated"}';
+  ai_app text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999"}';
+  t text;
+  n int;
+  pass int;
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', owner_, true);
+  -- The owner's own session is not an AI app, whatever it calls.
+  if public.ai_app_read('{categories}', '2026-01-01', '2026-01-31') <> '{"refused": "not_an_ai_app"}'
+     or public.ai_app_review(1) <> '{"refused": "not_an_ai_app"}'
+     or public.ai_app_search(null, '2026-01-01', '2026-01-31', null, null, null, null, null, 1) <> '{"refused": "not_an_ai_app"}'
+     or public.ai_app_add_candidate(null, null, null, null, null, null, null, null) <> '{"refused": "not_an_ai_app"}' then
+    raise exception 'an ai_app_* function served the owner''s own session';
+  end if;
+  -- The browser reads its counts but never writes them.
+  begin
+    insert into public.ai_app_usage (user_id, day, kind, calls) values (auth.uid(), '2026-01-02', 'read', 0);
+    raise exception 'NOT REFUSED: the browser wrote a count';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    update public.ai_app_last_use set last_used_at = now();
+    raise exception 'NOT REFUSED: the browser wrote a last use';
+  exception when insufficient_privilege then null;
+  end;
+  -- Its own switch only, in a zone Postgres knows.
+  select count(*) into n from public.ai_app_access;
+  if n <> 1 then raise exception 'RLS LEAK: the owner sees % switches', n; end if;
+  update public.ai_app_access set time_zone = 'America/Toronto';
+  update public.ai_app_access set time_zone = 'UTC';
+  begin
+    update public.ai_app_access set time_zone = 'Mars/Base';
+    raise exception 'NOT REFUSED: an unknown time zone was saved';
+  exception when check_violation then null;
+  end;
+
+  -- An AI app's token reads no table directly, with the switch off or on.
+  for pass in 1..2 loop
+    perform set_config('request.jwt.claims', owner_, true);
+    update public.ai_app_access set enabled = (pass = 2);
+    perform set_config('request.jwt.claims', ai_app, true);
+    for t in select tablename from pg_tables where schemaname = 'public'
+               and has_table_privilege('authenticated', format('%I.%I', schemaname, tablename), 'select') loop
+      execute format('select count(*) from public.%I', t) into n;
+      if n <> 0 then raise exception 'NOT REFUSED: an AI app read % rows of % directly', n, t; end if;
+    end loop;
+  end loop;
+  if public.ai_app_read('{categories}', '2026-01-01', '2026-01-31') is not null then null; end if;
+  -- Once the gate has let a read through, still no write to its own switch.
+  begin
+    insert into public.ai_app_access (user_id, time_zone) values (auth.uid(), 'UTC');
+    raise exception 'NOT REFUSED: an AI app wrote a switch';
+  exception when insufficient_privilege then null;
+  end;
+  update public.ai_app_access set enabled = true, connect_until = now() + interval '1 day';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'NOT REFUSED: an AI app moved its own switch or window'; end if;
+  raise notice 'an AI app reads nothing directly, and the owner''s session gets not_an_ai_app';
+end $$;
+
+-- Reads through the gate: counted, and refused off, adds off and at the cap.
+do $$
+declare
+  ai_app text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999"}';
+  owner_ text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated"}';
+  r jsonb;
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', ai_app, true);
+  r := public.ai_app_read('{account,categories}', '2026-01-01', '2026-01-31');
+  if r ->> 'account' <> 'aaaaaaaa-0000-4000-8000-000000000001' or r ->> 'today' <> ((now() at time zone 'UTC')::date)::text
+     or not (r -> 'categories') @> '[{"name": "Coffee"}]' or r ? 'txns' then
+    raise exception 'ai_app_read did not return the parts asked for: %', r;
+  end if;
+  r := public.ai_app_search('%', '2026-01-01', '2026-12-31', null, null, null, null, 'any', 5);
+  if (r ->> 'total')::int <> 0 then raise exception 'a %% in the words matched as a wildcard'; end if;
+  perform set_config('request.jwt.claims', owner_, true);
+  update public.ai_app_access set allow_add = false;
+  perform set_config('request.jwt.claims', ai_app, true);
+  if public.ai_app_add_candidate(null, null, null, null, null, null, null, null) <> '{"refused": "adding_off"}' then
+    raise exception 'NOT REFUSED: an add with adding off';
+  end if;
+  perform set_config('request.jwt.claims', owner_, true);
+  update public.ai_app_access set enabled = false;
+  perform set_config('request.jwt.claims', ai_app, true);
+  if public.ai_app_review(1) <> '{"refused": "ai_apps_off"}' then raise exception 'NOT REFUSED: a read with AI apps off'; end if;
+  perform set_config('request.jwt.claims', owner_, true);
+  update public.ai_app_access set enabled = true, allow_add = true;
+  raise notice 'reads through the gate return what was asked; off and adds off refuse';
+end $$;
+reset role;
+do $$
+begin
+  if (select calls from public.ai_app_usage where user_id = '11111111-1111-4111-8111-111111111111'
+        and day = (now() at time zone 'UTC')::date and kind = 'read') <> 3 then
+    raise exception 'the gate did not count each allowed read once';
+  end if;
+  update public.ai_app_usage set calls = 299 where user_id = '11111111-1111-4111-8111-111111111111' and kind = 'read';
+end $$;
+set role app_user;
+do $$
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999"}', true);
+  if public.ai_app_review(1) ? 'refused' then raise exception 'the 300th read was refused'; end if;
+  if public.ai_app_review(1) <> '{"refused": "limit_reached"}' then raise exception 'NOT REFUSED: a 301st read'; end if;
+  raise notice 'the 300th read goes through and the 301st is refused';
+end $$;
+reset role;
+update public.ai_app_usage set calls = 0 where user_id = '11111111-1111-4111-8111-111111111111';
+
+-- A PostgREST GET runs a read-only transaction: the gate cannot count, so it fails.
+begin transaction read only;
+set local role app_user;
+set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+set local request.jwt.claims = '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999"}';
+do $$
+begin
+  perform public.ai_app_read('{categories}', '2026-01-01', '2026-01-31');
+  raise exception 'NOT REFUSED: an AI app read uncounted in a read-only transaction';
+exception when read_only_sql_transaction then raise notice 'a read-only call fails rather than reading uncounted';
+end $$;
+rollback;
+
+-- The one write: every hostile argument refused, and what it accepts only ever waits.
+set role app_user;
+do $$
+declare
+  acc   uuid := 'aaaaaaaa-0000-4000-8000-000000000001';
+  day   date := (now() at time zone 'UTC')::date - 1;
+  h     verify.ai_hash;
+  r     jsonb;
+  c     record;
+  cases jsonb;
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999"}', true);
+  select * into h from verify.ai_hash;
+  for c in select * from (values
+      ('bad_amount', acc, day, 0::bigint, 'Lunch at Subway', 1, h.lunch, 1, null::text),
+      ('bad_amount', acc, day, -10000001, 'Lunch at Subway', 1, h.lunch, 1, null),
+      ('bad_date', acc, day + 2, -1250, 'Lunch at Subway', 1, h.lunch, 1, null),
+      ('bad_date', acc, day - 366, -1250, 'Lunch at Subway', 1, h.lunch, 1, null),
+      ('bad_words', acc, day, -1250, E'Lunch\tat Subway', 1, h.lunch, 1, null),
+      ('bad_occurrence', acc, day, -1250, 'Lunch at Subway', 0, h.lunch, 1, null),
+      ('bad_occurrence', acc, day, -1250, 'Lunch at Subway', 10, h.lunch, 1, null),
+      ('no_account', 'aaaaaaaa-0000-4000-8000-000000000301'::uuid, day, -1250, 'Lunch at Subway', 1, h.lunch, 1, null),
+      ('unknown_category', acc, day, -1250, 'Lunch at Subway', 1, h.lunch, 1, 'Their lunch'),
+      ('unknown_category', acc, day, -1250, 'Lunch at Subway', 1, h.lunch, 1, 'Moved for AI'),
+      ('needs_update', acc, day, -1250, 'Lunch at Subway', 1, repeat('0', 64), 1, null),
+      ('needs_update', acc, day, -1250, 'Lunch at Subway', 1, h.other_words, 1, null),
+      ('needs_update', acc, day, -1250, 'Lunch at Subway', 1, h.other_amount, 1, null),
+      ('needs_update', acc, day, -1250, 'Lunch at Subway', 1, h.lunch, 2, null)
+    ) as v(code, account, posted, cents, words, occ, hash, hash_v, category) loop
+    r := public.ai_app_add_candidate(c.account, c.posted, c.cents, c.words, c.occ, c.hash, c.hash_v, c.category);
+    if r ->> 'refused' is distinct from c.code then raise exception 'NOT REFUSED as %: %', c.code, r; end if;
+  end loop;
+  r := public.ai_app_add_candidate(acc, day, -1250, 'Lunch at Subway', 1, h.lunch, 1, 'Lunch for AI');
+  if r ->> 'status' <> 'added' then raise exception 'the right hash was not added: %', r; end if;
+  r := public.ai_app_add_candidate(acc, day, -1250, 'Lunch at Subway', 1, h.lunch, 1, 'Lunch for AI');
+  if r ->> 'status' <> 'already_waiting' then raise exception 'a repeat was not already waiting: %', r; end if;
+  r := public.ai_app_add_candidate(acc, day, -999, 'Ledger coffee', 1, h.ledger, 1, null);
+  if r ->> 'status' <> 'already_recorded' then raise exception 'a ledger hash was not already recorded: %', r; end if;
+  r := public.ai_app_review(50);
+  if not (r -> 'rows') @> '[{"merchant_raw": "Lunch at Subway", "category_source": "model", "source": "ai_app", "ai_client_id": "99999999-9999-4999-8999-999999999999"}]' then
+    raise exception 'Review does not show the added row: %', r;
+  end if;
+  raise notice 'the add refuses every hostile argument, and adds once';
+end $$;
+reset role;
+do $$
+begin
+  if exists (select 1 from public.ingest_candidates where source = 'ai_app'
+              and (status <> 'pending' or merchant <> merchant_raw or merchant_raw <> 'Lunch at Subway'
+                   or category_source is distinct from 'model')) then
+    raise exception 'an AI app''s candidate is not pending, or not stored as the words it showed';
+  end if;
+  if (select count(*) from public.ingest_candidates where source = 'ai_app') <> 1 then raise exception 'the add did not add exactly once'; end if;
+  if exists (select 1 from public.ingest_batches where source = 'ai_app'
+              and (ai_client_id is distinct from '99999999-9999-4999-8999-999999999999' or parsed <> 1)) then
+    raise exception 'an AI app''s batch is not the token''s, or its counts do not say one';
+  end if;
+  if (select array_agg(inserted::text || deduped::text order by created_at, inserted desc) from public.ingest_batches where source = 'ai_app')
+       <> '{10,01,01}' then
+    raise exception 'the add''s batches do not balance as added, waiting, recorded';
+  end if;
+  raise notice 'an AI app''s row waits as the words it showed, in a batch of its own that balances';
+end $$;
+
+-- 0020 refuses to run before 0019. Its own check, taken from the file, run
+-- with 0019's guard gone, then put back.
+\set paste_check_20 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0020_ai_apps.sql`
+begin;
+drop function public._not_an_ai_app();
+set local verify.paste_check = :'paste_check_20';
+do $$
+begin
+  begin
+    execute current_setting('verify.paste_check');
+    raise exception 'NOT REFUSED: 0020 ran without 0019';
+  exception when raise_exception then
+    if sqlerrm not like 'Paste 0019 first%' then raise; end if;
+  end;
+  raise notice '0020 says to paste 0019 first when it is missing';
 end $$;
 rollback;
