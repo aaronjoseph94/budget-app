@@ -81,6 +81,29 @@ describe('get_period', () => {
     expect(august.waiting_in_review).toBe(1)
   })
 
+  it('gives this week from Monday 28 September to Sunday 4 October, with its days left', async () => {
+    const { result, rpcCalls } = await period({ period: 'week', list: 'variable' })
+    expect(JSON.parse(String(rpcCalls[0]?.init.body)).p_parts).toEqual(['categories', 'plans', 'txns', 'records', 'pending'])
+    const out = result.structuredContent as Record<string, unknown>
+    // Wednesday to Sunday, today counted.
+    expect(out.period).toEqual({ kind: 'week', from: '2026-09-28', to: '2026-10-04', days_left: 5 })
+    // 12.75 and 20.00 against the weekly 150.00 (21.83 %); October's 1,200.00 rent falls on the 1st.
+    expect(out.lists).toEqual([{ list: 'variable', budget: $(15000, '$150.00'), actual: $(3275, '$32.75'), used_bp: 2183, left: $(11725, '$117.25') }])
+    expect((out.summary as Record<string, unknown>).spent).toEqual($(123275, '$1,232.75'))
+    // No start is typed for a week, so no end either (D17).
+    expect((out.summary as Record<string, unknown>).ending_balance).toBeNull()
+    expect(out.categories).toEqual([
+      { name: 'Groceries', list: 'variable', budget: $(15000, '$150.00'), actual: $(3275, '$32.75'), left: $(11725, '$117.25'), standing: 'under' },
+    ])
+    expect(out.waiting_in_review).toBe(2)
+  })
+
+  it('has no days left in another week', async () => {
+    const week = (await period({ period: 'week', date: '2026-09-10', categories: ['Rent'] })).result.structuredContent as Record<string, unknown>
+    expect(week.period).toEqual({ kind: 'week', from: '2026-09-07', to: '2026-09-13', days_left: null })
+    expect(week.categories).toEqual([{ name: 'Rent', list: 'bill', budget: null, actual: $(0, '$0.00'), left: null, standing: 'none' }])
+  })
+
   it.each([
     ['a category it does not have', { categories: ['Nope'] }, READ, SENTENCES.unknown_category],
     ['rows it cannot read', {}, { ...READ, txns: 'SECRET' }, SENTENCES.records_unreadable],

@@ -1,6 +1,6 @@
 /**
- * Tool 2, `get_period` (PLAN §2.4): how a month is going, as the Month
- * shows it. Every figure is core's, from the same rows
+ * Tool 2, `get_period` (PLAN §2.4): how a month or a week is going, as the
+ * Month and the Week show it. Every figure is core's, from the same rows
  * renamed as the screens rename them; this only picks the period and
  * hands the figures out with the app's own display words.
  */
@@ -14,6 +14,8 @@ import {
   monthBounds,
   monthSheet,
   safeToSpend,
+  weekBounds,
+  weekSheet,
   type PeriodSheet,
 } from '@budget/core'
 import type { Cents, IsoDate } from '@budget/money-primitives'
@@ -21,13 +23,13 @@ import { GetPeriodInputSchema } from '@budget/schema'
 import { log } from '../log.js'
 import { cleanName, money } from '../money.js'
 import { READ_ONLY, SIGNED_IN, answer, isRefusal, refusal, rpc, type Caller } from '../rpc.js'
-import { categoriesFrom, monthSheetInput, pendingIn, recordsFrom, schedulesFrom, type Read } from '../rows.js'
+import { categoriesFrom, monthSheetInput, pendingIn, recordsFrom, schedulesFrom, weekSheetInput, type Read } from '../rows.js'
 import { monthsAround, utcToday } from '../windows.js'
 
 export type GetPeriodInput = z.output<typeof GetPeriodInputSchema>
 
 export const DESCRIPTION =
-  'How a month is going: starting balance, income, spent, saved, left to spend, ending balance; ' +
+  'How a month or week is going: starting balance, income, spent, saved, left to spend, ending balance; ' +
   'each list’s budget and actual; each category’s budget, actual, what is left and whether it is over, near or under, ' +
   'with this month’s pace. `date` picks the period holding that day (default today). Charges waiting in Review are ' +
   'not counted; `waiting_in_review` says how many. Every amount is {cents, display}; quote display. ' +
@@ -39,6 +41,7 @@ const SPENDING: ReadonlySet<string> = new Set(['variable', 'bill', 'debt', 'subs
 
 const PARTS = {
   month: ['categories', 'budgets', 'plans', 'txns', 'balances', 'schedules', 'records', 'pending'],
+  week: ['categories', 'plans', 'txns', 'records', 'pending'],
 } as const
 
 type Pace = (actual: Cents, budget: Cents | null) => ReturnType<typeof categoryPace>
@@ -109,7 +112,14 @@ function month(read: Read, day: IsoDate, today: IsoDate, readFrom: IsoDate): Sho
   }
 }
 
-const SHOWN = { month } as const
+/** The week holding `day`, as the Week shows it: this week counts its days left from today, any other from its Monday. */
+function week(read: Read, day: IsoDate, today: IsoDate): Shown {
+  const current = weekBounds(day).start === weekBounds(today).start
+  const sheet = weekSheet(weekSheetInput(read, current ? today : weekBounds(day).start))
+  return { sheet, daysLeft: current ? sheet.daysLeft : null, paceOf: null }
+}
+
+const SHOWN = { month, week } as const
 
 export async function getPeriod(caller: Caller | null, input: GetPeriodInput) {
   if (caller === null) return refusal('server_error')
