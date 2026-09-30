@@ -1029,3 +1029,285 @@ rules.
   is "turn on dynamic registration"; anything the browser cannot read is
   "could not check", never "missing").
 
+### 2.12 Migrations
+
+Both forward-only, both after `0018` (they re-create 0016's and 0018's
+functions and name their tables), each enabling row-level security with the
+owner policy in the same file for every table it creates. Migrations are
+exempt from the 300-line limit.
+
+**`0019_ai_apps_cannot_write.sql`** (M1a):
+- Before `begin`, as 0004 did: `alter type public.ingest_source add value if
+  not exists 'ai_app';`. It lives here, not in 0020, because Postgres
+  refuses to use an enum label in the transaction that added it (55P04),
+  and a paste into the SQL Editor may run as one transaction; the local
+  gate applies each statement on its own and would never notice. Pasted
+  and committed a step earlier, the label is safe for 0020 to use. Nothing
+  in 0019 uses it.
+- The "Paste 0018 first" check (§2.5); `public._not_an_ai_app()`
+  (SECURITY DEFINER, `search_path` pinned, granted to `authenticated`;
+  raises `42501` "AI apps cannot do this" when `client_id` is present,
+  else returns); the restrictive write policies and the storage policy of
+  §2.5; the re-created functions with their one-line guard.
+
+**`0020_ai_apps.sql`** (M4):
+- The "Paste 0019 first" check.
+- `ai_app_access (user_id uuid primary key references auth.users on delete
+  cascade, enabled boolean not null default false, allow_add boolean not
+  null default true, time_zone text not null check (time_zone ~
+  '^[A-Za-z_]+(/[A-Za-z0-9_+-]+){0,2}$'), connect_until timestamptz null,
+  updated_at timestamptz not null default now())`. The first draft's
+  pattern refused `UTC`, which a browser can report; a `before insert or
+  update` trigger also refuses a zone missing from `pg_timezone_names`, so
+  the gate never meets one it cannot use. The browser reads and writes its
+  own row through RLS.
+- `ai_app_usage (user_id, day date, kind text check (kind in ('read',
+  'add')), calls integer not null check (calls >= 0), primary key
+  (user_id, day, kind))` and `ai_app_last_use (user_id, client_id uuid,
+  last_used_at timestamptz, primary key (user_id, client_id))`: RLS and the
+  owner policy, then `revoke all … from anon, authenticated; grant select …
+  to authenticated`.
+- For each of these three tables, 0019's restrictive write policies (0019
+  ran before they existed), so an AI app cannot switch itself on, move its
+  window or reset its counts.
+- `ingest_batches.ai_client_id uuid null`, with `check (ai_client_id is null
+  or source = 'ai_app')`.
+- `_ai_app_gate`, `ai_app_read`, `ai_app_search`, `ai_app_review`,
+  `ai_app_add_candidate` (§2.5), all VOLATILE and in PL/pgSQL, each
+  `revoke all … from public, anon; grant execute … to authenticated`; the
+  owner's own session calling them gets `not_an_ai_app`.
+- The restrictive `select` policy of §2.5 ("Reads only through the gate"),
+  on every public table including these.
+
+**Mirrors in code** (M4): `IngestSourceSchema`
+(`packages/schema/src/enums.ts`) and `IngestSource` (`apps/web/src/ledger.ts`)
+gain `ai_app`; `BY_HAND` (`apps/web/src/sheet-input.ts`) gains it, so F39's
+"may be counted twice" treats an AI-added row like a typed one.
+
+**`supabase/local-stub.sql`** (M1a): `auth.jwt()` reading
+`request.jwt.claims`, and `auth.uid()` reading `request.jwt.claim.sub`, else
+`request.jwt.claims ->> 'sub'`, as Supabase does, so the schema gate can
+set a `client_id` claim.
+
+### 2.13 Tests
+
+**`packages/ai-apps/test`** (vitest on Node; a new `ai-apps` project,
+coverage held at 80/80/75 like every module; every test fakes `fetch`, never
+the engine):
+
+- `mcp-auth`: no token → 401 with the exact `resource_metadata` URL and no
+  fetch made; the metadata needs no token and names the one authorization
+  server; Auth's 401 → `error="invalid_token"`; Auth unreachable → 503; a
+  token without `client_id`, with another `iss`, or with `role` `anon` →
+  refused; a disallowed `Origin` → 403; no request header ever carries a
+  service key, and the source names none.
+- `mcp-protocol`: `initialize` at 2025-06-18 and 2025-11-25;
+  `notifications/initialized` → 202; `server/discover` at 2026-07-28 with
+  `Mcp-Method`; `tools/list` gives the ten tools in a fixed order with their
+  annotations and `securitySchemes`, makes no request at all, and is
+  identical whatever the fake database holds; every response carries
+  `Cache-Control: no-store`; `GET` and `DELETE` → 405; an unknown method →
+  -32601; bad arguments → invalid params; a 65 KB body → 413; a redirect
+  from Auth or PostgREST is an error, never followed.
+- `mcp-read-tools`: a fake RPC returns fixture rows; each tool's expected
+  output is core called directly on the same rows (no mocking of core);
+  every `Money.display` equals `formatCents(cents)`; masking, cutting and
+  the removal of control, zero-width and direction-override characters in
+  names; the 24 KB trim; the window-invariance test of §2.4, including a
+  savings fund typed four years before the anchor.
+- `mcp-add`: the add's arguments carry `computeDedupeHash` with the account
+  from the read, `occurrence` `same_again`, the signed cents and the words
+  exactly as given; the same fixture's hash equals the literal the schema
+  gate checks SQL against; a JSON number amount, a zero, an amount over the
+  cap, a control character in the words, a future date and a date more
+  than 366 days back are refused before any fetch; every refusal code maps
+  to its sentence; `add_note` with no amount writes nothing and says what
+  is missing.
+- `mcp-logs`: §2.6's sentinel test.
+- `mcp-bundle`: builds the file, holds its imports to the two pinned URLs
+  and its text to no service key name, imports it and runs `initialize`,
+  `server/discover` and `tools/list`.
+
+**`packages/core/test`:** `entriesTotals`, hand-worked (F52), written first
+and seen failing; no `toBeCloseTo`, snapshots or mocks.
+
+**`packages/money-primitives` and `packages/statement-parsers`:** the moved
+`formatCents` and `parseTypedAmount`, with the app's existing cases.
+
+**`supabase/functions/test`** (M1b): `ai` and `read-receipt` each answer
+401 to no token, to the public anon key, to a token Auth refuses, and to a
+token carrying `client_id`, and serve the owner's own session; each seen
+RED by removing its check.
+
+**`apps/web/test`** (jsdom and the fake Supabase client in
+`fake-supabase.ts`, which gains `GET` and `DELETE /auth/v1/user/oauth/grants`,
+`GET /auth/v1/oauth/authorizations/:id` and its consent `POST`; each screen
+file ends with an axe check):
+- `ai-apps-parity.test.ts`: §2.4's parity, tool by tool.
+- `ai-apps-card.test.tsx`: off by default; the switch upserts `time_zone`;
+  **Connect a new AI app** copies the address and writes `connect_until`;
+  connected apps drawn as text, with no `uri` or `logo_uri` anywhere in the
+  page; Disconnect calls `revokeGrant` only after confirming; 0020 missing
+  and OAuth off each show their one line.
+- `ai-apps-hosts.test.ts`: each allowed callback, exactly; refused:
+  `https://claude.ai/`, `https://claude.ai/api/mcp/auth_callback/x`,
+  `https://chatgpt.com/share/x`, `https://chatgpt.com/connector/oauth/`,
+  `evil.example`, `claude.ai.evil.example`, `https://claude.ai@evil.example/`,
+  a registered address with a query or fragment, `http://claude.ai/…`;
+  accepted as the same host: `CLAUDE.AI` and `claude.ai.`.
+- `oauth-consent.test.tsx`: Allow only with an allowed callback, AI apps on
+  and an open window, and never otherwise (each missing in turn); no
+  window shows its sentence and Deny; Allow never writes `ai_app_access`;
+  the redirect-only reply follows the same rules; `location.assign` only
+  ever to the approved callback; Deny for an unknown callback calls
+  `denyAuthorization` with `skipBrowserRedirect` and navigates nowhere; the
+  client name drawn as text, markup and all, and no `uri` or `logo_uri`
+  drawn or requested; expired; not signed in shows sign-in with the return
+  address, and a return address on another origin is refused.
+- Updated: `help-articles.test.ts`, `updates-check.test.ts`,
+  `updates-screen.test.tsx`, `setup-files.test.ts`, `review-screen.test.tsx`
+  (the "Added by" line), `width-guard.test.ts`.
+
+**`supabase/tests/schema-assertions.sql`**, every case attempted and
+refused, with `request.jwt.claims` set with and without `client_id`:
+- 0019: a `client_id` token inserting, updating or deleting on every table
+  in §2.5's list; calling each guarded function; writing or reading a
+  receipt object; each guarded function's source unchanged but for its
+  guard line; the owner's own session (no `client_id`) still does all of
+  it; its "Paste 0018 first" check raising, inside a rolled-back
+  transaction that drops 0018's function first.
+- 0020: every `ai_app_*` function called without `client_id`; each one
+  VOLATILE (`pg_proc.provolatile`); with access off, adds off, and past
+  each cap; the counters' atomic claim at the cap; another user's account
+  or category; a Not-spending category; a future date, and one 367 days
+  back; a zero amount; an occurrence of 0 or 10; a wrong hash, a hash for
+  other words or another amount, and version 2, each `needs_update`; the
+  right hash (a literal made by `computeDedupeHash`, the same one M9's test
+  checks) accepted; a repeat (`already_waiting`); a hash already in the
+  ledger (`already_recorded`); every candidate it writes pending, with
+  `merchant` equal to `merchant_raw`, `category_source 'model'` when named
+  and never approved; the batch's `ai_client_id` the token's, whatever is
+  sent; the batch counts balanced; the browser writing the counters; an AI
+  app writing `ai_app_access` (its switch, its window); a `client_id`
+  token reading every table directly, with the switch on and off, and
+  getting nothing; the same token reading through `ai_app_read` with the
+  switch on; the time zones `UTC` and `America/Toronto` accepted and
+  `Mars/Base` refused; RLS isolating two users on every new table.
+
+### 2.14 What only the hosted project can show
+
+This environment cannot write to the hosted project; it can read its
+public endpoints (the review repeated the metadata and key-set probes).
+Each check below fails visibly, and HANDOFF gets a first-connection
+checklist (M12b).
+
+| # | Check | If it fails |
+|---|---|---|
+| K1 | PostgREST resolves `auth.uid()` and exposes `client_id` in `auth.jwt()` under an OAuth token (issue 41668 reports `auth.uid()` null through server-side supabase-js) | Every tool answers `not_an_ai_app` or `not_signed_in`, so the server does nothing; but the token used directly would pass the restrictive policies, so the checklist says to switch AI apps and the OAuth server off (§2.5) |
+| K2 | `/auth/v1/user` accepts an OAuth token, and refuses it after `revokeGrant` | Every call is a 401: no connection |
+| K3 | Claude's and ChatGPT's DCR and token exchange work against Supabase | The connection fails at sign-in |
+| K4 | A dashboard paste that imports the SDK by `npm:` deploys and starts; the cold start's time | `/mcp/health` does not answer; One-time updates says so |
+| K5 | Whether an OAuth token can change the email or password (`PUT /auth/v1/user`), and whether MFA on the account stops it | A security finding (§4, §5.4): today only the consent checks and Supabase's email settings stand in the way |
+| K6 | Deno's resolution of the SDK's own `zod ^4.2.0` beside our pinned `npm:zod@4.6.5` converts our schemas, and the SDK's Node shim (with its vendored validator) loads under Supabase's runtime | `/mcp/health` reports `tools: 0` or fails |
+| K7 | Cloudflare Pages serves the app at `/oauth/consent` | The consent page 404s; the build emits `oauth/consent/index.html` instead |
+| K8 | Supabase accepts the `resource` parameter Claude and ChatGPT send (RFC 8707) | Sign-in fails at the authorize or token step |
+| K9 | ChatGPT registers, and returns to, `https://chatgpt.com/connector/oauth/{callback_id}` (Supabase sends no `iss`) | The consent page names a callback it does not allow; the allowlist gains the documented form in its own commit |
+
+### 2.15 Records this work writes
+
+- **ADR 0012** (with this plan): the decision, the owner's words, and what
+  it amends: ADR 0004 (the helpers refuse AI-app tokens; "JWT verification
+  stays on" holds only while the project signs with the legacy secret),
+  ADR 0007 (`setup/` carries a file built at site build). It does **not**
+  amend ADR 0005 (the first draft said it did): an AI app's added words
+  are ingested text, held to `IngestedTextSchema` and drawn as
+  `IngestedText`, exactly as a model's reading of a receipt's shop name is
+  today (`packages/schema/src/receipt.ts`), and its amount lands in
+  Review as ADR 0005 §7's receipt total does. CONSTRAINTS.md's "Model text
+  carries no numbers" row is unchanged; its words say "every string a
+  model writes", which the receipt path already reads as the AI's own
+  words only. M1a records that wording gap in NOTICED-NOT-TOUCHING.md for
+  its own commit; this plan relies on no new reading of it.
+- **CAPABILITY-MAP.md** (its own docs commit before M2a, the slice that
+  creates the module): `money-primitives`' row gains "and the one display
+  helper" (M5a moves `formatCents` there); the
+  `ai-apps` module row ("The MCP server outside AI apps connect to: the token check, ten tools
+  and the rows renamed for the engine; built into one pasteable Edge
+  Function, `mcp`"), depending on `calc-engine`, `money-primitives`,
+  `statement-parsers`, `schema-contracts`, and `persistence-schema` by RPC
+  only; its place in the build order after `ingest-pipeline`; its "why"
+  paragraph.
+- **CONSTRAINTS.md** (M2a, M3; additions for the new module, nothing
+  existing loosened): the `ai-apps` coverage floor; its `console` rule; its
+  depcruise arrows (deny by default: the four packages, zod and the SDK); "the AI apps server file imports only
+  `npm:zod@4.6.5` and `npm:@modelcontextprotocol/server@2.2.0` and names no
+  service key" (`mcp-bundle` test and `check-bundle.mjs`). The
+  "Edge Functions … imports zod alone" row is untouched.
+- **F52** in `docs/formula-decisions.md` (M8a), before its code.
+- **HANDOFF.md §3 and `docs/setup.md`** (M12b): §1's owner steps and the
+  first-connection checklist.
+- **NOTICED-NOT-TOUCHING.md:** anything a slice sees outside itself; M1b
+  records that `read-receipt` accepted the public anon key (it checked only
+  for a `Bearer` prefix and relied on the gateway, which accepts the anon
+  key), which M1b's `whoIs` closes.
+
+### 2.16 How each CLAUDE.md rule is kept
+
+| Rule | How |
+|---|---|
+| All arithmetic in `packages/core` | Every figure is a core function's output (§2.4), `days_left` included; the one new sum is core's `entriesTotals` (F52); SQL and the server only count calls and rows, which are bookkeeping, never money (ADR 0004), and SQL does no date arithmetic on a window; the Review list has no total by design; the window-invariance test proves no figure depends on how many rows were fetched. What an AI writes in its own chat is outside the app, and the server instructions ask it to quote |
+| Money is `Cents` | Integers in results, with `display` from the one helper, moved not copied; amounts in as text through statement-parsers; a JSON number amount is refused; `bigint` in Postgres |
+| Model output never reaches the ledger unreviewed | One write, `ai_app_add_candidate`, always pending, `model` when it names a category, never approved even on a rule match; it checks the hash it is sent and stores the words it shows, so no caller can make a pending row swallow a real statement line or teach a rule the owner did not see; every other write refused to a `client_id` token by 0019; the schema gate attempts each |
+| Core functions: one plain input, one output, explicit `asOf` | `asOf` is the owner's date from the database, passed in; F52 the same |
+| zod at four boundaries | Tool arguments (the request body) and the environment only; no `outputSchema`; rows cast as `ledger.ts` does |
+| New tables: RLS and the owner policy in the same file; forward-only | 0020's three tables; 0019 and 0020 are new files; nothing applied is edited |
+| Approving is a conditional write | Unchanged; AI apps have no approve path |
+| Dedupe hash with an occurrence discriminator and its version | `same_again` is the occurrence index; `DEDUPE_HASH_VERSION` is stored; the hash's inputs do not change; the add function re-derives version 1 in SQL only to check the server's hash, and refuses any other version |
+| Vertical slices, ≤300 lines, green | §3, re-estimated in review and split where over |
+| Every ingestion failure visible; counts balance | A refused add is answered with its reason to the AI app before anything is written; accepted adds balance their batch (§2.8) |
+| Never persist a derived money value | Nothing is cached: `tools/list` carries `ttlMs: 0`, tool results carry no cache hint, every response says `Cache-Control: no-store`, and the server keeps nothing between calls |
+| No provider or `service_role` key reachable from the browser | The server holds no provider key and never reads `service_role`; its file is checked for both names; the browser gains no key |
+| Never log amounts, merchants, prompts or responses | §2.6, with a sentinel test |
+| No public bucket; signed URLs | Receipts untouched; AI apps refused on the bucket entirely |
+| Never render ingested or model text as markup | A client's name, an AI-added shop name and everything on the consent page are React text; the name is also never logged; a client's `uri` and `logo_uri` are never drawn; names sent to the AI lose control and direction-override characters, and no stored text is ever part of a tool's description or schema |
+| Never accept a model- or database-supplied URL | The server calls only `SUPABASE_URL` from its environment, following no redirect; the consent page sends the browser only to exact, committed callback addresses, and never follows a refusal to an unknown one |
+| Weak assertions; no mocks in core | F52's tests are hand-worked; the tool tests call core for real |
+| Never commit the workbook, exports, photos or `.env` | Fixtures are invented |
+| Never fix duplicates at the query or UI layer | The dedupe hash and `same_again` |
+| Ask first: dependencies | The SDK (M2a) and vite declared in `packages/ai-apps` (M3, no new lockfile package), each its own commit with the reason; ADR 0012 |
+| Ask first: sending financial content to a hosted provider | Anthropic ("Yes, budget details can go to Anthropic") and OpenAI (asked for as "ChatGPT … should work as well"; the owner's explicit word is pending in ADR 0012 and is recorded before the server is switched on), through the owner's own AI apps |
+| Ask first: dedupe inputs, destructive migrations, golden values, divergences | None: the hash is unchanged, `create or replace` keeps each signature and its data, no golden value moves, no workbook figure changes |
+
+---
+
+## 3. The build slices
+
+**Rules for every slice** (CLAUDE.md, CONSTRAINTS.md, and
+`docs/ai-first-plan.md` §13's, not repeated below): `./scripts/gates.sh full`
+prints `status=GREEN` before each commit; one logical change per commit; at
+most 300 changed lines excluding the lockfile and migrations, tests
+included; each new test seen failing first, against a mutation named in the
+commit body; each screen change looked at in the preview harness at 320,
+390 and 1280 px; anything noticed outside the slice into
+`NOTICED-NOT-TOUCHING.md`. Each tool's input schema goes into
+`packages/schema/src/ai-apps.ts` in the slice that adds the tool, and its
+description into the tool's own file. **If a slice measures over 300
+lines, it splits at a tool or file boundary into consecutive commits that are each green;
+the 300-line rule wins over this plan's count.**
+
+**Before M1a:** this plan and ADR 0012, committed on 2026-09-30 as
+docs-only commits of at most 300 lines each (split by section, as A01
+was); then the CAPABILITY-MAP.md row for `ai-apps` as its own docs commit,
+before M2a creates the module. They are the design, not build slices.
+
+The estimates are changed lines excluding migrations, tests included. The
+review re-counted each slice from the files it touches, counting the tests
+and the parity and window cases the review added, and split every one whose
+count came near or over 300: the first draft's M5 (put at 300) held two
+moved helpers, the RPC layer, the registry, two tools and a parity test,
+which is nearer 450. The order is buildable: no slice uses a
+function, table or dependency-cruiser arrow that a later slice brings (the
+first draft read amounts through `parseTypedAmount` in M7 and M8 but
+created it in M9, and imported `packages/ai-apps` from
+`apps/web/setup-files.ts` in M3 but allowed that arrow only in M5).
+
