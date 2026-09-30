@@ -107,11 +107,13 @@ module.exports = {
         'The UI consumes a package through its public API, never by reaching into its ' +
         'files. A deep import binds the screen to an internal name that carries no ' +
         'promise, so a refactor inside a package silently becomes a UI change — and ' +
-        'the package index is where each layer states what it is willing to support.',
+        'the package index is where each layer states what it is willing to support. ' +
+        'money-primitives states a second entry point, ./format, for the one display ' +
+        'helper alone (see ui-never-computes-money).',
       from: { path: '^apps/web/src' },
       to: {
         path: '^packages/[^/]+/src/',
-        pathNot: '^packages/[^/]+/src/index\\.ts$',
+        pathNot: ['^packages/[^/]+/src/index\\.ts$', '^packages/money-primitives/src/format\\.ts$'],
       },
     },
     {
@@ -123,10 +125,14 @@ module.exports = {
         'away from adding up a column itself, and a total computed in a screen is a ' +
         'second place for a figure to be wrong — the one the user actually reads. ' +
         'The TYPE is allowed: naming a value Cents costs nothing and prevents a float. ' +
-        'The functions are not. Totals come from packages/core or they do not exist.',
+        'The functions are not. Totals come from packages/core or they do not exist. ' +
+        'The one exception is src/format.ts, the one display helper (MCP plan M5a): it ' +
+        'turns one amount into words and adds nothing up, and the app and the AI apps ' +
+        'server must share it rather than each keep a copy.',
       from: { path: '^apps/web/src' },
       to: {
         path: '^packages/money-primitives',
+        pathNot: '^packages/money-primitives/src/format\\.ts$',
         dependencyTypesNot: ['type-only'],
       },
     },
