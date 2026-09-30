@@ -469,6 +469,9 @@
   }
   body {
     font-family: ui-sans-serif, system-ui, -apple-system, 'SF Pro Text', 'Segoe UI', sans-serif;
+    /* Every figure in tabular numbers (Mockup A), those inside sentences too,
+       so no figure depends on a caller remembering `.tnum`. */
+    font-variant-numeric: tabular-nums;
     -webkit-font-smoothing: antialiased;
     -webkit-tap-highlight-color: transparent;
   }

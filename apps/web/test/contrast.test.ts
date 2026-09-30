@@ -71,6 +71,14 @@ describe.each([
   })
 })
 
+describe('figures', () => {
+  it('are tabular everywhere, set once on the body (Mockup A)', () => {
+    const start = css.indexOf('  body {\n    font-family')
+    const body = css.slice(start, css.indexOf('}', start))
+    expect(body).toContain('font-variant-numeric: tabular-nums;')
+  })
+})
+
 describe('the focus ring', () => {
   it('is drawn at full strength, not faded to half', async () => {
     const sources = import.meta.glob('../src/**/*.tsx', { query: '?raw', import: 'default', eager: true })
