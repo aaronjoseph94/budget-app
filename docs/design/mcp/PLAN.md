@@ -1560,6 +1560,18 @@ created it in M9, and imported `packages/ai-apps` from
   `tools/list` is identical with an empty and a hostile fake database, and
   makes no request (seen RED by building a description from a category
   name).
+- **As built (2026-09-30):** the SDK's factory is handed each request's
+  `authInfo`, so `handle` adds the project and its `fetch` to it and the
+  tools reach the database as that caller; the registry and instructions
+  live in `src/server.ts`, the RPC caller, the refusal sentences and the
+  tool annotations in `src/rpc.ts`. The SDK answers arguments a tool does
+  not take as an `isError` result ("Input validation error: …", naming
+  the key, never the value), not as `-32602`. `list_categories` names all
+  seven lists, Not spending included, since a search may filter by it,
+  and says `truncated` past 200. A gate refusal the server does not know,
+  and `not_an_ai_app` (K1's failure), each have a sentence. Parity is
+  checked on the cast rows (`categoriesFrom` against `listCategories`),
+  which is all the app does with categories.
 
 ### M5c: `get_period` for a month and a week
 

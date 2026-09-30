@@ -30,5 +30,8 @@ export const ListSchema = z.enum(['variable', 'bill', 'debt', 'subscription', 'i
 /** What an AI app adds was: the owner's own words, held as ingested text, trimmed. */
 export const WordsSchema = z.string().trim().max(120).pipe(IngestedTextSchema)
 
+/** `list_categories` takes nothing. */
+export const ListCategoriesInputSchema = z.object({}).strict()
+
 /** Something the owner said, for `add_note`, read as Just type it reads it. */
 export const NoteTextSchema = z.string().trim().max(300).pipe(IngestedTextSchema)

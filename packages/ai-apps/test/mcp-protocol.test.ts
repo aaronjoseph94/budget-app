@@ -60,10 +60,19 @@ describe('the MCP endpoint', () => {
     expect((await message(res)).result).toMatchObject({ supportedVersions: ['2026-07-28'], capabilities: { tools: {} } })
   })
 
-  it('lists no tools yet, in both eras, with a zero cache hint', async () => {
-    expect((await message(await handle(legacy('tools/list'), ENV))).result).toEqual({ tools: [] })
+  it('lists the same tools in both eras, with a zero cache hint', async () => {
+    const names = (reply: Record<string, unknown>) => (reply.result as { tools: { name: string }[] }).tools.map((t) => t.name)
+    expect(names(await message(await handle(legacy('tools/list'), ENV)))).toEqual(['list_categories'])
     const now = await message(await handle(modern('tools/list'), ENV))
-    expect(now.result).toMatchObject({ tools: [], ttlMs: 0, cacheScope: 'private' })
+    expect(names(now)).toEqual(['list_categories'])
+    expect(now.result).toMatchObject({ ttlMs: 0, cacheScope: 'private' })
+  })
+
+  // The SDK answers a tool's refused arguments as an error result, not -32602.
+  it('refuses arguments a tool does not take, naming no value', async () => {
+    const reply = await message(await handle(legacy('tools/call', { name: 'list_categories', arguments: { sneaky: 'VALUE-7' } }), ENV))
+    expect(reply.result).toMatchObject({ isError: true, content: [{ type: 'text', text: expect.stringMatching(/^Input validation error/) }] })
+    expect(JSON.stringify(reply)).not.toContain('VALUE-7')
   })
 
   it('answers an unknown method with -32601, in both eras', async () => {

@@ -18,10 +18,11 @@
  *   app's own origins only, so One-time updates can check the paste.
  */
 import { z } from 'zod'
-import { McpServer, createMcpHandler } from '@modelcontextprotocol/server'
+import { createMcpHandler } from '@modelcontextprotocol/server'
 import { MCP_SERVER_VERSION } from '@budget/schema'
 import { checkToken, json, protectedResource, type Project } from './auth.js'
 import { log } from './log.js'
+import { TOOLS, budgetServer } from './server.js'
 
 // The app's own sites and its dev server, plus exact https origins in the
 // EXTRA_ORIGINS secret, as the AI helper allows. Claude and ChatGPT call
@@ -43,15 +44,6 @@ export const MAX_BODY_BYTES = 64 * 1024
 
 /** The most a request may take in all (PLAN §2.7), far under the platform's 150 s. */
 export const DEADLINE_MS = 20_000
-
-/** The tools, in the order `tools/list` gives them. None yet (PLAN §3, M5b). */
-const TOOLS: readonly ((server: McpServer) => void)[] = []
-
-function budgetServer(): McpServer {
-  const server = new McpServer({ name: 'budget', version: MCP_SERVER_VERSION }, { capabilities: { tools: {} } })
-  for (const register of TOOLS) register(server)
-  return server
-}
 
 // Built once per instance; it holds no request's state. The SDK's error
 // hook logs the code only: an error's message can carry a tool's arguments.
@@ -108,7 +100,9 @@ async function withDeadline(work: Promise<Response>): Promise<Response> {
 
 async function serveMcp(req: Request, project: Project, fetchFn: typeof fetch): Promise<Response> {
   const caller = await checkToken(project, req.headers.get('authorization'), fetchFn)
-  return caller instanceof Response ? caller : mcp.fetch(req, { authInfo: caller })
+  if (caller instanceof Response) return caller
+  // The tools reach the database as this caller, through this project only.
+  return mcp.fetch(req, { authInfo: { ...caller, extra: { ...caller.extra, project, fetchFn } } })
 }
 
 async function route(req: Request, env: Env, fetchFn: typeof fetch): Promise<Response> {

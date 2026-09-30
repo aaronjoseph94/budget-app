@@ -70,6 +70,7 @@ export { ModelProse, proseProblem, type ProseProblem } from './prose.js'
 
 export {
   AmountTextSchema,
+  ListCategoriesInputSchema,
   ListSchema,
   MCP_SERVER_VERSION,
   NameSchema,
