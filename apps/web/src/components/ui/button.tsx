@@ -11,10 +11,6 @@ const VARIANTS = {
   link: 'text-primary underline-offset-4 hover:underline',
 } as const
 
-// The variants that lift off the page; `flat` (Mockup A) leaves the shadow
-// off, a prop rather than a shadow-none override, which cn cannot resolve.
-const SHADOWED: ReadonlySet<string> = new Set(['default', 'outline', 'destructive'])
-
 // Heights are floors, not fixed, so a label that has to wrap grows the
 // button instead of spilling out of it.
 const SIZES = {
@@ -30,10 +26,9 @@ const SIZES = {
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   readonly variant?: keyof typeof VARIANTS
   readonly size?: keyof typeof SIZES
-  readonly flat?: boolean
 }
 
-export function Button({ variant = 'default', size = 'default', flat = false, className, type = 'button', ...props }: ButtonProps) {
+export function Button({ variant = 'default', size = 'default', className, type = 'button', ...props }: ButtonProps) {
   return (
     <button
       type={type}
@@ -53,7 +48,6 @@ export function Button({ variant = 'default', size = 'default', flat = false, cl
         // Greyed the same while a save runs; it keeps focus, where disabled drops it (FE-6).
         'aria-disabled:opacity-50',
         VARIANTS[variant],
-        !flat && SHADOWED.has(variant) && 'shadow-sm',
         SIZES[size],
         className,
       )}

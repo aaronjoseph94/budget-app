@@ -120,7 +120,7 @@ export function SuggestLine({ status }: { status: SuggestStatus }) {
 /** The button that asks for them, on Review's title row (Mockup A). */
 export function SuggestButton({ onSuggest }: { onSuggest: () => void }) {
   return (
-    <Button variant="outline" size="tall" flat onClick={onSuggest}>
+    <Button variant="outline" size="tall" onClick={onSuggest}>
       <Icon name="sparkles" className="text-primary" /> Suggest categories
     </Button>
   )

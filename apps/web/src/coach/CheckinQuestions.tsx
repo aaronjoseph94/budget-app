@@ -66,7 +66,7 @@ export function CheckinQuestions(props: {
   const { questions, week, answers, impulse, shops } = props
   if (answers.status === 'missing') {
     return (
-      <Section title="Was it planned?" flat className={CHECKIN_CARD}>
+      <Section title="Was it planned?" className={CHECKIN_CARD}>
         <p>
           Your answers need a one-time update.{' '}
           <a href={hashOf({ screen: 'help', param: 'updates' })} className={SENTENCE_LINK}>
@@ -78,13 +78,13 @@ export function CheckinQuestions(props: {
   }
   if (answers.status === 'failed') {
     return (
-      <Section title="Was it planned?" flat className={CHECKIN_CARD}>
+      <Section title="Was it planned?" className={CHECKIN_CARD}>
         <p className="text-muted-foreground">Your answers did not load. Reload to try again.</p>
       </Section>
     )
   }
   return (
-    <Section title="Was it planned?" flat className={CHECKIN_CARD}>
+    <Section title="Was it planned?" className={CHECKIN_CARD}>
       {questions.length === 0 ? <p className="text-muted-foreground">No everyday charges of $20.00 or more to ask about last week.</p> : null}
       <ul className="space-y-4">
         {questions.map((q) => (

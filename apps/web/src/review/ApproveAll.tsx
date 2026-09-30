@@ -32,7 +32,7 @@ export function ApproveAll({ items, busy, onConfirm, onCancel }: {
 }) {
   const n = items.length
   return (
-    <Card flat className="p-4 md:px-5" role="group" aria-labelledby="approve-all-title">
+    <Card className="p-4 md:px-5" role="group" aria-labelledby="approve-all-title">
       <h2 id="approve-all-title" className="font-medium">
         Approve these {n}?
       </h2>

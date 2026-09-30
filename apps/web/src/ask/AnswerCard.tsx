@@ -118,7 +118,7 @@ export function AnswerCard(props: {
   // Mockup A's answer card, white to the accent's tint. Muted words on the
   // tint take `canvas-muted`, as #6b7280 reads 4.27 where it ends (ADR 0010).
   return (
-    <Card flat className="bg-linear-to-b from-card to-primary-tint [--muted-foreground:var(--canvas-muted)]">
+    <Card className="bg-linear-to-b from-card to-primary-tint [--muted-foreground:var(--canvas-muted)]">
       <CardContent className="space-y-3 pt-5 md:px-6 md:pt-6">
         <ReadAs read={read} by={props.by} names={props.names} answer={answer} />
         {answer.status === 'answered' ? <Answered answer={answer} /> : <NoAnswer answer={answer} missingUpdate={props.missingUpdate} />}

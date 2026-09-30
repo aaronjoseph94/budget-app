@@ -337,7 +337,7 @@ export function ReviewScreen() {
       </div>
 
       {rows !== null && rows.length === 0 && unreadable?.total === 0 ? (
-        <Card flat>
+        <Card>
           <Empty icon={<Icon name="check" />} title="All caught up">
             Import a statement and anything it finds that you have not categorised before will wait here.
           </Empty>
@@ -429,7 +429,7 @@ const ReviewRow = memo(function ReviewRow({
 
   return (
     <li>
-      <Card flat className={cn('p-4 transition-opacity md:px-5 md:py-[1.125rem]', busy && 'opacity-60')}>
+      <Card className={cn('p-4 transition-opacity md:px-5 md:py-[1.125rem]', busy && 'opacity-60')}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             {/* As the statement printed it, in the mockup's fixed-width face. */}
@@ -480,7 +480,7 @@ const ReviewRow = memo(function ReviewRow({
             >
               <Icon name="check" /> Approve
             </Button>
-            <Button variant="outline" size="icon-lg" flat aria-label="Not a real transaction — remove" disabled={busy} onClick={() => onReject(row)}>
+            <Button variant="outline" size="icon-lg" aria-label="Not a real transaction — remove" disabled={busy} onClick={() => onReject(row)}>
               <Icon name="x" className="text-muted-foreground" />
             </Button>
           </div>
@@ -569,7 +569,6 @@ function UnreadableLines({
                       <Button
                         variant="outline"
                         size="sm"
-                        flat
                         aria-label={`Dismiss ${where.toLowerCase()}`}
                         disabled={busy !== null}
                         onClick={() => onDismiss(line.id)}

@@ -92,13 +92,13 @@ export function LedgerScreen() {
         // White, not the mockup's rose and green: those hues name the Debts
         // and Income lists (ADR 0010), and these totals are every row.
         <div className="grid grid-cols-2 gap-3 md:gap-4">
-          <Card flat className="min-w-0 p-4 md:px-6 md:py-5">
+          <Card className="min-w-0 p-4 md:px-6 md:py-5">
             <p className="text-sm text-muted-foreground md:text-[0.9375rem]">Money out</p>
             <p className="mt-1 text-xl font-bold tracking-[-0.02em] md:text-2xl xl:text-[2rem]">
               <Figure>{formatCents(totals.outflowCents)}</Figure>
             </p>
           </Card>
-          <Card flat className="min-w-0 p-4 md:px-6 md:py-5">
+          <Card className="min-w-0 p-4 md:px-6 md:py-5">
             <p className="text-sm text-muted-foreground md:text-[0.9375rem]">Money in</p>
             <p className="mt-1 text-xl font-bold tracking-[-0.02em] text-income md:text-2xl xl:text-[2rem]">
               <Figure>{formatCents(totals.inflowCents)}</Figure>
@@ -119,7 +119,7 @@ export function LedgerScreen() {
       {rows === null && error === null ? <Loading what="this month’s transactions" /> : null}
 
       {visible !== null && visible.length === 0 ? (
-        <Card flat>
+        <Card>
           <Empty icon={<Icon name="list" />} title={query === '' ? 'Nothing this month' : 'No matches'}>
             {query === '' ? 'Approved transactions appear here.' : 'Try a different word.'}
           </Empty>
@@ -130,7 +130,7 @@ export function LedgerScreen() {
         // Days off screen skip layout and paint until scrolled to (PERF-5).
         <section key={day} className="[contain-intrinsic-size:auto_12rem] [content-visibility:auto]">
           <h2 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{formatIsoDate(day)}</h2>
-          <Card flat className="overflow-hidden">
+          <Card className="overflow-hidden">
             <ul className="divide-y">
               {items.map((r) => (
                 <li key={r.id} className="flex flex-wrap items-center gap-3 px-4 py-3 md:px-5 md:py-3.5">

@@ -175,7 +175,7 @@ export function StatementImport() {
   if (loaded.kind === 'none') return <FilePicker onFile={(f) => void onFile(f)} />
   if (loaded.kind === 'reading') {
     return (
-      <Card flat>
+      <Card>
         <div className="py-10 text-center text-sm text-muted-foreground">Reading {loaded.name}…</div>
       </Card>
     )
@@ -253,7 +253,7 @@ function PdfPreview({
       {/* Mockup A: one card tinted to the accent holds the statement's
         figures and its Import; its muted words take canvas-muted, measured
         on the tint (ADR 0010). */}
-      <Card flat className="space-y-3.5 bg-linear-to-b from-card to-primary-tint p-5 [--muted-foreground:var(--canvas-muted)] md:px-6 md:py-[1.375rem]">
+      <Card className="space-y-3.5 bg-linear-to-b from-card to-primary-tint p-5 [--muted-foreground:var(--canvas-muted)] md:px-6 md:py-[1.375rem]">
         <div className="space-y-2">
           <CardDescription>
             Statement · {formatIsoDate(period.from)} – {formatIsoDate(period.to)}
@@ -332,7 +332,7 @@ const DISCREPANCY: Record<string, string> = {
 
 function PreviewList({ rows }: { rows: readonly AcceptedRow[] }) {
   return (
-    <Card flat className="overflow-hidden">
+    <Card className="overflow-hidden">
       <ul className="divide-y">
         {rows.map((row) => (
           <li key={row.line} className="flex items-baseline gap-3 px-4 py-2.5 text-sm md:gap-3.5 md:px-5">
@@ -478,7 +478,7 @@ function TypedEntry() {
   }
 
   return (
-    <Card flat>
+    <Card>
       <CardContent className="space-y-4 pt-5 md:space-y-[1.125rem] md:px-6 md:pt-[1.375rem] md:pb-[1.375rem]">
         <JustTypeIt onFill={fill} />
         <hr className="border-border" />
@@ -779,7 +779,7 @@ function PhotoEntry() {
       </div>
 
       {state.kind !== 'reading' ? (
-        <Card flat>
+        <Card>
           <CardContent className="pt-5 md:px-6 md:pt-[1.375rem] md:pb-[1.375rem]">
             <form
               className="space-y-4"

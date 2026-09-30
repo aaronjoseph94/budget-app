@@ -163,7 +163,7 @@ export function SignIn({ supabase, linkRefused = false }: { supabase: SupabaseCl
         ) : null}
 
         {/* The one card in the app with a shadow (Mockup A). */}
-        <Card flat className="mt-7 p-6 shadow-[0_10px_30px_rgba(17,24,39,.06)] sm:p-7">
+        <Card className="mt-7 p-6 shadow-[0_10px_30px_rgba(17,24,39,.06)] sm:p-7">
           {attempt.kind === 'link-sent' ? (
             <div>
               <h2 className="font-semibold">Check your email</h2>

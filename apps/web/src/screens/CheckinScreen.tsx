@@ -136,7 +136,7 @@ function LastWeek({ figures, facts, words }: { figures: CheckinFigures; facts: C
   const { recap } = figures
   return (
     // Tinted to the accent, not the mockup's green, which names Income (ADR 0010).
-    <Section title="Last week" flat className={`${CHECKIN_CARD} bg-linear-to-b from-card to-primary-tint`}>
+    <Section title="Last week" className={`${CHECKIN_CARD} bg-linear-to-b from-card to-primary-tint`}>
       {recap.status === 'not_covered' ? (
         <p>
           {recap.coveredFrom === null
@@ -177,7 +177,7 @@ function TryThis({ figures, facts, words }: { figures: CheckinFigures; facts: Ch
     }
   }
   return (
-    <Section title="One thing to try" flat className={CHECKIN_CARD}>
+    <Section title="One thing to try" className={CHECKIN_CARD}>
       <p className="[overflow-wrap:anywhere]">
         <Said part={words.tryThis} facts={facts} />
       </p>
@@ -216,7 +216,7 @@ function Goals({ facts, words }: { facts: CheckinFacts; words: Checkin }) {
     goals: active.map((g) => ({ id: g.id, targetCents: g.target_cents, savedCents: goalSavedCents(g, funds), unitCostCents: g.unit_cost_cents })),
   })
   return (
-    <Section title={active.length === 1 ? 'Your goal' : 'Your goals'} flat className={CHECKIN_CARD}>
+    <Section title={active.length === 1 ? 'Your goal' : 'Your goals'} className={CHECKIN_CARD}>
       <p className="[overflow-wrap:anywhere]">
         <Said part={words.goal} facts={facts} />
       </p>

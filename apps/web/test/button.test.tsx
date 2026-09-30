@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { Button } from '../src/components/ui/button.js'
+import { Card } from '../src/components/ui/card.js'
 import { expectNoAxeViolations } from './axe.js'
 
 afterEach(cleanup)
@@ -42,5 +43,20 @@ describe('Button focus', () => {
     const classes = screen.getByRole('button').classList
     expect(classes.contains('focus-visible:ring-offset-2')).toBe(true)
     expect(classes.contains('focus-visible:ring-offset-background')).toBe(true)
+  })
+})
+
+// Mockup A has no raised controls or cards: only the sign-in card casts a
+// shadow (README), so neither part carries one by default.
+describe('Mockup A is flat', () => {
+  it('gives no Button variant and no Card a shadow', () => {
+    for (const variant of ['default', 'secondary', 'outline', 'ghost', 'destructive', 'link'] as const) {
+      cleanup()
+      render(<Button variant={variant}>Save</Button>)
+      expect([...screen.getByRole('button').classList].filter((c) => c.startsWith('shadow')), variant).toEqual([])
+    }
+    cleanup()
+    render(<Card data-testid="card">Words</Card>)
+    expect([...screen.getByTestId('card').classList].filter((c) => c.startsWith('shadow'))).toEqual([])
   })
 })

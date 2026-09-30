@@ -11,21 +11,21 @@ import { SENTENCE_LINK } from '../components/ui/link.js'
 import { cn } from '../lib/cn.js'
 
 /**
- * `flat` and `className` let a screen restyle the card, as the check-in does
- * (Mockup A step 7). `large` is Mockup A's section card (step 8): no shadow,
- * an 18px title, 24px sides and 15px words.
+ * `className` lets a screen restyle the card, as the check-in does (Mockup A
+ * step 7). `large` is Mockup A's section card (step 8): an 18px title, 24px
+ * sides and 15px words.
  */
-export function Section({ title, children, flat = false, large = false, className }: { title: string; children: ReactNode; flat?: boolean; large?: boolean; className?: string }) {
+export function Section({ title, children, large = false, className }: { title: string; children: ReactNode; large?: boolean; className?: string }) {
   if (large) {
     return (
-      <Card flat className={cn('min-w-0', className)}>
+      <Card className={cn('min-w-0', className)}>
         <h2 className="px-5 pt-5 pb-3 text-lg font-semibold leading-tight tracking-tight md:px-6 md:pt-6">{title}</h2>
         <div className="space-y-3 px-5 pb-5 text-[0.9375rem] md:px-6 md:pb-6">{children}</div>
       </Card>
     )
   }
   return (
-    <Card flat={flat} className={className}>
+    <Card className={className}>
       <div className="p-5 pb-2">
         <CardTitle as="h2">{title}</CardTitle>
       </div>
