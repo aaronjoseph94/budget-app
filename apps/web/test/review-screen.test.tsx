@@ -54,6 +54,19 @@ describe('ReviewScreen', () => {
     await expectNoAxeViolations()
   })
 
+  // An AI app's addition (0020) waits like any other row, and says where it came from.
+  it('says a row was added by an AI app, and no other row', async () => {
+    const fake = seeded()
+    fake.tables.ingest_candidates.push({
+      id: 'p4', posted_on: '2026-03-12', amount_cents: -1250, merchant: 'Lunch at Subway', merchant_raw: 'Lunch at Subway', status: 'pending', source: 'ai_app',
+    })
+    renderScreen(<ReviewScreen />, fake)
+
+    expect((await row('Lunch at Subway')).getByText(/Added by an AI app/)).toBeTruthy()
+    expect(screen.getAllByText(/Added by an AI app/)).toHaveLength(1)
+    await expectNoAxeViolations()
+  })
+
   it("groups the picker under the workbook's lists, each in its own order, then by name", async () => {
     const fake = seeded()
     fake.tables.categories.push(

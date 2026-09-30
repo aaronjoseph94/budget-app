@@ -1213,6 +1213,7 @@ checklist (M12b).
 | K8 | Supabase accepts the `resource` parameter Claude and ChatGPT send (RFC 8707) | Sign-in fails at the authorize or token step |
 | K9 | ChatGPT registers, and returns to, `https://chatgpt.com/connector/oauth/{callback_id}` (Supabase sends no `iss`) | The consent page names a callback it does not allow; the allowlist gains the documented form in its own commit |
 | K10 | 0019 pastes in the SQL Editor: the restrictive policy on `storage.objects` is created, as 0001's receipt policies were, and each guarded function is re-created from its own `pg_get_functiondef` (M1a) | The paste stops with an error and, inside its transaction, changes nothing but the unused `ai_app` label; One-time updates keeps 0019 as not in, and the error is reported before 0020 |
+| K11 | 0020 pastes, and under PostgREST the gate's transaction-local `budget.ai_app_read` flag lets `ai_app_read` read while a direct `GET /rest/v1/categories` with the same token returns `[]` (M4) | The paste stops, or every tool answers `records_unreadable` or nothing; switch AI apps off and report it |
 
 ### 2.15 Records this work writes
 
@@ -1496,6 +1497,28 @@ created it in M9, and imported `packages/ai-apps` from
   check, the pending status, the read flag in the restrictive `select`
   policy, the hash check, the `merchant` copy); RLS coverage still green
   on the new tables; Review shows "Added by an AI app" for a seeded row.
+- **As built (2026-09-30):** two commits, to stay under 300 lines: the
+  database (0020 and its assertions), then the app's mirrors, Review's
+  line and One-time updates' entry. The SQL rebuilds the hash in an
+  internal `_ai_app_dedupe_hash`, granted to nobody, so the schema gate
+  checks it against `computeDedupeHash`'s literals for a fixed date and
+  uses it for adds dated yesterday (an add must be within the owner's
+  past year, so no fixed date stays valid). `_ai_app_today()` is an
+  invoker function the reads call after the gate. `pending` in
+  `ai_app_read` is the waiting rows' dates, not a count, so the server
+  counts those in the exact period (the window is a month wider each
+  side). `debts` also returns `debt_extras`; `records` is
+  `{statement_start, statement_end, first_entry}`. `ai_app_search`
+  takes `p_min` and `p_max` as magnitudes (flow picks the sign) and
+  refuses a window over 1,100 days, a limit outside 1–50 or more than 10
+  names. The add's extra refusal codes are `bad_words` and
+  `bad_occurrence` (only a direct caller can meet them; the server maps
+  any code it does not know to `server_error`). 0019's write loop now
+  seeds the new tables and turns the read flag on, so the rows it may
+  not change are in sight. Review reads each row's `source`, which 0001
+  already has, and not the batch's `ai_client_id`: reading 0020's column
+  before the owner pastes 0020 would break Review, so the grant's name
+  ("Added by Claude") waits for M10b, which must tolerate 0020 missing.
 
 ### M5a: Money in and out, shared with the app
 

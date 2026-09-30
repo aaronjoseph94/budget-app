@@ -40,8 +40,8 @@ export interface FakeTables {
   categories: Category[]
   transactions: LedgerRow[]
   /** A suggested category (0018) may be left out; it reads as none. */
-  ingest_candidates: (Omit<PendingCandidate, 'category_id' | 'category_source'> &
-    Partial<Pick<PendingCandidate, 'category_id' | 'category_source'>> & { readonly status: string })[]
+  ingest_candidates: (Omit<PendingCandidate, 'category_id' | 'category_source' | 'source'> &
+    Partial<Pick<PendingCandidate, 'category_id' | 'category_source' | 'source'>> & { readonly status: string })[]
   merchant_rules: { readonly id?: string; readonly match_merchant: string; readonly category_id: string }[]
   /**
    * A goal from before 0013 may leave out its fund's columns; they read as
@@ -82,6 +82,8 @@ export interface FakeTables {
   insight_dismissals: { readonly user_id?: string; readonly insight_key: string }[]
   /** The check-in's answers (0017). */
   coach_answers: Row[]
+  /** The owner's switch for AI apps (0020). */
+  ai_app_access: Row[]
 }
 
 export interface RpcCall {
@@ -205,6 +207,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     ai_notes: [],
     insight_dismissals: [],
     coach_answers: [],
+    ai_app_access: [],
     ...seed,
   }
   const rpcCalls: RpcCall[] = []

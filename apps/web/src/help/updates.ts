@@ -49,7 +49,7 @@ export interface Update {
 
 const NIL = '00000000-0000-0000-0000-000000000000'
 
-/** 0005 to 0019 and the AI helper, each with what it adds. */
+/** 0005 to 0020, the AI helper and the AI apps server, each with what it adds. */
 export const UPDATES: readonly Update[] = [
   { file: '0005_category_kinds.sql', adds: 'Which list each category is on', checks: [{ kind: 'column', table: 'categories', column: 'kind' }] },
   {
@@ -108,6 +108,12 @@ export const UPDATES: readonly Update[] = [
     file: '0019_ai_apps_cannot_write.sql',
     adds: 'Stops an AI app you connect from changing your records itself',
     checks: [{ kind: 'function', name: '_not_an_ai_app', args: {} }],
+  },
+  {
+    // Listed after 0019, so it is offered only once 0019 is in, which it needs.
+    file: '0020_ai_apps.sql',
+    adds: 'What an AI app you connect may read, and adding to Review, with a switch and daily limits',
+    checks: [{ kind: 'table', table: 'ai_app_access' }],
   },
   { file: HELPER_FILE, adds: 'The AI helper, which every AI feature goes through', checks: [{ kind: 'helper' }] },
   { file: SERVER_FILE, adds: 'The AI apps server, which Claude or ChatGPT connect to', checks: [{ kind: 'server' }] },

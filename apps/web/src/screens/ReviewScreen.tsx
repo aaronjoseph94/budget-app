@@ -436,7 +436,10 @@ const ReviewRow = memo(function ReviewRow({
             <p className="font-mono text-[0.9375rem] font-semibold leading-snug [overflow-wrap:anywhere]">
               <IngestedText>{row.merchant_raw}</IngestedText>
             </p>
-            <p className="mt-0.5 text-xs text-muted-foreground md:text-[0.8125rem]">{formatIsoDate(row.posted_on)}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground md:text-[0.8125rem]">
+              {formatIsoDate(row.posted_on)}
+              {row.source === 'ai_app' ? ' · Added by an AI app' : ''}
+            </p>
           </div>
           <span className={cn('tnum shrink-0 text-lg font-bold tracking-[-0.01em]', row.amount_cents < 0 ? 'text-foreground' : 'text-income')}>
             {formatCents(row.amount_cents)}
@@ -516,6 +519,7 @@ const SOURCE: Record<IngestSource, string> = {
   card_pdf: 'Card statement (PDF)',
   receipt_photo: 'Receipt photo',
   typed: 'Typed entry',
+  ai_app: 'Added by an AI app',
 }
 
 /**

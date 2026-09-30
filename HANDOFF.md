@@ -267,6 +267,10 @@ One-time updates, which names what is missing.
     larger (**aA** in Safari) and look again: nothing should need scrolling
     sideways. Only Chromium could be checked here (N41); tell the next
     agent which screen if anything is squashed or cut off.
+15. **AI apps, once `0020` is pasted** (MCP plan K11): the first question
+    from Claude or ChatGPT answers with your own figures. If it answers
+    "not an AI app", or with nothing, turn **Let AI apps connect** off
+    and report it.
 
 ## 5. Questions for the owner
 

@@ -46,8 +46,8 @@ export function entriesForCore(rows: readonly LedgerRow[]): PeriodEntry[] {
   return rows.map((r) => ({ postedOn: isoDate(r.posted_on), amountCents: r.amount_cents, categoryId: r.category_id }))
 }
 
-/** Rows typed in Add or read from a receipt photo, as against a card statement's (F38). */
-const BY_HAND: ReadonlySet<string> = new Set(['typed', 'receipt_photo'])
+/** Rows typed in Add, read from a receipt photo or added by an AI app, as against a card statement's (F38). */
+const BY_HAND: ReadonlySet<string> = new Set(['typed', 'receipt_photo', 'ai_app'])
 
 /**
  * As entriesForCore, with each row's shop: the descriptor as

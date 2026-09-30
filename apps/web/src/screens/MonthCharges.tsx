@@ -118,7 +118,7 @@ export function MonthCharges({
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {formatIsoDate(c.posted_on)}
-                    {c.source === 'typed' ? ' · added by hand' : ''}
+                    {c.source === 'typed' ? ' · added by hand' : c.source === 'ai_app' ? ' · added by an AI app' : ''}
                   </p>
                   <TimeToward charge={c} toward={toward} />
                 </div>

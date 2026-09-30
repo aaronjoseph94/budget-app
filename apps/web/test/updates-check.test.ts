@@ -10,7 +10,7 @@ describe('checking the one-time updates', () => {
   it('finds each one in when everything it adds answers', async () => {
     const fake = createFakeSupabase()
     const checked = await checkUpdates(fake.client)
-    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', 'ai-f', 'mcp-'])
+    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', '0020', 'ai-f', 'mcp-'])
     expect(missing(checked)).toEqual([])
     expect(nextStep(checked)).toEqual({ kind: 'done' })
   })
@@ -91,6 +91,17 @@ describe('checking the one-time updates', () => {
     expect(nextStep(checked)).toEqual({ kind: 'paste', file: '0019_ai_apps_cannot_write.sql', fromStart: false })
     delete fake.rpcReplies['clear_candidate_suggestion']
     expect(nextStep(await checkUpdates(fake.client))).toEqual({ kind: 'paste', file: '0018_category_suggestions.sql', fromStart: false })
+  })
+
+  // What AI apps may do: 0020 uses 0019's label and guard, so it comes only after 0019.
+  it('reads PGRST205 on the AI apps switch as 0020 not in yet, offered only once 0019 is in', async () => {
+    const fake = createFakeSupabase()
+    fake.fail('ai_app_access', 'PGRST205')
+    const checked = await checkUpdates(fake.client)
+    expect(missing(checked)).toEqual([['0020', 'missing']])
+    expect(nextStep(checked)).toEqual({ kind: 'paste', file: '0020_ai_apps.sql', fromStart: false })
+    delete fake.rpcReplies['_not_an_ai_app']
+    expect(nextStep(await checkUpdates(fake.client))).toEqual({ kind: 'paste', file: '0019_ai_apps_cannot_write.sql', fromStart: false })
   })
 
   it('reads Supabase’s 404 for the AI helper as not installed, and any other failure as could not check', async () => {

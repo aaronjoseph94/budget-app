@@ -7,8 +7,8 @@
  */
 import { z } from 'zod'
 
-/** How a row entered the system. */
-export const IngestSourceSchema = z.enum(['card_csv', 'card_xlsx', 'card_pdf', 'receipt_photo', 'typed'])
+/** How a row entered the system. `ai_app`: added to Review by a connected AI app (0019, 0020). */
+export const IngestSourceSchema = z.enum(['card_csv', 'card_xlsx', 'card_pdf', 'receipt_photo', 'typed', 'ai_app'])
 export type IngestSource = z.infer<typeof IngestSourceSchema>
 
 /**

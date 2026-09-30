@@ -37,7 +37,7 @@ import type { GoalStatus } from '@budget/core'
 import { LIST_HEADING, type CategoryKind } from './lists.js'
 import type { SupabaseClient } from './supabase.js'
 
-export type IngestSource = 'card_csv' | 'card_xlsx' | 'card_pdf' | 'receipt_photo' | 'typed'
+export type IngestSource = 'card_csv' | 'card_xlsx' | 'card_pdf' | 'receipt_photo' | 'typed' | 'ai_app'
 
 /** What a reader hands over to be saved. */
 export type ImportRequest = {
@@ -56,7 +56,7 @@ export type ImportRequest = {
     }
   | {
       /** Where the rows came from. Was hardcoded to card_csv, which a PDF is not. */
-      readonly source: Exclude<IngestSource, 'card_pdf'>
+      readonly source: Exclude<IngestSource, 'card_pdf' | 'ai_app'>
       /** A CSV export, a photo and a typed row carry no period. */
       readonly period?: undefined
     }
@@ -201,6 +201,8 @@ export interface PendingCandidate {
    */
   readonly category_id: string | null
   readonly category_source: 'model' | 'user' | 'merchant_rule' | null
+  /** Where it came from: an AI app's addition says so in Review (0020). */
+  readonly source: IngestSource
 }
 
 export interface PendingPage {
@@ -219,7 +221,7 @@ export interface PendingPage {
 export async function listPending(supabase: SupabaseClient, limit = 300): Promise<PendingPage> {
   const { data, error, count } = await supabase
     .from('ingest_candidates')
-    .select('id, posted_on, amount_cents, merchant, merchant_raw, category_id, category_source', { count: 'exact' })
+    .select('id, posted_on, amount_cents, merchant, merchant_raw, category_id, category_source, source', { count: 'exact' })
     .eq('status', 'pending')
     .order('posted_on', { ascending: true })
     .limit(limit)
