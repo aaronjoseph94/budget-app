@@ -12,6 +12,8 @@ import {
   type BudgetHistoryRow,
   type IncomeSchedule,
   type MonthSheetInput,
+  type PaycheckSheetInput,
+  type PaySchedule,
   type PeriodCategory,
   type PeriodEntry,
   type PlanHistoryRow,
@@ -144,6 +146,35 @@ export function weekSheetInput(read: Read, asOf: IsoDate): WeekSheetInput {
   return {
     asOf,
     categories: weekCategories(categoriesFrom(read['categories'])),
+    planHistory: plansFrom(read['plans']),
+    entries: entriesFrom(txnsFrom(read['txns'])),
+    statementPeriodEnds: recordsFrom(read['records']).statementEnds,
+    startingBalanceCents: null,
+  }
+}
+
+/**
+ * Each income source paid on a schedule, in Setup's order, as the Paycheck
+ * offers them: a schedule left on another list pays nobody (N27).
+ */
+export function paySources(read: Read): { readonly name: string; readonly schedule: PaySchedule }[] {
+  const schedules = schedulesFrom(read['schedules'])
+  return categoriesFrom(read['categories'])
+    .filter((c) => c.kind === 'income')
+    .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name))
+    .flatMap((c) => {
+      const s = schedules.find((row) => row.categoryId === c.id)
+      return s === undefined ? [] : [{ name: c.name, schedule: { firstPayDate: s.firstPayDate, frequency: s.frequency } }]
+    })
+}
+
+/** The Paycheck's input for the pay period beginning `start`, as PaycheckPeriod builds it: no start is typed (D17). */
+export function paycheckSheetInput(read: Read, start: IsoDate, schedule: PaySchedule): PaycheckSheetInput {
+  return {
+    asOf: start,
+    schedule,
+    categories: periodCategories(categoriesFrom(read['categories'])),
+    budgetHistory: budgetsFrom(read['budgets']),
     planHistory: plansFrom(read['plans']),
     entries: entriesFrom(txnsFrom(read['txns'])),
     statementPeriodEnds: recordsFrom(read['records']).statementEnds,

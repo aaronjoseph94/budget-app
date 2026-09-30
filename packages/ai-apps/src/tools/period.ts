@@ -13,6 +13,8 @@ import {
   isoDate,
   monthBounds,
   monthSheet,
+  paycheckSheet,
+  payPeriod,
   safeToSpend,
   weekBounds,
   weekSheet,
@@ -22,18 +24,29 @@ import type { Cents, IsoDate } from '@budget/money-primitives'
 import { GetPeriodInputSchema } from '@budget/schema'
 import { log } from '../log.js'
 import { cleanName, money } from '../money.js'
-import { READ_ONLY, SIGNED_IN, answer, isRefusal, refusal, rpc, type Caller } from '../rpc.js'
-import { categoriesFrom, monthSheetInput, pendingIn, recordsFrom, schedulesFrom, weekSheetInput, type Read } from '../rows.js'
+import { READ_ONLY, SIGNED_IN, answer, isRefusal, refusal, rpc, type Caller, type RefusalCode } from '../rpc.js'
+import {
+  categoriesFrom,
+  monthSheetInput,
+  paycheckSheetInput,
+  paySources,
+  pendingIn,
+  recordsFrom,
+  schedulesFrom,
+  weekSheetInput,
+  type Read,
+} from '../rows.js'
 import { monthsAround, utcToday } from '../windows.js'
 
 export type GetPeriodInput = z.output<typeof GetPeriodInputSchema>
 
 export const DESCRIPTION =
-  'How a month or week is going: starting balance, income, spent, saved, left to spend, ending balance; ' +
+  'How a month, week or pay period is going: starting balance, income, spent, saved, left to spend, ending balance; ' +
   'each list’s budget and actual; each category’s budget, actual, what is left and whether it is over, near or under, ' +
-  'with this month’s pace. `date` picks the period holding that day (default today). Charges waiting in Review are ' +
+  'with this month’s pace. `date` picks the period holding that day (default today); a pay period follows ' +
+  'the paydays of `income` (default the first income source with paydays). Charges waiting in Review are ' +
   'not counted; `waiting_in_review` says how many. Every amount is {cents, display}; quote display. ' +
-  'Returns as_of, period{kind, from, to, days_left}, summary, lists[], categories[], imported_through, waiting_in_review.'
+  'Returns as_of, period{kind, from, to, days_left, income?}, summary, lists[], categories[], imported_through, waiting_in_review.'
 
 const LISTS = ['income', 'savings', 'variable', 'bill', 'debt', 'subscription'] as const
 /** Where a budget passed is overspending; on Income and Savings more is better, so no standing. */
@@ -42,6 +55,7 @@ const SPENDING: ReadonlySet<string> = new Set(['variable', 'bill', 'debt', 'subs
 const PARTS = {
   month: ['categories', 'budgets', 'plans', 'txns', 'balances', 'schedules', 'records', 'pending'],
   week: ['categories', 'plans', 'txns', 'records', 'pending'],
+  pay_period: ['categories', 'budgets', 'plans', 'txns', 'schedules', 'records', 'pending'],
 } as const
 
 type Pace = (actual: Cents, budget: Cents | null) => ReturnType<typeof categoryPace>
@@ -95,10 +109,19 @@ function figures(sheet: PeriodSheet, input: GetPeriodInput, paceOf: Pace | null)
   }
 }
 
-type Shown = { readonly sheet: PeriodSheet; readonly daysLeft: number | null; readonly paceOf: Pace | null }
+type Shown = {
+  readonly sheet: PeriodSheet
+  readonly daysLeft: number | null
+  readonly paceOf: Pace | null
+  /** Whose paydays a pay period follows. */
+  readonly income?: string
+}
+
+/** What a period is found from: the read, the day asked about, the owner's today and the arguments. */
+type Asked = { readonly read: Read; readonly day: IsoDate; readonly today: IsoDate; readonly readFrom: IsoDate; readonly input: GetPeriodInput }
 
 /** The month holding `day`, as the Month shows it; days left (F31) and paces (F28) only while it runs. */
-function month(read: Read, day: IsoDate, today: IsoDate, readFrom: IsoDate): Shown {
+function month({ read, day, today, readFrom }: Asked): Shown {
   const start = monthBounds(day).start
   const input = monthSheetInput(read, start)
   const sheet = monthSheet(input)
@@ -113,13 +136,27 @@ function month(read: Read, day: IsoDate, today: IsoDate, readFrom: IsoDate): Sho
 }
 
 /** The week holding `day`, as the Week shows it: this week counts its days left from today, any other from its Monday. */
-function week(read: Read, day: IsoDate, today: IsoDate): Shown {
+function week({ read, day, today }: Asked): Shown {
   const current = weekBounds(day).start === weekBounds(today).start
   const sheet = weekSheet(weekSheetInput(read, current ? today : weekBounds(day).start))
   return { sheet, daysLeft: current ? sheet.daysLeft : null, paceOf: null }
 }
 
-const SHOWN = { month, week } as const
+/**
+ * The pay period holding `day`, as the Paycheck shows it: from the paydays
+ * of the income source named, else the first in Setup's order. Core counts
+ * no days left in a pay period, so none are given.
+ */
+function pay_period({ read, day, input }: Asked): Shown | RefusalCode {
+  const sources = paySources(read)
+  const source = input.income === undefined ? sources[0] : sources.find((s) => cleanName(s.name) === input.income)
+  if (source === undefined) return input.income === undefined ? 'no_pay_schedule' : 'unknown_category'
+  const { start } = payPeriod({ schedule: source.schedule, asOf: day })
+  const sheet = paycheckSheet(paycheckSheetInput(read, start, source.schedule))
+  return { sheet, daysLeft: null, paceOf: null, income: cleanName(source.name) }
+}
+
+const SHOWN = { month, week, pay_period } as const
 
 export async function getPeriod(caller: Caller | null, input: GetPeriodInput) {
   if (caller === null) return refusal('server_error')
@@ -135,10 +172,12 @@ export async function getPeriod(caller: Caller | null, input: GetPeriodInput) {
     const day = input.date === undefined ? today : isoDate(input.date)
     const known = new Set(categoriesFrom(read['categories']).map((c) => cleanName(c.name)))
     if (input.categories?.some((n) => !known.has(n)) === true) return refusal('unknown_category')
-    const { sheet, daysLeft, paceOf } = SHOWN[input.period](read, day, today, window.from)
+    const shown = SHOWN[input.period]({ read, day, today, readFrom: window.from, input })
+    if (typeof shown === 'string') return refusal(shown)
+    const { sheet, daysLeft, paceOf, income } = shown
     result = {
       as_of: today,
-      period: { kind: input.period, from: sheet.from, to: sheet.to, days_left: daysLeft },
+      period: { kind: input.period, from: sheet.from, to: sheet.to, days_left: daysLeft, ...(income === undefined ? {} : { income }) },
       ...figures(sheet, input, paceOf),
       imported_through: sheet.importedThrough,
       waiting_in_review: pendingIn(read['pending'], sheet.from, sheet.to),

@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { isoDate, monthSheet, weekSheet } from '@budget/core'
-import { categoriesFrom, monthSheetInput, weekSheetInput } from '@budget/ai-apps/rows'
+import { isoDate, monthSheet, paycheckSheet, weekSheet, type PaySchedule } from '@budget/core'
+import { categoriesFrom, monthSheetInput, paySources, paycheckSheetInput, weekSheetInput } from '@budget/ai-apps/rows'
 import {
   getMonthBalance,
   latestStatementEnd,
   listBudgetHistory,
   listCategories,
+  listPaySchedules,
   listPlanHistory,
   listTransactions,
   type Category,
@@ -62,6 +63,7 @@ describe('the AI apps server reads rows as the app does', () => {
       { id: 't4', posted_on: '2026-09-30', amount_cents: 50000, merchant_raw: 'PAYMENT THANK YOU', category_id: 'card', source: 'card_csv' },
       { id: 't5', posted_on: '2026-10-02', amount_cents: -2000, merchant_raw: 'FRESHCO 1234', category_id: 'food', source: 'card_csv' },
     ],
+    pay_schedules: [{ id: 's1', category_id: 'pay', first_pay_date: '2026-09-15', frequency: 'monthly' }],
     ingest_batches: [
       { id: 'i1', source: 'card_csv', created_at: '2026-09-20T12:00:00Z', period_start: '2026-08-08', period_end: '2026-09-07' },
       { id: 'i2', source: 'card_csv', created_at: '2026-10-05T12:00:00Z', period_start: '2026-09-08', period_end: '2026-10-07' },
@@ -77,6 +79,7 @@ describe('the AI apps server reads rows as the app does', () => {
       plans: [...(tables.category_plans ?? [])].sort((a, b) => a.effective_month.localeCompare(b.effective_month) || a.id.localeCompare(b.id)),
       txns: [...(tables.transactions ?? [])].sort((a, b) => b.posted_on.localeCompare(a.posted_on) || a.id.localeCompare(b.id)),
       balances: tables.month_balances,
+      schedules: tables.pay_schedules,
       records: { statement_start: '2026-08-08', statement_end: '2026-10-07', first_entry: '2026-09-02' },
     }),
   ) as Record<string, unknown>
@@ -128,5 +131,31 @@ describe('the AI apps server reads rows as the app does', () => {
     const screen = await weekAsTheApp('2026-10-01', { from: '2026-09-28', to: '2026-10-04' })
     expect(weekSheet(server)).toEqual(weekSheet(screen))
     expect(weekSheet(server).blocks.bill.actualTotalCents).toBe(125000)
+  })
+
+  async function paycheckAsTheApp(schedule: PaySchedule, through: string, range: { from: string; to: string }) {
+    const supabase = createFakeSupabase(tables).client
+    return {
+      asOf: isoDate('2026-09-15'),
+      schedule,
+      categories: categoriesForCore(await listCategories(supabase)),
+      budgetHistory: budgetsForCore(await listBudgetHistory(supabase, through, 'paycheck')),
+      planHistory: plansForCore(await listPlanHistory(supabase, through, 'paycheck')),
+      entries: entriesForCore(await listTransactions(supabase, range)),
+      statementPeriodEnds: (await latestStatementEnd(supabase)).map((e) => isoDate(e)),
+      startingBalanceCents: null,
+    }
+  }
+
+  it('the Paycheck', async () => {
+    const rows = await listPaySchedules(createFakeSupabase(tables).client, 'paycheck')
+    const schedule: PaySchedule = { firstPayDate: isoDate(rows[0]?.first_pay_date ?? ''), frequency: 'monthly' }
+    expect(paySources(read)).toEqual([{ name: 'Pay', schedule }])
+    const server = paycheckSheetInput(read, isoDate('2026-09-15'), schedule)
+    expect(server).toEqual(await paycheckAsTheApp(schedule, WINDOW.to, WINDOW))
+    // 15 September to 14 October, with September's amounts, as the screen reads them.
+    const screen = await paycheckAsTheApp(schedule, '2026-09-01', { from: '2026-09-15', to: '2026-10-14' })
+    expect(paycheckSheet(server)).toEqual(paycheckSheet(screen))
+    expect(paycheckSheet(server).blocks.variable.effectiveBudgetTotalCents).toBe(55000)
   })
 })

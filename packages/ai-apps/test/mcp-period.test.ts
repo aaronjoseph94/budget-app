@@ -104,11 +104,48 @@ describe('get_period', () => {
     expect(week.categories).toEqual([{ name: 'Rent', list: 'bill', budget: null, actual: $(0, '$0.00'), left: null, standing: 'none' }])
   })
 
+  // Paid on the 15th monthly by Pay, and weekly from Saturday 26 September by Side.
+  const PAID = {
+    ...READ,
+    categories: [...READ.categories, { id: 'side', name: 'Side', kind: 'income', sort_order: 1, weekly_budget_cents: null }],
+    schedules: [
+      { id: 's2', category_id: 'side', first_pay_date: '2026-09-26', frequency: 'weekly' },
+      { id: 's1', category_id: 'pay', first_pay_date: '2026-09-15', frequency: 'monthly' },
+    ],
+  }
+
+  it('gives this pay period from the first income source’s paydays, as the Paycheck shows it', async () => {
+    const { result, rpcCalls } = await period({ period: 'pay_period', date: '2026-09-30', list: 'variable' }, PAID)
+    expect(JSON.parse(String(rpcCalls[0]?.init.body))).toEqual({
+      p_parts: ['categories', 'budgets', 'plans', 'txns', 'schedules', 'records', 'pending'],
+      p_from: '2026-08-01',
+      p_to: '2026-10-31',
+    })
+    const out = result.structuredContent as Record<string, unknown>
+    expect(out.period).toEqual({ kind: 'pay_period', from: '2026-09-15', to: '2026-10-14', days_left: null, income: 'Pay' })
+    // Paid monthly, so each budget is its whole September amount: 12.75 and 20.00 of 600.00 is 5.46 %, half-up.
+    expect(out.lists).toEqual([{ list: 'variable', budget: $(60000, '$600.00'), actual: $(3275, '$32.75'), used_bp: 546, left: $(56725, '$567.25') }])
+    // With September's rent, planned in full whatever its due day (F15).
+    expect((out.summary as Record<string, unknown>).spent).toEqual($(123275, '$1,232.75'))
+    expect((out.summary as Record<string, unknown>).starting_balance).toBeNull()
+    // Waiting: 29 September and 1 October.
+    expect(out.waiting_in_review).toBe(2)
+  })
+
+  it('follows the paydays of the income source named', async () => {
+    const out = (await period({ period: 'pay_period', date: '2026-09-30', income: 'Side', categories: ['Groceries'] }, PAID)).result
+      .structuredContent as Record<string, unknown>
+    expect(out.period).toEqual({ kind: 'pay_period', from: '2026-09-26', to: '2026-10-02', days_left: null, income: 'Side' })
+    expect((out.categories as { actual: unknown }[]).map((c) => c.actual)).toEqual([$(3275, '$32.75')])
+  })
+
   it.each([
     ['a category it does not have', { categories: ['Nope'] }, READ, SENTENCES.unknown_category],
     ['rows it cannot read', {}, { ...READ, txns: 'SECRET' }, SENTENCES.records_unreadable],
     ['a charge on a category it was not given', {}, { ...READ, categories: [] }, SENTENCES.records_unreadable],
     ['a refusal', {}, { refused: 'limit_reached' }, SENTENCES.limit_reached],
+    ['a pay period with no paydays set', { period: 'pay_period' }, READ, SENTENCES.no_pay_schedule],
+    ['a pay period for income it does not have', { period: 'pay_period', income: 'Groceries' }, PAID, SENTENCES.unknown_category],
   ])('answers %s with one sentence', async (_, args, read, sentence) => {
     const { result } = await period(args, read)
     expect(result).toEqual({ isError: true, content: [{ type: 'text', text: sentence }] })

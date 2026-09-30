@@ -31,6 +31,10 @@ const CASES: readonly (readonly [string, Record<string, unknown>, string, string
   ['this week across a month, the server a day behind', { period: 'week' }, '2026-09-30T20:00:00Z', '2026-10-01'],
   ['a week across a year', { period: 'week', date: '2025-01-01' }, '2026-09-30T12:00:00Z', '2026-09-30'],
   ['a week reaching back into the month before', { period: 'week', date: '2026-10-02' }, '2026-09-30T12:00:00Z', '2026-09-30'],
+  // Paid monthly on the 15th: a period runs into the next month.
+  ['this pay period, the server already in the next month', { period: 'pay_period' }, '2026-10-01T03:00:00Z', '2026-09-30'],
+  ['this pay period, the server a day behind', { period: 'pay_period' }, '2026-09-30T20:00:00Z', '2026-10-01'],
+  ['a pay period asked for by its last day', { period: 'pay_period', date: '2026-10-14' }, '2026-09-30T12:00:00Z', '2026-09-30'],
 ]
 
 describe('the read tools do not depend on how many rows the database returns', () => {
