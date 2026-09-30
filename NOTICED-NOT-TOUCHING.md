@@ -3261,3 +3261,37 @@ token, as the AI helper does, and refuses the anon key, a token the auth
 server refuses, and an AI app's token (`client_id`). A copy deployed before
 2026-09-30 still has the hole until it is pasted again or deleted; One-time
 updates offers both beside the AI helper's step.
+
+---
+
+## N141 — The measured first load has grown since CONSTRAINTS recorded it
+
+**Seen:** 2026-09-30, building the MCP plan's M3. `check-bundle.mjs`
+measured 188.82 KB gzipped of first-load JavaScript; CONSTRAINTS.md's
+"Measured, not yet enforced" table still says 184.33 KB (2026-09-28).
+Nothing from `packages/ai-apps` is in the page (depcruise refuses any
+import of it from `apps/web/src`, and the built server is a `setup/`
+asset), so the growth came with earlier slices. Still under the 200 KB
+budget, and the gate passes.
+
+**Why not fixed here:** re-measuring and finding what grew is outside the
+MCP slices.
+
+**To settle:** re-measure on main, update the table's figure and date,
+and look at what moved into the entry chunk since 2026-09-28.
+
+---
+
+## N142 — The MCP SDK prints one warning each time the server starts
+
+**Seen:** 2026-09-30, M2a. `createMcpHandler` with `responseMode: 'json'`
+writes one fixed line through `console.warn` when it is built: that JSON
+replies drop mid-call notifications. It carries no request content, so
+the log rule is kept (the sentinel test runs with it), but it lands in the
+function's logs on every cold start.
+
+**Why not fixed here:** it is the SDK's own text; silencing it would mean
+wrapping `console` around the SDK, which is more code than the noise costs.
+
+**To settle:** if the SDK gains an option to quiet it, use it in
+`packages/ai-apps/src/handle.ts`.
