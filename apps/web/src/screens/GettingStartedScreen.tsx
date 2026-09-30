@@ -219,7 +219,8 @@ function AllSteps({ progress, at, onGo, open }: { progress: SetupProgress; at: S
               onClick={() => onGo(stepOf(s.id))}
               className={cn(
                 'flex min-h-11 w-full items-center gap-2 px-4 py-2 text-left text-sm outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
-                s.id === at && 'bg-primary-tint hover:bg-primary-tint',
+                // Muted marks on the tint take canvas-muted: #6b7280 reads 4.27 there (ADR 0010).
+                s.id === at && 'bg-primary-tint hover:bg-primary-tint [--muted-foreground:var(--canvas-muted)]',
               )}
             >
               <span aria-hidden="true" className={cn('w-4 shrink-0 text-center', s.check === 'done' ? 'text-income' : 'text-muted-foreground')}>

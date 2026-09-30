@@ -126,6 +126,8 @@ describe('Getting started (plan §8.1)', () => {
     // Only the sign-in card has a shadow (Mockup A).
     expect(document.querySelectorAll('[class*="rounded-xl"][class*="shadow"]')).toHaveLength(0)
     expect(within(beside).getAllByRole('button').filter((b) => b.getAttribute('aria-current') === 'step').map((b) => b.textContent?.replace(/:.*$/, ''))).toEqual(['·Your name'])
+    // Its muted mark sits on the accent's tint, where only canvas-muted reads 4.5 to one.
+    expect(within(beside).getAllByRole('button').find((b) => b.getAttribute('aria-current') === 'step')!.className).toContain('[--muted-foreground:var(--canvas-muted)]')
     await expectNoAxeViolations()
   })
 
