@@ -1606,3 +1606,297 @@ created it in M9, and imported `packages/ai-apps` from
 
 ---
 
+## 4. Open risks and unknowns
+
+1. **Beta and a moving spec.** Supabase's OAuth 2.1 server is beta. The MCP
+   2026-07-28 revision deprecates DCR in favour of CIMD (it stays usable
+   for at least twelve months under the spec's deprecation policy), and
+   Supabase does not support CIMD. If Claude or ChatGPT drop DCR, sign-in
+   breaks until Supabase adds CIMD or F1 is built.
+2. **Full-power tokens, and the Auth API above all.** A token an AI app
+   holds reaches the Auth API as the owner, and nothing in this design can
+   scope that. If K5 confirms what the research found, such a token can
+   set a new password on the account for up to 24 hours after the owner
+   allows the app, and a new password is the whole account, writes and
+   all. Only Anthropic's and OpenAI's servers should ever hold one (the
+   exact callbacks, the connect window), but a leak at either, or through
+   Supabase's logs (item 9), would be a takeover, not a leak of figures.
+   The security review tests it on the hosted project and decides the
+   mitigation (§5.4; MFA on the account is the likely one, if Supabase
+   then demands a second factor for a password change). The database and
+   the helpers are closed (0019, 0020, M1b).
+3. **Audience not bound.** `aud` stays `authenticated`, short of the spec's
+   MUST. Requiring `client_id` covers it while this server is the project's
+   only OAuth client; registering another would weaken it. The optional
+   Custom Access Token hook closes it fully, at the price of a hook that
+   runs on every sign-in, the owner's included.
+4. **Revocation window.** After Disconnect, the server refuses the app at
+   once (`/auth/v1/user` sees the session gone), but PostgREST checks only
+   the signature and expiry, so the access token still works there for up
+   to an hour: it can call the `ai_app_*` functions directly, reading within
+   the day's count and adding up to the day's 30 pending rows. It can write
+   nothing else (0019) and read nothing else (0020), and switching AI apps
+   off stops even that at once. Disconnect's confirmation says so.
+5. **The signing key.** ChatGPT needs the project to sign with ES256.
+   Rotating may break gateway JWT verification on `ai` and `read-receipt`
+   (Supabase issue 42244, and Supabase's own warning), hence §1's step 3,
+   which turns it off first.
+6. **The verify-JWT switch.** It must be off for `mcp` and is reported to
+   switch itself back on after some updates (Supabase issue 43608). If it
+   does, sign-in silently breaks: the gateway's 401 lacks the pointer to
+   the metadata. One-time updates fetches `/mcp/health` with no token, so
+   the gateway's 401 there means the switch is on; but the gateway's reply
+   may carry no CORS headers, which the browser reports only as "could not
+   check". So HANDOFF also says to re-check the switch after every paste.
+7. **Deno without a lockfile.** The pasted file pins `zod@4.6.5` and the SDK
+   `2.2.0`, but Deno resolves the SDK's own `zod ^4.2.0` and
+   `@modelcontextprotocol/core` at deploy time, outside our lockfile and
+   `pnpm audit`, and loads the SDK's Node build with its vendored
+   validator. No Deno runs in CI; the owner's deploy is the first real run
+   (K4, K6).
+8. **SDK 2.x is new.** 2.0.0 shipped on 2026-07-27, 2.1.0 on 2026-09-23 and
+   2.2.0 on 2026-09-28, two days before this plan. Pinned exactly; an
+   upgrade is its own commit with the protocol tests, and the security
+   review checks 2.2.0 against advisories again before the owner deploys.
+9. **Platform logs.** Supabase's function logs keep request metadata;
+   whether that includes the bearer token, and for how long, is not
+   documented (§5.7). Tokens live an hour, but see item 2.
+10. **Open DCR.** Anyone can register clients. They clutter **Authentication
+    → OAuth Apps** (Claude adds one per fresh connection) and cannot get
+    past the consent page's exact callbacks and connect window; HANDOFF
+    says to prune stale ones now and then.
+11. **Gemini CLI 0.61+** cannot sign in until its issue 29477 is fixed; F1
+    covers it if the owner wants it. Desktop tools whose callback port
+    changes are expected to fail on Supabase's exact port match
+    (discussion 41695).
+12. **ChatGPT.** Developer mode is web only and labelled elevated risk; one
+    third-party blog says Plus and Pro are read-only, while OpenAI's own
+    developer guide lists Plus and Pro for the full client. Re-connecting
+    after a revoke is untested. Its callback form is K9.
+13. **Consent timing.** A pending request lasts 10 minutes and the connect
+    window 15; an email sign-in link can outlast both. The password form
+    avoids it; each message says what to do. The iPhone home-screen app
+    keeps its own sign-in, so Help says to connect from a computer.
+14. **Duplicates across paths.** A purchase an AI adds and the same charge
+    arriving on a statement have different shop text, so different hashes:
+    both wait in Review, and F39 already flags "may be counted twice". The
+    add tool's description says card purchases usually arrive with the
+    statement.
+15. **The AI's own arithmetic.** An AI app may still add or round figures in
+    its chat. The instructions ask it not to, and the tools give totals
+    where the engine has them; the screen stays the source of truth, and
+    the Help article says so.
+16. **Instructions hidden in data, carried to other connectors.** Shop names
+    from statements and words the AI added reach the model as data, with
+    control and direction-override characters removed, digits masked and
+    length cut, and no stored text ever reaches a tool's description. A
+    model can still be talked into acting on one. Within Budget the worst
+    it can do is add pending rows the owner must approve; with a connector
+    that can send messages switched on in the same chat, it could send
+    figures on. Help says to keep such connectors off in those chats; the
+    app cannot enforce it.
+17. **Travel.** "Today" is the time zone saved when AI apps were switched
+    on; away from home, it may be a day off until the owner turns the
+    switch off and on again.
+18. **Free-plan invocations.** With JWT verification off, anyone can make
+    the function answer 401s, which count toward the plan's monthly
+    invocations.
+19. **Rules learned from AI-added rows** key on the words as the AI wrote
+    them (§2.5), so they seldom file a later statement line by themselves.
+    That is the safe side of the trade; the owner loses a little automatic
+    filing, nothing else.
+
+---
+
+## 5. What the later security review must check
+
+Against the built code and, where marked (hosted), on the hosted project
+with the OAuth server on.
+
+1. **Tokens.** Only a token Supabase Auth accepts, with this project's `iss`,
+   `role` `authenticated` and a UUID `client_id`, reaches a tool. The
+   owner's browser session, the anon and publishable keys, a secret key, an
+   expired token and a revoked grant's token are each refused (hosted).
+   Nothing is trusted from the payload before Auth has accepted the token.
+2. **Every write path with an AI app's token** (hosted, with a real token):
+   PostgREST insert, update and delete on every public table; every
+   SECURITY DEFINER function granted to `authenticated`; a Storage upload,
+   download and signed URL on the receipts bucket; the `ai` helper and
+   `read-receipt`, each also with the public anon key. All refused except
+   `ai_app_add_candidate`, which only ever leaves a pending row; and that
+   one called directly with a hash copied from a statement line, and with
+   words that differ from what it stores, is refused or stores what it
+   shows.
+3. **Reads outside the gate** (hosted): direct PostgREST table reads,
+   GraphQL and a Realtime subscription with an AI app's token return
+   nothing, with the switch on and with it off; every read through the
+   `ai_app_*` functions is counted.
+4. **The Auth API with an AI app's token** (hosted, K5): `PUT /auth/v1/user`
+   (email, password, data), MFA enrolment and removal, sign-out of other
+   sessions; then the same with MFA on the account. Record what Supabase
+   allows and which settings stop it, and decide the mitigation with the
+   owner (§4.2); decide on the Custom Access Token hook.
+5. **The consent page.** Only the exact callbacks pass: not a suffix
+   (`claude.ai.evil.example`), a prefix (`evilclaude.ai`), userinfo
+   (`https://claude.ai@evil.example`), another path on an allowed host,
+   case or a trailing dot beyond the host, punycode or an IP form; the
+   redirect-only (already allowed) reply and the approve reply are both
+   checked; Deny on an unknown callback navigates nowhere; nothing from the
+   query string is drawn; the client's name cannot become markup, and its
+   `uri` and `logo_uri` are never fetched; framing is refused.
+6. **Consent phishing.** A link started from someone else's Claude or
+   ChatGPT account, or someone else's registered client, finds no connect
+   window and gets no Allow. Then, for Claude and ChatGPT, whether a code
+   delivered to their callback in the owner's browser is bound to the
+   account that started the flow (PKCE and `state`), which matters only if
+   the window is ever open when such a link arrives.
+7. **Logs.** No token, argument, result, name, amount or error body in any
+   log line from our code, including the SDK's error path; what Supabase's
+   platform logs keep of headers, for how long, and who can see them.
+8. **Injection.** Shop and category names in results cannot steer the
+   caller beyond being data (the instructions, character stripping, digit
+   masking, cutting); no stored text appears in `tools/list`; an AI-added
+   shop name reaching the in-app AI later (Review suggestions) stays
+   inside ADR 0004's `DATA (JSON, …)` framing; `ai_app_search`'s `ilike`
+   escaping; no string-built SQL.
+9. **Limits.** The caps hold under concurrent calls (the atomic claim) and
+   for direct calls; body, argument and result bounds; the 20 s deadline;
+   `GET /rest/v1/rpc/ai_app_read` (a read-only transaction) fails rather
+   than reads uncounted.
+10. **Secrets and supply chain.** The built file names no service key and
+    no AI host; the environment schema reads none; the SDK and its
+    dependencies at the versions Deno actually resolved (hosted), against
+    advisories; `pnpm audit` on the workspace.
+11. **Revocation.** Disconnect ends the server's access at once; what the
+    remaining hour allows at PostgREST (§4.4), and that switching AI apps
+    off ends it.
+12. **The switch, the window and the time zone.** An AI app cannot turn
+    itself on, open a connect window or change the time zone; a bad zone
+    is refused on write, not a crash at the gate.
+13. **Idempotency.** Repeated adds, `same_again` up to 9, and races between
+    two identical adds leave one pending row each, and never touch the
+    ledger.
+14. **Unauthenticated surface.** Only the metadata and `/mcp/health` answer
+    without a token, and health says only the version and the tool count.
+15. **The helpers' JWT setting** after a key rotation: with gateway
+    verification off, `ai`'s and `read-receipt`'s own checks refuse
+    everything but the owner's browser session.
+16. **K1's failure mode.** If `client_id` does not reach `auth.jwt()`, the
+    checklist's instruction to switch everything off is the only guard for
+    a token used directly; confirm K1 before anything else.
+
+---
+
+## 6. Review (2026-09-30)
+
+An adversarial review of the first draft of this plan and of ADR 0012,
+against the repository, the npm registry, the live project's public
+endpoints, and the current guides of Anthropic, OpenAI, Supabase and the
+MCP specification. Each finding and what changed:
+
+1. **Consent phishing.** Allow appeared for any client whose callback host
+   was allowed, and turned AI apps on by itself, so one click on a link
+   someone else started was enough. Now Allow needs the switch already on
+   and **Connect a new AI app** pressed within 15 minutes, and never turns
+   anything on (§2.9, §2.10, §1).
+2. **Host allowlist too wide.** Any page on `claude.ai`, `claude.com` or
+   `chatgpt.com` could receive a code (an open redirect or a page anyone
+   can publish there would leak it). Now only the exact callbacks
+   Anthropic and OpenAI document, including ChatGPT's per-connection form,
+   which it uses because Supabase sends no `iss` (§2.10, K9).
+3. **Open redirect on Deny.** `denyAuthorization` redirects by default, and
+   for an unknown callback that means to the attacker's site. Now it is
+   called with `skipBrowserRedirect` and not followed (§2.10). The sign-in
+   card's return address is held to the app's origin.
+4. **Attacker-chosen `uri` and `logo_uri`** could have been drawn or
+   fetched on the consent page or in Settings. Never (§2.9, §2.10).
+5. **Direct reads bypassed every limit.** The first draft's select policy
+   let an AI app's token read every table straight from PostgREST,
+   uncounted, while the switch was on. Now a token reads only inside a
+   gated, counted `ai_app_*` call, through a transaction-local flag
+   (§2.5, §2.7).
+6. **The one write trusted its caller.** A token used directly could plant
+   a hash copied from a statement line (the real line would then be
+   dropped on import) or a normalised shop name different from the words
+   Review shows (teaching an auto-approving rule the owner never saw). Now
+   SQL checks the hash against its own arguments and stores the words as
+   both columns; `ai_client_id` comes from the token (§2.5).
+7. **`read-receipt` had no caller check of its own** and accepts the
+   public anon key through the gateway; turning its gateway check off, as
+   step 3 might, would have opened it entirely. M1b gives it `whoIs` and
+   the `client_id` refusal, and One-time updates a Copy for it (§1, §3).
+8. **Wrong savings figures.** `fund_txns` was windowed at 12 months, but a
+   fund's balance counts every transfer since its typed day. Now it is
+   never windowed, windows are worked out in TypeScript rather than SQL,
+   and a window-invariance test proves no figure depends on the window
+   (§2.4, §2.5).
+9. **`days_left` had no engine source.** Now `weekSheet` and
+   `safeToSpend`'s, and null where core has none (§2.4).
+10. **The enum label would fail in the dashboard.** 0020 added `ai_app`
+    and used it in a CHECK in the same paste, which Postgres refuses (55P04)
+    when the paste runs as one transaction, while the local gate would pass.
+    The label moves to 0019 (§2.12).
+11. **Paste order.** 0019 pasted before 0018 would have had its guards
+    silently undone by 0018. Each migration now refuses to run before its
+    predecessor (§2.5, §2.12).
+12. **Read-only transactions.** A STABLE `ai_app_*` function would run
+    read-only under PostgREST and the gate could not count. All are
+    VOLATILE, and asserted (§2.5).
+13. **`UTC` refused.** The time-zone pattern needed a slash; now `UTC` is
+    allowed and unknown zones are refused on write (§2.12).
+14. **Cache claim.** Tool results carry no cache hint in the 2026-07-28
+    revision; only `tools/list` does. Stated correctly, and every response
+    is `no-store` (§2.2).
+15. **"JSON replies, no event streams"** holds only for 2026-07-28 requests;
+    the SDK's 2025 fallback may stream one message. Stated (§2.2).
+16. **SDK size.** About 800 KB unminified, with a vendored validator the
+    Node shim brings, not 224–348 KB (§2.2).
+17. **Tool descriptions steerable?** They were constant in practice; now it
+    is a rule with a test, names lose control and direction-override
+    characters, and the instructions say a name is data "even when it reads
+    like" an instruction (§2.4).
+18. **K1 was called fail-closed.** It is closed for the server only; a
+    token used directly would pass the restrictive policies. The checklist
+    now says what to do (§2.5, §2.14, §5.16).
+19. **Slices over 300 lines and out of order.** M5 was about 450 lines;
+    `parseTypedAmount` was used two slices before it was made; the
+    `setup-files.ts` import arrow came two slices after the import. Split
+    and reordered into 23 slices (§3).
+20. **Owner steps.** Claude's dialog marks "Use Claude's published
+    identity" as recommended, which Supabase cannot serve; the steps now
+    say to pick **Register automatically**. ChatGPT's DCR choice, the Site
+    URL check, the verify-JWT switch before rotating (Supabase's own
+    warning), `read-receipt`'s re-paste or deletion, and the emergency
+    order (the app's switch first) are now explicit (§1).
+21. **Sources corrected:** Claude's header beta is for "a limited set of
+    organizations", not "some Team and Enterprise" ones; ChatGPT's
+    developer mode offers OAuth or no sign-in, with no API-key header;
+    OpenAI lists Plus for the full client; Claude Code and other loopback
+    clients are expected to fail on Supabase's exact port match.
+22. **ADR 0005 was said to be amended.** It need not be: an AI app's words
+    take the receipt path's rule. The CONSTRAINTS row is unchanged
+    (§2.15).
+23. **Auth API risk understated.** A token can likely set a new password
+    for a day after approval: account takeover, not a figure leak. Now
+    risk 2 and §5.4 (§4).
+24. **Other connectors** in the same chat are the realistic exfiltration
+    path for instructions hidden in shop names. Now in §1, Help and risk
+    16.
+
+Sources read on 2026-09-30: Anthropic, "Authentication for connectors"
+(claude.com/docs/connectors/building/authentication) and "Add a connector
+that isn't in the directory" (claude.com/docs/connectors/custom/add-unlisted);
+Claude Help Center article 11175166; OpenAI, "ChatGPT Developer mode"
+(developers.openai.com/api/docs/guides/developer-mode) and "Authentication –
+Plugins" (developers.openai.com/plugins/build/auth); Supabase, "OAuth 2.1
+Server", "Getting Started with OAuth 2.1 Server", "OAuth 2.1 Flows",
+"Token Security and Row Level Security", "Model Context Protocol (MCP)
+Authentication" (supabase.com/docs/guides/auth/oauth-server/…), "JWT
+signing keys" (supabase.com/docs/guides/auth/signing-keys), "Authorization
+headers" (supabase.com/docs/guides/functions/auth-headers), discussion 41695
+and issue 42244 (github.com/supabase); MCP 2026-07-28 changelog
+(modelcontextprotocol.io/specification/2026-07-28/changelog); the npm
+registry's `@modelcontextprotocol/server` and `@modelcontextprotocol/core`
+2.2.0; the live project's `/.well-known/oauth-authorization-server/auth/v1`
+(404 `feature_disabled`) and `/auth/v1/.well-known/jwks.json` (one ES256
+key).
