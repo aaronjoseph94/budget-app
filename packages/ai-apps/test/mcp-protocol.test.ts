@@ -1,15 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { MCP_SERVER_VERSION } from '@budget/schema'
-import { handle } from '../src/handle.js'
+import { handle as serve } from '../src/handle.js'
+import { AI_APP_TOKEN, ENV, PROJECT, fakeFetch } from './fake-auth.js'
 
 /**
  * The AI apps server speaks MCP through the official SDK (PLAN §2.13,
  * mcp-protocol): both protocol eras, the 64 KB bound, and nothing
- * cacheable. No tool is registered yet (M5b adds the first).
+ * cacheable, for an AI app Auth accepts. No tool is registered yet (M5b
+ * adds the first).
  */
 
-const PROJECT = 'https://project.supabase.co'
-const ENV = { SUPABASE_URL: PROJECT, SUPABASE_ANON_KEY: 'anon-key-for-tests' }
+const handle = (req: Request, env: typeof ENV) => serve(req, env, fakeFetch().fetchFn)
 const MODERN = {
   'io.modelcontextprotocol/protocolVersion': '2026-07-28',
   'io.modelcontextprotocol/clientInfo': { name: 'test-client', version: '1' },
@@ -19,7 +20,7 @@ const MODERN = {
 function post(body: unknown, headers: Record<string, string> = {}): Request {
   return new Request(`${PROJECT}/mcp`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', accept: 'application/json, text/event-stream', authorization: 'Bearer e30.e30.sig', ...headers },
+    headers: { 'content-type': 'application/json', accept: 'application/json, text/event-stream', authorization: `Bearer ${AI_APP_TOKEN}`, ...headers },
     body: typeof body === 'string' ? body : JSON.stringify(body),
   })
 }

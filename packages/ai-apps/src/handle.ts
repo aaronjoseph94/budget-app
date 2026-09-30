@@ -11,7 +11,8 @@
  *   protocol eras in use (2025's `initialize`; 2026-07-28's
  *   `server/discover`), statelessly: a fresh server per request. Any other
  *   method is 405.
- *   Without a token, the 401 says where to sign in (src/auth.ts).
+ *   It needs an AI app's token (src/auth.ts); without one, the 401 says
+ *   where to sign in.
  * - `GET /mcp/.well-known/oauth-protected-resource`: RFC 9728's metadata.
  * - `GET /mcp/health`: `{ ok, version, tools }`, no token, CORS for the
  *   app's own origins only, so One-time updates can check the paste.
@@ -19,7 +20,7 @@
 import { z } from 'zod'
 import { McpServer, createMcpHandler } from '@modelcontextprotocol/server'
 import { MCP_SERVER_VERSION } from '@budget/schema'
-import { bearerOf, challenge, json, protectedResource } from './auth.js'
+import { checkToken, json, protectedResource, type Project } from './auth.js'
 import { log } from './log.js'
 
 // The app's own sites and its dev server, plus exact https origins in the
@@ -80,7 +81,12 @@ function noStore(res: Response): Response {
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers })
 }
 
-async function route(req: Request, env: Env): Promise<Response> {
+async function serveMcp(req: Request, project: Project, fetchFn: typeof fetch): Promise<Response> {
+  const caller = await checkToken(project, req.headers.get('authorization'), fetchFn)
+  return caller instanceof Response ? caller : mcp.fetch(req, { authInfo: caller })
+}
+
+async function route(req: Request, env: Env, fetchFn: typeof fetch): Promise<Response> {
   // Supabase hands the function `/mcp…`; the project's full address works too.
   const path = /^(?:\/functions\/v1)?\/mcp(\/.*)?$/.exec(new URL(req.url).pathname)
   if (path === null) return json(404, { error: 'not_found' })
@@ -107,13 +113,15 @@ async function route(req: Request, env: Env): Promise<Response> {
   }
   const project = { url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY }
   if (metadata) return json(200, protectedResource(project))
-  const header = req.headers.get('authorization')
-  if (bearerOf(header) === null) return challenge(project, header !== null)
-  return mcp.fetch(req)
+  return serveMcp(req, project, fetchFn)
 }
 
-export async function handle(req: Request, rawEnv: Readonly<Record<string, string | undefined>>): Promise<Response> {
+export async function handle(
+  req: Request,
+  rawEnv: Readonly<Record<string, string | undefined>>,
+  fetchFn: typeof fetch,
+): Promise<Response> {
   // A secret zod cannot read counts as unset, which ends in not_configured.
   const parsed = EnvSchema.safeParse(rawEnv)
-  return noStore(await route(req, parsed.success ? parsed.data : {}))
+  return noStore(await route(req, parsed.success ? parsed.data : {}, fetchFn))
 }

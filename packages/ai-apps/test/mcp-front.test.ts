@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MCP_SERVER_VERSION } from '@budget/schema'
-import { handle } from '../src/handle.js'
+import { handle as serve } from '../src/handle.js'
 
 /**
  * What the AI apps server answers around the MCP endpoint itself (PLAN
@@ -11,6 +11,9 @@ import { handle } from '../src/handle.js'
 const PROJECT = 'https://project.supabase.co'
 const ENV = { SUPABASE_URL: PROJECT, SUPABASE_ANON_KEY: 'anon-key-for-tests' }
 const SITE = 'https://aaron-budget-app.pages.dev'
+/** Nothing here may reach Supabase. */
+const noFetch = (() => Promise.reject(new Error('no fetch expected'))) as typeof fetch
+const handle = (req: Request, env: Record<string, string>) => serve(req, env, noFetch)
 const at = (path: string, init: RequestInit = {}) => new Request(`${PROJECT}${path}`, init)
 
 afterEach(() => {
