@@ -8,7 +8,7 @@ Dependency arrows point one way only.
 
 | Module id | Responsibility | Depends on |
 |---|---|---|
-| `money-primitives` | Branded `Cents` type, entity ids, date helpers, the single rounding and sign-convention policy transcribed from the workbook. Zero dependencies, including zod. | — |
+| `money-primitives` | Branded `Cents` type, entity ids, date helpers, the single rounding and sign-convention policy transcribed from the workbook, and the one display helper. Zero dependencies, including zod. | — |
 | `golden-verification` | Extracts the workbook's cached Excel values into committed fixtures, and the replay harness that asserts a calculator reproduces them exactly. | `money-primitives` |
 | `calc-engine` | All arithmetic: budget rollups, debt amortization, future value, 50/30/20, cash-flow forecast, net worth. Pure functions, no I/O, no ambient clock. | `money-primitives`, `golden-verification` |
 | `chart-specs` | Chart layout and SVG generation as pure functions: Sankey flows, the contribution grid, category bars, trend lines. No React, no DOM. | `money-primitives`, `calc-engine` |
@@ -17,6 +17,7 @@ Dependency arrows point one way only.
 | `statement-parsers` | Deterministic CSV/XLSX parsing, merchant normalization, the dedupe hash. Bytes in, validated rows out. | `money-primitives`, `schema-contracts` |
 | `llm-providers` | One interface over Gemini, Groq and OpenRouter (free) and OpenAI and Anthropic (paid): the hardcoded endpoint and model allowlist, the failover router with its daily limits and cooldowns, each task's prompt paired with its JSON schema, and the encryption of pasted keys. Realised as the `ai` Edge Function, one pasteable file, beside `read-receipt` (ADR 0004). | `schema-contracts` (held to it by contract tests; the file imports only zod), `persistence-schema` |
 | `ingest-pipeline` | The candidate lifecycle: creation, merchant-rule lookup and learning, review-queue state machine, guarded promotion to `transactions`. | `schema-contracts`, `persistence-schema`, `statement-parsers`, `llm-providers` |
+| `ai-apps` | The MCP server outside AI apps connect to: the token check, ten tools and the rows renamed for the engine; built into one pasteable Edge Function, `mcp` (ADR 0012). Realised as `packages/ai-apps`. | `calc-engine`, `money-primitives`, `statement-parsers`, `schema-contracts`, `persistence-schema` (by RPC only, with the caller's own token) |
 | `savings-coach` | Weekly limits and streaks, savings-capacity analysis, goal tracking and tradeoff conversion, the spend-interrogation loop and the answers it learns from, and the surfacing of insights: ranking, dismissal state, cadence and narration. The behavioural layer; every number it shows and every detector that fires comes from `calc-engine`. Realised as `packages/savings-coach`: templates and tones, the blank renderer, card ranking, the quotes and tips library, the AI's brief and its signatures, the check of a model's reply, Ask's intents, the check-in's rules (ADR 0005). | `calc-engine`, `schema-contracts` (types), `money-primitives` (types) |
 | `report-export` | Excel workbook and PDF report generation. Formats engine output and embeds `chart-specs` SVG; computes nothing. Dynamically imported, runs on the client. Realised in part as `packages/report-export`: a month as CSV, with the formula guard (N4); the PDF is the browser's print of Reports. The Excel workbook is not built. | none for the CSV writer, which takes rows of text; `calc-engine`, `chart-specs`, `schema-contracts` once the Excel workbook is built |
 | `reminders-scheduler` | pg_cron bill reminders plus the heartbeat row that proves the job is still firing. | `persistence-schema`, `calc-engine` |
@@ -38,7 +39,7 @@ coach's tables and calls the helper. `app-client` always drew
 ```
 money-primitives → golden-verification → calc-engine → chart-specs
   → schema-contracts → persistence-schema → statement-parsers → llm-providers
-  → ingest-pipeline → savings-coach → report-export → reminders-scheduler
+  → ingest-pipeline → ai-apps → savings-coach → report-export → reminders-scheduler
   → app-client
 ```
 
@@ -95,6 +96,19 @@ zod; the app reads, writes, hashes and calls. That keeps every rule about
 what the AI may say testable without a network, and keeps the arrow from
 the coach to the engine one way: the coach may call the engine, never the
 reverse (ADR 0005).
+
+**`ai-apps` is a package that builds into one file** (2026-09-30, ADR
+0012). An AI app on the owner's own subscription asks for figures and adds
+entries to Review. Every figure it is sent must be the engine's, so unlike
+`llm-providers` this server bundles `calc-engine`: it is ordinary
+TypeScript that imports the packages below it and is built at site build
+into the one file the owner pastes as the Edge Function `mcp`. It reaches
+the database only through `ai_app_*` functions with the caller's own token,
+so row-level security sees the owner; it holds no provider key, calls no
+model and never uses `service_role`. Its one write leaves a pending
+candidate, which is why it sits after `ingest-pipeline`: the approval path
+is the one the app already has. Nothing in the app imports it; only the
+build step that emits the pasteable file does.
 
 ## Slice order for delivery
 
