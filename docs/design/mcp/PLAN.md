@@ -1311,3 +1311,298 @@ first draft read amounts through `parseTypedAmount` in M7 and M8 but
 created it in M9, and imported `packages/ai-apps` from
 `apps/web/setup-files.ts` in M3 but allowed that arrow only in M5).
 
+### M1a: AI apps cannot write (0019)
+
+- **Files:** `supabase/migrations/0019_ai_apps_cannot_write.sql`;
+  `supabase/local-stub.sql`; `supabase/tests/schema-assertions.sql`;
+  `supabase/tests/before/0019_ai_apps_cannot_write.sql` (the gate's
+  existing before-a-migration hook: it copies each guarded function's
+  source into a table in a `verify` schema, outside `public`, for the
+  assertions to compare); `apps/web/src/help/updates.ts` (0019's entry,
+  probing `_not_an_ai_app`, offered once 0018 is in) and
+  `apps/web/test/updates-check.test.ts`; `NOTICED-NOT-TOUCHING.md` (the
+  CONSTRAINTS wording gap of §2.15).
+- **Estimate:** about 190 lines.
+- **Done:** every write in §2.13's 0019 list is attempted with a `client_id`
+  claim and refused, and succeeds without it; each guarded function's
+  source is its old source plus the guard, or the gate goes RED (seen by
+  changing one character of a re-created body); the "Paste 0018 first"
+  check seen raising; One-time updates lists 0019.
+
+### M1b: The AI helpers refuse AI apps
+
+- **Files:** `supabase/functions/ai/index.ts` (after `whoIs`, refuse a
+  token whose payload has `client_id`, as `not_signed_in`; `VERSION`
+  bumped) and `packages/schema/src/ai.ts` (`AI_HELPER_VERSION`);
+  `supabase/functions/read-receipt/index.ts` (gains the same `whoIs`
+  through `/auth/v1/user` and the same refusal: today it checks only for a
+  `Bearer ` prefix and relies on the gateway, which accepts the public
+  anon key, so anyone holding that key can spend the Gemini key);
+  `supabase/functions/test/ai-identity.test.ts`, `read-receipt.test.ts`;
+  `apps/web/setup-files.ts` and `scripts/check-bundle.mjs`
+  (`read-receipt-function.ts` joins `setup/`, byte for byte), and
+  `apps/web/test/setup-files.test.ts`; `apps/web/src/help/updates.ts` and
+  `UpdatesPanel.tsx` (the AI helper shows "old"; `read-receipt`'s optional
+  **Copy**, with "or delete it"); `NOTICED-NOT-TOUCHING.md` (the old
+  `read-receipt` hole, now closed).
+- **Estimate:** about 230 lines.
+- **Done:** §2.13's helper cases, each seen RED by removing its check;
+  One-time updates shows the AI helper as "old" and offers `read-receipt`.
+
+### M2a: The server's skeleton, with the SDK (the dependency commit)
+
+- **Files:** `packages/ai-apps/package.json` (`@modelcontextprotocol/server`
+  `2.2.0` exact; zod at the workspace's version), `tsconfig.json`, the root
+  `tsconfig.json` reference, `vitest.config.ts` (the `ai-apps` project and
+  its 80/80/75 floor), `eslint.config.js` (its `console` rule),
+  `.dependency-cruiser.cjs` (its allowed arrows); `src/handle.ts` (env,
+  origin, `/mcp/health`, the 405s, `Cache-Control: no-store`,
+  `createMcpHandler` with no tools yet), `src/log.ts`, `src/deno.ts`;
+  `test/mcp-protocol.test.ts`; `packages/schema/src/ai-apps.ts`
+  (`MCP_SERVER_VERSION`); CONSTRAINTS.md's `ai-apps` rows; ADR 0012's
+  note of the dependency.
+- **Estimate:** about 250 lines, plus the lockfile.
+- **Done:** `mcp-protocol` passes with an empty tool list; each new gate
+  seen RED once (a `console.log` outside `log`, an import of `apps/web`,
+  the tests deleted for coverage); `pnpm audit --audit-level high` clean;
+  the commit body says why this dependency and names its two
+  dependencies; ADR 0012 holds the owner's acceptance in their own words
+  before this commit lands (it is pending there today).
+
+### M2b: The front door: discovery, the challenge and the token check
+
+- **Files:** `packages/ai-apps/src/handle.ts`, and `src/auth.ts` if
+  `handle.ts` would pass 200 lines (the metadata document, the challenge,
+  `whoIs`, the claim checks, `redirect: 'error'`, the 20 s deadline);
+  `test/mcp-auth.test.ts`, `test/mcp-logs.test.ts`.
+- **Estimate:** about 270 lines.
+- **Done:** §2.13's `mcp-auth` and `mcp-logs` pass; seen RED by removing
+  the `client_id` check, and by logging a token.
+
+### M3: The pasteable file, built with the site
+
+- **Files:** `packages/ai-apps/build.ts` (`bundleMcpFunction`),
+  `packages/ai-apps/package.json` (vite as a devDependency, the version the
+  app already uses: no new package in the lockfile, said in the body);
+  `apps/web/package.json` (`@budget/ai-apps` as a `workspace:*`
+  devDependency, for the build config and tests only, never `src`);
+  `.dependency-cruiser.cjs` (the one arrow from `apps/web/setup-files.ts`
+  into `packages/ai-apps`, and none from `apps/web/src`);
+  `apps/web/setup-files.ts` (emit and serve `mcp-function.ts`);
+  `scripts/check-bundle.mjs` (the `setup/` list and the file's import and
+  key-name check); `packages/ai-apps/test/mcp-bundle.test.ts`;
+  `apps/web/test/setup-files.test.ts`; `apps/web/src/help/updates.ts` and
+  `UpdatesPanel.tsx` ("The AI apps server": the `mcp` probe of
+  `/mcp/health` against `MCP_SERVER_VERSION`, Copy, and its clicks with JWT
+  verification off); `apps/web/test/updates-check.test.ts`; ADR 0007's
+  amendment is ADR 0012's.
+- **Estimate:** about 240 lines.
+- **Done:** `vite build` emits `setup/mcp-function.ts` whose first line is
+  its banner; the bundle test runs `initialize`, `server/discover` and
+  `tools/list` through the built file; `check-bundle.mjs` goes RED when the
+  file imports a third URL or contains `SERVICE_ROLE` (both seen);
+  `depcruise` goes RED on an import of `packages/ai-apps` from
+  `apps/web/src` (seen); One-time updates offers **Copy** for it with the
+  `mcp` clicks.
+
+### M4: The database for AI apps (0020), and "Added by" in Review
+
+- **Files:** `supabase/migrations/0020_ai_apps.sql`;
+  `supabase/tests/schema-assertions.sql`; `packages/schema/src/enums.ts`;
+  `apps/web/src/ledger.ts` (the `ai_app` source; Review's read gains the
+  batch's `ai_client_id`); `apps/web/src/sheet-input.ts` (`BY_HAND`);
+  `apps/web/src/screens/ReviewScreen.tsx`, `MonthCharges.tsx`,
+  `LedgerScreen.tsx` ("added by an AI app"); `apps/web/src/help/updates.ts`
+  (0020, probing `ai_app_access`, offered once 0019 is in);
+  `apps/web/test/review-screen.test.tsx`, `updates-check.test.ts`.
+- **Estimate:** about 230 lines.
+- **Done:** every 0020 case in §2.13 is attempted and refused, each seen
+  RED by removing what it proves (the cap's `where`, the `client_id`
+  check, the pending status, the read flag in the restrictive `select`
+  policy, the hash check, the `merchant` copy); RLS coverage still green
+  on the new tables; Review shows "Added by an AI app" for a seeded row.
+
+### M5a: Money in and out, shared with the app
+
+- **Files:** `packages/money-primitives/src/format.ts` (`formatCents`,
+  moved) and its test; `apps/web/src/format.ts` (re-export);
+  `packages/statement-parsers/src/amount.ts` (`parseTypedAmount`, moved
+  from `parseMoneyInput`) and its test; `apps/web/src/app-data.tsx` (calls
+  it); `packages/ai-apps/src/money.ts` (`Money`, the character stripping,
+  masking and cutting of names) and its test;
+  `packages/schema/src/ai-apps.ts` (`AmountText`, `Name`, `List`, the
+  words schema).
+- **Estimate:** about 230 lines.
+- **Done:** the app's format and money-input tests pass unchanged against
+  the moved functions; `money.ts`'s cases, including a name carrying
+  U+202E and a zero-width space; the float-money lint still passes on
+  `money-primitives`.
+
+### M5b: The first tool: `list_categories`, and the registry
+
+- **Files:** `packages/ai-apps/src/rpc.ts` (the RPC caller, refusal and
+  error mapping), `src/rows.ts` (categories), `src/server.ts` (the
+  registry, the instructions, `securitySchemes`),
+  `src/tools/categories.ts`; `test/mcp-read-tools.test.ts` (categories,
+  and `tools/list` making no request); `apps/web/test/ai-apps-parity.test.ts`
+  (categories); `.dependency-cruiser.cjs` (the arrow from `apps/web/test/`
+  into `packages/ai-apps`).
+- **Estimate:** about 250 lines.
+- **Done:** the tool's output equals the rows' renaming the app does;
+  `tools/list` is identical with an empty and a hostile fake database, and
+  makes no request (seen RED by building a description from a category
+  name).
+
+### M5c: `get_period` for a month and a week
+
+- **Files:** `src/tools/period.ts`, `src/rows.ts`, `src/windows.ts`; tests,
+  including the window-invariance harness of §2.4; the parity test's Month
+  and Week cases.
+- **Estimate:** about 280 lines.
+- **Done:** outputs equal core's on the same rows; parity with the Month's
+  and the Week's inputs (seen RED by dropping a budget row in one
+  renaming); window invariance (seen RED by narrowing the month window by
+  one month).
+
+### M5d: `get_period` for a pay period and a year, and comparisons
+
+- **Files:** `src/tools/period.ts`, `src/rows.ts`, `src/windows.ts`; tests;
+  the parity test's Paycheck and Year cases.
+- **Estimate:** about 220 lines.
+- **Done:** as M5c for a pay period, a year (N43's January start) and
+  `compare`; `days_left` null for both.
+
+### M6a: `get_spending`
+
+- **Files:** `src/tools/spending.ts`, `src/rows.ts`; tests; the parity
+  test's Ask cases.
+- **Estimate:** about 180 lines.
+- **Done:** each question kind returns `answerQuery`'s figures for the same
+  rows as the app's Ask; an unknown category name is `unknown_category`.
+
+### M6b: `get_debts`
+
+- **Files:** `src/tools/debts.ts`, `src/rows.ts`; tests; the parity test's
+  Debts case.
+- **Estimate:** about 150 lines.
+- **Done:** debts match the Debts screen's inputs and outputs; the
+  schedule is capped at `months`.
+
+### M7a: `get_forecast`
+
+- **Files:** `src/tools/forecast.ts`, `src/rows.ts`, `src/windows.ts`;
+  tests; the parity test's Forecast case.
+- **Estimate:** about 200 lines.
+- **Done:** outputs equal `forecastFigures`' engine calls on the same rows;
+  "no starting balance" says so instead of a balance; the what-if amount
+  is read through `AmountText`, and a JSON number is refused.
+
+### M7b: `get_savings_goals`
+
+- **Files:** `src/tools/goals.ts`, `src/rows.ts`; tests; the parity test's
+  Savings case.
+- **Estimate:** about 150 lines.
+- **Done:** outputs equal the Savings screen's; window invariance with a
+  fund whose balance was typed four years before the anchor (seen RED by
+  windowing `fund_txns` at 12 months, the first draft's reading).
+
+### M8a: F52, a search's totals, in the engine
+
+- **Files:** `docs/formula-decisions.md` (F52, first);
+  `packages/core/src/entries-totals.ts`, its export and
+  `packages/core/test/entries-totals.test.ts` (hand-worked, seen failing
+  first).
+- **Estimate:** about 130 lines.
+- **Done:** `entriesTotals` passes its hand-worked cases and fails each
+  named mutation (a transfer counted, a refund subtracted from `spent`).
+
+### M8b: `search_transactions` and `list_review_queue`
+
+- **Files:** `src/tools/search.ts`, `src/tools/review.ts`; tests.
+- **Estimate:** about 230 lines.
+- **Done:** search totals cover all matches, not the returned page; the
+  review tool returns counts and rows and no sum; 5,001 matches give
+  `totals: null`.
+
+### M9: `add_expense` and `add_note`
+
+- **Files:** `packages/ai-apps/src/tools/add.ts`, `src/tools/note.ts`;
+  `test/mcp-add.test.ts`.
+- **Estimate:** about 250 lines.
+- **Done:** §2.13's `mcp-add` cases; the fixture's hash equals the literal
+  M4's schema test checks SQL against; `tools/list` now shows all ten.
+
+### M10a: Settings → AI apps: the switches, the address and Connect a new AI app
+
+- **Files:** `apps/web/src/ai-apps/AiAppsCard.tsx`, `access.ts`;
+  `apps/web/src/screens/SettingsScreen.tsx`;
+  `apps/web/test/ai-apps-card.test.tsx`; `width-guard.test.ts` if it needs
+  the new file.
+- **Estimate:** about 200 lines.
+- **Done:** §2.13's card cases for the switches, the address and the
+  window, with an axe check; looked at in the preview harness at 320, 390
+  and 1280 px, light and dark.
+
+### M10b: Settings → AI apps: connected apps and Disconnect
+
+- **Files:** `AiAppsCard.tsx`, `access.ts`; `apps/web/test/fake-supabase.ts`
+  (the grants routes); `apps/web/test/ai-apps-card.test.tsx`.
+- **Estimate:** about 180 lines.
+- **Done:** §2.13's card cases for the list and Disconnect; looked at as
+  M10a. Its Help links come with the articles, in M12a.
+
+### M11a: The callback allowlist
+
+- **Files:** `apps/web/src/ai-apps/hosts.ts`;
+  `apps/web/test/ai-apps-hosts.test.ts`.
+- **Estimate:** about 130 lines.
+- **Done:** §2.13's host cases, each refusal seen RED by loosening the
+  match (a prefix match, a host-only match).
+
+### M11b: The consent page
+
+- **Files:** `apps/web/src/ai-apps/ConsentScreen.tsx`;
+  `apps/web/src/main.tsx`; `apps/web/src/auth.tsx` (the optional,
+  same-origin return address); `apps/web/test/fake-supabase.ts`
+  (authorization routes); `apps/web/test/oauth-consent.test.tsx`,
+  `sign-in-link.test.tsx`.
+- **Estimate:** about 270 lines.
+- **Done:** §2.13's consent cases with an axe check; the first-load size
+  from `check-bundle.mjs` recorded in the body and still under 200 KB (the
+  page is its own chunk; `main.tsx` gains a path check and a lazy import).
+
+### M12a: Help: the three articles, and Settings' links
+
+- **Files:** `apps/web/src/help/topics.ts`, `articles.ts` (`ai-apps`,
+  `connect-claude`, `connect-chatgpt`); `apps/web/src/ai-apps/AiAppsCard.tsx`
+  (its two Help links); `apps/web/test/help-articles.test.ts`.
+- **Estimate:** about 200 lines.
+- **Done:** the three articles pass the Help rules and are reachable from
+  Settings → AI apps and from Help's list.
+
+### M12b: One-time updates' last checks, and the owner's steps
+
+- **Files:** `apps/web/src/help/updates.ts` and `UpdatesPanel.tsx` (the
+  signing-key and OAuth-server checks and their clicks);
+  `apps/web/test/updates-check.test.ts`, `updates-screen.test.tsx`;
+  `HANDOFF.md` §3 and §4 (the owner's steps and the first-connection
+  checklist, including K1's "not an AI app" instruction); `docs/setup.md`.
+- **Estimate:** about 240 lines.
+- **Done:** One-time updates walks the whole order (0019, 0020, the AI
+  helper and `read-receipt` again, the signing key, the OAuth server, the
+  `mcp` server) with each step checked; HANDOFF §3 matches §1 of this
+  plan.
+
+### After M12b, in the owner's order
+
+1. **The README.** None exists at the repository's root today; a short
+   one says what the app is, how to run the gates, and that Help's
+   Connect articles are where AI apps are set up.
+2. **The four reviews.**
+3. **The security review**, against §5.
+4. **Cleanup:** the NOTICED entries this work raised; the stale DCR
+   clients listed for the owner to prune; `EXTRA_ORIGINS` and the verify-JWT
+   switches re-checked against HANDOFF.
+
+---
+
