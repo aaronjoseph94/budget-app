@@ -142,8 +142,10 @@ module.exports = {
       comment:
         'packages/ai-apps is the server AI apps call, built into a file the owner pastes. ' +
         'Only the /setup/ build plugin may reach it; in the page it would be dead weight ' +
-        'at best, and at worst a second place that checks tokens.',
-      from: { path: '^apps/web/(src|test)/' },
+        'at best, and at worst a second place that checks tokens. One test may read ' +
+        'it: the parity test, which proves the server renames rows for the engine as ' +
+        'the app does (MCP plan 2.4), so a chat cannot quote a figure the screen does not show.',
+      from: { path: '^apps/web/(src|test)/', pathNot: '^apps/web/test/ai-apps-parity\\.test\\.ts$' },
       to: { path: '^packages/ai-apps/' },
     },
     {
@@ -277,6 +279,8 @@ module.exports = {
     // builds mcp-function.ts with it at site build (ADR 0012). Nothing in
     // apps/web/src may reach it, so none of it ships in the page.
     { from: { path: '^apps/web/setup-files\\.ts$' }, to: { path: '^packages/ai-apps/build\\.ts$' } },
+    // And the parity test, which feeds the same rows to the app and the server.
+    { from: { path: '^apps/web/test/ai-apps-parity\\.test\\.ts$' }, to: { path: '^packages/ai-apps/src/' } },
   ],
   options: {
     doNotFollow: { path: 'node_modules' },
