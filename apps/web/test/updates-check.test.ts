@@ -9,7 +9,7 @@ describe('checking the one-time updates', () => {
   it('finds each one in when everything it adds answers', async () => {
     const fake = createFakeSupabase()
     const checked = await checkUpdates(fake.client)
-    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', 'ai-f'])
+    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', 'ai-f'])
     expect(missing(checked)).toEqual([])
     expect(nextStep(checked)).toEqual({ kind: 'done' })
   })
@@ -81,6 +81,17 @@ describe('checking the one-time updates', () => {
     ])
   })
 
+  // AI apps cannot write: 0019 re-creates 0018's functions, so it comes only after 0018.
+  it('reads PGRST202 on the AI-app guard as 0019 not in yet, offered only once 0018 is in', async () => {
+    const fake = createFakeSupabase()
+    delete fake.rpcReplies['_not_an_ai_app']
+    const checked = await checkUpdates(fake.client)
+    expect(missing(checked)).toEqual([['0019', 'missing']])
+    expect(nextStep(checked)).toEqual({ kind: 'paste', file: '0019_ai_apps_cannot_write.sql', fromStart: false })
+    delete fake.rpcReplies['clear_candidate_suggestion']
+    expect(nextStep(await checkUpdates(fake.client))).toEqual({ kind: 'paste', file: '0018_category_suggestions.sql', fromStart: false })
+  })
+
   it('reads Supabase’s 404 for the AI helper as not installed, and any other failure as could not check', async () => {
     const fake = createFakeSupabase()
     fake.functions.ai = null
@@ -133,6 +144,7 @@ describe('checking the one-time updates', () => {
       { name: 'dismiss_unreadable_line', args: { p_line: nil } },
       { name: 'ai_key_status', args: {} },
       { name: 'clear_candidate_suggestion', args: { p_candidate: nil } },
+      { name: '_not_an_ai_app', args: {} },
     ])
     // The helper is only pinged.
     expect(fake.functions.calls).toEqual([{ action: 'ping' }])

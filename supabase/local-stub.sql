@@ -26,10 +26,18 @@ alter table storage.objects enable row level security;
 create or replace function storage.foldername(name text) returns text[]
   language sql immutable as $$ select string_to_array(name, '/') $$;
 
--- auth.uid() reads a session setting, the way Supabase reads the JWT claim.
+-- auth.uid() and auth.jwt() read session settings as Supabase's do: the sub
+-- setting when one is set, else the claims PostgREST sets from the token. So
+-- the schema gate can set a client_id claim and act as an AI app (0019).
+create or replace function auth.jwt() returns jsonb
+  language sql stable as $$
+    select coalesce(nullif(current_setting('request.jwt.claim', true), ''),
+                    nullif(current_setting('request.jwt.claims', true), ''))::jsonb
+  $$;
 create or replace function auth.uid() returns uuid
   language sql stable as $$
-    select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
+    select coalesce(nullif(current_setting('request.jwt.claim.sub', true), ''),
+                    nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub')::uuid
   $$;
 
 -- The roles Supabase requests arrive as, and the default grants Supabase gives

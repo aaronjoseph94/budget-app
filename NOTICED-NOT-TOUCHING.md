@@ -3226,3 +3226,21 @@ the Month's Coach line (`MonthCoachLine.tsx`).
 
 **To settle:** drop `shadow-sm` from those three, with a screen test that
 no `rounded-xl` element there has a shadow, and check 390 and 1440.
+
+---
+
+## N139 — "Model text carries no numbers" reads wider than it is kept
+
+**Seen:** 2026-09-30, MCP slice M1a (PLAN.md §2.15). CONSTRAINTS.md's row
+says "every string a model writes" is held to ADR 0005's text rule. The
+receipt path has always read that as the app's own AI's words only: a
+model's reading of a receipt's shop name is ingested text, held to
+`IngestedTextSchema` and drawn as `IngestedText`, never `ModelProse`. An
+AI app's added words (M9) take that same path.
+
+**Why not fixed here:** rewording a CONSTRAINTS row is its own commit, and
+nothing in the MCP plan relies on a new reading of it.
+
+**To settle:** say "every string the app's own AI writes for the app to
+show or keep", and name ingested text (a receipt's reading, an AI app's
+added words) as held to `IngestedTextSchema` instead.

@@ -1328,6 +1328,20 @@ created it in M9, and imported `packages/ai-apps` from
   source is its old source plus the guard, or the gate goes RED (seen by
   changing one character of a re-created body); the "Paste 0018 first"
   check seen raising; One-time updates lists 0019.
+- **As built (2026-09-30):** each guarded function is re-created from its
+  own `pg_get_functiondef`, with the guard put after the body's first
+  `begin` line, rather than from a copy of its text, so the body is the one
+  in the database. `ai_key_status` is SQL, not PL/pgSQL, so its guard is
+  `select public._not_an_ai_app();`, its body's first statement.
+  `_not_an_ai_app` is plain `create` (a second paste is refused there) and
+  STABLE. The schema gate tries the writes on every table in `public` as a
+  role holding every grant, so row-level security alone decides, and fails
+  on a table where the first user has no row to try; it also fails on any
+  SECURITY DEFINER function the browser may call without the guard. So M4
+  seeds a row of the first user's in each new table, and lists 0020's own
+  `_ai_app_gate` and `ai_app_*` functions as the exceptions. The fake
+  Supabase answers `_not_an_ai_app`, and `updates-screen.test.tsx` counts
+  16 updates.
 
 ### M1b: The AI helpers refuse AI apps
 

@@ -37,7 +37,7 @@ export interface Update {
 
 const NIL = '00000000-0000-0000-0000-000000000000'
 
-/** 0005 to 0018 and the AI helper, each with what it adds. */
+/** 0005 to 0019 and the AI helper, each with what it adds. */
 export const UPDATES: readonly Update[] = [
   { file: '0005_category_kinds.sql', adds: 'Which list each category is on', checks: [{ kind: 'column', table: 'categories', column: 'kind' }] },
   {
@@ -89,6 +89,13 @@ export const UPDATES: readonly Update[] = [
     file: '0018_category_suggestions.sql',
     adds: 'Where Review keeps the AI’s suggested categories',
     checks: [{ kind: 'function', name: 'clear_candidate_suggestion', args: { p_candidate: NIL } }],
+  },
+  {
+    // The owner's own session is not an AI app, so this returns and changes nothing.
+    // Listed after 0018, so it is offered only once 0018 is in, which it needs.
+    file: '0019_ai_apps_cannot_write.sql',
+    adds: 'Stops an AI app you connect from changing your records itself',
+    checks: [{ kind: 'function', name: '_not_an_ai_app', args: {} }],
   },
   { file: HELPER_FILE, adds: 'The AI helper, which every AI feature goes through', checks: [{ kind: 'helper' }] },
 ]

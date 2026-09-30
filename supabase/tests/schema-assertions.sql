@@ -2287,3 +2287,179 @@ begin
   end loop;
   raise notice 'only the helper can call the helper''s functions';
 end $$;
+
+-- ---------------------------------------------------------------------------
+-- 0019: AI apps cannot write. A token carrying client_id, which only an AI
+-- app's sign-in through Supabase's OAuth server has, changes no row, touches
+-- no receipt and runs no function the browser may call. Every assertion
+-- above ran after 0019 too, without client_id: the owner's own session
+-- still does all of it.
+-- ---------------------------------------------------------------------------
+-- Each guarded function is exactly as it stood before 0019, plus its guard as
+-- the first statement, with the same settings and grants.
+do $$
+declare
+  r     record;
+  p     record;
+  guard text;
+  at    int;
+  n     int := 0;
+begin
+  for r in select * from verify.guarded_before loop
+    select prosrc, prosecdef, provolatile, proconfig, proacl::text as acl into p
+      from pg_proc where oid = r.fn::regprocedure;
+    guard := case r.lang when 'sql' then E'\n  select public._not_an_ai_app();' else E'\n  perform public._not_an_ai_app();' end;
+    at := case r.lang when 'sql' then 1 else strpos(r.prosrc, E'\nbegin\n') + 6 end;
+    if strpos(p.prosrc, guard) <> at or replace(p.prosrc, guard, '') <> r.prosrc then
+      raise exception '% is not its old body plus the guard as its first statement', r.fn;
+    end if;
+    if (p.prosecdef, p.provolatile, p.proconfig, p.acl) is distinct from (r.prosecdef, r.provolatile, r.proconfig, r.acl) then
+      raise exception '% changed its settings or grants', r.fn;
+    end if;
+    n := n + 1;
+  end loop;
+  if n <> 11 then raise exception '% functions were guarded, not the 11 the browser could call', n; end if;
+  -- And any such function added later must carry the guard too.
+  select count(*) into n from pg_proc
+   where pronamespace = 'public'::regnamespace and prosecdef and proname <> '_not_an_ai_app'
+     and has_function_privilege('authenticated', oid, 'execute')
+     and strpos(prosrc, 'public._not_an_ai_app();') = 0;
+  if n <> 0 then raise exception '% SECURITY DEFINER functions the browser may call have no guard', n; end if;
+  if has_function_privilege('anon', 'public._not_an_ai_app()', 'execute') then
+    raise exception 'the anonymous role can call _not_an_ai_app';
+  end if;
+  raise notice 'every function the browser may call refuses an AI app first, and is otherwise unchanged';
+end $$;
+
+-- A receipt of the first user's, written as the superuser.
+insert into storage.objects (bucket_id, name, owner)
+  values ('receipts', '11111111-1111-4111-8111-111111111111/r.jpg', '11111111-1111-4111-8111-111111111111');
+
+-- As a signed-in browser: every guarded function refuses an AI app before
+-- it reads a single argument, and no receipt is read or written.
+grant usage on schema verify to app_user;
+grant select on verify.guarded_before to app_user;
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+do $$
+declare
+  owner_ text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated"}';
+  ai_app text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999"}';
+  r record;
+  n int;
+begin
+  perform set_config('request.jwt.claims', owner_, true);
+  perform public._not_an_ai_app();
+  select count(*) into n from storage.objects where bucket_id = 'receipts';
+  if n <> 1 then raise exception 'the owner sees % receipts, not 1', n; end if;
+
+  perform set_config('request.jwt.claims', ai_app, true);
+  for r in
+    select g.fn, format('select %s(%s)', p.oid::regproc,
+             (select string_agg('null::' || format_type(t, null), ', ') from unnest(p.proargtypes) t)) as call
+      from verify.guarded_before g join pg_proc p on p.oid = g.fn::regprocedure
+  loop
+    begin
+      execute r.call;
+      raise exception 'NOT REFUSED: an AI app called %', r.fn;
+    exception when insufficient_privilege then
+      if sqlerrm <> 'AI apps cannot do this' then raise exception '% refused an AI app for another reason: %', r.fn, sqlerrm; end if;
+    end;
+  end loop;
+  select count(*) into n from storage.objects;
+  if n <> 0 then raise exception 'NOT REFUSED: an AI app read % receipts', n; end if;
+  begin
+    insert into storage.objects (bucket_id, name) values ('receipts', '11111111-1111-4111-8111-111111111111/x.jpg');
+    raise exception 'NOT REFUSED: an AI app stored a receipt';
+  exception when insufficient_privilege then null;
+  end;
+  raise notice 'an AI app can run none of the browser''s functions, and never sees a receipt';
+end $$;
+reset role;
+
+-- Every table, as a role holding every grant, so that row-level security
+-- alone decides: an AI app inserts, updates and deletes nothing, and the
+-- owner's own session, on the same rows, is not stopped by it. The first
+-- user's AI use, rest and check-in answer, written as the superuser: the
+-- three tables with none of theirs left by now.
+insert into public.ai_usage (user_id, day, provider, model, task, attempts) values
+  ('11111111-1111-4111-8111-111111111111', '2026-09-30', 'gemini', 'm', 'test', 1);
+insert into public.ai_provider_state (user_id, provider, model, last_code) values
+  ('11111111-1111-4111-8111-111111111111', 'gemini', 'm', 'ok');
+insert into public.coach_answers (user_id, transaction_id, answer, asked_week)
+  select user_id, id, 'planned', '2026-09-28' from public.transactions
+   where user_id = '11111111-1111-4111-8111-111111111111' limit 1;
+create role wide_user nologin;
+grant authenticated to wide_user;
+grant all on all tables in schema public to wide_user;
+set role wide_user;
+do $$
+declare
+  owner_ text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated"}';
+  ai_app text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999"}';
+  writes text[] := array[
+    'insert into public.%1$I select * from public.%1$I where user_id = auth.uid() limit 1',
+    'update public.%1$I set user_id = user_id where user_id = auth.uid()',
+    'delete from public.%1$I where user_id = auth.uid()'];
+  t text;
+  w text;
+  n int;
+begin
+  for t in select tablename from pg_tables where schemaname = 'public' order by tablename loop
+    perform set_config('request.jwt.claims', ai_app, true);
+    execute format('select count(*) from public.%I where user_id = auth.uid()', t) into n;
+    if n = 0 then raise exception 'the first user has no % row to try writing', t; end if;
+    begin
+      execute format(writes[1], t);
+      raise exception 'NOT REFUSED: an AI app inserted into %', t;
+    exception when insufficient_privilege then
+      if sqlerrm not like 'new row violates row-level security policy%' then raise; end if;
+    end;
+    foreach w in array writes[2:3] loop
+      execute format(w, t);
+      get diagnostics n = row_count;
+      if n <> 0 then raise exception 'NOT REFUSED: an AI app changed % rows of %: %', n, t, w; end if;
+    end loop;
+
+    -- The owner, each write undone: a duplicate, a trigger or a foreign key
+    -- may stop it, but never row-level security.
+    perform set_config('request.jwt.claims', owner_, true);
+    foreach w in array writes loop
+      begin
+        execute format(w, t);
+        get diagnostics n = row_count;
+        if n = 0 then raise exception 'the owner changed no row of %: %', t, w using errcode = 'UN001'; end if;
+        raise exception 'undo' using errcode = 'UN000';
+      exception
+        when sqlstate 'UN000' then null;
+        when sqlstate 'UN001' then raise;
+        when insufficient_privilege then raise exception 'row-level security stopped the owner on %: %', t, sqlerrm;
+        when others then null;
+      end;
+    end loop;
+  end loop;
+  raise notice 'an AI app writes no row of any table, and the owner still can';
+end $$;
+reset role;
+
+-- 0019 refuses to run before 0018, whose functions it re-creates: pasted
+-- first, a later 0018 would silently take the guards away. Its own check,
+-- taken from the file, run with 0018's function gone, then put back.
+\set paste_check `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0019_ai_apps_cannot_write.sql`
+begin;
+drop function public.clear_candidate_suggestion(uuid);
+set local verify.paste_check = :'paste_check';
+do $$
+begin
+  if strpos(current_setting('verify.paste_check'), 'Paste 0018 first') = 0 then
+    raise exception 'the paste-order check was not found in 0019';
+  end if;
+  begin
+    execute current_setting('verify.paste_check');
+    raise exception 'NOT REFUSED: 0019 ran without 0018';
+  exception when raise_exception then
+    if sqlerrm not like 'Paste 0018 first%' then raise; end if;
+  end;
+  raise notice '0019 says to paste 0018 first when it is missing';
+end $$;
+rollback;

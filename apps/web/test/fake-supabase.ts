@@ -216,6 +216,8 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     // 0018: answered by suggest() and clearSuggestion() below.
     suggest_candidate_categories: 0,
     clear_candidate_suggestion: false,
+    // 0019: returns nothing for the owner's own session.
+    _not_an_ai_app: null,
   }
   const failures = new Map<string, string>()
   const server: FakeSupabase['server'] = { refuse: null, maxRows: null, afterRead: null, hold: null, lacks: {}, offline: false }
