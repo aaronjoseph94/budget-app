@@ -171,8 +171,10 @@ export function Shell() {
             <TopBar screen={screen} param={param} folded={sidebar.folded} onFold={() => sidebar.setFolded(!sidebar.folded)} onSearch={openHelpSearch} />
             {/* A 16 px gutter, 12 below 360 px (plan §9): at 320 the Month's
               tables were 18 px wider than their cards (N66). Every band that
-              bleeds to the edge takes back the same (-mx-4, and -mx-3 there). */}
-            <main ref={main} id="main" tabIndex={-1} className={cn('pt-screen pb-safe mx-auto w-full px-4 outline-none max-[359px]:px-3 md:pb-12', width)}>
+              bleeds to the edge takes back the same (-mx-4, and -mx-3 there).
+              Beside the sidebar, from 1024 px, Mockup A's 28 px content padding;
+              the rail's narrower panel keeps 16, where the Month's tables fit. */}
+            <main ref={main} id="main" tabIndex={-1} className={cn('pt-screen pb-safe mx-auto w-full px-4 outline-none max-[359px]:px-3 md:pb-12 lg:px-7', width)}>
               <OfflineBanner />
               {loadError !== null ? (
                 <div className="mb-4 space-y-2">

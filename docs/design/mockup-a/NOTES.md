@@ -530,6 +530,12 @@ the fixes below; every touch target is 44px or sits in a 44px label.
 - **Getting started's lit step** takes `canvas-muted` on its tint, as
   every other tinted surface does.
 - **31 unused tokens removed** (N129), with their contrast rows.
+- **Content padding 28px beside the sidebar** (review of the sweep): the
+  page kept its 16px phone gutter at every width, so from 1024px the
+  content sat 12px left of the top bar and of the mockup's 28px (README
+  spacing). The rail's panel, 768 to 1023px, keeps 16, where the Month's
+  Variable table fits its card; the Forecast's month table lost 4px
+  between columns so it fits its card at 1280.
 - **N127 stays open:** chart text is one shared constant (see its entry).
   N124 and N128 were already settled.
 

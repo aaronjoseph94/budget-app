@@ -134,6 +134,10 @@ describe('the gutter below 360 px', () => {
     expect(app).toMatch(/pt-screen pb-safe mx-auto w-full px-4 [^']*max-\[359px\]:px-3/)
   })
 
+  it('is 28 px beside the sidebar from 1024 px, Mockup A content padding', () => {
+    expect(app).toMatch(/pt-screen pb-safe mx-auto w-full px-4 [^']*lg:px-7/)
+  })
+
   it('is taken back exactly by every band that bleeds to the edge', () => {
     const offenders = Object.entries(sources).flatMap(([path, text]) =>
       [...text.matchAll(/(["'`])([^"'`]*)\1/g)]

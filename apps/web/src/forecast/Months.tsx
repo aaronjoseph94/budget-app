@@ -59,7 +59,7 @@ export function MonthsAheadCard({ ahead, bars, names }: { ahead: CashFlowAhead; 
                 <span className="sr-only">What</span>
               </th>
               {ahead.months.map((m) => (
-                <th key={m.month} scope="col" className="whitespace-nowrap py-2 pl-3 text-right font-medium">
+                <th key={m.month} scope="col" className="whitespace-nowrap py-2 pl-2 text-right font-medium">
                   {formatShortMonth(m.month)}
                 </th>
               ))}
@@ -103,7 +103,7 @@ function Line({ label, cells, strong = false }: { label: string; cells: readonly
         {label}
       </th>
       {cells.map((c, i) => (
-        <td key={i} className={`tnum whitespace-nowrap py-2 pl-3 text-right${strong ? ' font-semibold' : ''}`}>
+        <td key={i} className={`tnum whitespace-nowrap py-2 pl-2 text-right${strong ? ' font-semibold' : ''}`}>
           {c}
         </td>
       ))}
