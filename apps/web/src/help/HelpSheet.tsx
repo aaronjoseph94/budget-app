@@ -19,7 +19,7 @@ export function HelpSheet({ topic, onClose }: { topic: HelpTopic; onClose: () =>
         {article === undefined ? null : <ArticleBody article={article} />}
         <a
           href={hashOf({ screen: 'help', param: topic })}
-          className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90"
+          className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
           Show me
         </a>
@@ -27,7 +27,7 @@ export function HelpSheet({ topic, onClose }: { topic: HelpTopic; onClose: () =>
         {topic === 'ask' ? null : (
           <a
             href={hashOf({ screen: 'ask', param: topic })}
-            className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-md border bg-card px-4 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground"
+            className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-md border bg-card px-4 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
           >
             <span aria-hidden="true">✨</span> Ask about this
           </a>

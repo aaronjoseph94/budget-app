@@ -66,7 +66,7 @@ export function MoreScreen() {
           <h2 id={idOf(group.title)} className="px-1 text-sm font-medium text-muted-foreground">
             {group.title}
           </h2>
-          <ul className="divide-y overflow-hidden rounded-xl border bg-card shadow-sm">
+          <ul className="divide-y overflow-hidden rounded-xl border bg-card">
             {group.items.map((item) => (
               <li key={item.screen}>
                 {/* A link to the screen's address, so it can open in a new tab (FE-20). */}

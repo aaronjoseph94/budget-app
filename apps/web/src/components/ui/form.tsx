@@ -11,7 +11,7 @@ import { cn } from '../../lib/cn.js'
 // No height or horizontal padding here: those vary by use, and a caller must
 // never have to override a base class (see lib/cn.ts).
 const FIELD =
-  'flex w-full rounded-md border border-input bg-card py-2 text-base shadow-xs transition-colors ' +
+  'flex w-full rounded-md border border-input bg-card py-2 text-base transition-colors ' +
   'placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] ' +
   'focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 pointer-coarse:min-h-11'
 

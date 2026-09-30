@@ -294,7 +294,7 @@ export function MonthScreen({ month }: { month: string | null }) {
       {/* A first run: six empty blocks each saying "Add one in Setup" left
         the first step unsaid, so it is said once, here. */}
       {version > 0 && categories.length === 0 ? (
-        <section aria-label="Start here" className="rounded-xl border bg-card p-4 shadow-sm">
+        <section aria-label="Start here" className="rounded-xl border bg-card p-4">
           <p className="text-sm">
             New here? Getting started sets up your lists, pay, bills and goals one step at a time, a few minutes each.
           </p>

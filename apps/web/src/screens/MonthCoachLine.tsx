@@ -42,7 +42,7 @@ export default function MonthCoachLine({ read, categories }: { read: DigestRows;
       <button
         type="button"
         onClick={() => navigate('coach')}
-        className="flex min-h-11 w-full items-center gap-3 rounded-xl border bg-card px-4 py-3 text-left text-sm shadow-sm transition-colors hover:bg-accent"
+        className="flex min-h-11 w-full items-center gap-3 rounded-xl border bg-card px-4 py-3 text-left text-sm transition-colors hover:bg-accent"
       >
         <span aria-live="polite" className="min-w-0 flex-1 [overflow-wrap:anywhere]">
           <span key={words.ai ? 'ai' : 'own'} className={words.ai ? 'words-in' : undefined}>

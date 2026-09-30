@@ -60,3 +60,16 @@ describe('Mockup A is flat', () => {
     expect([...screen.getByTestId('card').classList].filter((c) => c.startsWith('shadow'))).toEqual([])
   })
 })
+
+// Every shadow left in the app is one the mockup draws: the sign-in card,
+// the sheet over the page, and the chosen segment of a segmented control.
+describe('Mockup A has three shadows', () => {
+  it('uses no shadow class anywhere else', () => {
+    const sources = import.meta.glob('../src/**/*.tsx', { query: '?raw', import: 'default', eager: true })
+    const allowed = new Set(['../src/auth.tsx', '../src/components/ui/sheet.tsx', '../src/screens/ReportsScreen.tsx', '../src/screens/PeriodSwitch.tsx', '../src/screens/AddScreen.tsx'])
+    const shadowed = Object.entries(sources)
+      .filter(([file, text]) => !allowed.has(file) && /\bshadow-(?!none\b)[\w[]/.test(String(text)))
+      .map(([file]) => file)
+    expect(shadowed).toEqual([])
+  })
+})
