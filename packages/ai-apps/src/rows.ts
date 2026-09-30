@@ -10,6 +10,7 @@ import {
   historyStart,
   isoDate,
   type BudgetHistoryRow,
+  type IncomeSchedule,
   type MonthSheetInput,
   type PeriodCategory,
   type PeriodEntry,
@@ -94,6 +95,12 @@ export function entriesFrom(rows: readonly LedgerRow[]): PeriodEntry[] {
   return rows.map((r) => ({ postedOn: isoDate(r.posted_on), amountCents: r.amount_cents, categoryId: r.category_id }))
 }
 
+/** When each income source is paid, as the forecast reads it (F29). */
+export function schedulesFrom(part: unknown): IncomeSchedule[] {
+  type Row = { category_id: string; first_pay_date: string; frequency: IncomeSchedule['frequency'] }
+  return (listOf(part) as readonly Row[]).map((s) => ({ categoryId: s.category_id, firstPayDate: isoDate(s.first_pay_date), frequency: s.frequency }))
+}
+
 /** The starting balance typed for the month beginning `month`, or null: never another month's (D17). */
 export function balanceFor(part: unknown, month: string): number | null {
   const row = (listOf(part) as readonly { month: string; starting_balance_cents: number }[]).find((m) => m.month === month)
@@ -109,6 +116,11 @@ export function recordsFrom(part: unknown): { readonly historyStart: IsoDate | n
     historyStart: historyStart({ statementPeriodStarts: dates(r.statement_start), entryDates: dates(r.first_entry) }).start,
     statementEnds: dates(r.statement_end),
   }
+}
+
+/** The waiting rows dated inside [from, to]: a count of rows, never of money. */
+export function pendingIn(part: unknown, from: string, to: string): number {
+  return (listOf(part) as readonly string[]).filter((d) => d >= from && d <= to).length
 }
 
 /** An `ai_app_read` answer: each part as the database gave it. */

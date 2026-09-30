@@ -13,6 +13,7 @@ import { MCP_SERVER_VERSION } from '@budget/schema'
 import type { Project } from './auth.js'
 import type { Caller } from './rpc.js'
 import { registerListCategories } from './tools/categories.js'
+import { registerGetPeriod } from './tools/period.js'
 
 /** What every client reads first; the first 512 characters stand on their own. */
 export const INSTRUCTIONS =
@@ -31,7 +32,7 @@ export function callerOf(auth: AuthInfo | undefined): Caller | null {
 }
 
 /** The tools, in the order `tools/list` gives them. */
-export const TOOLS: readonly ((server: McpServer, caller: Caller | null) => void)[] = [registerListCategories]
+export const TOOLS: readonly ((server: McpServer, caller: Caller | null) => void)[] = [registerListCategories, registerGetPeriod]
 
 /** A fresh server for one request: nothing is kept between calls. */
 export function budgetServer(ctx?: McpRequestContext): McpServer {

@@ -35,3 +35,13 @@ export const ListCategoriesInputSchema = z.object({}).strict()
 
 /** Something the owner said, for `add_note`, read as Just type it reads it. */
 export const NoteTextSchema = z.string().trim().max(300).pipe(IngestedTextSchema)
+
+/** `get_period`: `date` picks the period holding that day, the owner's today when left out. */
+export const GetPeriodInputSchema = z
+  .object({
+    period: z.enum(['month']).default('month'),
+    date: z.iso.date().optional(),
+    list: ListSchema.optional(),
+    categories: z.array(NameSchema).min(1).max(10).optional(),
+  })
+  .strict()

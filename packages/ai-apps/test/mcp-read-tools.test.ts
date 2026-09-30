@@ -30,6 +30,7 @@ describe('tools/list', () => {
         annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
         _meta: { securitySchemes: [{ type: 'oauth2' }] },
       },
+      { name: 'get_period', annotations: { readOnlyHint: true }, _meta: { securitySchemes: [{ type: 'oauth2' }] } },
     ])
   })
 })
