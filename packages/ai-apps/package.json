@@ -8,6 +8,7 @@
   "types": "./src/handle.ts",
   "exports": { ".": "./src/handle.ts", "./build": "./build.ts", "./rows": "./src/rows.ts" },
   "dependencies": {
+    "@budget/core": "workspace:*",
     "@budget/money-primitives": "workspace:*",
     "@budget/schema": "workspace:*",
     "@modelcontextprotocol/server": "2.2.0",

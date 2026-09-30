@@ -1,13 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import { categoriesFrom } from '@budget/ai-apps/rows'
-import { listCategories, type Category } from '../src/ledger.js'
-import { createFakeSupabase } from './fake-supabase.js'
+import { isoDate, monthSheet, weekSheet } from '@budget/core'
+import { categoriesFrom, monthSheetInput, weekSheetInput } from '@budget/ai-apps/rows'
+import {
+  getMonthBalance,
+  latestStatementEnd,
+  listBudgetHistory,
+  listCategories,
+  listPlanHistory,
+  listTransactions,
+  type Category,
+} from '../src/ledger.js'
+import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore, weekCategoriesForCore } from '../src/sheet-input.js'
+import { createFakeSupabase, type FakeTables } from './fake-supabase.js'
 
 /**
  * The AI apps server renames the database's rows for the engine exactly as
  * the app does (MCP PLAN §2.4), so a chat cannot quote a figure the screen
  * does not show. Each case gives both the same rows, in the order the
- * database returns them, and requires the same result.
+ * database returns them, and requires the same engine input and output.
  */
 describe('the AI apps server reads rows as the app does', () => {
   it('categories', async () => {
@@ -21,5 +31,102 @@ describe('the AI apps server reads rows as the app does', () => {
     const app = await listCategories(createFakeSupabase({ categories: rows }).client)
     expect(categoriesFrom(JSON.parse(JSON.stringify(rows)))).toEqual(app)
     expect(app).toHaveLength(4)
+  })
+
+  // One owner's September 2026, and a week across its end.
+  const tables: Partial<FakeTables> = {
+    categories: [
+      { id: 'pay', name: 'Pay', kind: 'income', sort_order: 0, weekly_budget_cents: 60000 },
+      { id: 'food', name: 'Groceries', kind: 'variable', sort_order: 0, weekly_budget_cents: 15000 },
+      { id: 'rent', name: 'Rent', kind: 'bill', sort_order: 0, weekly_budget_cents: null },
+      { id: 'fund', name: 'Trip fund', kind: 'savings', sort_order: 0, weekly_budget_cents: 5000 },
+      { id: 'card', name: 'Card payments', kind: 'transfer', sort_order: 0, weekly_budget_cents: null },
+    ],
+    category_budgets: [
+      { id: 'b1', category_id: 'food', month: '2026-08-01', applies: 'onward', budget_cents: 60000 },
+      { id: 'b2', category_id: 'food', month: '2026-09-01', applies: 'only', budget_cents: 55000 },
+      { id: 'b3', category_id: 'pay', month: '2026-01-01', applies: 'onward', budget_cents: 250000 },
+    ],
+    category_plans: [
+      { id: 'p1', category_id: 'rent', effective_month: '2026-01-01', planned_cents: 120000, due_day: 1 },
+      { id: 'p2', category_id: 'rent', effective_month: '2026-10-01', planned_cents: 125000, due_day: 1 },
+    ],
+    month_balances: [
+      { id: 'm1', month: '2026-08-01', starting_balance_cents: 90000 },
+      { id: 'm2', month: '2026-09-01', starting_balance_cents: 100000 },
+    ],
+    transactions: [
+      { id: 't1', posted_on: '2026-09-02', amount_cents: -4520, merchant_raw: 'FRESHCO 1234', category_id: 'food', source: 'card_csv' },
+      { id: 't2', posted_on: '2026-09-15', amount_cents: 250000, merchant_raw: 'PAYROLL', category_id: 'pay', source: 'typed' },
+      { id: 't3', posted_on: '2026-09-29', amount_cents: -1275, merchant_raw: 'FRESHCO 1234', category_id: 'food', source: 'ai_app' },
+      { id: 't4', posted_on: '2026-09-30', amount_cents: 50000, merchant_raw: 'PAYMENT THANK YOU', category_id: 'card', source: 'card_csv' },
+      { id: 't5', posted_on: '2026-10-02', amount_cents: -2000, merchant_raw: 'FRESHCO 1234', category_id: 'food', source: 'card_csv' },
+    ],
+    ingest_batches: [
+      { id: 'i1', source: 'card_csv', created_at: '2026-09-20T12:00:00Z', period_start: '2026-08-08', period_end: '2026-09-07' },
+      { id: 'i2', source: 'card_csv', created_at: '2026-10-05T12:00:00Z', period_start: '2026-09-08', period_end: '2026-10-07' },
+    ],
+  }
+
+  /** What ai_app_read answers for the same rows, in its order, through JSON as PostgREST sends it. */
+  const read = JSON.parse(
+    JSON.stringify({
+      today: '2026-09-30',
+      categories: [...(tables.categories ?? [])].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)),
+      budgets: [...(tables.category_budgets ?? [])].sort((a, b) => a.month.localeCompare(b.month) || a.id.localeCompare(b.id)),
+      plans: [...(tables.category_plans ?? [])].sort((a, b) => a.effective_month.localeCompare(b.effective_month) || a.id.localeCompare(b.id)),
+      txns: [...(tables.transactions ?? [])].sort((a, b) => b.posted_on.localeCompare(a.posted_on) || a.id.localeCompare(b.id)),
+      balances: tables.month_balances,
+      records: { statement_start: '2026-08-08', statement_end: '2026-10-07', first_entry: '2026-09-02' },
+    }),
+  ) as Record<string, unknown>
+
+  // The server reads the months either side (its window); the screens read
+  // their own period, and what was typed up to it. So each case checks the
+  // renaming on the same rows, and the figures against the screen's own read.
+  const WINDOW = { from: '2026-08-01', to: '2026-10-31' }
+
+  async function monthAsTheApp(through: string, range: { from: string; to: string }) {
+    const supabase = createFakeSupabase(tables).client
+    const start = isoDate('2026-09-01')
+    return {
+      asOf: start,
+      categories: categoriesForCore(await listCategories(supabase)),
+      budgetHistory: budgetsForCore(await listBudgetHistory(supabase, through)),
+      planHistory: plansForCore(await listPlanHistory(supabase, through, 'month')),
+      entries: entriesForCore(await listTransactions(supabase, range)),
+      statementPeriodEnds: (await latestStatementEnd(supabase)).map((e) => isoDate(e)),
+      startingBalanceCents: await getMonthBalance(supabase, start),
+    }
+  }
+
+  it('the Month', async () => {
+    const server = monthSheetInput(read, isoDate('2026-09-01'))
+    expect(server).toEqual(await monthAsTheApp(WINDOW.to, WINDOW))
+    expect(server.budgetHistory).toHaveLength(3)
+    expect(server.startingBalanceCents).toBe(100000)
+    const screen = await monthAsTheApp('2026-09-01', { from: '2026-09-01', to: '2026-09-30' })
+    expect(monthSheet(server)).toEqual(monthSheet(screen))
+  })
+
+  async function weekAsTheApp(through: string, range: { from: string; to: string }) {
+    const supabase = createFakeSupabase(tables).client
+    return {
+      asOf: isoDate('2026-09-30'),
+      categories: weekCategoriesForCore(await listCategories(supabase)),
+      planHistory: plansForCore(await listPlanHistory(supabase, through, 'week')),
+      entries: entriesForCore(await listTransactions(supabase, range)),
+      statementPeriodEnds: (await latestStatementEnd(supabase)).map((e) => isoDate(e)),
+      startingBalanceCents: null,
+    }
+  }
+
+  it('the Week', async () => {
+    const server = weekSheetInput(read, isoDate('2026-09-30'))
+    expect(server).toEqual(await weekAsTheApp(WINDOW.to, WINDOW))
+    // Monday 28 September to Sunday 4 October: October's rent counts on the 1st.
+    const screen = await weekAsTheApp('2026-10-01', { from: '2026-09-28', to: '2026-10-04' })
+    expect(weekSheet(server)).toEqual(weekSheet(screen))
+    expect(weekSheet(server).blocks.bill.actualTotalCents).toBe(125000)
   })
 })

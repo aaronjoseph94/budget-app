@@ -3,5 +3,5 @@
   // Request, Response and fetch: web types, which Deno and Node share.
   "compilerOptions": { "outDir": "./dist", "rootDir": ".", "lib": ["ES2023", "DOM"] },
   "include": ["deno-env.d.ts", "build.ts", "src/**/*", "test/**/*"],
-  "references": [{ "path": "../money-primitives" }, { "path": "../schema" }]
+  "references": [{ "path": "../core" }, { "path": "../money-primitives" }, { "path": "../schema" }]
 }
