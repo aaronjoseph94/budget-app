@@ -1395,6 +1395,22 @@ created it in M9, and imported `packages/ai-apps` from
   dependencies; ADR 0012 holds the owner's acceptance in their own words
   before this commit lands (it is pending there today).
 
+- **As built (2026-09-30):** two commits, split at a file boundary to keep
+  each under 300 lines: first the package with `/mcp/health`, the origin
+  check, the 405s, `no-store`, `log.ts`, `deno.ts` and the gates
+  (`test/mcp-front.test.ts`; POST answered 501 until the SDK came, and
+  nothing could deploy it before M3); then the dependency commit, the SDK
+  alone, with `createMcpHandler` and `test/mcp-protocol.test.ts`. The
+  CAPABILITY-MAP row went first, as its own docs commit. The handler is
+  built once per instance, not per request (it holds no request's state;
+  the factory still builds a fresh server for every request), and the SDK
+  prints one fixed warning when it is built, that `responseMode: 'json'`
+  drops mid-call notifications: its own text, with no request content.
+  The SDK's 2025 replies carry `Cache-Control: no-cache`, so `handle`
+  rewrites every response's header to `no-store`. With no environment the
+  endpoint answers 503 `not_configured` (a code §2.6 did not list). The
+  `bad arguments → invalid params` case waits for M5b's first tool.
+
 ### M2b: The front door: discovery, the challenge and the token check
 
 - **Files:** `packages/ai-apps/src/handle.ts`, and `src/auth.ts` if

@@ -7,12 +7,15 @@
  * response says `Cache-Control: no-store`.
  *
  * Paths, as the function sees them:
- * - `POST /mcp`: the MCP endpoint (M2a's dependency commit brings the SDK
- *   that serves it). Any other method is 405.
+ * - `POST /mcp`: the MCP endpoint, served by the official SDK for both
+ *   protocol eras in use (2025's `initialize`; 2026-07-28's
+ *   `server/discover`), statelessly: a fresh server per request. Any other
+ *   method is 405.
  * - `GET /mcp/health`: `{ ok, version, tools }`, no token, CORS for the
  *   app's own origins only, so One-time updates can check the paste.
  */
 import { z } from 'zod'
+import { McpServer, createMcpHandler } from '@modelcontextprotocol/server'
 import { MCP_SERVER_VERSION } from '@budget/schema'
 import { log } from './log.js'
 
@@ -31,8 +34,26 @@ const EnvSchema = z.object({
 })
 export type Env = z.infer<typeof EnvSchema>
 
+/** The largest request body the server reads (PLAN §2.7). */
+export const MAX_BODY_BYTES = 64 * 1024
+
 /** The tools, in the order `tools/list` gives them. None yet (PLAN §3, M5b). */
-const TOOLS: readonly unknown[] = []
+const TOOLS: readonly ((server: McpServer) => void)[] = []
+
+function budgetServer(): McpServer {
+  const server = new McpServer({ name: 'budget', version: MCP_SERVER_VERSION }, { capabilities: { tools: {} } })
+  for (const register of TOOLS) register(server)
+  return server
+}
+
+// Built once per instance; it holds no request's state. The SDK's error
+// hook logs the code only: an error's message can carry a tool's arguments.
+const mcp = createMcpHandler(budgetServer, {
+  legacy: 'stateless',
+  responseMode: 'json',
+  maxRequestBodySize: MAX_BODY_BYTES,
+  onerror: () => log('sdk_error'),
+})
 
 function allowedOrigins(env: Env): Set<string> {
   return new Set([
@@ -83,7 +104,7 @@ async function route(req: Request, env: Env): Promise<Response> {
     log('not_configured')
     return json(503, { error: 'not_configured' })
   }
-  return json(501, { error: 'not_built' })
+  return mcp.fetch(req)
 }
 
 export async function handle(req: Request, rawEnv: Readonly<Record<string, string | undefined>>): Promise<Response> {

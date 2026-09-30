@@ -9,6 +9,7 @@
   "exports": { ".": "./src/handle.ts" },
   "dependencies": {
     "@budget/schema": "workspace:*",
+    "@modelcontextprotocol/server": "2.2.0",
     "zod": "4.6.5"
   }
 }

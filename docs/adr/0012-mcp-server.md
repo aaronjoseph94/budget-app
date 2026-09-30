@@ -71,6 +71,12 @@ As relayed in the brief of 2026-09-30:
 | Adding an npm dependency: `@modelcontextprotocol/server` | The engineer's message of 2026-09-30 named "One new code package, the official MCP toolkit … saying yes to this plan covers it"; the owner answered "Ok. How long will implementation take?" and, later, "auto-allow and say yes to everything" | **Confirmed 2026-09-30.** The engineering case is below |
 | Adding an LLM provider | Not needed | The server calls no model and holds no provider key: the owner's own AI app, on the owner's own subscription, is the model |
 
+**The dependency as added (M2a, 2026-09-30):** `@modelcontextprotocol/server`
+`2.2.0`, pinned exactly in `packages/ai-apps`, whose only dependencies are
+`zod ^4.2.0` (resolved to the workspace's 4.6.5, so the lockfile gains no
+second zod) and `@modelcontextprotocol/core` `2.2.0`, whose only dependency
+is zod; `pnpm audit --audit-level high` clean.
+
 Nothing else on the "Ask first" list is used: the dedupe hash's inputs do
 not change, no migration is destructive, no golden value or workbook figure
 moves.
