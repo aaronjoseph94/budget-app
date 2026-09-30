@@ -769,3 +769,263 @@ not the boundary; the database is:
   `to_regprocedure('public.clear_candidate_suggestion(uuid)')` exists, and
   0020 does the same for `public._not_an_ai_app()`.
 
+**Reads only through the gate (0020).** A RESTRICTIVE `select` policy on
+every public table, `to authenticated using ((select auth.jwt() ->>
+'client_id') is null or (select current_setting('budget.ai_app_read',
+true)) = 'on')`. The gate, having passed, sets that flag with
+`set_config('budget.ai_app_read', 'on', true)`: transaction-local, so it
+lasts for the one PostgREST request that called an `ai_app_*` function
+and no longer. A client cannot set it: PostgREST sets only its own
+`request.*` settings, and `set_config` is not in an exposed schema. The
+owner's browser (no `client_id`) is unaffected. So an AI app's token reads
+nothing directly, whether through PostgREST's table routes, GraphQL or
+Realtime, and every read it makes, through the server or not, is one the
+gate allowed and counted with the switch on. This replaces the first
+draft's `ai_apps_on()` policy, which let a token read every table
+directly, uncounted, whenever the switch was on.
+
+**One coupling, closed only on the server's side.** The gate and every
+guard read the same claim. If PostgREST did not pass `client_id` into
+`auth.jwt()` (K1, §2.14), the gate would refuse every tool
+(`not_an_ai_app`), so the server would visibly not work; but the
+restrictive policies would not bite either, so the AI app's token used
+directly would act as the owner's own session. HANDOFF's first-connection
+checklist (M12b) therefore says: if the first question answers "not an AI
+app", switch **Let AI apps connect** off and the OAuth server off, and
+report it.
+
+### 2.6 Logging
+
+One `log(code, counts)` helper in `packages/ai-apps/src/log.ts`, whose types
+admit a fixed code and numbers only; an eslint block allows `console`
+nowhere else in `packages/ai-apps/src` (the rule the functions already
+have). Codes: `auth_unreachable`, `auth_status`, `token_refused`
+(counts: which check), `origin_refused`, `rpc_unreachable`, `rpc_status`,
+`rpc_shape`, `records_unreadable`, `tool_<name>_<outcome>` (counts: `ms`,
+`rows`), `sdk_error` (the SDK's `onerror` hook: the code only, never the
+error's message, which can carry arguments). Never a token, a tool
+argument, a result, a shop or category name, an amount, a client's name, or
+a user id. The body of an error from Auth or PostgREST is never logged and
+never passed to the AI app: only its status and our code. A test puts a
+sentinel string in every argument, every row the fake database returns,
+every error body, the token and the client name, runs every tool and
+every error path, and fails if any sentinel reaches `console` or any
+sentinel from an error body reaches a response.
+
+**Outside our control:** Supabase's own function logs keep request
+metadata; whether that includes the `Authorization` header, and so a
+bearer token, is not documented (§4, §5.7).
+
+### 2.7 Limits
+
+| Limit | Value | Where |
+|---|---|---|
+| Reads a day, all AI apps together | 300 | the gate, per `(user_id, owner's day, 'read')` |
+| Adds a day, all AI apps together | 30 | the gate, per `(user_id, owner's day, 'add')`; an add also spends one read (its account lookup) |
+| Reads outside the server | none uncounted | 0020's read flag: a token reads a table only inside a gated `ai_app_*` call |
+| A new connection | Allow only within 15 minutes of **Connect a new AI app** | the consent page (§2.10) |
+| Request body | 64 KB | the SDK's `maxRequestBodySize` |
+| Each database or Auth call | 10 s timeout | `AbortSignal.timeout` |
+| A whole request | 20 s | the handler's deadline, far under the platform's 150 s |
+| Rows in a result | search 50, review 50, next 30 days 30, debt schedule 36 months, categories 200 | the tools' zod bounds and the RPCs' `limit` |
+| A search window | 3 years; totals over at most 5,000 matches | zod and `ai_app_search` |
+| A result's size | 24 KB of JSON | a last check trims trailing rows and sets `truncated: true`; tested with a large fixture |
+| Tool arguments | `what` 120, a note 300, names 60, lists of names 10 (3 for `get_spending`), `same_again` 9 | zod |
+
+### 2.8 Errors
+
+- **HTTP:** `401` with the challenge (no token, a token Auth refuses, wrong
+  `iss` or `role`); `403` with a plain message for a token without
+  `client_id` or a refused `Origin`; `405` for `GET` and `DELETE` on `/mcp`;
+  `413` past 64 KB; `503` when Auth or the database cannot be reached.
+- **Protocol:** unknown method `-32601`; arguments zod refuses are invalid
+  params (the SDK's mapping), with zod's message, which names the field and
+  never echoes the value.
+- **Tool results with `isError: true`**, one sentence the AI can pass on:
+
+| Code | Sentence |
+|---|---|
+| `ai_apps_off` | "AI apps are switched off in the budget app. The owner can turn them on in Settings → AI apps." |
+| `adding_off` | "Adding to Review is switched off in the budget app's Settings → AI apps." |
+| `limit_reached` | "Today's limit for AI apps is used up. It resets at midnight, the owner's time." |
+| `needs_update` | "The budget app needs a one-time update. The owner can open Help → One-time updates." (the RPC is missing: `PGRST202`; or the add function checks the hash at another version) |
+| `no_account` | "Open the budget app once so it can set up the card account, then try again." |
+| `unknown_category` | "There is no category called that. Call list_categories for the exact names." |
+| `bad_date` / `bad_amount` | "The date must be today or in the past year." / "The amount must be more than $0.00 and at most $100,000.00." |
+| `records_unreadable` | "The app could not read some of the records. The owner can open the app to see which." |
+| `server_error` | "Something went wrong in the budget app's server. Nothing was changed." |
+
+**A refused add is not a lost ingestion.** CLAUDE.md asks that every
+ingestion failure leave a visible Review row. An add is refused before
+anything is written, synchronously, with its reason, to the AI app, which
+shows it to the owner in the chat: the equivalent of the Add form refusing
+**Save**. Nothing half-written can exist (one SQL transaction), and every
+accepted add balances its batch's counts. This reading is recorded in ADR
+0012.
+
+### 2.9 The Settings panel
+
+A lazy `apps/web/src/ai-apps/AiAppsCard.tsx`, a new `Section` titled **AI
+apps** in `SettingsScreen.tsx`, backed by `apps/web/src/ai-apps/access.ts`:
+
+- **Let AI apps connect**, off by default. On upserts `ai_app_access` with
+  `enabled`, and `time_zone` from `Intl.DateTimeFormat().resolvedOptions()`.
+  Off stops every AI app at once (the gate refuses, so 0020's read flag is
+  never set).
+- **Let them add to Review**, on by default once connecting is on.
+- **The address** `${VITE_SUPABASE_URL}/functions/v1/mcp`, and **Connect a
+  new AI app**, which copies it and writes `ai_app_access.connect_until`
+  as the browser's own clock plus 15 minutes; the consent page offers
+  Allow only before that time (§2.10). Links to Help's **Connect Claude**
+  and **Connect ChatGPT** come with the articles in M12a, since a Help
+  link must name a topic that exists.
+- **Connected apps** from `supabase.auth.oauth.listGrants()`: each app's
+  name drawn as plain text (whoever registered it chose it), when it was
+  connected, and when it last asked something (`ai_app_last_use`). The
+  grant's `client.uri` and `client.logo_uri` are never drawn or fetched:
+  the registrant chose them too. **Disconnect**, after a confirmation,
+  calls `supabase.auth.oauth.revokeGrant({ clientId })`, which deletes
+  that app's sessions and refresh tokens. The confirmation says that an
+  hour-long access token the app already holds is refused by the server at
+  once, and that turning **Let AI apps connect** off also stops one used
+  anywhere else.
+- **When something is missing:** 0020 missing (`PGRST205`) shows the usual
+  "needs a one-time update → Help" line; the OAuth server off (the grants
+  call fails) shows "Sign-in for AI apps is not switched on in Supabase yet
+  → Help"; each fails on its own.
+- **Review** says where a row came from: source `ai_app` reads "Added by
+  Claude" (the grant's name, matched on the batch's `ai_client_id`) or
+  "Added by an AI app".
+
+### 2.10 The consent page
+
+Supabase sends the owner to **Site URL + Authorization Path**,
+`https://aaron-budget-app.pages.dev/oauth/consent?authorization_id=…`.
+
+- **Routing.** The app uses hash addresses (ADR 0003), so this is a real
+  path. Cloudflare Pages serves `index.html` for a path it has no file for
+  when the build has no `404.html`, and Netlify's `/*` rule does the same.
+  `apps/web/src/main.tsx` renders the lazy
+  `apps/web/src/ai-apps/ConsentScreen.tsx` when `location.pathname` is
+  `/oauth/consent`, **before** `restoreAddress` runs, so a remembered hash
+  cannot replace it. If Pages ever serves something else there, the build
+  emits a copy of `index.html` at `oauth/consent/index.html` instead (K7).
+- **Sign in first,** with the existing sign-in card. The password form works
+  as is; the email link must bring the owner back here, so the card takes
+  an optional return address and the consent page passes `location.href`
+  (today `auth.tsx` always sends `window.location.origin`). The card
+  accepts a return address only on the app's own origin (checked with
+  `new URL`), so it can never become an open redirect. The Redirect URLs
+  setting `https://aaron-budget-app.pages.dev/**` already allows it.
+- **Then** `supabase.auth.oauth.getAuthorizationDetails(id)`:
+  - A redirect-only reply (the owner already allowed this app, and Supabase
+    has already issued a code) is followed only if the same two checks as
+    Allow pass (the callback and the connect window, below); otherwise the
+    page says why and follows nothing.
+  - Otherwise the page shows: "**“{client name}”** wants to connect to
+    your budget", the name as plain text in quotes; "It will send you back
+    to **claude.ai**", the host of `redirect_uri` in bold (the MCP spec
+    requires the host shown); what it may do ("read your budget figures,
+    search your charges, and add items to Review; it cannot approve,
+    change or delete anything"); where data goes ("your budget details go
+    to the company that runs this AI app: Anthropic for Claude, OpenAI for
+    ChatGPT"); and "Only continue if you just pressed Connect in Claude or
+    ChatGPT yourself." The client's `uri` and `logo_uri` are never drawn or
+    fetched.
+- **The allowlist** (`apps/web/src/ai-apps/hosts.ts`) holds exact callback
+  addresses, not hosts, so no other page on an allowed host (an open
+  redirect, a page anyone can publish) can ever receive a code:
+  - `https://claude.ai/api/mcp/auth_callback` and
+    `https://claude.com/api/mcp/auth_callback` (Anthropic's documented
+    callback, and the one it says may replace it);
+  - `https://chatgpt.com/connector_platform_oauth_redirect` and
+    `https://chatgpt.com/connector/oauth/<id>`, `<id>` being 1–128
+    letters, digits, `-` or `_` (OpenAI's two documented callbacks; without
+    RFC 9207 support ChatGPT uses the second);
+  - `http://localhost`, `http://127.0.0.1` or `http://[::1]` with any port
+    and path (desktop tools), with an extra line: "This sends you to a
+    program on this computer. Any program on it could be listening; only
+    continue if you started this from a program you trust."
+  Parsed with `new URL`; the scheme, the host (lower-cased, no trailing
+  dot) and the path must match exactly, never by prefix, suffix or
+  substring; a registered address with a username, password, query or
+  fragment is refused. Adding a client's callback is a one-line change
+  with its test.
+- **Allow** appears only when all three hold: the callback is on the
+  allowlist; **Let AI apps connect** is on; and **Connect a new AI app**
+  was pressed less than 15 minutes ago (`connect_until`, read back and
+  compared with the browser's own clock). This is the answer to consent
+  phishing: a link someone else started (their own Claude account, their
+  own registered client) and sent to the owner finds no open window and
+  gets no Allow. Allow never turns AI apps on by itself (the first draft's
+  "Allow and turn on AI apps" made one click on such a link enough). It
+  calls `approveAuthorization(id, { skipBrowserRedirect: true })`,
+  requires the returned `redirect_url` to be the approved callback
+  followed by `?` and query parameters only, then `location.assign`s it.
+- **No open window:** "This connection wasn't started from the budget
+  app. If you are connecting Claude or ChatGPT yourself, open Settings →
+  AI apps, press Connect a new AI app, and press Connect in Claude or
+  ChatGPT again." and **Deny**.
+- **Any other callback** gets no Allow: "This app would send you to
+  **evil.example**, which is not Claude or ChatGPT, so the budget app
+  refused it." and **Deny**, which calls `denyAuthorization(id, {
+  skipBrowserRedirect: true })` and does not follow the `redirect_url` it
+  returns: following it would carry the browser to that unknown site, an
+  open redirect through the app. The page then says "Refused. You can
+  close this tab." **Deny** for an allowed callback does follow it, after
+  the same check as Allow's `redirect_url`, so Claude or ChatGPT learns
+  the owner said no.
+- **Expired** (Supabase keeps a pending request 10 minutes): "This request
+  has expired. Go back to Claude or ChatGPT and press Connect again."
+- **No cross-site forgery to defend:** approving needs the owner's session
+  token, which supabase-js sends from the page's own storage, not a cookie
+  a forged request would carry; the only way to approve is the owner
+  pressing Allow on this page, and the site's headers forbid framing
+  (`frame-ancestors 'none'`), so it cannot be clicked through another
+  site. Nothing on the page is drawn from the query string but the id,
+  which is only passed to Supabase, and referrers are never sent.
+
+### 2.11 Help articles
+
+Three new ids in `apps/web/src/help/topics.ts` (lowercase words and
+hyphens, no digit) and their articles in `articles.ts`, in the existing
+pattern: a summary, steps with **bold** button names, "You're done when…",
+"Stuck?", and related topics. `help-articles.test.ts` holds them to its
+rules.
+
+- **`ai-apps`, "Use Claude or ChatGPT with your budget":** what an AI app can
+  and cannot do; the limits; what goes to Anthropic or OpenAI; other
+  connectors in the same chat (§1); switching off (§1). Related:
+  `connect-claude`, `connect-chatgpt`, `ai-sees`, `review`, `updates`.
+- **`connect-claude`, "Connect Claude":** §1's five steps. Done: "Claude
+  answers 'How is my month going?' with your figures." Stuck: Free allows
+  one custom connector; choose **Register automatically**, not Claude's
+  published identity; if the connect page says the connection was not
+  started from the app, press **Connect a new AI app** and try again
+  within 15 minutes; if it says the request expired, press Connect again;
+  if Claude says it cannot reach the server, open One-time updates;
+  connect from a computer (the home-screen app on an iPhone keeps its own
+  sign-in); if the page names a host other than claude.ai, press Deny.
+- **`connect-chatgpt`, "Connect ChatGPT":** §1's five steps. Done: "ChatGPT
+  answers with your figures, and asks before it adds anything." Stuck:
+  Plus, Pro, Business, Enterprise or Edu, on the website only; Developer
+  mode must be on; the 15-minute window as for Claude; if sign-in fails,
+  One-time updates' signing-key step; if the page names a host other than
+  chatgpt.com, press Deny.
+- **One-time updates** gains, each in the slice that brings it: `0019` and
+  `0020`, each offered only once the one before it is in; `read-receipt`'s
+  new version as an optional **Copy** (M1b), with "or delete it"; "The AI
+  apps server" (`mcp-function.ts`, checked by fetching `/mcp/health` with
+  no token: 200 with the expected version is "in", an older version
+  "old", 404 "missing", the gateway's 401 "turn Enforce JWT verification
+  off"; its own clicks: name `mcp`, **Enforce JWT verification off**);
+  "Signing key" (the session token's `alg`, read locally; "sign out and in
+  again to re-check"; its clicks turn Verify JWT off for `ai` and
+  `read-receipt` first); "Sign-in for AI apps" (`GET
+  {SUPABASE_URL}/.well-known/oauth-authorization-server/auth/v1` answers
+  200 with a `registration_endpoint` and `S256` in
+  `code_challenge_methods_supported`, which ChatGPT requires, where it now
+  answers 404 `feature_disabled`; 200 without a `registration_endpoint`
+  is "turn on dynamic registration"; anything the browser cannot read is
+  "could not check", never "missing").
+
