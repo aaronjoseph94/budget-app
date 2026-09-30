@@ -105,10 +105,14 @@ try {
       failed = true
     }
   }
+  // Statements only: a line that starts an import or re-export, or an
+  // import() call. The file keeps the engine's comments, and a comment's
+  // words ("from "never set"") are not an import.
+  const IMPORTS = /^\s*(?:import|export)\b[^'";]*?\bfrom\s*["']([^"']+)["']|^\s*import\s*["']([^"']+)["']|\bimport\s*\(\s*["']([^"']+)["']/gm
   if (published.includes('mcp-function.ts')) {
     const server = readFileSync(join(setup, 'mcp-function.ts'), 'utf8')
     const pinned = ['npm:zod@4.6.5', 'npm:@modelcontextprotocol/server@2.2.0']
-    const imports = [...new Set([...server.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*)["']([^"']+)["']/g)].map((m) => m[1]))]
+    const imports = [...new Set([...server.matchAll(IMPORTS)].map((m) => m[1] ?? m[2] ?? m[3]))]
     const strays = imports.filter((i) => !pinned.includes(i))
     const keys = [...PROVIDER_HOSTS, 'service_role', 'secret_keys'].filter((k) => server.toLowerCase().includes(k))
     if (!server.startsWith('// mcp-function.ts — ') || strays.length > 0 || keys.length > 0) {

@@ -34,8 +34,12 @@ afterAll(() => {
   rmSync(out, { recursive: true, force: true })
 })
 
+// Statements only, as check-bundle.mjs reads them: the file keeps the
+// engine's comments, and a comment's words are not an import.
 const specifiers = (text: string) =>
-  [...text.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*)["']([^"']+)["']/g)].map((m) => m[1])
+  [...text.matchAll(/^\s*(?:import|export)\b[^'";]*?\bfrom\s*["']([^"']+)["']|^\s*import\s*["']([^"']+)["']|\bimport\s*\(\s*["']([^"']+)["']/gm)].map(
+    (m) => m[1] ?? m[2] ?? m[3],
+  )
 
 describe('the pasteable file', () => {
   it('opens with its banner, naming its version', () => {
