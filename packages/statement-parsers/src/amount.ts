@@ -166,3 +166,19 @@ export function applySignConvention(amount: Cents, convention: SignConvention): 
   // `negate` rather than `-amount`, so a zero does not become `-0`.
   return cents(negate(amount, true))
 }
+
+/**
+ * A dollar amount a person typed, as cents, or null if it is not one.
+ *
+ * "12.5", "12.50", "$1,234.00" and "1234" mean here exactly what they mean
+ * in a CSV: the missing cents are padded, then the statement parser reads
+ * it. The app's money fields and the AI apps server both read typed
+ * amounts through this, so the same words mean the same amount in both.
+ */
+export function parseTypedAmount(text: string): Cents | null {
+  const trimmed = text.trim().replace(/^\$/, '')
+  if (trimmed.length === 0) return null
+  const withCents = /\.\d{2}$/.test(trimmed) ? trimmed : /\.\d$/.test(trimmed) ? `${trimmed}0` : `${trimmed}.00`
+  const parsed = parseAmountToCents(withCents, US_AMOUNT_FORMAT)
+  return parsed.ok ? parsed.value : null
+}

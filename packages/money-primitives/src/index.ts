@@ -126,3 +126,5 @@ function utcMs(date: IsoDate): number {
   const [y, m, d] = date.split('-').map(Number) as [number, number, number]
   return Date.UTC(y, m - 1, d)
 }
+
+export { formatCents } from './format.js'

@@ -3,6 +3,7 @@ import { cents } from '@budget/money-primitives'
 import {
   US_AMOUNT_FORMAT,
   applySignConvention,
+  parseTypedAmount,
   parseAmountToCents,
   type AmountFormat,
 } from '../src/index.js'
@@ -157,5 +158,27 @@ describe('negative zero', () => {
       expect(result.ok === true && Object.is(result.value, 0)).toBe(true)
     }
     expect(Object.is(applySignConvention(cents(0), { kind: 'debit_positive' }), 0)).toBe(true)
+  })
+})
+
+// What a person types in the app's money fields, and what an AI app sends
+// as AmountText: the cents padded, then read as a statement's amount.
+describe('parseTypedAmount', () => {
+  it.each([
+    ['12.5', 1250],
+    ['12.50', 1250],
+    ['12', 1200],
+    ['$1,234.00', 123400],
+    ['1234', 123400],
+    ['  4.07 ', 407],
+    ['0.29', 29],
+    ['-5', -500],
+    ['0', 0],
+  ])('reads %s as %i cents', (text, expected) => {
+    expect(parseTypedAmount(text)).toBe(expected)
+  })
+
+  it.each(['', '   ', '$', 'abc', '12.345', '1.2.3', '12,5'])('reads %j as no amount', (text) => {
+    expect(parseTypedAmount(text)).toBeNull()
   })
 })

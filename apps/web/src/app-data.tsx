@@ -8,7 +8,7 @@
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { orderGoals, type PlacedGoal } from '@budget/core'
-import { US_AMOUNT_FORMAT, parseAmountToCents } from '@budget/statement-parsers'
+import { parseTypedAmount } from '@budget/statement-parsers'
 import {
   ensureAccount,
   listCategories,
@@ -164,17 +164,12 @@ function goalsInOrder(rows: readonly ListedGoalRow[]): { readonly goals: readonl
 
 /**
  * A dollar amount typed by a person, as cents — or null if it is not one.
- *
- * Parsed by the same function that reads statements, so "12.5", "12.50",
- * "$1,234.00" and "1234" mean here exactly what they mean in a CSV, and the
- * screen never does the arithmetic of turning dollars into cents itself.
+ * statement-parsers' parseTypedAmount, which the AI apps server reads
+ * amounts with too, so "12.5" means the same in both; the screen never
+ * does the arithmetic of turning dollars into cents itself.
  */
 export function parseMoneyInput(text: string): Cents | null {
-  const trimmed = text.trim().replace(/^\$/, '')
-  if (trimmed.length === 0) return null
-  const withCents = /\.\d{2}$/.test(trimmed) ? trimmed : /\.\d$/.test(trimmed) ? `${trimmed}0` : `${trimmed}.00`
-  const parsed = parseAmountToCents(withCents, US_AMOUNT_FORMAT)
-  return parsed.ok ? parsed.value : null
+  return parseTypedAmount(text)
 }
 
 /**

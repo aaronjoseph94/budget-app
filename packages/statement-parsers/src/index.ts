@@ -8,6 +8,7 @@ export {
   US_AMOUNT_FORMAT,
   applySignConvention,
   parseAmountToCents,
+  parseTypedAmount,
   type AmountFormat,
   type ParseOutcome,
   type SignConvention,

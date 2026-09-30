@@ -1,23 +1,11 @@
 /**
- * The one place money becomes a string.
- *
- * CLAUDE.md invariant 2 allows exactly one display helper, and this is it.
- * Everywhere else money is integer `Cents`.
- *
- * It formats from the integer directly rather than dividing by 100 first: a
- * division would hand the formatter a float, and the whole point of storing
- * minor units is that no float ever touches an amount.
+ * The one place money becomes a string: money-primitives' formatCents,
+ * re-exported, so the app and the AI apps server share exactly one display
+ * helper (CLAUDE.md invariant 2, ADR 0012).
  */
-const GROUPED = new Intl.NumberFormat('en-US')
+import { formatCents } from '@budget/money-primitives/format'
 
-export function formatCents(amountCents: number): string {
-  const negative = amountCents < 0
-  const magnitude = Math.abs(amountCents)
-  const whole = Math.floor(magnitude / 100)
-  const fraction = magnitude % 100
-  const body = `$${GROUPED.format(whole)}.${String(fraction).padStart(2, '0')}`
-  return negative ? `-${body}` : body
-}
+export { formatCents }
 
 /** `2025-03-04` as `4 Mar 2025`. Parsed by parts, never through Date. */
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
