@@ -1583,6 +1583,20 @@ created it in M9, and imported `packages/ai-apps` from
   and the Week's inputs (seen RED by dropping a budget row in one
   renaming); window invariance (seen RED by narrowing the month window by
   one month).
+- **As built (2026-09-30):** six commits, to stay under 300 lines each:
+  the Month's and the Week's renaming with their parity cases; the bundle
+  checks reading imports as statements (core's comments, now bundled,
+  held a quoted `from "…"`); the fake database shared between test files;
+  the month; the week; the window-invariance harness
+  (`test/four-years.ts`, `test/window-invariance.test.ts`), whose fake
+  cuts each dated part as 0020's SQL does. It sets the server's clock on
+  the other side of a month's end from the owner's today, both ways,
+  since that is where a short window shows: seen RED by narrowing the
+  window a month behind (four cases) and a month ahead (two). `standing`
+  is given on the four spending lists only (null on Income and Savings,
+  where more is better). The week reads no budgets, balances or schedules,
+  which the Week does not use; its `days_left` is given only for this
+  week, as the Week's header shows it.
 
 ### M5d: `get_period` for a pay period and a year, and comparisons
 
