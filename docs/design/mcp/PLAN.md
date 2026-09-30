@@ -1605,6 +1605,23 @@ created it in M9, and imported `packages/ai-apps` from
 - **Estimate:** about 220 lines.
 - **Done:** as M5c for a pay period, a year (N43's January start) and
   `compare`; `days_left` null for both.
+- **As built (2026-09-30):** three commits: the pay period, the year,
+  then comparisons (`src/tools/compare.ts`). A pay period follows `income`
+  (a Name), else the first income source with paydays in Setup's order,
+  and says `income` in `period`; with none, the new `no_pay_schedule`
+  sentence says where paydays are set. A year cannot give §2.4's
+  per-category rows, so it gives `categories: []`, each month's income,
+  spent and saved (`months`), yearSheet's top three (`top_spending`) and
+  F12's `left_over`, with `left_to_spend` null; each list's budget is the
+  Year's own (typed budgets only), and `imported_through` is the latest
+  statement's end, since yearSheet names none. A year's comparison names no
+  category either. `compared` is periodComparison's `before_records`
+  (with `records_start`) or `not_started` when there is no like-for-like
+  window. The window (`periodWindow`) is the month either side, a year's
+  every month of each calendar year the owner's day can fall in, and with
+  `compare` two months back for a month or pay period and a year more for
+  a year; each bound was seen RED one month (or a year) narrower in the
+  window-invariance test.
 
 ### M6a: `get_spending`
 

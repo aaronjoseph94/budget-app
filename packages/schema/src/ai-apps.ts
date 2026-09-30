@@ -47,5 +47,6 @@ export const GetPeriodInputSchema = z
     income: NameSchema.optional(),
     list: ListSchema.optional(),
     categories: z.array(NameSchema).min(1).max(10).optional(),
+    compare: z.boolean().default(true),
   })
   .strict()

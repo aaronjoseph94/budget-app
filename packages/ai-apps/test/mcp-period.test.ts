@@ -36,7 +36,7 @@ const $ = (cents: number, display: string) => ({ cents, display })
 
 describe('get_period', () => {
   it('gives the month as the Month shows it, reading the months either side', async () => {
-    const { result, rpcCalls } = await period({ date: '2026-09-30' })
+    const { result, rpcCalls } = await period({ date: '2026-09-30', compare: false })
     expect(JSON.parse(String(rpcCalls[0]?.init.body))).toEqual({
       p_parts: ['categories', 'budgets', 'plans', 'txns', 'balances', 'schedules', 'records', 'pending'],
       p_from: '2026-08-01',
@@ -115,7 +115,7 @@ describe('get_period', () => {
   }
 
   it('gives this pay period from the first income source’s paydays, as the Paycheck shows it', async () => {
-    const { result, rpcCalls } = await period({ period: 'pay_period', date: '2026-09-30', list: 'variable' }, PAID)
+    const { result, rpcCalls } = await period({ period: 'pay_period', date: '2026-09-30', list: 'variable', compare: false }, PAID)
     expect(JSON.parse(String(rpcCalls[0]?.init.body))).toEqual({
       p_parts: ['categories', 'budgets', 'plans', 'txns', 'schedules', 'records', 'pending'],
       p_from: '2026-08-01',
@@ -140,7 +140,7 @@ describe('get_period', () => {
   })
 
   it('gives the year from January as the Year shows it, with its months and top spending', async () => {
-    const { result, rpcCalls } = await period({ period: 'year', date: '2026-09-30' })
+    const { result, rpcCalls } = await period({ period: 'year', date: '2026-09-30', compare: false })
     expect(JSON.parse(String(rpcCalls[0]?.init.body))).toEqual({
       p_parts: ['categories', 'budgets', 'plans', 'txns', 'balances', 'records', 'pending'],
       p_from: '2026-01-01',
@@ -174,6 +174,54 @@ describe('get_period', () => {
     ])
     expect(out.categories).toEqual([])
     expect([out.imported_through, out.waiting_in_review]).toEqual(['2026-09-07', 4])
+  })
+
+  const change = (now: [number, string], before: [number, string], by: [number, string], bp: number | null, direction: string, meaning: string) => ({
+    now: $(...now), before: $(...before), change: $(...by), change_bp: bp, direction, meaning,
+  })
+
+  it('compares this month with the same days of August, reading one month further back', async () => {
+    const since = { ...READ, records: { ...READ.records, statement_start: '2026-07-01' } }
+    const { result, rpcCalls } = await period({ date: '2026-09-30', list: 'variable' }, since)
+    expect(JSON.parse(String(rpcCalls[0]?.init.body)).p_from).toBe('2026-07-01')
+    // 1 to 30 September against 1 to 30 August: August's 31st (9.99) is left out; its rent counts on the 1st.
+    expect((result.structuredContent as Record<string, unknown>).compared).toEqual({
+      status: 'compared',
+      same_days: true,
+      now: { from: '2026-09-01', to: '2026-09-30' },
+      before: { from: '2026-08-01', to: '2026-08-30' },
+      summary: {
+        // 57.95 more on 1,200.00 is 4.83 %, half-up.
+        spent: change([125795, '$1,257.95'], [120000, '$1,200.00'], [5795, '$57.95'], 483, 'more', 'watch'),
+        income: change([250000, '$2,500.00'], [0, '$0.00'], [250000, '$2,500.00'], null, 'more', 'good'),
+        saved: change([0, '$0.00'], [0, '$0.00'], [0, '$0.00'], null, 'same', 'neutral'),
+      },
+      lists: [{ list: 'variable', ...change([5795, '$57.95'], [0, '$0.00'], [5795, '$57.95'], null, 'more', 'watch') }],
+      categories: [{ name: 'Groceries', list: 'variable', ...change([5795, '$57.95'], [0, '$0.00'], [5795, '$57.95'], null, 'more', 'watch') }],
+    })
+  })
+
+  it('says when the period before starts before the records, and when a period has not begun', async () => {
+    const month = (await period({ date: '2026-09-30' })).result.structuredContent as Record<string, unknown>
+    expect(month.compared).toEqual({
+      status: 'before_records',
+      now: { from: '2026-09-01', to: '2026-09-30' },
+      before: { from: '2026-08-01', to: '2026-08-30' },
+      records_start: '2026-08-08',
+    })
+    const later = (await period({ period: 'week', date: '2026-10-07' })).result.structuredContent as Record<string, unknown>
+    expect(later.compared).toEqual({ status: 'not_started' })
+  })
+
+  it('gives a year’s comparison without categories', async () => {
+    const since = { ...READ, records: { ...READ.records, statement_start: '2025-01-01' } }
+    const { result, rpcCalls } = await period({ period: 'year', date: '2026-09-30', categories: ['Groceries'] }, since)
+    expect(JSON.parse(String(rpcCalls[0]?.init.body)).p_from).toBe('2025-01-01')
+    const out = (result.structuredContent as Record<string, unknown>).compared as Record<string, unknown>
+    // 1 January to 30 September, against the same days of 2025.
+    expect([out.status, out.now, out.before, out.categories]).toEqual([
+      'compared', { from: '2026-01-01', to: '2026-09-30' }, { from: '2025-01-01', to: '2025-09-30' }, [],
+    ])
   })
 
   it.each([
