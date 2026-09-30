@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { FIRST_FILE, HELPER_FILE, SERVER_FILE, UPDATES, checkUpdates, nextStep, type Checked } from '../src/help/updates.js'
+import { MCP_SERVER_VERSION } from '@budget/schema'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 
 const stateOf = (checked: readonly Checked[], prefix: string) => checked.find((c) => c.update.file.startsWith(prefix))?.state
@@ -124,7 +125,9 @@ describe('checking the one-time updates', () => {
     expect(missing(checked)).toEqual([['mcp-', 'missing']])
     expect(nextStep(checked)).toEqual({ kind: 'paste', file: SERVER_FILE, fromStart: false })
     const says = (version: unknown) => () => new Response(JSON.stringify({ ok: true, version, tools: 0 }), { headers: { 'content-type': 'application/json' } })
-    for (const [version, state] of [['2026-09-29.9', 'old'], [undefined, 'old'], ['2026-09-30.1', 'in'], ['2026-10-01.1', 'in']] as const) {
+    // Relative to MCP_SERVER_VERSION, so a bump does not break this case.
+    const [day, n] = MCP_SERVER_VERSION.split('.') as [string, string]
+    for (const [version, state] of [[`${day}.${Number(n) - 1}`, 'old'], ['2020-01-01.9', 'old'], [undefined, 'old'], [MCP_SERVER_VERSION, 'in'], [`${day}.${Number(n) + 1}`, 'in'], ['2999-01-01.1', 'in']] as const) {
       fake.functions.mcpHealth = says(version)
       expect([version, missing(await checkUpdates(fake.client))]).toEqual([version, state === 'old' ? [['mcp-', 'old']] : []])
     }

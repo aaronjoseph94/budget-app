@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { CALL_TIMEOUT_MS } from '../src/auth.js'
 import { DEADLINE_MS, handle } from '../src/handle.js'
 import { AI_APP_CLAIMS, AI_APP_TOKEN, CLIENT, ENV, PROJECT, fakeFetch, signedIn, tokenWith, type Respond } from './fake-auth.js'
 
@@ -88,6 +89,19 @@ describe('the token check', () => {
     expect(calls[0]?.init.redirect).toBe('error')
   })
 
+  it(`gives Auth ${CALL_TIMEOUT_MS / 1000} s, then lets the call go`, async () => {
+    expect(CALL_TIMEOUT_MS).toBe(10_000)
+    const timeout = vi.spyOn(AbortSignal, 'timeout')
+    try {
+      const { res, calls } = call(`Bearer ${AI_APP_TOKEN}`)
+      await res
+      expect(timeout).toHaveBeenCalledWith(CALL_TIMEOUT_MS)
+      expect(calls[0]?.init.signal).toBe(timeout.mock.results[0]?.value)
+    } finally {
+      timeout.mockRestore()
+    }
+  })
+
   it.each([
     ['Auth unreachable', () => Promise.reject(new TypeError('network'))],
     ['Auth failing', () => new Response('{}', { status: 500 })],
@@ -132,6 +146,7 @@ describe('the token check', () => {
 
 describe('the deadline', () => {
   it(`gives up after ${DEADLINE_MS / 1000} s`, async () => {
+    expect(DEADLINE_MS).toBe(20_000)
     vi.useFakeTimers()
     const { res } = call(`Bearer ${AI_APP_TOKEN}`, () => new Promise<Response>(() => undefined))
     await vi.advanceTimersByTimeAsync(DEADLINE_MS)
