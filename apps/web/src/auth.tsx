@@ -87,6 +87,11 @@ type Attempt =
 
 type Method = 'password' | 'link'
 
+/** Supabase's refusal to email a link to an address that has no account. */
+function isNoAccount(error: { readonly code?: string | undefined; readonly message: string }): boolean {
+  return error.code === 'otp_disabled' || error.code === 'signup_disabled' || /signups not allowed/i.test(error.message)
+}
+
 /**
  * Sign in, by password or by emailed link.
  *
@@ -130,8 +135,12 @@ export function SignIn({ supabase, linkRefused = false }: { supabase: SupabaseCl
       email: address,
       options: { emailRedirectTo: window.location.origin, shouldCreateUser: false },
     })
+    // An address with no account is refused by Supabase (no account is made
+    // and no email goes out), but showing that refusal would tell a stranger
+    // which addresses are registered. So it reads exactly as a sent link does,
+    // as the password form's single message does.
     setAttempt(
-      error === null
+      error === null || isNoAccount(error)
         ? { kind: 'link-sent', email: address }
         : { kind: 'failed', message: error.message },
     )
@@ -168,8 +177,8 @@ export function SignIn({ supabase, linkRefused = false }: { supabase: SupabaseCl
             <div>
               <h2 className="font-semibold">Check your email</h2>
               <p className="mt-2 text-sm">
-                A sign-in link is on its way to{' '}
-                <strong className="font-medium">{attempt.email}</strong>. Open it on this device, in
+                If <strong className="font-medium">{attempt.email}</strong> has an account here, a sign-in
+                link is on its way to it. Open it on this device, in
                 this same browser, and you are in. If you asked from the app on your Home Screen, sign in there with
                 your password instead: its links open in another browser.
               </p>

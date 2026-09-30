@@ -214,6 +214,12 @@ a fallback.
   Users →** the `⋯` on your row → **Reset password**, then **Sign out
   user** once: a sign-in link with a live token was pasted into a chat
   earlier.
+- **Stop strangers registering.** **Authentication → Sign In / Providers**
+  → turn **Allow new users to sign up** off → **Save**. The app already
+  asks Supabase never to make an account, but the public key in the web
+  page lets anyone ask Supabase directly; only this switch refuses them.
+  Then look in **Authentication → Users** and delete any row that is not
+  you. Add people later with **Add user** on that page.
 - **iPhone.** In Safari open the site → **Share → Add to Home Screen**.
   Remove an icon added before 2026-09-23 first (N24).
 
