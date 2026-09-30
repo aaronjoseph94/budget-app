@@ -6,7 +6,7 @@
   "sideEffects": false,
   "main": "./src/handle.ts",
   "types": "./src/handle.ts",
-  "exports": { ".": "./src/handle.ts", "./build": "./build.ts" },
+  "exports": { ".": "./src/handle.ts", "./build": "./build.ts", "./rows": "./src/rows.ts" },
   "dependencies": {
     "@budget/money-primitives": "workspace:*",
     "@budget/schema": "workspace:*",
