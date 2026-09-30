@@ -135,3 +135,19 @@ describe('LedgerScreen, in Mockup A (step 10)', () => {
     expect(stepper.textContent).toBe('Aug 2026')
   })
 })
+
+// How a row came in, where it was not a statement (0020's ai_app beside typed).
+describe('LedgerScreen, where a row came from', () => {
+  it('says added by hand or added by an AI app, and nothing on a statement row', async () => {
+    const fake = seeded()
+    fake.tables.transactions.push(
+      { id: 't4', posted_on: '2026-09-06', amount_cents: -450, merchant_raw: 'Coffee with Sam', category_id: 'c1', source: 'typed' },
+      { id: 't5', posted_on: '2026-09-07', amount_cents: -1250, merchant_raw: 'Lunch at Subway', category_id: 'c1', source: 'ai_app' },
+    )
+    await open(fake)
+
+    expect(rowOf('Coffee with Sam').getByText('added by hand')).toBeTruthy()
+    expect(rowOf('Lunch at Subway').getByText('added by an AI app')).toBeTruthy()
+    expect(rowOf('CORNER MARKET').queryByText(/added by/)).toBeNull()
+  })
+})

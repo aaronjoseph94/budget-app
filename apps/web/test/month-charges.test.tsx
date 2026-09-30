@@ -77,6 +77,23 @@ describe('Month row charges', () => {
     expect(document.querySelector('[role="dialog"] img')).toBeNull()
   })
 
+  it('says a charge was added by hand or by an AI app (0020)', async () => {
+    const fake = seeded()
+    fake.tables.transactions.push(
+      { ...tx('t4', '2026-09-14', -450, 'dining', 'Coffee with Sam'), source: 'typed' },
+      { ...tx('t5', '2026-09-15', -1250, 'dining', 'Lunch at Subway'), source: 'ai_app' },
+    )
+    renderScreen(<MonthScreen month="2026-09" />, fake)
+    await screen.findByRole('rowheader', { name: 'Restaurants' })
+
+    const sheet = openRow('Variable expenses', 'Restaurants')
+    expect(sheet.getAllByRole('listitem').map((li: HTMLElement) => li.textContent)).toEqual([
+      'Lunch at Subway15 Sep 2026 · added by an AI app-$12.50Move to…',
+      'Coffee with Sam14 Sep 2026 · added by hand-$4.50Move to…',
+      'TAILSPIN GRILL12 Sep 2026-$25.00Move to…',
+    ])
+  })
+
   it('opens from a tap anywhere on the row, and says so when nothing is filed there', async () => {
     renderScreen(<MonthScreen month="2026-09" />, seeded())
     const bills = within(await screen.findByRole('region', { name: 'Bills' }))
