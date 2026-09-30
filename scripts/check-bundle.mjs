@@ -13,6 +13,9 @@
 // 4. The one-time updates under setup/ (ADR 0007) are exactly every
 //    migration from 0015 on, the AI helper and read-receipt, each byte for byte as
 //    committed: nothing more is published, and nothing is changed on the way.
+//    Beside them, mcp-function.ts, the AI apps server built from
+//    packages/ai-apps (ADR 0012): it must open with its banner, import only
+//    the two pinned npm: packages, and name no service key and no AI host.
 // 5. The JavaScript a browser runs names no AI service's API host and no
 //    service-role key: every AI call goes through the `ai` helper (ADR 0004).
 //    setup/ is left out, since it is the functions' own source, and is never
@@ -91,7 +94,7 @@ try {
   ])
   const setup = join(out, 'setup')
   const published = existsSync(setup) ? readdirSync(setup).sort() : []
-  const wanted = [...sources.keys()].sort()
+  const wanted = [...sources.keys(), 'mcp-function.ts'].sort()
   if (published.join() !== wanted.join()) {
     console.log(`FAIL: setup/ holds ${published.join(', ') || 'nothing'}; it must hold exactly ${wanted.join(', ')}`)
     failed = true
@@ -99,6 +102,17 @@ try {
   for (const name of published.filter((n) => sources.has(n))) {
     if (!readFileSync(join(setup, name)).equals(readFileSync(sources.get(name)))) {
       console.log(`FAIL: setup/${name} is not byte for byte the committed file`)
+      failed = true
+    }
+  }
+  if (published.includes('mcp-function.ts')) {
+    const server = readFileSync(join(setup, 'mcp-function.ts'), 'utf8')
+    const pinned = ['npm:zod@4.6.5', 'npm:@modelcontextprotocol/server@2.2.0']
+    const imports = [...new Set([...server.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*)["']([^"']+)["']/g)].map((m) => m[1]))]
+    const strays = imports.filter((i) => !pinned.includes(i))
+    const keys = [...PROVIDER_HOSTS, 'service_role', 'secret_keys'].filter((k) => server.toLowerCase().includes(k))
+    if (!server.startsWith('// mcp-function.ts — ') || strays.length > 0 || keys.length > 0) {
+      console.log(`FAIL: setup/mcp-function.ts must open with its banner, import only ${pinned.join(' and ')}, and name no key or AI host; it imports ${strays.join(', ') || 'nothing else'} and names ${keys.join(', ') || 'none'}`)
       failed = true
     }
   }

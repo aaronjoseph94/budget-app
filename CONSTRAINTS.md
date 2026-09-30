@@ -55,7 +55,7 @@ whether a commit is clean.
 | Dependencies | Nothing high or above | `pnpm audit --audit-level high` | CI |
 | Web first load | The JavaScript a phone loads before the first screen (the entry and the chunks it preloads) ≤200 KB gzipped | `node scripts/check-bundle.mjs` | CI |
 | Edge Functions | Every `supabase/functions/*/index.ts` type-checks; imports zod alone, so it can be pasted as one file (its tests: the function, vitest, Node and `packages/schema`); uses `console` only inside its one `log(code, counts)` helper; and is tested to ≥80% lines and functions, ≥75% branches | `tsc --build` + `depcruise` + `eslint` + `vitest run --coverage` | every edit (coverage: CI) |
-| AI apps server | `packages/ai-apps` (ADR 0012) imports only `core`, `money-primitives`, `statement-parsers`, `schema`, zod and the official MCP SDK, and never the app; uses `console` only in `src/log.ts`, whose `log(code, counts)` takes a fixed code and numbers; and is tested to ≥80% lines and functions, ≥75% branches | `depcruise` + `eslint` + `vitest run --coverage` | every edit (coverage: CI) |
+| AI apps server | `packages/ai-apps` (ADR 0012) imports only `core`, `money-primitives`, `statement-parsers`, `schema`, zod and the official MCP SDK, and never the app; uses `console` only in `src/log.ts`, whose `log(code, counts)` takes a fixed code and numbers; and is tested to ≥80% lines and functions, ≥75% branches. The file built from it, `setup/mcp-function.ts`, imports only `npm:zod@4.6.5` and `npm:@modelcontextprotocol/server@2.2.0` and names no service key or AI host; only `apps/web/setup-files.ts` may import the package | `depcruise` + `eslint` + `vitest run --coverage` (`mcp-bundle.test.ts`) + `node scripts/check-bundle.mjs` | every edit (coverage, bundle: CI) |
 | Browser holds no AI key | No AI service's API host (`generativelanguage.googleapis.com`, `api.groq.com`, `openrouter.ai/api`, `api.openai.com`, `api.anthropic.com`) and no `SERVICE_ROLE` in `apps/web/src` or the built JavaScript (`/setup/` left out: it is the AI helper's own source, never run by the page); `connect-src` is `'self'` and the Supabase project alone | `vitest run` (`no-provider-hosts.test.ts`, `headers.test.ts`) + `node scripts/check-bundle.mjs` | every edit (bundle: CI) |
 | Model text carries no numbers | Every string a model writes is held to ADR 0005's text rule (`ModelProse`: NFKC, then no `\p{N}` or `\p{Sc}`, no markup or link characters, no number word but "one", no product or investing words, at most two line breaks, each field within its length) before it is drawn or kept; the database refuses any digit, in five scripts, and `$ ＄ % ％ € £ ¥ ¢ ₹` in the AI's kept words (`ai_text_is_clean`, 0017) | `vitest run` (`model-prose.test.ts`; `templates.test.ts` holds the app's own words to the same rule) + `scripts/verify-migrations.sh` | every edit (schema: CI) |
 | Brand | The workbook vendor's name is in no tracked file's text or path, in any letter case | `git grep -niI -e "w[i]nky"` + `git ls-files` | every edit |
@@ -74,7 +74,10 @@ it, while each function still imports zod by Deno's pinned URL
 `depcruise`. Each part was seen `RED` once: a type error in the function
 (`tsc`), `console.error` outside the log helper (`eslint`), the function
 importing `packages/schema` and its test importing the engine (`depcruise`),
-and its tests moved away (coverage at 0% against 80).
+and its tests moved away (coverage at 0% against 80). Its built file's checks
+(M3) were seen `RED` by a third import and by a service key's name planted
+in the source (`check-bundle.mjs` and the bundle test), and an import of
+the package from `apps/web/src` (`depcruise`).
 
 The AI apps server row was added on 2026-09-30 (MCP plan M2a). The server
 sees the owner's token, an AI app's arguments and the owner's rows, so its

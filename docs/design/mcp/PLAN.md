@@ -1460,6 +1460,18 @@ created it in M9, and imported `packages/ai-apps` from
   `apps/web/src` (seen); One-time updates offers **Copy** for it with the
   `mcp` clicks.
 
+- **As built (2026-09-30):** in two commits: the built file (`build.ts`,
+  the bundle test, `setup-files.ts`, `check-bundle.mjs`, the depcruise
+  arrow), then One-time updates' entry for it. `build.ts` imports no
+  workspace package: vite loads the site's config, and so `build.ts`,
+  with Node, which cannot follow a package's TypeScript sources, so the
+  banner's version is read from the built code (the build fails if it
+  names none). The SDK and zod are kept external by a `pre` plugin that
+  resolves them to the pinned `npm:` names. `serveSetup` is now async, to
+  serve the built file from the dev server. The bundle test writes the
+  file under the package's ignored `dist/` to import it, and deletes it.
+  The built file is about 10 KB, since the schema barrel tree-shakes away.
+
 ### M4: The database for AI apps (0020), and "Added by" in Review
 
 - **Files:** `supabase/migrations/0020_ai_apps.sql`;

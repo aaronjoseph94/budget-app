@@ -6,10 +6,13 @@
   "sideEffects": false,
   "main": "./src/handle.ts",
   "types": "./src/handle.ts",
-  "exports": { ".": "./src/handle.ts" },
+  "exports": { ".": "./src/handle.ts", "./build": "./build.ts" },
   "dependencies": {
     "@budget/schema": "workspace:*",
     "@modelcontextprotocol/server": "2.2.0",
     "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "vite": "^8.3.0"
   }
 }

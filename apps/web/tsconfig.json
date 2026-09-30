@@ -17,6 +17,7 @@
     { "path": "../../packages/core" },
     { "path": "../../packages/chart-specs" },
     { "path": "../../packages/savings-coach" },
-    { "path": "../../packages/report-export" }
+    { "path": "../../packages/report-export" },
+    { "path": "../../packages/ai-apps" }
   ]
 }

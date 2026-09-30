@@ -131,6 +131,16 @@ module.exports = {
       },
     },
     {
+      name: 'app-never-ships-the-ai-apps-server',
+      severity: 'error',
+      comment:
+        'packages/ai-apps is the server AI apps call, built into a file the owner pastes. ' +
+        'Only the /setup/ build plugin may reach it; in the page it would be dead weight ' +
+        'at best, and at worst a second place that checks tokens.',
+      from: { path: '^apps/web/(src|test)/' },
+      to: { path: '^packages/ai-apps/' },
+    },
+    {
       name: 'packages-never-import-the-app',
       severity: 'error',
       comment:
@@ -216,6 +226,11 @@ module.exports = {
         ],
       },
     },
+    // Its build script, which makes the pasteable file at site build (M3),
+    // uses vite and Node; the bundle test builds and runs that file.
+    { from: { path: '^packages/ai-apps/build\\.ts$' }, to: { path: 'node_modules/vite/' } },
+    { from: { path: '^packages/ai-apps/build\\.ts$' }, to: { dependencyTypes: ['core'] } },
+    { from: { path: '^packages/ai-apps/test/' }, to: { path: '^packages/ai-apps/build\\.ts$' } },
     // Its tests hold its templates to schema's text rule itself (ModelProse,
     // plan A12), so the app's words and a model's pass the one rule; the
     // source still names schema's types only.
@@ -252,6 +267,10 @@ module.exports = {
     // So does the Copy button's test, which serves those same files.
     { from: { path: '^apps/web/(setup-files\\.ts|test/setup-files\\.test\\.ts|test/updates-copy\\.test\\.tsx)$' }, to: { dependencyTypes: ['core'] } },
     { from: { path: '^apps/web/test/setup-files\\.test\\.ts$' }, to: { path: '^apps/web/setup-files\\.ts$' } },
+    // The one arrow from the app into the AI apps server: the /setup/ plugin
+    // builds mcp-function.ts with it at site build (ADR 0012). Nothing in
+    // apps/web/src may reach it, so none of it ships in the page.
+    { from: { path: '^apps/web/setup-files\\.ts$' }, to: { path: '^packages/ai-apps/build\\.ts$' } },
   ],
   options: {
     doNotFollow: { path: 'node_modules' },

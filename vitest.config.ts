@@ -11,7 +11,14 @@ export default defineConfig({
       { test: { name: 'charts', root: './packages/chart-specs' } },
       { test: { name: 'coach', root: './packages/savings-coach' } },
       { test: { name: 'export', root: './packages/report-export' } },
-      { test: { name: 'ai-apps', root: './packages/ai-apps' } },
+      // The bundle test imports the built file, whose two imports are Deno's
+      // pinned names; here they are the installed packages, as for the functions.
+      {
+        test: { name: 'ai-apps', root: './packages/ai-apps' },
+        resolve: {
+          alias: { 'npm:zod@4.6.5': 'zod', 'npm:@modelcontextprotocol/server@2.2.0': '@modelcontextprotocol/server' },
+        },
+      },
       // Split by extension: a .tsx test renders a component and needs a DOM,
       // a .ts test checks plain functions and keeps Node's faster, stricter
       // environment, where reaching for `window` by accident is an error.
