@@ -2668,6 +2668,9 @@ begin
       ('bad_date', acc, day + 2, -1250, 'Lunch at Subway', 1, h.lunch, 1, null),
       ('bad_date', acc, day - 366, -1250, 'Lunch at Subway', 1, h.lunch, 1, null),
       ('bad_words', acc, day, -1250, E'Lunch\tat Subway', 1, h.lunch, 1, null),
+      ('bad_words', acc, day, -1250, E'Lunch ‮yawbus', 1, h.lunch, 1, null),
+      ('bad_words', acc, day, -1250, E'Lunch\u0085at Subway', 1, h.lunch, 1, null),
+      ('bad_words', acc, day, -1250, E'Lunch⁦at Subway', 1, h.lunch, 1, null),
       ('bad_occurrence', acc, day, -1250, 'Lunch at Subway', 0, h.lunch, 1, null),
       ('bad_occurrence', acc, day, -1250, 'Lunch at Subway', 10, h.lunch, 1, null),
       ('no_account', 'aaaaaaaa-0000-4000-8000-000000000301'::uuid, day, -1250, 'Lunch at Subway', 1, h.lunch, 1, null),
@@ -2711,6 +2714,45 @@ begin
     raise exception 'the add''s batches do not balance as added, waiting, recorded';
   end if;
   raise notice 'an AI app''s row waits as the words it showed, in a batch of its own that balances';
+  -- For the next block: no last use yet, and one add left today.
+  delete from public.ai_app_last_use where user_id = '11111111-1111-4111-8111-111111111111';
+  insert into public.ai_app_usage (user_id, day, kind, calls)
+  values ('11111111-1111-4111-8111-111111111111', (now() at time zone 'UTC')::date, 'add', 29)
+  on conflict (user_id, day, kind) do update set calls = 29;
+end $$;
+
+-- The 30th add goes through and the 31st is refused; the gate notes which
+-- app asked; and _ and \ in a search's words match only themselves.
+set role app_user;
+do $$
+declare
+  day date := (now() at time zone 'UTC')::date;
+  r   jsonb;
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999"}', true);
+  if public.ai_app_add_candidate(null, null, null, null, null, null, null, null) <> '{"refused": "bad_amount"}' then
+    raise exception 'the 30th add was refused by the gate';
+  end if;
+  if public.ai_app_add_candidate(null, null, null, null, null, null, null, null) <> '{"refused": "limit_reached"}' then
+    raise exception 'NOT REFUSED: a 31st add';
+  end if;
+  r := public.ai_app_search('Ledger_coffee', day - 30, day, null, null, null, null, 'any', 5);
+  if (r ->> 'total')::int <> 0 then raise exception 'a _ in the words matched any character'; end if;
+  r := public.ai_app_search('Ledg\er', day - 30, day, null, null, null, null, 'any', 5);
+  if (r ->> 'total')::int <> 0 then raise exception 'a \ in the words was read as an escape'; end if;
+  r := public.ai_app_search('ledger COFFEE', day - 30, day, null, null, null, null, 'any', 5);
+  if (r ->> 'total')::int <> 1 then raise exception 'the words did not find the charge they name: %', r; end if;
+  raise notice 'the 31st add is refused, and a search''s words are only words';
+end $$;
+reset role;
+do $$
+begin
+  if not exists (select 1 from public.ai_app_last_use where user_id = '11111111-1111-4111-8111-111111111111'
+                  and client_id = '99999999-9999-4999-8999-999999999999' and last_used_at > now() - interval '1 hour') then
+    raise exception 'the gate did not note when the AI app last asked';
+  end if;
+  raise notice 'the gate notes when each AI app last asked';
 end $$;
 
 -- 0020 refuses to run before 0019. Its own check, taken from the file, run
