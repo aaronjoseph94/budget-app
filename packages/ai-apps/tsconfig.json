@@ -1,0 +1,7 @@
+{
+  "extends": "../../tsconfig.base.json",
+  // Request, Response and fetch: web types, which Deno and Node share.
+  "compilerOptions": { "outDir": "./dist", "rootDir": ".", "lib": ["ES2023", "DOM"] },
+  "include": ["deno-env.d.ts", "src/**/*", "test/**/*"],
+  "references": [{ "path": "../schema" }]
+}

@@ -204,6 +204,18 @@ module.exports = {
       from: { path: '^packages/savings-coach/' },
       to: { path: ['^packages/(schema|money-primitives)/src/'], dependencyTypes: ['type-only'] },
     },
+    // The AI apps server (ADR 0012, PLAN §2.15): the engine and the packages
+    // below it, zod, and the official MCP SDK. Nothing else, and never the
+    // app; the database only by RPC over fetch, which is no import.
+    {
+      from: { path: '^packages/ai-apps/' },
+      to: {
+        path: [
+          '^packages/(core|money-primitives|statement-parsers|schema)/src/',
+          'node_modules/(zod|@modelcontextprotocol/server)/',
+        ],
+      },
+    },
     // Its tests hold its templates to schema's text rule itself (ModelProse,
     // plan A12), so the app's words and a model's pass the one rule; the
     // source still names schema's types only.

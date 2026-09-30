@@ -68,6 +68,8 @@ export {
 
 export { ModelProse, proseProblem, type ProseProblem } from './prose.js'
 
+export { MCP_SERVER_VERSION } from './ai-apps.js'
+
 export {
   FACT_LETTER,
   NARRATE_LIMITS,

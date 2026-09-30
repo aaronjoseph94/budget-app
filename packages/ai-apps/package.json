@@ -1,0 +1,14 @@
+{
+  "name": "@budget/ai-apps",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "main": "./src/handle.ts",
+  "types": "./src/handle.ts",
+  "exports": { ".": "./src/handle.ts" },
+  "dependencies": {
+    "@budget/schema": "workspace:*",
+    "zod": "4.6.5"
+  }
+}

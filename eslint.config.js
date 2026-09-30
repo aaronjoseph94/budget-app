@@ -281,7 +281,21 @@ export default tseslint.config(
     },
   },
   {
+    // The AI apps server logs through src/log.ts alone, codes and counts
+    // (PLAN §2.6), as the Edge Functions do; console elsewhere is an error.
+    files: ['packages/ai-apps/src/**/*.ts'],
+    ignores: ['packages/ai-apps/src/log.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        { selector: "Identifier[name='console']", message: "Log through src/log.ts's log(code, counts) only: codes and counts, never content." },
+        ...NO_FLOAT_MONEY,
+      ],
+    },
+  },
+  {
     files: [
+      'packages/ai-apps/test/**/*.ts',
       'packages/core/test/**/*.ts',
       'packages/schema/test/**/*.ts',
       'packages/statement-parsers/test/**/*.ts',
