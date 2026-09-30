@@ -19,6 +19,7 @@ import {
   type PlanHistoryRow,
   type WeekCategory,
   type WeekSheetInput,
+  type YearSheetInput,
 } from '@budget/core'
 import type { IsoDate } from '@budget/money-primitives'
 import type { CategoryKind } from '@budget/schema'
@@ -179,5 +180,19 @@ export function paycheckSheetInput(read: Read, start: IsoDate, schedule: PaySche
     entries: entriesFrom(txnsFrom(read['txns'])),
     statementPeriodEnds: recordsFrom(read['records']).statementEnds,
     startingBalanceCents: null,
+  }
+}
+
+/** The Year's input for the twelve months from `start`, as YearScreen builds it: the start month's balance alone. */
+export function yearSheetInput(read: Read, start: IsoDate, asOf: IsoDate): YearSheetInput {
+  const balance = balanceFor(read['balances'], start)
+  return {
+    startMonth: start,
+    asOf,
+    categories: periodCategories(categoriesFrom(read['categories'])),
+    budgetHistory: budgetsFrom(read['budgets']),
+    planHistory: plansFrom(read['plans']),
+    entries: entriesFrom(txnsFrom(read['txns'])),
+    startingBalances: balance === null ? [] : [{ month: start, cents: balance }],
   }
 }

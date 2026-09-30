@@ -42,7 +42,7 @@ export const NoteTextSchema = z.string().trim().max(300).pipe(IngestedTextSchema
  */
 export const GetPeriodInputSchema = z
   .object({
-    period: z.enum(['month', 'week', 'pay_period']).default('month'),
+    period: z.enum(['month', 'week', 'pay_period', 'year']).default('month'),
     date: z.iso.date().optional(),
     income: NameSchema.optional(),
     list: ListSchema.optional(),

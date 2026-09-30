@@ -139,6 +139,43 @@ describe('get_period', () => {
     expect((out.categories as { actual: unknown }[]).map((c) => c.actual)).toEqual([$(3275, '$32.75')])
   })
 
+  it('gives the year from January as the Year shows it, with its months and top spending', async () => {
+    const { result, rpcCalls } = await period({ period: 'year', date: '2026-09-30' })
+    expect(JSON.parse(String(rpcCalls[0]?.init.body))).toEqual({
+      p_parts: ['categories', 'budgets', 'plans', 'txns', 'balances', 'records', 'pending'],
+      p_from: '2026-01-01',
+      p_to: '2026-12-31',
+    })
+    const out = result.structuredContent as Record<string, unknown>
+    expect(out.period).toEqual({ kind: 'year', from: '2026-01-01', to: '2026-12-31', days_left: null })
+    // Rent's 1,200.00 counts January to September, up to this month (F10): 10,800.00. Groceries 9.99 + 45.20 + 12.75 + 20.00.
+    // No start typed for January, so no end (D17); Left over is 2,500.00 − 10,887.94.
+    expect(out.summary).toEqual({
+      starting_balance: null,
+      income: $(250000, '$2,500.00'),
+      spent: $(1088794, '$10,887.94'),
+      saved: $(0, '$0.00'),
+      left_to_spend: null,
+      left_over: $(-838794, '-$8,387.94'),
+      ending_balance: null,
+    })
+    const lists = out.lists as { list: string }[]
+    // 600.00 a month from September: 2,400.00; 87.94 of it is 3.66 %, half-up.
+    expect(lists[2]).toEqual({ list: 'variable', budget: $(240000, '$2,400.00'), actual: $(8794, '$87.94'), used_bp: 366, left: null })
+    // The Year adds typed budgets only (Hidden!N4 =Jan!$D$21); no bill has one, so none is used.
+    expect(lists[3]).toEqual({ list: 'bill', budget: $(0, '$0.00'), actual: $(1080000, '$10,800.00'), used_bp: null, left: null })
+    const months = out.months as { month: string; spent: unknown }[]
+    expect(months.map((m) => m.month)).toEqual(['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08', '2026-09', '2026-10', '2026-11', '2026-12'])
+    expect([months[7]?.spent, months[8]?.spent, months[9]?.spent]).toEqual([$(120999, '$1,209.99'), $(125795, '$1,257.95'), $(2000, '$20.00')])
+    // Shares of 10,887.94: 99.19 % and 0.81 %, half-up.
+    expect(out.top_spending).toEqual([
+      { name: 'Rent', list: 'bill', actual: $(1080000, '$10,800.00'), share_bp: 9919 },
+      { name: 'Groceries', list: 'variable', actual: $(8794, '$87.94'), share_bp: 81 },
+    ])
+    expect(out.categories).toEqual([])
+    expect([out.imported_through, out.waiting_in_review]).toEqual(['2026-09-07', 4])
+  })
+
   it.each([
     ['a category it does not have', { categories: ['Nope'] }, READ, SENTENCES.unknown_category],
     ['rows it cannot read', {}, { ...READ, txns: 'SECRET' }, SENTENCES.records_unreadable],

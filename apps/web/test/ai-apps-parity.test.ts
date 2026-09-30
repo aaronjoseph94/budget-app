@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { isoDate, monthSheet, paycheckSheet, weekSheet, type PaySchedule } from '@budget/core'
-import { categoriesFrom, monthSheetInput, paySources, paycheckSheetInput, weekSheetInput } from '@budget/ai-apps/rows'
+import { isoDate, monthSheet, paycheckSheet, weekSheet, yearSheet, type PaySchedule } from '@budget/core'
+import { categoriesFrom, monthSheetInput, paySources, paycheckSheetInput, weekSheetInput, yearSheetInput } from '@budget/ai-apps/rows'
 import {
   getMonthBalance,
   latestStatementEnd,
@@ -157,5 +157,32 @@ describe('the AI apps server reads rows as the app does', () => {
     const screen = await paycheckAsTheApp(schedule, '2026-09-01', { from: '2026-09-15', to: '2026-10-14' })
     expect(paycheckSheet(server)).toEqual(paycheckSheet(screen))
     expect(paycheckSheet(server).blocks.variable.effectiveBudgetTotalCents).toBe(55000)
+  })
+
+  async function yearAsTheApp(own: Partial<FakeTables>, through: string, range: { from: string; to: string }) {
+    const supabase = createFakeSupabase(own).client
+    const start = isoDate('2026-01-01')
+    const balance = await getMonthBalance(supabase, start)
+    return {
+      startMonth: start,
+      asOf: isoDate('2026-09-30'),
+      categories: categoriesForCore(await listCategories(supabase)),
+      budgetHistory: budgetsForCore(await listBudgetHistory(supabase, through, 'year')),
+      planHistory: plansForCore(await listPlanHistory(supabase, through, 'year')),
+      entries: entriesForCore(await listTransactions(supabase, range)),
+      startingBalances: balance === null ? [] : [{ month: start, cents: balance }],
+    }
+  }
+
+  it('the Year', async () => {
+    const whole = { from: '2026-01-01', to: '2026-12-31' }
+    // With January's start typed, so the balances are renamed too.
+    const withStart = { ...read, balances: [{ month: '2026-01-01', starting_balance_cents: 80000 }, ...(read.balances as unknown[])] }
+    const own = { ...tables, month_balances: [{ id: 'm0', month: '2026-01-01', starting_balance_cents: 80000 }, ...(tables.month_balances ?? [])] }
+    const server = yearSheetInput(withStart, isoDate('2026-01-01'), isoDate('2026-09-30'))
+    expect(server).toEqual(await yearAsTheApp(own, whole.to, whole))
+    const screen = await yearAsTheApp(own, '2026-12-01', whole)
+    expect(yearSheet(server)).toEqual(yearSheet(screen))
+    expect(yearSheet(server).startingBalanceCents).toBe(80000)
   })
 })

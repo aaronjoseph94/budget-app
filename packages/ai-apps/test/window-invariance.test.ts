@@ -35,6 +35,9 @@ const CASES: readonly (readonly [string, Record<string, unknown>, string, string
   ['this pay period, the server already in the next month', { period: 'pay_period' }, '2026-10-01T03:00:00Z', '2026-09-30'],
   ['this pay period, the server a day behind', { period: 'pay_period' }, '2026-09-30T20:00:00Z', '2026-10-01'],
   ['a pay period asked for by its last day', { period: 'pay_period', date: '2026-10-14' }, '2026-09-30T12:00:00Z', '2026-09-30'],
+  ['this year, the server already in the next', { period: 'year' }, '2026-01-01T03:00:00Z', '2025-12-31'],
+  ['this year, the server still in the last', { period: 'year' }, '2025-12-31T20:00:00Z', '2026-01-01'],
+  ['a year asked for by date', { period: 'year', date: '2024-06-15' }, '2026-09-30T12:00:00Z', '2026-09-30'],
 ]
 
 describe('the read tools do not depend on how many rows the database returns', () => {
