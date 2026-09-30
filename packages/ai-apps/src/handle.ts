@@ -11,12 +11,15 @@
  *   protocol eras in use (2025's `initialize`; 2026-07-28's
  *   `server/discover`), statelessly: a fresh server per request. Any other
  *   method is 405.
+ *   Without a token, the 401 says where to sign in (src/auth.ts).
+ * - `GET /mcp/.well-known/oauth-protected-resource`: RFC 9728's metadata.
  * - `GET /mcp/health`: `{ ok, version, tools }`, no token, CORS for the
  *   app's own origins only, so One-time updates can check the paste.
  */
 import { z } from 'zod'
 import { McpServer, createMcpHandler } from '@modelcontextprotocol/server'
 import { MCP_SERVER_VERSION } from '@budget/schema'
+import { bearerOf, challenge, json, protectedResource } from './auth.js'
 import { log } from './log.js'
 
 // The app's own sites and its dev server, plus exact https origins in the
@@ -70,10 +73,6 @@ function cors(origin: string | null, origins: Set<string>): Record<string, strin
   return { 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, OPTIONS', Vary: 'Origin' }
 }
 
-function json(status: number, body: unknown, headers: Record<string, string> = {}): Response {
-  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...headers } })
-}
-
 /** The same response, never to be kept by a client or a proxy. */
 function noStore(res: Response): Response {
   const headers = new Headers(res.headers)
@@ -98,12 +97,18 @@ async function route(req: Request, env: Env): Promise<Response> {
     if (req.method !== 'GET') return json(405, { error: 'method_not_allowed' }, { Allow: 'GET, OPTIONS' })
     return json(200, { ok: true, version: MCP_SERVER_VERSION, tools: TOOLS.length }, cors(origin, origins))
   }
-  if (rest !== '' && rest !== '/') return json(404, { error: 'not_found' })
-  if (req.method !== 'POST') return json(405, { error: 'method_not_allowed' }, { Allow: 'POST' })
+  const metadata = rest === '/.well-known/oauth-protected-resource'
+  if (!metadata && rest !== '' && rest !== '/') return json(404, { error: 'not_found' })
+  const allow = metadata ? 'GET' : 'POST'
+  if (req.method !== allow) return json(405, { error: 'method_not_allowed' }, { Allow: allow })
   if (env.SUPABASE_URL === undefined || env.SUPABASE_ANON_KEY === undefined) {
     log('not_configured')
     return json(503, { error: 'not_configured' })
   }
+  const project = { url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY }
+  if (metadata) return json(200, protectedResource(project))
+  const header = req.headers.get('authorization')
+  if (bearerOf(header) === null) return challenge(project, header !== null)
   return mcp.fetch(req)
 }
 

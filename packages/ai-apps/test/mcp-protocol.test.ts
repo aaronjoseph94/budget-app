@@ -19,7 +19,7 @@ const MODERN = {
 function post(body: unknown, headers: Record<string, string> = {}): Request {
   return new Request(`${PROJECT}/mcp`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', accept: 'application/json, text/event-stream', ...headers },
+    headers: { 'content-type': 'application/json', accept: 'application/json, text/event-stream', authorization: 'Bearer e30.e30.sig', ...headers },
     body: typeof body === 'string' ? body : JSON.stringify(body),
   })
 }
