@@ -402,7 +402,7 @@ header is how every client finds the sign-in.
 
 1. `GET {SUPABASE_URL}/auth/v1/user` with the caller's token and the anon
    `apikey`, the `ai` helper's `whoIs` (`supabase/functions/ai/index.ts`,
-   lines 284–307). Supabase checks the signature, the expiry, that the user
+   lines 287–321 after M1b). Supabase checks the signature, the expiry, that the user
    exists and that the session still exists, so a revoked grant fails at
    once. A 401 or 403 from Auth becomes our 401 challenge; anything else,
    503.
@@ -1212,6 +1212,7 @@ checklist (M12b).
 | K7 | Cloudflare Pages serves the app at `/oauth/consent` | The consent page 404s; the build emits `oauth/consent/index.html` instead |
 | K8 | Supabase accepts the `resource` parameter Claude and ChatGPT send (RFC 8707) | Sign-in fails at the authorize or token step |
 | K9 | ChatGPT registers, and returns to, `https://chatgpt.com/connector/oauth/{callback_id}` (Supabase sends no `iss`) | The consent page names a callback it does not allow; the allowlist gains the documented form in its own commit |
+| K10 | 0019 pastes in the SQL Editor: the restrictive policy on `storage.objects` is created, as 0001's receipt policies were, and each guarded function is re-created from its own `pg_get_functiondef` (M1a) | The paste stops with an error and, inside its transaction, changes nothing but the unused `ai_app` label; One-time updates keeps 0019 as not in, and the error is reported before 0020 |
 
 ### 2.15 Records this work writes
 
