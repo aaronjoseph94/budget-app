@@ -1535,6 +1535,16 @@ created it in M9, and imported `packages/ai-apps` from
   the moved functions; `money.ts`'s cases, including a name carrying
   U+202E and a zero-width space; the float-money lint still passes on
   `money-primitives`.
+- **As built (2026-09-30):** three commits: first a narrow loosening of
+  two depcruise rules, on its own as CONSTRAINTS asks, since the app
+  could import neither a function nor a non-index file of
+  `money-primitives`: the one exception is `src/format.ts`, stated as the
+  package's `./format` entry point; then the two moves; then `money.ts`
+  and the input schemas. Names lose U+2028–U+2029 as well as the listed
+  ranges, digits are masked with `*` after the hidden characters go (so
+  a zero-width space cannot split a run), and names are cut by code
+  point. The words schema is `WordsSchema` (and `NoteTextSchema` for a
+  note): trimmed, then `IngestedTextSchema`.
 
 ### M5b: The first tool: `list_categories`, and the registry
 

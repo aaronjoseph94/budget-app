@@ -1,6 +1,34 @@
+import { z } from 'zod'
+import { IngestedTextSchema } from './primitives.js'
+
 /**
  * The AI apps server's version (ADR 0012), which its `/mcp/health` answers so
  * One-time updates can tell an old paste of `mcp-function.ts` from this
  * site's. Bumped with every change the owner must paste, as `YYYY-MM-DD.N`.
  */
 export const MCP_SERVER_VERSION = '2026-09-30.1'
+
+/*
+ * What an AI app may send the server's tools (PLAN §2.4). Each tool's input
+ * object is built from these in the slice that adds the tool, `.strict()`.
+ * zod's messages name the field and never echo the value.
+ */
+
+/**
+ * Money in is text, never a JSON number, so no float ever arrives: dollars
+ * with at most two decimals, grouped by commas or not, at most $999,999.99
+ * before the tools' own cap. Read by statement-parsers' parseTypedAmount.
+ */
+export const AmountTextSchema = z.string().regex(/^\$?(\d{1,3}(,\d{3})+|\d{1,6})(\.\d{1,2})?$/, 'Expected an amount like 12.50')
+
+/** A category, goal, debt or pay schedule's name, as the AI read it from a result. */
+export const NameSchema = z.string().trim().min(1).max(60)
+
+/** Which of the workbook's lists; Not spending is named only where a tool allows it. */
+export const ListSchema = z.enum(['variable', 'bill', 'debt', 'subscription', 'income', 'savings'])
+
+/** What an AI app adds was: the owner's own words, held as ingested text, trimmed. */
+export const WordsSchema = z.string().trim().max(120).pipe(IngestedTextSchema)
+
+/** Something the owner said, for `add_note`, read as Just type it reads it. */
+export const NoteTextSchema = z.string().trim().max(300).pipe(IngestedTextSchema)
