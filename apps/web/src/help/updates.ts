@@ -14,7 +14,7 @@
  * as a dropped connection, is "could not check", never "missing": telling
  * the owner to paste something already in would be refused, and worry them.
  */
-import { AI_HELPER_VERSION } from '@budget/schema'
+import { AI_HELPER_VERSION, MCP_SERVER_VERSION } from '@budget/schema'
 import { askAi } from '../ai/client.js'
 import type { SupabaseClient } from '../supabase.js'
 
@@ -24,6 +24,8 @@ type Check =
   | { readonly kind: 'function'; readonly name: string; readonly args: Readonly<Record<string, unknown>> }
   /** The AI helper answers `ping` once it is deployed; Supabase answers 404 until then. */
   | { readonly kind: 'helper' }
+  /** The AI apps server answers `/mcp/health` with its version once it is deployed (ADR 0012). */
+  | { readonly kind: 'server' }
 
 /** The AI helper's source, as One-time updates names it and /setup/ serves it (ADR 0007). */
 export const HELPER_FILE = 'ai-function.ts'
@@ -34,6 +36,9 @@ export const HELPER_FILE = 'ai-function.ts'
  * 2026-09-30 lets anyone holding the app's public key spend the Gemini key.
  */
 export const READ_RECEIPT_FILE = 'read-receipt-function.ts'
+
+/** The AI apps server, built at site build and served under /setup/ (ADR 0012). */
+export const SERVER_FILE = 'mcp-function.ts'
 
 export interface Update {
   readonly file: string
@@ -105,6 +110,7 @@ export const UPDATES: readonly Update[] = [
     checks: [{ kind: 'function', name: '_not_an_ai_app', args: {} }],
   },
   { file: HELPER_FILE, adds: 'The AI helper, which every AI feature goes through', checks: [{ kind: 'helper' }] },
+  { file: SERVER_FILE, adds: 'The AI apps server, which Claude or ChatGPT connect to', checks: [{ kind: 'server' }] },
 ]
 
 /** What 0005's absence means: start where HANDOFF's list starts. */
@@ -123,6 +129,7 @@ const MISSING: Readonly<Record<Check['kind'], ReadonlySet<string>>> = {
   column: new Set(['42703']),
   function: new Set(['PGRST202', '42883']),
   helper: new Set(),
+  server: new Set(),
 }
 
 async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateState> {
@@ -131,6 +138,15 @@ async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateStat
     if (!answer.ok) return answer.view.state === 'not_deployed' ? 'missing' : 'unknown'
     const version = typeof answer.data === 'object' && answer.data !== null && 'version' in answer.data ? answer.data.version : null
     return isOlder(version) ? 'old' : 'in'
+  }
+  if (check.kind === 'server') {
+    const { data, error } = await supabase.functions.invoke('mcp/health', { method: 'GET' })
+    if (error !== null) {
+      const reply = (error as { context?: unknown }).context
+      return reply instanceof Response && reply.status === 404 ? 'missing' : 'unknown'
+    }
+    const version = typeof data === 'object' && data !== null && 'version' in data ? data.version : null
+    return isOlder(version, MCP_SERVER_VERSION) ? 'old' : 'in'
   }
   const { error } =
     check.kind === 'function'
@@ -144,14 +160,14 @@ async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateStat
 }
 
 /**
- * Whether the helper's version is older than the app's. Versions are
- * `YYYY-MM-DD.N`; one that is not in that shape is older, since every
- * copy that ever shipped carries one.
+ * Whether a function's version is older than the app's (the AI helper's,
+ * unless another is named). Versions are `YYYY-MM-DD.N`; one that is not in
+ * that shape is older, since every copy that ever shipped carries one.
  */
-export function isOlder(version: unknown): boolean {
+export function isOlder(version: unknown, wanted: string = AI_HELPER_VERSION): boolean {
   const parts = (v: unknown) => (typeof v === 'string' ? /^(\d{4}-\d{2}-\d{2})\.(\d+)$/.exec(v) : null)
   const have = parts(version)
-  const want = parts(AI_HELPER_VERSION)
+  const want = parts(wanted)
   if (have === null || want === null) return true
   return have[1]! < want[1]! || (have[1] === want[1] && Number(have[2]) < Number(want[2]))
 }

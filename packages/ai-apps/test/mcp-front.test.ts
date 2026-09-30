@@ -80,6 +80,7 @@ describe('/mcp/health', () => {
     const pre = await handle(at('/mcp/health', { method: 'OPTIONS', headers: { origin: 'http://localhost:5173' } }), ENV)
     expect(pre.status).toBe(204)
     expect(pre.headers.get('access-control-allow-methods')).toBe('GET, OPTIONS')
+    expect(pre.headers.get('access-control-allow-headers')).toBe('authorization, x-client-info, apikey, content-type')
     expect((await handle(at('/mcp/health', { method: 'POST' }), ENV)).status).toBe(405)
   })
 })

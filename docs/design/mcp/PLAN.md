@@ -1471,6 +1471,14 @@ created it in M9, and imported `packages/ai-apps` from
   serve the built file from the dev server. The bundle test writes the
   file under the package's ignored `dist/` to import it, and deletes it.
   The built file is about 10 KB, since the schema barrel tree-shakes away.
+  One-time updates lists the server last, after the AI helper, and asks
+  `/mcp/health` through `supabase.functions.invoke`, which the app already
+  uses and which sends the owner's own session: so a gateway with Verify
+  JWT on still lets it through, and the check cannot see that switch
+  (risk 6). A 401 there reads as "could not check"; the steps say to turn
+  the switch off, and the again-steps to check it is still off. Health's
+  CORS names the headers `invoke` sends. With no GitHub copy to fall back
+  on, a failed Copy says to check the connection and Check again.
 
 ### M4: The database for AI apps (0020), and "Added by" in Review
 
@@ -1711,10 +1719,11 @@ created it in M9, and imported `packages/ai-apps` from
 6. **The verify-JWT switch.** It must be off for `mcp` and is reported to
    switch itself back on after some updates (Supabase issue 43608). If it
    does, sign-in silently breaks: the gateway's 401 lacks the pointer to
-   the metadata. One-time updates fetches `/mcp/health` with no token, so
-   the gateway's 401 there means the switch is on; but the gateway's reply
-   may carry no CORS headers, which the browser reports only as "could not
-   check". So HANDOFF also says to re-check the switch after every paste.
+   the metadata. *As built (M3):* One-time updates asks `/mcp/health` with
+   the owner's own session, which the gateway accepts either way, so it
+   cannot see the switch; HANDOFF says to re-check it after every paste,
+   and the first-connection checklist (M12b) should say a sign-in that
+   never starts means the switch is on.
 7. **Deno without a lockfile.** The pasted file pins `zod@4.6.5` and the SDK
    `2.2.0`, but Deno resolves the SDK's own `zod ^4.2.0` and
    `@modelcontextprotocol/core` at deploy time, outside our lockfile and

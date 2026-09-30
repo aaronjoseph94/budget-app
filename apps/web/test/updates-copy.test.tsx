@@ -20,6 +20,8 @@ const SITE: Record<string, string> = {
   '/setup/0016_ai_foundation.sql': committed('supabase/migrations/0016_ai_foundation.sql'),
   '/setup/ai-function.ts': committed('supabase/functions/ai/index.ts'),
   '/setup/read-receipt-function.ts': committed('supabase/functions/read-receipt/index.ts'),
+  // Built at site build, not committed (ADR 0012); its first line is its banner.
+  '/setup/mcp-function.ts': '// mcp-function.ts — the budget app\'s AI apps server, version 2026-09-30.1.\nexport {}\n',
 }
 let asked: string[] = []
 // A static host answers a path it does not have with the app's own page.
@@ -81,6 +83,19 @@ describe('Copy on One-time updates', () => {
     fireEvent.click(await nextIs(fake, 'Copy the AI helper'))
     await screen.findByText('Copied. Now paste it into Supabase.')
     expect(writeText.mock.calls).toEqual([[SITE['/setup/ai-function.ts']]])
+  })
+
+  it('copies the AI apps server when it is next, and says to check again if it cannot get it', async () => {
+    const fake = createFakeSupabase()
+    fake.functions.mcpHealth = null
+    fireEvent.click(await nextIs(fake, 'Copy the AI apps server'))
+    await screen.findByText('Copied. Now paste it into Supabase.')
+    expect(writeText.mock.calls).toEqual([[SITE['/setup/mcp-function.ts']]])
+    await expectNoAxeViolations()
+    cleanup()
+    site = () => new Response('<!doctype html><title>Budget</title>')
+    renderScreen(<Shell />, fake)
+    expect(await screen.findByText('Couldn’t get the file here. Check your connection, then press Check again.')).toBeTruthy()
   })
 
   // Its older copy took the public key as a sign-in (ADR 0012); the helper reads receipts without it.

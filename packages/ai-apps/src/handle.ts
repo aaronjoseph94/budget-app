@@ -74,7 +74,13 @@ function allowedOrigins(env: Env): Set<string> {
 
 function cors(origin: string | null, origins: Set<string>): Record<string, string> {
   if (origin === null || !origins.has(origin)) return {}
-  return { 'Access-Control-Allow-Origin': origin, 'Access-Control-Allow-Methods': 'GET, OPTIONS', Vary: 'Origin' }
+  // The headers supabase-js sends with functions.invoke, which One-time updates uses.
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    Vary: 'Origin',
+  }
 }
 
 /** The same response, never to be kept by a client or a proxy. */

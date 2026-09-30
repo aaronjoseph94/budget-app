@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FIRST_FILE, HELPER_FILE, UPDATES, checkUpdates, nextStep, type Checked } from '../src/help/updates.js'
+import { FIRST_FILE, HELPER_FILE, SERVER_FILE, UPDATES, checkUpdates, nextStep, type Checked } from '../src/help/updates.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 
 const stateOf = (checked: readonly Checked[], prefix: string) => checked.find((c) => c.update.file.startsWith(prefix))?.state
@@ -9,7 +9,7 @@ describe('checking the one-time updates', () => {
   it('finds each one in when everything it adds answers', async () => {
     const fake = createFakeSupabase()
     const checked = await checkUpdates(fake.client)
-    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', 'ai-f'])
+    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', 'ai-f', 'mcp-'])
     expect(missing(checked)).toEqual([])
     expect(nextStep(checked)).toEqual({ kind: 'done' })
   })
@@ -114,6 +114,24 @@ describe('checking the one-time updates', () => {
       expect([version, missing(checked)]).toEqual([version, state === 'old' ? [['ai-f', 'old']] : []])
       if (state === 'old') expect(nextStep(checked)).toEqual({ kind: 'paste', file: HELPER_FILE, fromStart: false })
     }
+  })
+
+  // The AI apps server (ADR 0012) answers /mcp/health; it comes last, after the helper.
+  it('reads the AI apps server’s health: 404 not installed, an older version old, anything else could not check', async () => {
+    const fake = createFakeSupabase()
+    fake.functions.mcpHealth = null
+    const checked = await checkUpdates(fake.client)
+    expect(missing(checked)).toEqual([['mcp-', 'missing']])
+    expect(nextStep(checked)).toEqual({ kind: 'paste', file: SERVER_FILE, fromStart: false })
+    const says = (version: unknown) => () => new Response(JSON.stringify({ ok: true, version, tools: 0 }), { headers: { 'content-type': 'application/json' } })
+    for (const [version, state] of [['2026-09-29.9', 'old'], [undefined, 'old'], ['2026-09-30.1', 'in'], ['2026-10-01.1', 'in']] as const) {
+      fake.functions.mcpHealth = says(version)
+      expect([version, missing(await checkUpdates(fake.client))]).toEqual([version, state === 'old' ? [['mcp-', 'old']] : []])
+    }
+    fake.functions.mcpHealth = () => new Response('{}', { status: 401 })
+    expect(missing(await checkUpdates(fake.client))).toEqual([['mcp-', 'unknown']])
+    fake.functions.ai = null
+    expect(nextStep(await checkUpdates(fake.client))).toEqual({ kind: 'paste', file: HELPER_FILE, fromStart: false })
   })
 
   it('says it could not check, never "missing", when the answer is something else', async () => {

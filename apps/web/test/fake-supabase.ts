@@ -31,7 +31,7 @@ import type {
 } from '../src/ledger.js'
 import type { SupabaseClient } from '../src/supabase.js'
 import { watchNetwork } from '../src/offline.js'
-import { AI_HELPER_VERSION, type AiStatusReply } from '@budget/schema'
+import { AI_HELPER_VERSION, MCP_SERVER_VERSION, type AiStatusReply } from '@budget/schema'
 
 type Row = Readonly<Record<string, unknown>>
 
@@ -143,6 +143,8 @@ export interface FakeSupabase {
     /** `functions/v1/read-receipt`, the older receipt reader; null, the default, is one never deployed. Its bodies are kept in `receiptCalls`. */
     readReceipt: ((body: Readonly<Record<string, unknown>>) => Response | Promise<Response>) | null
     readonly receiptCalls: Readonly<Record<string, unknown>>[]
+    /** `functions/v1/mcp/health`, the AI apps server's; null is one never deployed. By default it answers with this app's version. */
+    mcpHealth: (() => Response | Promise<Response>) | null
   }
   /** The signed-in user as the auth server holds it, `user_metadata` included. */
   readonly user: { id: string; email: string; user_metadata: Record<string, unknown> }
@@ -234,6 +236,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     calls: [],
     readReceipt: null,
     receiptCalls: [],
+    mcpHealth: () => json({ ok: true, version: MCP_SERVER_VERSION, tools: 0 }),
   }
   let nextId = 1
 
@@ -371,6 +374,10 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       functions.calls.push(body)
       if (functions.ai === null) return json({ code: 'NOT_FOUND', message: 'Requested function was not found' }, 404)
       return functions.ai(body)
+    }
+    if (url.pathname === '/functions/v1/mcp/health') {
+      if (functions.mcpHealth === null) return json({ code: 'NOT_FOUND', message: 'Requested function was not found' }, 404)
+      return functions.mcpHealth()
     }
     if (url.pathname === '/functions/v1/read-receipt') {
       const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>

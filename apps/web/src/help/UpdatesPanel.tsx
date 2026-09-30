@@ -3,7 +3,7 @@ import { useAppData } from '../app-data.js'
 import { Button } from '../components/ui/button.js'
 import { cn } from '../lib/cn.js'
 import { CopyFile, isCopyable } from './CopyFile.js'
-import { FIRST_FILE, HELPER_FILE, READ_RECEIPT_FILE, checkUpdates, nextStep, type Checked } from './updates.js'
+import { FIRST_FILE, HELPER_FILE, READ_RECEIPT_FILE, SERVER_FILE, checkUpdates, nextStep, type Checked } from './updates.js'
 
 /** Where each committed file can be opened and copied (HANDOFF §3, step 1). */
 const REPO = 'https://github.com/aaronjoseph94/budget-app/blob/main/'
@@ -22,6 +22,24 @@ const HELPER_AGAIN_STEPS = [
   'In Supabase, open Edge Functions, then the function named ai, then its code.',
   'Paste the new version over everything in the editor.',
   'Keep Enforce JWT verification on, and deploy it.',
+]
+
+/**
+ * The clicks for the AI apps server (ADR 0012). It checks every caller
+ * itself, and Claude and ChatGPT find their sign-in only through its own
+ * 401, which Supabase's JWT check would answer first.
+ */
+const SERVER_STEPS = [
+  'In Supabase, open Edge Functions, then Deploy a new function, then Via Editor.',
+  'Name it exactly mcp.',
+  'Paste the server over everything in the editor.',
+  'Turn Enforce JWT verification off, and press Deploy. The server checks every caller itself.',
+]
+
+const SERVER_AGAIN_STEPS = [
+  'In Supabase, open Edge Functions, then the function named mcp, then its code.',
+  'Paste the new version over everything in the editor, and deploy it.',
+  'Open its settings and check Enforce JWT verification is still off.',
 ]
 
 const MARK = {
@@ -61,6 +79,7 @@ export function UpdatesPanel() {
   const count = checked?.filter((c) => c.state === 'in').length
   const next = checked === null ? null : nextStep(checked)
   const helperOld = checked?.some((c) => c.update.file === HELPER_FILE && c.state === 'old') === true
+  const serverOld = checked?.some((c) => c.update.file === SERVER_FILE && c.state === 'old') === true
   return (
     <section aria-labelledby="updates-status" className="space-y-3 rounded-xl border bg-card p-4">
       <h2 id="updates-status" className="font-semibold" aria-live="polite">
@@ -102,6 +121,19 @@ export function UpdatesPanel() {
                 ))}
               </ol>
             </>
+          ) : next.file === SERVER_FILE ? (
+            <>
+              <p>
+                {serverOld
+                  ? 'Next: paste the AI apps server’s new version over the one you have. About 5 minutes, on a computer.'
+                  : 'Next: install the AI apps server, which Claude or ChatGPT connect to. About 5 minutes, on a computer.'}
+              </p>
+              <ol className="list-decimal space-y-1 pl-5">
+                {(serverOld ? SERVER_AGAIN_STEPS : SERVER_STEPS).map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+            </>
           ) : (
             <>
               <p>
@@ -114,7 +146,7 @@ export function UpdatesPanel() {
             </>
           )}
           {next.kind === 'paste' && isCopyable(next.file) ? <CopyFile key={next.file} file={next.file} /> : null}
-          {next.kind === 'paste' ? (
+          {next.kind === 'paste' && next.file !== SERVER_FILE ? (
             <a
               href={sourceOf(next.file)}
               target="_blank"
