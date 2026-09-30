@@ -80,10 +80,41 @@ it is merged into `main` (§3).
 - The phone bar is **Month · Coach · Add · Review · More**. **Week left the
   bar**: it is the **Week** in the **Month · Week · Pay · Year** switch under
   the Month's title, and `#/week` still works.
-- On a wide screen the top bar is Month, Week, Coach, Forecast, Reports,
-  Savings, Debts, Review, Add, More. Year and Paycheck are in the switch;
-  the Bill calendar and Setup are in More.
+- On a computer, a sidebar replaces the old top bar (see Mockup A below).
 - **More** is in four groups: Plan, Understand, Set up and help, Records.
+  On a computer, More is not needed: every screen is in the sidebar.
+
+### Mockup A, the new look (2026-09-29 and 30)
+
+The owner asked on 2026-09-29 for the app to be restyled to Mockup A
+(`docs/design/mockup-a/`). It was built in the design's twelve steps, then
+swept screen by screen at 320 to 1440 px, light and dark. It is a restyle:
+no figure, rule or database table changed. The decisions are ADR 0010
+(colours and type), ADR 0011 (the sidebar) and
+`docs/design/mockup-a/NOTES.md`, which ends with every deliberate
+difference from the mockups.
+
+**What the owner will notice:**
+- **A sidebar from 1024 px wide**, grouped Plan · Money · Coach · Inbox ·
+  Setup, with the main goal's progress and Sign out at its foot. Plan is
+  always open; the other groups fold and remember it. Between 768 and
+  1023 px it is a column of icons. The top bar holds the sidebar toggle,
+  where you are ("Budget › Month"), **Search or jump to… ⌘K** (opens
+  Help's search for now) and **+ Add**. On a phone nothing moved.
+- **Week is in the switch** under each title, Month · Week · Pay · Year,
+  as before on a phone, and now in the sidebar too.
+- **The colours.** The workbook's pastel blocks, teal Setup, slate Year
+  and handwritten month title are gone. The app is white cards on a light
+  grey with an indigo accent; each list has one colour on every screen
+  (orange Variable, sky Bills, violet Subscriptions, rose Debts, green
+  Income, amber Savings), and waiting-for-review is always amber. Dark
+  mode follows the phone or computer's setting. Every figure lines up in
+  columns, and nothing but the sign-in card casts a shadow.
+
+**Left open, none urgent:** chart words are small in the Month's desktop
+column (N127); long names are cut in Setup's narrow column (N135) and in
+the calendar's payday pills (N131); AI settings has no link on a computer
+once AI is on (N136).
 
 **The app, screen by screen:**
 
@@ -108,7 +139,7 @@ words and checks are in `packages/savings-coach`; the CSV writer is
 `packages/report-export`; the AI helper is `supabase/functions/ai`; the
 database is `supabase/migrations/0001` to `0018`. Decisions are recorded in
 `docs/formula-decisions.md` (F1–F49), `docs/divergences.md` and
-`docs/adr/` (0001–0009).
+`docs/adr/` (0001–0011).
 
 Key decisions already made by the owner (do not reopen): dates are the
 purchase date (F1); Gemini's free tier, privacy trade-off accepted

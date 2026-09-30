@@ -510,3 +510,93 @@ and the amber Review count.
   sign-up here.", which is auth.tsx's comment, not its copy.
 - **No figure is missing.** Getting started's count and order are core's
   `setupProgress`, as before; Help and Sign in show no figures.
+
+## 2026-09-30 — The final sweep
+
+Every screen and state walked at 320, 390, 768, 1024, 1280 and 1440 px,
+light and dark, in the preview, and compared with the mockups. No page
+scrolls sideways; no h1 differs (32px bold everywhere but Sign in's card,
+28px, and More, a phone list); no text under 4.5 to one was found after
+the fixes below; every touch target is 44px or sits in a 44px label.
+
+- **Flat by default.** `Card` and `Button` carry no shadow, and the `flat`
+  prop is gone. The shadows left are the three the mockup draws: the
+  sign-in card, the sheet over the page, and a segmented control's chosen
+  segment (0 1px 2px). A test holds every other file to none. Fields lost
+  shadcn's `shadow-xs`; More's list, the Month's Start here and Coach
+  line, and Help sheet's two link-buttons lost theirs (N138).
+- **Tabular figures on the body,** not per element: fifteen sentences
+  carried a figure without `.tnum`. `.tnum` stays, redundant.
+- **Getting started's lit step** takes `canvas-muted` on its tint, as
+  every other tinted surface does.
+- **31 unused tokens removed** (N129), with their contrast rows.
+- **N127 stays open:** chart text is one shared constant (see its entry).
+  N124 and N128 were already settled.
+
+### Every deliberate difference from the mockups
+
+Colour and hue (ADR 0010: a hue names a list, and contrast is a floor):
+- Stat cards, insight tiles, the Debts rings, the chosen debt plan, the
+  AI status, Forecast badges and every non-list tint take the indigo
+  accent, where the mockup uses green, rose, sky, violet or teal.
+- Sidebar icons are grey, the lit one the accent (ADR 0011); the mockup
+  colours each.
+- The Review count, the waiting banners and Review's unreadable lines are
+  waiting's amber, where the mockup has orange in places; the Year's
+  review line is the amber banner, not a grey link.
+- Small orange words are #C2410C, large ones and icons #EA580C (#F97316 is
+  2.8:1). The waiting count is #92400E. A field's edge is a darker grey
+  than #D1D5DB (a control's only edge needs 3:1). Words on the canvas and
+  on tints are `canvas-muted`. The payday pill is #047857 with white (the
+  mockup's #10B981 reads 2.5:1). A filled button in dark mode has dark
+  words on #818CF8.
+- The Year's Expenses are grey (`owed`), not Debts' rose; the four lists
+  added are no one list. The Month's Money out / Money in on All
+  transactions stay white, not rose and green.
+- Getting started's "You're done when…" check and "Done" are the accent,
+  not Income's green; the check-in's Last week is tinted to the accent.
+
+Layout:
+- Below 768 px the phone bar and single column stay (ADR 0011); the
+  mockups are 1440 px only.
+- Sidebar groups other than Plan fold (design-review P1 item 1).
+- The Month lays the lists two across with the charts in a 17 to 20rem
+  column from 1280 px; the mockup puts three lists across.
+- The Coach is one column from 1024 to 1279 px, the goal card not sticky;
+  the Forecast's sections likewise one across below 1280 px.
+- Add, Review and All transactions keep the 48rem centred reading width,
+  where the mockup sets 920 to 960 px to the left; Review's two buttons
+  therefore wrap under the title at 1440.
+- Setup's two columns run top to bottom, so the keyboard follows what is
+  seen; the mockup pairs them row by row.
+- The Year's pie stays a pie and "Against goals and budgets" stays
+  Goal-beside-Actual columns; Reports' "This month and last" stays paired
+  bars. A restyle changes a chart's colours, never its shape.
+- Bill calendar names wrap instead of ending in "…", so "Credit Card 1"
+  and "Credit Card 2" stay apart. Planned amounts there are italic, as
+  the screen's own legend says; elsewhere "planned" is a small word.
+- The check-in and Ask stay centred at reading width.
+- Ask's suggestion chips keep the small button's corners, not 14px pills.
+- Goal and debt actions keep every word (Mark as reached, Remove), where
+  the mockup shows a bin alone.
+- Chart words are drawn by chart-specs at one scale, so the Month's
+  desktop legend is near 9px, where the mockup writes 14px HTML (N127).
+
+Copy (the app's own; screens.md is the inventory):
+- Left out, as not the app's: the Month's hint lines under the stat cards
+  and the hero's bar; "September 2026" under chart titles; Reports' and
+  the Forecast's subtitles and "THE MONTH IN REVIEW"; the Year's chart
+  subtitles; "Today's insights" and the "Main goal" badge on the Coach;
+  "· Card statement (PDF)" on Review rows (N134) and the "Similar shop"
+  badge; "every approved charge…" under All transactions; Setup's and AI
+  settings' subtitles; Help's "ARTICLE" and "✨ Ask about this" pill; the
+  sign-in's note on accounts; the search boxes' magnifiers.
+- Added, as the design review asked: "← Coach" on Ask and "← Settings" on
+  AI settings; the sidebar's and top bar's "Search or jump to…", "⌘K" and
+  "Toggle sidebar".
+- The Week's and Month's "$X of $Y in weekly budgets" and its bar are left
+  out: no engine output gives the Actual of the budgeted rows alone.
+
+Figures: none is computed on a screen. Every percentage, bar, ring and
+share is core's (goalProgress, budgetUsedBp, shareBp, partShares,
+goalBars, scaleSeries and the rest).
