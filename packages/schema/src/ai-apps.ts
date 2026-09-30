@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ASK_MONTHS, ASK_PERIODS } from './ask.js'
 import { IngestedTextSchema } from './primitives.js'
 
 /**
@@ -48,5 +49,20 @@ export const GetPeriodInputSchema = z
     list: ListSchema.optional(),
     categories: z.array(NameSchema).min(1).max(10).optional(),
     compare: z.boolean().default(true),
+  })
+  .strict()
+
+/**
+ * `get_spending`: the questions the app's Ask answers from figures alone,
+ * over one of its periods, or a month by name this year or last (`month`
+ * is used instead of `period` when both are given).
+ */
+export const GetSpendingInputSchema = z
+  .object({
+    question: z.enum(['spend_in', 'compare', 'top_categories', 'top_shops', 'subscriptions', 'explain_month']),
+    period: z.enum(ASK_PERIODS).optional(),
+    month: z.enum(ASK_MONTHS).optional(),
+    year: z.enum(['this', 'last']).default('this'),
+    categories: z.array(NameSchema).min(1).max(3).optional(),
   })
   .strict()

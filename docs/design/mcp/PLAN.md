@@ -1630,6 +1630,20 @@ created it in M9, and imported `packages/ai-apps` from
 - **Estimate:** about 180 lines.
 - **Done:** each question kind returns `answerQuery`'s figures for the same
   rows as the app's Ask; an unknown category name is `unknown_category`.
+- **As built (2026-09-30):** three commits: the test rows shared, Ask's
+  renaming (`askInput`) with its parity case, then the tool. Input gains
+  `year: this | last` for `month`, as Ask's own reading has (`month` wins
+  over `period`); Not spending is not offered, as in Ask, so naming it is
+  `unknown_category`. The six questions need no forecast, goal or debt,
+  so the read is categories, budgets, plans, txns, records and
+  not_subscriptions, thirteen months back and one ahead of the server's
+  date (Ask reads twelve back from the owner's month; seen RED at twelve,
+  and at none ahead). The answer keeps core's shape in snake case:
+  `answer{status, now, before, cut_from, main{say, names, figures},
+  rows[]}`, or `{status: not_yet}` / `{status: before_records,
+  covered_from}`; money figures are `Money`, a change adds `direction`,
+  months are `YYYY-MM`. Shop names (top shops, subscriptions) go through
+  `cleanShop`.
 
 ### M6b: `get_debts`
 

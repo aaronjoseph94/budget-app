@@ -48,3 +48,23 @@ describe('the read tools do not depend on how many rows the database returns', (
     expect(out.as_of).toBe(today)
   })
 })
+
+const QUESTIONS = ['spend_in', 'compare', 'top_categories', 'top_shops', 'subscriptions', 'explain_month'] as const
+const ASKED: readonly Record<string, unknown>[] = [{}, { period: 'last_year' }, { period: 'last_three_months' }, { month: 'october', year: 'last' }]
+// The server's clock either side of a month's end from the owner's today, and on a month's last day.
+const CLOCKS = [
+  ['2026-10-01T03:00:00Z', '2026-09-30'],
+  ['2026-09-30T20:00:00Z', '2026-10-01'],
+  ['2026-03-31T12:00:00Z', '2026-03-31'],
+] as const
+
+describe('get_spending does not depend on how many rows the database returns', () => {
+  it.each(QUESTIONS.flatMap((question) => CLOCKS.map(([clock, today]) => [question, clock, today] as const)))('%s, the server at %s', async (question, clock, today) => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(clock))
+    for (const asked of ASKED) {
+      const out = await bothWays('get_spending', { question, categories: ['Groceries'], ...asked }, today)
+      expect(out.as_of).toBe(today)
+    }
+  })
+})

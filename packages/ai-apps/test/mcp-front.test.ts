@@ -70,7 +70,7 @@ describe('/mcp/health', () => {
   it('says the version and the tool count, with no token', async () => {
     const res = await handle(at('/functions/v1/mcp/health', { headers: { origin: SITE } }), ENV)
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ ok: true, version: MCP_SERVER_VERSION, tools: 2 })
+    expect(await res.json()).toEqual({ ok: true, version: MCP_SERVER_VERSION, tools: 3 })
     expect(res.headers.get('access-control-allow-origin')).toBe(SITE)
     const bare = await handle(at('/mcp/health'), ENV)
     expect(bare.headers.get('access-control-allow-origin')).toBeNull()

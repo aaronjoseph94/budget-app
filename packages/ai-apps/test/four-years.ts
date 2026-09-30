@@ -52,6 +52,7 @@ export function fourYears(today: string): Row {
     balances: monthly('01', (d, i) => ({ month: d, starting_balance_cents: 90000 + i * 1000 })),
     schedules: [{ id: 'ps', category_id: 'pay', first_pay_date: '2023-01-15', frequency: 'monthly' }],
     records: { statement_start: '2023-01-08', statement_end: '2026-09-07', first_entry: '2023-01-02' },
+    not_subscriptions: ['not_subscription:TO SAVINGS'],
     pending: everyDay('2023-01-05', '2026-12-28', 17, (d) => ({ d })).map((r) => r.d),
   }
 }

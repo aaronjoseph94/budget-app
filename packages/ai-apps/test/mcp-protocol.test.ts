@@ -62,9 +62,9 @@ describe('the MCP endpoint', () => {
 
   it('lists the same tools in both eras, with a zero cache hint', async () => {
     const names = (reply: Record<string, unknown>) => (reply.result as { tools: { name: string }[] }).tools.map((t) => t.name)
-    expect(names(await message(await handle(legacy('tools/list'), ENV)))).toEqual(['list_categories', 'get_period'])
+    expect(names(await message(await handle(legacy('tools/list'), ENV)))).toEqual(['list_categories', 'get_period', 'get_spending'])
     const now = await message(await handle(modern('tools/list'), ENV))
-    expect(names(now)).toEqual(['list_categories', 'get_period'])
+    expect(names(now)).toEqual(['list_categories', 'get_period', 'get_spending'])
     expect(now.result).toMatchObject({ ttlMs: 0, cacheScope: 'private' })
   })
 

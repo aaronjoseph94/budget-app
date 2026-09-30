@@ -71,6 +71,7 @@ export { ModelProse, proseProblem, type ProseProblem } from './prose.js'
 export {
   AmountTextSchema,
   GetPeriodInputSchema,
+  GetSpendingInputSchema,
   ListCategoriesInputSchema,
   ListSchema,
   MCP_SERVER_VERSION,
