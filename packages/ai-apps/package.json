@@ -11,6 +11,7 @@
     "@budget/core": "workspace:*",
     "@budget/money-primitives": "workspace:*",
     "@budget/schema": "workspace:*",
+    "@budget/statement-parsers": "workspace:*",
     "@modelcontextprotocol/server": "2.2.0",
     "zod": "4.6.5"
   },

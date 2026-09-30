@@ -9,6 +9,8 @@
 import {
   historyStart,
   isoDate,
+  monthBounds,
+  shiftMonth,
   type BudgetHistoryRow,
   type IncomeSchedule,
   type MonthSheetInput,
@@ -17,12 +19,15 @@ import {
   type PeriodCategory,
   type PeriodEntry,
   type PlanHistoryRow,
+  type ShopEntry,
+  type SpendingBase,
   type WeekCategory,
   type WeekSheetInput,
   type YearSheetInput,
 } from '@budget/core'
 import type { IsoDate } from '@budget/money-primitives'
 import type { CategoryKind } from '@budget/schema'
+import { normalizeMerchant } from '@budget/statement-parsers'
 
 /** A category as `listCategories` gives it to the app's screens. */
 export interface CategoryRow {
@@ -96,6 +101,27 @@ export function plansFrom(part: unknown): PlanHistoryRow[] {
 
 export function entriesFrom(rows: readonly LedgerRow[]): PeriodEntry[] {
   return rows.map((r) => ({ postedOn: isoDate(r.posted_on), amountCents: r.amount_cents, categoryId: r.category_id }))
+}
+
+/** Rows typed in Add, read from a receipt photo or added by an AI app, as against a card statement's (F38). */
+const BY_HAND: ReadonlySet<string> = new Set(['typed', 'receipt_photo', 'ai_app'])
+
+/** As entriesFrom, with each row's shop as statement-parsers normalises it, as the app's shopEntriesForCore gives it. */
+export function shopEntriesFrom(rows: readonly LedgerRow[]): ShopEntry[] {
+  return rows.map((r) => ({
+    id: r.id,
+    postedOn: isoDate(r.posted_on),
+    amountCents: r.amount_cents,
+    categoryId: r.category_id,
+    shop: normalizeMerchant(r.merchant_raw),
+    by: BY_HAND.has(r.source) ? 'hand' : 'statement',
+  }))
+}
+
+/** The shops marked "Not a subscription": 0017 keeps each as a dismissal's key, as the app's notSubscriptionsOf reads it (F38). */
+export function notSubscriptionsFrom(part: unknown): string[] {
+  const NOT_SUBSCRIPTION = 'not_subscription:'
+  return (listOf(part) as readonly string[]).filter((k) => k.startsWith(NOT_SUBSCRIPTION)).map((k) => k.slice(NOT_SUBSCRIPTION.length))
 }
 
 /** When each income source is paid, as the forecast reads it (F29). */
@@ -194,5 +220,19 @@ export function yearSheetInput(read: Read, start: IsoDate, asOf: IsoDate): YearS
     planHistory: plansFrom(read['plans']),
     entries: entriesFrom(txnsFrom(read['txns'])),
     startingBalances: balance === null ? [] : [{ month: start, cents: balance }],
+  }
+}
+
+/** What Ask gives answerQuery about spending, as its answerOf builds it from the Coach's year: twelve months back from this month's first day. */
+export function askInput(read: Read, today: IsoDate): SpendingBase & { readonly notSubscriptions: readonly string[] } {
+  return {
+    asOf: today,
+    historyStart: recordsFrom(read['records']).historyStart,
+    readFrom: shiftMonth(monthBounds(today).start, -12),
+    categories: weekCategories(categoriesFrom(read['categories'])),
+    budgetHistory: budgetsFrom(read['budgets']),
+    planHistory: plansFrom(read['plans']),
+    entries: shopEntriesFrom(txnsFrom(read['txns'])),
+    notSubscriptions: notSubscriptionsFrom(read['not_subscriptions']),
   }
 }

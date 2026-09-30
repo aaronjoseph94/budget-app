@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { isoDate, monthSheet, paycheckSheet, weekSheet, yearSheet, type PaySchedule } from '@budget/core'
-import { categoriesFrom, monthSheetInput, paySources, paycheckSheetInput, weekSheetInput, yearSheetInput } from '@budget/ai-apps/rows'
+import { answerQuery, isoDate, monthSheet, paycheckSheet, weekSheet, yearSheet, type AskIntent, type PaySchedule } from '@budget/core'
+import { askInput, categoriesFrom, monthSheetInput, paySources, paycheckSheetInput, weekSheetInput, yearSheetInput } from '@budget/ai-apps/rows'
 import {
   getMonthBalance,
   latestStatementEnd,
+  readRecordsStart,
   listBudgetHistory,
   listCategories,
   listPaySchedules,
@@ -11,7 +12,9 @@ import {
   listTransactions,
   type Category,
 } from '../src/ledger.js'
-import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore, weekCategoriesForCore } from '../src/sheet-input.js'
+import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore, shopEntriesForCore, weekCategoriesForCore } from '../src/sheet-input.js'
+import { answerOf } from '../src/ask/answer.js'
+import { historyOf, type DigestRows } from '../src/coach/facts.js'
 import { createFakeSupabase, type FakeTables } from './fake-supabase.js'
 
 /**
@@ -184,5 +187,41 @@ describe('the AI apps server reads rows as the app does', () => {
     const screen = await yearAsTheApp(own, '2026-12-01', whole)
     expect(yearSheet(server)).toEqual(yearSheet(screen))
     expect(yearSheet(server).startingBalanceCents).toBe(80000)
+  })
+
+  it('Ask', async () => {
+    const supabase = createFakeSupabase(tables).client
+    // The Coach's year, as useCoachRead reads it on 30 September: from September 2025, budgets and plans three months ahead.
+    const coach: DigestRows = {
+      asOf: '2026-09-30',
+      readFrom: '2025-09-01',
+      rows: await listTransactions(supabase, { from: '2025-09-01', to: '2026-09-30' }),
+      budgets: await listBudgetHistory(supabase, '2026-12-01'),
+      plans: await listPlanHistory(supabase, '2026-12-01', 'month'),
+      statementEnds: await latestStatementEnd(supabase),
+      records: await readRecordsStart(supabase),
+      pending: null,
+    }
+    const categories = await listCategories(supabase)
+    const notSubscriptions = ['PAYROLL']
+    const server = askInput({ ...read, not_subscriptions: ['not_subscription:PAYROLL', 'goal_ahead:x'] }, isoDate('2026-09-30'))
+    // The server reads the months either side; each row it has beyond Ask's is left out by the windows.
+    expect({ ...server, entries: server.entries.filter((e) => e.postedOn <= '2026-09-30') }).toEqual({
+      asOf: '2026-09-30',
+      historyStart: historyOf(coach),
+      readFrom: '2025-09-01',
+      categories: weekCategoriesForCore(categories),
+      budgetHistory: budgetsForCore(await listBudgetHistory(supabase, WINDOW.to)),
+      planHistory: plansForCore(await listPlanHistory(supabase, WINDOW.to, 'month')),
+      entries: shopEntriesForCore(coach.rows),
+      notSubscriptions,
+    })
+    const food = categories.find((c) => c.name === 'Groceries')?.id ?? ''
+    const intents: AskIntent[] = ['spend_in', 'compare', 'top_categories', 'top_shops', 'subscriptions', 'explain_month']
+    for (const intent of intents) {
+      const query = { intent, period: null, categoryIds: intent === 'spend_in' || intent === 'compare' ? [food] : [], monthlyCents: null }
+      const app = answerOf({ read: coach, categories, goals: [], debts: null, notSubscriptions }, query)
+      expect(answerQuery({ ...server, query, forecast: null, goals: [], debts: null })).toEqual(app)
+    }
   })
 })

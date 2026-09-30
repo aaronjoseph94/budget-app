@@ -114,6 +114,9 @@ importers:
       '@budget/schema':
         specifier: workspace:*
         version: link:../schema
+      '@budget/statement-parsers':
+        specifier: workspace:*
+        version: link:../statement-parsers
       '@modelcontextprotocol/server':
         specifier: 2.2.0
         version: 2.2.0
