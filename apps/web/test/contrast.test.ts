@@ -113,24 +113,22 @@ const TEXT: readonly (readonly [text: string, surface: string, least?: number, a
   ['primary', 'primary-soft'],
   ['destructive-foreground', 'destructive'],
   ['spend', 'card'],
-  ['spend-foreground', 'spend'],
   ['income', 'card'],
   ['warning', 'card'],
   ['summary-label', 'summary'],
   ['summary-value', 'summary'],
   ['summary-negative-ink', 'summary-negative'],
-  ['title-ink', 'title-band'],
+  ['title-ink', 'card'],
   // Each list's ink on its own surfaces and on a card; its accent never carries words.
   ...(['variable', 'bills', 'subscriptions', 'debts', 'income', 'savings'] as const).flatMap((list) =>
-    ['card', 'band', 'header', 'tile'].map((surface) => [`${list}-ink`, surface === 'card' ? 'card' : `${list}-${surface}`] as const),
+    ['card', 'header', 'tile'].map((surface) => [`${list}-ink`, surface === 'card' ? 'card' : `${list}-${surface}`] as const),
   ),
-  ...(['variable', 'income', 'savings', 'owed'] as const).flatMap((list) =>
-    ['band', 'header', 'total'].map((surface) => [`${list}-ink`, `${list}-${surface}`] as const),
-  ),
+  ['savings-ink', 'savings-band'],
+  ['owed-ink', 'owed-header'],
   ['owed-ink', 'card'],
-  // #ea580c, for large orange words only (ADR 0010).
+  // #ea580c, for large orange words and Variable's icon on its tile (ADR 0010).
   ['variable-large', 'card', 3],
-  ['variable-large', 'variable-band', 3],
+  ['variable-large', 'variable-tile', 3],
   ['waiting-ink', 'waiting'],
   // The Month's hero stat card ends on the accent's tint (step 3).
   ['foreground', 'primary-tint'],
@@ -161,14 +159,7 @@ const TEXT: readonly (readonly [text: string, surface: string, least?: number, a
   // The Coach's check-in link, hovered, ends on the soft accent (step 7).
   ['canvas-muted', 'primary-soft'],
   // The screens' own sets.
-  ['white', 'setup-band'],
-  ['setup-band-ink', 'setup-band'],
-  ['setup-band-ink', 'setup-band', 4.5, 0.9],
-  ['setup-label', 'card'],
-  ['foreground', 'setup-canvas'],
-  ['muted-foreground', 'setup-canvas'],
   ['year-header-ink', 'year-header'],
-  ['foreground', 'year-row-alt'],
   ['foreground', 'year-today'],
   // The Year's tables (step 5): a budget in muted words on today's row, and
   // each Total row's words in the ink on its list's tinted head.
@@ -176,12 +167,8 @@ const TEXT: readonly (readonly [text: string, surface: string, least?: number, a
   ...(['income', 'savings', 'bills', 'debts', 'subscriptions', 'variable', 'owed'] as const).map(
     (list) => ['foreground', `${list}-header`] as const,
   ),
-  ['home-ink', 'home-card'],
-  ['home-ink', 'home-canvas'],
-  ['muted-foreground', 'home-canvas'],
+  ['home-ink', 'card'],
   ['year-chart-ink', 'card'],
-  ['paycheck-ink', 'paycheck-band'],
-  ['paycheck-ink', 'card'],
   ['calendar-ink', 'card'],
   ['calendar-ink', 'calendar-band'],
   ['calendar-pill-ink', 'calendar-pill'],
@@ -198,7 +185,6 @@ const TEXT: readonly (readonly [text: string, surface: string, least?: number, a
   ['calendar-ink', 'calendar-today'],
   ['muted-foreground', 'calendar-today'],
   ['payday-ink', 'payday'],
-  ['savings-ink', 'savings-banner'],
   ['savings-ink', 'savings-title'],
   ['savings-ink', 'savings-needed'],
   // Savings (step 9): a goal's name in ink on its amber strip, and Saved
@@ -209,12 +195,7 @@ const TEXT: readonly (readonly [text: string, surface: string, least?: number, a
   // rings' centre figure where the summary's accent tint ends.
   ['debts-ink', 'card'],
   ['debt-ink', 'primary-tint'],
-  ['white', 'debt-banner'],
-  ['debt-label', 'debt-page'],
-  ['debt-label', 'card'],
-  ['debt-ink', 'debt-page'],
   ['debt-ink', 'card'],
-  ['muted-foreground', 'debt-page'],
 ]
 
 /** `fg` over `bg` at `alpha`, or `fg` itself at full strength. */

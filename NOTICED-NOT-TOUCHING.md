@@ -2995,7 +2995,7 @@ to `Block` can take both.
 
 ---
 
-## N129 — The `paycheck` colour set is drawn by nothing
+## N129 — The `paycheck` colour set is drawn by nothing *(settled 2026-09-30)*
 
 **Seen:** 2026-09-29, Mockup A step 4. Paycheck's summary, its title band
 and the no-schedule note were the last users of `paycheck-band` and
@@ -3025,6 +3025,18 @@ this clean-up is now due.
 
 **To settle:** after step 12, remove every token no class uses, with its
 contrast rows, in one commit.
+
+**Settled, 2026-09-30, the final sweep:** 31 tokens no class, rule or
+chart reads are gone from index.css with their contrast rows: the
+`paycheck` and `setup` sets, `title-band`, `year-row-alt`, `home-canvas`
+and `home-card`, `savings-banner`, `debt-banner`, `debt-page` and
+`debt-label`, `spend-foreground`, every list's unused `-band`, `-rule` or
+`-total` (Savings keeps its band and Income its rule, which are drawn),
+and `owed-band`, `owed-rule` and `owed-total`. `owed` keeps its header,
+ink and accent, the Year's Expenses. Rows that measured an ink on a
+removed surface now measure it on the surface it is drawn on
+(`title-ink` and `home-ink` on the card, `variable-large` on its tile,
+`owed-ink` on its header).
 
 ---
 
