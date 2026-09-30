@@ -13,6 +13,9 @@ export type LogCode =
   | 'deadline'
   | 'sdk_error'
 
-export function log(code: LogCode, counts: Readonly<Record<string, number>> = {}): void {
+/** The counts a line may carry, by fixed name, so no key can carry content either. */
+export type LogCounts = Readonly<Partial<Record<'check' | 'status' | 'ms' | 'rows', number>>>
+
+export function log(code: LogCode, counts: LogCounts = {}): void {
   console.log(JSON.stringify({ fn: 'mcp', code, ...counts }))
 }

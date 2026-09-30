@@ -12,7 +12,7 @@
  *   `server/discover`), statelessly: a fresh server per request. Any other
  *   method is 405.
  *   It needs an AI app's token (src/auth.ts); without one, the 401 says
- *   where to sign in.
+ *   where to sign in. A request gets 20 s in all.
  * - `GET /mcp/.well-known/oauth-protected-resource`: RFC 9728's metadata.
  * - `GET /mcp/health`: `{ ok, version, tools }`, no token, CORS for the
  *   app's own origins only, so One-time updates can check the paste.
@@ -40,6 +40,9 @@ export type Env = z.infer<typeof EnvSchema>
 
 /** The largest request body the server reads (PLAN §2.7). */
 export const MAX_BODY_BYTES = 64 * 1024
+
+/** The most a request may take in all (PLAN §2.7), far under the platform's 150 s. */
+export const DEADLINE_MS = 20_000
 
 /** The tools, in the order `tools/list` gives them. None yet (PLAN §3, M5b). */
 const TOOLS: readonly ((server: McpServer) => void)[] = []
@@ -81,6 +84,22 @@ function noStore(res: Response): Response {
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers })
 }
 
+/** The work's answer, or 503 once the deadline passes. */
+async function withDeadline(work: Promise<Response>): Promise<Response> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const late = new Promise<Response>((resolve) => {
+    timer = setTimeout(() => {
+      log('deadline')
+      resolve(json(503, { error: 'deadline' }))
+    }, DEADLINE_MS)
+  })
+  try {
+    return await Promise.race([work, late])
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 async function serveMcp(req: Request, project: Project, fetchFn: typeof fetch): Promise<Response> {
   const caller = await checkToken(project, req.headers.get('authorization'), fetchFn)
   return caller instanceof Response ? caller : mcp.fetch(req, { authInfo: caller })
@@ -113,7 +132,7 @@ async function route(req: Request, env: Env, fetchFn: typeof fetch): Promise<Res
   }
   const project = { url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY }
   if (metadata) return json(200, protectedResource(project))
-  return serveMcp(req, project, fetchFn)
+  return withDeadline(serveMcp(req, project, fetchFn))
 }
 
 export async function handle(

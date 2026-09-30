@@ -1421,6 +1421,19 @@ created it in M9, and imported `packages/ai-apps` from
 - **Done:** §2.13's `mcp-auth` and `mcp-logs` pass; seen RED by removing
   the `client_id` check, and by logging a token.
 
+- **As built (2026-09-30):** three commits, to stay under 300 lines each:
+  the metadata and the challenge; the token check; the deadline and the
+  log test. The token check also requires the token's `sub` to equal the
+  user Auth names, and a token Auth accepts whose payload cannot be read
+  is refused as invalid. The owner's own session gets 403
+  `not_an_ai_app` with its sentence. The log's counts take fixed names
+  (`check`, `status`, `ms`, `rows`), since a free key could carry a token;
+  `token_refused` counts which check refused (1 Auth, 2 user, 3 payload,
+  4 `iss`, 5 `role`, 6 `sub`, 7 `client_id`). The 20 s deadline answers
+  503 `deadline` and stops waiting; the call it gave up on ends at its
+  own 10 s timeout. The 64 KB bound is the SDK's, so a large body is read
+  only after the token passes. `auth.ts` holds the checks, as planned.
+
 ### M3: The pasteable file, built with the site
 
 - **Files:** `packages/ai-apps/build.ts` (`bundleMcpFunction`),

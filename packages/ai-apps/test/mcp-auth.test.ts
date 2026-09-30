@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs'
-import { describe, expect, it } from 'vitest'
-import { handle } from '../src/handle.js'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { DEADLINE_MS, handle } from '../src/handle.js'
 import { AI_APP_CLAIMS, AI_APP_TOKEN, CLIENT, ENV, PROJECT, fakeFetch, signedIn, tokenWith, type Respond } from './fake-auth.js'
 
 /**
@@ -31,6 +31,10 @@ function call(auth: string | null, respond?: Respond, headers: Record<string, st
   return { res, calls }
 }
 const noFetch = fakeFetch().fetchFn
+
+afterEach(() => {
+  vi.useRealTimers()
+})
 
 describe('discovery', () => {
   it('serves the metadata with no token, naming the one authorization server', async () => {
@@ -123,6 +127,17 @@ describe('the token check', () => {
     const { res, calls } = call(`Bearer ${AI_APP_TOKEN}`, signedIn, { origin: 'https://evil.example' })
     expect((await res).status).toBe(403)
     expect(calls).toEqual([])
+  })
+})
+
+describe('the deadline', () => {
+  it(`gives up after ${DEADLINE_MS / 1000} s`, async () => {
+    vi.useFakeTimers()
+    const { res } = call(`Bearer ${AI_APP_TOKEN}`, () => new Promise<Response>(() => undefined))
+    await vi.advanceTimersByTimeAsync(DEADLINE_MS)
+    const r = await res
+    expect(r.status).toBe(503)
+    expect(await r.json()).toEqual({ error: 'deadline' })
   })
 })
 
