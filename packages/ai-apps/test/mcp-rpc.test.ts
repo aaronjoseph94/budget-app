@@ -34,6 +34,8 @@ describe('rpc', () => {
 
   it.each([
     ['a refusal from the gate', () => reply({ refused: 'limit_reached' }), 'limit_reached'],
+    // 0030: the token's sign-in has ended (Disconnect), though the token has not expired.
+    ['a disconnected sign-in', () => reply({ refused: 'disconnected' }), 'disconnected'],
     ['a code the server does not know', () => reply({ refused: 'SECRET-code' }), 'server_error'],
     ['the function missing (0020 not pasted)', () => reply({ code: 'PGRST202', message: 'SECRET-body' }, 404), 'needs_update'],
     ['any other failure', () => reply({ code: 'XX000', message: 'SECRET-body' }, 500), 'server_error'],

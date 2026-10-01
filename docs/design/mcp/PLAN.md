@@ -2016,12 +2016,18 @@ created it in M9, and imported `packages/ai-apps` from
    Custom Access Token hook closes it fully, at the price of a hook that
    runs on every sign-in, the owner's included.
 4. **Revocation window.** After Disconnect, the server refuses the app at
-   once (`/auth/v1/user` sees the session gone), but PostgREST checks only
-   the signature and expiry, so the access token still works there for up
-   to an hour: it can call the `ai_app_*` functions directly, reading within
-   the day's count and adding up to the day's 30 pending rows. It can write
-   nothing else (0019) and read nothing else (0020), and switching AI apps
-   off stops even that at once. Disconnect's confirmation says so.
+   once (`/auth/v1/user` sees the session gone). PostgREST checks only
+   the signature and expiry, so before 0030 the access token still worked
+   there for up to an hour: it could call the `ai_app_*` functions
+   directly, reading within the day's count and adding up to the day's 30
+   pending rows. *Closed by 0030 (security review mcp-1-01, 2026-10-01):*
+   the gate refuses a token whose `session_id` no longer names a live row
+   of `auth.sessions`, with `disconnected`. It rests on three things only
+   the hosted project shows (HANDOFF §4 checks 18 and 21): the token
+   carries `session_id`, the gate's owner may read `auth.sessions`, and
+   Disconnect deletes the row. Until 0030 is in, switching AI apps off
+   stops it at once, and Disconnect's confirmation says so. The Auth API
+   side of the token is risk 2.
 5. **The signing key.** ChatGPT needs the project to sign with ES256.
    Rotating may break gateway JWT verification on `ai` and `read-receipt`
    (Supabase issue 42244, and Supabase's own warning), hence §1's step 3,

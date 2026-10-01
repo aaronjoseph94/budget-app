@@ -274,3 +274,24 @@ plan's §6 has all 24 findings and its sources):
 - **ADR 0005:** not amended after all.
 - **Recorded, not closed:** the Auth API risk above, and K1's failure
   mode for a token used directly.
+
+## Security review, 2026-10-01
+
+The owner asked for a security review with fixes ("add a security review
+also to the task list", 2026-09-30), then "don't ask me any questions;
+auto-allow and say yes to everything" and "keep going and push to main
+when done" (2026-10-01). Where CLAUDE.md says ask first, the decision
+below was made under those words and is recorded with them.
+
+- **Numbering (2026-10-01).** The fixes' database updates start at
+  `0030`, not `0021`: another line of updates (`0021` onwards) was being
+  prepared at the same time, and the numbers must never collide. They
+  depend on `0020` only, touch none of that line's functions, and each
+  checks the one before it through `ai_app_update_level()`, a name of
+  their own, so the two lines may be pasted in either order. `0019` and
+  `0020` are not edited: the deployed site already offers them on a
+  **Copy** button, so the owner may have pasted them.
+- **mcp-1-01 (with mcp-3-02): Disconnect now ends a token at PostgREST
+  too** (`0030`). The gate refuses a token whose `session_id` names no
+  live row of `auth.sessions`, with `disconnected`. Three hosted-only
+  facts it rests on are HANDOFF §4 checks 18 and 21.

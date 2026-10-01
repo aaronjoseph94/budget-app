@@ -19,6 +19,10 @@ insert into auth.users (id) values
   ('11111111-1111-4111-8111-111111111111'),
   ('22222222-2222-4222-8222-222222222222');
 
+-- The AI app's sign-in, live: every AI-app claim below names it (0030).
+insert into auth.sessions (id, user_id) values
+  ('55555555-5555-4555-8555-555555555555', '11111111-1111-4111-8111-111111111111');
+
 set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
 
 insert into public.accounts (id, user_id, name)
@@ -2345,7 +2349,7 @@ set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
 do $$
 declare
   owner_ text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated"}';
-  ai_app text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999"}';
+  ai_app text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}';
   r record;
   n int;
 begin
@@ -2402,7 +2406,7 @@ set role wide_user;
 do $$
 declare
   owner_ text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated"}';
-  ai_app text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999"}';
+  ai_app text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}';
   writes text[] := array[
     'insert into public.%1$I select * from public.%1$I where user_id = auth.uid() limit 1',
     'update public.%1$I set user_id = user_id where user_id = auth.uid()',
@@ -2524,7 +2528,7 @@ set role app_user;
 do $$
 declare
   owner_ text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated"}';
-  ai_app text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999"}';
+  ai_app text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}';
   t text;
   n int;
   pass int;
@@ -2587,7 +2591,7 @@ end $$;
 -- Reads through the gate: counted, and refused off, adds off and at the cap.
 do $$
 declare
-  ai_app text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999"}';
+  ai_app text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}';
   owner_ text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated"}';
   r jsonb;
 begin
@@ -2627,7 +2631,7 @@ set role app_user;
 do $$
 begin
   perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
-  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999"}', true);
+  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}', true);
   if public.ai_app_review(1) ? 'refused' then raise exception 'the 300th read was refused'; end if;
   if public.ai_app_review(1) <> '{"refused": "limit_reached"}' then raise exception 'NOT REFUSED: a 301st read'; end if;
   raise notice 'the 300th read goes through and the 301st is refused';
@@ -2639,7 +2643,7 @@ update public.ai_app_usage set calls = 0 where user_id = '11111111-1111-4111-811
 begin transaction read only;
 set local role app_user;
 set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
-set local request.jwt.claims = '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999"}';
+set local request.jwt.claims = '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}';
 do $$
 begin
   perform public.ai_app_read('{categories}', '2026-01-01', '2026-01-31');
@@ -2660,7 +2664,7 @@ declare
   cases jsonb;
 begin
   perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
-  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999"}', true);
+  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}', true);
   select * into h from verify.ai_hash;
   for c in select * from (values
       ('bad_amount', acc, day, 0::bigint, 'Lunch at Subway', 1, h.lunch, 1, null::text),
@@ -2730,7 +2734,7 @@ declare
   r   jsonb;
 begin
   perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
-  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999"}', true);
+  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}', true);
   if public.ai_app_add_candidate(null, null, null, null, null, null, null, null) <> '{"refused": "bad_amount"}' then
     raise exception 'the 30th add was refused by the gate';
   end if;
@@ -2770,5 +2774,76 @@ begin
     if sqlerrm not like 'Paste 0019 first%' then raise; end if;
   end;
   raise notice '0020 says to paste 0019 first when it is missing';
+end $$;
+rollback;
+
+-- ---------------------------------------------------------------------------
+-- 0030: a disconnected AI app is refused at once. The gate lets a token
+-- through only while the sign-in it came from is still live: Disconnect
+-- deletes that session, and the token, used directly against PostgREST, is
+-- refused for the hour it would otherwise still have (mcp-1-01).
+-- ---------------------------------------------------------------------------
+insert into auth.sessions (id, user_id, not_after) values
+  ('66666666-6666-4666-8666-666666666666', '22222222-2222-4222-8222-222222222222', null),
+  ('77777777-7777-4777-8777-777777777777', '11111111-1111-4111-8111-111111111111', now() - interval '1 minute');
+set role app_user;
+do $$
+declare
+  claims text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999"%s}';
+  c      record;
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  for c in select * from (values
+      ('no session claim', ''),
+      ('a session that is not an id', ', "session_id": "not-a-uuid"'),
+      ('a session that was deleted', ', "session_id": "88888888-8888-4888-8888-888888888888"'),
+      ('another user''s session', ', "session_id": "66666666-6666-4666-8666-666666666666"'),
+      ('a session past its end', ', "session_id": "77777777-7777-4777-8777-777777777777"')
+    ) as v(what, extra) loop
+    perform set_config('request.jwt.claims', format(claims, c.extra), true);
+    if public.ai_app_read('{categories}', '2026-01-01', '2026-01-31') <> '{"refused": "disconnected"}'
+       or public.ai_app_review(1) <> '{"refused": "disconnected"}'
+       or public.ai_app_search(null, '2026-01-01', '2026-01-31', null, null, null, null, null, 1) <> '{"refused": "disconnected"}'
+       or public.ai_app_add_candidate(null, null, null, null, null, null, null, null) <> '{"refused": "disconnected"}' then
+      raise exception 'NOT REFUSED: an AI app with %', c.what;
+    end if;
+    -- And nothing is read directly either: the gate never set the flag.
+    if exists (select 1 from public.categories) then raise exception 'NOT REFUSED: % read a table', c.what; end if;
+  end loop;
+  perform set_config('request.jwt.claims', format(claims, ', "session_id": "55555555-5555-4555-8555-555555555555"'), true);
+  if public.ai_app_review(1) ? 'refused' then raise exception 'a live session was refused'; end if;
+  if public.ai_app_update_level() < 30 then raise exception 'the update level does not say 0030 is in'; end if;
+  raise notice 'a token whose sign-in has ended is refused by every ai_app_* function';
+end $$;
+reset role;
+do $$
+begin
+  if has_function_privilege('anon', 'public.ai_app_update_level()', 'execute') then
+    raise exception 'the anonymous role can call ai_app_update_level';
+  end if;
+  if (select provolatile from pg_proc where oid = 'public._ai_app_gate(text)'::regprocedure) <> 'v'
+     or not (select prosecdef from pg_proc where oid = 'public._ai_app_gate(text)'::regprocedure) then
+    raise exception '0030 changed the gate''s settings';
+  end if;
+end $$;
+
+-- 0030 refuses to run before 0020: its own check, run with the gate gone.
+\set paste_check_30 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0030_ai_app_gate_live_session.sql`
+begin;
+drop function public.ai_app_read(text[], date, date);
+drop function public.ai_app_search(text, date, date, bigint, bigint, text[], text, text, integer);
+drop function public.ai_app_review(integer);
+drop function public.ai_app_add_candidate(uuid, date, bigint, text, integer, text, integer, text);
+drop function public._ai_app_gate(text);
+set local verify.paste_check = :'paste_check_30';
+do $$
+begin
+  begin
+    execute current_setting('verify.paste_check');
+    raise exception 'NOT REFUSED: 0030 ran without 0020';
+  exception when raise_exception then
+    if sqlerrm not like 'Paste 0020 first%' then raise; end if;
+  end;
+  raise notice '0030 says to paste 0020 first when it is missing';
 end $$;
 rollback;

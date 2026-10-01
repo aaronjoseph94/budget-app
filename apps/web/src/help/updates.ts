@@ -31,6 +31,12 @@ type Check =
   | { readonly kind: 'signing_key' }
   /** Supabase's OAuth server, from the settings it publishes for AI apps to find. */
   | { readonly kind: 'oauth' }
+  /**
+   * An AI-app security update (0030 on): they change only functions the
+   * owner's session cannot tell apart, so each leaves its number in
+   * ai_app_update_level(), and is in when that is at least `level`.
+   */
+  | { readonly kind: 'level'; readonly level: number }
 
 /** The AI helper's source, as One-time updates names it and /setup/ serves it (ADR 0007). */
 export const HELPER_FILE = 'ai-function.ts'
@@ -60,7 +66,7 @@ export interface Update {
 
 const NIL = '00000000-0000-0000-0000-000000000000'
 
-/** 0005 to 0020, the AI helper, the two settings and the AI apps server, each with what it adds. */
+/** 0005 to 0020 and 0030, the AI helper, the two settings and the AI apps server, each with what it adds. */
 export const UPDATES: readonly Update[] = [
   { file: '0005_category_kinds.sql', adds: 'Which list each category is on', checks: [{ kind: 'column', table: 'categories', column: 'kind' }] },
   {
@@ -126,6 +132,12 @@ export const UPDATES: readonly Update[] = [
     adds: 'What an AI app you connect may read, and adding to Review, with a switch and daily limits',
     checks: [{ kind: 'table', table: 'ai_app_access' }],
   },
+  {
+    // Listed after 0020, so it is offered only once 0020 is in, which it needs.
+    file: '0030_ai_app_gate_live_session.sql',
+    adds: 'Stops an AI app the moment you disconnect it',
+    checks: [{ kind: 'level', level: 30 }],
+  },
   { file: HELPER_FILE, adds: 'The AI helper, which every AI feature goes through', checks: [{ kind: 'helper' }] },
   { file: SIGNING_KEY, name: 'Signing key', adds: 'The key Supabase signs your sign-in with, which ChatGPT needs', checks: [{ kind: 'signing_key' }] },
   { file: OAUTH_SERVER, name: 'Sign-in for AI apps', adds: 'Lets Claude or ChatGPT ask you to allow them', checks: [{ kind: 'oauth' }] },
@@ -151,6 +163,7 @@ const MISSING: Readonly<Record<Check['kind'], ReadonlySet<string>>> = {
   server: new Set(),
   signing_key: new Set(),
   oauth: new Set(),
+  level: new Set(['PGRST202', '42883']),
 }
 
 /**
@@ -211,6 +224,11 @@ async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateStat
     }
     const version = typeof data === 'object' && data !== null && 'version' in data ? data.version : null
     return isOlder(version, MCP_SERVER_VERSION) ? 'old' : 'in'
+  }
+  if (check.kind === 'level') {
+    const { data, error } = await supabase.rpc('ai_app_update_level', {})
+    if (error !== null) return MISSING.level.has(typeof error.code === 'string' ? error.code : '') ? 'missing' : 'unknown'
+    return typeof data !== 'number' ? 'unknown' : data >= check.level ? 'in' : 'missing'
   }
   const { error } =
     check.kind === 'function'

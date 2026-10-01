@@ -20,6 +20,8 @@ export type RpcName = 'ai_app_read' | 'ai_app_search' | 'ai_app_review' | 'ai_ap
 /** Each refusal, in the words the AI app passes on to the owner. */
 export const SENTENCES = {
   ai_apps_off: 'AI apps are switched off in the budget app. The owner can turn them on in Settings → AI apps.',
+  // 0030: the sign-in this token came from has ended, as Disconnect ends it.
+  disconnected: 'This connection to the budget app has ended. The owner can connect again from Settings → AI apps.',
   adding_off: 'Adding to Review is switched off in the budget app’s Settings → AI apps.',
   limit_reached: 'Today’s limit for AI apps is used up. It resets at midnight, the owner’s time.',
   needs_update: 'The budget app needs a one-time update. The owner can open Help → One-time updates.',

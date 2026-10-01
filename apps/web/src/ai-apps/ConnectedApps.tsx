@@ -81,8 +81,9 @@ export function ConnectedApps({ on }: { on: boolean }) {
               {asking === app.clientId ? (
                 <div className="space-y-2 rounded-lg border px-3 py-2 text-sm">
                   <p>
-                    Disconnect <bdi>“{app.name}”</bdi>? It has to sign in again to come back. The budget app’s server refuses it at once.
-                    For up to an hour it could still reach your budget another way; turning off Let AI apps connect stops that too.
+                    Disconnect <bdi>“{app.name}”</bdi>? It has to sign in again to come back, and the budget app refuses it at once.
+                    Until the one-time update 0030 is in, it could still reach your budget another way for up to an hour; turning off Let
+                    AI apps connect stops that too.
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <Button variant="destructive" size="tall" disabled={busy} onClick={() => void end(app)}>

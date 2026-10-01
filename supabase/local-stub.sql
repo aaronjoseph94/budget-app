@@ -12,6 +12,14 @@ create schema if not exists storage;
 
 create table auth.users (id uuid primary key default gen_random_uuid());
 
+-- The columns of Supabase's auth.sessions that 0030 reads: a sign-in lives
+-- while its row does. Signing out, and Disconnect (revokeGrant), delete it.
+create table auth.sessions (
+  id        uuid primary key,
+  user_id   uuid not null references auth.users (id) on delete cascade,
+  not_after timestamptz
+);
+
 create table storage.buckets (
   id text primary key, name text not null, public boolean not null default false
 );

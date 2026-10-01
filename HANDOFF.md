@@ -173,14 +173,16 @@ open GitHub. Easiest on a computer.
 
 **Part A: the updates and free AI, about 15 minutes, once.**
 
-1. **Paste the six new database updates, one at a time.** Supabase →
+1. **Paste the new database updates, one at a time.** Supabase →
    **SQL Editor** → **New query**. In the app, Help → One-time updates →
    **Copy** beside `0015_savings_goals_order.sql`. Paste, press **Run**,
    and wait for "Success. No rows returned." Then a new query for
    `0016_ai_foundation.sql`, then `0017_coach_memory.sql`,
-   `0018_category_suggestions.sql`, `0019_ai_apps_cannot_write.sql` and
-   `0020_ai_apps.sql`, in that order. `0019` stops with "Paste 0018
-   first" if `0018` is not in, and `0020` with "Paste 0019 first". If one
+   `0018_category_suggestions.sql`, `0019_ai_apps_cannot_write.sql`,
+   `0020_ai_apps.sql` and `0030_ai_app_gate_live_session.sql`, in that
+   order (One-time updates lists them in this order and names the next).
+   `0019` stops with "Paste 0018 first" if `0018` is not in, `0020` with
+   "Paste 0019 first", and `0030` with "Paste 0020 first". If one
    says anything else, stop there: nothing is lost, the message says which
    line, and the next agent needs that message (MCP plan K10, K11).
 2. **Paste the AI helper.** Supabase → **Edge Functions** → **Deploy a new
@@ -352,16 +354,26 @@ what to do, and reporting the words on the screen is enough.
     change your records. One-time updates then lists **Sign-in for AI
     apps** as not in: leave it off until the next agent says otherwise. If
     instead every question gets "Something went wrong in the budget app's
-    server", turn off **Let AI apps connect** and report that.
+    server", turn off **Let AI apps connect** and report that. **If every
+    question says "This connection to the budget app has ended"** right
+    after you connected, report it: `0030` could not see the sign-in as
+    live (the token carries no `session_id`, or the database may not read
+    Supabase's sign-ins table). Nothing is at risk; the AI app is only
+    refused.
 19. **Your figures** (K11). Ask "How is my month going?": the figures match
     the Month. If every answer says the app could not read your records,
     turn off **Let AI apps connect** and report it.
 20. **An addition.** Ask "add a test coffee for $1.00 today". **Review**
     shows it, with "Added by Claude"; press **✕** on it.
 21. **Disconnect** (K2). **Settings → AI apps → Connected apps** lists
-    Claude, "Last asked" today. Press **Disconnect**, then **Yes,
-    disconnect**, and ask Claude something: it can no longer reach your
-    budget. Connect it again with **Connect a new AI app** if you want it.
+    Claude, "Last asked" today. First, in Supabase's **SQL Editor**, run
+    `select count(*) from auth.sessions;` and note the number. Press
+    **Disconnect**, then **Yes, disconnect**, and ask Claude something: it
+    can no longer reach your budget. Run the same line again: the number
+    should be one lower. If it is not, report it: Disconnect then ends the
+    server's access but not, for up to an hour, a copy of the token used
+    another way (`0030` relies on that row going). Connect it again with
+    **Connect a new AI app** if you want it.
 22. **ChatGPT** (K3, K8, K9). Its connect page says **chatgpt.com** in
     bold, with **Allow**. If it says instead "This app would send you to
     chatgpt.com, which is not Claude or ChatGPT", press **Deny** and

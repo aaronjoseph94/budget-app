@@ -21,7 +21,7 @@ describe('checking the one-time updates', () => {
   it('finds each one in when everything it adds answers', async () => {
     const fake = await ready()
     const checked = await checkUpdates(fake.client)
-    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', '0020', 'ai-f', 'sign', 'oaut', 'mcp-'])
+    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', '0020', '0030', 'ai-f', 'sign', 'oaut', 'mcp-'])
     expect(missing(checked)).toEqual([])
     expect(nextStep(checked)).toEqual({ kind: 'done' })
   })
@@ -113,6 +113,26 @@ describe('checking the one-time updates', () => {
     expect(nextStep(checked)).toEqual({ kind: 'paste', file: '0020_ai_apps.sql', fromStart: false })
     delete fake.rpcReplies['_not_an_ai_app']
     expect(nextStep(await checkUpdates(fake.client))).toEqual({ kind: 'paste', file: '0019_ai_apps_cannot_write.sql', fromStart: false })
+  })
+
+  // The AI-app security updates (0030 on) change only functions, so each is
+  // proven by the level it leaves: ai_app_update_level() at or above its number.
+  it('reads the AI-app update level: missing below 0030 or not there, offered only once 0020 is in', async () => {
+    const fake = await ready()
+    delete fake.rpcReplies['ai_app_update_level']
+    let checked = await checkUpdates(fake.client)
+    expect(missing(checked)).toEqual([['0030', 'missing']])
+    expect(nextStep(checked)).toEqual({ kind: 'paste', file: '0030_ai_app_gate_live_session.sql', fromStart: false })
+    fake.rpcReplies['ai_app_update_level'] = 29
+    expect(missing(await checkUpdates(fake.client))).toEqual([['0030', 'missing']])
+    fake.rpcReplies['ai_app_update_level'] = 'thirty'
+    expect(missing(await checkUpdates(fake.client))).toEqual([['0030', 'unknown']])
+    fake.rpcReplies['ai_app_update_level'] = 30
+    checked = await checkUpdates(fake.client)
+    expect(stateOf(checked, '0030')).toBe('in')
+    fake.fail('ai_app_access', 'PGRST205')
+    delete fake.rpcReplies['ai_app_update_level']
+    expect(nextStep(await checkUpdates(fake.client))).toEqual({ kind: 'paste', file: '0020_ai_apps.sql', fromStart: false })
   })
 
   it('reads Supabase’s 404 for the AI helper as not installed, and any other failure as could not check', async () => {
@@ -233,6 +253,8 @@ describe('checking the one-time updates', () => {
       { name: 'ai_key_status', args: {} },
       { name: 'clear_candidate_suggestion', args: { p_candidate: nil } },
       { name: '_not_an_ai_app', args: {} },
+      // Reads a number and nothing else (0030 on).
+      { name: 'ai_app_update_level', args: {} },
     ])
     // The helper is only pinged.
     expect(fake.functions.calls).toEqual([{ action: 'ping' }])
