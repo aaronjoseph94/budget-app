@@ -20,7 +20,7 @@ import { ADDS, SIGNED_IN, answer, isRefusal, refusal, rpc, type Caller, type Ref
 import { utcToday } from '../windows.js'
 
 export type AddExpenseInput = z.output<typeof AddExpenseInputSchema>
-type AddTool = 'add_expense'
+type AddTool = 'add_expense' | 'add_note'
 
 export const DESCRIPTION =
   'Add one purchase, or money received, to the owner’s Review list; the owner checks and approves it in the app, ' +
@@ -61,6 +61,10 @@ export async function ownerFor(caller: Caller, category: string | undefined): Pr
 /** One entry for Review: the amount without its sign, the owner's own words. */
 export type Entry = { readonly amount: Cents; readonly what: string; readonly date: IsoDate; readonly flow: 'spent' | 'received'; readonly sameAgain: number }
 
+/** D3: money out is below $0. */
+export const signedAmount = (amount: Cents, flow: 'spent' | 'received'): Cents =>
+  flow === 'spent' ? applySignConvention(amount, { kind: 'debit_positive' }) : amount
+
 const MESSAGES = {
   added: 'Added to Review. It counts nowhere until the owner approves it in the app.',
   already_waiting:
@@ -78,8 +82,7 @@ function refused(tool: AddTool, code: RefusalCode): CallToolResult {
 export async function addEntry(caller: Caller, owner: Owner, entry: Entry, tool: AddTool): Promise<CallToolResult> {
   if (!amountAllowed(entry.amount)) return refused(tool, 'bad_amount')
   if (entry.date > owner.today || entry.date < addDays(owner.today, -366)) return refused(tool, 'bad_date')
-  // D3: money out is below $0.
-  const signed = entry.flow === 'spent' ? applySignConvention(entry.amount, { kind: 'debit_positive' }) : entry.amount
+  const signed = signedAmount(entry.amount, entry.flow)
   const occurrence = { kind: 'occurrence', index: entry.sameAgain } as const
   const hash = await computeDedupeHash({ accountId: owner.account, postedOn: entry.date, amountCents: signed, merchantRaw: entry.what, discriminator: occurrence })
   const added = await rpc(caller, 'ai_app_add_candidate', {

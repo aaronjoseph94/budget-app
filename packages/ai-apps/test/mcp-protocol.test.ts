@@ -62,9 +62,9 @@ describe('the MCP endpoint', () => {
 
   it('lists the same tools in both eras, with a zero cache hint', async () => {
     const names = (reply: Record<string, unknown>) => (reply.result as { tools: { name: string }[] }).tools.map((t) => t.name)
-    expect(names(await message(await handle(legacy('tools/list'), ENV)))).toEqual(['list_categories', 'get_period', 'get_spending', 'get_forecast', 'get_savings_goals', 'get_debts', 'search_transactions', 'list_review_queue', 'add_expense'])
+    expect(names(await message(await handle(legacy('tools/list'), ENV)))).toEqual(['list_categories', 'get_period', 'get_spending', 'get_forecast', 'get_savings_goals', 'get_debts', 'search_transactions', 'list_review_queue', 'add_expense', 'add_note'])
     const now = await message(await handle(modern('tools/list'), ENV))
-    expect(names(now)).toEqual(['list_categories', 'get_period', 'get_spending', 'get_forecast', 'get_savings_goals', 'get_debts', 'search_transactions', 'list_review_queue', 'add_expense'])
+    expect(names(now)).toEqual(['list_categories', 'get_period', 'get_spending', 'get_forecast', 'get_savings_goals', 'get_debts', 'search_transactions', 'list_review_queue', 'add_expense', 'add_note'])
     expect(now.result).toMatchObject({ ttlMs: 0, cacheScope: 'private' })
   })
 

@@ -7,7 +7,7 @@ import { IngestedTextSchema } from './primitives.js'
  * One-time updates can tell an old paste of `mcp-function.ts` from this
  * site's. Bumped with every change the owner must paste, as `YYYY-MM-DD.N`.
  */
-export const MCP_SERVER_VERSION = '2026-09-30.1'
+export const MCP_SERVER_VERSION = '2026-10-01.1'
 
 /*
  * What an AI app may send the server's tools (PLAN §2.4). Each tool's input
@@ -121,3 +121,6 @@ export const AddExpenseInputSchema = z
     same_again: SameAgainSchema,
   })
   .strict()
+
+/** `add_note`: what the owner said, read as Just type it reads it; `same_again` as add_expense's. */
+export const AddNoteInputSchema = z.object({ text: NoteTextSchema, category: NameSchema.optional(), same_again: SameAgainSchema }).strict()

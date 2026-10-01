@@ -116,6 +116,7 @@ const TOOLS: [string, Record<string, unknown>][] = [
   ['search_transactions', { text: SENTINEL, categories: [`Groceries ${SENTINEL}`] }],
   ['list_review_queue', {}],
   ['add_expense', { amount: '12.50', what: `Lunch ${SENTINEL}`, category: `Groceries ${SENTINEL}` }],
+  ['add_note', { text: `Lunch ${SENTINEL} 12.50 yesterday`, category: `Groceries ${SENTINEL}` }],
 ]
 
 describe('the tools log codes and counts only', () => {

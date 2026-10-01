@@ -38,6 +38,7 @@ describe('tools/list', () => {
       { name: 'search_transactions', annotations: { readOnlyHint: true }, _meta: { securitySchemes: [{ type: 'oauth2' }] } },
       { name: 'list_review_queue', annotations: { readOnlyHint: true }, _meta: { securitySchemes: [{ type: 'oauth2' }] } },
       { name: 'add_expense', annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false }, _meta: { securitySchemes: [{ type: 'oauth2' }] } },
+      { name: 'add_note', annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false }, _meta: { securitySchemes: [{ type: 'oauth2' }] } },
     ])
   })
 })

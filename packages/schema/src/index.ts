@@ -70,6 +70,7 @@ export { ModelProse, proseProblem, type ProseProblem } from './prose.js'
 
 export {
   AddExpenseInputSchema,
+  AddNoteInputSchema,
   AmountTextSchema,
   GetDebtsInputSchema,
   GetForecastInputSchema,

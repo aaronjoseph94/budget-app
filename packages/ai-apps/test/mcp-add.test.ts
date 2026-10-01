@@ -125,3 +125,51 @@ describe('add_expense', () => {
     expect((await add(LUNCH, owner(OWNER, added))).result).toEqual(says(sentence))
   })
 })
+
+describe('add_note', () => {
+  const note = (args: Record<string, unknown>, rpc: Rpc = owner(OWNER)) => callTool(rpc, 'add_note', args)
+
+  it('reads a sentence as Just type it does, from the owner’s today, and adds it as add_expense would', async () => {
+    const { result, rpcCalls } = await note({ text: 'Lunch at Subway 12.50 yesterday' })
+    expect(body(rpcCalls[0])).toMatchObject({ p_parts: ['account'] })
+    expect(body(rpcCalls[1])).toMatchObject({ p_posted_on: '2026-09-29', p_amount_cents: -1250, p_words: 'Lunch at Subway', p_occurrence: 1, p_dedupe_hash: LUNCH_1 })
+    expect(result.structuredContent).toMatchObject({ status: 'added', entry: { date: '2026-09-29', what: 'Lunch at Subway', amount: $(-1250, '-$12.50') } })
+  })
+
+  it('sends a category as stored, and same_again as the occurrence', async () => {
+    const { rpcCalls } = await note({ text: 'spent $12.50 on Lunch at Subway yesterday', category: 'Eating out', same_again: 2 })
+    expect(body(rpcCalls[1])).toMatchObject({ p_words: 'Lunch at Subway', p_category_name: 'Eating out​', p_dedupe_hash: LUNCH_2 })
+  })
+
+  // Two numbers that could each be the amount, or a date with slashes, are never guessed (F47).
+  it.each([
+    ['got paid 2100', 'got paid 2100', ['what'], { date: '2026-09-30', what: null, amount: $(210000, '$2,100.00'), flow: 'received' }],
+    ['two amounts and a slashed date', 'coffee 4 or 5 on 9/28', ['amount', 'date'], { date: null, what: 'coffee 4 or 5', amount: null, flow: 'spent' }],
+    ['a day after today', 'coffee 4.50 2026-10-01', ['date'], { date: null, what: 'coffee', amount: $(-450, '-$4.50'), flow: 'spent' }],
+    ['words past 120 characters', `${'x'.repeat(121)} 4.50`, ['what'], { date: '2026-09-30', what: null, amount: $(-450, '-$4.50'), flow: 'spent' }],
+  ])('adds nothing for %s, and says what is missing', async (_, text, missing, read_so_far) => {
+    const { result, rpcCalls } = await note({ text })
+    expect(rpcCalls).toHaveLength(1)
+    expect(result.structuredContent).toEqual({ as_of: '2026-09-30', status: 'needs_more', missing, read_so_far, message: expect.stringMatching(/^Nothing was added\. Ask the owner/) })
+  })
+
+  it.each([
+    ['a day more than a year back', 'Lunch 12.50 2025-09-28', SENTENCES.bad_date],
+    ['an amount over the most an add may be', 'car 150000', SENTENCES.bad_amount],
+  ])('refuses %s once it has read, and adds nothing', async (_, text, sentence) => {
+    const { result, rpcCalls } = await note({ text })
+    expect(result).toEqual(says(sentence))
+    expect(rpcCalls).toHaveLength(1)
+  })
+
+  it.each([
+    ['more than 300 characters', { text: 'x'.repeat(301) }],
+    ['a control character', { text: 'coffee 4.50\u0007' }],
+    ['a number for the words', { text: 4.5 }],
+    ['an empty note', { text: ' ' }],
+  ])('refuses %s before reading anything', async (_, args) => {
+    const { result, rpcCalls } = await note(args)
+    expect(result.isError).toBe(true)
+    expect(rpcCalls).toEqual([])
+  })
+})

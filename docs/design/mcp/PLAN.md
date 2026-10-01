@@ -1783,6 +1783,11 @@ created it in M9, and imported `packages/ai-apps` from
   `not_confirmed` sentence, not `server_error`, whose "Nothing was
   changed" an add cannot promise. `entry.what` is cleaned as Review's tool
   shows it.
+  `add_note` reads first too, since its day counts from the owner's today,
+  so a note missing something spends one read and adds nothing. Words
+  past 120 characters are a missing `what`; a day after today, which Just
+  type it reads as no day, a missing `date`. With all ten tools in,
+  `MCP_SERVER_VERSION` is `2026-10-01.1` (N143).
 
 ### M10a: Settings → AI apps: the switches, the address and Connect a new AI app
 

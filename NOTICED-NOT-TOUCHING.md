@@ -3298,7 +3298,7 @@ wrapping `console` around the SDK, which is more code than the noise costs.
 
 ---
 
-## N143 — The AI apps server's version has not moved since its tools began
+## N143 — The AI apps server's version has not moved since its tools began *(settled 2026-10-01)*
 
 **Seen:** 2026-09-30, M5b. `MCP_SERVER_VERSION` is still `2026-09-30.1`,
 the version of the empty server, while the built `mcp-function.ts` now
@@ -3311,6 +3311,9 @@ and the owner pastes the server only after M12b.
 
 **To settle:** bump it once the tools are all in (M9) and in every slice
 after that changes the built file, as its comment asks.
+
+**Settled:** M9's `add_note`, the tenth tool, bumps it to `2026-10-01.1`.
+Every later slice that changes the built file bumps it again.
 
 ---
 
