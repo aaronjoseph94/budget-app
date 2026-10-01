@@ -220,6 +220,9 @@ export function ReviewScreen() {
     setError(null)
     try {
       await clearCandidateSuggestion(supabase, row.id)
+      // As in act: a read already out was asked while the suggestion stood,
+      // and would draw it again when it lands (FE-8).
+      reads.current += 1
       setRows((now) => now?.map((r) => (r.id === row.id ? { ...r, category_id: null, category_source: null } : r)) ?? null)
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'That did not work. Nothing was changed.')
@@ -239,7 +242,9 @@ export function ReviewScreen() {
   const ready = (rows ?? []).flatMap((row) => {
     const categoryId = categoryFor(row)
     const name = named.get(categoryId)
-    return name === undefined ? [] : [{ row, categoryId, name }]
+    // The AI's own pick, not the owner's, is marked in the question (FE-7).
+    const byAi = picked[row.id] === undefined && suggestionFor(row)?.kind === 'model'
+    return name === undefined ? [] : [{ row, categoryId, name, byAi }]
   })
   const [confirming, setConfirming] = useState(false)
   const approveAll = async (list: typeof ready) => {
@@ -322,7 +327,7 @@ export function ReviewScreen() {
 
       {confirming && ready.length > 0 ? (
         <ApproveAll
-          items={ready.map((r) => ({ id: r.row.id, shop: r.row.merchant_raw, category: r.name }))}
+          items={ready.map((r) => ({ id: r.row.id, shop: r.row.merchant_raw, category: r.name, byAi: r.byAi }))}
           busy={busy !== null}
           onConfirm={() => void approveAll(ready)}
           onCancel={() => setConfirming(false)}
@@ -465,6 +470,8 @@ const ReviewRow = memo(function ReviewRow({
               <>
                 <Input
                   autoFocus
+                  aria-label={`Name of the new category for ${row.merchant_raw}`}
+                  disabled={busy}
                   placeholder="Category name, e.g. Groceries"
                   value={newName}
                   maxLength={60}

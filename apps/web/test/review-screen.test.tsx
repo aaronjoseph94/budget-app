@@ -120,7 +120,9 @@ describe('ReviewScreen', () => {
 
     const coffee = await row('SQ *LITWARE COFFEE')
     fireEvent.change(coffee.getByRole('combobox', { name: 'Category' }), { target: { value: '__new__' } })
-    fireEvent.change(coffee.getByPlaceholderText(/Category name/), { target: { value: '  Coffee  ' } })
+    const name = coffee.getByRole('textbox', { name: 'Name of the new category for SQ *LITWARE COFFEE' })
+    await expectNoAxeViolations()
+    fireEvent.change(name, { target: { value: '  Coffee  ' } })
     fireEvent.click(coffee.getByRole('button', { name: /Approve/ }))
 
     await screen.findByText(/^Added\./)

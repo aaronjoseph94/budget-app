@@ -1,12 +1,15 @@
 import { IngestedText } from '../ui.js'
 import { Card } from '../components/ui/card.js'
 import { Button } from '../components/ui/button.js'
+import { Icon } from '../components/ui/icons.js'
 
 export interface ApproveItem {
   readonly id: string
   /** The shop as the statement printed it: drawn as text, never markup. */
   readonly shop: string
   readonly category: string
+  /** The AI suggested the category and the owner has not changed it. */
+  readonly byAi: boolean
 }
 
 /** Approve these N, on the title row: it only opens the question below. */
@@ -44,11 +47,20 @@ export function ApproveAll({ items, busy, onConfirm, onCancel }: {
               <IngestedText>{item.shop}</IngestedText>
             </span>
             <span className="max-w-[45%] min-w-0 truncate text-right text-muted-foreground" title={item.category}>
+              {item.byAi ? (
+                <>
+                  <Icon name="sparkles" aria-hidden="true" className="mr-1 inline size-3.5 align-[-0.125em] text-primary" />
+                  <span className="sr-only">Suggested by AI: </span>
+                </>
+              ) : null}
               {item.category}
             </span>
           </li>
         ))}
       </ul>
+      {items.some((item) => item.byAi) ? (
+        <p className="mt-3 text-sm text-muted-foreground">✨ marks a category the AI suggested. Check it.</p>
+      ) : null}
       <div className="mt-4 flex flex-wrap gap-2">
         <Button disabled={busy} onClick={onConfirm}>
           Approve all {n}
