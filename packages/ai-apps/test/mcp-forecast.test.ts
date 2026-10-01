@@ -92,6 +92,13 @@ describe('get_forecast', () => {
     expect((out.structuredContent as Record<string, unknown>).what_if).toEqual({ status: 'no_active_goal' })
   })
 
+  it('says when a saving is too small to reach a goal with no pace', async () => {
+    // $0.02 a month × 12 ÷ 52 is 0.46 of a cent, so $0.00 a week, and Flying, on no fund, has no pace to add it to.
+    const { result } = await callTool(() => reply({ ...READ, ...GOALS }), 'get_forecast', { what_if_monthly_saving: '0.02' })
+    expect(result.isError).toBeUndefined()
+    expect((result.structuredContent as Record<string, unknown>).what_if).toEqual({ status: 'too_small' })
+  })
+
   it.each([['0'], ['100,000.01'], [100]])('refuses a saving of %j before reading anything', async (saving) => {
     const { result, rpcCalls } = await callTool(() => reply({ ...READ, ...GOALS }), 'get_forecast', { what_if_monthly_saving: saving })
     expect(result.isError).toBe(true)

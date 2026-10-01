@@ -3,7 +3,8 @@
  * Forecast shows it. Every figure is core's, over the same rows renamed as
  * the Forecast renames them (forecastInput): safe to spend (F31), the
  * month's end (F30), the next 30 days (F32) and the next three months
- * (F35). Without this month's typed start there is no balance (D17), and
+ * (F35), and with a monthly saving, what it does for the main goal (F33,
+ * whatIf). Without this month's typed start there is no balance (D17), and
  * the result says so rather than show one.
  */
 import type { McpServer } from '@modelcontextprotocol/server'
@@ -19,6 +20,7 @@ import {
   whatIf,
   type MonthForecastInput,
   type Spread,
+  type WhatIf,
   type WhatIfGoal,
 } from '@budget/core'
 import { GetForecastInputSchema } from '@budget/schema'
@@ -33,7 +35,8 @@ export const DESCRIPTION =
   'Where this month is heading: safe to spend a day, the month’s end (spent and bank balance, as a low–likely–high ' +
   'range, or rough, or too early), bills and paydays in the next 30 days with the lowest day, and the next three ' +
   'months. With what_if_monthly_saving (dollars as text, like \'50\'), what saving that much a month does for the ' +
-  'month’s end and the main goal’s date. Balance figures need this month’s starting balance; no_starting_balance says when it is missing, and ' +
+  'month’s end and the main goal’s date (what_if.status no_active_goal without one, too_small when it adds under ' +
+  'a cent a week to a goal with no pace). Balance figures need this month’s starting balance; no_starting_balance says when it is missing, and ' +
   'those figures are then null. Every amount is {cents, display}; quote display. Returns as_of, ' +
   'no_starting_balance, safe_to_spend, month_end, next_30_days{today_balance, lowest, items[]}, next_3_months, what_if?.'
 
@@ -67,7 +70,14 @@ function whatIfOut(read: Read, input: MonthForecastInput, end: Spread | null, mo
   if (main === undefined) return { status: 'no_active_goal' }
   const { asOf, historyStart, readFrom, categories, entries } = input
   const forecast = goalForecast({ asOf, historyStart, readFrom, categories, entries, goal: main })
-  const w = whatIf({ asOf, monthlyCents, end, goal: { remainingCents: forecast.remainingCents, pace: forecast.pace, unitCostCents: main.unitCostCents } })
+  let w: WhatIf
+  try {
+    w = whatIf({ asOf, monthlyCents, end, goal: { remainingCents: forecast.remainingCents, pace: forecast.pace, unitCostCents: main.unitCostCents } })
+  } catch (error) {
+    // A cent or two a month is $0.00 a week, which never reaches a goal with no pace: core refuses it, and no row is wrong.
+    if (error instanceof RangeError) return { status: 'too_small' }
+    throw error
+  }
   return {
     status: 'worked_out',
     goal: cleanName(main.name),

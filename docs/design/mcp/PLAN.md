@@ -1696,6 +1696,10 @@ created it in M9, and imported `packages/ai-apps` from
   `four-years.ts` gains a fund typed four years before the anchor, and its
   fake reads `fund_txns` from each goal's typed day as 0020 does: seen RED
   with them cut at the window's start, the first draft's reading.
+  *Review, 2026-10-01:* a saving of $0.01 or $0.02 a month is $0.00 a
+  week, which core refuses for a goal with no pace; the tool had answered
+  `records_unreadable` for it. It now answers `what_if: {status:
+  'too_small'}`.
 
 ### M7b: `get_savings_goals`
 
