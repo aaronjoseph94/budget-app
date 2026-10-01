@@ -69,6 +69,7 @@ export interface FakeTables {
   /** The owner's AI choices (0016), as the app writes them. */
   ai_settings: {
     readonly user_id: string
+    readonly enabled?: boolean
     readonly models?: Readonly<Record<string, string>>
     readonly provider_order?: readonly string[]
     readonly allow_paid?: boolean
