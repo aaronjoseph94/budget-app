@@ -3170,3 +3170,91 @@ begin
   end loop;
   raise notice '0034 added one condition to the AI app''s add, and nothing else';
 end $$;
+
+-- ---------------------------------------------------------------------------
+-- 0035: which AI-app security updates are in, read from what each one left
+-- in its functions, so pasting an earlier one again cannot make One-time
+-- updates offer a later one that can then never be pasted (re-paste of
+-- 0030 after 0034 set ai_app_update_level() back to 30, then 0032 failed
+-- for good: its lines were already in).
+-- ---------------------------------------------------------------------------
+do $$
+begin
+  if public.ai_app_updates_in() <> 35 then
+    raise exception 'ai_app_updates_in() says %, not 35, with 0030 to 0035 in', public.ai_app_updates_in();
+  end if;
+  if has_function_privilege('anon', 'public.ai_app_updates_in()', 'execute') then
+    raise exception 'the anonymous role can call ai_app_updates_in';
+  end if;
+  if not has_function_privilege('authenticated', 'public.ai_app_updates_in()', 'execute') then
+    raise exception 'a signed-in browser cannot call ai_app_updates_in';
+  end if;
+end $$;
+
+-- An update's mark taken away (0033's here) is read as that update and
+-- every later one not in.
+begin;
+do $$
+declare
+  was int;
+begin
+  -- 0033's mark gone from the search: 33 and on are not in.
+  execute replace(pg_get_functiondef('public.ai_app_search(text,date,date,bigint,bigint,text[],text,text,integer)'::regprocedure),
+                  '(0033)', '(----)');
+  was := public.ai_app_updates_in();
+  if was <> 32 then raise exception 'with 0033''s lines gone, ai_app_updates_in() says %, not 32', was; end if;
+end $$;
+rollback;
+
+-- Pasting 0030 and 0031 again after everything is in: the level they set
+-- goes back, what One-time updates reads does not, and 0032 pasted again
+-- is refused with nothing changed.
+\set repaste_30 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0030_ai_app_gate_live_session.sql`
+\set repaste_31 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0031_ai_app_hash_own_kind.sql`
+\set repaste_32 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0032_ai_rows_teach_no_rule.sql`
+begin;
+:repaste_30
+:repaste_31
+set local verify.repaste = :'repaste_32';
+do $$
+declare
+  approve text := (select prosrc from pg_proc where oid = 'public.approve_candidate(uuid,uuid)'::regprocedure);
+begin
+  if public.ai_app_update_level() <> 31 then raise exception 'the re-paste did not run'; end if;
+  if public.ai_app_updates_in() <> 35 then
+    raise exception 'NOT REFUSED: pasting 0030 and 0031 again moved what One-time updates reads to %', public.ai_app_updates_in();
+  end if;
+  begin
+    execute current_setting('verify.repaste');
+    raise exception 'NOT REFUSED: 0032 pasted twice changed its functions again';
+  exception when raise_exception then
+    if sqlerrm like 'NOT REFUSED%' then raise; end if;
+  end;
+  if (select prosrc from pg_proc where oid = 'public.approve_candidate(uuid,uuid)'::regprocedure) <> approve
+     or public.ai_app_updates_in() <> 35 then
+    raise exception '0032 pasted twice changed something';
+  end if;
+  raise notice 'pasting an AI-app update again never makes One-time updates offer one already in';
+end $$;
+rollback;
+
+-- 0035 refuses to run before 0020: its own check, run with the gate gone.
+\set paste_check_35 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0035_ai_app_updates_in.sql`
+begin;
+drop function public.ai_app_read(text[], date, date);
+drop function public.ai_app_search(text, date, date, bigint, bigint, text[], text, text, integer);
+drop function public.ai_app_review(integer);
+drop function public.ai_app_add_candidate(uuid, date, bigint, text, integer, text, integer, text);
+drop function public._ai_app_gate(text);
+set local verify.paste_check = :'paste_check_35';
+do $$
+begin
+  begin
+    execute current_setting('verify.paste_check');
+    raise exception 'NOT REFUSED: 0035 ran without 0020';
+  exception when raise_exception then
+    if sqlerrm not like 'Paste 0020 first%' then raise; end if;
+  end;
+  raise notice '0035 says to paste 0020 first when it is missing';
+end $$;
+rollback;

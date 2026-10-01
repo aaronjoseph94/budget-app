@@ -128,7 +128,7 @@ describe('the consent page: Allow', () => {
   it('allows nothing when what AI apps need is no longer in at the click', async () => {
     const { fake, go } = await open()
     const button = await screen.findByRole('button', { name: 'Allow' })
-    fake.rpcReplies['ai_app_update_level'] = 33
+    fake.rpcReplies['ai_app_updates_in'] = 33
     const approve = vi.spyOn(fake.client.auth.oauth, 'approveAuthorization')
     fireEvent.click(button)
     expect(await screen.findByText(/needs a one-time update first/)).toBeTruthy()
@@ -140,7 +140,7 @@ describe('the consent page: Allow', () => {
   it('offers no Allow while the security updates are in only to 0033', async () => {
     const fake = createFakeSupabase({ ai_app_access: [ON] })
     fake.oauth.requests['auth-1'] = asking()
-    fake.rpcReplies['ai_app_update_level'] = 33
+    fake.rpcReplies['ai_app_updates_in'] = 33
     await fake.signIn()
     window.history.replaceState(null, '', '/oauth/consent?authorization_id=auth-1')
     render(<Consent supabase={fake.client} go={vi.fn()} />)

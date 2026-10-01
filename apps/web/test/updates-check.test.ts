@@ -21,7 +21,7 @@ describe('checking the one-time updates', () => {
   it('finds each one in when everything it adds answers', async () => {
     const fake = await ready()
     const checked = await checkUpdates(fake.client)
-    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', '0020', '0030', '0031', '0032', '0033', '0034', 'ai-f', 'read', 'sign', 'oaut', 'mcp-'])
+    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', '0020', '0035', '0030', '0031', '0032', '0033', '0034', 'ai-f', 'read', 'sign', 'oaut', 'mcp-'])
     expect(missing(checked)).toEqual([])
     expect(nextStep(checked)).toEqual({ kind: 'done' })
   })
@@ -116,28 +116,41 @@ describe('checking the one-time updates', () => {
   })
 
   // The AI-app security updates (0030 on) change only functions, so each is
-  // proven by the level it leaves: ai_app_update_level() at or above its number.
-  it('reads the AI-app update level: each one in at its number, offered in order, only once 0020 is in', async () => {
+  // proven by the last one in: ai_app_updates_in() (0035) at or above its number.
+  it('reads which AI-app updates are in: each one in at its number, offered in order, only once 0020 and 0035 are in', async () => {
     const levels = UPDATES.filter((u) => u.checks.some((c) => c.kind === 'level')).map((u) => u.file)
     expect(levels.map((f) => f.slice(0, 4))).toEqual(['0030', '0031', '0032', '0033', '0034'])
     const fake = await ready()
     const all = (state: string) => levels.map((f) => [f.slice(0, 4), state])
-    delete fake.rpcReplies['ai_app_update_level']
-    expect(missing(await checkUpdates(fake.client))).toEqual(all('missing'))
-    fake.rpcReplies['ai_app_update_level'] = 'thirty'
+    fake.rpcReplies['ai_app_updates_in'] = 'thirty'
     expect(missing(await checkUpdates(fake.client))).toEqual(all('unknown'))
     for (const [at, file] of levels.entries()) {
-      // The level the one before it leaves: everything from this one on is missing, and this one is next.
-      fake.rpcReplies['ai_app_update_level'] = 29 + at
+      // The last one in is the one before: everything from this one on is missing, and this one is next.
+      fake.rpcReplies['ai_app_updates_in'] = 29 + at
       const checked = await checkUpdates(fake.client)
       expect(missing(checked)).toEqual(all('missing').slice(at))
       expect(nextStep(checked)).toEqual({ kind: 'paste', file, fromStart: false })
     }
-    fake.rpcReplies['ai_app_update_level'] = 29 + levels.length
+    // What 0035 reads wins over the number an earlier update pasted again set back.
+    fake.rpcReplies['ai_app_updates_in'] = 35
+    fake.rpcReplies['ai_app_update_level'] = 30
     expect(missing(await checkUpdates(fake.client))).toEqual([])
     fake.fail('ai_app_access', 'PGRST205')
+    delete fake.rpcReplies['ai_app_updates_in']
     delete fake.rpcReplies['ai_app_update_level']
     expect(nextStep(await checkUpdates(fake.client))).toEqual({ kind: 'paste', file: '0020_ai_apps.sql', fromStart: false })
+  })
+
+  // Before 0035, the number each of 0030 to 0034 left; 0035 is offered first, straight after 0020.
+  it('before 0035, reads the level each update left, and offers 0035 next', async () => {
+    const fake = await ready()
+    delete fake.rpcReplies['ai_app_updates_in']
+    fake.rpcReplies['ai_app_update_level'] = 31
+    const checked = await checkUpdates(fake.client)
+    expect(missing(checked)).toEqual([['0035', 'missing'], ['0032', 'missing'], ['0033', 'missing'], ['0034', 'missing']])
+    expect(nextStep(checked)).toEqual({ kind: 'paste', file: '0035_ai_app_updates_in.sql', fromStart: false })
+    delete fake.rpcReplies['ai_app_update_level']
+    expect(missing(await checkUpdates(fake.client)).map(([n]) => n)).toEqual(['0035', '0030', '0031', '0032', '0033', '0034'])
   })
 
   it('reads Supabase’s 404 for the AI helper as not installed, and any other failure as could not check', async () => {
@@ -278,9 +291,8 @@ describe('checking the one-time updates', () => {
       { name: 'ai_key_status', args: {} },
       { name: 'clear_candidate_suggestion', args: { p_candidate: nil } },
       { name: '_not_an_ai_app', args: {} },
-      // Reads a number and nothing else (0030 on).
-      // One for each of 0030 to 0034.
-      ...Array.from({ length: 5 }, () => ({ name: 'ai_app_update_level', args: {} })),
+      // Reads a number and nothing else (0035, then one for each of 0030 to 0034).
+      ...Array.from({ length: 6 }, () => ({ name: 'ai_app_updates_in', args: {} })),
     ])
     // The helper is only pinged.
     expect(fake.functions.calls).toEqual([{ action: 'ping' }])

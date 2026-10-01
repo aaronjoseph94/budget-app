@@ -341,6 +341,14 @@ below was made under those words and is recorded with them.
   allowing), until `0019`, `0020`, the AI helper from 2026-09-30.1 and
   read-receipt (deleted or new) are in, as `aiAppsReady` checks; turning
   off never waits.
+- **Second pass: pasting an update again never strands the owner**
+  (`0035`). `0030` to `0034` each set `ai_app_update_level()` to their own
+  number, so re-pasting `0030` after `0034` said 30, and One-time updates
+  then offered `0032`, which can never paste twice. `ai_app_updates_in()`
+  reads which are in from what each left in its functions (`0035` to
+  `0039` by a `(00NN)` mark in a function body), and One-time updates
+  asks it first. It is listed straight after `0020`, out of number order,
+  since it needs nothing else.
 - **mcp-3-04: the pasted server imports nothing.** The SDK and zod are
   bundled at the lockfile's versions (about 1.2 MB, unminified), so no
   deploy fetches a release nobody reviewed; `check-bundle.mjs` and the

@@ -39,8 +39,9 @@ type Check =
   | { readonly kind: 'oauth' }
   /**
    * An AI-app security update (0030 on): they change only functions the
-   * owner's session cannot tell apart, so each leaves its number in
-   * ai_app_update_level(), and is in when that is at least `level`.
+   * owner's session cannot tell apart. Each is in when the last one in is
+   * at least `level`: as ai_app_updates_in() reads it from the functions
+   * (0035), or, before 0035, the number each left in ai_app_update_level().
    */
   | { readonly kind: 'level'; readonly level: number }
 
@@ -72,7 +73,7 @@ export interface Update {
 
 const NIL = '00000000-0000-0000-0000-000000000000'
 
-/** 0005 to 0020 and 0030 on, the AI helper, the two settings and the AI apps server, each with what it adds. */
+/** 0005 to 0020, 0035, 0030 on, the AI helper, the two settings and the AI apps server, each with what it adds. */
 export const UPDATES: readonly Update[] = [
   { file: '0005_category_kinds.sql', adds: 'Which list each category is on', checks: [{ kind: 'column', table: 'categories', column: 'kind' }] },
   {
@@ -137,6 +138,14 @@ export const UPDATES: readonly Update[] = [
     file: '0020_ai_apps.sql',
     adds: 'What an AI app you connect may read, and adding to Review, with a switch and daily limits',
     checks: [{ kind: 'table', table: 'ai_app_access' }],
+  },
+  {
+    // Out of number order on purpose: it needs only 0020, and once it is in
+    // the checks below read what 0030 to 0034 left, so pasting one again
+    // never offers a later one that is already in.
+    file: '0035_ai_app_updates_in.sql',
+    adds: 'Lets One-time updates see exactly which AI app safety updates are in',
+    checks: [{ kind: 'function', name: 'ai_app_updates_in', args: {} }],
   },
   {
     // Listed after 0020, so it is offered only once 0020 is in, which it needs.
@@ -270,9 +279,14 @@ async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateStat
     return isOlder(version, MCP_SERVER_VERSION) ? 'old' : 'in'
   }
   if (check.kind === 'level') {
-    const { data, error } = await supabase.rpc('ai_app_update_level', {})
-    if (error !== null) return MISSING.level.has(typeof error.code === 'string' ? error.code : '') ? 'missing' : 'unknown'
-    return typeof data !== 'number' ? 'unknown' : data >= check.level ? 'in' : 'missing'
+    for (const name of ['ai_app_updates_in', 'ai_app_update_level']) {
+      const { data, error } = await supabase.rpc(name, {})
+      const gone = error !== null && MISSING.level.has(typeof error.code === 'string' ? error.code : '')
+      if (gone && name === 'ai_app_updates_in') continue
+      if (error !== null) return gone ? 'missing' : 'unknown'
+      return typeof data !== 'number' ? 'unknown' : data >= check.level ? 'in' : 'missing'
+    }
+    return 'unknown'
   }
   const { error } =
     check.kind === 'function'
