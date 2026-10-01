@@ -3416,3 +3416,25 @@ both screens' reads are outside M10b.
 row's approved candidate by `(user_id, dedupe_hash)`, then its batch,
 and reuse `addedBy` in `apps/web/src/ai-apps/access.ts`, with "an AI
 app" kept for an app since disconnected.
+
+---
+
+## N149 — A time zone the database does not know reads as "try again"
+
+**Seen:** 2026-10-01, reviewing M10a. Every save in Settings → AI apps
+sends the browser's time zone, and 0020's trigger refuses one missing
+from Postgres's `pg_timezone_names` with `23514`. `saveAccess` reads
+any code but a missing table as `unreachable`, so the switch goes back
+and says "Couldn't save that just now. Try again.", which can never
+work: a browser reporting a zone newer than the database's time zone
+data (`Europe/Kyiv` against data from before 2022, say) could not turn
+AI apps on at all. The owner's own zone is an old one, so this is not
+expected to bite.
+
+**Why not fixed here:** it changes only what the owner is told, nothing
+is saved wrong, and the owner's own zone is known; it is left for the
+cleanup step after the reviews (PLAN §3).
+
+**To settle:** read `23514` as its own reason in `access.ts`, and say
+"Your browser's time zone isn't one the database knows yet", with a
+card test whose fake refuses the zone.

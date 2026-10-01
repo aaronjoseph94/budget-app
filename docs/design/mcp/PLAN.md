@@ -2016,9 +2016,10 @@ created it in M9, and imported `packages/ai-apps` from
     that can send messages switched on in the same chat, it could send
     figures on. Help says to keep such connectors off in those chats; the
     app cannot enforce it.
-17. **Travel.** "Today" is the time zone saved when AI apps were switched
-    on; away from home, it may be a day off until the owner turns the
-    switch off and on again.
+17. **Travel.** "Today" is the time zone the browser had at the last
+    change in Settings → AI apps (every save carries it, as built in
+    M10a); away from home, it may be a day off until the owner changes
+    something there, such as pressing **Connect a new AI app**.
 18. **Free-plan invocations.** With JWT verification off, anyone can make
     the function answer 401s, which count toward the plan's monthly
     invocations.
