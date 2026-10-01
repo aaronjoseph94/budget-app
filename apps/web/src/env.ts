@@ -12,6 +12,7 @@
  * it bypasses every one of those policies.
  */
 import { z } from 'zod'
+import { SECRET_KEY_REFUSED, isSecretKey } from './public-key.js'
 
 // zod's first parse tries `Function('')` to see whether it may compile a
 // faster parser. The Content-Security-Policy refuses eval, so every page
@@ -24,7 +25,10 @@ const EnvSchema = z.object({
   VITE_SUPABASE_URL: z.url({ message: 'VITE_SUPABASE_URL must be the project URL' }),
   VITE_SUPABASE_ANON_KEY: z
     .string()
-    .min(20, 'VITE_SUPABASE_ANON_KEY looks too short to be a key'),
+    .min(20, 'VITE_SUPABASE_ANON_KEY looks too short to be a key')
+    // A secret or service_role key would give anyone who opens the site's
+    // JavaScript the whole database (security-c2-02).
+    .refine((key) => !isSecretKey(key), SECRET_KEY_REFUSED),
 })
 
 export type Env = z.infer<typeof EnvSchema>
