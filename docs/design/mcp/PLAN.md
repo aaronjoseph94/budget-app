@@ -1760,6 +1760,13 @@ created it in M9, and imported `packages/ai-apps` from
   log test (§2.6) had run no tool yet; it now runs every read tool with
   the sentinel in every name the fake database hands back, and against a
   database error carrying it.
+  *Review, 2026-10-01:* category names sent as given meant a typo, a
+  different letter case or a stored hidden character matched nothing, and
+  the search answered totals of $0.00 for a category the owner has, where
+  every other tool says `unknown_category`. When `categories` are named,
+  the search now reads the owner's categories first (one more counted
+  read), matches each name as `list_categories` hands it out, sends the
+  stored names, and refuses one the owner does not have.
 
 ### M9: `add_expense` and `add_note`
 

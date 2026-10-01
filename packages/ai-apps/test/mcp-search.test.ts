@@ -14,7 +14,7 @@ const match = (posted_on: string, amount_cents: number, merchant_raw: string, ca
 const FOUND = {
   today: '2026-09-30',
   total: 4,
-  rows: [match('2026-09-29', -1275, 'FRESHCO 1234567', 'Groceries', 'variable'), match('2026-09-20', 500, 'FRESHCO REFUND', 'Groceries', 'variable')],
+  rows: [match('2026-09-29', -1275, 'FRESHCO 1234567', 'Groceries', 'variable'), match('2026-09-20', 500, 'FRESHCO REFUND', 'Groceries\u202e', 'variable')],
   all: [
     { amount_cents: -1275, kind: 'variable' },
     { amount_cents: 500, kind: 'variable' },
@@ -22,6 +22,16 @@ const FOUND = {
     { amount_cents: 50000, kind: 'transfer' },
   ],
 }
+
+// The owner's categories, as the search reads them first when some are named; Groceries was typed with a zero-width space.
+const CATEGORIES = {
+  today: '2026-09-30',
+  categories: [
+    { id: 'food', name: 'Groceries\u200b', kind: 'variable', sort_order: 0, weekly_budget_cents: null },
+    { id: 'card', name: 'Card payments', kind: 'transfer', sort_order: 0, weekly_budget_cents: null },
+  ],
+}
+const answers = (fn: string) => reply(fn === 'ai_app_read' ? CATEGORIES : FOUND)
 
 afterEach(() => {
   vi.useRealTimers()
@@ -53,8 +63,23 @@ describe('search_transactions', () => {
   })
 
   it('gives no totals past 5,000 matches', async () => {
-    const { result } = await callTool(() => reply({ ...FOUND, total: 5001, all: null }), 'search_transactions', { categories: ['Groceries'], list: 'transfer', from: '2024-01-01', to: '2026-09-30' })
+    const many = (fn: string) => (fn === 'ai_app_read' ? answers(fn) : reply({ ...FOUND, total: 5001, all: null }))
+    const { result } = await callTool(many, 'search_transactions', { categories: ['Groceries'], list: 'transfer', from: '2024-01-01', to: '2026-09-30' })
     expect(result.structuredContent).toMatchObject({ total_matches: 5001, totals: null, returned: 2, truncated: true })
+  })
+
+  it('finds categories by the names list_categories gives, and sends the list and the flow', async () => {
+    const { result, rpcCalls } = await callTool(answers, 'search_transactions', { categories: ['Groceries', 'Card payments'], list: 'variable', flow: 'spent' })
+    expect(result.isError).toBeUndefined()
+    expect(JSON.parse(String(rpcCalls[0]?.init.body)).p_parts).toEqual(['categories'])
+    // The database matches names as stored, hidden character and all.
+    expect(JSON.parse(String(rpcCalls[1]?.init.body))).toMatchObject({ p_categories: ['Groceries\u200b', 'Card payments'], p_list: 'variable', p_flow: 'spent' })
+  })
+
+  it('refuses a category the owner does not have, rather than total nothing for it', async () => {
+    const { result, rpcCalls } = await callTool(answers, 'search_transactions', { categories: ['Groceries', 'groceries'] })
+    expect(result).toEqual({ isError: true, content: [{ type: 'text', text: SENTENCES.unknown_category }] })
+    expect(rpcCalls).toHaveLength(1)
   })
 
   it.each([
