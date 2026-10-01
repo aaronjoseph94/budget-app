@@ -138,8 +138,9 @@ export async function readReceiptPhoto(supabase: SupabaseClient, photo: ReceiptP
 
 /** read-receipt, as the app called it before the helper: the Gemini secret, one model, no failover. */
 async function viaReadReceipt(supabase: SupabaseClient, photo: ReceiptPhoto): Promise<ReceiptRead> {
-  // Past read-receipt's own 30 s wait for Gemini (backend-b-05).
-  const { data, error } = await supabase.functions.invoke('read-receipt', { body: photo, timeout: 40_000 })
+  // Past read-receipt's 10 s sign-in check plus its 30 s wait for Gemini, with
+  // room for a cold start, so its own 504 answers first (backend-b-05, review-r-02).
+  const { data, error } = await supabase.functions.invoke('read-receipt', { body: photo, timeout: 50_000 })
 
   if (error !== null) {
     // The function answers failures with { ok: false, code }. supabase-js

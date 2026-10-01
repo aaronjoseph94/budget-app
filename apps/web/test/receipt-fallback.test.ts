@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { ReceiptPhoto } from '@budget/schema'
 import { readReceiptPhoto } from '../src/receipt.js'
 import { createFakeSupabase } from './fake-supabase.js'
@@ -14,7 +14,7 @@ const READING = { readable: true, merchant: 'LITWARE CAFE', total: '14.23', date
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
 const helperSays = (code: string, status: number) => () => json({ ok: false, code }, status)
 
-function setUp(helper: ((body: Readonly<Record<string, unknown>>) => Response) | null, reader: (() => Response) | null = () => json({ ok: true, reply: JSON.stringify(READING) })) {
+function setUp(helper: ((body: Readonly<Record<string, unknown>>) => Response) | null, reader: (() => Response | Promise<Response>) | null = () => json({ ok: true, reply: JSON.stringify(READING) })) {
   const fake = createFakeSupabase()
   fake.functions.ai = helper
   fake.functions.readReceipt = reader
@@ -70,6 +70,23 @@ describe('reading a receipt photo', () => {
       link: 'updates',
     })
     expect(fake.functions.receiptCalls).toEqual([PHOTO])
+  })
+
+  it('waits for read-receipt past its 10 s sign-in check plus its 30 s wait for Gemini, then gives up (review-r-02)', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    try {
+      const fake = setUp(null, () => new Promise<Response>(() => undefined))
+      let settled = false
+      const pending = readReceiptPhoto(fake.client, PHOTO).finally(() => void (settled = true))
+      // 40 s is read-receipt's own worst case: the app must still be waiting for its 504, with room to spare.
+      await vi.advanceTimersByTimeAsync(49_000)
+      expect(settled).toBe(false)
+      await vi.advanceTimersByTimeAsync(1_000)
+      expect((await pending).ok).toBe(false)
+      expect(fake.functions.receiptCalls).toEqual([PHOTO])
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('keeps read-receipt’s own reasons when it is the one that answered', async () => {

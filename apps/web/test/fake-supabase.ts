@@ -390,7 +390,10 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
       functions.receiptCalls.push(body)
       if (functions.readReceipt === null) return json({ code: 'NOT_FOUND', message: 'Requested function was not found' }, 404)
-      return functions.readReceipt(body)
+      // As a real fetch does, a request given up on stops waiting for its answer.
+      const signal = init?.signal
+      const given = new Promise<never>((_, reject) => signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError'))))
+      return Promise.race([functions.readReceipt(body), given])
     }
     const target = url.pathname.replace(/^\/rest\/v1\//, '')
     const failure = failures.get(target) ?? failures.get(`${method} ${target}`)
