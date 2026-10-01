@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import { goalForecast, isoDate, savingsFunds, type GoalPace } from '@budget/core'
+import { money } from '../src/money.js'
+import { fundsInput, goalBase, goalsAhead, goalsFrom, goalsInOrder } from '../src/rows.js'
 import { SENTENCES } from '../src/rpc.js'
 import { callTool, reply } from './fake-database.js'
+import { variedFourYears } from './four-years.js'
 import { READ } from './owner-rows.js'
 
 /**
@@ -79,5 +83,48 @@ describe('get_savings_goals', () => {
     ['a refusal', { refused: 'not_signed_in' }, SENTENCES.server_error],
   ])('answers %s with one sentence', async (_, read, sentence) => {
     expect((await goals(read)).result).toEqual({ isError: true, content: [{ type: 'text', text: sentence }] })
+  })
+})
+
+/** What the description promises for each pace with a date or none, written out apart from goals.ts. */
+function paceOf(pace: GoalPace) {
+  switch (pace.status) {
+    case 'range':
+      // Three different dates and paces, so a field taken from the wrong one shows.
+      expect(pace.dates.early < pace.dates.middle && pace.dates.middle < (pace.dates.late ?? '') && pace.weekly.low < pace.weekly.middle && pace.weekly.middle < pace.weekly.high).toBe(true)
+      return {
+        status: 'range',
+        months: pace.months,
+        weekly: { low: money(pace.weekly.low), likely: money(pace.weekly.middle), high: money(pace.weekly.high) },
+        early: pace.dates.early,
+        likely: pace.dates.middle,
+        late: pace.dates.late,
+      }
+    case 'rough':
+      return { status: 'rough', months: pace.months, weekly: money(pace.weeklyCents), date: pace.date }
+    case 'no_pace':
+      return { status: 'no_pace', months: pace.months }
+    default:
+      throw new Error(`no case for ${pace.status}`)
+  }
+}
+
+// By 15 October, September is the records' one complete month: $100.00 moved into Trip's fund then is a rough
+// pace; $100.00 taken out is none. Four varied years give a range.
+const move = (cents: number) => ({ id: 'f9', posted_on: '2026-09-10', amount_cents: cents, merchant_raw: 'SAVINGS', category_id: 'fund', source: 'typed' })
+const oneMonth = (cents: number) => ({ ...GOALS, today: '2026-10-15', goals: [GOALS.goals[2]], txns: [...READ.txns, move(cents)], fund_txns: [move(cents)] })
+
+describe('get_savings_goals gives core’s pace', () => {
+  it.each([
+    ['range', variedFourYears('2026-09-10')],
+    ['rough', oneMonth(-10000)],
+    ['no_pace', oneMonth(10000)],
+  ])('%s', async (status, read) => {
+    const today = isoDate(String(read.today))
+    const main = goalsAhead(goalsInOrder(goalsFrom(read.goals)), savingsFunds(fundsInput(read, today)))[0]!
+    const { pace, neededWeeklyCents } = goalForecast({ ...goalBase(read, today), goal: main })
+    expect(pace.status).toBe(status)
+    const out = (await goals(read)).result.structuredContent as { goals: Record<string, unknown>[] }
+    expect(out.goals[0]).toMatchObject({ name: 'Trip', main: true, forecast: { ...paceOf(pace), weekly_needed: money(neededWeeklyCents!) } })
   })
 })
