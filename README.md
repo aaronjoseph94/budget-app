@@ -17,14 +17,14 @@ the owner's to-do list and the next agent's starting point.
 
 | Screen | What it is for |
 |---|---|
-| Month | Opens first. Start, Spent, Left to spend, the month's end, last month beside it, your lists, the charts |
-| Week, Pay, Year | The switch under the Month's title: the same view for a week, a pay period or twelve months |
+| Month | Opens first. Left to spend, End of month, Start and Spent, last month beside it, your lists, the charts |
+| Week, Paycheck, Year | The same view for a week, a pay period or twelve months. The **Month · Week · Pay · Year** switch at the top of each of the four moves between them |
 | Bill calendar | Each bill on its day, paydays, each week's total |
 | Coach and Check-in | How the month is going, your goals, what to try next, a weekly check-in from Sunday |
 | Forecast | Safe to spend a day, where the month will end, the next 30 days, goal dates, what-ifs, the debt-free date |
 | Reports | The month in review, trends, shops and subscriptions, habits; **Save as PDF** and **Download CSV** |
 | Ask | A question about your money in your own words; the answer's figure comes from the engine |
-| Savings, Debts | Every savings goal in your order; every debt and when it is paid off |
+| Savings, Debts, All transactions | Every savings goal in your order; every debt and when it is paid off; every approved charge |
 | Add, Review | A statement, a receipt photo or a typed note; everything waits in Review until you approve it |
 | Setup, Settings, AI settings | Your lists and bills; weekly budgets and learned shops; AI on or off, keys and a daily limit |
 | Help, Getting started | An article for every screen (the **?** beside each title), One-time updates, nine setup steps |
@@ -38,23 +38,29 @@ the owner's to-do list and the next agent's starting point.
   fills each blank from its own engine ([ADR 0005](docs/adr/0005-grounded-ai-text.md)).
   With AI off, every screen still works and shows the app's own words.
 - **Keys never reach the browser.** Every AI call goes through one server
-  function, `ai`, which keeps keys encrypted in the database. A key is
-  pasted once in **AI settings** and never shown again.
+  function, `ai`, which keeps keys encrypted in the database (until `ai` is
+  installed, receipt photos use the older `read-receipt` function and its
+  server-side key instead). A key is pasted once in **AI settings** and
+  never shown again.
 - **A fixed list of services.** Free: Google Gemini (the default), Groq and
   OpenRouter. Paid, off until you switch **Use paid services** on: OpenAI and
   Anthropic. The addresses are written into the code; a setting can only
   pick from that list ([ADR 0004](docs/adr/0004-ai-providers-and-keys.md)).
 - **Free tiers may keep what they are sent.** The owner accepted that trade
-  for receipts and summaries ([ADR 0002](docs/adr/0002-gemini-free-tier-for-receipts.md));
-  Help's "What the AI sees" article lists exactly what each task sends.
+  for receipts ([ADR 0002](docs/adr/0002-gemini-free-tier-for-receipts.md))
+  and for the other AI tasks ([ADR 0004](docs/adr/0004-ai-providers-and-keys.md));
+  Help's "What the AI sees, and how the Coach talks" article lists what
+  each task sends.
 
 ## Connecting Claude or ChatGPT (AI apps)
 
 The app can act as an MCP server (Model Context Protocol, the way AI apps
 call tools on another service). Once connected, Claude or ChatGPT can read
 your figures and add entries to **Review**. They cannot approve, change or
-delete anything, and each connection starts only after you press
-**Connect a new AI app** in Settings and then **Allow** on the app's own page.
+delete anything. It is off until you turn it on: in **Settings** (on a
+phone, under **More**), under **AI apps**, turn on **Let AI apps connect**,
+press **Connect a new AI app**, and then press **Allow** on the budget
+app's own page. Connecting is done once, on a computer.
 
 - Step by step, in the app: **Help → Connect Claude** and
   **Help → Connect ChatGPT** (the words are in
@@ -92,7 +98,8 @@ workbook's own saved results exactly. The canonical case: four debts from
   [ADR 0006](docs/adr/0006-navigation-for-an-ai-first-app.md))
 - zod for checking data at the edges; Vitest for tests
 - Supabase: Postgres with row-level security, private Storage, Edge Functions
-- Cloudflare Pages for the website
+- Cloudflare Pages for the website (not set up yet; until then
+  `netlify.toml` builds a preview the same way)
 
 ## What is where
 
@@ -164,7 +171,9 @@ has the detail behind each one. In outline:
    server for AI apps, from the same Help page.
 3. **Website.** Cloudflare Pages builds `pnpm --filter @budget/app-client build`
    from `main` and serves `apps/web/dist`, with the two public values as
-   environment variables. Pushing to `main` deploys.
+   environment variables. Pushing to `main` deploys. That host is still
+   one of the owner's open steps; until it is done, a Netlify preview
+   builds the same command from `netlify.toml`.
 
 ## Where the docs are
 
@@ -183,11 +192,13 @@ has the detail behind each one. In outline:
 
 - **One person's data.** Every table has row-level security: a signed-in
   user sees only their own rows. There is no sign-up screen; accounts are
-  made in Supabase, and public sign-up is switched off there.
+  made in Supabase. Public sign-up must also be switched off there
+  ([`HANDOFF.md`](HANDOFF.md) section 3, "Stop strangers registering").
 - **Only two values are public:** the Supabase project URL and its anon
   key. The `service_role` key and every AI key stay on the server.
-- **Receipts are private.** They live in a private Storage bucket under
-  your own folder, opened through links that expire within 60 seconds.
+- **Receipt photos are not kept.** A photo is sent to be read and then
+  dropped; it is not saved in Supabase or on the device. The database's
+  only Storage bucket is private, readable only from your own folder.
 - **Logs carry ids, codes and counts only**, never an amount, shop, note,
   image path, prompt or AI reply.
 - **Text from a receipt or an AI reply is shown as plain text**, never run
