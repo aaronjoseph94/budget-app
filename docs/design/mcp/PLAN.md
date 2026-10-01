@@ -1976,7 +1976,7 @@ created it in M9, and imported `packages/ai-apps` from
   off without replacing it, which on its older copy (§6, finding 7)
   opens the Gemini key to anyone; they now say to paste its new version
   or delete it first, with its **Copy** beside them, as HANDOFF §3 step 4
-  does.
+  does. HANDOFF check 18 quotes the server's own K1 sentence.
 
 ### After M12b, in the owner's order
 

@@ -194,9 +194,10 @@ describe('checking the one-time updates', () => {
       fake.oauth.metadata = metadata
       expect([metadata, stateOf(await checkUpdates(fake.client), 'oauth')]).toEqual([metadata, state])
     }
-    // Only Supabase's own "switched off" is missing: another 404, or no answer, could not be checked.
+    // Only Supabase's own "switched off" is missing: another 404, any other failure, or no answer, could not be checked.
     const gateway404 = () => Promise.resolve(new Response(JSON.stringify({ message: 'no Route matched with those values' }), { status: 404 }))
-    for (const reply of [gateway404, () => Promise.resolve(new Response('Not Found', { status: 404 })), () => Promise.reject(new TypeError('Failed to fetch'))]) {
+    const busy = () => Promise.resolve(new Response(JSON.stringify({ message: 'upstream unavailable' }), { status: 503 }))
+    for (const reply of [gateway404, busy, () => Promise.resolve(new Response('Not Found', { status: 404 })), () => Promise.reject(new TypeError('Failed to fetch'))]) {
       vi.stubGlobal('fetch', reply)
       expect(stateOf(await checkUpdates(fake.client), 'oauth')).toBe('unknown')
     }

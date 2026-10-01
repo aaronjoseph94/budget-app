@@ -341,13 +341,16 @@ what to do, and reporting the words on the screen is enough.
     found, or the page says "This isn't a connection request", stop and
     report it: nothing has been connected.
 18. **The first question** (K1, the one that matters most). Ask Claude
-    "list my categories". It should list yours. **If it answers "not an
-    AI app", or that you are not signed in: at once turn off Let AI apps
-    connect in Settings, then Supabase → Authentication → OAuth Server →
-    turn it off, and report it.** That answer would mean the database
-    cannot tell an AI app's sign-in from your own: the server turns the AI
-    app away, but its sign-in, used without the server, could change your
-    records.
+    "list my categories". It should list yours. **If it says the budget
+    app did not recognise this sign-in as an AI app's: at once turn off
+    Let AI apps connect in Settings, then Supabase → Authentication →
+    OAuth Server → turn it off, and report it.** That answer would mean
+    the database cannot tell an AI app's sign-in from your own: the server
+    turns the AI app away, but its sign-in, used without the server, could
+    change your records. One-time updates then lists **Sign-in for AI
+    apps** as not in: leave it off until the next agent says otherwise. If
+    instead every question gets "Something went wrong in the budget app's
+    server", turn off **Let AI apps connect** and report that.
 19. **Your figures** (K11). Ask "How is my month going?": the figures match
     the Month. If every answer says the app could not read your records,
     turn off **Let AI apps connect** and report it.

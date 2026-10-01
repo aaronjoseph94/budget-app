@@ -148,9 +148,14 @@ describe('One-time updates', () => {
     fake.oauth.grants = null
     await open(fake, '19 of 20 in')
     expect(row('Sign-in for AI apps')).toBe('✗Not in yet: Sign-in for AI appsLets Claude or ChatGPT ask you to allow them')
-    expect(screen.getByText(`In Supabase, open Authentication, then URL Configuration, and check Site URL is ${window.location.origin}.`)).toBeTruthy()
-    expect(screen.getByText('Set Authorization Path to /oauth/consent.')).toBeTruthy()
-    expect(screen.queryByRole('link', { name: /on GitHub$/ })).toBeNull()
+    expect(clicks()).toEqual([
+      `In Supabase, open Authentication, then URL Configuration, and check Site URL is ${window.location.origin}.`,
+      'Open Authentication, then OAuth Server, and press Enable.',
+      'Set Authorization Path to /oauth/consent.',
+      'Turn on dynamic client registration, which lets Claude and ChatGPT register themselves, and press Save.',
+      'Under Sign In / Providers, keep Allow new users to sign up off, and under Email keep Secure email change on.',
+    ])
+    expect(githubLinks()).toEqual([])
   })
 
   it('asks for the helper’s new version over an older copy, with the clicks for replacing it', async () => {
