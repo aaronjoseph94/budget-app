@@ -75,7 +75,7 @@ export type AiAction = AiRequest['action']
  * new version to be pasted over it. Bumped with every change to the
  * helper, as `YYYY-MM-DD.N`.
  */
-export const AI_HELPER_VERSION = '2026-10-01.2'
+export const AI_HELPER_VERSION = '2026-10-01.3'
 
 /**
  * Every failure the helper answers with, as a code the app turns into a

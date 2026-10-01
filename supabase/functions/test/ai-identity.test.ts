@@ -161,6 +161,24 @@ describe('the AI helper waits a bounded time for the auth server and the databas
   })
 })
 
+describe('the AI helper serves only the owner once OWNER_USER_ID is set (backend-b-06)', () => {
+  const OTHER = '0a1b2c3d-4e5f-4a6b-8c7d-998877665544'
+
+  it('refuses any other signed-in account as not signed in, before asking anything else', async () => {
+    const stranger = await run(request(), { ...ENV, OWNER_USER_ID: OTHER })
+    expect([stranger.res.status, stranger.body.code]).toEqual([401, 'not_signed_in'])
+    expect(stranger.calls.map((c) => c.url)).toEqual([`${PROJECT}/auth/v1/user`])
+    const owner = await run(request(), { ...ENV, OWNER_USER_ID: USER.toUpperCase() })
+    expect(owner.res.status).toBe(200)
+    expect((await run(request(), ENV)).res.status).toBe(200)
+  })
+
+  it('serves no one when the setting is not a user id, rather than everyone', async () => {
+    const typo = await run(request(), { ...ENV, OWNER_USER_ID: 'my user id' })
+    expect([typo.res.status, typo.body.code, typo.calls.length]).toEqual([503, 'helper_error', 0])
+  })
+})
+
 describe('the AI helper asks the auth server with the project’s public key (backend-b-04)', () => {
   const apikeyOf = (c: Call | undefined) => new Headers(c?.init.headers).get('apikey')
   const PUBLISHABLE = JSON.stringify({ default: 'sb_publishable_notarealkey0001' })

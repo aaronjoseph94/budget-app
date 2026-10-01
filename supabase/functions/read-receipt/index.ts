@@ -60,6 +60,9 @@ const EnvSchema = z.object({
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().optional(),
   EXTRA_ORIGINS: z.string().optional(),
+  // Optional: the owner's user id. Set, every other account is refused
+  // before the key is spent (backend-b-06). Not a user id, nothing is served.
+  OWNER_USER_ID: z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i).optional(),
 })
 type Env = z.infer<typeof EnvSchema>
 
@@ -175,7 +178,13 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
  * (it carries client_id, which the owner's own sign-in never has) and one
  * whose payload cannot be read.
  */
-async function whoIs(project: string, anonKey: string, bearer: string, fetchFn: typeof fetch): Promise<'owner' | 'not_signed_in' | 'auth_unreachable'> {
+async function whoIs(
+  project: string,
+  anonKey: string,
+  bearer: string,
+  owner: string | undefined,
+  fetchFn: typeof fetch,
+): Promise<'owner' | 'not_signed_in' | 'auth_unreachable'> {
   const res = await bounded(fetchFn, `${project}/auth/v1/user`, { method: 'GET', headers: { apikey: anonKey, Authorization: bearer } }, AUTH_MS)
   if (typeof res === 'string') {
     log('auth_unreachable')
@@ -189,6 +198,7 @@ async function whoIs(project: string, anonKey: string, bearer: string, fetchFn: 
   const user: unknown = res.body
   const id = typeof user === 'object' && user !== null && 'id' in user ? user.id : null
   if (typeof id !== 'string' || !UUID.test(id)) return 'not_signed_in'
+  if (owner !== undefined && id.toLowerCase() !== owner.toLowerCase()) return 'not_signed_in'
   try {
     const claims: unknown = JSON.parse(atob((bearer.split('.')[1] ?? '').replace(/-/g, '+').replace(/_/g, '/')))
     return typeof claims === 'object' && claims !== null && !('client_id' in claims && claims.client_id !== null) ? 'owner' : 'not_signed_in'
@@ -238,7 +248,7 @@ export async function handle(
     return send(400, { ok: false, code: 'bad_request' })
   }
 
-  const who = await whoIs(project, anonKey, bearer, fetchFn)
+  const who = await whoIs(project, anonKey, bearer, env.OWNER_USER_ID, fetchFn)
   if (who !== 'owner') return send(who === 'not_signed_in' ? 401 : 503, { ok: false, code: who })
 
   const upstream = await bounded(
@@ -295,6 +305,7 @@ if (typeof Deno !== 'undefined') {
         GEMINI_API_KEY: Deno.env.get('GEMINI_API_KEY'),
         GEMINI_MODEL: Deno.env.get('GEMINI_MODEL'),
         EXTRA_ORIGINS: Deno.env.get('EXTRA_ORIGINS'),
+        OWNER_USER_ID: Deno.env.get('OWNER_USER_ID'),
       },
       fetch,
     ),

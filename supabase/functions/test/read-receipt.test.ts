@@ -273,3 +273,14 @@ describe('read-receipt waits a bounded time for Gemini (backend-b-05)', () => {
     expect([res.status, await res.json()]).toEqual([504, { ok: false, code: 'provider_unreachable' }])
   })
 })
+
+describe('read-receipt serves only the owner once OWNER_USER_ID is set (backend-b-06)', () => {
+  it('refuses any other signed-in account before spending the key, and a setting that is not a user id', async () => {
+    const stranger = await run(request(), { ...ENV, OWNER_USER_ID: '0a1b2c3d-4e5f-4a6b-8c7d-998877665544' })
+    expect([stranger.res.status, stranger.body.code, stranger.calls.length]).toEqual([401, 'not_signed_in', 0])
+    const owner = await run(request(), { ...ENV, OWNER_USER_ID: USER })
+    expect(owner.res.status).toBe(200)
+    const typo = await run(request(), { ...ENV, OWNER_USER_ID: 'my user id' })
+    expect([typo.res.status, typo.body.code, typo.calls.length + typo.auth.length]).toEqual([503, 'not_configured', 0])
+  })
+})

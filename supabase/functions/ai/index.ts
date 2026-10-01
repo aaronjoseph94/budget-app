@@ -27,7 +27,7 @@
 import { z } from 'npm:zod@4.6.5'
 
 /** Which copy is deployed, so One-time updates can tell an old paste from this one. */
-export const VERSION = '2026-10-01.2'
+export const VERSION = '2026-10-01.3'
 
 // Browsers allowed to call this, as read-receipt's: the Cloudflare and
 // Netlify sites and a local dev server, plus exact https origins in the
@@ -55,6 +55,10 @@ const EnvSchema = z.object({
   // Optional: a root of the owner's own for sealing pasted keys, so they
   // survive a change of Supabase's keys (ADR 0004).
   AI_KEYS_ROOT: z.string().optional(),
+  // Optional: the owner's user id. Set, every other account is refused,
+  // so one that signed up on its own cannot spend the owner's keys or the
+  // receipts secret (backend-b-06). Not a user id, nothing is served.
+  OWNER_USER_ID: z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i).optional(),
 })
 type Env = z.infer<typeof EnvSchema>
 
@@ -306,6 +310,7 @@ async function whoIs(env: Env, bearer: string, fetchFn: typeof fetch): Promise<W
   const user: unknown = res.body
   const id = typeof user === 'object' && user !== null && 'id' in user ? user.id : null
   if (typeof id !== 'string' || !UUID.test(id)) return { code: 'not_signed_in' }
+  if (env.OWNER_USER_ID !== undefined && id.toLowerCase() !== env.OWNER_USER_ID.toLowerCase()) return { code: 'not_signed_in' }
   return fromAnAiApp(bearer) ? { code: 'not_signed_in' } : { user: id.toLowerCase() }
 }
 
@@ -1496,6 +1501,7 @@ if (typeof Deno !== 'undefined') {
         GEMINI_MODEL: Deno.env.get('GEMINI_MODEL'),
         EXTRA_ORIGINS: Deno.env.get('EXTRA_ORIGINS'),
         AI_KEYS_ROOT: Deno.env.get('AI_KEYS_ROOT'),
+        OWNER_USER_ID: Deno.env.get('OWNER_USER_ID'),
       },
       fetch,
     ),
