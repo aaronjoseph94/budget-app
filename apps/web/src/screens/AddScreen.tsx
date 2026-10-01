@@ -644,6 +644,16 @@ const PHOTO_LINKS: Readonly<Record<ReceiptLink, { readonly href: string; readonl
  * can correct it, and the row still waits in Review for a category like any
  * other — model output never reaches the ledger unreviewed (CLAUDE.md).
  */
+/** A photo's bytes as SHA-256 hex; null when the file cannot be read, and the receipt is then told apart only by its fields. */
+async function photoDigest(file: File): Promise<string | null> {
+  try {
+    const digest = await crypto.subtle.digest('SHA-256', await file.arrayBuffer())
+    return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')
+  } catch {
+    return null
+  }
+}
+
 function PhotoEntry() {
   const { supabase, userId, accountId, refresh } = useAppData()
   const [state, setState] = useState<PhotoState>({ kind: 'none' })
@@ -668,6 +678,10 @@ function PhotoEntry() {
   // Which photo is being read: "Use another photo" during a read, or the
   // screen closing, makes a late reading stale, and it is dropped (FE-2).
   const reading = useRef(0)
+  // The photo's own SHA-256, its identity for the dedupe hash: two receipts
+  // with the same shop, day and total are two purchases, and the same photo
+  // sent twice is one (backend-c1-02). Never logged or shown.
+  const photoId = useRef<Promise<string | null> | null>(null)
   // The preview on show, let go of when the screen closes.
   const shown = useRef<string | null>(null)
   useEffect(
@@ -685,6 +699,7 @@ function PhotoEntry() {
     shown.current = preview
     setOutcome(null)
     setState({ kind: 'reading', preview })
+    photoId.current = photoDigest(file)
     const result = await readReceipt(supabase, file)
     if (mine !== reading.current) return
     if (result.ok) {
@@ -701,6 +716,7 @@ function PhotoEntry() {
     reading.current += 1
     if (state.kind !== 'none') URL.revokeObjectURL(state.preview)
     shown.current = null
+    photoId.current = null
     setState({ kind: 'none' })
     setMerchant('')
     setAmount('')
@@ -717,6 +733,7 @@ function PhotoEntry() {
     setBusy(true)
     setOutcome(null)
     try {
+      const digest = photoId.current === null ? null : await photoId.current
       const counts = await saveImport(supabase, {
         userId,
         accountId,
@@ -729,7 +746,7 @@ function PhotoEntry() {
             postedOn: isoDate(date),
             amountCents: applySignConvention(cents, { kind: 'debit_positive' }),
             merchantRaw: merchant.trim(),
-            issuerTransactionId: undefined,
+            issuerTransactionId: digest === null ? undefined : `receipt:${digest}`,
           },
         ],
       })
@@ -739,7 +756,7 @@ function PhotoEntry() {
           counts.autoApproved > 0
             ? 'Added — filed automatically from your past choices.'
             : counts.deduped > 0
-              ? 'You already had this one, so nothing was added.'
+              ? 'This photo was already sent, so nothing was added.'
               : 'Sent to Review. Pick a category there and it counts.',
       })
       await refresh()

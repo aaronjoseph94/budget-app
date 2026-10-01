@@ -91,6 +91,54 @@ describe('AddScreen, a receipt photo', () => {
   })
 })
 
+describe('AddScreen, two receipts alike (backend-c1-02)', () => {
+  const real = { create: URL.createObjectURL, revoke: URL.revokeObjectURL }
+  beforeEach(() => {
+    URL.createObjectURL = () => 'blob:receipt'
+    URL.revokeObjectURL = () => undefined
+  })
+  afterEach(() => {
+    cleanup()
+    URL.createObjectURL = real.create
+    URL.revokeObjectURL = real.revoke
+  })
+
+  // The same shop, day and total typed for each photo; only the photo differs.
+  async function sendPhoto(file: File) {
+    pick('Take or choose a receipt photo', file)
+    await screen.findByText('That file could not be opened as a photo.')
+    fireEvent.change(screen.getByLabelText('Where'), { target: { value: 'BLUE BOTTLE' } })
+    fireEvent.change(screen.getByLabelText('Total spent'), { target: { value: '4.50' } })
+    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-09-30' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Send to review' }))
+  }
+  const hashes = (fake: ReturnType<typeof createFakeSupabase>) =>
+    fake.rpcCalls.map((c) => (c.args.p_rows as { dedupe_hash: string }[])[0]?.dedupe_hash)
+
+  it('keeps two different photos of equal receipts apart, and the same photo sent twice as one', async () => {
+    const fake = createFakeSupabase()
+    const sent = { batch_id: 'b1', parsed: 1, deduped: 0, inserted: 1, rejected: 0, auto_approved: 0 }
+    fake.rpcReplies.save_import = [sent]
+    renderScreen(<AddScreen />, fake)
+    fireEvent.click(await screen.findByRole('tab', { name: /Photo/ }))
+
+    await sendPhoto(new File(['first coffee'], 'a.jpg', { type: 'image/jpeg' }))
+    await screen.findByText('Sent to Review. Pick a category there and it counts.')
+    fireEvent.click(screen.getByRole('button', { name: 'Use another photo' }))
+    await sendPhoto(new File(['second coffee'], 'b.jpg', { type: 'image/jpeg' }))
+    await screen.findByText('Sent to Review. Pick a category there and it counts.')
+    fireEvent.click(screen.getByRole('button', { name: 'Use another photo' }))
+    // The server finds the first photo's charge already waiting.
+    fake.rpcReplies.save_import = [{ ...sent, deduped: 1, inserted: 0 }]
+    await sendPhoto(new File(['first coffee'], 'a-again.jpg', { type: 'image/jpeg' }))
+
+    expect(await screen.findByText('This photo was already sent, so nothing was added.')).toBeTruthy()
+    const [first, second, again] = hashes(fake)
+    expect(first).not.toBe(second)
+    expect(again).toBe(first)
+  })
+})
+
 describe('AddScreen, a receipt photo not read (FE-8)', () => {
   const real = { create: URL.createObjectURL, revoke: URL.revokeObjectURL }
   beforeEach(() => {
