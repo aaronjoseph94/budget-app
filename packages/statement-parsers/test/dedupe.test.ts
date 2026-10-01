@@ -60,6 +60,17 @@ describe('dedupeCanonicalString — what counts as the same charge', () => {
     expect(byIssuer).not.toBe(byIndex)
   })
 
+  // Security review mcp-2-01: an AI app chooses every field of what it adds,
+  // so its rows have a kind of their own and can never take the hash of a
+  // statement line, which would then be skipped on import as already waiting.
+  it('never gives an AI app’s row the key of a statement row with the same fields', () => {
+    const statement = dedupeCanonicalString(charge({ discriminator: { kind: 'occurrence', index: 1 } }))
+    const aiApp = dedupeCanonicalString(charge({ discriminator: { kind: 'ai_app', index: 1 } }))
+    expect(aiApp).not.toBe(statement)
+    expect(aiApp.endsWith('\u0000ai_app:1')).toBe(true)
+    expect(() => dedupeCanonicalString(charge({ discriminator: { kind: 'ai_app', index: 0 } }))).toThrow(RangeError)
+  })
+
   it('cannot be forged by smuggling the separator into a merchant name', () => {
     // A printable separator could be typed into a merchant string to make two
     // different charges render one identical key. NUL cannot appear, because

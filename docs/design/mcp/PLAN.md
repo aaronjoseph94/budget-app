@@ -718,7 +718,13 @@ treated as hostile.
    hash copied from a statement line with a different amount, and the real
    line would later be dropped on import as "already waiting". A version
    bump in `dedupe.ts` fails every add until this function follows, never
-   silently.
+   silently. *Corrected by 0031 (security review mcp-2-01, 2026-10-01):*
+   checking the hash was not enough, because the caller chooses every
+   argument: words, amount and day equal to a statement line gave that
+   line's exact hash, and the real charge was skipped on import. An AI
+   app's row is now hashed with its own kind, `ai_app:<n>` in place of
+   `occurrence:<n>`, so it can never equal a statement, receipt or typed
+   row's.
 4. Inserts the batch `(…, source 'ai_app', 0, 0, 0, 0, ai_client_id)`, with
    `ai_client_id` taken from `auth.jwt() ->> 'client_id'`, never from an
    argument: the counts CHECK is immediate, so counts are set afterwards,
@@ -1286,7 +1292,7 @@ review's, on the hosted project with the owner (§5.4).
 |---|---|
 | All arithmetic in `packages/core` | Every figure is a core function's output (§2.4), `days_left` included; the one new sum is core's `entriesTotals` (F52); SQL and the server only count calls and rows, which are bookkeeping, never money (ADR 0004), and SQL does no date arithmetic on a window; the Review list has no total by design; the window-invariance test proves no figure depends on how many rows were fetched. What an AI writes in its own chat is outside the app, and the server instructions ask it to quote |
 | Money is `Cents` | Integers in results, with `display` from the one helper, moved not copied; amounts in as text through statement-parsers; a JSON number amount is refused; `bigint` in Postgres |
-| Model output never reaches the ledger unreviewed | One write, `ai_app_add_candidate`, always pending, `model` when it names a category, never approved even on a rule match; it checks the hash it is sent and stores the words it shows, so no caller can make a pending row swallow a real statement line or teach a rule the owner did not see; every other write refused to a `client_id` token by 0019; the schema gate attempts each |
+| Model output never reaches the ledger unreviewed | One write, `ai_app_add_candidate`, always pending, `model` when it names a category, never approved even on a rule match; it checks the hash it is sent, in a kind of its own (`ai_app:<n>`, 0031), and stores the words it shows, so no caller can make a pending row swallow a real statement line; every other write refused to a `client_id` token by 0019; the schema gate attempts each |
 | Core functions: one plain input, one output, explicit `asOf` | `asOf` is the owner's date from the database, passed in; F52 the same |
 | zod at four boundaries | Tool arguments (the request body) and the environment only; no `outputSchema`; rows cast as `ledger.ts` does |
 | New tables: RLS and the owner policy in the same file; forward-only | 0020's three tables; 0019 and 0020 are new files; nothing applied is edited |
@@ -2071,8 +2077,11 @@ created it in M9, and imported `packages/ai-apps` from
     avoids it; each message says what to do. The iPhone home-screen app
     keeps its own sign-in, so Help says to connect from a computer.
 14. **Duplicates across paths.** A purchase an AI adds and the same charge
-    arriving on a statement have different shop text, so different hashes:
-    both wait in Review, and F39 already flags "may be counted twice". The
+    arriving on a statement always have different hashes, even with the
+    same shop text, since 0031 gives an AI app's rows a kind of their own
+    (mcp-2-01): both wait in Review, and F39 already flags "may be counted
+    twice". That is the visible, cheap failure; the other way round, a
+    real charge silently skipped, is the one `dedupe.ts` exists to prevent. The
     add tool's description says card purchases usually arrive with the
     statement.
 15. **The AI's own arithmetic.** An AI app may still add or round figures in

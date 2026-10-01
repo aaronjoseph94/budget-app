@@ -66,7 +66,7 @@ export interface Update {
 
 const NIL = '00000000-0000-0000-0000-000000000000'
 
-/** 0005 to 0020 and 0030, the AI helper, the two settings and the AI apps server, each with what it adds. */
+/** 0005 to 0020 and 0030 on, the AI helper, the two settings and the AI apps server, each with what it adds. */
 export const UPDATES: readonly Update[] = [
   { file: '0005_category_kinds.sql', adds: 'Which list each category is on', checks: [{ kind: 'column', table: 'categories', column: 'kind' }] },
   {
@@ -137,6 +137,11 @@ export const UPDATES: readonly Update[] = [
     file: '0030_ai_app_gate_live_session.sql',
     adds: 'Stops an AI app the moment you disconnect it',
     checks: [{ kind: 'level', level: 30 }],
+  },
+  {
+    file: '0031_ai_app_hash_own_kind.sql',
+    adds: 'Keeps what an AI app adds from hiding a real charge on your statement',
+    checks: [{ kind: 'level', level: 31 }],
   },
   { file: HELPER_FILE, adds: 'The AI helper, which every AI feature goes through', checks: [{ kind: 'helper' }] },
   { file: SIGNING_KEY, name: 'Signing key', adds: 'The key Supabase signs your sign-in with, which ChatGPT needs', checks: [{ kind: 'signing_key' }] },

@@ -2500,10 +2500,9 @@ do $$
 declare
   f text;
 begin
-  if public._ai_app_dedupe_hash('aaaaaaaa-0000-4000-8000-000000000001', '2026-09-29', -1250, 'Lunch at Subway', 1)
-       <> '2ad325760b37229a52c8c13682fee3d31f11a2301ad7ff83eb99ef6b4a2746cf'
-     or public._ai_app_dedupe_hash('aaaaaaaa-0000-4000-8000-000000000001', '2026-09-29', -1250, 'Lunch at Subway', 2)
-       <> 'a37ba14cf3c5b8d4ceeaf5f62d492008fa9a84a93306aa6de42603a2caf2c652' then
+  -- As 0020 left it, before 0031 gave AI apps' rows a kind of their own.
+  if (select one from verify.hash_before_0031) <> '2ad325760b37229a52c8c13682fee3d31f11a2301ad7ff83eb99ef6b4a2746cf'
+     or (select two from verify.hash_before_0031) <> 'a37ba14cf3c5b8d4ceeaf5f62d492008fa9a84a93306aa6de42603a2caf2c652' then
     raise exception 'the add checks a hash other than dedupe.ts''s version 1';
   end if;
   foreach f in array array['_ai_app_gate(text)', 'ai_app_read(text[],date,date)', 'ai_app_review(integer)',
@@ -2845,5 +2844,81 @@ begin
     if sqlerrm not like 'Paste 0020 first%' then raise; end if;
   end;
   raise notice '0030 says to paste 0020 first when it is missing';
+end $$;
+rollback;
+
+-- ---------------------------------------------------------------------------
+-- 0031: an AI app's row has a hash kind of its own, ai_app:<n>, so it can
+-- never take a statement line's hash and make the real charge be skipped
+-- on import as already waiting (mcp-2-01). Literals from computeDedupeHash
+-- with dedupe.ts's 'ai_app' kind.
+-- ---------------------------------------------------------------------------
+update public.ai_app_usage set calls = 0 where user_id = '11111111-1111-4111-8111-111111111111';
+create table verify.ai_hash_31 as select
+  (now() at time zone 'UTC')::date - 2 as day,
+  public._ai_app_dedupe_hash('aaaaaaaa-0000-4000-8000-000000000001', (now() at time zone 'UTC')::date - 2, -1549, 'NETFLIX.COM 8665797172 CA', 1) as ai_app,
+  null::text as statement;
+-- The hash a statement row with the same fields carries (dedupe.ts, occurrence:1).
+
+update verify.ai_hash_31 set statement = encode(sha256(
+  convert_to('v1', 'UTF8') || '\x00'::bytea || convert_to('aaaaaaaa-0000-4000-8000-000000000001', 'UTF8') || '\x00'::bytea ||
+  convert_to(to_char(day, 'YYYY-MM-DD'), 'UTF8') || '\x00'::bytea || convert_to('-1549', 'UTF8') || '\x00'::bytea ||
+  convert_to('NETFLIX.COM 8665797172 CA', 'UTF8') || '\x00'::bytea || convert_to('occurrence:1', 'UTF8')), 'hex');
+grant select on verify.ai_hash_31 to app_user;
+do $$
+begin
+  if public._ai_app_dedupe_hash('aaaaaaaa-0000-4000-8000-000000000001', '2026-09-29', -1250, 'Lunch at Subway', 1)
+       <> '206b7b1e064cf1e59e31da82c407a14a697eb0448ad0ea59ba078cbd7de4795d'
+     or public._ai_app_dedupe_hash('aaaaaaaa-0000-4000-8000-000000000001', '2026-09-29', -1250, 'Lunch at Subway', 2)
+       <> '750ae64d42c96e628f602a05afe0d85ec04e2b2e93a42efc5e49c401e7332e76' then
+    raise exception 'the add checks a hash other than dedupe.ts''s ai_app kind';
+  end if;
+  if public.ai_app_update_level() < 31 then raise exception 'the update level does not say 0031 is in'; end if;
+end $$;
+set role app_user;
+do $$
+declare
+  ai_app text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}';
+  owner_ text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated"}';
+  h      verify.ai_hash_31;
+  r      jsonb;
+  i      record;
+begin
+  select * into h from verify.ai_hash_31;
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', ai_app, true);
+  -- The statement line's own hash, sent by a caller that chose every field: refused.
+  r := public.ai_app_add_candidate('aaaaaaaa-0000-4000-8000-000000000001', h.day, -1549, 'NETFLIX.COM 8665797172 CA', 1, h.statement, 1, null);
+  if r ->> 'refused' is distinct from 'needs_update' then raise exception 'NOT REFUSED: an add carrying a statement row''s hash: %', r; end if;
+  -- The same fields under its own kind: added, and waiting.
+  r := public.ai_app_add_candidate('aaaaaaaa-0000-4000-8000-000000000001', h.day, -1549, 'NETFLIX.COM 8665797172 CA', 1, h.ai_app, 1, null);
+  if r ->> 'status' <> 'added' then raise exception 'the ai_app hash was not added: %', r; end if;
+
+  -- Then the statement arrives: the real charge is inserted, not skipped.
+  perform set_config('request.jwt.claims', owner_, true);
+  select * into i from public.save_import('aaaaaaaa-0000-4000-8000-000000000001', 'card_csv', 1,
+    jsonb_build_array(jsonb_build_object('posted_on', h.day, 'amount_cents', -1549,
+      'merchant', 'NETFLIX.COM', 'merchant_raw', 'NETFLIX.COM 8665797172 CA', 'dedupe_hash', h.statement, 'dedupe_hash_v', 1)),
+    '[]'::jsonb);
+  if i.inserted <> 1 or i.deduped <> 0 then
+    raise exception 'an AI app''s row swallowed a statement line: inserted % deduped %', i.inserted, i.deduped;
+  end if;
+  raise notice 'an AI app''s row never takes a statement line''s hash; the real charge still arrives';
+end $$;
+reset role;
+
+\set paste_check_31 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0031_ai_app_hash_own_kind.sql`
+begin;
+drop function public.ai_app_update_level();
+set local verify.paste_check = :'paste_check_31';
+do $$
+begin
+  begin
+    execute current_setting('verify.paste_check');
+    raise exception 'NOT REFUSED: 0031 ran without 0030';
+  exception when raise_exception then
+    if sqlerrm not like 'Paste 0030 first%' then raise; end if;
+  end;
+  raise notice '0031 says to paste 0030 first when it is missing';
 end $$;
 rollback;

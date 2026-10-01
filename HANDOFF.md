@@ -179,10 +179,10 @@ open GitHub. Easiest on a computer.
    and wait for "Success. No rows returned." Then a new query for
    `0016_ai_foundation.sql`, then `0017_coach_memory.sql`,
    `0018_category_suggestions.sql`, `0019_ai_apps_cannot_write.sql`,
-   `0020_ai_apps.sql` and `0030_ai_app_gate_live_session.sql`, in that
+   `0020_ai_apps.sql`, then the security fixes `0030` and `0031`, in that
    order (One-time updates lists them in this order and names the next).
    `0019` stops with "Paste 0018 first" if `0018` is not in, `0020` with
-   "Paste 0019 first", and `0030` with "Paste 0020 first". If one
+   "Paste 0019 first", and each fix with the one before it. If one
    says anything else, stop there: nothing is lost, the message says which
    line, and the next agent needs that message (MCP plan K10, K11).
 2. **Paste the AI helper.** Supabase → **Edge Functions** → **Deploy a new

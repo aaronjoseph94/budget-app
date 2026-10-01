@@ -83,7 +83,8 @@ export async function addEntry(caller: Caller, owner: Owner, entry: Entry, tool:
   if (!amountAllowed(entry.amount)) return refused(tool, 'bad_amount')
   if (entry.date > owner.today || entry.date < addDays(owner.today, -366)) return refused(tool, 'bad_date')
   const signed = signedAmount(entry.amount, entry.flow)
-  const occurrence = { kind: 'occurrence', index: entry.sameAgain } as const
+  // Its own kind, never a statement row's hash (0031, mcp-2-01).
+  const occurrence = { kind: 'ai_app', index: entry.sameAgain } as const
   const hash = await computeDedupeHash({ accountId: owner.account, postedOn: entry.date, amountCents: signed, merchantRaw: entry.what, discriminator: occurrence })
   const added = await rpc(caller, 'ai_app_add_candidate', {
     p_account: owner.account, p_posted_on: entry.date, p_amount_cents: signed, p_words: entry.what, p_occurrence: entry.sameAgain,

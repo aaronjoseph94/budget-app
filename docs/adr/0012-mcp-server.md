@@ -295,3 +295,10 @@ below was made under those words and is recorded with them.
   too** (`0030`). The gate refuses a token whose `session_id` names no
   live row of `auth.sessions`, with `disconnected`. Three hosted-only
   facts it rests on are HANDOFF §4 checks 18 and 21.
+- **mcp-2-01: an AI app's row has a hash kind of its own** (`0031`,
+  `dedupe.ts`'s `ai_app` kind). Changing the dedupe hash's inputs is
+  ask-first; decided under the owner's words above, 2026-10-01.
+  `dedupe_hash_v` stays 1 with this dated note: only the new kind's bytes
+  are new, no stored hash changes, and no row with them exists yet, so
+  nothing needs a backfill. An older server, or a newer one before `0031`
+  is in, gets `needs_update` and adds nothing.

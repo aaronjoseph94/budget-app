@@ -21,7 +21,7 @@ describe('checking the one-time updates', () => {
   it('finds each one in when everything it adds answers', async () => {
     const fake = await ready()
     const checked = await checkUpdates(fake.client)
-    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', '0020', '0030', 'ai-f', 'sign', 'oaut', 'mcp-'])
+    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', '0020', '0030', '0031', 'ai-f', 'sign', 'oaut', 'mcp-'])
     expect(missing(checked)).toEqual([])
     expect(nextStep(checked)).toEqual({ kind: 'done' })
   })
@@ -117,19 +117,24 @@ describe('checking the one-time updates', () => {
 
   // The AI-app security updates (0030 on) change only functions, so each is
   // proven by the level it leaves: ai_app_update_level() at or above its number.
-  it('reads the AI-app update level: missing below 0030 or not there, offered only once 0020 is in', async () => {
+  it('reads the AI-app update level: each one in at its number, offered in order, only once 0020 is in', async () => {
+    const levels = UPDATES.filter((u) => u.checks.some((c) => c.kind === 'level')).map((u) => u.file)
+    expect(levels.map((f) => f.slice(0, 4))).toEqual(['0030', '0031'])
     const fake = await ready()
+    const all = (state: string) => levels.map((f) => [f.slice(0, 4), state])
     delete fake.rpcReplies['ai_app_update_level']
-    let checked = await checkUpdates(fake.client)
-    expect(missing(checked)).toEqual([['0030', 'missing']])
-    expect(nextStep(checked)).toEqual({ kind: 'paste', file: '0030_ai_app_gate_live_session.sql', fromStart: false })
-    fake.rpcReplies['ai_app_update_level'] = 29
-    expect(missing(await checkUpdates(fake.client))).toEqual([['0030', 'missing']])
+    expect(missing(await checkUpdates(fake.client))).toEqual(all('missing'))
     fake.rpcReplies['ai_app_update_level'] = 'thirty'
-    expect(missing(await checkUpdates(fake.client))).toEqual([['0030', 'unknown']])
-    fake.rpcReplies['ai_app_update_level'] = 30
-    checked = await checkUpdates(fake.client)
-    expect(stateOf(checked, '0030')).toBe('in')
+    expect(missing(await checkUpdates(fake.client))).toEqual(all('unknown'))
+    for (const [at, file] of levels.entries()) {
+      // The level the one before it leaves: everything from this one on is missing, and this one is next.
+      fake.rpcReplies['ai_app_update_level'] = 29 + at
+      const checked = await checkUpdates(fake.client)
+      expect(missing(checked)).toEqual(all('missing').slice(at))
+      expect(nextStep(checked)).toEqual({ kind: 'paste', file, fromStart: false })
+    }
+    fake.rpcReplies['ai_app_update_level'] = 29 + levels.length
+    expect(missing(await checkUpdates(fake.client))).toEqual([])
     fake.fail('ai_app_access', 'PGRST205')
     delete fake.rpcReplies['ai_app_update_level']
     expect(nextStep(await checkUpdates(fake.client))).toEqual({ kind: 'paste', file: '0020_ai_apps.sql', fromStart: false })
@@ -254,6 +259,7 @@ describe('checking the one-time updates', () => {
       { name: 'clear_candidate_suggestion', args: { p_candidate: nil } },
       { name: '_not_an_ai_app', args: {} },
       // Reads a number and nothing else (0030 on).
+      { name: 'ai_app_update_level', args: {} },
       { name: 'ai_app_update_level', args: {} },
     ])
     // The helper is only pinged.

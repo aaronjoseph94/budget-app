@@ -40,6 +40,13 @@ export type OccurrenceDiscriminator =
   | { readonly kind: 'issuer_id'; readonly id: string }
   /** 1-based index among identical rows in the batch, when the issuer gives no id. */
   | { readonly kind: 'occurrence'; readonly index: number }
+  /**
+   * A row an AI app added (same_again's 1-based index). Its own kind, so an
+   * AI app, which chooses every other field, can never produce a statement
+   * row's key and have the real line skipped on import as already waiting
+   * (security review mcp-2-01, 0031). No other path ever uses it.
+   */
+  | { readonly kind: 'ai_app'; readonly index: number }
 
 export interface DedupeInput {
   readonly accountId: string
@@ -69,13 +76,13 @@ export function dedupeCanonicalString(input: DedupeInput): string {
   if (d.kind === 'issuer_id' && d.id.length === 0) {
     throw new RangeError('An issuer transaction id must not be empty; use an occurrence index')
   }
-  if (d.kind === 'occurrence' && (!Number.isInteger(d.index) || d.index < 1)) {
+  if (d.kind !== 'issuer_id' && (!Number.isInteger(d.index) || d.index < 1)) {
     throw new RangeError('An occurrence index must be a whole number of at least 1')
   }
 
   // The kind is part of the string: without it, issuer id "2" and occurrence 2
   // would produce the same key for different rows.
-  const discriminator = d.kind === 'issuer_id' ? `issuer_id:${d.id}` : `occurrence:${d.index}`
+  const discriminator = d.kind === 'issuer_id' ? `issuer_id:${d.id}` : `${d.kind}:${d.index}`
 
   return [
     `v${DEDUPE_HASH_VERSION}`,

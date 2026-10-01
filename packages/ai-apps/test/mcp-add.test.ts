@@ -7,12 +7,13 @@ import { callTool, reply, type Rpc } from './fake-database.js'
  * The server reads the owner's today and card account, hashes the words
  * exactly as given, and asks ai_app_add_candidate for one pending Review
  * row; SQL checks the hash again. The account, day, amount and words are
- * 0020's schema test's, so the hash must be the literal it checks SQL against.
+ * 0031's schema test's, so the hash must be the literal it checks SQL against.
  */
 const $ = (cents: number, display: string) => ({ cents, display })
 const ACCOUNT = 'aaaaaaaa-0000-4000-8000-000000000001'
-const LUNCH_1 = '2ad325760b37229a52c8c13682fee3d31f11a2301ad7ff83eb99ef6b4a2746cf'
-const LUNCH_2 = 'a37ba14cf3c5b8d4ceeaf5f62d492008fa9a84a93306aa6de42603a2caf2c652'
+// dedupe.ts's 'ai_app' kind (0031, mcp-2-01): never a statement row's hash.
+const LUNCH_1 = '206b7b1e064cf1e59e31da82c407a14a697eb0448ad0ea59ba078cbd7de4795d'
+const LUNCH_2 = '750ae64d42c96e628f602a05afe0d85ec04e2b2e93a42efc5e49c401e7332e76'
 
 const OWNER = {
   today: '2026-09-30',
