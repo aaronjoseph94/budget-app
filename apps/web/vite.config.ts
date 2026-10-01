@@ -8,8 +8,9 @@ export default defineConfig(({ mode }) => {
   // Before anything is built: a secret or service_role key named as the
   // public one would be compiled into the published JavaScript, and an
   // old deployment stays reachable after a fix (security-c2-02). loadEnv
-  // reads .env files and the process environment, as Cloudflare sets it.
-  refuseSecretKey(loadEnv(mode, process.cwd(), 'VITE_'))
+  // reads .env files and the process environment, as Cloudflare sets it;
+  // the .env files from this app's folder, whatever folder the build ran in.
+  refuseSecretKey(loadEnv(mode, import.meta.dirname, 'VITE_'))
   return {
     // The one-time updates the Copy buttons fetch, under /setup/ (ADR 0007).
     plugins: [react(), tailwindcss(), setupFilesPlugin()],
