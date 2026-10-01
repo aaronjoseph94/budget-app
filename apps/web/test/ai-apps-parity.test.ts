@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { answerQuery, debtPlan, isoDate, monthEndForecast, monthSheet, payoffStrategies, paycheckSheet, weekSheet, yearSheet, type AskIntent, type PaySchedule } from '@budget/core'
-import { askInput, categoriesFrom, debtsFrom, forecastInput, monthSheetInput, paySources, paycheckSheetInput, weekSheetInput, yearSheetInput } from '@budget/ai-apps/rows'
+import { answerQuery, debtPlan, isoDate, monthEndForecast, monthSheet, orderGoals, savingsFunds, payoffStrategies, paycheckSheet, weekSheet, yearSheet, type AskIntent, type PaySchedule } from '@budget/core'
+import { askInput, categoriesFrom, debtsFrom, forecastInput, fundsInput, goalsAhead, goalsFrom, goalsInOrder, monthSheetInput, paySources, paycheckSheetInput, weekSheetInput, yearSheetInput } from '@budget/ai-apps/rows'
 import {
   getMonthBalance,
   latestStatementEnd,
   listDebtExtras,
   listDebts,
+  listFundTransfers,
+  listFunds,
+  listGoals,
   readRecordsStart,
   listBudgetHistory,
   listCategories,
@@ -17,6 +20,9 @@ import {
 import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore, shopEntriesForCore, weekCategoriesForCore } from '../src/sheet-input.js'
 import { answerOf } from '../src/ask/answer.js'
 import { debtsForCore } from '../src/debts.js'
+import { placedGoal } from '../src/app-data.js'
+import { fundsOf } from '../src/funds.js'
+import { goalsForCore } from '../src/coach/goals.js'
 import { historyOf, type DigestRows } from '../src/coach/facts.js'
 import { forecastInput as appForecastInput } from '../src/forecast/figures.js'
 import { createFakeSupabase, type FakeTables } from './fake-supabase.js'
@@ -242,6 +248,38 @@ describe('the AI apps server reads rows as the app does', () => {
       const app = answerOf({ read: coach, categories, goals: [], debts: null, notSubscriptions }, query)
       expect(answerQuery({ ...server, query, forecast: null, goals: [], debts: null })).toEqual(app)
     }
+  })
+
+  it('Savings, and the goals the forecasts read', async () => {
+    // Trip is a fund typed at $500.00 on 30 June; Flying is on no fund; the rest are folded away.
+    const goals = [
+      { id: 'g1', name: 'Trip', target_cents: 200000, saved_cents: 50000, target_date: '2027-06-01', unit_cost_cents: null, unit_label: null, created_at: '2026-01-02T00:00:00Z', sort_order: 1, status: 'active', reached_on: null, category_id: 'fund', start_date: '2026-06-01', balance_as_of: '2026-06-30' },
+      { id: 'g2', name: 'Flying', target_cents: 550000, saved_cents: 30000, target_date: null, unit_cost_cents: 27500, unit_label: 'flight hours', created_at: '2026-01-03T00:00:00Z', sort_order: 0, status: 'active', reached_on: null, category_id: null, start_date: null, balance_as_of: null },
+      { id: 'g3', name: 'Bike', target_cents: 90000, saved_cents: 90000, target_date: null, unit_cost_cents: null, unit_label: null, created_at: '2026-01-01T00:00:00Z', sort_order: 0, status: 'reached', reached_on: '2026-05-01', category_id: null, start_date: null, balance_as_of: null },
+      { id: 'g4', name: 'Car', target_cents: 400000, saved_cents: 0, target_date: null, unit_cost_cents: null, unit_label: null, created_at: '2026-01-04T00:00:00Z', sort_order: 2, status: 'paused', reached_on: null, category_id: null, start_date: null, balance_as_of: null },
+    ] as const
+    // Moved in on the typed day (already in it), after it, and back out; and October's, after today.
+    const moves = [
+      { id: 'f1', posted_on: '2026-06-30', amount_cents: -5000, merchant_raw: 'TO SAVINGS', category_id: 'fund', source: 'typed' },
+      { id: 'f2', posted_on: '2026-07-25', amount_cents: -10000, merchant_raw: 'TO SAVINGS', category_id: 'fund', source: 'typed' },
+      { id: 'f3', posted_on: '2026-09-25', amount_cents: 2500, merchant_raw: 'FROM SAVINGS', category_id: 'fund', source: 'typed' },
+      { id: 'f4', posted_on: '2026-10-01', amount_cents: -7000, merchant_raw: 'TO SAVINGS', category_id: 'fund', source: 'typed' },
+    ]
+    const supabase = createFakeSupabase({ ...tables, savings_goals: [...goals], transactions: [...(tables.transactions ?? []), ...moves] }).client
+    const categories = await listCategories(supabase)
+    const fundRows = await listFunds(supabase)
+    const appFunds = fundsOf('2026-09-30', categories, fundRows, await listFundTransfers(supabase, ['fund'], { from: '2026-06-30', to: '2026-09-30' }))
+    const listed = orderGoals({ goals: (await listGoals(supabase)).goals.map(placedGoal) })
+    const appOrder = [...listed.active, ...listed.paused, ...listed.reached].map((g) => g.row)
+    // As ai_app_read sends them: by when each was made, money perhaps as text, a fund's moves from its typed day.
+    const server = JSON.parse(JSON.stringify({ ...read, goals: [goals[2], goals[0], { ...goals[1], saved_cents: '30000' }, goals[3]], fund_txns: moves })) as Record<string, unknown>
+    const serverFunds = savingsFunds(fundsInput(server, isoDate('2026-09-30')))
+    expect(serverFunds).toEqual(appFunds)
+    // 500.00 + 100.00 − 25.00: the typed day's move is in the typed amount, October's is after today.
+    expect(serverFunds.funds.find((f) => f.categoryId === 'fund')?.figures?.balanceCents).toBe(57500)
+    const ordered = goalsInOrder(goalsFrom(server.goals))
+    expect(ordered.map((g) => g.id)).toEqual(appOrder.map((g) => g.id))
+    expect(goalsAhead(ordered, serverFunds)).toEqual(goalsForCore(appOrder, { status: 'ready', asOf: '2026-09-30', goals: fundRows, funds: appFunds }))
   })
 
   it('Debts', async () => {

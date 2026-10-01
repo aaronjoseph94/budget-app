@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { isoDate, savingsFunds, type SavingsFunds } from '@budget/core'
 import { useAppData } from './app-data.js'
-import { listFundTransfers, listFunds, needsOneTimeUpdate, type FundRow, type LedgerRow } from './ledger.js'
+import { listFundTransfers, listFunds, needsOneTimeUpdate, type Category, type FundRow, type LedgerRow } from './ledger.js'
 import { categoriesForCore } from './sheet-input.js'
 import { todayIso } from './format.js'
 
@@ -54,20 +54,7 @@ export function useFunds(): FundsState {
     if (error !== null) return { status: 'failed', ...error }
     if (loaded === null) return { status: 'loading' }
     try {
-      const funds = savingsFunds({
-        asOf: isoDate(loaded.asOf),
-        categories: categoriesForCore(categories),
-        goals: loaded.goals.map((g) => ({
-          id: g.id,
-          categoryId: g.category_id,
-          goalCents: g.target_cents,
-          typedCents: g.saved_cents,
-          typedOn: g.balance_as_of === null ? null : isoDate(g.balance_as_of),
-          startDate: g.start_date === null ? null : isoDate(g.start_date),
-          goalDate: g.target_date === null ? null : isoDate(g.target_date),
-        })),
-        entries: loaded.rows.map((r) => ({ postedOn: isoDate(r.posted_on), amountCents: r.amount_cents, categoryId: r.category_id })),
-      })
+      const funds = fundsOf(loaded.asOf, categories, loaded.goals, loaded.rows)
       return { status: 'ready', asOf: loaded.asOf, goals: loaded.goals, funds }
     } catch {
       return {
@@ -77,6 +64,27 @@ export function useFunds(): FundsState {
       }
     }
   }, [loaded, error, categories])
+}
+
+/**
+ * The funds' figures on `asOf`, from the goals and their transfers as read:
+ * what the Savings screen hands savingsFunds. Throws where core refuses a row.
+ */
+export function fundsOf(asOf: string, categories: readonly Category[], goals: readonly FundRow[], rows: readonly LedgerRow[]): SavingsFunds {
+  return savingsFunds({
+    asOf: isoDate(asOf),
+    categories: categoriesForCore(categories),
+    goals: goals.map((g) => ({
+      id: g.id,
+      categoryId: g.category_id,
+      goalCents: g.target_cents,
+      typedCents: g.saved_cents,
+      typedOn: g.balance_as_of === null ? null : isoDate(g.balance_as_of),
+      startDate: g.start_date === null ? null : isoDate(g.start_date),
+      goalDate: g.target_date === null ? null : isoDate(g.target_date),
+    })),
+    entries: rows.map((r) => ({ postedOn: isoDate(r.posted_on), amountCents: r.amount_cents, categoryId: r.category_id })),
+  })
 }
 
 /**

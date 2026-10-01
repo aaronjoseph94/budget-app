@@ -1683,6 +1683,11 @@ created it in M9, and imported `packages/ai-apps` from
   it. Spreads are `{low, likely, high}`; the next 30 days' bills and
   paydays are one list by date, at most 30, with `truncated`;
   `no_starting_balance` says why the balances are null.
+  Then the goals' renaming, in its own commit since M7b needs it too:
+  `goalsInOrder` (F45's order, as the app's first load lists them),
+  `fundsInput` (each fund's transfers since its typed day, as `fundsOf`,
+  moved out of the app's `useFunds` so the parity case can call it) and
+  `goalsAhead` (the app's `goalsForCore`), with a Savings parity case.
 
 ### M7b: `get_savings_goals`
 
