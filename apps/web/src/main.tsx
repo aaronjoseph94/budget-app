@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import { App } from './App.js'
 import { restoreAddress } from './nav.js'
+import { isConsentPath } from './ai-apps/consent-path.js'
 
 // The page Supabase sends an AI app's sign-in to (PLAN §2.10): a real
 // path, since the app's own screens live in the hash. Its own chunk, so
@@ -21,7 +22,7 @@ function deviceStorage(): Storage | null {
 const root = document.getElementById('root')
 if (root === null) throw new Error('no #root element to mount into')
 
-const consent = window.location.pathname === '/oauth/consent'
+const consent = isConsentPath(window.location.pathname)
 // Not on the consent page, so a remembered screen can never replace it.
 if (!consent) restoreAddress(deviceStorage())
 

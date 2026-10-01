@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { OAuthAuthorizationDetails, OAuthRedirect } from '@supabase/supabase-js'
 import { Consent, ConsentScreen } from '../src/ai-apps/ConsentScreen.js'
+import { isConsentPath } from '../src/ai-apps/consent-path.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { expectNoAxeViolations } from './axe.js'
 
@@ -159,6 +160,23 @@ describe('the consent page: an app allowed before', () => {
     const elsewhere = await open({ request: { redirect_url: 'https://evil.example/cb?code=fake-code' } })
     expect(await screen.findByRole('heading', { level: 1, name: 'Not sent back' })).toBeTruthy()
     expect([shut.go.mock.calls, elsewhere.go.mock.calls]).toEqual([[], []])
+  })
+})
+
+// main.tsx draws the page in place of the app here. With a trailing slash
+// too: if Pages ever needs the build's copy at oauth/consent/index.html (K7),
+// it answers /oauth/consent by sending the browser to /oauth/consent/.
+describe('the consent page: its address', () => {
+  it.each([
+    ['/oauth/consent', true],
+    ['/oauth/consent/', true],
+    ['/', false],
+    ['/oauth/consent/x', false],
+    ['/oauth/consentx', false],
+    ['/oauth/consent//', false],
+    ['/x/oauth/consent', false],
+  ])('%s is the consent page: %s', (path, is) => {
+    expect(isConsentPath(path)).toBe(is)
   })
 })
 
