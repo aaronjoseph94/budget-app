@@ -1,8 +1,27 @@
 # AI apps over MCP: the build plan
 
-**Status: planned (2026-09-30).** Nothing below is built. Written on branch
-`main-tnlcto` at `f9f6df9`. The decision is recorded as ADR 0012
-(`docs/adr/0012-mcp-server.md`).
+**Status: built through M12b (2026-10-01); not yet run on the hosted
+project.** Planned on 2026-09-30 on branch `main-tnlcto` at `f9f6df9`. The
+decision is recorded as ADR 0012 (`docs/adr/0012-mcp-server.md`).
+
+**Where it stands, 2026-10-01:**
+
+- **Built, each green and each with an "As built" note in §3:** all 23
+  slices, M1a to M12b: the two migrations (0019, 0020), the helpers'
+  refusal of AI apps, the server and its ten tools, F52, Settings → AI
+  apps, the consent page, Help's three articles, and One-time updates'
+  checks for every step.
+- **Not built, by design:** fallbacks F1 and F2 (§2.3); the optional
+  Custom Access Token hook (§4, risk 3); §2.7's 24 KB cap on a result
+  (N145).
+- **Untested until the hosted project runs it:** everything in §2.14,
+  K1 to K13. Nothing here has touched the hosted project: the migrations
+  have run only in the local schema gate, the server only in vitest on
+  Node (never Deno), and the sign-in only against the fake Supabase. The
+  owner's walk through them is HANDOFF §3 Part B, then §4's checks 15 to
+  23; §5's items marked (hosted) wait for the security review.
+- **Next, in the owner's order:** the README, the four reviews, the
+  security review (§5), cleanup (§3, "After M12b").
 
 **What it answers.** The owner asked, on 2026-09-30 (as relayed in the brief
 for this plan): "how do I add MCP to this app in order to request LLM/Agent
@@ -1201,6 +1220,12 @@ public endpoints (the review repeated the metadata and key-set probes).
 Each check below fails visibly, and HANDOFF gets a first-connection
 checklist (M12b).
 
+*As built (2026-10-01): all thirteen still untested.* Where the owner
+meets each: K10 and K11's pastes at HANDOFF §3 step 1; K4 and K6 at §4
+check 15; K3 and K8 at 16 and 22; K7 and K12 at 17; K1 at 18; K11's
+reads at 19; K2 at 21; K9 at 22; K13 at 23. K5 is the security
+review's, on the hosted project with the owner (§5.4).
+
 | # | Check | If it fails |
 |---|---|---|
 | K1 | PostgREST resolves `auth.uid()` and exposes `client_id` in `auth.jwt()` under an OAuth token (issue 41668 reports `auth.uid()` null through server-side supabase-js) | Every tool answers `not_an_ai_app` or `not_signed_in`, so the server does nothing; but the token used directly would pass the restrictive policies, so the checklist says to switch AI apps and the OAuth server off (§2.5) |
@@ -2001,9 +2026,10 @@ created it in M9, and imported `packages/ai-apps` from
    does, sign-in silently breaks: the gateway's 401 lacks the pointer to
    the metadata. *As built (M3):* One-time updates asks `/mcp/health` with
    the owner's own session, which the gateway accepts either way, so it
-   cannot see the switch; HANDOFF says to re-check it after every paste,
-   and the first-connection checklist (M12b) should say a sign-in that
-   never starts means the switch is on.
+   cannot see the switch; HANDOFF says to re-check it after every paste.
+   *As built (M12b):* HANDOFF §4 check 15 opens `/mcp/health` in a tab,
+   with no session, where a 401 is the switch; check 16 says a sign-in
+   that never starts means the switch is on.
 7. **Deno without a lockfile.** The pasted file pins `zod@4.6.5` and the SDK
    `2.2.0`, but Deno resolves the SDK's own `zod ^4.2.0` and
    `@modelcontextprotocol/core` at deploy time, outside our lockfile and
