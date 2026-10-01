@@ -3005,6 +3005,49 @@ begin
   end if;
 end $$;
 
+-- ---------------------------------------------------------------------------
+-- 0024: a learned shop is written only by approving or moving a charge, and
+-- names only its owner's category (backend-a-05).
+-- ---------------------------------------------------------------------------
+reset role;
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000002401', '11111111-1111-4111-8111-111111111111', 'Shops 2401', 'variable'),
+  ('cccccccc-0000-4000-8000-000000002402', '22222222-2222-4222-8222-222222222222', 'Theirs 2402', 'variable');
+insert into public.merchant_rules (id, user_id, match_merchant, category_id) values
+  ('dddddddd-0000-4000-8000-000000002401', '11111111-1111-4111-8111-111111111111', 'SHOP 2401', 'cccccccc-0000-4000-8000-000000002401');
+do $$
+begin
+  begin
+    insert into public.merchant_rules (user_id, match_merchant, category_id)
+    values ('11111111-1111-4111-8111-111111111111', 'SHOP 2402', 'cccccccc-0000-4000-8000-000000002402');
+    raise exception 'NOT REFUSED: a learned shop naming another account''s category';
+  exception when foreign_key_violation then null;
+  end;
+end $$;
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+do $$
+begin
+  begin
+    insert into public.merchant_rules (user_id, match_merchant, category_id)
+    values ('11111111-1111-4111-8111-111111111111', 'SHOP 2403', 'cccccccc-0000-4000-8000-000000002401');
+    raise exception 'NOT REFUSED: the browser wrote a learned shop itself';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    update public.merchant_rules set category_id = 'cccccccc-0000-4000-8000-000000002401' where id = 'dddddddd-0000-4000-8000-000000002401';
+    raise exception 'NOT REFUSED: the browser changed a learned shop itself';
+  exception when insufficient_privilege then null;
+  end;
+  -- Forget, in Settings, still works.
+  delete from public.merchant_rules where id = 'dddddddd-0000-4000-8000-000000002401';
+  if exists (select 1 from public.merchant_rules where id = 'dddddddd-0000-4000-8000-000000002401') then
+    raise exception 'the browser could not forget a learned shop';
+  end if;
+  raise notice 'learned shops are written only by approving, name only their owner''s categories, and can be forgotten';
+end $$;
+reset role;
+
 -- The level the app reads (0021) names the last update in this folder, so a
 -- new update that forgets to raise it fails here.
 \set last_migration `ls supabase/migrations | tail -1 | cut -c1-4`
