@@ -189,6 +189,14 @@ describe('the consent page: what it draws', () => {
     expect(document.body.innerHTML).not.toContain('evil.example')
   })
 
+  // Supabase's answer is not parsed, and dynamic registration lets a client leave its name out.
+  it('still draws the page for an app registered with no name', async () => {
+    await open({ request: asking(CLAUDE, null as unknown as string) })
+
+    expect((await screen.findByText(/wants to connect/)).textContent).toBe('“An app with no name” wants to connect to your budget.')
+    expect(allow()).toBeTruthy()
+  })
+
   it('says what is missing on a site built without its two public values', async () => {
     render(<ConsentScreen />)
     expect(await screen.findByText('Not configured')).toBeTruthy()

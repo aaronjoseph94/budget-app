@@ -87,10 +87,13 @@ function hidden(code: number): boolean {
 /**
  * An AI app's name as the page draws it. Whoever registered the app chose
  * it, so it is text, never markup; it loses the characters that could hide
- * words or reverse how it reads, and is cut to 80 characters.
+ * words or reverse how it reads, and is cut to 80 characters. Supabase's
+ * answer is not parsed, and registration lets a client leave its name out,
+ * so anything but text is no name rather than a page that stops drawing.
  */
-export function shownName(name: string): string {
-  const kept = [...name].filter((ch) => !hidden(ch.codePointAt(0) ?? 0)).slice(0, 80).join('').trim()
+export function shownName(name: string | null | undefined): string {
+  const given = typeof name === 'string' ? name : ''
+  const kept = [...given].filter((ch) => !hidden(ch.codePointAt(0) ?? 0)).slice(0, 80).join('').trim()
   return kept === '' ? 'An app with no name' : kept
 }
 

@@ -174,6 +174,15 @@ describe('Settings → AI apps: connected apps and Disconnect', () => {
     expect(rows().map((r) => r.querySelector('bdi')?.textContent)).toEqual(['<img src=x>tpGtahC'])
   })
 
+  it('lists an app registered with no name, so it can still be disconnected', async () => {
+    const fake = await connected()
+    fake.oauth.grants = [grant('id-unnamed', null as unknown as string, '2026-09-28T12:00:00Z')]
+    cleanup()
+    renderScreen(<AiAppsCard />, fake)
+
+    await waitFor(() => expect(rows().map((r) => r.querySelector('bdi')?.textContent)).toEqual(['An app with no name']))
+  })
+
   it('still lists a connected app with AI apps off, so it can be disconnected', async () => {
     await connected(false)
     await waitFor(() => expect(rows()).toHaveLength(2))
