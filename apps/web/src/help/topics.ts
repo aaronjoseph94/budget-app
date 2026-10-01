@@ -8,12 +8,14 @@
  */
 export const HELP_TOPICS = [
   'start',
+  'getting-around',
   'updates',
   'periods',
   'statements',
   'review',
   'add',
   'budgets',
+  'lists',
   'savings',
   'goals',
   'debts',
@@ -33,6 +35,7 @@ export const HELP_TOPICS = [
   'connect-chatgpt',
   'wrong-number',
   'codes',
+  'signing-in',
   'iphone',
   'words',
 ] as const

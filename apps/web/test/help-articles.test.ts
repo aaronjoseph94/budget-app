@@ -176,3 +176,76 @@ describe('boldParts', () => {
     expect(boldParts('Press **Approve.')).toEqual([{ text: 'Press **Approve.', bold: false }])
   })
 })
+
+/**
+ * Every word the app draws, from its own source: each bold name in Help
+ * must be one of them, so an article never names a button that is not
+ * there, or one renamed since it was written.
+ */
+const SOURCES: Record<string, string> = import.meta.glob(['../src/**/*.{ts,tsx}', '!../src/help/articles.ts'], {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+})
+const APP_WORDS = Object.values(SOURCES).join('\n')
+
+/** Names on someone else's screen, which the app cannot draw: Supabase's, Claude's, ChatGPT's and Safari's. */
+const OUTSIDE = new Set([
+  'New query',
+  'Customize',
+  'Connectors',
+  'Add custom connector',
+  'Sign in now',
+  'Register automatically',
+  'Use Claude’s published identity',
+  'Security and login',
+  'Developer mode',
+  'DCR',
+  'Edit Actions',
+  'Add to Home Screen',
+  '⋯',
+])
+
+/** A name with the owner's own words in it, checked by the app's part: a what-if names the owner's category. */
+const APP_PART: Readonly<Record<string, string>> = { 'Dining out −25%': '−25%' }
+
+const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+/** A count in a name ("Approve these 12", "Today: N of 40") or "…" stands for whatever the app fills in there. */
+const shownAs = (name: string) =>
+  new RegExp(
+    `(?<![\\p{L}])${name
+      .split(/(\d+|\bN\b|…)/u)
+      .map((part, i) => (i % 2 === 1 ? '(?:\\d+|\\$?\\{[^}]*\\}|…)' : escape(part)))
+      .join('')}(?![\\p{L}])`,
+    'u',
+  )
+
+const boldNames = (a: (typeof ARTICLES)[number]) =>
+  [a.summary, a.done, a.stuck, ...a.steps, ...(a.terms ?? []).map((t) => t.meaning)].flatMap((text) =>
+    boldParts(text)
+      .filter((p) => p.bold)
+      .map((p) => p.text),
+  )
+
+describe('Help’s bold names', () => {
+  it('are each a name the app draws, or a name on Supabase’s, Claude’s, ChatGPT’s or Safari’s own screen', () => {
+    const used = new Set<string>()
+    for (const a of ARTICLES) {
+      for (const name of boldNames(a)) {
+        used.add(name)
+        if (OUTSIDE.has(name)) continue
+        expect(shownAs(APP_PART[name] ?? name).test(APP_WORDS), `${a.id}: **${name}** is drawn nowhere in the app`).toBe(true)
+      }
+    }
+    // The list of outside names holds only names an article still uses.
+    for (const name of [...OUTSIDE, ...Object.keys(APP_PART)]) expect(used, name).toContain(name)
+  })
+
+  it('finds a name the app does not draw, reading the app without Help’s own words', () => {
+    expect(APP_WORDS).toContain('Open AI settings')
+    expect(APP_WORDS).not.toContain('export const ARTICLES')
+    expect(shownAs('Paid').test('<span>Day paid</span>')).toBe(false)
+    expect(shownAs('Approve these 12').test('Approve these {n}')).toBe(true)
+    expect(shownAs('Show 3 empty').test('`Show ${empty} empty`')).toBe(true)
+  })
+})

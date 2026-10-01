@@ -54,7 +54,14 @@ describe('Help', () => {
     expect(titles()).toEqual(['Start here', 'Debts', 'How the forecast works', 'Two month-end figures', 'Why does a number look wrong?'])
     // A button's name counts as its words, without the stars around it.
     fireEvent.change(search, { target: { value: 'add to home screen' } })
-    expect(titles()).toEqual(['Put it on your iPhone'])
+    expect(titles()).toEqual(['Signing in and out', 'Put it on your iPhone'])
+    // The newer articles are found by their own words: getting around, Setup's lists, AI apps.
+    fireEvent.change(search, { target: { value: 'sidebar' } })
+    expect(titles()).toEqual(['Finding your way around', 'Month, Week, Pay and Year', 'Signing in and out', 'Words the app uses'])
+    fireEvent.change(search, { target: { value: 'Rename' } })
+    expect(titles()).toEqual(['Your lists and categories'])
+    fireEvent.change(search, { target: { value: 'disconnect' } })
+    expect(titles()).toEqual(['Use Claude or ChatGPT with your budget'])
 
     fireEvent.change(search, { target: { value: 'zeppelin' } })
     expect(onScreen().queryByRole('list')).toBeNull()
@@ -97,7 +104,7 @@ describe('Help', () => {
     // The list is the way back, so the article drops its own.
     expect(onScreen().queryByRole('link', { name: '‹ Help' })).toBeNull()
     fireEvent.change(within(list).getByRole('searchbox', { name: 'Search help' }), { target: { value: 'add to home screen' } })
-    expect(within(list).getAllByRole('link').map((a) => a.textContent)).toEqual(['Put it on your iPhone'])
+    expect(within(list).getAllByRole('link').map((a) => a.textContent)).toEqual(['Signing in and out', 'Put it on your iPhone'])
     // cn is a plain join: the carded steps carry one left padding, not two.
     const steps = onScreen().getByRole('article').querySelector('ol')!
     expect(steps.className.split(' ').filter((c) => c.startsWith('pl-'))).toEqual(['pl-11'])

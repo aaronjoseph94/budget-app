@@ -15,8 +15,9 @@ export const SCREEN_HELP: Readonly<Record<Exclude<Screen, 'help'>, HelpTopic>> =
   calendar: 'budgets',
   review: 'review',
   add: 'add',
-  more: 'start',
-  setup: 'start',
+  // More is where a phone finds the rest; Setup is its lists and categories.
+  more: 'getting-around',
+  setup: 'lists',
   settings: 'budgets',
   // All transactions is where a charge counted twice is found and removed.
   ledger: 'wrong-number',

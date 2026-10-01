@@ -62,7 +62,27 @@ export const ARTICLES: readonly Article[] = [
     done: 'Getting started says "Your coach is ready", or Settings (More on a phone) says All done.',
     stuck:
       'Do the steps you can and leave the rest. A step that says it can’t be checked yet could not be read just now; if it keeps saying so, open One-time updates. Every screen works with what it has, and says what it is missing in one line.',
-    related: ['updates', 'statements', 'review', 'free-ai', 'iphone'],
+    related: ['getting-around', 'updates', 'statements', 'review', 'free-ai', 'iphone'],
+  },
+  {
+    id: 'getting-around',
+    title: 'Finding your way around',
+    summary:
+      'On a phone, five buttons along the bottom; on a computer, a sidebar on the left and a bar along the top. Every screen is a tap or two away.',
+    steps: [
+      'On a phone, use the buttons along the bottom: **Month**, **Coach**, **Add**, **Review** and **More**, which holds the rest.',
+      'On a computer, use the sidebar on the left, grouped **Plan**, **Money**, **Coach**, **Inbox** and **Setup**.',
+      'Press a group’s name to open or close it; **Plan** always stays open.',
+      'Press the sidebar button at the top left to fold the sidebar to its icons, and press it again to open it.',
+      'Read where you are at the top, such as Coach › Ask, and press the first name to go back.',
+      'Press **Search or jump to…** at the top, or ⌘K on a Mac and Ctrl+K elsewhere, to search Help.',
+      'Press **Add** at the top right to bring in a statement, a photo or one entry.',
+      'To sign out, press the button beside your name at the foot of the sidebar, or **Sign out** under **Account** in **Settings**.',
+    ],
+    done: 'you can reach every screen from the sidebar on a computer, or from the bottom buttons and More on a phone.',
+    stuck:
+      'In a narrower window the sidebar shows only its icons: point at one to see its name. Ask and the Sunday check-in have no place of their own in the sidebar: open them from the **Coach**. Getting started and AI settings open from **Settings**, with **Open Getting started** and **Open AI settings**. Month, Week, Pay and Year are also in the switch at the top of each. A closed group says on its name how many rows wait in Review.',
+    related: ['start', 'periods', 'signing-in'],
   },
   {
     id: 'updates',
@@ -173,7 +193,26 @@ export const ARTICLES: readonly Article[] = [
     done: 'each list’s head shows what it spent of its budget with a % pill, each row shows Budgeted, Actual and Left, and the Bill calendar shows your bills on their days.',
     stuck:
       'A bill with no charge yet this month counts its planned amount. When the real charge comes in, it takes the planned amount’s place, so it is never counted twice. With no budget typed, a bill’s planned amount is its budget, marked planned, so a bill paid as planned is 100% and 0.00 left; a budget you type, even $0.00, is used instead. When a shop charges a Bills, Debts or Subscriptions row every month and that row has no monthly amount, Setup says **Looks like a monthly bill: add it?** Press **Fill it in**, check the day and the amount, then press **Save**; nothing is saved until you do.',
-    related: ['periods', 'wrong-number', 'start'],
+    related: ['periods', 'lists', 'wrong-number', 'start'],
+  },
+  {
+    id: 'lists',
+    title: 'Your lists and categories',
+    summary:
+      'Setup holds your name and your categories, each on one list: Income, Savings, Bills, Debts, Subscriptions, Variable expenses, and Not spending for money that only moves, such as paying off your card.',
+    steps: [
+      'Open **Setup** (on a phone, under **More**).',
+      'Type your name after **My name is**.',
+      'With few categories yet, press **Use the starter list** for example names to rename.',
+      'To add a category, type its name in the box at the bottom of a list and press **Add**.',
+      'To rename one, type over its name, and a tick shows it is saved.',
+      'Use the up and down arrows to change its place, the arrows-in-a-square button to move it to another list, and the bin to remove it.',
+      'On Bills, Debts and Subscriptions, type the **Day paid** and **Monthly amount**; on Income, choose **How often** and a **First payday**.',
+    ],
+    done: 'each category sits on the list it belongs to, and **Fixed monthly bills** shows what your bills come to.',
+    stuck:
+      'A card you pay off from your bank belongs on Not spending, since what you bought on it is already counted. A category with a monthly amount stays on its list until you press **Stop** under it. A category that still has charges cannot be removed: on the Month, tap its row and use **Move to…** on each charge first. When a shop charges a row every month, Setup says **Looks like a monthly bill: add it?**; press **Fill it in**, check the day and the amount, then press **Save**.',
+    related: ['budgets', 'periods', 'start'],
   },
   {
     id: 'savings',
@@ -526,7 +565,7 @@ export const ARTICLES: readonly Article[] = [
     ],
     done: 'what you were doing works without a message.',
     stuck: 'Nothing is lost when a message shows: a change that fails is not saved half way.',
-    related: ['updates', 'wrong-number'],
+    related: ['updates', 'wrong-number', 'signing-in'],
     terms: [
       { term: 'PGRST205, 42P01, PGRST202, 42883, 42703', meaning: 'A one-time update is missing. Open Help, then One-time updates.' },
       { term: '42501', meaning: 'Something was changed on another device, or your sign-in needs refreshing. Sign out and back in.' },
@@ -535,6 +574,22 @@ export const ARTICLES: readonly Article[] = [
       { term: '23514, 23503', meaning: 'A rule your lists follow stopped the change, so nothing was saved.' },
       { term: 'unknown, or no code', meaning: 'The app could not reach the internet. Check your connection and try again.' },
     ],
+  },
+  {
+    id: 'signing-in',
+    title: 'Signing in and out',
+    summary:
+      'Only you can sign in: there is no sign-up page, and the sign-in page never says whether an address has an account here.',
+    steps: [
+      'Type your **Email address** and **Password**, and press **Sign in**.',
+      'Or press **Email me a link instead**, then **Email me a link**, and open the link on the same device, in the same browser.',
+      'In the app on your iPhone’s Home Screen, sign in with your password, since an emailed link opens in Safari instead.',
+      'To sign out, press the button beside your name at the foot of the sidebar, or **Sign out** under **Account** in **Settings** (on a phone, under **More**).',
+    ],
+    done: 'your budget opens, and signing out brings back the sign-in page.',
+    stuck:
+      '“Check your email” shows for any address, with an account here or not, so no one can use the page to learn whether yours is here; if no email comes, check the spelling and use your password. A wrong password and an unknown address get the same message, for the same reason. Emailed links are limited to a few an hour, so a password is quicker when you sign in often.',
+    related: ['iphone', 'codes', 'getting-around'],
   },
   {
     id: 'iphone',
@@ -549,7 +604,7 @@ export const ARTICLES: readonly Article[] = [
     done: 'the app’s icon is on your home screen and opens full screen.',
     stuck:
       'It has to be Safari. If Add to Home Screen is missing, tap **Edit Actions** at the bottom of the Share list and add it. Sign in there with your password: an emailed link opens in Safari instead of the app.',
-    related: ['start'],
+    related: ['start', 'signing-in'],
   },
   {
     id: 'words',
