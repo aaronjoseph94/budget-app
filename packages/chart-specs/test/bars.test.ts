@@ -66,7 +66,8 @@ describe('incomeBars', () => {
   it('names Goal and Actual in a key, and makes room for every row', () => {
     const svg = chart([bar('Pay', 10_000, 10_000), bar('Side', 702, 570)])
     expect(svg).toContain('viewBox="0 0 3000 920"')
-    expect(svg).toMatch(/fill="#D1FAE5" class="chart-income-goal"\/><text x="160" y="120" [^>]*>Goal</)
+    // The Goal's pale swatch is edged in the Actual's colour, so it shows on the card (V4).
+    expect(svg).toMatch(/fill="#D1FAE5" class="chart-income-goal chart-income-edge" stroke="#10B981" stroke-width="10"\/><text x="160" y="120" [^>]*>Goal</)
     expect(svg).toMatch(/>Actual<\/text>/)
     expect([...svg.matchAll(/<text x="0" y="(\d+)"/g)].map((m) => m[1])).toEqual(['340', '680'])
   })
@@ -108,6 +109,7 @@ describe('debtBars', () => {
       [730, '#E11D48', 600],
     ])
     expect(svg).toContain('class="chart-debts-ink">Left to pay</text>')
+    expect(svg).toContain('fill="#FFE4E6" class="chart-debts-track chart-debts-edge" stroke="#E11D48" stroke-width="10"/>')
     expect(svg).toContain('>Card &lt;1&gt;</text>')
   })
 })

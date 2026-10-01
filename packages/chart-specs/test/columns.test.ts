@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { goalActualColumns, incomeExpenseColumns } from '../src/columns.js'
+import { FONT, textUnits } from '../src/frame.js'
 
 /** Suite tests: coordinates worked by hand on the 3,000-unit grid; the plot runs 1,400 units up from y = 1660. */
 
@@ -22,6 +23,22 @@ describe('incomeExpenseColumns', () => {
     expect(rects(svg)).toEqual(['300 610 900 1050 #10B981', '300 260 900 350 #9CA3AF', '1800 960 900 700 #9CA3AF'])
     expect(svg).toContain('<title>Feb &amp; &lt;co&gt;: out $200</title>')
     expect(svg).not.toContain('<co>')
+  })
+
+  it('leaves a gap between twelve months\' names however narrow the chart (V6)', () => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    for (const width of [2_000, 3_000, 4_000]) {
+      const svg = incomeExpenseColumns({ ...frame, width, columns: months.map((label) => ({ label, valueText: '', parts: [null, null] })) })
+      const labels = [...svg.matchAll(/<text x="(\d+)" y="\d+" text-anchor="middle"(?: font-size="(\d+)")?[^>]*>([^<]+)<\/text>/g)].map((m) => {
+        const size = Number(m[2] ?? FONT)
+        const half = Math.ceil((textUnits(m[3]!) * size) / FONT / 2)
+        return [Number(m[1]) - half, Number(m[1]) + half] as const
+      })
+      expect(labels).toHaveLength(12)
+      for (let i = 1; i < 12; i += 1) expect(labels[i]![0] - labels[i - 1]![1]).toBeGreaterThanOrEqual(60)
+      // Each month keeps its whole name in its column's title, however short its label.
+      expect(svg).toContain('<title>Sep: </title>')
+    }
   })
 
   it('draws nothing for a part too thin to reach a unit', () => {

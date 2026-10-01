@@ -67,6 +67,7 @@ export function incomeExpenseColumns(input: IncomeExpenseInput): SvgMarkup {
   const width = widthOf(input)
   const step = Math.floor(width / Math.max(input.columns.length, 1))
   const bar = Math.floor((step * 3) / 5)
+  const look = monthLabels(input.columns.map((c) => c.label), step)
   const columns = input.columns.map((c, i) => {
     const x = i * step + Math.floor((step - bar) / 2)
     const marks = c.parts.flatMap((p, s): SvgNode[] => {
@@ -75,8 +76,8 @@ export function incomeExpenseColumns(input: IncomeExpenseInput): SvgMarkup {
       const height = top - lengthOf(p.fromBp, PLOT)
       return height > 0 ? [el('rect', { x, y: BASE - top, width: bar, height, ...(s === 0 ? INCOME : EXPENSES) })] : []
     })
-    const label = el('text', { x: i * step + Math.floor(step / 2), y: BASE + 160, 'text-anchor': 'middle', ...INK }, [
-      fit(c.label, step),
+    const label = el('text', { x: i * step + Math.floor(step / 2), y: BASE + 160, 'text-anchor': 'middle', ...look.size, ...INK }, [
+      look.text(c.label),
     ])
     return el('g', {}, [el('title', {}, [`${c.label}: ${c.valueText}`]), ...marks, label])
   })
@@ -123,6 +124,23 @@ export function goalActualColumns(input: GoalActualInput): SvgMarkup {
     baseline(width),
     ...groups,
   ])
+}
+
+/** The narrowest gap between two months' names, 6 px at the designed size. */
+const GAP = 60
+
+/**
+ * How the months under the columns are written so that no two touch (V6):
+ * whole at the chart's size where they fit with a gap, a little smaller
+ * where that is enough (no smaller than four fifths), and otherwise by
+ * their first letter, "J F M". The whole name stays in each column's title.
+ */
+function monthLabels(labels: readonly string[], step: number): { size: Readonly<Record<string, number>>; text: (label: string) => string } {
+  const widest = Math.max(0, ...labels.map((l) => textUnits(l)))
+  if (widest + GAP <= step) return { size: {}, text: (l) => fit(l, step) }
+  const size = Math.floor((FONT * (step - GAP)) / widest)
+  if (size >= Math.ceil((FONT * 4) / 5)) return { size: { 'font-size': size }, text: (l) => l }
+  return { size: {}, text: (l) => Array.from(l)[0] ?? '' }
 }
 
 /** Two series, so a key names them: colour is never the only way to tell them apart. */

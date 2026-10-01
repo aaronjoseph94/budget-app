@@ -81,15 +81,14 @@ export function spendingDoughnut(input: DoughnutInput): SvgMarkup {
     return el('g', {}, [
       el('title', {}, [`${s.label}: ${s.valueText}`]),
       el('rect', { x: 0, y: y - 90, width: SWATCH, height: SWATCH, rx: 20, fill: hueFor(s.listIndex) }),
-      el('text', { x: SWATCH + 60, y, fill: INK, class: 'chart-variable-ink' }, [fit(s.label, room)]),
+      el('text', { x: SWATCH + 60, y, ...NAME }, [fit(s.label, room)]),
       el(
         'text',
         {
           x: width,
           y,
           'text-anchor': 'end',
-          fill: INK,
-          class: 'chart-variable-ink',
+          ...FIGURE,
           style: 'font-variant-numeric:tabular-nums',
         },
         [s.valueText],
@@ -99,8 +98,13 @@ export function spendingDoughnut(input: DoughnutInput): SvgMarkup {
   return frame(input, height + 40, [el('g', {}, body), ...legend])
 }
 
-/** Variable expenses' ink (ADR 0010), readable on the card. */
-const INK = '#C2410C'
+/**
+ * The legend as Mockup A's Month writes it (Month.dc.html): each name in the
+ * ink and its figure muted, where every word was once Variable's orange
+ * (V5). The slices and swatches carry the hue.
+ */
+const NAME = { fill: '#111827', class: 'chart-ink' } as const
+const FIGURE = { fill: '#6B7280', class: 'chart-forecast-ink' } as const
 const SURFACE = {
   'fill-rule': 'evenodd',
   stroke: '#FFFFFF',

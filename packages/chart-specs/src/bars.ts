@@ -37,6 +37,8 @@ interface Palette {
   /** For every word: the block's ink (§6.6), readable on the card. */
   readonly ink: Paint
   readonly keys: readonly [string, string]
+  /** The class that edges the Goal's key swatch in the Actual's colour. */
+  readonly edge: string
 }
 
 const INCOME: Palette = {
@@ -44,6 +46,7 @@ const INCOME: Palette = {
   actual: { fill: '#10B981', class: 'chart-income-actual' },
   ink: { fill: '#047857', class: 'chart-income-ink' },
   keys: ['Goal', 'Actual'],
+  edge: 'chart-income-edge',
 }
 
 /**
@@ -57,6 +60,7 @@ const SAVINGS: Palette = {
   actual: { fill: '#F59E0B', class: 'chart-savings-saved' },
   ink: { fill: '#B45309', class: 'chart-savings-ink' },
   keys: ['Goal', 'Saved'],
+  edge: 'chart-savings-edge',
 }
 /**
  * Home's debt chart (chart4, D25): what is left of each debt in Debts'
@@ -70,6 +74,7 @@ const DEBTS: Palette = {
   actual: { fill: '#E11D48', class: 'chart-debts-left' },
   ink: { fill: '#BE123C', class: 'chart-debts-ink' },
   keys: ['Starting balance', 'Left to pay'],
+  edge: 'chart-debts-edge',
 }
 /**
  * The Habits tab's weekdays (F40): each weekday's average everyday
@@ -82,6 +87,7 @@ const WEEKDAYS: Palette = {
   actual: { fill: '#A42F1A', class: 'chart-heat-3' },
   ink: { fill: '#6B7280', class: 'chart-forecast-ink' },
   keys: ['Daily allowance', 'Average'],
+  edge: 'chart-heat-edge',
 }
 const KEY = 220
 const ROW = 340
@@ -124,11 +130,15 @@ function drawBars(input: IncomeBarsInput, palette: Palette, keyed = true): SvgMa
   return frame(input, top + input.bars.length * ROW + 20, keyed ? [key(palette), ...rows] : rows)
 }
 
-/** Two series, so a key names them: colour is never the only way to tell them apart. */
-function key({ goal, actual, ink, keys }: Palette): SvgNode {
+/**
+ * Two series, so a key names them: colour is never the only way to tell them
+ * apart. The Goal's tile is pale on the card (#FEF3C7 is 1.1 to one), so its
+ * swatch is edged in the Actual's colour, a 1 px line (V4); the bars are not.
+ */
+function key({ goal, actual, ink, keys, edge }: Palette): SvgNode {
   const second = 160 + textUnits(keys[0]) + 100
   return el('g', {}, [
-    el('rect', { x: 0, y: 30, width: BAR, height: BAR, rx: ROUND / 2, ...goal }),
+    el('rect', { x: 0, y: 30, width: BAR, height: BAR, rx: ROUND / 2, ...goal, class: `${goal.class} ${edge}`, stroke: actual.fill, 'stroke-width': 10 }),
     el('text', { x: 160, y: FONT, ...ink }, [keys[0]]),
     el('rect', { x: second, y: 30, width: BAR, height: BAR, rx: ROUND / 2, ...actual }),
     el('text', { x: second + 160, y: FONT, ...ink }, [keys[1]]),

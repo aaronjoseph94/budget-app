@@ -26,6 +26,10 @@ describe('spendingDoughnut', () => {
     expect(svg).toMatch(/^<svg [^>]*viewBox="0 0 3000 1980" [^>]*aria-labelledby="spend-title" aria-describedby="spend-desc"/)
     expect(svg).toContain('<title id="spend-title">Variable expenses by category</title><desc id="spend-desc">')
     expect([...svg.matchAll(/<text x="160" y="(\d+)"/g)].map((m) => m[1])).toEqual(['1540', '1740'])
+    // Names in the ink and figures muted, as the mockup's legend: not every word in orange (V5).
+    expect(svg).toContain('<text x="160" y="1540" fill="#111827" class="chart-ink">a</text>')
+    expect(svg).toMatch(/<text x="3000" y="1540" text-anchor="end" fill="#6B7280" class="chart-forecast-ink"[^>]*>\$10000 · x%<\/text>/)
+    expect(svg).not.toContain('#C2410C')
   })
 
   it("draws each slice clockwise from twelve o'clock, the long way round past half", () => {

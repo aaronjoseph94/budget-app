@@ -422,6 +422,23 @@
 .spec-chart .chart-income-actual {
   fill: var(--income-accent);
 }
+/* The ink, for words that name a thing: the donut's legend names (V5). */
+.spec-chart .chart-ink {
+  fill: var(--foreground);
+}
+/* A Goal's pale key swatch, edged in its Actual's colour (V4). */
+.spec-chart .chart-income-edge {
+  stroke: var(--income-accent);
+}
+.spec-chart .chart-savings-edge {
+  stroke: var(--savings-chart-saved);
+}
+.spec-chart .chart-debts-edge {
+  stroke: var(--debts-accent);
+}
+.spec-chart .chart-heat-edge {
+  stroke: var(--heat-3);
+}
 .spec-chart .chart-income-ink {
   fill: var(--income-ink);
 }
