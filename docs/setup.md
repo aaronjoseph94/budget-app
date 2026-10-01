@@ -25,7 +25,7 @@ refused rather than applied twice.
 | `0008_category_budgets.sql` | The budgets and goals you type on a month, "from this month on" or "just this month". Needed by the Month as soon as this branch is merged |
 | `0009_category_plans.sql` | Each bill's, debt's and subscription's monthly amount and the day it is paid. Needed by Setup's Day paid and Monthly amount, and by the Month, which counts each bill's planned amount, as soon as this branch is merged. Once it runs, a category with a monthly amount stays on its list until you stop the amount (Stop, under it in Setup) |
 | `0010_month_balances.sql` | The bank balance you type for the start of each month. Needed by the Month, whose card shows it as Start and projects End of month from it, as soon as this branch is merged |
-| `0011_pay_schedules.sql` | When each income source pays: a payday, and weekly, every two weeks or monthly. Needed by Setup's Paid and First payday on each Income row, and by Paycheck, as soon as this branch is merged; the Bill Calendar will read it too |
+| `0011_pay_schedules.sql` | When each income source pays: a payday, and weekly, every two weeks or monthly. Needed by Setup's How often and First payday on each Income row, and by Paycheck, as soon as this branch is merged; the Bill Calendar will read it too |
 | `0012_dismiss_unreadable_lines.sql` | Dismissing a statement line the app could not read. Needed by Review as soon as this branch is merged |
 | `0013_savings_funds.sql` | Linking a savings goal to one of your Savings-list funds, with the date saving started and the date the amount you typed was true, so transfers you record after it can add to it. Your existing goal keeps working as it is. Needed by the Savings screen, and by the Year's savings chart |
 | `0014_debts.sql` | Your debts for the Debt Calculator: each one's starting balance, minimum payment, interest rate and start month, and any extra payments by month. Needed by the Debts screen, and by the Year's debt chart |
@@ -49,7 +49,7 @@ Without `0009`, Setup says the same of monthly amounts and shows none, and
 your lists still work; the Month says it too, and shows no month. Without
 `0010`, the Month says starting balances need the update, and shows no
 month. Without `0011`, Setup says pay schedules need the update and shows
-no Paid or First payday, and your lists still work; Paycheck says it too,
+no How often or First payday, and your lists still work; Paycheck says it too,
 and shows no pay period. Without `0012`, Review cannot list the lines an
 import could not read and shows a code in brackets instead. Without
 `0013`, Savings says savings funds need the update. Without `0014`, Debts

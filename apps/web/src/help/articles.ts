@@ -56,7 +56,7 @@ export const ARTICLES: readonly Article[] = [
       'Open **Getting started** from **Settings**, or from **More** on a phone, and it says how many of the nine steps are done.',
       'Do what the step shows, then press **Continue**.',
       'To leave a step for now, press **Do this later**, which moves it to the end.',
-      'To go to any step, open **All 9 steps** and tap it.',
+      'To go to any step, tap it in **All 9 steps** (open beside the step on a wide screen; on a phone, open it first).',
       'Come back any time: More and Settings say how many are done.',
     ],
     done: 'Getting started says "Your coach is ready", or Settings (More on a phone) says All done.',
@@ -68,11 +68,11 @@ export const ARTICLES: readonly Article[] = [
     id: 'updates',
     title: 'One-time updates',
     summary:
-      'Some parts of the app need a one-time update pasted into Supabase, where your budget is kept online, or a setting changed there. This page checks which are in, names the next one, and has a Copy button for each file. This version brings six updates, the AI helper, two settings and the AI apps server: about 35 minutes, once, easiest on a computer. Until they are in, everything that worked before still works, and nothing breaks if you stop part way.',
+      'Some parts of the app need a one-time update pasted into Supabase, where your budget is kept online, or a setting changed there. This page checks which are in, names the next one, and gives you a Copy button for it. The line at the top says how many are in; the rest take about 35 minutes, once, easiest on a computer. Until they are in, everything that worked before still works, and nothing breaks if you stop part way.',
     steps: [
       'Open Supabase in a new tab and choose your project.',
       'Press **SQL Editor**, then **New query**.',
-      'On this page, press **Copy** beside the update it names next.',
+      'On this page, press the **Copy** button under Next, which names what it copies.',
       'Paste it into the new query, press **Run**, and wait for Success.',
       'Press **Check again** here, and do the next one the same way.',
       'For the AI helper, press **Edge Functions**, **Deploy a new function** and **Via Editor**, name it ai, and paste what **Copy** gives you over everything there.',
@@ -81,7 +81,7 @@ export const ARTICLES: readonly Article[] = [
     ],
     done: 'this page says "All done", and AI settings says AI is on.',
     stuck:
-      'If Supabase says anything other than Success, stop there: nothing is lost, and the message names the line. A file already pasted is refused rather than applied twice, so pasting one again does no harm. The AI helper needs no new secrets: the receipts key is used again if you set one. The signing key, sign-in for AI apps and the AI apps server are for connecting Claude or ChatGPT; until they are done, this page names them next and the rest of the app works. If the signing key still shows after you changed it, sign out and back in, so your sign-in is made with the new key. Updates from before this version are copied from GitHub, as the setup guide says; the Copy buttons carry only the newest ones.',
+      'If Supabase says anything other than Success, stop there: nothing is lost, and the message names the line. A file already pasted is refused rather than applied twice, so pasting one again does no harm. The AI helper needs no new secrets: the receipts key is used again if you set one. The signing key, sign-in for AI apps and the AI apps server are for connecting Claude or ChatGPT; until they are done, this page names them next and the rest of the app works. If the signing key still shows after you changed it, sign out and back in, so your sign-in is made with the new key. If **Edge Functions** lists read-receipt, paste its new version over it or delete it: an older copy lets anyone with the app’s public key use your Gemini key. Updates from before this version are copied from GitHub, as the setup guide says; the Copy buttons carry only the newest ones.',
     related: ['start', 'free-ai', 'ai-apps', 'codes'],
   },
   {
@@ -92,15 +92,16 @@ export const ARTICLES: readonly Article[] = [
     steps: [
       'Open the **Month** to see this month: what you planned, what you spent, and what is left.',
       'Tap **Week** in the switch at the top to see Monday to Sunday.',
-      'Tap **Pay** to see one pay period, from one payday to the next.',
-      'Tap **Year** to see twelve months side by side.',
-      'Use the arrows beside the title to step back or forward one month, week or pay period.',
+      'Tap **Pay** (called **Paycheck** in the sidebar and on More) to see one pay period, from one payday to the next.',
+      'Tap **Year** to see twelve months side by side, and choose the first one under **Starts in**.',
+      'Use the arrows at the top right, around the month’s name, to step back or forward one month, week or pay period.',
       'Tap a row to see the charges behind it.',
       'Tap a budget to type it: every budget you can type is underlined with dots, and a pencil marks a row with none yet.',
+      'Read the % pill on a list’s head: how much of its budget it has spent.',
     ],
     done: 'you can move between the four views and step back to last month.',
     stuck:
-      'Pay needs to know when you are paid: set **Paid** and **First payday** on an Income row in Setup. On a phone, the Week is in the switch, not the bottom bar.',
+      'Pay needs to know when you are paid: choose **How often** and a **First payday** on an Income row in Setup. On a phone, the Week is in the switch, not the bottom bar. Rows with nothing in them fold away: press **Show 3 empty** (with your own number) to see them.',
     related: ['comparisons', 'budgets', 'wrong-number'],
   },
   {
@@ -109,15 +110,15 @@ export const ARTICLES: readonly Article[] = [
     summary:
       'Your card statement brings in most of your spending at once. Download it from your bank as a PDF or a CSV file first. About 3 minutes.',
     steps: [
-      'Open **Add**.',
+      'Open **Add**: the middle button along the bottom on a phone, or **Add** at the top right on a computer.',
       'Choose the **Statement** tab.',
       'Press **Choose a statement** and pick the file you downloaded.',
-      'Check the rows it read, then press **Import**.',
+      'Check the rows it read, then press **Import 42 transactions** (with your own number).',
       'Press **Go to review** to give the new rows their categories.',
     ],
     done: 'Review lists the new rows, and a statement you bring in again adds nothing twice.',
     stuck:
-      'If the app says it could not read the file, try the other format your bank offers (PDF or CSV). Lines it could not read wait at the bottom of Review with the reason.',
+      'If the app says it could not read the file, try the other format your bank offers (PDF or CSV). Lines it could not read wait at the bottom of Review with the reason. If it says **Does not add up**, the rows it read do not match the statement’s printed totals, so nothing is imported: try the CSV instead.',
     related: ['review', 'add', 'wrong-number'],
   },
   {
@@ -127,15 +128,15 @@ export const ARTICLES: readonly Article[] = [
       'Nothing reaches your budget until you approve it. Every imported row waits here for its category, so a wrong guess never counts by itself.',
     steps: [
       'Open **Review**.',
-      'Check the category picked on each row: **✨ Suggested** is the AI’s guess from the shop’s name, and the others are how you filed that shop, or one like it, before.',
+      'Check the category on each row: **✨ Suggested: …** with “By AI” is the AI’s guess; **Suggested** with “How you filed this merchant last time” is your own rule; “You filed a similar shop under …” is a shop like it.',
       'Choose another category where the pick is wrong, or press **Not this** to clear the AI’s guess.',
-      'Press **Approve** on a row, or **Approve these 12** (with your own number) to file every row that has a category after one look at the list.',
+      'Press **Approve** on a row, or **Approve these 12** (with your own number), check the list it shows, and press **Approve all 12**.',
       'For a row that is not a real charge, press the **✕** beside it.',
       'At the bottom, press **Dismiss** on a line the reader could not read once you have typed it yourself.',
     ],
     done: 'Review says "Nothing waiting." A shop you approved once is filed the same way next time, without waiting.',
     stuck:
-      'If a shop keeps landing in the wrong place, move one of its charges from the Month with **Move to…** and leave **Always file** ticked. With free AI on, categories are suggested by themselves after an import; press **Suggest categories** to ask again, and the line beside it says if something is missing, such as a one-time update. The AI is sent each shop’s name, whether it was money in or out, and whether it was small, medium or large, never the amount or the date, and nothing it suggests counts until you approve it. Turn off **Share shop names** in AI settings to send nothing.',
+      'If a shop keeps landing in the wrong place, move one of its charges from the Month with **Move to…** and leave **Always file** ticked. With free AI on, categories are suggested by themselves after an import; press **Suggest categories** to ask again, and the line beside it says if something is missing, such as a one-time update. The AI is sent each shop’s name, whether it was money in or out, and whether it was small, medium or large, never the amount or the date, and nothing it suggests counts until you approve it. Turn off **Share shop names** in AI settings to send nothing. To stop a shop filing itself, press **Forget** beside it under **Shops filed by themselves** in Settings.',
     related: ['statements', 'add', 'wrong-number'],
   },
   {
@@ -143,10 +144,11 @@ export const ARTICLES: readonly Article[] = [
     title: 'Add: a statement, a photo, or type it',
     summary: 'Three ways to put money in: a statement from your bank, a receipt photo, or one entry typed by hand.',
     steps: [
-      'Open **Add**.',
+      'Open **Add**: the middle button along the bottom on a phone, or **Add** at the top right on a computer.',
       'For a receipt, choose **Photo**, then **Take or choose a receipt photo**.',
       'Check what it read, then press **Send to review**.',
       'For cash, pay or a move to savings, choose **Type it**.',
+      'Choose **I spent** for cash or a move into a savings fund, or **I received** for pay.',
       'Under **Just type it**, write it the way you would say it, such as “coffee 4.50 yesterday” or “got paid 2100”, and press **Fill in**.',
       'Check each field, fill in anything left empty, then press **Add**.',
     ],
@@ -162,13 +164,13 @@ export const ARTICLES: readonly Article[] = [
       'A budget is what you plan to spend on something. A bill has a monthly amount and a day it is paid, and counts as planned until the real charge arrives.',
     steps: [
       'On the **Month**, tap a row’s Budgeted figure.',
-      'Type the amount, and choose **From this month on** or **Just this month**.',
+      'Type the amount, choose **From this month on** or **Just this month**, and press **Save**.',
       'For a bill, open **Setup** (on a phone, under **More**), and type its **Monthly amount**.',
       'Choose its **Day paid**.',
-      'To see every bill by its day, tap the calendar button beside the Month’s title.',
-      'For weekly budgets, open **Settings** (on a phone, under **More**), and type them under **Weekly budgets**.',
+      'To see every bill by its day, press the calendar button beside the month arrows, or open **Bill calendar**.',
+      'For weekly budgets, tap one on the **Week**, or open **Settings** (on a phone, under **More**) and type them under **Weekly budgets**.',
     ],
-    done: 'each row on the Month shows Budgeted, Actual and Left, and the Bill calendar shows your bills on their days.',
+    done: 'each list’s head shows what it spent of its budget with a % pill, each row shows Budgeted, Actual and Left, and the Bill calendar shows your bills on their days.',
     stuck:
       'A bill with no charge yet this month counts its planned amount. When the real charge comes in, it takes the planned amount’s place, so it is never counted twice. With no budget typed, a bill’s planned amount is its budget, marked planned, so a bill paid as planned is 100% and 0.00 left; a budget you type, even $0.00, is used instead. When a shop charges a Bills, Debts or Subscriptions row every month and that row has no monthly amount, Setup says **Looks like a monthly bill: add it?** Press **Fill it in**, check the day and the amount, then press **Save**; nothing is saved until you do.',
     related: ['periods', 'wrong-number', 'start'],
@@ -184,7 +186,7 @@ export const ARTICLES: readonly Article[] = [
       'Press **Make main goal** on the goal you want the Coach and the Week to show.',
       'Press the up and down arrows on a goal to put your goals in the order you like.',
       'Press **Pause** on a goal you are putting aside, or **Mark as reached** when it is done.',
-      'Each time you move money into a fund, record it on **Add** under **Type it**, filed under that fund.',
+      'Each time you move money into a fund, record it on **Add** under **Type it** as **I spent**, filed under that fund.',
     ],
     done: 'your main goal is first on Savings, and the Coach and the Week show it.',
     stuck:
@@ -217,13 +219,13 @@ export const ARTICLES: readonly Article[] = [
     steps: [
       'Open **Debts** (on a phone, under **More**).',
       'Press **Add a debt**.',
-      'Type its starting balance, the month beside it, its minimum payment and its APR.',
+      'Type its name, **Starting balance**, the **As of** month, **Minimum payment** and **APR**.',
       'Press **Save debt**.',
       'Read **Ways to pay it off** to see how much sooner Snowball or Avalanche finishes than minimums only.',
     ],
     done: 'each debt shows when it is paid off, and the summary shows the date you are debt-free.',
     stuck:
-      'An estimate is fine: the balance is as of the month beside it. Tap a debt to fix a figure or add an extra payment.',
+      'An estimate is fine: the balance is as of the **As of** month. Press **Edit** on a debt to fix a figure, or to add one under **Extra payments**.',
     related: ['budgets', 'comparisons'],
   },
   {
@@ -252,10 +254,10 @@ export const ARTICLES: readonly Article[] = [
     summary:
       'Once a week the Coach looks back at last week with you, Monday to Sunday: what your everyday spending came to, a win, a few questions about your biggest charges, one thing to try next week and how your goals are doing. It takes about 2 minutes.',
     steps: [
-      'From Sunday, look for the dot on **Coach**, then press **Your Sunday check-in is ready**.',
+      'From Sunday, look for the dot on **Coach**, then press **Your Sunday check-in is ready** (on other days, **Your weekly check-in**).',
       'Read **Last week**: what you spent on everyday things, against the week before and your weekly budgets, and a win.',
       'Under **Was it planned?**, press **Planned**, **Impulse** or **Needed** for each charge; press another to change your answer.',
-      'Read **One thing to try**, and press **Yes, set it** to make it that category’s weekly budget on the **Week**.',
+      'Read **One thing to try**, and press **Yes, set it** (or **Yes, keep it**) to make it that category’s weekly budget on the **Week**.',
       'Read **Your goals**: a line for them and how far each has come.',
     ],
     done: 'you have answered the questions and chosen whether to set next week’s limit.',
@@ -439,12 +441,12 @@ export const ARTICLES: readonly Article[] = [
       'In a chat, ask something like “How is my month going?” or “How much is left for groceries this week?”.',
       'Say what you bought, such as “I spent $12.50 on lunch at Subway today”, then open **Review** to approve it.',
       'To let AI apps only read, turn off **Let them add to Review**.',
-      'To stop one app, press **Disconnect** beside it under **Connected apps**, and remove it in Claude or ChatGPT too.',
+      'To stop one app, press **Disconnect** beside it under **Connected apps**, then **Yes, disconnect**, and remove it in Claude or ChatGPT too.',
       'To stop every AI app at once, turn off **Let AI apps connect**.',
     ],
     done: 'your AI app answers with the figures your screens show, and anything it adds waits in Review until you approve it.',
     stuck:
-      'An AI app cannot approve, reject, change or delete anything: only you can, in the app. If a chat gives a figure that differs from your screen, your screen is right: the app hands the AI its figures ready to quote, and what it then writes is its own. Shop names come from your statements, and anyone can name a shop to read like an instruction. All Budget lets an AI do is add to Review, but one that also has a connector able to send email or messages could be tricked into sending your figures on, so use Budget in chats where no other connector can send anything. If your AI app says the budget app needs a one-time update, or cannot reach it, open One-time updates. In an emergency, first turn off **Let AI apps connect**, which stops every AI app at once; then in Supabase open **Authentication**, then **OAuth Server**, and turn it off, so no AI app can sign in again.',
+      'An AI app cannot approve, reject, change or delete anything: only you can, in the app. What it adds is marked Added by an AI app in Review, and in All transactions once you approve it. If a chat gives a figure that differs from your screen, your screen is right: the app hands the AI its figures ready to quote, and what it then writes is its own. Shop names come from your statements, and anyone can name a shop to read like an instruction. All Budget lets an AI do is add to Review, but one that also has a connector able to send email or messages could be tricked into sending your figures on, so use Budget in chats where no other connector can send anything. If your AI app says the budget app needs a one-time update, or cannot reach it, open One-time updates. In an emergency, first turn off **Let AI apps connect**, which stops every AI app at once; then in Supabase open **Authentication**, then **OAuth Server**, and turn it off, so no AI app can sign in again.',
     related: ['connect-claude', 'connect-chatgpt', 'ai-sees', 'review', 'updates'],
     terms: [
       { term: 'It can', meaning: 'read your figures (a month, week, pay period or year, what is left in each category, the forecast, your savings goals and your debts), search your approved charges, see what waits in Review and your category names, and add a purchase or money received to Review.' },
@@ -504,7 +506,7 @@ export const ARTICLES: readonly Article[] = [
       'Open **Add** and bring in your latest statement if the last one ended a while ago.',
       'On the **Month**, check that **Start** shows the balance your bank showed on the 1st.',
       'Tap the row that looks wrong to see each charge behind it.',
-      'If one charge is there twice, typed once and imported once, open **All transactions** (on a phone, under **More**), and remove the typed one.',
+      'If one charge is there twice, typed once and imported once, open **All transactions** (on a phone, under **More**), press the bin beside the one marked added by hand, then **Remove**.',
     ],
     done: 'each row’s charges add up to what you expected.',
     stuck:
@@ -540,12 +542,13 @@ export const ARTICLES: readonly Article[] = [
     summary: 'Open the app from your home screen like any other app. About 1 minute.',
     steps: [
       'Open the app’s address in **Safari**.',
-      'Tap **Share**, the square with an arrow.',
+      'Tap **Share**, the square with an arrow, or tap **⋯** first if you do not see it.',
       'Scroll down and tap **Add to Home Screen**.',
       'Tap **Add**.',
     ],
     done: 'the app’s icon is on your home screen and opens full screen.',
-    stuck: 'It has to be Safari. If Add to Home Screen is missing, tap **Edit Actions** at the bottom of the Share list and add it.',
+    stuck:
+      'It has to be Safari. If Add to Home Screen is missing, tap **Edit Actions** at the bottom of the Share list and add it. Sign in there with your password: an emailed link opens in Safari instead of the app.',
     related: ['start'],
   },
   {
@@ -554,7 +557,7 @@ export const ARTICLES: readonly Article[] = [
     summary: 'The words on the screens, in plain terms.',
     steps: ['Find the word in the list below.', 'Tap **?** beside a screen’s title to read how that screen uses it.'],
     done: 'the word on the screen makes sense.',
-    stuck: 'If a word is not here, open **Help** and search for it.',
+    stuck: 'If a word is not here, search Help: press **Search or jump to…** at the top on a computer, or open **Help** from **More** on a phone.',
     related: ['periods', 'wrong-number'],
     terms: [
       { term: 'Start', meaning: 'The balance your bank showed on the 1st of the month, as you typed it.' },
@@ -562,9 +565,11 @@ export const ARTICLES: readonly Article[] = [
       { term: 'Left to spend', meaning: 'What your Variable expenses budgets allow that is not spent yet.' },
       { term: 'End of month', meaning: 'Start, plus what came in, less what was spent and saved.' },
       { term: 'Budgeted, Actual, Left', meaning: 'What you planned, what happened, and the difference.' },
-      { term: 'Planned', meaning: 'A bill’s monthly amount, counted until its real charge comes in.' },
+      { term: 'Planned', meaning: 'A bill’s monthly amount, counted until its real charge comes in, and used as its budget when you have not typed one.' },
+      { term: '% pill', meaning: 'What a list has spent of its budget, on the list’s head; none shows with no budget.' },
       { term: 'Not spending', meaning: 'Money that moves but is not spent, such as paying off your card.' },
       { term: 'Pay period', meaning: 'From one payday to the day before the next.' },
+      { term: 'Pay, Paycheck', meaning: 'The same view, one pay period: the switch says Pay, the sidebar and More say Paycheck.' },
       { term: 'Fund', meaning: 'A savings category that money is moved into, with a goal.' },
       { term: 'Main goal', meaning: 'The savings goal the Coach and the Week show. You choose it on Savings.' },
       { term: 'Review', meaning: 'Where new rows wait for you to approve them.' },

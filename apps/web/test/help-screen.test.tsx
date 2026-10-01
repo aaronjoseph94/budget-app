@@ -70,8 +70,8 @@ describe('Help', () => {
     const page = (await screen.findByRole('heading', { level: 1, name: 'Why things wait in Review' })).closest('article')!
 
     const steps = within(page).getAllByRole('listitem').slice(0, 5)
-    expect(steps[3]?.textContent).toBe('Press Approve on a row, or Approve these 12 (with your own number) to file every row that has a category after one look at the list.')
-    expect([...(steps[3]?.querySelectorAll('strong') ?? [])].map((b) => b.textContent)).toEqual(['Approve', 'Approve these 12'])
+    expect(steps[3]?.textContent).toBe('Press Approve on a row, or Approve these 12 (with your own number), check the list it shows, and press Approve all 12.')
+    expect([...(steps[3]?.querySelectorAll('strong') ?? [])].map((b) => b.textContent)).toEqual(['Approve', 'Approve these 12', 'Approve all 12'])
     expect(within(page).getByRole('region', { name: 'You’re done when…' }).textContent).toContain('Review says "Nothing waiting."')
     expect(within(page).getByRole('region', { name: 'Stuck?' }).textContent).toContain('Always file')
     const related = within(within(page).getByRole('region', { name: 'Related' })).getAllByRole('link')

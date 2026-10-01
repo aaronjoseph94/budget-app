@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { act, cleanup, fireEvent, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
@@ -116,7 +116,8 @@ describe('Copy on One-time updates', () => {
     const migration = createFakeSupabase()
     delete migration.rpcReplies['ai_key_status']
     await nextIs(migration, 'Copy 0016_ai_foundation.sql')
-    expect(screen.queryByText(/read-receipt/)).toBeNull()
+    // The panel's own words: the article around it names read-receipt in Stuck?, for after the helper is in.
+    expect(within(document.querySelector<HTMLElement>('[aria-labelledby="updates-status"]')!).queryByText(/read-receipt/)).toBeNull()
   })
 
   // Its switch comes off before the key moves, which its older copy cannot survive (PLAN §6, finding 7).
