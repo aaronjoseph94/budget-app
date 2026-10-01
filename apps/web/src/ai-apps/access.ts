@@ -134,7 +134,12 @@ export async function readConnectedApps(supabase: SupabaseClient): Promise<AppsR
   }
 }
 
-/** Disconnect: Supabase ends that app's sign-ins and refresh tokens, so the AI apps server refuses it at once. */
+/**
+ * Disconnect: Supabase revokes that app's grant, which should end its
+ * sign-ins and refresh tokens, so the AI apps server and 0030 refuse it at
+ * once. That it deletes the auth.sessions row is HANDOFF §4 check 21, not
+ * yet run; the owner's words say "should" until it is.
+ */
 export async function disconnect(supabase: SupabaseClient, clientId: string): Promise<boolean> {
   const { error } = await supabase.auth.oauth.revokeGrant({ clientId })
   return error === null

@@ -90,7 +90,7 @@ export function ConnectedApps({ on }: { on: boolean }) {
               {asking === app.clientId ? (
                 <div className="space-y-2 rounded-lg border px-3 py-2 text-sm">
                   <p>
-                    Disconnect <bdi>“{app.name}”</bdi>? It has to sign in again to come back, and the budget app refuses it at once.
+                    Disconnect <bdi>“{app.name}”</bdi>? It has to sign in again to come back, and the budget app should refuse it at once.
                     Until the one-time update 0030 is in, it could still reach your budget another way for up to an hour; turning off Let
                     AI apps connect stops that too.
                   </p>

@@ -35,7 +35,7 @@ describe('Settings → AI apps: the switches', () => {
 
     expect((await connect()).checked).toBe(false)
     // Security review mcp-2-03: the switch closes the budget, not an app's sign-in.
-    expect(screen.getByText('Off: no AI app can reach your budget. Only Disconnect, below, ends an app’s sign-in.')).toBeTruthy()
+    expect(screen.getByText('Off: no AI app can reach your budget. This does not end an app’s sign-in; Disconnect, below, should.')).toBeTruthy()
     expect(screen.queryByRole('switch', { name: 'Let them add to Review' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Connect a new AI app' })).toBeNull()
     expect(fake.tables.ai_app_access).toEqual([])

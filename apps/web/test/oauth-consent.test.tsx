@@ -59,7 +59,7 @@ describe('the consent page: Allow', () => {
     expect(screen.getByText(/Anthropic for Claude, OpenAI for ChatGPT/)).toBeTruthy()
     // Security review mcp-2-03: true of the credential handed over, which also reaches the account itself.
     expect(screen.getByText(/In your budget it cannot approve, change or delete anything\./)).toBeTruthy()
-    expect(screen.getByText(/could also be used on your Supabase account itself, such as its email or password, until you disconnect it/)).toBeTruthy()
+    expect(screen.getByText(/could also be used on your Supabase account itself, such as its email or password, until its sign-in ends, which Disconnect should do/)).toBeTruthy()
     await expectNoAxeViolations()
 
     const approve = vi.spyOn(fake.client.auth.oauth, 'approveAuthorization')

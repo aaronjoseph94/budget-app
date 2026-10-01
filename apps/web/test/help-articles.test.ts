@@ -166,7 +166,8 @@ describe('Help articles', () => {
     const terms = articleFor('ai-apps')?.terms ?? []
     const meaning = (term: string) => terms.find((t) => t.term === term)?.meaning ?? ''
     expect(meaning('It cannot')).not.toMatch(/do anything while/)
-    expect(meaning('Its sign-in')).toMatch(/your Supabase account itself.*until you press \*\*Disconnect\*\*/)
+    // Disconnect ending the session is HANDOFF check 21, not yet run: "should", and the emergency steps make sure.
+    expect(meaning('Its sign-in')).toMatch(/your Supabase account itself.*until its sign-in ends, which \*\*Disconnect\*\* should do/)
   })
 
   it('finds no article for a topic not written yet', () => {

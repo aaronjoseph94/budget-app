@@ -122,7 +122,7 @@ export function AiAppsCard() {
           <p id={ids.onHint} className="text-sm text-muted-foreground">
             {loaded.access.enabled
               ? 'On: an AI app you connect can read your figures and search your charges. In your budget it cannot approve, change or delete anything.'
-              : 'Off: no AI app can reach your budget. Only Disconnect, below, ends an app’s sign-in.'}
+              : 'Off: no AI app can reach your budget. This does not end an app’s sign-in; Disconnect, below, should.'}
           </p>
           {loaded.access.enabled ? (
             <>

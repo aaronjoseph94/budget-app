@@ -285,12 +285,36 @@ below was made under those words and is recorded with them.
 
 - **Numbering (2026-10-01).** The fixes' database updates start at
   `0030`, not `0021`: another line of updates (`0021` onwards) was being
-  prepared at the same time, and the numbers must never collide. They
-  depend on `0020` only, touch none of that line's functions, and each
-  checks the one before it through `ai_app_update_level()`, a name of
-  their own, so the two lines may be pasted in either order. `0019` and
-  `0020` are not edited: the deployed site already offers them on a
+  prepared at the same time. They depend on `0020` only, touch none of
+  that line's functions, and each checks the one before it through
+  `ai_app_update_level()` (from `0035`, `ai_app_updates_in()`), names of
+  their own, so the two lines' SQL may be pasted in either order. `0019`
+  and `0020` are not edited: the deployed site already offers them on a
   **Copy** button, so the owner may have pasted them.
+- **Reserved range 0030-0039 (second pass, 2026-10-01).** The other line
+  reached `0028` while these were written, two numbers short of `0030`,
+  so "never collide" in the `0030`-`0034` headers is not a promise any
+  more; those files are pushed and may have been offered by **Copy**, so
+  they keep their numbers and words. Instead `0030`-`0039` belong to this
+  line, and the other line's next update after `0029` is `0040` or later
+  (NOTICED-NOT-TOUCHING N153). The Supabase CLI and One-time updates both
+  key on the number, so two files with one number would break both.
+- **Merging the two lines (second pass).** Pasting works in either order;
+  the merged schema gate does not yet (N154). The merge must (a) take
+  this line's `0020`/`0031` hash assertion (an AI row's kind is
+  `ai_app:<n>`; the other line's expects `occurrence:<n>`); (b) give the
+  other line's AI-app claims a `session_id` and a live `auth.sessions`
+  row, or `0030` answers `disconnected`; and (c) make the other line's
+  `0027` "everything else unchanged" check compare against a snapshot
+  taken before `0030`, or leave out the functions `0032`, `0033`, `0034`
+  and `0036` change (`approve_candidate`, `recategorise_transaction`,
+  `ai_app_search`, `ai_app_add_candidate`).
+- **Disconnect and the session (second pass).** Whether Supabase's
+  `revokeGrant` deletes the app's `auth.sessions` row is HANDOFF §4
+  check 21, not yet run. Until it passes, Settings, the consent page and
+  Help say Disconnect *should* end an app's sign-in, and the emergency
+  steps' `delete from auth.sessions;` makes sure. Record the result here
+  and drop "should" once it is run.
 - **mcp-1-01 (with mcp-3-02): Disconnect now ends a token at PostgREST
   too** (`0030`). The gate refuses a token whose `session_id` names no
   live row of `auth.sessions`, with `disconnected`. Three hosted-only

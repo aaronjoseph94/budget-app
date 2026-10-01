@@ -276,9 +276,12 @@ Then work through §4's first-connection checks, 15 to 24, in order.
   If the Pages project was made earlier with `PNPM_VERSION` `10`, change it
   to `10.33.0` there (N61.3).
 - **Your password, and signing out old sessions.** **Authentication →
-  Users →** the `⋯` on your row → **Reset password**, then **Sign out
-  user** once: a sign-in link with a live token was pasted into a chat
-  earlier.
+  Users →** the `⋯` on your row → **Reset password**. Then end every
+  old sign-in: **SQL Editor** → **New query** → `delete from
+  auth.sessions;` → **Run**, and sign in to the app again. A sign-in link
+  with a live token was pasted into a chat earlier. (This is the same line
+  as check 18 and Help's emergency steps; the dashboard's "Sign out user"
+  was never confirmed to end every session, so it is not used.)
 - **Stop strangers registering.** **Authentication → Sign In / Providers**
   → turn **Allow new users to sign up** off → **Save**. The app already
   asks Supabase never to make an account, but the public key in the web

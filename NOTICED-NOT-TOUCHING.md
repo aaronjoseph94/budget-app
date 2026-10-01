@@ -3502,3 +3502,45 @@ needs its own `npm:zod` alias.
 
 **To settle:** drop the ai-apps project's two aliases in the cleanup
 step, and run the bundle test.
+
+---
+
+## N153 — Update numbers 0030-0039 are reserved for the AI-app security line
+
+**Seen:** 2026-10-01, security review second pass. The line in
+`budget-app-fixes` is at `0028_ai_words_no_invisible_characters.sql`;
+this line holds `0030`-`0037`. The `0030`-`0034` headers say the ranges
+"never collide", which stopped being certain once that line reached
+`0028`.
+
+**Why not fixed here:** `0030`-`0034` are pushed and may have been
+offered by **Copy**, so they cannot be renumbered or edited; the other
+tree is another agent's.
+
+**To settle (the other line):** after `0029`, number the next update
+`0040` or later. `0030`-`0039` belong to this line (ADR 0012). Never
+two files with one number: the Supabase CLI and One-time updates both
+key on it.
+
+---
+
+## N154 — The merged schema gate needs three changes
+
+**Seen:** 2026-10-01, security review second pass. Put this line's
+`0030`-`0037`, their `before/` files and `local-stub.sql` beside the
+other line's, and its `verify-migrations` fails twice before reaching
+the end.
+
+**Why not fixed here:** the other line's assertions are in the other
+tree.
+
+**To settle at the merge:** (a) take this line's AI-app hash assertion
+(`ai_app:<n>`, `0031`) over the other's (`occurrence:<n>`); (b) add a
+`session_id` claim and a live `auth.sessions` row to the other line's
+AI-app claims, or every `ai_app_*` case answers `disconnected` (`0030`);
+(c) make its `0027` "everything else unchanged" check compare against a
+snapshot taken before `0030`, or leave out `approve_candidate`,
+`recategorise_transaction`, `ai_app_search` and `ai_app_add_candidate`,
+which `0032`, `0033`, `0034` and `0036` change afterwards. Also mind
+`0037`'s seeded user (`37373737-...`): assertions that count every AI
+row must name their own user, as this line's now do.
