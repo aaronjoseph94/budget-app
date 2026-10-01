@@ -111,12 +111,14 @@ try {
   const IMPORTS = /^\s*(?:import|export)\b[^'";]*?\bfrom\s*["']([^"']+)["']|^\s*import\s*["']([^"']+)["']|\bimport\s*\(\s*["']([^"']+)["']/gm
   if (published.includes('mcp-function.ts')) {
     const server = readFileSync(join(setup, 'mcp-function.ts'), 'utf8')
-    const pinned = ['npm:zod@4.6.5', 'npm:@modelcontextprotocol/server@2.2.0']
-    const imports = [...new Set([...server.matchAll(IMPORTS)].map((m) => m[1] ?? m[2] ?? m[3]))]
-    const strays = imports.filter((i) => !pinned.includes(i))
+    // Nothing at all: the SDK and zod are bundled at the locked versions, so
+    // no deploy resolves a version nobody reviewed (security review mcp-3-04).
+    // Comment lines first: the bundled SDK's JSDoc names types as import('…').
+    const statements = server.split('\n').filter((line) => !/^\s*(\*|\/\/|\/\*)/.test(line)).join('\n')
+    const strays = [...new Set([...statements.matchAll(IMPORTS)].map((m) => m[1] ?? m[2] ?? m[3]))]
     const keys = [...PROVIDER_HOSTS, 'service_role', 'secret_keys'].filter((k) => server.toLowerCase().includes(k))
     if (!server.startsWith('// mcp-function.ts — ') || strays.length > 0 || keys.length > 0) {
-      console.log(`FAIL: setup/mcp-function.ts must open with its banner, import only ${pinned.join(' and ')}, and name no key or AI host; it imports ${strays.join(', ') || 'nothing else'} and names ${keys.join(', ') || 'none'}`)
+      console.log(`FAIL: setup/mcp-function.ts must open with its banner, import nothing, and name no key or AI host; it imports ${strays.join(', ') || 'nothing'} and names ${keys.join(', ') || 'none'}`)
       failed = true
     }
   }

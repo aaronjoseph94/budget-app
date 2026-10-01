@@ -6,7 +6,7 @@ import { AI_APP_TOKEN, ENV, PROJECT, fakeFetch } from './fake-auth.js'
 
 /**
  * The file the owner pastes as the Edge Function `mcp` (PLAN §2.2, §2.13
- * mcp-bundle): built as the site builds it, held to its two pinned imports
+ * mcp-bundle): built as the site builds it, held to importing nothing
  * and to naming no key, then imported and run as Deno would run it.
  */
 
@@ -35,9 +35,11 @@ afterAll(() => {
 })
 
 // Statements only, as check-bundle.mjs reads them: the file keeps the
-// engine's comments, and a comment's words are not an import.
+// engine's comments, and a comment's words are not an import. Comment
+// lines go first: the bundled SDK's JSDoc names types as import('…').
+const statements = (text: string) => text.split('\n').filter((line) => !/^\s*(\*|\/\/|\/\*)/.test(line)).join('\n')
 const specifiers = (text: string) =>
-  [...text.matchAll(/^\s*(?:import|export)\b[^'";]*?\bfrom\s*["']([^"']+)["']|^\s*import\s*["']([^"']+)["']|\bimport\s*\(\s*["']([^"']+)["']/gm)].map(
+  [...statements(text).matchAll(/^\s*(?:import|export)\b[^'";]*?\bfrom\s*["']([^"']+)["']|^\s*import\s*["']([^"']+)["']|\bimport\s*\(\s*["']([^"']+)["']/gm)].map(
     (m) => m[1] ?? m[2] ?? m[3],
   )
 
@@ -46,8 +48,12 @@ describe('the pasteable file', () => {
     expect(code.split('\n')[0]).toBe(banner(MCP_SERVER_VERSION))
   })
 
-  it('imports the two pinned packages and nothing else', () => {
-    expect(new Set(specifiers(code))).toEqual(new Set(Object.values(PINNED)))
+  // Security review mcp-3-04: the SDK and zod are bundled at the versions in
+  // pnpm-lock.yaml, so no deploy resolves a version nobody reviewed.
+  it('imports nothing at all: the SDK and zod are inside it, at the locked versions', () => {
+    expect(specifiers(code)).toEqual([])
+    expect(PINNED).toEqual({})
+    expect(code).not.toMatch(/from\s*["']npm:|from\s*["']node:/)
   })
 
   it('names no service key and no AI service', () => {

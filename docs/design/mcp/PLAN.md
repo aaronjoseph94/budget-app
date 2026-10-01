@@ -363,8 +363,11 @@ supabase-js, for what `whoIs` plus about twenty lines already does).
     alone. Built at site build, none of that applies, and nothing
     generated is tracked.
   - **What is checked:** `scripts/check-bundle.mjs` holds `setup/` to its
-    list, now including `mcp-function.ts`, and checks that file's only
-    imports are the two pinned `npm:` URLs and that it holds no
+    list, now including `mcp-function.ts`, and checks that file imports
+    nothing at all (since 2026-10-01, security review mcp-3-04: the SDK
+    and zod are bundled in at the lockfile's versions, about 1.2 MB
+    unminified, so no deploy resolves a version nobody reviewed; before,
+    its only imports were the two pinned `npm:` URLs) and that it holds no
     `SERVICE_ROLE`, `SECRET_KEYS` or AI service host. A test in
     `packages/ai-apps/test` builds it, imports it (vitest aliases the two
     `npm:` names to the installed packages), and runs `initialize`,
@@ -2082,12 +2085,15 @@ created it in M9, and imported `packages/ai-apps` from
    *As built (M12b):* HANDOFF §4 check 15 opens `/mcp/health` in a tab,
    with no session, where a 401 is the switch; check 16 says a sign-in
    that never starts means the switch is on.
-7. **Deno without a lockfile.** The pasted file pins `zod@4.6.5` and the SDK
-   `2.2.0`, but Deno resolves the SDK's own `zod ^4.2.0` and
-   `@modelcontextprotocol/core` at deploy time, outside our lockfile and
-   `pnpm audit`, and loads the SDK's Node build with its vendored
-   validator. No Deno runs in CI; the owner's deploy is the first real run
-   (K4, K6).
+7. **Deno without a lockfile.** *Closed 2026-10-01 (security review
+   mcp-3-04):* the pasted file used to pin `zod@4.6.5` and the SDK
+   `2.2.0` while Deno resolved the SDK's own `zod ^4.2.0` and
+   `@modelcontextprotocol/core` at each deploy, outside our lockfile and
+   `pnpm audit`. Now the SDK and zod are bundled in at the lockfile's
+   versions, resolved as Deno would (`deno`, `node`, `import`), and the
+   file imports nothing. No Deno runs in CI; the owner's deploy is still
+   the first real run (K4, K6): if the bundled file fails to start there,
+   HANDOFF check 15 shows it.
 8. **SDK 2.x is new.** 2.0.0 shipped on 2026-07-27, 2.1.0 on 2026-09-23 and
    2.2.0 on 2026-09-28, two days before this plan. Pinned exactly; an
    upgrade is its own commit with the protocol tests, and the security

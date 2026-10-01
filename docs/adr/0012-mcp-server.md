@@ -341,3 +341,7 @@ below was made under those words and is recorded with them.
   allowing), until `0019`, `0020`, the AI helper from 2026-09-30.1 and
   read-receipt (deleted or new) are in, as `aiAppsReady` checks; turning
   off never waits.
+- **mcp-3-04: the pasted server imports nothing.** The SDK and zod are
+  bundled at the lockfile's versions (about 1.2 MB, unminified), so no
+  deploy fetches a release nobody reviewed; `check-bundle.mjs` and the
+  bundle test require zero imports.

@@ -4,8 +4,12 @@
  * site is built, never committed, so the file the site offers always comes
  * from the same commit as the site.
  *
- * Everything from `packages/*` is bundled in; the SDK and zod stay imports,
- * pinned to the exact versions Deno fetches.
+ * Everything is bundled in: `packages/*`, and the SDK and zod at the exact
+ * versions in pnpm-lock.yaml, resolved as Deno would (`deno`, `node`,
+ * `import`). The file imports nothing, so a deploy fetches nothing nobody
+ * reviewed: before, the SDK's own `zod ^4.2.0` was resolved afresh at each
+ * paste, outside the lockfile and `pnpm audit` (security review mcp-3-04).
+ * About 1.2 MB, unminified so it can still be read.
  *
  * This file imports no workspace package: vite loads the site's config, and
  * so this, with Node, which cannot follow a package's TypeScript sources.
@@ -14,11 +18,8 @@
 import { fileURLToPath } from 'node:url'
 import { build, type Rolldown } from 'vite'
 
-/** The only imports the pasted file may have, by the package name each replaces. */
-export const PINNED: Readonly<Record<string, string>> = {
-  zod: 'npm:zod@4.6.5',
-  '@modelcontextprotocol/server': 'npm:@modelcontextprotocol/server@2.2.0',
-}
+/** The imports the pasted file may have, by the package name each replaces: none (mcp-3-04). */
+export const PINNED: Readonly<Record<string, string>> = {}
 
 export const banner = (version: string) =>
   `// mcp-function.ts — the budget app's AI apps server, version ${version}. Built from packages/ai-apps; paste it whole as the Edge Function "mcp".`
@@ -35,6 +36,7 @@ export async function bundleMcpFunction(): Promise<string> {
         resolveId: (id: string) => (id in PINNED ? { id: PINNED[id] as string, external: true } : null),
       },
     ],
+    resolve: { conditions: ['deno', 'node', 'import'] },
     build: {
       write: false,
       minify: false,
