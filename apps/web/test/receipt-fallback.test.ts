@@ -35,11 +35,21 @@ describe('reading a receipt photo', () => {
     expect(fake.functions.receiptCalls).toEqual([PHOTO])
   })
 
-  it('falls back when the helper needs its one-time update, or is an older copy that refuses the task', async () => {
-    for (const [code, status] of [['needs_update', 503], ['bad_request', 400], ['helper_error', 503]] as const) {
-      const fake = setUp(helperSays(code, status))
-      expect((await readReceiptPhoto(fake.client, PHOTO)).ok, code).toBe(true)
-      expect(fake.functions.receiptCalls, code).toEqual([PHOTO])
+  it('falls back when the helper needs its one-time update', async () => {
+    const fake = setUp(helperSays('needs_update', 503))
+    expect((await readReceiptPhoto(fake.client, PHOTO)).ok).toBe(true)
+    expect(fake.functions.receiptCalls).toEqual([PHOTO])
+  })
+
+  it('sends the photo nowhere else when the helper failed before it could read the owner’s settings (backend-b-01)', async () => {
+    // helper_error and bad_request can both come before the helper has read
+    // whether AI is off, as can a gateway 5xx with no code at all.
+    const replies = [helperSays('helper_error', 503), helperSays('bad_request', 400), () => new Response('upstream timed out', { status: 504 })]
+    for (const reply of replies) {
+      const fake = setUp(reply)
+      const read = await readReceiptPhoto(fake.client, PHOTO)
+      expect(read.ok).toBe(false)
+      expect(fake.functions.receiptCalls).toEqual([])
     }
   })
 

@@ -49,12 +49,15 @@ const fallback = 'Receipt reading is not available right now. Try again, or type
 const BY: Readonly<Record<AiProvider, string>> = { gemini: 'Gemini', groq: 'Groq', openrouter: 'OpenRouter', openai: 'OpenAI', anthropic: 'Anthropic' }
 
 /**
- * When read-receipt answers instead: the helper is not deployed, 0016 is
- * not pasted, or the helper cannot do its part (an older copy refuses the
- * receipt task as a bad request, which reads as helper_error). The owner's
- * own choices, AI off, a limit or a rest, are never gone around.
+ * When read-receipt answers instead: the helper is not deployed, or 0016 is
+ * not pasted, so there are no AI settings to go around. Never on
+ * helper_error: the helper says that for a database or sign-in hiccup, a
+ * request it refused, or a crash, all before it has read whether the owner
+ * turned AI off, and read-receipt never reads it (backend-b-01). An older
+ * helper that refuses the receipt task is flagged by One-time updates. The
+ * owner's own choices, AI off, a limit or a rest, are never gone around.
  */
-const FALLS_BACK: ReadonlySet<AiState> = new Set(['not_deployed', 'needs_update', 'helper_error'])
+const FALLS_BACK: ReadonlySet<AiState> = new Set(['not_deployed', 'needs_update'])
 
 /** Why the helper read nothing, in the Photo tab's words, with the one place that fixes it. */
 function stopped(state: AiState, sentence: string): Extract<ReceiptRead, { ok: false }> {
