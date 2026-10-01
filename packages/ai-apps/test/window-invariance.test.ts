@@ -68,3 +68,10 @@ describe('get_spending does not depend on how many rows the database returns', (
     }
   })
 })
+
+describe('get_debts does not depend on how many rows the database returns', () => {
+  it('reads every debt whatever the window', async () => {
+    const out = await bothWays('get_debts', { debt: 'Car', months: 36 }, '2026-09-30')
+    expect((out.schedule as unknown[]).length).toBeGreaterThan(0)
+  })
+})

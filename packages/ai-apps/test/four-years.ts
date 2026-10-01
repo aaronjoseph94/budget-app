@@ -53,6 +53,8 @@ export function fourYears(today: string): Row {
     schedules: [{ id: 'ps', category_id: 'pay', first_pay_date: '2023-01-15', frequency: 'monthly' }],
     records: { statement_start: '2023-01-08', statement_end: '2026-09-07', first_entry: '2023-01-02' },
     not_subscriptions: ['not_subscription:TO SAVINGS'],
+    debts: [{ id: 'd1', name: 'Car', starting_balance_cents: 3000000, minimum_payment_cents: 30000, apr_basis_points: 699, start_date: '2023-03-01', sort_order: 0 }],
+    debt_extras: [{ id: 'x1', debt_id: 'd1', month: '2024-06-01', amount_cents: 100000 }],
     pending: everyDay('2023-01-05', '2026-12-28', 17, (d) => ({ d })).map((r) => r.d),
   }
 }
@@ -75,6 +77,8 @@ export function readOf(all: Row, whole: boolean): Rpc {
       const part = all[p]
       return [p, whole || cut === undefined ? part : (part as unknown[]).filter((r) => cut(r, from, to))]
     })
-    return reply({ today: all.today, ...Object.fromEntries(parts) })
+    // As in 0020, the debts part brings the extra payments with it.
+    const extras = parts.some(([p]) => p === 'debts') ? { debt_extras: all.debt_extras } : {}
+    return reply({ today: all.today, ...Object.fromEntries(parts), ...extras })
   }
 }

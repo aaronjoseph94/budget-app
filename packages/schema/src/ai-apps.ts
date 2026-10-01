@@ -66,3 +66,11 @@ export const GetSpendingInputSchema = z
     categories: z.array(NameSchema).min(1).max(3).optional(),
   })
   .strict()
+
+/** `get_debts`: every debt, and with `debt` its schedule for `months` months from this one. */
+export const GetDebtsInputSchema = z
+  .object({
+    debt: NameSchema.optional(),
+    months: z.number().int().min(1).max(36).default(12),
+  })
+  .strict()

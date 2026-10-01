@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { answerQuery, isoDate, monthSheet, paycheckSheet, weekSheet, yearSheet, type AskIntent, type PaySchedule } from '@budget/core'
-import { askInput, categoriesFrom, monthSheetInput, paySources, paycheckSheetInput, weekSheetInput, yearSheetInput } from '@budget/ai-apps/rows'
+import { answerQuery, debtPlan, isoDate, monthSheet, payoffStrategies, paycheckSheet, weekSheet, yearSheet, type AskIntent, type PaySchedule } from '@budget/core'
+import { askInput, categoriesFrom, debtsFrom, monthSheetInput, paySources, paycheckSheetInput, weekSheetInput, yearSheetInput } from '@budget/ai-apps/rows'
 import {
   getMonthBalance,
   latestStatementEnd,
+  listDebtExtras,
+  listDebts,
   readRecordsStart,
   listBudgetHistory,
   listCategories,
@@ -14,6 +16,7 @@ import {
 } from '../src/ledger.js'
 import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore, shopEntriesForCore, weekCategoriesForCore } from '../src/sheet-input.js'
 import { answerOf } from '../src/ask/answer.js'
+import { debtsForCore } from '../src/debts.js'
 import { historyOf, type DigestRows } from '../src/coach/facts.js'
 import { createFakeSupabase, type FakeTables } from './fake-supabase.js'
 
@@ -223,5 +226,22 @@ describe('the AI apps server reads rows as the app does', () => {
       const app = answerOf({ read: coach, categories, goals: [], debts: null, notSubscriptions }, query)
       expect(answerQuery({ ...server, query, forecast: null, goals: [], debts: null })).toEqual(app)
     }
+  })
+
+  it('Debts', async () => {
+    const debts = [
+      { id: 'd2', name: 'Card', starting_balance_cents: 50000, minimum_payment_cents: 5000, apr_basis_points: 1999, start_date: '2026-09-01', sort_order: 0 },
+      { id: 'd1', name: 'Car', starting_balance_cents: 100000, minimum_payment_cents: 10000, apr_basis_points: 0, start_date: '2026-07-01', sort_order: 1 },
+    ]
+    const extras = [{ id: 'x1', debt_id: 'd1', month: '2026-11-01', amount_cents: 25000 }]
+    const supabase = createFakeSupabase({ debts, debt_extra_payments: extras }).client
+    const app = debtsForCore(await listDebts(supabase), await listDebtExtras(supabase))
+    // As ai_app_read sends them: bigint columns may arrive as text.
+    const server = debtsFrom(JSON.parse(JSON.stringify({ debts: debts.map((d) => ({ ...d, starting_balance_cents: String(d.starting_balance_cents) })), debt_extras: extras })))
+    expect(server).toEqual(app)
+    expect(server.extraPayments).toEqual([{ debtName: 'Car', month: '2026-11-01', amountCents: 25000 }])
+    // debtStatus reads only the plan's schedules, so equal plans stand equally today.
+    expect(debtPlan(server)).toEqual(debtPlan(app))
+    expect(payoffStrategies(server)).toEqual(payoffStrategies(app))
   })
 })

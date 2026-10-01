@@ -1652,6 +1652,14 @@ created it in M9, and imported `packages/ai-apps` from
 - **Estimate:** about 150 lines.
 - **Done:** debts match the Debts screen's inputs and outputs; the
   schedule is capped at `months`.
+- **As built (2026-09-30):** one commit. Each debt gives `balance`
+  (today's, on its schedule), `starting_balance`, `minimum`, `apr_bp`,
+  `paid`, `progress_bp` and `paid_off_month`; `totals` adds the monthly
+  minimums; every month is `YYYY-MM`. `schedule` runs from this month
+  (a debt started earlier skips its past months), at most `months` long,
+  and is empty for a debt never paid off, which `never_paid_off` names. A
+  debt name the owner does not have is the new `unknown_debt` sentence,
+  not `unknown_category`.
 
 ### M7a: `get_forecast`
 

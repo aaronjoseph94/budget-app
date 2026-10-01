@@ -12,6 +12,7 @@ import {
   monthBounds,
   shiftMonth,
   type BudgetHistoryRow,
+  type DebtPlanInput,
   type IncomeSchedule,
   type MonthSheetInput,
   type PaycheckSheetInput,
@@ -234,5 +235,25 @@ export function askInput(read: Read, today: IsoDate): SpendingBase & { readonly 
     planHistory: plansFrom(read['plans']),
     entries: shopEntriesFrom(txnsFrom(read['txns'])),
     notSubscriptions: notSubscriptionsFrom(read['not_subscriptions']),
+  }
+}
+
+/** The debts and their extra payments as the app's debtsForCore gives them: a debt by its name, an extra by its debt's. */
+export function debtsFrom(read: Read): DebtPlanInput {
+  type Debt = { id: string; name: string; starting_balance_cents: number; minimum_payment_cents: number; apr_basis_points: number; start_date: string }
+  type Extra = { debt_id: string; month: string; amount_cents: number }
+  const rows = listOf(read['debts']) as readonly Debt[]
+  return {
+    debts: rows.map((d) => ({
+      name: d.name,
+      startMonth: isoDate(d.start_date),
+      startingBalanceCents: Number(d.starting_balance_cents),
+      minimumPaymentCents: Number(d.minimum_payment_cents),
+      aprBasisPoints: d.apr_basis_points,
+    })),
+    extraPayments: (listOf(read['debt_extras']) as readonly Extra[]).flatMap((e) => {
+      const debt = rows.find((d) => d.id === e.debt_id)
+      return debt === undefined ? [] : [{ debtName: debt.name, month: isoDate(e.month), amountCents: Number(e.amount_cents) }]
+    }),
   }
 }

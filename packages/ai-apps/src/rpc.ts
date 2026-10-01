@@ -25,6 +25,7 @@ export const SENTENCES = {
   needs_update: 'The budget app needs a one-time update. The owner can open Help → One-time updates.',
   no_account: 'Open the budget app once so it can set up the card account, then try again.',
   unknown_category: 'There is no category called that. Call list_categories for the exact names.',
+  unknown_debt: 'There is no debt called that. Call get_debts without `debt` for the exact names.',
   no_pay_schedule:
     'No income is set up with paydays, so there is no pay period. The owner can give an Income row how often it pays, and a first payday, in the app’s Setup.',
   bad_date: 'The date must be today or in the past year.',
