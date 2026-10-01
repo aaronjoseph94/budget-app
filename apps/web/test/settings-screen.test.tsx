@@ -20,7 +20,8 @@ describe('SettingsScreen, Mockup A', () => {
     const pair = cardOf('Weekly budgets').parentElement!
     expect(pair.className).toContain('xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]')
     expect(pair.lastElementChild?.contains(cardOf('Shops filed by themselves'))).toBe(true)
-    expect(pair.lastElementChild?.contains(cardOf('Account'))).toBe(true)
+    // AI apps (ADR 0012) between the learned shops and the account.
+    expect([...pair.lastElementChild!.children].map((c) => c.querySelector('h2')?.textContent)).toEqual(['Shops filed by themselves', 'AI apps', 'Account'])
     // The address and Sign out share the account card's one row.
     expect(within(cardOf('Account')).getByRole('button', { name: 'Sign out' })).toBeTruthy()
     await screen.findByText(/None yet|Learned shops/)

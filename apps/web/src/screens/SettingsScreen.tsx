@@ -13,13 +13,14 @@ import { Icon } from '../components/ui/icons.js'
 import { navigate } from '../nav.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { LearnedShopsCard } from './LearnedShops.js'
+import { AiAppsCard } from '../ai-apps/AiAppsCard.js'
 
 const ProgressLine = lazy(() => import('../start/ProgressLine.js').then((m) => ({ default: m.ProgressLine })))
 
 export function SettingsScreen() {
   const { supabase, email } = useAppData()
   // Mockup A: the three shortcuts across from 1024px, then Weekly budgets
-  // beside the learned shops and the account from 1280px.
+  // beside the learned shops, AI apps and the account from 1280px.
   return (
     <div className="space-y-5">
       <header>
@@ -52,6 +53,7 @@ export function SettingsScreen() {
         <BudgetsCard />
         <div className="space-y-5">
           <LearnedShopsCard />
+          <AiAppsCard />
           <Section large title="Account">
             <div className="flex flex-wrap items-center justify-between gap-3">
               {/* An address is one long word: it breaks only where it cannot fit. */}
