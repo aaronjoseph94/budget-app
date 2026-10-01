@@ -1,7 +1,8 @@
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import { SIDEBAR_KEY } from '../src/shell/sidebar-state.js'
+import { SIGNED_OUT_HERE_ONLY } from '../src/supabase.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { expectNoAxeViolations } from './axe.js'
@@ -176,6 +177,24 @@ describe('the sidebar’s foot (ADR 0011)', () => {
     expect(aside.getByText('S').getAttribute('aria-hidden')).toBe('true')
     fireEvent.click(aside.getByRole('button', { name: 'Sign out' }))
     expect(signOut).toHaveBeenCalledTimes(1)
+  })
+
+  it('signs out on this device even when the server cannot be reached, and says so (security-a-06)', async () => {
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://abcdefghijklmnopqrst.supabase.co')
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'a-public-anon-key-of-some-length')
+    const key = 'sb-abcdefghijklmnopqrst-auth-token'
+    window.localStorage.setItem(key, '{"refresh_token":"still-live"}')
+    const fake = createFakeSupabase()
+    vi.spyOn(fake.client.auth, 'signOut').mockResolvedValue({ error: new Error('Failed to fetch') } as never)
+    renderScreen(<Shell />, fake)
+    await screen.findByRole('heading', { name: 'September 2026' })
+    const aside = within(screen.getByRole('complementary', { name: 'Sidebar' }))
+    fireEvent.click(aside.getByRole('button', { name: 'Sign out' }))
+
+    await waitFor(() => expect(window.sessionStorage.getItem(SIGNED_OUT_HERE_ONLY)).toBe('1'))
+    expect(window.localStorage.getItem(key)).toBeNull()
+    window.sessionStorage.removeItem(SIGNED_OUT_HERE_ONLY)
+    vi.unstubAllEnvs()
   })
 })
 
