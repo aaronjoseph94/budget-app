@@ -312,12 +312,28 @@ export async function checkUpdates(supabase: SupabaseClient): Promise<Checked[]>
 /**
  * What must be in before AI apps may be switched on or a connection
  * allowed (security review mcp-3-03), as 0020 already is: 0019, which
- * stops an AI app writing; 0020; the AI helper from 2026-09-30.1, the
+ * stops an AI app writing; 0020; 0030 to 0034, which close what the
+ * security review found open in 0020 (a disconnected app's token, an AI
+ * row hiding a statement line or teaching a shop, a search reading masked
+ * numbers, invisible characters); the AI helper from 2026-09-30.1, the
  * first to refuse an AI app's token (an older one would let it spend the
- * owner's keys or save one of its own); and read-receipt deleted or
- * replaced. Ready, or the first not in (null when it could not be checked).
+ * owner's keys or save one of its own); read-receipt deleted or replaced;
+ * and the AI apps server at this app's version, whose hashes 0031 checks.
+ * Ready, or the first not in (null when one could not be checked: off
+ * until it can be).
  */
-const BEFORE_AI_APPS = ['0019_ai_apps_cannot_write.sql', '0020_ai_apps.sql', HELPER_FILE, READ_RECEIPT_FILE]
+const BEFORE_AI_APPS: readonly string[] = [
+  '0019_ai_apps_cannot_write.sql',
+  '0020_ai_apps.sql',
+  '0030_ai_app_gate_live_session.sql',
+  '0031_ai_app_hash_own_kind.sql',
+  '0032_ai_rows_teach_no_rule.sql',
+  '0033_ai_search_masked.sql',
+  '0034_ai_words_visible.sql',
+  HELPER_FILE,
+  READ_RECEIPT_FILE,
+  SERVER_FILE,
+]
 
 export type Readiness = { readonly ready: true } | { readonly ready: false; readonly file: string | null }
 

@@ -153,11 +153,25 @@ function Decide({ supabase, userId, go }: { supabase: SupabaseClient; userId: st
   const allow = callback.allowed && opened(access, now) && ready
 
   const answer = async (approve: boolean) => {
-    const at = Date.now()
-    setNow(at)
-    // All three again at the click, the window by the clock now.
-    if (approve && !(callback.allowed && opened(access, at) && ready)) return
     setBusy(true)
+    if (approve) {
+      // All three again at the click, read afresh: another page's Allow may
+      // have closed the window since this one loaded (mcp-1-02), or an
+      // update gone; the window by the clock now. Unread is no.
+      const [read, readiness] = await Promise.all([readAccess(supabase, userId), aiAppsReady(supabase)])
+      const at = Date.now()
+      setNow(at)
+      if (!read.ok) {
+        setBusy(false)
+        setSeen(SAID.unreachable)
+        return
+      }
+      if (!(callback.allowed && opened(read.access, at) && readiness.ready)) {
+        setBusy(false)
+        setSeen({ ...seen, access: read.access, ready: readiness.ready })
+        return
+      }
+    }
     const reply = approve
       ? await supabase.auth.oauth.approveAuthorization(id, { skipBrowserRedirect: true })
       : await supabase.auth.oauth.denyAuthorization(id, { skipBrowserRedirect: true })

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { OAuthAuthorizationDetails, OAuthRedirect } from '@supabase/supabase-js'
 import { Consent, ConsentScreen } from '../src/ai-apps/ConsentScreen.js'
@@ -104,10 +104,54 @@ describe('the consent page: Allow', () => {
     expect(allow()).toBeNull()
   })
 
+  // Security review mcp-1-02: a page already open finds the window the first Allow closed.
+  it('allows nothing from a second page open beside the first, once the first is allowed', async () => {
+    const { fake, go } = await open()
+    await screen.findByRole('button', { name: 'Allow' })
+    fake.oauth.requests['auth-2'] = { ...asking(), authorization_id: 'auth-2' }
+    window.history.replaceState(null, '', '/oauth/consent?authorization_id=auth-2')
+    const second = vi.fn()
+    const page = render(<Consent supabase={fake.client} go={second} />)
+    await waitFor(() => expect(screen.getAllByRole('button', { name: 'Allow' })).toHaveLength(2))
+    const [first, other] = screen.getAllByRole('button', { name: 'Allow' })
+    fireEvent.click(first!)
+    await waitFor(() => expect(go).toHaveBeenCalled())
+
+    const approve = vi.spyOn(fake.client.auth.oauth, 'approveAuthorization')
+    fireEvent.click(other!)
+    expect(await within(page.container).findByText(/wasn’t started from the budget app\./)).toBeTruthy()
+    expect(approve).not.toHaveBeenCalled()
+    expect([fake.oauth.consents, second.mock.calls]).toEqual([[{ id: 'auth-1', action: 'approve' }], []])
+  })
+
+  // Security review mcp-3-03: an update gone after the page loaded (a server pasted back, say) is no.
+  it('allows nothing when what AI apps need is no longer in at the click', async () => {
+    const { fake, go } = await open()
+    const button = await screen.findByRole('button', { name: 'Allow' })
+    fake.rpcReplies['ai_app_update_level'] = 33
+    const approve = vi.spyOn(fake.client.auth.oauth, 'approveAuthorization')
+    fireEvent.click(button)
+    expect(await screen.findByText(/needs a one-time update first/)).toBeTruthy()
+    expect(allow()).toBeNull()
+    expect(approve).not.toHaveBeenCalled()
+    expect(go).not.toHaveBeenCalled()
+  })
+
+  it('offers no Allow while the security updates are in only to 0033', async () => {
+    const fake = createFakeSupabase({ ai_app_access: [ON] })
+    fake.oauth.requests['auth-1'] = asking()
+    fake.rpcReplies['ai_app_update_level'] = 33
+    await fake.signIn()
+    window.history.replaceState(null, '', '/oauth/consent?authorization_id=auth-1')
+    render(<Consent supabase={fake.client} go={vi.fn()} />)
+    expect(await screen.findByText(/needs a one-time update first/)).toBeTruthy()
+    expect(allow()).toBeNull()
+  })
+
   it('still sends the owner back when closing the window fails, since they did allow it', async () => {
     const { fake, go } = await open()
     const button = await screen.findByRole('button', { name: 'Allow' })
-    fake.fail('ai_app_access', '57014')
+    fake.fail('POST ai_app_access', '57014')
     fireEvent.click(button)
     await waitFor(() => expect(go).toHaveBeenCalledWith(`${CLAUDE}?code=fake-code&state=fake-state`))
   })

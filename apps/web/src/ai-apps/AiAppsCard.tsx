@@ -5,7 +5,7 @@ import type { HelpTopic } from '../help/topics.js'
 import { Section } from '../forecast/parts.js'
 import { SWITCH } from '../components/ui/form.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
-import { HELPER_FILE, READ_RECEIPT_FILE, aiAppsReady } from '../help/updates.js'
+import { HELPER_FILE, READ_RECEIPT_FILE, SERVER_FILE, aiAppsReady } from '../help/updates.js'
 import { readAccess, saveAccess, type Access } from './access.js'
 import { ConnectNew } from './ConnectNew.js'
 import { ConnectedApps } from './ConnectedApps.js'
@@ -26,9 +26,11 @@ const FIRST = (file: string | null) =>
     ? 'Paste the AI helper’s new version first.'
     : file === READ_RECEIPT_FILE
       ? 'Delete read-receipt, or paste its new version, first.'
-      : file === null
-        ? 'Couldn’t check the one-time updates just now. Try again.'
-        : 'That needs a one-time update first.'
+      : file === SERVER_FILE
+        ? 'Paste the AI apps server’s new version first.'
+        : file === null
+          ? 'Couldn’t check the one-time updates just now. Try again.'
+          : 'That needs a one-time update first.'
 
 /**
  * Settings → AI apps (PLAN §2.9, ADR 0012): Let AI apps connect, off until

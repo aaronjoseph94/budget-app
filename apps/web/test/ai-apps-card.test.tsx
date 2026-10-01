@@ -57,6 +57,18 @@ describe('Settings → AI apps: the switches', () => {
     ['0019 not in', (f: FakeSupabase): void => {
         delete f.rpcReplies['_not_an_ai_app']
       }, 'That needs a one-time update first.'],
+    // The security updates 0030 to 0034: each one open is a way past the switch (security review).
+    ...[30, 31, 32, 33].map((level) => [`the security updates in only to 00${level}`, (f: FakeSupabase): void => {
+        f.rpcReplies['ai_app_update_level'] = level
+      }, 'That needs a one-time update first.'] as const),
+    ['an older AI apps server', (f: FakeSupabase): void => {
+        f.functions.mcpHealth = () => new Response(JSON.stringify({ version: '2026-09-27.1' }), { headers: { 'content-type': 'application/json' } })
+      }, 'Paste the AI apps server’s new version first.'],
+    // A check that could not be made keeps AI apps off: it is never taken as in.
+    ['read-receipt that could not be checked', (f: FakeSupabase): void => {
+        f.functions.readReceipt = () => new Response('{}')
+        f.functions.readReceiptVersion = () => new Response('{}', { status: 503 })
+      }, 'Couldn’t check the one-time updates just now.'],
   ] as const)('will not turn AI apps on with %s, and says what to do first', async (_, set, words) => {
     const fake = createFakeSupabase()
     set(fake)
