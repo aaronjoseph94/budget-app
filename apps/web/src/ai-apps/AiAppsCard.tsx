@@ -1,6 +1,7 @@
-import { useEffect, useId, useState } from 'react'
+import { Fragment, useEffect, useId, useState } from 'react'
 import { useAppData } from '../app-data.js'
 import { hashOf } from '../nav.js'
+import type { HelpTopic } from '../help/topics.js'
 import { Section } from '../forecast/parts.js'
 import { SWITCH } from '../components/ui/form.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
@@ -9,6 +10,12 @@ import { ConnectNew } from './ConnectNew.js'
 import { ConnectedApps } from './ConnectedApps.js'
 
 type Loaded = { readonly state: 'loading' | 'needs_update' | 'unreachable' } | { readonly state: 'ready'; readonly access: Access }
+
+const HELP: readonly (readonly [HelpTopic, string])[] = [
+  ['connect-claude', 'Connect Claude'],
+  ['connect-chatgpt', 'Connect ChatGPT'],
+  ['ai-apps', 'What AI apps can do'],
+]
 
 const SAVE_FAILED = { needs_update: 'That needs a one-time update first. See One-time updates in Help.', unreachable: 'Couldn’t save that just now. Try again.' }
 
@@ -49,6 +56,18 @@ export function AiAppsCard() {
     <Section large title="AI apps">
       <p className="text-muted-foreground">
         Ask Claude or ChatGPT about your budget, and let them add purchases to Review. Nothing they add counts until you approve it.
+      </p>
+      {/* Help's articles, readable before the switch is on (M12a). */}
+      <p className="text-sm">
+        Step by step:{' '}
+        {HELP.map(([topic, words], i) => (
+          <Fragment key={topic}>
+            {i === 0 ? null : ' · '}
+            <a href={hashOf({ screen: 'help', param: topic })} className={SENTENCE_LINK}>
+              {words}
+            </a>
+          </Fragment>
+        ))}
       </p>
       {loaded.state === 'loading' ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
       {loaded.state === 'needs_update' ? (

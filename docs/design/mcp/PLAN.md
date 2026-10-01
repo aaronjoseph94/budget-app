@@ -1899,6 +1899,19 @@ created it in M9, and imported `packages/ai-apps` from
 - **Estimate:** about 200 lines.
 - **Done:** the three articles pass the Help rules and are reachable from
   Settings → AI apps and from Help's list.
+- **As built (2026-10-01):** one commit. The three sit after "Why the AI
+  sometimes rests" in Help's list. `ai-apps` lists what an AI app can and
+  cannot do, the limits, who sees what and what is never sent as terms,
+  as "What the AI sees" does, and keeps the emergency order and other
+  connectors in Stuck. Each Connect article's second step is **Connect a
+  new AI app** with its 15 minutes, which the test reads from
+  `CONNECT_MINUTES`; Stuck dates the menus to Anthropic's and OpenAI's
+  help of 2026-09-30. Settings → AI apps links to all three under its
+  first line, whatever the switch, so the steps can be read before turning
+  it on (three links, not two: the group asked for every article). A
+  search for "add to home screen" found Connect Claude's "home-screen
+  app", so it says "the app opened from its icon on an iPhone". Looked at
+  in a preview harness at 320, 390 and 1280 px, light and dark.
 
 ### M12b: One-time updates' last checks, and the owner's steps
 

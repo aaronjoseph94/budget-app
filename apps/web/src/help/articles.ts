@@ -428,6 +428,73 @@ export const ARTICLES: readonly Article[] = [
     related: ['more-ai', 'free-ai'],
   },
   {
+    id: 'ai-apps',
+    title: 'Use Claude or ChatGPT with your budget',
+    summary:
+      'Connect your own Claude or ChatGPT, then ask about your budget in a chat, or tell it what you bought and it waits in Review for you. Every figure it is given is the app’s own, worked out the way your screens work it out. Off until you turn it on.',
+    steps: [
+      'Open **Settings** (on a phone, under **More**), and find **AI apps**.',
+      'Turn on **Let AI apps connect**.',
+      'Connect your AI app once, on a computer, as Connect Claude or Connect ChatGPT below says.',
+      'In a chat, ask something like “How is my month going?” or “How much is left for groceries this week?”.',
+      'Say what you bought, such as “I spent $12.50 on lunch at Subway today”, then open **Review** to approve it.',
+      'To let AI apps only read, turn off **Let them add to Review**.',
+      'To stop one app, press **Disconnect** beside it under **Connected apps**, and remove it in Claude or ChatGPT too.',
+      'To stop every AI app at once, turn off **Let AI apps connect**.',
+    ],
+    done: 'your AI app answers with the figures your screens show, and anything it adds waits in Review until you approve it.',
+    stuck:
+      'An AI app cannot approve, reject, change or delete anything: only you can, in the app. If a chat gives a figure that differs from your screen, your screen is right: the app hands the AI its figures ready to quote, and what it then writes is its own. Shop names come from your statements, and anyone can name a shop to read like an instruction. All Budget lets an AI do is add to Review, but one that also has a connector able to send email or messages could be tricked into sending your figures on, so use Budget in chats where no other connector can send anything. If your AI app says the budget app needs a one-time update, or cannot reach it, open One-time updates. In an emergency, first turn off **Let AI apps connect**, which stops every AI app at once; then in Supabase open **Authentication**, then **OAuth Server**, and turn it off, so no AI app can sign in again.',
+    related: ['connect-claude', 'connect-chatgpt', 'ai-sees', 'review', 'updates'],
+    terms: [
+      { term: 'It can', meaning: 'read your figures (a month, week, pay period or year, what is left in each category, the forecast, your savings goals and your debts), search your approved charges, see what waits in Review and your category names, and add a purchase or money received to Review.' },
+      { term: 'It cannot', meaning: 'approve or change anything; change a budget, category, goal or setting; see a receipt photo; use the AI keys you saved in the app; or do anything while Let AI apps connect is off.' },
+      { term: 'Limits', meaning: '300 look-ups and 30 additions a day, across all AI apps together; one question in a chat may use a few look-ups. They start again at midnight, your time.' },
+      { term: 'Who sees it', meaning: 'what the app tells your AI app goes to the company that runs it, Anthropic for Claude, OpenAI for ChatGPT, and stays in your chat history there: figures, the names of categories, shops, goals and debts, and dates. Signing in tells it your email address.' },
+      { term: 'Never sent', meaning: 'your password, the AI keys you saved in the app, or a receipt photo.' },
+    ],
+  },
+  {
+    id: 'connect-claude',
+    title: 'Connect Claude',
+    summary:
+      'Let Claude read your budget and add purchases to Review. Once, on a computer, in about 5 minutes; Claude’s desktop and iPhone apps then have it too. Any Claude plan works, Free included.',
+    steps: [
+      'In this app, open **Settings** (on a phone, under **More**), and turn on **Let AI apps connect** under **AI apps**.',
+      'Press **Connect a new AI app**, which copies the address, and do the steps below within 15 minutes.',
+      'On claude.ai, open **Customize**, then **Connectors**, and press **Add custom connector**.',
+      'Name it **Budget** and paste the address.',
+      'If Claude asks, choose **Sign in now**, and **Register automatically**, not **Use Claude’s published identity**.',
+      'Press **Add**, then **Connect**.',
+      'On the **Connect an AI app** page that opens, check it says **claude.ai** in bold, sign in if it asks, and press **Allow**.',
+      'In a chat, press **+**, then **Connectors**, switch **Budget** on, and ask “How is my month going?”.',
+    ],
+    done: 'Claude answers “How is my month going?” with your own figures.',
+    stuck:
+      'Claude’s Free plan allows one custom connector. Claude marks its published identity as recommended, but the budget app’s sign-in cannot use it yet, so choose Register automatically. If the page says the connection wasn’t started from the budget app, press **Connect a new AI app** again and connect within 15 minutes; if it says the request has expired, press Connect in Claude again. If Claude says it cannot reach the server, or never opens the page, open One-time updates and do the step it names next. Connect from a computer: the app opened from its icon on an iPhone keeps a sign-in of its own. If the page names anything other than claude.ai, press **Deny**. These menus are as Anthropic’s help described them on 30 September 2026; if one has moved, look for Connectors in Claude’s settings.',
+    related: ['ai-apps', 'connect-chatgpt', 'updates'],
+  },
+  {
+    id: 'connect-chatgpt',
+    title: 'Connect ChatGPT',
+    summary:
+      'Let ChatGPT read your budget and add purchases to Review. It needs ChatGPT Plus, Pro, Business, Enterprise or Edu, and works on the chatgpt.com website, not in the phone app. Once, on a computer, in about 5 minutes.',
+    steps: [
+      'In this app, open **Settings** (on a phone, under **More**), and turn on **Let AI apps connect** under **AI apps**.',
+      'Press **Connect a new AI app**, which copies the address, and do the steps below within 15 minutes.',
+      'On chatgpt.com, open **Settings**, then **Security and login**, and turn on **Developer mode**.',
+      'Go to chatgpt.com/plugins, press **+**, name it **Budget**, and paste the address.',
+      'Choose **OAuth**, and dynamic registration (**DCR**) if it asks how to register, then press **Create**.',
+      'On the **Connect an AI app** page that opens, check it says **chatgpt.com** in bold, sign in if it asks, and press **Allow**.',
+      'In a chat, press **+**, then **Developer mode**, and pick **Budget**.',
+      'When ChatGPT asks you to confirm an addition, say yes only if it is right.',
+    ],
+    done: 'ChatGPT answers with your own figures, and asks you before it adds anything.',
+    stuck:
+      'Free ChatGPT cannot connect apps. ChatGPT warns that Developer mode is higher risk; that is expected. If the page says the connection wasn’t started from the budget app, press **Connect a new AI app** again and connect within 15 minutes; if it says the request has expired, go back to ChatGPT and connect again. If sign-in fails, open One-time updates and do the step it names next: ChatGPT cannot sign in until every step there is done. If the page names anything other than chatgpt.com, press **Deny**. These menus are as OpenAI’s help described them on 30 September 2026; if one has moved, look for Developer mode in ChatGPT’s settings.',
+    related: ['ai-apps', 'connect-claude', 'updates'],
+  },
+  {
     id: 'wrong-number',
     title: 'Why does a number look wrong?',
     summary:

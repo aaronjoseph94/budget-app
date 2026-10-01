@@ -73,6 +73,13 @@ describe('Settings → AI apps: the switches', () => {
     expect(fake.tables.ai_app_access).toEqual([])
   })
 
+  it('links to Help on connecting Claude and ChatGPT, and on what AI apps can do, with the switch off', async () => {
+    renderScreen(<AiAppsCard />, createFakeSupabase())
+    await connect()
+    const href = (name: string) => screen.getByRole('link', { name }).getAttribute('href')
+    expect([href('Connect Claude'), href('Connect ChatGPT'), href('What AI apps can do')]).toEqual(['#/help/connect-claude', '#/help/connect-chatgpt', '#/help/ai-apps'])
+  })
+
   it('says in one line when the one-time update is not in yet', async () => {
     const fake = createFakeSupabase()
     fake.fail('ai_app_access', 'PGRST205')

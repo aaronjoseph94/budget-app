@@ -3,6 +3,7 @@ import { ARTICLES, articleFor, boldParts } from '../src/help/articles.js'
 import { HELP_TOPICS } from '../src/help/topics.js'
 import { SCREEN_HELP } from '../src/help/screen-help.js'
 import { SCREENS } from '../src/nav.js'
+import { CONNECT_MINUTES } from '../src/ai-apps/access.js'
 
 /** The words plan §8 keeps out of Help; a button's own name, in bold, may still say it. */
 const ENGINEERING = /\b(migrations?|edge functions?|postgres|sql|rls|jwt|endpoints?|api|schema|database)\b/i
@@ -121,6 +122,24 @@ describe('Help articles', () => {
       for (const m of text.matchAll(/open \*\*More\*\*, then \*\*([^*]+)\*\*/gi)) expect(m[1], a.id).toBe('AI settings')
     }
     expect(articleFor('reports')?.steps[0]).toBe('Open **Reports** (on a phone, under **More**).')
+  })
+
+  // MCP plan M12a: a connection starts from Connect a new AI app, inside its window.
+  it('connects Claude and ChatGPT from Connect a new AI app, and says what an AI app may do and who sees it', () => {
+    for (const id of ['connect-claude', 'connect-chatgpt'] as const) {
+      const steps = articleFor(id)?.steps ?? []
+      expect(steps[1], id).toMatch(new RegExp(`^Press \\*\\*Connect a new AI app\\*\\*.* within ${CONNECT_MINUTES} minutes\\.$`))
+      expect(steps.some((s) => s.includes('**Allow**')), id).toBe(true)
+      expect(articleFor(id)?.related, id).toContain('ai-apps')
+    }
+    const claude = articleFor('connect-claude')?.steps.join(' ')
+    expect(claude).toMatch(/\*\*Register automatically\*\*, not \*\*Use Claude’s published identity\*\*/)
+    expect(claude).toContain('**claude.ai**')
+    expect(articleFor('connect-chatgpt')?.steps.join(' ')).toMatch(/\*\*Developer mode\*\*.*\*\*chatgpt\.com\*\*/)
+    const apps = articleFor('ai-apps')
+    const said = [apps?.stuck, ...(apps?.terms ?? []).map((t) => t.meaning)].join(' ')
+    for (const words of [/Anthropic for Claude, OpenAI for ChatGPT/, /300 look-ups and 30 additions a day/, /cannot approve, reject, change or delete anything/]) expect(said).toMatch(words)
+    expect(apps?.related).toEqual(['connect-claude', 'connect-chatgpt', 'ai-sees', 'review', 'updates'])
   })
 
   it('finds no article for a topic not written yet', () => {
