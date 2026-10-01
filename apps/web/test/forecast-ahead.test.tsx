@@ -20,7 +20,13 @@ async function aheadCard(): Promise<HTMLElement> {
 const rowOf = (card: HTMLElement, label: string) =>
   [...(within(card).getByRole('rowheader', { name: label }).parentElement?.querySelectorAll('td') ?? [])].map((td) => td.textContent)
 
-beforeAll(() => warmScreen('#/forecast', 'Forecast'))
+// Drawn once as far as this card, on the seed's day, so the engine behind it has run before the first test's find (N90).
+beforeAll(async () => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(EXAMPLE_TODAY)
+  await warmScreen('#/forecast', 'Forecast', { fake: forecastFake(), text: 'The next three months' })
+  vi.useRealTimers()
+})
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })

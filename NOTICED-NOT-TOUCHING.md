@@ -3311,3 +3311,18 @@ and the owner pastes the server only after M12b.
 
 **To settle:** bump it once the tools are all in (M9) and in every slice
 after that changes the built file, as its comment asks.
+
+---
+
+## N144 — forecast-ahead lost a find's one second in a full gate run *(settled 2026-10-01)*
+
+**Seen:** 2026-10-01, M7b's groundwork. One full gate run failed
+`coverage` on `forecast-ahead`'s first test, which could not find "The
+next three months" within a find's one second; the file passed alone,
+three times, on the same tree, and the change under test did not touch
+the card. Its warm-up drew the Forecast with an empty seed, so the
+months-ahead engine behind the card first ran cold inside that test's
+find, as N90 describes.
+
+**Settled:** the file's warm-up now draws its own seed, on its day, as far
+as the card (N90's remedy). No wait was raised.
