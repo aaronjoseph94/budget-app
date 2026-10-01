@@ -674,7 +674,8 @@ Behaviour:
 - **A late AI reading never overwrites what the owner did meanwhile:** a
   receipt read after "Use another photo" is dropped and its preview let go
   (FE-2); Just type it's fill is dropped once the form has been changed or
-  sent, and a reading that fails says so (FE-4).
+  sent, and a reading that fails says so (FE-4). An Add pressed early that
+  only said what was missing sent nothing, so the reading still fills in.
 - **All transactions keeps its rows on screen while it reads again after a
   removal (FE-5);** only a new month shows "Loading…". The removed row and
   its amount go at once, so a row already deleted never offers Remove.

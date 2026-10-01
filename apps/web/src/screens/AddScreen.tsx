@@ -414,8 +414,8 @@ function TypedEntry() {
   // The amount Just type it's AI read, until the owner changes it (plan A22).
   const [aiAmount, setAiAmount] = useState(false)
   const amountError = useId()
-  // Every change to the form and every Add, so a late Just type it reading
-  // knows the form moved on without it (FE-4).
+  // Every change to the form and every Add that sends it, so a late Just
+  // type it reading knows the form moved on without it (FE-4).
   const edits = useRef(0)
 
   const cents = parseMoneyInput(amount)
@@ -449,6 +449,10 @@ function TypedEntry() {
     if (!ready) return setTried((n) => n + 1)
     if (accountId === null) return setOutcome({ ok: false, message: NO_ACCOUNT })
     if (cents === null) return
+    // The form is being sent, so a Just type it reading still out would
+    // refill what was just added (FE-4). An Add that only said what was
+    // missing sent nothing, and the reading is still wanted.
+    edits.current += 1
     setBusy(true)
     setOutcome(null)
     try {
@@ -493,7 +497,6 @@ function TypedEntry() {
           onChange={() => (edits.current += 1)}
           onSubmit={(e) => {
             e.preventDefault()
-            edits.current += 1
             void submit()
           }}
         >

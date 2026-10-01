@@ -159,6 +159,31 @@ describe('Just type it, a slow AI (FE-4)', () => {
     expect(screen.queryByText('Read by AI: check it')).toBeNull()
   })
 
+  it('still fills the form when Add was pressed early and saved nothing', async () => {
+    const fake = seeded()
+    const [gemini, ...rest] = fake.functions.aiStatus.services
+    fake.functions.aiStatus = aiStatusReply({ services: [{ ...gemini!, source: 'secret', hint: 'abcd' }, ...rest] })
+    let answer: (r: Response) => void = () => undefined
+    fake.functions.ai = (body) =>
+      body['action'] !== 'run' ? json(fake.functions.aiStatus) : new Promise<Response>((done) => (answer = done))
+    renderScreen(<AddScreen />, fake)
+
+    fireEvent.click(await screen.findByRole('tab', { name: /Type it/ }))
+    fireEvent.change(await screen.findByLabelText('Just type it'), { target: { value: '3 coffees 12' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Fill in' }))
+    await waitFor(() => expect(runs(fake).length).toBe(1))
+    // Add on the empty form only says what is missing: nothing the owner
+    // typed is there for the AI's answer to write over.
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+    expect(await screen.findByText(/^Still needed:/)).toBeTruthy()
+    answer(json({ ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: JSON.stringify({ amount: '12', category: 'c1', date: null, shop: null, flow: null }) }))
+    await screen.findByRole('button', { name: 'Fill in' })
+
+    expect([field('Amount').value, field('Category').value]).toEqual(['12.00', 'c-coffee'])
+    expect(screen.getByText('Read by AI: check it')).toBeTruthy()
+    expect(fake.rpcCalls).toEqual([])
+  })
+
   it('says it could not read the line when reading throws, rather than leave the old hint', async () => {
     const fake = seeded()
     renderScreen(<AddScreen />, fake)
