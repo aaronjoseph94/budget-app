@@ -1,0 +1,10 @@
+# Proposes new commit pins for the workflow's actions as pull requests, so
+# the pins in .github/workflows/gates.yml do not go stale (security-b-06).
+# npm dependencies are not listed: each one is added by hand, one per commit
+# (CLAUDE.md, Ask first).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

@@ -21,7 +21,11 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v4
+      # Each action is pinned to a commit, the one its v4 tag named on
+      # 2026-10-01: a tag can be moved by the action's owner, and a moved one
+      # could report these gates green without running them (security-b-06).
+      # Dependabot (.github/dependabot.yml) proposes new pins as reviewed PRs.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # gitleaks' history scan walks commits, so a shallow clone would scan
           # one commit and report clean for a secret added earlier.
@@ -33,9 +37,9 @@ jobs:
       # No version here: it reads packageManager in package.json, and names
       # one pnpm for CI, the session and the hosts (SEC-6). Given both, it
       # refuses to run.
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: pnpm
