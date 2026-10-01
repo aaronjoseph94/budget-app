@@ -2923,7 +2923,9 @@ reset role;
 
 -- 0022 changed save_import by that one condition and nothing else: the body
 -- as it stood before 0022, plus the condition, with the same settings and
--- grants; every other function the browser may call is as it stood.
+-- grants; every other function the browser may call is as it stood. Read
+-- as they stood before 0027, which changes save_import again and is
+-- checked on its own.
 do $$
 declare
   r    record;
@@ -2932,8 +2934,8 @@ declare
   at   constant text := E'\n       and r.match_merchant = c.merchant';
 begin
   for r in select * from verify.before_0022 loop
-    select prosrc, prosecdef, provolatile, proconfig, proacl::text as acl into p
-      from pg_proc where oid = r.fn::regprocedure;
+    select prosrc, prosecdef, provolatile, proconfig, acl into p
+      from verify.before_0027 where fn = r.fn;
     if not found then raise exception '% is gone after 0022', r.fn; end if;
     if r.fn = 'save_import(uuid,ingest_source,integer,jsonb,jsonb)' then
       if p.prosrc <> replace(r.prosrc, at, at || cond) or strpos(r.prosrc, at) = 0 then
@@ -2950,6 +2952,103 @@ begin
     raise exception 'save_import was not among the functions checked';
   end if;
   raise notice '0022 changed save_import by one condition, and nothing else';
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- 0027: a second photo of a receipt already brought in waits in Review,
+-- even for a learned shop. Another day or total from that shop, or a
+-- statement row, is still filed by its rule (review-r-03).
+-- ---------------------------------------------------------------------------
+reset role;
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000002701', '11111111-1111-4111-8111-111111111111', 'Bakery 2701', 'variable');
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+do $$
+declare
+  acc    uuid := 'aaaaaaaa-0000-4000-8000-000000000001';
+  bakery uuid := 'cccccccc-0000-4000-8000-000000002701';
+  first_ jsonb := jsonb_build_object('posted_on','2025-10-01','amount_cents',-1250,'merchant','BAKERY 2701',
+                    'merchant_raw','BAKERY 2701','dedupe_hash', repeat('7',62) || '01', 'dedupe_hash_v', 1);
+  again  jsonb := jsonb_build_object('posted_on','2025-10-01','amount_cents',-1250,'merchant','BAKERY 2701',
+                    'merchant_raw','BAKERY 2701','dedupe_hash', repeat('7',62) || '02', 'dedupe_hash_v', 1);
+  later  jsonb := jsonb_build_object('posted_on','2025-10-02','amount_cents',-1250,'merchant','BAKERY 2701',
+                    'merchant_raw','BAKERY 2701','dedupe_hash', repeat('7',62) || '03', 'dedupe_hash_v', 1);
+  card   jsonb := jsonb_build_object('posted_on','2025-10-01','amount_cents',-1250,'merchant','BAKERY 2701',
+                    'merchant_raw','BAKERY 2701','dedupe_hash', repeat('7',62) || '04', 'dedupe_hash_v', 1);
+  r      record;
+  cand   uuid;
+  before_ bigint;
+begin
+  -- The first photo, approved by hand, which teaches the rule.
+  select * into r from public.save_import(acc, 'receipt_photo', 1, jsonb_build_array(first_), '[]'::jsonb);
+  select id into cand from public.ingest_candidates where batch_id = r.batch_id;
+  perform public.approve_candidate(cand, bakery);
+  select count(*) into before_ from public.transactions;
+
+  -- A second photo of the same receipt: another photo, so another hash.
+  select * into r from public.save_import(acc, 'receipt_photo', 1, jsonb_build_array(again), '[]'::jsonb);
+  if (r.inserted, r.deduped, r.auto_approved) is distinct from (1, 0, 0) then
+    raise exception 'the second photo read inserted=% deduped=% auto_approved=%, not 1, 0, 0', r.inserted, r.deduped, r.auto_approved;
+  end if;
+  if not exists (select 1 from public.ingest_candidates where batch_id = r.batch_id
+                  and dedupe_hash = again->>'dedupe_hash' and status = 'pending' and category_id is null) then
+    raise exception 'a second photo of a receipt already brought in is not waiting in Review';
+  end if;
+  if (select count(*) from public.transactions) <> before_ then
+    raise exception 'a second photo of a receipt already brought in went into the ledger without review';
+  end if;
+
+  -- Another day from the same shop is still filed by its rule.
+  select * into r from public.save_import(acc, 'receipt_photo', 1, jsonb_build_array(later), '[]'::jsonb);
+  if r.auto_approved <> 1 or not exists (select 1 from public.transactions where dedupe_hash = later->>'dedupe_hash') then
+    raise exception 'a receipt from a learned shop on another day was not filed by its rule: %', r;
+  end if;
+
+  -- A statement row alike is not a receipt photo, and is filed as before.
+  select * into r from public.save_import(acc, 'card_csv', 1, jsonb_build_array(card), '[]'::jsonb);
+  if r.auto_approved <> 1 then
+    raise exception 'a statement row from a learned shop was not filed by its rule: %', r;
+  end if;
+  raise notice 'a second photo of a receipt waits in Review; other receipts and statement rows are still filed';
+end $$;
+reset role;
+
+-- 0027 changed save_import by that one condition, right after 0022's, and
+-- nothing else: the body as it stood before 0027, plus the condition, with
+-- the same settings and grants; every other function the browser may call
+-- is as it stood.
+do $$
+declare
+  r    record;
+  p    record;
+  at   constant text := E'\n       and r.match_merchant = c.merchant'
+                     || E'\n       and not exists (select 1 from public.ingest_candidates d'
+                     || E'\n                        where d.user_id = v_user and d.dedupe_hash = c.dedupe_hash and d.id <> c.id)';
+  cond constant text := E'\n       and not (c.source = ''receipt_photo'' and exists (select 1 from public.ingest_candidates e'
+                     || E'\n                        where e.user_id = v_user and e.id <> c.id and e.source = ''receipt_photo'''
+                     || E'\n                          and e.posted_on = c.posted_on and e.amount_cents = c.amount_cents'
+                     || E'\n                          and e.merchant = c.merchant))';
+begin
+  for r in select * from verify.before_0027 loop
+    select prosrc, prosecdef, provolatile, proconfig, proacl::text as acl into p
+      from pg_proc where oid = r.fn::regprocedure;
+    if not found then raise exception '% is gone after 0027', r.fn; end if;
+    if r.fn = 'save_import(uuid,ingest_source,integer,jsonb,jsonb)' then
+      if p.prosrc <> replace(r.prosrc, at, at || cond) or strpos(r.prosrc, at) = 0 then
+        raise exception 'save_import is not its old body plus the one condition';
+      end if;
+    elsif p.prosrc <> r.prosrc then
+      raise exception '% changed in 0027', r.fn;
+    end if;
+    if (p.prosecdef, p.provolatile, p.proconfig, p.acl) is distinct from (r.prosecdef, r.provolatile, r.proconfig, r.acl) then
+      raise exception '% changed its settings or grants in 0027', r.fn;
+    end if;
+  end loop;
+  if not exists (select 1 from verify.before_0027 where fn = 'save_import(uuid,ingest_source,integer,jsonb,jsonb)') then
+    raise exception 'save_import was not among the functions checked';
+  end if;
+  raise notice '0027 changed save_import by one condition, and nothing else';
 end $$;
 
 -- ---------------------------------------------------------------------------

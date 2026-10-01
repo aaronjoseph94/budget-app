@@ -20,6 +20,16 @@ already sent, so nothing was added." A second photo of the same paper
 receipt lands twice and shows in Review, where it is rejected: the visible
 failure `dedupe.ts` prefers.
 
+**Corrected 2026-10-01 (review-r-03).** As first shipped, that last
+sentence held only for a shop with no learned rule. save_import files any
+candidate whose shop has a rule straight into the ledger, and approving a
+row teaches one, so for most shops the second photo was filed with no
+review. Migration 0027 adds one condition to save_import's rule step: a
+receipt photo is not filed by a rule while another receipt photo has the
+same shop, day and total (even one the owner rejected). It waits in Review
+instead. A receipt from that shop on another day or for another total, and
+every statement row, is still filed by its rule.
+
 **Unchanged.** `dedupeCanonicalString` and `DEDUPE_HASH_VERSION`: the
 issuer-id discriminator already exists, so stored hashes stay valid and no
 backfill is needed. The digest goes only into the hashed string; it is never
