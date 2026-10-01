@@ -43,7 +43,7 @@ whether a commit is clean.
 |---|---|---|---|
 | Types | Zero type errors | `tsc --build` | every edit |
 | Lint | Zero errors | `eslint .` | every edit |
-| Engine purity | `packages/core` imports only `money-primitives`; no ambient clock, randomness, or env | `depcruise` + `eslint` | every edit |
+| Engine purity | `packages/core` imports only `money-primitives`; no ambient clock, randomness, env, locale, time zone, network, timer or storage, in `core` and in the pure packages (`statement-parsers`, `chart-specs`, `savings-coach`, `report-export`), whose dedupe hash alone may use `crypto` | `depcruise` + `eslint` (`no-restricted-globals`, `NO_AMBIENT_STATE`) | every edit |
 | Float money | No `toFixed` / `parseFloat` in the engine; `Cents` brand enforced by the type system | `eslint` + `tsc --build` | every edit |
 | Weak assertions | No `toBeCloseTo`, no snapshots, no `vi.mock` under `packages/core` | `eslint` | every edit |
 | Secrets | Zero findings in the working tree (local `.env` files allowed there only) | `gitleaks dir --config .gitleaks-tree.toml --redact --no-banner` | every edit |
@@ -118,6 +118,22 @@ each time.
 
 Verified to bite: injecting `Date.now()` and `toFixed()` into `packages/core`
 turns the gate run `RED`. A gate never seen to fail has not been tested.
+
+The purity rule caught only four spellings until 2026-10-01
+(architecture-a-03): `Date()`, `globalThis.Date.now()`, `performance.now()`,
+`crypto.randomUUID()`, a bare `localeCompare`, `new Intl.DateTimeFormat()`,
+`fetch`, `setTimeout`, `process.versions` and `toLocaleString()` all linted
+clean in `packages/core/src`, and `statement-parsers`, whose dedupe hash
+must read a file the same way every time, had no such rule at all. Each of
+those ten spellings was then planted in `core`, `statement-parsers`,
+`chart-specs`, `savings-coach` and `report-export` and seen `RED` in every
+one; `localeCompare` with a named locale stays allowed, `Intl` only in
+core's `order.ts` (F52), `crypto` only in `dedupe.ts`. In `money-primitives`,
+which keeps `Date` for its UTC calendar, a local getter, `Date()` and a
+parsed date string were seen `RED`. `packages/core` still type-checks with
+Node's types visible to `src`: its tsconfig builds `src` and `test` as one
+project that the other packages reference, and the lint rule names the
+same globals.
 
 Every module has a coverage floor. `statement-parsers` and
 `golden-verification` had none: thresholds apply only to files a glob matches,
