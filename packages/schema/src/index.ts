@@ -76,6 +76,7 @@ export {
   GetSavingsGoalsInputSchema,
   GetSpendingInputSchema,
   ListCategoriesInputSchema,
+  ListReviewQueueInputSchema,
   ListSchema,
   MCP_SERVER_VERSION,
   NameSchema,

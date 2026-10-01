@@ -99,3 +99,6 @@ export const SearchTransactionsInputSchema = z
     limit: z.number().int().min(1).max(50).default(20),
   })
   .strict()
+
+/** `list_review_queue`: what waits in Review, oldest first, at most `limit` rows. */
+export const ListReviewQueueInputSchema = z.object({ limit: z.number().int().min(1).max(50).default(20) }).strict()

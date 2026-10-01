@@ -1750,6 +1750,12 @@ created it in M9, and imported `packages/ai-apps` from
   it, with `flow` beside it. §2.7's 24 KB trim is not built here: 50
   rows with two 80-character names each come to about 16 KB of JSON,
   carried twice (structured and as text); NOTICED N145 holds the rest.
+  Review's list reads `ai_app_review` as M4 wrote it: `added_by_ai_app` is
+  the row's `source`, as Review's own line reads it (M4), and
+  `suggested_category` is the category name whatever suggested it. The
+  log test (§2.6) had run no tool yet; it now runs every read tool with
+  the sentinel in every name the fake database hands back, and against a
+  database error carrying it.
 
 ### M9: `add_expense` and `add_note`
 

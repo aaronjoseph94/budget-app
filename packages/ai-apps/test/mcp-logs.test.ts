@@ -1,13 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { handle } from '../src/handle.js'
 import { AI_APP_CLAIMS, ENV, PROJECT, USER, fakeFetch, tokenWith, type Respond } from './fake-auth.js'
+import { callTool, reply } from './fake-database.js'
+import { READ } from './owner-rows.js'
 
 /**
  * Nothing a caller or Supabase sends reaches a log line, and nothing in an
  * error body from Auth reaches a response (PLAN §2.6). A sentinel rides in
  * the token, the client's name, the arguments, and every body Auth
- * returns; every path the server has so far is run. M5b onwards add each
- * tool's paths and the fake database's rows here.
+ * returns; every path the server has so far is run. Each read tool is run
+ * below with it in every name the database hands back, and against a
+ * database failing with words of its own.
  */
 
 const SENTINEL = 'SENTINEL7c1e'
@@ -81,5 +84,48 @@ describe('logs carry codes and counts only', () => {
     await handle(post(call, `Bearer ${TOKEN}`), ENV, fakeFetch(authSays(401)).fetchFn)
     await handle(post(call, `Bearer ${TOKEN}`), ENV, fakeFetch(authSays(500)).fetchFn)
     expect(lines).toEqual(['{"fn":"mcp","code":"token_refused","check":1}', '{"fn":"mcp","code":"auth_status","status":500}'])
+  })
+})
+
+// Every name the database can hand back carries the sentinel: a category, a shop, a goal, a debt.
+const named = JSON.parse(JSON.stringify(READ).replace(/"(Groceries|Rent|Pay|FRESHCO|PAYROLL)"/g, `"$1 ${SENTINEL}"`)) as typeof READ
+const goal = { id: 'g1', name: `Trip ${SENTINEL}`, target_cents: 200000, saved_cents: 5000, target_date: null, unit_cost_cents: 27500, unit_label: SENTINEL, created_at: SENTINEL, sort_order: 0, status: 'active', reached_on: null, category_id: null, start_date: null, balance_as_of: null }
+const row = { posted_on: '2026-09-29', amount_cents: -1275, merchant_raw: `SHOP ${SENTINEL}`, category: `Food ${SENTINEL}`, kind: 'variable', category_source: 'model', source: 'ai_app', ai_client_id: null }
+const EVERYTHING = {
+  ...named,
+  goals: [goal],
+  fund_txns: [],
+  debts: [{ id: 'd1', name: `Car ${SENTINEL}`, starting_balance_cents: 100000, minimum_payment_cents: 10000, apr_basis_points: 0, start_date: '2026-07-01', sort_order: 0 }],
+  debt_extras: [],
+  not_subscriptions: [],
+  total: 1,
+  rows: [row],
+  all: [row],
+  waiting: 1,
+  unreadable_lines: 0,
+}
+const TOOLS: [string, Record<string, unknown>][] = [
+  ['list_categories', {}],
+  ['get_period', { period: 'month' }],
+  ['get_spending', { question: 'top_shops' }],
+  ['get_debts', { debt: `Car ${SENTINEL}` }],
+  ['get_forecast', { what_if_monthly_saving: '50' }],
+  ['get_savings_goals', {}],
+  ['search_transactions', { text: SENTINEL }],
+  ['list_review_queue', {}],
+]
+
+describe('the tools log codes and counts only', () => {
+  it.each(TOOLS)('%s, with names in every row', async (name, args) => {
+    const { result } = await callTool(() => reply(EVERYTHING), name, args)
+    expect(result.isError).toBeUndefined()
+    expect(lines.filter((l) => l.includes(SENTINEL))).toEqual([])
+    expect(lines.some((l) => l.includes(`"code":"tool_${name}_ok"`))).toBe(true)
+  })
+
+  it.each(TOOLS)('%s, when the database fails with words of its own', async (name, args) => {
+    const { result } = await callTool(() => reply({ message: `error ${SENTINEL}` }, 500), name, args)
+    expect(JSON.stringify(result).includes(`error ${SENTINEL}`)).toBe(false)
+    expect(lines.filter((l) => l.includes(SENTINEL))).toEqual([])
   })
 })

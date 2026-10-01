@@ -36,6 +36,7 @@ describe('tools/list', () => {
       { name: 'get_savings_goals', annotations: { readOnlyHint: true }, _meta: { securitySchemes: [{ type: 'oauth2' }] } },
       { name: 'get_debts', annotations: { readOnlyHint: true }, _meta: { securitySchemes: [{ type: 'oauth2' }] } },
       { name: 'search_transactions', annotations: { readOnlyHint: true }, _meta: { securitySchemes: [{ type: 'oauth2' }] } },
+      { name: 'list_review_queue', annotations: { readOnlyHint: true }, _meta: { securitySchemes: [{ type: 'oauth2' }] } },
     ])
   })
 })
