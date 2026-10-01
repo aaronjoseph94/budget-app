@@ -1,4 +1,5 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import type { OAuthGrant } from '@supabase/supabase-js'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AiAppsCard } from '../src/ai-apps/AiAppsCard.js'
 import { createFakeSupabase } from './fake-supabase.js'
@@ -122,5 +123,80 @@ describe('Settings → AI apps: Connect a new AI app', () => {
     ).toBeTruthy()
     expect(screen.queryByText(/Copied/)).toBeNull()
     expect(fake.tables.ai_app_access[0]?.connect_until).toBeNull()
+  })
+})
+
+describe('Settings → AI apps: connected apps and Disconnect', () => {
+  const grant = (id: string, name: string, granted_at: string): OAuthGrant => ({
+    client: { id, name, uri: 'https://evil.example/home', logo_uri: 'https://evil.example/logo.png' },
+    scopes: ['email'],
+    granted_at,
+  })
+  async function connected(on = true) {
+    const fake = createFakeSupabase({
+      ai_app_access: [{ user_id: 'u1', enabled: on, allow_add: true, time_zone: 'UTC', connect_until: null }],
+      ai_app_last_use: [{ user_id: 'u1', client_id: 'id-claude', last_used_at: '2026-10-01T12:00:00Z' }],
+    })
+    fake.oauth.grants = [grant('id-claude', 'Claude', '2026-09-30T12:00:00Z'), grant('id-other', '<img src=x>‮tpGtahC', '2026-09-29T12:00:00Z')]
+    await fake.signIn()
+    renderScreen(<AiAppsCard />, fake)
+    return fake
+  }
+  const rows = () => within(screen.getByRole('list')).getAllByRole('listitem')
+
+  it('lists each by the name it was given, as text, with when it was connected and last asked', async () => {
+    await connected()
+
+    expect(await screen.findByRole('heading', { name: 'Connected apps' })).toBeTruthy()
+    await waitFor(() => expect(rows()).toHaveLength(2))
+    expect(rows()[0]?.textContent).toBe('ClaudeConnected 30 Sep 2026 · Last asked 1 Oct 2026Disconnect')
+    // Markup is text, and a direction override is dropped, so the name reads as it is stored.
+    expect(rows()[1]?.textContent).toBe('<img src=x>tpGtahCConnected 29 Sep 2026 · Not used yetDisconnect')
+    expect(document.querySelector('img')).toBeNull()
+    // The registrant's own address and logo are never drawn or fetched.
+    expect(document.body.innerHTML).not.toContain('evil.example')
+    await expectNoAxeViolations()
+  })
+
+  it('disconnects one only once asked, and lists what is left', async () => {
+    const fake = await connected()
+
+    const claude = await waitFor(() => rows()[0]!)
+    fireEvent.click(within(claude).getByRole('button', { name: 'Disconnect' }))
+    expect(within(claude).getByText(/It has to sign in again to come back/)).toBeTruthy()
+    fireEvent.click(within(claude).getByRole('button', { name: 'Keep it' }))
+    expect(fake.oauth.revoked).toEqual([])
+
+    fireEvent.click(within(claude).getByRole('button', { name: 'Disconnect' }))
+    fireEvent.click(within(claude).getByRole('button', { name: 'Yes, disconnect' }))
+    expect(await screen.findByText('Disconnected “Claude”. It has to sign in again to come back.')).toBeTruthy()
+    expect(fake.oauth.revoked).toEqual(['id-claude'])
+    expect(rows().map((r) => r.querySelector('bdi')?.textContent)).toEqual(['<img src=x>tpGtahC'])
+  })
+
+  it('still lists a connected app with AI apps off, so it can be disconnected', async () => {
+    await connected(false)
+    await waitFor(() => expect(rows()).toHaveLength(2))
+  })
+
+  it('says sign-in for AI apps is not on yet, and says nothing of it while AI apps are off', async () => {
+    const fake = createFakeSupabase({ ai_app_access: [{ user_id: 'u1', enabled: true, allow_add: true, time_zone: 'UTC', connect_until: null }] })
+    await fake.signIn()
+    renderScreen(<AiAppsCard />, fake)
+    expect(await screen.findByText(/Sign-in for AI apps is not switched on in Supabase yet\./)).toBeTruthy()
+
+    cleanup()
+    renderScreen(<AiAppsCard />, createFakeSupabase())
+    expect(await connect()).toBeTruthy()
+    expect(screen.queryByText(/Sign-in for AI apps/)).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Connected apps' })).toBeNull()
+  })
+
+  it('lists them before the one-time update, without when each last asked', async () => {
+    const fake = await connected()
+    fake.fail('ai_app_last_use', 'PGRST205')
+    cleanup()
+    renderScreen(<AiAppsCard />, fake)
+    await waitFor(() => expect(rows()[0]?.textContent).toBe('ClaudeConnected 30 Sep 2026Disconnect'))
   })
 })

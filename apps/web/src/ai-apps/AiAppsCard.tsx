@@ -6,6 +6,7 @@ import { SWITCH } from '../components/ui/form.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
 import { readAccess, saveAccess, type Access } from './access.js'
 import { ConnectNew } from './ConnectNew.js'
+import { ConnectedApps } from './ConnectedApps.js'
 
 type Loaded = { readonly state: 'loading' | 'needs_update' | 'unreachable' } | { readonly state: 'ready'; readonly access: Access }
 
@@ -13,9 +14,10 @@ const SAVE_FAILED = { needs_update: 'That needs a one-time update first. See One
 
 /**
  * Settings → AI apps (PLAN §2.9, ADR 0012): Let AI apps connect, off until
- * the owner turns it on; and, while on, Let them add to Review, the
- * address to paste and Connect a new AI app. Each switch is saved at once;
- * a save that fails puts the switch back as it is stored.
+ * the owner turns it on; while on, Let them add to Review, the address to
+ * paste and Connect a new AI app; and the apps connected, each with
+ * Disconnect. Each switch is saved at once; a save that fails puts the
+ * switch back as it is stored.
  */
 export function AiAppsCard() {
   const { supabase, userId } = useAppData()
@@ -106,6 +108,7 @@ export function AiAppsCard() {
       <p aria-live="polite" className="text-base font-medium empty:sr-only">
         {said}
       </p>
+      <ConnectedApps on={loaded.state === 'ready' && loaded.access.enabled} />
     </Section>
   )
 }

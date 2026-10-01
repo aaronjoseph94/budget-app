@@ -69,3 +69,70 @@ export async function saveAccess(
 export function serverAddress(supabase: SupabaseClient): string {
   return `${supabase.from('ai_app_access').url.origin}/functions/v1/mcp`
 }
+
+// C0, DEL and C1; zero-width and direction marks; line and paragraph
+// separators, embeddings and overrides; the word joiner and isolates; the
+// BOM: the characters the AI apps server strips from names (PLAN §2.4).
+function hidden(code: number): boolean {
+  return (
+    code < 0x20 ||
+    (code >= 0x7f && code <= 0x9f) ||
+    (code >= 0x200b && code <= 0x200f) ||
+    (code >= 0x2028 && code <= 0x202e) ||
+    (code >= 0x2060 && code <= 0x2069) ||
+    code === 0xfeff
+  )
+}
+
+/**
+ * An AI app's name as the page draws it. Whoever registered the app chose
+ * it, so it is text, never markup; it loses the characters that could hide
+ * words or reverse how it reads, and is cut to 80 characters.
+ */
+export function shownName(name: string): string {
+  const kept = [...name].filter((ch) => !hidden(ch.codePointAt(0) ?? 0)).slice(0, 80).join('').trim()
+  return kept === '' ? 'An app with no name' : kept
+}
+
+export interface ConnectedApp {
+  readonly clientId: string
+  readonly name: string
+  /** When the owner allowed it, as Supabase stamped it. */
+  readonly connectedAt: string
+  /** When it last asked something (0020's ai_app_last_use); null when never. */
+  readonly lastUsedAt: string | null
+}
+
+export type AppsRead =
+  /** `lastUseKnown` is false before 0020 is in, when when-last-used cannot be read. */
+  | { readonly ok: true; readonly apps: readonly ConnectedApp[]; readonly lastUseKnown: boolean }
+  /** `oauth_off`: Supabase's sign-in for AI apps is not switched on, which it answers 404. */
+  | { readonly ok: false; readonly why: 'oauth_off' | 'unreachable' }
+
+/**
+ * The AI apps the owner has allowed, from Supabase's own list of grants.
+ * Only the name, the client's id and when are read: the registrant chose
+ * the client's `uri` and `logo_uri` too, and they are never drawn or
+ * fetched.
+ */
+export async function readConnectedApps(supabase: SupabaseClient): Promise<AppsRead> {
+  const [grants, uses] = await Promise.all([
+    supabase.auth.oauth.listGrants(),
+    supabase.from('ai_app_last_use').select('client_id, last_used_at'),
+  ])
+  if (grants.error !== null) {
+    return { ok: false, why: grants.error.status === 404 || grants.error.code === 'feature_disabled' ? 'oauth_off' : 'unreachable' }
+  }
+  const last = new Map(uses.error === null ? (uses.data as { client_id: string; last_used_at: string }[]).map((u) => [u.client_id, u.last_used_at]) : [])
+  return {
+    ok: true,
+    lastUseKnown: uses.error === null,
+    apps: grants.data.map((g) => ({ clientId: g.client.id, name: shownName(g.client.name), connectedAt: g.granted_at, lastUsedAt: last.get(g.client.id) ?? null })),
+  }
+}
+
+/** Disconnect: Supabase ends that app's sign-ins and refresh tokens, so the AI apps server refuses it at once. */
+export async function disconnect(supabase: SupabaseClient, clientId: string): Promise<boolean> {
+  const { error } = await supabase.auth.oauth.revokeGrant({ clientId })
+  return error === null
+}

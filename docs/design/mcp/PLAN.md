@@ -1825,6 +1825,15 @@ created it in M9, and imported `packages/ai-apps` from
 - **Estimate:** about 180 lines.
 - **Done:** §2.13's card cases for the list and Disconnect; looked at as
   M10a. Its Help links come with the articles, in M12a.
+- **As built (2026-10-01):** `ConnectedApps.tsx`, under the switches. It
+  shows while AI apps are on, and whenever an app is still connected, so
+  one can be disconnected with the switch off. Each name loses the hidden
+  and direction characters the server strips (`shownName`) and sits in a
+  `<bdi>`. The grants call failing with 404 or `feature_disabled` is
+  "not switched on"; any other failure is "couldn't load". Before 0020,
+  apps are listed without when each last asked. The question before
+  Disconnect also says that for up to an hour the app could still reach
+  the budget another way (risk 4), which the switch stops.
 
 ### M11a: The callback allowlist
 

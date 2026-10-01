@@ -11,7 +11,7 @@
  *
  * Adapted from the screenshot harness's fake, keeping what the tests use.
  */
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type OAuthGrant } from '@supabase/supabase-js'
 import type {
   BudgetRow,
   Category,
@@ -84,6 +84,8 @@ export interface FakeTables {
   coach_answers: Row[]
   /** The owner's switch for AI apps (0020). */
   ai_app_access: Row[]
+  /** When each AI app last asked something (0020). */
+  ai_app_last_use: Row[]
 }
 
 export interface RpcCall {
@@ -148,6 +150,13 @@ export interface FakeSupabase {
     /** `functions/v1/mcp/health`, the AI apps server's; null is one never deployed. By default it answers with this app's version. */
     mcpHealth: (() => Response | Promise<Response>) | null
   }
+  /**
+   * Supabase's OAuth server (ADR 0012): `grants` are the AI apps the owner
+   * allowed, which Settings lists; null, the default, is the server
+   * switched off, which Supabase answers 404 feature_disabled. Each client
+   * id Disconnect revokes is kept in `revoked`. Both need `signIn()`.
+   */
+  readonly oauth: { grants: OAuthGrant[] | null; readonly revoked: string[] }
   /** The signed-in user as the auth server holds it, `user_metadata` included. */
   readonly user: { id: string; email: string; user_metadata: Record<string, unknown> }
   /** Give the client a session, which `auth.updateUser` needs. `fail('auth/user', …)` makes updates fail. */
@@ -208,6 +217,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     insight_dismissals: [],
     coach_answers: [],
     ai_app_access: [],
+    ai_app_last_use: [],
     ...seed,
   }
   const rpcCalls: RpcCall[] = []
@@ -241,6 +251,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     receiptCalls: [],
     mcpHealth: () => json({ ok: true, version: MCP_SERVER_VERSION, tools: 0 }),
   }
+  const oauth: FakeSupabase['oauth'] = { grants: null, revoked: [] }
   let nextId = 1
 
   const json = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
@@ -362,6 +373,14 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     const url = new URL(input instanceof Request ? input.url : String(input))
     const method = init?.method ?? 'GET'
     const headers = new Headers(init?.headers)
+    if (url.pathname === '/auth/v1/user/oauth/grants') {
+      if (oauth.grants === null) return json({ code: 404, error_code: 'feature_disabled', msg: 'OAuth server is disabled' }, 404)
+      if (method === 'GET') return json(oauth.grants)
+      const revoked = url.searchParams.get('client_id')
+      oauth.revoked.push(String(revoked))
+      oauth.grants = oauth.grants.filter((g) => g.client.id !== revoked)
+      return new Response(null, { status: 204 })
+    }
     if (url.pathname === '/auth/v1/user') {
       // GET when a session is set, PUT for updateUser, which merges `data`
       // into user_metadata as the auth server does.
@@ -628,5 +647,5 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     if (error !== null) throw error
   }
 
-  return { client, tables, rpcCalls, rpcReplies, functions, fail: (t, code) => void failures.set(t, code), heal: (t) => void failures.delete(t), user, signIn, server }
+  return { client, tables, rpcCalls, rpcReplies, functions, fail: (t, code) => void failures.set(t, code), heal: (t) => void failures.delete(t), oauth, user, signIn, server }
 }
