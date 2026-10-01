@@ -320,3 +320,6 @@ below was made under those words and is recorded with them.
   any sign-in it could be used on the account itself until Disconnect.
   K5 (what `PUT /auth/v1/user` allows) is HANDOFF §4 check 24, to be
   recorded here when run.
+- **mcp-2-04: a search sees names as the AI app is shown them** (`0033`).
+  Long digit runs are masked on both sides before matching, and words
+  holding six or more digits in a row are refused (`bad_search`).

@@ -38,6 +38,7 @@ refused rather than applied twice.
 | `0030_ai_app_gate_live_session.sql` | Stops an AI app the moment you press Disconnect: before it, a copy of the app's sign-in could still reach your budget for up to an hour. Changes nothing you see. It stops with "Paste 0020 first" if `0020` is not in. Numbered from 0030 so it never collides with other updates in preparation |
 | `0031_ai_app_hash_own_kind.sql` | Keeps what an AI app adds from ever hiding a real charge: before it, an AI app could add an entry that matched next month's statement line exactly, and the real charge was skipped on import as already waiting. Now both wait in Review. It stops with "Paste 0030 first" if `0030` is not in |
 | `0032_ai_rows_teach_no_rule.sql` | Approving or moving something an AI app added no longer teaches the app a shop: before it, one approval could make every later statement charge from that shop file itself into the AI's category without Review. It stops with "Paste 0031 first" if `0031` is not in |
+| `0033_ai_search_masked.sql` | An AI app's search sees shop names as it is shown them, with long numbers (card, phone and reference numbers) masked: before it, counting what matched could read a masked number back one digit at a time. It stops with "Paste 0032 first" if `0032` is not in |
 
 **`0015` to `0020` can be pasted after `main-tnlcto` is merged into
 `main`.** Nothing the app needs to open depends on them: each new part

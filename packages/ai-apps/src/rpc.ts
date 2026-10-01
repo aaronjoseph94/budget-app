@@ -32,7 +32,8 @@ export const SENTENCES = {
     'No income is set up with paydays, so there is no pay period. The owner can give an Income row how often it pays, and a first payday, in the app’s Setup.',
   bad_date: 'The date must be today or in the past year.',
   bad_amount: 'The amount must be more than $0.00 and at most $100,000.00.',
-  bad_search: 'A search’s dates must run forwards over at most three years, and min_amount must not be above max_amount.',
+  bad_search:
+    'A search’s dates must run forwards over at most three years, min_amount must not be above max_amount, and its words must not hold six or more digits in a row (those are masked in every shop name).',
   not_an_ai_app:
     'The budget app did not recognise this sign-in as an AI app’s. The owner should switch AI apps off in Settings → AI apps and report it.',
   records_unreadable: 'The app could not read some of the records. The owner can open the app to see which.',

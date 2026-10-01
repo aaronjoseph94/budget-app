@@ -148,6 +148,11 @@ export const UPDATES: readonly Update[] = [
     adds: 'Keeps an AI app’s words from becoming a shop the app files by itself',
     checks: [{ kind: 'level', level: 32 }],
   },
+  {
+    file: '0033_ai_search_masked.sql',
+    adds: 'Keeps the long numbers in shop names hidden from an AI app’s searches',
+    checks: [{ kind: 'level', level: 33 }],
+  },
   { file: HELPER_FILE, adds: 'The AI helper, which every AI feature goes through', checks: [{ kind: 'helper' }] },
   { file: SIGNING_KEY, name: 'Signing key', adds: 'The key Supabase signs your sign-in with, which ChatGPT needs', checks: [{ kind: 'signing_key' }] },
   { file: OAUTH_SERVER, name: 'Sign-in for AI apps', adds: 'Lets Claude or ChatGPT ask you to allow them', checks: [{ kind: 'oauth' }] },

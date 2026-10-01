@@ -86,10 +86,13 @@ describe('search_transactions', () => {
     ['dates that run backwards', { from: '2026-09-30', to: '2026-09-01' }],
     ['more than three years', { from: '2023-09-29', to: '2026-09-30' }],
     ['a least amount above the most', { min_amount: '20', max_amount: '10' }],
+    // 0033 (mcp-2-04): such a number is masked in every name shown, so it matches nothing it should.
+    ['words with six or more digits in a row', { text: 'NETFLIX 866579' }],
   ])('refuses %s before reading anything', async (_, args) => {
     const { result, rpcCalls } = await callTool(() => reply(FOUND), 'search_transactions', args)
     expect(result).toEqual({ isError: true, content: [{ type: 'text', text: SENTENCES.bad_search }] })
     expect(rpcCalls).toEqual([])
+    expect(SENTENCES.bad_search).toMatch(/six or more digits/)
   })
 
   it('refuses an amount sent as a number', async () => {

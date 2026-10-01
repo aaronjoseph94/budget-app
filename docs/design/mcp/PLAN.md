@@ -2115,7 +2115,8 @@ created it in M9, and imported `packages/ai-apps` from
 16. **Instructions hidden in data, carried to other connectors.** Shop names
     from statements and words the AI added reach the model as data, with
     control and direction-override characters removed, digits masked and
-    length cut, and no stored text ever reaches a tool's description. A
+    length cut (and, since 0033, searched as masked too, so a count of
+    matches cannot read a masked number back: mcp-2-04), and no stored text ever reaches a tool's description. A
     model can still be talked into acting on one. Within Budget the worst
     it can do is add pending rows the owner must approve; with a connector
     that can send messages switched on in the same chat, it could send

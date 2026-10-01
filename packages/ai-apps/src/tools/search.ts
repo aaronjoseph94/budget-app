@@ -20,7 +20,7 @@ import { searchWindow, utcToday } from '../windows.js'
 export type SearchTransactionsInput = z.output<typeof SearchTransactionsInputSchema>
 
 export const DESCRIPTION =
-  'Find approved charges (not Review) by words in the shop name, categories, list, dates, amount range, or money ' +
+  'Find approved charges (not Review) by words in the shop name as shown (a run of six or more digits is masked, so never search for one), categories, list, dates, amount range, or money ' +
   'in or out. `categories` are names as list_categories gives them; one the owner does not have is refused. `from` and `to` default to the last 90 days, and may span at most three years; amounts are dollars ' +
   'as text like \'25\', compared without their sign. Newest first, at most `limit`; total_matches and totals cover ' +
   'every match, not only those returned: totals{spent, received, count, not_spending_left_out}, gross (a refund is ' +
@@ -57,7 +57,9 @@ export async function searchTransactions(caller: Caller | null, input: SearchTra
   const window = searchWindow(input.from === undefined ? undefined : isoDate(input.from), input.to === undefined ? undefined : isoDate(input.to), utcToday())
   const min = input.min_amount === undefined ? null : parseTypedAmount(input.min_amount)
   const max = input.max_amount === undefined ? null : parseTypedAmount(input.max_amount)
-  if (window === null || (min !== null && max !== null && min > max)) return refusal('bad_search')
+  // A long number is masked in every name shown, and 0033 refuses it too (mcp-2-04).
+  const longNumber = input.text !== undefined && /[0-9]{6,}/.test(input.text)
+  if (window === null || longNumber || (min !== null && max !== null && min > max)) return refusal('bad_search')
   const names = input.categories === undefined ? null : await storedNames(caller, input.categories, window.to)
   if (names !== null && isRefusal(names)) {
     log('tool_search_transactions_refused')

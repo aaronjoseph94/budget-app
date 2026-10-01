@@ -3038,3 +3038,60 @@ begin
   raise notice '0032 says to paste 0031 first when it is missing';
 end $$;
 rollback;
+
+-- ---------------------------------------------------------------------------
+-- 0033: a search matches the shop names as an AI app is shown them, long
+-- numbers masked, so it cannot read a masked number back one digit at a
+-- time from how many rows match (mcp-2-04).
+-- ---------------------------------------------------------------------------
+set role app_user;
+do $$
+declare
+  day date := (now() at time zone 'UTC')::date;
+  r   jsonb;
+  t   text;
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}', true);
+  -- 0031's and 0032's two NETFLIX rows, words 'NETFLIX.COM 8665797172 CA'.
+  r := public.ai_app_search('NETFLIX.COM', day - 30, day, null, null, null, null, 'any', 5);
+  if (r ->> 'total')::int <> 2 then raise exception 'the words did not find the two charges: %', r; end if;
+  foreach t in array array['NETFLIX.COM 8', 'NETFLIX.COM 86', 'NETFLIX.COM 86657', '97172 CA', '72 CA'] loop
+    r := public.ai_app_search(t, day - 30, day, null, null, null, null, 'any', 5);
+    if (r ->> 'total')::int <> 0 then raise exception 'NOT REFUSED: a search for % matched a masked number', t; end if;
+  end loop;
+  -- What the AI app was shown finds them again.
+  r := public.ai_app_search('NETFLIX.COM ********** CA', day - 30, day, null, null, null, null, 'any', 5);
+  if (r ->> 'total')::int <> 2 then raise exception 'the shop as shown did not find the charges: %', r; end if;
+  begin
+    perform public.ai_app_search('8665797172', day - 30, day, null, null, null, null, 'any', 5);
+    raise exception 'NOT REFUSED: a search for a long number';
+  exception when invalid_parameter_value then null;
+  end;
+  raise notice 'a search sees shop names as the AI app is shown them, numbers masked';
+end $$;
+reset role;
+do $$
+begin
+  if public.ai_app_update_level() < 33 then raise exception 'the update level does not say 0033 is in'; end if;
+  if (select provolatile from pg_proc where oid = 'public.ai_app_search(text,date,date,bigint,bigint,text[],text,text,integer)'::regprocedure) <> 'v'
+     or (select prosecdef from pg_proc where oid = 'public.ai_app_search(text,date,date,bigint,bigint,text[],text,text,integer)'::regprocedure) then
+    raise exception '0033 changed the search''s settings';
+  end if;
+end $$;
+
+\set paste_check_33 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0033_ai_search_masked.sql`
+begin;
+create or replace function public.ai_app_update_level() returns integer language sql immutable as $$ select 31 $$;
+set local verify.paste_check = :'paste_check_33';
+do $$
+begin
+  begin
+    execute current_setting('verify.paste_check');
+    raise exception 'NOT REFUSED: 0033 ran without 0032';
+  exception when raise_exception then
+    if sqlerrm not like 'Paste 0032 first%' then raise; end if;
+  end;
+  raise notice '0033 says to paste 0032 first when it is missing';
+end $$;
+rollback;
