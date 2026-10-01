@@ -223,11 +223,13 @@ describe('describeSetupFailure', () => {
     )
     expect(describeSetupFailure('rename', { code: '23505' })).toMatch(/^You already have a category with that name/)
     expect(describeSetupFailure('rename', { code: '23514' })).toMatch(/^That name has characters the app cannot store/)
+    expect(describeSetupFailure('add', { code: '23514' })).toMatch(/^That name has characters the app cannot store/)
   })
 
   // The import wording is exactly what Setup must not say for these.
   it('never says the numbers did not add up', () => {
-    for (const action of ['rename', 'move', 'reorder', 'remove'] as const) {
+    // 'add' too: since 0025 a new name with a format character is refused with 23514 (backend-a-06).
+    for (const action of ['add', 'rename', 'move', 'reorder', 'remove'] as const) {
       expect(describeSetupFailure(action, { code: '23514' })).not.toMatch(/did not add up/)
     }
   })

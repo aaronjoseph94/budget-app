@@ -45,6 +45,14 @@ describe('adding a typed entry', () => {
     await expect(addTypedTransaction(fake.client, ENTRY)).rejects.toThrow(/\(code 42501\)$/)
   })
 
+  it('says what it was cannot be stored when the database refuses its characters (backend-a-06)', async () => {
+    const fake = createFakeSupabase()
+    fake.fail('rpc/add_typed_transaction', '23514')
+    await expect(addTypedTransaction(fake.client, ENTRY)).rejects.toThrow(
+      'What it was has characters the app cannot store, so nothing was saved. Use letters, numbers and ordinary punctuation. (code 23514)',
+    )
+  })
+
   it('says why on any other failure, and does not try again', async () => {
     const fake = createFakeSupabase()
     fake.fail('rpc/add_typed_transaction', '42501')

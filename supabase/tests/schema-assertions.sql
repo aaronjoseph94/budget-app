@@ -3048,6 +3048,35 @@ begin
 end $$;
 reset role;
 
+-- ---------------------------------------------------------------------------
+-- 0025: stored text refuses what IngestedTextSchema refuses: C1 controls,
+-- line and paragraph separators, and the bidi embeddings, overrides and
+-- isolates, which make a reviewer read one thing and approve another
+-- (backend-a-06). Ordinary accented, CJK and symbol text is still stored.
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  bad text;
+  n   int := 0;
+begin
+  foreach bad in array array[
+    'BAD' || chr(8238) || 'NAME', 'LINE' || chr(8232) || 'BREAK', 'PARA' || chr(8233) || 'BREAK',
+    'C1' || chr(133) || 'NEL', 'C1' || chr(128) || 'LOW', 'C1' || chr(159) || 'HIGH',
+    'EMBED' || chr(8234) || 'LRE', 'ISOLATE' || chr(8294) || 'LRI', 'ISOLATE' || chr(8297) || 'PDI'
+  ] loop
+    begin
+      insert into public.categories (user_id, name, kind) values ('11111111-1111-4111-8111-111111111111', bad, 'variable');
+      raise exception 'NOT REFUSED: stored text with format character %', n;
+    exception when check_violation then n := n + 1;
+    end;
+  end loop;
+  insert into public.categories (user_id, name, kind) values
+    ('11111111-1111-4111-8111-111111111111', 'Café Zürich 2501', 'variable'),
+    ('11111111-1111-4111-8111-111111111111', '咖啡 2501', 'variable'),
+    ('11111111-1111-4111-8111-111111111111', 'Fun € ☕ 2501', 'variable');
+  raise notice 'stored text refuses % kinds of format character, and keeps accented, CJK and symbol text', n;
+end $$;
+
 -- The level the app reads (0021) names the last update in this folder, so a
 -- new update that forgets to raise it fails here.
 \set last_migration `ls supabase/migrations | tail -1 | cut -c1-4`

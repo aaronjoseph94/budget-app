@@ -161,12 +161,14 @@ export type SetupAction = 'add' | 'rename' | 'move' | 'reorder' | 'remove'
  * listed falls back to the import wording, which covers the connection and
  * sign-in failures that can happen anywhere.
  */
+// The name domain (0001, 0025) refuses control and format characters and empty names.
+const NAME_REFUSED = 'That name has characters the app cannot store. Use letters, numbers and ordinary punctuation.'
+
 const SETUP_FAILURES: Readonly<Record<SetupAction, Readonly<Record<string, string>>>> = {
-  add: {},
+  add: { '23514': NAME_REFUSED },
   rename: {
     '23505': 'You already have a category with that name, on this list or another. Use a different name.',
-    // The name domain (0001) refuses control characters and empty names.
-    '23514': 'That name has characters the app cannot store. Use letters, numbers and ordinary punctuation.',
+    '23514': NAME_REFUSED,
   },
   // 0009's trigger raises check_violation while an amount is in effect this
   // month or set for a later one. Stop is how Setup removes it (S9).

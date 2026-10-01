@@ -456,6 +456,10 @@ export async function addTypedTransaction(supabase: SupabaseClient, entry: Typed
   }
   const { error } = await supabase.rpc('add_typed_transaction', { ...args, p_entry: entry.entryId })
   if (error === null) return
+  // Only the stored-text domain (0001, 0025) refuses a typed entry this way.
+  if (error.code === '23514') {
+    throw new Error('What it was has characters the app cannot store, so nothing was saved. Use letters, numbers and ordinary punctuation. (code 23514)')
+  }
   // Before 0023 is pasted there is no call that takes an entry id; the one
   // without it still adds, as before (each call a new entry).
   if (error.code !== 'PGRST202' && error.code !== '42883') fail(error)
