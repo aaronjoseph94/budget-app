@@ -80,3 +80,22 @@ export const GetForecastInputSchema = z.object({ what_if_monthly_saving: AmountT
 
 /** `get_savings_goals` takes nothing: every goal, as Savings shows it. */
 export const GetSavingsGoalsInputSchema = z.object({}).strict()
+
+/**
+ * `search_transactions`: approved rows by words in the shop's name, the
+ * categories' exact names, a list (Not spending too), dates and amounts
+ * compared without their sign. The dates' defaults and span are the server's.
+ */
+export const SearchTransactionsInputSchema = z
+  .object({
+    text: z.string().trim().max(60).pipe(IngestedTextSchema).optional(),
+    categories: z.array(NameSchema).min(1).max(10).optional(),
+    list: z.enum([...ListSchema.options, 'transfer']).optional(),
+    from: z.iso.date().optional(),
+    to: z.iso.date().optional(),
+    min_amount: AmountTextSchema.optional(),
+    max_amount: AmountTextSchema.optional(),
+    flow: z.enum(['spent', 'received', 'any']).default('any'),
+    limit: z.number().int().min(1).max(50).default(20),
+  })
+  .strict()

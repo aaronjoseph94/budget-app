@@ -50,3 +50,8 @@ export function cleanShop(name: string): string {
     .replace(/[0-9]{6,}/g, (run) => '*'.repeat(run.length))
   return [...masked].slice(0, NAME_LIMIT).join('')
 }
+
+/** Which way a ledger row's money went (D3: money out is below $0). */
+export function flowOf(cents: number): 'spent' | 'received' | 'none' {
+  return cents < 0 ? 'spent' : cents > 0 ? 'received' : 'none'
+}

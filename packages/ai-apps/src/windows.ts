@@ -5,7 +5,7 @@
  * cut a day off; core picks the exact period from the owner's today.
  */
 import { isoDate, monthBounds, shiftMonth } from '@budget/core'
-import { addDays, type IsoDate } from '@budget/money-primitives'
+import { addDays, daysBetween, type IsoDate } from '@budget/money-primitives'
 
 export interface Window {
   readonly from: IsoDate
@@ -43,4 +43,20 @@ export function periodWindow(period: 'month' | 'week' | 'pay_period' | 'year', a
     return { from: compare ? shiftMonth(from, -12) : from, to: calendarYear(addDays(anchor, 1)).to }
   }
   return monthsAround(anchor, compare && period !== 'week' ? BACK[period] : 1, 1)
+}
+
+/** A search's days when none are given, back from its last. */
+const SEARCH_DAYS = 90
+/** The most a search spans: three years, a leap day among them. */
+const SEARCH_MOST_DAYS = 1096
+
+/**
+ * A search's days: as asked, else the last 90 days to the day after the
+ * server's, which the owner's today is never past. Null when they run
+ * backwards or span more than three years.
+ */
+export function searchWindow(from: IsoDate | undefined, to: IsoDate | undefined, anchor: IsoDate): Window | null {
+  const end = to ?? addDays(anchor, 1)
+  const start = from ?? addDays(end, -SEARCH_DAYS)
+  return start <= end && daysBetween(start, end) <= SEARCH_MOST_DAYS ? { from: start, to: end } : null
 }

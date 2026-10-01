@@ -3326,3 +3326,24 @@ find, as N90 describes.
 
 **Settled:** the file's warm-up now draws its own seed, on its day, as far
 as the card (N90's remedy). No wait was raised.
+
+---
+
+## N145 — §2.7's 24 KB cap on a result is not built
+
+**Seen:** 2026-10-01, M8b. PLAN §2.7 lists "a result's size: 24 KB of
+JSON; a last check trims trailing rows and sets `truncated: true`;
+tested with a large fixture". No slice built it, and `answer()` in
+`packages/ai-apps/src/rpc.ts` sends whatever a tool gives. The tools'
+own bounds keep results modest (search and Review at 50 rows, the next
+30 days at 30, a debt's schedule at 36 months), so a search's 50 rows
+are about 16 KB, carried twice: as `structuredContent` and as the same
+JSON in `content`. Names of 80 characters outside ASCII could take a
+full page of 50 past 24 KB each way.
+
+**Why not fixed here:** it is one check for every tool, in `answer()`,
+with its own test; M8b adds two tools under the 300-line rule.
+
+**To settle:** decide whether the cap counts one copy or both, then trim
+trailing `rows` in `answer()` past it and set `truncated`, tested with
+a page of long non-ASCII names.

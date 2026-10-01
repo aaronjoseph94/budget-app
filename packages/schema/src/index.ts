@@ -79,6 +79,7 @@ export {
   ListSchema,
   MCP_SERVER_VERSION,
   NameSchema,
+  SearchTransactionsInputSchema,
   NoteTextSchema,
   WordsSchema,
 } from './ai-apps.js'

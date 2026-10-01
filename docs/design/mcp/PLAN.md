@@ -1738,6 +1738,18 @@ created it in M9, and imported `packages/ai-apps` from
 - **Done:** search totals cover all matches, not the returned page; the
   review tool returns counts and rows and no sum; 5,001 matches give
   `totals: null`.
+- **As built (2026-10-01):** two commits, one per tool. The search sends
+  `ai_app_search` the window `searchWindow` works out (as asked, or the
+  90 days to the day after the server's; backwards or past 1,096 days is
+  the new `bad_search` sentence, as is a least amount above the most,
+  both before anything is read), the amounts as magnitudes (M4's SQL
+  compares them unsigned, so no sign is applied) and category names as
+  given: the SQL matches stored names exactly, so a name whose stored form
+  held a hidden character matches nothing rather than being refused. Each
+  row's `amount` is signed, money out below zero, as `formatCents` writes
+  it, with `flow` beside it. §2.7's 24 KB trim is not built here: 50
+  rows with two 80-character names each come to about 16 KB of JSON,
+  carried twice (structured and as text); NOTICED N145 holds the rest.
 
 ### M9: `add_expense` and `add_note`
 
