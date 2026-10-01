@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { LINK_REFUSED, SignIn, useSession } from '../src/auth.js'
+import { DASHBOARD_LINK_REFUSED, LINK_REFUSED, SignIn, useSession } from '../src/auth.js'
 import type { SupabaseClient } from '../src/supabase.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { expectNoAxeViolations } from './axe.js'
@@ -26,6 +26,23 @@ describe('a sign-in link that does not sign in (SEC-NEW-2)', () => {
     await waitFor(() => expect(window.location.search).toBe(''))
     expect(window.location.hash).toBe('#/month')
     await expectNoAxeViolations()
+  })
+
+  it('takes tokens a dashboard link put after # out of the address, and says such links do not work here', async () => {
+    window.history.replaceState(null, '', '/#access_token=invented-access&refresh_token=invented-refresh&type=recovery')
+    render(<Gate supabase={createFakeSupabase().client} />)
+
+    expect((await screen.findByRole('alert')).textContent).toBe(DASHBOARD_LINK_REFUSED)
+    expect(window.location.href).not.toMatch(/invented|access_token|refresh_token/)
+  })
+
+  it('takes the error of an expired link out of the address too', async () => {
+    window.history.replaceState(null, '', '/?error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid#/month')
+    render(<Gate supabase={createFakeSupabase().client} />)
+
+    expect((await screen.findByRole('alert')).textContent).toBe(LINK_REFUSED)
+    await waitFor(() => expect(window.location.search).toBe(''))
+    expect(window.location.hash).toBe('#/month')
   })
 
   it('balances the subtitle over its lines, so no word is left alone on the last (V23)', async () => {

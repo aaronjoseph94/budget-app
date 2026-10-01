@@ -10,28 +10,61 @@ import { Alert } from './components/ui/feedback.js'
 import { LINE_BUTTON } from './components/ui/link.js'
 import { cn } from './lib/cn.js'
 
+/** Why the page, opened from an emailed link, is not signed in: a PKCE link that failed, or a dashboard link. */
+export type LinkRefusal = 'link' | 'dashboard'
+
 export type SessionState =
   | { readonly status: 'loading' }
-  | { readonly status: 'signed-out'; readonly linkRefused: boolean }
+  | { readonly status: 'signed-out'; readonly linkRefused: LinkRefusal | null }
   | { readonly status: 'signed-in'; readonly session: Session }
 
 /** Said on sign-in when the page was opened from an emailed link that did not sign in. */
 export const LINK_REFUSED =
   'That sign-in link only works once, and only in the browser that asked for it. Ask for a new link here, or use your password.'
 
+/** Said when the link came from the Supabase dashboard, which sends a kind of link this app never accepts. */
+export const DASHBOARD_LINK_REFUSED =
+  'Links sent from the Supabase dashboard do not sign in here. Ask for a link on this screen, or use your password.'
+
+/** Query keys an emailed link brings: its one-time code, or why it failed. */
+const LINK_QUERY = ['code', 'error', 'error_code', 'error_description'] as const
+/** After #: the tokens themselves, as a dashboard link (no PKCE) sends them, or why it failed. */
+const LINK_FRAGMENT = ['access_token', 'refresh_token', 'provider_token', 'error', 'error_code'] as const
+
+let fragmentTaken = false
+
 /**
- * Whether the page was opened from a sign-in link, and, if so, takes the
- * link's one-time code out of the address. A link opened in another browser
+ * Takes a dashboard link's tokens out of the address at once. This client
+ * runs PKCE and refuses them (SEC-5), so they sign nothing in, but a
+ * refresh token in the address bar, the history and a screenshot is a live
+ * credential that does not expire on its own (security-a-02). Run before
+ * the app reads its address, so navigation never sees them; idempotent.
+ */
+export function takeTokensOutOfAddress(): void {
+  const fragment = new URLSearchParams(window.location.hash.slice(1))
+  if (!LINK_FRAGMENT.some((key) => fragment.has(key))) return
+  window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search)
+  fragmentTaken = true
+}
+
+/**
+ * Whether the page was opened from an emailed link, and, if so, takes the
+ * link's code or error out of the address. A link opened in another browser
  * (on an iPhone, the Home Screen app's links open in Safari) cannot be
  * exchanged there, and it left the plain sign-in form with the code still
  * in the address bar and no reason given (SEC-NEW-2).
  */
-function cameFromLink(): boolean {
+function cameFromLink(): LinkRefusal | null {
+  takeTokensOutOfAddress()
+  const dashboard = fragmentTaken
+  fragmentTaken = false
   const url = new URL(window.location.href)
-  if (!url.searchParams.has('code')) return false
-  url.searchParams.delete('code')
-  window.history.replaceState(window.history.state, '', url.toString())
-  return true
+  const inQuery = LINK_QUERY.some((key) => url.searchParams.has(key))
+  if (inQuery) {
+    for (const key of LINK_QUERY) url.searchParams.delete(key)
+    window.history.replaceState(window.history.state, '', url.toString())
+  }
+  return dashboard ? 'dashboard' : inQuery ? 'link' : null
 }
 
 /**
@@ -45,13 +78,15 @@ export function useSession(supabase: SupabaseClient): SessionState {
 
   useEffect(() => {
     let live = true
+    takeTokensOutOfAddress()
 
     // getSession waits for the client to finish with the address, a link's
     // exchange included, so its answer says whether the link signed in.
     void supabase.auth.getSession().then(({ data }) => {
       if (!live) return
       // Read only now: a link that did sign in has its code taken out by the client.
-      const refused = data.session === null && cameFromLink()
+      const link = cameFromLink()
+      const refused = data.session === null ? link : null
       setState(
         data.session === null
           ? { status: 'signed-out', linkRefused: refused }
@@ -65,7 +100,7 @@ export function useSession(supabase: SupabaseClient): SessionState {
       // session must not wipe the reason a link did not sign in.
       setState((was) =>
         session === null
-          ? { status: 'signed-out', linkRefused: was.status === 'signed-out' && was.linkRefused }
+          ? { status: 'signed-out', linkRefused: was.status === 'signed-out' ? was.linkRefused : null }
           : { status: 'signed-in', session },
       )
     })
@@ -104,7 +139,7 @@ function isNoAccount(error: { readonly code?: string | undefined; readonly messa
  * person's financial history; accounts are made in the Supabase dashboard, so
  * a public URL cannot be used to register against this project at all.
  */
-export function SignIn({ supabase, linkRefused = false }: { supabase: SupabaseClient; linkRefused?: boolean }) {
+export function SignIn({ supabase, linkRefused = null }: { supabase: SupabaseClient; linkRefused?: LinkRefusal | null }) {
   const [method, setMethod] = useState<Method>('password')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -165,9 +200,9 @@ export function SignIn({ supabase, linkRefused = false }: { supabase: SupabaseCl
           <p className="mt-1 text-balance text-muted-foreground">Your statements and your spending, visible only to you.</p>
         </div>
 
-        {linkRefused && attempt.kind === 'idle' ? (
+        {linkRefused !== null && attempt.kind === 'idle' ? (
           <div className="mt-6">
-            <Alert tone="error">{LINK_REFUSED}</Alert>
+            <Alert tone="error">{linkRefused === 'dashboard' ? DASHBOARD_LINK_REFUSED : LINK_REFUSED}</Alert>
           </div>
         ) : null}
 

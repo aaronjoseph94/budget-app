@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import { App } from './App.js'
 import { restoreAddress } from './nav.js'
+import { takeTokensOutOfAddress } from './auth.js'
 import { reloadOnceOnPreloadError } from './shell/preload-reload.js'
 
 // Reading localStorage can itself throw (storage blocked), so ask carefully.
@@ -31,6 +32,8 @@ window.addEventListener('vite:preloadError', (event) => {
 const root = document.getElementById('root')
 if (root === null) throw new Error('no #root element to mount into')
 
+// A dashboard link's tokens leave the address before anything reads it.
+takeTokensOutOfAddress()
 restoreAddress(deviceStorage())
 
 createRoot(root).render(
