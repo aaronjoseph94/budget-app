@@ -50,19 +50,29 @@ describe('a chunk from an older deploy (FE-1)', () => {
   it('reloads the page once, and not again in a loop', () => {
     const reload = vi.fn()
     const kept = storage()
-    expect(reloadOnceOnPreloadError(kept, reload)).toBe(true)
-    expect(reloadOnceOnPreloadError(kept, reload)).toBe(false)
+    expect(reloadOnceOnPreloadError(kept, reload, true)).toBe(true)
+    expect(reloadOnceOnPreloadError(kept, reload, true)).toBe(false)
+    expect(reload).toHaveBeenCalledTimes(1)
+  })
+
+  it("leaves the screen's own note while offline, where a reload would lose the app to the browser's error page", () => {
+    const reload = vi.fn()
+    const kept = storage()
+    expect(reloadOnceOnPreloadError(kept, reload, false)).toBe(false)
+    expect(reload).not.toHaveBeenCalled()
+    // The one reload is still there for a chunk that fails once back online.
+    expect(reloadOnceOnPreloadError(kept, reload, true)).toBe(true)
     expect(reload).toHaveBeenCalledTimes(1)
   })
 
   it('does not reload when storage is blocked, since it could not stop a loop', () => {
     const reload = vi.fn()
-    expect(reloadOnceOnPreloadError(null, reload)).toBe(false)
+    expect(reloadOnceOnPreloadError(null, reload, true)).toBe(false)
     const throws = storage()
     throws.getItem = () => {
       throw new Error('blocked')
     }
-    expect(reloadOnceOnPreloadError(throws, reload)).toBe(false)
+    expect(reloadOnceOnPreloadError(throws, reload, true)).toBe(false)
     expect(reload).not.toHaveBeenCalled()
   })
 })

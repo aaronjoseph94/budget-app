@@ -22,9 +22,10 @@ function sessionStore(): Storage | null {
   }
 }
 
-// A screen's chunk from an older deploy: reload once for the new one (FE-1).
+// A screen's chunk from an older deploy: reload once for the new one (FE-1),
+// but not offline, where the screen's own note says what to do.
 window.addEventListener('vite:preloadError', (event) => {
-  if (reloadOnceOnPreloadError(sessionStore(), () => window.location.reload())) event.preventDefault()
+  if (reloadOnceOnPreloadError(sessionStore(), () => window.location.reload(), navigator.onLine !== false)) event.preventDefault()
 })
 
 const root = document.getElementById('root')

@@ -678,7 +678,9 @@ Layout:
 Behaviour:
 - **A screen that cannot load says so, with Reload (FE-1),** where a
   missing chunk or a screen's error left a blank page; a chunk from an
-  older deploy reloads the page once by itself.
+  older deploy reloads the page once by itself. Not offline, where the
+  reload would fail too and the browser's own error page would take the
+  app's place: the note stays and says to check the connection.
 - **A late AI reading never overwrites what the owner did meanwhile:** a
   receipt read after "Use another photo" is dropped and its preview let go
   (FE-2); Just type it's fill is dropped once the form has been changed or

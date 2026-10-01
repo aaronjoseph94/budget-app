@@ -8,9 +8,14 @@ const KEY = 'budget:preload-reloaded'
  * that is gone for another reason cannot reload the page in a loop; the
  * screen's own "did not load" note is left to say so. With storage blocked
  * there is no flag to keep, so nothing reloads by itself.
+ *
+ * Offline (`online` false) the chunk is missing for want of a network, and a
+ * reload would fail too: the browser's own error page would take the app's
+ * place. The note stays, saying to check the connection, and the one reload
+ * is kept for a chunk that fails once the phone is back online.
  */
-export function reloadOnceOnPreloadError(storage: Storage | null, reload: () => void): boolean {
-  if (storage === null) return false
+export function reloadOnceOnPreloadError(storage: Storage | null, reload: () => void, online: boolean): boolean {
+  if (storage === null || !online) return false
   try {
     if (storage.getItem(KEY) !== null) return false
     storage.setItem(KEY, '1')
