@@ -16,6 +16,7 @@
  */
 import { AI_HELPER_VERSION, MCP_SERVER_VERSION } from '@budget/schema'
 import { askAi } from '../ai/client.js'
+import { serverAddress } from '../ai-apps/access.js'
 import type { SupabaseClient } from '../supabase.js'
 
 type Check =
@@ -28,6 +29,8 @@ type Check =
   | { readonly kind: 'server' }
   /** Which key Supabase signs the owner's sign-in with, read from the owner's own token. */
   | { readonly kind: 'signing_key' }
+  /** Supabase's OAuth server, from the settings it publishes for AI apps to find. */
+  | { readonly kind: 'oauth' }
 
 /** The AI helper's source, as One-time updates names it and /setup/ serves it (ADR 0007). */
 export const HELPER_FILE = 'ai-function.ts'
@@ -42,8 +45,9 @@ export const READ_RECEIPT_FILE = 'read-receipt-function.ts'
 /** The AI apps server, built at site build and served under /setup/ (ADR 0012). */
 export const SERVER_FILE = 'mcp-function.ts'
 
-/** Steps made in Supabase's settings, with no file to paste (PLAN §1). */
+/** Two steps made in Supabase's settings, with no file to paste (PLAN §1, steps 3 and 4). */
 export const SIGNING_KEY = 'signing-key'
+export const OAUTH_SERVER = 'oauth-server'
 
 export interface Update {
   readonly file: string
@@ -56,7 +60,7 @@ export interface Update {
 
 const NIL = '00000000-0000-0000-0000-000000000000'
 
-/** 0005 to 0020, the AI helper, the signing key and the AI apps server, each with what it adds. */
+/** 0005 to 0020, the AI helper, the two settings and the AI apps server, each with what it adds. */
 export const UPDATES: readonly Update[] = [
   { file: '0005_category_kinds.sql', adds: 'Which list each category is on', checks: [{ kind: 'column', table: 'categories', column: 'kind' }] },
   {
@@ -124,6 +128,7 @@ export const UPDATES: readonly Update[] = [
   },
   { file: HELPER_FILE, adds: 'The AI helper, which every AI feature goes through', checks: [{ kind: 'helper' }] },
   { file: SIGNING_KEY, name: 'Signing key', adds: 'The key Supabase signs your sign-in with, which ChatGPT needs', checks: [{ kind: 'signing_key' }] },
+  { file: OAUTH_SERVER, name: 'Sign-in for AI apps', adds: 'Lets Claude or ChatGPT ask you to allow them', checks: [{ kind: 'oauth' }] },
   { file: SERVER_FILE, adds: 'The AI apps server, which Claude or ChatGPT connect to', checks: [{ kind: 'server' }] },
 ]
 
@@ -145,6 +150,7 @@ const MISSING: Readonly<Record<Check['kind'], ReadonlySet<string>>> = {
   helper: new Set(),
   server: new Set(),
   signing_key: new Set(),
+  oauth: new Set(),
 }
 
 /**
@@ -166,8 +172,31 @@ async function signingKey(supabase: SupabaseClient): Promise<UpdateState> {
   }
 }
 
+/**
+ * Whether Supabase's OAuth server is on and lets apps register themselves,
+ * from the settings it publishes for Claude and ChatGPT to find (PLAN
+ * §2.11). Asked with the browser's own fetch and nothing of the owner's,
+ * so no token leaves and the browser needs no preflight. Supabase's own
+ * 404 `feature_disabled` is off; on without a registration address (the
+ * step's last switch), or without the S256 ChatGPT requires, is not done
+ * either. Anything else could not be checked (PLAN K13).
+ */
+async function signInForAiApps(supabase: SupabaseClient): Promise<UpdateState> {
+  try {
+    const reply = await fetch(`${new URL(serverAddress(supabase)).origin}/.well-known/oauth-authorization-server/auth/v1`)
+    const said = (await reply.json()) as Record<string, unknown> | null
+    if (reply.status === 404) return said?.['error_code'] === 'feature_disabled' ? 'missing' : 'unknown'
+    if (!reply.ok || typeof said !== 'object' || said === null) return 'unknown'
+    const methods = said['code_challenge_methods_supported']
+    return typeof said['registration_endpoint'] === 'string' && Array.isArray(methods) && methods.includes('S256') ? 'in' : 'missing'
+  } catch {
+    return 'unknown'
+  }
+}
+
 async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateState> {
   if (check.kind === 'signing_key') return signingKey(supabase)
+  if (check.kind === 'oauth') return signInForAiApps(supabase)
   if (check.kind === 'helper') {
     const answer = await askAi(supabase, { action: 'ping' })
     if (!answer.ok) return answer.view.state === 'not_deployed' ? 'missing' : 'unknown'

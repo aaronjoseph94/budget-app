@@ -63,9 +63,10 @@ describe('Help articles', () => {
   })
 
   // HANDOFF's three steps, as One-time updates says them (plan §10.2, A28).
-  it('walks One-time updates to the end: the updates, the AI helper, then free AI', () => {
+  it('walks One-time updates to the end: the updates, the AI helper, the AI apps steps, then free AI', () => {
     const updates = articleFor('updates')
-    expect(updates?.summary).toMatch(/four updates and the AI helper: about 15 minutes, once, easiest on a computer/)
+    expect(updates?.summary).toMatch(/six updates, the AI helper, two settings and the AI apps server: about 35 minutes, once, easiest on a computer/)
+    expect(updates?.steps.some((s) => s.includes('the signing key, sign-in for AI apps and the AI apps server'))).toBe(true)
     expect(updates?.steps.some((s) => s.includes('**Deploy a new function**') && s.includes('name it ai'))).toBe(true)
     expect(updates?.steps.at(-1)).toMatch(/\*\*AI settings\*\* and turn on free AI/)
   })

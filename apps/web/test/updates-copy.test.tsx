@@ -36,6 +36,8 @@ beforeEach(() => {
   site = host
   vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
   vi.stubGlobal('fetch', async (url: string) => {
+    // Sign-in for AI apps is asked of the project, not the site (M12b), and Copy never fetches it.
+    if (url.startsWith('http://fake.supabase.test/')) return new Response('{}', { status: 503 })
     asked.push(url)
     return site(url)
   })

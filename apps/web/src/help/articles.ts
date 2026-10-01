@@ -68,7 +68,7 @@ export const ARTICLES: readonly Article[] = [
     id: 'updates',
     title: 'One-time updates',
     summary:
-      'Some parts of the app need a one-time update pasted into Supabase, where your budget is kept online. This page checks which are in, names the next one, and has a Copy button for each. This version brings four updates and the AI helper: about 15 minutes, once, easiest on a computer. Until they are in, everything that worked before still works, and nothing breaks if you stop part way.',
+      'Some parts of the app need a one-time update pasted into Supabase, where your budget is kept online, or a setting changed there. This page checks which are in, names the next one, and has a Copy button for each file. This version brings six updates, the AI helper, two settings and the AI apps server: about 35 minutes, once, easiest on a computer. Until they are in, everything that worked before still works, and nothing breaks if you stop part way.',
     steps: [
       'Open Supabase in a new tab and choose your project.',
       'Press **SQL Editor**, then **New query**.',
@@ -76,13 +76,13 @@ export const ARTICLES: readonly Article[] = [
       'Paste it into the new query, press **Run**, and wait for Success.',
       'Press **Check again** here, and do the next one the same way.',
       'For the AI helper, press **Edge Functions**, **Deploy a new function** and **Via Editor**, name it ai, and paste what **Copy** gives you over everything there.',
-      'Keep **Enforce JWT verification** on, and press **Deploy**.',
+      'For the helper’s switch, the signing key, sign-in for AI apps and the AI apps server, do the clicks this page lists under each, then press **Check again**.',
       'Last, open **AI settings** and turn on free AI, in about 2 minutes.',
     ],
     done: 'this page says "All done", and AI settings says AI is on.',
     stuck:
-      'If Supabase says anything other than Success, stop there: nothing is lost, and the message names the line. A file already pasted is refused rather than applied twice, so pasting one again does no harm. The AI helper needs no new secrets: the receipts key is used again if you set one. Updates from before this version are copied from GitHub, as the setup guide says; the Copy buttons carry only the newest ones.',
-    related: ['start', 'free-ai', 'codes'],
+      'If Supabase says anything other than Success, stop there: nothing is lost, and the message names the line. A file already pasted is refused rather than applied twice, so pasting one again does no harm. The AI helper needs no new secrets: the receipts key is used again if you set one. The signing key, sign-in for AI apps and the AI apps server are for connecting Claude or ChatGPT; until they are done, this page names them next and the rest of the app works. If the signing key still shows after you changed it, sign out and back in, so your sign-in is made with the new key. Updates from before this version are copied from GitHub, as the setup guide says; the Copy buttons carry only the newest ones.',
+    related: ['start', 'free-ai', 'ai-apps', 'codes'],
   },
   {
     id: 'periods',

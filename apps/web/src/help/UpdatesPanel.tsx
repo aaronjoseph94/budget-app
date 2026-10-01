@@ -3,7 +3,7 @@ import { useAppData } from '../app-data.js'
 import { Button } from '../components/ui/button.js'
 import { cn } from '../lib/cn.js'
 import { CopyFile, isCopyable } from './CopyFile.js'
-import { FIRST_FILE, HELPER_FILE, READ_RECEIPT_FILE, SERVER_FILE, SIGNING_KEY, checkUpdates, nextStep, type Checked } from './updates.js'
+import { FIRST_FILE, HELPER_FILE, OAUTH_SERVER, READ_RECEIPT_FILE, SERVER_FILE, SIGNING_KEY, checkUpdates, nextStep, type Checked } from './updates.js'
 
 /** Where each committed file can be opened and copied (HANDOFF §3, step 1); null for a step with no committed file. */
 const REPO = 'https://github.com/aaronjoseph94/budget-app/blob/main/'
@@ -35,6 +35,15 @@ const SIGNING_KEY_STEPS = [
   'Do the same for read-receipt, if Edge Functions lists it.',
   'Open Project Settings, then JWT Keys, and press Rotate keys, so the current key is the ECC (P-256) one. Do not revoke the old key.',
   'Sign out of this app and back in, then press Check again.',
+]
+
+/** Supabase's OAuth server, which finds the consent page from Site URL (PLAN §1, steps 4 and 5). */
+const oauthSteps = (site: string) => [
+  `In Supabase, open Authentication, then URL Configuration, and check Site URL is ${site}.`,
+  'Open Authentication, then OAuth Server, and press Enable.',
+  'Set Authorization Path to /oauth/consent.',
+  'Turn on dynamic client registration, which lets Claude and ChatGPT register themselves, and press Save.',
+  'Under Sign In / Providers, keep Allow new users to sign up off, and under Email keep Secure email change on.',
 ]
 
 /**
@@ -136,11 +145,15 @@ export function UpdatesPanel() {
                 ))}
               </ol>
             </>
-          ) : next.file === SIGNING_KEY ? (
+          ) : next.file === SIGNING_KEY || next.file === OAUTH_SERVER ? (
             <>
-              <p>Next: move Supabase to its new signing key, which ChatGPT needs to sign in. About 5 minutes, on a computer.</p>
+              <p>
+                {next.file === SIGNING_KEY
+                  ? 'Next: move Supabase to its new signing key, which ChatGPT needs to sign in. About 5 minutes, on a computer.'
+                  : 'Next: turn on sign-in for AI apps in Supabase, so Claude or ChatGPT can ask you to allow them. About 5 minutes, on a computer.'}
+              </p>
               <ol className="list-decimal space-y-1 pl-5">
-                {SIGNING_KEY_STEPS.map((step) => (
+                {(next.file === SIGNING_KEY ? SIGNING_KEY_STEPS : oauthSteps(window.location.origin)).map((step) => (
                   <li key={step}>{step}</li>
                 ))}
               </ol>

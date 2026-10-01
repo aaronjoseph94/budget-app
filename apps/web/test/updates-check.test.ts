@@ -1,23 +1,27 @@
-import { describe, expect, it } from 'vitest'
-import { FIRST_FILE, HELPER_FILE, SERVER_FILE, SIGNING_KEY, UPDATES, checkUpdates, nextStep, type Checked } from '../src/help/updates.js'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { FIRST_FILE, HELPER_FILE, OAUTH_SERVER, SERVER_FILE, SIGNING_KEY, UPDATES, checkUpdates, nextStep, type Checked } from '../src/help/updates.js'
 import { MCP_SERVER_VERSION } from '@budget/schema'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 
 const stateOf = (checked: readonly Checked[], prefix: string) => checked.find((c) => c.update.file.startsWith(prefix))?.state
 const missing = (checked: readonly Checked[]) => checked.filter((c) => c.state !== 'in').map((c) => [c.update.file.slice(0, 4), c.state])
 
-/** Signed in, by default with Supabase's new key, as One-time updates always is. */
+/** Every step done: signed in with Supabase's new key, sign-in for AI apps on, and the browser's own fetch reaching the fake. */
 async function ready(seed: Parameters<typeof createFakeSupabase>[0] = {}, alg = 'ES256'): Promise<FakeSupabase> {
   const fake = createFakeSupabase(seed)
   await fake.signIn(alg)
+  fake.oauth.grants = []
+  vi.stubGlobal('fetch', fake.fetch)
   return fake
 }
+
+afterEach(() => vi.unstubAllGlobals())
 
 describe('checking the one-time updates', () => {
   it('finds each one in when everything it adds answers', async () => {
     const fake = await ready()
     const checked = await checkUpdates(fake.client)
-    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', '0020', 'ai-f', 'sign', 'mcp-'])
+    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', '0020', 'ai-f', 'sign', 'oaut', 'mcp-'])
     expect(missing(checked)).toEqual([])
     expect(nextStep(checked)).toEqual({ kind: 'done' })
   })
@@ -166,7 +170,36 @@ describe('checking the one-time updates', () => {
     fake.functions.ai = null
     expect(nextStep(await checkUpdates(fake.client))).toEqual({ kind: 'paste', file: HELPER_FILE, fromStart: false })
     // With no session there is no token to read.
-    expect(stateOf(await checkUpdates(createFakeSupabase().client), 'signing')).toBe('unknown')
+    const signedOut = createFakeSupabase()
+    vi.stubGlobal('fetch', signedOut.fetch)
+    expect(stateOf(await checkUpdates(signedOut.client), 'signing')).toBe('unknown')
+  })
+
+  it('reads sign-in for AI apps from Supabase’s published settings, asking with nothing of the owner’s', async () => {
+    const fake = await ready()
+    const asked: unknown[] = []
+    vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) => (asked.push([String(input), init]), fake.fetch(input, init)))
+    fake.oauth.grants = null
+    const checked = await checkUpdates(fake.client)
+    expect(missing(checked)).toEqual([['oaut', 'missing']])
+    expect(nextStep(checked)).toEqual({ kind: 'paste', file: OAUTH_SERVER, fromStart: false })
+    expect(asked).toEqual([['http://fake.supabase.test/.well-known/oauth-authorization-server/auth/v1', undefined]])
+    fake.oauth.grants = []
+    for (const [metadata, state] of [
+      // On, but apps cannot register themselves, or without the S256 ChatGPT requires: the same step's switch.
+      [{ code_challenge_methods_supported: ['S256'] }, 'missing'],
+      [{ registration_endpoint: 'https://x.test/register', code_challenge_methods_supported: ['plain'] }, 'missing'],
+      [{ registration_endpoint: 'https://x.test/register', code_challenge_methods_supported: ['S256'] }, 'in'],
+    ] as const) {
+      fake.oauth.metadata = metadata
+      expect([metadata, stateOf(await checkUpdates(fake.client), 'oauth')]).toEqual([metadata, state])
+    }
+    // Only Supabase's own "switched off" is missing: another 404, or no answer, could not be checked.
+    const gateway404 = () => Promise.resolve(new Response(JSON.stringify({ message: 'no Route matched with those values' }), { status: 404 }))
+    for (const reply of [gateway404, () => Promise.resolve(new Response('Not Found', { status: 404 })), () => Promise.reject(new TypeError('Failed to fetch'))]) {
+      vi.stubGlobal('fetch', reply)
+      expect(stateOf(await checkUpdates(fake.client), 'oauth')).toBe('unknown')
+    }
   })
 
   it('says it could not check, never "missing", when the answer is something else', async () => {

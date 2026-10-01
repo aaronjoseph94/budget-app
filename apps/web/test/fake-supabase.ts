@@ -159,9 +159,12 @@ export interface FakeSupabase {
    * a `redirect_url` (an app allowed before); an id not there is answered
    * 404, as an expired one. Each Allow or Deny is kept in `consents` and
    * answered with `answer`'s address, by default the request's callback
-   * with a code or `access_denied`. All need `signIn()`.
+   * with a code or `access_denied`. All need `signIn()`. `metadata` is what
+   * the server publishes at `/.well-known/oauth-authorization-server/auth/v1`
+   * while it is on: by default with dynamic registration and S256.
    */
   readonly oauth: {
+    metadata: Readonly<Record<string, unknown>>
     grants: OAuthGrant[] | null
     readonly revoked: string[]
     readonly requests: Record<string, OAuthAuthorizationDetails | OAuthRedirect>
@@ -175,6 +178,8 @@ export interface FakeSupabase {
    * `alg` is the key the token says signed it, which One-time updates reads: by default ES256, Supabase's new key.
    */
   signIn(alg?: string): Promise<void>
+  /** The server itself, for what the app asks with the browser's own fetch, not the client's: stub the global with it. */
+  readonly fetch: typeof fetch
   /**
    * How the server behaves. `maxRows` is PostgREST's cap on one response,
    * which Supabase sets to 1,000 and which wins over any limit a query asks
@@ -265,7 +270,14 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     receiptCalls: [],
     mcpHealth: () => json({ ok: true, version: MCP_SERVER_VERSION, tools: 0 }),
   }
-  const oauth: FakeSupabase['oauth'] = { grants: null, revoked: [], requests: {}, consents: [], answer: null }
+  const oauth: FakeSupabase['oauth'] = {
+    metadata: { registration_endpoint: 'http://fake.supabase.test/auth/v1/oauth/clients/register', code_challenge_methods_supported: ['S256'] },
+    grants: null,
+    revoked: [],
+    requests: {},
+    consents: [],
+    answer: null,
+  }
   let nextId = 1
 
   const json = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
@@ -387,8 +399,10 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     const url = new URL(input instanceof Request ? input.url : String(input))
     const method = init?.method ?? 'GET'
     const headers = new Headers(init?.headers)
+    const oauthOff = () => json({ code: 404, error_code: 'feature_disabled', msg: 'OAuth server is disabled' }, 404)
+    if (url.pathname === '/.well-known/oauth-authorization-server/auth/v1') return oauth.grants === null ? oauthOff() : json(oauth.metadata)
     if (url.pathname === '/auth/v1/user/oauth/grants') {
-      if (oauth.grants === null) return json({ code: 404, error_code: 'feature_disabled', msg: 'OAuth server is disabled' }, 404)
+      if (oauth.grants === null) return oauthOff()
       if (method === 'GET') return json(oauth.grants)
       const revoked = url.searchParams.get('client_id')
       oauth.revoked.push(String(revoked))
@@ -672,6 +686,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     const { error } = await client.auth.setSession({ access_token: token, refresh_token: 'fake-refresh' })
     if (error !== null) throw error
   }
+  const fetch: typeof globalThis.fetch = (input, init) => serve(input, init)
 
-  return { client, tables, rpcCalls, rpcReplies, functions, fail: (t, code) => void failures.set(t, code), heal: (t) => void failures.delete(t), oauth, user, signIn, server }
+  return { client, tables, rpcCalls, rpcReplies, functions, fail: (t, code) => void failures.set(t, code), heal: (t) => void failures.delete(t), oauth, user, signIn, fetch, server }
 }

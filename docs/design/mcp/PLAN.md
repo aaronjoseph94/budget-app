@@ -1215,6 +1215,7 @@ checklist (M12b).
 | K10 | 0019 pastes in the SQL Editor: the restrictive policy on `storage.objects` is created, as 0001's receipt policies were, and each guarded function is re-created from its own `pg_get_functiondef` (M1a) | The paste stops with an error and, inside its transaction, changes nothing but the unused `ai_app` label; One-time updates keeps 0019 as not in, and the error is reported before 0020 |
 | K11 | 0020 pastes, and under PostgREST the gate's transaction-local `budget.ai_app_read` flag lets `ai_app_read` read while a direct `GET /rest/v1/categories` with the same token returns `[]` (M4) | The paste stops, or every tool answers `records_unreadable` or nothing; switch AI apps off and report it |
 | K12 | Supabase's `authorization_id` in the consent page's address is 1–128 letters, digits, `-` or `_` (M11b) | The consent page says "This isn't a connection request" and sends nothing; the pattern in `ConsentScreen.tsx` is widened in its own commit |
+| K13 | The browser can read `/.well-known/oauth-authorization-server/auth/v1` from the site (CORS on that root path), and the owner's session token names its key in `alg` (M12b) | One-time updates says "Could not check" for Sign-in for AI apps, or the Signing key, and never "All done"; the owner checks the setting by eye in Supabase, and the probe moves to `/auth/v1/…` in its own commit |
 
 ### 2.15 Records this work writes
 
@@ -1925,6 +1926,27 @@ created it in M9, and imported `packages/ai-apps` from
   helper and `read-receipt` again, the signing key, the OAuth server, the
   `mcp` server) with each step checked; HANDOFF §3 matches §1 of this
   plan.
+- **As built (2026-10-01):** two commits for the checks, to stay under
+  300 lines (the signing key; then sign-in for AI apps with Help's
+  One-time updates article), then the owner's steps. A setting has a
+  `name` in the list in place of a file, and no GitHub link. **Signing
+  key** reads the `alg` in the header of the owner's own session token:
+  ES256 or RS256 is in (Supabase issues an ID token with either), HS256
+  is the step, anything else or no session could not be checked. The AI
+  helper's clicks follow it: keep **Enforce JWT verification** on while
+  the key is the old secret, turn it off once it is the new one, so a
+  later re-paste never turns it back on. **Sign-in for AI apps** asks
+  the published settings with the browser's own `fetch`, no headers, so
+  no token is sent and no preflight is needed; only Supabase's own 404
+  `feature_disabled` is "not in", and a gateway 404 or no answer is
+  "could not check". On without a registration address, or without
+  `S256`, is the same step (§2.11's separate "turn on dynamic
+  registration" is folded into its clicks, which always include that
+  switch). Its clicks also check Site URL against the site's own address,
+  and keep sign-ups off and Secure email change on (§1, step 5). Help's
+  One-time updates article now counts six updates, the helper, two
+  settings and the server, about 35 minutes. Not runnable here: whether
+  the browser can read the published settings (K13).
 
 ### After M12b, in the owner's order
 
