@@ -37,6 +37,7 @@ refused rather than applied twice.
 | `0020_ai_apps.sql` | What an AI app may read, and its one way to add something to Review, always waiting for you; the switch in Settings → AI apps, its daily limits, and when each app last asked. Without it, Settings → AI apps says it needs the update. It stops with "Paste 0019 first" if `0019` is not in |
 | `0030_ai_app_gate_live_session.sql` | Stops an AI app the moment you press Disconnect: before it, a copy of the app's sign-in could still reach your budget for up to an hour. Changes nothing you see. It stops with "Paste 0020 first" if `0020` is not in. Numbered from 0030 so it never collides with other updates in preparation |
 | `0031_ai_app_hash_own_kind.sql` | Keeps what an AI app adds from ever hiding a real charge: before it, an AI app could add an entry that matched next month's statement line exactly, and the real charge was skipped on import as already waiting. Now both wait in Review. It stops with "Paste 0030 first" if `0030` is not in |
+| `0032_ai_rows_teach_no_rule.sql` | Approving or moving something an AI app added no longer teaches the app a shop: before it, one approval could make every later statement charge from that shop file itself into the AI's category without Review. It stops with "Paste 0031 first" if `0031` is not in |
 
 **`0015` to `0020` can be pasted after `main-tnlcto` is merged into
 `main`.** Nothing the app needs to open depends on them: each new part

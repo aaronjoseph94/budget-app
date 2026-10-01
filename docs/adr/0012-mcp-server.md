@@ -302,3 +302,7 @@ below was made under those words and is recorded with them.
   are new, no stored hash changes, and no row with them exists yet, so
   nothing needs a backfill. An older server, or a newer one before `0031`
   is in, gets `needs_update` and adds nothing.
+- **mcp-2-02: an AI app's row teaches no learned shop** (`0032`).
+  `approve_candidate` and `recategorise_transaction` are re-created from
+  their own definitions with a few lines changed, 0019's guard kept as
+  the first statement; the Month's Move hides "Always file" for one.

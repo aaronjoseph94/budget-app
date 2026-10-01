@@ -165,6 +165,19 @@ describe('Moving a charge from the Month', () => {
     expect(fake.rpcCalls[0]?.args).toEqual({ p_transaction: 't1', p_category: 'card', p_learn: false })
   })
 
+  // 0032 (security review mcp-2-02): an AI app's words never become a learned shop.
+  it('offers no "Always file" for a charge an AI app added, and never asks to learn from it', async () => {
+    const fake = seeded()
+    fake.tables.transactions.push({ ...tx('t5', '2026-09-15', -1250, 'groceries', 'Lunch at Subway'), source: 'ai_app' })
+    const sheet = await startMoving(fake, 'Lunch at Subway')
+    expect(sheet.queryByRole('checkbox')).toBeNull()
+    expect(sheet.getByText('An AI app added this, so its words are not learned as a shop.')).toBeTruthy()
+    fireEvent.change(sheet.getByRole('combobox', { name: 'Move to' }), { target: { value: 'dining' } })
+    fireEvent.click(sheet.getByRole('button', { name: 'Move' }))
+    await sheet.findByRole('status')
+    expect(fake.rpcCalls[0]?.args).toEqual({ p_transaction: 't5', p_category: 'dining', p_learn: false })
+  })
+
   it("offers every other category under the workbook's headings, in list order", async () => {
     const sheet = await startMoving(seeded(), 'CONTOSO MARKET')
     const picker = sheet.getByRole('combobox', { name: 'Move to' })

@@ -738,6 +738,13 @@ treated as hostile.
    saw. The cost: such a rule seldom matches a statement's tidied shop
    name, so it rarely files anything by itself. The app's shop figures
    (F39, F41) tidy `merchant_raw` when they read it and are unaffected.
+   *Corrected by 0032 (security review mcp-2-02, 2026-10-01):* "seldom"
+   assumed the words were chosen innocently. A model can match a rule's
+   key on purpose (the spending tools hand those names out), and one
+   approval re-filed every later statement line from that shop with no
+   review. Now `approve_candidate` and `recategorise_transaction` learn
+   nothing from a row whose source is `ai_app`, and the Month's Move
+   offers no "Always file" for one.
 6. Inserts the candidate with `status 'pending'` and, when a category was
    named, `category_source 'model'`, in **one statement**:
    `insert … select … where not exists (select 1 from transactions where
@@ -1292,7 +1299,7 @@ review's, on the hosted project with the owner (§5.4).
 |---|---|
 | All arithmetic in `packages/core` | Every figure is a core function's output (§2.4), `days_left` included; the one new sum is core's `entriesTotals` (F52); SQL and the server only count calls and rows, which are bookkeeping, never money (ADR 0004), and SQL does no date arithmetic on a window; the Review list has no total by design; the window-invariance test proves no figure depends on how many rows were fetched. What an AI writes in its own chat is outside the app, and the server instructions ask it to quote |
 | Money is `Cents` | Integers in results, with `display` from the one helper, moved not copied; amounts in as text through statement-parsers; a JSON number amount is refused; `bigint` in Postgres |
-| Model output never reaches the ledger unreviewed | One write, `ai_app_add_candidate`, always pending, `model` when it names a category, never approved even on a rule match; it checks the hash it is sent, in a kind of its own (`ai_app:<n>`, 0031), and stores the words it shows, so no caller can make a pending row swallow a real statement line; every other write refused to a `client_id` token by 0019; the schema gate attempts each |
+| Model output never reaches the ledger unreviewed | One write, `ai_app_add_candidate`, always pending, `model` when it names a category, never approved even on a rule match; it checks the hash it is sent, in a kind of its own (`ai_app:<n>`, 0031), and stores the words it shows, so no caller can make a pending row swallow a real statement line, and approving or moving an AI app's row teaches no rule (0032); every other write refused to a `client_id` token by 0019; the schema gate attempts each |
 | Core functions: one plain input, one output, explicit `asOf` | `asOf` is the owner's date from the database, passed in; F52 the same |
 | zod at four boundaries | Tool arguments (the request body) and the environment only; no `outputSchema`; rows cast as `ledger.ts` does |
 | New tables: RLS and the owner policy in the same file; forward-only | 0020's three tables; 0019 and 0020 are new files; nothing applied is edited |
@@ -2104,10 +2111,10 @@ created it in M9, and imported `packages/ai-apps` from
 18. **Free-plan invocations.** With JWT verification off, anyone can make
     the function answer 401s, which count toward the plan's monthly
     invocations.
-19. **Rules learned from AI-added rows** key on the words as the AI wrote
-    them (§2.5), so they seldom file a later statement line by themselves.
-    That is the safe side of the trade; the owner loses a little automatic
-    filing, nothing else.
+19. **Rules learned from AI-added rows.** None, since 0032 (security
+    review mcp-2-02): a model can choose words that match a shop's rule
+    on purpose, and a rule files later statement lines unseen. The owner
+    loses a little automatic filing, nothing else.
 
 ---
 

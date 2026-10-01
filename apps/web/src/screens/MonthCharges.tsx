@@ -277,7 +277,8 @@ function TimeToward({ charge, toward }: { charge: LedgerRow; toward: { readonly 
  * Where one charge goes: a category picker under the workbook's headings, and
  * "Always file <shop> here", on by default, which also re-points the shop's
  * learned rule so the next statement files it in the new place. Off, only
- * this charge moves.
+ * this charge moves. Never offered for a charge an AI app added: its words
+ * are the AI's, and 0032 learns nothing from them (security review mcp-2-02).
  */
 function MoveCharge({
   charge,
@@ -296,13 +297,14 @@ function MoveCharge({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const target = categories.find((k) => k.id === to)
+  const canLearn = charge.source !== 'ai_app'
 
   const move = async () => {
     if (target === undefined) return
     setBusy(true)
     setError(null)
     try {
-      await recategoriseTransaction(supabase, { transactionId: charge.id, categoryId: target.id, learn })
+      await recategoriseTransaction(supabase, { transactionId: charge.id, categoryId: target.id, learn: canLearn && learn })
       onMoved(target.name)
       // Re-reads the categories and, through `version`, the month itself.
       await refresh()
@@ -320,21 +322,25 @@ function MoveCharge({
         </option>
         <CategoryOptions categories={categories.filter((k) => k.id !== from)} />
       </NativeSelect>
-      <label className="flex items-start gap-2 text-sm">
-        <input
-          type="checkbox"
-          className="mt-0.5 size-4 shrink-0 accent-primary"
-          checked={learn}
-          disabled={busy}
-          onChange={(e) => setLearn(e.target.checked)}
-        />
-        <span className="min-w-0 break-words [overflow-wrap:anywhere]">
-          {/* Inside a sheet titled with the category the charge is leaving,
-            "here" reads as that one, so once a category is chosen it is named. */}
-          Always file <IngestedText>{charge.merchant_raw}</IngestedText>{' '}
-          {target === undefined ? 'here' : `in ${target.name}`}
-        </span>
-      </label>
+      {canLearn ? (
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="mt-0.5 size-4 shrink-0 accent-primary"
+            checked={learn}
+            disabled={busy}
+            onChange={(e) => setLearn(e.target.checked)}
+          />
+          <span className="min-w-0 break-words [overflow-wrap:anywhere]">
+            {/* Inside a sheet titled with the category the charge is leaving,
+              "here" reads as that one, so once a category is chosen it is named. */}
+            Always file <IngestedText>{charge.merchant_raw}</IngestedText>{' '}
+            {target === undefined ? 'here' : `in ${target.name}`}
+          </span>
+        </label>
+      ) : (
+        <p className="text-sm text-muted-foreground">An AI app added this, so its words are not learned as a shop.</p>
+      )}
       {error !== null ? (
         <Alert tone="error" title="Could not move this charge">
           {error}

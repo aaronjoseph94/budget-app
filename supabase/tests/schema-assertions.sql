@@ -2300,7 +2300,8 @@ end $$;
 -- still does all of it.
 -- ---------------------------------------------------------------------------
 -- Each guarded function is exactly as it stood before 0019, plus its guard as
--- the first statement, with the same settings and grants.
+-- the first statement, with the same settings and grants. Read as they stood
+-- before 0032, which changes two of them again and is checked on its own.
 do $$
 declare
   r     record;
@@ -2310,8 +2311,9 @@ declare
   n     int := 0;
 begin
   for r in select * from verify.guarded_before loop
-    select prosrc, prosecdef, provolatile, proconfig, proacl::text as acl into p
-      from pg_proc where oid = r.fn::regprocedure;
+    select prosrc, prosecdef, provolatile, proconfig, acl into p
+      from verify.before_0032 where fn = r.fn;
+    if not found then raise exception '% is not among the functions the browser could call before 0032', r.fn; end if;
     guard := case r.lang when 'sql' then E'\n  select public._not_an_ai_app();' else E'\n  perform public._not_an_ai_app();' end;
     at := case r.lang when 'sql' then 1 else strpos(r.prosrc, E'\nbegin\n') + 6 end;
     if strpos(p.prosrc, guard) <> at or replace(p.prosrc, guard, '') <> r.prosrc then
@@ -2920,5 +2922,119 @@ begin
     if sqlerrm not like 'Paste 0030 first%' then raise; end if;
   end;
   raise notice '0031 says to paste 0030 first when it is missing';
+end $$;
+rollback;
+
+-- ---------------------------------------------------------------------------
+-- 0032: a row an AI app added never teaches a learned shop, approved or
+-- moved; every other row still does (mcp-2-02).
+-- ---------------------------------------------------------------------------
+-- The owner's rule for the AI's words, as the superuser: an AI row approved
+-- into another category must not move it.
+insert into public.merchant_rules (user_id, match_merchant, category_id)
+  values ('11111111-1111-4111-8111-111111111111', 'NETFLIX.COM 8665797172 CA', 'cccccccc-0000-4000-8000-000000000001');
+set role app_user;
+do $$
+declare
+  lunch uuid := 'cccccccc-0000-4000-8000-000000000303';
+  ai    uuid;
+  stmt  uuid;
+  txn   uuid;
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated"}', true);
+  select id into ai from public.ingest_candidates
+   where source = 'ai_app' and merchant = 'NETFLIX.COM 8665797172 CA' and status = 'pending';
+  select id into stmt from public.ingest_candidates
+   where source = 'card_csv' and merchant = 'NETFLIX.COM' and status = 'pending';
+  if ai is null or stmt is null then raise exception 'the rows 0031''s block left are not waiting'; end if;
+
+  if public.approve_candidate(ai, lunch) <> 'approved' then raise exception 'the AI app''s row was not approved'; end if;
+  if (select category_id from public.merchant_rules where match_merchant = 'NETFLIX.COM 8665797172 CA') <> 'cccccccc-0000-4000-8000-000000000001' then
+    raise exception 'NOT REFUSED: approving an AI app''s row moved a learned shop';
+  end if;
+  select id into txn from public.transactions where candidate_id = ai;
+  if txn is null or (select category_id from public.transactions where id = txn) <> lunch then
+    raise exception 'the AI app''s row was not posted as approved';
+  end if;
+  -- Moved, asked to learn: the row moves, the rule does not.
+  perform public.recategorise_transaction(txn, 'cccccccc-0000-4000-8000-000000000001', true);
+  perform public.recategorise_transaction(txn, lunch, true);
+  if (select category_id from public.transactions where id = txn) <> lunch then raise exception 'the AI app''s row did not move'; end if;
+  if (select category_id from public.merchant_rules where match_merchant = 'NETFLIX.COM 8665797172 CA') <> 'cccccccc-0000-4000-8000-000000000001' then
+    raise exception 'NOT REFUSED: moving an AI app''s row moved a learned shop';
+  end if;
+
+  -- A statement's row still teaches, approved and moved.
+  if public.approve_candidate(stmt, lunch) <> 'approved' then raise exception 'the statement row was not approved'; end if;
+  if (select category_id from public.merchant_rules where match_merchant = 'NETFLIX.COM') is distinct from lunch then
+    raise exception 'approving a statement row no longer teaches its shop';
+  end if;
+  select id into txn from public.transactions where candidate_id = stmt;
+  perform public.recategorise_transaction(txn, 'cccccccc-0000-4000-8000-000000000001', true);
+  if (select category_id from public.merchant_rules where match_merchant = 'NETFLIX.COM') <> 'cccccccc-0000-4000-8000-000000000001' then
+    raise exception 'moving a statement row no longer teaches its shop';
+  end if;
+  raise notice 'an AI app''s row teaches no learned shop; a statement''s still does';
+end $$;
+reset role;
+
+-- 0032 changed approve_candidate and recategorise_transaction by those few
+-- lines and nothing else, 0019's guard included; every other function the
+-- browser may call is as it stood, with the same settings and grants.
+do $$
+declare
+  r record;
+  p record;
+  n int := 0;
+begin
+  for r in select * from verify.before_0032 loop
+    select prosrc, prosecdef, provolatile, proconfig, proacl::text as acl into p from pg_proc where oid = r.fn::regprocedure;
+    if r.fn = 'approve_candidate(uuid,uuid)' then
+      if p.prosrc <> replace(replace(replace(r.prosrc,
+           E'  v_merchant text;\nbegin\n', E'  v_merchant text;\n  v_source   text;\nbegin\n'),
+           E'  returning c.merchant into v_merchant;\n', E'  returning c.merchant, c.source::text into v_merchant, v_source;\n'),
+           E'  insert into public.merchant_rules (user_id, match_merchant, category_id)\n  values (v_user, v_merchant, p_category)\n  on conflict (user_id, match_merchant) do update set category_id = excluded.category_id;\n',
+           E'  -- Never from an AI app''s row: its words are the AI''s, and a rule\n  -- files later statement lines with no review (0032).\n  if v_source is distinct from ''ai_app'' then\n' ||
+           E'    insert into public.merchant_rules (user_id, match_merchant, category_id)\n    values (v_user, v_merchant, p_category)\n    on conflict (user_id, match_merchant) do update set category_id = excluded.category_id;\n  end if;\n') then
+        raise exception 'approve_candidate is not its old body with 0032''s lines';
+      end if;
+      n := n + 1;
+    elsif r.fn = 'recategorise_transaction(uuid,uuid,boolean)' then
+      if p.prosrc <> replace(replace(replace(r.prosrc,
+           E'  v_merchant  text;\nbegin\n', E'  v_merchant  text;\n  v_source    text;\nbegin\n'),
+           E'  returning t.candidate_id, t.merchant into v_cand, v_merchant;\n', E'  returning t.candidate_id, t.merchant, t.source::text into v_cand, v_merchant, v_source;\n'),
+           E'  if p_learn then\n', E'  -- Never from an AI app''s row (0032).\n  if p_learn and v_source is distinct from ''ai_app'' then\n') then
+        raise exception 'recategorise_transaction is not its old body with 0032''s lines';
+      end if;
+      n := n + 1;
+    elsif p.prosrc <> r.prosrc then
+      raise exception '% changed in 0032', r.fn;
+    end if;
+    if strpos(p.prosrc, E'begin\n  perform public._not_an_ai_app();\n') = 0 and r.fn in ('approve_candidate(uuid,uuid)', 'recategorise_transaction(uuid,uuid,boolean)') then
+      raise exception '% lost 0019''s guard as its first statement', r.fn;
+    end if;
+    if (p.prosecdef, p.provolatile, p.proconfig, p.acl) is distinct from (r.prosecdef, r.provolatile, r.proconfig, r.acl) then
+      raise exception '% changed its settings or grants in 0032', r.fn;
+    end if;
+  end loop;
+  if n <> 2 then raise exception '0032''s two functions were not both checked'; end if;
+  if public.ai_app_update_level() < 32 then raise exception 'the update level does not say 0032 is in'; end if;
+  raise notice '0032 changed only those lines of approve_candidate and recategorise_transaction';
+end $$;
+
+\set paste_check_32 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0032_ai_rows_teach_no_rule.sql`
+begin;
+create or replace function public.ai_app_update_level() returns integer language sql immutable as $$ select 30 $$;
+set local verify.paste_check = :'paste_check_32';
+do $$
+begin
+  begin
+    execute current_setting('verify.paste_check');
+    raise exception 'NOT REFUSED: 0032 ran without 0031';
+  exception when raise_exception then
+    if sqlerrm not like 'Paste 0031 first%' then raise; end if;
+  end;
+  raise notice '0032 says to paste 0031 first when it is missing';
 end $$;
 rollback;
