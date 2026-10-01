@@ -46,10 +46,17 @@ function takeSignedOutNote(): boolean {
 
 /** Query keys an emailed link brings: its one-time code, or why it failed. */
 const LINK_QUERY = ['code', 'error', 'error_code', 'error_description'] as const
-/** After #: the tokens themselves, as a dashboard link (no PKCE) sends them, or why it failed. */
-const LINK_FRAGMENT = ['access_token', 'refresh_token', 'provider_token', 'error', 'error_code'] as const
+/** After #: the tokens themselves, as a dashboard link (no PKCE) sends them. */
+const TOKEN_FRAGMENT = ['access_token', 'refresh_token', 'provider_token'] as const
+/**
+ * After #: why a link failed. Supabase puts a dead link's error here even
+ * for the app's own PKCE links, since a used token cannot say its flow, so
+ * an error alone reads as the owner's link, not a dashboard one.
+ */
+const ERROR_FRAGMENT = ['error', 'error_code'] as const
 
-let fragmentTaken = false
+/** What the fragment taken out held, until cameFromLink reads it. */
+let fragmentTaken: LinkRefusal | null = null
 
 /**
  * Takes a dashboard link's tokens out of the address at once. This client
@@ -60,9 +67,10 @@ let fragmentTaken = false
  */
 export function takeTokensOutOfAddress(): void {
   const fragment = new URLSearchParams(window.location.hash.slice(1))
-  if (!LINK_FRAGMENT.some((key) => fragment.has(key))) return
+  const tokens = TOKEN_FRAGMENT.some((key) => fragment.has(key))
+  if (!tokens && !ERROR_FRAGMENT.some((key) => fragment.has(key))) return
   window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search)
-  fragmentTaken = true
+  fragmentTaken = tokens ? 'dashboard' : 'link'
 }
 
 /**
@@ -74,15 +82,15 @@ export function takeTokensOutOfAddress(): void {
  */
 function cameFromLink(): LinkRefusal | null {
   takeTokensOutOfAddress()
-  const dashboard = fragmentTaken
-  fragmentTaken = false
+  const fromFragment = fragmentTaken
+  fragmentTaken = null
   const url = new URL(window.location.href)
   const inQuery = LINK_QUERY.some((key) => url.searchParams.has(key))
   if (inQuery) {
     for (const key of LINK_QUERY) url.searchParams.delete(key)
     window.history.replaceState(window.history.state, '', url.toString())
   }
-  return dashboard ? 'dashboard' : inQuery ? 'link' : null
+  return fromFragment ?? (inQuery ? 'link' : null)
 }
 
 /**

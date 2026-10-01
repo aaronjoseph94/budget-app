@@ -45,6 +45,14 @@ describe('a sign-in link that does not sign in (SEC-NEW-2)', () => {
     expect(window.location.hash).toBe('#/month')
   })
 
+  it("reads an expired link's error after # as the owner's own link, not a dashboard one, and takes it out", async () => {
+    window.history.replaceState(null, '', '/#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired')
+    render(<Gate supabase={createFakeSupabase().client} />)
+
+    expect((await screen.findByRole('alert')).textContent).toBe(LINK_REFUSED)
+    expect(window.location.href).not.toMatch(/error/)
+  })
+
   it('balances the subtitle over its lines, so no word is left alone on the last (V23)', async () => {
     window.history.replaceState(null, '', '/#/month')
     render(<Gate supabase={createFakeSupabase().client} />)
