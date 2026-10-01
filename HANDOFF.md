@@ -179,7 +179,7 @@ open GitHub. Easiest on a computer.
    and wait for "Success. No rows returned." Then a new query for
    `0016_ai_foundation.sql`, then `0017_coach_memory.sql`,
    `0018_category_suggestions.sql`, `0019_ai_apps_cannot_write.sql`,
-   `0020_ai_apps.sql`, then the security fixes `0030` to `0033`, in that
+   `0020_ai_apps.sql`, then the security fixes `0030` to `0034`, in that
    order (One-time updates lists them in this order and names the next).
    `0019` stops with "Paste 0018 first" if `0018` is not in, `0020` with
    "Paste 0019 first", and each fix with the one before it. If one

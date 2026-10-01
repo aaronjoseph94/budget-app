@@ -2115,7 +2115,9 @@ created it in M9, and imported `packages/ai-apps` from
 16. **Instructions hidden in data, carried to other connectors.** Shop names
     from statements and words the AI added reach the model as data, with
     control and direction-override characters removed, digits masked and
-    length cut (and, since 0033, searched as masked too, so a count of
+    length cut; what an AI app adds may not hold a character that draws
+    as nothing (0034, mcp-2-05; refused only there, since a statement's
+    shop name may need a zero-width joiner); (and, since 0033, searched as masked too, so a count of
     matches cannot read a masked number back: mcp-2-04), and no stored text ever reaches a tool's description. A
     model can still be talked into acting on one. Within Budget the worst
     it can do is add pending rows the owner must approve; with a connector

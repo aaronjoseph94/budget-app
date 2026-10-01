@@ -59,9 +59,16 @@ describe('add_expense', () => {
   })
 
   it('stores the words as given, and hands them back cleaned as list_review_queue shows them', async () => {
-    const { result, rpcCalls } = await add({ ...LUNCH, what: 'Lunch​ at Subway 1234567' })
-    expect(body(rpcCalls[1])).toMatchObject({ p_words: 'Lunch​ at Subway 1234567' })
+    const { result, rpcCalls } = await add({ ...LUNCH, what: 'Lunch at Subway 1234567' })
+    expect(body(rpcCalls[1])).toMatchObject({ p_words: 'Lunch at Subway 1234567' })
     expect(result.structuredContent).toMatchObject({ entry: { what: 'Lunch at Subway *******' } })
+  })
+
+  // mcp-2-05: two entries that look the same in Review must be the same words.
+  it('refuses words with a character that draws as nothing, before reading anything', async () => {
+    const { result, rpcCalls } = await add({ ...LUNCH, what: 'Lunch\u200b at Subway' })
+    expect(result.isError).toBe(true)
+    expect(rpcCalls).toEqual([])
   })
 
   it('takes money received as positive, today by default, and a category by the name list_categories gives', async () => {
@@ -161,7 +168,7 @@ describe('add_note', () => {
     ['two amounts and a slashed date', 'coffee 4 or 5 on 9/28', ['amount', 'date'], { date: null, what: 'coffee 4 or 5', amount: null, flow: 'spent' }],
     ['a day after today', 'coffee 4.50 2026-10-01', ['date'], { date: null, what: 'coffee', amount: $(-450, '-$4.50'), flow: 'spent' }],
     ['words past 120 characters', `${'x'.repeat(121)} 4.50`, ['what'], { date: '2026-09-30', what: null, amount: $(-450, '-$4.50'), flow: 'spent' }],
-    ['words read so far, cleaned', 'coffee​ 4 or 5', ['amount'], { date: '2026-09-30', what: 'coffee 4 or 5', amount: null, flow: 'spent' }],
+    ['words read so far, cleaned', 'coffee 4 or 5 1234567', ['amount'], { date: '2026-09-30', what: 'coffee 4 or 5 *******', amount: null, flow: 'spent' }],
   ])('adds nothing for %s, and says what is missing', async (_, text, missing, read_so_far) => {
     const { result, rpcCalls } = await note({ text })
     expect(rpcCalls).toHaveLength(1)
@@ -180,6 +187,8 @@ describe('add_note', () => {
   it.each([
     ['more than 300 characters', { text: 'x'.repeat(301) }],
     ['a control character', { text: 'coffee 4.50\u0007' }],
+    // mcp-2-05: a character that draws as nothing.
+    ['an invisible character', { text: 'cof\u200bfee 4.50' }],
     ['a number for the words', { text: 4.5 }],
     ['an empty note', { text: ' ' }],
   ])('refuses %s before reading anything', async (_, args) => {

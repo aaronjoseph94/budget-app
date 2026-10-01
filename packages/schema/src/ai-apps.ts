@@ -28,14 +28,26 @@ export const NameSchema = z.string().trim().min(1).max(60)
 /** Which of the workbook's lists; Not spending is named only where a tool allows it. */
 export const ListSchema = z.enum(['variable', 'bill', 'debt', 'subscription', 'income', 'savings'])
 
-/** What an AI app adds was: the owner's own words, held as ingested text, trimmed. */
-export const WordsSchema = z.string().trim().max(120).pipe(IngestedTextSchema)
+/**
+ * Characters that draw as nothing: soft hyphen, the Arabic letter mark,
+ * the Mongolian vowel separator, zero-width space/joiners and the LRM/RLM
+ * marks, the word joiner and invisible operators, and the BOM. Two words
+ * that differ only by one look the same in Review while hashing apart
+ * (security review mcp-2-05). Refused only where an AI app adds: a shop's
+ * own name on a statement may need U+200C or U+200D. 0034 refuses the same
+ * set in ai_app_add_candidate.
+ */
+const INVISIBLE = /[\u00AD\u061C\u180E\u200B-\u200F\u2060-\u2065\uFEFF]/
+const shown = (text: string) => !INVISIBLE.test(text)
+
+/** What an AI app adds was: the owner's own words, held as ingested text, trimmed, every character visible. */
+export const WordsSchema = z.string().trim().max(120).pipe(IngestedTextSchema).refine(shown, 'Expected no invisible characters')
 
 /** `list_categories` takes nothing. */
 export const ListCategoriesInputSchema = z.object({}).strict()
 
 /** Something the owner said, for `add_note`, read as Just type it reads it. */
-export const NoteTextSchema = z.string().trim().max(300).pipe(IngestedTextSchema)
+export const NoteTextSchema = z.string().trim().max(300).pipe(IngestedTextSchema).refine(shown, 'Expected no invisible characters')
 
 /**
  * `get_period`: `date` picks the period holding that day, the owner's today

@@ -42,6 +42,15 @@ describe('the words an AI app sends', () => {
     }
   })
 
+  // Security review mcp-2-05: characters that draw as nothing let two Review rows
+  // look the same while hashing apart. Refused where an AI app adds, not at
+  // every ingested boundary, where a shop's name may need U+200C or U+200D.
+  const INVISIBLE = [0xad, 0x61c, 0x180e, 0x200b, 0x200c, 0x200d, 0x200e, 0x200f, 0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0x2065, 0xfeff]
+  it.each(INVISIBLE.map((c) => [c.toString(16).padStart(4, '0'), String.fromCharCode(c)]))('refuses U+%s in what an AI app adds or notes', (_, ch) => {
+    expect(WordsSchema.safeParse(`Cof${ch}fee`).success).toBe(false)
+    expect(NoteTextSchema.safeParse(`coffee${ch} 4.50`).success).toBe(false)
+  })
+
   it('holds a note to 300 characters', () => {
     expect(NoteTextSchema.safeParse('coffee 4.50 yesterday').success).toBe(true)
     expect(NoteTextSchema.safeParse('x'.repeat(301)).success).toBe(false)

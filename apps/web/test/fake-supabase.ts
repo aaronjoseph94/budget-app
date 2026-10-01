@@ -253,7 +253,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     // 0019: returns nothing for the owner's own session.
     _not_an_ai_app: null,
     // 0030 on: which AI-app security update is in, the latest by default.
-    ai_app_update_level: 33,
+    ai_app_update_level: 34,
   }
   const failures = new Map<string, string>()
   const server: FakeSupabase['server'] = { refuse: null, maxRows: null, afterRead: null, hold: null, lacks: {}, offline: false }

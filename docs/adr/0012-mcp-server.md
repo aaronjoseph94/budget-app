@@ -323,3 +323,7 @@ below was made under those words and is recorded with them.
 - **mcp-2-04: a search sees names as the AI app is shown them** (`0033`).
   Long digit runs are masked on both sides before matching, and words
   holding six or more digits in a row are refused (`bad_search`).
+- **mcp-2-05: what an AI app adds has every character visible** (`0034`,
+  `WordsSchema` and `NoteTextSchema`). Narrowed as a verifier advised: the
+  shared `hasControlCharacter` and the `ingested_text` domain are
+  unchanged, since a statement's shop name may need U+200C or U+200D.

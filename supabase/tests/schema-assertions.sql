@@ -2981,7 +2981,9 @@ reset role;
 
 -- 0032 changed approve_candidate and recategorise_transaction by those few
 -- lines and nothing else, 0019's guard included; every other function the
--- browser may call is as it stood, with the same settings and grants.
+-- browser may call is as it stood, with the same settings and grants. Read
+-- as they stood before 0034, which changes the AI app's add and is checked
+-- on its own.
 do $$
 declare
   r record;
@@ -2989,7 +2991,8 @@ declare
   n int := 0;
 begin
   for r in select * from verify.before_0032 loop
-    select prosrc, prosecdef, provolatile, proconfig, proacl::text as acl into p from pg_proc where oid = r.fn::regprocedure;
+    select prosrc, prosecdef, provolatile, proconfig, acl into p from verify.before_0034 where fn = r.fn;
+    if not found then raise exception '% is gone after 0032', r.fn; end if;
     if r.fn = 'approve_candidate(uuid,uuid)' then
       if p.prosrc <> replace(replace(replace(r.prosrc,
            E'  v_merchant text;\nbegin\n', E'  v_merchant text;\n  v_source   text;\nbegin\n'),
@@ -3095,3 +3098,75 @@ begin
   raise notice '0033 says to paste 0032 first when it is missing';
 end $$;
 rollback;
+
+-- ---------------------------------------------------------------------------
+-- 0034: what an AI app adds has every character visible, as the server's
+-- WordsSchema requires: a caller without the server cannot add two rows
+-- that look the same in Review while hashing apart (mcp-2-05).
+-- ---------------------------------------------------------------------------
+set role app_user;
+do $$
+declare
+  c int;
+  r jsonb;
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}', true);
+  foreach c in array array[x'00AD', x'061C', x'180E', x'200B', x'200C', x'200D', x'200E', x'200F', x'2060', x'2061', x'2062', x'2063', x'2064', x'2065', x'FEFF']::int[] loop
+    r := public.ai_app_add_candidate('aaaaaaaa-0000-4000-8000-000000000001', (now() at time zone 'UTC')::date - 1, -450,
+           'Cof' || chr(c) || 'fee', 1, repeat('0', 64), 1, null);
+    if r ->> 'refused' is distinct from 'bad_words' then
+      raise exception 'NOT REFUSED: U+% in what an AI app added: %', lpad(to_hex(c), 4, '0'), r;
+    end if;
+  end loop;
+  raise notice 'what an AI app adds has every character visible';
+end $$;
+reset role;
+do $$
+begin
+  if public.ai_app_update_level() < 34 then raise exception 'the update level does not say 0034 is in'; end if;
+  if not (select prosecdef from pg_proc where oid = 'public.ai_app_add_candidate(uuid,date,bigint,text,integer,text,integer,text)'::regprocedure) then
+    raise exception '0034 changed the add''s settings';
+  end if;
+end $$;
+
+\set paste_check_34 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0034_ai_words_visible.sql`
+begin;
+create or replace function public.ai_app_update_level() returns integer language sql immutable as $$ select 32 $$;
+set local verify.paste_check = :'paste_check_34';
+do $$
+begin
+  begin
+    execute current_setting('verify.paste_check');
+    raise exception 'NOT REFUSED: 0034 ran without 0033';
+  exception when raise_exception then
+    if sqlerrm not like 'Paste 0033 first%' then raise; end if;
+  end;
+  raise notice '0034 says to paste 0033 first when it is missing';
+end $$;
+rollback;
+
+-- 0034 added that one condition to ai_app_add_candidate and nothing else;
+-- every other function the browser may call is as it stood.
+do $$
+declare
+  r   record;
+  p   record;
+  at  constant text := E'  if p_words is null or length(p_words) not between 1 and 120 or p_words <> btrim(p_words)\n';
+  add constant text := E'     or p_words ~ ''[\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2060-\\u2065\\uFEFF]'' -- drawn as nothing (0034)\n';
+begin
+  for r in select * from verify.before_0034 loop
+    select prosrc, prosecdef, provolatile, proconfig, proacl::text as acl into p from pg_proc where oid = r.fn::regprocedure;
+    if r.fn = 'ai_app_add_candidate(uuid,date,bigint,text,integer,text,integer,text)' then
+      if strpos(r.prosrc, at) = 0 or p.prosrc <> replace(r.prosrc, at, at || add) then
+        raise exception 'ai_app_add_candidate is not its old body plus the one condition';
+      end if;
+    elsif p.prosrc <> r.prosrc then
+      raise exception '% changed in 0034', r.fn;
+    end if;
+    if (p.prosecdef, p.provolatile, p.proconfig, p.acl) is distinct from (r.prosecdef, r.provolatile, r.proconfig, r.acl) then
+      raise exception '% changed its settings or grants in 0034', r.fn;
+    end if;
+  end loop;
+  raise notice '0034 added one condition to the AI app''s add, and nothing else';
+end $$;
