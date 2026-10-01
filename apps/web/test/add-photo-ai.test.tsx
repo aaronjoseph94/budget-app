@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AddScreen } from '../src/screens/AddScreen.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
@@ -107,5 +107,41 @@ describe('AddScreen, a receipt photo read by the AI helper', () => {
     expect(await screen.findByText(/AI is off, so the photo was not read/)).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Open AI settings' }).getAttribute('href')).toBe('#/ai')
     expect(fake.functions.receiptCalls).toEqual([])
+  })
+
+  it('drops a reading that arrives after "Use another photo", and lets go of the old preview (FE-2)', async () => {
+    const fake = createFakeSupabase()
+    let answer: (r: Response) => void = () => undefined
+    fake.functions.ai = () => new Promise<Response>((done) => (answer = done))
+    // Each URL its own, so the preview's is told from the one decoding uses.
+    let made = 0
+    URL.createObjectURL = () => `blob:receipt-${++made}`
+    const revoked: string[] = []
+    URL.revokeObjectURL = (u: string) => void revoked.push(u)
+    await takePhoto(fake)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Use another photo' }))
+    expect(revoked.filter((u) => u === 'blob:receipt-1')).toEqual(['blob:receipt-1'])
+    await vi.waitFor(() => expect(fake.functions.calls.length).toBe(1))
+    answer(json({ ok: true, provider: 'anthropic', model: 'claude-haiku-4-5', text: JSON.stringify(READING) }))
+    await new Promise((r) => setTimeout(r, 50))
+
+    expect(screen.queryByText(/Read by Anthropic/)).toBeNull()
+    expect(screen.getByText('Take or choose a receipt photo')).toBeTruthy()
+    expect(revoked.filter((u) => u === 'blob:receipt-1')).toEqual(['blob:receipt-1'])
+  })
+
+  it('lets go of the preview when the screen closes (FE-2)', async () => {
+    const fake = createFakeSupabase()
+    fake.functions.ai = () => json({ ok: true, provider: 'anthropic', model: 'claude-haiku-4-5', text: JSON.stringify(READING) })
+    let made = 0
+    URL.createObjectURL = () => `blob:receipt-${++made}`
+    const revoked: string[] = []
+    URL.revokeObjectURL = (u: string) => void revoked.push(u)
+    await takePhoto(fake)
+    expect(await screen.findByText(/Read by Anthropic/)).toBeTruthy()
+    expect(revoked).not.toContain('blob:receipt-1')
+    cleanup()
+    expect(revoked).toContain('blob:receipt-1')
   })
 })

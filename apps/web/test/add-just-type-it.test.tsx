@@ -135,3 +135,37 @@ describe('Just type it with AI on', () => {
     expect(screen.queryByText('Read by AI: check it')).toBeNull()
   })
 })
+
+describe('Just type it, a slow AI (FE-4)', () => {
+  it('leaves alone a form the owner changed while the AI was reading', async () => {
+    const fake = seeded()
+    const [gemini, ...rest] = fake.functions.aiStatus.services
+    fake.functions.aiStatus = aiStatusReply({ services: [{ ...gemini!, source: 'secret', hint: 'abcd' }, ...rest] })
+    let answer: (r: Response) => void = () => undefined
+    fake.functions.ai = (body) =>
+      body['action'] !== 'run' ? json(fake.functions.aiStatus) : new Promise<Response>((done) => (answer = done))
+    renderScreen(<AddScreen />, fake)
+
+    fireEvent.click(await screen.findByRole('tab', { name: /Type it/ }))
+    fireEvent.change(await screen.findByLabelText('Just type it'), { target: { value: '3 coffees 12' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Fill in' }))
+    await screen.findByRole('button', { name: 'Reading…' })
+    await waitFor(() => expect(runs(fake).length).toBe(1))
+    fireEvent.change(field('What was it?'), { target: { value: 'Market' } })
+    answer(json({ ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: JSON.stringify({ amount: '12', category: 'c1', date: null, shop: null, flow: null }) }))
+    await screen.findByRole('button', { name: 'Fill in' })
+
+    expect([field('Amount').value, field('What was it?').value]).toEqual(['', 'Market'])
+    expect(screen.queryByText('Read by AI: check it')).toBeNull()
+  })
+
+  it('says it could not read the line when reading throws, rather than leave the old hint', async () => {
+    const fake = seeded()
+    renderScreen(<AddScreen />, fake)
+    const quick = await import('../src/add/quick-add.js')
+    const thrown = vi.spyOn(quick, 'readQuickEntry').mockRejectedValueOnce(new Error('network'))
+    await justType('coffee 4.50')
+    expect(await screen.findByText('Filled in what the app could read; fill in the rest, then press Add.')).toBeTruthy()
+    thrown.mockRestore()
+  })
+})

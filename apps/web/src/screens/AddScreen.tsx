@@ -414,6 +414,9 @@ function TypedEntry() {
   // The amount Just type it's AI read, until the owner changes it (plan A22).
   const [aiAmount, setAiAmount] = useState(false)
   const amountError = useId()
+  // Every change to the form and every Add, so a late Just type it reading
+  // knows the form moved on without it (FE-4).
+  const edits = useRef(0)
 
   const cents = parseMoneyInput(amount)
   const fill = (f: QuickFill) => {
@@ -480,15 +483,17 @@ function TypedEntry() {
   return (
     <Card>
       <CardContent className="space-y-4 pt-5 md:space-y-[1.125rem] md:px-6 md:pt-[1.375rem] md:pb-[1.375rem]">
-        <JustTypeIt onFill={fill} />
+        <JustTypeIt onFill={fill} edits={edits} />
         <hr className="border-border" />
         {/* noValidate: the browser's own bubble would stop the press before
           StillNeeded can say, in words kept on the page, what is missing. */}
         <form
           className="space-y-4"
           noValidate
+          onChange={() => (edits.current += 1)}
           onSubmit={(e) => {
             e.preventDefault()
+            edits.current += 1
             void submit()
           }}
         >
@@ -656,11 +661,28 @@ function PhotoEntry() {
   ].filter((n): n is string => n !== null)
   const ready = needed.length === 0
 
+  // Which photo is being read: "Use another photo" during a read, or the
+  // screen closing, makes a late reading stale, and it is dropped (FE-2).
+  const reading = useRef(0)
+  // The preview on show, let go of when the screen closes.
+  const shown = useRef<string | null>(null)
+  useEffect(
+    () => () => {
+      reading.current += 1
+      if (shown.current !== null) URL.revokeObjectURL(shown.current)
+    },
+    [],
+  )
+
   const onPhoto = async (file: File) => {
+    const mine = ++reading.current
+    if (shown.current !== null) URL.revokeObjectURL(shown.current)
     const preview = URL.createObjectURL(file)
+    shown.current = preview
     setOutcome(null)
     setState({ kind: 'reading', preview })
     const result = await readReceipt(supabase, file)
+    if (mine !== reading.current) return
     if (result.ok) {
       setMerchant(result.reading.merchant ?? '')
       setAmount(result.reading.total)
@@ -672,7 +694,9 @@ function PhotoEntry() {
   }
 
   const reset = () => {
+    reading.current += 1
     if (state.kind !== 'none') URL.revokeObjectURL(state.preview)
+    shown.current = null
     setState({ kind: 'none' })
     setMerchant('')
     setAmount('')
