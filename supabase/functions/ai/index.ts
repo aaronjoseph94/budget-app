@@ -27,7 +27,7 @@
 import { z } from 'npm:zod@4.6.5'
 
 /** Which copy is deployed, so One-time updates can tell an old paste from this one. */
-export const VERSION = '2026-10-01.4'
+export const VERSION = '2026-10-01.5'
 
 // Browsers allowed to call this, as read-receipt's: the Cloudflare and
 // Netlify sites and a local dev server, plus exact https origins in the
@@ -1361,8 +1361,11 @@ export async function route(env: Env, user: string, task: TaskName, ask: Ask, st
       tried.push({ provider, model, result: 'over_budget' })
       continue
     }
-    // An attempt starts only if its whole timeout fits in what is left.
-    if (Date.now() - started + ms > DEADLINE_MS) break
+    // An attempt starts only if all it may take fits in what is left: its
+    // claim, its own timeout, and the note and key mark after it, each of
+    // which the database may take BACKEND_MS to answer. So the helper always
+    // answers inside DEADLINE_MS, before the app stops waiting (review-r-01).
+    if (Date.now() - started + BACKEND_MS + ms + 2 * BACKEND_MS > DEADLINE_MS) break
 
     const claim = await callDb(
       env,
