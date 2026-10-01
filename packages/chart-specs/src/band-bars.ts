@@ -6,7 +6,7 @@
  * here divides money. The figures are also the table beside the chart and
  * its description.
  */
-import { FONT, WIDTH, type ChartFrame, fit, frame, lengthOf, textUnits } from './frame.js'
+import { FONT, type ChartFrame, fit, frame, lengthOf, textUnits, widthOf } from './frame.js'
 import { type SvgMarkup, type SvgNode, el } from './svg.js'
 
 export interface BandColumn {
@@ -39,7 +39,8 @@ const BAR = { fill: '#4F46E5', class: 'chart-forecast-range' } as const
 export function bandBars(input: BandBarsInput): SvgMarkup {
   const y = (bp: number) => BASE - lengthOf(bp, PLOT)
   const zero = y(input.zeroBp)
-  const step = Math.floor(WIDTH / Math.max(input.columns.length, 1))
+  const width = widthOf(input)
+  const step = Math.floor(width / Math.max(input.columns.length, 1))
   const band = Math.floor((step * 3) / 5)
   const bar = Math.floor((step * 2) / 5)
   const columns = input.columns.map((c, i) => {
@@ -59,7 +60,7 @@ export function bandBars(input: BandBarsInput): SvgMarkup {
   })
   return frame(input, BASE + 220, [
     key(),
-    el('line', { x1: 0, y1: zero, x2: WIDTH, y2: zero, stroke: '#6B7280', 'stroke-width': 10, class: 'chart-forecast-rule' }),
+    el('line', { x1: 0, y1: zero, x2: width, y2: zero, stroke: '#6B7280', 'stroke-width': 10, class: 'chart-forecast-rule' }),
     ...columns,
   ])
 }

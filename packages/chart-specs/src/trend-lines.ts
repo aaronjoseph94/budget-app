@@ -6,7 +6,7 @@
  * the line stops and starts again rather than dropping to $0. Nothing here
  * divides money. The page lists the same figures beside each chart.
  */
-import { FONT, WIDTH, type ChartFrame, fit, frame, lengthOf } from './frame.js'
+import { FONT, WIDTH, type ChartFrame, fit, frame, lengthOf, widthOf } from './frame.js'
 import { type SvgMarkup, type SvgNode, el } from './svg.js'
 
 export interface TrendSeries {
@@ -27,7 +27,6 @@ export interface TrendLinesInput extends ChartFrame {
 }
 
 const EDGE = 80
-const SPAN = WIDTH - 2 * EDGE
 const KEY = 260
 const PLOT = 1_200
 
@@ -77,22 +76,24 @@ function runs(
 
 export function trendLines(input: TrendLinesInput): SvgMarkup {
   const y = (bp: number) => KEY + PLOT - lengthOf(bp, PLOT)
-  const marks: SvgNode[] = [key(input.series)]
+  const width = widthOf(input)
+  const span = width - 2 * EDGE
+  const marks: SvgNode[] = [key(input.series, width)]
   const zero = y(input.zeroBp)
-  marks.push(el('line', { x1: EDGE, y1: zero, x2: WIDTH - EDGE, y2: zero, ...RULE }))
+  marks.push(el('line', { x1: EDGE, y1: zero, x2: width - EDGE, y2: zero, ...RULE }))
   for (const s of input.series) {
     const n = s.pointsBp.length
-    marks.push(...runs(s.pointsBp, (i, bp) => [across(i, n, EDGE, SPAN), y(bp)], { 'stroke-width': 30, ...TONE[s.tone] }, 40))
+    marks.push(...runs(s.pointsBp, (i, bp) => [across(i, n, EDGE, span), y(bp)], { 'stroke-width': 30, ...TONE[s.tone] }, 40))
   }
   const base = KEY + PLOT + FONT + 100
   marks.push(el('text', { x: EDGE, y: base, ...INK }, [input.startText]))
-  marks.push(el('text', { x: WIDTH - EDGE, y: base, 'text-anchor': 'end', ...INK }, [input.endText]))
+  marks.push(el('text', { x: width - EDGE, y: base, 'text-anchor': 'end', ...INK }, [input.endText]))
   return frame(input, base + 60, marks)
 }
 
 /** A short sample of each line and its name, side by side. */
-function key(series: readonly TrendSeries[]): SvgNode {
-  const each = series.length === 0 ? WIDTH : Math.floor(WIDTH / series.length)
+function key(series: readonly TrendSeries[], width: number): SvgNode {
+  const each = series.length === 0 ? width : Math.floor(width / series.length)
   return el(
     'g',
     {},
@@ -130,5 +131,6 @@ export function sparkline(input: SparklineInput): SvgMarkup {
   marks.push(...runs(input.pointsBp, (i, bp) => [x(i), y(bp)], line, 50))
   const last = input.pointsBp[n - 1]
   if (n > 0 && last !== null && last !== undefined) marks.push(el('circle', { cx: x(n - 1), cy: y(last), r: 60, fill: '#4F46E5', class: 'chart-trend-last' }))
-  return frame(input, SPARK + 2 * SPARK_EDGE, marks)
+  // Drawn in its row's own small box, so always WIDTH across.
+  return frame({ ...input, width: WIDTH }, SPARK + 2 * SPARK_EDGE, marks)
 }

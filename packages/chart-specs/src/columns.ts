@@ -15,7 +15,7 @@
  * axis ("$"#,##0) is not drawn: every amount is in the chart's description,
  * each column's own title, and the tables beside it.
  */
-import { FONT, WIDTH, type ChartFrame, fit, frame, lengthOf, textUnits } from './frame.js'
+import { FONT, type ChartFrame, fit, frame, lengthOf, textUnits, widthOf } from './frame.js'
 import { type SvgMarkup, type SvgNode, el } from './svg.js'
 
 /** Where a stacked part starts and ends, from core (`stackedColumns`). */
@@ -64,7 +64,8 @@ const GOAL = { fill: '#9CA3AF', class: 'chart-year-goal' } as const
 const ACTUAL = { fill: '#4F46E5', class: 'chart-year-actual' } as const
 
 export function incomeExpenseColumns(input: IncomeExpenseInput): SvgMarkup {
-  const step = Math.floor(WIDTH / Math.max(input.columns.length, 1))
+  const width = widthOf(input)
+  const step = Math.floor(width / Math.max(input.columns.length, 1))
   const bar = Math.floor((step * 3) / 5)
   const columns = input.columns.map((c, i) => {
     const x = i * step + Math.floor((step - bar) / 2)
@@ -84,13 +85,14 @@ export function incomeExpenseColumns(input: IncomeExpenseInput): SvgMarkup {
       ['Income', INCOME],
       ['Expenses', EXPENSES],
     ]),
-    baseline(),
+    baseline(width),
     ...columns,
   ])
 }
 
 export function goalActualColumns(input: GoalActualInput): SvgMarkup {
-  const step = Math.floor(WIDTH / Math.max(input.groups.length, 1))
+  const width = widthOf(input)
+  const step = Math.floor(width / Math.max(input.groups.length, 1))
   const bar = Math.floor((step * 7) / 20)
   // Labels a little smaller than the chart's text, so a list's name fits
   // under its pair of columns; `fit` counts characters at FONT.
@@ -118,7 +120,7 @@ export function goalActualColumns(input: GoalActualInput): SvgMarkup {
       ['Goal', GOAL],
       ['Actual', ACTUAL],
     ]),
-    baseline(),
+    baseline(width),
     ...groups,
   ])
 }
@@ -137,11 +139,11 @@ function key(series: readonly [string, { readonly fill: string; readonly class: 
   return el('g', {}, marks)
 }
 
-function baseline(): SvgNode {
+function baseline(width: number): SvgNode {
   return el('line', {
     x1: 0,
     y1: BASE,
-    x2: WIDTH,
+    x2: width,
     y2: BASE,
     stroke: '#E5E7EB',
     'stroke-width': 10,

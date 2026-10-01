@@ -31,6 +31,25 @@ export interface ChartFrame {
   readonly title: string
   /** Every value it draws, in words, for anyone who cannot see it. */
   readonly description: string
+  /**
+   * Units across, WIDTH when not given. Text is FONT units however wide
+   * the drawing, so the page draws a chart in a narrow card on fewer units
+   * and one in a wide card on more, and its words show at one size
+   * wherever it sits (V1, N127). Heights do not change with it.
+   */
+  readonly width?: number | undefined
+}
+
+/** The narrowest a chart is drawn: the pie's 1,600 across, with room. */
+export const NARROWEST = 2_000
+export const WIDEST = 5_000
+
+/** The units across a chart is drawn on, checked. */
+export function widthOf(chart: ChartFrame): number {
+  const width = chart.width ?? WIDTH
+  if (!Number.isInteger(width) || width % 10 !== 0 || width < NARROWEST || width > WIDEST)
+    throw new RangeError(`A chart is ${NARROWEST} to ${WIDEST} units across in tens, received ${width}`)
+  return width
 }
 
 const ID = /^[A-Za-z][A-Za-z0-9_-]*$/
@@ -43,13 +62,14 @@ const ID = /^[A-Za-z][A-Za-z0-9_-]*$/
  */
 export function frame(chart: ChartFrame, height: number, children: readonly SvgChild[]): SvgMarkup {
   if (!ID.test(chart.id)) throw new RangeError(`A chart id must be letters, digits, "-" and "_": ${chart.id}`)
+  const width = widthOf(chart)
   return finish(
     el(
       'svg',
       {
         xmlns: 'http://www.w3.org/2000/svg',
-        viewBox: `0 0 ${WIDTH} ${height}`,
-        width: WIDTH / 10,
+        viewBox: `0 0 ${width} ${height}`,
+        width: width / 10,
         height: Math.ceil(height / 10),
         role: 'img',
         'aria-labelledby': `${chart.id}-title`,
