@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useRef } from 'react'
+import { lazy, useEffect, useMemo, useRef } from 'react'
 import { readEnv } from './env.js'
 import { createSupabase } from './supabase.js'
 import { NotConfigured, SignIn, useSession } from './auth.js'
@@ -14,6 +14,7 @@ import { AnnounceProvider } from './components/ui/announce.js'
 import { Icon, type IconName } from './components/ui/icons.js'
 import { Count, Dot, labelOf } from './shell/marks.js'
 import { Sidebar } from './shell/Sidebar.js'
+import { ScreenBoundary } from './shell/ScreenBoundary.js'
 import { TopBar } from './shell/TopBar.js'
 import { askForHelpSearch } from './help/search-focus.js'
 import { useSidebarState } from './shell/sidebar-state.js'
@@ -266,7 +267,7 @@ export function Shell() {
 /** The screen the address names, each but the Month fetched on first use. */
 function Screens({ screen, param }: { screen: Screen; param: string | null }) {
   return (
-    <Suspense fallback={<p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>}>
+    <ScreenBoundary screen={screen}>
       {screen === 'month' ? <MonthScreen month={param} /> : null}
       {screen === 'week' ? <WeekScreen monday={param} /> : null}
       {screen === 'paycheck' ? <PaycheckScreen day={param} /> : null}
@@ -290,7 +291,7 @@ function Screens({ screen, param }: { screen: Screen; param: string | null }) {
       {screen === 'coach' && param === null ? <CoachScreen /> : null}
       {/* nav.ts reads no other param on the Coach. */}
       {screen === 'coach' && param === 'checkin' ? <CheckinScreen /> : null}
-    </Suspense>
+    </ScreenBoundary>
   )
 }
 
