@@ -25,6 +25,7 @@ import {
   describePlanFailure,
   describeScheduleFailure,
   describeSetupFailure,
+  describeIngestFailure,
   describeWriteFailure,
   scheduleShownBy,
   shownBy,
@@ -155,7 +156,7 @@ export async function saveImport(
       ? args
       : { ...args, p_period_start: input.period.from, p_period_end: input.period.to },
   )
-  if (error !== null) throw new Error(describeWriteFailure(error))
+  if (error !== null) failIngest(error)
 
   const result = (Array.isArray(data) ? data[0] : data) as SavedCounts | undefined
   if (result === undefined) throw new Error(describeWriteFailure(null))
@@ -182,6 +183,11 @@ interface SavedCounts {
 
 function fail(error: { code?: string | null } | null): never {
   throw new Error(describeWriteFailure(error))
+}
+
+/** As fail, for the functions that say a category, account or line they cannot find with 42501. */
+function failIngest(error: { code?: string | null } | null): never {
+  throw new Error(describeIngestFailure(error))
 }
 
 // ---------------------------------------------------------------------------
@@ -249,7 +255,7 @@ export async function approveCandidate(
     p_candidate: candidateId,
     p_category: categoryId,
   })
-  if (error !== null) fail(error)
+  if (error !== null) failIngest(error)
   const outcome = String(data)
   return outcome === 'approved' || outcome === 'already_in_ledger' ? outcome : 'already_handled'
 }
@@ -339,7 +345,7 @@ export async function listUnreadable(supabase: SupabaseClient, limit = 200): Pro
  */
 export async function dismissUnreadableLine(supabase: SupabaseClient, lineId: string): Promise<void> {
   const { error } = await supabase.rpc('dismiss_unreadable_line', { p_line: lineId })
-  if (error !== null) fail(error)
+  if (error !== null) failIngest(error)
 }
 
 /**
@@ -462,9 +468,9 @@ export async function addTypedTransaction(supabase: SupabaseClient, entry: Typed
   }
   // Before 0023 is pasted there is no call that takes an entry id; the one
   // without it still adds, as before (each call a new entry).
-  if (error.code !== 'PGRST202' && error.code !== '42883') fail(error)
+  if (error.code !== 'PGRST202' && error.code !== '42883') failIngest(error)
   const before = await supabase.rpc('add_typed_transaction', args)
-  if (before.error !== null) fail(before.error)
+  if (before.error !== null) failIngest(before.error)
 }
 
 // ---------------------------------------------------------------------------

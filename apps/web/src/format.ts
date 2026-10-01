@@ -211,6 +211,23 @@ const MOVE_FAILURES: Readonly<Record<string, string>> = {
   '23514': 'That move breaks a rule the ledger follows, so nothing was moved.',
 }
 
+/**
+ * Why approving, adding, bringing in or dismissing was refused. Those
+ * functions (0004, 0012) say 42501 when the category, account or line they
+ * were given is not the owner's any more: removed, most likely, on another
+ * device. Signing out, the everyday 42501 sentence, would not help (backend-b-08).
+ */
+const INGEST_FAILURES: Readonly<Record<string, string>> = {
+  '42501':
+    'That category, account or line is no longer there — it may have changed on another device. Reload this screen and try again; if it keeps happening, sign out and back in. Nothing was saved.',
+}
+
+export function describeIngestFailure(error: WriteError | null | undefined): string {
+  const code = typeof error?.code === 'string' ? error.code : ''
+  const body = INGEST_FAILURES[code]
+  return body === undefined ? describeWriteFailure(error) : `${body} (code ${code})`
+}
+
 export function describeMoveFailure(error: WriteError | null | undefined): string {
   const code = typeof error?.code === 'string' ? error.code : ''
   const body = MOVE_FAILURES[code]

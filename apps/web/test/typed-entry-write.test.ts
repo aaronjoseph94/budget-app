@@ -56,6 +56,6 @@ describe('adding a typed entry', () => {
   it('says why on any other failure, and does not try again', async () => {
     const fake = createFakeSupabase()
     fake.fail('rpc/add_typed_transaction', '42501')
-    await expect(addTypedTransaction(fake.client, ENTRY)).rejects.toThrow(/\(code 42501\)$/)
+    await expect(addTypedTransaction(fake.client, ENTRY)).rejects.toThrow(/^That category, account or line is no longer there.*\(code 42501\)$/)
   })
 })
