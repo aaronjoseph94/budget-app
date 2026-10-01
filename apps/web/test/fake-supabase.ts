@@ -11,7 +11,7 @@
  *
  * Adapted from the screenshot harness's fake, keeping what the tests use.
  */
-import { createClient, type OAuthGrant } from '@supabase/supabase-js'
+import { createClient, type OAuthAuthorizationDetails, type OAuthGrant, type OAuthRedirect } from '@supabase/supabase-js'
 import type {
   BudgetRow,
   Category,
@@ -154,9 +154,16 @@ export interface FakeSupabase {
    * Supabase's OAuth server (ADR 0012): `grants` are the AI apps the owner
    * allowed, which Settings lists; null, the default, is the server
    * switched off, which Supabase answers 404 feature_disabled. Each client
-   * id Disconnect revokes is kept in `revoked`. Both need `signIn()`.
+   * id Disconnect revokes is kept in `revoked`. `requests` are the sign-ins
+   * waiting on the consent page, by id: what it shows, or a reply with only
+   * a `redirect_url` (an app allowed before); an id not there is answered
+   * 404, as an expired one. All need `signIn()`.
    */
-  readonly oauth: { grants: OAuthGrant[] | null; readonly revoked: string[] }
+  readonly oauth: {
+    grants: OAuthGrant[] | null
+    readonly revoked: string[]
+    readonly requests: Record<string, OAuthAuthorizationDetails | OAuthRedirect>
+  }
   /** The signed-in user as the auth server holds it, `user_metadata` included. */
   readonly user: { id: string; email: string; user_metadata: Record<string, unknown> }
   /** Give the client a session, which `auth.updateUser` needs. `fail('auth/user', …)` makes updates fail. */
@@ -251,7 +258,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     receiptCalls: [],
     mcpHealth: () => json({ ok: true, version: MCP_SERVER_VERSION, tools: 0 }),
   }
-  const oauth: FakeSupabase['oauth'] = { grants: null, revoked: [] }
+  const oauth: FakeSupabase['oauth'] = { grants: null, revoked: [], requests: {} }
   let nextId = 1
 
   const json = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
@@ -380,6 +387,12 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       oauth.revoked.push(String(revoked))
       oauth.grants = oauth.grants.filter((g) => g.client.id !== revoked)
       return new Response(null, { status: 204 })
+    }
+    const authorization = /^\/auth\/v1\/oauth\/authorizations\/([^/]+)$/.exec(url.pathname)
+    if (authorization !== null) {
+      const request = oauth.requests[decodeURIComponent(authorization[1] ?? '')]
+      if (request === undefined) return json({ code: 404, error_code: 'not_found', msg: 'authorization not found' }, 404)
+      return json(request)
     }
     if (url.pathname === '/auth/v1/user') {
       // GET when a session is set, PUT for updateUser, which merges `data`
