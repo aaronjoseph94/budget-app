@@ -19,6 +19,9 @@ export interface Access {
 
 export const NO_ACCESS: Access = { enabled: false, allowAdd: true, connectUntil: null }
 
+/** How long Connect a new AI app keeps the door open (PLAN §2.10). */
+export const CONNECT_MINUTES = 15
+
 export type Why = 'needs_update' | 'unreachable'
 export type AccessRead = { readonly ok: true; readonly access: Access } | { readonly ok: false; readonly why: Why }
 
@@ -45,14 +48,24 @@ export async function readAccess(supabase: SupabaseClient, userId: string): Prom
 export async function saveAccess(
   supabase: SupabaseClient,
   userId: string,
-  change: { readonly enabled?: boolean; readonly allowAdd?: boolean },
+  change: { readonly enabled?: boolean; readonly allowAdd?: boolean; readonly connectUntil?: string },
 ): Promise<true | Why> {
   const row = {
     user_id: userId,
     time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     ...(change.enabled === undefined ? {} : { enabled: change.enabled }),
     ...(change.allowAdd === undefined ? {} : { allow_add: change.allowAdd }),
+    ...(change.connectUntil === undefined ? {} : { connect_until: change.connectUntil }),
   }
   const { error } = await supabase.from('ai_app_access').upsert(row, { onConflict: 'user_id' })
   return error === null ? true : why(error)
+}
+
+/**
+ * The address the owner pastes into Claude or ChatGPT: this project's `mcp`
+ * function, exactly as the server names itself (`resourceOf` in
+ * packages/ai-apps), from the client's own project, never typed or stored.
+ */
+export function serverAddress(supabase: SupabaseClient): string {
+  return `${supabase.from('ai_app_access').url.origin}/functions/v1/mcp`
 }

@@ -5,6 +5,7 @@ import { Section } from '../forecast/parts.js'
 import { SWITCH } from '../components/ui/form.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
 import { readAccess, saveAccess, type Access } from './access.js'
+import { ConnectNew } from './ConnectNew.js'
 
 type Loaded = { readonly state: 'loading' | 'needs_update' | 'unreachable' } | { readonly state: 'ready'; readonly access: Access }
 
@@ -12,8 +13,9 @@ const SAVE_FAILED = { needs_update: 'That needs a one-time update first. See One
 
 /**
  * Settings → AI apps (PLAN §2.9, ADR 0012): Let AI apps connect, off until
- * the owner turns it on, and Let them add to Review. Each switch is saved
- * at once; a save that fails puts the switch back as it is stored.
+ * the owner turns it on; and, while on, Let them add to Review, the
+ * address to paste and Connect a new AI app. Each switch is saved at once;
+ * a save that fails puts the switch back as it is stored.
  */
 export function AiAppsCard() {
   const { supabase, userId } = useAppData()
@@ -96,6 +98,7 @@ export function AiAppsCard() {
                   ? 'On: they can add a purchase or money received to Review, where it waits for you.'
                   : 'Off: they can only read. Nothing is added to Review.'}
               </p>
+              <ConnectNew />
             </>
           ) : null}
         </>

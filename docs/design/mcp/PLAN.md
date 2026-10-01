@@ -1803,6 +1803,20 @@ created it in M9, and imported `packages/ai-apps` from
 - **Done:** §2.13's card cases for the switches, the address and the
   window, with an axe check; looked at in the preview harness at 320, 390
   and 1280 px, light and dark.
+- **As built (2026-10-01):** two commits, to stay under 300 lines: the
+  card with its two switches, then the address and Connect
+  (`ConnectNew.tsx`). The card is not lazy: Settings is already its own
+  chunk. It sits in Settings' right-hand column, between the learned
+  shops and the account. The browser's time zone goes with every save,
+  not only turning on, since any first save creates the row and its zone
+  cannot be null; so "today" follows where Settings was last used (risk
+  17). The address is built from the client's own project
+  (`serverAddress`), as the server's `resourceOf` names it, and breaks
+  only after a slash. Connect starts the copy within the tap (Safari
+  allows it only then) while it writes `connect_until`; a copy refused
+  still opens the window and says to copy by hand, and a window not
+  opened says Claude or ChatGPT would be turned away. The address and
+  Connect show only while AI apps are on, as Allow does.
 
 ### M10b: Settings → AI apps: connected apps and Disconnect
 
