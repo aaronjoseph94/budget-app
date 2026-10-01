@@ -59,3 +59,28 @@ describe('the files under /setup/', () => {
     expect(String(emitted.at(-1)?.source)).toMatch(/^\/\/ mcp-function\.ts — /)
   }, 60_000)
 })
+
+/**
+ * A bidi override or a zero-width character written as itself into SQL
+ * makes the rest of its line display reordered or hidden, in an editor, in
+ * GitHub's diff and in what the owner pastes (security-b-01, the Trojan
+ * Source pattern). Every such character is written as an escape instead.
+ * 0015-0020 are applied or belong to the AI apps build and are not edited
+ * here (NOTICED-NOT-TOUCHING.md); every later update is held to it.
+ */
+const INVISIBLE = /[\p{Cf}\p{Co}\u2028\u2029]/gu
+const shown = (text: string) => [...text.matchAll(INVISIBLE)].map((m) => `U+${m[0].codePointAt(0)?.toString(16).toUpperCase()}`)
+
+describe('the SQL the owner pastes and the schema gate runs', () => {
+  it('holds no invisible character written as itself, from 0021 on', () => {
+    const checked = expected.filter((n) => n.endsWith('.sql') && n >= '0021')
+    expect(checked).toContain('0028_ai_words_no_invisible_characters.sql')
+    for (const name of [...checked.map((n) => `supabase/migrations/${n}`), 'supabase/tests/schema-assertions.sql']) {
+      expect(shown(committed(name).toString('utf8')), name).toEqual([])
+    }
+  })
+
+  it('would see one', () => {
+    expect(shown('a\u202Eb\u200Bc\uE000d\u00ADe')).toEqual(['U+202E', 'U+200B', 'U+E000', 'U+AD'])
+  })
+})

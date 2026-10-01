@@ -3313,3 +3313,25 @@ and the owner pastes the server only after M12b.
 
 **To settle:** bump it once the tools are all in (M9) and in every slice
 after that changes the built file, as its comment asks.
+
+---
+
+## N144 — 0020 writes four invisible characters as themselves
+
+**Seen:** 2026-10-01, review of ecd31c8. Line 527 of
+`0020_ai_apps.sql`, the `bad_words` check in the AI apps' add-purchase
+function, holds U+2028, U+202E, U+2066 and U+2069 written as themselves
+inside `'[\x01-\x1F\x7F-\x9F...]'`. The check works; but a raw U+202E in
+a SQL line makes the rest of it display reordered in an editor and in
+GitHub's diff (the Trojan Source pattern), and the owner pastes this file.
+0025 and 0028 write the same characters as `\uXXXX` escapes, and
+`apps/web/test/setup-files.test.ts` now refuses a raw one in 0021 on.
+
+**Why not fixed here:** 0020 belongs to the AI apps build now under way,
+and may be applied to the hosted project; a migration already applied is
+never edited.
+
+**To settle:** if 0020 has not been applied anywhere, write that class as
+`'[\x01-\x1F\x7F-\x9F -‮⁦-⁩]'` and lower the guard
+test's `'0021'` to `'0015'`. If it has, leave it: 0025 already holds the
+same characters out of every ingested text, written escaped.

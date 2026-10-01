@@ -2703,9 +2703,9 @@ begin
       ('bad_date', acc, day + 2, -1250, 'Lunch at Subway', 1, h.lunch, 1, null),
       ('bad_date', acc, day - 366, -1250, 'Lunch at Subway', 1, h.lunch, 1, null),
       ('bad_words', acc, day, -1250, E'Lunch\tat Subway', 1, h.lunch, 1, null),
-      ('bad_words', acc, day, -1250, E'Lunch ‮yawbus', 1, h.lunch, 1, null),
+      ('bad_words', acc, day, -1250, E'Lunch \u202Eyawbus', 1, h.lunch, 1, null),
       ('bad_words', acc, day, -1250, E'Lunch\u0085at Subway', 1, h.lunch, 1, null),
-      ('bad_words', acc, day, -1250, E'Lunch⁦at Subway', 1, h.lunch, 1, null),
+      ('bad_words', acc, day, -1250, E'Lunch\u2066at Subway', 1, h.lunch, 1, null),
       ('bad_occurrence', acc, day, -1250, 'Lunch at Subway', 0, h.lunch, 1, null),
       ('bad_occurrence', acc, day, -1250, 'Lunch at Subway', 10, h.lunch, 1, null),
       ('no_account', 'aaaaaaaa-0000-4000-8000-000000000301'::uuid, day, -1250, 'Lunch at Subway', 1, h.lunch, 1, null),
@@ -3229,12 +3229,12 @@ declare
   u   uuid := '11111111-1111-4111-8111-111111111111';
   bad text;
 begin
-  foreach bad in array array[E'spent ‮{{A.now}}‬', E'spent ⁦{{A.now}}⁩', E't​wenty', E'fif­ty',
-                             E'cryp‍to', E'a﻿b', E'a؜b', E'a⁠b', E'ab'] loop
+  foreach bad in array array[E'spent \u202E{{A.now}}\u202C', E'spent \u2066{{A.now}}\u2069', E't\u200Bwenty', E'fif\u00ADty',
+                             E'cryp\u200Dto', E'a\uFEFFb', E'a\u061Cb', E'a\u2060b', E'a\uE000b'] loop
     begin
       insert into public.ai_notes (user_id, surface, scope, facts_sig, prompt_v, body, provider, model)
         values (u, 'daily', 'day:2026-10-01', repeat('e', 64), 1, jsonb_build_object('summary', bad), 'gemini', 'gemini-3.5-flash-lite');
-      raise exception 'NOT REFUSED: AI words holding U+%', upper(to_hex(ascii(regexp_replace(bad, '^[^­؜​-‏‪-‮⁠-⁩﻿]*', ''))));
+      raise exception 'NOT REFUSED: AI words holding U+%', upper(to_hex(ascii(regexp_replace(bad, '^[^\u00AD\u061C\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF\uE000]*', ''))));
     exception when check_violation then null;
     end;
   end loop;

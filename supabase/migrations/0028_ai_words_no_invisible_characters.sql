@@ -46,7 +46,7 @@ set search_path = public, pg_temp
 as $$
   select p_body is not null
      and p_body::text !~ '[0-9０-９٠-٩۰-۹०-९$＄%％€£¥¢₹]'
-     and p_body::text !~ '[­؜᠎​-‏‪-‮⁠-⁤⁦-⁩﻿-]'
+     and p_body::text !~ '[\u00AD\u061C\u180E\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF\uE000-\uF8FF]'
 $$;
 
 alter table public.ai_notes
