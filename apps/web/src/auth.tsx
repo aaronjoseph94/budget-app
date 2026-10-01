@@ -162,7 +162,7 @@ export function SignIn({ supabase, linkRefused = false }: { supabase: SupabaseCl
             <Icon name="wallet" className="size-7" />
           </span>
           <h1 className="mt-4 text-[1.75rem] font-bold leading-tight tracking-[-0.02em]">Budget</h1>
-          <p className="mt-1 text-muted-foreground">Your statements and your spending, visible only to you.</p>
+          <p className="mt-1 text-balance text-muted-foreground">Your statements and your spending, visible only to you.</p>
         </div>
 
         {linkRefused && attempt.kind === 'idle' ? (

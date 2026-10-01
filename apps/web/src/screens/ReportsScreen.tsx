@@ -100,7 +100,10 @@ export function ReportsScreen({ month }: { month: string | null }) {
                 <Icon name="chevronRight" className="size-4" />
               </a>
             ) : (
-              <span className="size-11" aria-hidden="true" />
+              // A dimmed chevron, as the Week's and Pay's steppers show at the latest (V15).
+              <span aria-hidden="true" className="flex size-11 items-center justify-center opacity-40 print:invisible">
+                <Icon name="chevronRight" className="size-4" />
+              </span>
             )}
           </nav>
           {/* The browser's own print makes the PDF: nothing is loaded and nothing leaves the phone. */}

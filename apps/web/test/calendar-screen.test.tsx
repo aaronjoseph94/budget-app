@@ -124,6 +124,10 @@ describe('CalendarScreen', () => {
     expect(rows[4]?.[0]).toBe('20<b>Tunes & more</b>11.99 planned')
     expect(rows[5]).toEqual(['27', '28', '29', '30Car loan300.00 planned', '', '', '', 'Week total $300.00'])
     expect(rows).toHaveLength(6)
+    // Name and amount in two columns, the name wrapping beside the amount, the
+    // same on every day: some days stacked them and some did not (V13).
+    const rent = within(grid).getByText('Rent').closest('p')
+    expect(rent?.className.split(' ')).toEqual(expect.arrayContaining(['grid', 'grid-cols-[minmax(0,1fr)_auto]']))
   })
 
   it("keeps the phone's dotted month out of a screen reader's way, since the list under it says the same", async () => {

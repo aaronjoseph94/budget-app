@@ -73,6 +73,8 @@ describe('Help', () => {
     expect(steps[3]?.textContent).toBe('Press Approve on a row, or Approve these 12 (with your own number) to file every row that has a category after one look at the list.')
     expect([...(steps[3]?.querySelectorAll('strong') ?? [])].map((b) => b.textContent)).toEqual(['Approve', 'Approve these 12'])
     expect(within(page).getByRole('region', { name: 'You’re done when…' }).textContent).toContain('Review says "Nothing waiting."')
+    // Side by side, the two cards stretch to one height (V18).
+    expect(within(page).getByRole('region', { name: 'You’re done when…' }).parentElement?.className).not.toContain('items-start')
     expect(within(page).getByRole('region', { name: 'Stuck?' }).textContent).toContain('Always file')
     const related = within(within(page).getByRole('region', { name: 'Related' })).getAllByRole('link')
     expect(related.map((a) => [a.textContent, a.getAttribute('href')])).toEqual([

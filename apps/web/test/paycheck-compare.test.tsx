@@ -51,7 +51,9 @@ describe('the Paycheck beside the last pay period (D26)', () => {
     renderScreen(<PaycheckScreen day={null} />, seeded())
 
     const s = await line()
-    expect(s.getByText(text('18 – 24 Sep: $445.38 spent · 4 – 10 Sep: $465.38'))).toBeTruthy()
+    const both = s.getByText(text('18 – 24 Sep: $445.38 spent · 4 – 10 Sep: $465.38'))
+    // The dot starts the second part, so it never ends a line or stands alone on one (V7).
+    expect([...both.children].map((c) => c.textContent)).toEqual(['18 – 24 Sep: $445.38 spent', '· 4 – 10 Sep: $465.38'])
     expect(s.getByText(text('▼ $20.00 less (4%)'))).toBeTruthy()
     await expectNoAxeViolations()
   })

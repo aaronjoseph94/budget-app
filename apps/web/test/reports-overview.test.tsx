@@ -86,6 +86,10 @@ describe('Reports, the Overview (plan §2.6, A15)', () => {
     // No month after this one to step to.
     expect(screen.getByRole('link', { name: 'Previous month' }).getAttribute('href')).toBe('#/reports/2026-08')
     expect(screen.queryByRole('link', { name: 'Next month' })).toBeNull()
+    // In its place a dimmed chevron, as the Week's and Pay's steppers show, not an empty box (V15).
+    const previous = screen.getByRole('link', { name: 'Previous month' })
+    const next = previous.parentElement?.lastElementChild
+    expect([next?.getAttribute('aria-hidden'), next?.querySelector('svg') !== null, next?.className.includes('opacity-40')]).toEqual(['true', true, true])
   })
 
   it('sets "So far" beside the title and the review over the sections two across (Mockup A)', async () => {

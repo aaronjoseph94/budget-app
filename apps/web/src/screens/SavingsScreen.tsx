@@ -318,7 +318,7 @@ function FundCard({
           </div>
         </div>
       ) : (
-        <div className="space-y-3 px-4 py-4 md:px-5">
+        <div className="flex flex-1 flex-col space-y-3 px-4 py-4 md:px-5">
           <GoalFigures figures={f} goal={goal} />
           {lever}
           {/* This fund's line only when there is one; the card above says why when there is not. */}
@@ -331,19 +331,25 @@ function FundCard({
               word="saved"
             />
           )}
-          {actions ?? (
-            <Button variant="outline" size="sm" onClick={onEdit}>
-              Edit goal
-            </Button>
-          )}
+          <div className="mt-auto">
+            {actions ?? (
+              <Button variant="outline" size="sm" onClick={onEdit}>
+                Edit goal
+              </Button>
+            )}
+          </div>
         </div>
       )}
     </section>
   )
 }
 
-/** Mockup A's goal card: white, an amber title strip, the words in ink. */
-const CARD = 'overflow-hidden rounded-xl border bg-card'
+/**
+ * Mockup A's goal card: white, an amber title strip, the words in ink. It
+ * fills its grid cell, its actions at its foot, so cards side by side are
+ * one height with their buttons level (V17).
+ */
+const CARD = 'flex h-full flex-col overflow-hidden rounded-xl border bg-card'
 
 /** The strip: Savings' icon tile, a plane for a goal counted in hours as the sidebar draws it, the name and its badge. */
 function Title({ name, badge, icon }: { name: string; badge: ReactNode; icon: IconName }) {
@@ -384,14 +390,14 @@ function LooseGoalCard({
   return (
     <section aria-label={`${goal.name}, on no fund`} className={CARD}>
       <Title name={goal.name} badge={badge} icon={goal.unit_cost_cents === null ? 'piggy' : 'plane'} />
-      <div className="space-y-3 px-4 py-4 md:px-5">
+      <div className="flex flex-1 flex-col space-y-3 px-4 py-4 md:px-5">
         <p className="text-sm">On no savings fund yet, so money moved to savings does not count toward it.</p>
         <Button variant="outline" size="sm" onClick={onMakeFund}>
           Make it a fund
         </Button>
         <GoalFigures figures={figures} goal={goal} />
         {lever}
-        {actions}
+        <div className="mt-auto">{actions}</div>
       </div>
     </section>
   )
@@ -403,7 +409,7 @@ function GoalFigures({ figures: f, goal }: { figures: FundFigures; goal: FundRow
     <>
       <p>
         <Figure className="text-3xl font-bold">{formatCents(f.balanceCents)}</Figure>
-        <span className="tnum text-sm text-muted-foreground"> saved of {formatCents(f.goalCents)}</span>
+        <span className="tnum whitespace-nowrap text-sm text-muted-foreground"> saved of {formatCents(f.goalCents)}</span>
       </p>
       <Bar figures={f} />
       <div className="rounded-lg bg-savings-needed px-3 py-2.5">

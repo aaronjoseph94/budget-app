@@ -54,13 +54,15 @@ export function CompareLine({
   const c = pick(comparison)
   return line(
     <>
-      {/* Each side kept whole where it fits, so a date range never breaks from its figure. */}
+      {/* Each side kept whole where it fits, so a date range never breaks
+        from its figure. The dot starts the second side, so it never ends a
+        line or stands on one alone (V7). */}
       <p>
         <span className="inline-block">
-          {dates(comparison.now)}: <span className="tnum font-semibold">{formatCents(c.nowCents)}</span> {word} ·
+          {dates(comparison.now)}: <span className="tnum font-semibold">{formatCents(c.nowCents)}</span> {word}
         </span>{' '}
         <span className="inline-block">
-          {dates(comparison.before)}: <span className="tnum font-semibold">{formatCents(c.beforeCents)}</span>
+          · {dates(comparison.before)}: <span className="tnum font-semibold">{formatCents(c.beforeCents)}</span>
         </span>
       </p>
       <p className="mt-0.5 font-medium">

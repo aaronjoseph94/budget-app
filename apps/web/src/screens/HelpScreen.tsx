@@ -137,7 +137,8 @@ function ArticlePage({ article, beside }: { article: Article; beside: boolean })
       {/* What is in comes first: it is what the owner opened this page to learn. */}
       {article.id === 'updates' ? <UpdatesPanel /> : null}
       <ArticleBody article={article} carded />
-      <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+      {/* Stretched, so the two cards side by side are one height (V18). */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
         <section aria-labelledby="help-done" className="space-y-1 rounded-xl border bg-card p-5">
           <h2 id="help-done" className="flex items-center gap-2 font-semibold">
             <Icon name="check" className="size-4 shrink-0 text-primary" />
