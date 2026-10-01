@@ -93,6 +93,23 @@ function isNoAccount(error: { readonly code?: string | undefined; readonly messa
 }
 
 /**
+ * Where an emailed sign-in link brings the owner back: the address asked
+ * for when it is on this site, as the consent page asks for its own (PLAN
+ * §2.10), else the site itself. Never another origin, so the card cannot
+ * become an open redirect.
+ */
+export function returnAddress(asked: string | undefined): string {
+  const here = window.location.origin
+  if (asked === undefined) return here
+  try {
+    const url = new URL(asked, here)
+    return url.origin === here ? url.href : here
+  } catch {
+    return here
+  }
+}
+
+/**
  * Sign in, by password or by emailed link.
  *
  * Password is the default because the alternative depends on a mail service:
@@ -104,7 +121,7 @@ function isNoAccount(error: { readonly code?: string | undefined; readonly messa
  * person's financial history; accounts are made in the Supabase dashboard, so
  * a public URL cannot be used to register against this project at all.
  */
-export function SignIn({ supabase, linkRefused = false }: { supabase: SupabaseClient; linkRefused?: boolean }) {
+export function SignIn({ supabase, linkRefused = false, returnTo }: { supabase: SupabaseClient; linkRefused?: boolean; returnTo?: string }) {
   const [method, setMethod] = useState<Method>('password')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -133,7 +150,7 @@ export function SignIn({ supabase, linkRefused = false }: { supabase: SupabaseCl
 
     const { error } = await supabase.auth.signInWithOtp({
       email: address,
-      options: { emailRedirectTo: window.location.origin, shouldCreateUser: false },
+      options: { emailRedirectTo: returnAddress(returnTo), shouldCreateUser: false },
     })
     // An address with no account is refused by Supabase (no account is made
     // and no email goes out), but showing that refusal would tell a stranger
