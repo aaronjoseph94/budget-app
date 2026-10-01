@@ -49,8 +49,8 @@ whether a commit is clean.
 | Secrets | Zero findings in the working tree (local `.env` files allowed there only) | `gitleaks dir --config .gitleaks-tree.toml --redact --no-banner` | every edit |
 | Tracked env files | No `.env` file is tracked but `.env.example` | `git ls-files` (`no_env_files` in `scripts/gates.sh`) | every edit |
 | Secret history | Zero findings in committed history, `.env` files included | `gitleaks detect --config .gitleaks.toml --redact --no-banner` | CI |
-| Golden replay | 100% exact match, zero tolerance | `vitest run` | every edit |
-| Coverage | ≥80% lines and functions, ≥75% branches, per module | `vitest run --coverage` | CI |
+| Golden replay | 100% exact match, zero tolerance | `vitest run` (at full level, the same run as Coverage) | every edit |
+| Coverage | ≥80% lines and functions, ≥75% branches, per module | `vitest run --coverage` (gate `golden+coverage`: the suite runs once at full level) | CI |
 | Migration replay | Applies cleanly to an empty database | `scripts/verify-migrations.sh` | CI |
 | RLS coverage | `pg_tables WHERE NOT rowsecurity` returns 0; every public table has an all-commands `user_id = auth.uid()` policy (`pg_policies`), and it is the only permissive policy on the table, so policies isolate; no SECURITY DEFINER function is callable by `anon` | `scripts/verify-migrations.sh` | CI |
 | Dependencies | Nothing high or above | `pnpm audit --audit-level high` | CI |

@@ -17,7 +17,12 @@ declare -a PASSED=() FAILED=() MISCONFIGURED=()
 
 # Each run keeps its own logs: two worktrees gating at once must never
 # print each other's failure.
-LOGS="$(mktemp -d "${TMPDIR:-/tmp}/gates.XXXXXX")"
+# CI names the folder (GATES_LOG_DIR) so it can keep the logs of a slow run.
+if [ -n "${GATES_LOG_DIR:-}" ]; then
+  LOGS="$GATES_LOG_DIR"; mkdir -p "$LOGS"
+else
+  LOGS="$(mktemp -d "${TMPDIR:-/tmp}/gates.XXXXXX")"
+fi
 
 have() {
   case "$1" in
@@ -61,7 +66,15 @@ no_env_files() {
   [ -z "$found" ] || { echo "tracked environment file(s):"; echo "$found"; return 1; }
 }
 gate envfile git       no_env_files
-gate golden  vitest    npx vitest run
+# The suite runs once. At full level it runs with coverage, whose
+# thresholds fail the same command, so the golden replay and the coverage
+# floor are one gate there: running the whole suite twice took CI past its
+# time limit before coverage, deps and bundle ever ran (architecture-b-01).
+if [ "$LEVEL" = "full" ]; then
+  gate golden+coverage vitest npx vitest run --coverage
+else
+  gate golden  vitest    npx vitest run
+fi
 
 # The owner asked (2026-09-24) for the workbook vendor's name to go from
 # everything in the repository. Its second letter is a character class here,
@@ -89,7 +102,6 @@ if [ "$LEVEL" = "full" ]; then
   # Applies every migration to a throwaway database and asserts the schema
   # refuses what it claims to. Never touches the hosted project.
   gate schema   pg_server ./scripts/verify-migrations.sh
-  gate coverage vitest   npx vitest run --coverage
   gate deps     pnpm     pnpm audit --audit-level high
   # Builds the web app into a temporary folder and fails when the JavaScript
   # a phone loads before the first screen is over budget (CONSTRAINTS.md).

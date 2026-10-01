@@ -15,10 +15,19 @@ on:
 permissions:
   contents: read
 
+# A newer push to the same branch stops the run it supersedes, so runs do
+# not pile up behind one another on the runner (architecture-b-01).
+concurrency:
+  group: gates-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   gates:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # The suite with coverage takes about 7 minutes here, and the bundle
+    # build follows it. At 15 minutes, 8 of 14 runs were cancelled before
+    # coverage, deps and bundle ran, and a cancelled run shows grey, not red.
+    timeout-minutes: 30
 
     steps:
       # Each action is pinned to a commit, the one its v4 tag named on
@@ -54,3 +63,16 @@ jobs:
       # than passing quietly, so a broken runner cannot look like a green build.
       - name: Run gates
         run: ./scripts/gates.sh full
+        env:
+          GATES_LOG_DIR: ${{ runner.temp }}/gate-logs
+
+      # Every gate's full log, kept even when the run fails or times out, so
+      # a slow or failing gate can be read rather than guessed at.
+      - name: Keep the gate logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: gate-logs
+          path: ${{ runner.temp }}/gate-logs
+          if-no-files-found: ignore
+          retention-days: 14
