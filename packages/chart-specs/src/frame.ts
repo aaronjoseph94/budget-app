@@ -44,6 +44,19 @@ export interface ChartFrame {
 export const NARROWEST = 2_000
 export const WIDEST = 5_000
 
+/** The size a chart's words show at on the page, in px: the mockup's 12 to 14. */
+export const TEXT_PX = 13
+
+/**
+ * The units across that show a chart's text at TEXT_PX in a box `px` wide,
+ * to the nearest ten, within NARROWEST and WIDEST. Geometry, not money.
+ */
+export function widthFor(px: number): number {
+  if (!Number.isFinite(px)) return NARROWEST
+  const units = Math.round((px * FONT) / TEXT_PX / 10) * 10
+  return Math.min(WIDEST, Math.max(NARROWEST, units))
+}
+
 /** The units across a chart is drawn on, checked. */
 export function widthOf(chart: ChartFrame): number {
   const width = chart.width ?? WIDTH

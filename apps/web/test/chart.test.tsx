@@ -1,5 +1,5 @@
 import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { spendingDoughnut } from '@budget/chart-specs'
 import { SvgChart } from '../src/components/ui/chart.js'
 import { expectNoAxeViolations } from './axe.js'
@@ -30,5 +30,34 @@ describe('SvgChart', () => {
     expect(screen.getByText(NAME, { selector: 'text' })).toBeTruthy()
     expect(container.querySelector('img')).toBeNull()
     expect(container.querySelectorAll('[onerror]')).toHaveLength(0)
+  })
+})
+
+// V1: a chart's words show at one size whatever box it is drawn in.
+describe('SvgChart, drawn to its box', () => {
+  const draw = (width: number | undefined) =>
+    spendingDoughnut({ id: 'c2', title: 'Spending', description: 'd', width, slices: [{ label: 'Food', valueText: '$1.00 · 100%', shareBp: 10_000, listIndex: 0 }] })
+
+  it('is drawn on the width that shows its text at 13 px in the box it measures', () => {
+    const watched: Element[] = []
+    vi.stubGlobal('ResizeObserver', class {
+      observe(el: Element) {
+        watched.push(el)
+      }
+      disconnect() {}
+    })
+    const size = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ width: 222 } as DOMRect)
+    render(<SvgChart svg={draw} />)
+    expect(screen.getByRole('img', { name: 'Spending' }).getAttribute('viewBox')).toMatch(/^0 0 2050 /)
+    expect(watched).toHaveLength(1)
+    size.mockRestore()
+    vi.unstubAllGlobals()
+  })
+
+  it('is drawn at its designed width where the browser cannot measure', () => {
+    vi.stubGlobal('ResizeObserver', undefined)
+    render(<SvgChart svg={draw} />)
+    expect(screen.getByRole('img', { name: 'Spending' }).getAttribute('viewBox')).toMatch(/^0 0 3000 /)
+    vi.unstubAllGlobals()
   })
 })

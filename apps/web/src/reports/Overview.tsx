@@ -8,7 +8,7 @@
 import { pairedBars } from '@budget/chart-specs'
 import type { Change, MonthReport, Mover } from '@budget/core'
 import { formatBasisPoints, formatCents, formatChange, formatDateRange, formatDayMonth, formatMonthName } from '../format.js'
-import { SvgChart } from '../components/ui/chart.js'
+import { SvgChart, fitted } from '../components/ui/chart.js'
 import { Section } from '../forecast/parts.js'
 
 export type Reviewed = Extract<MonthReport, { readonly totals: unknown }>
@@ -142,7 +142,7 @@ export function PairsCard({ report, nameOf }: { report: Reviewed; nameOf: (id: s
       ) : (
         <>
           <SvgChart
-            svg={pairedBars({
+            svg={fitted(pairedBars, {
               id: 'report-pairs',
               title: `${sides.now} against ${sides.before}, by category`,
               description: rows.map((r) => `${r.name}: ${formatCents(r.nowCents)}, then ${formatCents(r.beforeCents)}`).join('. '),

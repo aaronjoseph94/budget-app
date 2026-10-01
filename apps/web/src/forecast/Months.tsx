@@ -1,7 +1,7 @@
 import { bandBars } from '@budget/chart-specs'
 import type { AheadMonth, CashFlowAhead, ScaledSeries, Spread } from '@budget/core'
 import { formatCents, formatIsoDate, formatShortMonth, formatWholeDollars } from '../format.js'
-import { SvgChart } from '../components/ui/chart.js'
+import { SvgChart, fitted } from '../components/ui/chart.js'
 import { Badge } from '../components/ui/feedback.js'
 import { Section } from './parts.js'
 
@@ -36,7 +36,7 @@ export function MonthsAheadCard({ ahead, bars, names }: { ahead: CashFlowAhead; 
         Not a promise.
       </p>
       <SvgChart
-        svg={bandBars({
+        svg={fitted(bandBars, {
           id: 'forecast-ahead',
           title: withStart ? 'Where the next three months end' : 'What the next three months leave over',
           description: ahead.months.map((m) => `${formatShortMonth(m.month)}: ${range(shown(m))}, most likely ${formatWholeDollars(shown(m).mid)}.`).join(' '),

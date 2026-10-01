@@ -5,7 +5,7 @@ import { useAppData } from '../app-data.js'
 import { useFunds } from '../funds.js'
 import { formatCents, formatDayMonth, formatMonthName, formatWholeDollars } from '../format.js'
 import { hashOf } from '../nav.js'
-import { SvgChart } from '../components/ui/chart.js'
+import { SvgChart, fitted } from '../components/ui/chart.js'
 import { Badge } from '../components/ui/feedback.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { Said } from '../coach/CoachCards.js'
@@ -169,7 +169,7 @@ function MonthEndCard({ monthEnd, figures, month }: { monthEnd: MonthEndForecast
       {end === null ? <NoStart /> : monthEnd.status === 'range' ? <p className="text-muted-foreground">Most likely {formatWholeDollars(end.mid)}.</p> : null}
       {end === null || range === null || today === null ? null : (
         <SvgChart
-          svg={rangeBar({
+          svg={fitted(rangeBar, {
             id: 'forecast-month-end',
             title: `Where ${name} ends`,
             description: `Today ${formatCents(today)}; the month ends between ${formatWholeDollars(end.low)} and ${formatWholeDollars(end.high)}, most likely ${formatWholeDollars(end.mid)}.`,

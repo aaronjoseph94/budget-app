@@ -11,7 +11,7 @@ import { sparkline, trendLines } from '@budget/chart-specs'
 import type { CategoryTrend, MonthlyTrend, TrendLabel } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { formatCents, formatMonthTitle, formatShortMonth } from '../format.js'
-import { SvgChart } from '../components/ui/chart.js'
+import { SvgChart, fitted } from '../components/ui/chart.js'
 import { cn } from '../lib/cn.js'
 import { Row, Section } from '../forecast/parts.js'
 import { Failed } from './Failed.js'
@@ -93,7 +93,7 @@ function TotalsTrend({ trend }: { trend: MonthlyTrend }) {
       ) : (
         <>
           <SvgChart
-            svg={trendLines({
+            svg={fitted(trendLines, {
               id: 'trend-totals',
               title: `Income, Spent and Saved, ${span}`,
               description: months.map((_, i) => monthText(i)).join('. '),

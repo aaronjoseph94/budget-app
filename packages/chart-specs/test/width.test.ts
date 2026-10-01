@@ -4,7 +4,7 @@ import { bandBars } from '../src/band-bars.js'
 import { incomeBars } from '../src/bars.js'
 import { goalActualColumns, incomeExpenseColumns } from '../src/columns.js'
 import { spendingDoughnut } from '../src/doughnut.js'
-import { WIDTH, frame, widthOf } from '../src/frame.js'
+import { WIDTH, frame, widthFor, widthOf } from '../src/frame.js'
 import { pairedBars } from '../src/paired-bars.js'
 import { yearPie } from '../src/pie.js'
 import { rangeBar } from '../src/range-bar.js'
@@ -50,6 +50,12 @@ describe('a chart drawn on its own width', () => {
 
   it('refuses a width too narrow for its marks, too wide, or off the 10-unit grid', () => {
     for (const width of [1_990, 5_010, 2_255, Number.NaN]) expect(() => widthOf({ ...at, width })).toThrow(RangeError)
+  })
+
+  it('picks the width that shows its text at 13 px in a box of a given size, within bounds', () => {
+    // 120 units of text at 13 px: 9.23 units to the pixel, to the nearest ten.
+    expect([widthFor(222), widthFor(325), widthFor(448)]).toEqual([2_050, 3_000, 4_140])
+    expect([widthFor(100), widthFor(900), widthFor(0), widthFor(Number.NaN)]).toEqual([2_000, 5_000, 2_000, 2_000])
   })
 
   it.each(builders)('%s draws across the width it is given and no further', (_, draw) => {

@@ -8,7 +8,7 @@
  * lengths and angles; it never divides money (invariant 1).
  */
 export { escapeXml, type SvgMarkup } from './svg.js'
-export type { ChartFrame } from './frame.js'
+export { widthFor, type ChartFrame } from './frame.js'
 export { spendingDoughnut, type DoughnutInput, type DoughnutSlice } from './doughnut.js'
 export { debtBars, incomeBars, savingsGoalBars, weekdayBars, type IncomeBar, type IncomeBarsInput } from './bars.js'
 export { debtRing, shareRing, yearPie, TOP3_COLOURS, type DebtRingInput, type PieInput, type PieSlice, type ShareRingInput } from './pie.js'
