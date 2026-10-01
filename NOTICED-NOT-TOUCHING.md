@@ -3464,3 +3464,41 @@ after M12b (PLAN §3, "After M12b") rewrites anyway.
 **To settle:** in the README step or the cleanup after the reviews, add
 an "AI apps" bullet to §2, say `0001` to `0020` and ADRs 0001 to 0012
 under "Underneath", and add K1 to K13 and K5 to §6.
+
+---
+
+## N151 — The netlify.app origin is still trusted after the Netlify site goes
+
+**Seen:** 2026-10-01, in the AI-apps security review (mcp-3-05, dropped
+as unproven). `https://aaron-budget-app.netlify.app` is still in the
+ORIGINS lists of `packages/ai-apps/src/handle.ts`,
+`supabase/functions/ai/index.ts` and
+`supabase/functions/read-receipt/index.ts`, and HANDOFF says to delete
+the Netlify site without first removing any netlify.app entry from
+Supabase's Redirect URLs. A freed subdomain someone re-claims would then
+be a trusted origin, and possibly a trusted redirect.
+
+**Why not fixed here:** whether a netlify.app Redirect URL exists is
+hosted state nobody has seen, and the origins alone give nothing without
+a token; the security fixes changed none of these lists.
+
+**To settle:** when `netlify.toml` is removed, drop the origin from all
+three lists (bumping the helper's and the server's versions), add a test
+that no ORIGINS list names netlify.app, and add "remove any netlify.app
+Redirect URL" to HANDOFF and `docs/setup.md` before "delete the Netlify
+site".
+
+---
+
+## N152 — vitest still aliases the server's two npm: imports
+
+**Seen:** 2026-10-01, bundling the SDK and zod into the pasted server
+(mcp-3-04). `vitest.config.ts` aliases `npm:zod@4.6.5` and
+`npm:@modelcontextprotocol/server@2.2.0` for the ai-apps project, which
+the built file no longer imports.
+
+**Why not fixed here:** harmless, and the read-receipt project still
+needs its own `npm:zod` alias.
+
+**To settle:** drop the ai-apps project's two aliases in the cleanup
+step, and run the bundle test.
