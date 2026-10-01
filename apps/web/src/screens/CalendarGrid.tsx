@@ -130,12 +130,14 @@ function GridDay({ day, today, onOpen, onOpenDay }: { day: CalendarDay; today: b
       {shown.map((b, i) => (
         <p
           key={`${b.categoryId}-${i}`}
-          className={cn('grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-1.5 border-l-[3px] pl-1 text-xs leading-snug text-calendar-ink xl:pl-1.5 xl:text-[0.8125rem]', RULE[b.kind])}
+          className={cn('flex flex-col border-l-[3px] pl-1 text-xs leading-snug text-calendar-ink xl:pl-1.5 xl:text-[0.8125rem]', RULE[b.kind])}
         >
-          {/* The name wraps beside its amount, never cut short, the same on
-            every day: some days stacked them and some did not (V13). */}
-          <BillName bill={b} onOpen={onOpen} className="min-w-0 [overflow-wrap:anywhere]" />
-          <span className={cn('tnum shrink-0 text-muted-foreground', b.basis === 'planned' && 'italic')}>
+          {/* The name over its amount, never cut short, the same on every day
+            and width: some days stacked them and some did not (V13). Two
+            columns squeezed a tablet's day to a letter a line, so the name
+            wraps between words and breaks only a word wider than the day. */}
+          <BillName bill={b} onOpen={onOpen} className="max-w-full self-start break-words" />
+          <span className={cn('tnum text-muted-foreground', b.basis === 'planned' && 'italic')}>
             {formatAmount(b.amountCents)}
             {b.basis === 'planned' ? <span className="sr-only"> planned</span> : null}
           </span>

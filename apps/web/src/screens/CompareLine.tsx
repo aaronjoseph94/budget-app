@@ -56,10 +56,14 @@ export function CompareLine({
     <>
       {/* Each side kept whole where it fits, so a date range never breaks
         from its figure. The dot starts the second side, so it never ends a
-        line or stands on one alone (V7). */}
+        line or stands on one alone (V7), and a figure keeps its word, which
+        in a narrow card stood on a line alone. */}
       <p>
         <span className="inline-block">
-          {dates(comparison.now)}: <span className="tnum font-semibold">{formatCents(c.nowCents)}</span> {word}
+          {dates(comparison.now)}:{' '}
+          <span className="whitespace-nowrap">
+            <span className="tnum font-semibold">{formatCents(c.nowCents)}</span> {word}
+          </span>
         </span>{' '}
         <span className="inline-block">
           · {dates(comparison.before)}: <span className="tnum font-semibold">{formatCents(c.beforeCents)}</span>

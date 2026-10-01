@@ -627,7 +627,11 @@ Charts:
   a chart is measured (and in an exported file) it is drawn at 3,000, as
   before. Chosen over three fixed sizes: one size per chart could not hold
   12 to 14 px for a chart whose card is 222 px at 1440 and 324 px on a
-  phone.
+  phone. Measured at 320, 390, 768, 1024, 1280 and 1440, three stay under
+  13 px: the Year's pie in the glance row at 1280 (183 px across, 11 px;
+  drawn on fewer units its legend would cut "Expenses" short), the twelve
+  month names, which shrink to 11.7 px on a phone to keep their gap (V6),
+  and the Against goals labels, four fifths of the text by design.
 - **The donut's legend names are in the ink, the figures muted (V5),** as
   Month.dc.html writes them; the hue stays on the slices and swatches.
 - **A Goal's pale key swatch is edged in its Actual's colour (V4);** the
@@ -653,10 +657,14 @@ Layout:
 - **The Year's Top 3 is each name over its amount and share, at every
   width (V2);** four across, each table card's total sits under its name,
   so every head is two lines and the tables start level (V3).
-- **Bill calendar days: name and amount in two columns,** the name
-  wrapping beside its amount on every day (V13); still no "…".
+- **Bill calendar days: each bill's name over its amount, on every day
+  and width (V13);** still no "…". Two columns, tried first, squeezed a
+  tablet's day to a letter a line ("R e n t") and broke "Insuranc e" on a
+  desktop, so the name wraps between words and breaks only a word wider
+  than the day.
 - **Comparison lines start their second half with the dot (V7),** so "·"
-  never ends a line or stands alone.
+  never ends a line or stands alone, and a figure keeps its word ("$1,860.23
+  spent"), where "spent" stood on a line alone in a narrow card.
 - **Reports' stepper shows a dimmed chevron at the latest month (V15),**
   as the Week's and Pay's do.
 - **Setup's column head is "Monthly amount" on one line; "Amounts apply
