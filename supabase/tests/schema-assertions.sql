@@ -3077,6 +3077,49 @@ begin
   raise notice 'stored text refuses % kinds of format character, and keeps accented, CJK and symbol text', n;
 end $$;
 
+-- ---------------------------------------------------------------------------
+-- 0026: a goal whose fund moved off the Savings list can still be
+-- reordered, paused, reached or retyped; only linking it to a category
+-- that is not on Savings is refused (backend-a-08).
+-- ---------------------------------------------------------------------------
+reset role;
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000002601', '11111111-1111-4111-8111-111111111111', 'Fund 2601', 'savings'),
+  ('cccccccc-0000-4000-8000-000000002602', '11111111-1111-4111-8111-111111111111', 'Spend 2602', 'variable');
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+do $$
+declare
+  fund  uuid := 'cccccccc-0000-4000-8000-000000002601';
+  spend uuid := 'cccccccc-0000-4000-8000-000000002602';
+  goal  uuid;
+begin
+  insert into public.savings_goals (user_id, name, target_cents, saved_cents, category_id, balance_as_of)
+    values ('11111111-1111-4111-8111-111111111111', 'Fund 2601', 100000, 5000, fund, '2026-09-01')
+    returning id into goal;
+  -- Nothing stops the fund's category moving list (N52).
+  update public.categories set kind = 'variable' where id = fund;
+
+  update public.savings_goals set sort_order = 3 where id = goal;
+  update public.savings_goals set status = 'paused' where id = goal;
+  update public.savings_goals set saved_cents = 6000, balance_as_of = '2026-09-30' where id = goal;
+  update public.savings_goals set status = 'reached', reached_on = '2026-09-30' where id = goal;
+
+  begin
+    update public.savings_goals set category_id = spend where id = goal;
+    raise exception 'NOT REFUSED: a goal linked to a category off the Savings list';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.savings_goals (user_id, name, target_cents, category_id, balance_as_of)
+      values ('11111111-1111-4111-8111-111111111111', 'Spend 2602', 100000, spend, '2026-09-01');
+    raise exception 'NOT REFUSED: a new goal on a category off the Savings list';
+  exception when check_violation then null;
+  end;
+  raise notice 'a goal whose fund moved list can still be changed; linking off Savings is still refused';
+end $$;
+reset role;
+
 -- The level the app reads (0021) names the last update in this folder, so a
 -- new update that forgets to raise it fails here.
 \set last_migration `ls supabase/migrations | tail -1 | cut -c1-4`
