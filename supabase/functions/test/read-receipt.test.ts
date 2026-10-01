@@ -249,3 +249,27 @@ describe('read-receipt asks the auth server with the project’s public key (bac
     expect([none.res.status, none.body.code, none.calls.length + none.auth.length]).toEqual([503, 'not_configured', 0])
   })
 })
+
+describe('read-receipt waits a bounded time for Gemini (backend-b-05)', () => {
+  afterEach(() => vi.useRealTimers())
+
+  it('gives up after 30 s when Gemini sends its headers and then stalls, and says Gemini could not be reached', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    const fetchFn = (async (url: string | URL | Request, init?: RequestInit) => {
+      if (String(url) === `${PROJECT}/auth/v1/user`) return signedIn()
+      return new Response(
+        new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode('{"candidates":'))
+            init?.signal?.addEventListener('abort', () => controller.error(new DOMException('aborted', 'AbortError')))
+          },
+        }),
+        { status: 200 },
+      )
+    }) as typeof fetch
+    const pending = handle(request(), ENV, fetchFn)
+    await vi.advanceTimersByTimeAsync(30_000)
+    const res = await pending
+    expect([res.status, await res.json()]).toEqual([504, { ok: false, code: 'provider_unreachable' }])
+  })
+})

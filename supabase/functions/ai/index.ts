@@ -27,7 +27,7 @@
 import { z } from 'npm:zod@4.6.5'
 
 /** Which copy is deployed, so One-time updates can tell an old paste from this one. */
-export const VERSION = '2026-10-01.1'
+export const VERSION = '2026-10-01.2'
 
 // Browsers allowed to call this, as read-receipt's: the Cloudflare and
 // Netlify sites and a local dev server, plus exact https origins in the
@@ -293,13 +293,8 @@ async function whoIs(env: Env, bearer: string, fetchFn: typeof fetch): Promise<W
     log('not_configured')
     return { code: 'helper_error' }
   }
-  let res: Response
-  try {
-    res = await fetchFn(`${env.SUPABASE_URL}/auth/v1/user`, {
-      method: 'GET',
-      headers: { apikey, Authorization: bearer },
-    })
-  } catch {
+  const res = await callService(fetchFn, `${env.SUPABASE_URL}/auth/v1/user`, { method: 'GET', headers: { apikey, Authorization: bearer } }, BACKEND_MS)
+  if (typeof res === 'string') {
     log('auth_unreachable')
     return { code: 'helper_error' }
   }
@@ -308,7 +303,7 @@ async function whoIs(env: Env, bearer: string, fetchFn: typeof fetch): Promise<W
     log('auth_status', { status: res.status })
     return { code: 'helper_error' }
   }
-  const user: unknown = await res.json().catch(() => null)
+  const user: unknown = res.body
   const id = typeof user === 'object' && user !== null && 'id' in user ? user.id : null
   if (typeof id !== 'string' || !UUID.test(id)) return { code: 'not_signed_in' }
   return fromAnAiApp(bearer) ? { code: 'not_signed_in' } : { user: id.toLowerCase() }
@@ -385,12 +380,31 @@ const ATTEMPT_MS = 20_000
 /** What one call to a service came to (plan §3.3). */
 export type Outcome = 'ok' | 'rate_limited' | 'rejected' | 'model_not_found' | 'provider_error' | 'timeout' | 'unreachable'
 
-/** One call, cut off at the attempt's limit. No reply at all is a timeout or no route. */
-async function callService(fetchFn: typeof fetch, url: string, init: RequestInit, ms = ATTEMPT_MS): Promise<Response | 'timeout' | 'unreachable'> {
+/** How long the auth server or the database may take to answer one call. */
+const BACKEND_MS = 10_000
+
+/** A whole answer: its status and headers, and its body as JSON (null when it is not JSON). */
+interface Answered {
+  readonly status: number
+  readonly ok: boolean
+  readonly headers: Headers
+  readonly body: unknown
+}
+
+/**
+ * One call, cut off at the attempt's limit, its body read inside the same
+ * limit: a service that sends its headers and then stalls is a timeout too
+ * (backend-b-05). No reply at all is a timeout or no route.
+ */
+async function callService(fetchFn: typeof fetch, url: string, init: RequestInit, ms = ATTEMPT_MS): Promise<Answered | 'timeout' | 'unreachable'> {
   const stop = new AbortController()
   const timer = setTimeout(() => stop.abort(), ms)
+  const aborted = new Promise<null>((resolve) => stop.signal.addEventListener('abort', () => resolve(null)))
   try {
-    return await fetchFn(url, { ...init, signal: stop.signal })
+    const res = await fetchFn(url, { ...init, signal: stop.signal })
+    const body: unknown = await Promise.race([res.json().catch(() => null), aborted])
+    if (stop.signal.aborted) return 'timeout'
+    return { status: res.status, ok: res.ok, headers: res.headers, body }
   } catch {
     return stop.signal.aborted ? 'timeout' : 'unreachable'
   } finally {
@@ -447,9 +461,8 @@ function listedIn(provider: Provider, body: unknown): readonly string[] {
 export async function listModels(provider: Provider, key: string, fetchFn: typeof fetch): Promise<{ outcome: Outcome; listed: readonly string[] }> {
   const res = await callService(fetchFn, LIST_URL[provider], { method: 'GET', headers: keyHeaders(provider, key) })
   if (typeof res === 'string') return { outcome: res, listed: [] }
-  const body: unknown = await res.json().catch(() => null)
-  const outcome = outcomeOf(res.status, body)
-  return outcome === 'ok' ? { outcome, listed: listedIn(provider, body) } : { outcome, listed: [] }
+  const outcome = outcomeOf(res.status, res.body)
+  return outcome === 'ok' ? { outcome, listed: listedIn(provider, res.body) } : { outcome, listed: [] }
 }
 
 /**
@@ -849,14 +862,12 @@ async function callDb(env: Env, fn: string, args: Record<string, unknown>, fetch
   }
   const headers: Record<string, string> = { apikey: key, 'Content-Type': 'application/json' }
   if (JWT.test(key)) headers['Authorization'] = `Bearer ${key}`
-  let res: Response
-  try {
-    res = await fetchFn(`${env.SUPABASE_URL}/rest/v1/rpc/${fn}`, { method: 'POST', headers, body: JSON.stringify(args) })
-  } catch {
+  const res = await callService(fetchFn, `${env.SUPABASE_URL}/rest/v1/rpc/${fn}`, { method: 'POST', headers, body: JSON.stringify(args) }, BACKEND_MS)
+  if (typeof res === 'string') {
     log('db_unreachable')
     return { code: 'helper_error' }
   }
-  const body: unknown = await res.json().catch(() => null)
+  const body = res.body
   if (res.ok) return { data: body }
   const code = typeof body === 'object' && body !== null && 'code' in body ? body.code : null
   if (typeof code === 'string' && NOT_THERE.has(code)) return { code: 'needs_update' }
@@ -1367,7 +1378,7 @@ export async function route(env: Env, user: string, task: TaskName, ask: Ask, st
 
     attempts += 1
     const res = await callService(fetchFn, built.url, built.init, ms)
-    const body: unknown = typeof res === 'string' ? null : await res.json().catch(() => null)
+    const body: unknown = typeof res === 'string' ? null : res.body
     const replied = typeof res === 'string' ? { outcome: res, text: null } : chatReply(provider, res.status, body)
     log(`attempt_${replied.outcome}`)
     const until = restUntil(provider, replied.outcome, typeof res === 'string' ? null : res.headers, body, Date.now())

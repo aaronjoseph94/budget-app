@@ -138,6 +138,34 @@ function publicKey(env: Env): string | null {
   return typeof fresh === 'string' && fresh !== '' ? fresh : (env.SUPABASE_ANON_KEY ?? null)
 }
 
+/** How long the auth server, and Gemini, may take to answer, body and all (backend-b-05). */
+const AUTH_MS = 10_000
+const GEMINI_MS = 30_000
+
+/**
+ * One call with its body read as JSON, both inside `ms`: a reply that sends
+ * its headers and then stalls is cut off too. Null body: not JSON.
+ */
+async function bounded(
+  fetchFn: typeof fetch,
+  url: string,
+  init: RequestInit,
+  ms: number,
+): Promise<{ status: number; ok: boolean; body: unknown } | 'timeout' | 'unreachable'> {
+  const stop = new AbortController()
+  const timer = setTimeout(() => stop.abort(), ms)
+  const aborted = new Promise<null>((resolve) => stop.signal.addEventListener('abort', () => resolve(null)))
+  try {
+    const res = await fetchFn(url, { ...init, signal: stop.signal })
+    const body: unknown = await Promise.race([res.json().catch(() => null), aborted])
+    return stop.signal.aborted ? 'timeout' : { status: res.status, ok: res.ok, body }
+  } catch {
+    return stop.signal.aborted ? 'timeout' : 'unreachable'
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
@@ -148,13 +176,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
  * whose payload cannot be read.
  */
 async function whoIs(project: string, anonKey: string, bearer: string, fetchFn: typeof fetch): Promise<'owner' | 'not_signed_in' | 'auth_unreachable'> {
-  let res: Response
-  try {
-    res = await fetchFn(`${project}/auth/v1/user`, {
-      method: 'GET',
-      headers: { apikey: anonKey, Authorization: bearer },
-    })
-  } catch {
+  const res = await bounded(fetchFn, `${project}/auth/v1/user`, { method: 'GET', headers: { apikey: anonKey, Authorization: bearer } }, AUTH_MS)
+  if (typeof res === 'string') {
     log('auth_unreachable')
     return 'auth_unreachable'
   }
@@ -163,7 +186,7 @@ async function whoIs(project: string, anonKey: string, bearer: string, fetchFn: 
     log('auth_status', { status: res.status })
     return 'auth_unreachable'
   }
-  const user: unknown = await res.json().catch(() => null)
+  const user: unknown = res.body
   const id = typeof user === 'object' && user !== null && 'id' in user ? user.id : null
   if (typeof id !== 'string' || !UUID.test(id)) return 'not_signed_in'
   try {
@@ -218,9 +241,10 @@ export async function handle(
   const who = await whoIs(project, anonKey, bearer, fetchFn)
   if (who !== 'owner') return send(who === 'not_signed_in' ? 401 : 503, { ok: false, code: who })
 
-  let upstream: Response
-  try {
-    upstream = await fetchFn(`${HOST}${model}:generateContent`, {
+  const upstream = await bounded(
+    fetchFn,
+    `${HOST}${model}:generateContent`,
+    {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify({
@@ -236,10 +260,12 @@ export async function handle(
         ],
         generationConfig: { temperature: 0, responseMimeType: 'application/json', responseSchema: RESPONSE_SCHEMA },
       }),
-    })
-  } catch {
+    },
+    GEMINI_MS,
+  )
+  if (upstream === 'timeout' || upstream === 'unreachable') {
     log('provider_unreachable')
-    return send(502, { ok: false, code: 'provider_unreachable' })
+    return send(upstream === 'timeout' ? 504 : 502, { ok: false, code: 'provider_unreachable' })
   }
 
   if (upstream.status === 429) return send(429, { ok: false, code: 'rate_limited' })
@@ -250,13 +276,8 @@ export async function handle(
 
   // Only the reply text is passed on. Everything else Gemini returns — safety
   // ratings, token counts, other candidates — stays here.
-  let text: unknown
-  try {
-    const data = await upstream.json()
-    text = data?.candidates?.[0]?.content?.parts?.[0]?.text
-  } catch {
-    text = undefined
-  }
+  const data = upstream.body as { candidates?: { content?: { parts?: { text?: unknown }[] } }[] } | null
+  const text: unknown = data?.candidates?.[0]?.content?.parts?.[0]?.text
   if (typeof text !== 'string') return send(502, { ok: false, code: 'provider_error' })
   return send(200, { ok: true, reply: text })
 }

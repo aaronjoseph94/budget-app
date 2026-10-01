@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { AiKeyStatus } from '@budget/schema'
 import { aiStatus, askAi, ranOf, statusOf, type AiView } from '../src/ai/client.js'
 import { aiStatusReply, createFakeSupabase } from './fake-supabase.js'
@@ -129,5 +129,24 @@ describe('ranOf', () => {
     expect(ranOf({ ...ran, model: 7 })).toBeNull()
     expect(ranOf({ ...ran, text: { suggestions: [] } })).toBeNull()
     expect(ranOf(null)).toBeNull()
+  })
+})
+
+describe('the app waits a bounded time for the helper (backend-b-05)', () => {
+  it('gives up on the helper after 110 s, past its own 100 s deadline, and says it could not be reached', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    try {
+      const fake = createFakeSupabase()
+      fake.functions.ai = () => new Promise<Response>(() => undefined)
+      let settled = false
+      const pending = askAi(fake.client, { action: 'ping' }).finally(() => void (settled = true))
+      await vi.advanceTimersByTimeAsync(109_000)
+      expect(settled).toBe(false)
+      await vi.advanceTimersByTimeAsync(1_000)
+      const answer = await pending
+      expect(answer.ok ? null : answer.view.state).toBe('unreachable')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

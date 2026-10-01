@@ -377,7 +377,10 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
       functions.calls.push(body)
       if (functions.ai === null) return json({ code: 'NOT_FOUND', message: 'Requested function was not found' }, 404)
-      return functions.ai(body)
+      // As a real fetch does, a request given up on stops waiting for its answer.
+      const signal = init?.signal
+      const given = new Promise<never>((_, reject) => signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError'))))
+      return Promise.race([functions.ai(body), given])
     }
     if (url.pathname === '/functions/v1/mcp/health') {
       if (functions.mcpHealth === null) return json({ code: 'NOT_FOUND', message: 'Requested function was not found' }, 404)

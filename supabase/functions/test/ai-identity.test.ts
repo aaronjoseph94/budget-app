@@ -132,6 +132,35 @@ describe('the AI helper learns who is calling from the auth server', () => {
   })
 })
 
+describe('the AI helper waits a bounded time for the auth server and the database (backend-b-05)', () => {
+  const hangs = (_url: string, init?: RequestInit) =>
+    new Promise<Response>((_, reject) => init?.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError'))))
+  afterEach(() => vi.useRealTimers())
+
+  it('answers helper_error after 10 s when the auth server does not answer, and asks nothing else', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    const calls: string[] = []
+    const pending = handle(request(), ENV, (async (url: string | URL | Request, init?: RequestInit) => {
+      calls.push(String(url))
+      return hangs(String(url), init)
+    }) as typeof fetch)
+    await vi.advanceTimersByTimeAsync(10_000)
+    const res = await pending
+    expect([res.status, (await res.json()).code]).toEqual([503, 'helper_error'])
+    expect(calls).toEqual([`${PROJECT}/auth/v1/user`])
+  })
+
+  it('answers helper_error after 10 s when the database does not answer', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    const env = { ...ENV, SUPABASE_SERVICE_ROLE_KEY: ['header', 'payload', 'signature'].join('.') }
+    const pending = handle(request({ body: { action: 'status' } }), env, (async (url: string | URL | Request, init?: RequestInit) =>
+      String(url).endsWith('/auth/v1/user') ? signedIn(String(url)) : hangs(String(url), init)) as typeof fetch)
+    await vi.advanceTimersByTimeAsync(10_000)
+    const res = await pending
+    expect([res.status, (await res.json()).code]).toEqual([503, 'helper_error'])
+  })
+})
+
 describe('the AI helper asks the auth server with the project’s public key (backend-b-04)', () => {
   const apikeyOf = (c: Call | undefined) => new Headers(c?.init.headers).get('apikey')
   const PUBLISHABLE = JSON.stringify({ default: 'sb_publishable_notarealkey0001' })
