@@ -417,9 +417,18 @@ function TypedEntry() {
   // Every change to the form and every Add that sends it, so a late Just
   // type it reading knows the form moved on without it (FE-4).
   const edits = useRef(0)
+  // This entry as filled in: kept when Add is pressed again after a failure,
+  // so a write whose answer was lost is not added twice; new once the form
+  // changes or the entry is added (backend-a-07).
+  const entry = useRef(crypto.randomUUID())
+  const changed = () => {
+    edits.current += 1
+    entry.current = crypto.randomUUID()
+  }
 
   const cents = parseMoneyInput(amount)
   const fill = (f: QuickFill) => {
+    entry.current = crypto.randomUUID()
     setDirection(f.flow)
     setNewKind(f.flow === 'spent' ? 'variable' : 'income')
     setAmount(f.amount)
@@ -461,6 +470,7 @@ function TypedEntry() {
           ? (await ensureCategory(supabase, userId, atEndOf(categories, newCategory.trim(), newKind))).id
           : categoryId
       await addTypedTransaction(supabase, {
+        entryId: entry.current,
         accountId,
         postedOn: isoDate(date),
         // The parser's own sign convention, not arithmetic here: spending is an
@@ -470,6 +480,7 @@ function TypedEntry() {
         categoryId: category,
       })
       setOutcome({ ok: true, message: `Added ${formatCents(cents)} — ${merchant.trim()}.` })
+      entry.current = crypto.randomUUID()
       setTried(0)
       setAmount('')
       setAiAmount(false)
@@ -494,7 +505,7 @@ function TypedEntry() {
         <form
           className="space-y-4"
           noValidate
-          onChange={() => (edits.current += 1)}
+          onChange={changed}
           onSubmit={(e) => {
             e.preventDefault()
             void submit()

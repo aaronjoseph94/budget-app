@@ -124,7 +124,9 @@ const WRITE_FAILURES: Record<string, string> = {
   '42501': 'Your sign-in does not allow this. Signing out and back in usually fixes it.',
   '28000': 'You are not signed in any more. Sign in again and retry — nothing was saved.',
   PGRST301: 'Your session expired. Sign in again and retry — nothing was saved.',
-  '': 'Could not reach the database. Check your connection and try again — nothing was saved.',
+  // No answer at all: the write may have gone through before the connection
+  // dropped, so this never claims nothing was saved (backend-b-03).
+  '': 'Could not reach the database, or its answer was lost on the way back, so this may or may not have been saved. Check your connection, then look before trying again.',
   // A table, column or function that a one-time update adds, not there yet
   // (N28): said as what it is, where "something went wrong" said nothing.
   ...Object.fromEntries(MISSING_UPDATE.map((code) => [code, 'This needs a one-time update, so nothing was saved.'])),

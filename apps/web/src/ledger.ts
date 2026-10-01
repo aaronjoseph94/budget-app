@@ -431,6 +431,12 @@ export async function listRules(supabase: SupabaseClient): Promise<ReadonlyMap<s
 // ---------------------------------------------------------------------------
 
 export interface TypedEntry {
+  /**
+   * One id for one entry as filled in, kept when Add is pressed again after
+   * an answer that never came: the database then takes it as the same entry,
+   * not a second purchase (0023, backend-a-07).
+   */
+  readonly entryId: string
   readonly accountId: string
   readonly postedOn: string
   /** Signed, ledger convention: a purchase is negative. */
@@ -440,15 +446,21 @@ export interface TypedEntry {
 }
 
 export async function addTypedTransaction(supabase: SupabaseClient, entry: TypedEntry): Promise<void> {
-  const { error } = await supabase.rpc('add_typed_transaction', {
+  const args = {
     p_account_id: entry.accountId,
     p_posted_on: entry.postedOn,
     p_amount_cents: entry.amountCents,
     p_merchant: normalizeMerchant(entry.merchantRaw),
     p_merchant_raw: entry.merchantRaw,
     p_category: entry.categoryId,
-  })
-  if (error !== null) fail(error)
+  }
+  const { error } = await supabase.rpc('add_typed_transaction', { ...args, p_entry: entry.entryId })
+  if (error === null) return
+  // Before 0023 is pasted there is no call that takes an entry id; the one
+  // without it still adds, as before (each call a new entry).
+  if (error.code !== 'PGRST202' && error.code !== '42883') fail(error)
+  const before = await supabase.rpc('add_typed_transaction', args)
+  if (before.error !== null) fail(before.error)
 }
 
 // ---------------------------------------------------------------------------

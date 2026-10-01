@@ -115,6 +115,8 @@ describe('describeWriteFailure', () => {
       const message = describeWriteFailure(error)
       expect(message).toMatch(/could not reach the database/i)
       expect(message).not.toMatch(/undefined|: $/)
+      // The write may have gone through before the answer was lost (backend-b-03).
+      expect(message).not.toMatch(/nothing was saved/i)
     }
   })
 

@@ -2952,6 +2952,59 @@ begin
   raise notice '0022 changed save_import by one condition, and nothing else';
 end $$;
 
+-- ---------------------------------------------------------------------------
+-- 0023: a typed entry sent again, after an answer that never arrived, is
+-- the same entry: one ledger row, and its own batch says it was a repeat.
+-- Two entries typed alike are still two (backend-a-07, backend-b-03).
+-- ---------------------------------------------------------------------------
+reset role;
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000002301', '11111111-1111-4111-8111-111111111111', 'Cash 2301', 'variable');
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+do $$
+declare
+  acc    uuid := 'aaaaaaaa-0000-4000-8000-000000000001';
+  cash   uuid := 'cccccccc-0000-4000-8000-000000002301';
+  entry  uuid := '23232323-0000-4000-8000-000000000001';
+  first_ uuid;
+  again  uuid;
+  other  uuid;
+  b      record;
+begin
+  first_ := public.add_typed_transaction(acc, '2025-10-01', -450, 'COFFEE 2301', 'Coffee 2301', cash, entry);
+  again  := public.add_typed_transaction(acc, '2025-10-01', -450, 'COFFEE 2301', 'Coffee 2301', cash, entry);
+  if again <> first_ then raise exception 'the same entry sent again made a second candidate'; end if;
+  if (select count(*) from public.transactions where merchant = 'COFFEE 2301') <> 1 then
+    raise exception 'the same entry sent again reached the ledger twice';
+  end if;
+  select parsed, deduped, inserted, rejected into b from public.ingest_batches
+   where source = 'typed' and id <> (select batch_id from public.ingest_candidates where id = first_)
+     and account_id = acc order by created_at desc limit 1;
+  if (b.parsed, b.deduped, b.inserted, b.rejected) is distinct from (1, 1, 0, 0) then
+    raise exception 'the repeat''s batch reads %, not parsed 1 = deduped 1', b;
+  end if;
+
+  -- A second coffee, typed alike, is a second coffee.
+  other := public.add_typed_transaction(acc, '2025-10-01', -450, 'COFFEE 2301', 'Coffee 2301', cash, '23232323-0000-4000-8000-000000000002');
+  if other = first_ or (select count(*) from public.transactions where merchant = 'COFFEE 2301') <> 2 then
+    raise exception 'two entries typed alike were taken as one';
+  end if;
+  -- And the older call, with no entry, still posts every time.
+  perform public.add_typed_transaction(acc, '2025-10-01', -450, 'COFFEE 2301', 'Coffee 2301', cash);
+  if (select count(*) from public.transactions where merchant = 'COFFEE 2301') <> 3 then
+    raise exception 'the call without an entry stopped posting';
+  end if;
+  raise notice 'a typed entry sent again is one entry, and two typed alike are two';
+end $$;
+reset role;
+do $$
+begin
+  if has_function_privilege('anon', 'public.add_typed_transaction(uuid, date, bigint, text, text, uuid, uuid)', 'execute') then
+    raise exception 'the anonymous role can add a typed entry';
+  end if;
+end $$;
+
 -- The level the app reads (0021) names the last update in this folder, so a
 -- new update that forgets to raise it fails here.
 \set last_migration `ls supabase/migrations | tail -1 | cut -c1-4`

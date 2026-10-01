@@ -24,3 +24,27 @@ failure `dedupe.ts` prefers.
 issuer-id discriminator already exists, so stored hashes stay valid and no
 backfill is needed. The digest goes only into the hashed string; it is never
 logged, stored on its own or shown.
+
+## A typed entry carries an entry id (backend-a-07, backend-b-03)
+
+**Before.** `add_typed_transaction` gave every call a random dedupe hash, so
+two coffees typed on one day stay two coffees (0004). When a write committed
+and its answer was lost, the app said "nothing was saved" and kept the form
+filled; pressing Add again posted the same cash purchase twice, straight to
+the ledger.
+
+**Now.** The Add form keeps one entry id (a random UUID) per entry as filled
+in: kept when Add is pressed again after a failure, renewed once the form
+changes or the entry is added. 0023's overload hashes
+`typed:<user>:<entry>`, and a unique index on typed candidates makes a
+repeat return the candidate already there, its own batch reading parsed 1 =
+deduped 1. Two entries typed alike still carry two ids. A connection that
+drops now says the write "may or may not have been saved" instead of
+"nothing was saved".
+
+**Unchanged.** The 6-argument call and existing typed rows' random hashes
+(no backfill). `dedupe_hash_v` stays 1 for typed rows, which never used
+`dedupe.ts`'s canonical string. Before 0023 is pasted, the app falls back to
+the 6-argument call. `save_import` is left as it is: a statement brought in
+again already dedupes its rows, and its unreadable lines listing twice is
+N13's accepted behaviour.
