@@ -356,16 +356,16 @@ export function fundsInput(read: Read, today: IsoDate): SavingsFundsInput {
 /** A goal as the forecasts read it, as the app's goalsForCore gives it. */
 export type GoalAhead = DigestGoal & ForecastGoal & { readonly unitLabel: string | null }
 
-/**
- * The active goals, main first, joined to the funds as the app's
- * goalsForCore joins them: what each has saved (its fund's kept balance,
- * else the amount typed) and the fund it is on.
- */
 /** What a goal has saved: its fund's balance kept by transfers (D16), else the amount typed, as the app's goalSavedCents says. */
 export function savedOf(goal: GoalRow, funds: SavingsFunds): number {
   return funds.funds.find((f) => f.figures?.goalId === goal.id)?.figures?.balanceCents ?? goal.saved_cents
 }
 
+/**
+ * The active goals, main first, joined to the funds as the app's
+ * goalsForCore joins them: what each has saved (its fund's kept balance,
+ * else the amount typed) and the fund it is on.
+ */
 export function goalsAhead(ordered: readonly GoalRow[], funds: SavingsFunds): GoalAhead[] {
   return ordered
     .filter((g) => g.status === 'active')
