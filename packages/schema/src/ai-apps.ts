@@ -74,3 +74,6 @@ export const GetDebtsInputSchema = z
     months: z.number().int().min(1).max(36).default(12),
   })
   .strict()
+
+/** `get_forecast`: this month's forecast, as the Forecast shows it. */
+export const GetForecastInputSchema = z.object({}).strict()

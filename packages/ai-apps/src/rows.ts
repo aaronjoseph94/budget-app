@@ -14,6 +14,7 @@ import {
   type BudgetHistoryRow,
   type DebtPlanInput,
   type IncomeSchedule,
+  type MonthForecastInput,
   type MonthSheetInput,
   type PaycheckSheetInput,
   type PaySchedule,
@@ -235,6 +236,29 @@ export function askInput(read: Read, today: IsoDate): SpendingBase & { readonly 
     planHistory: plansFrom(read['plans']),
     entries: shopEntriesFrom(txnsFrom(read['txns'])),
     notSubscriptions: notSubscriptionsFrom(read['not_subscriptions']),
+  }
+}
+
+/**
+ * What the Forecast gives core (F29 to F35), as its forecastInput builds it
+ * from the Coach's year: the rows from twelve months before this month's
+ * first day to its last, the budgets and plans typed up to three months
+ * ahead (F35), each income's paydays and this month's typed start (D17).
+ */
+export function forecastInput(read: Read, today: IsoDate): MonthForecastInput {
+  const { start, end } = monthBounds(today)
+  const readFrom = shiftMonth(start, -12)
+  const ahead = shiftMonth(start, 3)
+  return {
+    asOf: today,
+    historyStart: recordsFrom(read['records']).historyStart,
+    readFrom,
+    categories: periodCategories(categoriesFrom(read['categories'])),
+    budgetHistory: budgetsFrom(read['budgets']).filter((b) => b.month <= ahead),
+    planHistory: plansFrom(read['plans']).filter((p) => p.effectiveMonth <= ahead),
+    entries: entriesFrom(txnsFrom(read['txns']).filter((r) => r.posted_on >= readFrom && r.posted_on <= end)),
+    paySchedules: schedulesFrom(read['schedules']),
+    startingBalanceCents: balanceFor(read['balances'], start),
   }
 }
 

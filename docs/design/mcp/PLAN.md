@@ -1671,6 +1671,18 @@ created it in M9, and imported `packages/ai-apps` from
 - **Done:** outputs equal `forecastFigures`' engine calls on the same rows;
   "no starting balance" says so instead of a balance; the what-if amount
   is read through `AmountText`, and a JSON number is refused.
+- **As built (2026-10-01):** the Forecast's renaming (`forecastInput`)
+  with its parity case and the tool came first; the what-if follows the
+  goals' renaming, which M7b needs too. `forecastInput` keeps only the rows
+  the Forecast reads (twelve months back to the month's end, budgets and
+  plans up to three months ahead), so the engine's input is the app's
+  exactly. The read is thirteen months back and four ahead of the server's
+  date: the window test goes RED at three ahead (a plan typed for January,
+  added to `four-years.ts`) and at five back, since the figures rest on six
+  complete months; the rest of the year is read because the Forecast reads
+  it. Spreads are `{low, likely, high}`; the next 30 days' bills and
+  paydays are one list by date, at most 30, with `truncated`;
+  `no_starting_balance` says why the balances are null.
 
 ### M7b: `get_savings_goals`
 

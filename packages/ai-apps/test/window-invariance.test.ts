@@ -75,3 +75,12 @@ describe('get_debts does not depend on how many rows the database returns', () =
     expect((out.schedule as unknown[]).length).toBeGreaterThan(0)
   })
 })
+
+describe('get_forecast does not depend on how many rows the database returns', () => {
+  it.each(CLOCKS)('the server at %s', async (clock, today) => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(clock))
+    const out = await bothWays('get_forecast', {}, today)
+    expect((out.next_3_months as { months: unknown[] }).months).toHaveLength(3)
+  })
+})

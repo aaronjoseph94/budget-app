@@ -47,6 +47,8 @@ export function fourYears(today: string): Row {
     plans: [
       { id: 'r1', category_id: 'rent', effective_month: '2023-01-01', planned_cents: 100000, due_day: 1 },
       { id: 'r2', category_id: 'rent', effective_month: '2026-10-01', planned_cents: 125000, due_day: 1 },
+      // Typed ahead: the forecast's third month ahead reads it (F35).
+      { id: 'r3', category_id: 'rent', effective_month: '2027-01-01', planned_cents: 130000, due_day: 1 },
     ],
     txns,
     balances: monthly('01', (d, i) => ({ month: d, starting_balance_cents: 90000 + i * 1000 })),

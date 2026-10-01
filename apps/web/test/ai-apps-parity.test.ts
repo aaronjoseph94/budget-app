@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { answerQuery, debtPlan, isoDate, monthSheet, payoffStrategies, paycheckSheet, weekSheet, yearSheet, type AskIntent, type PaySchedule } from '@budget/core'
-import { askInput, categoriesFrom, debtsFrom, monthSheetInput, paySources, paycheckSheetInput, weekSheetInput, yearSheetInput } from '@budget/ai-apps/rows'
+import { answerQuery, debtPlan, isoDate, monthEndForecast, monthSheet, payoffStrategies, paycheckSheet, weekSheet, yearSheet, type AskIntent, type PaySchedule } from '@budget/core'
+import { askInput, categoriesFrom, debtsFrom, forecastInput, monthSheetInput, paySources, paycheckSheetInput, weekSheetInput, yearSheetInput } from '@budget/ai-apps/rows'
 import {
   getMonthBalance,
   latestStatementEnd,
@@ -18,6 +18,7 @@ import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore, shopEn
 import { answerOf } from '../src/ask/answer.js'
 import { debtsForCore } from '../src/debts.js'
 import { historyOf, type DigestRows } from '../src/coach/facts.js'
+import { forecastInput as appForecastInput } from '../src/forecast/figures.js'
 import { createFakeSupabase, type FakeTables } from './fake-supabase.js'
 
 /**
@@ -192,10 +193,9 @@ describe('the AI apps server reads rows as the app does', () => {
     expect(yearSheet(server).startingBalanceCents).toBe(80000)
   })
 
-  it('Ask', async () => {
-    const supabase = createFakeSupabase(tables).client
-    // The Coach's year, as useCoachRead reads it on 30 September: from September 2025, budgets and plans three months ahead.
-    const coach: DigestRows = {
+  /** The Coach's year, as useCoachRead reads it on 30 September: from September 2025, budgets and plans three months ahead. */
+  async function coachYear(supabase: ReturnType<typeof createFakeSupabase>['client']): Promise<DigestRows> {
+    return {
       asOf: '2026-09-30',
       readFrom: '2025-09-01',
       rows: await listTransactions(supabase, { from: '2025-09-01', to: '2026-09-30' }),
@@ -205,6 +205,22 @@ describe('the AI apps server reads rows as the app does', () => {
       records: await readRecordsStart(supabase),
       pending: null,
     }
+  }
+
+  it('the Forecast', async () => {
+    const supabase = createFakeSupabase(tables).client
+    const rows = { status: 'ready', schedules: await listPaySchedules(supabase, 'read'), balance: await getMonthBalance(supabase, isoDate('2026-09-01')) } as const
+    const app = appForecastInput(await coachYear(supabase), rows, await listCategories(supabase))
+    // The server's window also holds October's charge, and plans typed further ahead; both are left out as the app leaves them.
+    const server = forecastInput({ ...read, plans: [...(read.plans as unknown[]), { id: 'p9', category_id: 'rent', effective_month: '2027-01-01', planned_cents: 1, due_day: 1 }] }, isoDate('2026-09-30'))
+    expect(server).toEqual(app)
+    expect([server.entries.length, server.planHistory.length, server.startingBalanceCents]).toEqual([4, 2, 100000])
+    expect(monthEndForecast(server)).toEqual(monthEndForecast(app))
+  })
+
+  it('Ask', async () => {
+    const supabase = createFakeSupabase(tables).client
+    const coach = await coachYear(supabase)
     const categories = await listCategories(supabase)
     const notSubscriptions = ['PAYROLL']
     const server = askInput({ ...read, not_subscriptions: ['not_subscription:PAYROLL', 'goal_ahead:x'] }, isoDate('2026-09-30'))
