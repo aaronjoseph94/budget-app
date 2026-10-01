@@ -298,15 +298,34 @@ export function isOlder(version: unknown, wanted: string = AI_HELPER_VERSION): b
   return have[1]! < want[1]! || (have[1] === want[1] && Number(have[2]) < Number(want[2]))
 }
 
+async function checkOne(supabase: SupabaseClient, update: Update): Promise<Checked> {
+  const states = await Promise.all(update.checks.map((c) => probe(supabase, c)))
+  const state: UpdateState = states.includes('missing') ? 'missing' : states.includes('old') ? 'old' : states.includes('unknown') ? 'unknown' : 'in'
+  return { update, state }
+}
+
 /** Every update's state, all asked at once. */
 export async function checkUpdates(supabase: SupabaseClient): Promise<Checked[]> {
-  return Promise.all(
-    UPDATES.map(async (update) => {
-      const states = await Promise.all(update.checks.map((c) => probe(supabase, c)))
-      const state: UpdateState = states.includes('missing') ? 'missing' : states.includes('old') ? 'old' : states.includes('unknown') ? 'unknown' : 'in'
-      return { update, state }
-    }),
-  )
+  return Promise.all(UPDATES.map((update) => checkOne(supabase, update)))
+}
+
+/**
+ * What must be in before AI apps may be switched on or a connection
+ * allowed (security review mcp-3-03), as 0020 already is: 0019, which
+ * stops an AI app writing; 0020; the AI helper from 2026-09-30.1, the
+ * first to refuse an AI app's token (an older one would let it spend the
+ * owner's keys or save one of its own); and read-receipt deleted or
+ * replaced. Ready, or the first not in (null when it could not be checked).
+ */
+const BEFORE_AI_APPS = ['0019_ai_apps_cannot_write.sql', '0020_ai_apps.sql', HELPER_FILE, READ_RECEIPT_FILE]
+
+export type Readiness = { readonly ready: true } | { readonly ready: false; readonly file: string | null }
+
+export async function aiAppsReady(supabase: SupabaseClient): Promise<Readiness> {
+  const checked = await Promise.all(UPDATES.filter((u) => BEFORE_AI_APPS.includes(u.file)).map((u) => checkOne(supabase, u)))
+  const first = checked.find((c) => c.state === 'missing' || c.state === 'old')
+  if (first !== undefined) return { ready: false, file: first.update.file }
+  return checked.every((c) => c.state === 'in') ? { ready: true } : { ready: false, file: null }
 }
 
 export type NextStep =

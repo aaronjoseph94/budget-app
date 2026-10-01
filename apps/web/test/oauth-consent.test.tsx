@@ -72,6 +72,26 @@ describe('the consent page: Allow', () => {
     expect(fake.tables.ai_app_access).toMatchObject([{ ...ON, enabled: true, allow_add: true, connect_until: minutes(0) }])
   })
 
+  // Security review mcp-3-03: the AI helper before 2026-09-30.1 accepts an AI app's token.
+  it('offers no Allow, and follows no earlier allowing, until the AI helper’s new version is in', async () => {
+    const old = () => new Response(JSON.stringify({ ok: true, version: '2026-09-27.5' }), { headers: { 'content-type': 'application/json' } })
+    const fake = createFakeSupabase({ ai_app_access: [ON] })
+    fake.oauth.requests['auth-1'] = asking()
+    fake.functions.ai = old
+    await fake.signIn()
+    window.history.replaceState(null, '', '/oauth/consent?authorization_id=auth-1')
+    render(<Consent supabase={fake.client} go={vi.fn()} />)
+    expect(await screen.findByText(/needs a one-time update first/)).toBeTruthy()
+    expect(allow()).toBeNull()
+    expect(screen.getByRole('button', { name: 'Deny' })).toBeTruthy()
+    cleanup()
+    fake.oauth.requests['auth-1'] = { redirect_url: `${CLAUDE}?code=fake-code&state=fake-state` }
+    const go = vi.fn()
+    render(<Consent supabase={fake.client} go={go} />)
+    expect(await screen.findByText(/needs a one-time update first/)).toBeTruthy()
+    expect(go).not.toHaveBeenCalled()
+  })
+
   it('offers no Allow to a second connection after the first was allowed', async () => {
     const { fake, go } = await open()
     fireEvent.click(await screen.findByRole('button', { name: 'Allow' }))

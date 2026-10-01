@@ -2,7 +2,7 @@ import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/re
 import type { OAuthGrant } from '@supabase/supabase-js'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AiAppsCard } from '../src/ai-apps/AiAppsCard.js'
-import { createFakeSupabase } from './fake-supabase.js'
+import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { expectNoAxeViolations } from './axe.js'
 
@@ -40,6 +40,32 @@ describe('Settings → AI apps: the switches', () => {
     expect(screen.queryByRole('button', { name: 'Connect a new AI app' })).toBeNull()
     expect(fake.tables.ai_app_access).toEqual([])
     await expectNoAxeViolations()
+  })
+
+  // Security review mcp-3-03: an older AI helper accepts an AI app's token, so it comes first.
+  it.each([
+    ['an older AI helper', (f: FakeSupabase): void => {
+        f.functions.ai = () => new Response(JSON.stringify({ ok: true, version: '2026-09-27.5' }), { headers: { 'content-type': 'application/json' } })
+      }, 'Paste the AI helper’s new version first.'],
+    ['no AI helper', (f: FakeSupabase): void => {
+        f.functions.ai = null
+      }, 'Paste the AI helper’s new version first.'],
+    ['an older read-receipt', (f: FakeSupabase): void => {
+        f.functions.readReceipt = () => new Response('{}')
+        f.functions.readReceiptVersion = () => new Response('{}', { status: 405 })
+      }, 'Delete read-receipt, or paste its new version, first.'],
+    ['0019 not in', (f: FakeSupabase): void => {
+        delete f.rpcReplies['_not_an_ai_app']
+      }, 'That needs a one-time update first.'],
+  ] as const)('will not turn AI apps on with %s, and says what to do first', async (_, set, words) => {
+    const fake = createFakeSupabase()
+    set(fake)
+    renderScreen(<AiAppsCard />, fake)
+    fireEvent.click(await connect())
+    expect(await screen.findByText(new RegExp(`^${words}`))).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'One-time updates' })).toBeTruthy()
+    expect((await connect()).checked).toBe(false)
+    expect(fake.tables.ai_app_access).toEqual([])
   })
 
   it('turns AI apps on with the browser’s time zone, then adding is on too', async () => {

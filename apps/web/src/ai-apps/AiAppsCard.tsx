@@ -5,6 +5,7 @@ import type { HelpTopic } from '../help/topics.js'
 import { Section } from '../forecast/parts.js'
 import { SWITCH } from '../components/ui/form.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
+import { HELPER_FILE, READ_RECEIPT_FILE, aiAppsReady } from '../help/updates.js'
 import { readAccess, saveAccess, type Access } from './access.js'
 import { ConnectNew } from './ConnectNew.js'
 import { ConnectedApps } from './ConnectedApps.js'
@@ -19,6 +20,16 @@ const HELP: readonly (readonly [HelpTopic, string])[] = [
 
 const SAVE_FAILED = { needs_update: 'That needs a one-time update first. See One-time updates in Help.', unreachable: 'Couldn’t save that just now. Try again.' }
 
+/** Why AI apps cannot be switched on yet (mcp-3-03), with One-time updates beside it. */
+const FIRST = (file: string | null) =>
+  file === HELPER_FILE
+    ? 'Paste the AI helper’s new version first.'
+    : file === READ_RECEIPT_FILE
+      ? 'Delete read-receipt, or paste its new version, first.'
+      : file === null
+        ? 'Couldn’t check the one-time updates just now. Try again.'
+        : 'That needs a one-time update first.'
+
 /**
  * Settings → AI apps (PLAN §2.9, ADR 0012): Let AI apps connect, off until
  * the owner turns it on; while on, Let them add to Review, the address to
@@ -31,6 +42,7 @@ export function AiAppsCard() {
   const [loaded, setLoaded] = useState<Loaded>({ state: 'loading' })
   const [saving, setSaving] = useState(false)
   const [said, setSaid] = useState('')
+  const [first, setFirst] = useState(false)
   const ids = { on: useId(), onHint: useId(), add: useId(), addHint: useId() }
 
   useEffect(() => {
@@ -44,6 +56,17 @@ export function AiAppsCard() {
   const change = async (was: Access, next: Access, saved: Parameters<typeof saveAccess>[2]) => {
     setSaving(true)
     setSaid('')
+    setFirst(false)
+    // Switching on waits for what keeps an AI app's token harmless (mcp-3-03); off never waits.
+    if (saved.enabled === true) {
+      const ready = await aiAppsReady(supabase)
+      if (!ready.ready) {
+        setSaving(false)
+        setSaid(FIRST(ready.file))
+        setFirst(true)
+        return
+      }
+    }
     setLoaded({ state: 'ready', access: next })
     const outcome = await saveAccess(supabase, userId, saved)
     setSaving(false)
@@ -126,6 +149,14 @@ export function AiAppsCard() {
       ) : null}
       <p aria-live="polite" className="text-base font-medium empty:sr-only">
         {said}
+        {first ? (
+          <>
+            {' '}
+            <a href={hashOf({ screen: 'help', param: 'updates' })} className={SENTENCE_LINK}>
+              One-time updates
+            </a>
+          </>
+        ) : null}
       </p>
       <ConnectedApps on={loaded.state === 'ready' && loaded.access.enabled} />
     </Section>

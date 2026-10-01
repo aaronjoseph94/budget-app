@@ -205,7 +205,10 @@ open GitHub. Easiest on a computer.
    the screen already says "AI is on" and there is nothing to paste.
 
 **Part B: Claude and ChatGPT (AI apps), about 20 minutes, once, on a
-computer.** Only if you want them; Part A stands alone. It needs the
+computer.** Only if you want them; Part A stands alone, but Part B needs
+Part A's steps 1 and 2: **Let AI apps connect** will not turn on, and the
+connect page offers no **Allow**, until `0019`, `0020`, the AI helper's
+new version and read-receipt (deleted or new) are in. It needs the
 Cloudflare site live with its Site URL set in Supabase ("Still open from
 before", below), because Supabase finds the app's connect page from it.
 

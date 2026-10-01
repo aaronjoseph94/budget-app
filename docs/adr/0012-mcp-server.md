@@ -336,3 +336,8 @@ below was made under those words and is recorded with them.
 - **mcp-3-03, read-receipt: One-time updates checks it.** The new copy
   answers GET with `READ_RECEIPT_VERSION`; an older copy's 405 is "an
   older copy", deleted is in, and it is the step after the AI helper.
+- **mcp-3-03, the order made structural.** Let AI apps connect will not
+  turn on, and the consent page offers no Allow (nor follows an earlier
+  allowing), until `0019`, `0020`, the AI helper from 2026-09-30.1 and
+  read-receipt (deleted or new) are in, as `aiAppsReady` checks; turning
+  off never waits.

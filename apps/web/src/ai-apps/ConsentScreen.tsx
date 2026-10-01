@@ -9,6 +9,7 @@ import { Icon } from '../components/ui/icons.js'
 import { Loading } from '../components/ui/feedback.js'
 import { checkCallback, type Callback } from './hosts.js'
 import { readAccess, saveAccess, shownName, type Access } from './access.js'
+import { aiAppsReady } from '../help/updates.js'
 
 /** Supabase's authorization ids are short URL-safe tokens; anything else is not one, and is never sent. */
 const AUTHORIZATION_ID = /^[A-Za-z0-9_-]{1,128}$/
@@ -38,11 +39,21 @@ const opened = (access: Access | null, now: number) =>
 const AGAIN = 'If you are connecting Claude or ChatGPT yourself, open Settings → AI apps'
 const NOT_STARTED = `This connection wasn’t started from the budget app. ${AGAIN}, press Connect a new AI app, and press Connect in Claude or ChatGPT again.`
 const SWITCHED_OFF = `AI apps are switched off in the budget app. ${AGAIN}, turn on Let AI apps connect, press Connect a new AI app, and press Connect in Claude or ChatGPT again.`
+/** The AI helper, 0019, 0020 or read-receipt is not as AI apps need it (mcp-3-03). */
+const NEEDS_UPDATE = 'The budget app needs a one-time update first. Open it, go to Help → One-time updates and do the step it names, then press Connect in Claude or ChatGPT again.'
 
 type Seen =
   | { readonly kind: 'reading' }
   | { readonly kind: 'said'; readonly title: string; readonly words: string }
-  | { readonly kind: 'asking'; readonly id: string; readonly details: OAuthAuthorizationDetails; readonly callback: Callback; readonly access: Access | null }
+  | {
+      readonly kind: 'asking'
+      readonly id: string
+      readonly details: OAuthAuthorizationDetails
+      readonly callback: Callback
+      readonly access: Access | null
+      /** What keeps an AI app's token harmless is in (mcp-3-03). */
+      readonly ready: boolean
+    }
 
 const SAID = {
   bad_link: { kind: 'said', title: 'This isn’t a connection request', words: 'To connect Claude or ChatGPT, start from Settings → AI apps in the budget app.' },
@@ -50,6 +61,7 @@ const SAID = {
   unreachable: { kind: 'said', title: 'Couldn’t reach Supabase', words: 'Check your connection, then reload this page.' },
   not_started: { kind: 'said', title: 'Start from the budget app', words: NOT_STARTED },
   switched_off: { kind: 'said', title: 'AI apps are switched off', words: SWITCHED_OFF },
+  needs_update: { kind: 'said', title: 'A one-time update first', words: NEEDS_UPDATE },
   bad_reply: { kind: 'said', title: 'Not sent back', words: 'Supabase answered with an address that is not Claude’s or ChatGPT’s, so this page went nowhere. Go back to Claude or ChatGPT and press Connect again.' },
   refused: { kind: 'said', title: 'Refused', words: 'You can close this tab.' },
 } as const satisfies Record<string, Seen>
@@ -107,18 +119,20 @@ function Decide({ supabase, userId, go }: { supabase: SupabaseClient; userId: st
       setSeen(SAID.bad_link)
       return
     }
-    void Promise.all([supabase.auth.oauth.getAuthorizationDetails(id), readAccess(supabase, userId)]).then(([asked, read]) => {
+    void Promise.all([supabase.auth.oauth.getAuthorizationDetails(id), readAccess(supabase, userId), aiAppsReady(supabase)]).then(([asked, read, readiness]) => {
       if (!live) return
       const access = read.ok ? read.access : null
       if (asked.error !== null) {
         setSeen(asked.error.status !== undefined && asked.error.status >= 400 && asked.error.status < 500 ? SAID.expired : SAID.unreachable)
       } else if ('authorization_id' in asked.data) {
-        setSeen({ kind: 'asking', id, details: asked.data, callback: checkCallback(asked.data.redirect_uri), access })
+        setSeen({ kind: 'asking', id, details: asked.data, callback: checkCallback(asked.data.redirect_uri), access, ready: readiness.ready })
       } else if (!followable(asked.data.redirect_url, null)) {
         setSeen(SAID.bad_reply)
       } else if (!opened(access, Date.now())) {
         // Allowed before, so Supabase has already issued a code: followed only on Allow's terms.
         setSeen(access?.enabled === true ? SAID.not_started : SAID.switched_off)
+      } else if (!readiness.ready) {
+        setSeen(SAID.needs_update)
       } else {
         const back = asked.data.redirect_url
         void closeWindow(supabase, userId).then(() => go(back))
@@ -135,14 +149,14 @@ function Decide({ supabase, userId, go }: { supabase: SupabaseClient; userId: st
       </Page>
     )
   }
-  const { id, details, callback, access } = seen
-  const allow = callback.allowed && opened(access, now)
+  const { id, details, callback, access, ready } = seen
+  const allow = callback.allowed && opened(access, now) && ready
 
   const answer = async (approve: boolean) => {
     const at = Date.now()
     setNow(at)
     // All three again at the click, the window by the clock now.
-    if (approve && !(callback.allowed && opened(access, at))) return
+    if (approve && !(callback.allowed && opened(access, at) && ready)) return
     setBusy(true)
     const reply = approve
       ? await supabase.auth.oauth.approveAuthorization(id, { skipBrowserRedirect: true })
@@ -180,7 +194,13 @@ function Decide({ supabase, userId, go }: { supabase: SupabaseClient; userId: st
           </p>
           <p>Your budget details go to the company that runs this AI app: Anthropic for Claude, OpenAI for ChatGPT.</p>
           <p className="font-semibold">
-            {allow ? 'Only continue if you just pressed Connect in Claude or ChatGPT yourself.' : access?.enabled === true ? NOT_STARTED : SWITCHED_OFF}
+            {allow
+              ? 'Only continue if you just pressed Connect in Claude or ChatGPT yourself.'
+              : access?.enabled !== true
+                ? SWITCHED_OFF
+                : !ready
+                  ? NEEDS_UPDATE
+                  : NOT_STARTED}
           </p>
         </>
       ) : (
