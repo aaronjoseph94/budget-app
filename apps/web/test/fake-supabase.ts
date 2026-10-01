@@ -170,8 +170,11 @@ export interface FakeSupabase {
   }
   /** The signed-in user as the auth server holds it, `user_metadata` included. */
   readonly user: { id: string; email: string; user_metadata: Record<string, unknown> }
-  /** Give the client a session, which `auth.updateUser` needs. `fail('auth/user', …)` makes updates fail. */
-  signIn(): Promise<void>
+  /**
+   * Give the client a session, which `auth.updateUser` needs. `fail('auth/user', …)` makes updates fail.
+   * `alg` is the key the token says signed it, which One-time updates reads: by default ES256, Supabase's new key.
+   */
+  signIn(alg?: string): Promise<void>
   /**
    * How the server behaves. `maxRows` is PostgREST's cap on one response,
    * which Supabase sets to 1,000 and which wins over any limit a query asks
@@ -664,8 +667,8 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
   // A token of the right shape, made here rather than written out: the client
   // only decodes it for its expiry, and nothing checks the signature.
   const part = (value: unknown) => btoa(JSON.stringify(value)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_')
-  const signIn = async () => {
-    const token = [part({ alg: 'none' }), part({ sub: user.id, exp: 4102444800 }), part('fake')].join('.')
+  const signIn = async (alg = 'ES256') => {
+    const token = [part({ alg }), part({ sub: user.id, exp: 4102444800 }), part('fake')].join('.')
     const { error } = await client.auth.setSession({ access_token: token, refresh_token: 'fake-refresh' })
     if (error !== null) throw error
   }

@@ -26,6 +26,8 @@ type Check =
   | { readonly kind: 'helper' }
   /** The AI apps server answers `/mcp/health` with its version once it is deployed (ADR 0012). */
   | { readonly kind: 'server' }
+  /** Which key Supabase signs the owner's sign-in with, read from the owner's own token. */
+  | { readonly kind: 'signing_key' }
 
 /** The AI helper's source, as One-time updates names it and /setup/ serves it (ADR 0007). */
 export const HELPER_FILE = 'ai-function.ts'
@@ -40,8 +42,13 @@ export const READ_RECEIPT_FILE = 'read-receipt-function.ts'
 /** The AI apps server, built at site build and served under /setup/ (ADR 0012). */
 export const SERVER_FILE = 'mcp-function.ts'
 
+/** Steps made in Supabase's settings, with no file to paste (PLAN §1). */
+export const SIGNING_KEY = 'signing-key'
+
 export interface Update {
   readonly file: string
+  /** What the list calls a step that is a setting, not a file. */
+  readonly name?: string
   /** What it adds, in the owner's words. */
   readonly adds: string
   readonly checks: readonly Check[]
@@ -49,7 +56,7 @@ export interface Update {
 
 const NIL = '00000000-0000-0000-0000-000000000000'
 
-/** 0005 to 0020, the AI helper and the AI apps server, each with what it adds. */
+/** 0005 to 0020, the AI helper, the signing key and the AI apps server, each with what it adds. */
 export const UPDATES: readonly Update[] = [
   { file: '0005_category_kinds.sql', adds: 'Which list each category is on', checks: [{ kind: 'column', table: 'categories', column: 'kind' }] },
   {
@@ -116,6 +123,7 @@ export const UPDATES: readonly Update[] = [
     checks: [{ kind: 'table', table: 'ai_app_access' }],
   },
   { file: HELPER_FILE, adds: 'The AI helper, which every AI feature goes through', checks: [{ kind: 'helper' }] },
+  { file: SIGNING_KEY, name: 'Signing key', adds: 'The key Supabase signs your sign-in with, which ChatGPT needs', checks: [{ kind: 'signing_key' }] },
   { file: SERVER_FILE, adds: 'The AI apps server, which Claude or ChatGPT connect to', checks: [{ kind: 'server' }] },
 ]
 
@@ -136,9 +144,30 @@ const MISSING: Readonly<Record<Check['kind'], ReadonlySet<string>>> = {
   function: new Set(['PGRST202', '42883']),
   helper: new Set(),
   server: new Set(),
+  signing_key: new Set(),
+}
+
+/**
+ * The key that signed the owner's own session, read from its header here
+ * and sent nowhere. Supabase gives ChatGPT the ID token it asks for only
+ * when it signs with an asymmetric key (PLAN §2.3): ES256, or RS256, is
+ * in; the legacy shared secret, HS256, is the step still to do. Anything
+ * else, or no session, could not be checked.
+ */
+async function signingKey(supabase: SupabaseClient): Promise<UpdateState> {
+  const { data } = await supabase.auth.getSession()
+  const head = data.session?.access_token.split('.')[0]
+  if (head === undefined) return 'unknown'
+  try {
+    const { alg } = JSON.parse(atob(head.replaceAll('-', '+').replaceAll('_', '/'))) as { alg?: unknown }
+    return alg === 'ES256' || alg === 'RS256' ? 'in' : alg === 'HS256' ? 'missing' : 'unknown'
+  } catch {
+    return 'unknown'
+  }
 }
 
 async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateState> {
+  if (check.kind === 'signing_key') return signingKey(supabase)
   if (check.kind === 'helper') {
     const answer = await askAi(supabase, { action: 'ping' })
     if (!answer.ok) return answer.view.state === 'not_deployed' ? 'missing' : 'unknown'

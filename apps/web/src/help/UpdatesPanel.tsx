@@ -3,25 +3,38 @@ import { useAppData } from '../app-data.js'
 import { Button } from '../components/ui/button.js'
 import { cn } from '../lib/cn.js'
 import { CopyFile, isCopyable } from './CopyFile.js'
-import { FIRST_FILE, HELPER_FILE, READ_RECEIPT_FILE, SERVER_FILE, checkUpdates, nextStep, type Checked } from './updates.js'
+import { FIRST_FILE, HELPER_FILE, READ_RECEIPT_FILE, SERVER_FILE, SIGNING_KEY, checkUpdates, nextStep, type Checked } from './updates.js'
 
-/** Where each committed file can be opened and copied (HANDOFF §3, step 1). */
+/** Where each committed file can be opened and copied (HANDOFF §3, step 1); null for a step with no committed file. */
 const REPO = 'https://github.com/aaronjoseph94/budget-app/blob/main/'
-const sourceOf = (file: string) => (file === HELPER_FILE ? `${REPO}supabase/functions/ai/index.ts` : `${REPO}supabase/migrations/${file}`)
+const sourceOf = (file: string) =>
+  file === HELPER_FILE ? `${REPO}supabase/functions/ai/index.ts` : file.endsWith('.sql') ? `${REPO}supabase/migrations/${file}` : null
 
-/** The exact clicks for the AI helper, which goes in the Edge Functions editor, not the SQL Editor (plan §10.2). */
-const HELPER_STEPS = [
-  'In Supabase, open Edge Functions, then Deploy a new function, then Via Editor.',
-  'Name it exactly ai.',
-  'Paste the helper over everything in the editor.',
-  'Keep Enforce JWT verification on, and press Deploy.',
-]
+/**
+ * The exact clicks for the AI helper, which goes in the Edge Functions
+ * editor, not the SQL Editor (plan §10.2), first or over an older copy
+ * (N78). Its gateway check stays on only while Supabase signs with the old
+ * shared secret: Supabase warns a changed key can break a function with it
+ * on, and the helper checks every caller itself (ADR 0012).
+ */
+function helperSteps(again: boolean, newKey: boolean): string[] {
+  const check = newKey ? 'Turn Enforce JWT verification off' : 'Keep Enforce JWT verification on'
+  return again
+    ? ['In Supabase, open Edge Functions, then the function named ai, then its code.', 'Paste the new version over everything in the editor.', `${check}, and deploy it.`]
+    : [
+        'In Supabase, open Edge Functions, then Deploy a new function, then Via Editor.',
+        'Name it exactly ai.',
+        'Paste the helper over everything in the editor.',
+        `${check}, and press Deploy.${newKey ? ' The helper checks every caller itself.' : ''}`,
+      ]
+}
 
-/** Pasting the helper's new version over an older copy (N78). */
-const HELPER_AGAIN_STEPS = [
-  'In Supabase, open Edge Functions, then the function named ai, then its code.',
-  'Paste the new version over everything in the editor.',
-  'Keep Enforce JWT verification on, and deploy it.',
+/** Moving Supabase to its new signing key, which ChatGPT's sign-in needs (PLAN §1, step 3): each helper's gateway check off first. */
+const SIGNING_KEY_STEPS = [
+  'In Supabase, open Edge Functions, then the function named ai, then its settings. Turn Enforce JWT verification off, and save.',
+  'Do the same for read-receipt, if Edge Functions lists it.',
+  'Open Project Settings, then JWT Keys, and press Rotate keys, so the current key is the ECC (P-256) one. Do not revoke the old key.',
+  'Sign out of this app and back in, then press Check again.',
 ]
 
 /**
@@ -79,6 +92,8 @@ export function UpdatesPanel() {
   const count = checked?.filter((c) => c.state === 'in').length
   const next = checked === null ? null : nextStep(checked)
   const helperOld = checked?.some((c) => c.update.file === HELPER_FILE && c.state === 'old') === true
+  const newKey = checked?.some((c) => c.update.file === SIGNING_KEY && c.state === 'in') === true
+  const source = next?.kind === 'paste' ? sourceOf(next.file) : null
   const serverOld = checked?.some((c) => c.update.file === SERVER_FILE && c.state === 'old') === true
   return (
     <section aria-labelledby="updates-status" className="space-y-3 rounded-xl border bg-card p-4">
@@ -94,7 +109,7 @@ export function UpdatesPanel() {
               </span>
               <span className="min-w-0">
                 <span className="sr-only">{MARK[c.state].said}: </span>
-                <span className="block font-mono text-xs [overflow-wrap:anywhere]">{c.update.file}</span>
+                <span className={cn('block [overflow-wrap:anywhere]', c.update.name === undefined && 'font-mono text-xs')}>{c.update.name ?? c.update.file}</span>
                 <span className="block text-muted-foreground">
                   {c.update.adds}
                   {c.state === 'old' ? ': an older copy is in' : ''}
@@ -116,7 +131,16 @@ export function UpdatesPanel() {
                   : 'Next: install the AI helper. About 5 minutes, easiest on a computer.'}
               </p>
               <ol className="list-decimal space-y-1 pl-5">
-                {(helperOld ? HELPER_AGAIN_STEPS : HELPER_STEPS).map((step) => (
+                {helperSteps(helperOld, newKey).map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+            </>
+          ) : next.file === SIGNING_KEY ? (
+            <>
+              <p>Next: move Supabase to its new signing key, which ChatGPT needs to sign in. About 5 minutes, on a computer.</p>
+              <ol className="list-decimal space-y-1 pl-5">
+                {SIGNING_KEY_STEPS.map((step) => (
                   <li key={step}>{step}</li>
                 ))}
               </ol>
@@ -146,9 +170,9 @@ export function UpdatesPanel() {
             </>
           )}
           {next.kind === 'paste' && isCopyable(next.file) ? <CopyFile key={next.file} file={next.file} /> : null}
-          {next.kind === 'paste' && next.file !== SERVER_FILE ? (
+          {next.kind === 'paste' && source !== null ? (
             <a
-              href={sourceOf(next.file)}
+              href={source}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex min-h-11 items-center font-medium underline underline-offset-4"

@@ -1,22 +1,29 @@
 import { describe, expect, it } from 'vitest'
-import { FIRST_FILE, HELPER_FILE, SERVER_FILE, UPDATES, checkUpdates, nextStep, type Checked } from '../src/help/updates.js'
+import { FIRST_FILE, HELPER_FILE, SERVER_FILE, SIGNING_KEY, UPDATES, checkUpdates, nextStep, type Checked } from '../src/help/updates.js'
 import { MCP_SERVER_VERSION } from '@budget/schema'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 
 const stateOf = (checked: readonly Checked[], prefix: string) => checked.find((c) => c.update.file.startsWith(prefix))?.state
 const missing = (checked: readonly Checked[]) => checked.filter((c) => c.state !== 'in').map((c) => [c.update.file.slice(0, 4), c.state])
 
+/** Signed in, by default with Supabase's new key, as One-time updates always is. */
+async function ready(seed: Parameters<typeof createFakeSupabase>[0] = {}, alg = 'ES256'): Promise<FakeSupabase> {
+  const fake = createFakeSupabase(seed)
+  await fake.signIn(alg)
+  return fake
+}
+
 describe('checking the one-time updates', () => {
   it('finds each one in when everything it adds answers', async () => {
-    const fake = createFakeSupabase()
+    const fake = await ready()
     const checked = await checkUpdates(fake.client)
-    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', '0020', 'ai-f', 'mcp-'])
+    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', '0020', 'ai-f', 'sign', 'mcp-'])
     expect(missing(checked)).toEqual([])
     expect(nextStep(checked)).toEqual({ kind: 'done' })
   })
 
   it('reads PGRST205, and 42P01 from an older server, as a table not there', async () => {
-    const fake = createFakeSupabase()
+    const fake = await ready()
     fake.fail('category_budgets', 'PGRST205')
     fake.fail('debt_extra_payments', '42P01')
     const checked = await checkUpdates(fake.client)
@@ -25,7 +32,7 @@ describe('checking the one-time updates', () => {
   })
 
   it('reads PGRST202, and 42883 from Postgres, as a function not there', async () => {
-    const fake = createFakeSupabase()
+    const fake = await ready()
     delete fake.rpcReplies['recategorise_transaction']
     fake.fail('rpc/dismiss_unreadable_line', '42883')
     const checked = await checkUpdates(fake.client)
@@ -34,7 +41,7 @@ describe('checking the one-time updates', () => {
   })
 
   it('reads 42703 as a column not there, and with 0005 missing starts at HANDOFF’s first file', async () => {
-    const fake = createFakeSupabase()
+    const fake = await ready()
     fake.server.refuse = (table, query) => (table === 'categories' && query.get('select') === 'kind' ? '42703' : null)
     const checked = await checkUpdates(fake.client)
     expect(stateOf(checked, '0005')).toBe('missing')
@@ -44,7 +51,7 @@ describe('checking the one-time updates', () => {
   // G1's update adds columns to a table that is already there, so it is
   // proven by reading one of them, as 0013's is.
   it('reads 42703 on a goal’s place as 0015 not in yet, after everything before it', async () => {
-    const fake = createFakeSupabase()
+    const fake = await ready()
     fake.server.refuse = (table, query) => (table === 'savings_goals' && query.get('select') === 'sort_order' ? '42703' : null)
     const checked = await checkUpdates(fake.client)
     expect(missing(checked)).toEqual([['0015', 'missing']])
@@ -52,7 +59,7 @@ describe('checking the one-time updates', () => {
   })
 
   it('reads PGRST202 on ai_key_status as 0016 not in yet, and names it before the AI helper', async () => {
-    const fake = createFakeSupabase()
+    const fake = await ready()
     delete fake.rpcReplies['ai_key_status']
     fake.functions.ai = null
     const checked = await checkUpdates(fake.client)
@@ -62,7 +69,7 @@ describe('checking the one-time updates', () => {
 
   // A12's update adds three tables; any one missing means it is not in.
   it('reads PGRST205 on the Coach’s notes as 0017 not in yet, before the AI helper', async () => {
-    const fake = createFakeSupabase()
+    const fake = await ready()
     fake.fail('coach_answers', 'PGRST205')
     fake.functions.ai = null
     const checked = await checkUpdates(fake.client)
@@ -72,7 +79,7 @@ describe('checking the one-time updates', () => {
 
   // A21's update adds two functions; clearing a suggestion proves it without changing a row.
   it('reads PGRST202 on clearing a suggestion as 0018 not in yet', async () => {
-    const fake = createFakeSupabase()
+    const fake = await ready()
     delete fake.rpcReplies['clear_candidate_suggestion']
     const checked = await checkUpdates(fake.client)
     expect(missing(checked)).toEqual([['0018', 'missing']])
@@ -84,7 +91,7 @@ describe('checking the one-time updates', () => {
 
   // AI apps cannot write: 0019 re-creates 0018's functions, so it comes only after 0018.
   it('reads PGRST202 on the AI-app guard as 0019 not in yet, offered only once 0018 is in', async () => {
-    const fake = createFakeSupabase()
+    const fake = await ready()
     delete fake.rpcReplies['_not_an_ai_app']
     const checked = await checkUpdates(fake.client)
     expect(missing(checked)).toEqual([['0019', 'missing']])
@@ -95,7 +102,7 @@ describe('checking the one-time updates', () => {
 
   // What AI apps may do: 0020 uses 0019's label and guard, so it comes only after 0019.
   it('reads PGRST205 on the AI apps switch as 0020 not in yet, offered only once 0019 is in', async () => {
-    const fake = createFakeSupabase()
+    const fake = await ready()
     fake.fail('ai_app_access', 'PGRST205')
     const checked = await checkUpdates(fake.client)
     expect(missing(checked)).toEqual([['0020', 'missing']])
@@ -105,7 +112,7 @@ describe('checking the one-time updates', () => {
   })
 
   it('reads Supabase’s 404 for the AI helper as not installed, and any other failure as could not check', async () => {
-    const fake = createFakeSupabase()
+    const fake = await ready()
     fake.functions.ai = null
     const checked = await checkUpdates(fake.client)
     expect(missing(checked)).toEqual([['ai-f', 'missing']])
@@ -115,7 +122,7 @@ describe('checking the one-time updates', () => {
   })
 
   it('asks for the helper’s new version when an older copy answers, and not for the same or a newer one', async () => {
-    const fake = createFakeSupabase()
+    const fake = await ready()
     for (const [version, state] of [
       ['2026-09-25.5', 'old'], ['2026-09-24.9', 'old'], [undefined, 'old'], ['preview', 'old'],
       // 2026-09-27.5 is the copy from before AI apps, which let them spend the owner's keys (ADR 0012).
@@ -130,7 +137,7 @@ describe('checking the one-time updates', () => {
 
   // The AI apps server (ADR 0012) answers /mcp/health; it comes last, after the helper.
   it('reads the AI apps server’s health: 404 not installed, an older version old, anything else could not check', async () => {
-    const fake = createFakeSupabase()
+    const fake = await ready()
     fake.functions.mcpHealth = null
     const checked = await checkUpdates(fake.client)
     expect(missing(checked)).toEqual([['mcp-', 'missing']])
@@ -148,8 +155,22 @@ describe('checking the one-time updates', () => {
     expect(nextStep(await checkUpdates(fake.client))).toEqual({ kind: 'paste', file: HELPER_FILE, fromStart: false })
   })
 
+  // ChatGPT asks for an ID token, which Supabase issues only when it signs with an asymmetric key (PLAN §2.3).
+  it('reads the key from the owner’s own token: ES256 or RS256 in, the old shared secret next after the AI helper', async () => {
+    for (const [alg, state] of [['ES256', 'in'], ['RS256', 'in'], ['HS256', 'missing'], ['none', 'unknown']] as const) {
+      const fake = await ready({}, alg)
+      expect([alg, stateOf(await checkUpdates(fake.client), 'signing')]).toEqual([alg, state])
+    }
+    const fake = await ready({}, 'HS256')
+    expect(nextStep(await checkUpdates(fake.client))).toEqual({ kind: 'paste', file: SIGNING_KEY, fromStart: false })
+    fake.functions.ai = null
+    expect(nextStep(await checkUpdates(fake.client))).toEqual({ kind: 'paste', file: HELPER_FILE, fromStart: false })
+    // With no session there is no token to read.
+    expect(stateOf(await checkUpdates(createFakeSupabase().client), 'signing')).toBe('unknown')
+  })
+
   it('says it could not check, never "missing", when the answer is something else', async () => {
-    const fake = createFakeSupabase()
+    const fake = await ready()
     fake.fail('month_balances', 'PGRST301')
     fake.fail('rpc/recategorise_transaction', '')
     const checked = await checkUpdates(fake.client)
@@ -158,14 +179,14 @@ describe('checking the one-time updates', () => {
   })
 
   it('names the first missing one even when another could not be checked', async () => {
-    const fake = createFakeSupabase()
+    const fake = await ready()
     fake.fail('month_balances', 'PGRST301')
     fake.fail('pay_schedules', 'PGRST205')
     expect(nextStep(await checkUpdates(fake.client))).toEqual({ kind: 'paste', file: '0011_pay_schedules.sql', fromStart: false })
   })
 
   it('changes nothing: tables are read for no rows, functions sent the nil id', async () => {
-    const fake: FakeSupabase = createFakeSupabase({
+    const fake = await ready({
       transactions: [{ id: 't1', posted_on: '2026-09-02', amount_cents: -100, merchant_raw: 'SHOP', category_id: 'c1', source: 'manual' }],
     })
     const before = JSON.stringify(fake.tables)
