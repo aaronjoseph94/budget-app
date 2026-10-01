@@ -3396,3 +3396,23 @@ package reads dates through, outside M9 and M11a.
 **To settle:** build the date in `daysInMonth` with `setUTCFullYear`, so
 years 0 to 99 are read as written, with `isoDate` cases for 0000-02-29
 (a day) and 0001-02-29 (not one); then the two read tools need nothing.
+
+---
+
+## N148 — All transactions and the Month's charges do not name the AI app
+
+**Seen:** 2026-10-01, M10b. Review now says "Added by Claude", by the
+name of the grant matched on the row's import's `ai_client_id`. Once
+such a row is approved, All transactions (`LedgerScreen.tsx`) and the
+Month's charges sheet (`MonthCharges.tsx`) still say "added by an AI
+app", as M4 wrote them: a ledger row carries its `source` but nothing
+that leads back to its import (0001's `transactions` has no `batch_id`;
+its candidate shares only the `dedupe_hash`).
+
+**Why not fixed here:** PLAN §2.9 asks for the name in Review only, and
+both screens' reads are outside M10b.
+
+**To settle:** if the owner wants the name there too, find each such
+row's approved candidate by `(user_id, dedupe_hash)`, then its batch,
+and reuse `addedBy` in `apps/web/src/ai-apps/access.ts`, with "an AI
+app" kept for an app since disconnected.
