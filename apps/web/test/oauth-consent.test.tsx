@@ -68,8 +68,28 @@ describe('the consent page: Allow', () => {
     // The library itself would follow its answer; the page checks it first.
     expect(approve).toHaveBeenCalledWith('auth-1', { skipBrowserRedirect: true })
     expect(fake.oauth.consents).toEqual([{ id: 'auth-1', action: 'approve' }])
-    // Allow never turns anything on, or moves the window.
-    expect(fake.tables.ai_app_access).toEqual([ON])
+    // Allow never turns anything on, and it closes the window: one Connect, one connection (mcp-1-02).
+    expect(fake.tables.ai_app_access).toMatchObject([{ ...ON, enabled: true, allow_add: true, connect_until: minutes(0) }])
+  })
+
+  it('offers no Allow to a second connection after the first was allowed', async () => {
+    const { fake, go } = await open()
+    fireEvent.click(await screen.findByRole('button', { name: 'Allow' }))
+    await waitFor(() => expect(go).toHaveBeenCalled())
+    cleanup()
+    fake.oauth.requests['auth-2'] = { ...asking(), authorization_id: 'auth-2' }
+    window.history.replaceState(null, '', '/oauth/consent?authorization_id=auth-2')
+    render(<Consent supabase={fake.client} go={vi.fn()} />)
+    expect(await screen.findByText(/wasn’t started from the budget app\./)).toBeTruthy()
+    expect(allow()).toBeNull()
+  })
+
+  it('still sends the owner back when closing the window fails, since they did allow it', async () => {
+    const { fake, go } = await open()
+    const button = await screen.findByRole('button', { name: 'Allow' })
+    fake.fail('ai_app_access', '57014')
+    fireEvent.click(button)
+    await waitFor(() => expect(go).toHaveBeenCalledWith(`${CLAUDE}?code=fake-code&state=fake-state`))
   })
 
   it.each([
@@ -151,9 +171,10 @@ describe('the consent page: Deny', () => {
 describe('the consent page: an app allowed before', () => {
   const before: OAuthRedirect = { redirect_url: `${CLAUDE}?code=fake-code&state=fake-state` }
 
-  it('sends the owner straight back while the window is open', async () => {
-    const { go } = await open({ request: before })
+  it('sends the owner straight back while the window is open, and closes it', async () => {
+    const { fake, go } = await open({ request: before })
     await waitFor(() => expect(go).toHaveBeenCalledWith(before.redirect_url))
+    expect(fake.tables.ai_app_access).toMatchObject([{ connect_until: minutes(0) }])
   })
 
   it('goes nowhere with the window shut, or to an address not allowed', async () => {

@@ -8,7 +8,7 @@ import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 import { Loading } from '../components/ui/feedback.js'
 import { checkCallback, type Callback } from './hosts.js'
-import { readAccess, shownName, type Access } from './access.js'
+import { readAccess, saveAccess, shownName, type Access } from './access.js'
 
 /** Supabase's authorization ids are short URL-safe tokens; anything else is not one, and is never sent. */
 const AUTHORIZATION_ID = /^[A-Za-z0-9_-]{1,128}$/
@@ -63,6 +63,15 @@ export function ConsentScreen() {
 
 const leave = (url: string) => window.location.assign(url)
 
+/**
+ * One Connect, one connection (security review mcp-1-02): once a
+ * connection is allowed, the 15 minutes end, so a second consent link
+ * arriving in them, someone else's included, finds no Allow. A failed
+ * write is not waited on twice: the owner did allow this one.
+ */
+const closeWindow = (supabase: SupabaseClient, userId: string) =>
+  saveAccess(supabase, userId, { connectUntil: new Date(Date.now()).toISOString() }).catch(() => null)
+
 function WithProject({ env }: { env: Env }) {
   const supabase = useMemo(() => createSupabase(env), [env])
   return <Consent supabase={supabase} go={leave} />
@@ -110,7 +119,10 @@ function Decide({ supabase, userId, go }: { supabase: SupabaseClient; userId: st
       } else if (!opened(access, Date.now())) {
         // Allowed before, so Supabase has already issued a code: followed only on Allow's terms.
         setSeen(access?.enabled === true ? SAID.not_started : SAID.switched_off)
-      } else go(asked.data.redirect_url)
+      } else {
+        const back = asked.data.redirect_url
+        void closeWindow(supabase, userId).then(() => go(back))
+      }
     })
     return () => void (live = false)
   }, [supabase, userId, go])
@@ -137,6 +149,7 @@ function Decide({ supabase, userId, go }: { supabase: SupabaseClient; userId: st
       : await supabase.auth.oauth.denyAuthorization(id, { skipBrowserRedirect: true })
     // Never to an unknown callback, even with the owner's no: that would be an open redirect.
     if (callback.allowed && reply.error === null && followable(reply.data.redirect_url, details.redirect_uri)) {
+      if (approve) await closeWindow(supabase, userId)
       go(reply.data.redirect_url)
       return
     }

@@ -20,7 +20,8 @@ function copy(text: string): Promise<boolean> {
  * The address to paste, and Connect a new AI app (PLAN §2.9, §2.10). The
  * button copies the address and opens the 15 minutes in which the consent
  * page offers Allow, so a connection someone else started, and sent to the
- * owner as a link, finds no window open.
+ * owner as a link, finds no window open. Allowing one connection ends the
+ * window (ConsentScreen, mcp-1-02).
  */
 export function ConnectNew() {
   const { supabase, userId } = useAppData()
@@ -60,8 +61,8 @@ export function ConnectNew() {
         <Icon name="plus" /> Connect a new AI app
       </Button>
       <p className="text-sm text-muted-foreground">
-        Copies the address, and lets a new AI app connect for the next {CONNECT_MINUTES} minutes. Press it each time you add the app in
-        Claude or ChatGPT.
+        Copies the address, and lets one new AI app connect within the next {CONNECT_MINUTES} minutes; the first connection you allow
+        ends that time. Press it each time you add the app in Claude or ChatGPT.
       </p>
       <p aria-live="polite" className="text-base font-medium empty:sr-only">
         {said}

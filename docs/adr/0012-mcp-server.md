@@ -327,3 +327,6 @@ below was made under those words and is recorded with them.
   `WordsSchema` and `NoteTextSchema`). Narrowed as a verifier advised: the
   shared `hasControlCharacter` and the `ingested_text` domain are
   unchanged, since a statement's shop name may need U+200C or U+200D.
+- **mcp-1-02: one Connect, one connection.** Allowing a connection ends
+  the 15-minute window, so a second consent link arriving in it finds no
+  Allow.

@@ -101,8 +101,8 @@ described them on 2026-09-30):
 
 1. In the budget app: **Settings → AI apps**, turn on **Let AI apps
    connect**, and press **Connect a new AI app**. It copies the address,
-   and for the next 15 minutes the app will accept a new connection. Do
-   steps 2 to 4 within those 15 minutes.
+   and for the next 15 minutes the app will accept one new connection
+   (allowing it ends the 15 minutes). Do steps 2 to 4 within them.
 2. On claude.ai: **Customize → Connectors → Add custom connector**.
 3. Name it **Budget** if it asks for a name, and paste the address. If it
    asks how to sign in, choose **Sign in now**; if it asks about the OAuth
@@ -1007,7 +1007,12 @@ Supabase sends the owner to **Site URL + Authorization Path**,
   phishing: a link someone else started (their own Claude account, their
   own registered client) and sent to the owner finds no open window and
   gets no Allow. Allow never turns AI apps on by itself (the first draft's
-  "Allow and turn on AI apps" made one click on such a link enough). It
+  "Allow and turn on AI apps" made one click on such a link enough).
+  *Since 2026-10-01 (security review mcp-1-02):* a successful Allow, and
+  an allowed-before redirect, end the window (`connect_until` set to now)
+  before the page leaves, so it stays open for no second, unsolicited
+  connection; a failed write still follows the callback the owner
+  allowed. It
   calls `approveAuthorization(id, { skipBrowserRedirect: true })`,
   requires the returned `redirect_url` to be the approved callback
   followed by `?` and query parameters only, then `location.assign`s it.
