@@ -3438,3 +3438,21 @@ cleanup step after the reviews (PLAN §3).
 **To settle:** read `23514` as its own reason in `access.ts`, and say
 "Your browser's time zone isn't one the database knows yet", with a
 card test whose fake refuses the zone.
+
+---
+
+## N150 — HANDOFF's §2 and §6 do not mention AI apps yet
+
+**Seen:** 2026-10-01, writing M12b's owner steps into HANDOFF §3 and §4.
+§2 ("What is new") lists nothing about Claude or ChatGPT, and its
+"Underneath" paragraph still says the database is `0001` to `0018` and
+the decisions ADRs 0001 to 0011; §6 ("What is left") has no line for
+the hosted-only checks (MCP plan §2.14) or K5's password question.
+
+**Why not fixed here:** M12b covers §3 and §4, the owner's steps and the
+checks; §2 and §6 summarise the whole branch, which the README step
+after M12b (PLAN §3, "After M12b") rewrites anyway.
+
+**To settle:** in the README step or the cleanup after the reviews, add
+an "AI apps" bullet to §2, say `0001` to `0020` and ADRs 0001 to 0012
+under "Underneath", and add K1 to K13 and K5 to §6.

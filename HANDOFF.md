@@ -160,40 +160,91 @@ that. Do not run them again.
 
 **Merging to `main` comes first, and is safe.** `main` deploys itself when
 it changes. Nothing the app needs to open depends on the new updates:
-until you do the three steps below, everything that worked before still
+until you do the steps below, everything that worked before still
 works, and each new part says in one line that it needs a one-time
 update, with a link to Help. This was checked screen by screen with each
 update missing in turn (A28).
 
-**Then three things, about 15 minutes, once. Easiest on a computer.** In
-the app, **Help → One-time updates** checks each one and has **Copy**
-buttons, so there is no need to open GitHub.
+In the app, **Help → One-time updates** walks every step below in this
+order, checks each one, and has **Copy** buttons, so there is no need to
+open GitHub. Easiest on a computer.
 
-1. **Paste the four new database updates, one at a time.** Supabase →
+**Part A: the updates and free AI, about 15 minutes, once.**
+
+1. **Paste the six new database updates, one at a time.** Supabase →
    **SQL Editor** → **New query**. In the app, Help → One-time updates →
    **Copy** beside `0015_savings_goals_order.sql`. Paste, press **Run**,
    and wait for "Success. No rows returned." Then a new query for
-   `0016_ai_foundation.sql`, then `0017_coach_memory.sql`, then
-   `0018_category_suggestions.sql`. If one says anything other than
-   "Success", stop there: nothing is lost, and the message says which line.
+   `0016_ai_foundation.sql`, then `0017_coach_memory.sql`,
+   `0018_category_suggestions.sql`, `0019_ai_apps_cannot_write.sql` and
+   `0020_ai_apps.sql`, in that order. `0019` stops with "Paste 0018
+   first" if `0018` is not in, and `0020` with "Paste 0019 first". If one
+   says anything else, stop there: nothing is lost, the message says which
+   line, and the next agent needs that message (MCP plan K10, K11).
 2. **Paste the AI helper.** Supabase → **Edge Functions** → **Deploy a new
    function** → **Via Editor**. Name it exactly `ai`. In the app, **Copy**
-   beside "The AI helper", paste it over everything in the editor, keep
-   **Enforce JWT verification** on, and press **Deploy**. There are no new
-   secrets: `GEMINI_API_KEY` and `EXTRA_ORIGINS` are reused if you set them
-   for receipt photos.
+   beside "The AI helper", paste it over everything in the editor. Set
+   **Enforce JWT verification** as One-time updates says: on while
+   Supabase signs with its old key, off once it signs with the new one
+   (step 4). Press **Deploy**. There are no new secrets: `GEMINI_API_KEY`
+   and `EXTRA_ORIGINS` are reused if you set them for receipt photos.
+   **If Edge Functions also lists `read-receipt`**, paste its new version
+   the same way (its **Copy** is beside the helper's) or delete it (its
+   `⋯` menu → **Delete**): the helper reads receipts without it, and its
+   old copy lets anyone holding the app's public key use your Gemini key.
 3. **Turn on free AI.** In the app: More → **AI settings** → **Get a free
    key**. Google AI Studio opens in a new tab: **Create API key**, copy it,
    come back, paste it, and press **Save & test**. You should see "Works ·
    key ending …abcd". If you set `GEMINI_API_KEY` for receipts earlier,
    the screen already says "AI is on" and there is nothing to paste.
 
-Then **Check again** on One-time updates says "All done".
+**Part B: Claude and ChatGPT (AI apps), about 20 minutes, once, on a
+computer.** Only if you want them; Part A stands alone. It needs the
+Cloudflare site live with its Site URL set in Supabase ("Still open from
+before", below), because Supabase finds the app's connect page from it.
 
-**Optional:** if you deployed `read-receipt` earlier, paste its new version
-the same way. It moves off a Google model that stops working in
-mid-October. The AI helper reads receipts itself, so this matters only as
-a fallback.
+4. **The signing key**, only if One-time updates shows **Signing key**
+   with a ✗ (it reads your own sign-in to tell). ChatGPT cannot sign in
+   without it. First, Supabase → **Edge Functions** → `ai` → its
+   settings → turn **Enforce JWT verification** off → **Save**; the same
+   for `read-receipt` if you kept it. Supabase's own guide warns that
+   changing the key with that switch on can break a function, and both
+   check every caller themselves. Then **Project Settings → JWT Keys** →
+   **Rotate keys**, so the current key is the **ECC (P-256)** one. Do not
+   revoke the old key. Sign out of the app and back in, and press **Check
+   again**.
+5. **Sign-in for AI apps.** Supabase → **Authentication → URL
+   Configuration**: check **Site URL** is
+   `https://aaron-budget-app.pages.dev`. Then **Authentication → OAuth
+   Server** → **Enable**; set **Authorization Path** to `/oauth/consent`;
+   turn on dynamic client registration (the switch that lets apps register
+   themselves); **Save**. Then **Authentication → Sign In / Providers**:
+   **Allow new users to sign up** stays off; under **Email**, keep
+   **Secure email change** on, and turn on any setting that asks for the
+   current password before a password change.
+6. **Deploy the AI apps server.** Supabase → **Edge Functions** → **Deploy
+   a new function** → **Via Editor**. Name it exactly `mcp`. In the app,
+   **Copy** beside "The AI apps server", paste it over everything in the
+   editor, turn **Enforce JWT verification off**, and press **Deploy**.
+   Off is right for this one: the server checks every caller itself, and
+   Claude and ChatGPT find the sign-in only through the server's own
+   answer, which that switch would hide. Supabase has been seen to turn
+   it back on after an update, so after any later paste, open the
+   function's settings and check it is still off.
+7. **Check again** on One-time updates says "All done".
+8. **Connect Claude**, as **Help → Connect Claude** says: Settings → AI
+   apps → turn on **Let AI apps connect** → **Connect a new AI app**, then
+   within 15 minutes, on claude.ai, **Customize → Connectors → Add custom
+   connector**, name it **Budget**, paste the address, choose **Register
+   automatically** (not "Use Claude's published identity"), **Add**,
+   **Connect**, and **Allow** on the budget app's page.
+9. **Connect ChatGPT**, as **Help → Connect ChatGPT** says (Plus or
+   higher, the website only): **Connect a new AI app** first; on
+   chatgpt.com, **Settings → Security and login → Developer mode** on;
+   then **chatgpt.com/plugins → +**, name **Budget**, paste the address,
+   **OAuth** (dynamic registration if asked), **Create**, and **Allow**.
+
+Then work through §4's first-connection checks, 15 to 23, in order.
 
 **Still open from before, if not done yet:**
 - **Cloudflare Pages** (replaces Netlify). **Workers & Pages → Create →
@@ -267,16 +318,58 @@ One-time updates, which names what is missing.
     larger (**aA** in Safari) and look again: nothing should need scrolling
     sideways. Only Chromium could be checked here (N41); tell the next
     agent which screen if anything is squashed or cut off.
-15. **AI apps, once `0020` is pasted** (MCP plan K11): the first question
-    from Claude or ChatGPT answers with your own figures. If it answers
-    "not an AI app", or with nothing, turn **Let AI apps connect** off
-    and report it.
-16. **The connect page, the first time** (MCP plan K7, K12): after
-    **Connect a new AI app** in Settings and **Connect** in Claude, the
-    browser opens `aaron-budget-app.pages.dev/oauth/consent` showing
-    **Connect an AI app**, with **claude.ai** in bold. If that address is
-    not found, or the page says "This isn't a connection request", stop
-    there and report it: nothing has been connected.
+**AI apps, the first connection** (MCP plan `docs/design/mcp/PLAN.md`
+§2.14, K1 to K13). None of this could run here: it needs the live
+project. Do them in order, and stop at the first that fails: each says
+what to do, and reporting the words on the screen is enough.
+
+15. **The server answers** (K4, K6). In a browser tab, open
+    `https://bnodrfghxbavlopxkgju.supabase.co/functions/v1/mcp/health`.
+    Expect `{"ok":true,"version":"…","tools":10}`. A 401 means **Enforce
+    JWT verification** is on for `mcp`: turn it off. Anything else, or
+    `"tools":0`, means the server did not start: report what it shows.
+16. **Sign-in starts** (K3, K8). After **Connect a new AI app** and
+    **Connect** in Claude, the browser opens the budget app's **Connect an
+    AI app** page. If Claude shows an error before that, report it word
+    for word. If nothing happens at all, check **Enforce JWT
+    verification** is still off for `mcp` (step 6).
+17. **The page** (K7, K12). Its address starts
+    `aaron-budget-app.pages.dev/oauth/consent?authorization_id=`, and it
+    says **claude.ai** in bold above **Allow**. If the address is not
+    found, or the page says "This isn't a connection request", stop and
+    report it: nothing has been connected.
+18. **The first question** (K1, the one that matters most). Ask Claude
+    "list my categories". It should list yours. **If it answers "not an
+    AI app", or that you are not signed in: at once turn off Let AI apps
+    connect in Settings, then Supabase → Authentication → OAuth Server →
+    turn it off, and report it.** That answer would mean the database
+    cannot tell an AI app's sign-in from your own: the server turns the AI
+    app away, but its sign-in, used without the server, could change your
+    records.
+19. **Your figures** (K11). Ask "How is my month going?": the figures match
+    the Month. If every answer says the app could not read your records,
+    turn off **Let AI apps connect** and report it.
+20. **An addition.** Ask "add a test coffee for $1.00 today". **Review**
+    shows it, with "Added by Claude"; press **✕** on it.
+21. **Disconnect** (K2). **Settings → AI apps → Connected apps** lists
+    Claude, "Last asked" today. Press **Disconnect**, then **Yes,
+    disconnect**, and ask Claude something: it can no longer reach your
+    budget. Connect it again with **Connect a new AI app** if you want it.
+22. **ChatGPT** (K3, K8, K9). Its connect page says **chatgpt.com** in
+    bold, with **Allow**. If it says instead "This app would send you to
+    chatgpt.com, which is not Claude or ChatGPT", press **Deny** and
+    report it: ChatGPT used a callback address the app does not know yet,
+    and adding it is a one-line change. If sign-in fails before the page,
+    check step 4's signing key.
+23. **One-time updates** (K13). If **Signing key** or **Sign-in for AI
+    apps** still says "Could not check" after you did them, look at the
+    setting in Supabase by eye and report it; nothing else depends on it.
+
+Not yours to check alone: whether a connected AI app's sign-in could be
+used to change your password (K5, MCP plan risk 2). The security review
+tests it on the live project with you before you rely on AI apps day to
+day; until then, connect only from your own computer, and **Disconnect**
+any app you stop using.
 
 ## 5. Questions for the owner
 

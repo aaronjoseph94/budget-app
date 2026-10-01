@@ -33,8 +33,10 @@ refused rather than applied twice.
 | `0016_ai_foundation.sql` | Where AI keeps your settings (on or off, the order services are tried, paid services, the daily limit, the coach's tone, sharing shop names), your AI keys, locked so the browser can never read them, and today's use. Without it, AI settings and the AI's words say they need a one-time update, and every screen uses the app's own words |
 | `0017_coach_memory.sql` | Where the Coach keeps the AI's checked words (never a digit or a currency sign: the database refuses them), the cards you dismissed, and your check-in answers. Without it, AI words still show but are asked for afresh, ✕ on a card is hidden, and the check-in's questions say they need the update |
 | `0018_category_suggestions.sql` | Where Review keeps the category the AI suggested for a row, until you approve or change it. Without it, Review works as before and says suggestions need the update |
+| `0019_ai_apps_cannot_write.sql` | Stops an AI app you connect (Claude, ChatGPT) from changing anything itself: the database refuses every write from an AI app's sign-in, and every function that writes says "AI apps cannot do this" to one. Your own sign-in is unaffected. It stops with "Paste 0018 first" if `0018` is not in |
+| `0020_ai_apps.sql` | What an AI app may read, and its one way to add something to Review, always waiting for you; the switch in Settings → AI apps, its daily limits, and when each app last asked. Without it, Settings → AI apps says it needs the update. It stops with "Paste 0019 first" if `0019` is not in |
 
-**`0015` to `0018` can be pasted after `main-tnlcto` is merged into
+**`0015` to `0020` can be pasted after `main-tnlcto` is merged into
 `main`.** Nothing the app needs to open depends on them: each new part
 says in one line that it needs a one-time update until its file is in
 (HANDOFF §3). In the app, **Help → One-time updates** shows which are
@@ -91,13 +93,16 @@ through one Edge Function, `ai`, called "the AI helper" in the app. Chosen
 in `docs/adr/0004-ai-providers-and-keys.md`; the rules that keep numbers
 out of the AI's words are `docs/adr/0005-grounded-ai-text.md`. Everything
 works without it, in the app's own words. About 15 minutes, once, easiest
-on a computer, after `0015` to `0018` above.
+on a computer, after `0015` to `0020` above.
 
 1. **Paste the helper.** Supabase → **Edge Functions** → **Deploy a new
    function** → **Via Editor**. Name it exactly `ai`. In the app, Help →
    One-time updates → **Copy** beside "The AI helper" (the file is
    `supabase/functions/ai/index.ts`), paste it over everything in the
-   editor, keep **Enforce JWT verification** on, and press **Deploy**.
+   editor, and press **Deploy**. Keep **Enforce JWT verification** on
+   while Supabase signs with its old key, and off once it signs with the
+   new one (the signing key, under AI apps below); One-time updates says
+   which. Since 2026-09-30 the helper checks every caller itself.
 2. **No new secrets.** It reuses `GEMINI_API_KEY` and `EXTRA_ORIGINS` if
    they are set for receipt photos (below). `AI_KEYS_ROOT` is optional: set
    to a long random value, it lets keys pasted in the app survive a change
@@ -133,8 +138,11 @@ without it. Chosen in docs/adr/0002-gemini-free-tier-for-receipts.md.
    Google account, and choose **Create API key**. Copy it.
 2. **Add the function.** In Supabase: **Edge Functions → Deploy a new function
    → Via Editor**. Name it exactly `read-receipt`, replace the sample code with
-   the whole of `supabase/functions/read-receipt/index.ts`, and deploy. Leave
-   **Enforce JWT verification** on — it is what stops strangers using your key.
+   the whole of `supabase/functions/read-receipt/index.ts`, and deploy. Set
+   **Enforce JWT verification** as for the AI helper. Before 2026-09-30
+   that switch alone stopped strangers using your key; since then the
+   function also checks every caller itself, so the switch can come off
+   when the signing key changes.
 3. **Add the key.** **Edge Functions → Secrets → Add new secret**: name
    `GEMINI_API_KEY`, value the key from step 1.
 
@@ -151,6 +159,48 @@ listed for shutdown around 16–20 October 2026. If you set `GEMINI_MODEL` to
 
 The key is a password to your Google account's quota. It goes only in that
 Supabase secret — never in the app, never in this repository.
+
+## AI apps: Claude and ChatGPT (MCP)
+
+Lets your own Claude or ChatGPT read your figures and add items to
+Review over MCP. Chosen in `docs/adr/0012-mcp-server.md`; the design and
+every check is `docs/design/mcp/PLAN.md`. The steps, in order, are
+HANDOFF §3 Part B; One-time updates checks each one. What they leave set:
+
+| Where in Supabase | Setting |
+|---|---|
+| **Authentication → URL Configuration** | Site URL `https://aaron-budget-app.pages.dev`: Supabase sends an AI app's sign-in to Site URL + Authorization Path |
+| **Authentication → OAuth Server** | Enabled; Authorization Path `/oauth/consent`; dynamic client registration on |
+| **Authentication → Sign In / Providers** | Allow new users to sign up off; Email: Secure email change on |
+| **Project Settings → JWT Keys** | The current key is ECC (P-256); the old key not revoked |
+| **Edge Functions → `mcp`** | The AI apps server, pasted from One-time updates' **Copy**; **Enforce JWT verification off** |
+| **Edge Functions → `ai`, `read-receipt`** | **Enforce JWT verification off** once the key is ECC (both check every caller themselves) |
+
+`mcp` needs no secrets: `SUPABASE_URL` and `SUPABASE_ANON_KEY` are
+provided by Supabase, and `EXTRA_ORIGINS`, if set for the other
+functions, is read the same way. It never holds a service key or an AI
+key. Check it at
+`https://bnodrfghxbavlopxkgju.supabase.co/functions/v1/mcp/health`:
+`{"ok":true,"version":"…","tools":10}`.
+
+**Enforce JWT verification on `mcp` must stay off.** With it on,
+Supabase answers Claude and ChatGPT before the server can, without the
+pointer to the sign-in, and connecting silently fails. Supabase has been
+seen to turn it back on after an update, so check it after every paste.
+
+**Connecting** is Help → **Connect Claude** or **Connect ChatGPT**, each
+starting from Settings → AI apps → **Connect a new AI app**, which lets
+a new app connect for 15 minutes. The first-connection checks are HANDOFF
+§4, 15 to 23.
+
+**Now and then:** Claude registers a new app in **Authentication → OAuth
+Apps** each time it connects afresh, and anyone can register one there
+(none gets past the connect page without your 15 minutes). Delete any
+that Settings → AI apps → **Connected apps** does not list.
+
+**To switch it all off:** Settings → AI apps → turn off **Let AI apps
+connect**, which stops every AI app at once; then **Authentication →
+OAuth Server** → off, so none can sign in again.
 
 ## iPhone: install it
 
