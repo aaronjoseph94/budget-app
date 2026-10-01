@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { FIRST_FILE, HELPER_FILE, OAUTH_SERVER, SERVER_FILE, SIGNING_KEY, UPDATES, checkUpdates, nextStep, type Checked } from '../src/help/updates.js'
-import { MCP_SERVER_VERSION } from '@budget/schema'
+import { FIRST_FILE, HELPER_FILE, OAUTH_SERVER, READ_RECEIPT_FILE, SERVER_FILE, SIGNING_KEY, UPDATES, checkUpdates, nextStep, type Checked } from '../src/help/updates.js'
+import { MCP_SERVER_VERSION, READ_RECEIPT_VERSION } from '@budget/schema'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 
 const stateOf = (checked: readonly Checked[], prefix: string) => checked.find((c) => c.update.file.startsWith(prefix))?.state
@@ -21,7 +21,7 @@ describe('checking the one-time updates', () => {
   it('finds each one in when everything it adds answers', async () => {
     const fake = await ready()
     const checked = await checkUpdates(fake.client)
-    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', '0020', '0030', '0031', '0032', '0033', '0034', 'ai-f', 'sign', 'oaut', 'mcp-'])
+    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', '0020', '0030', '0031', '0032', '0033', '0034', 'ai-f', 'read', 'sign', 'oaut', 'mcp-'])
     expect(missing(checked)).toEqual([])
     expect(nextStep(checked)).toEqual({ kind: 'done' })
   })
@@ -148,6 +148,26 @@ describe('checking the one-time updates', () => {
     expect(nextStep(checked)).toEqual({ kind: 'paste', file: HELPER_FILE, fromStart: false })
     fake.functions.ai = () => Promise.reject(new TypeError('Failed to fetch'))
     expect(missing(await checkUpdates(fake.client))).toEqual([['ai-f', 'unknown']])
+  })
+
+  // Security review mcp-3-03: an older read-receipt relies on the gateway's switch alone.
+  it('reads read-receipt: deleted or its new version in, an older copy (405 to GET) old and next after the helper', async () => {
+    const fake = await ready()
+    expect(stateOf(await checkUpdates(fake.client), 'read-receipt')).toBe('in')
+    fake.functions.readReceipt = () => new Response('{}')
+    for (const [reply, state] of [
+      [() => new Response(JSON.stringify({ ok: true, version: READ_RECEIPT_VERSION }), { headers: { 'content-type': 'application/json' } }), 'in'],
+      [() => new Response(JSON.stringify({ ok: true, version: '2026-09-30.9' }), { headers: { 'content-type': 'application/json' } }), 'old'],
+      [() => new Response(JSON.stringify({ ok: false, code: 'method_not_allowed' }), { status: 405, headers: { 'content-type': 'application/json' } }), 'old'],
+      [() => new Response('{}', { status: 503 }), 'unknown'],
+    ] as const) {
+      fake.functions.readReceiptVersion = reply
+      expect(stateOf(await checkUpdates(fake.client), 'read-receipt')).toBe(state)
+    }
+    fake.functions.readReceiptVersion = () => new Response(JSON.stringify({ ok: false }), { status: 405 })
+    expect(nextStep(await checkUpdates(fake.client))).toEqual({ kind: 'paste', file: READ_RECEIPT_FILE, fromStart: false })
+    fake.functions.ai = null
+    expect(nextStep(await checkUpdates(fake.client))).toEqual({ kind: 'paste', file: HELPER_FILE, fromStart: false })
   })
 
   it('asks for the helper’s new version when an older copy answers, and not for the same or a newer one', async () => {

@@ -110,6 +110,20 @@ describe('One-time updates', () => {
     expect(link.getAttribute('href')).toBe('https://github.com/aaronjoseph94/budget-app/blob/main/supabase/functions/ai/index.ts')
   })
 
+  // Security review mcp-3-03: an older read-receipt is a step of its own, after the helper.
+  it('names an older read-receipt next, to delete or replace, with its Copy', async () => {
+    const fake = await ready()
+    fake.functions.readReceipt = () => new Response('{}')
+    fake.functions.readReceiptVersion = () => new Response(JSON.stringify({ ok: false, code: 'method_not_allowed' }), { status: 405 })
+    await open(fake, ONE_LEFT)
+    expect(row('read-receipt')).toBe('✗An older copy: read-receiptDeleted, or its new version: the AI helper reads receipts without it: an older copy is in')
+    expect(screen.getByText('Next: delete read-receipt, or paste its new version over it. About 2 minutes, on a computer.')).toBeTruthy()
+    expect(clicks()).toEqual([
+      'In Supabase, open Edge Functions, then read-receipt, then its ⋯ menu, and press Delete.',
+      'Or, to keep it, open its code, paste its new version over everything with Copy below, and deploy it.',
+    ])
+  })
+
   it('names the AI apps server last, with its clicks: JWT verification off, and no GitHub link', async () => {
     const fake = await ready()
     fake.functions.mcpHealth = null

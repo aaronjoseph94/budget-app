@@ -78,6 +78,15 @@ export type AiAction = AiRequest['action']
 export const AI_HELPER_VERSION = '2026-09-30.1'
 
 /**
+ * read-receipt's version, which it answers to GET from this one on, so
+ * One-time updates can tell it from an older copy that relies on the
+ * gateway's JWT switch alone (security review mcp-3-03). The function is
+ * pasted on its own and imports nothing of ours, so it writes the same
+ * literal, and its test holds the two together.
+ */
+export const READ_RECEIPT_VERSION = '2026-10-01.1'
+
+/**
  * Every failure the helper answers with, as a code the app turns into a
  * sentence (plan §3.2). Codes only, so each is safe to log. `helper_error`
  * is the helper's own trouble: a secret it needs is missing, or its

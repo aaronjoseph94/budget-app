@@ -116,8 +116,10 @@ describe('Copy on One-time updates', () => {
     const migration = createFakeSupabase()
     delete migration.rpcReplies['ai_key_status']
     await nextIs(migration, 'Copy 0016_ai_foundation.sql')
-    // The panel's own words: the article around it names read-receipt in Stuck?, for after the helper is in.
-    expect(within(document.querySelector<HTMLElement>('[aria-labelledby="updates-status"]')!).queryByText(/read-receipt/)).toBeNull()
+    // The next step's own words: the article around it names read-receipt in Stuck?, for after the helper is in.
+    // (The list above names it as a step of its own since mcp-3-03, ✓ while it is deleted.)
+    const step = document.querySelector<HTMLElement>('[aria-labelledby="updates-status"] .bg-muted')!
+    expect(within(step).queryByText(/read-receipt/)).toBeNull()
   })
 
   // Its switch comes off before the key moves, which its older copy cannot survive (PLAN §6, finding 7).

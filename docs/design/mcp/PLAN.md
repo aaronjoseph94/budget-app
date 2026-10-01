@@ -224,7 +224,9 @@ and has **Copy** buttons):
    `read-receipt`, either paste its new version the same way (One-time
    updates has its **Copy**) or delete it: the AI helper reads receipts
    without it, and its old version lets anyone who has the app's public
-   key use your Gemini key.
+   key use your Gemini key. One-time updates checks it (since 2026-10-01,
+   security review mcp-3-03): the new version answers GET with its
+   version, the old one 405, and a deleted one Supabase's 404.
 3. **Check the signing key.** One-time updates reads your own sign-in and
    says whether this step is needed. If it is: first open the `ai`
    function's settings in Supabase (and `read-receipt`'s, if you kept it),

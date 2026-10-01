@@ -36,6 +36,10 @@ const HOST = 'https://generativelanguage.googleapis.com/v1beta/models/'
 // shutdown around 16-20 October 2026 and no longer offers to new keys
 // (ADR 0002's dated note). The GEMINI_MODEL secret still overrides it.
 const DEFAULT_MODEL = 'gemini-3.5-flash-lite'
+
+// Answered to GET, so One-time updates can tell this copy from an older one
+// (packages/schema's READ_RECEIPT_VERSION, the same literal; ADR 0012).
+const VERSION = '2026-10-01.1'
 const MODEL_NAME = /^gemini-[a-z0-9.-]{1,40}$/
 
 // Browsers allowed to call this: the Cloudflare and Netlify sites and a local
@@ -103,7 +107,7 @@ function cors(origin: string | null, origins: Set<string>): Record<string, strin
   return {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     Vary: 'Origin',
   }
 }
@@ -172,10 +176,12 @@ export async function handle(
   const send = (status: number, body: unknown) => reply(status, body, origin, origins)
 
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(origin, origins) })
-  if (req.method !== 'POST') return send(405, { ok: false, code: 'method_not_allowed' })
   // A browser page on any other site is refused before the key is spent. The
   // browser would already hide the answer from it, but not the cost of asking.
   if (origin !== null && !origins.has(origin)) return send(403, { ok: false, code: 'origin_not_allowed' })
+  // Which copy this is, and nothing else: no key is read, nothing is asked.
+  if (req.method === 'GET') return send(200, { ok: true, version: VERSION })
+  if (req.method !== 'POST') return send(405, { ok: false, code: 'method_not_allowed' })
 
   // Who is asking is checked below, with the auth server, whether or not
   // the gateway's "Enforce JWT verification" is on.

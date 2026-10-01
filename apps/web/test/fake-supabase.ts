@@ -31,7 +31,7 @@ import type {
 } from '../src/ledger.js'
 import type { SupabaseClient } from '../src/supabase.js'
 import { watchNetwork } from '../src/offline.js'
-import { AI_HELPER_VERSION, MCP_SERVER_VERSION, type AiStatusReply } from '@budget/schema'
+import { AI_HELPER_VERSION, MCP_SERVER_VERSION, READ_RECEIPT_VERSION, type AiStatusReply } from '@budget/schema'
 
 type Row = Readonly<Record<string, unknown>>
 
@@ -147,6 +147,8 @@ export interface FakeSupabase {
     /** `functions/v1/read-receipt`, the older receipt reader; null, the default, is one never deployed. Its bodies are kept in `receiptCalls`. */
     readReceipt: ((body: Readonly<Record<string, unknown>>) => Response | Promise<Response>) | null
     readonly receiptCalls: Readonly<Record<string, unknown>>[]
+    /** What a deployed read-receipt answers to GET: by default this app's version. */
+    readReceiptVersion: () => Response | Promise<Response>
     /** `functions/v1/mcp/health`, the AI apps server's; null is one never deployed. By default it answers with this app's version. */
     mcpHealth: (() => Response | Promise<Response>) | null
   }
@@ -270,6 +272,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     calls: [],
     readReceipt: null,
     receiptCalls: [],
+    readReceiptVersion: () => json({ ok: true, version: READ_RECEIPT_VERSION }),
     mcpHealth: () => json({ ok: true, version: MCP_SERVER_VERSION, tools: 0 }),
   }
   const oauth: FakeSupabase['oauth'] = {
@@ -442,6 +445,11 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     if (url.pathname === '/functions/v1/mcp/health') {
       if (functions.mcpHealth === null) return json({ code: 'NOT_FOUND', message: 'Requested function was not found' }, 404)
       return functions.mcpHealth()
+    }
+    if (url.pathname === '/functions/v1/read-receipt' && method === 'GET') {
+      // Its version, from 2026-10-01.1 on (One-time updates, mcp-3-03); null is one never deployed.
+      if (functions.readReceipt === null) return json({ code: 'NOT_FOUND', message: 'Requested function was not found' }, 404)
+      return functions.readReceiptVersion()
     }
     if (url.pathname === '/functions/v1/read-receipt') {
       const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>

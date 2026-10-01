@@ -64,6 +64,12 @@ const SERVER_STEPS = [
   'Turn Enforce JWT verification off, and press Deploy. The server checks every caller itself.',
 ]
 
+/** read-receipt from before 2026-10-01: deleted, as the helper reads receipts, or replaced (security review mcp-3-03). */
+const READ_RECEIPT_STEPS = [
+  'In Supabase, open Edge Functions, then read-receipt, then its ⋯ menu, and press Delete.',
+  'Or, to keep it, open its code, paste its new version over everything with Copy below, and deploy it.',
+]
+
 const SERVER_AGAIN_STEPS = [
   'In Supabase, open Edge Functions, then the function named mcp, then its code.',
   'Paste the new version over everything in the editor, and deploy it.',
@@ -160,6 +166,15 @@ export function UpdatesPanel() {
               </p>
               <ol className="list-decimal space-y-1 pl-5">
                 {(next.file === SIGNING_KEY ? SIGNING_KEY_STEPS : oauthSteps(window.location.origin)).map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+            </>
+          ) : next.file === READ_RECEIPT_FILE ? (
+            <>
+              <p>Next: delete read-receipt, or paste its new version over it. About 2 minutes, on a computer.</p>
+              <ol className="list-decimal space-y-1 pl-5">
+                {READ_RECEIPT_STEPS.map((step) => (
                   <li key={step}>{step}</li>
                 ))}
               </ol>

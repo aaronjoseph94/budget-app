@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { parseReceiptReply } from '@budget/schema'
+import { READ_RECEIPT_VERSION, parseReceiptReply } from '@budget/schema'
 import { handle } from '../read-receipt/index.js'
 
 /**
@@ -70,8 +70,17 @@ describe('read-receipt refuses before spending the key', () => {
     expect(calls).toHaveLength(0)
   })
 
-  it('refuses anything but POST', async () => {
-    const { res, body } = await run(request({ method: 'GET' }))
+  // So One-time updates can tell this copy from one before it (security review mcp-3-03).
+  it('answers GET with its version, and nothing else, spending nothing', async () => {
+    const { res, body, calls } = await run(request({ method: 'GET' }))
+    expect([res.status, body]).toEqual([200, { ok: true, version: READ_RECEIPT_VERSION }])
+    expect(calls).toHaveLength(0)
+    const pre = await run(request({ method: 'OPTIONS' }))
+    expect(pre.res.headers.get('access-control-allow-methods')).toBe('GET, POST, OPTIONS')
+  })
+
+  it('refuses anything but GET and POST', async () => {
+    const { res, body } = await run(request({ method: 'PUT' }))
     expect([res.status, body.code]).toEqual([405, 'method_not_allowed'])
   })
 

@@ -196,6 +196,8 @@ open GitHub. Easiest on a computer.
    the same way (its **Copy** is beside the helper's) or delete it (its
    `⋯` menu → **Delete**): the helper reads receipts without it, and its
    old copy lets anyone holding the app's public key use your Gemini key.
+   One-time updates now checks this too: **read-receipt** shows ✓ once it
+   is deleted or its new version is in, and is the next step until then.
 3. **Turn on free AI.** In the app: Settings (More on a phone) → **AI settings** → **Get a free
    key**. Google AI Studio opens in a new tab: **Create API key**, copy it,
    come back, paste it, and press **Save & test**. You should see "Works ·

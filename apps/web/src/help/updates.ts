@@ -14,7 +14,7 @@
  * as a dropped connection, is "could not check", never "missing": telling
  * the owner to paste something already in would be refused, and worry them.
  */
-import { AI_HELPER_VERSION, MCP_SERVER_VERSION } from '@budget/schema'
+import { AI_HELPER_VERSION, MCP_SERVER_VERSION, READ_RECEIPT_VERSION } from '@budget/schema'
 import { askAi } from '../ai/client.js'
 import { serverAddress } from '../ai-apps/access.js'
 import type { SupabaseClient } from '../supabase.js'
@@ -27,6 +27,12 @@ type Check =
   | { readonly kind: 'helper' }
   /** The AI apps server answers `/mcp/health` with its version once it is deployed (ADR 0012). */
   | { readonly kind: 'server' }
+  /**
+   * read-receipt: in when deleted (Supabase's 404) or when it answers GET
+   * with a version at least READ_RECEIPT_VERSION; an older copy answers 405
+   * and relies on the gateway's JWT switch alone (security review mcp-3-03).
+   */
+  | { readonly kind: 'read_receipt' }
   /** Which key Supabase signs the owner's sign-in with, read from the owner's own token. */
   | { readonly kind: 'signing_key' }
   /** Supabase's OAuth server, from the settings it publishes for AI apps to find. */
@@ -159,6 +165,12 @@ export const UPDATES: readonly Update[] = [
     checks: [{ kind: 'level', level: 34 }],
   },
   { file: HELPER_FILE, adds: 'The AI helper, which every AI feature goes through', checks: [{ kind: 'helper' }] },
+  {
+    file: READ_RECEIPT_FILE,
+    name: 'read-receipt',
+    adds: 'Deleted, or its new version: the AI helper reads receipts without it',
+    checks: [{ kind: 'read_receipt' }],
+  },
   { file: SIGNING_KEY, name: 'Signing key', adds: 'The key Supabase signs your sign-in with, which ChatGPT needs', checks: [{ kind: 'signing_key' }] },
   { file: OAUTH_SERVER, name: 'Sign-in for AI apps', adds: 'Lets Claude or ChatGPT ask you to allow them', checks: [{ kind: 'oauth' }] },
   { file: SERVER_FILE, adds: 'The AI apps server, which Claude or ChatGPT connect to', checks: [{ kind: 'server' }] },
@@ -181,6 +193,7 @@ const MISSING: Readonly<Record<Check['kind'], ReadonlySet<string>>> = {
   function: new Set(['PGRST202', '42883']),
   helper: new Set(),
   server: new Set(),
+  read_receipt: new Set(),
   signing_key: new Set(),
   oauth: new Set(),
   level: new Set(['PGRST202', '42883']),
@@ -235,6 +248,17 @@ async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateStat
     if (!answer.ok) return answer.view.state === 'not_deployed' ? 'missing' : 'unknown'
     const version = typeof answer.data === 'object' && answer.data !== null && 'version' in answer.data ? answer.data.version : null
     return isOlder(version) ? 'old' : 'in'
+  }
+  if (check.kind === 'read_receipt') {
+    const { data, error } = await supabase.functions.invoke('read-receipt', { method: 'GET' })
+    if (error !== null) {
+      const status = (error as { context?: unknown }).context
+      if (!(status instanceof Response)) return 'unknown'
+      // Deleted is in; the copy from before 2026-10-01 refuses GET.
+      return status.status === 404 ? 'in' : status.status === 405 ? 'old' : 'unknown'
+    }
+    const version = typeof data === 'object' && data !== null && 'version' in data ? data.version : null
+    return isOlder(version, READ_RECEIPT_VERSION) ? 'old' : 'in'
   }
   if (check.kind === 'server') {
     const { data, error } = await supabase.functions.invoke('mcp/health', { method: 'GET' })
