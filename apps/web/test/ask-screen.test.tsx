@@ -169,6 +169,19 @@ describe('Ask fails soft', () => {
     await screen.findByText(/Your payoff plan needs a one-time update\./)
   })
 
+  it('reads the payoff plan again for the next question after a read that failed (FE-13)', async () => {
+    const fake = forecastFakeWithGoals()
+    fake.fail('debts', '500')
+    open(fake)
+    await ask('When will I be debt-free?')
+    await waitFor(() => expect(screen.queryByText(sentence('No debts on your payoff plan.'))).toBeNull())
+    await screen.findByText(/When will I be debt-free\?/)
+    await new Promise((r) => setTimeout(r, 50))
+    fake.heal('debts')
+    await ask('When will I be debt-free?')
+    expect(await screen.findByText(sentence('No debts on your payoff plan.'))).toBeTruthy()
+  })
+
   it('says the forecast needs a one-time update when its reads are missing, and still answers the rest', async () => {
     const fake = forecastFakeWithGoals()
     fake.fail('pay_schedules', '42P01')

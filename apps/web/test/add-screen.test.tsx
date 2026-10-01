@@ -89,6 +89,13 @@ describe('AddScreen, typing one in with a new category', () => {
     expect(fake.rpcCalls[0]?.args.p_amount_cents).toBe(-1250)
   })
 
+  it('labels the list picker with the words it is named by (FE-12, WCAG 2.5.3)', async () => {
+    renderScreen(<AddScreen />, seeded())
+    await typeOne('I spent', '12.50', 'Farmers market')
+    const list = screen.getByRole('combobox', { name: 'Which list' })
+    expect(list.closest('label')?.firstElementChild?.textContent).toBe('Which list')
+  })
+
   it('moves back to Variable expenses when switched from received to spent', async () => {
     renderScreen(<AddScreen />, seeded())
 

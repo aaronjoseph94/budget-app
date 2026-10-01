@@ -568,7 +568,8 @@ function TypedEntry() {
               <Field label="New category name">
                 <Input value={newCategory} maxLength={60} onChange={(e) => setNewCategory(e.target.value)} />
               </Field>
-              <Field label="On the list">
+              {/* The picker's own name, so what is heard is what is seen (FE-12). */}
+              <Field label="Which list">
                 <ListSelect value={newKind} onChange={setNewKind} lists={LISTS_FOR[direction]} />
               </Field>
             </div>

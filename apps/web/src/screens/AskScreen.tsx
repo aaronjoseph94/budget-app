@@ -76,6 +76,9 @@ export function AskScreen({ topic }: { topic: HelpTopic | null }) {
     if (question.trim() === '' || busy) return
     setBusy(true)
     setRecent(keepQuestion(question))
+    // A payoff plan that failed to load (offline, say) is read again for
+    // this question, rather than answer "failed" until Ask reopens (FE-13).
+    setDebts((d) => (d === 'failed' ? null : d))
     try {
       const reading = await readQuestion(supabase, { question, asOf: todayIso(), categories, topics: TOPICS, chip })
       setAsked({ question: question.trim(), read: reading })

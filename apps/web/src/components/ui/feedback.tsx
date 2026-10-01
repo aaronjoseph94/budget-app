@@ -47,7 +47,7 @@ export function Progress({ basisPoints, tone = 'default' }: { basisPoints: numbe
   const fill = tone === 'over' ? 'bg-spend-bar' : tone === 'near' ? 'bg-warning' : 'bg-primary'
   return (
     <div className="h-2 w-full overflow-hidden rounded-full bg-secondary" role="presentation">
-      <div className={cn('h-full rounded-full transition-[width]', fill)} style={{ width }} />
+      <div className={cn('h-full rounded-full transition-[width] motion-reduce:transition-none', fill)} style={{ width }} />
     </div>
   )
 }
