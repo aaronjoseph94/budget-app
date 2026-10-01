@@ -10,10 +10,10 @@ import { callTool, reply } from './fake-database.js'
 const $ = (cents: number, display: string) => ({ cents, display })
 const QUEUE = {
   today: '2026-09-30',
-  waiting: 3,
+  waiting: '3',
   unreadable_lines: '1',
   rows: [
-    { posted_on: '2026-09-28', amount_cents: -1275, merchant_raw: 'coffee‮ 4111111111', category: 'Eating out', category_source: 'model', source: 'ai_app', ai_client_id: 'c0ffee00-0000-4000-8000-000000000000' },
+    { posted_on: '2026-09-28', amount_cents: -1275, merchant_raw: 'coffee‮ 4111111111', category: 'Eating out\u2066', category_source: 'model', source: 'ai_app', ai_client_id: 'c0ffee00-0000-4000-8000-000000000000' },
     { posted_on: '2026-09-29', amount_cents: '250000', merchant_raw: 'PAYROLL', category: null, category_source: null, source: 'card_csv', ai_client_id: null },
   ],
 }
