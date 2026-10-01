@@ -86,3 +86,13 @@ describe('get_forecast does not depend on how many rows the database returns', (
     expect(out.what_if).toMatchObject({ goal: 'Trip', reached: { status: 'range' } })
   })
 })
+
+describe('get_savings_goals does not depend on how many rows the database returns', () => {
+  it.each(CLOCKS)('the server at %s', async (clock, today) => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(clock))
+    const out = await bothWays('get_savings_goals', {}, today)
+    // The fund typed in 2022 counts every transfer since, and its pace is a range.
+    expect((out.goals as Record<string, unknown>[])[0]).toMatchObject({ name: 'Trip', main: true, forecast: { status: 'range' } })
+  })
+})

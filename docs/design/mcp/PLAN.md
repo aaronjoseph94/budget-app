@@ -1705,6 +1705,16 @@ created it in M9, and imported `packages/ai-apps` from
 - **Done:** outputs equal the Savings screen's; window invariance with a
   fund whose balance was typed four years before the anchor (seen RED by
   windowing `fund_txns` at 12 months, the first draft's reading).
+- **As built (2026-10-01):** one commit; the renaming and the Savings
+  parity case came with M7a, which needed them first. Each goal also gives
+  `monthly_contribution`, the workbook's monthly figure from its start and
+  target dates that the Savings card shows (F21), and an active goal's
+  `forecast` carries `weekly_needed` beside its pace (F33); paused and
+  reached goals have no forecast, and `main` is false on every goal when
+  none is active. The read is the Coach's year, as Savings reads it: the
+  window test goes RED with the fund's transfers cut at the window's
+  start, but not at twelve months back or none ahead, since a pace rests
+  on six complete months.
 
 ### M8a: F52, a search's totals, in the engine
 

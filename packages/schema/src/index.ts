@@ -73,6 +73,7 @@ export {
   GetDebtsInputSchema,
   GetForecastInputSchema,
   GetPeriodInputSchema,
+  GetSavingsGoalsInputSchema,
   GetSpendingInputSchema,
   ListCategoriesInputSchema,
   ListSchema,
