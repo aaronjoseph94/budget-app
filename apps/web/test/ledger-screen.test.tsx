@@ -103,6 +103,28 @@ describe('LedgerScreen, removing a transaction', () => {
     await waitFor(() => expect(screen.queryByText('CORNER MARKET')).toBeNull())
   })
 
+  it('takes a removed row, and its amount, off at once while the app reads again', async () => {
+    const fake = seeded()
+    await open(fake)
+    const moneyOut = () => screen.getByText('Money out').nextElementSibling?.textContent
+    expect(moneyOut()).toContain('62.09')
+    let release: () => void = () => undefined
+    const held = new Promise<void>((done) => (release = done))
+    // Every read waits, the app's own refresh and the month's: a slow phone.
+    fake.server.hold = () => held
+
+    fireEvent.click(rowOf('CORNER MARKET').getByRole('button', { name: 'Remove this transaction' }))
+    fireEvent.click(rowOf('CORNER MARKET').getByRole('button', { name: 'Remove' }))
+    await waitFor(() => expect(fake.tables.transactions).toHaveLength(2))
+
+    // Gone, with no Remove left to press on a row already deleted.
+    await waitFor(() => expect(screen.queryByText('CORNER MARKET')).toBeNull())
+    expect(screen.getByText('LITWARE BOOKS')).toBeTruthy()
+    expect(moneyOut()).toContain('19.99')
+    fake.server.hold = null
+    release()
+  })
+
   it('says why when the removal is refused, and keeps the row', async () => {
     const fake = seeded()
     fake.fail('DELETE transactions', '42501')

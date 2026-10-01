@@ -63,6 +63,10 @@ export function LedgerScreen() {
     setConfirming(null)
     try {
       await deleteTransaction(supabase, id)
+      // Off the list as soon as it is deleted: the rows stay while the month
+      // is read again (FE-5), and a deleted row kept with them still offered
+      // Remove, and its amount, until the read landed.
+      setLoaded((l) => (l === null ? null : { ...l, rows: l.rows.filter((r) => r.id !== id) }))
       await refresh()
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not remove it.')
