@@ -1833,7 +1833,11 @@ created it in M9, and imported `packages/ai-apps` from
   "not switched on"; any other failure is "couldn't load". Before 0020,
   apps are listed without when each last asked. The question before
   Disconnect also says that for up to an hour the app could still reach
-  the budget another way (risk 4), which the switch stops.
+  the budget another way (risk 4), which the switch stops. A second
+  commit gives Review the app's name, which M4 left here ("Added by
+  Claude"): only when a waiting row came from an AI app, Review reads
+  its import's `ai_client_id` and the grants; an app since
+  disconnected, or a read that fails, still reads "Added by an AI app".
 
 ### M11a: The callback allowlist
 

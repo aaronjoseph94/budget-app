@@ -40,8 +40,8 @@ export interface FakeTables {
   categories: Category[]
   transactions: LedgerRow[]
   /** A suggested category (0018) may be left out; it reads as none. */
-  ingest_candidates: (Omit<PendingCandidate, 'category_id' | 'category_source' | 'source'> &
-    Partial<Pick<PendingCandidate, 'category_id' | 'category_source' | 'source'>> & { readonly status: string })[]
+  ingest_candidates: (Omit<PendingCandidate, 'category_id' | 'category_source' | 'source' | 'batch_id'> &
+    Partial<Pick<PendingCandidate, 'category_id' | 'category_source' | 'source' | 'batch_id'>> & { readonly status: string })[]
   merchant_rules: { readonly id?: string; readonly match_merchant: string; readonly category_id: string }[]
   /**
    * A goal from before 0013 may leave out its fund's columns; they read as
@@ -51,8 +51,8 @@ export interface FakeTables {
   savings_goals: (GoalRow &
     Partial<Pick<FundRow, 'category_id' | 'start_date' | 'balance_as_of'>> &
     Partial<Pick<ListedGoalRow, 'created_at' | 'sort_order' | 'status' | 'reached_on'>> & { readonly user_id?: string })[]
-  /** `period_start` and `period_end` only for a statement with a period (0007). */
-  ingest_batches: (UnreadableBatch & { readonly period_start?: string | null; readonly period_end?: string | null })[]
+  /** `period_start` and `period_end` only for a statement with a period (0007); `ai_client_id` for an AI app's (0020). */
+  ingest_batches: (UnreadableBatch & { readonly period_start?: string | null; readonly period_end?: string | null; readonly ai_client_id?: string | null })[]
   /** `dismissed_at` once dismissed (0012); absent reads as null, still waiting. */
   ingest_unreadable_lines: (UnreadableLine & { readonly dismissed_at?: string | null })[]
   /** Budgets and goals as typed (0008); `user_id` as the app writes it. */

@@ -31,6 +31,7 @@ import { ApproveAll, ApproveAllButton } from '../review/ApproveAll.js'
 import { SuggestButton, SuggestLine, suggestOffered } from '../review/SuggestBar.js'
 import { MonthTitle } from '../components/ui/type.js'
 import { useSuggestions } from '../review/use-suggestions.js'
+import { addedBy } from '../ai-apps/access.js'
 
 const NEW_CATEGORY = '__new__'
 /** `busy` while Approve these N works through its rows: every row waits. */
@@ -74,6 +75,8 @@ export function ReviewScreen() {
   const [unreadable, setUnreadable] = useState<UnreadablePage | null>(null)
   const [total, setTotal] = useState(0)
   const [rules, setRules] = useState<ReadonlyMap<string, string>>(new Map())
+  // Which AI app added each such row, by its grant's name (PLAN §2.9).
+  const [byApp, setByApp] = useState<ReadonlyMap<string, string>>(new Map())
   const [picked, setPicked] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -118,6 +121,16 @@ export function ReviewScreen() {
   useEffect(() => {
     void load()
   }, [load, version])
+
+  useEffect(() => {
+    const added = (rows ?? []).filter((r) => r.source === 'ai_app')
+    if (added.length === 0) return
+    let live = true
+    void addedBy(supabase, added).then((names) => {
+      if (live) setByApp(names)
+    })
+    return () => void (live = false)
+  }, [supabase, rows])
 
   // The AI's suggestions are stored; a similar shop's category is worked
   // out here, for rows with neither a rule nor a stored suggestion.
@@ -360,6 +373,7 @@ export function ReviewScreen() {
               categoryId={categoryFor(row)}
               suggestion={suggestion?.kind ?? null}
               suggestedName={suggestion === null ? null : (named.get(suggestion.id) ?? null)}
+              addedBy={byApp.get(row.id) ?? 'an AI app'}
               categories={categories}
               busy={busy === row.id || busy === ALL}
               onPick={onPick}
@@ -402,6 +416,7 @@ const ReviewRow = memo(function ReviewRow({
   categoryId,
   suggestion,
   suggestedName,
+  addedBy,
   categories,
   busy,
   onPick,
@@ -413,6 +428,8 @@ const ReviewRow = memo(function ReviewRow({
   categoryId: string
   suggestion: SuggestionKind | null
   suggestedName: string | null
+  /** The AI app that added it, when its source is one; drawn as text. */
+  addedBy: string
   categories: readonly Category[]
   busy: boolean
   onPick: (rowId: string, id: string) => void
@@ -438,7 +455,7 @@ const ReviewRow = memo(function ReviewRow({
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground md:text-[0.8125rem]">
               {formatIsoDate(row.posted_on)}
-              {row.source === 'ai_app' ? ' · Added by an AI app' : ''}
+              {row.source === 'ai_app' ? ` · Added by ${addedBy}` : ''}
             </p>
           </div>
           <span className={cn('tnum shrink-0 text-lg font-bold tracking-[-0.01em]', row.amount_cents < 0 ? 'text-foreground' : 'text-income')}>

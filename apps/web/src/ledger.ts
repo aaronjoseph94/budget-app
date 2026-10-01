@@ -203,6 +203,8 @@ export interface PendingCandidate {
   readonly category_source: 'model' | 'user' | 'merchant_rule' | null
   /** Where it came from: an AI app's addition says so in Review (0020). */
   readonly source: IngestSource
+  /** Its import, which names the AI app that added it (0020's ai_client_id). */
+  readonly batch_id: string
 }
 
 export interface PendingPage {
@@ -221,7 +223,7 @@ export interface PendingPage {
 export async function listPending(supabase: SupabaseClient, limit = 300): Promise<PendingPage> {
   const { data, error, count } = await supabase
     .from('ingest_candidates')
-    .select('id, posted_on, amount_cents, merchant, merchant_raw, category_id, category_source, source', { count: 'exact' })
+    .select('id, posted_on, amount_cents, merchant, merchant_raw, category_id, category_source, source, batch_id', { count: 'exact' })
     .eq('status', 'pending')
     .order('posted_on', { ascending: true })
     .limit(limit)

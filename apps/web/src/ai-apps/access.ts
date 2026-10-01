@@ -136,3 +136,23 @@ export async function disconnect(supabase: SupabaseClient, clientId: string): Pr
   const { error } = await supabase.auth.oauth.revokeGrant({ clientId })
   return error === null
 }
+
+/**
+ * Which AI app added each row waiting in Review (PLAN §2.9): its import's
+ * ai_client_id, which 0020 takes from the AI app's own token, matched to
+ * that app's grant. A row whose app cannot be told, because it was
+ * disconnected or a read failed, is left out, and Review says "an AI app".
+ */
+export async function addedBy(supabase: SupabaseClient, rows: readonly { readonly id: string; readonly batch_id: string }[]): Promise<ReadonlyMap<string, string>> {
+  const [batches, grants] = await Promise.all([
+    supabase.from('ingest_batches').select('id, ai_client_id').in('id', [...new Set(rows.map((r) => r.batch_id))]),
+    supabase.auth.oauth.listGrants(),
+  ])
+  if (batches.error !== null || grants.error !== null) return new Map()
+  const apps = new Map(grants.data.map((g) => [g.client.id, shownName(g.client.name)]))
+  const clients = new Map((batches.data as { id: string; ai_client_id: string | null }[]).map((b) => [b.id, b.ai_client_id]))
+  return new Map(rows.flatMap((r) => {
+    const name = apps.get(clients.get(r.batch_id) ?? '')
+    return name === undefined ? [] : [[r.id, name] as const]
+  }))
+}
