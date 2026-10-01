@@ -5,7 +5,9 @@
  * The words are the app's own templates today and a model's from plan A12;
  * either way they arrive as text and leave as React text nodes, never as
  * markup. A change is drawn with the engine's direction word ("$40.00
- * more"), so no sentence can put "up" beside a fall.
+ * more"), so no sentence can put "up" beside a fall. Each filled blank is
+ * its own <bdi>, so no direction character around it, a model's or a
+ * name's, can draw $12.34 as 43.21$ (security-b-01).
  */
 import { Fragment } from 'react'
 import type { Figure } from '@budget/core'
@@ -65,7 +67,7 @@ export function CoachText({ text, facts }: { text: string; facts: Readonly<Recor
   return (
     <>
       {read.segments.map((s, i) => (
-        <Fragment key={i}>{s.kind === 'text' ? s.text : <span className="tnum font-semibold">{slotText(facts[s.letter]!, s.slot)}</span>}</Fragment>
+        <Fragment key={i}>{s.kind === 'text' ? s.text : <bdi className="tnum font-semibold">{slotText(facts[s.letter]!, s.slot)}</bdi>}</Fragment>
       ))}
     </>
   )

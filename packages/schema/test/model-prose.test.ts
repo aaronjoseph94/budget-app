@@ -65,6 +65,18 @@ const TABLE: readonly (readonly [text: string, problem: ProseProblem | null])[] 
   // Rule 7: at most two line breaks.
   ['Line.\nMore.\nAgain.\nLast.', 'line_breaks'],
   ['Line.\nAnother line.\nA last line.', null],
+  // Invisible characters: a bidi override can show an engine figure reversed,
+  // and a zero-width or soft hyphen hides a number word or a product (security-b-01).
+  ['You spent ‮{{A.now}}‬ here.', 'invisible'],
+  ['You spent ⁦{{A.now}}⁩ here.', 'invisible'],
+  ['You spent t​wenty dollars.', 'invisible'],
+  ['You spent fif­ty.', 'invisible'],
+  ['Put the rest into cryp‍to.', 'invisible'],
+  ['A word﻿ here.', 'invisible'],
+  ['A private character.', 'invisible'],
+  ['A bell\u0007 rings.', 'invisible'],
+  // A reply with Windows line ends or a tab is still words.
+  ['Line.\r\nAnother line.\tDone.', null],
   // Nothing at all is not a sentence.
   ['   ', 'empty'],
 ]

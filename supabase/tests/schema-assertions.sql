@@ -3219,6 +3219,33 @@ begin
 end $$;
 reset role;
 
+-- 0028: the AI's kept words refuse the invisible characters the app's rule
+-- refuses (security-b-01): a bidi override around a blank draws a figure
+-- reversed, and a zero-width space or soft hyphen hides a number word.
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+do $$
+declare
+  u   uuid := '11111111-1111-4111-8111-111111111111';
+  bad text;
+begin
+  foreach bad in array array[E'spent ‮{{A.now}}‬', E'spent ⁦{{A.now}}⁩', E't​wenty', E'fif­ty',
+                             E'cryp‍to', E'a﻿b', E'a؜b', E'a⁠b', E'ab'] loop
+    begin
+      insert into public.ai_notes (user_id, surface, scope, facts_sig, prompt_v, body, provider, model)
+        values (u, 'daily', 'day:2026-10-01', repeat('e', 64), 1, jsonb_build_object('summary', bad), 'gemini', 'gemini-3.5-flash-lite');
+      raise exception 'NOT REFUSED: AI words holding U+%', upper(to_hex(ascii(regexp_replace(bad, '^[^­؜​-‏‪-‮⁠-⁩﻿]*', ''))));
+    exception when check_violation then null;
+    end;
+  end loop;
+  -- Accents, other scripts and plain punctuation are still words.
+  insert into public.ai_notes (user_id, surface, scope, facts_sig, prompt_v, body, provider, model)
+    values (u, 'daily', 'day:2026-10-01', repeat('e', 64), 1, '{"summary": "Café, 東京 and naïve — still words."}', 'gemini', 'gemini-3.5-flash-lite');
+  delete from public.ai_notes where facts_sig = repeat('e', 64);
+  raise notice 'the AI''s kept words refuse invisible characters';
+end $$;
+reset role;
+
 -- The level the app reads (0021) names the last update in this folder, so a
 -- new update that forgets to raise it fails here.
 \set last_migration `ls supabase/migrations | tail -1 | cut -c1-4`
