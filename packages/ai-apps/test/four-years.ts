@@ -55,6 +55,12 @@ export function fourYears(today: string): Row {
     schedules: [{ id: 'ps', category_id: 'pay', first_pay_date: '2023-01-15', frequency: 'monthly' }],
     records: { statement_start: '2023-01-08', statement_end: '2026-09-07', first_entry: '2023-01-02' },
     not_subscriptions: ['not_subscription:TO SAVINGS'],
+    // A fund typed four years before September 2026, so every transfer since counts toward it (D16).
+    goals: [
+      { id: 'g1', name: 'Trip', target_cents: 900000, saved_cents: 100000, target_date: '2027-12-01', unit_cost_cents: null, unit_label: null, created_at: '2022-09-30T00:00:00Z', sort_order: 0, status: 'active', reached_on: null, category_id: 'fund', start_date: '2022-09-01', balance_as_of: '2022-09-30' },
+      { id: 'g2', name: 'Flying', target_cents: 550000, saved_cents: 30000, target_date: null, unit_cost_cents: 27500, unit_label: 'flight hours', created_at: '2024-01-01T00:00:00Z', sort_order: 1, status: 'active', reached_on: null, category_id: null, start_date: null, balance_as_of: null },
+    ],
+    fund_txns: txns.filter((t) => t.category_id === 'fund'),
     debts: [{ id: 'd1', name: 'Car', starting_balance_cents: 3000000, minimum_payment_cents: 30000, apr_basis_points: 699, start_date: '2023-03-01', sort_order: 0 }],
     debt_extras: [{ id: 'x1', debt_id: 'd1', month: '2024-06-01', amount_cents: 100000 }],
     pending: everyDay('2023-01-05', '2026-12-28', 17, (d) => ({ d })).map((r) => r.d),
@@ -74,8 +80,11 @@ const WINDOWED: Record<string, (r: unknown, from: string, to: string) => boolean
 export function readOf(all: Row, whole: boolean): Rpc {
   return (_fn, args) => {
     const [from, to] = [String(args.p_from), String(args.p_to)]
+    // As in 0020, a fund's transfers run from the day its goal's balance was typed, whatever the window's start.
+    const typed = new Map((all.goals as Row[]).map((g) => [g.category_id, String(g.balance_as_of)]))
+    const fromTyped = (r: unknown, _: string, to: string) => between(typed.get((r as Row).category_id) ?? '9999', to)((r as Row).posted_on)
     const parts = (args.p_parts as string[]).map((p) => {
-      const cut = WINDOWED[p]
+      const cut = p === 'fund_txns' ? fromTyped : WINDOWED[p]
       const part = all[p]
       return [p, whole || cut === undefined ? part : (part as unknown[]).filter((r) => cut(r, from, to))]
     })

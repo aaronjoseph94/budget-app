@@ -75,5 +75,5 @@ export const GetDebtsInputSchema = z
   })
   .strict()
 
-/** `get_forecast`: this month's forecast, as the Forecast shows it. */
-export const GetForecastInputSchema = z.object({}).strict()
+/** `get_forecast`: this month's forecast, as the Forecast shows it, and what a month's saving would do for the main goal. */
+export const GetForecastInputSchema = z.object({ what_if_monthly_saving: AmountTextSchema.optional() }).strict()

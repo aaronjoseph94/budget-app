@@ -61,6 +61,44 @@ describe('get_forecast', () => {
     expect(out.next_30_days).toMatchObject({ today_balance: null, lowest: null, items: [rent(true), rent(false)] })
   })
 
+  // Flying leads the owner's order, on no fund, $300.00 of $5,500.00 saved, at $275.00 an hour.
+  const goal = (id: string, name: string, sort_order: number, more: Record<string, unknown> = {}) => ({
+    id, name, target_cents: 550000, saved_cents: '30000', target_date: null, unit_cost_cents: null, unit_label: null, created_at: `2026-01-0${sort_order + 1}T00:00:00Z`,
+    sort_order, status: 'active', reached_on: null, category_id: null, start_date: null, balance_as_of: null, ...more,
+  })
+  const GOALS = { goals: [goal('g1', 'Trip', 1), goal('g2', 'Flying', 0, { unit_cost_cents: 27500, unit_label: 'flight hours' })], fund_txns: [] }
+
+  it('works out a month’s saving, sent as text, for the main goal', async () => {
+    const { result, rpcCalls } = await callTool(() => reply({ ...READ, ...GOALS }), 'get_forecast', { what_if_monthly_saving: '100' })
+    expect(JSON.parse(String(rpcCalls[0]?.init.body)).p_parts).toEqual(['categories', 'budgets', 'plans', 'txns', 'schedules', 'balances', 'records', 'goals', 'fund_txns'])
+    // $100.00 a month is 100.00 × 12 ÷ 52 = $23.077, so $23.08 a week; today is the month's last day, so nothing is
+    // kept this month and the end stays $2,240.00. On no fund there is no pace: $5,200.00 ÷ $23.08 is 225.3, so 226
+    // weeks, 1,582 days after 30 September 2026: 29 January 2031. 100.00 of 275.00 an hour is 21.8, so 22 minutes.
+    expect((result.structuredContent as Record<string, unknown>).what_if).toEqual({
+      status: 'worked_out',
+      goal: 'Flying',
+      monthly: $(10000, '$100.00'),
+      weekly: $(2308, '$23.08'),
+      kept_this_month: $(0, '$0.00'),
+      month_end_balance: { low: $(224000, '$2,240.00'), likely: $(224000, '$2,240.00'), high: $(224000, '$2,240.00') },
+      reached: { status: 'alone', weeks: 226, date: '2031-01-29' },
+      minutes_a_month: 22,
+      unit: 'flight hours',
+    })
+  })
+
+  it('says when there is no active goal to work a saving out for', async () => {
+    const out = (await callTool(() => reply({ ...READ, goals: [], fund_txns: [] }), 'get_forecast', { what_if_monthly_saving: '$1,000.5' })).result
+    expect((out.structuredContent as Record<string, unknown>).what_if).toEqual({ status: 'no_active_goal' })
+  })
+
+  it.each([['0'], ['100,000.01'], [100]])('refuses a saving of %j before reading anything', async (saving) => {
+    const { result, rpcCalls } = await callTool(() => reply({ ...READ, ...GOALS }), 'get_forecast', { what_if_monthly_saving: saving })
+    expect(result.isError).toBe(true)
+    if (typeof saving === 'string') expect(result.content).toEqual([{ type: 'text', text: SENTENCES.bad_amount }])
+    expect(rpcCalls).toEqual([])
+  })
+
   it.each([
     ['rows it cannot read', { ...READ, schedules: 'SECRET' }, SENTENCES.records_unreadable],
     ['a refusal', { refused: 'ai_apps_off' }, SENTENCES.ai_apps_off],

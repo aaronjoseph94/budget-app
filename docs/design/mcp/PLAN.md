@@ -1688,6 +1688,14 @@ created it in M9, and imported `packages/ai-apps` from
   `fundsInput` (each fund's transfers since its typed day, as `fundsOf`,
   moved out of the app's `useFunds` so the parity case can call it) and
   `goalsAhead` (the app's `goalsForCore`), with a Savings parity case.
+  Last the what-if: `what_if_monthly_saving` is read by
+  `parseTypedAmount`, and $0 or more than $100,000.00 is `bad_amount`
+  before anything is read (core's what-if has no date for $0 with no
+  pace). It adds `goals` and `fund_txns` to the read and answers for the
+  main goal, as the Forecast's chips do, or `no_active_goal`.
+  `four-years.ts` gains a fund typed four years before the anchor, and its
+  fake reads `fund_txns` from each goal's typed day as 0020 does: seen RED
+  with them cut at the window's start, the first draft's reading.
 
 ### M7b: `get_savings_goals`
 

@@ -80,7 +80,9 @@ describe('get_forecast does not depend on how many rows the database returns', (
   it.each(CLOCKS)('the server at %s', async (clock, today) => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date(clock))
-    const out = await bothWays('get_forecast', {}, today)
+    const out = await bothWays('get_forecast', { what_if_monthly_saving: '250' }, today)
     expect((out.next_3_months as { months: unknown[] }).months).toHaveLength(3)
+    // Trip leads, and its fund's pace gives a range: every transfer since 2022 is read for its balance.
+    expect(out.what_if).toMatchObject({ goal: 'Trip', reached: { status: 'range' } })
   })
 })
