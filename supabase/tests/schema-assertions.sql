@@ -2329,7 +2329,8 @@ end $$;
 -- still does all of it.
 -- ---------------------------------------------------------------------------
 -- Each guarded function is exactly as it stood before 0019, plus its guard as
--- the first statement, with the same settings and grants.
+-- the first statement, with the same settings and grants. Read as they stood
+-- before 0022, which changes save_import again and is checked on its own.
 do $$
 declare
   r     record;
@@ -2339,8 +2340,9 @@ declare
   n     int := 0;
 begin
   for r in select * from verify.guarded_before loop
-    select prosrc, prosecdef, provolatile, proconfig, proacl::text as acl into p
-      from pg_proc where oid = r.fn::regprocedure;
+    select prosrc, prosecdef, provolatile, proconfig, acl into p
+      from verify.before_0022 where fn = r.fn;
+    if not found then raise exception '% is not among the functions the browser could call before 0022', r.fn; end if;
     guard := case r.lang when 'sql' then E'\n  select public._not_an_ai_app();' else E'\n  perform public._not_an_ai_app();' end;
     at := case r.lang when 'sql' then 1 else strpos(r.prosrc, E'\nbegin\n') + 6 end;
     if strpos(p.prosrc, guard) <> at or replace(p.prosrc, guard, '') <> r.prosrc then
@@ -2866,6 +2868,89 @@ begin
   raise notice 'a guess on a rejected row, or an approval with no ledger row left, no longer holds its category';
 end $$;
 reset role;
+
+-- ---------------------------------------------------------------------------
+-- 0022: a charge the owner already decided on is never filed by a learned
+-- shop on its own. Removed from All transactions and brought in again, it
+-- waits in Review (backend-c2-02).
+-- ---------------------------------------------------------------------------
+reset role;
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000002201', '11111111-1111-4111-8111-111111111111', 'Cafes 2201', 'variable');
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+do $$
+declare
+  acc   uuid := 'aaaaaaaa-0000-4000-8000-000000000001';
+  cafes uuid := 'cccccccc-0000-4000-8000-000000002201';
+  row_  jsonb := jsonb_build_object('posted_on','2025-09-01','amount_cents',-500,'merchant','CAFE 2201',
+                   'merchant_raw','CAFE 2201','dedupe_hash', repeat('2',62) || '01', 'dedupe_hash_v', 1);
+  other jsonb := jsonb_build_object('posted_on','2025-09-02','amount_cents',-600,'merchant','CAFE 2201',
+                   'merchant_raw','CAFE 2201','dedupe_hash', repeat('2',62) || '02', 'dedupe_hash_v', 1);
+  kept  jsonb := jsonb_build_object('posted_on','2025-09-03','amount_cents',-700,'merchant','CAFE 2201',
+                   'merchant_raw','CAFE 2201','dedupe_hash', repeat('2',62) || '03', 'dedupe_hash_v', 1);
+  r     record;
+  cand  uuid;
+begin
+  -- Approved by hand, which teaches the rule, then removed from the ledger.
+  select * into r from public.save_import(acc, 'card_csv', 1, jsonb_build_array(row_), '[]'::jsonb);
+  select id into cand from public.ingest_candidates where batch_id = r.batch_id;
+  perform public.approve_candidate(cand, cafes);
+  delete from public.transactions where candidate_id = cand;
+
+  -- And a charge the rule filed that stays in the ledger.
+  select * into r from public.save_import(acc, 'card_csv', 1, jsonb_build_array(kept), '[]'::jsonb);
+  if r.auto_approved <> 1 then raise exception 'the learned shop did not file a new charge: %', r; end if;
+
+  -- The same statement again, with a new charge from the same shop.
+  select * into r from public.save_import(acc, 'card_csv', 3, jsonb_build_array(row_, other, kept), '[]'::jsonb);
+  if r.inserted <> 2 or r.deduped <> 1 or r.auto_approved <> 1 then
+    raise exception 'the import again read inserted=% deduped=% auto_approved=%, not 2, 1, 1', r.inserted, r.deduped, r.auto_approved;
+  end if;
+  if exists (select 1 from public.transactions where dedupe_hash = row_->>'dedupe_hash') then
+    raise exception 'a charge removed from the ledger came back without review';
+  end if;
+  if not exists (select 1 from public.ingest_candidates where batch_id = r.batch_id
+                  and dedupe_hash = row_->>'dedupe_hash' and status = 'pending' and category_id is null) then
+    raise exception 'the removed charge is not waiting in Review';
+  end if;
+  if not exists (select 1 from public.transactions where dedupe_hash = other->>'dedupe_hash') then
+    raise exception 'a new charge from the same shop was not filed by its rule';
+  end if;
+  raise notice 'a charge removed from the ledger waits in Review when brought in again; new ones are still filed';
+end $$;
+reset role;
+
+-- 0022 changed save_import by that one condition and nothing else: the body
+-- as it stood before 0022, plus the condition, with the same settings and
+-- grants; every other function the browser may call is as it stood.
+do $$
+declare
+  r    record;
+  p    record;
+  cond constant text := E'\n       and not exists (select 1 from public.ingest_candidates d\n                        where d.user_id = v_user and d.dedupe_hash = c.dedupe_hash and d.id <> c.id)';
+  at   constant text := E'\n       and r.match_merchant = c.merchant';
+begin
+  for r in select * from verify.before_0022 loop
+    select prosrc, prosecdef, provolatile, proconfig, proacl::text as acl into p
+      from pg_proc where oid = r.fn::regprocedure;
+    if not found then raise exception '% is gone after 0022', r.fn; end if;
+    if r.fn = 'save_import(uuid,ingest_source,integer,jsonb,jsonb)' then
+      if p.prosrc <> replace(r.prosrc, at, at || cond) or strpos(r.prosrc, at) = 0 then
+        raise exception 'save_import is not its old body plus the one condition';
+      end if;
+    elsif p.prosrc <> r.prosrc then
+      raise exception '% changed in 0022', r.fn;
+    end if;
+    if (p.prosecdef, p.provolatile, p.proconfig, p.acl) is distinct from (r.prosecdef, r.provolatile, r.proconfig, r.acl) then
+      raise exception '% changed its settings or grants in 0022', r.fn;
+    end if;
+  end loop;
+  if not exists (select 1 from verify.before_0022 where fn = 'save_import(uuid,ingest_source,integer,jsonb,jsonb)') then
+    raise exception 'save_import was not among the functions checked';
+  end if;
+  raise notice '0022 changed save_import by one condition, and nothing else';
+end $$;
 
 -- The level the app reads (0021) names the last update in this folder, so a
 -- new update that forgets to raise it fails here.
