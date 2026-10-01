@@ -323,6 +323,11 @@ below was made under those words and is recorded with them.
 - **mcp-2-04: a search sees names as the AI app is shown them** (`0033`).
   Long digit runs are masked on both sides before matching, and words
   holding six or more digits in a row are refused (`bad_search`).
+  Second pass (`0036`): the stored side is now made exactly as the
+  server's `cleanShop` makes it (hidden characters out, long digit runs
+  masked, cut to 80 characters) by `_ai_app_shown_shop()`, so a number
+  split by an invisible character, or text past the 80th character, can
+  no longer be found by a search.
 - **mcp-2-05: what an AI app adds has every character visible** (`0034`,
   `WordsSchema` and `NoteTextSchema`). Narrowed as a verifier advised: the
   shared `hasControlCharacter` and the `ingested_text` domain are

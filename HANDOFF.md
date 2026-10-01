@@ -180,8 +180,8 @@ open GitHub. Easiest on a computer.
    `0016_ai_foundation.sql`, then `0017_coach_memory.sql`,
    `0018_category_suggestions.sql`, `0019_ai_apps_cannot_write.sql`,
    `0020_ai_apps.sql`, then `0035_ai_app_updates_in.sql` (it only reads,
-   and needs nothing but `0020`), then the security fixes `0030` to `0034`,
-   in that order (One-time updates lists them in this order and names the
+   and needs nothing but `0020`), then the security fixes `0030` to `0034`
+   and `0036`, in that order (One-time updates lists them in this order and names the
    next). `0019` stops with "Paste 0018 first" if `0018` is not in, `0020`
    with "Paste 0019 first", and each fix with the one before it. Pasting
    one again by mistake is harmless: `0032` to `0034` refuse ("it is not as

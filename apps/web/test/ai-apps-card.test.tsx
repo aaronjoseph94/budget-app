@@ -58,7 +58,7 @@ describe('Settings → AI apps: the switches', () => {
         delete f.rpcReplies['_not_an_ai_app']
       }, 'That needs a one-time update first.'],
     // The security updates 0030 to 0034: each one open is a way past the switch (security review).
-    ...[30, 31, 32, 33].map((level) => [`the security updates in only to 00${level}`, (f: FakeSupabase): void => {
+    ...[30, 31, 32, 33, 35].map((level) => [`the security updates in only to 00${level}`, (f: FakeSupabase): void => {
         f.rpcReplies['ai_app_updates_in'] = level
       }, 'That needs a one-time update first.'] as const),
     ['an older AI apps server', (f: FakeSupabase): void => {

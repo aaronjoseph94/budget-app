@@ -3180,8 +3180,8 @@ end $$;
 -- ---------------------------------------------------------------------------
 do $$
 begin
-  if public.ai_app_updates_in() <> 35 then
-    raise exception 'ai_app_updates_in() says %, not 35, with 0030 to 0035 in', public.ai_app_updates_in();
+  if public.ai_app_updates_in() < 35 then
+    raise exception 'ai_app_updates_in() says %, not 35 or more, with 0030 to 0035 in', public.ai_app_updates_in();
   end if;
   if has_function_privilege('anon', 'public.ai_app_updates_in()', 'execute') then
     raise exception 'the anonymous role can call ai_app_updates_in';
@@ -3212,16 +3212,18 @@ rollback;
 \set repaste_30 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0030_ai_app_gate_live_session.sql`
 \set repaste_31 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0031_ai_app_hash_own_kind.sql`
 \set repaste_32 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0032_ai_rows_teach_no_rule.sql`
+select public.ai_app_updates_in() as all_in \gset
 begin;
 :repaste_30
 :repaste_31
 set local verify.repaste = :'repaste_32';
+set local verify.all_in = :'all_in';
 do $$
 declare
   approve text := (select prosrc from pg_proc where oid = 'public.approve_candidate(uuid,uuid)'::regprocedure);
 begin
   if public.ai_app_update_level() <> 31 then raise exception 'the re-paste did not run'; end if;
-  if public.ai_app_updates_in() <> 35 then
+  if public.ai_app_updates_in() <> current_setting('verify.all_in')::int then
     raise exception 'NOT REFUSED: pasting 0030 and 0031 again moved what One-time updates reads to %', public.ai_app_updates_in();
   end if;
   begin
@@ -3231,7 +3233,7 @@ begin
     if sqlerrm like 'NOT REFUSED%' then raise; end if;
   end;
   if (select prosrc from pg_proc where oid = 'public.approve_candidate(uuid,uuid)'::regprocedure) <> approve
-     or public.ai_app_updates_in() <> 35 then
+     or public.ai_app_updates_in() <> current_setting('verify.all_in')::int then
     raise exception '0032 pasted twice changed something';
   end if;
   raise notice 'pasting an AI-app update again never makes One-time updates offer one already in';
@@ -3256,5 +3258,77 @@ begin
     if sqlerrm not like 'Paste 0020 first%' then raise; end if;
   end;
   raise notice '0035 says to paste 0020 first when it is missing';
+end $$;
+rollback;
+
+-- ---------------------------------------------------------------------------
+-- 0036: a search matches exactly the shop name the AI app is shown, as
+-- cleanShop makes it: hidden characters out first, so a number split by
+-- one is masked whole, and cut to 80 characters, so text past them, never
+-- shown, is never found.
+-- ---------------------------------------------------------------------------
+insert into public.transactions
+  (user_id,account_id,posted_on,amount_cents,merchant,merchant_raw,category_id,dedupe_hash,dedupe_hash_v,source)
+values
+  ('11111111-1111-4111-8111-111111111111','aaaaaaaa-0000-4000-8000-000000000001',(now() at time zone 'UTC')::date - 3,-700,
+   'SPLITPAY', 'SPLITPAY 12345' || chr(x'200B'::int) || '67890', 'cccccccc-0000-4000-8000-000000000001', repeat('5',64),1,'card_csv'),
+  ('11111111-1111-4111-8111-111111111111','aaaaaaaa-0000-4000-8000-000000000001',(now() at time zone 'UTC')::date - 3,-800,
+   'LONGNAME', 'LONGNAME ' || repeat('x', 75) || 'TAILSECRET', 'cccccccc-0000-4000-8000-000000000001', repeat('6',64),1,'card_csv');
+do $$
+begin
+  -- The server's own cleanShop, character for character (money.ts).
+  if public._ai_app_shown_shop('A' || chr(x'200B'::int) || 'B 12345' || chr(x'2060'::int) || '67890 C 12345 D' || chr(31) || 'E')
+       <> 'AB ********** C 12345 DE'
+     or public._ai_app_shown_shop(repeat('y', 78) || '1234567890') <> repeat('y', 78) || '**'
+     or public._ai_app_shown_shop(repeat('z', 90)) <> repeat('z', 80) then
+    raise exception 'the search does not see shop names as cleanShop shows them';
+  end if;
+end $$;
+set role app_user;
+do $$
+declare
+  day date := (now() at time zone 'UTC')::date;
+  t   text;
+  r   jsonb;
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}', true);
+  foreach t in array array['12345', '67890', 'PAY 1', 'TAILSECRET', 'xT'] loop
+    r := public.ai_app_search(t, day - 30, day, null, null, null, null, 'any', 5);
+    if (r ->> 'total')::int <> 0 then raise exception 'NOT REFUSED: a search for % found text the AI app is never shown', t; end if;
+  end loop;
+  -- As shown, they are found.
+  foreach t in array array['SPLITPAY **********', 'LONGNAME xxx'] loop
+    r := public.ai_app_search(t, day - 30, day, null, null, null, null, 'any', 5);
+    if (r ->> 'total')::int <> 1 then raise exception 'the shop as shown (%) did not find its charge: %', t, r; end if;
+  end loop;
+  raise notice 'a search finds only what the AI app is shown of a shop name';
+end $$;
+reset role;
+do $$
+begin
+  if public.ai_app_updates_in() <> 36 then raise exception 'ai_app_updates_in() does not say 0036 is in'; end if;
+  if has_function_privilege('anon', 'public._ai_app_shown_shop(text)', 'execute') then
+    raise exception 'the anonymous role can call _ai_app_shown_shop';
+  end if;
+  if (select provolatile from pg_proc where oid = 'public.ai_app_search(text,date,date,bigint,bigint,text[],text,text,integer)'::regprocedure) <> 'v'
+     or (select prosecdef from pg_proc where oid = 'public.ai_app_search(text,date,date,bigint,bigint,text[],text,text,integer)'::regprocedure) then
+    raise exception '0036 changed the search''s settings';
+  end if;
+end $$;
+
+\set paste_check_36 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0036_ai_search_as_shown.sql`
+begin;
+drop function public.ai_app_updates_in();
+set local verify.paste_check = :'paste_check_36';
+do $$
+begin
+  begin
+    execute current_setting('verify.paste_check');
+    raise exception 'NOT REFUSED: 0036 ran without 0035';
+  exception when raise_exception then
+    if sqlerrm not like 'Paste 0035 first%' then raise; end if;
+  end;
+  raise notice '0036 says to paste 0035 first when it is missing';
 end $$;
 rollback;
