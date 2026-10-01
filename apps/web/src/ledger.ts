@@ -1220,9 +1220,13 @@ export async function listFundTransfers(
 
 export interface FundEdit {
   readonly goalCents: number
-  /** What is in the fund today, typed; true at the end of `asOf` (D16). */
-  readonly savedCents: number
-  readonly asOf: string
+  /**
+   * What is in the fund, typed, and the day it is true at the end of (D16);
+   * null when the owner left it as it was, so the stored pair stays and
+   * transfers dated after its day keep adding to it (backend-c1-01). A new
+   * goal always carries it: 0013 requires a fund's goal to have its day.
+   */
+  readonly saved: { readonly cents: number; readonly asOf: string } | null
   readonly startDate: string | null
   readonly goalDate: string | null
   /** What an hour costs and what the hours are of; both null for a goal in dollars (F45). */
@@ -1233,7 +1237,10 @@ export interface FundEdit {
 /**
  * Save a fund's goal. The typed balance and the day it is true are always
  * written together (N52): a balance retyped without moving its day would
- * count the transfers since the old day twice. A new goal takes its fund's
+ * count the transfers since the old day twice. Neither is written when the
+ * owner did not retype the balance: writing core's kept figure back as typed
+ * would re-date it, and a transfer dated before today that reaches the ledger
+ * later would never be counted (backend-c1-01). A new goal takes its fund's
  * name, which 0004 keeps unique among goals.
  */
 export async function saveFund(
@@ -1242,10 +1249,10 @@ export async function saveFund(
   target: { readonly userId: string; readonly categoryId: string | null; readonly name: string; readonly goalId: string | null },
   edit: FundEdit,
 ): Promise<void> {
+  if (target.goalId === null && edit.saved === null) throw new Error('A new goal needs what is saved in it.')
   const row = {
     target_cents: edit.goalCents,
-    saved_cents: edit.savedCents,
-    balance_as_of: edit.asOf,
+    ...(edit.saved === null ? {} : { saved_cents: edit.saved.cents, balance_as_of: edit.saved.asOf }),
     start_date: edit.startDate,
     target_date: edit.goalDate,
     unit_cost_cents: edit.unitCostCents,

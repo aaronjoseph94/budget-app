@@ -14,9 +14,11 @@ import { GoalUnitFields, readUnit, unitText } from './GoalUnitFields.js'
  * Amount on its card (Savings!B7, B5) and its Start and Goal Dates (N14,
  * R14); and whether its progress shows in dollars or in hours (F45). What
  * is saved is typed as what the fund holds today, and filled in
- * with the balance core kept (D16); saving writes it with today as its day,
- * so transfers already counted are never counted again and later ones add
- * to it (N52). After a save the app's data is refreshed, which re-reads the
+ * with the balance core kept (D16); once retyped, saving writes it with today
+ * as its day, so transfers already counted are never counted again and later
+ * ones add to it (N52). Left as filled in, it is not written at all, so a
+ * transfer dated before today that reaches the ledger later still counts
+ * (backend-c1-01). After a save the app's data is refreshed, which re-reads the
  * funds. A refusal that answers once the sheet has closed is handed to
  * `onFailedAfterClose`, so it is never lost.
  */
@@ -38,6 +40,7 @@ export function FundEditor({
   const { supabase, userId, refresh } = useAppData()
   const [target, setTarget] = useState(formatForInput(goal === null ? null : goal.target_cents))
   const [saved, setSaved] = useState(formatForInput(fund.figures === null ? null : fund.figures.balanceCents))
+  const [savedTouched, setSavedTouched] = useState(false)
   const [start, setStart] = useState(goal?.start_date ?? '')
   const [end, setEnd] = useState(goal?.target_date ?? '')
   const [unit, setUnit] = useState(unitText(goal))
@@ -73,7 +76,13 @@ export function FundEditor({
       await saveFund(
         supabase,
         { userId, categoryId: fund.categoryId, name: fund.name, goalId: goal === null ? null : goal.id },
-        { goalCents, savedCents, asOf: todayIso(), startDate: start === '' ? null : start, goalDate: end === '' ? null : end, ...inUnit },
+        {
+          goalCents,
+          saved: goal === null || savedTouched ? { cents: savedCents, asOf: todayIso() } : null,
+          startDate: start === '' ? null : start,
+          goalDate: end === '' ? null : end,
+          ...inUnit,
+        },
       )
       onSaved(`${fund.name}'s goal is saved.`)
       await refresh()
@@ -105,7 +114,14 @@ export function FundEditor({
             label="Saved today ($)"
             hint={fund.categoryId === null ? 'Update this when you move money in.' : 'Money moved in after today adds to it.'}
           >
-            <Input inputMode="decimal" value={saved} onChange={(e) => setSaved(e.target.value)} />
+            <Input
+              inputMode="decimal"
+              value={saved}
+              onChange={(e) => {
+                setSaved(e.target.value)
+                setSavedTouched(true)
+              }}
+            />
           </Field>
         </div>
         {/* Savings!N14's note, and the callout over N13:R13. */}
