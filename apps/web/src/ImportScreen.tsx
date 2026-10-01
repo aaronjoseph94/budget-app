@@ -170,7 +170,8 @@ function SaveFooter({
           </p>
         ) : null}
         <p className="text-xs text-muted-foreground">
-          Nothing reaches your ledger until you approve it.
+          A row from a shop you have filed before goes straight to its category; everything else
+          waits for you in Review. Check the rows above first.
         </p>
       </div>
 
@@ -188,7 +189,7 @@ function SaveFooter({
  * signed, each proposed and each the owner's to change (FE-19).
  */
 function ColumnMapping({ mapping }: { mapping: Mapping }) {
-  const { delimiter, setDelimiter, choose, tokenized, analysis, dateIndex, merchantIndex, amountIndex, signKind, dateFormat, ambiguousDate } =
+  const { delimiter, setDelimiter, choose, tokenized, analysis, dateIndex, merchantIndex, amountIndex, signKind, dateFormat, ambiguousDate, otherMoney } =
     mapping
   return (
     <>
@@ -259,6 +260,14 @@ function ColumnMapping({ mapping }: { mapping: Mapping }) {
               onChange={(v) => choose('signKind', v)}
             />
           </div>
+
+          {otherMoney ? (
+            <p className="mt-4 rounded-lg border border-border bg-muted p-3 text-sm">
+              <strong className="font-medium">More than one column looks like money.</strong> Check
+              that the Amount column is the price of each purchase, not a fee, a balance or a
+              reference number.
+            </p>
+          ) : null}
 
           {ambiguousDate !== null ? (
             <p className="mt-4 rounded-lg border border-border bg-muted p-3 text-sm">

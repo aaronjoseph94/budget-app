@@ -36,6 +36,8 @@ export {
 
 export { normalizeMerchant, sameMerchant, similarMerchant } from './merchant.js'
 
+export { proposeMapping, type MappingProposal, type ProposeInput } from './propose.js'
+
 export { parseQuickEntry, type QuickEntry, type QuickEntryInput } from './quick-entry.js'
 
 export {

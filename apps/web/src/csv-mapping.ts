@@ -11,6 +11,7 @@ import {
   US_AMOUNT_FORMAT,
   detectHeaderRow,
   profileColumns,
+  proposeMapping,
   readStatement,
   tokenizeCsv,
   type DateFormat,
@@ -60,27 +61,16 @@ export function useCsvMapping(text: string) {
   // A proposal, applied once, that the user can override. It is never
   // re-applied after they touch a control: a screen that silently re-picks a
   // column while someone is choosing one is worse than no proposal at all.
+  // The guess itself is statement-parsers' (architecture-c2-01).
   const proposal = useMemo(() => {
-    if (analysis === null) return null
-    const { columns } = analysis
-    const date = columns.find((c) => c.dateFormats.length > 0)
-    const amount = columns.find((c) => c.readsAsAmount && c.index !== date?.index)
-    // A description is whatever is left once dates and money are excluded.
-    // Preferring a repeating column is a weak signal — a short statement may
-    // have no repeats at all — so it falls back to the first remaining column
-    // rather than to a fixed index that would only be right by accident.
-    const textual = columns.filter((c) => !c.readsAsAmount && c.dateFormats.length === 0)
-    const merchant = textual.find((c) => !c.unique) ?? textual[0]
-    return {
-      dateIndex: date?.index ?? 0,
-      amountIndex: amount?.index ?? Math.max(0, columns.length - 1),
-      merchantIndex: merchant?.index ?? 1,
-      dateFormats: date?.dateFormats ?? [],
-    }
-  }, [analysis])
+    if (!tokenized.ok || analysis === null) return null
+    return proposeMapping({ rows: tokenized.rows, hasHeader: analysis.hasHeader, columns: analysis.columns, amountFormat: US_AMOUNT_FORMAT })
+  }, [tokenized, analysis])
 
   // The mapping actually in force: the user's choice where they made one, the
   // proposal otherwise. Derived, never stored, so the two cannot disagree.
+  // Where nothing was found, the first three columns stand, for the owner to
+  // change; the preview below shows what each reads.
   const dateIndex = chosen.dateIndex ?? proposal?.dateIndex ?? 0
   const merchantIndex = chosen.merchantIndex ?? proposal?.merchantIndex ?? 1
   const amountIndex = chosen.amountIndex ?? proposal?.amountIndex ?? 2
@@ -115,6 +105,10 @@ export function useCsvMapping(text: string) {
 
   const ambiguousDate =
     proposal !== null && proposal.dateFormats.length > 1 ? proposal.dateFormats : null
+  // More than one column could be the amount, and the owner has not picked:
+  // the screen says so beside the proposal.
+  const otherMoney =
+    chosen.amountIndex === undefined && proposal !== null && proposal.amountCandidates.length > 1
 
 
   // Back to the proposal, as a new file would start.
@@ -135,5 +129,6 @@ export function useCsvMapping(text: string) {
     result,
     summary,
     ambiguousDate,
+    otherMoney,
   }
 }
