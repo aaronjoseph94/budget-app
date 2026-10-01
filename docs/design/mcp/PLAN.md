@@ -1775,6 +1775,14 @@ created it in M9, and imported `packages/ai-apps` from
 - **Estimate:** about 250 lines.
 - **Done:** §2.13's `mcp-add` cases; the fixture's hash equals the literal
   M4's schema test checks SQL against; `tools/list` now shows all ten.
+- **As built (2026-10-01):** one commit per tool. One counted read gives
+  the account, and the categories when one is named, matched as
+  `list_categories` hands names out (never Not spending) and sent as
+  stored. A bad date is refused once the owner's today is read, before
+  the add. An add the database does not answer clearly is the new
+  `not_confirmed` sentence, not `server_error`, whose "Nothing was
+  changed" an add cannot promise. `entry.what` is cleaned as Review's tool
+  shows it.
 
 ### M10a: Settings → AI apps: the switches, the address and Connect a new AI app
 

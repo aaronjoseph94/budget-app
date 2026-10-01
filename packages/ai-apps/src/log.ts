@@ -16,7 +16,7 @@ export type LogCode =
   | 'rpc_status'
   | 'rpc_shape'
   | 'records_unreadable'
-  | `tool_${'list_categories' | 'get_period' | 'get_spending' | 'get_forecast' | 'get_savings_goals' | 'get_debts' | 'search_transactions' | 'list_review_queue'}_${'ok' | 'refused'}`
+  | `tool_${'list_categories' | 'get_period' | 'get_spending' | 'get_forecast' | 'get_savings_goals' | 'get_debts' | 'search_transactions' | 'list_review_queue' | 'add_expense'}_${'ok' | 'refused'}`
 
 /** The counts a line may carry, by fixed name, so no key can carry content either. */
 export type LogCounts = Readonly<Partial<Record<'check' | 'status' | 'ms' | 'rows', number>>>

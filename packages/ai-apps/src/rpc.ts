@@ -35,6 +35,9 @@ export const SENTENCES = {
     'The budget app did not recognise this sign-in as an AI app’s. The owner should switch AI apps off in Settings → AI apps and report it.',
   records_unreadable: 'The app could not read some of the records. The owner can open the app to see which.',
   server_error: 'Something went wrong in the budget app’s server. Nothing was changed.',
+  // An add the database did not answer clearly may or may not have been written.
+  not_confirmed:
+    'The budget app did not confirm the add. Asking again with the same details never adds it twice; list_review_queue shows what is waiting.',
 } as const
 
 export type RefusalCode = keyof typeof SENTENCES
@@ -81,6 +84,9 @@ export async function rpc(caller: Caller, fn: RpcName, args: Readonly<Record<str
 
 /** Read tools overwrite nothing and read the same twice (ChatGPT confirms any tool without readOnlyHint). */
 export const READ_ONLY = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false } as const
+
+/** The two add tools write, but overwrite nothing, and the dedupe hash makes a repeat add nothing. */
+export const ADDS = { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false } as const
 
 /** Sign-in declared per tool, where OpenAI's Apps SDK reads it; other clients ignore it. */
 export const SIGNED_IN = { securitySchemes: [{ type: 'oauth2' }] } as const

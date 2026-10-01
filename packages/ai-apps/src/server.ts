@@ -12,6 +12,7 @@ import { McpServer, type AuthInfo, type McpRequestContext } from '@modelcontextp
 import { MCP_SERVER_VERSION } from '@budget/schema'
 import type { Project } from './auth.js'
 import type { Caller } from './rpc.js'
+import { registerAddExpense } from './tools/add.js'
 import { registerListCategories } from './tools/categories.js'
 import { registerGetDebts } from './tools/debts.js'
 import { registerGetForecast } from './tools/forecast.js'
@@ -38,7 +39,7 @@ export function callerOf(auth: AuthInfo | undefined): Caller | null {
 }
 
 /** The tools, in the order `tools/list` gives them. */
-export const TOOLS: readonly ((server: McpServer, caller: Caller | null) => void)[] = [registerListCategories, registerGetPeriod, registerGetSpending, registerGetForecast, registerGetSavingsGoals, registerGetDebts, registerSearchTransactions, registerListReviewQueue]
+export const TOOLS: readonly ((server: McpServer, caller: Caller | null) => void)[] = [registerListCategories, registerGetPeriod, registerGetSpending, registerGetForecast, registerGetSavingsGoals, registerGetDebts, registerSearchTransactions, registerListReviewQueue, registerAddExpense]
 
 /** A fresh server for one request: nothing is kept between calls. */
 export function budgetServer(ctx?: McpRequestContext): McpServer {

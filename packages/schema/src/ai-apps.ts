@@ -102,3 +102,22 @@ export const SearchTransactionsInputSchema = z
 
 /** `list_review_queue`: what waits in Review, oldest first, at most `limit` rows. */
 export const ListReviewQueueInputSchema = z.object({ limit: z.number().int().min(1).max(50).default(20) }).strict()
+
+/** Which identical purchase of the day this is: the dedupe hash's occurrence (1 is the first). */
+const SameAgainSchema = z.number().int().min(1).max(9).default(1)
+
+/**
+ * `add_expense`: one purchase, or money received, for Review. The amount is
+ * dollars without a sign, `flow` gives it one; the date must fall in the
+ * owner's past year, which only the server can check, knowing their today.
+ */
+export const AddExpenseInputSchema = z
+  .object({
+    amount: AmountTextSchema,
+    what: WordsSchema,
+    date: z.iso.date().optional(),
+    flow: z.enum(['spent', 'received']).default('spent'),
+    category: NameSchema.optional(),
+    same_again: SameAgainSchema,
+  })
+  .strict()
