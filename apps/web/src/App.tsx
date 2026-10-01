@@ -1,7 +1,7 @@
 import { lazy, useEffect, useMemo, useRef } from 'react'
 import { readEnv } from './env.js'
 import { createSupabase } from './supabase.js'
-import { NotConfigured, SignIn, useSession } from './auth.js'
+import { NewPassword, NotConfigured, SignIn, useSession } from './auth.js'
 import { AppDataProvider, useAppData } from './app-data.js'
 import { HOME, hashOf, navigate, useAddress, type Screen } from './nav.js'
 import { HELP_TOPICS } from './help/topics.js'
@@ -62,6 +62,7 @@ function Configured({ env }: { env: Parameters<typeof createSupabase>[0] }) {
     return <p className="py-16 text-center text-sm text-muted-foreground">Loading…</p>
   }
   if (session.status === 'signed-out') return <SignIn supabase={supabase} linkRefused={session.linkRefused} />
+  if (session.status === 'recovering') return <NewPassword supabase={supabase} />
 
   return (
     <AppDataProvider

@@ -1,6 +1,6 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { DASHBOARD_LINK_REFUSED, LINK_REFUSED, SignIn, useSession } from '../src/auth.js'
+import { DASHBOARD_LINK_REFUSED, LINK_REFUSED, NewPassword, SignIn, useSession } from '../src/auth.js'
 import type { SupabaseClient } from '../src/supabase.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { expectNoAxeViolations } from './axe.js'
@@ -90,5 +90,70 @@ describe('an emailed link for an address with no account', () => {
     await askForLink(linkAnswering({ code: 'over_email_send_rate_limit', message: 'Email rate limit exceeded' }))
 
     expect((await screen.findByRole('alert')).textContent).toBe('Email rate limit exceeded')
+  })
+})
+
+type Listener = (event: string, session: unknown) => void
+
+/** A client whose auth events the test sends, as a recovery link's exchange does. */
+function recoveryClient() {
+  const listeners: Listener[] = []
+  const calls: { reset: Array<[string, unknown]>; update: unknown[] } = { reset: [], update: [] }
+  const auth = {
+    getSession: () => Promise.resolve({ data: { session: null } }),
+    onAuthStateChange: (listener: Listener) => {
+      listeners.push(listener)
+      return { data: { subscription: { unsubscribe: () => undefined } } }
+    },
+    resetPasswordForEmail: (email: string, options: unknown) => {
+      calls.reset.push([email, options])
+      return Promise.resolve({ data: {}, error: null })
+    },
+    updateUser: (attributes: unknown) => {
+      calls.update.push(attributes)
+      return Promise.resolve({ data: {}, error: null })
+    },
+    signInWithPassword: () => Promise.resolve({ error: null }),
+  }
+  const send = (event: string, session: unknown) => {
+    for (const listener of listeners) listener(event, session)
+  }
+  return { client: { auth } as unknown as SupabaseClient, calls, send }
+}
+
+function RecoveryGate({ supabase }: { supabase: SupabaseClient }) {
+  const session = useSession(supabase)
+  if (session.status === 'recovering') return <NewPassword supabase={supabase} />
+  if (session.status === 'signed-in') return <p>signed in</p>
+  if (session.status === 'signed-out') return <SignIn supabase={supabase} linkRefused={session.linkRefused} />
+  return null
+}
+
+describe('a forgotten password (security-a-02)', () => {
+  it('asks for a reset link through this browser, and reads as a sent link', async () => {
+    const fake = recoveryClient()
+    render(<SignIn supabase={fake.client} />)
+    fireEvent.change(screen.getByLabelText('Email address'), { target: { value: ' owner@example.com ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Forgot your password?' }))
+
+    expect(await screen.findByRole('heading', { name: 'Check your email' })).toBeTruthy()
+    expect(fake.calls.reset).toEqual([['owner@example.com', { redirectTo: window.location.origin }]])
+  })
+
+  it('opens a new-password form when the reset link signs in, and saves it', async () => {
+    const fake = recoveryClient()
+    render(<RecoveryGate supabase={fake.client} />)
+    await screen.findByRole('button', { name: 'Sign in' })
+
+    const session = { user: { id: 'u1' } }
+    act(() => fake.send('PASSWORD_RECOVERY', session))
+    // The client's first-session event can come after; it must not skip the form.
+    act(() => fake.send('INITIAL_SESSION', session))
+    fireEvent.change(await screen.findByLabelText('New password'), { target: { value: 'a-long-generated-password' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save password' }))
+
+    await waitFor(() => expect(fake.calls.update).toEqual([{ password: 'a-long-generated-password' }]))
+    act(() => fake.send('USER_UPDATED', session))
+    expect(await screen.findByText('signed in')).toBeTruthy()
   })
 })

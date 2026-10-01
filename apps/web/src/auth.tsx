@@ -17,6 +17,8 @@ export type SessionState =
   | { readonly status: 'loading' }
   | { readonly status: 'signed-out'; readonly linkRefused: LinkRefusal | null }
   | { readonly status: 'signed-in'; readonly session: Session }
+  /** Signed in by a reset link: a new password is asked for before the app opens. */
+  | { readonly status: 'recovering'; readonly session: Session }
 
 /** Said on sign-in when the page was opened from an emailed link that did not sign in. */
 export const LINK_REFUSED =
@@ -87,21 +89,27 @@ export function useSession(supabase: SupabaseClient): SessionState {
       // Read only now: a link that did sign in has its code taken out by the client.
       const link = cameFromLink()
       const refused = data.session === null ? link : null
-      setState(
+      setState((was) =>
         data.session === null
           ? { status: 'signed-out', linkRefused: refused }
-          : { status: 'signed-in', session: data.session },
+          : was.status === 'recovering'
+            ? was
+            : { status: 'signed-in', session: data.session },
       )
     })
 
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
       if (!live) return
       // The first event can come after getSession's answer, and a null
-      // session must not wipe the reason a link did not sign in.
+      // session must not wipe the reason a link did not sign in. A reset
+      // link's session asks for a new password until one is saved, whatever
+      // event the client sends in between (security-a-02).
       setState((was) =>
         session === null
           ? { status: 'signed-out', linkRefused: was.status === 'signed-out' ? was.linkRefused : null }
-          : { status: 'signed-in', session },
+          : event === 'PASSWORD_RECOVERY' || (was.status === 'recovering' && event !== 'USER_UPDATED')
+            ? { status: 'recovering', session }
+            : { status: 'signed-in', session },
       )
     })
 
@@ -118,6 +126,7 @@ type Attempt =
   | { readonly kind: 'idle' }
   | { readonly kind: 'working' }
   | { readonly kind: 'link-sent'; readonly email: string }
+  | { readonly kind: 'reset-sent'; readonly email: string }
   | { readonly kind: 'failed'; readonly message: string }
 
 type Method = 'password' | 'link'
@@ -181,6 +190,19 @@ export function SignIn({ supabase, linkRefused = null }: { supabase: SupabaseCli
     )
   }
 
+  // A reset link asked for here goes through PKCE, so it opens in this
+  // browser and signs in; one sent from the dashboard never can.
+  const forgot = async () => {
+    const address = email.trim()
+    if (address.length === 0) {
+      setAttempt({ kind: 'failed', message: 'Type your email address first, then choose Forgot your password?' })
+      return
+    }
+    setAttempt({ kind: 'working' })
+    const { error } = await supabase.auth.resetPasswordForEmail(address, { redirectTo: window.location.origin })
+    setAttempt(error === null ? { kind: 'reset-sent', email: address } : { kind: 'failed', message: error.message })
+  }
+
   const busy = attempt.kind === 'working'
   // Both fields are named by the refusal: Supabase will not say which was wrong.
   const refused = refusal(reasonId, attempt.kind === 'failed')
@@ -208,12 +230,12 @@ export function SignIn({ supabase, linkRefused = null }: { supabase: SupabaseCli
 
         {/* The one card in the app with a shadow (Mockup A). */}
         <Card className="mt-7 p-6 shadow-[0_10px_30px_rgba(17,24,39,.06)] sm:p-7">
-          {attempt.kind === 'link-sent' ? (
+          {attempt.kind === 'link-sent' || attempt.kind === 'reset-sent' ? (
             <div>
               <h2 className="font-semibold">Check your email</h2>
               <p className="mt-2 text-sm">
-                If <strong className="font-medium">{attempt.email}</strong> has an account here, a sign-in
-                link is on its way to it. Open it on this device, in
+                If <strong className="font-medium">{attempt.email}</strong> has an account here,{' '}
+                {attempt.kind === 'reset-sent' ? 'a link to choose a new password' : 'a sign-in link'} is on its way to it. Open it on this device, in
                 this same browser, and you are in. If you asked from the app on your Home Screen, sign in there with
                 your password instead: its links open in another browser.
               </p>
@@ -276,6 +298,16 @@ export function SignIn({ supabase, linkRefused = null }: { supabase: SupabaseCli
                 >
                   {method === 'password' ? 'Email me a link instead' : 'Use a password instead'}
                 </button>
+                {method === 'password' ? (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    className={cn('text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground', LINE_BUTTON)}
+                    onClick={() => void forgot()}
+                  >
+                    Forgot your password?
+                  </button>
+                ) : null}
               </div>
 
               {attempt.kind === 'failed' ? (
@@ -294,6 +326,69 @@ export function SignIn({ supabase, linkRefused = null }: { supabase: SupabaseCli
           )}
         </Card>
       </div>
+    </main>
+  )
+}
+
+/**
+ * Asked for once a reset link has signed in: the new password is saved
+ * before the app opens. "Not now" signs out, keeping the old password.
+ */
+export function NewPassword({ supabase }: { supabase: SupabaseClient }) {
+  const [password, setPassword] = useState('')
+  const [attempt, setAttempt] = useState<Attempt>({ kind: 'idle' })
+  const reasonId = useId()
+
+  const save = async () => {
+    setAttempt({ kind: 'working' })
+    // Supabase holds the length rule; its refusal is shown as given.
+    const { error } = await supabase.auth.updateUser({ password })
+    setAttempt(error === null ? { kind: 'idle' } : { kind: 'failed', message: error.message })
+  }
+
+  return (
+    <main className="flex min-h-dvh flex-col items-center justify-center bg-canvas px-4 py-12">
+      <Card className="w-full max-w-[26rem] p-6 sm:p-7">
+        <h1 className="text-xl font-bold">Choose a new password</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Use a long one your password manager makes, used nowhere else.</p>
+        <form
+          className="mt-5"
+          onSubmit={(e) => {
+            e.preventDefault()
+            void save()
+          }}
+        >
+          <label className="block">
+            <span className="text-sm font-semibold">New password</span>
+            <Input
+              type="password"
+              required
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              {...refusal(reasonId, attempt.kind === 'failed')}
+              className="mt-1.5"
+            />
+          </label>
+          <div className="mt-5 flex flex-col items-center gap-2">
+            <Button type="submit" size="lg" disabled={attempt.kind === 'working'} className="w-full">
+              {attempt.kind === 'working' ? 'Saving…' : 'Save password'}
+            </Button>
+            <button
+              type="button"
+              className={cn('text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground', LINE_BUTTON)}
+              onClick={() => void supabase.auth.signOut()}
+            >
+              Not now: sign out
+            </button>
+          </div>
+          {attempt.kind === 'failed' ? (
+            <p id={reasonId} role="alert" className="mt-3 text-sm text-spend">
+              {attempt.message}
+            </p>
+          ) : null}
+        </form>
+      </Card>
     </main>
   )
 }
