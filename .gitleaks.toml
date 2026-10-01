@@ -51,3 +51,25 @@ paths = [
   '''(^|/)\.env\.production$''',
   '''(^|/)\.env\.test$''',
 ]
+
+# Keys the bundled rules miss unless the line happens to say "key" or
+# "secret" (security-c2-03): the project's own RLS-bypassing secret key, and
+# two providers the AI helper can use. New ids, so they add to the bundled
+# rules rather than replace one (see above).
+[[rules]]
+id = "supabase-secret-key"
+description = "Supabase secret key, which bypasses every row-level security policy"
+regex = '''\bsb_secret_[A-Za-z0-9_-]{20,}'''
+keywords = ["sb_secret_"]
+
+[[rules]]
+id = "groq-api-key"
+description = "Groq API key"
+regex = '''\bgsk_[A-Za-z0-9]{40,}'''
+keywords = ["gsk_"]
+
+[[rules]]
+id = "openrouter-api-key"
+description = "OpenRouter API key"
+regex = '''\bsk-or-v1-[0-9a-f]{64}\b'''
+keywords = ["sk-or-v1-"]
