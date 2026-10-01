@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { DASHBOARD_LINK_REFUSED, LINK_REFUSED, NewPassword, SignIn, useSession } from '../src/auth.js'
+import { DASHBOARD_LINK_REFUSED, LINK_REFUSED, NewPassword, SIGNED_OUT_HERE_ONLY_NOTE, SignIn, useSession } from '../src/auth.js'
 import type { SupabaseClient } from '../src/supabase.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { expectNoAxeViolations } from './axe.js'
@@ -155,5 +155,17 @@ describe('a forgotten password (security-a-02)', () => {
     await waitFor(() => expect(fake.calls.update).toEqual([{ password: 'a-long-generated-password' }]))
     act(() => fake.send('USER_UPDATED', session))
     expect(await screen.findByText('signed in')).toBeTruthy()
+  })
+})
+
+describe('after signing out on this device only (security-a-06)', () => {
+  it('says the other devices may still be signed in, once', async () => {
+    window.sessionStorage.setItem('budget.signed-out-here-only', '1')
+    render(<SignIn supabase={linkAnswering(null)} />)
+    expect(screen.getByText(SIGNED_OUT_HERE_ONLY_NOTE)).toBeTruthy()
+    expect(window.sessionStorage.getItem('budget.signed-out-here-only')).toBeNull()
+    cleanup()
+    render(<SignIn supabase={linkAnswering(null)} />)
+    expect(screen.queryByText(SIGNED_OUT_HERE_ONLY_NOTE)).toBeNull()
   })
 })

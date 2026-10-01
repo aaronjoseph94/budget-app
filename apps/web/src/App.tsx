@@ -2,6 +2,7 @@ import { lazy, useEffect, useMemo, useRef } from 'react'
 import { readEnv } from './env.js'
 import { createSupabase } from './supabase.js'
 import { NewPassword, NotConfigured, SignIn, useSession } from './auth.js'
+import { signOutHere } from './sign-out.js'
 import { AppDataProvider, useAppData } from './app-data.js'
 import { HOME, hashOf, navigate, useAddress, type Screen } from './nav.js'
 import { HELP_TOPICS } from './help/topics.js'
@@ -190,7 +191,7 @@ export function Shell() {
                     {/* No screen is drawn, so Settings' Sign out is out of reach,
                       and a refused sign-in is fixed by signing out (FE-7-NEW). */}
                     {status === 'failed' ? (
-                      <Button variant="outline" onClick={() => void supabase.auth.signOut()}>
+                      <Button variant="outline" onClick={() => void signOutHere(supabase)}>
                         Sign out
                       </Button>
                     ) : null}

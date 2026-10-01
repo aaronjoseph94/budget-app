@@ -8,6 +8,7 @@ import { Progress } from '../components/ui/feedback.js'
 import { useWide } from '../lib/wide.js'
 import { cn } from '../lib/cn.js'
 import { RING_INSET } from './marks.js'
+import { signOutHere } from '../sign-out.js'
 
 /**
  * The sidebar's foot (ADR 0011): the main goal, from 1024px and unfolded,
@@ -75,7 +76,7 @@ function Owner({ folded }: { folded: boolean }) {
       <button
         type="button"
         aria-label="Sign out"
-        onClick={() => void supabase.auth.signOut()}
+        onClick={() => void signOutHere(supabase)}
         className={cn(full, RING_INSET, 'size-11 shrink-0 items-center justify-center rounded-md text-canvas-muted hover:bg-card hover:text-foreground')}
       >
         <Icon name="logout" className="size-[18px]" />

@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
-import type { SupabaseClient } from './supabase.js'
+import { SIGNED_OUT_HERE_ONLY, type SupabaseClient } from './supabase.js'
+import { signOutHere } from './sign-out.js'
 import { Label } from './ui.js'
 import { Input, refusal } from './components/ui/form.js'
 import { Button } from './components/ui/button.js'
@@ -27,6 +28,21 @@ export const LINK_REFUSED =
 /** Said when the link came from the Supabase dashboard, which sends a kind of link this app never accepts. */
 export const DASHBOARD_LINK_REFUSED =
   'Links sent from the Supabase dashboard do not sign in here. Ask for a link on this screen, or use your password.'
+
+/** Said on sign-in after sign-out could not reach the server, so only this device was signed out. */
+export const SIGNED_OUT_HERE_ONLY_NOTE =
+  'Signed out on this device. The server could not be reached, so your other devices may still be signed in: sign in when you are back online and sign out again to end them.'
+
+/** Whether sign-out left that note; read once, so it shows once. */
+function takeSignedOutNote(): boolean {
+  try {
+    const left = sessionStorage.getItem(SIGNED_OUT_HERE_ONLY) !== null
+    sessionStorage.removeItem(SIGNED_OUT_HERE_ONLY)
+    return left
+  } catch {
+    return false
+  }
+}
 
 /** Query keys an emailed link brings: its one-time code, or why it failed. */
 const LINK_QUERY = ['code', 'error', 'error_code', 'error_description'] as const
@@ -153,6 +169,7 @@ export function SignIn({ supabase, linkRefused = null }: { supabase: SupabaseCli
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [attempt, setAttempt] = useState<Attempt>({ kind: 'idle' })
+  const [signedOutHere] = useState(takeSignedOutNote)
   // The Sign in button is disabled while it works, which drops focus to the
   // page; a failure puts it on the reason, which is then read out (FE-6).
   const reason = useRef<HTMLParagraphElement>(null)
@@ -221,6 +238,12 @@ export function SignIn({ supabase, linkRefused = null }: { supabase: SupabaseCli
           <h1 className="mt-4 text-[1.75rem] font-bold leading-tight tracking-[-0.02em]">Budget</h1>
           <p className="mt-1 text-balance text-muted-foreground">Your statements and your spending, visible only to you.</p>
         </div>
+
+        {signedOutHere ? (
+          <div className="mt-6">
+            <Alert>{SIGNED_OUT_HERE_ONLY_NOTE}</Alert>
+          </div>
+        ) : null}
 
         {linkRefused !== null && attempt.kind === 'idle' ? (
           <div className="mt-6">
@@ -377,7 +400,7 @@ export function NewPassword({ supabase }: { supabase: SupabaseClient }) {
             <button
               type="button"
               className={cn('text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground', LINE_BUTTON)}
-              onClick={() => void supabase.auth.signOut()}
+              onClick={() => void signOutHere(supabase)}
             >
               Not now: sign out
             </button>
