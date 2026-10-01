@@ -302,6 +302,14 @@ below was made under those words and is recorded with them.
   are new, no stored hash changes, and no row with them exists yet, so
   nothing needs a backfill. An older server, or a newer one before `0031`
   is in, gets `needs_update` and adds nothing.
+  Second pass (`0037`): "no row with them exists yet" was true of the new
+  kind only. AI rows added under `0020` carried statement-format hashes,
+  and a waiting one could still stand in for the real line. `0037`
+  re-hashes every AI row (and its ledger row) that matches `0020`'s rule
+  to its own kind, and unlearns any learned shop an AI row taught
+  (putting it back to the owner's last filing from anything else). Still
+  `dedupe_hash_v` 1, as above. Whether the hosted project had any such
+  rows is not known from here; `0037` reports its counts when pasted.
 - **mcp-2-02: an AI app's row teaches no learned shop** (`0032`).
   `approve_candidate` and `recategorise_transaction` are re-created from
   their own definitions with a few lines changed, 0019's guard kept as

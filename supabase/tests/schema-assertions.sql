@@ -2704,17 +2704,18 @@ end $$;
 reset role;
 do $$
 begin
-  if exists (select 1 from public.ingest_candidates where source = 'ai_app'
+  -- The test user's rows (before/0037 seeds another user's, from before 0031).
+  if exists (select 1 from public.ingest_candidates where source = 'ai_app' and user_id = '11111111-1111-4111-8111-111111111111'
               and (status <> 'pending' or merchant <> merchant_raw or merchant_raw <> 'Lunch at Subway'
                    or category_source is distinct from 'model')) then
     raise exception 'an AI app''s candidate is not pending, or not stored as the words it showed';
   end if;
-  if (select count(*) from public.ingest_candidates where source = 'ai_app') <> 1 then raise exception 'the add did not add exactly once'; end if;
-  if exists (select 1 from public.ingest_batches where source = 'ai_app'
+  if (select count(*) from public.ingest_candidates where source = 'ai_app' and user_id = '11111111-1111-4111-8111-111111111111') <> 1 then raise exception 'the add did not add exactly once'; end if;
+  if exists (select 1 from public.ingest_batches where source = 'ai_app' and user_id = '11111111-1111-4111-8111-111111111111'
               and (ai_client_id is distinct from '99999999-9999-4999-8999-999999999999' or parsed <> 1)) then
     raise exception 'an AI app''s batch is not the token''s, or its counts do not say one';
   end if;
-  if (select array_agg(inserted::text || deduped::text order by created_at, inserted desc) from public.ingest_batches where source = 'ai_app')
+  if (select array_agg(inserted::text || deduped::text order by created_at, inserted desc) from public.ingest_batches where source = 'ai_app' and user_id = '11111111-1111-4111-8111-111111111111')
        <> '{10,01,01}' then
     raise exception 'the add''s batches do not balance as added, waiting, recorded';
   end if;
@@ -3307,7 +3308,7 @@ end $$;
 reset role;
 do $$
 begin
-  if public.ai_app_updates_in() <> 36 then raise exception 'ai_app_updates_in() does not say 0036 is in'; end if;
+  if public.ai_app_updates_in() < 36 then raise exception 'ai_app_updates_in() does not say 0036 is in'; end if;
   if has_function_privilege('anon', 'public._ai_app_shown_shop(text)', 'execute') then
     raise exception 'the anonymous role can call _ai_app_shown_shop';
   end if;
@@ -3330,5 +3331,88 @@ begin
     if sqlerrm not like 'Paste 0035 first%' then raise; end if;
   end;
   raise notice '0036 says to paste 0035 first when it is missing';
+end $$;
+rollback;
+
+-- ---------------------------------------------------------------------------
+-- 0037: what AI apps could leave before 0031 and 0032 is cleaned up. An AI
+-- row hashed as a statement line (occurrence:<n>) is hashed with its own
+-- kind, ai_app:<n>, so it can no longer stand in for the real line; a
+-- learned shop an AI row taught goes back to the owner's last filing of
+-- that shop from anything else, or goes. Rows seeded by before/0037.
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  u   uuid := '37373737-3737-4737-8737-373737373737';
+  acc uuid := 'aaaaaaaa-0000-4000-8000-000000000037';
+begin
+  if (select dedupe_hash from public.ingest_candidates where id = 'dddddddd-0000-4000-8000-000000003701')
+       is distinct from public._ai_app_dedupe_hash(acc, '2026-09-15', -1549, 'NETFLIX.COM', 2) then
+    raise exception 'NOT REFUSED: a waiting AI row kept a statement line''s hash';
+  end if;
+  if (select dedupe_hash from public.ingest_candidates where id = 'dddddddd-0000-4000-8000-000000003702')
+       is distinct from public._ai_app_dedupe_hash(acc, '2026-09-15', -1549, 'NETFLIX.COM', 1)
+     or (select dedupe_hash from public.transactions where candidate_id = 'dddddddd-0000-4000-8000-000000003702')
+       is distinct from public._ai_app_dedupe_hash(acc, '2026-09-15', -1549, 'NETFLIX.COM', 1) then
+    raise exception 'NOT REFUSED: an approved AI row kept a statement line''s hash';
+  end if;
+  if (select dedupe_hash from public.ingest_candidates where id = 'dddddddd-0000-4000-8000-000000003704') is distinct from repeat('7', 64) then
+    raise exception '0037 changed a hash 0020''s rule did not make';
+  end if;
+  if exists (select 1 from public.ingest_candidates where user_id = u and dedupe_hash_v <> 1)
+     or exists (select 1 from public.transactions where user_id = u and dedupe_hash_v <> 1) then
+    raise exception '0037 changed a hash version';
+  end if;
+  if (select category_id from public.merchant_rules where user_id = u and match_merchant = 'NETFLIX.COM') is distinct from 'cccccccc-0000-4000-8000-000000003701' then
+    raise exception 'NOT REFUSED: a learned shop an AI row taught still files there';
+  end if;
+  if exists (select 1 from public.merchant_rules where user_id = u and match_merchant = 'MADE UP SHOP') then
+    raise exception 'NOT REFUSED: a learned shop only an AI row ever had is still learned';
+  end if;
+  if (select category_id from public.merchant_rules where user_id = u and match_merchant = 'SAFEWAY') is distinct from 'cccccccc-0000-4000-8000-000000003702' then
+    raise exception '0037 changed a learned shop no AI row taught';
+  end if;
+  raise notice 'AI rows from before 0031 have their own hash kind; shops they taught are unlearned';
+end $$;
+
+-- The real statement line now arrives beside the AI row, never swallowed.
+set role app_user;
+do $$
+declare
+  i record;
+begin
+  perform set_config('request.jwt.claim.sub', '37373737-3737-4737-8737-373737373737', true);
+  perform set_config('request.jwt.claims', '{"sub": "37373737-3737-4737-8737-373737373737", "role": "authenticated"}', true);
+  select * into i from public.save_import('aaaaaaaa-0000-4000-8000-000000000037', 'card_csv', 1,
+    jsonb_build_array(jsonb_build_object('posted_on', '2026-09-15', 'amount_cents', -1549,
+      'merchant', 'NETFLIX.COM', 'merchant_raw', 'NETFLIX.COM', 'dedupe_hash', verify.old_hash('NETFLIX.COM', -1549, 2), 'dedupe_hash_v', 1)),
+    '[]'::jsonb);
+  if i.inserted <> 1 or i.deduped <> 0 then
+    raise exception 'an AI row from before 0031 swallowed a statement line: inserted % deduped %', i.inserted, i.deduped;
+  end if;
+end $$;
+reset role;
+
+do $$
+begin
+  if public.ai_app_updates_in() < 37 then raise exception 'ai_app_updates_in() does not say 0037 is in'; end if;
+  if has_function_privilege('authenticated', 'public._ai_app_clean_old_rows()', 'execute') then
+    raise exception 'a signed-in browser can run 0037''s clean-up';
+  end if;
+end $$;
+
+\set paste_check_37 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0037_ai_rows_before_the_fixes.sql`
+begin;
+drop function public._ai_app_shown_shop(text);
+set local verify.paste_check = :'paste_check_37';
+do $$
+begin
+  begin
+    execute current_setting('verify.paste_check');
+    raise exception 'NOT REFUSED: 0037 ran without 0036';
+  exception when raise_exception then
+    if sqlerrm not like 'Paste 0036 first%' then raise; end if;
+  end;
+  raise notice '0037 says to paste 0036 first when it is missing';
 end $$;
 rollback;

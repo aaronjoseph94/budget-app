@@ -178,6 +178,11 @@ export const UPDATES: readonly Update[] = [
     adds: 'Keeps an AI app’s searches to the shop names it is shown',
     checks: [{ kind: 'level', level: 36 }],
   },
+  {
+    file: '0037_ai_rows_before_the_fixes.sql',
+    adds: 'Tidies anything an AI app added before these safety updates',
+    checks: [{ kind: 'level', level: 37 }],
+  },
   { file: HELPER_FILE, adds: 'The AI helper, which every AI feature goes through', checks: [{ kind: 'helper' }] },
   {
     file: READ_RECEIPT_FILE,
@@ -331,10 +336,10 @@ export async function checkUpdates(supabase: SupabaseClient): Promise<Checked[]>
 /**
  * What must be in before AI apps may be switched on or a connection
  * allowed (security review mcp-3-03), as 0020 already is: 0019, which
- * stops an AI app writing; 0020; 0030 to 0034 and 0036, which close what the
- * security review found open in 0020 (a disconnected app's token, an AI
- * row hiding a statement line or teaching a shop, a search reading masked
- * numbers, invisible characters); the AI helper from 2026-09-30.1, the
+ * stops an AI app writing; 0020; 0030 to 0034, 0036 and 0037, which close
+ * what the security review found open in 0020 (a disconnected app's token,
+ * an AI row hiding a statement line or teaching a shop, a search reading
+ * masked numbers, invisible characters) and clean up what was left before; the AI helper from 2026-09-30.1, the
  * first to refuse an AI app's token (an older one would let it spend the
  * owner's keys or save one of its own); read-receipt deleted or replaced;
  * and the AI apps server at this app's version, whose hashes 0031 checks.
@@ -350,6 +355,7 @@ const BEFORE_AI_APPS: readonly string[] = [
   '0033_ai_search_masked.sql',
   '0034_ai_words_visible.sql',
   '0036_ai_search_as_shown.sql',
+  '0037_ai_rows_before_the_fixes.sql',
   HELPER_FILE,
   READ_RECEIPT_FILE,
   SERVER_FILE,
