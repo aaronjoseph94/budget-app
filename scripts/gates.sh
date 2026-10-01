@@ -82,7 +82,10 @@ fi
 # skips binaries. A git grep that fails (exit 2 or more) is not "none found".
 no_brand() {
   local found=0 rc
-  git grep -n -I -i -e 'w[i]nky'
+  # --untracked: a new file is usually not staged when the gates run, and
+  # git grep reads only tracked files without it (architecture-c2-06). It
+  # still honours .gitignore.
+  git grep -n -I -i --untracked -e 'w[i]nky'
   rc=$?
   case $rc in
     0) found=1 ;;
@@ -90,7 +93,7 @@ no_brand() {
     *) echo "git grep failed with exit $rc"; return 2 ;;
   esac
   # A file or folder named with it has no line to match, so paths too.
-  if git ls-files | grep -i -e 'w[i]nky'; then found=1; fi
+  if git ls-files --cached --others --exclude-standard | grep -i -e 'w[i]nky'; then found=1; fi
   [ "$found" -eq 0 ]
 }
 gate brand   git       no_brand
