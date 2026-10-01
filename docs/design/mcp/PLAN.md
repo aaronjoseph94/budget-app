@@ -1725,6 +1725,11 @@ created it in M9, and imported `packages/ai-apps` from
 - **Estimate:** about 130 lines.
 - **Done:** `entriesTotals` passes its hand-worked cases and fails each
   named mutation (a transfer counted, a refund subtracted from `spent`).
+- **As built (2026-10-01):** one commit, F52 written first. Each entry is
+  `{ amountCents, kind }`, the category's list, which `ai_app_search`'s
+  `all` already carries; Savings moves count as money out or in like any
+  list (a move to savings leaves the account), and only Not spending is
+  left out. Seen failing against a stub, then against each named mutation.
 
 ### M8b: `search_transactions` and `list_review_queue`
 

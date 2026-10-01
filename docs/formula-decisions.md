@@ -2472,3 +2472,55 @@ Phone typed 70.00 and paid 55.00: Left 15.00. Bills: **$1,655.00 of
 $1,670.00, 9,910 bp (99%)**. Rent typed $0: effective 0, Left −1,600.00.
 A week without Rent's due day: no planned budget, and the row's real
 payment, if any, stands against none.
+
+---
+
+## F52 — A search's totals: money out, money in, and the rows left out
+
+**Decided 2026-10-01. Engineering default. Not from the workbook.** Decided
+by the engineer under the owner's 2026-09-30 request that AI apps "answer
+questions" (ADR 0012; MCP plan §2.4, tool 7). The workbook has no search,
+so there is no cell to follow. Without a total from the engine, "how much
+did I spend at the grocery store this year" would be the AI adding up at
+most 50 rows itself, which CLAUDE.md's first invariant forbids.
+
+`entriesTotals` in core takes every approved row a search matched, each
+with its signed amount (D3: money out is negative) and its category's
+list, and returns `{ spentCents, receivedCents, count, notSpendingCount }`.
+
+**Options considered, for a refund among the matches** (a positive row on
+a spending list)
+
+- **A — gross:** a refund is money in. `spent` adds only the rows going
+  out, `received` only the rows coming in, and both are shown, so the AI
+  can quote each as the app gives it.
+- **B — net:** a refund is taken off `spent`. It reads as "what it cost
+  me", but a search across lists would then take pay off spending, and a
+  window holding a refund and not its purchase would show spending below
+  what went out.
+
+**Chosen: A.** The search's own `flow` filter splits rows by the same sign,
+so the totals agree with the rows a `spent` or `received` search lists.
+
+- **spent:** the sum of the magnitudes of the rows below $0, through
+  `sumCents`.
+- **received:** the sum of the rows above $0.
+- **Not spending** (the `transfer` list: card payments, moves between
+  accounts) is left out of both, as every figure in the app leaves it
+  out, and counted in `notSpendingCount`: adding a card payment to spending
+  would count each purchase twice.
+- **Savings** moves count as money out or in like any other list: a move
+  to savings is a negative row (D3), and it leaves the account.
+- **count** is every match, Not spending included. A $0 row counts and
+  adds nothing.
+- **No match** gives zeros, never null. A fraction of a cent, or an
+  amount past what `cents` holds exactly, is refused (`RangeError`).
+- **Past 5,000 matches** the server asks for no totals at all (MCP plan
+  §2.5), so this function never sees a partial set.
+
+**Worked examples.** Groceries −45.20, −12.75 and a refund +5.00; Pay
++2,500.00; a card payment +500.00 on Not spending; a move to savings
+−100.00; a $0.00 row on Groceries: spent **$157.95** (45.20 + 12.75 +
+100.00), received **$2,505.00**, count **7**, Not spending **1**. Only the
+card payment: spent **$0.00**, received **$0.00**, count **1**, Not
+spending **1**. No rows: all **0**.
