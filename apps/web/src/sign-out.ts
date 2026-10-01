@@ -3,7 +3,7 @@
  *
  * auth-js keeps the session when sign-out cannot refresh an expired token
  * (offline after a long gap): the tap did nothing and said nothing. Then
- * the stored session and its PKCE verifier are removed here and the page
+ * the stored session and every PKCE verifier kept under its key are removed here and the page
  * reloads to the sign-in screen, which says other devices may still be
  * signed in, since the server never heard. The recent Ask questions, kept
  * on this device for whoever is signed in, go either way.
@@ -28,8 +28,16 @@ export async function signOutHere(supabase: SupabaseClient, device: Here = here(
   if (error === null) return
   try {
     if (device.key !== null) {
-      localStorage.removeItem(device.key)
-      localStorage.removeItem(`${device.key}-code-verifier`)
+      // auth-js 2.117 keeps each PKCE flow's verifier in its own
+      // `${key}-flow-<id>-code-verifier` slot, indexed by `${key}-flows-code-verifier`,
+      // beside the legacy `${key}-code-verifier`: every key under the session's goes.
+      const own = (k: string) => k === device.key || k.startsWith(`${device.key}-`)
+      const keys: string[] = []
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const k = localStorage.key(i)
+        if (k !== null && own(k)) keys.push(k)
+      }
+      for (const k of keys) localStorage.removeItem(k)
     }
     sessionStorage.setItem(SIGNED_OUT_HERE_ONLY, '1')
   } catch {
