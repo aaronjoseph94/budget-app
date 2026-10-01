@@ -7,19 +7,35 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 
 LEVEL="${1:-full}"
+# A level this script does not know would run the fast set and could print
+# GREEN with the full-only gates never run (architecture-b-07).
+case "$LEVEL" in
+  fast|quick|full) ;;
+  *) echo "gates.sh: unknown level '$LEVEL' (fast, quick or full)" >&2; exit 2 ;;
+esac
 declare -a PASSED=() FAILED=() MISCONFIGURED=()
 
-have() { command -v "$1" >/dev/null 2>&1 || [ -x "node_modules/.bin/$1" ]; }
+# Each run keeps its own logs: two worktrees gating at once must never
+# print each other's failure.
+LOGS="$(mktemp -d "${TMPDIR:-/tmp}/gates.XXXXXX")"
+
+have() {
+  case "$1" in
+    # The schema gate needs a PostgreSQL server, not only psql.
+    pg_server) ls /usr/lib/postgresql/*/bin/initdb >/dev/null 2>&1 ;;
+    *) command -v "$1" >/dev/null 2>&1 || [ -x "node_modules/.bin/$1" ] ;;
+  esac
+}
 
 gate() {
   local name="$1" tool="$2"; shift 2
   if ! have "$tool"; then
     MISCONFIGURED+=("$name"); printf '  %-18s MISCONFIGURED (%s not installed)\n' "$name" "$tool"; return
   fi
-  if "$@" >/tmp/gate-$name.log 2>&1; then
+  if "$@" >"$LOGS/$name.log" 2>&1; then
     PASSED+=("$name"); printf '  %-18s PASS\n' "$name"
   else
-    FAILED+=("$name"); printf '  %-18s FAIL\n' "$name"; tail -15 "/tmp/gate-$name.log" | sed 's/^/      /'
+    FAILED+=("$name"); printf '  %-18s FAIL\n' "$name"; tail -15 "$LOGS/$name.log" | sed 's/^/      /'
   fi
 }
 
@@ -72,7 +88,7 @@ if [ "$LEVEL" = "full" ]; then
   gate history  gitleaks gitleaks detect --config .gitleaks.toml --redact --no-banner --source .
   # Applies every migration to a throwaway database and asserts the schema
   # refuses what it claims to. Never touches the hosted project.
-  gate schema   psql     ./scripts/verify-migrations.sh
+  gate schema   pg_server ./scripts/verify-migrations.sh
   gate coverage vitest   npx vitest run --coverage
   gate deps     pnpm     pnpm audit --audit-level high
   # Builds the web app into a temporary folder and fails when the JavaScript
@@ -86,6 +102,7 @@ STATUS=GREEN
 
 join() { local IFS=,; echo "${*:-none}"; }
 echo
+echo "logs: $LOGS"
 echo "BUDGET_GATES: level=$LEVEL status=$STATUS passed=${#PASSED[@]} failed=${#FAILED[@]} failing=$(join "${FAILED[@]+"${FAILED[@]}"}") misconfigured=$(join "${MISCONFIGURED[@]+"${MISCONFIGURED[@]}"}")"
 
 case "$STATUS" in
