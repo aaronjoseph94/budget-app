@@ -340,8 +340,11 @@ function YearTable({
       <div className={cn('flex flex-wrap items-center gap-x-3 gap-y-1 py-4', left, right)}>
         <span aria-hidden="true" className={cn('size-3 shrink-0 rounded-[4px]', tone.dot)} />
         <h2 className={cn('flex-1 font-semibold', compact ? 'text-base' : 'text-lg')}>{g.heading}</h2>
-        {/* Drops under the name before it would break inside the number. */}
-        <Figure className={cn('shrink-0 font-bold', compact ? 'text-base' : 'text-lg')}>{formatCents(total.actualCents)}</Figure>
+        {/* Drops under the name before it would break inside the number.
+          Four across, always under it, in line with the name: "Variable
+          expenses" took two lines where the others took one, and the tables
+          below started at different heights (V3). */}
+        <Figure className={cn('shrink-0 font-bold', compact ? 'basis-full pl-6 text-base' : 'text-lg')}>{formatCents(total.actualCents)}</Figure>
       </div>
       <table className={cn('w-full', compact ? 'text-xs whitespace-nowrap min-[1400px]:text-[0.8125rem]' : 'text-sm md:text-[0.9375rem]')}>
         <thead className={cn(tone.header, tone.ink)}>

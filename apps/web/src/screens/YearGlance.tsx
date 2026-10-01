@@ -102,14 +102,18 @@ export function YearGlance({
         ) : (
           <ol className="space-y-3 text-sm">
             {atAGlance.top3.map((t, i) => (
-              // The figure drops under the name when both do not fit, as
-              // with the phone's text at 200%, rather than run off (N58).
-              <li key={t.categoryId} className="flex flex-wrap items-center gap-x-2">
+              // The name over its amount and share beside the ring: the same
+              // two lines at every width, where the figure dropped under the
+              // name at some widths and not others (V2). Both wrap rather
+              // than run off with the phone's text at 200% (N58).
+              <li key={t.categoryId} className="flex items-center gap-3">
                 <TopRing top={t} rank={i} />
-                <span className="min-w-0 flex-1 basis-20 break-words font-medium [overflow-wrap:anywhere]">{t.name}</span>
-                <span className="tnum ml-auto shrink-0 text-right text-muted-foreground">
-                  {formatCents(t.amountCents)} · {formatShare(t.shareBp)}
-                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium [overflow-wrap:anywhere]">{t.name}</p>
+                  <p className="tnum text-[0.8125rem] text-muted-foreground">
+                    {formatCents(t.amountCents)} · {formatShare(t.shareBp)}
+                  </p>
+                </div>
               </li>
             ))}
           </ol>
