@@ -330,3 +330,6 @@ below was made under those words and is recorded with them.
 - **mcp-1-02: one Connect, one connection.** Allowing a connection ends
   the 15-minute window, so a second consent link arriving in it finds no
   Allow.
+- **mcp-c-01: no event streams.** `maxSubscriptions: 0` makes the SDK
+  refuse `subscriptions/listen` with plain JSON instead of holding a
+  stream open past the deadline and past Disconnect.

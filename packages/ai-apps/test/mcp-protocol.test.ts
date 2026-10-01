@@ -60,6 +60,26 @@ describe('the MCP endpoint', () => {
     expect((await message(res)).result).toMatchObject({ supportedVersions: ['2026-07-28'], capabilities: { tools: {} } })
   })
 
+  // Security review mcp-c-01: the SDK serves subscriptions/listen as an event
+  // stream whatever responseMode says, which outlived the 20 s deadline and
+  // Disconnect. Nothing streams for longer than the request (PLAN §2.2).
+  it('refuses a 2026-07-28 subscriptions/listen with one JSON body, and opens no stream', async () => {
+    const method = 'subscriptions/listen'
+    const req = post(
+      { jsonrpc: '2.0', id: 7, method, params: { _meta: MODERN, notifications: { toolsListChanged: true } } },
+      { 'mcp-protocol-version': '2026-07-28', 'mcp-method': method },
+    )
+    const res = await handle(req, ENV)
+    expect(res.headers.get('content-type')).toMatch(/^application\/json/)
+    const read = Promise.race([res.text(), new Promise<null>((done) => setTimeout(() => done(null), 1000))])
+    const text = await read
+    if (text === null) await res.body?.cancel()
+    expect(text).not.toBeNull()
+    const reply = JSON.parse(text ?? '{}') as { error?: { code: number }; result?: unknown }
+    expect(reply.error?.code).toBe(-32603)
+    expect(reply.result).toBeUndefined()
+  })
+
   it('lists the same tools in both eras, with a zero cache hint', async () => {
     const names = (reply: Record<string, unknown>) => (reply.result as { tools: { name: string }[] }).tools.map((t) => t.name)
     expect(names(await message(await handle(legacy('tools/list'), ENV)))).toEqual(['list_categories', 'get_period', 'get_spending', 'get_forecast', 'get_savings_goals', 'get_debts', 'search_transactions', 'list_review_queue', 'add_expense', 'add_note'])

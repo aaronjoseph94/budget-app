@@ -313,7 +313,11 @@ supabase-js, for what `whoIs` plus about twenty lines already does).
   'json'`). A 2025-era request goes through the SDK's stateless fallback,
   which `responseMode` does not govern and which may answer as a
   one-message server-sent event stream; the spec requires clients to
-  accept either, and nothing streams for longer than the request. `GET`
+  accept either, and nothing streams for longer than the request. The
+  2026-07-28 `subscriptions/listen` is always an event stream in the SDK,
+  whatever `responseMode` says, and outlived the 20 s deadline and
+  Disconnect; `maxSubscriptions: 0` refuses it at once with a JSON
+  `-32603` (security review mcp-c-01, held by `mcp-protocol.test.ts`). `GET`
   and `DELETE` on `/mcp` answer 405. Request bodies are capped at 64 KB
   (`maxRequestBodySize`).
 - **Nothing is cacheable.** The 2026-07-28 revision puts cache hints only

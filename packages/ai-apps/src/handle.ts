@@ -51,6 +51,11 @@ const mcp = createMcpHandler(budgetServer, {
   legacy: 'stateless',
   responseMode: 'json',
   maxRequestBodySize: MAX_BODY_BYTES,
+  // No subscriptions/listen streams at all: the SDK serves them as events
+  // whatever responseMode says, past the deadline and past Disconnect.
+  // With 0 it answers -32603 as plain JSON at once (security review
+  // mcp-c-01; PLAN §2.2's "nothing streams", held by mcp-protocol.test.ts).
+  maxSubscriptions: 0,
   onerror: () => log('sdk_error'),
 })
 
