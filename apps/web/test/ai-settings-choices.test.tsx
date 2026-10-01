@@ -91,7 +91,8 @@ describe('Use AI', () => {
     fireEvent.click(use)
     await waitFor(() => expect(fake.tables.ai_settings).toEqual([{ user_id: 'u1', daily_cap: 60, enabled: false }]))
     expect(await screen.findByText(/^AI is off\./)).toBeTruthy()
-    expect(screen.getByText(/^Off: nothing from your records is sent to any AI service/)).toBeTruthy()
+    // The switch stops the helper alone; an AI app the owner connects keeps its own switch (review-r-04).
+    expect(screen.getByText('Off: the Coach, suggestions, Just type it and receipt photos send nothing to any AI service and use the app’s own words. AI apps you connect have their own switch in Settings.')).toBeTruthy()
     await waitFor(() => expect(use.disabled).toBe(false))
     fake.functions.aiStatus = aiStatusReply()
     fireEvent.click(use)

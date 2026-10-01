@@ -112,7 +112,7 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
           <p className="text-sm text-muted-foreground">
             {choices.enabled
               ? 'On: the services below are asked, in their order, for the Coach, suggestions, Just type it and receipt photos.'
-              : 'Off: nothing from your records is sent to any AI service; every screen uses the app’s own words.'}
+              : 'Off: the Coach, suggestions, Just type it and receipt photos send nothing to any AI service and use the app’s own words. AI apps you connect have their own switch in Settings.'}
           </p>
         </section>
 
