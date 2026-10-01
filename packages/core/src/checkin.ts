@@ -15,6 +15,7 @@ import { completeMonths } from './history.js'
 import { monthActuals } from './month-actuals.js'
 import { usualMonth } from './notable.js'
 import { type PeriodEntry, type WeekCategory, weekSheet } from './period-sheet.js'
+import { byName } from './order.js'
 import { type CheckinWeek, checkinWeek } from './week.js'
 
 export { type CheckinWeek, checkinWeek }
@@ -78,7 +79,7 @@ export function weeklyRecap(input: CheckinInput): WeeklyRecap {
   const noSpendDays = Array.from({ length: 7 }, (_, i) => addDays(week.start, i)).filter((day) => sumCents(daily.get(day) ?? []) >= 0).length
 
   // The list's order breaks a tie, as the Month lists them.
-  const ordered = input.categories.filter((c) => c.kind === 'variable').sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+  const ordered = input.categories.filter((c) => c.kind === 'variable').sort((a, b) => a.sortOrder - b.sortOrder || byName(a.name, b.name))
   let top: { categoryId: string; spentCents: Cents } | null = null
   for (const c of ordered) {
     const spent = byCategory.get(c.id)

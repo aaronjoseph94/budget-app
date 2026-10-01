@@ -12,6 +12,7 @@ import { type PayFrequency, paydaysIn, payShare } from './pay-period.js'
 import type { PeriodCategory, PeriodEntry } from './period-sheet.js'
 import { median } from './stats.js'
 import { monthBounds } from './week.js'
+import { byName } from './order.js'
 
 /** An Income source's schedule (0011). */
 export interface IncomeSchedule {
@@ -69,7 +70,7 @@ export function expectedPay(input: ExpectedPayInput): ExpectedPay {
   const goals = new Map(resolveBudgets({ asOf, history: input.budgetHistory }).budgets.map((b) => [b.categoryId, b.budgetCents]))
   const incomes = input.categories
     .filter((c) => c.kind === 'income')
-    .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+    .sort((a, b) => a.sortOrder - b.sortOrder || byName(a.name, b.name))
 
   const sources = incomes.map((c): PaySource => {
     const rows = input.entries.filter((e) => e.categoryId === c.id)

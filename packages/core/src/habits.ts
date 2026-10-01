@@ -17,6 +17,7 @@ import { type PeriodEntry, type WeekCategory, weekSheet } from './period-sheet.j
 import { goalBars } from './shares.js'
 import { median } from './stats.js'
 import { monthBounds, shiftMonth, weekBounds } from './week.js'
+import { byName } from './order.js'
 
 export interface HabitsInput {
   /** Today: its week is the grid's last, and never complete. */
@@ -283,7 +284,7 @@ export function personalBest(input: HabitsInput): PersonalBests {
   const [last, ...earlier] = read
   const bests = input.categories
     .filter((c) => c.kind === 'variable')
-    .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+    .sort((a, b) => a.sortOrder - b.sortOrder || byName(a.name, b.name))
     .flatMap((c): PersonalBestRow[] => {
       const now = actualOf(last!.actuals, c.id)
       // Newest first, so a strict "lower" keeps the latest of equal months.

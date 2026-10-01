@@ -42,6 +42,7 @@ import { type Cents, type IsoDate, ZERO_CENTS, addMonths, cents, daysBetween, su
 import type { PayFrequency } from './pay-period.js'
 import type { PeriodCategory, PeriodEntry } from './period-sheet.js'
 import { type PlanHistoryRow, resolvePlans } from './plans.js'
+import { byName } from './order.js'
 import { type CategoryKind, monthBounds } from './week.js'
 
 export interface CalendarPaySchedule {
@@ -119,7 +120,7 @@ export function billCalendar(input: BillCalendarInput): BillCalendar {
   // The workbook's stack within a day (H9): Bills, then Debts, then Subscriptions,
   // each in Setup's order; paydays in Income's. A real charge sits in its
   // bill's place, where the workbook puts logged payments after every plan (F20).
-  const inOrder = [...input.categories].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+  const inOrder = [...input.categories].sort((a, b) => a.sortOrder - b.sortOrder || byName(a.name, b.name))
   const owed = inOrder
     .flatMap((c) => (isOwed(c.kind) ? [{ ...c, kind: c.kind }] : []))
     .sort((a, b) => LIST_ORDER[a.kind] - LIST_ORDER[b.kind])

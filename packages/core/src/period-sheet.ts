@@ -90,6 +90,7 @@ import { type BudgetHistoryRow, resolveBudgets } from './budgets.js'
 import { type PaySchedule, PAYDAYS_A_YEAR, payPeriod, payShare } from './pay-period.js'
 import { type PlanHistoryRow, resolvePlans } from './plans.js'
 import { shareOf } from './shares.js'
+import { byName } from './order.js'
 import { type CategoryKind, monthBounds, shiftMonth, weekBounds } from './week.js'
 
 export interface PeriodCategory {
@@ -330,7 +331,7 @@ export function periodSheet(input: PeriodSheetInput): PeriodSheet {
   const block = (kind: CategoryKind): PeriodBlock => {
     const unshared = input.categories
       .filter((c) => c.kind === kind)
-      .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+      .sort((a, b) => a.sortOrder - b.sortOrder || byName(a.name, b.name))
       .map((c): Omit<PeriodRow, 'shareBp'> => {
         const real = byCategory.get(c.id)
         const budget = budgets.get(c.id)

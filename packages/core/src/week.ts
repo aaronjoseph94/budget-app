@@ -36,6 +36,7 @@ import {
   daysBetween,
   sumCents,
 } from '@budget/money-primitives'
+import { byName } from './order.js'
 
 export interface LedgerEntry {
   readonly postedOn: IsoDate
@@ -209,7 +210,7 @@ export function weeklySummary(input: WeeklySummaryInput): WeeklySummary {
         over: budget !== null && spent > budget,
       }
     })
-  categories.sort((a, b) => b.spentCents - a.spentCents || a.name.localeCompare(b.name))
+  categories.sort((a, b) => b.spentCents - a.spentCents || byName(a.name, b.name))
 
   // Only rows with a budget count against the budget. Collected with the
   // null case as its own branch: a missing budget is not a zero one.
