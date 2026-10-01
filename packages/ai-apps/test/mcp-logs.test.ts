@@ -111,7 +111,7 @@ const TOOLS: [string, Record<string, unknown>][] = [
   ['get_debts', { debt: `Car ${SENTINEL}` }],
   ['get_forecast', { what_if_monthly_saving: '50' }],
   ['get_savings_goals', {}],
-  ['search_transactions', { text: SENTINEL }],
+  ['search_transactions', { text: SENTINEL, categories: [`Groceries ${SENTINEL}`] }],
   ['list_review_queue', {}],
 ]
 
