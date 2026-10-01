@@ -161,6 +161,18 @@ describe('the consent page: an app allowed before', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Not sent back' })).toBeTruthy()
     expect([shut.go.mock.calls, elsewhere.go.mock.calls]).toEqual([[], []])
   })
+
+  // Connect a new AI app shows only while they are on, so the words say to turn them on first.
+  it.each([
+    ['AI apps off', { ...ON, enabled: false }],
+    ['no AI apps settings saved', null],
+  ])('goes nowhere with %s, and says to turn them on', async (_, access) => {
+    const { go } = await open({ request: before, access })
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'AI apps are switched off' })).toBeTruthy()
+    expect(screen.getByText(/turn on Let AI apps connect, press Connect a new AI app/)).toBeTruthy()
+    expect(go).not.toHaveBeenCalled()
+  })
 })
 
 // main.tsx draws the page in place of the app here. With a trailing slash

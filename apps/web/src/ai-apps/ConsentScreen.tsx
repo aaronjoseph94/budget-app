@@ -49,6 +49,7 @@ const SAID = {
   expired: { kind: 'said', title: 'This request has expired', words: 'Go back to Claude or ChatGPT and press Connect again.' },
   unreachable: { kind: 'said', title: 'Couldn’t reach Supabase', words: 'Check your connection, then reload this page.' },
   not_started: { kind: 'said', title: 'Start from the budget app', words: NOT_STARTED },
+  switched_off: { kind: 'said', title: 'AI apps are switched off', words: SWITCHED_OFF },
   bad_reply: { kind: 'said', title: 'Not sent back', words: 'Supabase answered with an address that is not Claude’s or ChatGPT’s, so this page went nowhere. Go back to Claude or ChatGPT and press Connect again.' },
   refused: { kind: 'said', title: 'Refused', words: 'You can close this tab.' },
 } as const satisfies Record<string, Seen>
@@ -108,7 +109,7 @@ function Decide({ supabase, userId, go }: { supabase: SupabaseClient; userId: st
         setSeen(SAID.bad_reply)
       } else if (!opened(access, Date.now())) {
         // Allowed before, so Supabase has already issued a code: followed only on Allow's terms.
-        setSeen(SAID.not_started)
+        setSeen(access?.enabled === true ? SAID.not_started : SAID.switched_off)
       } else go(asked.data.redirect_url)
     })
     return () => void (live = false)
@@ -128,7 +129,8 @@ function Decide({ supabase, userId, go }: { supabase: SupabaseClient; userId: st
   const answer = async (approve: boolean) => {
     const at = Date.now()
     setNow(at)
-    if (approve && !opened(access, at)) return
+    // All three again at the click, the window by the clock now.
+    if (approve && !(callback.allowed && opened(access, at))) return
     setBusy(true)
     const reply = approve
       ? await supabase.auth.oauth.approveAuthorization(id, { skipBrowserRedirect: true })
