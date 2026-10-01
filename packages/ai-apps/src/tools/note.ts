@@ -25,7 +25,7 @@ export const DESCRIPTION =
   'or a date with slashes, are never guessed. Returns add_expense’s result, or as_of, status needs_more, ' +
   'missing[amount | what | date], read_so_far{date, what, amount, flow} and message.'
 
-/** The most words an entry keeps, as add_expense's `what` and 0020 hold them. */
+/** The longest `what` an entry keeps, in characters, as add_expense's schema and 0020 hold it. */
 const WORDS_LIMIT = 120
 
 const NEEDS_MORE =

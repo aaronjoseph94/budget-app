@@ -3,11 +3,11 @@ import { SENTENCES } from '../src/rpc.js'
 import { callTool, reply, type Rpc } from './fake-database.js'
 
 /**
- * add_expense against a fake database (PLAN §2.13, mcp-add). The server
- * reads the owner's today and card account, hashes the words exactly as
- * given, and asks ai_app_add_candidate for one pending Review row; SQL
- * checks the hash again. The account, day, amount and words are 0020's
- * schema test's, so the hash must be the literal it checks SQL against.
+ * add_expense and add_note against a fake database (PLAN §2.13, mcp-add).
+ * The server reads the owner's today and card account, hashes the words
+ * exactly as given, and asks ai_app_add_candidate for one pending Review
+ * row; SQL checks the hash again. The account, day, amount and words are
+ * 0020's schema test's, so the hash must be the literal it checks SQL against.
  */
 const $ = (cents: number, display: string) => ({ cents, display })
 const ACCOUNT = 'aaaaaaaa-0000-4000-8000-000000000001'
@@ -55,6 +55,12 @@ describe('add_expense', () => {
   it('makes a second identical purchase that day its own row, and trims the words before hashing', async () => {
     const { rpcCalls } = await add({ ...LUNCH, what: '  Lunch at Subway ', same_again: 2 })
     expect(body(rpcCalls[1])).toMatchObject({ p_words: 'Lunch at Subway', p_occurrence: 2, p_dedupe_hash: LUNCH_2 })
+  })
+
+  it('stores the words as given, and hands them back cleaned as list_review_queue shows them', async () => {
+    const { result, rpcCalls } = await add({ ...LUNCH, what: 'Lunch​ at Subway 1234567' })
+    expect(body(rpcCalls[1])).toMatchObject({ p_words: 'Lunch​ at Subway 1234567' })
+    expect(result.structuredContent).toMatchObject({ entry: { what: 'Lunch at Subway *******' } })
   })
 
   it('takes money received as positive, today by default, and a category by the name list_categories gives', async () => {
@@ -154,6 +160,7 @@ describe('add_note', () => {
     ['two amounts and a slashed date', 'coffee 4 or 5 on 9/28', ['amount', 'date'], { date: null, what: 'coffee 4 or 5', amount: null, flow: 'spent' }],
     ['a day after today', 'coffee 4.50 2026-10-01', ['date'], { date: null, what: 'coffee', amount: $(-450, '-$4.50'), flow: 'spent' }],
     ['words past 120 characters', `${'x'.repeat(121)} 4.50`, ['what'], { date: '2026-09-30', what: null, amount: $(-450, '-$4.50'), flow: 'spent' }],
+    ['words read so far, cleaned', 'coffee​ 4 or 5', ['amount'], { date: '2026-09-30', what: 'coffee 4 or 5', amount: null, flow: 'spent' }],
   ])('adds nothing for %s, and says what is missing', async (_, text, missing, read_so_far) => {
     const { result, rpcCalls } = await note({ text })
     expect(rpcCalls).toHaveLength(1)
