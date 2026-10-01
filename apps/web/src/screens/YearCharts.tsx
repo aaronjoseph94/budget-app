@@ -138,7 +138,7 @@ const TOTALS: readonly [keyof YearGroups, string, string][] = [
 /**
  * Annual's chart row (row 23): income and expenses by month (chart40), and
  * each list's Goal against its Actual over the Year (chart42). Annual's pie
- * (chart41) joins them on a desktop; a phone already has Home's above.
+ * (chart41) is the glance row's pie, drawn once (V12).
  */
 export function AnnualCharts({ sheet, wide, className }: { sheet: YearSheet; wide: boolean; className?: string }) {
   const id = useChartId()
@@ -189,17 +189,16 @@ export function AnnualCharts({ sheet, wide, className }: { sheet: YearSheet; wid
       aria-label="Year charts"
       className={cn('grid min-w-0 gap-6 rounded-xl border bg-card p-4 md:px-6 md:py-[1.375rem]', wide ? 'grid-cols-4' : 'grid-cols-1', className)}
     >
+      {/* Two across on a desktop. Annual's own pie (chart41) is left out:
+        the glance row above already draws the Year's totals as a pie, and
+        the page showed it twice (V12). Each chart's words are 13 px
+        whatever its width (SvgChart); the cap keeps its bars from
+        stretching across the card. */}
       <Chart title="Income and expenses by month" className={cn(wide && 'col-span-2')}>
-        {/* Text scales with a chart, so it stops at about a phone's width. */}
         <SvgChart svg={drawn.columns} className="max-w-md" />
       </Chart>
-      {wide ? (
-        <Chart title="Annual totals">
-          <YearPie sheet={sheet} palette="annual" />
-        </Chart>
-      ) : null}
-      <Chart title="Against goals and budgets">
-        <SvgChart svg={drawn.totals} className={cn(!wide && 'max-w-sm')} />
+      <Chart title="Against goals and budgets" className={cn(wide && 'col-span-2')}>
+        <SvgChart svg={drawn.totals} className="max-w-md" />
       </Chart>
     </section>
   )

@@ -288,11 +288,13 @@ describe('YearScreen', () => {
     expect(screen.queryByRole('group', { name: 'Table' })).toBeNull()
     expect(screen.getAllByText('Left over')).toHaveLength(1)
     expect((await rowsOf('Bills by month'))[8]).toEqual(['Sep 2026', '', '1,600.00'])
-    // Annual's pie in the chart row, in Mockup A's colours as Home's is.
-    const annual = within(screen.getByRole('region', { name: 'Year charts' })).getByRole('img', {
-      name: 'Income, expenses and savings',
-    })
-    expect([...annual.querySelectorAll('path')].map((p) => p.getAttribute('fill'))).toEqual(['#10B981', '#9CA3AF', '#F59E0B'])
+    // The Year's totals pie once on the page, in the glance row, and not
+    // again in the chart row beside it (V12); the chart row's two charts
+    // take two columns each.
+    expect(screen.getAllByRole('img', { name: 'Income, expenses and savings' })).toHaveLength(1)
+    const charts = within(screen.getByRole('region', { name: 'Year charts' }))
+    expect(charts.queryByRole('img', { name: 'Income, expenses and savings' })).toBeNull()
+    expect(charts.getAllByRole('heading').map((h) => h.parentElement?.className)).toEqual(['space-y-2 col-span-2', 'space-y-2 col-span-2'])
   })
 
   it('keeps the chips from 1024px to 1279px, each table in its list\'s hue, with the charts beside it', async () => {
