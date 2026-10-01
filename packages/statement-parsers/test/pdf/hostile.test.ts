@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { readPdfText } from '../../src/pdf/read.js'
-import { MAX_INFLATED_BYTES } from '../../src/pdf/objects.js'
+import { MAX_DOCUMENT_INFLATED_BYTES, MAX_INFLATED_BYTES } from '../../src/pdf/objects.js'
 import { extractRuns } from '../../src/pdf/text.js'
 import { buildPdf, contentFor, deflate } from './make-pdf.js'
 
@@ -66,6 +66,26 @@ describe('a stream that inflates far past any statement (security-b-03)', () => 
     expect(out.ok && out.document.pages[199]?.map((r) => r.text)).toEqual(['A synthetic line'])
     expect(made).toBe(1)
   })
+})
+
+describe('a file whose streams together inflate past the budget (security-b-03)', () => {
+  // Each stream is just under its own limit; nine of them together are over
+  // the whole file's, and eight are not. About 33 MB is inflated either
+  // way, which takes over a second; the wider timeout is for a busy machine.
+  const each = MAX_INFLATED_BYTES - 64 * 1024
+  const stream = LINE + ' '.repeat(each - LINE.length)
+
+  it('reads eight streams under the budget', async () => {
+    expect(8 * each).toBeLessThanOrEqual(MAX_DOCUMENT_INFLATED_BYTES)
+    const out = await readPdfText(await buildPdf(Array.from({ length: 8 }, () => stream)))
+    expect(out.ok && out.document.pages.length).toBe(8)
+  }, 20_000)
+
+  it('refuses nine as too large', async () => {
+    expect(9 * each).toBeGreaterThan(MAX_DOCUMENT_INFLATED_BYTES)
+    const out = await readPdfText(await buildPdf(Array.from({ length: 9 }, () => stream)))
+    expect(out).toEqual({ ok: false, failure: 'too_large' })
+  }, 20_000)
 })
 
 describe('runs that made the patterns backtrack (security-b-04)', () => {
