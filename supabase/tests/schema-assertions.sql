@@ -253,6 +253,39 @@ begin
   raise notice 'every public table has an owner policy';
 end $$;
 
+-- An owner policy alone does not isolate: permissive policies are OR'd, so a
+-- second `using (true)` beside it opens the table to every account and the
+-- check above still passes. So the owner policy must be the ONLY permissive
+-- policy on a public table. Restrictive policies (0019, 0020) only narrow it,
+-- and are left alone (backend-a-04).
+do $$
+declare loose text;
+begin
+  select string_agg(format('%s.%s', tablename, policyname), ', ' order by tablename, policyname) into loose
+    from pg_policies
+   where schemaname = 'public' and permissive = 'PERMISSIVE'
+     and not (cmd = 'ALL' and qual = '(user_id = auth.uid())' and with_check = '(user_id = auth.uid())');
+  if loose is not null then
+    raise exception 'permissive policies other than the owner''s: %', loose;
+  end if;
+  raise notice 'the owner policy is the only permissive policy on every public table';
+end $$;
+
+-- And no SECURITY DEFINER function in public is callable by the anonymous
+-- role, found from the catalog rather than kept as a list by hand (N12).
+do $$
+declare open_ text;
+begin
+  select string_agg(oid::regprocedure::text, ', ') into open_
+    from pg_proc
+   where pronamespace = 'public'::regnamespace and prosecdef
+     and has_function_privilege('anon', oid, 'execute');
+  if open_ is not null then
+    raise exception 'SECURITY DEFINER functions the anonymous role can call: %', open_;
+  end if;
+  raise notice 'the anonymous role can call no SECURITY DEFINER function';
+end $$;
+
 -- The receipts bucket is private. A public bucket puts every receipt behind a
 -- guessable URL with no authentication at all.
 do $$
