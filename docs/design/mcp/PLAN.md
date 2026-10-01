@@ -143,9 +143,18 @@ left in each category; the forecast; your savings goals; your debts),
 search your approved charges, see what is waiting in Review, see your
 category names, and add a purchase or money received to Review.
 
-**It cannot:** approve, reject, change or delete anything; change budgets,
-categories, goals, settings or keys; see receipt photos; use the app's own
-AI keys; or do anything at all while AI apps are switched off.
+**It cannot:** approve, reject, change or delete anything in the budget;
+change budgets, categories, goals, settings or keys; see receipt photos;
+use the app's own AI keys; or reach the budget while AI apps are switched
+off.
+
+**Its sign-in** is like any sign-in to your account: until you press
+**Disconnect**, it could also be used on the Supabase account itself (its
+email or password, risk 2), and the switch does not end it. Only allow
+apps you trust. *Corrected 2026-10-01 (security review mcp-2-03):* this
+section, the consent page, Settings and Help said "cannot change
+anything" and "nothing at all while switched off", which is untrue of the
+credential the owner hands over.
 
 **Limits:** 300 look-ups (one question may take a few) and 30 additions
 a day, across all AI apps together. They reset at midnight your time.

@@ -489,7 +489,8 @@ export const ARTICLES: readonly Article[] = [
     related: ['connect-claude', 'connect-chatgpt', 'ai-sees', 'review', 'updates'],
     terms: [
       { term: 'It can', meaning: 'read your figures (a month, week, pay period or year, what is left in each category, the forecast, your savings goals and your debts), search your approved charges, see what waits in Review and your category names, and add a purchase or money received to Review.' },
-      { term: 'It cannot', meaning: 'approve or change anything; change a budget, category, goal or setting; see a receipt photo; use the AI keys you saved in the app; or do anything while Let AI apps connect is off.' },
+      { term: 'It cannot', meaning: 'approve or change anything in your budget; change a budget, category, goal or setting; see a receipt photo; use the AI keys you saved in the app; or reach your budget while Let AI apps connect is off.' },
+      { term: 'Its sign-in', meaning: 'like any sign-in, it could also be used on your Supabase account itself, such as its email or password, until you press **Disconnect**; turning off Let AI apps connect does not end it. Only allow an app you trust.' },
       { term: 'Limits', meaning: '300 look-ups and 30 additions a day, across all AI apps together; one question in a chat may use a few look-ups. They start again at midnight, your time.' },
       { term: 'Who sees it', meaning: 'what the app tells your AI app goes to the company that runs it, Anthropic for Claude, OpenAI for ChatGPT, and stays in your chat history there: figures, the names of categories, shops, goals and debts, and dates. Signing in tells it your email address.' },
       { term: 'Never sent', meaning: 'your password, the AI keys you saved in the app, or a receipt photo.' },

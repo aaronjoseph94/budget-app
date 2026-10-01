@@ -250,7 +250,7 @@ before", below), because Supabase finds the app's connect page from it.
    then **chatgpt.com/plugins → +**, name **Budget**, paste the address,
    **OAuth** (dynamic registration if asked), **Create**, and **Allow**.
 
-Then work through §4's first-connection checks, 15 to 23, in order.
+Then work through §4's first-connection checks, 15 to 24, in order.
 
 **Still open from before, if not done yet:**
 - **Cloudflare Pages** (replaces Netlify). **Workers & Pages → Create →
@@ -388,11 +388,17 @@ what to do, and reporting the words on the screen is enough.
     apps** still says "Could not check" after you did them, look at the
     setting in Supabase by eye and report it; nothing else depends on it.
 
-Not yours to check alone: whether a connected AI app's sign-in could be
-used to change your password (K5, MCP plan risk 2). The security review
-tests it on the live project with you before you rely on AI apps day to
-day; until then, connect only from your own computer, and **Disconnect**
-any app you stop using.
+24. **What an AI app's sign-in can do to your account** (K5, MCP plan
+    risk 2, security review mcp-2-03). Not yours to check alone: with the
+    next agent, on the live project, send an AI app's token to Supabase's
+    `PUT /auth/v1/user` asking to change the password, the email and the
+    profile data, with and without a second sign-in factor (MFA), with
+    **Secure password change** on. Record what Supabase allowed in ADR
+    0012. If a password change goes through, turn on a second factor and
+    test again, or adopt the Custom Access Token hook (PLAN risk 3). The
+    consent page, Settings and Help already say the sign-in reaches the
+    account until **Disconnect**. Until this is done, connect only from
+    your own computer, and **Disconnect** any app you stop using.
 
 ## 5. Questions for the owner
 

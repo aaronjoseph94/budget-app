@@ -161,8 +161,9 @@ function Decide({ supabase, userId, go }: { supabase: SupabaseClient; userId: st
             </p>
           ) : null}
           <p>
-            If you allow it, it can read your budget figures, search your charges, and add items to Review. It cannot approve, change or
-            delete anything.
+            If you allow it, it can read your budget figures, search your charges, and add items to Review. In your budget it cannot
+            approve, change or delete anything. Like any sign-in, it could also be used on your Supabase account itself, such as its email
+            or password, until you disconnect it, so only allow an app you trust.
           </p>
           <p>Your budget details go to the company that runs this AI app: Anthropic for Claude, OpenAI for ChatGPT.</p>
           <p className="font-semibold">

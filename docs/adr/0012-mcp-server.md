@@ -312,3 +312,11 @@ below was made under those words and is recorded with them.
   auth.sessions;` in the SQL Editor, and only then the OAuth Server. The
   SQL line is used rather than a dashboard "Sign out user" action, which
   could not be confirmed from here.
+- **mcp-2-03: the owner is told what the credential can do.** The
+  consent page, Settings and Help said an AI app "cannot change
+  anything" and could do nothing while switched off; its token reaches
+  Supabase's Auth API as the owner whatever the switch says. They now
+  say: in the budget it cannot approve, change or delete anything; like
+  any sign-in it could be used on the account itself until Disconnect.
+  K5 (what `PUT /auth/v1/user` allows) is HANDOFF §4 check 24, to be
+  recorded here when run.

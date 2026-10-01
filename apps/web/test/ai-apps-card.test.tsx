@@ -34,7 +34,8 @@ describe('Settings → AI apps: the switches', () => {
     renderScreen(<AiAppsCard />, fake)
 
     expect((await connect()).checked).toBe(false)
-    expect(screen.getByText('Off: no AI app can read your figures or add anything.')).toBeTruthy()
+    // Security review mcp-2-03: the switch closes the budget, not an app's sign-in.
+    expect(screen.getByText('Off: no AI app can reach your budget. Only Disconnect, below, ends an app’s sign-in.')).toBeTruthy()
     expect(screen.queryByRole('switch', { name: 'Let them add to Review' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Connect a new AI app' })).toBeNull()
     expect(fake.tables.ai_app_access).toEqual([])
@@ -48,6 +49,7 @@ describe('Settings → AI apps: the switches', () => {
     fireEvent.click(await connect())
     await waitFor(() => expect(fake.tables.ai_app_access).toMatchObject([{ user_id: 'u1', enabled: true, time_zone: ZONE }]))
     const add = await screen.findByRole<HTMLInputElement>('switch', { name: 'Let them add to Review' })
+    expect(screen.getByText('On: an AI app you connect can read your figures and search your charges. In your budget it cannot approve, change or delete anything.')).toBeTruthy()
     expect(add.checked).toBe(true)
     expect(screen.getByText(ADDRESS)).toBeTruthy()
 

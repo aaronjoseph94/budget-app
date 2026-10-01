@@ -161,6 +161,14 @@ describe('Help articles', () => {
     expect(stuck).not.toMatch(/stops every AI app at once/)
   })
 
+  // Security review mcp-2-03: what the switch does not do, and what a sign-in can.
+  it('never says an AI app can do nothing while switched off, and says its sign-in reaches the account', () => {
+    const terms = articleFor('ai-apps')?.terms ?? []
+    const meaning = (term: string) => terms.find((t) => t.term === term)?.meaning ?? ''
+    expect(meaning('It cannot')).not.toMatch(/do anything while/)
+    expect(meaning('Its sign-in')).toMatch(/your Supabase account itself.*until you press \*\*Disconnect\*\*/)
+  })
+
   it('finds no article for a topic not written yet', () => {
     expect(articleFor('start')?.title).toBe('Start here')
     expect(articleFor('nowhere')).toBeUndefined()
