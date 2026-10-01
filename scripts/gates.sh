@@ -98,6 +98,19 @@ no_brand() {
 }
 gate brand   git       no_brand
 
+# Statements, exports and receipt photos never enter the repository
+# (CLAUDE.md). .gitignore keeps them out of `git add -A`; this also catches
+# one force-added or not yet staged. Only reduced synthetic fixtures under
+# packages/*/test/fixtures may be such a file (architecture-c2-05).
+no_source_data() {
+  local files
+  files=$(git ls-files --cached --others --exclude-standard) || { echo "git ls-files failed"; return 2; }
+  ! printf '%s\n' "$files" \
+    | grep -iE '\.(pdf|heic|heif|jpe?g|webp|ofx|qfx|qif|xlsx?|numbers|ods|csv)$' \
+    | grep -vE '^packages/[^/]+/test/fixtures/'
+}
+gate data    git       no_source_data
+
 if [ "$LEVEL" = "full" ]; then
   # The history scan still earns its place: it catches a secret committed
   # earlier, which a working-tree scan cannot see once the file is deleted.
