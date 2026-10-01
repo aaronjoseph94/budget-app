@@ -76,6 +76,12 @@ describe('get_period', () => {
     expect(week.categories).toEqual([{ name: 'Rent', list: 'bill', budget: null, actual: $(0, '$0.00'), left: null, standing: 'none' }])
   })
 
+  it('counts this week’s days left from today, even when asked by a later day in it', async () => {
+    const week = (await period({ period: 'week', date: '2026-10-02', compare: false })).result.structuredContent as Record<string, unknown>
+    // Wednesday 30 September to Sunday 4 October, as the Week shows it today.
+    expect(week.period).toEqual({ kind: 'week', from: '2026-09-28', to: '2026-10-04', days_left: 5 })
+  })
+
   // Paid on the 15th monthly by Pay, and weekly from Saturday 26 September by Side.
   const PAID = {
     ...READ,
@@ -196,6 +202,20 @@ describe('get_period', () => {
     ])
   })
 
+  it('compares only the categories asked for', async () => {
+    const since = { ...READ, records: { ...READ.records, statement_start: '2026-07-01' } }
+    const out = (await period({ date: '2026-09-30', categories: ['Rent'] }, since)).result.structuredContent as Record<string, unknown>
+    const names = (rows: unknown) => (rows as { name: string }[]).map((r) => r.name)
+    expect([names(out.categories), names((out.compared as Record<string, unknown>).categories)]).toEqual([['Rent'], ['Rent']])
+  })
+
+  it('gives the year’s top spending under clean names', async () => {
+    // A direction override hidden in a name is taken out, as on every other name.
+    const hostile = { ...READ, categories: READ.categories.map((c) => (c.id === 'rent' ? { ...c, name: 'Rent‮' } : c)) }
+    const out = (await period({ period: 'year', date: '2026-09-30', compare: false }, hostile)).result.structuredContent as Record<string, unknown>
+    expect((out.top_spending as { name: string }[]).map((t) => t.name)).toEqual(['Rent', 'Groceries'])
+  })
+
   it.each([
     ['a category it does not have', { categories: ['Nope'] }, READ, SENTENCES.unknown_category],
     ['rows it cannot read', {}, { ...READ, txns: 'SECRET' }, SENTENCES.records_unreadable],
@@ -203,6 +223,7 @@ describe('get_period', () => {
     ['a refusal', {}, { refused: 'limit_reached' }, SENTENCES.limit_reached],
     ['a pay period with no paydays set', { period: 'pay_period' }, READ, SENTENCES.no_pay_schedule],
     ['a pay period for income it does not have', { period: 'pay_period', income: 'Groceries' }, PAID, SENTENCES.unknown_category],
+    ['a pay period for income with no paydays set', { period: 'pay_period', income: 'Pay' }, READ, SENTENCES.no_pay_schedule],
   ])('answers %s with one sentence', async (_, args, read, sentence) => {
     const { result } = await period(args, read)
     expect(result).toEqual({ isError: true, content: [{ type: 'text', text: sentence }] })

@@ -1608,8 +1608,10 @@ created it in M9, and imported `packages/ai-apps` from
 - **As built (2026-09-30):** three commits: the pay period, the year,
   then comparisons (`src/tools/compare.ts`). A pay period follows `income`
   (a Name), else the first income source with paydays in Setup's order,
-  and says `income` in `period`; with none, the new `no_pay_schedule`
-  sentence says where paydays are set. A year cannot give §2.4's
+  and says `income` in `period`; with none, or when the income named has
+  no paydays, the new `no_pay_schedule` sentence says where paydays are
+  set (review, 2026-10-01: a named income without paydays had been told
+  there was no such category). A year cannot give §2.4's
   per-category rows, so it gives `categories: []`, each month's income,
   spent and saved (`months`), yearSheet's top three (`top_spending`) and
   F12's `left_over`, with `left_to_spend` null; each list's budget is the

@@ -1,6 +1,7 @@
 /**
- * Tool 2, `get_period` (PLAN §2.4): how a month or a week is going, as the
- * Month and the Week show it. Every figure is core's, from the same rows
+ * Tool 2, `get_period` (PLAN §2.4): how a month, week, pay period or year
+ * is going, as the Month, the Week, the Paycheck and the Year show it, and
+ * beside the period before it. Every figure is core's, from the same rows
  * renamed as the screens rename them; this only picks the period and
  * hands the figures out with the app's own display words.
  */
@@ -171,7 +172,11 @@ function week({ read, day, today, input }: Asked): Shown {
 function pay_period({ read, day, input }: Asked): Shown | RefusalCode {
   const sources = paySources(read)
   const source = input.income === undefined ? sources[0] : sources.find((s) => cleanName(s.name) === input.income)
-  if (source === undefined) return input.income === undefined ? 'no_pay_schedule' : 'unknown_category'
+  if (source === undefined) {
+    // An income source that is there but has no paydays set is told where to set them.
+    const income = categoriesFrom(read['categories']).some((c) => c.kind === 'income' && cleanName(c.name) === input.income)
+    return input.income === undefined || income ? 'no_pay_schedule' : 'unknown_category'
+  }
   const { start } = payPeriod({ schedule: source.schedule, asOf: day })
   const sheet = paycheckSheet(paycheckSheetInput(read, start, source.schedule))
   return ofSheet(sheet, { period: 'pay', schedule: source.schedule, day: start }, input, null, null, cleanName(source.name))
