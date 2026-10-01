@@ -49,14 +49,23 @@ afterEach(() => {
 })
 
 describe('the consent page: Allow', () => {
-  it('names the app and where it sends the owner', async () => {
-    await open()
+  it('names the app and where it sends the owner, and Allow sends them back to that callback alone', async () => {
+    const { fake, go } = await open()
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Connect an AI app' })).toBeTruthy()
     expect(screen.getByText(/wants to connect to your budget\./).textContent).toBe('“Claude” wants to connect to your budget.')
     expect(screen.getByText('claude.ai').tagName).toBe('STRONG')
     expect(screen.getByText(/Anthropic for Claude, OpenAI for ChatGPT/)).toBeTruthy()
     await expectNoAxeViolations()
+
+    const approve = vi.spyOn(fake.client.auth.oauth, 'approveAuthorization')
+    fireEvent.click(allow()!)
+    await waitFor(() => expect(go).toHaveBeenCalledWith(`${CLAUDE}?code=fake-code&state=fake-state`))
+    // The library itself would follow its answer; the page checks it first.
+    expect(approve).toHaveBeenCalledWith('auth-1', { skipBrowserRedirect: true })
+    expect(fake.oauth.consents).toEqual([{ id: 'auth-1', action: 'approve' }])
+    // Allow never turns anything on, or moves the window.
+    expect(fake.tables.ai_app_access).toEqual([ON])
   })
 
   it.each([
@@ -70,12 +79,68 @@ describe('the consent page: Allow', () => {
 
     expect(await screen.findByText(why)).toBeTruthy()
     expect(allow()).toBeNull()
+    expect(screen.getByRole('button', { name: 'Deny' })).toBeTruthy()
+  })
+
+  it('takes Allow back when the 15 minutes run out while the page is open', async () => {
+    const { fake, go } = await open()
+    await screen.findByRole('button', { name: 'Allow' })
+    vi.spyOn(Date, 'now').mockReturnValue(NOW + 11 * 60_000)
+
+    fireEvent.click(allow()!)
+    expect(await screen.findByText(/wasn’t started from the budget app\./)).toBeTruthy()
+    expect(allow()).toBeNull()
+    expect([fake.oauth.consents, go.mock.calls]).toEqual([[], []])
+  })
+
+  it.each([
+    ['another page on the same host', `${CLAUDE}/x?code=fake-code`],
+    ['another site', 'https://evil.example/?code=fake-code'],
+    ['the callback with a fragment', `${CLAUDE}?code=fake-code#more`],
+    ['the callback with no query', CLAUDE],
+  ])('goes nowhere when Supabase answers Allow with %s', async (_, address) => {
+    const { fake, go } = await open()
+    fake.oauth.answer = () => address
+
+    fireEvent.click((await screen.findByRole('button', { name: 'Allow' })))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Not sent back' })).toBeTruthy()
+    expect(go).not.toHaveBeenCalled()
+  })
+
+  it('goes nowhere when Supabase answers with another allowed callback than the one named', async () => {
+    const { fake, go } = await open({ request: asking('https://chatgpt.com/connector/oauth/abc', 'ChatGPT') })
+    fake.oauth.answer = () => 'https://chatgpt.com/connector/oauth/xyz?code=fake-code'
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Allow' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Not sent back' })).toBeTruthy()
+    expect(go).not.toHaveBeenCalled()
   })
 
   it('warns that a program on this computer will get the sign-in', async () => {
     await open({ request: asking('http://127.0.0.1:33418/callback') })
     expect(await screen.findByText(/Any program on it could be listening/)).toBeTruthy()
     expect(screen.getByText('127.0.0.1').tagName).toBe('STRONG')
+    expect(allow()).toBeTruthy()
+  })
+})
+
+describe('the consent page: Deny', () => {
+  it('refuses an unknown callback and goes nowhere, not even to say no', async () => {
+    const { fake, go } = await open({ request: asking('https://evil.example/cb') })
+    const deny = vi.spyOn(fake.client.auth.oauth, 'denyAuthorization')
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Deny' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Refused' })).toBeTruthy()
+    expect(deny).toHaveBeenCalledWith('auth-1', { skipBrowserRedirect: true })
+    expect(fake.oauth.consents).toEqual([{ id: 'auth-1', action: 'deny' }])
+    expect(go).not.toHaveBeenCalled()
+  })
+
+  it('tells Claude the owner said no', async () => {
+    const { go } = await open({ access: { ...ON, enabled: false } })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Deny' }))
+    await waitFor(() => expect(go).toHaveBeenCalledWith(`${CLAUDE}?error=access_denied&state=fake-state`))
   })
 })
 

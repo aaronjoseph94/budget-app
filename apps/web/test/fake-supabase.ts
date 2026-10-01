@@ -157,12 +157,16 @@ export interface FakeSupabase {
    * id Disconnect revokes is kept in `revoked`. `requests` are the sign-ins
    * waiting on the consent page, by id: what it shows, or a reply with only
    * a `redirect_url` (an app allowed before); an id not there is answered
-   * 404, as an expired one. All need `signIn()`.
+   * 404, as an expired one. Each Allow or Deny is kept in `consents` and
+   * answered with `answer`'s address, by default the request's callback
+   * with a code or `access_denied`. All need `signIn()`.
    */
   readonly oauth: {
     grants: OAuthGrant[] | null
     readonly revoked: string[]
     readonly requests: Record<string, OAuthAuthorizationDetails | OAuthRedirect>
+    readonly consents: { readonly id: string; readonly action: string }[]
+    answer: ((id: string, action: string) => string) | null
   }
   /** The signed-in user as the auth server holds it, `user_metadata` included. */
   readonly user: { id: string; email: string; user_metadata: Record<string, unknown> }
@@ -258,7 +262,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     receiptCalls: [],
     mcpHealth: () => json({ ok: true, version: MCP_SERVER_VERSION, tools: 0 }),
   }
-  const oauth: FakeSupabase['oauth'] = { grants: null, revoked: [], requests: {} }
+  const oauth: FakeSupabase['oauth'] = { grants: null, revoked: [], requests: {}, consents: [], answer: null }
   let nextId = 1
 
   const json = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
@@ -388,11 +392,17 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       oauth.grants = oauth.grants.filter((g) => g.client.id !== revoked)
       return new Response(null, { status: 204 })
     }
-    const authorization = /^\/auth\/v1\/oauth\/authorizations\/([^/]+)$/.exec(url.pathname)
+    const authorization = /^\/auth\/v1\/oauth\/authorizations\/([^/]+)(\/consent)?$/.exec(url.pathname)
     if (authorization !== null) {
-      const request = oauth.requests[decodeURIComponent(authorization[1] ?? '')]
+      const id = decodeURIComponent(authorization[1] ?? '')
+      const request = oauth.requests[id]
       if (request === undefined) return json({ code: 404, error_code: 'not_found', msg: 'authorization not found' }, 404)
-      return json(request)
+      if (authorization[2] === undefined) return json(request)
+      const action = String((JSON.parse(String(init?.body)) as { action?: unknown }).action)
+      oauth.consents.push({ id, action })
+      const callback = 'redirect_uri' in request ? request.redirect_uri : request.redirect_url.split('?')[0]
+      const said = action === 'approve' ? 'code=fake-code' : 'error=access_denied'
+      return json({ redirect_url: oauth.answer?.(id, action) ?? `${callback}?${said}&state=fake-state` })
     }
     if (url.pathname === '/auth/v1/user') {
       // GET when a session is set, PUT for updateUser, which merges `data`

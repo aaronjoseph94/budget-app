@@ -3,6 +3,7 @@ import type { OAuthAuthorizationDetails } from '@supabase/supabase-js'
 import type { SupabaseClient } from '../supabase.js'
 import { SignIn, useSession } from '../auth.js'
 import { Card } from '../components/ui/card.js'
+import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 import { Loading } from '../components/ui/feedback.js'
 import { checkCallback, type Callback } from './hosts.js'
@@ -10,6 +11,23 @@ import { readAccess, shownName, type Access } from './access.js'
 
 /** Supabase's authorization ids are short URL-safe tokens; anything else is not one, and is never sent. */
 const AUTHORIZATION_ID = /^[A-Za-z0-9_-]{1,128}$/
+
+/**
+ * Whether Supabase's answer may send the browser on: to the callback the
+ * page named, exactly, then `?` and a query, and nothing else (no
+ * fragment, no user name), which the allowlist passes.
+ */
+function followable(redirectUrl: string, callback: string): boolean {
+  let url: URL
+  try {
+    url = new URL(redirectUrl)
+  } catch {
+    return false
+  }
+  const base = `${url.protocol}//${url.host}${url.pathname}`
+  if (url.href !== `${base}${url.search}` || url.search.length < 2 || !checkCallback(base).allowed) return false
+  return base === new URL(callback).href
+}
 
 /** AI apps on, and Connect a new AI app pressed within its 15 minutes, by this browser's clock. */
 const opened = (access: Access | null, now: number) =>
@@ -29,17 +47,20 @@ const SAID = {
   expired: { kind: 'said', title: 'This request has expired', words: 'Go back to Claude or ChatGPT and press Connect again.' },
   unreachable: { kind: 'said', title: 'Couldn’t reach Supabase', words: 'Check your connection, then reload this page.' },
   not_started: { kind: 'said', title: 'Start from the budget app', words: NOT_STARTED },
+  bad_reply: { kind: 'said', title: 'Not sent back', words: 'Supabase answered with an address that is not Claude’s or ChatGPT’s, so this page went nowhere. Go back to Claude or ChatGPT and press Connect again.' },
+  refused: { kind: 'said', title: 'Refused', words: 'You can close this tab.' },
 } as const satisfies Record<string, Seen>
 
 /**
  * Connect an AI app. Signed out, it shows the sign-in card, whose emailed
  * link brings the owner back here. Then it asks Supabase what is asking,
- * and says who and where to: Allow will be offered only when all three
- * hold: the callback is exactly one Claude or ChatGPT documents
- * (hosts.ts), AI apps are on, and Connect a new AI app was pressed less
- * than 15 minutes ago. So a link someone else started and sent the owner
- * finds no Allow. `go` is how the page leaves, handed in so a test can
- * see where.
+ * and offers Allow only when all three hold: the callback is exactly one
+ * Claude or ChatGPT documents (hosts.ts), AI apps are on, and Connect a
+ * new AI app was pressed less than 15 minutes ago. So a link someone else
+ * started and sent the owner finds no Allow. Allow never turns anything
+ * on. Deny follows Supabase's answer only back to an allowed callback,
+ * never to an unknown site. `go` is how the page leaves, handed in so a
+ * test can see where.
  */
 export function Consent({ supabase, go }: { supabase: SupabaseClient; go: (url: string) => void }) {
   const session = useSession(supabase)
@@ -50,7 +71,8 @@ export function Consent({ supabase, go }: { supabase: SupabaseClient; go: (url: 
 
 function Decide({ supabase, userId, go }: { supabase: SupabaseClient; userId: string; go: (url: string) => void }) {
   const [seen, setSeen] = useState<Seen>({ kind: 'reading' })
-  const [now] = useState(() => Date.now())
+  const [now, setNow] = useState(() => Date.now())
+  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     let live = true
@@ -79,8 +101,25 @@ function Decide({ supabase, userId, go }: { supabase: SupabaseClient; userId: st
       </Page>
     )
   }
-  const { details, callback, access } = seen
+  const { id, details, callback, access } = seen
   const allow = callback.allowed && opened(access, now)
+
+  const answer = async (approve: boolean) => {
+    const at = Date.now()
+    setNow(at)
+    if (approve && !opened(access, at)) return
+    setBusy(true)
+    const reply = approve
+      ? await supabase.auth.oauth.approveAuthorization(id, { skipBrowserRedirect: true })
+      : await supabase.auth.oauth.denyAuthorization(id, { skipBrowserRedirect: true })
+    // Never to an unknown callback, even with the owner's no: that would be an open redirect.
+    if (callback.allowed && reply.error === null && followable(reply.data.redirect_url, details.redirect_uri)) {
+      go(reply.data.redirect_url)
+      return
+    }
+    setBusy(false)
+    setSeen(!approve ? SAID.refused : reply.error === null ? SAID.bad_reply : SAID.expired)
+  }
 
   return (
     <Page title="Connect an AI app">
@@ -113,6 +152,16 @@ function Decide({ supabase, userId, go }: { supabase: SupabaseClient; userId: st
           is not Claude or ChatGPT, so the budget app refused it.
         </p>
       )}
+      <div className="flex flex-wrap gap-3 pt-2">
+        {allow ? (
+          <Button size="lg" disabled={busy} onClick={() => void answer(true)}>
+            Allow
+          </Button>
+        ) : null}
+        <Button size="lg" variant="outline" disabled={busy} onClick={() => void answer(false)}>
+          Deny
+        </Button>
+      </div>
     </Page>
   )
 }
