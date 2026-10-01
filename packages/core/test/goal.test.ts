@@ -36,6 +36,21 @@ describe('goalProgress', () => {
     expect(p.remainingCents).toBe(0)
   })
 
+  it('reads a fund taken under zero as 0%, as fundProgress does, and banks no units', () => {
+    // $1,000 typed in, $1,250 moved back out: the fund stands at -$250.00.
+    const p = goalProgress({ ...FLYING, targetCents: 400_000, savedCents: -25_000 })
+    expect(p.percentCompleteBasisPoints).toBe(0)
+    expect(Object.is(p.percentCompleteBasisPoints, -0)).toBe(false)
+    expect(p.unitsEarned).toBe(0)
+    expect(Object.is(goalProgress({ ...FLYING, targetCents: 20_000, savedCents: -1 }).percentCompleteBasisPoints, 0)).toBe(true)
+  })
+
+  it('rounds a share half-up to a basis point', () => {
+    // 1/3 = 3,333.33 bp -> 3,333; 1/20,000 = 0.5 bp -> 1.
+    expect(goalProgress({ name: 'x', targetCents: 3, savedCents: 1 }).percentCompleteBasisPoints).toBe(3333)
+    expect(goalProgress({ name: 'x', targetCents: 20_000, savedCents: 1 }).percentCompleteBasisPoints).toBe(1)
+  })
+
   it('rejects a non-positive target rather than dividing by zero', () => {
     expect(() => goalProgress({ ...FLYING, targetCents: 0 })).toThrow(RangeError)
   })

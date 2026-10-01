@@ -21,6 +21,7 @@ import {
   daysBetween,
   subCents,
 } from '@budget/money-primitives'
+import { shareOf } from './shares.js'
 
 export interface SavingsGoal {
   readonly name: string
@@ -49,9 +50,12 @@ export function goalProgress(goal: SavingsGoal): GoalProgress {
 
   return {
     remainingCents: remaining,
-    percentCompleteBasisPoints: Math.min(10_000, Math.round((saved * 10_000) / target)),
+    // The same rule as fundProgress, so the Sidebar, the Week and Savings
+    // print one figure for one fund: a fund withdrawals took under zero is
+    // 0%, never a negative share (architecture-a-01).
+    percentCompleteBasisPoints: saved <= 0 ? 0 : saved >= target ? 10_000 : shareOf(saved, target),
     unitsRemaining: unitCost && unitCost > 0 ? Math.floor(remaining / unitCost) : null,
-    unitsEarned: unitCost && unitCost > 0 ? Math.floor(saved / unitCost) : null,
+    unitsEarned: unitCost && unitCost > 0 ? (saved <= 0 ? 0 : Math.floor(saved / unitCost)) : null,
   }
 }
 
