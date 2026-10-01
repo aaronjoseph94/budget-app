@@ -108,14 +108,18 @@ describe('MonthScreen blocks', () => {
     for (const [name, hue] of Object.entries(hues)) {
       const region = screen.getByRole('region', { name })
       expect(region.querySelector('[aria-hidden="true"]')?.className).toContain(`bg-${hue}-tile`)
-      // A list with no rows has no table, so no head.
+      // A list with no rows, or every row folded (V9), has no table, so no head.
       const head = region.querySelector('thead')
       if (head !== null) expect(head.className).toContain(`bg-${hue}-header`)
     }
-    expect(document.querySelectorAll('thead').length).toBe(5)
+    expect(document.querySelectorAll('thead').length).toBe(4)
     const charts = screen.getByRole('region', { name: 'Charts' })
     expect(charts.className.split(' ')).toEqual(expect.arrayContaining(['xl:col-start-3', 'xl:row-start-1']))
     expect(charts.parentElement?.className).toContain('xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,17rem)]')
+    // One list across below 1024px: two across beside the tablet rail left
+    // each card 225px, its names on three lines (V8).
+    expect(charts.parentElement?.className.split(' ')).toEqual(expect.arrayContaining(['lg:grid-cols-2']))
+    expect(charts.parentElement?.className.split(' ')).not.toContain('md:grid-cols-2')
   })
 
   it('shows a return with its minus sign, and a category name as text, never markup', async () => {
@@ -143,6 +147,23 @@ describe('MonthScreen blocks', () => {
     // A list with nothing on it at all points to Setup instead.
     // A link: jsdom does not follow its hash, so the address it names is checked.
     expect(block('Debts').getByRole('link', { name: 'Add one in Setup' }).getAttribute('href')).toBe('#/setup')
+  })
+
+  it('says a list has nothing this month when every row is folded, with no table head over no rows (V9)', async () => {
+    renderScreen(<MonthScreen month="2026-09" />, seeded())
+    const subs = within(await screen.findByRole('region', { name: 'Subscriptions' }))
+    expect(subs.queryByRole('table')).toBeNull()
+    expect(subs.getByText('Nothing on this list this month.')).toBeTruthy()
+    fireEvent.click(subs.getByRole('button', { name: 'Show 1 empty' }))
+    expect(subs.getByRole('rowheader', { name: 'Music' })).toBeTruthy()
+    expect(subs.queryByText('Nothing on this list this month.')).toBeNull()
+  })
+
+  it('keeps a list card head to two lines on a phone (V20)', async () => {
+    renderScreen(<MonthScreen month="2026-09" />, seeded())
+    const variable = await screen.findByRole('region', { name: 'Variable expenses' })
+    expect(variable.querySelector('[aria-hidden="true"]')?.className.split(' ')).toEqual(expect.arrayContaining(['max-sm:size-10']))
+    expect(variable.querySelector('h2')?.className.split(' ')).toEqual(expect.arrayContaining(['max-sm:text-base']))
   })
 
   it("shows another month's rows only under that month's title", async () => {

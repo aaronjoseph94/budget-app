@@ -188,8 +188,8 @@ export function PaycheckPeriod({
             </section>
           </div>
           <ImportedThrough through={sheet.importedThrough} />
-          <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:gap-5">
-            <PeriodBlocks blocks={sheet.blocks} onOpen={setOpened} />
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2 xl:gap-5">
+            <PeriodBlocks blocks={sheet.blocks} period="this pay period" onOpen={setOpened} />
           </div>
           <TransfersNote cents={sheet.transfersCents} onOpen={() => setOpened(NOT_SPENDING)} />
           {here !== null && opened !== null ? (
