@@ -151,6 +151,9 @@ export function describeWriteFailure(error: WriteError | null | undefined): stri
 /** What Setup was doing when a write failed. */
 export type SetupAction = 'add' | 'rename' | 'move' | 'reorder' | 'remove'
 
+// The name domain (0001, 0025) refuses control and format characters and empty names.
+const NAME_REFUSED = 'That name has characters the app cannot store. Use letters, numbers and ordinary punctuation.'
+
 /**
  * Setup's own sentences for the refusals its writes can meet.
  *
@@ -161,9 +164,6 @@ export type SetupAction = 'add' | 'rename' | 'move' | 'reorder' | 'remove'
  * listed falls back to the import wording, which covers the connection and
  * sign-in failures that can happen anywhere.
  */
-// The name domain (0001, 0025) refuses control and format characters and empty names.
-const NAME_REFUSED = 'That name has characters the app cannot store. Use letters, numbers and ordinary punctuation.'
-
 const SETUP_FAILURES: Readonly<Record<SetupAction, Readonly<Record<string, string>>>> = {
   add: { '23514': NAME_REFUSED },
   rename: {

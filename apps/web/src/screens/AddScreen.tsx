@@ -646,15 +646,6 @@ const PHOTO_LINKS: Readonly<Record<ReceiptLink, { readonly href: string; readonl
   'ai-rests': { href: hashOf({ screen: 'help', param: 'ai-rests' }), words: 'Why?' },
 }
 
-/**
- * A receipt photo, read by an AI service that reads images (the AI
- * helper, or read-receipt before it is installed), checked by the user,
- * then sent to Review.
- *
- * What the model reads only fills in the form. The user sees every field and
- * can correct it, and the row still waits in Review for a category like any
- * other — model output never reaches the ledger unreviewed (CLAUDE.md).
- */
 /** A photo's bytes as SHA-256 hex; null when the file cannot be read, and the receipt is then told apart only by its fields. */
 async function photoDigest(file: File): Promise<string | null> {
   try {
@@ -665,6 +656,15 @@ async function photoDigest(file: File): Promise<string | null> {
   }
 }
 
+/**
+ * A receipt photo, read by an AI service that reads images (the AI
+ * helper, or read-receipt before it is installed), checked by the user,
+ * then sent to Review.
+ *
+ * What the model reads only fills in the form. The user sees every field and
+ * can correct it, and the row still waits in Review for a category like any
+ * other — model output never reaches the ledger unreviewed (CLAUDE.md).
+ */
 function PhotoEntry() {
   const { supabase, userId, accountId, refresh } = useAppData()
   const [state, setState] = useState<PhotoState>({ kind: 'none' })
