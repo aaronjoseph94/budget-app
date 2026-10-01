@@ -260,6 +260,17 @@ describe('Review asks the AI for categories', () => {
     expect(await screen.findByText(/Suggestions are off while Share shop names is off\./)).toBeTruthy()
     expect(runs(fake)).toEqual([])
   })
+
+  it('sends nothing when Share shop names could not be read, and says so (backend-b-02)', async () => {
+    const fake = fresh()
+    aiOn(fake)
+    fake.tables.ai_settings.push({ user_id: 'u1', share_shop_names: false })
+    fake.fail('GET ai_settings', '57014')
+    renderScreen(<ReviewScreen />, fake)
+    expect(await screen.findByText(/Your AI settings could not be read, so nothing was sent\. Try again\./)).toBeTruthy()
+    expect(runs(fake)).toEqual([])
+    expect(screen.getByRole('button', { name: /Suggest categories/ })).toBeTruthy()
+  })
 })
 
 describe('Review says why nothing was suggested, in its own words', () => {

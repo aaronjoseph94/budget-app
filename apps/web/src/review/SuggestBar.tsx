@@ -79,6 +79,8 @@ function said(status: SuggestStatus): ReactNode {
           </a>
         </>
       )
+    case 'settings_unreadable':
+      return 'Your AI settings could not be read, so nothing was sent. Try again.'
     case 'done': {
       const got =
         status.suggested === 0
