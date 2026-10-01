@@ -84,6 +84,25 @@ describe('LedgerScreen, removing a transaction', () => {
     expect(screen.getByText('LITWARE BOOKS')).toBeTruthy()
   })
 
+  it('keeps the other rows on screen while the month is read again after a removal (FE-5)', async () => {
+    const fake = seeded()
+    await open(fake)
+    let release: () => void = () => undefined
+    const held = new Promise<void>((done) => (release = done))
+    fake.server.hold = (target) => (target === 'transactions' ? held : null)
+
+    fireEvent.click(rowOf('CORNER MARKET').getByRole('button', { name: 'Remove this transaction' }))
+    fireEvent.click(rowOf('CORNER MARKET').getByRole('button', { name: 'Remove' }))
+    await waitFor(() => expect(fake.tables.transactions).toHaveLength(2))
+    await new Promise((r) => setTimeout(r, 20))
+
+    expect(screen.getByText('LITWARE BOOKS')).toBeTruthy()
+    expect(screen.queryByRole('status', { name: /Loading/ })).toBeNull()
+    fake.server.hold = null
+    release()
+    await waitFor(() => expect(screen.queryByText('CORNER MARKET')).toBeNull())
+  })
+
   it('says why when the removal is refused, and keeps the row', async () => {
     const fake = seeded()
     fake.fail('DELETE transactions', '42501')
@@ -112,7 +131,7 @@ describe('LedgerScreen, finding a transaction', () => {
 
   it('narrows the month to a merchant or a category typed in the search', async () => {
     await open(seeded())
-    const search = screen.getByPlaceholderText('Search merchant or category')
+    const search = screen.getByRole('searchbox', { name: "Search this month's transactions" })
 
     fireEvent.change(search, { target: { value: 'litware' } })
     expect(screen.queryByText('CORNER MARKET')).toBeNull()

@@ -18,7 +18,10 @@ import { HelpButton } from '../help/HelpButton.js'
 export function LedgerScreen() {
   const { supabase, categories, refresh, version } = useAppData()
   const [month, setMonth] = useState(() => shiftMonth(isoDate(todayIso()), 0))
-  const [rows, setRows] = useState<readonly LedgerRow[] | null>(null)
+  // The rows with the month they are for. A read again after a removal keeps
+  // the rows on screen, and the scroll with them, until it lands; only a new
+  // month shows "Loading…" (FE-5).
+  const [loaded, setLoaded] = useState<{ readonly month: string; readonly rows: readonly LedgerRow[] } | null>(null)
   const [query, setQuery] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [confirming, setConfirming] = useState<string | null>(null)
@@ -26,14 +29,14 @@ export function LedgerScreen() {
 
   useEffect(() => {
     let live = true
-    setRows(null)
     listTransactions(supabase, { from: bounds.start, to: bounds.end })
-      .then((r) => live && (setRows(r), setError(null)))
+      .then((r) => live && (setLoaded({ month, rows: r }), setError(null)))
       .catch((e: unknown) => live && setError(e instanceof Error ? e.message : 'Could not load the ledger.'))
     return () => {
       live = false
     }
-  }, [supabase, bounds.start, bounds.end, version])
+  }, [supabase, month, bounds.start, bounds.end, version])
+  const rows = loaded?.month === month ? loaded.rows : null
 
   const names = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories])
   // The field shows each key at once; the month's rows are filtered and
@@ -112,7 +115,13 @@ export function LedgerScreen() {
         </div>
       ) : null}
 
-      <Input placeholder="Search merchant or category" value={query} onChange={(e) => setQuery(e.target.value)} />
+      <Input
+        type="search"
+        aria-label="Search this month's transactions"
+        placeholder="Search merchant or category"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+      />
 
       {error !== null ? <Alert tone="error" title="Something went wrong">{error}</Alert> : null}
 
