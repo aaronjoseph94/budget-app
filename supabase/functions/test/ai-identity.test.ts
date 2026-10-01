@@ -132,6 +132,28 @@ describe('the AI helper learns who is calling from the auth server', () => {
   })
 })
 
+describe('the AI helper asks the auth server with the project’s public key (backend-b-04)', () => {
+  const apikeyOf = (c: Call | undefined) => new Headers(c?.init.headers).get('apikey')
+  const PUBLISHABLE = JSON.stringify({ default: 'sb_publishable_notarealkey0001' })
+
+  it('uses the new publishable key when Supabase gives one, with the legacy anon key off', async () => {
+    const only = await run(request(), { SUPABASE_URL: PROJECT, SUPABASE_PUBLISHABLE_KEYS: PUBLISHABLE })
+    expect([only.res.status, only.body.ok]).toEqual([200, true])
+    expect(apikeyOf(only.calls[0])).toBe('sb_publishable_notarealkey0001')
+    const both = await run(request(), { ...ENV, SUPABASE_PUBLISHABLE_KEYS: PUBLISHABLE })
+    expect(apikeyOf(both.calls[0])).toBe('sb_publishable_notarealkey0001')
+  })
+
+  it('falls back to the legacy anon key when the publishable keys are missing or unreadable', async () => {
+    for (const keys of [undefined, 'not json', '{"default":""}', '{"other":"sb_publishable_x"}']) {
+      const r = await run(request(), { ...ENV, SUPABASE_PUBLISHABLE_KEYS: keys })
+      expect(apikeyOf(r.calls[0]), String(keys)).toBe('anon-key-for-tests')
+    }
+    const none = await run(request(), { SUPABASE_URL: PROJECT, SUPABASE_PUBLISHABLE_KEYS: 'not json' })
+    expect([none.res.status, none.body.code, none.calls.length]).toEqual([503, 'helper_error', 0])
+  })
+})
+
 describe('the AI helper reaches the database as itself, for the caller alone', () => {
   const LEGACY = ['header', 'payload', 'signature'].join('.') // a legacy key's three-part shape, and nothing a scanner could take for one
   const FRESH = 'sb_secret_notarealkey0001'

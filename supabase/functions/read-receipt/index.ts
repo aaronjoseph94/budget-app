@@ -54,6 +54,9 @@ const ORIGINS = [
 const EnvSchema = z.object({
   SUPABASE_URL: z.string().regex(/^https?:\/\/[A-Za-z0-9.-]+(:\d+)?$/).optional(),
   SUPABASE_ANON_KEY: z.string().min(1).optional(),
+  // The project's new public keys, a JSON object by name; the legacy anon
+  // key is retired by the end of 2026, and a project can switch it off sooner.
+  SUPABASE_PUBLISHABLE_KEYS: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().optional(),
   EXTRA_ORIGINS: z.string().optional(),
@@ -123,6 +126,18 @@ function log(code: LogCode, counts: Record<string, number> = {}): void {
   console.log(JSON.stringify({ fn: 'read-receipt', code, ...counts }))
 }
 
+/** The public key the auth server is asked with: the new publishable key, else the legacy anon key (backend-b-04). */
+function publicKey(env: Env): string | null {
+  let fresh: unknown = null
+  try {
+    const keys: unknown = JSON.parse(env.SUPABASE_PUBLISHABLE_KEYS ?? 'null')
+    fresh = typeof keys === 'object' && keys !== null && 'default' in keys ? keys.default : null
+  } catch {
+    fresh = null
+  }
+  return typeof fresh === 'string' && fresh !== '' ? fresh : (env.SUPABASE_ANON_KEY ?? null)
+}
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
@@ -185,8 +200,8 @@ export async function handle(
   const key = env.GEMINI_API_KEY
   if (key === undefined || key === '') return send(503, { ok: false, code: 'not_configured' })
   const project = env.SUPABASE_URL
-  const anonKey = env.SUPABASE_ANON_KEY
-  if (project === undefined || anonKey === undefined) return send(503, { ok: false, code: 'not_configured' })
+  const anonKey = publicKey(env)
+  if (project === undefined || anonKey === null) return send(503, { ok: false, code: 'not_configured' })
 
   const model = env.GEMINI_MODEL ?? DEFAULT_MODEL
   if (!MODEL_NAME.test(model)) return send(503, { ok: false, code: 'not_configured' })
@@ -255,6 +270,7 @@ if (typeof Deno !== 'undefined') {
       {
         SUPABASE_URL: Deno.env.get('SUPABASE_URL'),
         SUPABASE_ANON_KEY: Deno.env.get('SUPABASE_ANON_KEY'),
+        SUPABASE_PUBLISHABLE_KEYS: Deno.env.get('SUPABASE_PUBLISHABLE_KEYS'),
         GEMINI_API_KEY: Deno.env.get('GEMINI_API_KEY'),
         GEMINI_MODEL: Deno.env.get('GEMINI_MODEL'),
         EXTRA_ORIGINS: Deno.env.get('EXTRA_ORIGINS'),

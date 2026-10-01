@@ -235,3 +235,17 @@ describe('read-receipt can still be pasted as one file', () => {
     expect(specifiers).toEqual(['npm:zod@4.6.5'])
   })
 })
+
+describe('read-receipt asks the auth server with the project’s public key (backend-b-04)', () => {
+  it('uses the new publishable key when Supabase gives one, else the legacy anon key', async () => {
+    const PUBLISHABLE = JSON.stringify({ default: 'sb_publishable_notarealkey0001' })
+    const apikeyOf = (c: Call | undefined) => new Headers(c?.init.headers).get('apikey')
+    const only = await run(request(), { GEMINI_API_KEY: KEY, SUPABASE_URL: PROJECT, SUPABASE_PUBLISHABLE_KEYS: PUBLISHABLE })
+    expect(only.res.status).toBe(200)
+    expect(apikeyOf(only.auth[0])).toBe('sb_publishable_notarealkey0001')
+    const legacy = await run(request(), { ...ENV, SUPABASE_PUBLISHABLE_KEYS: 'not json' })
+    expect(apikeyOf(legacy.auth[0])).toBe('anon-key-for-tests')
+    const none = await run(request(), { GEMINI_API_KEY: KEY, SUPABASE_URL: PROJECT })
+    expect([none.res.status, none.body.code, none.calls.length + none.auth.length]).toEqual([503, 'not_configured', 0])
+  })
+})

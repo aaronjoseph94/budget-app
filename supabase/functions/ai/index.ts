@@ -27,7 +27,7 @@
 import { z } from 'npm:zod@4.6.5'
 
 /** Which copy is deployed, so One-time updates can tell an old paste from this one. */
-export const VERSION = '2026-09-30.1'
+export const VERSION = '2026-10-01.1'
 
 // Browsers allowed to call this, as read-receipt's: the Cloudflare and
 // Netlify sites and a local dev server, plus exact https origins in the
@@ -39,11 +39,14 @@ const ORIGINS = [
 ]
 
 // The secrets this helper reads, parsed at the "env loading" boundary.
-// Supabase sets the first four itself. SUPABASE_SECRET_KEYS is a JSON
-// object of the project's new secret keys, by name.
+// Supabase sets the first five itself. SUPABASE_SECRET_KEYS and
+// SUPABASE_PUBLISHABLE_KEYS are JSON objects of the project's new keys, by
+// name; the legacy anon and service_role keys are retired by the end of
+// 2026, and a project can switch them off sooner.
 const EnvSchema = z.object({
   SUPABASE_URL: z.string().regex(/^https?:\/\/[A-Za-z0-9.-]+(:\d+)?$/).optional(),
   SUPABASE_ANON_KEY: z.string().min(1).optional(),
+  SUPABASE_PUBLISHABLE_KEYS: z.string().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
   SUPABASE_SECRET_KEYS: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
@@ -285,7 +288,8 @@ const list = (v: unknown): readonly unknown[] => (Array.isArray(v) ? v : [])
 type Who = { readonly user: string } | { readonly code: Code }
 
 async function whoIs(env: Env, bearer: string, fetchFn: typeof fetch): Promise<Who> {
-  if (env.SUPABASE_URL === undefined || env.SUPABASE_ANON_KEY === undefined) {
+  const apikey = publicKey(env)
+  if (env.SUPABASE_URL === undefined || apikey === null) {
     log('not_configured')
     return { code: 'helper_error' }
   }
@@ -293,7 +297,7 @@ async function whoIs(env: Env, bearer: string, fetchFn: typeof fetch): Promise<W
   try {
     res = await fetchFn(`${env.SUPABASE_URL}/auth/v1/user`, {
       method: 'GET',
-      headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: bearer },
+      headers: { apikey, Authorization: bearer },
     })
   } catch {
     log('auth_unreachable')
@@ -714,16 +718,30 @@ export function chatReply(provider: Provider, status: number, body: unknown): Re
   return typeof message['content'] === 'string' ? jsonObject(message['content']) : cut
 }
 
-/** The project's new secret key, from the JSON of them all, when it has one. */
-function secretKeysDefault(env: Env): string | null {
+/** The `default` key from one of Supabase's JSON objects of new keys, when it has one. */
+function keysDefault(json: string | undefined): string | null {
   let fresh: unknown = null
   try {
-    const keys: unknown = JSON.parse(env.SUPABASE_SECRET_KEYS ?? 'null')
+    const keys: unknown = JSON.parse(json ?? 'null')
     fresh = typeof keys === 'object' && keys !== null && 'default' in keys ? keys.default : null
   } catch {
     fresh = null
   }
   return typeof fresh === 'string' && fresh !== '' ? fresh : null
+}
+
+/** The project's new secret key, from the JSON of them all, when it has one. */
+function secretKeysDefault(env: Env): string | null {
+  return keysDefault(env.SUPABASE_SECRET_KEYS)
+}
+
+/**
+ * The public key the auth server is asked with: the project's new
+ * publishable key when it has one, else the legacy anon key, which stops
+ * working once the project's legacy keys are switched off (backend-b-04).
+ */
+function publicKey(env: Env): string | null {
+  return keysDefault(env.SUPABASE_PUBLISHABLE_KEYS) ?? env.SUPABASE_ANON_KEY ?? null
 }
 
 /**
@@ -1460,6 +1478,7 @@ if (typeof Deno !== 'undefined') {
       {
         SUPABASE_URL: Deno.env.get('SUPABASE_URL'),
         SUPABASE_ANON_KEY: Deno.env.get('SUPABASE_ANON_KEY'),
+        SUPABASE_PUBLISHABLE_KEYS: Deno.env.get('SUPABASE_PUBLISHABLE_KEYS'),
         SUPABASE_SERVICE_ROLE_KEY: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
         SUPABASE_SECRET_KEYS: Deno.env.get('SUPABASE_SECRET_KEYS'),
         GEMINI_API_KEY: Deno.env.get('GEMINI_API_KEY'),
