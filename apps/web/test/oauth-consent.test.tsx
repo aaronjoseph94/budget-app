@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { OAuthAuthorizationDetails, OAuthRedirect } from '@supabase/supabase-js'
-import { Consent } from '../src/ai-apps/ConsentScreen.js'
+import { Consent, ConsentScreen } from '../src/ai-apps/ConsentScreen.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { expectNoAxeViolations } from './axe.js'
 
@@ -144,6 +144,24 @@ describe('the consent page: Deny', () => {
   })
 })
 
+describe('the consent page: an app allowed before', () => {
+  const before: OAuthRedirect = { redirect_url: `${CLAUDE}?code=fake-code&state=fake-state` }
+
+  it('sends the owner straight back while the window is open', async () => {
+    const { go } = await open({ request: before })
+    await waitFor(() => expect(go).toHaveBeenCalledWith(before.redirect_url))
+  })
+
+  it('goes nowhere with the window shut, or to an address not allowed', async () => {
+    const shut = await open({ request: before, access: { ...ON, connect_until: minutes(-1) } })
+    expect(await screen.findByText(/wasn’t started from the budget app\./)).toBeTruthy()
+    cleanup()
+    const elsewhere = await open({ request: { redirect_url: 'https://evil.example/cb?code=fake-code' } })
+    expect(await screen.findByRole('heading', { level: 1, name: 'Not sent back' })).toBeTruthy()
+    expect([shut.go.mock.calls, elsewhere.go.mock.calls]).toEqual([[], []])
+  })
+})
+
 describe('the consent page: what it draws', () => {
   it('draws the app’s name as text, markup and all, and never its address or logo', async () => {
     await open({ request: asking(CLAUDE, '<img src=x onerror=alert(1)>Claude‮') })
@@ -151,6 +169,11 @@ describe('the consent page: what it draws', () => {
     expect((await screen.findByText(/wants to connect/)).textContent).toBe('“<img src=x onerror=alert(1)>Claude” wants to connect to your budget.')
     expect(document.querySelector('img')).toBeNull()
     expect(document.body.innerHTML).not.toContain('evil.example')
+  })
+
+  it('says what is missing on a site built without its two public values', async () => {
+    render(<ConsentScreen />)
+    expect(await screen.findByText('Not configured')).toBeTruthy()
   })
 
   it('says a request Supabase no longer has has expired', async () => {

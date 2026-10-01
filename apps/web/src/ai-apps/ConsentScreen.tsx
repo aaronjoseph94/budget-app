@@ -1,7 +1,8 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { OAuthAuthorizationDetails } from '@supabase/supabase-js'
-import type { SupabaseClient } from '../supabase.js'
-import { SignIn, useSession } from '../auth.js'
+import { readEnv, type Env } from '../env.js'
+import { createSupabase, type SupabaseClient } from '../supabase.js'
+import { NotConfigured, SignIn, useSession } from '../auth.js'
 import { Card } from '../components/ui/card.js'
 import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
@@ -15,9 +16,10 @@ const AUTHORIZATION_ID = /^[A-Za-z0-9_-]{1,128}$/
 /**
  * Whether Supabase's answer may send the browser on: to the callback the
  * page named, exactly, then `?` and a query, and nothing else (no
- * fragment, no user name), which the allowlist passes.
+ * fragment, no user name), which the allowlist passes. An answer to a
+ * request allowed before names no callback first.
  */
-function followable(redirectUrl: string, callback: string): boolean {
+function followable(redirectUrl: string, callback: string | null): boolean {
   let url: URL
   try {
     url = new URL(redirectUrl)
@@ -26,7 +28,7 @@ function followable(redirectUrl: string, callback: string): boolean {
   }
   const base = `${url.protocol}//${url.host}${url.pathname}`
   if (url.href !== `${base}${url.search}` || url.search.length < 2 || !checkCallback(base).allowed) return false
-  return base === new URL(callback).href
+  return callback === null || base === new URL(callback).href
 }
 
 /** AI apps on, and Connect a new AI app pressed within its 15 minutes, by this browser's clock. */
@@ -50,6 +52,20 @@ const SAID = {
   bad_reply: { kind: 'said', title: 'Not sent back', words: 'Supabase answered with an address that is not Claude’s or ChatGPT’s, so this page went nowhere. Go back to Claude or ChatGPT and press Connect again.' },
   refused: { kind: 'said', title: 'Refused', words: 'You can close this tab.' },
 } as const satisfies Record<string, Seen>
+
+/** The page Supabase sends an AI app's sign-in to (PLAN §2.10), at /oauth/consent. */
+export function ConsentScreen() {
+  const env = useMemo(() => readEnv(), [])
+  if (!env.ok) return <NotConfigured missing={env.missing} />
+  return <WithProject env={env.env} />
+}
+
+const leave = (url: string) => window.location.assign(url)
+
+function WithProject({ env }: { env: Env }) {
+  const supabase = useMemo(() => createSupabase(env), [env])
+  return <Consent supabase={supabase} go={leave} />
+}
 
 /**
  * Connect an AI app. Signed out, it shows the sign-in card, whose emailed
@@ -88,7 +104,12 @@ function Decide({ supabase, userId, go }: { supabase: SupabaseClient; userId: st
         setSeen(asked.error.status !== undefined && asked.error.status >= 400 && asked.error.status < 500 ? SAID.expired : SAID.unreachable)
       } else if ('authorization_id' in asked.data) {
         setSeen({ kind: 'asking', id, details: asked.data, callback: checkCallback(asked.data.redirect_uri), access })
-      } else setSeen(SAID.not_started)
+      } else if (!followable(asked.data.redirect_url, null)) {
+        setSeen(SAID.bad_reply)
+      } else if (!opened(access, Date.now())) {
+        // Allowed before, so Supabase has already issued a code: followed only on Allow's terms.
+        setSeen(SAID.not_started)
+      } else go(asked.data.redirect_url)
     })
     return () => void (live = false)
   }, [supabase, userId, go])

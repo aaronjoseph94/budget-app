@@ -271,6 +271,12 @@ One-time updates, which names what is missing.
     from Claude or ChatGPT answers with your own figures. If it answers
     "not an AI app", or with nothing, turn **Let AI apps connect** off
     and report it.
+16. **The connect page, the first time** (MCP plan K7, K12): after
+    **Connect a new AI app** in Settings and **Connect** in Claude, the
+    browser opens `aaron-budget-app.pages.dev/oauth/consent` showing
+    **Connect an AI app**, with **claude.ai** in bold. If that address is
+    not found, or the page says "This isn't a connection request", stop
+    there and report it: nothing has been connected.
 
 ## 5. Questions for the owner
 

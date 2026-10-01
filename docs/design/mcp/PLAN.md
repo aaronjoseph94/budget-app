@@ -1214,6 +1214,7 @@ checklist (M12b).
 | K9 | ChatGPT registers, and returns to, `https://chatgpt.com/connector/oauth/{callback_id}` (Supabase sends no `iss`) | The consent page names a callback it does not allow; the allowlist gains the documented form in its own commit |
 | K10 | 0019 pastes in the SQL Editor: the restrictive policy on `storage.objects` is created, as 0001's receipt policies were, and each guarded function is re-created from its own `pg_get_functiondef` (M1a) | The paste stops with an error and, inside its transaction, changes nothing but the unused `ai_app` label; One-time updates keeps 0019 as not in, and the error is reported before 0020 |
 | K11 | 0020 pastes, and under PostgREST the gate's transaction-local `budget.ai_app_read` flag lets `ai_app_read` read while a direct `GET /rest/v1/categories` with the same token returns `[]` (M4) | The paste stops, or every tool answers `records_unreadable` or nothing; switch AI apps off and report it |
+| K12 | Supabase's `authorization_id` in the consent page's address is 1–128 letters, digits, `-` or `_` (M11b) | The consent page says "This isn't a connection request" and sends nothing; the pattern in `ConsentScreen.tsx` is widened in its own commit |
 
 ### 2.15 Records this work writes
 
@@ -1868,6 +1869,27 @@ created it in M9, and imported `packages/ai-apps` from
 - **Done:** §2.13's consent cases with an axe check; the first-load size
   from `check-bundle.mjs` recorded in the body and still under 200 KB (the
   page is its own chunk; `main.tsx` gains a path check and a lazy import).
+- **As built (2026-10-01):** four commits, to stay under 300 lines: the
+  sign-in card's return address (`returnAddress`: an address on this
+  site, else the site itself); the page saying who is asking and where,
+  with the fake's authorization reads; Allow and Deny; then the route
+  and a request allowed before. `Consent` is handed the client and `go`,
+  how it leaves, so a test sees where; `ConsentScreen` builds both from
+  the environment. An `authorization_id` that is not 1–128 letters,
+  digits, `-` or `_` is never sent to Supabase ("This isn't a connection
+  request", K12); a 4xx from Supabase reads as expired, anything else as
+  unreachable. With AI apps off, or no window open, the page says which
+  and how to start again, and offers Deny alone. Allow is checked again
+  at the click against the browser's clock, so a page left open past the
+  15 minutes loses it. Supabase's answer is followed only when it is the
+  callback the page named, exactly, then `?` and a query (no fragment,
+  no user name); otherwise "Not sent back", and the page goes nowhere. A
+  reply with only a `redirect_url` (an app allowed before) is followed
+  on Allow's terms: its own address allowed, AI apps on, the window
+  open. The client's name is cleaned as Settings cleans it and sits in a
+  `<bdi>`. The card is flat: the sign-in card keeps Mockup A's one card
+  shadow. `main.tsx` draws the page, its own chunk, in place of the app,
+  and skips `restoreAddress` there.
 
 ### M12a: Help: the three articles, and Settings' links
 
