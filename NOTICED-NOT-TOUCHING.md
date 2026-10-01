@@ -440,6 +440,8 @@ Setup), reading `merchant_rules`, with a way to re-point or delete one.
 
 
 **Settled, A27 (a7561a4):** Settings lists every learned shop with the category it files to, and **Forget** deletes the rule under 0001's own-rows policy; a refusal is said in words. A category held only by a shop rule can now be freed.
+
+**Settled, backend review (0021, backend-a-01/a-02, 2026-10-01):** the candidate half was still open: an approved candidate whose ledger row was removed, and an AI guess on a row the owner rejected, held the category for good. 0021's trigger before a category is deleted lets go of both, so only a charge, a learned shop or a fund's goal holds a category now.
 ---
 
 ## N18 — Two of Setup's messages wait on monthly amounts *(settled 2026-09-23, S9)*

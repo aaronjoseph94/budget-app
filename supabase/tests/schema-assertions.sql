@@ -2772,3 +2772,84 @@ begin
   raise notice '0020 says to paste 0019 first when it is missing';
 end $$;
 rollback;
+
+-- ---------------------------------------------------------------------------
+-- 0021: a category is held only by what still files money into it. A guess
+-- on a row the owner rejected, or an approval whose ledger row the owner
+-- removed, no longer stops the category being removed (backend-a-01, a-02).
+-- A category a ledger row still names is still refused.
+-- ---------------------------------------------------------------------------
+reset role;
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000002101', '11111111-1111-4111-8111-111111111111', 'Guessed then rejected', 'variable'),
+  ('cccccccc-0000-4000-8000-000000002102', '11111111-1111-4111-8111-111111111111', 'Typed then removed', 'variable'),
+  ('cccccccc-0000-4000-8000-000000002103', '11111111-1111-4111-8111-111111111111', 'Still in the ledger', 'variable');
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+do $$
+declare
+  acc     uuid := 'aaaaaaaa-0000-4000-8000-000000000001';
+  guessed uuid := 'cccccccc-0000-4000-8000-000000002101';
+  typed   uuid := 'cccccccc-0000-4000-8000-000000002102';
+  kept    uuid := 'cccccccc-0000-4000-8000-000000002103';
+  r       record;
+  cand    uuid;
+  c       record;
+begin
+  -- a-01: suggested, then rejected, then the category goes.
+  select * into r from public.save_import(acc, 'card_csv', 1, jsonb_build_array(jsonb_build_object(
+    'posted_on','2025-08-01','amount_cents',-910,'merchant','HELD 2101','merchant_raw','HELD 2101',
+    'dedupe_hash', repeat('2',63) || '1', 'dedupe_hash_v', 1)), '[]'::jsonb);
+  select id into cand from public.ingest_candidates where batch_id = r.batch_id;
+  if public.suggest_candidate_categories(jsonb_build_array(jsonb_build_object('candidate', cand, 'category', guessed))) <> 1 then
+    raise exception 'the guess was not set';
+  end if;
+  perform public.reject_candidate(cand);
+  delete from public.categories where id = guessed;
+  select status::text, category_id, rejection_reason::text into c from public.ingest_candidates where id = cand;
+  if c.status <> 'rejected' or c.category_id is not null or c.rejection_reason <> 'user_rejected' then
+    raise exception 'a rejected row kept its guess, or lost its decision: %', c;
+  end if;
+
+  -- a-02: typed, its ledger row removed, then the category goes.
+  cand := public.add_typed_transaction(acc, '2025-08-02', -920, 'HELD 2102', 'Held 2102', typed);
+  delete from public.transactions where candidate_id = cand;
+  delete from public.categories where id = typed;
+  select status::text, category_id, rejection_reason::text into c from public.ingest_candidates where id = cand;
+  if c.status <> 'rejected' or c.category_id is not null or c.rejection_reason <> 'user_rejected' then
+    raise exception 'an approval with no ledger row still reads %', c;
+  end if;
+
+  -- A charge still in the ledger still holds its category.
+  cand := public.add_typed_transaction(acc, '2025-08-03', -930, 'HELD 2103', 'Held 2103', kept);
+  begin
+    delete from public.categories where id = kept;
+    raise exception 'NOT REFUSED: a category a ledger row names was removed';
+  exception when foreign_key_violation then null;
+  end;
+  if not exists (select 1 from public.ingest_candidates where id = cand and status = 'approved' and category_id = kept) then
+    raise exception 'a refused delete still changed the approval behind a ledger row';
+  end if;
+  raise notice 'a guess on a rejected row, or an approval with no ledger row left, no longer holds its category';
+end $$;
+reset role;
+
+-- The level the app reads (0021) names the last update in this folder, so a
+-- new update that forgets to raise it fails here.
+\set last_migration `ls supabase/migrations | tail -1 | cut -c1-4`
+set verify.last_migration = :'last_migration';
+set role app_user;
+do $$
+begin
+  if public.schema_level() <> current_setting('verify.last_migration')::int then
+    raise exception 'schema_level() answers %, but the last update is %', public.schema_level(), current_setting('verify.last_migration');
+  end if;
+  raise notice 'schema_level() names the last update';
+end $$;
+reset role;
+do $$
+begin
+  if has_function_privilege('anon', 'public.schema_level()', 'execute') then
+    raise exception 'the anonymous role can call schema_level';
+  end if;
+end $$;
