@@ -61,6 +61,8 @@ interface World {
   services?: Partial<Record<Service, (init: RequestInit) => Response | Promise<Response>>>
   claims?: string[]
   authAfterMs?: number
+  /** ai_note_outcome answers this status, as a database that fails just then would. */
+  noteStatus?: number
 }
 
 const SETTINGS = { enabled: true, provider_order: ['gemini', 'groq', 'openrouter', 'openai', 'anthropic'], models: {}, daily_cap: 40, allow_paid: false }
@@ -94,6 +96,7 @@ async function world(w: World = {}, env: Record<string, string | undefined> = EN
     }
     if (u === `${PROJECT}/rest/v1/rpc/ai_context_for`) return json(context)
     if (u === `${PROJECT}/rest/v1/rpc/ai_usage_claim`) return json(claims.shift() ?? 'ok')
+    if (u === `${PROJECT}/rest/v1/rpc/ai_note_outcome` && w.noteStatus !== undefined) return json({ code: '40001' }, w.noteStatus)
     if (u.startsWith(`${PROJECT}/rest/v1/rpc/`)) return new Response(null, { status: 204 })
     const service = serviceOf(u)
     if (service === undefined) return json({}, 404)
@@ -222,6 +225,18 @@ describe('failing over, in the owner’s order', () => {
       { provider: 'gemini', model: 'gemini-3.5-flash-lite', result: 'timeout' },
       { provider: 'groq', model: 'openai/gpt-oss-20b', result: 'timeout' },
     ]])
+  })
+
+  it('keeps a good reply when only noting its outcome failed (backend-b-07)', async () => {
+    const r = await ran({ noteStatus: 500, services: { gemini: answers.gemini } })
+    expect([r.status, r.body]).toEqual([200, { ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: '{"ok":true}' }])
+    expect(r.services).toEqual(['gemini'])
+  })
+
+  it('still stops when noting a failed attempt fails, rather than trying on blind', async () => {
+    const r = await ran({ saved: ['groq'], noteStatus: 500, services: { gemini: () => json({}, 503), groq: answers.groq } })
+    expect([r.status, r.body.code]).toEqual([503, 'helper_error'])
+    expect(r.services).toEqual(['gemini'])
   })
 
   it('makes at most three attempts', async () => {

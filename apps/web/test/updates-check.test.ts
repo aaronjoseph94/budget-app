@@ -121,8 +121,9 @@ describe('checking the one-time updates', () => {
       // 2026-09-27.5 is the copy from before AI apps, which let them spend the owner's keys (ADR 0012).
       ['2026-09-27.5', 'old'], ['2026-09-27.10', 'old'], ['2026-09-30.1', 'old'], ['2026-09-30.10', 'old'],
       // 2026-10-01.1 asks the auth server with the new publishable key (backend-b-04);
-      // 2026-10-01.2 bounds every wait, body and all (backend-b-05); 2026-10-01.3 can serve the owner alone (backend-b-06).
-      ['2026-10-01.1', 'old'], ['2026-10-01.2', 'old'], ['2026-10-01.3', 'in'], ['2026-10-01.10', 'in'], ['2026-10-02.1', 'in'],
+      // 2026-10-01.2 bounds every wait, body and all (backend-b-05); 2026-10-01.3 can serve the owner alone (backend-b-06);
+      // 2026-10-01.4 keeps a good reply when noting it failed (backend-b-07).
+      ['2026-10-01.1', 'old'], ['2026-10-01.3', 'old'], ['2026-10-01.4', 'in'], ['2026-10-01.10', 'in'], ['2026-10-02.1', 'in'],
     ] as const) {
       fake.functions.ai = () => new Response(JSON.stringify({ ok: true, version }), { headers: { 'content-type': 'application/json' } })
       const checked = await checkUpdates(fake.client)

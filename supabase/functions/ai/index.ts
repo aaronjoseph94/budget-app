@@ -27,7 +27,7 @@
 import { z } from 'npm:zod@4.6.5'
 
 /** Which copy is deployed, so One-time updates can tell an old paste from this one. */
-export const VERSION = '2026-10-01.3'
+export const VERSION = '2026-10-01.4'
 
 // Browsers allowed to call this, as read-receipt's: the Cloudflare and
 // Netlify sites and a local dev server, plus exact https origins in the
@@ -1396,11 +1396,14 @@ export async function route(env: Env, user: string, task: TaskName, ask: Ask, st
       },
       fetchFn,
     )
-    if ('code' in noted) return end(noted.code)
+    // A good reply is kept even when noting it failed: only bookkeeping
+    // failed, the claim is already counted, and the answer was paid for
+    // (backend-b-07). callDb has logged why.
     if (replied.outcome === 'ok' && replied.text !== null) {
       log('run_ok', { attempts, tried: tried.length })
       return [200, { ok: true, provider, model, text: replied.text }]
     }
+    if ('code' in noted) return end(noted.code)
     if (replied.outcome === 'rejected' && found.source === 'saved') {
       const mark = await callDb(env, 'ai_key_mark', { p_user: user, p_provider: provider, p_status: 'rejected' }, fetchFn)
       if ('code' in mark) return end(mark.code)
