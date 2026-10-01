@@ -3196,6 +3196,11 @@ not the restyle of Help.
 Setup, as ADR 0011 already describes, with a screen test; then Help's
 four steps can say "Open **AI settings** from **Settings**".
 
+**Settled (2026-10-01):** Settings has an **AI settings** card with **Open
+AI settings** beside Getting started and Setup, tested in
+settings-screen.test; Help's four AI settings articles open it from
+Settings, or More on a phone.
+
 ---
 
 ## N137 — Getting started says "come back any time from More" on a computer
@@ -3210,6 +3215,9 @@ restyle keeps.
 
 **To settle:** say "from Settings, or More on a phone", as Help's Start
 here now does, and change getting-started.test's matcher with it.
+
+**Settled (2026-10-01):** it says "from Settings, or More on a phone", and
+Start here's "You're done when…" says the same.
 
 ---
 

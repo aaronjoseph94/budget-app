@@ -19,7 +19,7 @@ const ProgressLine = lazy(() => import('../start/ProgressLine.js').then((m) => (
 
 export function SettingsScreen() {
   const { supabase, email } = useAppData()
-  // Mockup A: the three shortcuts across from 1024px, then Weekly budgets
+  // Mockup A: the shortcuts two across from 1024px and four from 1280px, then Weekly budgets
   // beside the learned shops, AI apps and the account from 1280px.
   return (
     <div className="space-y-5">
@@ -30,7 +30,7 @@ export function SettingsScreen() {
         </div>
         <p className="text-muted-foreground md:text-base">Budgets, your savings goals, and your account.</p>
       </header>
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-4">
         <Section large title="Getting started">
           <p className="text-muted-foreground">
             <Suspense fallback="One step at a time">
@@ -45,6 +45,13 @@ export function SettingsScreen() {
           <p className="text-muted-foreground">Your name, and which list each category is on.</p>
           <Button variant="outline" onClick={() => navigate('setup')}>
             <Icon name="list" /> Open Setup
+          </Button>
+        </Section>
+        {/* AI settings has no sidebar item; on a computer this is its way in (N136). */}
+        <Section large title="AI settings">
+          <p className="text-muted-foreground">Free AI, other services, the Coach’s tone and shop names.</p>
+          <Button variant="outline" onClick={() => navigate('ai')}>
+            <Icon name="sparkles" /> Open AI settings
           </Button>
         </Section>
         <GoalsCard />

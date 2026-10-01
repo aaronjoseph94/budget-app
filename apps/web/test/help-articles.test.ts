@@ -114,13 +114,16 @@ describe('Help articles', () => {
     expect(articleFor('coach')?.related).toContain('checkin')
   })
 
-  // ADR 0011: More is a phone's; a computer has the sidebar. AI settings is
-  // in no sidebar group yet (N136), so its steps still go through More.
-  it('never sends a computer to More for a screen the sidebar holds, nor to the old bar at the top', () => {
+  // ADR 0011: More is a phone's; a computer has the sidebar, and AI
+  // settings, with no item of its own, opens from Settings (N136).
+  it('never sends a computer to More, nor to the old bar at the top', () => {
     for (const a of ARTICLES) {
       const text = [a.summary, a.done, a.stuck, ...a.steps].join(' ')
       expect(text, a.id).not.toMatch(/bar at the top/)
-      for (const m of text.matchAll(/open \*\*More\*\*, then \*\*([^*]+)\*\*/gi)) expect(m[1], a.id).toBe('AI settings')
+      expect(text, a.id).not.toMatch(/open \*\*More\*\*, then/i)
+    }
+    for (const id of ['free-ai', 'more-ai', 'ai-sees', 'ai-rests'] as const) {
+      expect(articleFor(id)?.steps[0], id).toMatch(/^Open \*\*AI settings\*\* \(from \*\*Settings\*\*, or \*\*More\*\* on a phone\)/)
     }
     expect(articleFor('reports')?.steps[0]).toBe('Open **Reports** (on a phone, under **More**).')
   })

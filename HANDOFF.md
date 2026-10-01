@@ -82,7 +82,9 @@ it is merged into `main` (§3).
   the Month's title, and `#/week` still works.
 - On a computer, a sidebar replaces the old top bar (see Mockup A below).
 - **More** is in four groups: Plan, Understand, Set up and help, Records.
-  On a computer, More is not needed: every screen is in the sidebar.
+  On a computer, More is not needed: every screen is in the sidebar, or
+  one tap from Coach (Ask, Check-in) or Settings (AI settings, Getting
+  started).
 
 ### Mockup A, the new look (2026-09-29 and 30)
 
@@ -192,7 +194,7 @@ open GitHub. Easiest on a computer.
    the same way (its **Copy** is beside the helper's) or delete it (its
    `⋯` menu → **Delete**): the helper reads receipts without it, and its
    old copy lets anyone holding the app's public key use your Gemini key.
-3. **Turn on free AI.** In the app: More → **AI settings** → **Get a free
+3. **Turn on free AI.** In the app: Settings (More on a phone) → **AI settings** → **Get a free
    key**. Google AI Studio opens in a new tab: **Create API key**, copy it,
    come back, paste it, and press **Save & test**. You should see "Works ·
    key ending …abcd". If you set `GEMINI_API_KEY` for receipts earlier,

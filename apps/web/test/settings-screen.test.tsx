@@ -9,14 +9,17 @@ import { expectNoAxeViolations } from './axe.js'
 afterEach(cleanup)
 
 describe('SettingsScreen, Mockup A', () => {
-  it('lays the three shortcuts across, then budgets beside the shops and the account', async () => {
+  it('lays the four shortcuts across, then budgets beside the shops and the account', async () => {
     renderScreen(<SettingsScreen />, createFakeSupabase())
 
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Settings')
     const cardOf = (title: string) => screen.getByRole('heading', { level: 2, name: title }).parentElement!
     const shortcuts = cardOf('Getting started').parentElement!
-    expect(shortcuts.className).toContain('lg:grid-cols-3')
-    expect([...shortcuts.children].map((c) => c.querySelector('h2')?.textContent)).toEqual(['Getting started', 'Your lists', 'Your savings goals'])
+    expect(shortcuts.className).toContain('xl:grid-cols-4')
+    expect([...shortcuts.children].map((c) => c.querySelector('h2')?.textContent)).toEqual(['Getting started', 'Your lists', 'AI settings', 'Your savings goals'])
+    // AI settings has no sidebar item, so Settings is a computer's way in (N136).
+    fireEvent.click(within(cardOf('AI settings')).getByRole('button', { name: 'Open AI settings' }))
+    expect(window.location.hash).toBe('#/ai')
     const pair = cardOf('Weekly budgets').parentElement!
     expect(pair.className).toContain('xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]')
     expect(pair.lastElementChild?.contains(cardOf('Shops filed by themselves'))).toBe(true)
