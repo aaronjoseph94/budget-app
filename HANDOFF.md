@@ -346,9 +346,13 @@ what to do, and reporting the words on the screen is enough.
     report it: nothing has been connected.
 18. **The first question** (K1, the one that matters most). Ask Claude
     "list my categories". It should list yours. **If it says the budget
-    app did not recognise this sign-in as an AI app's: at once turn off
-    Let AI apps connect in Settings, then Supabase → Authentication →
-    OAuth Server → turn it off, and report it.** That answer would mean
+    app did not recognise this sign-in as an AI app's, at once, in this
+    order: Settings → AI apps → Disconnect beside Claude; turn off Let AI
+    apps connect; Supabase → SQL Editor → run `delete from auth.sessions;`
+    (it signs you out too: sign in again after); then Supabase →
+    Authentication → OAuth Server → turn it off; and report it.** Turning
+    the OAuth Server off first would leave nothing in the app to
+    disconnect, and the switch alone does not end the AI app's sign-in. That answer would mean
     the database cannot tell an AI app's sign-in from your own: the server
     turns the AI app away, but its sign-in, used without the server, could
     change your records. One-time updates then lists **Sign-in for AI

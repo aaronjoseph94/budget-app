@@ -306,3 +306,9 @@ below was made under those words and is recorded with them.
   `approve_candidate` and `recategorise_transaction` are re-created from
   their own definitions with a few lines changed, 0019's guard kept as
   the first statement; the Month's Move hides "Always file" for one.
+- **mcp-3-01: the emergency steps end each sign-in, Disconnect first.**
+  Help, PLAN §1, HANDOFF check 18 and Connected apps (when Supabase's
+  OAuth Server is off) now say: Disconnect, the switch, `delete from
+  auth.sessions;` in the SQL Editor, and only then the OAuth Server. The
+  SQL line is used rather than a dashboard "Sign out user" action, which
+  could not be confirmed from here.

@@ -147,6 +147,20 @@ describe('Help articles', () => {
     expect(apps?.related).toEqual(['connect-claude', 'connect-chatgpt', 'ai-sees', 'review', 'updates'])
   })
 
+  // Security review mcp-3-01: the emergency steps end each sign-in, and Disconnect
+  // comes before the OAuth Server goes off, which would leave nothing to disconnect.
+  it('puts Disconnect first in an emergency, ends every sign-in, and turns the OAuth Server off last', () => {
+    const stuck = articleFor('ai-apps')?.stuck ?? ''
+    const emergency = stuck.slice(stuck.indexOf('In an emergency'))
+    const at = (words: string) => emergency.indexOf(words)
+    expect(at('In an emergency')).toBe(0)
+    for (const words of ['**Disconnect**', '**Let AI apps connect**', 'delete from auth.sessions;', '**OAuth Server**']) expect(at(words), words).toBeGreaterThan(0)
+    expect(at('**Disconnect**')).toBeLessThan(at('**Let AI apps connect**'))
+    expect(at('**Let AI apps connect**')).toBeLessThan(at('delete from auth.sessions;'))
+    expect(at('delete from auth.sessions;')).toBeLessThan(at('**OAuth Server**'))
+    expect(stuck).not.toMatch(/stops every AI app at once/)
+  })
+
   it('finds no article for a topic not written yet', () => {
     expect(articleFor('start')?.title).toBe('Start here')
     expect(articleFor('nowhere')).toBeUndefined()

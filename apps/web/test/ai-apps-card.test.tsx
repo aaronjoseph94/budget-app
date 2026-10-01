@@ -200,6 +200,8 @@ describe('Settings → AI apps: connected apps and Disconnect', () => {
     await fake.signIn()
     renderScreen(<AiAppsCard />, fake)
     expect(await screen.findByText(/Sign-in for AI apps is not switched on in Supabase yet\./)).toBeTruthy()
+    // With it off nothing can be disconnected here, so the way to end every sign-in is named (mcp-3-01).
+    expect(screen.getByText(/delete from auth\.sessions;/)).toBeTruthy()
 
     cleanup()
     renderScreen(<AiAppsCard />, createFakeSupabase())

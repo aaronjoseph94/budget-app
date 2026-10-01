@@ -182,14 +182,22 @@ other connectors switched on are ones that cannot send anything.
 ### How to switch it off
 
 - **Everything, at once:** **Settings → AI apps**, turn off **Let AI apps
-  connect**. It takes effect straight away.
+  connect**. It stops every AI app reaching your budget straight away;
+  it does not end their sign-ins (only Disconnect does).
 - **One app:** **Settings → AI apps → Disconnect** beside it. It has to
   sign in again to come back.
 - **In Claude or ChatGPT:** remove the connector there as well.
-- **In an emergency:** first turn off **Let AI apps connect** in the app,
-  which stops every AI app at once. Then Supabase → **Authentication →
-  OAuth Server** → turn it off, so no AI app can sign in again or renew its
-  sign-in.
+- **In an emergency, in this order** (security review mcp-3-01,
+  2026-10-01): (1) **Disconnect** each app listed, which ends its
+  sign-in; (2) turn off **Let AI apps connect**; (3) Supabase → **SQL
+  Editor** → `delete from auth.sessions;`, which ends every sign-in to
+  the account, yours too, including an app not listed; (4) only then
+  Supabase → **Authentication → OAuth Server** → off, so no AI app can
+  sign in again. Turning the OAuth Server off first leaves Connected
+  apps unable to list anything to disconnect, and the old sign-ins
+  alive. The order was the other way round before; the switch alone
+  never touched an app's sign-in, which still reached the Auth API
+  (risk 2).
 
 ### What you do once (about 20 minutes, on a computer)
 

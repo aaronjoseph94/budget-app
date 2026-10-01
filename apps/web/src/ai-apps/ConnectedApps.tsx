@@ -43,14 +43,23 @@ export function ConnectedApps({ on }: { on: boolean }) {
     <div className="space-y-2 border-t pt-3">
       <h3 className="text-base font-semibold">Connected apps</h3>
       {read.ok === false ? (
-        <p className="text-sm">
-          {read.why === 'oauth_off' ? 'Sign-in for AI apps is not switched on in Supabase yet. ' : 'Couldn’t load your connected apps just now. '}
+        <>
+          <p className="text-sm">
+            {read.why === 'oauth_off' ? 'Sign-in for AI apps is not switched on in Supabase yet. ' : 'Couldn’t load your connected apps just now. '}
+            {read.why === 'oauth_off' ? (
+              <a href={hashOf({ screen: 'help', param: 'updates' })} className={SENTENCE_LINK}>
+                One-time updates
+              </a>
+            ) : null}
+          </p>
+          {/* With Supabase's sign-in for AI apps off, nothing here can be disconnected (mcp-3-01). */}
           {read.why === 'oauth_off' ? (
-            <a href={hashOf({ screen: 'help', param: 'updates' })} className={SENTENCE_LINK}>
-              One-time updates
-            </a>
+            <p className="text-sm text-muted-foreground">
+              If you turned it off in an emergency, an app connected before may still hold a sign-in. To end every sign-in, yours too, open
+              the SQL Editor in Supabase and run <code className="font-mono">delete from auth.sessions;</code> then sign in again.
+            </p>
           ) : null}
-        </p>
+        </>
       ) : read.apps.length === 0 ? (
         <p className="text-sm text-muted-foreground">None yet.</p>
       ) : (
