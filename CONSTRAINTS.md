@@ -46,8 +46,9 @@ whether a commit is clean.
 | Engine purity | `packages/core` imports only `money-primitives`; no ambient clock, randomness, or env | `depcruise` + `eslint` | every edit |
 | Float money | No `toFixed` / `parseFloat` in the engine; `Cents` brand enforced by the type system | `eslint` + `tsc --build` | every edit |
 | Weak assertions | No `toBeCloseTo`, no snapshots, no `vi.mock` under `packages/core` | `eslint` | every edit |
-| Secrets | Zero findings in the working tree | `gitleaks dir --redact --no-banner` | every edit |
-| Secret history | Zero findings in committed history | `gitleaks detect --redact --no-banner` | CI |
+| Secrets | Zero findings in the working tree (local `.env` files allowed there only) | `gitleaks dir --config .gitleaks-tree.toml --redact --no-banner` | every edit |
+| Tracked env files | No `.env` file is tracked but `.env.example` | `git ls-files` (`no_env_files` in `scripts/gates.sh`) | every edit |
+| Secret history | Zero findings in committed history, `.env` files included | `gitleaks detect --config .gitleaks.toml --redact --no-banner` | CI |
 | Golden replay | 100% exact match, zero tolerance | `vitest run` | every edit |
 | Coverage | ≥80% lines and functions, ≥75% branches, per module | `vitest run --coverage` | CI |
 | Migration replay | Applies cleanly to an empty database | `scripts/verify-migrations.sh` | CI |

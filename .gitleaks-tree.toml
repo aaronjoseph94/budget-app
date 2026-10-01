@@ -1,0 +1,32 @@
+# The working-tree scan's config (gates.sh `secrets`): everything in
+# .gitleaks.toml, plus the local .env files a developer is meant to keep keys
+# in. Everything else stays as .gitleaks.toml has it.
+[extend]
+path = ".gitleaks.toml"
+
+[[allowlists]]
+description = "Local environment files"
+paths = [
+  # Local environment files, which .gitignore already refuses to commit.
+  # Allowed in the working tree only: a .env that reached history, even one
+  # deleted since, must fail the history scan, and `git add -f` gets past
+  # .gitignore (security-a-07). The envfile gate refuses a tracked one.
+  #
+  # This is where a key is SUPPOSED to live while developing, and the secrets
+  # gate scans the working tree, so without this the gate goes red the moment
+  # anyone configures the app correctly. A gate that fails on correct behaviour
+  # teaches people to ignore it, which costs more than it protects.
+  #
+  # Listed one by one rather than as a pattern excluding .env.example: these
+  # regexes are Go's RE2, which has no lookahead, and a pattern that fails to
+  # compile takes the whole gate down rather than loosening it.
+  #
+  # .env.example is deliberately absent — it IS committed, so a real value in
+  # it must still fail. A key anywhere else in the tree — a source file, a
+  # script, a fixture — is untouched by this and still fails the gate.
+  '''(^|/)\.env$''',
+  '''(^|/)\.env\.local$''',
+  '''(^|/)\.env\.development$''',
+  '''(^|/)\.env\.production$''',
+  '''(^|/)\.env\.test$''',
+]

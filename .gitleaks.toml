@@ -1,4 +1,5 @@
-# Secret-scanning config.
+# Secret-scanning config: the history scan's, and the base of the working
+# tree's (.gitleaks-tree.toml), which adds only local .env files.
 #
 # Extends the bundled ruleset rather than replacing it — the value of gitleaks
 # is that its rules are an opinion this project did not author, and rewriting
@@ -7,7 +8,7 @@
 useDefault = true
 
 [allowlist]
-description = "Generated paths, gitignored env files, and one deliberately published value"
+description = "Generated paths and one deliberately published value"
 
 # The Supabase publishable key, in the build config only.
 #
@@ -31,25 +32,6 @@ paths = [
   '''(^|/)coverage/''',
   '''(^|/)\.git/''',
   '''pnpm-lock\.yaml$''',
-  # Local environment files, which .gitignore already refuses to commit.
-  #
-  # This is where a key is SUPPOSED to live while developing, and the secrets
-  # gate scans the working tree, so without this the gate goes red the moment
-  # anyone configures the app correctly. A gate that fails on correct behaviour
-  # teaches people to ignore it, which costs more than it protects.
-  #
-  # Listed one by one rather than as a pattern excluding .env.example: these
-  # regexes are Go's RE2, which has no lookahead, and a pattern that fails to
-  # compile takes the whole gate down rather than loosening it.
-  #
-  # .env.example is deliberately absent — it IS committed, so a real value in
-  # it must still fail. A key anywhere else in the tree — a source file, a
-  # script, a fixture — is untouched by this and still fails the gate.
-  '''(^|/)\.env$''',
-  '''(^|/)\.env\.local$''',
-  '''(^|/)\.env\.development$''',
-  '''(^|/)\.env\.production$''',
-  '''(^|/)\.env\.test$''',
 ]
 
 # Keys the bundled rules miss unless the line happens to say "key" or

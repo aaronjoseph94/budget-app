@@ -34,7 +34,17 @@ gate purity  depcruise npx depcruise --config .dependency-cruiser.cjs packages a
 # detect` walks COMMITS instead, so it is structurally blind to an uncommitted
 # edit and reported PASS on a live-looking key sitting in a source file. Both
 # matter; this is the one that can stop a secret before it reaches history.
-gate secrets gitleaks  gitleaks dir --redact --no-banner .
+gate secrets gitleaks  gitleaks dir --config .gitleaks-tree.toml --redact --no-banner .
+
+# A .env file is where keys live, so the working-tree scan allows one; a
+# tracked one (`git add -f` gets past .gitignore) would be published with
+# the repository. Only .env.example may be committed (security-a-07).
+no_env_files() {
+  local found
+  found=$(git ls-files | grep -E '(^|/)\.env(\.[^/]*)?$' | grep -v -E '(^|/)\.env\.example$')
+  [ -z "$found" ] || { echo "tracked environment file(s):"; echo "$found"; return 1; }
+}
+gate envfile git       no_env_files
 gate golden  vitest    npx vitest run
 
 # The owner asked (2026-09-24) for the workbook vendor's name to go from
@@ -59,7 +69,7 @@ gate brand   git       no_brand
 if [ "$LEVEL" = "full" ]; then
   # The history scan still earns its place: it catches a secret committed
   # earlier, which a working-tree scan cannot see once the file is deleted.
-  gate history  gitleaks gitleaks detect --redact --no-banner --source .
+  gate history  gitleaks gitleaks detect --config .gitleaks.toml --redact --no-banner --source .
   # Applies every migration to a throwaway database and asserts the schema
   # refuses what it claims to. Never touches the hosted project.
   gate schema   psql     ./scripts/verify-migrations.sh
