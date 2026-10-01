@@ -3350,3 +3350,26 @@ with its own test; M8b adds two tools under the 300-line rule.
 **To settle:** decide whether the cap counts one copy or both, then trim
 trailing `rows` in `answer()` past it and set `truncated`, tested with
 a page of long non-ASCII names.
+
+---
+
+## N146 — focus-return and narration lost a find mid-file in a full gate run
+
+**Seen:** 2026-10-01, before M9, on a clean tree at `9e98291`. One full
+gate run failed `golden` on `focus-return`'s "goes back to the budget
+button once a budget is saved" (no "Budget for Groceries, $300.00"
+button), and `coverage` on two of `narration`'s Coach tests ("never
+shows words kept for claims that have changed…" and "says what is wrong
+now, not what was…"), each not finding what it waited for within a
+find's one second. The next two full runs, on M9's trees, passed;
+neither M9 nor M11a touches those screens. M11a's first run then failed
+`coverage` on one find each in `shell`, `topbar` and `forecast-screen`,
+while a second worktree on the machine ran its own vitest (N90's load).
+
+**Why not fixed here:** they are the app's screens, outside M9 and
+M11a. The first three are not N87's cold start: each failed test runs
+after others in its file, and `narration` already warms the Coach.
+
+**To settle:** find what each test's find races (a save's write, or the
+Coach's second render after `cleanup()`) and wait on the thing that
+settles it, as N144 did; never a longer timeout.

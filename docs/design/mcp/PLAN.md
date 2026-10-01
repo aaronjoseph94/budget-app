@@ -1815,6 +1815,16 @@ created it in M9, and imported `packages/ai-apps` from
 - **Estimate:** about 130 lines.
 - **Done:** §2.13's host cases, each refusal seen RED by loosening the
   match (a prefix match, a host-only match).
+- **As built (2026-10-01):** one commit. `checkCallback(address)` gives
+  `allowed`, the `host` to name in bold (lower case, no trailing dot; null
+  for no web address) and `local`, for the loopback warning. The address
+  is compared as `new URL` reads it, which is where the browser would go:
+  dot segments and backslashes resolve and `:443` is no port, while a
+  percent-encoded path stays encoded and matches nothing. Only loopback
+  may name a port, over `http`. Seen RED with a prefix, a host-only and a
+  substring match (which needed a host and a path that are parts of an
+  allowed one), and without the read-back, port, scheme or id checks.
+  Checking Supabase's returned `redirect_url` stays with M11b's page.
 
 ### M11b: The consent page
 
