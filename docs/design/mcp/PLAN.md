@@ -1788,6 +1788,10 @@ created it in M9, and imported `packages/ai-apps` from
   past 120 characters are a missing `what`; a day after today, which Just
   type it reads as no day, a missing `date`. With all ten tools in,
   `MCP_SERVER_VERSION` is `2026-10-01.1` (N143).
+  *Review, 2026-10-01:* `add_expense` answered `0000-02-29`, which zod
+  passes and `isoDate` refuses, with the error's own message after a
+  counted read. A day `isoDate` cannot read is now `bad_date` before
+  anything is read (N147 holds the cause and the two read tools).
 
 ### M10a: Settings → AI apps: the switches, the address and Connect a new AI app
 

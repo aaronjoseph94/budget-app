@@ -107,14 +107,25 @@ export async function addEntry(caller: Caller, owner: Owner, entry: Entry, tool:
   })
 }
 
+/** The day asked for, or null for one isoDate cannot read (zod passes 0000-02-29; N147). */
+function dayOf(text: string): IsoDate | null {
+  try {
+    return isoDate(text)
+  } catch (error) {
+    if (!(error instanceof RangeError)) throw error
+    return null
+  }
+}
+
 export async function addExpense(caller: Caller | null, input: AddExpenseInput): Promise<CallToolResult> {
   if (caller === null) return refusal('server_error')
   const amount = parseTypedAmount(input.amount)
   if (!amountAllowed(amount)) return refused('add_expense', 'bad_amount')
+  const asked = input.date === undefined ? undefined : dayOf(input.date)
+  if (asked === null) return refused('add_expense', 'bad_date')
   const owner = await ownerFor(caller, input.category)
   if (isRefusal(owner)) return refused('add_expense', owner.refused)
-  const date = input.date === undefined ? owner.today : isoDate(input.date)
-  return addEntry(caller, owner, { amount, what: input.what, date, flow: input.flow, sameAgain: input.same_again }, 'add_expense')
+  return addEntry(caller, owner, { amount, what: input.what, date: asked ?? owner.today, flow: input.flow, sameAgain: input.same_again }, 'add_expense')
 }
 
 export function registerAddExpense(server: McpServer, caller: Caller | null): void {

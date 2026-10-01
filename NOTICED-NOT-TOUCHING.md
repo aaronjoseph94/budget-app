@@ -3373,3 +3373,26 @@ after others in its file, and `narration` already warms the Coach.
 **To settle:** find what each test's find races (a save's write, or the
 Coach's second render after `cleanup()`) and wait on the thing that
 settles it, as N144 did; never a longer timeout.
+
+---
+
+## N147 — isoDate refuses 0000-02-29, which zod's date check passes
+
+**Seen:** 2026-10-01, reviewing M9. `daysInMonth` in
+`packages/money-primitives/src/index.ts` builds its date with
+`Date.UTC(year, month, 0)`, which reads a year from 0 to 99 as 1900 to
+1999. Year 0 is a leap year and 1900 is not, so `isoDate('0000-02-29')`
+throws a `RangeError`, while `z.iso.date()` accepts it. A tool that
+reads a date with `isoDate` after zod then throws, and the SDK answers
+the error's own message ("Day out of range in …") instead of one of
+§2.8's sentences: `get_period`'s `date` and `search_transactions`'
+`from` and `to` do this today. Nothing is logged or written; the message
+holds only the date the AI sent. The review's fix makes `add_expense`
+answer `bad_date` for it before reading anything.
+
+**Why not fixed here:** the cause is in `money-primitives`, which every
+package reads dates through, outside M9 and M11a.
+
+**To settle:** build the date in `daysInMonth` with `setUTCFullYear`, so
+years 0 to 99 are read as written, with `isoDate` cases for 0000-02-29
+(a day) and 0001-02-29 (not one); then the two read tools need nothing.

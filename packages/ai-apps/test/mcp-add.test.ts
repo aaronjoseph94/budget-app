@@ -91,6 +91,13 @@ describe('add_expense', () => {
     expect(rpcCalls).toEqual([])
   })
 
+  // zod passes 0000-02-29, a leap day in year 0, which money-primitives' isoDate refuses (N147).
+  it('refuses a day the app cannot read before reading anything, as a bad date', async () => {
+    const { result, rpcCalls } = await add({ ...LUNCH, date: '0000-02-29' })
+    expect(result).toEqual(says(SENTENCES.bad_date))
+    expect(rpcCalls).toEqual([])
+  })
+
   it('takes $100,000.00 and a day 366 days back, the owner’s today being 2026-09-30', async () => {
     expect((await add({ ...LUNCH, amount: '100000.01' })).result).toEqual(says(SENTENCES.bad_amount))
     expect(body((await add({ ...LUNCH, amount: '100,000', date: '2025-09-29' })).rpcCalls[1])).toMatchObject({ p_amount_cents: -10000000, p_posted_on: '2025-09-29' })
