@@ -70,7 +70,7 @@ export {
 } from './pdf/read.js'
 export { groupRows, type LayoutRow } from './pdf/layout.js'
 export { type TextRun } from './pdf/text.js'
-export { type PdfFailure } from './pdf/objects.js'
+export { MAX_PDF_BYTES, type PdfFailure } from './pdf/objects.js'
 
 export {
   LOOKBACK_DAYS,

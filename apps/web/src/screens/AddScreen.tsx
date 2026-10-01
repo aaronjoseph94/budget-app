@@ -4,7 +4,7 @@ import { isoDate } from '@budget/core'
 import { parseMoneyInput, useAppData } from '../app-data.js'
 import { addTypedTransaction, ensureCategory, saveImport } from '../ledger.js'
 import { ImportScreen, type SaveRequest } from '../ImportScreen.js'
-import { readStatementPdf, type PdfImport } from '../pdf-import.js'
+import { readStatementFile, type PdfImport } from '../pdf-import.js'
 import { readReceipt, type ReceiptLink } from '../receipt.js'
 import { formatCents, formatDayMonth, formatIsoDate, todayIso } from '../format.js'
 import { IngestedText } from '../ui.js'
@@ -135,7 +135,7 @@ export function StatementImport() {
     // "Reading…" with no way back (CR-7).
     try {
       if (isPdf) {
-        const result = await readStatementPdf(new Uint8Array(await file.arrayBuffer()))
+        const result = await readStatementFile(file)
         setLoaded({ kind: 'pdf', name: file.name, result })
       } else {
         setLoaded({ kind: 'csv', name: file.name, text: await file.text() })

@@ -26,6 +26,20 @@ export const MAX_RUNS_PER_PAGE = 20_000
 const latin1 = new TextDecoder('latin1')
 
 /**
+ * Every pattern below is linear on any input (security-b-04): a run of
+ * digits or of open brackets made the old ones try every split of it, and a
+ * 1KB page held the main thread for an hour. A number operand starts only
+ * at the first character of a run and is bounded, as is the gap after it,
+ * so each attempt costs a constant. An array's body cannot hold a bare `[`,
+ * so each `[` scans no further than the next; a `[` inside one of its
+ * strings is still read, because strings are matched whole.
+ */
+const NUMBER_START = String.raw`(?<![-\d.])`
+const NUMBER = String.raw`[-\d.]{1,32}`
+const GAP = String.raw`\s{1,16}`
+const ARRAY_LITERAL = String.raw`\((?:\\[\s\S]|[^\\()])*\)`
+
+/**
  * The operators that matter, in one pass.
  *
  * Ordered so that the longest, most specific forms match first: an array-form
@@ -35,11 +49,11 @@ const TOKEN = new RegExp(
   [
     String.raw`\((?<lit>(?:\\[\s\S]|[^\\()])*)\)\s*(?<litOp>Tj|TJ|'|")`,
     String.raw`<(?<hex>[0-9A-Fa-f\s]*)>\s*(?:Tj|TJ)`,
-    String.raw`\[(?<arr>(?:\\[\s\S]|[^\]\\])*)\]\s*TJ`,
-    String.raw`(?<tm>(?:[-\d.]+\s+){5}[-\d.]+)\s+Tm`,
-    String.raw`(?<td>[-\d.]+\s+[-\d.]+)\s+(?<tdOp>Td|TD)`,
+    String.raw`\[(?<arr>(?:${ARRAY_LITERAL}|<[0-9A-Fa-f\s]*>|\\[\s\S]|[^\[\]()<>\\])*)\]\s*TJ`,
+    String.raw`${NUMBER_START}(?<tm>(?:${NUMBER}${GAP}){5}${NUMBER})${GAP}Tm`,
+    String.raw`${NUMBER_START}(?<td>${NUMBER}${GAP}${NUMBER})${GAP}(?<tdOp>Td|TD)`,
     String.raw`(?<tstar>T\*)`,
-    String.raw`(?<lead>[-\d.]+)\s+TL`,
+    String.raw`${NUMBER_START}(?<lead>${NUMBER})${GAP}TL`,
     String.raw`(?<bt>BT)`,
   ].join('|'),
   'g',

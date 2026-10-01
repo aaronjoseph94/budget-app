@@ -34,6 +34,15 @@ export type PdfFailure =
 export const MAX_PDF_BYTES = 24 * 1024 * 1024
 /** A statement with more pages than this is not a statement. */
 export const MAX_PDF_PAGES = 200
+/**
+ * 4MB, for one content stream once inflated. MAX_PDF_BYTES bounds only the
+ * compressed file, and Flate can grow 1000-fold: a 130KB file inflated to
+ * 128MB a page (security-b-03). A page of MAX_RUNS_PER_PAGE runs at about
+ * 60 bytes each is about 1.2MB, so this is generous.
+ */
+export const MAX_INFLATED_BYTES = 4 * 1024 * 1024
+/** 32MB, for every distinct content stream in one file, inflated. */
+export const MAX_DOCUMENT_INFLATED_BYTES = 32 * 1024 * 1024
 
 export interface PdfObject {
   readonly id: number
@@ -64,7 +73,13 @@ export type ObjectsOutcome =
  */
 const latin1 = new TextDecoder('latin1')
 
-const OBJECT_HEADER = /(\d+)\s+(\d+)\s+obj\b/g
+/**
+ * Starts only at the first digit of a run, with bounded runs and gaps, so a
+ * long run of digits costs one pass rather than every split of it: a 1KB
+ * file of deflated digits held the main thread for an hour (security-b-04).
+ * Object numbers fit in ten digits and generations in five.
+ */
+const OBJECT_HEADER = /(?<!\d)(\d{1,10})\s{1,8}(\d{1,5})\s{1,8}obj\b/g
 
 /**
  * Split the file into numbered objects.
@@ -200,6 +215,7 @@ export async function inflateStream(
   // producers that omit the two-byte header, which some do.
   for (const format of ['deflate', 'deflate-raw'] as const) {
     const out = await tryInflate(object.raw, format)
+    if (out === 'too_large') return { ok: false, failure: 'too_large' }
     if (out !== null) return { ok: true, bytes: out }
   }
   return { ok: false, failure: 'stream_undecodable' }
@@ -208,7 +224,7 @@ export async function inflateStream(
 async function tryInflate(
   raw: Uint8Array,
   format: 'deflate' | 'deflate-raw',
-): Promise<Uint8Array | null> {
+): Promise<Uint8Array | 'too_large' | null> {
   try {
     // A ReadableStream rather than a Blob, and with no type argument.
     //
@@ -225,8 +241,28 @@ async function tryInflate(
         controller.close()
       },
     })
-    const inflated = source.pipeThrough(new DecompressionStream(format))
-    return new Uint8Array(await new Response(inflated).arrayBuffer())
+    // Read a chunk at a time and stop at the cap, rather than buffering
+    // whatever the stream grows to.
+    const reader = source.pipeThrough(new DecompressionStream(format)).getReader()
+    const chunks: Uint8Array[] = []
+    let total = 0
+    for (;;) {
+      const { done, value } = (await reader.read()) as { done: boolean; value?: Uint8Array }
+      if (done || value === undefined) break
+      total += value.byteLength
+      if (total > MAX_INFLATED_BYTES) {
+        await reader.cancel()
+        return 'too_large'
+      }
+      chunks.push(value)
+    }
+    const out = new Uint8Array(total)
+    let at = 0
+    for (const chunk of chunks) {
+      out.set(chunk, at)
+      at += chunk.byteLength
+    }
+    return out
   } catch {
     return null
   }
