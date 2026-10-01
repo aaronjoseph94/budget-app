@@ -29,10 +29,16 @@ function helperSteps(again: boolean, newKey: boolean): string[] {
       ]
 }
 
-/** Moving Supabase to its new signing key, which ChatGPT's sign-in needs (PLAN §1, step 3): each helper's gateway check off first. */
+/**
+ * Moving Supabase to its new signing key, which ChatGPT's sign-in needs
+ * (PLAN §1, step 3): each helper's gateway check off first. read-receipt's
+ * copy from before 2026-09-30 has no caller check of its own (PLAN §6,
+ * finding 7), so it is replaced or deleted before its switch comes off;
+ * this page cannot tell which copy is deployed.
+ */
 const SIGNING_KEY_STEPS = [
   'In Supabase, open Edge Functions, then the function named ai, then its settings. Turn Enforce JWT verification off, and save.',
-  'Do the same for read-receipt, if Edge Functions lists it.',
+  'If Edge Functions lists read-receipt, first paste its new version over it with Copy read-receipt below, or delete it: its older copy relies on that switch alone, and with it off anyone could use your Gemini key. Then turn its switch off the same way.',
   'Open Project Settings, then JWT Keys, and press Rotate keys, so the current key is the ECC (P-256) one. Do not revoke the old key.',
   'Sign out of this app and back in, then press Check again.',
 ]
@@ -193,12 +199,14 @@ export function UpdatesPanel() {
               Open {next.file === HELPER_FILE ? 'the AI helper' : next.file} on GitHub
             </a>
           ) : null}
-          {next.kind === 'paste' && next.file === HELPER_FILE ? (
+          {next.kind === 'paste' && (next.file === HELPER_FILE || next.file === SIGNING_KEY) ? (
             <>
-              <p>
-                If Edge Functions also lists read-receipt, paste its new version over it the same way, or delete it. The AI
-                helper reads receipts without it, and its older copy lets anyone with the app’s public key use your Gemini key.
-              </p>
+              {next.file === HELPER_FILE ? (
+                <p>
+                  If Edge Functions also lists read-receipt, paste its new version over it the same way, or delete it. The AI
+                  helper reads receipts without it, and its older copy lets anyone with the app’s public key use your Gemini key.
+                </p>
+              ) : null}
               <CopyFile file={READ_RECEIPT_FILE} />
               <a
                 href={`${REPO}supabase/functions/read-receipt/index.ts`}

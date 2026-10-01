@@ -1971,7 +1971,12 @@ created it in M9, and imported `packages/ai-apps` from
   and keep sign-ups off and Secure email change on (§1, step 5). Help's
   One-time updates article now counts six updates, the helper, two
   settings and the server, about 35 minutes. Not runnable here: whether
-  the browser can read the published settings (K13).
+  the browser can read the published settings (K13). *Reviewed
+  (2026-10-01):* the signing key's clicks turned `read-receipt`'s switch
+  off without replacing it, which on its older copy (§6, finding 7)
+  opens the Gemini key to anyone; they now say to paste its new version
+  or delete it first, with its **Copy** beside them, as HANDOFF §3 step 4
+  does.
 
 ### After M12b, in the owner's order
 

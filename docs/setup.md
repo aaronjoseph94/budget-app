@@ -174,7 +174,7 @@ HANDOFF §3 Part B; One-time updates checks each one. What they leave set:
 | **Authentication → Sign In / Providers** | Allow new users to sign up off; Email: Secure email change on |
 | **Project Settings → JWT Keys** | The current key is ECC (P-256); the old key not revoked |
 | **Edge Functions → `mcp`** | The AI apps server, pasted from One-time updates' **Copy**; **Enforce JWT verification off** |
-| **Edge Functions → `ai`, `read-receipt`** | **Enforce JWT verification off** once the key is ECC (both check every caller themselves) |
+| **Edge Functions → `ai`, `read-receipt`** | **Enforce JWT verification off** once the key is ECC, and only on their versions of 2026-09-30 or later, which check every caller themselves (`read-receipt`'s older copy relies on the switch alone: paste it again or delete it first) |
 
 `mcp` needs no secrets: `SUPABASE_URL` and `SUPABASE_ANON_KEY` are
 provided by Supabase, and `EXTRA_ORIGINS`, if set for the other

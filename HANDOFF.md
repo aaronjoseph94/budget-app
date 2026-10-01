@@ -207,12 +207,14 @@ before", below), because Supabase finds the app's connect page from it.
    with a ✗ (it reads your own sign-in to tell). ChatGPT cannot sign in
    without it. First, Supabase → **Edge Functions** → `ai` → its
    settings → turn **Enforce JWT verification** off → **Save**; the same
-   for `read-receipt` if you kept it. Supabase's own guide warns that
+   for `read-receipt` if you kept it, but only once its new version from
+   step 2 is in: its older copy relies on that switch alone, and with it
+   off anyone could use your Gemini key. Supabase's own guide warns that
    changing the key with that switch on can break a function, and both
-   check every caller themselves. Then **Project Settings → JWT Keys** →
-   **Rotate keys**, so the current key is the **ECC (P-256)** one. Do not
-   revoke the old key. Sign out of the app and back in, and press **Check
-   again**.
+   new versions check every caller themselves. Then **Project Settings →
+   JWT Keys** → **Rotate keys**, so the current key is the **ECC
+   (P-256)** one. Do not revoke the old key. Sign out of the app and back
+   in, and press **Check again**.
 5. **Sign-in for AI apps.** Supabase → **Authentication → URL
    Configuration**: check **Site URL** is
    `https://aaron-budget-app.pages.dev`. Then **Authentication → OAuth

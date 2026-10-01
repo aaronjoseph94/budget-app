@@ -119,6 +119,15 @@ describe('Copy on One-time updates', () => {
     expect(screen.queryByText(/read-receipt/)).toBeNull()
   })
 
+  // Its switch comes off before the key moves, which its older copy cannot survive (PLAN §6, finding 7).
+  it('offers read-receipt again at the signing key', async () => {
+    const fake = createFakeSupabase()
+    await fake.signIn('HS256')
+    fireEvent.click(await nextIs(fake, 'Copy read-receipt'))
+    await screen.findByText('Copied. Now paste it into Supabase.')
+    expect(writeText.mock.calls).toEqual([[SITE['/setup/read-receipt-function.ts']]])
+  })
+
   it('shows the text to select by hand when the browser refuses the clipboard', async () => {
     writeText.mockRejectedValue(new DOMException('denied', 'NotAllowedError'))
     const fake = createFakeSupabase()

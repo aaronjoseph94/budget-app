@@ -34,6 +34,10 @@ async function ready(alg = 'ES256'): Promise<FakeSupabase> {
 /** The row for a file, as a reader hears it: "Not in yet: 0008_…". */
 const row = (file: string) => screen.getByText(file, { selector: 'li span' }).closest('li')?.textContent
 
+/** The next step's clicks, in order, and the GitHub links beside them. */
+const clicks = () => [...document.querySelectorAll('[aria-labelledby="updates-status"] ol > li')].map((li) => li.textContent)
+const githubLinks = () => screen.queryAllByRole('link', { name: /on GitHub$/ }).map((a) => a.textContent)
+
 async function open(fake: FakeSupabase, status: string) {
   renderScreen(<Shell />, fake)
   await screen.findByRole('heading', { level: 1, name: 'One-time updates' })
@@ -120,9 +124,14 @@ describe('One-time updates', () => {
     await open(fake, '19 of 20 in')
     expect(row('Signing key')).toBe('✗Not in yet: Signing keyThe key Supabase signs your sign-in with, which ChatGPT needs')
     expect(screen.getByText(/^Next: move Supabase to its new signing key/)).toBeTruthy()
-    expect(screen.getByText(/^In Supabase, open Edge Functions, then the function named ai, then its settings\. Turn Enforce JWT verification off/)).toBeTruthy()
-    expect(screen.getByText('Sign out of this app and back in, then press Check again.')).toBeTruthy()
-    expect(screen.queryByRole('link', { name: /on GitHub$/ })).toBeNull()
+    // read-receipt's older copy relies on the gateway alone, so it is replaced or deleted before its switch comes off.
+    expect(clicks()).toEqual([
+      'In Supabase, open Edge Functions, then the function named ai, then its settings. Turn Enforce JWT verification off, and save.',
+      'If Edge Functions lists read-receipt, first paste its new version over it with Copy read-receipt below, or delete it: its older copy relies on that switch alone, and with it off anyone could use your Gemini key. Then turn its switch off the same way.',
+      'Open Project Settings, then JWT Keys, and press Rotate keys, so the current key is the ECC (P-256) one. Do not revoke the old key.',
+      'Sign out of this app and back in, then press Check again.',
+    ])
+    expect(githubLinks()).toEqual(['Open read-receipt on GitHub'])
     fake.functions.ai = null
     fireEvent.click(screen.getByRole('button', { name: 'Check again' }))
     expect(await screen.findByText('Keep Enforce JWT verification on, and press Deploy.')).toBeTruthy()
