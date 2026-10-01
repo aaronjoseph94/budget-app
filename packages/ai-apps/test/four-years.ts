@@ -93,3 +93,21 @@ export function readOf(all: Row, whole: boolean): Rpc {
     return reply({ today: all.today, ...Object.fromEntries(parts), ...extras })
   }
 }
+
+/**
+ * As fourYears, with a $200.00 monthly budget for the Trip fund and its
+ * monthly transfers running $50.00, $120.00, $190.00 and $260.00 in turn,
+ * so each forecast's low, likely and high differ, and a figure taken from
+ * the wrong end of a range shows.
+ */
+export function variedFourYears(today: string): Row {
+  const all = fourYears(today)
+  const vary = (rows: unknown) =>
+    (rows as Row[]).map((t) => (t.category_id === 'fund' ? { ...t, amount_cents: -(5000 + (Number(String(t.id).slice(1)) % 4) * 7000) } : t))
+  return {
+    ...all,
+    budgets: [...(all.budgets as Row[]), { id: 'b5', category_id: 'fund', month: '2024-01-01', applies: 'onward', budget_cents: 20000 }],
+    txns: vary(all.txns),
+    fund_txns: vary(all.fund_txns),
+  }
+}

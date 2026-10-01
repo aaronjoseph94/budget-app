@@ -1,6 +1,10 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cashFlow30, cashFlowAhead, goalForecast, isoDate, monthEndForecast, safeToSpend, savingsFunds, whatIf, type Spread, type WhatIfGoal } from '@budget/core'
+import { money } from '../src/money.js'
+import { forecastInput, fundsInput, goalBase, goalsAhead, goalsFrom, goalsInOrder } from '../src/rows.js'
 import { SENTENCES } from '../src/rpc.js'
 import { callTool, reply } from './fake-database.js'
+import { variedFourYears } from './four-years.js'
 import { READ } from './owner-rows.js'
 
 /**
@@ -87,8 +91,8 @@ describe('get_forecast', () => {
     })
   })
 
-  it('says when there is no active goal to work a saving out for', async () => {
-    const out = (await callTool(() => reply({ ...READ, goals: [], fund_txns: [] }), 'get_forecast', { what_if_monthly_saving: '$1,000.5' })).result
+  it.each([['$1,000.5'], ['100,000']])('says when there is no active goal to work %s a month out for', async (saving) => {
+    const out = (await callTool(() => reply({ ...READ, goals: [], fund_txns: [] }), 'get_forecast', { what_if_monthly_saving: saving })).result
     expect((out.structuredContent as Record<string, unknown>).what_if).toEqual({ status: 'no_active_goal' })
   })
 
@@ -112,5 +116,104 @@ describe('get_forecast', () => {
   ])('answers %s with one sentence', async (_, read, sentence) => {
     const { result } = await forecast(read)
     expect(result).toEqual({ isError: true, content: [{ type: 'text', text: sentence }] })
+  })
+})
+
+/**
+ * Every field against core's own answer on the same rows (M7a's "outputs
+ * equal the engine's"), where the shared September rows above leave most of
+ * them at $0 or empty: four varied years on 10 September, before the 15th's
+ * payday, with rent not yet charged, savings still planned, every range
+ * wide and three months ahead. Every name hides a direction override.
+ */
+describe('get_forecast gives core’s figures, field by field', () => {
+  const today = isoDate('2026-09-10')
+  const four = variedFourYears(today)
+  const hidden = (rows: unknown) => (rows as { name: string }[]).map((r) => ({ ...r, name: `${r.name}‮` }))
+  const read = { ...four, categories: hidden(four.categories), goals: hidden(four.goals) }
+  const range = (s: Spread | null) => (s === null ? null : { low: money(s.low), likely: money(s.mid), high: money(s.high) })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('over four years, with a what-if for the main goal', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-09-10T12:00:00Z'))
+    const out = (await callTool(() => reply(read), 'get_forecast', { what_if_monthly_saving: '250' })).result.structuredContent as Record<string, unknown>
+    const input = forecastInput(read, today)
+    const [safe, end, flow, ahead] = [safeToSpend(input), monthEndForecast(input), cashFlow30(input), cashFlowAhead(input)]
+    // Ranges whose ends differ, so a swapped field cannot pass.
+    expect(end.end !== null && end.end.low < end.end.mid && end.end.mid < end.end.high).toBe(true)
+    expect(out.safe_to_spend).toEqual({ status: 'ok', per_day: money(safe.perDayCents!), days: safe.days, available: money(safe.availableCents!), pay_not_counted: [] })
+    expect(out.month_end).toEqual({
+      status: 'range',
+      check_back_on: null,
+      complete_months: 6,
+      so_far: { starting_balance: money(end.startCents!), income: money(end.incomeCents), spent: money(end.spentCents), saved: money(end.savedCents) },
+      pay_still_due: money(end.pay.dueCents),
+      bills_not_charged_yet: money(end.billsNotChargedCents),
+      savings_still_planned: money(end.savingsPlannedCents),
+      spending_still_to_come: money(end.variableToComeCents!),
+      spent: range(end.spent),
+      balance: range(end.end),
+    })
+    // September's rent, not charged on the 1st, counts tomorrow; the 15th's payday comes before October's rent.
+    expect(out.next_30_days).toEqual({
+      today_balance: money(flow.todayCents!),
+      lowest: { date: flow.lowest!.date, balance: money(flow.lowest!.balanceCents) },
+      items: [
+        { date: '2026-09-11', kind: 'bill', name: 'Rent', amount: money(100000), not_charged_on_its_day: true },
+        { date: '2026-09-15', kind: 'payday', name: 'Pay', amount: money(250000) },
+        { date: '2026-10-01', kind: 'bill', name: 'Rent', amount: money(125000), not_charged_on_its_day: false },
+      ],
+      truncated: false,
+      spending_a_day: money(flow.dailyVariableCents!),
+      savings_not_moved: money(flow.savingsNotMovedCents),
+      pay_left_out: [],
+    })
+    expect(ahead.months.map((m) => m.month)).toEqual(['2026-10-01', '2026-11-01', '2026-12-01'])
+    expect(out.next_3_months).toEqual({
+      status: 'range',
+      check_back_on: null,
+      complete_months: 6,
+      pay_not_counted: [],
+      months: ahead.months.map((m) => ({
+        month: m.month.slice(0, 7),
+        pay: money(m.payCents),
+        bills: money(m.billsCents),
+        savings: money(m.savingsCents),
+        spending: range(m.variable),
+        net: range(m.net),
+        balance: range(m.balance),
+      })),
+    })
+    // Trip leads, on its fund, at a ranged pace, so the saving brings each of three dates sooner.
+    const main = goalsAhead(goalsInOrder(goalsFrom(read.goals)), savingsFunds(fundsInput(read, today)))[0]!
+    const paced = goalForecast({ ...goalBase(read, today), goal: main })
+    const w = whatIf({ asOf: today, monthlyCents: 25000, end: end.end, goal: { remainingCents: paced.remainingCents, pace: paced.pace, unitCostCents: null } })
+    const sooner = w.goal as Extract<WhatIfGoal, { status: 'sooner' }>
+    expect(sooner.status === 'sooner' && sooner.dates.early < sooner.dates.middle && sooner.dates.middle < (sooner.dates.late ?? '')).toBe(true)
+    expect(out.what_if).toEqual({
+      status: 'worked_out',
+      goal: 'Trip',
+      monthly: money(25000),
+      weekly: money(w.weeklyCents),
+      kept_this_month: money(w.keptThisMonthCents),
+      month_end_balance: range(w.end),
+      reached: { status: 'range', early: sooner.dates.early, likely: sooner.dates.middle, late: sooner.dates.late, weeks_sooner: sooner.weeksSooner },
+      minutes_a_month: null,
+      unit: null,
+    })
+  })
+
+  it('lists at most 30 bills and paydays, and says there were more', async () => {
+    const bills = Array.from({ length: 31 }, (_, i) => ({ id: `b${i}`, name: `Bill ${i}`, kind: 'bill', sort_order: i + 1, weekly_budget_cents: null }))
+    const plans = bills.map((b, i) => ({ id: `q${i}`, category_id: b.id, effective_month: '2026-01-01', planned_cents: 1000, due_day: (i % 28) + 1 }))
+    const out = (await forecast({ ...READ, categories: [...READ.categories, ...bills], plans: [...READ.plans, ...plans] })).result.structuredContent as {
+      next_30_days: { items: unknown[]; truncated: boolean }
+    }
+    expect(out.next_30_days.items).toHaveLength(30)
+    expect(out.next_30_days.truncated).toBe(true)
   })
 })
