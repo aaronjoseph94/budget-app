@@ -25,8 +25,8 @@ const deskBar = () => screen.getAllByRole('navigation', { name: 'Screens' })[0]!
 const moreItem = async (group: string, name: string) =>
   within(await screen.findByRole('region', { name: group })).getByRole('link', { name: new RegExp(`^${name}`) })
 
-// The Coach is the lazy screen these tests open cold, and under load its
-// first render lost a find's one second (N87).
+// The Coach is the lazy screen these tests open. setup-dom.ts fetches its
+// chunk; drawn once here, its code has run before a find's one second (N87).
 beforeAll(() => warmScreen('#/coach', 'Coach'))
 
 beforeEach(() => {

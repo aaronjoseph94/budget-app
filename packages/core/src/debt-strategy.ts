@@ -46,7 +46,6 @@ export interface StrategyOutcome {
 /** Each plan's outcome; null for one that does not pay every debt off within 600 months. */
 export type PayoffStrategies = Readonly<Record<PayoffStrategy, StrategyOutcome | null>>
 
-
 export function payoffStrategies(input: DebtPlanInput): PayoffStrategies | null {
   if (input.debts.length === 0) return null
   return {

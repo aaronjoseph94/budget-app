@@ -10,7 +10,6 @@ import { StartEditor } from './StartEditor.js'
 import { TryAgain } from '../try-again.js'
 import { ChangeWords } from './CompareLine.js'
 
-
 /** A negative figure in the Month's pink, as the workbook's D13:F14 format marks it. */
 export const NEGATIVE_FIGURE = '-mx-1.5 rounded-lg bg-summary-negative px-1.5 text-summary-negative-ink'
 

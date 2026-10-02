@@ -28,15 +28,14 @@ async function ask(question: string) {
 beforeAll(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(EXAMPLE_TODAY)
-  // Each screen these tests open draws once first, so no find races a cold chunk (N87).
+  // Each screen these tests open draws once first, so no find races its code running cold (N87).
   await warmScreen('#/ask', 'Ask', { fake: forecastFakeWithGoals(), text: 'Try asking' })
   await warmScreen('#/coach', 'Coach', { fake: forecastFakeWithGoals(), text: 'Ask anything about your money' })
   await warmScreen('#/forecast', 'Forecast')
-  // The help sheet is a lazy chunk of its own, opened by a tap, so the
-  // screen's warming never loads it. Importing the module was not enough:
-  // React's lazy still suspended on its first render, and under a loaded
-  // full run that lost the find's one second for Ask about this. Opened
-  // once here, the sheet renders at once in the test.
+  // The help sheet is a lazy part of its own, opened by a tap, so the
+  // screen's warming never draws it. setup-dom.ts fetches its chunk; opened
+  // once here, its code has also run once, so the sheet renders at once in
+  // the test and Ask about this is found well inside the find's one second.
   render(<HelpButton screen="forecast" />)
   fireEvent.click(screen.getByRole('button', { name: 'Help with this screen' }))
   await new Promise<void>((resolve) => {

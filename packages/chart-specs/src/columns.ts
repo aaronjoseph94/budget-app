@@ -148,7 +148,6 @@ function monthLabels(labels: readonly string[], step: number): { size: Readonly<
   return { size: {}, text: (l) => Array.from(l)[0] ?? '' }
 }
 
-
 function baseline(width: number): SvgNode {
   return el('line', {
     x1: 0,

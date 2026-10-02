@@ -37,9 +37,9 @@ function seeded(periodStart = '2026-07-01'): FakeSupabase {
 const whole = (s: string) => (_: string, el: Element | null) => el?.tagName === 'BUTTON' && el.textContent === s
 
 /**
- * The line is its own lazy chunk, drawn after the Month (N87): its first
- * render in a file suspends and runs cold, and under a loaded machine
- * that lost a find's one second. Setup, not an assertion, so it waits for
+ * The line is its own lazy part, drawn after the Month (N87). setup-dom.ts
+ * fetches its chunk, but its first render in a file still runs cold, and
+ * under a loaded machine that cost most of a find's one second. Setup, not an assertion, so it waits for
  * the line as the page changes, bounded by vitest's hook limit; no test's
  * own wait is raised.
  */

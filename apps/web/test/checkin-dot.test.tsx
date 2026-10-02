@@ -18,8 +18,8 @@ const phoneBar = () => screen.getAllByRole('navigation', { name: 'Screens' })[1]
 const coachTab = () => within(phoneBar()).getByRole('link', { name: /^Coach/ })
 const on = (day: number) => vi.setSystemTime(new Date(2026, 8, day, 12))
 
-// The Coach is the lazy screen these tests open cold, and under load its
-// first render lost a find's one second (N87).
+// The Coach is the lazy screen these tests open. setup-dom.ts fetches its
+// chunk; drawn once here, its code has run before a find's one second (N87).
 beforeAll(() => warmScreen('#/coach', 'Coach'))
 
 beforeEach(() => {
