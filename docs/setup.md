@@ -52,7 +52,7 @@ refused rather than applied twice.
 | `0035_ai_app_updates_in.sql` | Lets One-time updates see exactly which AI-app safety updates are in. It only reads, needs nothing but `0020`, and is pasted **before** `0030` (One-time updates lists it there) |
 | `0036_ai_search_as_shown.sql` | An AI app's searches match shop names only as it is shown them. It stops with "Paste 0035 first" unless `0030` to `0035` are all in |
 | `0037_ai_rows_before_the_fixes.sql` | Tidies anything an AI app added before these safety updates. It stops with "Paste 0036 first" if `0036` is not in |
-| `0038_intuit_prefix_merchants.sql` | Tidies shop names stored with Intuit's `IN*` prefix, so `IN*ACME` and `ACME` are one shop. **It permanently deletes** a learned shop where two would end up with one name (the one made or used most recently stays), so take a backup first (HANDOFF §3, "Before 0038, a backup"). Pasted last: it stops with "Paste 0029 first" or "Paste 0037 first". Written as `0030` and renumbered at the merge of two lines of updates (2026-10-02) |
+| `0038_intuit_prefix_merchants.sql` | Tidies shop names stored with Intuit's `IN*` prefix, so `IN*ACME` and `ACME` are one shop. **It permanently deletes** a learned shop where two would end up with one name (the one made or used most recently stays), so take a backup first (HANDOFF §3, steps 13 and 15). Pasted last: it stops with "Paste 0029 first" or "Paste 0037 first". Written as `0030` and renumbered at the merge of two lines of updates (2026-10-02) |
 
 **`0015` to `0038` can be pasted after `main-tnlcto` is merged into
 `main`.** Nothing the app needs to open depends on them: each new part
@@ -200,7 +200,7 @@ Supabase secret — never in the app, never in this repository.
 Lets your own Claude or ChatGPT read your figures and add items to
 Review over MCP. Chosen in `docs/adr/0012-mcp-server.md`; the design and
 every check is `docs/design/mcp/PLAN.md`. The steps, in order, are
-HANDOFF §3 Part B; One-time updates checks each one. What they leave set:
+HANDOFF §3 Part F; One-time updates checks each one. What they leave set:
 
 | Where in Supabase | Setting |
 |---|---|
