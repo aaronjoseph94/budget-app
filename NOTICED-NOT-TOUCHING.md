@@ -3382,6 +3382,20 @@ shops to match (the more recently made or used one kept where two would
 share a name). The dedupe hash is over the raw text and does not move,
 so no hash version bump is needed.
 
+**0030 deletes rows** *(recorded 2026-10-02, review of a95f03f)*: where
+two or more of the owner's learned shops would share one tidied name
+(`IN*X` beside `X`, or `IN*X` beside `IN* X`), every one but the most
+recently made or used is permanently deleted from `merchant_rules`, and
+with it the category decision it held. That makes 0030 a destructive
+migration. CLAUDE.md asks first before one, and asks for it in its own
+commit after a verified `pg_dump`. The owner's 2026-09-30 pre-approval
+("don't ask me any questions; auto-allow and say yes to everything") is
+the answer to the ask. The "own commit" rule was not met: 0030 shipped in
+a95f03f with the `merchant.ts` change, and splitting it now would rewrite
+the branch. The backup is the owner's step, because the owner pastes
+migrations into the hosted project by hand: take one before pasting
+0030 (the steps are in the handoff notes for the 0030 update).
+
 ---
 
 ## N147 — Tests run the app through Vite 7 while the site builds with Vite 8
