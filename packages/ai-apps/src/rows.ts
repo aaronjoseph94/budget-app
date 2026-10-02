@@ -191,7 +191,7 @@ export function weekSheetInput(read: Read, asOf: IsoDate): WeekSheetInput {
 
 /**
  * Names that tie on Setup's order go in English order, the same on every
- * device and the same as core's byName (architecture-a-02, F52): a bare
+ * device and the same as core's byName (architecture-a-02, F53): a bare
  * localeCompare follows wherever the server runs.
  */
 const NAMES = new Intl.Collator('en')
