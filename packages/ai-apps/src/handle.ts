@@ -27,7 +27,9 @@ import { TOOLS, budgetServer } from './server.js'
 // The app's own sites and its dev server, plus exact https origins in the
 // EXTRA_ORIGINS secret, as the AI helper allows. Claude and ChatGPT call
 // from their servers and send no Origin; a browser page on any other origin
-// is refused (the spec's DNS-rebinding rule).
+// is refused (the spec's DNS-rebinding rule). The netlify.app entry is the
+// retiring preview; it goes, with the AI helper's and read-receipt's, when
+// netlify.toml does (N151).
 const ORIGINS = ['https://aaron-budget-app.pages.dev', 'https://aaron-budget-app.netlify.app', 'http://localhost:5173']
 
 // The environment boundary. Supabase sets the first three. There is no field

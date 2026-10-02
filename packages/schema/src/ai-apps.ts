@@ -10,8 +10,8 @@ import { IngestedTextSchema } from './primitives.js'
 export const MCP_SERVER_VERSION = '2026-10-02.1'
 
 /*
- * What an AI app may send the server's tools (PLAN §2.4). Each tool's input
- * object is built from these in the slice that adds the tool, `.strict()`.
+ * What an AI app may send the server's tools (PLAN §2.4): each tool's input
+ * object is built from these, `.strict()`.
  * zod's messages name the field and never echo the value.
  */
 

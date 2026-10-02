@@ -1,3 +1,5 @@
+const GROUPED = new Intl.NumberFormat('en-US')
+
 /**
  * The one place money becomes a string.
  *
@@ -10,8 +12,6 @@
  * division would hand the formatter a float, and the whole point of storing
  * minor units is that no float ever touches an amount.
  */
-const GROUPED = new Intl.NumberFormat('en-US')
-
 export function formatCents(amountCents: number): string {
   // A float or NaN printed as a plausible amount ("$0.12.5", "$NaN.NaN")
   // would hide the bug that made it; the message names no value, per the

@@ -24,7 +24,7 @@ export interface Card {
 export interface RankCardsInput {
   /** From factsDigest, in any order. */
   readonly facts: readonly Fact[]
-  /** Causes the owner dismissed (A17 stores them; none until then). */
+  /** Causes the owner dismissed, as the Coach's memory keeps them (A17, 0017). */
   readonly dismissed: ReadonlySet<string>
 }
 

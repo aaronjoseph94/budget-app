@@ -23,8 +23,8 @@ import { type Cents, ZERO_CENTS, cents, sumCents } from '@budget/money-primitive
 /**
  * The figures a statement prints about itself.
  *
- * All are given as the STATEMENT writes them: `paymentsAndCredits` and
- * `purchasesAndDebits` are both positive totals, because that is how a
+ * All are given as the STATEMENT writes them: `paymentsAndCreditsCents` and
+ * `purchasesAndDebitsCents` are both positive totals, because that is how a
  * statement presents them. The sign convention of the ledger is applied to
  * rows elsewhere; mixing the two here is how a reconciliation passes by
  * cancelling its own error.

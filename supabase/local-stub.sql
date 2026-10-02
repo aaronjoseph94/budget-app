@@ -6,7 +6,6 @@
 -- migrations under supabase/migrations/ are tested verbatim: a migration that
 -- has to be edited to be testable is not the migration that runs in production.
 
--- so it can be applied and exercised locally exactly as written.
 create schema if not exists auth;
 create schema if not exists storage;
 

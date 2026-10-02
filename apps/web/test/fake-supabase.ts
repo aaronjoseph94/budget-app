@@ -8,8 +8,6 @@
  * answered here from in-memory tables typed by ledger.ts's own row types. A
  * query this server does not understand fails loudly rather than returning
  * an empty list that a test could mistake for "nothing there".
- *
- * Adapted from the screenshot harness's fake, keeping what the tests use.
  */
 import { createClient, type OAuthAuthorizationDetails, type OAuthGrant, type OAuthRedirect } from '@supabase/supabase-js'
 import type {

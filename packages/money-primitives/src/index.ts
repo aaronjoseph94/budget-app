@@ -53,7 +53,7 @@ export const sumCents = (values: readonly Cents[]): Cents =>
  * Excel Semantics (Debt Calculator, J20/O20/T20/Y20): the workbook applies a
  * flat monthly rate of APR/12 with no day-count adjustment. It retains sub-cent
  * fractions; this rounds to whole cents each month because fractions of a cent
- * cannot be paid. See docs/divergences.md.
+ * cannot be paid. See docs/divergences.md D1.
  *
  * Integer arithmetic throughout: balance * bp / (10_000 * 12).
  */

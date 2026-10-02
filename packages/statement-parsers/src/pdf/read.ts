@@ -1,7 +1,9 @@
 /**
  * A PDF's bytes to its pages of positioned text.
  *
- * The one entry point; objects.ts, text.ts and layout.ts are its parts.
+ * The one entry point for a PDF's text; objects.ts and text.ts are its
+ * parts. layout.ts (groupRows) turns the pages it returns into rows, for a
+ * statement format such as formats/rogers.ts.
  */
 
 import { MAX_DOCUMENT_INFLATED_BYTES, MAX_PDF_PAGES, inflateStream, splitObjects, type PdfFailure } from './objects.js'

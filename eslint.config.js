@@ -47,8 +47,9 @@ const NO_AMBIENT_STATE = [
 /**
  * Globals that reach outside a pure function: a clock, randomness, a
  * locale, the network, timers, storage or the host (architecture-a-03).
- * The syntax rules above catch four spellings; these catch the rest
- * (`Date()`, `globalThis.Date.now()`, `performance.now()`, `fetch`, ...).
+ * The syntax rules above catch the common spellings; these catch any other
+ * reach for the same globals (`globalThis.Date.now()`, `performance.now()`,
+ * `fetch`, ...).
  */
 const AMBIENT_GLOBALS = [
   'Date', 'performance', 'crypto', 'Intl', 'globalThis', 'fetch', 'XMLHttpRequest', 'WebSocket',
@@ -426,9 +427,10 @@ export default tseslint.config(
     rules: { 'no-restricted-syntax': ['error', ...NO_WEAK_ASSERTIONS] },
   },
   {
-    // The app's and the functions' tests may use vi.mock (two do, for the
-    // browser's own APIs), but CLAUDE.md's "never toBeCloseTo or snapshots
-    // on money or dates" binds them too (architecture-b-03).
+    // The app's and the functions' tests may use vi.mock (two do:
+    // add-statement stands in for the PDF reader, reports-download counts the
+    // CSV writer's loads), but CLAUDE.md's "never toBeCloseTo or snapshots on
+    // money or dates" binds them too (architecture-b-03).
     files: ['apps/web/test/**/*.{ts,tsx}', 'supabase/functions/test/**/*.ts'],
     rules: { 'no-restricted-syntax': ['error', ...NO_WEAK_ASSERTIONS.filter((rule) => !rule.selector.includes("'mock'"))] },
   },

@@ -145,8 +145,9 @@ export interface DebtRingInput extends ChartFrame {
 
 /**
  * The Debt Calculator's doughnut (I495:I496: Balance Paid, Remaining
- * Balance; holeSize 50) in Home's debt colours (D25): what is paid, #C8B6EB,
- * clockwise from twelve o'clock over a ring of what is left, #9171D7.
+ * Balance; holeSize 50) in Mockup A's colours (N124): what is paid in the
+ * accent #4F46E5, clockwise from twelve o'clock, over a track #E5E7EB of
+ * what is left.
  */
 export function debtRing(input: DebtRingInput): SvgMarkup {
   const c = WIDTH / 2

@@ -9,7 +9,7 @@
 // five services (plan A10, A11), and `run`, which runs one task on the
 // first service that answers: `test`, the Coach's daily words (A12), a
 // month's review (A15), the Sunday check-in (A20), Review's suggested
-// categories (A21), Just type it (A22) and a receipt photo (A23).
+// categories (A21), Just type it (A22), a receipt photo (A23) and Ask (A24).
 //
 // Who is calling comes from Supabase's auth server, asked with the
 // caller's own token, never from the request body. The database is reached
@@ -281,6 +281,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const obj = (v: unknown): Record<string, unknown> => (typeof v === 'object' && v !== null && !Array.isArray(v) ? (v as Record<string, unknown>) : {})
 const list = (v: unknown): readonly unknown[] => (Array.isArray(v) ? v : [])
 
+type Who = { readonly user: string } | { readonly code: Code }
+
 /**
  * Who is calling: the auth server's answer to the caller's own token,
  * which checks its signature, expiry and session; this is what turns it
@@ -289,8 +291,6 @@ const list = (v: unknown): readonly unknown[] => (Array.isArray(v) ? v : [])
  * token, from Supabase's OAuth server, carries a client_id claim that the
  * owner's own sign-in never has. A payload that cannot be read is refused.
  */
-type Who = { readonly user: string } | { readonly code: Code }
-
 async function whoIs(env: Env, bearer: string, fetchFn: typeof fetch): Promise<Who> {
   const apikey = publicKey(env)
   if (env.SUPABASE_URL === undefined || apikey === null) {
@@ -972,7 +972,7 @@ async function saveKey(env: Env, user: string, provider: Provider, key: string, 
 /**
  * The key the helper would use for a service: the saved one, opened, else
  * for Gemini the GEMINI_API_KEY secret. `key` is null when a saved key no
- * root can open (locked); `saved` is null when there is no key at all.
+ * root can open (locked); keyFor is null when there is no key at all.
  */
 type KeyFor = { readonly source: 'saved' | 'secret'; readonly key: string | null; readonly hint: string | null; readonly status: unknown }
 async function keyFor(env: Env, user: string, provider: Provider, keys: unknown): Promise<KeyFor | null> {

@@ -126,7 +126,7 @@ module.exports = {
         'second place for a figure to be wrong — the one the user actually reads. ' +
         'The TYPE is allowed: naming a value Cents costs nothing and prevents a float. ' +
         'The functions are not. Totals come from packages/core or they do not exist. ' +
-        'The one exception is src/format.ts, the one display helper (MCP plan M5a): it ' +
+        'The one exception is packages/money-primitives/src/format.ts, the one display helper (MCP plan M5a): it ' +
         'turns one amount into words and adds nothing up, and the app and the AI apps ' +
         'server must share it rather than each keep a copy.',
       from: { path: '^apps/web/src' },
@@ -276,7 +276,7 @@ module.exports = {
     { from: { path: '^apps/web/vite\\.config\\.ts$' }, to: { path: '^apps/web/src/public-key\\.ts$' } },
     // Its test runs that config, so taking the refusal out of it fails a test.
     { from: { path: '^apps/web/test/vite-config\\.test\\.ts$' }, to: { path: ['^apps/web/vite\\.config\\.ts$', 'node_modules/vite/'] } },
-    // So does the Copy button's test, which serves those same files.
+    // Node's fs, for the /setup/ plugin, its test, and the Copy button's test, which serves those same files.
     { from: { path: '^apps/web/(setup-files\\.ts|test/setup-files\\.test\\.ts|test/updates-copy\\.test\\.tsx)$' }, to: { dependencyTypes: ['core'] } },
     { from: { path: '^apps/web/test/setup-files\\.test\\.ts$' }, to: { path: '^apps/web/setup-files\\.ts$' } },
     // The one arrow from the app into the AI apps server: the /setup/ plugin

@@ -2,9 +2,9 @@
 # Apply every migration to an empty database and assert the schema refuses what
 # it claims to refuse.
 #
-# This is what moves CONSTRAINTS.md's "RLS coverage" and "Migration replay" rows
-# out of Pending: both now name a command that runs. It uses a throwaway
-# cluster in a temp directory and never touches the hosted project.
+# CONSTRAINTS.md's "RLS coverage" and "Migration replay" rows name this script.
+# It uses a throwaway cluster in a temp directory and never touches the
+# hosted project.
 #
 # Supabase provides `auth` and `storage` itself; supabase/local-stub.sql stands
 # in for them so the migrations can be applied verbatim rather than edited for

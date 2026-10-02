@@ -120,6 +120,8 @@ const SUMMARY_LABELS = [
   ['newBalanceCents', String.raw`New\s+Balance`],
 ] as const
 
+type SummaryKey = (typeof SUMMARY_LABELS)[number][0]
+
 /**
  * The printed summary figures.
  *
@@ -129,8 +131,6 @@ const SUMMARY_LABELS = [
  * purchases — so an amount taken from anywhere but after its own label is the
  * wrong one, and wrong in a way that still reconciles against itself.
  */
-type SummaryKey = (typeof SUMMARY_LABELS)[number][0]
-
 export function readSummary(pages: readonly (readonly TextRun[])[]): RogersSummary | null {
   // Keyed by the labels' own names, so a mistyped key does not compile
   // (architecture-a-07).

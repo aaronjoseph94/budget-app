@@ -1,8 +1,7 @@
 name: Gates
 
-# CONSTRAINTS.md marks Coverage and Dependencies as running "at CI". This is
-# that CI. Until it existed, those two rows named a place that did not exist,
-# which is the same failure as a gate that reports PASS without running.
+# The CI that CONSTRAINTS.md's rows marked "CI" (Coverage, Dependencies,
+# Migration replay, RLS coverage, Web first load and others) name.
 on:
   push:
     branches: ['**']

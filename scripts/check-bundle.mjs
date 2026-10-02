@@ -5,23 +5,22 @@
 // 1. First-load JavaScript: the entry script and every chunk index.html
 //    preloads beside it, gzipped, must stay within BUDGET. The Month opens
 //    first (decision 1) and waits for all of it (PERF-3, PERF-8).
-// 2. (Retired with the title font, ADR 0010: the app loads no font file,
-//    so there is no preload to check. PERF-6 cannot recur.)
-// 3. Only the two public values may be compiled in. The build is run with a
+// 2. Only the two public values may be compiled in. The build is run with a
 //    probe VITE_ variable that no code reads; finding its value in the
 //    output means every VITE_ variable in the environment ships (SEC-4).
-// 4. The one-time updates under setup/ (ADR 0007) are exactly every
+// 3. The one-time updates under setup/ (ADR 0007) are exactly every
 //    migration from 0015 on, the AI helper and read-receipt, each byte for byte as
 //    committed: nothing more is published, and nothing is changed on the way.
 //    Beside them, mcp-function.ts, the AI apps server built from
-//    packages/ai-apps (ADR 0012): it must open with its banner, import only
-//    the two pinned npm: packages, and name no service key and no AI host.
-// 5. The JavaScript a browser runs names no AI service's API host and no
+//    packages/ai-apps (ADR 0012): it must open with its banner, import
+//    nothing (the SDK and zod are bundled), and name no service key and no
+//    AI host.
+// 4. The JavaScript a browser runs names no AI service's API host and no
 //    service-role key: every AI call goes through the `ai` helper (ADR 0004).
 //    setup/ is left out, since it is the functions' own source, and is never
 //    run by the page; apps/web/test/no-provider-hosts.test.ts checks the
 //    app's source the same way.
-// 6. The PDF statement reader loads with Add, not with the first screen:
+// 5. The PDF statement reader loads with Add, not with the first screen:
 //    no first-load file holds its `FlateDecode` (PERF-3). The package's
 //    barrel is read by the Month's path for its small helpers, and without
 //    "sideEffects": false the reader came along with them.
@@ -33,7 +32,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { gzipSync } from 'node:zlib'
 
-// Measured 186 KB after PERF-3 split the screens out; the skill's budget is
+// The measured figure is in CONSTRAINTS.md's Measured table; the skill's budget is
 // 200 KB, which leaves room for small growth and none for a regression.
 const BUDGET_KB = 200
 const PROBE = 'bundle-probe-value-that-must-not-ship'

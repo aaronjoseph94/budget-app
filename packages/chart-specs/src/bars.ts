@@ -66,8 +66,8 @@ const SAVINGS: Palette = {
  * Home's debt chart (chart4, D25): what is left of each debt in Debts'
  * rose #E11D48, over a track as long as its starting balance in its tile
  * #FFE4E6, and the debts ink #BE123C for words (ADR 0010, N124). Its
- * classes are its own, so the Debts screen's ring keeps its colours until
- * its own step.
+ * classes (chart-debts-*) are its own, apart from the Debts screen's
+ * ring's (chart-debt-*).
  */
 const DEBTS: Palette = {
   goal: { fill: '#FFE4E6', class: 'chart-debts-track' },

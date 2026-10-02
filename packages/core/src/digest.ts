@@ -15,7 +15,7 @@
  * change on Bills or Debts is a bill moving, not a habit (F38 will say it).
  * Plan A08 adds two wins (F33, F34): more saved than by this day last
  * month, and a milestone passed on an active goal. They join version 1:
- * nothing reads the version until the AI's words are cached (plan A12).
+ * nothing reads the version (A12's coach memory does not key on it).
  * Plan A13 adds the month's forecast (F30 to F32) beside the facts, never
  * ranked among them: the Coach gives it a card of its own. Plan A16 adds
  * each Variable category rising or falling steadily (F37). They join
