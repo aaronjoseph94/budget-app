@@ -6,7 +6,7 @@
  * here divides money. The figures are also the table beside the chart and
  * its description.
  */
-import { FONT, type ChartFrame, fit, frame, lengthOf, textUnits, widthOf } from './frame.js'
+import { type ChartFrame, fit, frame, lengthOf, seriesKey, widthOf } from './frame.js'
 import { type SvgMarkup, type SvgNode, el } from './svg.js'
 
 export interface BandColumn {
@@ -30,7 +30,6 @@ const KEY = 220
 const TOP = KEY + 200
 const PLOT = 1_200
 const BASE = TOP + PLOT
-const SWATCH = 100
 
 const INK = { fill: '#6B7280', class: 'chart-forecast-ink' } as const
 const BAND = { fill: '#CAC7F7', class: 'chart-forecast-band' } as const
@@ -59,24 +58,15 @@ export function bandBars(input: BandBarsInput): SvgMarkup {
     return el('g', {}, [el('title', {}, [`${c.label}: ${c.valueText}`]), ...marks])
   })
   return frame(input, BASE + 220, [
-    key(),
+    seriesKey(
+      [
+        ['Most likely', BAR],
+        ['Worst to best case', BAND],
+      ],
+      INK,
+    ),
     el('line', { x1: 0, y1: zero, x2: width, y2: zero, stroke: '#6B7280', 'stroke-width': 10, class: 'chart-forecast-rule' }),
     ...columns,
   ])
 }
 
-/** The two marks named, so colour is never the only way to tell them apart. */
-function key(): SvgNode {
-  let x = 0
-  const marks = (
-    [
-      ['Most likely', BAR],
-      ['Worst to best case', BAND],
-    ] as const
-  ).flatMap(([name, colours]) => {
-    const at = x
-    x += SWATCH + 60 + textUnits(name) + 100
-    return [el('rect', { x: at, y: 30, width: SWATCH, height: SWATCH, rx: 20, ...colours }), el('text', { x: at + SWATCH + 60, y: FONT, ...INK }, [name])]
-  })
-  return el('g', {}, marks)
-}

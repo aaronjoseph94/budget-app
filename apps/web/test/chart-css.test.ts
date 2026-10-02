@@ -55,7 +55,7 @@ describe("the Year's charts on the page", () => {
   const frame = { id: 'y', title: 'Year', description: 'd' }
   const bars = [{ label: 'A', valueText: 'a', goalBp: 10_000, actualBp: 5_000 }]
   const svg = [
-    yearPie({ ...frame, palette: 'home', slices: ['Income', 'Expenses', 'Savings'].map((label) => ({ label, shareBp: 3_000, valueText: 'v' })) }),
+    yearPie({ ...frame, slices: ['Income', 'Expenses', 'Savings'].map((label) => ({ label, shareBp: 3_000, valueText: 'v' })) }),
     shareRing({ ...frame, shareBp: 2_500, rank: 0, centreText: '25%' }),
     incomeExpenseColumns({ ...frame, columns: [{ label: 'Jan', valueText: 'v', parts: [{ fromBp: 0, toBp: 5_000 }, { fromBp: 5_000, toBp: 9_000 }] }] }),
     goalActualColumns({ ...frame, groups: [{ label: 'Income', valueText: 'v', goalBp: 10_000, actualBp: 8_000 }] }),

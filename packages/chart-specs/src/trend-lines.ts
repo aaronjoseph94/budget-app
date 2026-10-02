@@ -6,7 +6,7 @@
  * the line stops and starts again rather than dropping to $0. Nothing here
  * divides money. The page lists the same figures beside each chart.
  */
-import { FONT, WIDTH, type ChartFrame, fit, frame, lengthOf, widthOf } from './frame.js'
+import { FONT, WIDTH, type ChartFrame, across, fit, frame, lengthOf, widthOf } from './frame.js'
 import { type SvgMarkup, type SvgNode, el } from './svg.js'
 
 export interface TrendSeries {
@@ -38,11 +38,6 @@ const TONE = {
   spent: { stroke: '#BE123C', 'stroke-dasharray': 'none', class: 'chart-trend-spent' },
   saved: { stroke: '#B45309', 'stroke-dasharray': '20 40', class: 'chart-trend-saved' },
 } as const
-
-/** The x of month i of n, evenly across, on whole units. */
-function across(i: number, n: number, edge: number, span: number): number {
-  return n < 2 ? edge : edge + Math.floor((2 * i * span + (n - 1)) / (2 * (n - 1)))
-}
 
 /**
  * A line broken at every gap: a polyline for each run of months, a dot for

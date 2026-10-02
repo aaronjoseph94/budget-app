@@ -5,7 +5,7 @@
  * in basis points (scaleSeries), and days are spread evenly across; nothing
  * here divides money. The page lists the same figures beside it.
  */
-import { FONT, type ChartFrame, frame, lengthOf, widthOf } from './frame.js'
+import { FONT, type ChartFrame, across, frame, lengthOf, widthOf } from './frame.js'
 import { label } from './range-bar.js'
 import { type SvgMarkup, type SvgNode, el } from './svg.js'
 
@@ -33,7 +33,7 @@ export function balanceLine(input: BalanceLineInput): SvgMarkup {
   const width = widthOf(input)
   const span = width - 2 * EDGE
   const n = input.pointsBp.length
-  const x = (i: number) => (n < 2 ? EDGE : EDGE + Math.floor((2 * i * span + (n - 1)) / (2 * (n - 1))))
+  const x = (i: number) => across(i, n, EDGE, span)
   const y = (bp: number) => TOP + PLOT - lengthOf(bp, PLOT)
   const marks: SvgNode[] = []
   if (input.zeroBp !== null) {

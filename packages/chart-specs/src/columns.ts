@@ -15,7 +15,7 @@
  * axis ("$"#,##0) is not drawn: every amount is in the chart's description,
  * each column's own title, and the tables beside it.
  */
-import { FONT, type ChartFrame, fit, frame, lengthOf, textUnits, widthOf } from './frame.js'
+import { FONT, type ChartFrame, fit, frame, lengthOf, seriesKey, textUnits, widthOf } from './frame.js'
 import { type SvgMarkup, type SvgNode, el } from './svg.js'
 
 /** Where a stacked part starts and ends, from core (`stackedColumns`). */
@@ -54,7 +54,6 @@ const KEY = 220
 const TOP = KEY + 40
 const PLOT = 1400
 const BASE = TOP + PLOT
-const SWATCH = 100
 /** Mockup A's muted words, #6B7280, 4.83 to one on the card. */
 const INK = { fill: '#6B7280', class: 'chart-year-ink' } as const
 
@@ -82,10 +81,13 @@ export function incomeExpenseColumns(input: IncomeExpenseInput): SvgMarkup {
     return el('g', {}, [el('title', {}, [`${c.label}: ${c.valueText}`]), ...marks, label])
   })
   return frame(input, BASE + 220, [
-    key([
-      ['Income', INCOME],
-      ['Expenses', EXPENSES],
-    ]),
+    seriesKey(
+      [
+        ['Income', INCOME],
+        ['Expenses', EXPENSES],
+      ],
+      INK,
+    ),
     baseline(width),
     ...columns,
   ])
@@ -117,10 +119,13 @@ export function goalActualColumns(input: GoalActualInput): SvgMarkup {
     ])
   })
   return frame(input, BASE + 220, [
-    key([
-      ['Goal', GOAL],
-      ['Actual', ACTUAL],
-    ]),
+    seriesKey(
+      [
+        ['Goal', GOAL],
+        ['Actual', ACTUAL],
+      ],
+      INK,
+    ),
     baseline(width),
     ...groups,
   ])
@@ -143,19 +148,6 @@ function monthLabels(labels: readonly string[], step: number): { size: Readonly<
   return { size: {}, text: (l) => Array.from(l)[0] ?? '' }
 }
 
-/** Two series, so a key names them: colour is never the only way to tell them apart. */
-function key(series: readonly [string, { readonly fill: string; readonly class: string }][]): SvgNode {
-  let x = 0
-  const marks = series.flatMap(([name, colours]) => {
-    const at = x
-    x += SWATCH + 60 + textUnits(name) + 100
-    return [
-      el('rect', { x: at, y: 30, width: SWATCH, height: SWATCH, rx: 20, ...colours }),
-      el('text', { x: at + SWATCH + 60, y: FONT, ...INK }, [name]),
-    ]
-  })
-  return el('g', {}, marks)
-}
 
 function baseline(width: number): SvgNode {
   return el('line', {

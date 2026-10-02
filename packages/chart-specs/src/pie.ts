@@ -13,7 +13,8 @@
  * (nothing above zero) has no slice but keeps its legend row, so the three
  * are always named.
  */
-import { FONT, WIDTH, type ChartFrame, fit, frame, lengthOf, textUnits, widthOf } from './frame.js'
+import { FONT, WIDTH, type ChartFrame, fit, frame, lengthOf, sector, textUnits, widthOf } from './frame.js'
+import { SLICE_HUES } from './doughnut.js'
 import { type SvgMarkup, type SvgNode, el } from './svg.js'
 
 export interface PieSlice {
@@ -26,14 +27,12 @@ export interface PieSlice {
 }
 
 export interface PieInput extends ChartFrame {
-  /** Where it is drawn: Annual's chart row (chart41) or Home's card (chart3). Both are Mockup A's colours. */
-  readonly palette: 'annual' | 'home'
-  /** Income, Expenses and Savings, in that order: the palette is by position. */
+  /** Income, Expenses and Savings, in that order: the colours are by position. */
   readonly slices: readonly PieSlice[]
 }
 
-const MOCKUP_A = { fills: ['#10B981', '#9CA3AF', '#F59E0B'] }
-const PALETTES = { annual: MOCKUP_A, home: MOCKUP_A } as const
+/** Mockup A's income green, grey and savings amber, by position. */
+const FILLS = ['#10B981', '#9CA3AF', '#F59E0B'] as const
 /** Income's, the grey's and Savings' inks (ADR 0010), readable on the card. */
 const INKS = [
   { fill: '#047857', class: 'chart-income-ink' },
@@ -50,7 +49,6 @@ const SWATCH = 100
 
 export function yearPie(input: PieInput): SvgMarkup {
   if (input.slices.length !== 3) throw new RangeError(`The Year's pie has three parts, received ${input.slices.length}`)
-  const palette = PALETTES[input.palette]
   const width = widthOf(input)
   let from = 0
   const marks: SvgNode[] = []
@@ -60,7 +58,7 @@ export function yearPie(input: PieInput): SvgMarkup {
     const to = Math.min(from + lengthOf(s.shareBp, 10_000), 10_000)
     if (to > from) {
       marks.push(
-        el('path', { d: sector(width / 2, CY, R, 0, from, to), fill: palette.fills[i]!, ...GAP, class: `chart-pie-${i} chart-surface-gap` }, [
+        el('path', { d: sector(width / 2, CY, R, 0, from, to), fill: FILLS[i]!, ...GAP, class: `chart-pie-${i} chart-surface-gap` }, [
           el('title', {}, [`${s.label}: ${s.valueText}`]),
         ]),
       )
@@ -79,7 +77,7 @@ export function yearPie(input: PieInput): SvgMarkup {
         width: SWATCH,
         height: SWATCH,
         rx: 20,
-        fill: palette.fills[i]!,
+        fill: FILLS[i]!,
         class: `chart-pie-${i}`,
       }),
       el('text', { x: SWATCH + 60, y, ...ink }, [fit(s.label, room)]),
@@ -105,7 +103,7 @@ export interface ShareRingInput extends ChartFrame {
  * of Home chart9–11's coral, teal and sand (N124); the track is the grey of
  * a bar's empty part.
  */
-export const TOP3_COLOURS = ['#F97316', '#EC4899', '#8B5CF6'] as const
+const TOP3_COLOURS = [SLICE_HUES[0], SLICE_HUES[1], SLICE_HUES[2]] as const
 const RING = 1400
 const HOLE = 1050
 
@@ -161,32 +159,4 @@ export function debtRing(input: DebtRingInput): SvgMarkup {
   const text = { x: c, y: c + 150, 'text-anchor': 'middle', 'font-size': FONT * 4, fill: '#111827', class: 'chart-debt-ink' }
   // A ring is square and sits in a box of its own size, so always WIDTH across.
   return frame({ ...input, width: WIDTH }, WIDTH, [...marks, el('text', text, [input.centreText])])
-}
-
-/**
- * A slice of a circle, or of a ring when `inner` is above zero, between two
- * points of the whole in basis points clockwise from twelve o'clock. A whole
- * one is two halves, since an arc from a point back to itself draws nothing.
- */
-function sector(cx: number, cy: number, outer: number, inner: number, fromBp: number, toBp: number): string {
-  const at = (r: number, bp: number): [number, number] => {
-    const angle = (bp / 10_000) * 2 * Math.PI
-    return [cx + Math.round(r * Math.sin(angle)), cy - Math.round(r * Math.cos(angle))]
-  }
-  const [ox0, oy0] = at(outer, fromBp)
-  const [ox1, oy1] = at(outer, toBp)
-  if (toBp - fromBp >= 10_000 || (toBp - fromBp > 5_000 && ox0 === ox1 && oy0 === oy1)) {
-    const circle = (r: number) => {
-      const [x0, y0] = at(r, 0)
-      const [x1, y1] = at(r, 5_000)
-      return `M${x0} ${y0}A${r} ${r} 0 0 1 ${x1} ${y1} A${r} ${r} 0 0 1 ${x0} ${y0} Z`
-    }
-    return inner > 0 ? `${circle(outer)} ${circle(inner)}` : circle(outer)
-  }
-  const large = toBp - fromBp > 5_000 ? 1 : 0
-  const rim = `M${ox0} ${oy0}A${outer} ${outer} 0 ${large} 1 ${ox1} ${oy1}`
-  if (inner === 0) return `${rim}L${cx} ${cy}Z`
-  const [ix1, iy1] = at(inner, toBp)
-  const [ix0, iy0] = at(inner, fromBp)
-  return `${rim}L${ix1} ${iy1}A${inner} ${inner} 0 ${large} 0 ${ix0} ${iy0}Z`
 }

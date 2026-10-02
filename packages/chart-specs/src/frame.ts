@@ -12,7 +12,7 @@
  * class, which is how the app's dark mode repaints it (index.css): a CSS
  * rule outranks a presentation attribute.
  */
-import { type SvgChild, type SvgMarkup, el, finish } from './svg.js'
+import { type SvgChild, type SvgMarkup, type SvgNode, el, finish } from './svg.js'
 
 export const WIDTH = 3_000
 /** Text size, 12 px at the designed width. */
@@ -126,4 +126,49 @@ export function lengthOf(bp: number, span: number): number {
   if (!Number.isInteger(bp) || bp < 0)
     throw new RangeError(`Basis points must be a whole number from 0, received ${bp}`)
   return Math.floor((Math.min(bp, 10_000) * span + 5_000) / 10_000)
+}
+
+/**
+ * A slice of a circle, or of a ring when `inner` is above zero, between two
+ * points of the whole in basis points clockwise from twelve o'clock. A whole
+ * one is two halves, since an arc from a point back to itself draws nothing.
+ */
+export function sector(cx: number, cy: number, outer: number, inner: number, fromBp: number, toBp: number): string {
+  const at = (r: number, bp: number): [number, number] => {
+    const angle = (bp / 10_000) * 2 * Math.PI
+    return [cx + Math.round(r * Math.sin(angle)), cy - Math.round(r * Math.cos(angle))]
+  }
+  const [ox0, oy0] = at(outer, fromBp)
+  const [ox1, oy1] = at(outer, toBp)
+  if (toBp - fromBp >= 10_000 || (toBp - fromBp > 5_000 && ox0 === ox1 && oy0 === oy1)) {
+    const circle = (r: number) => {
+      const [x0, y0] = at(r, 0)
+      const [x1, y1] = at(r, 5_000)
+      return `M${x0} ${y0}A${r} ${r} 0 0 1 ${x1} ${y1} A${r} ${r} 0 0 1 ${x0} ${y0} Z`
+    }
+    return inner > 0 ? `${circle(outer)} ${circle(inner)}` : circle(outer)
+  }
+  const large = toBp - fromBp > 5_000 ? 1 : 0
+  const rim = `M${ox0} ${oy0}A${outer} ${outer} 0 ${large} 1 ${ox1} ${oy1}`
+  if (inner === 0) return `${rim}L${cx} ${cy}Z`
+  const [ix1, iy1] = at(inner, toBp)
+  const [ix0, iy0] = at(inner, fromBp)
+  return `${rim}L${ix1} ${iy1}A${inner} ${inner} 0 ${large} 0 ${ix0} ${iy0}Z`
+}
+
+/** Two series named, swatch then name: colour is never the only way to tell them apart. */
+export function seriesKey(series: readonly (readonly [string, { readonly fill: string; readonly class: string }])[], ink: { readonly fill: string; readonly class: string }): SvgNode {
+  const SWATCH = 100
+  let x = 0
+  const marks = series.flatMap(([name, colours]) => {
+    const at = x
+    x += SWATCH + 60 + textUnits(name) + 100
+    return [el('rect', { x: at, y: 30, width: SWATCH, height: SWATCH, rx: 20, ...colours }), el('text', { x: at + SWATCH + 60, y: FONT, ...ink }, [name])]
+  })
+  return el('g', {}, marks)
+}
+
+/** The x of point i of n, evenly across, on whole units. */
+export function across(i: number, n: number, edge: number, span: number): number {
+  return n < 2 ? edge : edge + Math.floor((2 * i * span + (n - 1)) / (2 * (n - 1)))
 }

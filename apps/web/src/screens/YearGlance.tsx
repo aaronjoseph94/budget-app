@@ -54,7 +54,7 @@ export function YearGlance({
         the three totals with their shares. */}
       <Card>
         <h3 className={cn(TITLE, 'mb-3')}>Annual totals</h3>
-        <YearPie sheet={sheet} palette="home" />
+        <YearPie sheet={sheet} />
       </Card>
       <VsLastYear comparison={comparison} />
       {/* On a desktop these are Annual's left panel, beside the tables. */}

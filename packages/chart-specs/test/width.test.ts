@@ -30,7 +30,7 @@ function extent(svg: SvgMarkup): [number, number] {
 const builders: [string, (width: number | undefined) => SvgMarkup][] = [
   ['incomeBars', (width) => incomeBars({ ...at, width, bars: [{ label: 'Pay', valueText: '$1.00 of $2.00', goalBp: 10_000, actualBp: 5_000 }] })],
   ['spendingDoughnut', (width) => spendingDoughnut({ ...at, width, slices: [{ label: 'Food', valueText: '$1.00 · 100%', shareBp: 10_000, listIndex: 0 }] })],
-  ['yearPie', (width) => yearPie({ ...at, width, palette: 'annual', slices: [1, 2, 3].map((i) => ({ label: `s${i}`, valueText: `v${i}`, shareBp: 3_333 })) })],
+  ['yearPie', (width) => yearPie({ ...at, width, slices: [1, 2, 3].map((i) => ({ label: `s${i}`, valueText: `v${i}`, shareBp: 3_333 })) })],
   ['incomeExpenseColumns', (width) => incomeExpenseColumns({ ...at, width, columns: [{ label: 'Jan', valueText: 'v', parts: [{ fromBp: 0, toBp: 5_000 }, null] }] })],
   ['goalActualColumns', (width) => goalActualColumns({ ...at, width, groups: [{ label: 'Bills', valueText: 'v', goalBp: 10_000, actualBp: 5_000 }] })],
   ['pairedBars', (width) => pairedBars({ ...at, width, nowName: 'Aug', beforeName: 'Jul', rows: [{ label: 'Food', nowText: '$5', beforeText: '$4', nowBp: 10_000, beforeBp: 8_000 }] })],

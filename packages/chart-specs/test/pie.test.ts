@@ -4,8 +4,7 @@ import { debtRing, shareRing, yearPie, type PieSlice } from '../src/pie.js'
 /** Suite tests: coordinates worked by hand on the 3,000-unit grid, pie centred at (1500, 840), radius 800. */
 
 const slice = (label: string, shareBp: number | null): PieSlice => ({ label, valueText: `v${shareBp}`, shareBp })
-const pie = (slices: PieSlice[], palette: 'annual' | 'home' = 'annual') =>
-  yearPie({ id: 'pie', title: 'Income, expenses and savings', description: 'The year.', palette, slices })
+const pie = (slices: PieSlice[]) => yearPie({ id: 'pie', title: 'Income, expenses and savings', description: 'The year.', slices })
 const paths = (svg: string) => [...svg.matchAll(/<path d="([^"]+)" fill="(#[0-9A-F]{6})"/g)].map((m) => [m[1], m[2]])
 
 describe('yearPie', () => {
@@ -28,8 +27,8 @@ describe('yearPie', () => {
     expect(paths(svg)[0]![0]).toBe('M1500 40A800 800 0 0 1 1500 1640 A800 800 0 0 1 1500 40 Z')
   })
 
-  it("draws Home's pie as Annual's, each slice parted by a line in the card's colour", () => {
-    const svg = pie([slice('Income', 5_000), slice('Expenses', 3_000), slice('Savings', 2_001)], 'home')
+  it("parts each slice by a line in the card's colour", () => {
+    const svg = pie([slice('Income', 5_000), slice('Expenses', 3_000), slice('Savings', 2_001)])
     const edges = [...svg.matchAll(/fill="(#[0-9A-F]{6})" stroke="(#[0-9A-F]{6})"/g)].map((m) => [m[1], m[2]])
     expect(edges).toEqual([
       ['#10B981', '#FFFFFF'],

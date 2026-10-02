@@ -12,12 +12,8 @@ import { cn } from '../lib/cn.js'
  * file only formats the amounts written beside them.
  */
 
-/**
- * The Year's income, expenses and savings as a pie: Home's chart3 at the
- * top, Annual's chart41 in the chart row on a desktop, both in Mockup A's
- * colours.
- */
-export function YearPie({ sheet, palette }: { sheet: YearSheet; palette: 'home' | 'annual' }) {
+/** The Year's income, expenses and savings as a pie (Home's chart3), in Mockup A's colours. */
+export function YearPie({ sheet }: { sheet: YearSheet }) {
   const id = useChartId()
   const svg = useMemo((): Fitted => {
     const named: readonly [string, number][] = [
@@ -38,10 +34,9 @@ export function YearPie({ sheet, palette }: { sheet: YearSheet; palette: 'home' 
       id,
       title: 'Income, expenses and savings',
       description: said(slices.map((s) => `${s.label}: ${s.valueText}`)),
-      palette,
       slices,
     })
-  }, [id, sheet, palette])
+  }, [id, sheet])
   return <SvgChart svg={svg} className="mx-auto max-w-xs" />
 }
 

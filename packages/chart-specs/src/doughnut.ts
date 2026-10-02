@@ -12,7 +12,7 @@
  * Slices run clockwise from twelve o'clock in list order, as a spreadsheet
  * doughnut draws its rows, and the hole is half the ring (holeSize 50).
  */
-import { type ChartFrame, fit, frame, lengthOf, textUnits, widthOf } from './frame.js'
+import { type ChartFrame, fit, frame, lengthOf, sector, textUnits, widthOf } from './frame.js'
 import { type SvgMarkup, type SvgNode, el } from './svg.js'
 
 /**
@@ -64,7 +64,7 @@ export function spendingDoughnut(input: DoughnutInput): SvgMarkup {
     // basis point a row at most (F17); the ring stops at the whole.
     const to = Math.min(from + lengthOf(s.shareBp, 10_000), 10_000)
     if (to > from) {
-      const d = ring(cx, from, to)
+      const d = sector(cx, CY, OUTER, INNER, from, to)
       slices.push(
         el('path', { d, fill: hueFor(s.listIndex), ...SURFACE }, [el('title', {}, [`${s.label}: ${s.valueText}`])]),
       )
@@ -73,7 +73,7 @@ export function spendingDoughnut(input: DoughnutInput): SvgMarkup {
   }
   // Nothing to share: the empty ring the workbook's chart draws with every Actual
   // at 0, in the list's tile so it reads as waiting, not as a slice.
-  const track = { d: ring(cx, 0, 10_000), 'fill-rule': 'evenodd', fill: '#FFEDD5', class: 'chart-variable-track' }
+  const track = { d: sector(cx, CY, OUTER, INNER, 0, 10_000), 'fill-rule': 'evenodd', fill: '#FFEDD5', class: 'chart-variable-track' }
   const body = slices.length > 0 ? slices : [el('path', track)]
   const legend = input.slices.map((s, i) => {
     const y = legendTop + i * ROW
@@ -112,35 +112,3 @@ const SURFACE = {
   'stroke-linejoin': 'round',
   class: 'chart-surface-gap',
 } as const
-
-/**
- * The ring between two points of the whole, in basis points clockwise from
- * twelve o'clock. A whole ring is two half rings, since an arc from a point
- * back to itself draws nothing.
- */
-function ring(cx: number, fromBp: number, toBp: number): string {
-  const [ox0, oy0] = point(cx, OUTER, fromBp)
-  const [ox1, oy1] = point(cx, OUTER, toBp)
-  // Nearly all of it can round to the very point it started from on the
-  // grid, and would then vanish; it is drawn whole instead.
-  if (toBp - fromBp >= 10_000 || (toBp - fromBp > 5_000 && ox0 === ox1 && oy0 === oy1)) {
-    return `${arc(cx, OUTER, 0, 5_000, true)} ${arc(cx, OUTER, 5_000, 10_000, false)} Z ${arc(cx, INNER, 0, 5_000, true)} ${arc(cx, INNER, 5_000, 10_000, false)} Z`
-  }
-  const large = toBp - fromBp > 5_000 ? 1 : 0
-  const [ix1, iy1] = point(cx, INNER, toBp)
-  const [ix0, iy0] = point(cx, INNER, fromBp)
-  return `M${ox0} ${oy0}A${OUTER} ${OUTER} 0 ${large} 1 ${ox1} ${oy1}L${ix1} ${iy1}A${INNER} ${INNER} 0 ${large} 0 ${ix0} ${iy0}Z`
-}
-
-/** Half a circle of radius `r`, as the pieces of a whole ring. */
-function arc(cx: number, r: number, fromBp: number, toBp: number, move: boolean): string {
-  const [x0, y0] = point(cx, r, fromBp)
-  const [x1, y1] = point(cx, r, toBp)
-  return `${move ? `M${x0} ${y0}` : ''}A${r} ${r} 0 0 1 ${x1} ${y1}`
-}
-
-/** Where `bp` of the way round a circle of radius `r` about (cx, CY) falls, rounded to the grid. */
-function point(cx: number, r: number, bp: number): [number, number] {
-  const angle = (bp / 10_000) * 2 * Math.PI
-  return [cx + Math.round(r * Math.sin(angle)), CY - Math.round(r * Math.cos(angle))]
-}
