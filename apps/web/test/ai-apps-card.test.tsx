@@ -2,7 +2,7 @@ import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/re
 import type { OAuthGrant } from '@supabase/supabase-js'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AiAppsCard } from '../src/ai-apps/AiAppsCard.js'
-import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
+import { PUBLIC_KEY, createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { expectNoAxeViolations } from './axe.js'
 
@@ -16,6 +16,18 @@ const ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone
 const ADDRESS = 'http://fake.supabase.test/functions/v1/mcp'
 const writeText = vi.fn<(text: string) => Promise<void>>()
 
+/**
+ * A fake whose auth server also answers the browser's own fetch, with the
+ * page's public values, as the sign-ups check asks it.
+ */
+function fakeSupabase(...seed: Parameters<typeof createFakeSupabase>): FakeSupabase {
+  const fake = createFakeSupabase(...seed)
+  vi.stubGlobal('fetch', fake.fetch)
+  vi.stubEnv('VITE_SUPABASE_URL', 'https://abcdefghijklmnopqrst.supabase.co')
+  vi.stubEnv('VITE_SUPABASE_ANON_KEY', PUBLIC_KEY)
+  return fake
+}
+
 beforeEach(() => {
   writeText.mockReset().mockResolvedValue(undefined)
   Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
@@ -24,13 +36,15 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
 })
 
 const connect = () => screen.findByRole<HTMLInputElement>('switch', { name: 'Let AI apps connect' })
 
 describe('Settings → AI apps: the switches', () => {
   it('is off by default, and offers nothing to connect until it is on', async () => {
-    const fake = createFakeSupabase()
+    const fake = fakeSupabase()
     renderScreen(<AiAppsCard />, fake)
 
     expect((await connect()).checked).toBe(false)
@@ -44,6 +58,10 @@ describe('Settings → AI apps: the switches', () => {
 
   // Security review mcp-3-03: an older AI helper accepts an AI app's token, so it comes first.
   it.each([
+    // The AI apps server takes any account's token: a stranger's account must not be possible.
+    ['Allow new users to sign up still on', (f: FakeSupabase): void => {
+        f.server.signupsOff = false
+      }, 'Turn off Allow new users to sign up in Supabase first.'],
     ['an older AI helper', (f: FakeSupabase): void => {
         f.functions.ai = () => new Response(JSON.stringify({ ok: true, version: '2026-09-27.5' }), { headers: { 'content-type': 'application/json' } })
       }, 'Paste the AI helper’s new version first.'],
@@ -70,7 +88,7 @@ describe('Settings → AI apps: the switches', () => {
         f.functions.readReceiptVersion = () => new Response('{}', { status: 503 })
       }, 'Couldn’t check the one-time updates just now.'],
   ] as const)('will not turn AI apps on with %s, and says what to do first', async (_, set, words) => {
-    const fake = createFakeSupabase()
+    const fake = fakeSupabase()
     set(fake)
     renderScreen(<AiAppsCard />, fake)
     fireEvent.click(await connect())
@@ -81,7 +99,7 @@ describe('Settings → AI apps: the switches', () => {
   })
 
   it('turns AI apps on with the browser’s time zone, then adding is on too', async () => {
-    const fake = createFakeSupabase()
+    const fake = fakeSupabase()
     renderScreen(<AiAppsCard />, fake)
 
     fireEvent.click(await connect())
@@ -103,7 +121,7 @@ describe('Settings → AI apps: the switches', () => {
   })
 
   it('shows the switch as it was stored when the save fails, and says so', async () => {
-    const fake = createFakeSupabase()
+    const fake = fakeSupabase()
     fake.fail('POST ai_app_access', '08006')
     renderScreen(<AiAppsCard />, fake)
 
@@ -114,14 +132,14 @@ describe('Settings → AI apps: the switches', () => {
   })
 
   it('links to Help on connecting Claude and ChatGPT, and on what AI apps can do, with the switch off', async () => {
-    renderScreen(<AiAppsCard />, createFakeSupabase())
+    renderScreen(<AiAppsCard />, fakeSupabase())
     await connect()
     const href = (name: string) => screen.getByRole('link', { name }).getAttribute('href')
     expect([href('Connect Claude'), href('Connect ChatGPT'), href('What AI apps can do')]).toEqual(['#/help/connect-claude', '#/help/connect-chatgpt', '#/help/ai-apps'])
   })
 
   it('says in one line when the one-time update is not in yet', async () => {
-    const fake = createFakeSupabase()
+    const fake = fakeSupabase()
     fake.fail('ai_app_access', 'PGRST205')
     renderScreen(<AiAppsCard />, fake)
 
@@ -132,7 +150,7 @@ describe('Settings → AI apps: the switches', () => {
 })
 
 describe('Settings → AI apps: Connect a new AI app', () => {
-  const on = () => createFakeSupabase({ ai_app_access: [{ user_id: 'u1', enabled: true, allow_add: true, time_zone: 'UTC', connect_until: null }] })
+  const on = () => fakeSupabase({ ai_app_access: [{ user_id: 'u1', enabled: true, allow_add: true, time_zone: 'UTC', connect_until: null }] })
 
   it('copies the address and opens the next 15 minutes for a new connection', async () => {
     const fake = on()
@@ -180,7 +198,7 @@ describe('Settings → AI apps: connected apps and Disconnect', () => {
     granted_at,
   })
   async function connected(on = true) {
-    const fake = createFakeSupabase({
+    const fake = fakeSupabase({
       ai_app_access: [{ user_id: 'u1', enabled: on, allow_add: true, time_zone: 'UTC', connect_until: null }],
       ai_app_last_use: [{ user_id: 'u1', client_id: 'id-claude', last_used_at: '2026-10-01T12:00:00Z' }],
     })
@@ -236,7 +254,7 @@ describe('Settings → AI apps: connected apps and Disconnect', () => {
   })
 
   it('says sign-in for AI apps is not on yet, and says nothing of it while AI apps are off', async () => {
-    const fake = createFakeSupabase({ ai_app_access: [{ user_id: 'u1', enabled: true, allow_add: true, time_zone: 'UTC', connect_until: null }] })
+    const fake = fakeSupabase({ ai_app_access: [{ user_id: 'u1', enabled: true, allow_add: true, time_zone: 'UTC', connect_until: null }] })
     await fake.signIn()
     renderScreen(<AiAppsCard />, fake)
     expect(await screen.findByText(/Sign-in for AI apps is not switched on in Supabase yet\./)).toBeTruthy()
@@ -244,7 +262,7 @@ describe('Settings → AI apps: connected apps and Disconnect', () => {
     expect(screen.getByText(/delete from auth\.sessions;/)).toBeTruthy()
 
     cleanup()
-    renderScreen(<AiAppsCard />, createFakeSupabase())
+    renderScreen(<AiAppsCard />, fakeSupabase())
     expect(await connect()).toBeTruthy()
     expect(screen.queryByText(/Sign-in for AI apps/)).toBeNull()
     expect(screen.queryByRole('heading', { name: 'Connected apps' })).toBeNull()

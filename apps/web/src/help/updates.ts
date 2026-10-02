@@ -401,7 +401,9 @@ export async function checkUpdates(supabase: SupabaseClient): Promise<Checked[]>
 
 /**
  * What must be in before AI apps may be switched on or a connection
- * allowed (security review mcp-3-03), as 0020 already is: 0019, which
+ * allowed (security review mcp-3-03), as 0020 already is: sign-ups off,
+ * since the AI apps server takes any account's token and a stranger who
+ * made one could connect an app to it (review of 2026-10-02); 0019, which
  * stops an AI app writing; 0020; 0030 to 0034, 0036 and 0037, which close
  * what the security review found open in 0020 (a disconnected app's token,
  * an AI row hiding a statement line or teaching a shop, a search reading
@@ -413,6 +415,7 @@ export async function checkUpdates(supabase: SupabaseClient): Promise<Checked[]>
  * until it can be).
  */
 const BEFORE_AI_APPS: readonly string[] = [
+  SIGNUPS_OFF,
   '0019_ai_apps_cannot_write.sql',
   '0020_ai_apps.sql',
   '0030_ai_app_gate_live_session.sql',

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { OAuthAuthorizationDetails, OAuthRedirect } from '@supabase/supabase-js'
 import { Consent, ConsentScreen } from '../src/ai-apps/ConsentScreen.js'
 import { isConsentPath } from '../src/ai-apps/consent-path.js'
-import { createFakeSupabase } from './fake-supabase.js'
+import { PUBLIC_KEY, createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { expectNoAxeViolations } from './axe.js'
 
 /**
@@ -26,11 +26,23 @@ function asking(redirect_uri = CLAUDE, name = 'Claude'): OAuthAuthorizationDetai
   }
 }
 
+/**
+ * A fake whose auth server also answers the browser's own fetch, with the
+ * page's public values, as the sign-ups check asks it.
+ */
+function fakeSupabase(...seed: Parameters<typeof createFakeSupabase>): FakeSupabase {
+  const fake = createFakeSupabase(...seed)
+  vi.stubGlobal('fetch', fake.fetch)
+  vi.stubEnv('VITE_SUPABASE_URL', 'https://abcdefghijklmnopqrst.supabase.co')
+  vi.stubEnv('VITE_SUPABASE_ANON_KEY', PUBLIC_KEY)
+  return fake
+}
+
 type Saved = { user_id: string; enabled: boolean; allow_add: boolean; time_zone: string; connect_until: string | null }
 const ON: Saved = { user_id: 'u1', enabled: true, allow_add: true, time_zone: 'UTC', connect_until: minutes(10) }
 
 async function open({ request = asking() as OAuthAuthorizationDetails | OAuthRedirect, access = ON as Saved | null, id = 'auth-1', signedIn = true } = {}) {
-  const fake = createFakeSupabase({ ai_app_access: access === null ? [] : [access] })
+  const fake = fakeSupabase({ ai_app_access: access === null ? [] : [access] })
   fake.oauth.requests['auth-1'] = request
   if (signedIn) await fake.signIn()
   window.history.replaceState(null, '', `/oauth/consent?authorization_id=${id}`)
@@ -46,6 +58,8 @@ beforeEach(() => void vi.spyOn(Date, 'now').mockReturnValue(NOW))
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
   window.history.replaceState(null, '', '/')
 })
 
@@ -75,7 +89,7 @@ describe('the consent page: Allow', () => {
   // Security review mcp-3-03: the AI helper before 2026-09-30.1 accepts an AI app's token.
   it('offers no Allow, and follows no earlier allowing, until the AI helper’s new version is in', async () => {
     const old = () => new Response(JSON.stringify({ ok: true, version: '2026-09-27.5' }), { headers: { 'content-type': 'application/json' } })
-    const fake = createFakeSupabase({ ai_app_access: [ON] })
+    const fake = fakeSupabase({ ai_app_access: [ON] })
     fake.oauth.requests['auth-1'] = asking()
     fake.functions.ai = old
     await fake.signIn()
@@ -137,8 +151,20 @@ describe('the consent page: Allow', () => {
     expect(go).not.toHaveBeenCalled()
   })
 
+  // The AI apps server takes any account's token, so a stranger's account must not be possible first.
+  it('offers no Allow while Allow new users to sign up is still on', async () => {
+    const fake = fakeSupabase({ ai_app_access: [ON] })
+    fake.oauth.requests['auth-1'] = asking()
+    fake.server.signupsOff = false
+    await fake.signIn()
+    window.history.replaceState(null, '', '/oauth/consent?authorization_id=auth-1')
+    render(<Consent supabase={fake.client} go={vi.fn()} />)
+    expect(await screen.findByText(/needs a one-time update first/)).toBeTruthy()
+    expect(allow()).toBeNull()
+  })
+
   it('offers no Allow while the security updates are in only to 0033', async () => {
-    const fake = createFakeSupabase({ ai_app_access: [ON] })
+    const fake = fakeSupabase({ ai_app_access: [ON] })
     fake.oauth.requests['auth-1'] = asking()
     fake.rpcReplies['ai_app_updates_in'] = 33
     await fake.signIn()
@@ -308,7 +334,7 @@ describe('the consent page: what it draws', () => {
   })
 
   it('never sends Supabase an id that is not one', async () => {
-    const fake = createFakeSupabase()
+    const fake = fakeSupabase()
     const details = vi.spyOn(fake.client.auth.oauth, 'getAuthorizationDetails')
     await fake.signIn()
     window.history.replaceState(null, '', '/oauth/consent?authorization_id=..%2F..%2Fuser')

@@ -351,10 +351,13 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
 
 ### Part F: Claude and ChatGPT (AI apps), about 20 minutes, on a computer
 
-Only if you want them. They need Parts B, D and E done: **Let AI apps
+Only if you want them. They need Parts A, B, D and E done: **Let AI apps
 connect** will not turn on, and the connect page offers no **Allow**,
-until `0019`, `0020`, `0030` to `0037`, the helper, read-receipt (deleted
-or new) and the AI apps server are in.
+until sign-ups are off, and `0019`, `0020`, `0030` to `0037`, the helper,
+read-receipt (deleted or new) and the AI apps server are in. Sign-ups come
+first because the AI apps server accepts any account's sign-in: with
+**Allow new users to sign up** on, a stranger could make an account and
+connect an AI app to it.
 
 20. **Sign-in for AI apps.** Supabase → **Authentication → URL
     Configuration**: check **Site URL** is
