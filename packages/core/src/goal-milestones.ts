@@ -56,7 +56,7 @@ export function goalMilestones(input: GoalMilestonesInput): GoalMilestones {
   const rate = goal.unitCostCents
   const step = (saved: number): number => {
     if (saved <= 0) return 0
-    if (rate !== null) return Math.floor(timeEquivalent(saved, rate).hours / HOURS_A_STEP)
+    if (rate !== null) return Math.floor(timeEquivalent({ amountCents: saved, unitCostPerHourCents: rate }).hours / HOURS_A_STEP)
     return Math.min(TENTHS, Math.floor((saved * TENTHS) / goal.targetCents))
   }
   const reached = step(now)

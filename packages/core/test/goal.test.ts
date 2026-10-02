@@ -65,20 +65,20 @@ describe('projectGoal', () => {
     [30_000, 100], // $300/wk -> 100 weeks
     [50_000, 60], //  $500/wk ->  60 weeks
   ])('at %i cents per week the goal lands in %i weeks', (weekly, expected) => {
-    expect(projectGoal(FLYING, weekly, asOf).weeksRemaining).toBe(expected)
+    expect(projectGoal({ goal: FLYING, weeklyContributionCents: weekly, asOf }).weeksRemaining).toBe(expected)
   })
 
   it('projects a real date', () => {
     // 100 weeks = 700 days from 2026-09-21
-    expect(projectGoal(FLYING, 30_000, asOf).projectedDate).toBe('2028-08-21')
+    expect(projectGoal({ goal: FLYING, weeklyContributionCents: 30_000, asOf }).projectedDate).toBe('2028-08-21')
   })
 
   it('rounds partial weeks up — you do not arrive mid-contribution', () => {
-    expect(projectGoal({ ...FLYING, targetCents: 10_001 }, 10_000, asOf).weeksRemaining).toBe(2)
+    expect(projectGoal({ goal: { ...FLYING, targetCents: 10_001 }, weeklyContributionCents: 10_000, asOf }).weeksRemaining).toBe(2)
   })
 
   it('answers "never" honestly when nothing is being saved', () => {
-    const p = projectGoal(FLYING, 0, asOf)
+    const p = projectGoal({ goal: FLYING, weeklyContributionCents: 0, asOf })
     expect(p.weeksRemaining).toBeNull()
     expect(p.projectedDate).toBeNull()
   })
@@ -89,32 +89,32 @@ describe('requiredWeeklyContribution', () => {
     // 2026-09-21 -> 2028-09-21 is 731 days, not 730: 2028 is a leap year and
     // Feb 29 falls inside the window. 731 / 7 = 104.43 weeks;
     // 3_000_000 / 104.43 = 28_727.8 -> 28_728 ($287.28/week).
-    const weekly = requiredWeeklyContribution(
-      FLYING,
-      isoDate('2026-09-21'),
-      isoDate('2028-09-21'),
-    )
-    expect(weekly).toBe(28_728)
+    const { weeklyCents } = requiredWeeklyContribution({
+      goal: FLYING,
+      asOf: isoDate('2026-09-21'),
+      targetDate: isoDate('2028-09-21'),
+    })
+    expect(weeklyCents).toBe(28_728)
   })
 
   it('refuses a target date in the past instead of returning a nonsense number', () => {
     expect(() =>
-      requiredWeeklyContribution(FLYING, isoDate('2026-09-21'), isoDate('2026-09-01')),
+      requiredWeeklyContribution({ goal: FLYING, asOf: isoDate('2026-09-21'), targetDate: isoDate('2026-09-01') }),
     ).toThrow(RangeError)
   })
 })
 
 describe('timeEquivalent — the tradeoff framing', () => {
   it('prices an $80 dinner in flight time at $275/hr', () => {
-    expect(timeEquivalent(8_000, 27_500)).toEqual({ totalMinutes: 17, hours: 0, minutes: 17 })
+    expect(timeEquivalent({ amountCents: 8_000, unitCostPerHourCents: 27_500 })).toEqual({ totalMinutes: 17, hours: 0, minutes: 17 })
   })
 
   it('prices a week of restaurant spend', () => {
     // $412 at $275/hr = 1.498 hours = 90 minutes
-    expect(timeEquivalent(41_200, 27_500)).toEqual({ totalMinutes: 90, hours: 1, minutes: 30 })
+    expect(timeEquivalent({ amountCents: 41_200, unitCostPerHourCents: 27_500 })).toEqual({ totalMinutes: 90, hours: 1, minutes: 30 })
   })
 
   it('rejects a zero rate rather than dividing by zero', () => {
-    expect(() => timeEquivalent(8_000, 0)).toThrow(RangeError)
+    expect(() => timeEquivalent({ amountCents: 8_000, unitCostPerHourCents: 0 })).toThrow(RangeError)
   })
 })

@@ -85,7 +85,7 @@ export function expectedPay(input: ExpectedPayInput): ExpectedPay {
     }
     const paydays = asOf >= end ? [] : paydaysIn({ schedule, from: addDays(asOf, 1), to: end })
     const usual = usualPay(rows, input.historyStart, asOf)
-    const perPayday = usual ?? (goal === null ? null : payShare({ monthlyCents: goal, frequency: schedule.frequency }))
+    const perPayday = usual ?? (goal === null ? null : payShare({ monthlyCents: goal, frequency: schedule.frequency }).shareCents)
     if (perPayday === null) return notCounted(c.id)
     return {
       categoryId: c.id,

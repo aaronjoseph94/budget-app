@@ -31,10 +31,10 @@ export function GoalCard({ weekSpentCents, asOf }: { weekSpentCents: number; asO
     ...(goal.unit_label !== null ? { unitLabel: goal.unit_label } : {}),
   }
   const progress = goalProgress(saving)
-  const spentAsTime = goal.unit_cost_cents !== null && weekSpentCents > 0 ? timeEquivalent(weekSpentCents, goal.unit_cost_cents) : null
+  const spentAsTime = goal.unit_cost_cents !== null && weekSpentCents > 0 ? timeEquivalent({ amountCents: weekSpentCents, unitCostPerHourCents: goal.unit_cost_cents }) : null
   const perWeek =
     goal.target_date !== null && goal.target_date > asOf
-      ? requiredWeeklyContribution(saving, isoDate(asOf), isoDate(goal.target_date))
+      ? requiredWeeklyContribution({ goal: saving, asOf: isoDate(asOf), targetDate: isoDate(goal.target_date) }).weeklyCents
       : null
 
   const bp = progress.percentCompleteBasisPoints

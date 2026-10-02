@@ -570,7 +570,7 @@ export function paycheckSheet(input: PaycheckSheetInput): PaycheckSheet {
   const { start, end } = payPeriod({ schedule, asOf })
   const month = monthBounds(start).start
   const share = (monthlyCents: number | null): Cents | null =>
-    monthlyCents === null ? null : payShare({ monthlyCents, frequency: schedule.frequency })
+    monthlyCents === null ? null : payShare({ monthlyCents, frequency: schedule.frequency }).shareCents
   const budgets = resolveBudgets({ asOf: month, history: budgetHistory }).budgets.map((b) => ({
     categoryId: b.categoryId,
     budgetCents: share(b.budgetCents),
@@ -594,7 +594,7 @@ export function payPlans(
   return plansInEffect(categories, planHistory, month).map(
     (p): PeriodPlan => ({
       ...p,
-      plannedCents: p.plannedCents === null ? null : payShare({ monthlyCents: p.plannedCents, frequency }),
+      plannedCents: p.plannedCents === null ? null : payShare({ monthlyCents: p.plannedCents, frequency }).shareCents,
       spread: true,
     }),
   )

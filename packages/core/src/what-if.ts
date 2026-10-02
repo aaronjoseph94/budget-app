@@ -65,7 +65,7 @@ export function whatIf(input: WhatIfInput): WhatIf {
     keptThisMonthCents: kept,
     end: end === null ? null : { low: toTen(end.low + kept), mid: toTen(end.mid + kept), high: toTen(end.high + kept) },
     goal: goalWith(input, weekly),
-    minutesPerMonth: rate === null ? null : timeEquivalent(monthly, rate).totalMinutes,
+    minutesPerMonth: rate === null ? null : timeEquivalent({ amountCents: monthly, unitCostPerHourCents: rate }).totalMinutes,
   }
 }
 
@@ -74,7 +74,7 @@ function goalWith(input: WhatIfInput, weekly: Cents): WhatIfGoal {
   const remaining = cents(remainingCents)
   if (pace.status === 'met' || remaining <= 0) return { status: 'met' }
   const goal = { name: 'goal', targetCents: remaining, savedCents: 0 }
-  const at = (perWeek: number): IsoDate | null => projectGoal(goal, perWeek, input.asOf).projectedDate
+  const at = (perWeek: number): IsoDate | null => projectGoal({ goal, weeklyContributionCents: perWeek, asOf: input.asOf }).projectedDate
   const weeks = (perWeek: number) => Math.ceil(remaining / perWeek)
   if (pace.status !== 'rough' && pace.status !== 'range') {
     // A saving of $0 reaches nothing; a lever is never $0 (F34), so this is a caller's slip.
