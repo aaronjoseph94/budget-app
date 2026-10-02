@@ -524,7 +524,7 @@ begin
   -- caller without the server could otherwise send a direction override,
   -- and the owner would approve one thing having read another.
   if p_words is null or length(p_words) not between 1 and 120 or p_words <> btrim(p_words)
-     or p_words ~ '[\x01-\x1F\x7F-\x9F -‮⁦-⁩]' then
+     or p_words ~ '[\x01-\x1F\x7F-\x9F\u2028-\u202E\u2066-\u2069]' then
     return jsonb_build_object('refused', 'bad_words');
   end if;
   if p_occurrence is null or p_occurrence not between 1 and 9 then

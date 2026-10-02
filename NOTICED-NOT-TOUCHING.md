@@ -3575,7 +3575,7 @@ before `0022`, the first later change to a guarded function.
 
 ---
 
-## N155 — 0020 writes four invisible characters as themselves
+## N155 — 0020 writes four invisible characters as themselves *(settled 2026-10-02)*
 
 **Seen:** 2026-10-01, review of ecd31c8. Line 527 of
 `0020_ai_apps.sql`, the `bad_words` check in the AI apps' add-purchase
@@ -3594,6 +3594,15 @@ never edited.
 `'[\x01-\x1F\x7F-\x9F -‮⁦-⁩]'` and lower the guard
 test's `'0021'` to `'0015'`. If it has, leave it: 0025 already holds the
 same characters out of every ingested text, written escaped.
+
+**Settled 2026-10-02.** The owner confirmed `0001`-`0014` are the only
+updates applied to the hosted project, so `0020` had not been applied.
+Line 527 now writes the class as
+`'[\x01-\x1F\x7F-\x9F\u2028-\u202E\u2066-\u2069]'` (Postgres ARE
+escapes, the same characters), and the guard in `setup-files.test.ts`
+holds every update from `0015` on. 0034 anchors on the line before this
+one, and 0035 reads other words, so neither depends on its spelling; the
+schema gate's `bad_words` cases (U+202E, U+2066) still refuse.
 
 ---
 

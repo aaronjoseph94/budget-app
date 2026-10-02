@@ -65,15 +65,17 @@ describe('the files under /setup/', () => {
  * makes the rest of its line display reordered or hidden, in an editor, in
  * GitHub's diff and in what the owner pastes (security-b-01, the Trojan
  * Source pattern). Every such character is written as an escape instead.
- * 0015-0020 are applied or belong to the AI apps build and are not edited
- * here (NOTICED-NOT-TOUCHING.md); every later update is held to it.
+ * Every update from 0015, the first not yet applied to the hosted project,
+ * is held to it (N155: 0020's one raw class was escaped before it was
+ * applied).
  */
 const INVISIBLE = /[\p{Cf}\p{Co}\u2028\u2029]/gu
 const shown = (text: string) => [...text.matchAll(INVISIBLE)].map((m) => `U+${m[0].codePointAt(0)?.toString(16).toUpperCase()}`)
 
 describe('the SQL the owner pastes and the schema gate runs', () => {
-  it('holds no invisible character written as itself, from 0021 on', () => {
-    const checked = expected.filter((n) => n.endsWith('.sql') && n >= '0021')
+  it('holds no invisible character written as itself, from 0015 on', () => {
+    const checked = expected.filter((n) => n.endsWith('.sql') && n >= '0015')
+    expect(checked).toContain('0020_ai_apps.sql')
     expect(checked).toContain('0028_ai_words_no_invisible_characters.sql')
     for (const name of [...checked.map((n) => `supabase/migrations/${n}`), 'supabase/tests/schema-assertions.sql']) {
       expect(shown(committed(name).toString('utf8')), name).toEqual([])
