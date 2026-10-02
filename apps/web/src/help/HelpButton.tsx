@@ -1,4 +1,5 @@
-import { Suspense, lazy, useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
+import { lazyPart } from '../lib/lazy-part.js'
 import type { Screen } from '../nav.js'
 import { Icon } from '../components/ui/icons.js'
 import { cn } from '../lib/cn.js'
@@ -7,7 +8,7 @@ import type { HelpTopic } from './topics.js'
 
 // The sheet and the articles are fetched when a ? is first pressed, so the
 // Month's first load carries the button alone.
-const HelpSheet = lazy(() => import('./HelpSheet.js').then((m) => ({ default: m.HelpSheet })))
+const HelpSheet = lazyPart(() => import('./HelpSheet.js').then((m) => ({ default: m.HelpSheet })))
 
 /**
  * The ? beside a screen's title (plan §2.1): that screen's Help article in

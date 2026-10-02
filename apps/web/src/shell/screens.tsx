@@ -1,4 +1,5 @@
-import { lazy, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
+import { lazyPart } from '../lib/lazy-part.js'
 import type { Screen } from '../nav.js'
 import { HELP_TOPICS } from '../help/topics.js'
 import { MonthScreen } from '../screens/MonthScreen.js'
@@ -8,25 +9,25 @@ import { MoreScreen } from '../screens/MoreScreen.js'
 // fetched the first time it opens. The Month opens first (decision 1), and
 // it waited for every other screen's code: 214 KB gzipped, most of it
 // unused on the Month (PERF-3). Add carries the statement readers with it.
-const AiSettingsScreen = lazy(() => import('../screens/AiSettingsScreen.js').then((m) => ({ default: m.AiSettingsScreen })))
-const AskScreen = lazy(() => import('../screens/AskScreen.js').then((m) => ({ default: m.AskScreen })))
-const AddScreen = lazy(() => import('../screens/AddScreen.js').then((m) => ({ default: m.AddScreen })))
-const CalendarScreen = lazy(() => import('../screens/CalendarScreen.js').then((m) => ({ default: m.CalendarScreen })))
-const CoachScreen = lazy(() => import('../screens/CoachScreen.js').then((m) => ({ default: m.CoachScreen })))
-const CheckinScreen = lazy(() => import('../screens/CheckinScreen.js').then((m) => ({ default: m.CheckinScreen })))
-const DebtsScreen = lazy(() => import('../screens/DebtsScreen.js').then((m) => ({ default: m.DebtsScreen })))
-const GettingStartedScreen = lazy(() => import('../screens/GettingStartedScreen.js').then((m) => ({ default: m.GettingStartedScreen })))
-const ForecastScreen = lazy(() => import('../screens/ForecastScreen.js').then((m) => ({ default: m.ForecastScreen })))
-const HelpScreen = lazy(() => import('../screens/HelpScreen.js').then((m) => ({ default: m.HelpScreen })))
-const LedgerScreen = lazy(() => import('../screens/LedgerScreen.js').then((m) => ({ default: m.LedgerScreen })))
-const PaycheckScreen = lazy(() => import('../screens/PaycheckScreen.js').then((m) => ({ default: m.PaycheckScreen })))
-const ReportsScreen = lazy(() => import('../screens/ReportsScreen.js').then((m) => ({ default: m.ReportsScreen })))
-const ReviewScreen = lazy(() => import('../screens/ReviewScreen.js').then((m) => ({ default: m.ReviewScreen })))
-const SavingsScreen = lazy(() => import('../screens/SavingsScreen.js').then((m) => ({ default: m.SavingsScreen })))
-const SettingsScreen = lazy(() => import('../screens/SettingsScreen.js').then((m) => ({ default: m.SettingsScreen })))
-const SetupScreen = lazy(() => import('../screens/SetupScreen.js').then((m) => ({ default: m.SetupScreen })))
-const WeekScreen = lazy(() => import('../screens/WeekScreen.js').then((m) => ({ default: m.WeekScreen })))
-const YearScreen = lazy(() => import('../screens/YearScreen.js').then((m) => ({ default: m.YearScreen })))
+const AiSettingsScreen = lazyPart(() => import('../screens/AiSettingsScreen.js').then((m) => ({ default: m.AiSettingsScreen })))
+const AskScreen = lazyPart(() => import('../screens/AskScreen.js').then((m) => ({ default: m.AskScreen })))
+const AddScreen = lazyPart(() => import('../screens/AddScreen.js').then((m) => ({ default: m.AddScreen })))
+const CalendarScreen = lazyPart(() => import('../screens/CalendarScreen.js').then((m) => ({ default: m.CalendarScreen })))
+const CoachScreen = lazyPart(() => import('../screens/CoachScreen.js').then((m) => ({ default: m.CoachScreen })))
+const CheckinScreen = lazyPart(() => import('../screens/CheckinScreen.js').then((m) => ({ default: m.CheckinScreen })))
+const DebtsScreen = lazyPart(() => import('../screens/DebtsScreen.js').then((m) => ({ default: m.DebtsScreen })))
+const GettingStartedScreen = lazyPart(() => import('../screens/GettingStartedScreen.js').then((m) => ({ default: m.GettingStartedScreen })))
+const ForecastScreen = lazyPart(() => import('../screens/ForecastScreen.js').then((m) => ({ default: m.ForecastScreen })))
+const HelpScreen = lazyPart(() => import('../screens/HelpScreen.js').then((m) => ({ default: m.HelpScreen })))
+const LedgerScreen = lazyPart(() => import('../screens/LedgerScreen.js').then((m) => ({ default: m.LedgerScreen })))
+const PaycheckScreen = lazyPart(() => import('../screens/PaycheckScreen.js').then((m) => ({ default: m.PaycheckScreen })))
+const ReportsScreen = lazyPart(() => import('../screens/ReportsScreen.js').then((m) => ({ default: m.ReportsScreen })))
+const ReviewScreen = lazyPart(() => import('../screens/ReviewScreen.js').then((m) => ({ default: m.ReviewScreen })))
+const SavingsScreen = lazyPart(() => import('../screens/SavingsScreen.js').then((m) => ({ default: m.SavingsScreen })))
+const SettingsScreen = lazyPart(() => import('../screens/SettingsScreen.js').then((m) => ({ default: m.SettingsScreen })))
+const SetupScreen = lazyPart(() => import('../screens/SetupScreen.js').then((m) => ({ default: m.SetupScreen })))
+const WeekScreen = lazyPart(() => import('../screens/WeekScreen.js').then((m) => ({ default: m.WeekScreen })))
+const YearScreen = lazyPart(() => import('../screens/YearScreen.js').then((m) => ({ default: m.YearScreen })))
 
 export interface View {
   /** Whether the screen widens on a desktop, for this param. */

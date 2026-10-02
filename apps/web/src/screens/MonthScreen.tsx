@@ -1,4 +1,5 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { lazyPart } from '../lib/lazy-part.js'
 import {
   budgetUsedBp,
   goalBars,
@@ -60,8 +61,8 @@ import { ErrorBoundary } from '../components/ErrorBoundary.js'
 import { TryAgain } from '../try-again.js'
 
 // The coach line and the forecast line are their own chunks, fetched once the Month has drawn (D27).
-const MonthCoachLine = lazy(() => import('./MonthCoachLine.js'))
-const MonthForecastLine = lazy(() => import('./MonthForecastLine.js'))
+const MonthCoachLine = lazyPart(() => import('./MonthCoachLine.js'))
+const MonthForecastLine = lazyPart(() => import('./MonthForecastLine.js'))
 
 /**
  * One of the workbook's month tabs (plan §6.2, §6.3). `month` is the address's `YYYY-MM`,

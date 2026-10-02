@@ -2,6 +2,11 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
+    // Half the processor for one run. The default, every core but one,
+    // left two suites at once (two worktrees, or the gates beside an
+    // editor's run) at twice the cores, and the DOM tests' one-second finds
+    // failed at random. Half each keeps two runs within the machine.
+    maxWorkers: '50%',
     projects: [
       { test: { name: 'core', root: './packages/core' } },
       { test: { name: 'money', root: './packages/money-primitives' } },
@@ -39,7 +44,10 @@ export default defineConfig({
           css: { include: [/index\.css/] },
         },
       },
-      { test: { name: 'app-dom', root: './apps/web', include: ['test/**/*.test.tsx'], environment: 'jsdom' } },
+      // Each lazy part is fetched before a DOM test draws (test/setup-dom.ts).
+      {
+        test: { name: 'app-dom', root: './apps/web', include: ['test/**/*.test.tsx'], environment: 'jsdom', setupFiles: ['./test/setup-dom.ts'] },
+      },
       // The Edge Functions import zod by Deno's pinned URL so each can be
       // pasted alone; here that name is the package's own zod, as in its
       // tsconfig.

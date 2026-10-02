@@ -1,4 +1,5 @@
-import { Suspense, lazy, useId, useState } from 'react'
+import { Suspense, useId, useState } from 'react'
+import { lazyPart } from '../lib/lazy-part.js'
 import { SPENDING_LISTS } from '@budget/core'
 import { readBudgetInput, useAppData } from '../app-data.js'
 import { ensureCategory, setWeeklyBudget, type Category } from '../ledger.js'
@@ -16,7 +17,7 @@ import { LearnedShopsCard } from './LearnedShops.js'
 import { AiAppsCard } from '../ai-apps/AiAppsCard.js'
 import { signOutHere } from '../sign-out.js'
 
-const ProgressLine = lazy(() => import('../start/ProgressLine.js').then((m) => ({ default: m.ProgressLine })))
+const ProgressLine = lazyPart(() => import('../start/ProgressLine.js').then((m) => ({ default: m.ProgressLine })))
 
 /** Settings: shortcuts to Getting started, Setup, AI settings and Savings, then weekly budgets, learned shops, AI apps and the account. */
 export function SettingsScreen() {

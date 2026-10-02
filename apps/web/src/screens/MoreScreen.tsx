@@ -1,10 +1,11 @@
-import { Suspense, lazy } from 'react'
+import { Suspense } from 'react'
+import { lazyPart } from '../lib/lazy-part.js'
 import { hashOf, type Screen } from '../nav.js'
 import { Icon, type IconName } from '../components/ui/icons.js'
 import { HelpButton } from '../help/HelpButton.js'
 
 // Getting started's count reads nine answers; fetched only when More opens.
-const ProgressLine = lazy(() => import('../start/ProgressLine.js').then((m) => ({ default: m.ProgressLine })))
+const ProgressLine = lazyPart(() => import('../start/ProgressLine.js').then((m) => ({ default: m.ProgressLine })))
 
 interface Item {
   readonly screen: Screen

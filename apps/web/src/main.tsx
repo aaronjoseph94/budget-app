@@ -1,4 +1,5 @@
-import { StrictMode, Suspense, lazy } from 'react'
+import { StrictMode, Suspense } from 'react'
+import { lazyPart } from './lib/lazy-part.js'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { App } from './App.js'
@@ -10,7 +11,7 @@ import { reloadOnceOnPreloadError } from './shell/preload-reload.js'
 // The page Supabase sends an AI app's sign-in to (PLAN §2.10): a real
 // path, since the app's own screens live in the hash. Its own chunk, so
 // the first load stays as it was.
-const ConsentScreen = lazy(() => import('./ai-apps/ConsentScreen.js').then((m) => ({ default: m.ConsentScreen })))
+const ConsentScreen = lazyPart(() => import('./ai-apps/ConsentScreen.js').then((m) => ({ default: m.ConsentScreen })))
 
 // Reading localStorage can itself throw (storage blocked), so ask carefully.
 function deviceStorage(): Storage | null {

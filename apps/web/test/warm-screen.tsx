@@ -6,10 +6,9 @@ import { renderScreen } from './render-screen.js'
 
 /**
  * Render the app once at `hash` until the screen's title shows, then clear
- * it, for a file's beforeAll. The first render of a lazy screen in a test
- * file suspends on its chunk, React holds the revealed screen back for a
- * moment, and the code runs cold: about half a second of a find's one
- * second (N87). Rendered once first, a file's tests wait for the screen's
+ * it, for a file's beforeAll. setup-dom.ts fetches the screen's chunk
+ * before any test draws; what is left is the code running cold the first
+ * time (N87). Rendered once first, a file's tests wait for the screen's
  * reads alone.
  *
  * This is setup, not an assertion, so it waits for the title itself, as
