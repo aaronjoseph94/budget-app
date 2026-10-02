@@ -33,6 +33,12 @@ import type { SupabaseClient } from '../src/supabase.js'
 import { watchNetwork } from '../src/offline.js'
 import { AI_HELPER_VERSION, MCP_SERVER_VERSION, READ_RECEIPT_VERSION, type AiStatusReply } from '@budget/schema'
 
+/**
+ * The public key the page is built with, as One-time updates sends it to
+ * the auth server's settings: stub VITE_SUPABASE_ANON_KEY with it.
+ */
+export const PUBLIC_KEY = 'sb_publishable_fake_for_tests'
+
 type Row = Readonly<Record<string, unknown>>
 
 export interface FakeTables {
@@ -210,6 +216,11 @@ export interface FakeSupabase {
     lacks: Readonly<Record<string, readonly string[]>>
     /** No reply at all, as with the phone off the network: every request's fetch rejects. */
     offline: boolean
+    /**
+     * What `/auth/v1/settings` says of sign-ups, asked with PUBLIC_KEY:
+     * true is Allow new users to sign up off, as it is by default.
+     */
+    signupsOff: boolean
   }
 }
 
@@ -262,7 +273,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     schema_level: 38,
   }
   const failures = new Map<string, string>()
-  const server: FakeSupabase['server'] = { refuse: null, maxRows: null, afterRead: null, hold: null, lacks: {}, offline: false }
+  const server: FakeSupabase['server'] = { refuse: null, maxRows: null, afterRead: null, hold: null, lacks: {}, offline: false, signupsOff: true }
   const user = { id: 'u1', email: 'you@example.com', user_metadata: {} as Record<string, unknown> }
   const functions: FakeSupabase['functions'] = {
     // With no key anywhere, a task is turned away as the helper would: not set up.
@@ -410,6 +421,11 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     const headers = new Headers(init?.headers)
     const oauthOff = () => json({ code: 404, error_code: 'feature_disabled', msg: 'OAuth server is disabled' }, 404)
     if (url.pathname === '/.well-known/oauth-authorization-server/auth/v1') return oauth.grants === null ? oauthOff() : json(oauth.metadata)
+    if (url.pathname === '/auth/v1/settings') {
+      // As Supabase's gateway, which refuses a request without the public key.
+      if (headers.get('apikey') !== PUBLIC_KEY) return json({ message: 'No API key found in request' }, 401)
+      return json({ disable_signup: server.signupsOff, external: { email: true } })
+    }
     if (url.pathname === '/auth/v1/user/oauth/grants') {
       if (oauth.grants === null) return oauthOff()
       if (method === 'GET') return json(oauth.grants)

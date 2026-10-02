@@ -3,7 +3,7 @@ import { useAppData } from '../app-data.js'
 import { Button } from '../components/ui/button.js'
 import { cn } from '../lib/cn.js'
 import { CopyFile, isCopyable } from './CopyFile.js'
-import { FIRST_FILE, HELPER_FILE, OAUTH_SERVER, READ_RECEIPT_FILE, SERVER_FILE, SIGNING_KEY, checkUpdates, nextStep, type Checked } from './updates.js'
+import { FIRST_FILE, HELPER_FILE, OAUTH_SERVER, READ_RECEIPT_FILE, SERVER_FILE, SIGNING_KEY, SIGNUPS_OFF, checkUpdates, nextStep, type Checked } from './updates.js'
 
 /** Where each committed file can be opened and copied (HANDOFF §3, step 1); null for a step with no committed file. */
 const REPO = 'https://github.com/aaronjoseph94/budget-app/blob/main/'
@@ -50,6 +50,17 @@ const oauthSteps = (site: string) => [
   'Set Authorization Path to /oauth/consent.',
   'Turn on dynamic client registration, which lets Claude and ChatGPT register themselves, and press Save.',
   'Under Sign In / Providers, keep Allow new users to sign up off, and under Email keep Secure email change on.',
+]
+
+/**
+ * Allow new users to sign up, off (backend-b-06): the switch's place moved
+ * between dashboard versions, so the older names are given too.
+ */
+const SIGNUPS_STEPS = [
+  'In Supabase, open Authentication, then Sign In / Providers. On an older dashboard it is Authentication, then Providers, then Email, or Authentication, then Settings.',
+  'Turn off Allow new users to sign up, and press Save.',
+  'Open Authentication, then Users, and delete any row that is not you.',
+  'Press Check again.',
 ]
 
 /**
@@ -144,6 +155,15 @@ export function UpdatesPanel() {
         <div className="space-y-2 rounded-lg bg-muted p-3 text-sm">
           {next.kind === 'unknown' ? (
             <p>Some could not be checked. Check your connection, then press Check again.</p>
+          ) : next.file === SIGNUPS_OFF ? (
+            <>
+              <p>Next: stop strangers making an account. About 2 minutes, on a computer.</p>
+              <ol className="list-decimal space-y-1 pl-5">
+                {SIGNUPS_STEPS.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+            </>
           ) : next.file === HELPER_FILE ? (
             <>
               <p>

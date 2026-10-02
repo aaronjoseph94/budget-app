@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { FIRST_FILE, HELPER_FILE, OAUTH_SERVER, READ_RECEIPT_FILE, SERVER_FILE, SIGNING_KEY, UPDATES, checkUpdates, nextStep, type Checked } from '../src/help/updates.js'
+import { FIRST_FILE, HELPER_FILE, OAUTH_SERVER, READ_RECEIPT_FILE, SERVER_FILE, SIGNING_KEY, SIGNUPS_OFF, UPDATES, checkUpdates, nextStep, type Checked } from '../src/help/updates.js'
 import { MCP_SERVER_VERSION, READ_RECEIPT_VERSION } from '@budget/schema'
-import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
+import { PUBLIC_KEY, createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 
 const stateOf = (checked: readonly Checked[], prefix: string) => checked.find((c) => c.update.file.startsWith(prefix))?.state
 const missing = (checked: readonly Checked[]) => checked.filter((c) => c.state !== 'in').map((c) => [c.update.file.slice(0, 4), c.state])
@@ -12,16 +12,22 @@ async function ready(seed: Parameters<typeof createFakeSupabase>[0] = {}, alg = 
   await fake.signIn(alg)
   fake.oauth.grants = []
   vi.stubGlobal('fetch', fake.fetch)
+  // The public values the page is built with, which the sign-ups check sends.
+  vi.stubEnv('VITE_SUPABASE_URL', 'https://abcdefghijklmnopqrst.supabase.co')
+  vi.stubEnv('VITE_SUPABASE_ANON_KEY', PUBLIC_KEY)
   return fake
 }
 
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
+})
 
 describe('checking the one-time updates', () => {
   it('finds each one in when everything it adds answers', async () => {
     const fake = await ready()
     const checked = await checkUpdates(fake.client)
-    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', '0020', '0021', '0022', '0023', '0024', '0025', '0026', '0027', '0028', '0029', '0035', '0030', '0031', '0032', '0033', '0034', '0036', '0037', '0038', 'ai-f', 'read', 'sign', 'oaut', 'mcp-'])
+    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['sign', '0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', '0020', '0021', '0022', '0023', '0024', '0025', '0026', '0027', '0028', '0029', '0035', '0030', '0031', '0032', '0033', '0034', '0036', '0037', '0038', 'ai-f', 'read', 'sign', 'oaut', 'mcp-'])
     expect(missing(checked)).toEqual([])
     expect(nextStep(checked)).toEqual({ kind: 'done' })
   })
@@ -263,6 +269,33 @@ describe('checking the one-time updates', () => {
     expect(stateOf(await checkUpdates(signedOut.client), 'signing')).toBe('unknown')
   })
 
+  it('reads Allow new users to sign up from the auth server’s settings, first of all (backend-b-06)', async () => {
+    const fake = await ready()
+    fake.server.signupsOff = false
+    const checked = await checkUpdates(fake.client)
+    expect(checked[0]?.update.file).toBe(SIGNUPS_OFF)
+    expect(missing(checked)).toEqual([['sign', 'missing']])
+    expect(nextStep(checked)).toEqual({ kind: 'paste', file: SIGNUPS_OFF, fromStart: false })
+    // Before anything else: with 0008 missing too, sign-ups is still the next step.
+    fake.fail('category_budgets', 'PGRST205')
+    expect(nextStep(await checkUpdates(fake.client))).toEqual({ kind: 'paste', file: SIGNUPS_OFF, fromStart: false })
+    fake.heal('category_budgets')
+    fake.server.signupsOff = true
+    expect(nextStep(await checkUpdates(fake.client))).toEqual({ kind: 'done' })
+    // A refused key, an answer without the setting, no reply, or no public key: could not check, never "missing".
+    for (const reply of [
+      () => Promise.resolve(new Response('{"message":"No API key found in request"}', { status: 401 })),
+      () => Promise.resolve(new Response('{"external":{}}', { status: 200 })),
+      () => Promise.reject(new TypeError('Failed to fetch')),
+    ]) {
+      vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) => (String(input).endsWith('/auth/v1/settings') ? reply() : fake.fetch(input, init)))
+      expect(stateOf(await checkUpdates(fake.client), SIGNUPS_OFF)).toBe('unknown')
+    }
+    vi.stubGlobal('fetch', fake.fetch)
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', '')
+    expect(stateOf(await checkUpdates(fake.client), SIGNUPS_OFF)).toBe('unknown')
+  })
+
   it('reads sign-in for AI apps from Supabase’s published settings, asking with nothing of the owner’s', async () => {
     const fake = await ready()
     const asked: unknown[] = []
@@ -271,7 +304,11 @@ describe('checking the one-time updates', () => {
     const checked = await checkUpdates(fake.client)
     expect(missing(checked)).toEqual([['oaut', 'missing']])
     expect(nextStep(checked)).toEqual({ kind: 'paste', file: OAUTH_SERVER, fromStart: false })
-    expect(asked).toEqual([['http://fake.supabase.test/.well-known/oauth-authorization-server/auth/v1', undefined]])
+    expect(asked).toEqual([
+      // Sign-ups, asked with the page's public key alone.
+      ['http://fake.supabase.test/auth/v1/settings', { headers: { apikey: PUBLIC_KEY } }],
+      ['http://fake.supabase.test/.well-known/oauth-authorization-server/auth/v1', undefined],
+    ])
     fake.oauth.grants = []
     for (const [metadata, state] of [
       // On, but apps cannot register themselves, or without the S256 ChatGPT requires: the same step's switch.

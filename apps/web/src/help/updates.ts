@@ -17,6 +17,7 @@
 import { AI_HELPER_VERSION, MCP_SERVER_VERSION, READ_RECEIPT_VERSION } from '@budget/schema'
 import { askAi } from '../ai/client.js'
 import { serverAddress } from '../ai-apps/access.js'
+import { readEnv } from '../env.js'
 import type { SupabaseClient } from '../supabase.js'
 
 type Check =
@@ -37,6 +38,8 @@ type Check =
   | { readonly kind: 'signing_key' }
   /** Supabase's OAuth server, from the settings it publishes for AI apps to find. */
   | { readonly kind: 'oauth' }
+  /** Allow new users to sign up, off: from the settings Supabase's auth server publishes (backend-b-06). */
+  | { readonly kind: 'signups' }
   /**
    * An AI-app security update (0030 on): they change only functions the
    * owner's session cannot tell apart. Each is in when the last one in is
@@ -68,6 +71,14 @@ export const SERVER_FILE = 'mcp-function.ts'
 export const SIGNING_KEY = 'signing-key'
 export const OAUTH_SERVER = 'oauth-server'
 
+/**
+ * Turning off Allow new users to sign up: a setting, first on the list.
+ * While it is on, anyone who finds the site can make an account with the
+ * public key in the page, and any account can spend the owner's AI keys
+ * (backend-b-06, security-a-03).
+ */
+export const SIGNUPS_OFF = 'signups-off'
+
 export interface Update {
   readonly file: string
   /** What the list calls a step that is a setting, not a file. */
@@ -79,8 +90,10 @@ export interface Update {
 
 const NIL = '00000000-0000-0000-0000-000000000000'
 
-/** 0005 to 0029, 0035, 0030 to 0038, the AI helper, the two settings and the AI apps server, each with what it adds. */
+/** Sign-ups off, 0005 to 0029, 0035, 0030 to 0038, the AI helper, the two settings and the AI apps server, each with what it adds. */
 export const UPDATES: readonly Update[] = [
+  // First: it needs nothing, and it is what keeps strangers out.
+  { file: SIGNUPS_OFF, name: 'Sign-ups off', adds: 'Stops anyone who finds the site making an account', checks: [{ kind: 'signups' }] },
   { file: '0005_category_kinds.sql', adds: 'Which list each category is on', checks: [{ kind: 'column', table: 'categories', column: 'kind' }] },
   {
     file: '0006_recategorise.sql',
@@ -220,6 +233,9 @@ export const UPDATES: readonly Update[] = [
 /** What 0005's absence means: start where HANDOFF's list starts. */
 export const FIRST_FILE = '0003_save_import_atomically.sql'
 
+/** The first database update the list checks, 0005: missing, the owner starts at FIRST_FILE. */
+const FIRST_CHECKED = '0005_category_kinds.sql'
+
 /** `old`: the AI helper answers, but is a copy older than this app expects (N78). */
 export type UpdateState = 'in' | 'missing' | 'old' | 'unknown'
 
@@ -237,6 +253,7 @@ const MISSING: Readonly<Record<Check['kind'], ReadonlySet<string>>> = {
   read_receipt: new Set(),
   signing_key: new Set(),
   oauth: new Set(),
+  signups: new Set(),
   level: new Set(['PGRST202', '42883']),
   schema: new Set(['PGRST202', '42883']),
 }
@@ -282,7 +299,28 @@ async function signInForAiApps(supabase: SupabaseClient): Promise<UpdateState> {
   }
 }
 
+/**
+ * Whether Allow new users to sign up is off, from the settings Supabase's
+ * auth server publishes (`disable_signup`). Its gateway wants the public
+ * key, the one already in the page, and nothing of the owner's is sent.
+ * Anything but a true or false could not be checked.
+ */
+async function signupsOff(supabase: SupabaseClient): Promise<UpdateState> {
+  const env = readEnv()
+  if (!env.ok) return 'unknown'
+  try {
+    const reply = await fetch(`${new URL(serverAddress(supabase)).origin}/auth/v1/settings`, { headers: { apikey: env.env.VITE_SUPABASE_ANON_KEY } })
+    if (!reply.ok) return 'unknown'
+    const said = (await reply.json()) as Record<string, unknown> | null
+    const off = typeof said === 'object' && said !== null ? said['disable_signup'] : null
+    return off === true ? 'in' : off === false ? 'missing' : 'unknown'
+  } catch {
+    return 'unknown'
+  }
+}
+
 async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateState> {
+  if (check.kind === 'signups') return signupsOff(supabase)
   if (check.kind === 'signing_key') return signingKey(supabase)
   if (check.kind === 'oauth') return signInForAiApps(supabase)
   if (check.kind === 'helper') {
@@ -413,7 +451,7 @@ export function nextStep(checked: readonly Checked[]): NextStep {
   // An older helper is pasted again, over itself, as one not in yet is.
   const first = checked.find((c) => c.state === 'missing' || c.state === 'old')
   if (first !== undefined) {
-    const fromStart = first.update === UPDATES[0]
+    const fromStart = first.update.file === FIRST_CHECKED
     return { kind: 'paste', file: fromStart ? FIRST_FILE : first.update.file, fromStart }
   }
   return checked.some((c) => c.state === 'unknown') ? { kind: 'unknown' } : { kind: 'done' }

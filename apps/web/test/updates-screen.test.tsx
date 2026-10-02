@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
-import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
+import { PUBLIC_KEY, createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
 import { expectNoAxeViolations } from './axe.js'
@@ -24,6 +24,7 @@ afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
   window.location.hash = ''
 })
 
@@ -33,6 +34,9 @@ async function ready(alg = 'ES256'): Promise<FakeSupabase> {
   await fake.signIn(alg)
   fake.oauth.grants = []
   vi.stubGlobal('fetch', fake.fetch)
+  // The public values the page is built with, which the sign-ups check sends.
+  vi.stubEnv('VITE_SUPABASE_URL', 'https://abcdefghijklmnopqrst.supabase.co')
+  vi.stubEnv('VITE_SUPABASE_ANON_KEY', PUBLIC_KEY)
   return fake
 }
 
@@ -97,6 +101,22 @@ describe('One-time updates', () => {
     expect(screen.queryByRole('link', { name: 'Check the one-time updates' })).toBeNull()
     expect(screen.getByText(/^Next: paste/).textContent).toContain('0003_save_import_atomically.sql')
     expect(screen.getByText(/^0003_save_import_atomically\.sql is the first/)).toBeTruthy()
+  })
+
+  it('names sign-ups first when they are on, with the dashboard clicks and no Copy or GitHub link (backend-b-06)', async () => {
+    const fake = await ready()
+    fake.server.signupsOff = false
+    await open(fake, ONE_LEFT)
+    expect(row('Sign-ups off')).toBe('✗Not in yet: Sign-ups offStops anyone who finds the site making an account')
+    expect(screen.getByText('Next: stop strangers making an account. About 2 minutes, on a computer.')).toBeTruthy()
+    expect(clicks()).toEqual([
+      'In Supabase, open Authentication, then Sign In / Providers. On an older dashboard it is Authentication, then Providers, then Email, or Authentication, then Settings.',
+      'Turn off Allow new users to sign up, and press Save.',
+      'Open Authentication, then Users, and delete any row that is not you.',
+      'Press Check again.',
+    ])
+    expect(screen.queryByRole('link', { name: /on GitHub/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Copy/ })).toBeNull()
   })
 
   it('names the AI helper next when only it is missing, with the Edge Functions clicks', async () => {
