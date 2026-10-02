@@ -439,9 +439,14 @@ export async function countPendingBetween(
 
 /** merchant -> category id, for suggesting what the user chose last time. */
 export async function listRules(supabase: SupabaseClient): Promise<ReadonlyMap<string, string>> {
-  const { data, error } = await supabase.from('merchant_rules').select('match_merchant, category_id')
-  if (error !== null) fail(error)
-  const rules = (data ?? []) as { match_merchant: string; category_id: string }[]
+  // Every rule, page by page: one request stops at the server's 1,000 rows
+  // (architecture-c1-03).
+  // A shop's name is unique to its owner (0001), so it orders the pages.
+  const rules = await readAll<{ match_merchant: string; category_id: string }>(
+    (from, to) => supabase.from('merchant_rules').select('match_merchant, category_id', { count: 'exact' }).order('match_merchant').range(from, to),
+    { changed: 'The shops the app has learned changed while they were read. Try again.', describe: describeWriteFailure },
+    (r) => r.match_merchant,
+  )
   return new Map(rules.map((r) => [r.match_merchant, r.category_id]))
 }
 
@@ -769,6 +774,17 @@ interface Page {
 export async function readAll<T extends { readonly id: string }>(
   page: (from: number, to: number) => PromiseLike<Page>,
   failure: { readonly changed: string; readonly describe: (error: WriteError) => string },
+): Promise<T[]>
+/** As above, for a table keyed by another column (coach_answers, insight_dismissals; architecture-c1-03). */
+export async function readAll<T>(
+  page: (from: number, to: number) => PromiseLike<Page>,
+  failure: { readonly changed: string; readonly describe: (error: WriteError) => string },
+  keyOf: (row: T) => string,
+): Promise<T[]>
+export async function readAll<T>(
+  page: (from: number, to: number) => PromiseLike<Page>,
+  failure: { readonly changed: string; readonly describe: (error: WriteError) => string },
+  keyOf: (row: T) => string = (row) => (row as { readonly id: string }).id,
 ): Promise<T[]> {
   const rows: T[] = []
   let expected: number | null = null
@@ -781,7 +797,7 @@ export async function readAll<T extends { readonly id: string }>(
     if (got.length === 0 && rows.length < expected) throw new Error(failure.changed)
     rows.push(...got)
   } while (rows.length < expected)
-  if (rows.length !== expected || new Set(rows.map((r) => r.id)).size !== rows.length) {
+  if (rows.length !== expected || new Set(rows.map(keyOf)).size !== rows.length) {
     throw new Error(failure.changed)
   }
   return rows

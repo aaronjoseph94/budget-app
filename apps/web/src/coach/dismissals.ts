@@ -9,7 +9,7 @@
  */
 import { useCallback, useEffect, useState } from 'react'
 import { useAppData } from '../app-data.js'
-import { ReadRefused, needsOneTimeUpdate } from '../ledger.js'
+import { needsOneTimeUpdate, readAll } from '../ledger.js'
 
 /** A shop the owner marked "Not a subscription" on Reports → Shops, kept as a dismissal (F38). */
 const NOT_SUBSCRIPTION = 'not_subscription:'
@@ -45,18 +45,23 @@ export function useDismissals(): Dismissals {
 
   useEffect(() => {
     let live = true
-    void supabase
-      .from('insight_dismissals')
-      .select('insight_key')
-      .then(({ data, error }) => {
+    // Every dismissal, page by page: one request stopped at the server's
+    // 1,000 rows (architecture-c1-03). One per insight (0017's key).
+    readAll<{ insight_key: unknown }>(
+      (from, to) => supabase.from('insight_dismissals').select('insight_key', { count: 'exact' }).order('insight_key').range(from, to),
+      { changed: 'Dismissed insights changed while they were read.', describe: () => 'Dismissed insights could not be read.' },
+      (r) => String(r.insight_key),
+    ).then(
+      (rows) => {
         if (!live) return
-        if (error !== null) {
-          const missingUpdate = needsOneTimeUpdate(new ReadRefused('Dismissed insights could not be read.', error.code))
-          return setState({ dismissed: new Set(), canDismiss: false, missingUpdate })
-        }
-        const keys = (data as readonly { insight_key: unknown }[]).map((r) => r.insight_key).filter((k): k is string => typeof k === 'string')
+        const keys = rows.map((r) => r.insight_key).filter((k): k is string => typeof k === 'string')
         setState({ dismissed: new Set(keys), canDismiss: true, missingUpdate: false })
-      })
+      },
+      (cause: unknown) => {
+        if (!live) return
+        setState({ dismissed: new Set(), canDismiss: false, missingUpdate: needsOneTimeUpdate(cause) })
+      },
+    )
     return () => void (live = false)
   }, [supabase])
 

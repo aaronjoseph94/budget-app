@@ -10,7 +10,7 @@
  */
 import { type CheckinAnswer, isoDate } from '@budget/core'
 import type { IsoDate } from '@budget/money-primitives'
-import { ReadRefused, needsOneTimeUpdate } from '../ledger.js'
+import { needsOneTimeUpdate, readAll } from '../ledger.js'
 import type { SupabaseClient } from '../supabase.js'
 
 export interface AnswerRow {
@@ -28,10 +28,21 @@ export type AnswersRead =
 const ANSWERS: ReadonlySet<string> = new Set(['planned', 'impulse', 'needed'])
 
 export async function readAnswers(supabase: SupabaseClient): Promise<AnswersRead> {
-  const { data, error } = await supabase.from('coach_answers').select('transaction_id, answer, asked_week')
-  if (error !== null) return needsOneTimeUpdate(new ReadRefused('The check-in’s answers could not be read.', error.code)) ? { status: 'missing' } : { status: 'failed' }
+  // Every answer, page by page: one request stopped at the server's 1,000
+  // rows (architecture-c1-03). One answer per charge (0017's key).
+  let data: readonly Record<string, unknown>[]
+  try {
+    data = await readAll<Record<string, unknown>>(
+      (from, to) =>
+        supabase.from('coach_answers').select('transaction_id, answer, asked_week', { count: 'exact' }).order('transaction_id').range(from, to),
+      { changed: 'The check-in’s answers changed while they were read.', describe: () => 'The check-in’s answers could not be read.' },
+      (r) => String(r['transaction_id']),
+    )
+  } catch (cause) {
+    return needsOneTimeUpdate(cause) ? { status: 'missing' } : { status: 'failed' }
+  }
   // The database's CHECKs hold these; a row that is not one is skipped rather than counted as something it is not.
-  const rows = (data as readonly Record<string, unknown>[]).flatMap((r): AnswerRow[] => {
+  const rows = data.flatMap((r): AnswerRow[] => {
     const { transaction_id: id, answer, asked_week: week } = r
     return typeof id === 'string' && typeof answer === 'string' && ANSWERS.has(answer) && typeof week === 'string'
       ? [{ transactionId: id, answer: answer as CheckinAnswer, askedWeek: isoDate(week) }]
