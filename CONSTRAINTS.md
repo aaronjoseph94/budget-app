@@ -62,6 +62,7 @@ the debt extras) now branch on the missing value instead.
 | Golden replay | 100% exact match, zero tolerance | `vitest run` (at full level, the same run as Coverage) | every edit |
 | Coverage | ≥80% lines and functions, ≥75% branches, per module | `vitest run --coverage` (gate `golden+coverage`: the suite runs once at full level) | CI |
 | Migration replay | Applies cleanly to an empty database | `scripts/verify-migrations.sh` | CI |
+| Ingest idempotency | Re-import yields 0 new rows (`save_import` again: inserted 0, every row deduped); double-approve yields 1 transaction (`approve_candidate` again: `already_handled`) | `scripts/verify-migrations.sh` (`schema-assertions.sql`) | CI |
 | RLS coverage | `pg_tables WHERE NOT rowsecurity` returns 0; every public table has an all-commands `user_id = auth.uid()` policy (`pg_policies`), and it is the only permissive policy on the table, so policies isolate; no SECURITY DEFINER function is callable by `anon` | `scripts/verify-migrations.sh` | CI |
 | Dependencies | Nothing high or above | `pnpm audit --audit-level high` | CI |
 | Web first load | The JavaScript a phone loads before the first screen (the entry and the chunks it preloads) ≤200 KB gzipped | `node scripts/check-bundle.mjs` | CI |
@@ -205,7 +206,6 @@ the command to actually run.
 | Dimension | Rule | Activated by |
 |---|---|---|
 | Extraction accuracy | ≥90% zod-valid, ≥98% exact amounts over ≥20 labeled samples; no live provider calls in CI | `llm-providers`, and 20 labelled receipts that may be committed (see below) |
-| Ingest idempotency | Re-import yields 0 new rows; double-approve yields 1 transaction | `ingest-pipeline` |
 | Web entry charts | Chart code out of the entry chunk (N39: the Month draws its charts on every open, so this is still open) | a lazy MonthCharts, measured |
 | Engine speed | Full recompute over 5,000 transactions ≤50 ms | `calc-engine` rollups |
 | Feedback loop | `gates.sh fast` ≤5s · full ≤90s · CI ≤5 min | CI setup |
