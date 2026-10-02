@@ -11,6 +11,7 @@ if (typeof Deno !== 'undefined') {
       {
         SUPABASE_URL: Deno.env.get('SUPABASE_URL'),
         SUPABASE_ANON_KEY: Deno.env.get('SUPABASE_ANON_KEY'),
+        SUPABASE_PUBLISHABLE_KEYS: Deno.env.get('SUPABASE_PUBLISHABLE_KEYS'),
         EXTRA_ORIGINS: Deno.env.get('EXTRA_ORIGINS'),
       },
       fetch,

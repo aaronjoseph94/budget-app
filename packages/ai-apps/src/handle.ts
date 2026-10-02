@@ -30,11 +30,16 @@ import { TOOLS, budgetServer } from './server.js'
 // is refused (the spec's DNS-rebinding rule).
 const ORIGINS = ['https://aaron-budget-app.pages.dev', 'https://aaron-budget-app.netlify.app', 'http://localhost:5173']
 
-// The environment boundary. Supabase sets the first two. There is no field
+// The environment boundary. Supabase sets the first three. There is no field
 // for a service key: this server acts only with the caller's own token.
+// SUPABASE_PUBLISHABLE_KEYS is a JSON object of the project's new public
+// keys, by name; its `default` is used before the legacy anon key, which
+// stops working once the project's legacy keys are switched off
+// (backend-b-04, as the AI helper's publicKey does).
 const EnvSchema = z.object({
   SUPABASE_URL: z.string().regex(/^https?:\/\/[A-Za-z0-9.-]+(:\d+)?$/).optional(),
   SUPABASE_ANON_KEY: z.string().min(1).optional(),
+  SUPABASE_PUBLISHABLE_KEYS: z.string().optional(),
   EXTRA_ORIGINS: z.string().optional(),
 })
 export type Env = z.infer<typeof EnvSchema>
@@ -131,13 +136,26 @@ async function route(req: Request, env: Env, fetchFn: typeof fetch): Promise<Res
   if (!metadata && rest !== '' && rest !== '/') return json(404, { error: 'not_found' })
   const allow = metadata ? 'GET' : 'POST'
   if (req.method !== allow) return json(405, { error: 'method_not_allowed' }, { Allow: allow })
-  if (env.SUPABASE_URL === undefined || env.SUPABASE_ANON_KEY === undefined) {
+  const anonKey = publicKey(env)
+  if (env.SUPABASE_URL === undefined || anonKey === null) {
     log('not_configured')
     return json(503, { error: 'not_configured' })
   }
-  const project = { url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY }
+  const project = { url: env.SUPABASE_URL, anonKey }
   if (metadata) return json(200, protectedResource(project))
   return withDeadline(serveMcp(req, project, fetchFn))
+}
+
+/** The publishable key's `default` when it is a non-empty string, else the anon key, else none. */
+function publicKey(env: Env): string | null {
+  let fresh: unknown = null
+  try {
+    const keys: unknown = JSON.parse(env.SUPABASE_PUBLISHABLE_KEYS ?? 'null')
+    fresh = typeof keys === 'object' && keys !== null && 'default' in keys ? keys.default : null
+  } catch {
+    fresh = null
+  }
+  return typeof fresh === 'string' && fresh !== '' ? fresh : (env.SUPABASE_ANON_KEY ?? null)
 }
 
 export async function handle(

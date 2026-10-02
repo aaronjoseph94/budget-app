@@ -98,6 +98,6 @@ describe('under Deno', () => {
     await import('../src/deno.js')
     const res = await served?.(at('/mcp/health'))
     expect(res?.status).toBe(200)
-    expect(asked.sort()).toEqual(['EXTRA_ORIGINS', 'SUPABASE_ANON_KEY', 'SUPABASE_URL'])
+    expect(asked.sort()).toEqual(['EXTRA_ORIGINS', 'SUPABASE_ANON_KEY', 'SUPABASE_PUBLISHABLE_KEYS', 'SUPABASE_URL'])
   })
 })

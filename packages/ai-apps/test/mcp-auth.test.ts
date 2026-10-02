@@ -12,7 +12,7 @@ import { AI_APP_CLAIMS, AI_APP_TOKEN, CLIENT, ENV, PROJECT, fakeFetch, signedIn,
 const RESOURCE = `${PROJECT}/functions/v1/mcp`
 const METADATA = `${RESOURCE}/.well-known/oauth-protected-resource`
 
-function call(auth: string | null, respond?: Respond, headers: Record<string, string> = {}) {
+function call(auth: string | null, respond?: Respond, headers: Record<string, string> = {}, env: Record<string, string> = ENV) {
   const { fetchFn, calls } = fakeFetch(respond)
   const res = handle(
     new Request(`${PROJECT}/mcp`, {
@@ -26,7 +26,7 @@ function call(auth: string | null, respond?: Respond, headers: Record<string, st
       },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
     }),
-    ENV,
+    env,
     fetchFn,
   )
   return { res, calls }
@@ -87,6 +87,23 @@ describe('the token check', () => {
     expect(calls[0]?.url).toBe(`${PROJECT}/auth/v1/user`)
     expect(calls[0]?.init.headers).toEqual({ apikey: 'anon-key-for-tests', Authorization: `Bearer ${AI_APP_TOKEN}` })
     expect(calls[0]?.init.redirect).toBe('error')
+  })
+
+  it('asks Auth with the project\'s publishable key once it has one, so retiring the legacy keys signs no one out (backend-b-04)', async () => {
+    const keys = { ...ENV, SUPABASE_PUBLISHABLE_KEYS: JSON.stringify({ default: 'sb_publishable_for_tests' }) }
+    const { res, calls } = call(`Bearer ${AI_APP_TOKEN}`, undefined, {}, keys)
+    expect((await res).status).toBe(200)
+    expect(calls[0]?.init.headers).toEqual({ apikey: 'sb_publishable_for_tests', Authorization: `Bearer ${AI_APP_TOKEN}` })
+    // An empty default, or JSON that is not an object of keys, falls back to the anon key.
+    for (const bad of [JSON.stringify({ default: '' }), 'not json', '[]']) {
+      const again = call(`Bearer ${AI_APP_TOKEN}`, undefined, {}, { ...ENV, SUPABASE_PUBLISHABLE_KEYS: bad })
+      expect((await again.res).status).toBe(200)
+      expect(again.calls[0]?.init.headers).toEqual({ apikey: 'anon-key-for-tests', Authorization: `Bearer ${AI_APP_TOKEN}` })
+    }
+    // The publishable key alone is enough to serve.
+    const alone = call(`Bearer ${AI_APP_TOKEN}`, undefined, {}, { SUPABASE_URL: PROJECT, SUPABASE_PUBLISHABLE_KEYS: keys.SUPABASE_PUBLISHABLE_KEYS })
+    expect((await alone.res).status).toBe(200)
+    expect(alone.calls[0]?.init.headers).toEqual({ apikey: 'sb_publishable_for_tests', Authorization: `Bearer ${AI_APP_TOKEN}` })
   })
 
   it(`gives Auth ${CALL_TIMEOUT_MS / 1000} s, then lets the call go`, async () => {
