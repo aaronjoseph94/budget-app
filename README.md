@@ -5,6 +5,8 @@ spreadsheet (called **the workbook** everywhere in this repository), and it
 runs as a web app you can install on an iPhone's Home Screen or open on a
 computer.
 
+**Live site:** [https://aaron-budget-app.pages.dev](https://aaron-budget-app.pages.dev)
+
 It reads credit card statements, receipt photos and typed notes, puts
 everything in a **Review** list for you to approve, and then shows where the
 month is going, what to cut and when you will reach your goals. AI writes
@@ -38,10 +40,10 @@ the owner's to-do list and the next agent's starting point.
   fills each blank from its own engine ([ADR 0005](docs/adr/0005-grounded-ai-text.md)).
   With AI off, every screen still works and shows the app's own words.
 - **Keys never reach the browser.** Every AI call goes through one server
-  function, `ai`, which keeps keys encrypted in the database (until `ai` is
-  installed, receipt photos use the older `read-receipt` function and its
-  server-side key instead). A key is pasted once in **AI settings** and
-  never shown again.
+  function, `ai`, which keeps keys encrypted in the database (or uses a
+  server-side `GEMINI_API_KEY` secret). A key pasted in **AI settings** is
+  never shown again. The older `read-receipt` function is retired once `ai`
+  is in.
 - **A fixed list of services.** Free: Google Gemini (the default), Groq and
   OpenRouter. Paid, off until you switch **Use paid services** on: OpenAI and
   Anthropic. The addresses are written into the code; a setting can only
@@ -65,7 +67,8 @@ app's own page. Connecting is done once, on a computer.
 - Step by step, in the app: **Help → Connect Claude** and
   **Help → Connect ChatGPT** (the words are in
   [`apps/web/src/help/articles.ts`](apps/web/src/help/articles.ts)).
-- The one-time Supabase setup: [`HANDOFF.md`](HANDOFF.md) section 3, Part B.
+- The one-time Supabase setup (paste the `mcp` server, OAuth, signing key):
+  [`HANDOFF.md`](HANDOFF.md) section 3, Part F.
 - The design and its security review: [ADR 0012](docs/adr/0012-mcp-server.md)
   and [`docs/design/mcp/PLAN.md`](docs/design/mcp/PLAN.md).
 
@@ -98,8 +101,8 @@ workbook's own saved results exactly. The canonical case: four debts from
   [ADR 0006](docs/adr/0006-navigation-for-an-ai-first-app.md))
 - zod for checking data at the edges; Vitest for tests
 - Supabase: Postgres with row-level security, private Storage, Edge Functions
-- Cloudflare Pages for the website (not set up yet; until then
-  `netlify.toml` builds a preview the same way)
+- Cloudflare Pages for the website (`aaron-budget-app.pages.dev`); the old
+  Netlify address redirects there
 
 ## What is where
 
@@ -115,8 +118,8 @@ workbook's own saved results exactly. The canonical case: four debts from
 | `packages/chart-specs` | What each chart draws, worked out from engine output |
 | `packages/report-export` | The CSV writer for Reports |
 | `packages/ai-apps` | The MCP server for Claude and ChatGPT, built into one pasteable file |
-| `supabase/migrations` | Database changes `0001` to `0038`, applied in number order, never edited once applied |
-| `supabase/functions` | The `ai` helper and the older `read-receipt` function, with their tests |
+| `supabase/migrations` | Database changes `0001` to `0038`, pasted in the order One-time updates names, never edited once applied |
+| `supabase/functions` | The `ai` helper (and the retired `read-receipt` source, kept for an optional paste), with their tests |
 | `supabase/tests` | Checks that the database refuses what it should |
 | `scripts` | The checks (`gates.sh`), the bundle-size budget, the migration replay, the gitleaks installer |
 | `docs` | Decisions, plans and setup notes (see below) |
@@ -159,21 +162,22 @@ The full run needs `gitleaks` (`scripts/install-gitleaks.sh`) and a local
 
 ## Deploying
 
-There is no deploy script. The owner sets it up once by hand, and
+The live site is on Cloudflare Pages. Setup is done once by hand;
 [`HANDOFF.md`](HANDOFF.md) section 3 has every click; [`docs/setup.md`](docs/setup.md)
 has the detail behind each one. In outline:
 
 1. **Database.** Paste each file in `supabase/migrations` into Supabase's
-   SQL Editor, in number order, once. The app's **Help → One-time updates**
-   checks which are in and has a **Copy** button for each
+   SQL Editor in the order **Help → One-time updates** names (mostly number
+   order; `0035` before `0030` on purpose). That page checks which are in
+   and has a **Copy** button for each
    ([ADR 0007](docs/adr/0007-one-time-updates-copied-from-the-app.md)).
 2. **Edge Functions.** Paste the `ai` helper, and optionally the `mcp`
-   server for AI apps, from the same Help page.
+   server for AI apps, from the same Help page. Delete `read-receipt` once
+   `ai` is live.
 3. **Website.** Cloudflare Pages builds `pnpm --filter @budget/app-client build`
    from `main` and serves `apps/web/dist`, with the two public values as
-   environment variables. Pushing to `main` deploys. That host is still
-   one of the owner's open steps; until it is done, a Netlify preview
-   builds the same command from `netlify.toml`.
+   environment variables. Pushing to `main` deploys. The Netlify site, if
+   still named, only redirects to the Pages address.
 
 ## Where the docs are
 
@@ -192,10 +196,11 @@ has the detail behind each one. In outline:
 
 - **One person's data.** Every table has row-level security: a signed-in
   user sees only their own rows. There is no sign-up screen; accounts are
-  made in Supabase. Public sign-up must also be switched off there
-  ([`HANDOFF.md`](HANDOFF.md) section 3, "Stop strangers registering").
+  made in Supabase, and public sign-up is switched off there
+  ([`HANDOFF.md`](HANDOFF.md) section 3, Part A).
 - **Only two values are public:** the Supabase project URL and its anon
-  key. The `service_role` key and every AI key stay on the server.
+  (publishable) key. The `service_role` key and every AI key stay on the
+  server.
 - **Receipt photos are not kept.** A photo is sent to be read and then
   dropped; it is not saved in Supabase or on the device. The database's
   only Storage bucket is private, readable only from your own folder.
@@ -206,4 +211,4 @@ has the detail behind each one. In outline:
 - **Nothing private is in this repository:** no workbook, statements,
   receipts, keys or `.env` files. Test files use invented data.
 
-This is a private project for one owner. No licence is granted.
+This is a personal project for one owner. No licence is granted.
