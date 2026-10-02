@@ -3381,3 +3381,27 @@ the same change, from the rows' own statement text, renaming learned
 shops to match (the more recently made or used one kept where two would
 share a name). The dedupe hash is over the raw text and does not move,
 so no hash version bump is needed.
+
+---
+
+## N147 — Tests run the app through Vite 7 while the site builds with Vite 8
+
+**Seen:** 2026-10-01, architecture review (architecture-b-09). The
+lockfile resolves `vitest@3.2.7` with `vite@7.3.6`, while `apps/web`
+builds with `vite@^8.3.0` (Rolldown/Oxc). A transform difference between
+the two would pass the tests and ship something else.
+
+**Why not fixed here:** the first Vitest that peers Vite 8 is 4.1. Vitest
+4 removes `testTransformMode`, which `vitest.config.ts` uses to compile
+the source both app projects load one way (the fix for coverage reading
+153 branches on one run and 112 the next), and changes how v8 coverage is
+mapped, so the per-file thresholds (WeekScreen.tsx's 95/100/76 and the
+rest) would move. That needs the full suite with coverage run several
+times on an idle machine, which this review's shared four-core machine
+could not give, and a threshold may not be lowered to make it pass.
+
+**To settle:** in its own commit, move `vitest` and `@vitest/coverage-v8`
+together to 4.1.x; replace `testTransformMode` with Vitest 4's per-project
+transform option (or move the two Node-built tests to their own project);
+run `pnpm vitest run --coverage` alone until the figures are stable;
+confirm `grep -c "^  vite@" pnpm-lock.yaml` shows one Vite.
