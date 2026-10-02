@@ -171,6 +171,108 @@ In the app, **Help → One-time updates** walks every step below in this
 order, checks each one, and has **Copy** buttons, so there is no need to
 open GitHub. Easiest on a computer.
 
+### Part A: keep strangers out, about 10 minutes, do this first
+
+1. **Turn off sign-ups.** Supabase → **Authentication → Sign In /
+   Providers** (older dashboards: **Authentication → Providers → Email**,
+   or **Authentication → Settings**) → turn **Allow new users to sign up**
+   off → **Save**. While it is on, anyone who finds the site can make an
+   account with the public key in the page, and any account can use your
+   Gemini key. One-time updates lists **Sign-ups off** first until it is.
+2. **Remove anyone who is not you.** Supabase → **Authentication →
+   Users** → on any row that is not your email, `⋯` → **Delete user** →
+   confirm.
+3. **A longer minimum password.** Supabase → **Authentication → Sign In /
+   Providers → Email** (older: **Authentication → Policies**) →
+   **Minimum password length** → `16` → **Save**. Supabase checks it only
+   when a password is next set, so step 9 sets a new one.
+4. **Two-step sign-in on the accounts that hold this app.** Each takes a
+   minute with an authenticator app:
+   - Supabase: your avatar (top right) → **Account preferences** →
+     **Security** → **Multi-factor authentication** → **Add new app** →
+     scan, type the code → **Verify**.
+   - GitHub: your avatar → **Settings → Password and authentication →
+     Two-factor authentication → Enable**.
+   - Cloudflare: **My Profile → Authentication → Two-Factor
+     Authentication → Set up**.
+   - Google (your Gemini key): myaccount.google.com → **Security →
+     2-Step Verification → Get started**.
+   - Netlify: **User settings → Security → Two-factor authentication**.
+   If a menu has moved, look for Security in that account's settings.
+   The budget app's own sign-in has no second step yet: that is the next
+   agent's slice (security-c1-03, in the review notes), not yours.
+
+### Part B: the site on Cloudflare, about 15 minutes, once
+
+Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
+
+5. **Cloudflare Pages.** Cloudflare dashboard → **Workers & Pages →
+   Create → Pages → Connect to Git** → `aaronjoseph94/budget-app`.
+   Project name `aaron-budget-app`, production branch `main`, framework
+   preset **None**, build command `pnpm --filter @budget/app-client build`,
+   build output directory `apps/web/dist`, root directory empty.
+   **Environment variables** (same screen, before the first deploy):
+   `NODE_VERSION` = `22`, `PNPM_VERSION` = `10.33.0`,
+   `VITE_SUPABASE_URL` = `https://bnodrfghxbavlopxkgju.supabase.co`,
+   `VITE_SUPABASE_ANON_KEY` = the **publishable** key (`sb_publishable_…`,
+   the same value as in `netlify.toml`), never a secret or `service_role`
+   key: the build stops if it is one. **Save and Deploy**. If the project
+   was made earlier with `PNPM_VERSION` `10`, change it to `10.33.0`
+   (**Settings → Environment variables → Edit**) and **Deployments → Retry
+   deployment** (N61.3).
+6. **Where sign-in links return.** Supabase → **Authentication → URL
+   Configuration**: **Site URL** = `https://aaron-budget-app.pages.dev` →
+   **Save**. Under **Redirect URLs** → **Add URL** →
+   `https://aaron-budget-app.pages.dev/**` → **Save URLs**. Keep
+   `http://localhost:5173/**`. Leave the Netlify entry for now (step 10).
+7. **Check the site.** Open `https://aaron-budget-app.pages.dev` and sign
+   in with your password.
+8. **Only if this pages.dev site is not the one you set up** (Cloudflare
+   gave another name, or you use your own domain): Supabase → **Edge
+   Functions → Secrets → Add new secret** → `EXTRA_ORIGINS` =
+   `https://<that address>` → **Save**.
+9. **A new, long password, and every old sign-in ended.** On the
+   pages.dev site: sign out → type your email → **Forgot your password?**
+   → open the email **on the same device, in the same browser** → paste a
+   password-manager-generated password of 20+ characters → **Save
+   password**. Links sent from the Supabase dashboard (**Reset password**,
+   **Send magic link**) do not work with this app. Then end every older
+   sign-in (a sign-in link with a live token was pasted into a chat
+   earlier): Supabase → **SQL Editor → New query** →
+   `delete from auth.sessions;` → **Run**. It signs you out everywhere:
+   sign in again with the new password.
+10. **Retire Netlify, keeping its name.** Supabase → **Authentication →
+    URL Configuration → Redirect URLs** → on the
+    `https://aaron-budget-app.netlify.app/**` row press the bin icon →
+    confirm → check **Site URL** still says
+    `https://aaron-budget-app.pages.dev`. Sign in once more on the
+    pages.dev site. Then Netlify → your site → **Site configuration →
+    Build & deploy → Continuous deployment → Stop builds**. **Do not
+    choose Delete this site**: deleting frees the
+    `aaron-budget-app.netlify.app` name for anyone, and an address left
+    in Redirect URLs would send your sign-in links to them. Tell the next
+    agent it is done: it then removes the netlify.app origin from the
+    functions and `netlify.toml` (N151).
+11. **iPhone.** In Safari open the pages.dev site → **Share → Add to Home
+    Screen**. Remove an icon added before 2026-09-23 first (N24).
+
+### Part C: GitHub, 5 minutes, once
+
+12. **Only green commits reach the site.** github.com →
+    `aaronjoseph94/budget-app` → **Settings → Branches → Add branch
+    protection rule** → Branch name pattern `main` → tick **Require status
+    checks to pass before merging** → in the search box type `gates` and
+    pick **gates** → tick **Do not allow bypassing the above settings** →
+    **Create**. (Newer screen: **Settings → Rules → Rulesets → New ruleset
+    → New branch ruleset** → name `main` → Enforcement status **Active** →
+    **Target branches → Add target → Include by pattern** `main` → tick
+    **Require status checks to pass** → **Add checks** → `gates` → tick
+    **Block force pushes** → **Create**.) From then on the agent pushes to
+    `main-tnlcto` first, waits for the green **gates** run, and only then
+    pushes that same commit to `main`.
+
+### Parts D to F (renumbered in the next commit)
+
 **Part A: the updates and free AI, about 15 minutes, once.**
 
 1. **Paste the new database updates, one at a time.** Supabase →
@@ -281,37 +383,6 @@ before", below), because Supabase finds the app's connect page from it.
    **OAuth** (dynamic registration if asked), **Create**, and **Allow**.
 
 Then work through §4's first-connection checks, 15 to 24, in order.
-
-**Still open from before, if not done yet:**
-- **Cloudflare Pages** (replaces Netlify). **Workers & Pages → Create →
-  Pages → Connect to Git →** `aaronjoseph94/budget-app`. Project name
-  `aaron-budget-app`, production branch `main`, framework preset None,
-  build command `pnpm --filter @budget/app-client build`, output directory
-  `apps/web/dist`. Environment variables: `NODE_VERSION` = `22`,
-  `PNPM_VERSION` = `10.33.0`, `VITE_SUPABASE_URL` =
-  `https://bnodrfghxbavlopxkgju.supabase.co`, `VITE_SUPABASE_ANON_KEY` = the
-  publishable key in `netlify.toml` (public by design). Then in Supabase →
-  **Authentication → URL Configuration**: Site URL
-  `https://aaron-budget-app.pages.dev`, and add
-  `https://aaron-budget-app.pages.dev/**` to Redirect URLs. Once it works,
-  delete the Netlify site; the next agent then removes `netlify.toml`.
-  If the Pages project was made earlier with `PNPM_VERSION` `10`, change it
-  to `10.33.0` there (N61.3).
-- **Your password, and signing out old sessions.** **Authentication →
-  Users →** the `⋯` on your row → **Reset password**. Then end every
-  old sign-in: **SQL Editor** → **New query** → `delete from
-  auth.sessions;` → **Run**, and sign in to the app again. A sign-in link
-  with a live token was pasted into a chat earlier. (This is the same line
-  as check 18 and Help's emergency steps; the dashboard's "Sign out user"
-  was never confirmed to end every session, so it is not used.)
-- **Stop strangers registering.** **Authentication → Sign In / Providers**
-  → turn **Allow new users to sign up** off → **Save**. The app already
-  asks Supabase never to make an account, but the public key in the web
-  page lets anyone ask Supabase directly; only this switch refuses them.
-  Then look in **Authentication → Users** and delete any row that is not
-  you. Add people later with **Add user** on that page.
-- **iPhone.** In Safari open the site → **Share → Add to Home Screen**.
-  Remove an icon added before 2026-09-23 first (N24).
 
 ## 4. How to check it worked, screen by screen
 
