@@ -138,7 +138,7 @@ export const ARTICLES: readonly Article[] = [
     ],
     done: 'Review lists the new rows, and a statement you bring in again adds nothing twice.',
     stuck:
-      'If the app says it could not read the file, try the other format your bank offers (PDF or CSV). Lines it could not read wait at the bottom of Review with the reason. If it says **Does not add up**, the rows it read do not match the statement’s printed totals, so nothing is imported: try the CSV instead.',
+      'If the app says it could not read the file, try the other format your bank offers (PDF or CSV). Lines it could not read wait at the bottom of Review with the reason. If it says **Does not add up**, the rows it read do not match the statement’s printed totals, so nothing is imported: try the CSV instead. A charge you removed from All transactions comes back to Review, not to your totals, if you bring in that statement again: reject it there to keep it out. If the same charge comes in twice in different shapes (a PDF statement and a CSV of the same card, or a receipt photo and then the statement), the second copy waits in Review rather than going into your totals: reject it there.',
     related: ['review', 'add', 'wrong-number'],
   },
   {
@@ -174,7 +174,7 @@ export const ARTICLES: readonly Article[] = [
     ],
     done: 'a photo waits in Review, and a typed entry shows on the Month on its date.',
     stuck:
-      'A photo is read by your first AI service that reads photos: free Google Gemini, or OpenAI or Anthropic once **Use paid services** is on; Groq and OpenRouter are never sent one. Before the AI helper is installed, the older receipt reader is used (see One-time updates). You can always type the receipt instead. **Just type it** reads what it can by itself; with free AI on, the AI fills in the rest, but only an amount you actually typed, marked “Read by AI: check it”. What you typed and your category names are sent to the AI, nothing else. Two numbers, such as “3 coffees 12”, leave the amount for you or the AI; a date with slashes is left for you, since 9/10 can be either month. Nothing is added until you press **Add**.',
+      'A photo is read by your first AI service that reads photos: free Google Gemini, or OpenAI or Anthropic once **Use paid services** is on; Groq and OpenRouter are never sent one. Before the AI helper is installed, the older receipt reader is used (see One-time updates). You can always type the receipt instead. **Just type it** reads what it can by itself; with free AI on, the AI fills in the rest, but only an amount you actually typed, marked “Read by AI: check it”. What you typed, today’s date and your category names are sent to the AI, nothing else. Two numbers, such as “3 coffees 12”, leave the amount for you or the AI; a date with slashes is left for you, since 9/10 can be either month. Nothing is added until you press **Add**.',
     related: ['statements', 'review', 'updates'],
   },
   {
@@ -409,7 +409,7 @@ export const ARTICLES: readonly Article[] = [
     ],
     done: 'the Gemini card says "Works · key ending …" and the top says "AI is on".',
     stuck:
-      'If it says the key isn’t valid, copy it again from AI Studio, all of it. If Google is busy, the key is saved and tried again later. Nothing breaks while AI is off: the Coach and every other screen use the app’s own words. A key is a password Google gives you for the app to use; the app only ever shows its last four characters, and **Remove key** deletes it.',
+      'If it says the key isn’t valid, copy it again from AI Studio, all of it. If Google is busy, the key is saved and tried again later. Nothing breaks while AI is off: the Coach and every other screen use the app’s own words. To stop using AI altogether, turn off **Use AI** at the top of AI settings: nothing from your records is sent to any AI service while it is off, and every screen uses the app’s own words. Turn it on again the same way. A key is a password Google gives you for the app to use; the app only ever shows its last four characters, and **Remove key** deletes it.',
     related: ['updates', 'coach', 'more-ai'],
   },
   {
@@ -434,7 +434,7 @@ export const ARTICLES: readonly Article[] = [
     id: 'ai-sees',
     title: 'What the AI sees, and how the Coach talks',
     summary:
-      'The AI is told what kind of thing changed, which way, and by a little or a lot, with your names for things. It is never told an amount, a balance or a date. You choose the Coach’s tone, and whether shop names are shared.',
+      'For the Coach and Review, the AI is told what kind of thing changed, which way, and by a little or a lot, with your names for things, and never an amount, a balance or a date. You choose the Coach’s tone, and whether shop names are shared. **Use AI**, at the top of AI settings, turned off sends nothing at all.',
     steps: [
       'Open **AI settings** (from **Settings**, or **More** on a phone), and find **How the Coach talks**.',
       'Choose **Cheerleader** for a win first and never a telling-off, or **Straight talker** for plain words.',
@@ -448,7 +448,10 @@ export const ARTICLES: readonly Article[] = [
     terms: [
       { term: 'Sent for the Coach', meaning: 'what kind of change each is, up or down, a little or a lot, how many months of records it rests on, your category and goal names, and a short list of quotes.' },
       { term: 'Sent for Review’s suggestions', meaning: 'each shop’s name with long numbers hidden, whether it was money in or out, whether it was small (under $20), medium (under $100) or large, and your category names.' },
-      { term: 'Never sent', meaning: 'an amount, a balance, a date, a card or account number, your name or your email.' },
+      { term: 'Never sent for the Coach or Review', meaning: 'an amount, a balance, a date, a card or account number, your name or your email.' },
+      { term: 'Sent for Just type it', meaning: 'what you typed, which can include an amount and a shop’s name, today’s date and your category names.' },
+      { term: 'Sent for a receipt photo', meaning: 'the photo, with the shop, total and date printed on it.' },
+      { term: 'Use AI off', meaning: 'nothing is sent to any AI service, and every screen uses the app’s own words.' },
       { term: '✨', meaning: 'words written by AI from your numbers. Every figure in them is the app’s own.' },
     ],
   },
@@ -589,7 +592,7 @@ export const ARTICLES: readonly Article[] = [
     ],
     done: 'your budget opens, and signing out brings back the sign-in page.',
     stuck:
-      '“Check your email” shows for any address, with an account here or not, so no one can use the page to learn whether yours is here; if no email comes, check the spelling and use your password. A wrong password and an unknown address get the same message, for the same reason. Emailed links are limited to a few an hour, so a password is quicker when you sign in often.',
+      'To change a forgotten password, type your email on the sign-in screen and choose **Forgot your password?**, then open the emailed link on the same device, in the same browser, and choose a new password. Links sent from the Supabase dashboard (Reset password, Send magic link) do not work with this app. “Check your email” shows for any address, with an account here or not, so no one can use the page to learn whether yours is here; if no email comes, check the spelling and use your password. A wrong password and an unknown address get the same message, for the same reason. Emailed links are limited to a few an hour, so a password is quicker when you sign in often.',
     related: ['iphone', 'codes', 'getting-around'],
   },
   {
