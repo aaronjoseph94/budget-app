@@ -44,6 +44,12 @@ type Check =
    * (0035), or, before 0035, the number each left in ai_app_update_level().
    */
   | { readonly kind: 'level'; readonly level: number }
+  /**
+   * One of the review fixes (0021 to 0029, and 0038): each re-creates
+   * schema_level() (0021) to answer its own number, and is in when that
+   * answer is at least `level`.
+   */
+  | { readonly kind: 'schema'; readonly level: number }
 
 /** The AI helper's source, as One-time updates names it and /setup/ serves it (ADR 0007). */
 export const HELPER_FILE = 'ai-function.ts'
@@ -73,7 +79,7 @@ export interface Update {
 
 const NIL = '00000000-0000-0000-0000-000000000000'
 
-/** 0005 to 0020, 0035, 0030 on, the AI helper, the two settings and the AI apps server, each with what it adds. */
+/** 0005 to 0029, 0035, 0030 to 0038, the AI helper, the two settings and the AI apps server, each with what it adds. */
 export const UPDATES: readonly Update[] = [
   { file: '0005_category_kinds.sql', adds: 'Which list each category is on', checks: [{ kind: 'column', table: 'categories', column: 'kind' }] },
   {
@@ -139,6 +145,16 @@ export const UPDATES: readonly Update[] = [
     adds: 'What an AI app you connect may read, and adding to Review, with a switch and daily limits',
     checks: [{ kind: 'table', table: 'ai_app_access' }],
   },
+  // The review fixes: each needs the one before it, and 0021 only 0018.
+  { file: '0021_category_holds.sql', adds: 'Lets a category go once only a rejected guess or a removed charge names it', checks: [{ kind: 'schema', level: 21 }] },
+  { file: '0022_removed_charge_waits.sql', adds: 'A charge you removed waits in Review when its statement comes in again', checks: [{ kind: 'schema', level: 22 }] },
+  { file: '0023_typed_entry_once.sql', adds: 'Pressing Add again adds a typed purchase once', checks: [{ kind: 'schema', level: 23 }] },
+  { file: '0024_learned_shops_own_category.sql', adds: 'Keeps each learned shop to your own categories', checks: [{ kind: 'schema', level: 24 }] },
+  { file: '0025_ingested_text_format_characters.sql', adds: 'Keeps hidden characters out of stored text', checks: [{ kind: 'schema', level: 25 }] },
+  { file: '0026_goal_check_on_link.sql', adds: 'Lets you edit a goal whose fund left the Savings list', checks: [{ kind: 'schema', level: 26 }] },
+  { file: '0027_receipt_photo_twice_waits.sql', adds: 'A second photo of the same receipt waits in Review', checks: [{ kind: 'schema', level: 27 }] },
+  { file: '0028_ai_words_no_invisible_characters.sql', adds: 'Keeps invisible characters out of the AI’s kept words', checks: [{ kind: 'schema', level: 28 }] },
+  { file: '0029_lookalike_charge_waits.sql', adds: 'A charge already in your records under another statement waits in Review', checks: [{ kind: 'schema', level: 29 }] },
   {
     // Out of number order on purpose: it needs only 0020, and once it is in
     // the checks below read what 0030 to 0034 left, so pasting one again
@@ -183,6 +199,12 @@ export const UPDATES: readonly Update[] = [
     adds: 'Tidies anything an AI app added before these safety updates',
     checks: [{ kind: 'level', level: 37 }],
   },
+  {
+    // Last: it needs 0029 and 0037. It deletes duplicate learned shops, so HANDOFF §3 asks for a backup first.
+    file: '0038_intuit_prefix_merchants.sql',
+    adds: 'Makes IN*SHOP and SHOP one shop. It deletes duplicate learned shops, so first export merchant_rules from Supabase’s Table Editor as a CSV',
+    checks: [{ kind: 'schema', level: 38 }],
+  },
   { file: HELPER_FILE, adds: 'The AI helper, which every AI feature goes through', checks: [{ kind: 'helper' }] },
   {
     file: READ_RECEIPT_FILE,
@@ -216,6 +238,7 @@ const MISSING: Readonly<Record<Check['kind'], ReadonlySet<string>>> = {
   signing_key: new Set(),
   oauth: new Set(),
   level: new Set(['PGRST202', '42883']),
+  schema: new Set(['PGRST202', '42883']),
 }
 
 /**
@@ -297,6 +320,11 @@ async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateStat
       return typeof data !== 'number' ? 'unknown' : data >= check.level ? 'in' : 'missing'
     }
     return 'unknown'
+  }
+  if (check.kind === 'schema') {
+    const { data, error } = await supabase.rpc('schema_level', {})
+    if (error !== null) return MISSING.schema.has(typeof error.code === 'string' ? error.code : '') ? 'missing' : 'unknown'
+    return typeof data !== 'number' ? 'unknown' : data >= check.level ? 'in' : 'missing'
   }
   const { error } =
     check.kind === 'function'

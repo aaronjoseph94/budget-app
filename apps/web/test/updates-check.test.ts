@@ -21,7 +21,7 @@ describe('checking the one-time updates', () => {
   it('finds each one in when everything it adds answers', async () => {
     const fake = await ready()
     const checked = await checkUpdates(fake.client)
-    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', '0020', '0035', '0030', '0031', '0032', '0033', '0034', '0036', '0037', 'ai-f', 'read', 'sign', 'oaut', 'mcp-'])
+    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', '0020', '0021', '0022', '0023', '0024', '0025', '0026', '0027', '0028', '0029', '0035', '0030', '0031', '0032', '0033', '0034', '0036', '0037', '0038', 'ai-f', 'read', 'sign', 'oaut', 'mcp-'])
     expect(missing(checked)).toEqual([])
     expect(nextStep(checked)).toEqual({ kind: 'done' })
   })
@@ -139,6 +139,31 @@ describe('checking the one-time updates', () => {
     delete fake.rpcReplies['ai_app_updates_in']
     delete fake.rpcReplies['ai_app_update_level']
     expect(nextStep(await checkUpdates(fake.client))).toEqual({ kind: 'paste', file: '0020_ai_apps.sql', fromStart: false })
+  })
+
+  // The review fixes change rules, not what the owner's session can see, so
+  // each is proven by schema_level() (0021) at or above its number.
+  it('reads which review fixes are in from schema_level: 0021 to 0029 in order after 0020, and 0038 last', async () => {
+    const fake = await ready()
+    const fixes = UPDATES.filter((u) => u.checks.some((c) => c.kind === 'schema')).map((u) => u.file.slice(0, 4))
+    expect(fixes).toEqual(['0021', '0022', '0023', '0024', '0025', '0026', '0027', '0028', '0029', '0038'])
+    fake.rpcReplies['schema_level'] = 24
+    let checked = await checkUpdates(fake.client)
+    expect(missing(checked)).toEqual(['0025', '0026', '0027', '0028', '0029', '0038'].map((n) => [n, 'missing']))
+    expect(nextStep(checked)).toEqual({ kind: 'paste', file: '0025_ingested_text_format_characters.sql', fromStart: false })
+    // With 0029 in, 0038 is offered only once the AI-app updates before it are in.
+    fake.rpcReplies['schema_level'] = 29
+    fake.rpcReplies['ai_app_updates_in'] = 36
+    expect(nextStep(await checkUpdates(fake.client))).toEqual({ kind: 'paste', file: '0037_ai_rows_before_the_fixes.sql', fromStart: false })
+    fake.rpcReplies['ai_app_updates_in'] = 37
+    expect(nextStep(await checkUpdates(fake.client))).toEqual({ kind: 'paste', file: '0038_intuit_prefix_merchants.sql', fromStart: false })
+    // Before 0021, schema_level is not there: every fix is missing, and 0021 is next.
+    delete fake.rpcReplies['schema_level']
+    checked = await checkUpdates(fake.client)
+    expect(missing(checked).map(([n]) => n)).toEqual(fixes)
+    expect(nextStep(checked)).toEqual({ kind: 'paste', file: '0021_category_holds.sql', fromStart: false })
+    fake.rpcReplies['schema_level'] = 'thirty'
+    expect(missing(await checkUpdates(fake.client))).toEqual(fixes.map((n) => [n, 'unknown']))
   })
 
   // Before 0035, the number each of 0030 to 0034 left; 0035 is offered first, straight after 0020.
@@ -296,8 +321,12 @@ describe('checking the one-time updates', () => {
       { name: 'ai_key_status', args: {} },
       { name: 'clear_candidate_suggestion', args: { p_candidate: nil } },
       { name: '_not_an_ai_app', args: {} },
-      // Reads a number and nothing else (0035, then one for each of 0030 to 0034, 0036 and 0037).
+      // Each reads a number and nothing else: schema_level for 0021 to 0029,
+      // ai_app_updates_in for 0035 and then each of 0030 to 0034, 0036 and
+      // 0037, and schema_level again for 0038.
+      ...Array.from({ length: 9 }, () => ({ name: 'schema_level', args: {} })),
       ...Array.from({ length: 8 }, () => ({ name: 'ai_app_updates_in', args: {} })),
+      { name: 'schema_level', args: {} },
     ])
     // The helper is only pinged.
     expect(fake.functions.calls).toEqual([{ action: 'ping' }])
