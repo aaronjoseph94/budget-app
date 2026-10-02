@@ -11,12 +11,6 @@ import { CoachText } from './words.js'
 import { WhySheet } from './WhySheet.js'
 import { TryAgain } from '../try-again.js'
 
-/**
- * The day's line and up to three cards (plan §2.3). Which facts become
- * cards, and in what order, is savings-coach's; which words each part
- * gets, the app's own or the AI's, is narration.ts's; every figure is the
- * engine's; this draws them. The AI's words carry ✨.
- */
 const NOTHING_DISMISSED: ReadonlySet<string> = new Set()
 
 /** Today's cards, as savings-coach ranks them: at most three, none the owner dismissed. */
@@ -61,6 +55,12 @@ export function DayLine({ words, className }: { words: Words | null; className: 
   )
 }
 
+/**
+ * The day's line and up to three cards (plan §2.3). Which facts become
+ * cards, and in what order, is savings-coach's; which words each part
+ * gets, the app's own or the AI's, is narration.ts's; every figure is the
+ * engine's; this draws them. The AI's words carry ✨.
+ */
 export function CoachCards(props: {
   digest: FactsDigest | 'failed' | null
   cards: readonly CoachCard[] | null

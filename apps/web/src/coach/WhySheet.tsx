@@ -3,12 +3,6 @@ import { Sheet } from '../components/ui/sheet.js'
 import type { Words } from './narration.js'
 import { CoachText, figureText } from './words.js'
 
-/**
- * "Why am I seeing this?" (plan §2.3): the engine's figures behind a card,
- * each named, and the one rule that made it a card. Every figure is the
- * digest's, formatted; nothing is worked out here. When the card's words
- * are the AI's, it says so.
- */
 const LABEL: Readonly<Record<string, string>> = {
   now: 'So far this month',
   before: 'Same days last month',
@@ -122,6 +116,12 @@ function labelOf(fact: Fact, slot: string): string {
   return LABEL[slot] ?? slot
 }
 
+/**
+ * "Why am I seeing this?" (plan §2.3): the engine's figures behind a card,
+ * each named, and the one rule that made it a card. Every figure is the
+ * digest's, formatted; nothing is worked out here. When the card's words
+ * are the AI's, it says so.
+ */
 export function WhySheet({ fact, title, onClose }: { fact: Fact; title: Words; onClose: () => void }) {
   return (
     <Sheet title="Why am I seeing this?" subtitle={<CoachText text={title.text} facts={title.names} />} onClose={onClose}>

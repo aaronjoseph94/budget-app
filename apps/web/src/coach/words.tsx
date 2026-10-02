@@ -2,8 +2,8 @@
  * Coach words on screen: a sentence with blanks, each blank filled with the
  * engine's figure as it is drawn (ADR 0005 §5).
  *
- * The words are the app's own templates today and a model's from plan A12;
- * either way they arrive as text and leave as React text nodes, never as
+ * The words are the app's own templates or a model's (A12); either way
+ * they arrive as text and leave as React text nodes, never as
  * markup. A change is drawn with the engine's direction word ("$40.00
  * more"), so no sentence can put "up" beside a fall. Each filled blank is
  * its own <bdi>, so no direction character around it, a model's or a

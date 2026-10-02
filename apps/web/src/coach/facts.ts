@@ -7,7 +7,7 @@
  * to stand on (F27, F33, F34); Savings reads the same year. Nothing here
  * adds or compares: which months are complete, what changed and what is
  * worth a card is core's to say. A failed read or an engine refusal fails
- * the cards alone; the flight card beside them still shows.
+ * the cards alone; the goals card beside them still shows.
  */
 import { useEffect, useMemo, useState } from 'react'
 import { factsDigest, historyStart, isoDate, monthBounds, shiftMonth, type DigestGoal, type FactsDigest, type IncomeSchedule } from '@budget/core'

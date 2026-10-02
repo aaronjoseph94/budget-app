@@ -1,7 +1,7 @@
 /**
  * The handful of Lucide icons this app uses — the set shadcn/ui is drawn
  * with. Copied as paths (Lucide is ISC-licensed) rather than installing a
- * package of 1,500 icons to show nine.
+ * package of 1,500 icons to show a few dozen.
  */
 import type { SVGProps } from 'react'
 
@@ -40,9 +40,9 @@ const PATHS = {
   year: ['M3 3v16a2 2 0 0 0 2 2h16', 'M18 17V9', 'M13 17V5', 'M8 17v-3'],
   card: ['M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z', 'M2 10h20'],
   alert: ['M12 9v4', 'M12 17h.01', 'M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z'],
-  // Forecast and Reports, on the wide bar when their screens land (ADR 0006).
+  // Lucide's trending-up, for the Forecast (ADR 0006) and the Coach's forecast card.
   trend: ['M22 7 13.5 15.5 8.5 10.5 2 17', 'M16 7h6v6'],
-  // Lucide's circle-help, for Help in More and the ? beside each screen's title.
+  // Lucide's circle-help, for Help in the sidebar and More, and the ? beside each screen's title.
   help: ['M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z', 'M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3', 'M12 17h.01'],
   // The top bar's (ADR 0011): Lucide's panel-left, and search.
   sidebar: ['M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z', 'M9 4v16'],

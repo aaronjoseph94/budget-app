@@ -5,13 +5,6 @@ import type { ListedGoalRow } from '../ledger.js'
 import { Said } from './CoachCards.js'
 import type { Words } from './narration.js'
 
-/**
- * A quote or tip that fits today (plan §2.3, §4): from the committed
- * library only, chosen by savings-coach from what today's cards are about
- * and the main goal, never one this device showed in the last fortnight.
- * The words and the name are the library's, drawn as text; the AI may
- * pick among the same shortlist and add a line on why it fits (A12).
- */
 /** Today's shortlist and the app's own pick from it, from what today is about. */
 export function useQuotePick(facts: readonly Fact[], goal: ListedGoalRow | null, asOf: string): { readonly shortlist: readonly LibraryEntry[]; readonly entry: LibraryEntry | null } {
   return useMemo(() => {
@@ -24,7 +17,16 @@ export function useQuotePick(facts: readonly Fact[], goal: ListedGoalRow | null,
   }, [facts, goal, asOf])
 }
 
-/** The quote shown, and, when the AI chose it from today's shortlist, its line on why it fits (✨). */
+/**
+ * A quote or tip that fits today (plan §2.3, §4): from the committed
+ * library only, chosen by savings-coach from what today's cards are about
+ * and the main goal, never one this device showed in the last fortnight.
+ * The words and the name are the library's, drawn as text; the AI may
+ * pick among the same shortlist and add a line on why it fits (A12).
+ *
+ * Shows the quote, and, when the AI chose it from today's shortlist, its
+ * line on why it fits (✨).
+ */
 export function QuoteCard({ entry, why, asOf }: { entry: LibraryEntry | null; why: Words | null; asOf: string }) {
   useEffect(() => {
     if (entry !== null) remember(entry.id, asOf)

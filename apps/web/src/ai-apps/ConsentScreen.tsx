@@ -39,7 +39,7 @@ const opened = (access: Access | null, now: number) =>
 const AGAIN = 'If you are connecting Claude or ChatGPT yourself, open Settings → AI apps'
 const NOT_STARTED = `This connection wasn’t started from the budget app. ${AGAIN}, press Connect a new AI app, and press Connect in Claude or ChatGPT again.`
 const SWITCHED_OFF = `AI apps are switched off in the budget app. ${AGAIN}, turn on Let AI apps connect, press Connect a new AI app, and press Connect in Claude or ChatGPT again.`
-/** The AI helper, 0019, 0020 or read-receipt is not as AI apps need it (mcp-3-03). */
+/** Something aiAppsReady checks (BEFORE_AI_APPS in help/updates.ts) is not in yet (mcp-3-03). */
 const NEEDS_UPDATE = 'The budget app needs a one-time update first. Open it, go to Help → One-time updates and do the step it names, then press Connect in Claude or ChatGPT again.'
 
 type Seen =

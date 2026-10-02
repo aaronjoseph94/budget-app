@@ -285,6 +285,7 @@ export async function clearCandidateSuggestion(supabase: SupabaseClient, candida
   return data === true
 }
 
+/** Reject a waiting row through reject_candidate (0004), which only moves a row still pending; nothing reaches the ledger. */
 export async function rejectCandidate(supabase: SupabaseClient, candidateId: string): Promise<void> {
   const { error } = await supabase.rpc('reject_candidate', { p_candidate: candidateId })
   if (error !== null) fail(error)
@@ -470,6 +471,12 @@ export interface TypedEntry {
   readonly categoryId: string
 }
 
+/**
+ * Save one entry the owner typed (Add): an owner-typed row, not model
+ * output, so it goes straight into the ledger through add_typed_transaction.
+ * `entryId` makes a second press the same entry (0023); before 0023 the
+ * older call adds it once per press.
+ */
 export async function addTypedTransaction(supabase: SupabaseClient, entry: TypedEntry): Promise<void> {
   const args = {
     p_account_id: entry.accountId,
@@ -746,6 +753,11 @@ function refused(sentence: string, error: { code?: string | null } | null): Read
 /** A table, column or function a one-time update adds, not there yet (Help → One-time updates). */
 const NOT_YET_PASTED: ReadonlySet<string> = new Set(['PGRST205', '42P01', '42703', 'PGRST204', 'PGRST202', '42883'])
 
+/**
+ * True when `cause` is a ReadRefused whose code says a table, column or
+ * function a one-time update adds is not there yet; false for anything
+ * else, a lost connection included.
+ */
 export function needsOneTimeUpdate(cause: unknown): boolean {
   return cause instanceof ReadRefused && NOT_YET_PASTED.has(cause.code)
 }

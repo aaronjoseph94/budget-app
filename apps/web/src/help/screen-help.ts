@@ -4,8 +4,7 @@ import type { HelpTopic } from './topics.js'
 /**
  * The article each screen's ? opens (plan §8.2), kept here rather than on
  * the articles so the button carries no article text into the first load.
- * Help itself has no ?. A screen still on its way names the topic it will
- * have; its ? arrives with it.
+ * Help itself has no ?.
  */
 export const SCREEN_HELP: Readonly<Record<Exclude<Screen, 'help'>, HelpTopic>> = {
   month: 'periods',

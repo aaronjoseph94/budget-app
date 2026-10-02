@@ -236,7 +236,7 @@ export const FIRST_FILE = '0003_save_import_atomically.sql'
 /** The first database update the list checks, 0005: missing, the owner starts at FIRST_FILE. */
 const FIRST_CHECKED = '0005_category_kinds.sql'
 
-/** `old`: the AI helper answers, but is a copy older than this app expects (N78). */
+/** `old`: a function (the AI helper, read-receipt or the AI apps server) answers, but is a copy older than this app expects (N78). */
 export type UpdateState = 'in' | 'missing' | 'old' | 'unknown'
 
 export interface Checked {

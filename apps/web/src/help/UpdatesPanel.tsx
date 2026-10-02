@@ -5,8 +5,9 @@ import { cn } from '../lib/cn.js'
 import { CopyFile, isCopyable } from './CopyFile.js'
 import { FIRST_FILE, HELPER_FILE, OAUTH_SERVER, READ_RECEIPT_FILE, SERVER_FILE, SIGNING_KEY, SIGNUPS_OFF, checkUpdates, nextStep, type Checked } from './updates.js'
 
-/** Where each committed file can be opened and copied (HANDOFF §3, step 1); null for a step with no committed file. */
+/** The repository's files on GitHub. */
 const REPO = 'https://github.com/aaronjoseph94/budget-app/blob/main/'
+/** Where each committed file can be opened and copied (HANDOFF §3, step 1); null for a step with no committed file. */
 const sourceOf = (file: string) =>
   file === HELPER_FILE ? `${REPO}supabase/functions/ai/index.ts` : file.endsWith('.sql') ? `${REPO}supabase/migrations/${file}` : null
 
