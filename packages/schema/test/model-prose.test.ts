@@ -38,6 +38,7 @@ const TABLE: readonly (readonly [text: string, problem: ProseProblem | null])[] 
   ['<img src=x onerror=alert()>', 'markup'],
   ['<b>Bold</b> move.', 'markup'],
   ['**Great** week.', 'markup'],
+  ['A path like a\\b.', 'markup'],
   ['[Open this](javascript:alert)', 'markup'],
   ['Tag #savings.', 'markup'],
   ['Mail me @ home.', 'markup'],

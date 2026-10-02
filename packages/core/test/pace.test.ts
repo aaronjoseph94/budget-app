@@ -67,3 +67,15 @@ describe('budgetStanding (F28)', () => {
     expect(budgetStanding({ actualCents: c(500), budgetCents: c(0) })).toEqual(none)
   })
 })
+
+describe('categoryPace, at the notable line (architecture-a-05)', () => {
+  // The 15th of a 30-day month, a $100.00 budget: the line is max($25.00,
+  // 15% = $15.00) = $25.00. $62.50 so far paces to $125.00, $25.00 over:
+  // notable. $62.49 paces to $124.98, $24.98 over: not.
+  it('is notable exactly at max($25, 15% of the budget), and not a cent under', () => {
+    const at = { month: d('2026-09-01'), asOf: d('2026-09-15'), budgetCents: c(10_000) }
+    expect(categoryPace({ ...at, actualCents: c(6_250) })).toEqual({ paceCents: 12_500, overCents: 2_500, notable: true })
+    expect(categoryPace({ ...at, actualCents: c(6_249) })).toEqual({ paceCents: 12_498, overCents: 2_498, notable: false })
+  })
+})
+

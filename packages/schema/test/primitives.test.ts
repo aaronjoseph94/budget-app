@@ -93,6 +93,8 @@ describe('IngestedTextSchema', () => {
     ['a newline', 'ACME\nCORP'],
     ['a DEL byte', 'ACME\u007fCORP'],
     ['a C1 control', 'ACME\u0085CORP'],
+    ['the first C1 control', 'ACME\u0080CORP'],
+    ['the last C1 control', 'ACME\u009fCORP'],
     ['a line separator', 'ACME\u2028CORP'],
     ['a paragraph separator', 'ACME\u2029CORP'],
     ['a right-to-left override', 'ACME\u202eCORP'],
