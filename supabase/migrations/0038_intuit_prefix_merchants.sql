@@ -21,8 +21,8 @@
 -- the raw text, so nothing is re-keyed.
 --
 -- This DELETES rows: where two learned shops would share one tidied name,
--- all but one go. Take a backup before pasting it (HANDOFF §2, "Before
--- 0038"; NOTICED-NOT-TOUCHING.md N157).
+-- all but one go. Take a backup before pasting it (HANDOFF §3, Part D,
+-- steps 13 and 15; NOTICED-NOT-TOUCHING.md N157).
 --
 -- Numbering: written as 0030 on its own line of updates, it became 0038
 -- when that line was merged with the AI-app security line, which already

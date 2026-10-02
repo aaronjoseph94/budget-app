@@ -163,8 +163,10 @@ to paste, so GitHub is not needed. Easiest on a computer.
 
 **Already done (2026-09-24): `0001` to `0014`.** Do not run them again.
 
-**The agent pushes `main` first, and that is safe.** Cloudflare (and
-Netlify, until it is stopped) deploy the site when `main` changes.
+**The agent pushes `main` first, and that is safe.** Cloudflare deploys
+the site when `main` changes. Netlify, until it is stopped in step 10,
+deploys from `main-tnlcto` (`netlify.toml`), so every push there goes
+live on the netlify.app site, checked or not.
 Nothing the app needs to open depends on the steps below: until each is
 done, everything that worked before still works, and each new part says
 in one line that it needs a one-time update, with a link to Help (A28).
@@ -278,6 +280,10 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
     Database → Connection string**) → **Session pooler** → copy the URI,
     put your database password in place of `[YOUR-PASSWORD]`, then run
     `pg_dump "<that URI>" --data-only --schema=public -f budget-before-0015.sql`.
+    Use `pg_dump` 17 or newer: if it says "server version mismatch",
+    install the newer client and run it again. The file holds rows only:
+    putting them back needs the tables first, from the updates (`0001` up
+    to the last one that was in), and the next agent should do that.
     Open the file and check it holds `COPY public.merchant_rules` with
     your shops' names. With no such computer, at least: Supabase → **Table
     Editor** → `merchant_rules` → **Export → Export table as CSV**, and
@@ -402,8 +408,10 @@ connect an AI app to it.
     stopping at the first that fails: the server's health page answers
     `{"ok":true,…,"tools":10}`; sign-in opens the budget app's page with
     **claude.ai** in bold; "list my categories" lists yours (if it says
-    the app did not recognise the sign-in as an AI app's, follow step
-    18's emergency order at once); "How is my month going?" matches the
+    the app did not recognise the sign-in as an AI app's, at once, in
+    this order: **Disconnect**; **Let AI apps connect** off;
+    `delete from auth.sessions;` in the SQL Editor; then the **OAuth
+    Server** off, as §4 step 18 says); "How is my month going?" matches the
     Month; "add a test coffee for $1.00 today" waits in Review as "Added
     by Claude" (press **✕**); **Disconnect** lowers
     `select count(*) from auth.sessions;` by one; ChatGPT's page says
@@ -528,6 +536,10 @@ what to do, and reporting the words on the screen is enough.
 23. **One-time updates** (K13). If **Signing key** or **Sign-in for AI
     apps** still says "Could not check" after you did them, look at the
     setting in Supabase by eye and report it; nothing else depends on it.
+    If **Sign-ups off** says "Could not check", look by eye that
+    **Authentication → Sign In / Providers → Allow new users to sign up**
+    is off, and report it: until the app can read it, One-time updates
+    cannot say **All done**, and AI apps stay off.
 
 24. **What an AI app's sign-in can do to your account** (K5, MCP plan
     risk 2, security review mcp-2-03). Not yours to check alone: with the

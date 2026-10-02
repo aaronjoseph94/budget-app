@@ -3658,7 +3658,7 @@ the answer to the ask. The "own commit" rule was not met: it shipped in
 a95f03f with the `merchant.ts` change, and splitting it now would rewrite
 the branch. The backup is the owner's step, because the owner pastes
 migrations into the hosted project by hand: take one before pasting
-0038. HANDOFF §3 ("Before 0038, a backup") has the steps; One-time
+0038. HANDOFF §3, Part D, steps 13 and 15 have the steps; One-time
 updates says the same beside 0038.
 
 ---
