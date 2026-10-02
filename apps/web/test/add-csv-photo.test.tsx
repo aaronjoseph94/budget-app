@@ -13,8 +13,8 @@ import { expectNoAxeViolations } from './axe.js'
 
 const CSV = [
   'Date,Description,Amount',
-  '09/02/2026,CORNER MARKET,-42.10',
-  '09/03/2026,LITWARE BOOKS,-19.99',
+  '09/22/2026,CORNER MARKET,-42.10',
+  '09/23/2026,LITWARE BOOKS,-19.99',
   'sometime,UNDATED SHOP,-5.00',
 ].join('\n')
 

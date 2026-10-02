@@ -77,11 +77,18 @@ export function useCsvMapping(text: string) {
   const signKind = chosen.signKind ?? 'signed'
   // A format is proposed only when the column admits exactly one. Where the
   // data is ambiguous the user is asked, never defaulted past.
+  // It used to fall to MM/DD/YYYY here while the screen asked, and the rows
+  // were read and could be saved that way (architecture-b-02): now nothing
+  // is read until the owner answers.
   const soleFormat = proposal?.dateFormats.length === 1 ? proposal.dateFormats[0] : undefined
-  const dateFormat: DateFormat = chosen.dateFormat ?? soleFormat ?? 'MM/DD/YYYY'
+  const ambiguousDate =
+    chosen.dateFormat === undefined && proposal !== null && proposal.dateFormats.length > 1 ? proposal.dateFormats : null
+  // With no date column found, the usual US format stands and the preview
+  // shows every row it cannot read.
+  const dateFormat: DateFormat | null = chosen.dateFormat ?? soleFormat ?? (ambiguousDate === null ? 'MM/DD/YYYY' : null)
 
   const result: StatementRead | null = useMemo(() => {
-    if (!tokenized.ok || analysis === null) return null
+    if (!tokenized.ok || analysis === null || dateFormat === null) return null
     return readStatement(tokenized.rows, {
       mapping: {
         dateIndex,
@@ -103,8 +110,6 @@ export function useCsvMapping(text: string) {
     [result],
   )
 
-  const ambiguousDate =
-    proposal !== null && proposal.dateFormats.length > 1 ? proposal.dateFormats : null
   // More than one column could be the amount, and the owner has not picked:
   // the screen says so beside the proposal.
   const otherMoney =

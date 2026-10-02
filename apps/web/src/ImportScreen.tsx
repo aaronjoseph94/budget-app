@@ -1,4 +1,4 @@
-import { DATE_FORMATS, type ColumnProfile } from '@budget/statement-parsers'
+import { DATE_FORMATS, type ColumnProfile, type DateFormat } from '@budget/statement-parsers'
 import { useCsvMapping } from './csv-mapping.js'
 import type { ImportRequest } from './ledger.js'
 import { IngestedText, Label, Stat } from './ui.js'
@@ -244,11 +244,17 @@ function ColumnMapping({ mapping }: { mapping: Mapping }) {
               options={analysis.columns.map((c) => ({ value: c.index, label: columnName(c) }))}
               onChange={(v) => choose('amountIndex', v)}
             />
-            <OptionSelect
+            <OptionSelect<DateFormat | ''>
               label="Date format"
-              value={dateFormat}
-              options={DATE_FORMATS.map((f) => ({ value: f, label: f }))}
-              onChange={(v) => choose('dateFormat', v)}
+              value={dateFormat ?? ''}
+              options={[
+                // Until the owner answers an ambiguous file, nothing is chosen.
+                ...(dateFormat === null ? [{ value: '' as const, label: 'Choose…' }] : []),
+                ...DATE_FORMATS.map((f) => ({ value: f, label: f })),
+              ]}
+              onChange={(v) => {
+                if (v !== '') choose('dateFormat', v)
+              }}
             />
             <OptionSelect
               label="How amounts are written"
