@@ -14,7 +14,7 @@ import { hashOf } from '../nav.js'
 import { cn } from '../lib/cn.js'
 import { useFourAcross } from '../lib/wide.js'
 import { MonthTitle } from '../components/ui/type.js'
-import { SENTENCE_LINK } from '../components/ui/link.js'
+import { LINE_LINK, SENTENCE_LINK } from '../components/ui/link.js'
 
 /**
  * Getting started (`#/start`, plan §8.1): one step per screen, each with
@@ -271,7 +271,7 @@ function End({
           </li>
         ))}
       </ul>
-      <a href={hashOf({ screen: 'month', param: null })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+      <a href={hashOf({ screen: 'month', param: null })} className={LINE_LINK}>
         Open the Month
       </a>
     </section>

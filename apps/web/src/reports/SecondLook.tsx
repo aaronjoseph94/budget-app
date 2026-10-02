@@ -9,6 +9,7 @@ import type { ChargePair, UnusualCharges } from '@budget/core'
 import { formatCents, formatDayMonth } from '../format.js'
 import { hashOf } from '../nav.js'
 import { Section } from '../forecast/parts.js'
+import { LINE_LINK } from '../components/ui/link.js'
 
 interface Flag {
   readonly key: string
@@ -81,7 +82,7 @@ export function SecondLookCard({ unusual, nameOf }: { unusual: UnusualCharges; n
         </ul>
       )}
       {unusual.countedTwice.length === 0 ? null : (
-        <a href={hashOf({ screen: 'ledger', param: null })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+        <a href={hashOf({ screen: 'ledger', param: null })} className={LINE_LINK}>
           Open All transactions
         </a>
       )}

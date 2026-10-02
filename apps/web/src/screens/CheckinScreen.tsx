@@ -8,7 +8,7 @@ import { formatCents, formatDateRange, formatDayMonth, todayIso } from '../forma
 import { setWeeklyBudget } from '../ledger.js'
 import { hashOf } from '../nav.js'
 import { Button } from '../components/ui/button.js'
-import { SENTENCE_LINK } from '../components/ui/link.js'
+import { LINE_LINK, SENTENCE_LINK } from '../components/ui/link.js'
 import { LineLink } from '../ai/LineLink.js'
 import { MonthTitle } from '../components/ui/type.js'
 import { HelpButton } from '../help/HelpButton.js'
@@ -20,8 +20,7 @@ import { markCheckinSeen } from '../coach/checkin-seen.js'
 import { CoachText } from '../coach/words.js'
 import { CHECKIN_CARD, CheckinQuestions, useCheckinAnswers } from '../coach/CheckinQuestions.js'
 import { TryAgain } from '../try-again.js'
-
-const link = 'inline-flex min-h-11 items-center font-medium underline underline-offset-4'
+import { cn } from '../lib/cn.js'
 
 /**
  * The Sunday check-in (plan §2.4, A20): last week's recap and a win, the
@@ -70,7 +69,7 @@ export function CheckinScreen() {
 
   return (
     <div className="space-y-4">
-      <a href={hashOf({ screen: 'coach', param: null })} className={`${link} text-sm`}>
+      <a href={hashOf({ screen: 'coach', param: null })} className={cn(LINE_LINK, 'text-sm')}>
         ← Coach
       </a>
       <div className="flex flex-wrap items-center gap-1">

@@ -10,6 +10,8 @@ import { Alert, Badge } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
 import { TryAgain } from '../try-again.js'
+import { LINE_LINK } from '../components/ui/link.js'
+import { cn } from '../lib/cn.js'
 
 /**
  * The flight-training goal as the plan names it (§8.1 step 5): $30,000 at
@@ -63,7 +65,7 @@ export function GoalsStep() {
           </Button>
         )}
       </div>
-      <a href={hashOf({ screen: 'savings', param: null })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+      <a href={hashOf({ screen: 'savings', param: null })} className={cn(LINE_LINK, 'text-sm')}>
         Change a goal, or what is saved, on Savings
       </a>
       {adding === null || ready === null ? null : (

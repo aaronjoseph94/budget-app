@@ -23,15 +23,16 @@ import { suggestions } from '../ask/suggest.js'
 import { forgetQuestions, keepQuestion, recentQuestions } from '../ask/recent.js'
 import { takeHandedOver } from '../ask/handoff.js'
 import { TryAgain } from '../try-again.js'
+import { LINE_LINK } from '../components/ui/link.js'
+import { cn } from '../lib/cn.js'
 
-const link = 'inline-flex min-h-11 items-center font-medium underline underline-offset-4'
 const TOPICS = ARTICLES.map((a) => ({ id: a.id, title: a.title }))
 
 /** Why the app read the question itself, in one line with the one place that helps; nothing for a suggestion. */
 function ReadByApp({ by }: { by: ReadBy }): ReactNode {
   if (by.by === 'ai' || by.why === 'chip') return null
   const to = (href: string, words: string) => (
-    <a href={href} className={link}>
+    <a href={href} className={LINE_LINK}>
       {words}
     </a>
   )
@@ -131,7 +132,7 @@ export function AskScreen({ topic }: { topic: HelpTopic | null }) {
   return (
     <div className="space-y-4">
       {/* Ask has no sidebar item of its own; its way back is on the page (design-review P1 item 2). */}
-      <a href={hashOf({ screen: 'coach', param: null })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+      <a href={hashOf({ screen: 'coach', param: null })} className={cn(LINE_LINK, 'text-sm')}>
         ← Coach
       </a>
       <div className="flex flex-wrap items-center gap-1">
@@ -243,7 +244,7 @@ function NotAnIntent({ read, topic, onAsk }: { read: Exclude<AskRead, { kind: 'i
           <CardContent className="space-y-2 pt-5">
             <h2 className="font-semibold">{article.title}</h2>
             <p className="text-sm">{article.summary}</p>
-            <a href={hashOf({ screen: 'help', param: article.id })} className={link}>
+            <a href={hashOf({ screen: 'help', param: article.id })} className={LINE_LINK}>
               Open this article
             </a>
           </CardContent>

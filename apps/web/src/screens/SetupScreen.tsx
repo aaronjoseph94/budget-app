@@ -27,6 +27,7 @@ import { useBillNudges } from '../bill-nudges.js'
 import { PayFields, PayHeadings, usePaySchedules, type PaySchedules } from './SetupPay.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { TryAgain } from '../try-again.js'
+import { LINE_LINK } from '../components/ui/link.js'
 
 interface ListCard {
   readonly kind: CategoryKind
@@ -109,7 +110,7 @@ export function SetupScreen() {
       <button
         type="button"
         onClick={() => navigate('more')}
-        className="-mb-2 inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4 md:hidden"
+        className={cn('-mb-2', LINE_LINK, 'text-sm', 'md:hidden')}
       >
         ‹ More
       </button>

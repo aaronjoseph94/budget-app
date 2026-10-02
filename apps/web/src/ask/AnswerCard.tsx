@@ -4,11 +4,9 @@ import { ANSWER_WORDS, ASK_CATALOGUE, type AskRead } from '@budget/savings-coach
 import { formatDateRange, formatDayMonth, formatMonthTitle } from '../format.js'
 import { hashOf, type Screen } from '../nav.js'
 import { Card, CardContent } from '../components/ui/card.js'
-import { SENTENCE_LINK } from '../components/ui/link.js'
+import { LINE_LINK, SENTENCE_LINK } from '../components/ui/link.js'
 import { CoachText, figureText, type Named } from '../coach/words.js'
 import type { ReadBy } from './read.js'
-
-const link = 'inline-flex min-h-11 items-center font-medium underline underline-offset-4'
 
 /** "Coffee", "Coffee and Groceries", "Coffee, Groceries and Dining out". */
 export function namesOf(names: readonly string[]): string {
@@ -73,7 +71,7 @@ function Onward({ read, answer }: { read: Extract<AskRead, { kind: 'intent' }>; 
   if (screen === 'help') return null
   const [target, param, words] = to[screen]
   return (
-    <a href={hashOf({ screen: target, param })} className={link}>
+    <a href={hashOf({ screen: target, param })} className={LINE_LINK}>
       {words}
     </a>
   )

@@ -11,6 +11,8 @@ import { MonthTitle } from '../components/ui/type.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { isOlder } from '../help/updates.js'
 import { hashOf } from '../nav.js'
+import { LINE_LINK } from '../components/ui/link.js'
+import { cn } from '../lib/cn.js'
 
 /**
  * AI settings (plan §8.3): one true sentence on whether AI is on, the free
@@ -49,7 +51,7 @@ export function AiSettingsScreen() {
     // on the right, each column read top to bottom.
     <div className="max-w-5xl space-y-5">
       {/* AI settings has no sidebar item of its own; its way back is on the page (design-review P1 item 2). */}
-      <a href={hashOf({ screen: 'settings', param: null })} className="-mb-2 inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+      <a href={hashOf({ screen: 'settings', param: null })} className={cn('-mb-2', LINE_LINK, 'text-sm')}>
         ← Settings
       </a>
       <div className="flex flex-wrap items-center gap-1">
@@ -75,7 +77,7 @@ export function AiSettingsScreen() {
           {view === null || view.help === null ? null : (
             <a
               href={hashOf({ screen: 'help', param: view.help })}
-              className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4"
+              className={cn(LINE_LINK, 'text-sm')}
             >
               {view.help === 'updates' ? 'Open One-time updates' : 'Show me how'}
             </a>

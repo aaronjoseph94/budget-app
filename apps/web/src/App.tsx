@@ -21,6 +21,7 @@ import { SCREEN_NAME } from './shell/places.js'
 import { cn } from './lib/cn.js'
 import { checkinDue } from './coach/checkin-seen.js'
 import { OfflineBanner } from './offline.js'
+import { LINE_LINK } from './components/ui/link.js'
 
 export function App() {
   const env = useMemo(() => readEnv(), [])
@@ -161,7 +162,7 @@ export function Shell() {
                       </Button>
                     ) : null}
                     {screen === 'help' ? null : (
-                      <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+                      <a href={hashOf({ screen: 'help', param: 'updates' })} className={cn(LINE_LINK, 'text-sm')}>
                         Check the one-time updates
                       </a>
                     )}

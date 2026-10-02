@@ -11,6 +11,9 @@
  */
 export const SENTENCE_LINK = 'py-3.5 font-medium underline underline-offset-4'
 
+/** A link on a line of its own: a 44 px box for a finger, as Button is (FE-1). */
+export const LINE_LINK = 'inline-flex min-h-11 items-center font-medium underline underline-offset-4'
+
 /**
  * A button that reads as a link on a line of its own, as the Year's "Add
  * your debts to see them here": 44 px tall for a finger, as Button is

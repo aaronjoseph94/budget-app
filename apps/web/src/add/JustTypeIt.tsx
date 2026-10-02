@@ -7,13 +7,12 @@ import { Button } from '../components/ui/button.js'
 import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { readQuickEntry, type QuickFill, type QuickHelp } from './quick-add.js'
-
-const link = 'inline-flex min-h-11 items-center font-medium underline underline-offset-4'
+import { LINE_LINK } from '../components/ui/link.js'
 
 /** Why the AI did not fill the rest, in Add's own words, with the one place that fixes it. */
 function stopped(help: Extract<QuickHelp, { kind: 'stopped' }>): ReactNode {
   const to = (href: string, words: string) => (
-    <a href={href} className={link}>
+    <a href={href} className={LINE_LINK}>
       {words}
     </a>
   )

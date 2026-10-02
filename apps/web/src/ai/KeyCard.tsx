@@ -7,6 +7,7 @@ import { Badge } from '../components/ui/feedback.js'
 import { cn } from '../lib/cn.js'
 import { hashOf } from '../nav.js'
 import { chooseModel, COMPANY, forgetKey, saveKey, testKey, type KeyResult } from './keys.js'
+import { LINE_LINK } from '../components/ui/link.js'
 
 /**
  * What each service's card says (plan §8.3). Each key comes from the
@@ -191,7 +192,7 @@ export function KeyCard({
       <section aria-labelledby={ids.title} className={cn('space-y-2', CARD)}>
         {heading}
         <p className="text-base">The AI helper you installed is an older copy, so it can’t take a key yet. Everything else works.</p>
-        <a href={hashOf({ screen: 'help', param: 'updates' })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+        <a href={hashOf({ screen: 'help', param: 'updates' })} className={cn(LINE_LINK, 'text-sm')}>
           Open One-time updates
         </a>
       </section>
@@ -223,7 +224,7 @@ export function KeyCard({
       <div aria-live="polite" className="space-y-1">
         {result === null ? null : <p className={result.good ? 'text-base font-medium' : 'text-base font-medium text-destructive'}>{result.sentence}</p>}
         {result?.help == null ? null : (
-          <a href={hashOf({ screen: 'help', param: result.help })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+          <a href={hashOf({ screen: 'help', param: result.help })} className={cn(LINE_LINK, 'text-sm')}>
             {result.help === 'updates' ? 'Open One-time updates' : 'Show me how'}
           </a>
         )}

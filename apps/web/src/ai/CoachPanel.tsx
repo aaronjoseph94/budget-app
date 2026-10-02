@@ -3,8 +3,9 @@ import type { Tone } from '@budget/savings-coach'
 import { useAppData } from '../app-data.js'
 import { hashOf } from '../nav.js'
 import { readCoachSettings, saveCoachSettings, type CoachSettings } from './coach-settings.js'
-import { SENTENCE_LINK } from '../components/ui/link.js'
+import { LINE_LINK, SENTENCE_LINK } from '../components/ui/link.js'
 import { SWITCH } from '../components/ui/form.js'
+import { cn } from '../lib/cn.js'
 
 type Loaded = { readonly state: 'loading' } | { readonly state: 'missing' | 'unreachable' } | { readonly state: 'ready'; readonly settings: CoachSettings }
 
@@ -108,7 +109,7 @@ export function CoachPanel() {
               ? 'On: when the Coach speaks of a shop, or Review asks for a category, the AI sees its name, with long numbers hidden. The Coach and Review never send an amount or a date; Just type it and receipt photos send what you give them.'
               : 'Off: the Coach tells the AI “a shop” instead of the name, and Review suggests no categories. The Coach and Review never send an amount or a date; Just type it and receipt photos send what you give them.'}
           </p>
-          <a href={hashOf({ screen: 'help', param: 'ai-sees' })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+          <a href={hashOf({ screen: 'help', param: 'ai-sees' })} className={cn(LINE_LINK, 'text-sm')}>
             What the AI sees
           </a>
         </>

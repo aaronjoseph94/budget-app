@@ -9,7 +9,7 @@ import { StatementImport } from '../screens/AddScreen.js'
 import { StartEditor } from '../screens/StartEditor.js'
 import { Alert, SavedNote } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
-import { SENTENCE_LINK } from '../components/ui/link.js'
+import { LINE_LINK, SENTENCE_LINK } from '../components/ui/link.js'
 
 /**
  * Step 6, your first statement and filing it: Add's own statement reader,
@@ -30,7 +30,7 @@ export function StatementStep() {
         <p className="text-sm">
           {pendingTotal === 0 ? 'Nothing is waiting in Review.' : `${pendingTotal} ${pendingTotal === 1 ? 'charge is' : 'charges are'} waiting in Review.`}
         </p>
-        <a href={hashOf({ screen: 'review', param: null })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+        <a href={hashOf({ screen: 'review', param: null })} className={LINE_LINK}>
           Open Review
         </a>
       </div>

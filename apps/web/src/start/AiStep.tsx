@@ -4,6 +4,8 @@ import { UpdatesPanel } from '../help/UpdatesPanel.js'
 import { isOlder } from '../help/updates.js'
 import { hashOf } from '../nav.js'
 import { Button } from '../components/ui/button.js'
+import { LINE_LINK } from '../components/ui/link.js'
+import { cn } from '../lib/cn.js'
 
 /**
  * Step 8, turn on free AI (plan §8.1): honest about time. With the AI
@@ -17,7 +19,7 @@ import { Button } from '../components/ui/button.js'
 export function AiStep({ ai, onChanged }: { ai: AiView | null; onChanged: () => void }) {
   if (ai === null) return <p className="text-sm text-muted-foreground">Asking the AI helper…</p>
   const settings = (
-    <a href={hashOf({ screen: 'ai', param: null })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+    <a href={hashOf({ screen: 'ai', param: null })} className={cn(LINE_LINK, 'text-sm')}>
       More services and choices are in AI settings
     </a>
   )

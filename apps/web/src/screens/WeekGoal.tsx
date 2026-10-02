@@ -4,7 +4,7 @@ import { goalSavedCents, useFunds } from '../funds.js'
 import { formatBasisPoints, formatCents } from '../format.js'
 import { Icon } from '../components/ui/icons.js'
 import { hashOf } from '../nav.js'
-import { SENTENCE_LINK } from '../components/ui/link.js'
+import { LINE_LINK, SENTENCE_LINK } from '../components/ui/link.js'
 import { cn } from '../lib/cn.js'
 
 /**
@@ -79,7 +79,7 @@ export function GoalCard({ weekSpentCents, asOf }: { weekSpentCents: number; asO
             </p>
           ) : null}
           {others === 0 ? null : (
-            <a href={hashOf({ screen: 'savings', param: null })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+            <a href={hashOf({ screen: 'savings', param: null })} className={cn(LINE_LINK, 'text-sm')}>
               {others === 1 ? '1 other goal' : `${others} other goals`}
             </a>
           )}

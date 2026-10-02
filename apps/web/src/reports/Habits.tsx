@@ -15,6 +15,7 @@ import { SvgChart, fitted } from '../components/ui/chart.js'
 import { Row, Section } from '../forecast/parts.js'
 import { Failed } from './Failed.js'
 import { habitsOf, useHabitsRead } from './habits-read.js'
+import { LINE_LINK } from '../components/ui/link.js'
 
 export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const WEEKDAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -131,7 +132,6 @@ function GridCard({ grid }: { grid: SpendingGrid }) {
   )
 }
 
-const link = 'inline-flex min-h-11 items-center font-medium underline underline-offset-4'
 const weeksText = (n: number) => (n === 1 ? '1 week' : `${n} weeks`)
 
 function StreakCard({ streaks }: { streaks: Streaks }) {
@@ -139,7 +139,7 @@ function StreakCard({ streaks }: { streaks: Streaks }) {
     return (
       <Section title="Weeks within budget" large>
         <p>Set a weekly budget for your everyday spending, and each week you stay within it counts toward a streak.</p>
-        <a href={hashOf({ screen: 'week', param: null })} className={link}>
+        <a href={hashOf({ screen: 'week', param: null })} className={LINE_LINK}>
           Open the Week
         </a>
       </Section>

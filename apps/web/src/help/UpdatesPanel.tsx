@@ -4,6 +4,7 @@ import { Button } from '../components/ui/button.js'
 import { cn } from '../lib/cn.js'
 import { CopyFile, isCopyable } from './CopyFile.js'
 import { FIRST_FILE, HELPER_FILE, OAUTH_SERVER, READ_RECEIPT_FILE, SERVER_FILE, SIGNING_KEY, SIGNUPS_OFF, checkUpdates, nextStep, type Checked } from './updates.js'
+import { LINE_LINK } from '../components/ui/link.js'
 
 /** The repository's files on GitHub. */
 const REPO = 'https://github.com/aaronjoseph94/budget-app/blob/main/'
@@ -230,7 +231,7 @@ export function UpdatesPanel() {
               href={source}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center font-medium underline underline-offset-4"
+              className={LINE_LINK}
             >
               Open {next.file === HELPER_FILE ? 'the AI helper' : next.file} on GitHub
             </a>
@@ -248,7 +249,7 @@ export function UpdatesPanel() {
                 href={`${REPO}supabase/functions/read-receipt/index.ts`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-11 items-center font-medium underline underline-offset-4"
+                className={LINE_LINK}
               >
                 Open read-receipt on GitHub
               </a>

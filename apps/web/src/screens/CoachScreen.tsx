@@ -23,8 +23,9 @@ import { useGoalOutlooks, type Outlooks } from '../coach/outlook.js'
 import { CheckinLink } from '../coach/CheckinLink.js'
 import { AskBox } from '../coach/AskBox.js'
 import type { ListedGoalRow } from '../ledger.js'
-import { SENTENCE_LINK } from '../components/ui/link.js'
+import { LINE_LINK, SENTENCE_LINK } from '../components/ui/link.js'
 import { TryAgain } from '../try-again.js'
+import { cn } from '../lib/cn.js'
 
 /**
  * The Coach (plan §2.3): the day's line, the main goal's card with the
@@ -109,7 +110,7 @@ function GoalsCard({ funds, outlooks, words }: { funds: FundsState; outlooks: Ou
               ? 'Add what you are saving for, and the Coach shows how far you have come.'
               : 'Your goals are paused or reached. Resume one, or add another, and the Coach shows it here.'}
           </p>
-          <a href={hashOf({ screen: 'savings', param: null })} className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+          <a href={hashOf({ screen: 'savings', param: null })} className={LINE_LINK}>
             {goals.length === 0 ? 'Add a goal' : 'Open Savings'}
           </a>
         </div>
@@ -179,7 +180,7 @@ function GoalsCard({ funds, outlooks, words }: { funds: FundsState; outlooks: Ou
                 )
               })}
             </ul>
-            <a href={hashOf({ screen: 'savings', param: null })} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+            <a href={hashOf({ screen: 'savings', param: null })} className={cn(LINE_LINK, 'text-sm')}>
               All your goals on Savings
             </a>
           </div>
