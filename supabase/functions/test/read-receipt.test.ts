@@ -52,7 +52,7 @@ function request(opts: { method?: string; origin?: string | null; auth?: string 
   if (auth !== null) headers.set('authorization', auth)
   const method = opts.method ?? 'POST'
   const body = opts.body === undefined ? { image: IMAGE, mimeType: 'image/jpeg' } : opts.body
-  return new Request('https://project.supabase.co/functions/v1/read-receipt', {
+  return new Request(`${PROJECT}/functions/v1/read-receipt`, {
     method,
     headers,
     ...(method === 'POST' ? { body: typeof body === 'string' ? body : JSON.stringify(body) } : {}),

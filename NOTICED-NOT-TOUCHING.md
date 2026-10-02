@@ -3514,6 +3514,9 @@ needs its own `npm:zod` alias.
 **To settle:** drop the ai-apps project's two aliases in the cleanup
 step, and run the bundle test.
 
+**Settled, 2026-10-02 (cleanup):** the two aliases are gone from
+vitest.config.ts, and the bundle test passes without them.
+
 ---
 
 ## N153 — Update numbers 0030-0039 are reserved for the AI-app security line
@@ -3750,3 +3753,37 @@ first. Nothing changed either way, but the message misled.
 in place: none of these is applied to the hosted project. The schema gate
 runs each check with the level function dropped and expects "Paste 00NN
 first".
+
+---
+
+## N162 — CONSTRAINTS.md says the AI apps server's file imports two npm: packages
+
+**Seen:** 2026-10-02, cleanup. The "AI apps server" row says
+`setup/mcp-function.ts` "imports only `npm:zod@4.6.5` and
+`npm:@modelcontextprotocol/server@2.2.0`". The build now bundles both, and
+`scripts/check-bundle.mjs` and `mcp-bundle.test.ts` require the file to
+import nothing (mcp-3-04). The check is stricter than the row says.
+
+**Why not fixed here:** CONSTRAINTS.md is changed only on purpose, not in
+a cleanup of code comments.
+
+**To settle:** reword the row to "imports nothing (zod and the SDK are
+bundled)".
+
+---
+
+## N163 — The Coach's goal ring and the Week's are drawn two ways
+
+**Seen:** 2026-10-02, cleanup. `CoachScreen.tsx`'s `Ring` draws its arc on
+a path length of 10,000 and always draws the arc circle, with a butt cap
+at 0. `WeekGoal.tsx` draws on a length of 100 and leaves the arc out at 0.
+They look the same, but `week-screen.test.tsx` pins the Week's markup
+(`28.17 100`, one circle at 0).
+
+**Why not fixed here:** sharing one ring changes the markup that test
+asserts, which a cleanup must not do.
+
+**To settle:** move one ring to `components/ui/feedback.tsx` with the
+Week's rule (no arc at 0), and update the Week's assertions in the same
+commit.
+

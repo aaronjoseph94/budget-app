@@ -301,6 +301,11 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
   const json = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
     new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', ...headers } })
   const pgError = (code: string, status = 400) => json({ code, message: 'fake failure', details: null, hint: null }, status)
+  // A function never deployed, as the platform answers it.
+  const notDeployed = () => json({ code: 'NOT_FOUND', message: 'Requested function was not found' }, 404)
+  // As a real fetch does, a request given up on stops waiting for its answer.
+  const unlessAborted = (answer: Response | Promise<Response>, signal: AbortSignal | null | undefined) =>
+    Promise.race([answer, new Promise<never>((_, reject) => signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError'))))])
 
   // What 0006 does to the ledger, so a screen that re-reads the month after a
   // move sees the charge where it went. Either id not found is 42501, as there.
@@ -457,29 +462,23 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     if (url.pathname === '/functions/v1/ai') {
       const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
       functions.calls.push(body)
-      if (functions.ai === null) return json({ code: 'NOT_FOUND', message: 'Requested function was not found' }, 404)
-      // As a real fetch does, a request given up on stops waiting for its answer.
-      const signal = init?.signal
-      const given = new Promise<never>((_, reject) => signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError'))))
-      return Promise.race([functions.ai(body), given])
+      if (functions.ai === null) return notDeployed()
+      return unlessAborted(functions.ai(body), init?.signal)
     }
     if (url.pathname === '/functions/v1/mcp/health') {
-      if (functions.mcpHealth === null) return json({ code: 'NOT_FOUND', message: 'Requested function was not found' }, 404)
+      if (functions.mcpHealth === null) return notDeployed()
       return functions.mcpHealth()
     }
     if (url.pathname === '/functions/v1/read-receipt' && method === 'GET') {
       // Its version, from 2026-10-01.1 on (One-time updates, mcp-3-03); null is one never deployed.
-      if (functions.readReceipt === null) return json({ code: 'NOT_FOUND', message: 'Requested function was not found' }, 404)
+      if (functions.readReceipt === null) return notDeployed()
       return functions.readReceiptVersion()
     }
     if (url.pathname === '/functions/v1/read-receipt') {
       const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
       functions.receiptCalls.push(body)
-      if (functions.readReceipt === null) return json({ code: 'NOT_FOUND', message: 'Requested function was not found' }, 404)
-      // As a real fetch does, a request given up on stops waiting for its answer.
-      const signal = init?.signal
-      const given = new Promise<never>((_, reject) => signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError'))))
-      return Promise.race([functions.readReceipt(body), given])
+      if (functions.readReceipt === null) return notDeployed()
+      return unlessAborted(functions.readReceipt(body), init?.signal)
     }
     const target = url.pathname.replace(/^\/rest\/v1\//, '')
     const failure = failures.get(target) ?? failures.get(`${method} ${target}`)
@@ -492,13 +491,14 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
 
     if (target.startsWith('rpc/')) {
       const name = target.slice('rpc/'.length)
-      rpcCalls.push({ name, args: JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown> })
+      const args = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
+      rpcCalls.push({ name, args })
       if (!(name in rpcReplies)) return pgError('PGRST202', 404)
-      if (name === 'recategorise_transaction') return recategorise(rpcCalls[rpcCalls.length - 1]?.args ?? {})
-      if (name === 'dismiss_unreadable_line') return dismiss(rpcCalls[rpcCalls.length - 1]?.args ?? {})
-      if (name === 'approve_candidate') return approve(rpcCalls[rpcCalls.length - 1]?.args ?? {})
-      if (name === 'suggest_candidate_categories') return suggest(rpcCalls[rpcCalls.length - 1]?.args ?? {})
-      if (name === 'clear_candidate_suggestion') return clearSuggestion(rpcCalls[rpcCalls.length - 1]?.args ?? {})
+      if (name === 'recategorise_transaction') return recategorise(args)
+      if (name === 'dismiss_unreadable_line') return dismiss(args)
+      if (name === 'approve_candidate') return approve(args)
+      if (name === 'suggest_candidate_categories') return suggest(args)
+      if (name === 'clear_candidate_suggestion') return clearSuggestion(args)
       return json(rpcReplies[name] ?? null)
     }
 

@@ -114,13 +114,13 @@ const NarrateDailySchema = z
       .max(6),
   })
   .strict()
-export type NarrateDaily = z.infer<typeof NarrateDailySchema>
+type NarrateDaily = z.infer<typeof NarrateDailySchema>
 
 // A month's review (plan A15): the same facts, which to word as its three
 // points, and the fact its one thing to try is about. No month, amount or
 // date field: the words never need to know which month it is.
 const NarrateReportSchema = z.object({ tone: Tone, facts: NarrateFactsSchema, points: z.array(Letter).max(3), tryThis: Letter.nullable() }).strict()
-export type NarrateReport = z.infer<typeof NarrateReportSchema>
+type NarrateReport = z.infer<typeof NarrateReportSchema>
 
 // The Sunday check-in (plan A20): the week's facts, which fact the recap,
 // the win and the one thing to try are about, and the goals by name. No
@@ -128,7 +128,7 @@ export type NarrateReport = z.infer<typeof NarrateReportSchema>
 const NarrateCheckinSchema = z
   .object({ tone: Tone, facts: NarrateFactsSchema, recap: Letter.nullable(), win: Letter.nullable(), tryThis: Letter.nullable(), goals: NarrateGoalsSchema })
   .strict()
-export type NarrateCheckin = z.infer<typeof NarrateCheckinSchema>
+type NarrateCheckin = z.infer<typeof NarrateCheckinSchema>
 
 // Review's suggested categories (plan A21, §3.6): each row's number, its
 // shop's name masked and cut to 40 characters, spent or received and a
@@ -151,7 +151,7 @@ const CategoriseSchema = z
     categories: z.array(CategoryOffer).min(1).max(200),
   })
   .strict()
-export type Categorise = z.infer<typeof CategoriseSchema>
+type Categorise = z.infer<typeof CategoriseSchema>
 
 // Just type it (plan A22, §3.6): the line the owner typed, today's date,
 // the fields the app's own parser left empty, and the owner's categories
@@ -165,7 +165,7 @@ const QuickAddSchema = z
     categories: z.array(CategoryOffer).max(200),
   })
   .strict()
-export type QuickAdd = z.infer<typeof QuickAddSchema>
+type QuickAdd = z.infer<typeof QuickAddSchema>
 
 // Ask about your money (plan A24, §3.6): the question, today's date, the
 // owner's categories under aliases and the Help topics by id and title. No
@@ -179,7 +179,7 @@ const AskSchema = z
     topics: z.array(z.object({ id: z.string().regex(/^[a-z]+(?:-[a-z]+)*$/).max(40), title: z.string().min(1).max(80) }).strict()).max(40),
   })
   .strict()
-export type AskQuestion = z.infer<typeof AskSchema>
+type AskQuestion = z.infer<typeof AskSchema>
 
 // A receipt photo (plan A23, §3.6): the photo alone, in the shape and
 // bounds read-receipt takes. A phone photo shrunk to 1600 px is well under
@@ -190,7 +190,7 @@ const ReceiptSchema = z
     mimeType: z.enum(['image/jpeg', 'image/png', 'image/webp']),
   })
   .strict()
-export type Receipt = z.infer<typeof ReceiptSchema>
+type Receipt = z.infer<typeof ReceiptSchema>
 
 export const RequestSchema = z.union([
   z.object({ action: z.literal('ping') }).strict(),
@@ -513,7 +513,7 @@ function closed(schema: unknown): unknown {
  * counts against the same limit, so each gets room beyond the reply itself;
  * Claude Sonnet 5 thinks too, and gets at least 4,000 (plan §3.3).
  */
-export function replyTokens(provider: Provider, model: string, ask: Ask): number {
+function replyTokens(provider: Provider, model: string, ask: Ask): number {
   if (provider === 'openai') return ask.maxOutputTokens + 4000
   if (provider === 'groq' || provider === 'openrouter') return ask.maxOutputTokens + 2000
   if (provider === 'anthropic' && modelFor('anthropic', model) === 'claude-sonnet-5') return Math.max(4000, ask.maxOutputTokens)
@@ -812,7 +812,7 @@ const additionalData = (user: string, provider: string) => new TextEncoder().enc
 const toBase64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes))
 const fromBase64 = (text: string) => Uint8Array.from(atob(text), (c) => c.charCodeAt(0))
 
-export interface Sealed {
+interface Sealed {
   readonly ciphertext: string
   readonly iv: string
   readonly kek_id: string
@@ -1087,7 +1087,7 @@ export function narrateSchema(data: Offered): Record<string, unknown> {
   }
 }
 
-export function narrateAsk(data: NarrateDaily): Ask {
+function narrateAsk(data: NarrateDaily): Ask {
   return { system: NARRATE_SYSTEM, data, schema: narrateSchema(data), maxOutputTokens: 1500 }
 }
 
@@ -1126,7 +1126,7 @@ export function reportSchema(data: { readonly points: readonly string[] }): Reco
   }
 }
 
-export function reportAsk(data: NarrateReport): Ask {
+function reportAsk(data: NarrateReport): Ask {
   return { system: REPORT_SYSTEM, data, schema: reportSchema(data), maxOutputTokens: 1000 }
 }
 
@@ -1167,7 +1167,7 @@ export function checkinSchema(data: { readonly recap: string | null; readonly go
   }
 }
 
-export function checkinAsk(data: NarrateCheckin): Ask {
+function checkinAsk(data: NarrateCheckin): Ask {
   return { system: CHECKIN_SYSTEM, data, schema: checkinSchema(data), maxOutputTokens: 800 }
 }
 
@@ -1195,7 +1195,7 @@ export function categoriseSchema(data: { readonly rows: readonly { readonly i: n
   return { type: 'object', properties: { suggestions: { type: 'array', items: pick } }, required: ['suggestions'] }
 }
 
-export function categoriseAsk(data: Categorise): Ask {
+function categoriseAsk(data: Categorise): Ask {
   return { system: CATEGORISE_SYSTEM, data, schema: categoriseSchema(data), maxOutputTokens: 1500 }
 }
 
@@ -1226,7 +1226,7 @@ export function quickAddSchema(data: { readonly missing: readonly string[]; read
   }
 }
 
-export function quickAddAsk(data: QuickAdd): Ask {
+function quickAddAsk(data: QuickAdd): Ask {
   return { system: QUICK_ADD_SYSTEM, data, schema: quickAddSchema(data), maxOutputTokens: 300 }
 }
 
@@ -1265,7 +1265,7 @@ export function askSchema(data: { readonly categories: readonly { readonly alias
   }
 }
 
-export function askAsk(data: AskQuestion): Ask {
+function askAsk(data: AskQuestion): Ask {
   return { system: ASK_SYSTEM, data, schema: askSchema(data), maxOutputTokens: 300 }
 }
 
@@ -1295,7 +1295,7 @@ const RECEIPT_SCHEMA = {
 }
 
 /** The photo goes as a photo; the text turn only says it is there, as read-receipt's does. */
-export function receiptAsk(data: Receipt): Ask {
+function receiptAsk(data: Receipt): Ask {
   return { system: RECEIPT_SYSTEM, data: { photo: 'Read this receipt.' }, schema: RECEIPT_SCHEMA, maxOutputTokens: 300, image: { mimeType: data.mimeType, data: data.image } }
 }
 

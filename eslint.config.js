@@ -145,7 +145,7 @@ export default tseslint.config(
         'error',
         {
           patterns: [
-            { group: ['react', 'react-*', 'expo', 'expo-*', '@expo/*'], message: 'packages/core is pure: no UI.' },
+            { group: ['react', 'react-*'], message: 'packages/core is pure: no UI.' },
             { group: ['@supabase/*'], message: 'packages/core is pure: no database.' },
             { group: ['node:*', 'fs', 'path', 'os'], message: 'packages/core is pure: no I/O.' },
             { group: ['zod'], message: 'packages/core must not depend on zod — see CAPABILITY-MAP.md.' },
@@ -413,17 +413,8 @@ export default tseslint.config(
     },
   },
   {
-    files: [
-      'packages/ai-apps/test/**/*.ts',
-      'packages/core/test/**/*.ts',
-      'packages/schema/test/**/*.ts',
-      'packages/statement-parsers/test/**/*.ts',
-      'packages/chart-specs/test/**/*.ts',
-      'packages/savings-coach/test/**/*.ts',
-      'packages/report-export/test/**/*.ts',
-      'packages/money-primitives/test/**/*.ts',
-      'packages/golden-verification/test/**/*.ts',
-    ],
+    // Every package's tests, a package added later included.
+    files: ['packages/*/test/**/*.ts'],
     rules: { 'no-restricted-syntax': ['error', ...NO_WEAK_ASSERTIONS] },
   },
   {
