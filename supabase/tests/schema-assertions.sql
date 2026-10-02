@@ -3365,9 +3365,17 @@ begin
     raise exception 'the ledger row was not tidied, or its statement text changed';
   end if;
   if (select array_agg(match_merchant::text || '=' || category_id order by match_merchant) from public.merchant_rules where user_id = u3)
-     is distinct from array['ACME PLUMBING=cccccccc-0000-4000-8000-000000003001', 'IN*KEEP=cccccccc-0000-4000-8000-000000003002'] then
+     is distinct from array['ACME PLUMBING=cccccccc-0000-4000-8000-000000003001', 'IN*KEEP=cccccccc-0000-4000-8000-000000003002',
+                            'ZED SHOP=cccccccc-0000-4000-8000-000000003002'] then
     raise exception 'the learned shops are not as expected: %',
       (select array_agg(match_merchant::text || '=' || category_id order by match_merchant) from public.merchant_rules where user_id = u3);
+  end if;
+  -- Two old names that both tidy to 'ZED SHOP': both review rows follow,
+  -- and only the learned shop used most recently is left.
+  if (select array_agg(merchant::text order by id) from public.ingest_candidates where user_id = u3 and batch_id = 'bbbbbbbb-0000-4000-8000-000000003002')
+     is distinct from array['ZED SHOP', 'ZED SHOP'] then
+    raise exception 'two old names for one shop were not both tidied: %',
+      (select array_agg(merchant::text order by id) from public.ingest_candidates where user_id = u3 and batch_id = 'bbbbbbbb-0000-4000-8000-000000003002');
   end if;
   raise notice 'shop names stored before IN* was a prefix are tidied, and their learned shops follow';
 end $$;

@@ -52,13 +52,25 @@ update public.ingest_candidates c set merchant = n.new
 update public.transactions t set merchant = n.new
   from renamed n where t.user_id = n.user_id and t.merchant = n.old and upper(btrim(t.merchant_raw)) like 'IN*%';
 
--- Two learned shops would share the new name: the older one goes.
-delete from public.merchant_rules r
- using renamed n, public.merchant_rules o
- where r.user_id = n.user_id and o.user_id = n.user_id
-   and ((r.match_merchant = n.old and o.match_merchant = n.new) or (r.match_merchant = n.new and o.match_merchant = n.old))
-   and (greatest(r.created_at, coalesce(r.last_matched_at, r.created_at)), r.id)
-     < (greatest(o.created_at, coalesce(o.last_matched_at, o.created_at)), o.id);
+-- Learned shops that would share a new name: every rule under one of its
+-- old names or already under it is ranked together, and all but the one
+-- used or made most recently go. Ranking the whole group, not pairs, also
+-- covers two old names that tidy to one ('IN*ZED SHOP', 'IN* ZED SHOP'),
+-- which would otherwise both be renamed into the unique (user_id,
+-- match_merchant) and stop the paste. This deletes the owner's rows; see
+-- NOTICED-NOT-TOUCHING.md N146 for the backup step and the approval.
+delete from public.merchant_rules
+ where id in (
+   select id from (
+     select c.id, row_number() over (
+              partition by c.user_id, c.new
+              order by greatest(r.created_at, coalesce(r.last_matched_at, r.created_at)) desc, r.id desc) as k
+       from (select distinct r.id, n.user_id, n.new
+               from public.merchant_rules r
+               join renamed n on r.user_id = n.user_id and r.match_merchant in (n.old, n.new)) c
+       join public.merchant_rules r on r.id = c.id
+   ) x
+  where k > 1);
 
 update public.merchant_rules r set match_merchant = n.new
   from renamed n where r.user_id = n.user_id and r.match_merchant = n.old;

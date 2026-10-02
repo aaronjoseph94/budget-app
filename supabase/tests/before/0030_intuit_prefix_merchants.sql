@@ -37,3 +37,23 @@ insert into public.merchant_rules (user_id, match_merchant, category_id, created
   ('33333333-3333-4333-8333-333333333333', 'IN*ACME PLUMBING', 'cccccccc-0000-4000-8000-000000003001', '2025-12-05T00:00:00Z'),
   ('33333333-3333-4333-8333-333333333333', 'ACME PLUMBING', 'cccccccc-0000-4000-8000-000000003002', '2025-06-01T00:00:00Z'),
   ('33333333-3333-4333-8333-333333333333', 'IN*KEEP', 'cccccccc-0000-4000-8000-000000003002', '2025-12-05T00:00:00Z');
+-- Two old names that tidy to one new name, with no learned shop under it
+-- yet: 'IN*ZED SHOP' and 'IN* ZED SHOP' were two shops to the old app, and
+-- both become 'ZED SHOP'. The one used most recently is kept.
+insert into public.ingest_batches (id, user_id, account_id, source, parsed, deduped, inserted, rejected)
+  values ('bbbbbbbb-0000-4000-8000-000000003002', '33333333-3333-4333-8333-333333333333',
+          'aaaaaaaa-0000-4000-8000-000000003001', 'card_csv', 2, 0, 2, 0);
+insert into public.ingest_candidates
+  (id, user_id, batch_id, account_id, posted_on, amount_cents, merchant, merchant_raw,
+   category_id, category_source, status, dedupe_hash, dedupe_hash_v, source)
+values
+  ('eeeeeeee-0000-4000-8000-000000003004', '33333333-3333-4333-8333-333333333333', 'bbbbbbbb-0000-4000-8000-000000003002',
+   'aaaaaaaa-0000-4000-8000-000000003001', '2025-12-04', -700, 'IN*ZED SHOP', 'IN*ZED SHOP',
+   null, null, 'pending', repeat('3', 62) || '04', 1, 'card_csv'),
+  ('eeeeeeee-0000-4000-8000-000000003005', '33333333-3333-4333-8333-333333333333', 'bbbbbbbb-0000-4000-8000-000000003002',
+   'aaaaaaaa-0000-4000-8000-000000003001', '2025-12-05', -800, 'IN* ZED SHOP', 'IN* ZED SHOP',
+   null, null, 'pending', repeat('3', 62) || '05', 1, 'card_csv');
+-- Made later, but used less recently than the other: the other is kept.
+insert into public.merchant_rules (user_id, match_merchant, category_id, created_at, last_matched_at) values
+  ('33333333-3333-4333-8333-333333333333', 'IN*ZED SHOP', 'cccccccc-0000-4000-8000-000000003001', '2025-08-01T00:00:00Z', null),
+  ('33333333-3333-4333-8333-333333333333', 'IN* ZED SHOP', 'cccccccc-0000-4000-8000-000000003002', '2025-07-01T00:00:00Z', '2025-12-10T00:00:00Z');
