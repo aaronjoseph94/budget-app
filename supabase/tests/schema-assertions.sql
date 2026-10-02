@@ -2972,7 +2972,7 @@ declare
                     'merchant_raw','BAKERY 2701','dedupe_hash', repeat('7',62) || '01', 'dedupe_hash_v', 1);
   again  jsonb := jsonb_build_object('posted_on','2025-10-01','amount_cents',-1250,'merchant','BAKERY 2701',
                     'merchant_raw','BAKERY 2701','dedupe_hash', repeat('7',62) || '02', 'dedupe_hash_v', 1);
-  later  jsonb := jsonb_build_object('posted_on','2025-10-02','amount_cents',-1250,'merchant','BAKERY 2701',
+  later  jsonb := jsonb_build_object('posted_on','2025-10-08','amount_cents',-1250,'merchant','BAKERY 2701',
                     'merchant_raw','BAKERY 2701','dedupe_hash', repeat('7',62) || '03', 'dedupe_hash_v', 1);
   card   jsonb := jsonb_build_object('posted_on','2025-10-01','amount_cents',-1250,'merchant','BAKERY 2701',
                     'merchant_raw','BAKERY 2701','dedupe_hash', repeat('7',62) || '04', 'dedupe_hash_v', 1);
@@ -3005,12 +3005,15 @@ begin
     raise exception 'a receipt from a learned shop on another day was not filed by its rule: %', r;
   end if;
 
-  -- A statement row alike is not a receipt photo, and is filed as before.
+  -- A statement row alike is not a receipt photo, so 0027 lets it through;
+  -- but it is the receipt's own charge, in the ledger already, so 0029
+  -- holds it in Review (architecture-c2-02).
   select * into r from public.save_import(acc, 'card_csv', 1, jsonb_build_array(card), '[]'::jsonb);
-  if r.auto_approved <> 1 then
-    raise exception 'a statement row from a learned shop was not filed by its rule: %', r;
+  if r.auto_approved <> 0 or not exists (select 1 from public.ingest_candidates where batch_id = r.batch_id
+                                         and status = 'pending' and category_id is null) then
+    raise exception 'a statement row for a receipt already in the ledger was filed without review: %', r;
   end if;
-  raise notice 'a second photo of a receipt waits in Review; other receipts and statement rows are still filed';
+  raise notice 'a second photo of a receipt waits in Review; other receipts are still filed';
 end $$;
 reset role;
 
@@ -3031,8 +3034,8 @@ declare
                      || E'\n                          and e.merchant = c.merchant))';
 begin
   for r in select * from verify.before_0027 loop
-    select prosrc, prosecdef, provolatile, proconfig, proacl::text as acl into p
-      from pg_proc where oid = r.fn::regprocedure;
+    select prosrc, prosecdef, provolatile, proconfig, acl into p
+      from verify.before_0029 where fn = r.fn;
     if not found then raise exception '% is gone after 0027', r.fn; end if;
     if r.fn = 'save_import(uuid,ingest_source,integer,jsonb,jsonb)' then
       if p.prosrc <> replace(r.prosrc, at, at || cond) or strpos(r.prosrc, at) = 0 then
@@ -3049,6 +3052,101 @@ begin
     raise exception 'save_import was not among the functions checked';
   end if;
   raise notice '0027 changed save_import by one condition, and nothing else';
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- 0029: a charge that looks like one already in the ledger (same account,
+-- amount and normalised shop, within three days) waits in Review, even for
+-- a learned shop: the same charge read from a PDF and from a CSV has two
+-- hashes, and was counted twice (architecture-c2-02).
+-- ---------------------------------------------------------------------------
+reset role;
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000002901', '11111111-1111-4111-8111-111111111111', 'Garden 2901', 'variable');
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+do $$
+declare
+  acc    uuid := 'aaaaaaaa-0000-4000-8000-000000000001';
+  garden uuid := 'cccccccc-0000-4000-8000-000000002901';
+  -- The PDF prints the transaction date and its own spelling of the shop;
+  -- the CSV the posting date, three days on, and another spelling. Both
+  -- normalise to the same shop, so the hashes differ and the rule matches.
+  pdf    jsonb := jsonb_build_object('posted_on','2025-11-03','amount_cents',-4210,'merchant','GARDEN 2901',
+                    'merchant_raw','SQ *GARDEN 2901','dedupe_hash', repeat('9',62) || '01', 'dedupe_hash_v', 1);
+  csv    jsonb := jsonb_build_object('posted_on','2025-11-06','amount_cents',-4210,'merchant','GARDEN 2901',
+                    'merchant_raw','GARDEN 2901','dedupe_hash', repeat('9',62) || '02', 'dedupe_hash_v', 1);
+  week   jsonb := jsonb_build_object('posted_on','2025-11-07','amount_cents',-4210,'merchant','GARDEN 2901',
+                    'merchant_raw','GARDEN 2901','dedupe_hash', repeat('9',62) || '03', 'dedupe_hash_v', 1);
+  other  jsonb := jsonb_build_object('posted_on','2025-11-04','amount_cents',-1999,'merchant','GARDEN 2901',
+                    'merchant_raw','GARDEN 2901','dedupe_hash', repeat('9',62) || '04', 'dedupe_hash_v', 1);
+  r      record;
+  cand   uuid;
+  before_ bigint;
+begin
+  -- From the PDF, approved by hand, which teaches the rule.
+  select * into r from public.save_import(acc, 'card_pdf', 1, jsonb_build_array(pdf), '[]'::jsonb);
+  select id into cand from public.ingest_candidates where batch_id = r.batch_id;
+  perform public.approve_candidate(cand, garden);
+  select count(*) into before_ from public.transactions;
+
+  -- The CSV of the same card: the same charge three days on waits; another
+  -- amount from the same shop is filed by its rule.
+  select * into r from public.save_import(acc, 'card_csv', 2, jsonb_build_array(csv, other), '[]'::jsonb);
+  if (r.inserted, r.deduped, r.auto_approved) is distinct from (2, 0, 1) then
+    raise exception 'the CSV read inserted=% deduped=% auto_approved=%, not 2, 0, 1', r.inserted, r.deduped, r.auto_approved;
+  end if;
+  if not exists (select 1 from public.ingest_candidates where batch_id = r.batch_id
+                  and dedupe_hash = csv->>'dedupe_hash' and status = 'pending' and category_id is null) then
+    raise exception 'a charge already in the ledger from the PDF is not waiting in Review';
+  end if;
+  if (select count(*) from public.transactions) <> before_ + 1
+     or not exists (select 1 from public.transactions where dedupe_hash = other->>'dedupe_hash') then
+    raise exception 'the PDF''s charge was filed twice, or another charge was not filed';
+  end if;
+
+  -- Four days on is outside the window, and is filed by its rule.
+  select * into r from public.save_import(acc, 'card_csv', 1, jsonb_build_array(week), '[]'::jsonb);
+  if r.auto_approved <> 1 then
+    raise exception 'a charge four days from its lookalike was not filed by its rule: %', r;
+  end if;
+  raise notice 'a charge already in the ledger under another hash waits in Review; others are still filed';
+end $$;
+reset role;
+
+-- 0029 changed save_import by that one condition, after 0027's, and nothing
+-- else: the body as it stood before 0029, plus the condition, with the same
+-- settings and grants; every other function the browser may call is as it
+-- stood.
+do $$
+declare
+  r    record;
+  p    record;
+  at   constant text := E'\n                          and e.merchant = c.merchant))';
+  cond constant text := E'\n       and not exists (select 1 from public.transactions t'
+                     || E'\n                        where t.user_id = v_user and t.account_id = c.account_id'
+                     || E'\n                          and t.amount_cents = c.amount_cents and t.merchant = c.merchant'
+                     || E'\n                          and t.posted_on between c.posted_on - 3 and c.posted_on + 3)';
+begin
+  for r in select * from verify.before_0029 loop
+    select prosrc, prosecdef, provolatile, proconfig, proacl::text as acl into p
+      from pg_proc where oid = r.fn::regprocedure;
+    if not found then raise exception '% is gone after 0029', r.fn; end if;
+    if r.fn = 'save_import(uuid,ingest_source,integer,jsonb,jsonb)' then
+      if p.prosrc <> replace(r.prosrc, at, at || cond) or strpos(r.prosrc, at) = 0 then
+        raise exception 'save_import is not its old body plus the one condition';
+      end if;
+    elsif p.prosrc <> r.prosrc then
+      raise exception '% changed in 0029', r.fn;
+    end if;
+    if (p.prosecdef, p.provolatile, p.proconfig, p.acl) is distinct from (r.prosecdef, r.provolatile, r.proconfig, r.acl) then
+      raise exception '% changed its settings or grants in 0029', r.fn;
+    end if;
+  end loop;
+  if not exists (select 1 from verify.before_0029 where fn = 'save_import(uuid,ingest_source,integer,jsonb,jsonb)') then
+    raise exception 'save_import was not among the functions checked';
+  end if;
+  raise notice '0029 changed save_import by one condition, and nothing else';
 end $$;
 
 -- ---------------------------------------------------------------------------

@@ -9,6 +9,11 @@
  *     quietly wrong, and they find out by reconciling against a bank.
  *   - Too tight, and the same charge imports twice. A duplicate appears in the
  *     review queue where a human sees it and rejects it. Visible, and cheap.
+ *     That holds for a learned shop too only because save_import files a row
+ *     by its rule only when the ledger has no charge on the same account,
+ *     for the same amount, at the same normalised shop, within three days
+ *     (0029): the same charge from a PDF and from a CSV has two hashes, and
+ *     was otherwise filed twice with no review (architecture-c2-02).
  *
  * Everything below prefers the second. CLAUDE.md also forbids papering over a
  * duplicate at the query or UI layer — a duplicate is fixed here or not at all.
