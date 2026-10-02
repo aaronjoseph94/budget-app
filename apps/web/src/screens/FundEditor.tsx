@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import type { SavingsFund } from '@budget/core'
 import { parseMoneyInput, useAppData } from '../app-data.js'
 import { saveFund, type FundRow } from '../ledger.js'
@@ -8,6 +8,7 @@ import { Button } from '../components/ui/button.js'
 import { Field, Input } from '../components/ui/form.js'
 import { Sheet } from '../components/ui/sheet.js'
 import { GoalUnitFields, readUnit, unitText } from './GoalUnitFields.js'
+import { useStillOpen } from '../lib/still-open.js'
 
 /**
  * A fund's goal, typed where the workbook types it: the Goal Amount and Current
@@ -46,13 +47,7 @@ export function FundEditor({
   const [unit, setUnit] = useState(unitText(goal))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const open = useRef(true)
-  useEffect(() => {
-    open.current = true
-    return () => {
-      open.current = false
-    }
-  }, [])
+  const open = useStillOpen()
 
   const submit = async () => {
     const goalCents = parseMoneyInput(target)

@@ -22,7 +22,7 @@ import { hashOf, navigate } from '../nav.js'
 import { formatBasisPoints, formatCents, formatIsoDate, todayIso } from '../format.js'
 import { FundEditor } from './FundEditor.js'
 import { AddGoalSheet } from './AddGoalSheet.js'
-import { GoalActions } from './GoalActions.js'
+import { GoalActions, type Notice } from './GoalActions.js'
 import { Alert, Badge, Loading } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Icon, type IconName } from '../components/ui/icons.js'
@@ -69,7 +69,7 @@ export function SavingsScreen() {
   // A goal on no fund, edited by its own id: it has no fund to name it by.
   const [editingLoose, setEditingLoose] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
-  const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null)
+  const [notice, setNotice] = useState<Notice | null>(null)
   const ready = state.status === 'ready' ? state : null
   const goalOf = (fund: SavingsFund) => ready?.goals.find((g) => g.id === fund.figures?.goalId) ?? null
   // Goals on no fund, such as the one Settings saved before there were funds:

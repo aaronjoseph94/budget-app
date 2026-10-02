@@ -16,6 +16,7 @@ import { Section } from '../forecast/parts.js'
 import { readAnswers, saveAnswer, type AnswerRow } from './answers.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
 import { TryAgain } from '../try-again.js'
+import { arrowIndex } from '../lib/roving.js'
 
 export interface CheckinAnswers {
   /** Charges answered when the check-in opened; null while they load. */
@@ -140,12 +141,7 @@ function Question({ question, week, answers, shop }: { question: CheckinQuestion
 function onArrow(e: KeyboardEvent<HTMLButtonElement>) {
   const answers = [...(e.currentTarget.parentElement?.querySelectorAll('button') ?? [])]
   const at = answers.indexOf(e.currentTarget)
-  const to =
-    e.key === 'ArrowRight' ? (at + 1) % answers.length
-    : e.key === 'ArrowLeft' ? (at + answers.length - 1) % answers.length
-    : e.key === 'Home' ? 0
-    : e.key === 'End' ? answers.length - 1
-    : null
+  const to = arrowIndex(e.key, at, answers.length)
   if (to === null) return
   e.preventDefault()
   answers[to]?.focus()

@@ -1,10 +1,11 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useId, useState } from 'react'
 import { parseMoneyInput, useAppData } from '../app-data.js'
 import { setMonthBalance } from '../ledger.js'
 import { formatCents, formatForInput, formatMonthName } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Input, refusal } from '../components/ui/form.js'
+import { useStillOpen } from '../lib/still-open.js'
 
 /**
  * The bank balance a month started with, typed where the workbook types it (Jan!D9,
@@ -48,13 +49,7 @@ export function StartEditor({
   const [error, setError] = useState<string | null>(null)
   const errorId = useId()
   const monthName = formatMonthName(month)
-  const open = useRef(true)
-  useEffect(() => {
-    open.current = true
-    return () => {
-      open.current = false
-    }
-  }, [])
+  const open = useStillOpen()
 
   const save = async (clear: boolean) => {
     const cents = clear ? null : parseMoneyInput(overdrawn ? `-${text.trim()}` : text)

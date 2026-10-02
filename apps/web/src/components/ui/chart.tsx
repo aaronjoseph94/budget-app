@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { widthFor, type ChartFrame, type SvgMarkup } from '@budget/chart-specs'
 import { cn } from '../../lib/cn.js'
 
@@ -65,3 +65,11 @@ export type Fitted = (width: number | undefined) => SvgMarkup
 export function fitted<I extends ChartFrame>(build: (input: I) => SvgMarkup, input: NoInfer<I>): Fitted {
   return (width) => build({ ...input, width })
 }
+
+/** Names a chart's title and description; useId's punctuation is not allowed in a chart id. */
+export function useChartId(prefix = 'chart'): string {
+  return `${prefix}${useId().replace(/[^A-Za-z0-9_-]/g, '')}`
+}
+
+/** Sentences joined for a chart's description: "A. B." */
+export const said = (parts: readonly string[]): string => parts.join('. ') + '.'

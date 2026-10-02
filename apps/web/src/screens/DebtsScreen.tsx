@@ -1,4 +1,4 @@
-import { useId, useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { debtBalanceChange, endOfList, isoDate, type Change, type DebtBalanceChange, type DebtStanding, type DebtStatus } from '@budget/core'
 import { debtRing } from '@budget/chart-specs'
 import { useDebts } from '../debts.js'
@@ -8,11 +8,12 @@ import { DebtEditor } from './DebtEditor.js'
 import { DebtStrategies } from './DebtStrategies.js'
 import { Alert, Loading } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
-import { SvgChart } from '../components/ui/chart.js'
+import { SvgChart, useChartId } from '../components/ui/chart.js'
 import { Icon } from '../components/ui/icons.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { TryAgain } from '../try-again.js'
+import type { Notice } from './GoalActions.js'
 
 /**
  * The workbook's Debt Calculator (S17): the summary card (Current Debt Total,
@@ -28,7 +29,7 @@ export function DebtsScreen() {
   const state = useDebts()
   // The debt being edited, by id; 'new' to add one.
   const [editing, setEditing] = useState<string | null>(null)
-  const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null)
+  const [notice, setNotice] = useState<Notice | null>(null)
   const ready = state.status === 'ready' ? state.debts : null
   const shown = editing === 'new' ? null : (ready?.rows.find((r) => r.id === editing) ?? null)
   // Each balance against a month ago (F25, D26), from the same schedule, so
@@ -264,7 +265,7 @@ function DebtCard({
 
 /** The Debt Calculator's doughnut, its lengths core's basis points (D25). */
 function Ring({ label, paidBp, className }: { label: string; paidBp: number; className: string }) {
-  const id = `debt${useId().replace(/[^A-Za-z0-9_-]/g, '')}`
+  const id = useChartId('debt')
   const svg = useMemo(
     () =>
       debtRing({

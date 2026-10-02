@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useId, useState } from 'react'
 import type { PeriodRow } from '@budget/core'
 import { parseMoneyInput, useAppData } from '../app-data.js'
 import { setBudget } from '../ledger.js'
@@ -7,6 +7,7 @@ import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Input, refusal } from '../components/ui/form.js'
 import { cn } from '../lib/cn.js'
+import { useStillOpen } from '../lib/still-open.js'
 
 /**
  * A budget or goal typed where the workbook types it, on the month (Jan!D22:T44,
@@ -45,13 +46,7 @@ export function BudgetEditor({
   const errorId = useId()
   const lower = word.toLowerCase()
   const monthName = formatMonthName(month)
-  const open = useRef(true)
-  useEffect(() => {
-    open.current = true
-    return () => {
-      open.current = false
-    }
-  }, [])
+  const open = useStillOpen()
 
   const save = async (clear: boolean) => {
     const cents = clear ? null : parseMoneyInput(text)

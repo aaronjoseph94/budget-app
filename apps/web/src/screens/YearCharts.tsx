@@ -1,8 +1,8 @@
-import { useId, useMemo, type ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { goalBars, partShares, stackedColumns, type DebtStatus, type SavingsFund, type TopExpense, type YearGroups, type YearSheet } from '@budget/core'
 import { debtBars, goalActualColumns, incomeExpenseColumns, savingsGoalBars, shareRing, yearPie } from '@budget/chart-specs'
 import { formatCents, formatShare, formatShortMonth } from '../format.js'
-import { SvgChart, fitted, type Fitted } from '../components/ui/chart.js'
+import { SvgChart, fitted, said, useChartId, type Fitted } from '../components/ui/chart.js'
 import { cn } from '../lib/cn.js'
 
 /**
@@ -11,13 +11,6 @@ import { cn } from '../lib/cn.js'
  * `partShares`, `stackedColumns`, `goalBars` or F18's `shareBp` (F19). This
  * file only formats the amounts written beside them.
  */
-
-/** Names a chart's title and description; useId's punctuation is not allowed in a chart id. */
-function useChartId(): string {
-  return `chart${useId().replace(/[^A-Za-z0-9_-]/g, '')}`
-}
-
-const said = (parts: readonly string[]) => parts.join('. ') + '.'
 
 /**
  * The Year's income, expenses and savings as a pie: Home's chart3 at the

@@ -8,7 +8,7 @@ import { readStatementFile, type PdfImport } from '../pdf-import.js'
 import { readReceipt, type ReceiptLink } from '../receipt.js'
 import { formatCents, formatDayMonth, formatIsoDate, todayIso } from '../format.js'
 import { IngestedText } from '../ui.js'
-import { atEndOf, CategoryOptions, ListSelect, LISTS_FOR, type CategoryKind } from '../lists.js'
+import { atEndOf, CategoryOptions, ListSelect, LISTS_FOR, NEW_CATEGORY, type CategoryKind } from '../lists.js'
 import { Card, CardContent, CardDescription, CardTitle } from '../components/ui/card.js'
 import { Alert, Badge } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
@@ -21,6 +21,7 @@ import { HelpButton } from '../help/HelpButton.js'
 import { JustTypeIt } from '../add/JustTypeIt.js'
 import type { QuickFill } from '../add/quick-add.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
+import { arrowIndex } from '../lib/roving.js'
 
 type Mode = 'statement' | 'photo' | 'typed'
 type Loaded =
@@ -55,12 +56,7 @@ export function AddScreen() {
   }
   const onKey = (e: KeyboardEvent<HTMLButtonElement>) => {
     const at = MODES.indexOf(mode)
-    const to =
-      e.key === 'ArrowRight' ? (at + 1) % MODES.length
-      : e.key === 'ArrowLeft' ? (at + MODES.length - 1) % MODES.length
-      : e.key === 'Home' ? 0
-      : e.key === 'End' ? MODES.length - 1
-      : null
+    const to = arrowIndex(e.key, at, MODES.length)
     const next = to === null ? undefined : MODES[to]
     if (next === undefined) return
     e.preventDefault()
@@ -439,7 +435,7 @@ function TypedEntry() {
     setOutcome(null)
     setTried(0)
   }
-  const creating = categoryId === '__new__'
+  const creating = categoryId === NEW_CATEGORY
   const needed = [
     cents === null || cents <= 0 ? 'an amount' : null,
     merchant.trim().length === 0 ? 'what it was' : null,
@@ -573,7 +569,7 @@ function TypedEntry() {
               <NativeSelect value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required>
                 <option value="">Choose…</option>
                 <CategoryOptions categories={categories} />
-                <option value="__new__">+ New…</option>
+                <option value={NEW_CATEGORY}>+ New…</option>
               </NativeSelect>
             </Field>
           </div>

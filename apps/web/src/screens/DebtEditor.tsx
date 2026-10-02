@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { parseMoneyInput, parsePercentInput, useAppData } from '../app-data.js'
 import { removeDebt, saveDebt, type DebtExtraRow, type DebtRow } from '../ledger.js'
 import { formatForInput, todayIso } from '../format.js'
@@ -7,6 +7,7 @@ import { Button } from '../components/ui/button.js'
 import { Field, Input } from '../components/ui/form.js'
 import { Sheet } from '../components/ui/sheet.js'
 import { DebtExtras } from './DebtExtras.js'
+import { useStillOpen } from '../lib/still-open.js'
 
 /**
  * A debt, typed where the workbook types it: its Starting Balance, Minimum Payment
@@ -44,13 +45,7 @@ export function DebtEditor({
   const [removing, setRemoving] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const open = useRef(true)
-  useEffect(() => {
-    open.current = true
-    return () => {
-      open.current = false
-    }
-  }, [])
+  const open = useStillOpen()
 
   /** Run a write; on success close and refresh, on failure say why where it can be read. */
   const write = async (action: () => Promise<void>, done: string) => {

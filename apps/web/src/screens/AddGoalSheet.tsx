@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { goalAtEnd } from '@budget/core'
 import { parseMoneyInput, placedGoal, useAppData } from '../app-data.js'
 import { addGoal } from '../goal-writes.js'
@@ -9,6 +9,7 @@ import { Button } from '../components/ui/button.js'
 import { Field, Input } from '../components/ui/form.js'
 import { Sheet } from '../components/ui/sheet.js'
 import { GoalUnitFields, readUnit, unitText, type UnitText } from './GoalUnitFields.js'
+import { useStillOpen } from '../lib/still-open.js'
 
 /** What Add a goal opens with filled in, all of it changeable first: Getting started's flight goal (plan §8.1). */
 export interface GoalPreset {
@@ -49,13 +50,7 @@ export function AddGoalSheet({
   const [unit, setUnit] = useState(preset.unit ?? unitText(null))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const open = useRef(true)
-  useEffect(() => {
-    open.current = true
-    return () => {
-      open.current = false
-    }
-  }, [])
+  const open = useStillOpen()
 
   const submit = async () => {
     const named = name.trim()

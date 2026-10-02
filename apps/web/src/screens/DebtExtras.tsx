@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { parseMoneyInput, useAppData } from '../app-data.js'
 import { removeDebtExtra, saveDebtExtra, type DebtExtraRow, type DebtRow } from '../ledger.js'
 import { formatCents, formatMonthTitle, todayIso } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Field, Input } from '../components/ui/form.js'
+import { useStillOpen } from '../lib/still-open.js'
 
 /**
  * A debt's one-off Extra Payments, each in the month it is paid (Debt
@@ -29,13 +30,7 @@ export function DebtExtras({
   const [amount, setAmount] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const open = useRef(true)
-  useEffect(() => {
-    open.current = true
-    return () => {
-      open.current = false
-    }
-  }, [])
+  const open = useStillOpen()
 
   /** `what` names the write in a message shown after the sheet has closed. */
   const write = async (action: () => Promise<void>, what: string) => {

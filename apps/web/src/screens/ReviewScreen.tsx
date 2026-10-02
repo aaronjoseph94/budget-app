@@ -17,7 +17,7 @@ import {
 } from '../ledger.js'
 import { describeReason, formatCents, formatIsoDate, localDateOf } from '../format.js'
 import { IngestedText } from '../ui.js'
-import { atEndOf, CategoryOptions, ListSelect, type CategoryKind } from '../lists.js'
+import { atEndOf, CategoryOptions, ListSelect, NEW_CATEGORY, type CategoryKind } from '../lists.js'
 import { Card } from '../components/ui/card.js'
 import { Alert, Badge, Empty } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
@@ -33,7 +33,6 @@ import { MonthTitle } from '../components/ui/type.js'
 import { useSuggestions } from '../review/use-suggestions.js'
 import { addedBy } from '../ai-apps/access.js'
 
-const NEW_CATEGORY = '__new__'
 /** `busy` while Approve these N works through its rows: every row waits. */
 const ALL = '__all__'
 

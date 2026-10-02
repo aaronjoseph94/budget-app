@@ -1,8 +1,8 @@
-import { useId, useMemo } from 'react'
+import { useMemo } from 'react'
 import { goalBars, type PeriodRow, type PeriodSheet } from '@budget/core'
 import { incomeBars, spendingDoughnut } from '@budget/chart-specs'
 import { formatCents, formatShare } from '../format.js'
-import { SvgChart, fitted, type Fitted } from '../components/ui/chart.js'
+import { SvgChart, fitted, said, useChartId, type Fitted } from '../components/ui/chart.js'
 
 /**
  * The workbook's chart panel, Jan!H3:K18: the income chart (chart12) and the
@@ -15,9 +15,8 @@ import { SvgChart, fitted, type Fitted } from '../components/ui/chart.js'
  * no slice, since none can be drawn below zero, and is named under the ring.
  */
 export function MonthCharts({ sheet, className }: { sheet: PeriodSheet; className: string }) {
-  // Names the charts' titles for a screen reader; useId's own punctuation is
-  // not allowed in an id chart-specs accepts.
-  const id = `chart${useId().replace(/[^A-Za-z0-9_-]/g, '')}`
+  // Names the charts' titles for a screen reader.
+  const id = useChartId()
   const income = sheet.blocks.income.rows.filter((r) => r.budgetCents !== null || r.basis !== 'none')
   const variable = sheet.blocks.variable.rows
   const refunded = variable.filter((r) => r.actualCents < 0)
@@ -83,7 +82,6 @@ function draw(
     shareBp,
     listIndex,
   }))
-  const said = (parts: readonly string[]) => parts.join('. ') + '.'
   return {
     income:
       bars.length === 0

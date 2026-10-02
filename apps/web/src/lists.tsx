@@ -131,6 +131,9 @@ export function ListSelect({
   )
 }
 
+/** The picker option that makes a new category, as Add and Review offer it. */
+export const NEW_CATEGORY = '__new__'
+
 /**
  * A category picker's options, under the workbook's headings in START HERE order.
  * Lists with nothing on them are left out, so the picker shows only choices.

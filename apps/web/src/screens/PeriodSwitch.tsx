@@ -1,6 +1,7 @@
 import type { KeyboardEvent } from 'react'
 import { hashOf, type Screen } from '../nav.js'
 import { cn } from '../lib/cn.js'
+import { arrowIndex } from '../lib/roving.js'
 
 /** The four views of the same budget, in the order the workbook's tabs run (ADR 0006). */
 const VIEWS: readonly { screen: Screen; label: string }[] = [
@@ -14,12 +15,7 @@ const VIEWS: readonly { screen: Screen; label: string }[] = [
 function onArrow(e: KeyboardEvent<HTMLAnchorElement>) {
   const links = [...(e.currentTarget.parentElement?.querySelectorAll('a') ?? [])]
   const at = links.indexOf(e.currentTarget)
-  const to =
-    e.key === 'ArrowRight' ? (at + 1) % links.length
-    : e.key === 'ArrowLeft' ? (at + links.length - 1) % links.length
-    : e.key === 'Home' ? 0
-    : e.key === 'End' ? links.length - 1
-    : null
+  const to = arrowIndex(e.key, at, links.length)
   if (to === null) return
   e.preventDefault()
   links[to]?.focus()

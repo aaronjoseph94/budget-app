@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useId, useState } from 'react'
 import type { PeriodRow } from '@budget/core'
 import { readBudgetInput, useAppData } from '../app-data.js'
 import { setWeeklyBudget } from '../ledger.js'
@@ -6,6 +6,7 @@ import { formatCents, formatForInput } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Input, refusal } from '../components/ui/form.js'
+import { useStillOpen } from '../lib/still-open.js'
 
 /**
  * A weekly budget or goal, typed on the Week as the workbook types one on its
@@ -36,13 +37,7 @@ export function WeekBudgetEditor({
   const [error, setError] = useState<string | null>(null)
   const errorId = useId()
   const lower = word.toLowerCase()
-  const open = useRef(true)
-  useEffect(() => {
-    open.current = true
-    return () => {
-      open.current = false
-    }
-  }, [])
+  const open = useStillOpen()
 
   const save = async (clear: boolean) => {
     const typed = clear ? null : readBudgetInput(text, lower)

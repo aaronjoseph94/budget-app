@@ -18,6 +18,7 @@ import { HabitsPanel } from '../reports/Habits.js'
 import { DownloadCard } from '../reports/Download.js'
 import { rememberTab, rememberedTab, type ReportTab } from '../reports/tab.js'
 import { cn } from '../lib/cn.js'
+import { arrowIndex } from '../lib/roving.js'
 
 const TABS: readonly { readonly id: ReportTab; readonly name: string }[] = [
   { id: 'overview', name: 'Overview' },
@@ -62,12 +63,7 @@ export function ReportsScreen({ month }: { month: string | null }) {
   // The arrow keys, Home and End choose along the tabs, as Add's do (design review, Accessibility).
   const onKey = (e: KeyboardEvent<HTMLButtonElement>) => {
     const at = TABS.findIndex((t) => t.id === tab)
-    const to =
-      e.key === 'ArrowRight' ? (at + 1) % TABS.length
-      : e.key === 'ArrowLeft' ? (at + TABS.length - 1) % TABS.length
-      : e.key === 'Home' ? 0
-      : e.key === 'End' ? TABS.length - 1
-      : null
+    const to = arrowIndex(e.key, at, TABS.length)
     const next = to === null ? undefined : TABS[to]
     if (next === undefined) return
     e.preventDefault()
