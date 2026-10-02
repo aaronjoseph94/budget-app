@@ -3344,6 +3344,34 @@ begin
 end $$;
 reset role;
 
+-- ---------------------------------------------------------------------------
+-- 0030: shop names stored while 'IN*' was not a processor prefix are tidied
+-- as the app now tidies them; a learned shop follows, and where two would
+-- share a name the more recent is kept (architecture-a-10). Rows seeded by
+-- supabase/tests/before/0030_intuit_prefix_merchants.sql.
+-- ---------------------------------------------------------------------------
+reset role;
+do $$
+declare
+  u3 constant uuid := '33333333-3333-4333-8333-333333333333';
+begin
+  if (select array_agg(merchant::text order by id) from public.ingest_candidates where user_id = u3 and batch_id = 'bbbbbbbb-0000-4000-8000-000000003001')
+     is distinct from array['ACME PLUMBING', 'ACME PLUMBING', 'IN*KEEP'] then
+    raise exception 'the review rows were not tidied as the app now tidies them: %',
+      (select array_agg(merchant::text order by id) from public.ingest_candidates where user_id = u3 and batch_id = 'bbbbbbbb-0000-4000-8000-000000003001');
+  end if;
+  if (select merchant from public.transactions where candidate_id = 'eeeeeeee-0000-4000-8000-000000003001') <> 'ACME PLUMBING'
+     or (select merchant_raw from public.transactions where candidate_id = 'eeeeeeee-0000-4000-8000-000000003001') <> 'IN*ACME PLUMBING 4155551234' then
+    raise exception 'the ledger row was not tidied, or its statement text changed';
+  end if;
+  if (select array_agg(match_merchant::text || '=' || category_id order by match_merchant) from public.merchant_rules where user_id = u3)
+     is distinct from array['ACME PLUMBING=cccccccc-0000-4000-8000-000000003001', 'IN*KEEP=cccccccc-0000-4000-8000-000000003002'] then
+    raise exception 'the learned shops are not as expected: %',
+      (select array_agg(match_merchant::text || '=' || category_id order by match_merchant) from public.merchant_rules where user_id = u3);
+  end if;
+  raise notice 'shop names stored before IN* was a prefix are tidied, and their learned shops follow';
+end $$;
+
 -- The level the app reads (0021) names the last update in this folder, so a
 -- new update that forgets to raise it fails here.
 \set last_migration `ls supabase/migrations | tail -1 | cut -c1-4`

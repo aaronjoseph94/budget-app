@@ -40,7 +40,9 @@ const PROCESSOR_PREFIXES: readonly string[] = [
   'SP *',
   'SP*',
   'IN *',
-  'IN *',
+  // Listed twice as 'IN *' until 2026-10-01, so 'IN*SHOP' and 'IN *SHOP'
+  // were two shops; 0030 tidies the names stored before (architecture-a-10).
+  'IN*',
   'WWW.',
   'WWW ',
   'POS PURCHASE ',

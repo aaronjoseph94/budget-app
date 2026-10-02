@@ -3363,3 +3363,21 @@ generator start a container, which neither CI nor the session has.
 and fail the schema gate when it differs from the committed file
 (MISCONFIGURED when the generator cannot run); then create the client as
 `createClient<Database>`.
+
+---
+
+## N146 — 'IN*' is now a processor prefix, with its backfill *(settled 2026-10-01, architecture-a-10)*
+
+**Seen:** 2026-10-01, architecture review. `normalizeMerchant` listed
+Intuit's `'IN *'` twice and `'IN*'` never, so `IN*ACME PLUMBING` and
+`IN *ACME PLUMBING` were two shops and a learned rule for one never filed
+the other.
+
+**Decided:** CLAUDE.md asks first before merchant normalization changes;
+the owner's instruction of 2026-09-30 ("don't ask me any questions;
+auto-allow and say yes to everything") is that answer. The duplicate is
+now `'IN*'`, and migration 0030 rewrites the names stored before it in
+the same change, from the rows' own statement text, renaming learned
+shops to match (the more recently made or used one kept where two would
+share a name). The dedupe hash is over the raw text and does not move,
+so no hash version bump is needed.
