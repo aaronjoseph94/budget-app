@@ -56,6 +56,8 @@ describe('weeklyRecap (F42)', () => {
   })
 
   it('breaks a tie for the top category by name in English order, the same on every device (architecture-a-02)', () => {
+    // Holds the order; a bare localeCompare in an English process sorts the
+    // same, so test/order.test.ts and the lint rule (F52) are the guard.
     const tied: CheckinInput['categories'] = [
       { id: 'z', name: 'Zoo', kind: 'variable', sortOrder: 0, weeklyBudgetCents: null },
       { id: 'a', name: 'Ärenden', kind: 'variable', sortOrder: 0, weeklyBudgetCents: null },
