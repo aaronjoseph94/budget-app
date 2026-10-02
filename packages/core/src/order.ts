@@ -1,6 +1,6 @@
 /**
  * The one order the engine puts names in when nothing else decides
- * (architecture-a-02, docs/formula-decisions.md F-ORDER).
+ * (architecture-a-02, docs/formula-decisions.md F52).
  *
  * `a.localeCompare(b)` with no locale follows the device's: the same two
  * categories sat in one order on an English phone and the other on a
