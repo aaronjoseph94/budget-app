@@ -12,9 +12,8 @@ import { cn } from '../lib/cn.js'
 
 /**
  * Help (plan §8.2): `#/help` lists every article with a search box, and
- * `#/help/<topic>` shows one. A topic whose article is not written yet (it
- * belongs to a screen still on its way) opens the list, with a line saying
- * so, rather than an empty page. From 1024px an article has the list
+ * `#/help/<topic>` shows one. A topic with no article (an old or mistyped
+ * address) opens the list, with a line saying so, rather than an empty page. From 1024px an article has the list
  * beside it (Mockup A), drawn only there, so a phone builds one of them.
  */
 export function HelpScreen({ topic }: { topic: string | null }) {

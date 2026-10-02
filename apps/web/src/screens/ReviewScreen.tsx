@@ -234,7 +234,7 @@ export function ReviewScreen() {
     try {
       await clearCandidateSuggestion(supabase, row.id)
       // As in act: a read already out was asked while the suggestion stood,
-      // and would draw it again when it lands (FE-8).
+      // and would draw it again when it lands (c2ad3fe).
       reads.current += 1
       setRows((now) => now?.map((r) => (r.id === row.id ? { ...r, category_id: null, category_source: null } : r)) ?? null)
     } catch (cause) {
@@ -255,7 +255,7 @@ export function ReviewScreen() {
   const ready = (rows ?? []).flatMap((row) => {
     const categoryId = categoryFor(row)
     const name = named.get(categoryId)
-    // The AI's own pick, not the owner's, is marked in the question (FE-7).
+    // The AI's own pick, not the owner's, is marked in the question (c2ad3fe).
     const byAi = picked[row.id] === undefined && suggestionFor(row)?.kind === 'model'
     return name === undefined ? [] : [{ row, categoryId, name, byAi }]
   })

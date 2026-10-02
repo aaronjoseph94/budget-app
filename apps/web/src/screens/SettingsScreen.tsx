@@ -18,6 +18,7 @@ import { signOutHere } from '../sign-out.js'
 
 const ProgressLine = lazy(() => import('../start/ProgressLine.js').then((m) => ({ default: m.ProgressLine })))
 
+/** Settings: shortcuts to Getting started, Setup, AI settings and Savings, then weekly budgets, learned shops, AI apps and the account. */
 export function SettingsScreen() {
   const { supabase, email } = useAppData()
   // Mockup A: the shortcuts two across from 1024px and four from 1280px, then Weekly budgets

@@ -248,7 +248,7 @@ export function MonthScreen({ month }: { month: string | null }) {
           {sheet !== null && typeof sheet !== 'string' ? <ImportedThrough through={sheet.importedThrough} /> : null}
         </div>
         <div className="flex items-center gap-2">
-          {/* The Bill calendar left the wide bar for More (ADR 0006); from the Month it is one tap, at this month. */}
+          {/* The Bill calendar is in the sidebar's Plan group, and in More on a phone (ADR 0011); from the Month it is one tap, at this month. */}
           <Button variant="outline" size="icon" aria-label="Bill calendar" onClick={() => navigate('calendar', start.slice(0, 7))}>
             <Icon name="bills" />
           </Button>

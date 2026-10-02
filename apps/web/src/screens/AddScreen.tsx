@@ -398,7 +398,7 @@ function FilePicker({ onFile }: { onFile: (file: File) => void }) {
   )
 }
 
-/** A purchase typed by hand — mostly for cash, since card purchases arrive with the statement. */
+/** Money typed by hand, out or in: cash, pay and moves to savings, which no card statement shows (decision 8). */
 function TypedEntry() {
   const { supabase, userId, accountId, categories, refresh } = useAppData()
   const [date, setDate] = useState(todayIso())
@@ -415,7 +415,7 @@ function TypedEntry() {
   const [aiAmount, setAiAmount] = useState(false)
   const amountError = useId()
   // Every change to the form and every Add that sends it, so a late Just
-  // type it reading knows the form moved on without it (FE-4).
+  // type it reading knows the form moved on without it (3d6ea63).
   const edits = useRef(0)
   // This entry as filled in: kept when Add is pressed again after a failure,
   // so a write whose answer was lost is not added twice; new once the form
@@ -459,7 +459,7 @@ function TypedEntry() {
     if (accountId === null) return setOutcome({ ok: false, message: NO_ACCOUNT })
     if (cents === null) return
     // The form is being sent, so a Just type it reading still out would
-    // refill what was just added (FE-4). An Add that only said what was
+    // refill what was just added (fedb574). An Add that only said what was
     // missing sent nothing, and the reading is still wanted.
     edits.current += 1
     setBusy(true)
@@ -582,7 +582,7 @@ function TypedEntry() {
               <Field label="New category name">
                 <Input value={newCategory} maxLength={60} onChange={(e) => setNewCategory(e.target.value)} />
               </Field>
-              {/* The picker's own name, so what is heard is what is seen (FE-12). */}
+              {/* The picker's own name, so what is heard is what is seen (5de84f1). */}
               <Field label="Which list">
                 <ListSelect value={newKind} onChange={setNewKind} lists={LISTS_FOR[direction]} />
               </Field>
@@ -687,7 +687,7 @@ function PhotoEntry() {
   const ready = needed.length === 0
 
   // Which photo is being read: "Use another photo" during a read, or the
-  // screen closing, makes a late reading stale, and it is dropped (FE-2).
+  // screen closing, makes a late reading stale, and it is dropped (3d6ea63).
   const reading = useRef(0)
   // The photo's own SHA-256, its identity for the dedupe hash: two receipts
   // with the same shop, day and total are two purchases, and the same photo

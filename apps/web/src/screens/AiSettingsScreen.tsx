@@ -20,9 +20,9 @@ import { hashOf } from '../nav.js'
  * calls (A11); and how the Coach talks (A12), which is shown even with no
  * helper, since the app's own words follow its tone too.
  *
- * Its own chunk, and the only screen that asks the helper anything, so a
- * helper not installed, or 0016 not pasted, changes this page and nothing
- * else. Only the newest check is shown, as One-time updates does.
+ * Its own chunk. A helper not installed, or 0016 not pasted, is said here
+ * with the way to fix it; elsewhere the app's own words stand in. Only the
+ * newest check is shown, as One-time updates does.
  */
 export function AiSettingsScreen() {
   const { supabase } = useAppData()

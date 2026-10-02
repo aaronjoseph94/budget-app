@@ -13,11 +13,7 @@ interface Item {
   readonly icon: IconName
 }
 
-/**
- * What the bars have no room for, in four groups by what the owner wants to
- * do (ADR 0006). A screen not built yet keeps its place here and shows when
- * it lands; a group with nothing built yet is left out.
- */
+/** What the bars have no room for, in four groups by what the owner wants to do (ADR 0006). */
 export const MORE_GROUPS: readonly { readonly title: string; readonly items: readonly Item[] }[] = [
   {
     title: 'Plan',
@@ -53,15 +49,15 @@ export const MORE_GROUPS: readonly { readonly title: string; readonly items: rea
   },
 ]
 
+/** More, a phone's fifth tab: every screen the bar has no room for, in MORE_GROUPS' order, each a link to its address. */
 export function MoreScreen() {
-  const groups = MORE_GROUPS
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">More</h1>
         <HelpButton screen="more" />
       </div>
-      {groups.map((group) => (
+      {MORE_GROUPS.map((group) => (
         <section key={group.title} aria-labelledby={idOf(group.title)} className="space-y-2">
           <h2 id={idOf(group.title)} className="px-1 text-sm font-medium text-muted-foreground">
             {group.title}

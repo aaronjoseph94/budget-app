@@ -29,7 +29,7 @@ import { TryAgain } from '../try-again.js'
 
 /**
  * The workbook's Weekly Budget: the Month's summary and six blocks over the
- * Monday-to-Sunday week (D14), with the flight goal beside them.
+ * Monday-to-Sunday week (D14), with the main goal beside them (F45).
  *
  * Every figure comes from packages/core: weekSheet over the week's ledger,
  * the monthly amounts typed up to its last month and each category's weekly

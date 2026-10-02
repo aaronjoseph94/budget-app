@@ -2,6 +2,13 @@ import type { PayoffStrategies, PayoffStrategy } from '@budget/core'
 import { formatCents, formatMonthTitle } from '../format.js'
 import { cn } from '../lib/cn.js'
 
+/** The three plans, in the order drawn; 'flat' is debtPlan's, the workbook's. */
+const PLANS: readonly { key: PayoffStrategy; name: string; how: string }[] = [
+  { key: 'flat', name: 'Minimums only', how: 'Each debt pays its own minimum until it is paid off.' },
+  { key: 'snowball', name: 'Snowball', how: 'When a debt is paid off, its payment goes to the smallest balance left.' },
+  { key: 'avalanche', name: 'Avalanche', how: 'When a debt is paid off, its payment goes to the highest APR left.' },
+]
+
 /**
  * The debt-free month on three plans, side by side (D2, F23): the workbook's,
  * each debt paying its own minimum for life, and the snowball and the
@@ -11,12 +18,6 @@ import { cn } from '../lib/cn.js'
  * Minimums only is tinted to the accent: it is the plan the summary above
  * follows (debtPlan), the one chosen, as Mockup A tints its chosen plan.
  */
-const PLANS: readonly { key: PayoffStrategy; name: string; how: string }[] = [
-  { key: 'flat', name: 'Minimums only', how: 'Each debt pays its own minimum until it is paid off.' },
-  { key: 'snowball', name: 'Snowball', how: 'When a debt is paid off, its payment goes to the smallest balance left.' },
-  { key: 'avalanche', name: 'Avalanche', how: 'When a debt is paid off, its payment goes to the highest APR left.' },
-]
-
 export function DebtStrategies({ strategies }: { strategies: PayoffStrategies }) {
   return (
     <section aria-label="Payoff plans" className="space-y-3 rounded-xl border bg-card p-4 md:px-6 md:py-5">

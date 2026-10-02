@@ -28,7 +28,7 @@ export function LedgerScreen() {
 
   // The month's rows by the shared read protocol (lib/use-read.ts): a read
   // again after a removal keeps the rows on screen, and the scroll with
-  // them, until it lands; only a new month shows "Loading…" (FE-5).
+  // them, until it lands; only a new month shows "Loading…" (bc1fced).
   const read = useRead(month, () => listTransactions(supabase, { from: bounds.start, to: bounds.end }))
   const rows = useMemo(() => (read.status === 'ready' ? read.value.filter((r) => !removed.has(r.id)) : null), [read, removed])
   const readError = read.status === 'failed' ? (read.error instanceof Error ? read.error.message : 'Could not load the ledger.') : null
@@ -61,7 +61,7 @@ export function LedgerScreen() {
     try {
       await deleteTransaction(supabase, id)
       // Off the list as soon as it is deleted: the rows stay while the month
-      // is read again (FE-5), and a deleted row kept with them still offered
+      // is read again (3d86680), and a deleted row kept with them still offered
       // Remove, and its amount, until the read landed.
       setRemoved((s) => new Set([...s, id]))
       await refresh()
