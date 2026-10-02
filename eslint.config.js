@@ -167,9 +167,8 @@ export default tseslint.config(
   },
   {
     // The Floor's "no empty catch" (architecture-a-07): a swallowed error
-    // is a failure that ends nowhere. The AI apps server is the MCP build's.
+    // is a failure that ends nowhere.
     files: ['packages/*/src/**/*.ts'],
-    ignores: ['packages/ai-apps/**'],
     rules: { 'no-empty': ['error', { allowEmptyCatch: false }] },
   },
   {
@@ -408,6 +407,7 @@ export default tseslint.config(
           message: "No server locale: a bare localeCompare orders by where it runs. Use an Intl.Collator('en').",
         },
         ...NO_FLOAT_MONEY,
+        ...NO_SILENT_FALLBACK,
       ],
     },
   },

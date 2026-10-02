@@ -36,6 +36,9 @@ const strategy = (s: StrategyOutcome | null) =>
         paid_off_in: s.paidOffIn.map((p) => ({ name: cleanName(p.name), month: month(p.month) })),
       }
 
+/** A debt in the payoff status that is not among the typed debts (architecture-a-07). */
+class UntypedDebt extends Error {}
+
 export async function getDebts(caller: Caller | null, input: GetDebtsInput) {
   if (caller === null) return refusal('server_error')
   const day = utcToday()
@@ -54,6 +57,12 @@ export async function getDebts(caller: Caller | null, input: GetDebtsInput) {
     const status = amortization === null ? null : debtStatus({ amortization, asOf: today })
     const strategies = payoffStrategies(plan)
     const typed = new Map(plan.debts.map((d) => [d.name, d]))
+    // Every debt the status names was typed: one that was not is a bug, never a $0 minimum.
+    const minimumOf = (name: string) => {
+      const debt = typed.get(name)
+      if (debt === undefined) throw new UntypedDebt()
+      return debt.minimumPaymentCents
+    }
     const thisMonth = monthBounds(today).start
     const schedule = amortization?.perDebt.find((d) => d.name === named?.name)
     result = {
@@ -62,7 +71,7 @@ export async function getDebts(caller: Caller | null, input: GetDebtsInput) {
         name: cleanName(d.name),
         balance: money(d.balanceCents),
         starting_balance: money(d.startingBalanceCents),
-        minimum: money(typed.get(d.name)?.minimumPaymentCents ?? 0),
+        minimum: money(minimumOf(d.name)),
         apr_bp: typed.get(d.name)?.aprBasisPoints ?? null,
         paid: money(d.paidCents),
         progress_bp: d.progressBp,
@@ -93,6 +102,10 @@ export async function getDebts(caller: Caller | null, input: GetDebtsInput) {
           }),
     }
   } catch (error) {
+    if (error instanceof UntypedDebt) {
+      log('tool_get_debts_refused')
+      return refusal('server_error')
+    }
     if (!(error instanceof RangeError)) throw error
     log('records_unreadable')
     return refusal('records_unreadable')

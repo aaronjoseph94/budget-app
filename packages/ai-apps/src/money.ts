@@ -36,7 +36,13 @@ function hidden(code: number): boolean {
   )
 }
 
-const visible = (name: string) => [...name].filter((ch) => !hidden(ch.codePointAt(0) ?? 0))
+// A character from spreading a string always has a code point; one without
+// is refused as hidden rather than read as U+0000.
+const visible = (name: string) =>
+  [...name].filter((ch) => {
+    const code = ch.codePointAt(0)
+    return code !== undefined && !hidden(code)
+  })
 
 /** A category, goal or debt name, as an AI app is given it. */
 export function cleanName(name: string): string {
