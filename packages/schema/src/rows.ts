@@ -103,6 +103,11 @@ export const IngestCandidateRowSchema = candidateShape.superRefine((row, ctx) =>
   if (row.auto_approved_at !== null && row.category_source !== 'merchant_rule') {
     deny('Only an exact merchant_rules match may auto-approve', 'auto_approved_at')
   }
+  // 0004's candidates_model_category_never_approved: a model's guess is
+  // never the category of an approved row; approving it makes it the user's.
+  if (row.status === 'approved' && row.category_source === 'model') {
+    deny('A model-categorized candidate can never be approved', 'status')
+  }
   if (row.auto_approved_at !== null && row.status !== 'approved') {
     deny('An auto-approved candidate must be approved', 'status')
   }
