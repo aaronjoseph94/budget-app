@@ -1,13 +1,10 @@
-import { lazy, useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { readEnv } from './env.js'
 import { createSupabase } from './supabase.js'
 import { NewPassword, NotConfigured, SignIn, useSession } from './auth.js'
 import { signOutHere } from './sign-out.js'
 import { AppDataProvider, useAppData } from './app-data.js'
 import { HOME, hashOf, navigate, useAddress, type Screen } from './nav.js'
-import { HELP_TOPICS } from './help/topics.js'
-import { MonthScreen } from './screens/MonthScreen.js'
-import { MoreScreen } from './screens/MoreScreen.js'
 import { displayNameOf, setupMarksOf } from './profile.js'
 import { Alert } from './components/ui/feedback.js'
 import { Button } from './components/ui/button.js'
@@ -16,6 +13,7 @@ import { Icon, type IconName } from './components/ui/icons.js'
 import { Count, Dot, labelOf } from './shell/marks.js'
 import { Sidebar } from './shell/Sidebar.js'
 import { ScreenBoundary } from './shell/ScreenBoundary.js'
+import { VIEWS } from './shell/screens.js'
 import { TopBar } from './shell/TopBar.js'
 import { askForHelpSearch } from './help/search-focus.js'
 import { useSidebarState } from './shell/sidebar-state.js'
@@ -23,30 +21,6 @@ import { SCREEN_NAME } from './shell/places.js'
 import { cn } from './lib/cn.js'
 import { checkinDue } from './coach/checkin-seen.js'
 import { OfflineBanner } from './offline.js'
-
-// Each screen but the Month (and More, a list of links) is its own chunk,
-// fetched the first time it opens. The Month opens first (decision 1), and
-// it waited for every other screen's code: 214 KB gzipped, most of it
-// unused on the Month (PERF-3). Add carries the statement readers with it.
-const AiSettingsScreen = lazy(() => import('./screens/AiSettingsScreen.js').then((m) => ({ default: m.AiSettingsScreen })))
-const AskScreen = lazy(() => import('./screens/AskScreen.js').then((m) => ({ default: m.AskScreen })))
-const AddScreen = lazy(() => import('./screens/AddScreen.js').then((m) => ({ default: m.AddScreen })))
-const CalendarScreen = lazy(() => import('./screens/CalendarScreen.js').then((m) => ({ default: m.CalendarScreen })))
-const CoachScreen = lazy(() => import('./screens/CoachScreen.js').then((m) => ({ default: m.CoachScreen })))
-const CheckinScreen = lazy(() => import('./screens/CheckinScreen.js').then((m) => ({ default: m.CheckinScreen })))
-const DebtsScreen = lazy(() => import('./screens/DebtsScreen.js').then((m) => ({ default: m.DebtsScreen })))
-const GettingStartedScreen = lazy(() => import('./screens/GettingStartedScreen.js').then((m) => ({ default: m.GettingStartedScreen })))
-const ForecastScreen = lazy(() => import('./screens/ForecastScreen.js').then((m) => ({ default: m.ForecastScreen })))
-const HelpScreen = lazy(() => import('./screens/HelpScreen.js').then((m) => ({ default: m.HelpScreen })))
-const LedgerScreen = lazy(() => import('./screens/LedgerScreen.js').then((m) => ({ default: m.LedgerScreen })))
-const PaycheckScreen = lazy(() => import('./screens/PaycheckScreen.js').then((m) => ({ default: m.PaycheckScreen })))
-const ReportsScreen = lazy(() => import('./screens/ReportsScreen.js').then((m) => ({ default: m.ReportsScreen })))
-const ReviewScreen = lazy(() => import('./screens/ReviewScreen.js').then((m) => ({ default: m.ReviewScreen })))
-const SavingsScreen = lazy(() => import('./screens/SavingsScreen.js').then((m) => ({ default: m.SavingsScreen })))
-const SettingsScreen = lazy(() => import('./screens/SettingsScreen.js').then((m) => ({ default: m.SettingsScreen })))
-const SetupScreen = lazy(() => import('./screens/SetupScreen.js').then((m) => ({ default: m.SetupScreen })))
-const WeekScreen = lazy(() => import('./screens/WeekScreen.js').then((m) => ({ default: m.WeekScreen })))
-const YearScreen = lazy(() => import('./screens/YearScreen.js').then((m) => ({ default: m.YearScreen })))
 
 export function App() {
   const env = useMemo(() => readEnv(), [])
@@ -130,16 +104,8 @@ function tabOf(screen: Screen, tabs: readonly Tab[]): Screen {
 export function Shell() {
   const { screen, param } = useAddress()
   const { supabase, pendingTotal, loadError, status, refresh, today } = useAppData()
-  // Month, Week, Paycheck and Year widen on a desktop to take the workbook's four
-  // columns (§6.3, §6.4), the Bill Calendar to give its seven room for names,
-  // the Coach for its insights and goal side by side (Mockup A step 7), and the
-  // Forecast and Reports for their sections two across (step 8), and Savings
-  // and Debts for their cards three across (step 9), and Setup, Settings and
-  // AI settings for their cards in columns (step 11), a Help article for
-  // the list beside it and Getting started for its steps beside the step
-  // (step 12).
-  const wide =
-    screen === 'month' || screen === 'week' || screen === 'paycheck' || screen === 'year' || screen === 'calendar' || (screen === 'coach' && param === null) || screen === 'forecast' || screen === 'reports' || screen === 'savings' || screen === 'debts' || screen === 'setup' || screen === 'settings' || screen === 'ai' || (screen === 'help' && param !== null) || screen === 'start'
+  // How wide each screen stands is said beside what it draws (shell/screens.tsx).
+  const wide = VIEWS[screen].wide(param)
   const width = wide ? 'max-w-3xl lg:max-w-7xl' : 'max-w-3xl'
   const main = useRef<HTMLElement>(null)
   const sidebar = useSidebarState()
@@ -267,33 +233,7 @@ export function Shell() {
 
 /** The screen the address names, each but the Month fetched on first use. */
 function Screens({ screen, param }: { screen: Screen; param: string | null }) {
-  return (
-    <ScreenBoundary screen={screen}>
-      {screen === 'month' ? <MonthScreen month={param} /> : null}
-      {screen === 'week' ? <WeekScreen monday={param} /> : null}
-      {screen === 'paycheck' ? <PaycheckScreen day={param} /> : null}
-      {screen === 'calendar' ? <CalendarScreen month={param} /> : null}
-      {screen === 'review' ? <ReviewScreen /> : null}
-      {screen === 'add' ? <AddScreen /> : null}
-      {screen === 'more' ? <MoreScreen /> : null}
-      {screen === 'ledger' ? <LedgerScreen /> : null}
-      {screen === 'settings' ? <SettingsScreen /> : null}
-      {screen === 'setup' ? <SetupScreen /> : null}
-      {screen === 'savings' ? <SavingsScreen /> : null}
-      {screen === 'debts' ? <DebtsScreen /> : null}
-      {screen === 'year' ? <YearScreen start={param} /> : null}
-      {screen === 'help' ? <HelpScreen topic={param} /> : null}
-      {screen === 'ai' ? <AiSettingsScreen /> : null}
-      {screen === 'start' ? <GettingStartedScreen /> : null}
-      {screen === 'forecast' ? <ForecastScreen /> : null}
-      {screen === 'reports' ? <ReportsScreen month={param} /> : null}
-      {/* nav.ts reads Ask's param only as a committed Help topic. */}
-      {screen === 'ask' ? <AskScreen topic={HELP_TOPICS.find((t) => t === param) ?? null} /> : null}
-      {screen === 'coach' && param === null ? <CoachScreen /> : null}
-      {/* nav.ts reads no other param on the Coach. */}
-      {screen === 'coach' && param === 'checkin' ? <CheckinScreen /> : null}
-    </ScreenBoundary>
-  )
+  return <ScreenBoundary screen={screen}>{VIEWS[screen].render(param)}</ScreenBoundary>
 }
 
 /** "Search or jump to…": Help, its search box focused, for now (ADR 0011). */
