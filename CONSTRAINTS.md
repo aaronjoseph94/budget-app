@@ -39,7 +39,7 @@ whether a commit is clean.
 
 The Floor said "always enforced" and was checked by nothing until
 2026-10-01 (architecture-a-07). Now `eslint` refuses, in every package's
-`src` but the AI apps server's (the MCP build's, written up for it):
+`src` (the AI apps server's from 2026-10-02):
 `?? 0` and `|| 0`, `?? ZERO_CENTS`, `?? cents(…)`, `as unknown as`,
 `new Error("Not implemented")` and an empty `catch {}`. Each was planted in
 `core`, `money-primitives`, `schema`, `statement-parsers`, `chart-specs`,

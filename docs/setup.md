@@ -49,6 +49,9 @@ refused rather than applied twice.
 | `0032_ai_rows_teach_no_rule.sql` | Approving or moving something an AI app added no longer teaches the app a shop: before it, one approval could make every later statement charge from that shop file itself into the AI's category without Review. It stops with "Paste 0031 first" if `0031` is not in |
 | `0033_ai_search_masked.sql` | An AI app's search sees shop names as it is shown them, with long numbers (card, phone and reference numbers) masked: before it, counting what matched could read a masked number back one digit at a time. It stops with "Paste 0032 first" if `0032` is not in |
 | `0034_ai_words_visible.sql` | What an AI app adds may not hold characters that draw as nothing (zero-width spaces and the like): before it, two entries could look the same in Review while being different. It stops with "Paste 0033 first" if `0033` is not in |
+| `0035_ai_app_updates_in.sql` | Lets One-time updates see exactly which AI-app safety updates are in. It only reads, needs nothing but `0020`, and is pasted **before** `0030` (One-time updates lists it there) |
+| `0036_ai_search_as_shown.sql` | An AI app's searches match shop names only as it is shown them. It stops with "Paste 0035 first" unless `0030` to `0035` are all in |
+| `0037_ai_rows_before_the_fixes.sql` | Tidies anything an AI app added before these safety updates. It stops with "Paste 0036 first" if `0036` is not in |
 | `0038_intuit_prefix_merchants.sql` | Tidies shop names stored with Intuit's `IN*` prefix, so `IN*ACME` and `ACME` are one shop. **It permanently deletes** a learned shop where two would end up with one name (the one made or used most recently stays), so take a backup first (HANDOFF §3, "Before 0038, a backup"). Pasted last: it stops with "Paste 0029 first" or "Paste 0037 first". Written as `0030` and renumbered at the merge of two lines of updates (2026-10-02) |
 
 **`0015` to `0038` can be pasted after `main-tnlcto` is merged into
@@ -118,11 +121,16 @@ on a computer, after `0015` to `0020` above.
    while Supabase signs with its old key, and off once it signs with the
    new one (the signing key, under AI apps below); One-time updates says
    which. Since 2026-09-30 the helper checks every caller itself.
-2. **No new secrets.** It reuses `GEMINI_API_KEY` and `EXTRA_ORIGINS` if
-   they are set for receipt photos (below). `AI_KEYS_ROOT` is optional: set
-   to a long random value, it lets keys pasted in the app survive a change
-   of Supabase's own keys; without it, such a change asks you to paste the
-   key again.
+2. **One new secret, `OWNER_USER_ID`.** Supabase → **Authentication →
+   Users** → your row → copy **User UID**; then **Edge Functions →
+   Secrets** (or **Project Settings → Edge Functions → Secrets**) → **Add
+   new secret**, name `OWNER_USER_ID`, value that UID → **Save**. The
+   helper and read-receipt then refuse every other account; a value that
+   is not a user id makes both serve no one, so a typo fails closed. It
+   reuses `GEMINI_API_KEY` and `EXTRA_ORIGINS` if they are set for receipt
+   photos (below). `AI_KEYS_ROOT` is optional: set to a long random value,
+   it lets keys pasted in the app survive a change of Supabase's own keys;
+   without it, such a change asks you to paste the key again.
 3. **Turn on free AI.** In the app: More → **AI settings** → **Get a free
    key** (Google AI Studio, **Create API key**), paste it, and press
    **Save & test**: "Works · key ending …abcd". A key pasted here is
@@ -134,9 +142,11 @@ for Groq and OpenRouter (free) and for OpenAI and Anthropic (paid). Paid
 services are never asked until **Use paid services** is switched on. The
 order they are tried in, a daily limit (40 by default, 10 to 150), the
 coach's tone, and whether shop names are shared are set there too. Free
-services may keep and read what they are sent (ADR 0002, ADR 0004); the AI
-is never sent an amount, a balance or a date, and **What the AI sees**
-lists exactly what it is sent.
+services may keep and read what they are sent (ADR 0002, ADR 0004); for
+the Coach and Review the AI is never sent an amount, a balance or a date
+(Just type it and receipt photos send what you give them), **Use AI** off
+sends nothing at all, and **What the AI sees** lists exactly what each
+sends.
 
 **Check it:** One-time updates says "All done", and AI settings says "AI is
 on, using free Google Gemini" (or "your receipts key").
@@ -154,10 +164,13 @@ without it. Chosen in docs/adr/0002-gemini-free-tier-for-receipts.md.
 2. **Add the function.** In Supabase: **Edge Functions → Deploy a new function
    → Via Editor**. Name it exactly `read-receipt`, replace the sample code with
    the whole of `supabase/functions/read-receipt/index.ts`, and deploy. Set
-   **Enforce JWT verification** as for the AI helper. Before 2026-09-30
-   that switch alone stopped strangers using your key; since then the
-   function also checks every caller itself, so the switch can come off
-   when the signing key changes.
+   **Enforce JWT verification** as for the AI helper. Turning off **Allow
+   new users to sign up** (Authentication → Sign In / Providers) is what
+   stops strangers: any account on your project can call the helper and
+   this function. Setting the `OWNER_USER_ID` secret to your own user id
+   (step 2 of the AI helper, above) makes both refuse every other account
+   too. The function checks every caller itself, so the JWT switch can
+   come off when the signing key changes.
 3. **Add the key.** **Edge Functions → Secrets → Add new secret**: name
    `GEMINI_API_KEY`, value the key from step 1.
 
@@ -166,6 +179,13 @@ for reading documents, on the free tier. If a photo ever reports that the
 model has been retired, add a second secret, `GEMINI_MODEL`, set to a current
 model name from Google's list (for example `gemini-3.1-flash-lite`). No
 redeploy is needed for secrets.
+
+**If you keep `read-receipt`, paste it again after every update of the
+AI helper** (read-receipt has no version One-time updates can always
+read): its newest copy reads the **Use AI** switch, so a photo never goes
+to Gemini while AI is off, and serves only `OWNER_USER_ID`. Or delete it:
+**Edge Functions → read-receipt → ⋯ → Delete**; the app reads receipts
+through the helper.
 
 If you pasted `read-receipt` before 2026-09-24, paste its new version the
 same way (step 2): the old one used `gemini-2.5-flash`, which Google has
@@ -191,8 +211,9 @@ HANDOFF §3 Part B; One-time updates checks each one. What they leave set:
 | **Edge Functions → `mcp`** | The AI apps server, pasted from One-time updates' **Copy**; **Enforce JWT verification off** |
 | **Edge Functions → `ai`, `read-receipt`** | **Enforce JWT verification off** once the key is ECC, and only on their versions of 2026-09-30 or later, which check every caller themselves (`read-receipt`'s older copy relies on the switch alone: paste it again or delete it first) |
 
-`mcp` needs no secrets: `SUPABASE_URL` and `SUPABASE_ANON_KEY` are
-provided by Supabase, and `EXTRA_ORIGINS`, if set for the other
+`mcp` needs no secrets: `SUPABASE_URL`, `SUPABASE_ANON_KEY` and
+`SUPABASE_PUBLISHABLE_KEYS` are provided by Supabase (the publishable key
+is used first, so retiring the legacy keys signs no AI app out), and `EXTRA_ORIGINS`, if set for the other
 functions, is read the same way. It never holds a service key or an AI
 key. Check it at
 `https://bnodrfghxbavlopxkgju.supabase.co/functions/v1/mcp/health`:
@@ -225,15 +246,29 @@ full-screen from its own icon, with no browser bar.
 ## Supabase: making the one user account
 
 There is no sign-up screen, deliberately. This app holds one person's
-financial history and lives at a public URL, so the only way an account
-exists is if someone makes it in the dashboard.
+financial history and lives at a public URL. **Once Allow new users to
+sign up is off** (Authentication → Sign In / Providers → Save), the only
+way an account exists is if someone makes it in the dashboard. While it
+is on, anyone can make one with the public key in the page, whatever the
+app shows; One-time updates lists **Sign-ups off** first until it is.
+
+**Before you make the account:** Authentication → Sign In / Providers →
+**Email** (older dashboards: Authentication → Providers → Email, or
+Authentication → Policies) → **Minimum password length: 16** → **Save**.
+Use a password your password manager generates, used nowhere else.
+Supabase checks the new minimum only when a password is next set, so if
+the account already exists, set a new one now (below).
 
 **Authentication → Users → Add user → Create new user**, with **Auto Confirm
 User** ticked. Without that tick the user is created but cannot sign in until
 a confirmation email — the same rate-limited mailer — is delivered and opened.
 
-To give an existing user a password instead: **Authentication → Users**, the
-`⋯` menu on the row, **Reset password**.
+**To change the password:** on the app's sign-in screen, type your email
+and choose **Forgot your password?**. Open the emailed link on the same
+device, in the same browser, and choose a new password. Only after the
+new password works, use Authentication → Users → ⋯ → **Sign out user** if
+you want other devices signed out. Links sent from the Supabase dashboard
+(Reset password, Send magic link) do not work with this app.
 
 ## Supabase: the emailed-link path is rate limited
 
@@ -244,6 +279,11 @@ the app and is not one. This is why password is the default sign-in method.
 
 Lifting it means configuring a real SMTP sender under **Authentication →
 Emails → SMTP Settings**. Not needed while one person uses this.
+
+Turn off **Allow new users to sign up** (Authentication → Sign In /
+Providers) **before** setting up your own mail sender or turning off
+**Confirm email**. Either change lets a stranger who signs up get a
+working account.
 
 ## Supabase: where a sign-in link returns to
 
@@ -263,6 +303,10 @@ nothing runs. The symptom is a link that authenticates successfully and then
 lands on a dead page.
 
 The trailing `/**` matters: without it only the exact root path is allowed.
+
+Nothing else belongs in Redirect URLs. Remove an entry before giving up
+the site it names: an address left listed after its site is gone could be
+registered by anyone, and Supabase would send your sign-in links there.
 
 The localhost entry is what lets the same sign-in work against a dev server.
 Port 5173 is Vite's default and is pinned in `apps/web/vite.config.ts`.
@@ -307,6 +351,13 @@ These two `VITE_` values are public by design and are compiled into the site
 at build time: changing them later needs a new deploy (**Deployments → Retry
 deployment**), not just a save.
 
+`VITE_SUPABASE_ANON_KEY` is the publishable key (`sb_publishable_…`), never
+a secret or `service_role` key; the build now stops if it is one. If a
+secret or `service_role` key was ever deployed, rotate it at once
+(Supabase → **Project Settings → API Keys** → the key's ⋯ → **Roll** /
+**Revoke**), because each earlier Cloudflare deployment stays reachable at
+its own `<hash>.aaron-budget-app.pages.dev` address.
+
 Security headers come from `apps/web/public/_headers`; nothing to set.
 
 **After it deploys:**
@@ -317,8 +368,26 @@ Security headers come from `apps/web/public/_headers`; nothing to set.
 2. If Cloudflare gave the project a different address (the name was taken),
    add it to the receipt function: **Edge Functions → Secrets →**
    `EXTRA_ORIGINS` = `https://<the-address>.pages.dev`. Same for a custom domain.
-3. Once the Cloudflare site works, remove the Netlify site so there are not
-   two live copies: Netlify → Site configuration → **Delete this site**.
+3. Sign in once on the pages.dev site to check it works.
+4. Supabase → **Authentication → URL Configuration**: delete
+   `https://aaron-budget-app.netlify.app/**` from Redirect URLs (the bin
+   icon on its row) → **Save**, and check Site URL is
+   `https://aaron-budget-app.pages.dev`. Sign in once more on the pages.dev
+   site to check it still works.
+5. Only then stop Netlify, keeping the site: Netlify → your site → **Site
+   configuration → Build & deploy → Continuous deployment → Stop builds**.
+   **Do not choose Delete this site**: deleting frees the
+   `aaron-budget-app.netlify.app` name for anyone to register, and a
+   still-listed redirect would send your sign-in links to them. (The next
+   agent then takes the netlify.app origin out of the functions and
+   deletes `netlify.toml`, N151.)
+
+**Publishing, once `main` is protected.** GitHub → the repository →
+**Settings → Branches** → protect `main` with the `gates` check
+(HANDOFF §3). From then on: push to `main-tnlcto` first, wait for the
+green **gates** run, then push that same commit to `main`. Cloudflare
+Pages builds `main`, so only a commit that passed every gate reaches the
+site.
 
 ## Netlify (being replaced by Cloudflare)
 
