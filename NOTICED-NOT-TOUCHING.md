@@ -3340,3 +3340,26 @@ never edited.
 `'[\x01-\x1F\x7F-\x9F -‮⁦-⁩]'` and lower the guard
 test's `'0021'` to `'0015'`. If it has, leave it: 0025 already holds the
 same characters out of every ingested text, written escaped.
+
+---
+
+## N145 — Table and column names in the app's queries are checked by nothing
+
+**Seen:** 2026-10-01, architecture review (architecture-b-04). The app's
+~100 queries name tables, columns and functions in strings
+(`.select('id, posted_on, …')`), and their replies are cast to types. Since
+0530b56 those types are Picks of `packages/schema`'s rows, so a column
+dropped from schema breaks the compile; a column renamed in a migration
+but not in schema, or misspelt in a `.select`, still compiles.
+
+**Why not fixed here:** the fix is the database's own types, generated
+from the migrations (`supabase gen types typescript --db-url …` against
+verify-migrations' throwaway cluster) and `createClient<Database>`. That
+is a new dev dependency, the Supabase CLI, and some versions of its type
+generator start a container, which neither CI nor the session has.
+
+**To settle:** add the CLI in its own commit, pinned; generate
+`packages/schema/src/database.ts` inside `scripts/verify-migrations.sh`
+and fail the schema gate when it differs from the committed file
+(MISCONFIGURED when the generator cannot run); then create the client as
+`createClient<Database>`.

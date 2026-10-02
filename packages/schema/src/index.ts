@@ -33,8 +33,10 @@ export {
   TransactionRowSchema,
   type IngestBatchCounts,
   type IngestCandidateRow,
+  type IngestCandidateRowWire,
   type MerchantRuleRow,
   type TransactionRow,
+  type TransactionRowWire,
 } from './rows.js'
 
 export {

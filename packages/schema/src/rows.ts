@@ -60,6 +60,8 @@ export const TransactionRowSchema = z.object({
   created_at: TimestampSchema,
 })
 export type TransactionRow = z.infer<typeof TransactionRowSchema>
+/** The row as it arrives, before parsing: plain strings for dates, a number or string for cents. */
+export type TransactionRowWire = z.input<typeof TransactionRowSchema>
 
 const candidateShape = z.object({
   id: UuidSchema,
@@ -127,6 +129,7 @@ export const IngestCandidateRowSchema = candidateShape.superRefine((row, ctx) =>
   }
 })
 export type IngestCandidateRow = z.infer<typeof IngestCandidateRowSchema>
+export type IngestCandidateRowWire = z.input<typeof IngestCandidateRowSchema>
 
 /**
  * A learned rule. An exact match on `match_merchant` is the only thing allowed

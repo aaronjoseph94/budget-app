@@ -37,8 +37,11 @@ import {
 import type { GoalStatus } from '@budget/core'
 import { LIST_HEADING, type CategoryKind } from './lists.js'
 import type { SupabaseClient } from './supabase.js'
+import type { IngestBatchCounts, IngestCandidateRowWire, IngestSource, TransactionRowWire } from '@budget/schema'
 
-export type IngestSource = 'card_csv' | 'card_xlsx' | 'card_pdf' | 'receipt_photo' | 'typed' | 'ai_app'
+// One naming of where a row came from: schema's, which the migrations hold
+// it to (architecture-b-04).
+export type { IngestSource }
 
 /** What a reader hands over to be saved. */
 export type ImportRequest = {
@@ -158,27 +161,36 @@ export async function saveImport(
   )
   if (error !== null) failIngest(error)
 
-  const result = (Array.isArray(data) ? data[0] : data) as SavedCounts | undefined
-  if (result === undefined) throw new Error(describeWriteFailure(null))
+  const result: unknown = Array.isArray(data) ? data[0] : data
+  // Every count is read, or the import is said not to have been recorded:
+  // an auto_approved that fell back to 0 called every row a rule filed
+  // "waiting" (architecture-b-04). 0004 made it always present.
+  const counts = savedCounts(result)
+  if (counts === null) throw new Error(describeWriteFailure(null))
 
   return {
-    batchId: String(result.batch_id),
-    inserted: Number(result.inserted),
-    deduped: Number(result.deduped),
-    rejected: Number(result.rejected),
-    autoApproved: Number(result.auto_approved ?? 0),
-    waiting: Number(result.inserted) - Number(result.auto_approved ?? 0),
+    batchId: counts.batch_id,
+    inserted: counts.inserted,
+    deduped: counts.deduped,
+    rejected: counts.rejected,
+    autoApproved: counts.auto_approved,
+    waiting: counts.inserted - counts.auto_approved,
   }
 }
 
-/** What save_import returns. Shaped by migrations 0003 and 0004. */
-interface SavedCounts {
-  readonly batch_id: string
-  readonly parsed: number
-  readonly deduped: number
-  readonly inserted: number
-  readonly rejected: number
-  readonly auto_approved?: number
+/** What save_import returns (0003, 0004): schema's batch counts, and how many a rule filed. */
+type SavedCounts = Omit<IngestBatchCounts, 'batch_id'> & { readonly batch_id: string; readonly auto_approved: number }
+
+function savedCounts(reply: unknown): SavedCounts | null {
+  if (typeof reply !== 'object' || reply === null) return null
+  const r = reply as Readonly<Record<string, unknown>>
+  const whole = (key: string): number | null => {
+    const n = typeof r[key] === 'string' ? Number(r[key]) : r[key]
+    return typeof n === 'number' && Number.isSafeInteger(n) && n >= 0 ? n : null
+  }
+  const [parsed, deduped, inserted, rejected, auto] = ['parsed', 'deduped', 'inserted', 'rejected', 'auto_approved'].map(whole)
+  if (typeof r.batch_id !== 'string' || parsed == null || deduped == null || inserted == null || rejected == null || auto == null) return null
+  return { batch_id: r.batch_id, parsed, deduped, inserted, rejected, auto_approved: auto }
 }
 
 function fail(error: { code?: string | null } | null): never {
@@ -194,22 +206,19 @@ function failIngest(error: { code?: string | null } | null): never {
 // The review queue
 // ---------------------------------------------------------------------------
 
-export interface PendingCandidate {
-  readonly id: string
-  readonly posted_on: string
-  readonly amount_cents: number
-  /** Normalised: what a learned rule matches on. */
-  readonly merchant: string
-  readonly merchant_raw: string
-  /**
-   * Set on a row waiting here only by a model's suggestion (0018), which
-   * the owner still confirms: 0004 refuses approving it as the model's.
-   */
-  readonly category_id: string | null
-  readonly category_source: 'model' | 'user' | 'merchant_rule' | null
-  /** Where it came from: an AI app's addition says so in Review (0020). */
-  readonly source: IngestSource
-}
+/**
+ * A row waiting in Review, as schema's row describes it, so a column
+ * dropped there breaks this compile (architecture-b-04). `merchant` is
+ * normalised: what a learned rule matches on. `category_id` is set on a row
+ * waiting here only by a model's suggestion (0018), which the owner still
+ * confirms: 0004 refuses approving it as the model's. `source` says an AI
+ * app's addition in Review (0020).
+ */
+export type PendingCandidate = Readonly<
+  Pick<IngestCandidateRowWire, 'id' | 'posted_on' | 'merchant' | 'merchant_raw' | 'category_id' | 'category_source' | 'source'> & {
+    readonly amount_cents: number
+  }
+>
 
 export interface PendingPage {
   readonly rows: readonly PendingCandidate[]
@@ -233,7 +242,10 @@ export async function listPending(supabase: SupabaseClient, limit = 300): Promis
     .limit(limit)
   if (error !== null) fail(error)
   const rows = (data ?? []) as PendingCandidate[]
-  return { rows: rows.map((r) => ({ ...r, amount_cents: Number(r.amount_cents) })), total: count ?? rows.length }
+  // The true size, or a refusal: the page's length is the cap the count is
+  // there to see past (architecture-b-04).
+  if (count === null) throw new Error('The review queue could not be counted. Try again.')
+  return { rows: rows.map((r) => ({ ...r, amount_cents: Number(r.amount_cents) })), total: count }
 }
 
 export type ApproveOutcome = 'approved' | 'already_handled' | 'already_in_ledger'
@@ -325,7 +337,8 @@ export async function listUnreadable(supabase: SupabaseClient, limit = 200): Pro
     .limit(limit)
   if (error !== null) fail(error)
   const lines = ((data ?? []) as UnreadableLine[]).map((l) => ({ ...l, source_line: Number(l.source_line) }))
-  if (lines.length === 0) return { batches: [], lines, total: count ?? lines.length }
+  if (count === null) throw new Error('The lines no import could read could not be counted. Try again.')
+  if (lines.length === 0) return { batches: [], lines, total: count }
 
   const imports = await supabase
     .from('ingest_batches')
@@ -333,7 +346,7 @@ export async function listUnreadable(supabase: SupabaseClient, limit = 200): Pro
     .in('id', [...new Set(lines.map((l) => l.batch_id))])
     .order('created_at', { ascending: false })
   if (imports.error !== null) fail(imports.error)
-  return { batches: (imports.data ?? []) as UnreadableBatch[], lines, total: count ?? lines.length }
+  return { batches: (imports.data ?? []) as UnreadableBatch[], lines, total: count }
 }
 
 /**
@@ -685,14 +698,14 @@ export async function setWeeklyBudget(
 // The ledger
 // ---------------------------------------------------------------------------
 
-export interface LedgerRow {
-  readonly id: string
-  readonly posted_on: string
-  readonly amount_cents: number
-  readonly merchant_raw: string
-  readonly category_id: string
-  readonly source: string
-}
+/**
+ * A ledger row as the screens read it: schema's row (architecture-b-04),
+ * its amount a number after Number(). `source` stays a plain string: the
+ * screens only print it, and test rows name sources freely.
+ */
+export type LedgerRow = Readonly<
+  Pick<TransactionRowWire, 'id' | 'posted_on' | 'merchant_raw' | 'category_id'> & { readonly amount_cents: number; readonly source: string }
+>
 
 /**
  * Rows per request. Supabase answers at most 1,000 rows a request (PostgREST's
