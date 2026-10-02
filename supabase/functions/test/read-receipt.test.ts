@@ -20,16 +20,20 @@ const REPLY = '{"readable":true,"merchant":"SYNTHETIC CAFE","total":"14.23","dat
 
 type Call = { url: string; init: RequestInit }
 const signedIn = () => new Response(JSON.stringify({ id: USER }), { status: 200 })
-// Gemini's calls in `calls`, the auth server's in `auth`.
-function fakeFetch(respond: Respond, who: Respond) {
+// No ai_settings row: AI has never been switched off.
+const noSettings = () => new Response('[]', { status: 200 })
+// Gemini's calls in `calls`, the auth server's in `auth`, the AI switch's read in `settings`.
+function fakeFetch(respond: Respond, who: Respond, switched: Respond = noSettings) {
   const calls: Call[] = []
   const auth: Call[] = []
+  const settings: Call[] = []
   const fn = (async (url: string | URL | Request, init?: RequestInit) => {
     const isAuth = String(url) === `${PROJECT}/auth/v1/user`
-    ;(isAuth ? auth : calls).push({ url: String(url), init: init ?? {} })
-    return isAuth ? who() : respond()
+    const isSettings = String(url).startsWith(`${PROJECT}/rest/v1/ai_settings`)
+    ;(isAuth ? auth : isSettings ? settings : calls).push({ url: String(url), init: init ?? {} })
+    return isAuth ? who() : isSettings ? switched() : respond()
   }) as typeof fetch
-  return { fn, calls, auth }
+  return { fn, calls, auth, settings }
 }
 const gemini = (text: unknown = REPLY) => () =>
   new Response(
@@ -56,10 +60,10 @@ function request(opts: { method?: string; origin?: string | null; auth?: string 
 }
 
 type Respond = () => Response | Promise<Response>
-async function run(req: Request, env: Record<string, string | undefined> = ENV, respond: Respond = gemini(), who: Respond = signedIn) {
-  const f = fakeFetch(respond, who)
+async function run(req: Request, env: Record<string, string | undefined> = ENV, respond: Respond = gemini(), who: Respond = signedIn, switched: Respond = noSettings) {
+  const f = fakeFetch(respond, who, switched)
   const res = await handle(req, env, f.fn)
-  return { res, body: res.status === 204 ? null : await res.json(), calls: f.calls, auth: f.auth }
+  return { res, body: res.status === 204 ? null : await res.json(), calls: f.calls, auth: f.auth, settings: f.settings }
 }
 
 describe('read-receipt refuses before spending the key', () => {
@@ -257,6 +261,7 @@ describe('read-receipt waits a bounded time for Gemini (backend-b-05)', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
     const fetchFn = (async (url: string | URL | Request, init?: RequestInit) => {
       if (String(url) === `${PROJECT}/auth/v1/user`) return signedIn()
+      if (String(url).startsWith(`${PROJECT}/rest/v1/ai_settings`)) return noSettings()
       return new Response(
         new ReadableStream<Uint8Array>({
           start(controller) {
@@ -284,3 +289,41 @@ describe('read-receipt serves only the owner once OWNER_USER_ID is set (backend-
     expect([typo.res.status, typo.body.code, typo.calls.length + typo.auth.length]).toEqual([503, 'not_configured', 0])
   })
 })
+
+/**
+ * The app falls back to read-receipt when the AI helper is missing or an
+ * older copy, and an older helper can be there with AI switched off. So
+ * read-receipt reads the owner's switch itself, as the owner, under RLS,
+ * and fails closed when it cannot (architecture-c2-04).
+ */
+describe('read-receipt and the Use AI switch', () => {
+  const json = (body: unknown, status = 200) => () => new Response(JSON.stringify(body), { status })
+
+  it('sends nothing to Gemini when the owner turned AI off', async () => {
+    const { res, body, calls, settings } = await run(request(), ENV, gemini(), signedIn, json([{ enabled: false }]))
+    expect([res.status, body, calls.length]).toEqual([409, { ok: false, code: 'ai_off' }, 0])
+    expect(settings[0]?.url).toBe(`${PROJECT}/rest/v1/ai_settings?select=enabled`)
+    expect(new Headers(settings[0]?.init.headers).get('authorization')).toBe('Bearer e30.e30.user-token')
+  })
+
+  it('reads the photo when AI is on, or was never switched', async () => {
+    expect((await run(request(), ENV, gemini(), signedIn, json([{ enabled: true }]))).calls).toHaveLength(1)
+    expect((await run(request(), ENV, gemini(), signedIn, json([]))).calls).toHaveLength(1)
+  })
+
+  it('reads the photo before 0016, when no switch exists yet', async () => {
+    for (const code of ['PGRST205', '42P01']) {
+      const { res, calls } = await run(request(), ENV, gemini(), signedIn, json({ code, message: 'x' }, 404))
+      expect([res.status, calls.length], code).toEqual([200, 1])
+    }
+  })
+
+  it('sends nothing when the switch cannot be read', async () => {
+    const failed = [json({ code: 'XX000' }, 500), json({ unexpected: true }), json([{ enabled: 'no' }]), () => Promise.reject(new Error('down'))]
+    for (const switched of failed) {
+      const { res, body, calls } = await run(request(), ENV, gemini(), signedIn, switched)
+      expect([res.status, body, calls.length]).toEqual([503, { ok: false, code: 'settings_unreachable' }, 0])
+    }
+  })
+})
+

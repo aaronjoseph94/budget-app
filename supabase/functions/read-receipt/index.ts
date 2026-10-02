@@ -124,7 +124,7 @@ function reply(status: number, body: unknown, origin: string | null, origins: Se
 // The one place this file writes a log line, and all it can say: a fixed
 // code and numbers. Never the image, the prompt, the reply, an amount or a
 // merchant (CLAUDE.md); the types leave no room for them.
-type LogCode = 'provider_unreachable' | 'provider_status' | 'auth_unreachable' | 'auth_status'
+type LogCode = 'provider_unreachable' | 'provider_status' | 'auth_unreachable' | 'auth_status' | 'settings_unreachable' | 'settings_status'
 function log(code: LogCode, counts: Record<string, number> = {}): void {
   console.log(JSON.stringify({ fn: 'read-receipt', code, ...counts }))
 }
@@ -207,6 +207,41 @@ async function whoIs(
   }
 }
 
+/** PostgREST's and Postgres's "no such table": 0016 is not pasted, so no switch exists yet. */
+const NO_SETTINGS_TABLE = new Set(['PGRST205', '42P01'])
+
+/**
+ * Whether the owner left AI on: their own ai_settings row (0016), read with
+ * their own token, so RLS scopes it to them and no service key is needed.
+ * The app sends a photo here only when the AI helper is missing or an older
+ * copy, and an older helper can be there with AI switched off, so this is
+ * the switch's last word (architecture-c2-04). No row is on; anything that
+ * cannot be read is not, so a database fault never sends a photo.
+ */
+async function aiSwitch(project: string, anonKey: string, bearer: string, fetchFn: typeof fetch): Promise<'on' | 'off' | 'unreadable'> {
+  const res = await bounded(
+    fetchFn,
+    `${project}/rest/v1/ai_settings?select=enabled`,
+    { method: 'GET', headers: { apikey: anonKey, Authorization: bearer, Accept: 'application/json' } },
+    AUTH_MS,
+  )
+  if (typeof res === 'string') {
+    log('settings_unreachable')
+    return 'unreadable'
+  }
+  if (!res.ok) {
+    const code = typeof res.body === 'object' && res.body !== null && 'code' in res.body ? res.body.code : null
+    if (typeof code === 'string' && NO_SETTINGS_TABLE.has(code)) return 'on'
+    log('settings_status', { status: res.status })
+    return 'unreadable'
+  }
+  if (!Array.isArray(res.body)) return 'unreadable'
+  const row: unknown = res.body[0]
+  if (row === undefined) return 'on'
+  const enabled = typeof row === 'object' && row !== null && 'enabled' in row ? row.enabled : null
+  return enabled === true ? 'on' : enabled === false ? 'off' : 'unreadable'
+}
+
 export async function handle(
   req: Request,
   rawEnv: Readonly<Record<string, string | undefined>>,
@@ -250,6 +285,10 @@ export async function handle(
 
   const who = await whoIs(project, anonKey, bearer, env.OWNER_USER_ID, fetchFn)
   if (who !== 'owner') return send(who === 'not_signed_in' ? 401 : 503, { ok: false, code: who })
+
+  const switched = await aiSwitch(project, anonKey, bearer, fetchFn)
+  if (switched === 'off') return send(409, { ok: false, code: 'ai_off' })
+  if (switched === 'unreadable') return send(503, { ok: false, code: 'settings_unreachable' })
 
   const upstream = await bounded(
     fetchFn,

@@ -35,6 +35,15 @@ describe('reading a receipt photo', () => {
     expect(fake.functions.receiptCalls).toEqual([PHOTO])
   })
 
+  it('says AI is off when read-receipt finds the switch off behind an older helper (architecture-c2-04)', async () => {
+    const fake = setUp(helperSays('needs_update', 503), () => json({ ok: false, code: 'ai_off' }, 409))
+    expect(await readReceiptPhoto(fake.client, PHOTO)).toEqual({
+      ok: false,
+      message: 'AI is off in AI settings, so the photo was not read. Type it in below.',
+      link: null,
+    })
+  })
+
   it('falls back when the helper needs its one-time update', async () => {
     const fake = setUp(helperSays('needs_update', 503))
     expect((await readReceiptPhoto(fake.client, PHOTO)).ok).toBe(true)

@@ -41,6 +41,9 @@ const MESSAGES: Record<string, string> = {
   provider_error: 'Gemini could not read that photo right now. Try again in a moment.',
   bad_request: 'That photo could not be sent. Try a different one.',
   image_unreadable: 'That file could not be opened as a photo.',
+  // read-receipt reads the Use AI switch itself, behind an older helper
+  // that does not (architecture-c2-04).
+  ai_off: 'AI is off in AI settings, so the photo was not read. Type it in below.',
 }
 
 const fallback = 'Receipt reading is not available right now. Try again, or type it in.'
