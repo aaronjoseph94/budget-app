@@ -9,7 +9,8 @@ import type { IsoDate } from '@budget/money-primitives'
 import { cleanName, money } from '../money.js'
 import { categoriesFrom, entriesFrom, periodCategories, plansFrom, recordsFrom, txnsFrom, type Read } from '../rows.js'
 
-const LISTS = ['income', 'savings', 'variable', 'bill', 'debt', 'subscription'] as const
+/** The six lists, in the order the app shows them. */
+export const LISTS = ['income', 'savings', 'variable', 'bill', 'debt', 'subscription'] as const
 
 type Wanted = { readonly list?: (typeof LISTS)[number] | undefined; readonly categories?: readonly string[] | undefined }
 

@@ -21,6 +21,7 @@
 import { z } from 'zod'
 import { IsoDateSchema } from './primitives.js'
 import type { CategoriseCategory } from './categorise.js'
+import { replyValue } from './reply.js'
 
 /** What one request may carry; the helper's zod holds it to the same. */
 export const QUICK_ADD_LIMITS = { text: 300, categories: 200, shop: 120 } as const
@@ -54,31 +55,25 @@ const Field = z.string().max(400).nullable().optional()
 const ReplyShape = z.object({ amount: Field, date: Field, shop: Field, category: Field, flow: Field })
 
 /** NFKC, then no spaces and no currency signs, as ADR 0005 §7 compares amounts. */
-const bare = (s: string) => s.normalize('NFKC').replace(/[\s\p{Sc}]/gu, '')
+export const amountWord = (s: string): string => s.normalize('NFKC').replace(/[\s\p{Sc}]/gu, '')
 /** A word as typed, less the punctuation a sentence puts after it. */
 const words = (text: string) =>
   text
     .normalize('NFKC')
     .split(/\s+/u)
-    .map((w) => bare(w).replace(/[,;:!?]+$/u, '').replace(/\.$/u, ''))
+    .map((w) => amountWord(w).replace(/[,;:!?]+$/u, '').replace(/\.$/u, ''))
 
 /** Whether the model's amount is one of the owner's own words. */
 export function amountIsTyped(amount: string, text: string): boolean {
-  const said = bare(amount)
+  const said = amountWord(amount)
   return /\d/u.test(said) && words(text).includes(said)
 }
 
 /** A model's answer for one line, held to what that line asked. */
 export function parseQuickAddReply(raw: unknown, brief: QuickAddBrief): QuickAddParsed {
-  let value = raw
-  if (typeof raw === 'string') {
-    try {
-      value = JSON.parse(raw)
-    } catch {
-      return { ok: false }
-    }
-  }
-  const shape = ReplyShape.safeParse(value)
+  const json = replyValue(raw)
+  if (!json.ok) return { ok: false }
+  const shape = ReplyShape.safeParse(json.value)
   if (!shape.success) return { ok: false }
   const asked = new Set(brief.missing)
   let dropped = 0
@@ -90,7 +85,7 @@ export function parseQuickAddReply(raw: unknown, brief: QuickAddBrief): QuickAdd
   }
   const { amount, date, shop, category, flow } = shape.data
   const pick: QuickAddPick = {
-    amount: keep('amount', amount, (s) => (amountIsTyped(s, brief.text) ? bare(s) : null)),
+    amount: keep('amount', amount, (s) => (amountIsTyped(s, brief.text) ? amountWord(s) : null)),
     date: keep('date', date, (s) => {
       const read = IsoDateSchema.safeParse(s)
       // Never after today, and never before last year began: a typed line is about recent money.

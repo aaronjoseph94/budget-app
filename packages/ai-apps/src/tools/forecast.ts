@@ -30,6 +30,7 @@ import { cleanName, money } from '../money.js'
 import { READ_ONLY, SIGNED_IN, answer, isRefusal, refusal, rpc, type Caller } from '../rpc.js'
 import { categoriesFrom, forecastInput, fundsInput, goalsAhead, goalsFrom, goalsInOrder, type Read } from '../rows.js'
 import { monthsAround, utcToday } from '../windows.js'
+import { amountAllowed } from './add.js'
 
 export const DESCRIPTION =
   'Where this month is heading: safe to spend a day, the month’s end (spent and bank balance, as a low–likely–high ' +
@@ -50,8 +51,6 @@ const maybe = (cents: number | null) => (cents === null ? null : money(cents))
 
 /** Bills and paydays in the next 30 days, at most this many. */
 const ITEMS = 30
-/** The most a what-if saves a month: the add tools' $100,000.00. */
-const MOST_CENTS = 10_000_000
 
 const reached = (g: WhatIfGoal) =>
   g.status === 'met'
@@ -94,7 +93,8 @@ function whatIfOut(read: Read, input: MonthForecastInput, end: Spread | null, mo
 export async function getForecast(caller: Caller | null, input: GetForecastInput) {
   if (caller === null) return refusal('server_error')
   const saving = input.what_if_monthly_saving === undefined ? null : parseTypedAmount(input.what_if_monthly_saving)
-  if (input.what_if_monthly_saving !== undefined && (saving === null || saving <= 0 || saving > MOST_CENTS)) return refusal('bad_amount')
+  // At most the add tools' $100,000.00 a month.
+  if (input.what_if_monthly_saving !== undefined && !amountAllowed(saving)) return refusal('bad_amount')
   // Twelve months back from the owner's month and three ahead (F35), and the month either side of the server's date.
   const window = monthsAround(utcToday(), 13, 4)
   const read = await rpc(caller, 'ai_app_read', { p_parts: saving === null ? PARTS : [...PARTS, 'goals', 'fund_txns'], p_from: window.from, p_to: window.to })

@@ -55,6 +55,29 @@ export function letterOf(index: number): string {
 
 const MAX_LABEL = 40
 
+/** core's change direction as a fact's: more is up, less is down. */
+export const FACT_DIRECTION = { more: 'up', less: 'down', same: 'same' } as const
+
+/** A fact as a brief carries it: its words and blank names, its subject masked, never a figure (ADR 0005 §2). */
+type BriefedFact = Pick<NarrateFact, 'kind' | 'direction' | 'size' | 'evidence' | 'meaning'> & {
+  readonly subject: { readonly label: string }
+  readonly figures: object
+}
+
+/** The facts as the AI's brief lists them, keyed by their letters. */
+export function briefFactsOf(facts: Readonly<Record<string, BriefedFact>>): NarrateFact[] {
+  return Object.entries(facts).map(([id, f]) => ({
+    id,
+    kind: f.kind,
+    about: maskLabel(f.subject.label),
+    direction: f.direction,
+    size: f.size,
+    evidence: f.evidence,
+    meaning: f.meaning,
+    slots: ['name', ...Object.keys(f.figures)],
+  }))
+}
+
 /** The owner's name for something as the AI may see it: runs of four or more digits masked, then cut. */
 export function maskLabel(label: string): string {
   return [...label.replace(/\p{Nd}{4,}/gu, '#')].slice(0, MAX_LABEL).join('')

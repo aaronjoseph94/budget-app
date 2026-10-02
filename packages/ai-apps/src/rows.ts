@@ -365,8 +365,11 @@ export type GoalAhead = DigestGoal & ForecastGoal & { readonly unitLabel: string
 
 /** What a goal has saved: its fund's balance kept by transfers (D16), else the amount typed, as the app's goalSavedCents says. */
 export function savedOf(goal: GoalRow, funds: SavingsFunds): number {
-  return funds.funds.find((f) => f.figures?.goalId === goal.id)?.figures?.balanceCents ?? goal.saved_cents
+  return fundOf(goal.id, funds)?.figures?.balanceCents ?? goal.saved_cents
 }
+
+/** The Savings-list fund a goal is the goal of, if any. */
+export const fundOf = (goalId: string, funds: SavingsFunds) => funds.funds.find((f) => f.figures?.goalId === goalId)
 
 /**
  * The active goals, main first, joined to the funds as the app's
@@ -377,13 +380,13 @@ export function goalsAhead(ordered: readonly GoalRow[], funds: SavingsFunds): Go
   return ordered
     .filter((g) => g.status === 'active')
     .map((g) => {
-      const fund = funds.funds.find((f) => f.figures?.goalId === g.id)
+      const fund = fundOf(g.id, funds)
       const on = fund !== undefined && g.balance_as_of !== null ? { fund, typedOn: g.balance_as_of } : null
       return {
         id: g.id,
         name: g.name,
         targetCents: g.target_cents,
-        savedCents: savedOf(g, funds),
+        savedCents: fund?.figures?.balanceCents ?? g.saved_cents,
         unitCostCents: g.unit_cost_cents,
         unitLabel: g.unit_label,
         targetDate: g.target_date === null ? null : isoDate(g.target_date),

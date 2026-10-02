@@ -10,7 +10,7 @@
  * each part it got wrong shows the app's own words instead, alone.
  */
 import type { NarrateReport, ReportReply } from '@budget/schema'
-import { type CheckDropReason, sentenceProblem } from './check-reply.js'
+import { type CheckDropReason, type PartWords, partOf, sentenceProblem } from './check-reply.js'
 import type { ReportFacts } from './report.js'
 import type { Tone } from './templates.js'
 
@@ -102,10 +102,7 @@ export function reportWords(input: { readonly facts: ReportFacts; readonly tone:
 }
 
 /** A part of the review as drawn: its words, and whether the AI wrote them. */
-export interface ReviewPart {
-  readonly text: string
-  readonly ai: boolean
-}
+export type ReviewPart = PartWords
 
 export interface Review {
   readonly headline: ReviewPart
@@ -116,11 +113,10 @@ export interface Review {
 /** The AI's words where a checked reply has them, the app's own for every part it does not. */
 export function mergeReview(input: { readonly own: ReportWords; readonly ai: ReportReply | null }): Review {
   const { own, ai } = input
-  const part = (theirs: string | null | undefined, ours: string): ReviewPart => (theirs === null || theirs === undefined ? { text: ours, ai: false } : { text: theirs, ai: true })
   return {
-    headline: part(ai?.headline, own.headline),
-    points: own.points.map((p) => ({ fact: p.fact, ...part(ai?.points.find((q) => q.fact === p.fact)?.text, p.text) })),
-    tryThis: part(ai?.tryThis, own.tryThis),
+    headline: partOf(ai?.headline, own.headline),
+    points: own.points.map((p) => ({ fact: p.fact, ...partOf(ai?.points.find((q) => q.fact === p.fact)?.text, p.text) })),
+    tryThis: partOf(ai?.tryThis, own.tryThis),
   }
 }
 

@@ -12,7 +12,7 @@ import { GetSavingsGoalsInputSchema } from '@budget/schema'
 import { log } from '../log.js'
 import { cleanName, money } from '../money.js'
 import { READ_ONLY, SIGNED_IN, answer, isRefusal, refusal, rpc, type Caller } from '../rpc.js'
-import { fundsInput, goalBase, goalsAhead, goalsFrom, goalsInOrder, savedOf } from '../rows.js'
+import { fundOf, fundsInput, goalBase, goalsAhead, goalsFrom, goalsInOrder, savedOf } from '../rows.js'
 import { monthsAround, utcToday } from '../windows.js'
 
 export const DESCRIPTION =
@@ -70,7 +70,7 @@ export async function getSavingsGoals(caller: Caller | null) {
       goals: ordered.map((g, i) => {
         const p = progress[i]!
         const goal = ahead.get(g.id)
-        const plan = (funds.funds.find((f) => f.figures?.goalId === g.id)?.figures ?? funds.unlinked.find((u) => u.goalId === g.id))?.plan
+        const plan = (fundOf(g.id, funds)?.figures ?? funds.unlinked.find((u) => u.goalId === g.id))?.plan
         const forecast = goal === undefined ? null : goalForecast({ ...base, goal })
         return {
           name: cleanName(g.name),

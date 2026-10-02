@@ -11,7 +11,7 @@
  */
 import type { CheckinPart, CheckinReply, NarrateCheckin } from '@budget/schema'
 import type { CheckinFacts, WinReason } from './checkin.js'
-import { type CheckDropReason, sentenceProblem } from './check-reply.js'
+import { type CheckDropReason, type PartWords, partOf, sentenceProblem } from './check-reply.js'
 import { GOAL_LINE_TEMPLATES, type Tone } from './templates.js'
 
 type Tones = Readonly<Record<Tone, string>>
@@ -95,10 +95,7 @@ export function checkinWords(input: { readonly facts: CheckinFacts; readonly ton
 }
 
 /** A part of the check-in as drawn: its words, and whether the AI wrote them. */
-export interface CheckinPartWords {
-  readonly text: string
-  readonly ai: boolean
-}
+export type CheckinPartWords = PartWords
 
 export type Checkin = Readonly<Record<CheckinPart, CheckinPartWords | null>>
 
@@ -108,8 +105,7 @@ export function mergeCheckin(input: { readonly own: CheckinWords; readonly ai: C
     const ours = input.own[key]
     // A part the app has no words for (no covered week, no goal) is not shown, whatever a model wrote.
     if (ours === null) return null
-    const theirs = input.ai?.[key]
-    return theirs === null || theirs === undefined ? { text: ours, ai: false } : { text: theirs, ai: true }
+    return partOf(input.ai?.[key], ours)
   }
   return { recap: part('recap'), win: part('win'), tryThis: part('tryThis'), goal: part('goal') }
 }

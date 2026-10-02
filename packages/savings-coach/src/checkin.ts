@@ -9,8 +9,8 @@
  * each by its blank, never by an amount.
  */
 import type { Evidence, Figure, ImpulseShare, SuggestedLimit, WeeklyRecap } from '@budget/core'
-import type { NarrateCheckin, NarrateFact } from '@budget/schema'
-import { letterOf, maskLabel, type PayloadGoal } from './payload.js'
+import type { NarrateCheckin } from '@budget/schema'
+import { FACT_DIRECTION, briefFactsOf, letterOf, maskLabel, type PayloadGoal } from './payload.js'
 import type { Tone } from './templates.js'
 
 export type CheckinFactKind = 'week_spent' | 'week_top' | 'no_spend_days' | 'impulse_share'
@@ -53,7 +53,6 @@ export interface CheckinFacts {
   readonly mainGoal: string | null
 }
 
-const DIRECTION = { more: 'up', less: 'down', same: 'same' } as const
 /** A fact with no change to size, on a week or two of records: thin, as the Coach's summaries are (F27). */
 const QUIET = { direction: 'none', size: null, evidence: 'thin' } as const
 
@@ -75,7 +74,7 @@ export function checkinFacts(input: {
         key: 'week:spent',
         kind: 'week_spent',
         subject: { label: 'Everyday spending' },
-        direction: before === null ? 'none' : DIRECTION[before.change.direction],
+        direction: before === null ? 'none' : FACT_DIRECTION[before.change.direction],
         size: null,
         // Two weeks and no baseline: thin, as the Coach's summaries are (F27).
         evidence: 'thin',
@@ -129,16 +128,7 @@ export function checkinFacts(input: {
 /** The AI's brief: the facts' words and blank names, never a figure (ADR 0005 §2). */
 export function checkinBrief(input: { readonly facts: CheckinFacts; readonly tone: Tone }): { readonly brief: NarrateCheckin; readonly keys: Readonly<Record<string, string>> } {
   const { facts, goals, recap, top, win } = input.facts
-  const briefFacts: NarrateFact[] = Object.entries(facts).map(([id, f]) => ({
-    id,
-    kind: f.kind,
-    about: maskLabel(f.subject.label),
-    direction: f.direction,
-    size: f.size,
-    evidence: f.evidence,
-    meaning: f.meaning,
-    slots: ['name', ...Object.keys(f.figures)],
-  }))
+  const briefFacts = briefFactsOf(facts)
   return {
     brief: {
       tone: input.tone,

@@ -14,6 +14,7 @@
 import { z } from 'zod'
 import { FACT_LETTER, type NarrateFact } from './narrate.js'
 import { proseProblem, type ProseProblem } from './prose.js'
+import { replyValue } from './reply.js'
 
 /**
  * The review's prompt version. The helper's own constant is held to it by a
@@ -64,15 +65,9 @@ const ReplyShape = z.object({
 
 /** A model's review, or one read back from ai_notes, held to the same rule again. */
 export function parseReportReply(raw: unknown): ReportParsed {
-  let value = raw
-  if (typeof raw === 'string') {
-    try {
-      value = JSON.parse(raw)
-    } catch {
-      return { ok: false }
-    }
-  }
-  const shape = ReplyShape.safeParse(value)
+  const json = replyValue(raw)
+  if (!json.ok) return { ok: false }
+  const shape = ReplyShape.safeParse(json.value)
   if (!shape.success) return { ok: false }
   const dropped: ReportDrop[] = []
   const kept = (part: ReportDrop['part'], text: string, limit: number): string | null => {

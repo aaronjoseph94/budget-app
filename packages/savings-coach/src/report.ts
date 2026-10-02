@@ -10,8 +10,8 @@
  */
 import type { Evidence, Figure, MonthReport, Mover, TotalChange } from '@budget/core'
 import type { Cents } from '@budget/money-primitives'
-import type { NarrateFact, NarrateReport } from '@budget/schema'
-import { letterOf, maskLabel } from './payload.js'
+import type { NarrateReport } from '@budget/schema'
+import { FACT_DIRECTION, briefFactsOf, letterOf } from './payload.js'
 import type { Tone } from './templates.js'
 
 export type ReportFactKind = 'month_spent' | 'month_saved' | 'month_income' | 'mover_up' | 'mover_down'
@@ -45,7 +45,6 @@ export interface ReportFacts {
   readonly soFar: boolean
 }
 
-const DIRECTION = { more: 'up', less: 'down', same: 'same' } as const
 
 /** The review's facts, lettered in the order the brief gives them. */
 export function reportFacts(input: { readonly report: ReviewedMonth; readonly nameOf: (categoryId: string) => string }): ReportFacts {
@@ -56,7 +55,7 @@ export function reportFacts(input: { readonly report: ReviewedMonth; readonly na
     key: `report:${kind.slice('month_'.length)}`,
     kind,
     subject: { label },
-    direction: change === null ? 'none' : DIRECTION[change.change.direction],
+    direction: change === null ? 'none' : FACT_DIRECTION[change.change.direction],
     size: change === null ? null : change.size,
     // Two windows and no baseline: thin, as the Coach's summaries are (F27).
     evidence: 'thin',
@@ -103,16 +102,7 @@ export function reportFacts(input: { readonly report: ReviewedMonth; readonly na
 /** The AI's brief: the facts' words and blank names, never a figure (ADR 0005 §2). */
 export function reportBrief(input: { readonly facts: ReportFacts; readonly tone: Tone }): { readonly brief: NarrateReport; readonly keys: Readonly<Record<string, string>> } {
   const { facts, points, tryThis } = input.facts
-  const briefFacts: NarrateFact[] = Object.entries(facts).map(([id, f]) => ({
-    id,
-    kind: f.kind,
-    about: maskLabel(f.subject.label),
-    direction: f.direction,
-    size: f.size,
-    evidence: f.evidence,
-    meaning: f.meaning,
-    slots: ['name', ...Object.keys(f.figures)],
-  }))
+  const briefFacts = briefFactsOf(facts)
   return {
     brief: { tone: input.tone, facts: briefFacts, points, tryThis },
     keys: Object.fromEntries(Object.entries(facts).map(([id, f]) => [id, f.key])),

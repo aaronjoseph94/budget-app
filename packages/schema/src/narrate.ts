@@ -18,6 +18,7 @@
  */
 import { z } from 'zod'
 import { proseProblem, type ProseProblem } from './prose.js'
+import { replyValue } from './reply.js'
 
 /** One or two capitals: a fact's letter in the brief, and in a blank. */
 export const FACT_LETTER = /^[A-Z]{1,2}$/
@@ -118,15 +119,9 @@ const ReplyShape = z.object({
  * stored object.
  */
 export function parseNarrateReply(raw: unknown): NarrateParsed {
-  let value = raw
-  if (typeof raw === 'string') {
-    try {
-      value = JSON.parse(raw)
-    } catch {
-      return { ok: false }
-    }
-  }
-  const shape = ReplyShape.safeParse(value)
+  const json = replyValue(raw)
+  if (!json.ok) return { ok: false }
+  const shape = ReplyShape.safeParse(json.value)
   if (!shape.success) return { ok: false }
   const dropped: NarrateDrop[] = []
   // The words as checked, NFKC-normalised, or null when they broke the rule.

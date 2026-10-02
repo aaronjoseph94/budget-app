@@ -18,7 +18,8 @@
  */
 import { z } from 'zod'
 import type { CategoriseCategory } from './categorise.js'
-import { amountIsTyped } from './quick-add.js'
+import { amountIsTyped, amountWord } from './quick-add.js'
+import { replyValue } from './reply.js'
 
 /** Every kind of question Ask answers. `help` opens a Help article; the rest are answered by core. */
 export const ASK_INTENTS = [
@@ -100,15 +101,9 @@ const isOneOf = <T extends string>(list: readonly T[], s: string): s is T => (li
 
 /** A model's reading of one question, held to what its brief offered. */
 export function parseAskPlan(raw: unknown, brief: AskBrief): AskParsed {
-  let value = raw
-  if (typeof raw === 'string') {
-    try {
-      value = JSON.parse(raw)
-    } catch {
-      return { ok: false }
-    }
-  }
-  const shape = ReplyShape.safeParse(value)
+  const json = replyValue(raw)
+  if (!json.ok) return { ok: false }
+  const shape = ReplyShape.safeParse(json.value)
   if (!shape.success) return { ok: false }
   const reply = shape.data
   const intent = reply.intent.trim()
@@ -130,7 +125,7 @@ export function parseAskPlan(raw: unknown, brief: AskBrief): AskParsed {
   if (period === 'refused') dropped += 1
   let amountText: string | null = null
   if (given(reply.amount)) {
-    if (amountIsTyped(reply.amount, brief.question)) amountText = reply.amount.normalize('NFKC').replace(/[\s\p{Sc}]/gu, '')
+    if (amountIsTyped(reply.amount, brief.question)) amountText = amountWord(reply.amount)
     else dropped += 1
   }
   return { ok: true, plan: { kind: 'intent', intent, aliases, period: period === 'refused' ? null : period, amountText }, dropped }

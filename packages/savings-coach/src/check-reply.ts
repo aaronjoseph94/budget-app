@@ -140,3 +140,14 @@ export function checkReply(input: CheckReplyInput): CheckedReply {
 
   return { reply: { summary, cards, goal, quote }, dropped }
 }
+
+/** A part as drawn: its words, and whether the AI wrote them. */
+export interface PartWords {
+  readonly text: string
+  readonly ai: boolean
+}
+
+/** The AI's words where a checked reply has them, else the app's own. */
+export function partOf(theirs: string | null | undefined, ours: string): PartWords {
+  return theirs === null || theirs === undefined ? { text: ours, ai: false } : { text: theirs, ai: true }
+}

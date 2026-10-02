@@ -14,6 +14,7 @@
 import { z } from 'zod'
 import type { NarrateFact, NarrateGoal } from './narrate.js'
 import { proseProblem, type ProseProblem } from './prose.js'
+import { replyValue } from './reply.js'
 
 /**
  * The check-in's prompt version. The helper's own constant is held to it by
@@ -62,15 +63,9 @@ const ReplyShape = z.object({ recap: Text, win: Text, tryThis: Text, goal: Text 
 
 /** A model's check-in, or one read back from ai_notes, held to the same rule again. */
 export function parseCheckinReply(raw: unknown): CheckinParsed {
-  let value = raw
-  if (typeof raw === 'string') {
-    try {
-      value = JSON.parse(raw)
-    } catch {
-      return { ok: false }
-    }
-  }
-  const shape = ReplyShape.safeParse(value)
+  const json = replyValue(raw)
+  if (!json.ok) return { ok: false }
+  const shape = ReplyShape.safeParse(json.value)
   if (!shape.success) return { ok: false }
   const dropped: CheckinDrop[] = []
   const kept = (part: CheckinPart): string | null => {

@@ -41,7 +41,7 @@ import {
   type Read,
 } from '../rows.js'
 import { calendarYear, periodWindow, utcToday } from '../windows.js'
-import { compared } from './compare.js'
+import { LISTS, compared } from './compare.js'
 
 export type GetPeriodInput = z.output<typeof GetPeriodInputSchema>
 
@@ -55,7 +55,6 @@ export const DESCRIPTION =
   'not counted; `waiting_in_review` says how many. Every amount is {cents, display}; quote display. ' +
   'Returns as_of, period{kind, from, to, days_left, income?}, summary, lists[], categories[], months[]?, top_spending[]?, compared?, imported_through, waiting_in_review.'
 
-const LISTS = ['income', 'savings', 'variable', 'bill', 'debt', 'subscription'] as const
 /** Where a budget passed is overspending; on Income and Savings more is better, so no standing. */
 const SPENDING: ReadonlySet<string> = new Set(['variable', 'bill', 'debt', 'subscription'])
 

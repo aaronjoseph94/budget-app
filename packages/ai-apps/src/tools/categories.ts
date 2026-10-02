@@ -9,6 +9,7 @@ import { log } from '../log.js'
 import { cleanName, money, type Money } from '../money.js'
 import { READ_ONLY, SIGNED_IN, answer, isRefusal, refusal, rpc, type Caller } from '../rpc.js'
 import { UnreadableRows, categoriesFrom } from '../rows.js'
+import { utcToday } from '../windows.js'
 
 /** The most categories one answer carries (PLAN §2.7). */
 export const CATEGORY_LIMIT = 200
@@ -17,8 +18,6 @@ export const DESCRIPTION =
   'Your categories on each list, with weekly budgets. Use these exact names in other tools. ' +
   'Returns as_of (the owner’s date), lists[{list, categories[{name, weekly_budget: {cents, display} or null}]}], ' +
   'and truncated when there were more than 200.'
-
-const utcToday = () => new Date().toISOString().slice(0, 10)
 
 export async function listCategories(caller: Caller | null) {
   if (caller === null) return refusal('server_error')

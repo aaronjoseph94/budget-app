@@ -14,6 +14,7 @@
  */
 import { z } from 'zod'
 import type { CategoryKind } from './enums.js'
+import { replyValue } from './reply.js'
 
 /** What one request may carry: the helper's zod holds it to the same. */
 export const CATEGORISE_LIMITS = { rows: 40, categories: 200, label: 40 } as const
@@ -56,15 +57,9 @@ const PickShape = z.object({ i: z.int(), alias: z.string().max(8), confidence: z
 
 /** A model's picks for one request, held to what that request offered. */
 export function parseCategoriseReply(raw: unknown, brief: CategoriseBrief): CategoriseParsed {
-  let value = raw
-  if (typeof raw === 'string') {
-    try {
-      value = JSON.parse(raw)
-    } catch {
-      return { ok: false }
-    }
-  }
-  const shape = ReplyShape.safeParse(value)
+  const json = replyValue(raw)
+  if (!json.ok) return { ok: false }
+  const shape = ReplyShape.safeParse(json.value)
   if (!shape.success) return { ok: false }
   const rows = new Set(brief.rows.map((r) => r.i))
   const aliases = new Set(brief.categories.map((c) => c.alias))
