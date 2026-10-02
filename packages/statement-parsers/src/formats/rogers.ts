@@ -24,13 +24,13 @@
  * negative. Every amount is flipped on the way through.
  */
 
-import { type Cents, cents } from '@budget/money-primitives'
+import { type Cents, cents, isoDate } from '@budget/money-primitives'
 import { IngestedTextSchema, type RejectionReason } from '@budget/schema'
 import { US_AMOUNT_FORMAT, applySignConvention, parseAmountToCents } from '../amount.js'
 import { groupRows } from '../pdf/layout.js'
 import type { TextRun } from '../pdf/text.js'
 import type { AcceptedRow, RejectedRow } from '../read.js'
-import { isoDate, resolveYear, type StatementPeriod } from './yearless-dates.js'
+import { civilDate, resolveYear, type StatementPeriod } from './yearless-dates.js'
 
 /** Measured from a real statement. See the note above. */
 export const ROGERS_COLUMNS: readonly number[] = [20, 55, 90, 300]
@@ -93,9 +93,17 @@ export function readPeriod(pages: readonly (readonly TextRun[])[]): StatementPer
       const fromM = MONTHS[m[1] ?? '']
       const toM = MONTHS[m[4] ?? '']
       if (fromM === undefined || toM === undefined) continue
-      return {
-        from: isoDate(Number(m[3]), fromM, Number(m[2])),
-        to: isoDate(Number(m[6]), toM, Number(m[5])),
+      // Both ends through money-primitives' isoDate, which refuses a day the
+      // month lacks ("Feb 30"), and in order: a period that is no date, or
+      // runs backwards, is no period (architecture-a-06).
+      try {
+        const from = isoDate(civilDate(Number(m[3]), fromM, Number(m[2])))
+        const to = isoDate(civilDate(Number(m[6]), toM, Number(m[5])))
+        if (from > to) continue
+        return { from, to }
+      } catch (e) {
+        if (!(e instanceof RangeError)) throw e
+        continue
       }
     }
   }
@@ -220,7 +228,7 @@ function readRow(
   sink.statementAmountsCents.push(amount.value)
   sink.accepted.push({
     line: sink.line,
-    postedOn: isoDate(year, month, day),
+    postedOn: civilDate(year, month, day),
     // The statement writes a purchase as a positive. The ledger writes an
     // outflow as a negative.
     amountCents: applySignConvention(amount.value, { kind: 'debit_positive' }),

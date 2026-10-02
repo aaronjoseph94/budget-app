@@ -74,14 +74,10 @@ export { groupRows, type LayoutRow } from './pdf/layout.js'
 export { type TextRun } from './pdf/text.js'
 export { MAX_PDF_BYTES, type PdfFailure } from './pdf/objects.js'
 
-export {
-  LOOKBACK_DAYS,
-  daysFromCivil,
-  daysInMonth,
-  isoDate,
-  resolveYear,
-  type StatementPeriod,
-} from './formats/yearless-dates.js'
+// The yearless-date helpers stay inside the package: their isoDate checked
+// no day yet shared money-primitives' name, and nothing outside used them
+// (architecture-a-06). Dates leave as money-primitives' IsoDate.
+export { type StatementPeriod } from './formats/yearless-dates.js'
 
 export {
   ROGERS_COLUMNS,

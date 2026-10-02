@@ -17,7 +17,7 @@
  */
 import { addDays, type Cents, type IsoDate } from '@budget/money-primitives'
 import { parseAmountToCents, US_AMOUNT_FORMAT } from './amount.js'
-import { daysFromCivil, daysInMonth, isoDate } from './formats/yearless-dates.js'
+import { civilDate, daysFromCivil, daysInMonth } from './formats/yearless-dates.js'
 import { normalizeMerchant } from './merchant.js'
 
 export interface QuickEntryInput {
@@ -114,7 +114,7 @@ function readDate(words: Word[], asOf: IsoDate): IsoDate | null {
 }
 
 function validDate(y: number, m: number, d: number): IsoDate | null {
-  return m >= 1 && m <= 12 && d >= 1 && d <= daysInMonth(y, m) ? isoDate(y, m, d) : null
+  return m >= 1 && m <= 12 && d >= 1 && d <= daysInMonth(y, m) ? civilDate(y, m, d) : null
 }
 
 /** The latest such weekday, today counted when `today` is true. */

@@ -125,6 +125,21 @@ describe('the statement period', () => {
   it('returns null when the page has no period at all', () => {
     expect(readPeriod([[run(10, 10, 'no period here')]])).toBeNull()
   })
+
+  // A period that is no date, or runs backwards, was returned as one and
+  // only refused later by the database (architecture-a-06).
+  const periodRow = (text: string) => [text.split(' ').map((word, i) => run(25 + i * 30, 678.78, word))]
+  it('returns null for a day the month does not have', () => {
+    expect(readPeriod(periodRow('Statement Period Feb 30, 2026 - Mar 7, 2026'))).toBeNull()
+  })
+
+  it('returns null for a period that ends before it starts', () => {
+    expect(readPeriod(periodRow('Statement Period Feb 3, 2026 - Jan 7, 2026'))).toBeNull()
+  })
+
+  it('reads a period across a new year', () => {
+    expect(readPeriod(periodRow('Statement Period Dec 8, 2026 - Jan 7, 2027'))).toEqual({ from: '2026-12-08', to: '2027-01-07' })
+  })
 })
 
 describe('the printed summary', () => {

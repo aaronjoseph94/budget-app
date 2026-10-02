@@ -52,7 +52,14 @@ export function daysInMonth(y: number, m: number): number {
   return m === 4 || m === 6 || m === 9 || m === 11 ? 30 : 31
 }
 
-export function isoDate(y: number, m: number, d: number): IsoDate {
+/**
+ * A year, month and day as an IsoDate string, padded and nothing more: it
+ * checks no day. Only for parts already checked (resolveYear, daysInMonth),
+ * or passed on to money-primitives' isoDate, which checks (architecture-a-06).
+ * Internal to statement-parsers; money-primitives' isoDate is the one the
+ * other packages use.
+ */
+export function civilDate(y: number, m: number, d: number): IsoDate {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}` as IsoDate
 }
 
