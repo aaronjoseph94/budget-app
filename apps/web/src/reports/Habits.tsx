@@ -5,10 +5,10 @@
  * (F40); this draws and formats, and never computes. A day before the
  * records or still to come is left blank and listed as such, never $0.
  */
-import { useCallback, useMemo } from 'react'
+import { useMemo } from 'react'
 import { heatGrid, weekdayBars } from '@budget/chart-specs'
 import type { GridDay, GridLevel, PersonalBests, SpendingGrid, Streaks, WeekdayPattern } from '@budget/core'
-import { useAppData } from '../app-data.js'
+import { useAppData, useCategoryName } from '../app-data.js'
 import { formatCents, formatDayMonth, formatIsoDate, formatMagnitude, formatMonthTitle } from '../format.js'
 import { hashOf } from '../nav.js'
 import { SvgChart, fitted } from '../components/ui/chart.js'
@@ -40,7 +40,7 @@ export function HabitsPanel({ asOf }: { asOf: string }) {
       return 'failed' as const
     }
   }, [read, categories])
-  const nameOf = useCallback((id: string) => categories.find((c) => c.id === id)?.name ?? 'a category', [categories])
+  const nameOf = useCategoryName()
 
   return (
     <div className="space-y-4">

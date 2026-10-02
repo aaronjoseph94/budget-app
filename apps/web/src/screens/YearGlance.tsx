@@ -35,7 +35,6 @@ export function YearGlance({
 }) {
   const { displayName } = useAppData()
   const { atAGlance, startingBalanceCents: start, endingBalanceCents: end } = sheet
-  const startMonth = formatMonthName(sheet.startMonth)
   const best = atAGlance.bestSavingsMonth
   const funds = useFunds()
   const debts = useDebts()
@@ -69,13 +68,7 @@ export function YearGlance({
             <Amount label="Ending balance" cents={end} />
           </dl>
           {start === null ? (
-            <button
-              type="button"
-              className={cn('mt-2 text-left text-xs underline underline-offset-4', LINE_BUTTON)}
-              onClick={() => navigate('month', sheet.startMonth.slice(0, 7))}
-            >
-              Type {startMonth}&rsquo;s starting balance on the Month to see these
-            </button>
+            <TypeStartLink startMonth={sheet.startMonth} className="mt-2 text-xs" />
           ) : null}
         </Card>
       )}
@@ -236,5 +229,18 @@ function Versus({ label, change }: { label: string; change: Change }) {
           : `${formatChange(change)}${change.changeBp === null ? '' : ` (${formatBasisPoints(Math.abs(change.changeBp))})`}`}
       </dd>
     </div>
+  )
+}
+
+/** Where the year's missing starting balance is typed (D17): its first month, on the Month. */
+export function TypeStartLink({ startMonth, className }: { startMonth: string; className: string }) {
+  return (
+    <button
+      type="button"
+      className={cn('text-left underline underline-offset-4', LINE_BUTTON, className)}
+      onClick={() => navigate('month', startMonth.slice(0, 7))}
+    >
+      Type {formatMonthName(startMonth)}&rsquo;s starting balance on the Month to see these
+    </button>
   )
 }

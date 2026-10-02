@@ -15,15 +15,13 @@ import { useAppData } from '../app-data.js'
 import { latestStatementEnd, listBudgetHistory, listPlanHistory, listTransactions } from '../ledger.js'
 import type { BudgetRow, Category, LedgerRow, PayScheduleRow, PlanRow } from '../ledger.js'
 import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
-import { formatCents, formatDateRange, formatMonthTitle } from '../format.js'
+import { formatDateRange, formatMonthTitle } from '../format.js'
 import { navigate } from '../nav.js'
 import { Alert, Loading } from '../components/ui/feedback.js'
 import { Icon } from '../components/ui/icons.js'
-import { Figure, MonthTitle } from '../components/ui/type.js'
-import { StatCard } from './MonthSummary.js'
-import { cn } from '../lib/cn.js'
+import { MonthTitle } from '../components/ui/type.js'
+import { PeriodSummary } from './WeekBlocks.js'
 import { useEarlier } from '../earlier.js'
-import { CompareLine } from './CompareLine.js'
 import { ImportedThrough, PeriodBlocks, StepButton, TransfersNote } from './MonthScreen.js'
 import { NOT_SPENDING, OpenedCharges } from './MonthCharges.js'
 import { FREQUENCY_WORD } from './SetupPay.js'
@@ -166,7 +164,13 @@ export function PaycheckPeriod({
       {sheet !== null && typeof sheet !== 'string' ? (
         <>
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-            <Summary sheet={sheet} comparison={comparison} />
+            <PeriodSummary
+              sheet={sheet}
+              comparison={comparison}
+              compareLabel="Compared with the last pay period"
+              earlier="the last pay period"
+              noBudgetsHint="No budgets on Variable expenses yet. They are typed on the Month."
+            />
             {/* Where the workbook's chart well stands (I3:M18): the owner was told a
               share is about $738 of $1,600 rent, and this says how it is found.
               Mockup A's wide card tinted to the accent, its muted words in
@@ -218,41 +222,4 @@ interface Loaded {
   readonly budgets: readonly BudgetRow[]
   readonly plans: readonly PlanRow[]
   readonly ends: readonly string[]
-}
-
-/**
- * Paycheck Budget's summary panel (D9:D15): Money Spent and Left to Spend,
- * both core's, as the Week's stat cards draw them. Its Starting and Ending
- * Balance are not shown, as on the Week: no balance is typed for a period
- * (D17, N45). Under Spent, the period before by the same number of days
- * (D26).
- */
-function Summary({ sheet, comparison }: { sheet: PaycheckSheet; comparison: PeriodComparison | 'failed' | null }) {
-  const { spentCents, leftToSpendCents: left } = sheet.summary
-  const noBudgets = sheet.blocks.variable.rows.every((r) => r.budgetCents === null)
-  return (
-    <section aria-label="Summary">
-      <dl className="grid h-full grid-cols-1 gap-3 min-[480px]:grid-cols-2 md:gap-4">
-        <StatCard
-          label="Spent"
-          icon="bag"
-          extra={<CompareLine comparison={comparison} label="Compared with the last pay period" earlier="the last pay period" />}
-        >
-          <Figure>{formatCents(spentCents)}</Figure>
-        </StatCard>
-        {/* As the Month and Week say it (F5), and where a budget is typed,
-          since this view shows budgets and takes none. */}
-        <StatCard
-          label="Left to spend"
-          icon="sparkles"
-          hero
-          hint={noBudgets ? 'No budgets on Variable expenses yet. They are typed on the Month.' : null}
-        >
-          <Figure className={cn(left < 0 && '-mx-1.5 rounded-lg bg-summary-negative px-1.5 text-summary-negative-ink')}>
-            {formatCents(left)}
-          </Figure>
-        </StatCard>
-      </dl>
-    </section>
-  )
 }

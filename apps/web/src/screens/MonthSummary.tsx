@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react'
 import type { PeriodComparison, PeriodSheet } from '@budget/core'
-import { formatBasisPoints, formatCents, formatChange, formatDayMonth, formatMonthName } from '../format.js'
+import { formatCents, formatDayMonth, formatMonthName } from '../format.js'
 import { SavedNote } from '../components/ui/feedback.js'
 import { Icon, type IconName } from '../components/ui/icons.js'
 import { Figure } from '../components/ui/type.js'
@@ -8,6 +8,11 @@ import { cn } from '../lib/cn.js'
 import { useReturnFocus } from '../lib/return-focus.js'
 import { StartEditor } from './StartEditor.js'
 import { TryAgain } from '../try-again.js'
+import { ChangeWords } from './CompareLine.js'
+
+
+/** A negative figure in the Month's pink, as the workbook's D13:F14 format marks it. */
+export const NEGATIVE_FIGURE = '-mx-1.5 rounded-lg bg-summary-negative px-1.5 text-summary-negative-ink'
 
 /**
  * The workbook's summary card, Jan!B5:F16: Start, Spent, Left to spend and End of
@@ -70,11 +75,7 @@ export function MonthSummary({
           // (F5). Only Variable expenses count here, so the hint names them.
           hint={noBudgets ? 'No budgets on Variable expenses yet.' : null}
         >
-          <Figure
-            className={cn(left < 0 && '-mx-1.5 rounded-lg bg-summary-negative px-1.5 text-summary-negative-ink')}
-          >
-            {formatCents(left)}
-          </Figure>
+          <Figure className={cn(left < 0 && NEGATIVE_FIGURE)}>{formatCents(left)}</Figure>
         </StatCard>
         <StatCard label="End of month" icon="calendar" extra={forecast}>
           {end === null ? <Waiting>Shown once Start is typed</Waiting> : <Figure>{formatCents(end)}</Figure>}
@@ -198,15 +199,7 @@ function LastMonth({ comparison }: { comparison: PeriodComparison | 'failed' | n
         <span className="tnum font-semibold">{formatCents(spent.beforeCents)}</span>
       </p>
       <p className="mt-0.5 font-medium">
-        {spent.direction === 'same' ? (
-          'About the same'
-        ) : (
-          <>
-            <span aria-hidden="true">{spent.direction === 'more' ? '▲ ' : '▼ '}</span>
-            {formatChange(spent)}
-            {spent.changeBp === null ? '' : ` (${formatBasisPoints(Math.abs(spent.changeBp))})`}
-          </>
-        )}
+        <ChangeWords change={spent} />
       </p>
     </>,
   )

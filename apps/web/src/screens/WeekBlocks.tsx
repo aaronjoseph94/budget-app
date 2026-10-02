@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { PeriodComparison, PeriodRow, WeekSheet } from '@budget/core'
+import type { PaycheckSheet, PeriodComparison, PeriodRow, WeekSheet } from '@budget/core'
 import { formatCents } from '../format.js'
 import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
@@ -7,7 +7,7 @@ import { ImportedThrough, PeriodBlocks, TransfersNote, type EditorDone } from '.
 import { WeekBudgetEditor } from './WeekBudgetEditor.js'
 import { NOT_SPENDING } from './MonthCharges.js'
 import { CompareLine } from './CompareLine.js'
-import { StatCard } from './MonthSummary.js'
+import { NEGATIVE_FIGURE, StatCard } from './MonthSummary.js'
 
 /**
  * The workbook's Weekly Budget laid out as Mockup A's Period screen: Spent and
@@ -46,7 +46,13 @@ export function WeekBlocks({
   return (
     <>
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <WeekSummary sheet={sheet} comparison={comparison} />
+        <PeriodSummary
+          sheet={sheet}
+          comparison={comparison}
+          compareLabel="Compared with last week"
+          earlier="last week"
+          noBudgetsHint="No weekly budgets on Variable expenses yet."
+        />
         {aside}
       </div>
       <ImportedThrough through={sheet.importedThrough} />
@@ -59,32 +65,41 @@ export function WeekBlocks({
 }
 
 /**
- * Weekly Budget's summary panel (B8:G16): Money Spent and Left to Spend
- * (D11, D13), both core's. Its Starting and Ending Balance (D9, D15) are
- * not shown: no balance is typed for a week, and core gives no ending
- * balance without a start (D17). Mockup A draws the two as the Month's stat
- * cards, Left to spend the hero as on the Month, and a negative one takes
- * the Month's pink, as the workbook's D13:F14 format marks it. Under Spent,
- * last week to the same weekday (D26), as the mockup puts it.
+ * The summary panel of Weekly Budget (B8:G16) and Paycheck Budget (D9:D15):
+ * Money Spent and Left to Spend, both core's. Their Starting and Ending
+ * Balance are not shown: no balance is typed for a week or a pay period,
+ * and core gives no ending balance without a start (D17, N45). Mockup A
+ * draws the two as the Month's stat cards, Left to spend the hero as on
+ * the Month, and a negative one takes the Month's pink, as the workbook's
+ * D13:F14 format marks it. Under Spent, the period before to the same day
+ * (D26).
  */
-function WeekSummary({ sheet, comparison }: { sheet: WeekSheet; comparison: PeriodComparison | 'failed' | null }) {
+export function PeriodSummary({
+  sheet,
+  comparison,
+  compareLabel,
+  earlier,
+  noBudgetsHint,
+}: {
+  sheet: WeekSheet | PaycheckSheet
+  comparison: PeriodComparison | 'failed' | null
+  /** The comparison's name for a screen reader: "Compared with last week". */
+  compareLabel: string
+  earlier: string
+  /** Said under Left to spend while no Variable expense has a budget. */
+  noBudgetsHint: string
+}) {
   const { spentCents, leftToSpendCents: left } = sheet.summary
   const noBudgets = sheet.blocks.variable.rows.every((r) => r.budgetCents === null)
   return (
     <section aria-label="Summary">
       <dl className="grid h-full grid-cols-1 gap-3 min-[480px]:grid-cols-2 md:gap-4">
-        <StatCard
-          label="Spent"
-          icon="bag"
-          extra={<CompareLine comparison={comparison} label="Compared with last week" earlier="last week" />}
-        >
+        <StatCard label="Spent" icon="bag" extra={<CompareLine comparison={comparison} label={compareLabel} earlier={earlier} />}>
           <Figure>{formatCents(spentCents)}</Figure>
         </StatCard>
         {/* The workbook takes a blank budget as $0 (F5), and only Variable expenses count. */}
-        <StatCard label="Left to spend" icon="sparkles" hero hint={noBudgets ? 'No weekly budgets on Variable expenses yet.' : null}>
-          <Figure className={cn(left < 0 && '-mx-1.5 rounded-lg bg-summary-negative px-1.5 text-summary-negative-ink')}>
-            {formatCents(left)}
-          </Figure>
+        <StatCard label="Left to spend" icon="sparkles" hero hint={noBudgets ? noBudgetsHint : null}>
+          <Figure className={cn(left < 0 && NEGATIVE_FIGURE)}>{formatCents(left)}</Figure>
         </StatCard>
       </dl>
     </section>

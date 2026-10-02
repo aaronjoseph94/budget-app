@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { isoDate, shiftMonth } from '@budget/core'
-import { useAppData } from '../app-data.js'
+import { useAppData, useCategoryName } from '../app-data.js'
 import { formatMonthTitle } from '../format.js'
 import { hashOf } from '../nav.js'
 import { Badge } from '../components/ui/feedback.js'
@@ -49,7 +49,7 @@ export function ReportsScreen({ month }: { month: string | null }) {
     }
   }, [read, categories])
   // Stable while the categories are, so nothing drawn from it is worked out again every render.
-  const nameOf = useCallback((id: string) => categories.find((c) => c.id === id)?.name ?? 'a category', [categories])
+  const nameOf = useCategoryName()
   const thisMonth = `${asOf.slice(0, 7)}-01`
   const step = (by: number) => shiftMonth(isoDate(shown), by).slice(0, 7)
   const [tab, setTab] = useState<ReportTab>(rememberedTab)

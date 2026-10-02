@@ -6,10 +6,10 @@
  * A month with no records is a gap in the line and "No records" in the
  * list, never $0.
  */
-import { useCallback, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { sparkline, trendLines } from '@budget/chart-specs'
 import type { CategoryTrend, MonthlyTrend, TrendLabel } from '@budget/core'
-import { useAppData } from '../app-data.js'
+import { useAppData, useCategoryName } from '../app-data.js'
 import { formatCents, formatMonthTitle, formatShortMonth } from '../format.js'
 import { SvgChart, fitted } from '../components/ui/chart.js'
 import { cn } from '../lib/cn.js'
@@ -42,7 +42,7 @@ export function TrendsPanel({ asOf }: { asOf: string }) {
       return 'failed' as const
     }
   }, [read, categories, months])
-  const nameOf = useCallback((id: string) => categories.find((c) => c.id === id)?.name ?? 'a category', [categories])
+  const nameOf = useCategoryName()
 
   return (
     <div className="space-y-4">

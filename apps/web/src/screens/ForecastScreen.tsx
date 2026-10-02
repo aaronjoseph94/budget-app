@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { rangeBar } from '@budget/chart-specs'
 import type { MonthEndForecast, SafeToSpend } from '@budget/core'
-import { useAppData } from '../app-data.js'
+import { useAppData, useCategoryName } from '../app-data.js'
 import { useFunds } from '../funds.js'
 import { formatCents, formatDayMonth, formatMonthName, formatWholeDollars } from '../format.js'
 import { hashOf } from '../nav.js'
@@ -34,6 +34,7 @@ import { TryAgain } from '../try-again.js'
 export function ForecastScreen() {
   const read = useCoachRead()
   const { categories } = useAppData()
+  const nameOf = useCategoryName()
   const figures = useMemo((): ForecastFigures | 'failed' | 'missing_update' | null => {
     if (read === null) return null
     if (read === 'failed' || read.forecast === undefined) return 'failed'
@@ -70,18 +71,18 @@ export function ForecastScreen() {
       {figures === 'failed' ? <p className="text-sm text-muted-foreground">The forecast did not load. <TryAgain />; everything else still works.</p> : null}
       {ready === null ? null : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:gap-5">
-          <SafeCard safe={ready.figures.safe} names={namesOf(categories)} />
+          <SafeCard safe={ready.figures.safe} names={nameOf} />
           <MonthEndCard monthEnd={ready.figures.monthEnd} figures={ready.figures} month={ready.read.asOf} />
         </div>
       )}
       <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2 xl:gap-5">
         {ready === null ? null : <StillToComeCard monthEnd={ready.figures.monthEnd} month={ready.read.asOf} />}
-        {ready === null ? null : <NextDaysCard flow={ready.figures.flow} line={ready.figures.line} asOf={ready.read.asOf} names={namesOf(categories)} />}
+        {ready === null ? null : <NextDaysCard flow={ready.figures.flow} line={ready.figures.line} asOf={ready.read.asOf} names={nameOf} />}
         {/* The goals' dates need only the year's read, so they show when the month's forecast cannot. */}
         {typeof read === 'object' && read !== null ? (
           <GoalsAheadCard read={read} end={typeof figures === 'object' && figures !== null ? figures.monthEnd.end : null} month={formatMonthName(read.asOf)} />
         ) : null}
-        {typeof figures === 'object' && figures !== null ? <MonthsAheadCard ahead={figures.ahead} bars={figures.aheadBars} names={namesOf(categories)} /> : null}
+        {typeof figures === 'object' && figures !== null ? <MonthsAheadCard ahead={figures.ahead} bars={figures.aheadBars} names={nameOf} /> : null}
       </div>
       {/* From the payoff plan alone, so it shows whatever became of the rest. */}
       <DebtFreeCard />
@@ -89,9 +90,6 @@ export function ForecastScreen() {
   )
 }
 
-function namesOf(categories: readonly { readonly id: string; readonly name: string }[]): (id: string) => string {
-  return (id) => categories.find((c) => c.id === id)?.name ?? 'a category'
-}
 
 /** The Coach's forecast card's words, the AI's (✨) where kept ones still fit; nothing asked for here. */
 function Sentence({ read }: { read: DigestRows }) {

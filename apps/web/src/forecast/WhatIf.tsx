@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { isoDate, whatIf, type Lever, type Spread, type WhatIf } from '@budget/core'
-import { useAppData } from '../app-data.js'
 import { formatCents, formatMinutes, formatShortMonth, formatWholeDollars } from '../format.js'
 import { cn } from '../lib/cn.js'
+import { useCategoryName } from '../app-data.js'
 import type { CoreGoal } from '../coach/goals.js'
 import type { GoalOutlook } from '../coach/outlook.js'
 
@@ -13,7 +13,7 @@ import type { GoalOutlook } from '../coach/outlook.js'
  * with a cost an hour (G1).
  */
 export function WhatIfPanel({ goals, outlooks, end, month, asOf }: { goals: readonly CoreGoal[]; outlooks: ReadonlyMap<string, GoalOutlook>; end: Spread | null; month: string; asOf: string }) {
-  const { categories } = useAppData()
+  const nameOf = useCategoryName()
   const [chosen, setChosen] = useState<string | null>(null)
   const goal = goals.find((g) => g.id === chosen) ?? goals[0]
   const outlook = goal === undefined ? undefined : outlooks.get(goal.id)
@@ -37,7 +37,7 @@ export function WhatIfPanel({ goals, outlooks, end, month, asOf }: { goals: read
         </label>
       ) : null}
       {goal === undefined || outlook === undefined ? null : (
-        <WhatIfChips key={goal.id} goal={goal} outlook={outlook} end={end} month={month} names={(id) => categories.find((c) => c.id === id)?.name ?? 'a category'} asOf={asOf} />
+        <WhatIfChips key={goal.id} goal={goal} outlook={outlook} end={end} month={month} names={nameOf} asOf={asOf} />
       )}
     </>
   )

@@ -64,6 +64,9 @@ const SECTIONS: readonly { readonly label: string; readonly cards: readonly List
   },
 ]
 
+/** Every list's card with its section's name, in the workbook's order. */
+const CARDS = SECTIONS.flatMap((section) => section.cards.map((card) => ({ card, group: section.label })))
+
 /**
  * Setup: the workbook's START HERE tab. Your name, and every category under the
  * list it belongs to, which decides where its charges are counted.
@@ -102,7 +105,6 @@ export function SetupScreen() {
       {card.kind === 'subscription' ? <FixedTotal amounts={amounts} month={month} /> : null}
     </Fragment>
   )
-  const cards = SECTIONS.flatMap((section) => section.cards.map((card) => ({ card, group: section.label })))
 
   return (
     <div className="space-y-5">
@@ -120,11 +122,11 @@ export function SetupScreen() {
       {added !== null ? <StarterAdded count={added} /> : null}
       {twoColumns ? (
         <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start gap-5">
-          <div className="space-y-5">{cards.filter((c) => WITH_COLUMNS.has(c.card.kind)).map(view)}</div>
-          <div className="space-y-5">{cards.filter((c) => !WITH_COLUMNS.has(c.card.kind)).map(view)}</div>
+          <div className="space-y-5">{CARDS.filter((c) => WITH_COLUMNS.has(c.card.kind)).map(view)}</div>
+          <div className="space-y-5">{CARDS.filter((c) => !WITH_COLUMNS.has(c.card.kind)).map(view)}</div>
         </div>
       ) : (
-        <div className="space-y-5">{cards.map(view)}</div>
+        <div className="space-y-5">{CARDS.map(view)}</div>
       )}
     </div>
   )
@@ -146,19 +148,19 @@ export function SetupLists({ kinds, starter = false }: { kinds: readonly Categor
   const amounts = useMonthlyAmounts(month)
   const nudges = useBillNudges(amounts)
   const schedules = usePaySchedules()
-  const cards = SECTIONS.flatMap((section) => section.cards).filter((card) => kinds.includes(card.kind))
+  const cards = CARDS.filter(({ card }) => kinds.includes(card.kind))
   return (
     <div className="space-y-3">
       {starter && version > 0 && categories.length < FEW_CATEGORIES ? <StarterCard onAdded={setAdded} /> : null}
       {added !== null ? <StarterAdded count={added} /> : null}
       {kinds.some((k) => RECURRING.has(k)) ? <AmountsProblem amounts={amounts} /> : null}
       {kinds.includes('income') && schedules.status === 'failed' ? <Alert tone="error">{schedules.message}</Alert> : null}
-      {cards.map((card) => (
+      {cards.map(({ card, group }) => (
         <ListCardView
           key={card.kind}
           level={3}
           card={card}
-          group={SECTIONS.find((section) => section.cards.includes(card))?.label ?? ''}
+          group={group}
           rows={lists.get(card.kind) ?? []}
           month={month}
           amounts={RECURRING.has(card.kind) ? amounts : null}

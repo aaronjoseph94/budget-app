@@ -69,17 +69,21 @@ export function CompareLine({
         </span>
       </p>
       <p className="mt-0.5 font-medium">
-        {c.direction === 'same' ? (
-          'About the same'
-        ) : (
-          <>
-            <span aria-hidden="true">{c.direction === 'more' ? '▲ ' : '▼ '}</span>
-            {formatChange(c)}
-            {c.changeBp === null ? '' : ` (${formatBasisPoints(Math.abs(c.changeBp))})`}
-          </>
-        )}
+        <ChangeWords change={c} />
       </p>
     </>,
+  )
+}
+
+/** A change from core in words, with a marker the eye can find and a reader skips (F26). */
+export function ChangeWords({ change }: { change: Change }) {
+  if (change.direction === 'same') return <>About the same</>
+  return (
+    <>
+      <span aria-hidden="true">{change.direction === 'more' ? '▲ ' : '▼ '}</span>
+      {formatChange(change)}
+      {change.changeBp === null ? '' : ` (${formatBasisPoints(Math.abs(change.changeBp))})`}
+    </>
   )
 }
 

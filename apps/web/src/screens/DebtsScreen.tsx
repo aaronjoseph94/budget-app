@@ -3,7 +3,7 @@ import { debtBalanceChange, endOfList, isoDate, type Change, type DebtBalanceCha
 import { debtRing } from '@budget/chart-specs'
 import { useDebts } from '../debts.js'
 import type { DebtRow } from '../ledger.js'
-import { formatBasisPoints, formatCents, formatChange, formatMonthName, formatMonthTitle, formatRate } from '../format.js'
+import { formatBasisPoints, formatCents, formatMonthName, formatMonthTitle, formatRate } from '../format.js'
 import { DebtEditor } from './DebtEditor.js'
 import { DebtStrategies } from './DebtStrategies.js'
 import { Alert, Loading } from '../components/ui/feedback.js'
@@ -14,6 +14,7 @@ import { Figure, MonthTitle } from '../components/ui/type.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { TryAgain } from '../try-again.js'
 import type { Notice } from './GoalActions.js'
+import { ChangeWords } from './CompareLine.js'
 
 /**
  * The workbook's Debt Calculator (S17): the summary card (Current Debt Total,
@@ -291,17 +292,5 @@ function Stat({ label, muted = false, className, children }: { label: string; mu
       <dt className={muted ? 'text-sm text-muted-foreground' : 'text-xs text-debts-ink'}>{label}</dt>
       <dd>{children}</dd>
     </div>
-  )
-}
-
-/** A change from core in words, with a marker the eye can find and a reader skips (F26). */
-function ChangeWords({ change }: { change: Change }) {
-  if (change.direction === 'same') return <>About the same</>
-  return (
-    <>
-      <span aria-hidden="true">{change.direction === 'more' ? '▲ ' : '▼ '}</span>
-      {formatChange(change)}
-      {change.changeBp === null ? '' : ` (${formatBasisPoints(Math.abs(change.changeBp))})`}
-    </>
   )
 }

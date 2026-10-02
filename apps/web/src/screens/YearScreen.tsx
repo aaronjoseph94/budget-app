@@ -22,18 +22,17 @@ import {
 } from '../ledger.js'
 import { navigate } from '../nav.js'
 import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
-import { formatAmount, formatCents, formatMonthName, formatMonthTitle, formatShortMonth, MONTH_NAMES } from '../format.js'
+import { formatAmount, formatCents, formatMonthTitle, formatShortMonth, MONTH_NAMES } from '../format.js'
 import { Alert, Loading } from '../components/ui/feedback.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
 import { NativeSelect } from '../components/ui/form.js'
 import { cn } from '../lib/cn.js'
 import { useFourAcross } from '../lib/wide.js'
 import { AnnualCharts } from './YearCharts.js'
-import { YearGlance } from './YearGlance.js'
+import { TypeStartLink, YearGlance } from './YearGlance.js'
 import { PeriodSwitch } from './PeriodSwitch.js'
 import { WaitingBanner } from './MonthScreen.js'
 import { HelpButton } from '../help/HelpButton.js'
-import { LINE_BUTTON } from '../components/ui/link.js'
 import { TryAgain } from '../try-again.js'
 
 /**
@@ -421,13 +420,7 @@ function YearTotals({ sheet, thisMonth }: { sheet: YearSheet; thisMonth: string 
       </dl>
       {/* As the phone's balances card says: where the missing start is typed (D17). */}
       {sheet.startingBalanceCents === null ? (
-        <button
-          type="button"
-          className={cn('mt-3 text-left text-xs text-muted-foreground underline underline-offset-4', LINE_BUTTON)}
-          onClick={() => navigate('month', sheet.startMonth.slice(0, 7))}
-        >
-          Type {formatMonthName(sheet.startMonth)}&rsquo;s starting balance on the Month to see these
-        </button>
+        <TypeStartLink startMonth={sheet.startMonth} className="mt-3 text-xs text-muted-foreground" />
       ) : null}
     </section>
   )

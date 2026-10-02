@@ -77,6 +77,12 @@ export function useAppData(): AppData {
   return data
 }
 
+/** A category's name by its id, stable while the categories are; "a category" for one gone. */
+export function useCategoryName(): (id: string) => string {
+  const { categories } = useAppData()
+  return useCallback((id: string) => categories.find((c) => c.id === id)?.name ?? 'a category', [categories])
+}
+
 export function AppDataProvider({
   supabase,
   userId,
