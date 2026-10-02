@@ -330,6 +330,9 @@ export default tseslint.config(
           selector: "CallExpression[callee.object.name='document'][callee.property.name=/^write(ln)?$/]",
           message: 'Markup from a string only through SvgChart (components/ui/chart.tsx), and only from chart-specs.',
         },
+        // CLAUDE.md's "never toFixed outside the one display helper" is not
+        // the engine's rule alone (architecture-b-03).
+        ...NO_FLOAT_MONEY,
       ],
     },
   },
@@ -346,6 +349,7 @@ export default tseslint.config(
           selector: "Identifier[name='console']:not(FunctionDeclaration[id.name='log'] Identifier)",
           message: 'Log through this file\'s log(code, counts) helper only: codes and counts, never content.',
         },
+        ...NO_FLOAT_MONEY,
       ],
     },
   },
@@ -371,7 +375,16 @@ export default tseslint.config(
       'packages/chart-specs/test/**/*.ts',
       'packages/savings-coach/test/**/*.ts',
       'packages/report-export/test/**/*.ts',
+      'packages/money-primitives/test/**/*.ts',
+      'packages/golden-verification/test/**/*.ts',
     ],
     rules: { 'no-restricted-syntax': ['error', ...NO_WEAK_ASSERTIONS] },
+  },
+  {
+    // The app's and the functions' tests may use vi.mock (two do, for the
+    // browser's own APIs), but CLAUDE.md's "never toBeCloseTo or snapshots
+    // on money or dates" binds them too (architecture-b-03).
+    files: ['apps/web/test/**/*.{ts,tsx}', 'supabase/functions/test/**/*.ts'],
+    rules: { 'no-restricted-syntax': ['error', ...NO_WEAK_ASSERTIONS.filter((rule) => !rule.selector.includes("'mock'"))] },
   },
 )

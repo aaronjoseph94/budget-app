@@ -44,8 +44,8 @@ whether a commit is clean.
 | Types | Zero type errors | `tsc --build` | every edit |
 | Lint | Zero errors | `eslint .` | every edit |
 | Engine purity | `packages/core` imports only `money-primitives`; no ambient clock, randomness, env, locale, time zone, network, timer or storage, in `core` and in the pure packages (`statement-parsers`, `chart-specs`, `savings-coach`, `report-export`), whose dedupe hash alone may use `crypto` | `depcruise` + `eslint` (`no-restricted-globals`, `NO_AMBIENT_STATE`) | every edit |
-| Float money | No `toFixed` / `parseFloat` in the engine; `Cents` brand enforced by the type system | `eslint` + `tsc --build` | every edit |
-| Weak assertions | No `toBeCloseTo`, no snapshots, no `vi.mock` under `packages/core` | `eslint` | every edit |
+| Float money | No `toFixed` / `parseFloat` in the engine, the packages, the app (`apps/web/src`) or the Edge Functions; `Cents` brand enforced by the type system | `eslint` + `tsc --build` | every edit |
+| Weak assertions | No `toBeCloseTo`, no snapshots, in any package's tests (golden harness and money-primitives included), the app's or the Edge Functions'; no `vi.mock` in the packages' tests | `eslint` | every edit |
 | Secrets | Zero findings in the working tree (local `.env` files allowed there only) | `gitleaks dir --config .gitleaks-tree.toml --redact --no-banner` | every edit |
 | Tracked env files | No `.env` file is tracked but `.env.example` | `git ls-files` (`no_env_files` in `scripts/gates.sh`) | every edit |
 | Secret history | Zero findings in committed history, `.env` files included | `gitleaks detect --config .gitleaks.toml --redact --no-banner` | CI |
