@@ -17,7 +17,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { checkReply, modelPayload, type ModelPayload } from '@budget/savings-coach'
 import { parseNarrateReply, type AiProvider } from '@budget/schema'
 import { useAppData } from '../app-data.js'
-import { aiStatus, askAi, ranOf, viewOf, type AiState, type AiView } from '../ai/client.js'
+import { aiStatus, askAi, ranOf, REFUSED_VIEW, viewOf, type AiState, type AiView } from '../ai/client.js'
 import { readNotes, writeNote } from './ai-cache.js'
 import { fromReply, ownWords, reuse, type Day, type Narration, type Signed } from './narration.js'
 import { sign, sigsByLetter } from './signatures.js'
@@ -40,7 +40,6 @@ export interface NarrationState {
 const ASKED_KEY = 'budget.coach.asked'
 
 /** A reply that came back but failed the app's checks as a whole. */
-const REFUSED: AiView = { state: 'all_failed', sentence: 'The AI’s words didn’t pass the app’s checks: showing the app’s own words.', help: null, status: null }
 
 export function askedHereToday(asOf: string): boolean {
   try {
@@ -111,7 +110,7 @@ export function useNarration(day: Day | null, asOf: string, auto: boolean): Narr
       const ran = answer.ok ? ranOf(answer.data) : null
       const parsed = ran === null ? null : parseNarrateReply(ran.text)
       if (ran === null || parsed === null || !parsed.ok) {
-        const view = answer.ok ? REFUSED : answer.view
+        const view = answer.ok ? REFUSED_VIEW : answer.view
         if (!answer.ok) rememberWhy(asOf, answer.view.state)
         setState((s) => ({ ...s, status: s.provider === null ? 'own' : 'ai', view }))
         return

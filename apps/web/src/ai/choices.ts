@@ -8,7 +8,7 @@
  * screen shows what the helper will actually do.
  */
 import { AiProviderSchema, type AiProvider } from '@budget/schema'
-import { ReadRefused, needsOneTimeUpdate } from '../ledger.js'
+import { whyRefused } from '../ledger.js'
 import type { SupabaseClient } from '../supabase.js'
 
 export interface AiChoices {
@@ -45,12 +45,9 @@ export function moved(order: readonly AiProvider[], provider: AiProvider, by: -1
 
 export type ChoicesRead = { readonly ok: true; readonly choices: AiChoices } | { readonly ok: false; readonly why: 'needs_update' | 'unreachable' }
 
-const why = (error: { message: string; code: string }): 'needs_update' | 'unreachable' =>
-  needsOneTimeUpdate(new ReadRefused(error.message, error.code)) ? 'needs_update' : 'unreachable'
-
 export async function readChoices(supabase: SupabaseClient, userId: string): Promise<ChoicesRead> {
   const { data, error } = await supabase.from('ai_settings').select('enabled, provider_order, allow_paid, daily_cap').eq('user_id', userId).maybeSingle()
-  if (error !== null) return { ok: false, why: why(error) }
+  if (error !== null) return { ok: false, why: whyRefused(error) }
   if (data === null) return { ok: true, choices: DEFAULT_CHOICES }
   const row = data as { enabled?: unknown; provider_order?: unknown; allow_paid?: unknown; daily_cap?: unknown }
   return {
@@ -69,11 +66,11 @@ export async function saveChoices(supabase: SupabaseClient, userId: string, choi
   const { error } = await supabase
     .from('ai_settings')
     .upsert({ user_id: userId, provider_order: choices.order, allow_paid: choices.allowPaid, daily_cap: choices.dailyCap }, { onConflict: 'user_id' })
-  return error === null ? true : why(error)
+  return error === null ? true : whyRefused(error)
 }
 
 /** Turn AI on or off, writing that column alone, so every other choice stays as it is. */
 export async function saveEnabled(supabase: SupabaseClient, userId: string, enabled: boolean): Promise<true | 'needs_update' | 'unreachable'> {
   const { error } = await supabase.from('ai_settings').upsert({ user_id: userId, enabled }, { onConflict: 'user_id' })
-  return error === null ? true : why(error)
+  return error === null ? true : whyRefused(error)
 }

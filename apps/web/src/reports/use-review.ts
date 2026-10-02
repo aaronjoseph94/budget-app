@@ -14,8 +14,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { canonicalJson, checkReportReply, mergeReview, reportBrief, reportFacts, reportWords, type ReportFacts, type Review, type ReviewedMonth } from '@budget/savings-coach'
 import { AiProviderSchema, REPORT_PROMPT_VERSION, parseReportReply, type AiProvider, type NarrateReport, type ReportReply } from '@budget/schema'
 import { useAppData } from '../app-data.js'
-import { askAi, ranOf, type AiView } from '../ai/client.js'
-import { sha256Hex } from '../coach/ai-cache.js'
+import { askAi, ranOf, REFUSED_VIEW, type AiView } from '../ai/client.js'
+import { FIGURE, sha256Hex } from '../coach/ai-cache.js'
 import { useCoachSettings } from '../coach/settings.js'
 import type { SupabaseClient } from '../supabase.js'
 
@@ -29,9 +29,6 @@ export interface ReviewState {
 }
 
 const ASKED_KEY = 'budget.reports.asked'
-const REFUSED: AiView = { state: 'all_failed', sentence: 'The AI’s words didn’t pass the app’s checks: showing the app’s own words.', help: null, status: null }
-/** Any number, in any script, or any currency or percent sign: checked words never hold one. */
-const FIGURE = /[\p{N}\p{Sc}%％]/u
 
 function askedHere(mark: string): boolean {
   try {
@@ -92,7 +89,7 @@ export function useReview(report: ReviewedMonth, nameOf: (id: string) => string)
       const parsed = ran === null ? null : parseReportReply(ran.text)
       if (!live) return
       if (ran === null || parsed === null || !parsed.ok) {
-        return setState({ own, ai: null, status: 'own', view: answer.ok ? REFUSED : answer.view, provider: null })
+        return setState({ own, ai: null, status: 'own', view: answer.ok ? REFUSED_VIEW : answer.view, provider: null })
       }
       const checked = checkReportReply({ reply: parsed.reply, brief }).reply
       setState({ own, ai: checked, status: 'ai', view: null, provider: ran.provider })

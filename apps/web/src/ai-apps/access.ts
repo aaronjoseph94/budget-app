@@ -7,7 +7,7 @@
  *
  * With no row saved, AI apps are off: 0020's own default.
  */
-import { ReadRefused, needsOneTimeUpdate } from '../ledger.js'
+import { whyRefused } from '../ledger.js'
 import type { SupabaseClient } from '../supabase.js'
 
 export interface Access {
@@ -25,12 +25,9 @@ export const CONNECT_MINUTES = 15
 export type Why = 'needs_update' | 'unreachable'
 export type AccessRead = { readonly ok: true; readonly access: Access } | { readonly ok: false; readonly why: Why }
 
-const why = (error: { message: string; code: string }): Why =>
-  needsOneTimeUpdate(new ReadRefused(error.message, error.code)) ? 'needs_update' : 'unreachable'
-
 export async function readAccess(supabase: SupabaseClient, userId: string): Promise<AccessRead> {
   const { data, error } = await supabase.from('ai_app_access').select('enabled, allow_add, connect_until').eq('user_id', userId).maybeSingle()
-  if (error !== null) return { ok: false, why: why(error) }
+  if (error !== null) return { ok: false, why: whyRefused(error) }
   if (data === null) return { ok: true, access: NO_ACCESS }
   const row = data as { enabled?: unknown; allow_add?: unknown; connect_until?: unknown }
   return {
@@ -58,7 +55,7 @@ export async function saveAccess(
     ...(change.connectUntil === undefined ? {} : { connect_until: change.connectUntil }),
   }
   const { error } = await supabase.from('ai_app_access').upsert(row, { onConflict: 'user_id' })
-  return error === null ? true : why(error)
+  return error === null ? true : whyRefused(error)
 }
 
 /**

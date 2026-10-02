@@ -15,7 +15,7 @@
  * that, so a digit can never be stored, even by a bug here.
  */
 import { AiProviderSchema, NARRATE_PROMPT_VERSION, parseNarrateReply, type AiProvider, type NarrateReply } from '@budget/schema'
-import { ReadRefused, needsOneTimeUpdate } from '../ledger.js'
+import { whyRefused } from '../ledger.js'
 import type { SupabaseClient } from '../supabase.js'
 
 /** SHA-256 of the text, as lowercase hex. */
@@ -42,9 +42,6 @@ export interface Note {
 
 export type NotesRead = { readonly ok: true; readonly notes: readonly Note[] } | { readonly ok: false; readonly why: 'needs_update' | 'unreachable' }
 
-const why = (error: { message: string; code: string }): 'needs_update' | 'unreachable' =>
-  needsOneTimeUpdate(new ReadRefused(error.message, error.code)) ? 'needs_update' : 'unreachable'
-
 const strings = (v: unknown): Record<string, string> =>
   typeof v === 'object' && v !== null && !Array.isArray(v)
     ? Object.fromEntries(Object.entries(v).filter((e): e is [string, string] => typeof e[1] === 'string'))
@@ -58,7 +55,7 @@ export async function readNotes(supabase: SupabaseClient): Promise<NotesRead> {
     .eq('surface', 'daily')
     .order('created_at', { ascending: false })
     .limit(30)
-  if (error !== null) return { ok: false, why: why(error) }
+  if (error !== null) return { ok: false, why: whyRefused(error) }
   const notes = (data as readonly Record<string, unknown>[]).flatMap((row): Note[] => {
     const parsed = parseNarrateReply(row['body'])
     const provider = AiProviderSchema.safeParse(row['provider'])
@@ -87,7 +84,7 @@ export interface NoteToWrite {
 }
 
 /** Any number, in any script, or any currency or percent sign, anywhere in the body. */
-const FIGURE = /[\p{N}\p{Sc}%％]/u
+export const FIGURE = /[\p{N}\p{Sc}%％]/u
 
 /**
  * Keep checked words. `refused` when the body holds anything that could be
@@ -110,5 +107,5 @@ export async function writeNote(supabase: SupabaseClient, userId: string, note: 
     },
     { onConflict: 'user_id,surface,scope,facts_sig', ignoreDuplicates: true },
   )
-  return error === null ? 'kept' : why(error)
+  return error === null ? 'kept' : whyRefused(error)
 }

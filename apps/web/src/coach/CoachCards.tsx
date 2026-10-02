@@ -7,7 +7,7 @@ import { Button } from '../components/ui/button.js'
 import { Card } from '../components/ui/card.js'
 import { Icon, type IconName } from '../components/ui/icons.js'
 import type { CardText, Narration, Words } from './narration.js'
-import { CoachText } from './words.js'
+import { AiMark, CoachText } from './words.js'
 import { WhySheet } from './WhySheet.js'
 import { TryAgain } from '../try-again.js'
 
@@ -25,22 +25,11 @@ export function todaysLine(facts: readonly Fact[], tone: Tone): { readonly text:
   return line === null || fact === undefined ? null : { text: line.text, fact }
 }
 
-/** The AI's mark, said as words to a screen reader. */
-export function Sparkle({ words }: { words: Words }) {
-  if (!words.ai) return null
-  return (
-    <>
-      <span aria-hidden="true">✨ </span>
-      <span className="sr-only">Written by AI: </span>
-    </>
-  )
-}
-
 /** Words on screen, their figures filled from the engine as they are drawn. */
 export function Said({ words }: { words: Words }) {
   return (
     <>
-      <Sparkle words={words} />
+      <AiMark ai={words.ai} />
       <CoachText text={words.text} facts={words.names} />
     </>
   )

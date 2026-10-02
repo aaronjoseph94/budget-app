@@ -72,3 +72,14 @@ export function CoachText({ text, facts }: { text: string; facts: Readonly<Recor
     </>
   )
 }
+
+/** The AI's mark, said as words to a screen reader. */
+export function AiMark({ ai }: { ai: boolean }) {
+  if (!ai) return null
+  return (
+    <>
+      <span aria-hidden="true">✨ </span>
+      <span className="sr-only">Written by AI: </span>
+    </>
+  )
+}

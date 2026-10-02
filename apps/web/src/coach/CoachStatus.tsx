@@ -1,18 +1,10 @@
 import type { ReactNode } from 'react'
-import type { AiProvider } from '@budget/schema'
 import { hashOf } from '../nav.js'
 import { Button } from '../components/ui/button.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
 import { LineLink } from '../ai/LineLink.js'
 import type { NarrationState } from './use-narration.js'
-
-const BY: Readonly<Record<AiProvider, string>> = {
-  gemini: 'free Google Gemini',
-  groq: 'free Groq',
-  openrouter: 'free OpenRouter',
-  openai: 'OpenAI',
-  anthropic: 'Anthropic',
-}
+import { PROVIDER_NAME } from '../ai/client.js'
 
 /**
  * One line under the Coach's title saying whose words these are (plan
@@ -27,7 +19,7 @@ export function CoachStatus({ state }: { state: NarrationState }) {
   let said: ReactNode = 'In the app’s own words, from your records.'
   if (status === 'loading') said = 'Looking for today’s AI words. The app’s own show meanwhile.'
   else if (status === 'asking') said = 'Asking the AI for today’s words. The app’s own show meanwhile.'
-  else if (status === 'ai' && provider !== null) said = `✨ Words by AI (${BY[provider]}) from your numbers. Every figure is the app’s own.`
+  else if (status === 'ai' && provider !== null) said = `✨ Words by AI (${PROVIDER_NAME[provider]}) from your numbers. Every figure is the app’s own.`
   else if (view?.state === 'not_set_up' || view?.state === 'off') {
     said = (
       <>

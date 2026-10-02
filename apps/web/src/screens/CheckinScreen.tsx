@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { goalsProgress, impulseShare, isoDate } from '@budget/core'
 import { checkinFacts, type Checkin, type CheckinFacts } from '@budget/savings-coach'
-import type { AiProvider } from '@budget/schema'
 import { useAppData } from '../app-data.js'
 import { goalSavedCents, useFunds } from '../funds.js'
 import { formatCents, formatDateRange, formatDayMonth, todayIso } from '../format.js'
@@ -21,6 +20,7 @@ import { CoachText } from '../coach/words.js'
 import { CHECKIN_CARD, CheckinQuestions, useCheckinAnswers } from '../coach/CheckinQuestions.js'
 import { TryAgain } from '../try-again.js'
 import { cn } from '../lib/cn.js'
+import { PROVIDER_NAME } from '../ai/client.js'
 
 /**
  * The Sunday check-in (plan §2.4, A20): last week's recap and a win, the
@@ -112,15 +112,13 @@ function Said({ part, facts }: { part: Checkin[keyof Checkin]; facts: CheckinFac
   )
 }
 
-const BY: Readonly<Record<AiProvider, string>> = { gemini: 'free Google Gemini', groq: 'free Groq', openrouter: 'free OpenRouter', openai: 'OpenAI', anthropic: 'Anthropic' }
-
 /** Whose words these are, and why the app's own show when the AI's do not. */
 function Whose({ state }: { state: CheckinWordsState }) {
   const { status, view, provider } = state
   let said: ReactNode = 'In the app’s own words, from your records.'
   if (status === 'looking') said = 'Looking for this week’s AI words. The app’s own show meanwhile.'
   else if (status === 'asking') said = 'Asking the AI for this week’s words. The app’s own show meanwhile.'
-  else if (status === 'ai' && provider !== null) said = `✨ Words by AI (${BY[provider]}) from your numbers. Every figure is the app’s own.`
+  else if (status === 'ai' && provider !== null) said = `✨ Words by AI (${PROVIDER_NAME[provider]}) from your numbers. Every figure is the app’s own.`
   else if (view !== null) {
     said = (
       <>

@@ -40,7 +40,8 @@ export interface AiView {
   readonly status: AiStatusReply | null
 }
 
-const NAMES: Readonly<Record<AiServiceStatus['provider'], string>> = {
+/** Each service as a sentence names it: "Words by AI (free Google Gemini)". */
+export const PROVIDER_NAME: Readonly<Record<AiServiceStatus['provider'], string>> = {
   gemini: 'free Google Gemini',
   groq: 'free Groq',
   openrouter: 'free OpenRouter',
@@ -90,6 +91,9 @@ export const NOT_SET_UP_HERE = 'AI isn’t set up yet. Everything still works in
 export function viewOf(state: Exclude<AiState, 'on'>, status: AiStatusReply | null = null): AiView {
   return { state, ...SAID[state], status }
 }
+
+/** A reply that came back but failed the app's checks as a whole. */
+export const REFUSED_VIEW: AiView = { state: 'all_failed', sentence: 'The AI’s words didn’t pass the app’s checks: showing the app’s own words.', help: null, status: null }
 
 const isCode = (c: unknown): c is AiCode => AI_CODES.some((k) => k === c)
 
@@ -187,6 +191,6 @@ export async function aiStatus(supabase: SupabaseClient): Promise<AiView> {
     return viewOf(locked ? 'keys_locked' : rejected ? 'key_rejected' : 'not_set_up', status)
   }
   if (status.today.used >= status.today.cap) return viewOf('limit_reached', status)
-  const using = first.source === 'secret' ? 'your receipts key' : NAMES[first.provider]
+  const using = first.source === 'secret' ? 'your receipts key' : PROVIDER_NAME[first.provider]
   return { state: 'on', sentence: `AI is on, using ${using}.`, help: null, status }
 }

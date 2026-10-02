@@ -7,30 +7,11 @@
  */
 import type { ReactNode } from 'react'
 import type { ReviewedMonth } from '@budget/savings-coach'
-import type { AiProvider } from '@budget/schema'
 import { Section } from '../forecast/parts.js'
-import { CoachText } from '../coach/words.js'
+import { AiMark, CoachText } from '../coach/words.js'
 import { useReview, type ReviewState } from './use-review.js'
 import { LineLink } from '../ai/LineLink.js'
-
-const BY: Readonly<Record<AiProvider, string>> = {
-  gemini: 'free Google Gemini',
-  groq: 'free Groq',
-  openrouter: 'free OpenRouter',
-  openai: 'OpenAI',
-  anthropic: 'Anthropic',
-}
-
-/** The AI's mark, said as words to a screen reader. */
-function Mark({ ai }: { ai: boolean }) {
-  if (!ai) return null
-  return (
-    <>
-      <span aria-hidden="true">✨ </span>
-      <span className="sr-only">Written by AI: </span>
-    </>
-  )
-}
+import { PROVIDER_NAME } from '../ai/client.js'
 
 /** Whose words these are, and why the app's own show when the AI's do not. */
 function Whose({ state }: { state: ReviewState }) {
@@ -39,7 +20,7 @@ function Whose({ state }: { state: ReviewState }) {
   if (status === 'so_far') said = 'In the app’s own words. The AI reviews a month once it is over.'
   else if (status === 'looking') said = 'Looking for this month’s AI words. The app’s own show meanwhile.'
   else if (status === 'asking') said = 'Asking the AI to review this month. The app’s own words show meanwhile.'
-  else if (status === 'ai' && provider !== null) said = `✨ Words by AI (${BY[provider]}) from your numbers. Every figure is the app’s own.`
+  else if (status === 'ai' && provider !== null) said = `✨ Words by AI (${PROVIDER_NAME[provider]}) from your numbers. Every figure is the app’s own.`
   else if (view !== null) {
     said = (
       <>
@@ -61,20 +42,20 @@ export function ReviewCard({ report, nameOf }: { report: ReviewedMonth; nameOf: 
     <Section title="The month in review" large className="bg-linear-to-br from-card to-primary-tint [--muted-foreground:var(--canvas-muted)]">
       <div aria-live="polite" className="space-y-3">
         <p className="text-lg font-medium leading-snug [overflow-wrap:anywhere]">
-          <Mark ai={review.headline.ai} />
+          <AiMark ai={review.headline.ai} />
           <CoachText text={review.headline.text} facts={facts.facts} />
         </p>
         <ul className="list-disc space-y-1 pl-5 [overflow-wrap:anywhere]">
           {review.points.map((p) => (
             <li key={p.fact}>
-              <Mark ai={p.ai} />
+              <AiMark ai={p.ai} />
               <CoachText text={p.text} facts={facts.facts} />
             </li>
           ))}
         </ul>
         <p className="[overflow-wrap:anywhere]">
           <span className="font-medium">One thing to try: </span>
-          <Mark ai={review.tryThis.ai} />
+          <AiMark ai={review.tryThis.ai} />
           <CoachText text={review.tryThis.text} facts={facts.facts} />
         </p>
       </div>

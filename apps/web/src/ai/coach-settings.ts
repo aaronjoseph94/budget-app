@@ -11,7 +11,7 @@
  * Coach say what the database would.
  */
 import type { Tone } from '@budget/savings-coach'
-import { ReadRefused, needsOneTimeUpdate } from '../ledger.js'
+import { whyRefused } from '../ledger.js'
 import type { SupabaseClient } from '../supabase.js'
 
 export interface CoachSettings {
@@ -23,12 +23,9 @@ export const DEFAULT_COACH: CoachSettings = { tone: 'cheerleader', shareShopName
 
 export type CoachSettingsRead = { readonly ok: true; readonly settings: CoachSettings } | { readonly ok: false; readonly why: 'needs_update' | 'unreachable' }
 
-const why = (error: { message: string; code: string }): 'needs_update' | 'unreachable' =>
-  needsOneTimeUpdate(new ReadRefused(error.message, error.code)) ? 'needs_update' : 'unreachable'
-
 export async function readCoachSettings(supabase: SupabaseClient, userId: string): Promise<CoachSettingsRead> {
   const { data, error } = await supabase.from('ai_settings').select('tone, share_shop_names').eq('user_id', userId).maybeSingle()
-  if (error !== null) return { ok: false, why: why(error) }
+  if (error !== null) return { ok: false, why: whyRefused(error) }
   if (data === null) return { ok: true, settings: DEFAULT_COACH }
   const row = data as { tone?: unknown; share_shop_names?: unknown }
   return {
@@ -42,5 +39,5 @@ export async function saveCoachSettings(supabase: SupabaseClient, userId: string
   const { error } = await supabase
     .from('ai_settings')
     .upsert({ user_id: userId, tone: settings.tone, share_shop_names: settings.shareShopNames }, { onConflict: 'user_id' })
-  return error === null ? true : why(error)
+  return error === null ? true : whyRefused(error)
 }

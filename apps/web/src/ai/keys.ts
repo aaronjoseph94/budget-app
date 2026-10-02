@@ -8,7 +8,7 @@
  * own key; the browser has no grant on the table itself.
  */
 import { AI_KEY_SHAPE, AiProviderSchema, type AiKeyReply, type AiModelChoice, type AiProvider } from '@budget/schema'
-import { ReadRefused, needsOneTimeUpdate } from '../ledger.js'
+import { whyRefused } from '../ledger.js'
 import type { SupabaseClient } from '../supabase.js'
 import { askAi, viewOf, type AiView } from './client.js'
 
@@ -90,7 +90,7 @@ export function testKey(supabase: SupabaseClient, provider: AiProvider): Promise
 export async function forgetKey(supabase: SupabaseClient, provider: AiProvider): Promise<true | KeyResult> {
   const { error } = await supabase.rpc('ai_key_forget', { p_provider: provider })
   if (error === null) return true
-  if (needsOneTimeUpdate(new ReadRefused(error.message, error.code))) return said(viewOf('needs_update'))
+  if (whyRefused(error) === 'needs_update') return said(viewOf('needs_update'))
   return { sentence: 'Couldn’t remove the key just now. Check your connection and try again.', good: false, help: null, models: null }
 }
 
