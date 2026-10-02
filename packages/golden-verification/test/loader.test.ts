@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, it } from 'vitest'
-import { rmSync, writeFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
-import { dirname, join } from 'node:path'
+import { afterAll, describe, expect, it } from 'vitest'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { countScheduleRows, loadGolden } from '../src/index.js'
 
 /**
@@ -13,16 +13,20 @@ import { countScheduleRows, loadGolden } from '../src/index.js'
  * That guard had no test. Had it silently stopped rejecting, every golden
  * assertion would have quietly demoted to a Suite check and still looked green.
  */
-const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), '..', 'fixtures')
+/**
+ * Probes go in a scratch folder, never the committed fixtures: a run killed
+ * mid-test left a fully-provenanced invented fixture where golden values
+ * live (architecture-b-08). The loader reads it by the same path code.
+ */
+const SCRATCH = mkdtempSync(join(tmpdir(), 'golden-probe-'))
 const PROBE = 'zz-provenance-probe'
 
-/** Written into the real fixtures directory so the real loader path runs. */
 function writeProbe(body: unknown): void {
-  writeFileSync(join(FIXTURES, `${PROBE}.golden.json`), JSON.stringify(body), 'utf8')
+  writeFileSync(join(SCRATCH, `${PROBE}.golden.json`), JSON.stringify(body), 'utf8')
 }
 
-afterEach(() => {
-  rmSync(join(FIXTURES, `${PROBE}.golden.json`), { force: true })
+afterAll(() => {
+  rmSync(SCRATCH, { recursive: true, force: true })
 })
 
 function provenanceWithout(field: string): Record<string, unknown> {
@@ -57,7 +61,7 @@ describe('loadGolden provenance guard', () => {
     // An unsourced number is not a golden value. Accepting one would turn the
     // only External check into the author grading their own work.
     writeProbe(body)
-    expect(() => loadGolden(PROBE)).toThrow(/provenance/i)
+    expect(() => loadGolden(PROBE, SCRATCH)).toThrow(/provenance/i)
   })
 
   it('accepts a fixture once its provenance is complete', () => {
@@ -73,7 +77,7 @@ describe('loadGolden provenance guard', () => {
       input: {},
       expected: {},
     })
-    expect(() => loadGolden(PROBE)).not.toThrow()
+    expect(() => loadGolden(PROBE, SCRATCH)).not.toThrow()
   })
 })
 
