@@ -88,6 +88,14 @@ export interface AmortizeOutput {
 
 export function amortize(input: AmortizeInput): AmortizeOutput {
   const start = isoDate(input.startDate)
+  // No debts has no debt-free date (the latest of none was "-Infinity-NaN-NaN"),
+  // and an extra for a debt not here would be dropped, moving the payoff
+  // unsaid, as debtPlan refuses one before its start (architecture-a-12).
+  if (input.debts.length === 0) throw new RangeError('amortize needs at least one debt')
+  const names = new Set(input.debts.map((d) => d.name))
+  if (input.extraPayments.some((e) => !names.has(e.debtName))) {
+    throw new RangeError('An extra payment names a debt that was not passed in')
+  }
 
   const extrasByDebt = new Map<string, Map<number, Cents>>()
   for (const e of input.extraPayments) {

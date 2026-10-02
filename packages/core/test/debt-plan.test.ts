@@ -13,7 +13,30 @@ const loan: PlannedDebt = { name: 'Loan', startMonth: month('2026-01'), starting
 // $50.00 at 0%, $25.00 a month from June 2026: June and July.
 const car: PlannedDebt = { name: 'Car', startMonth: month('2026-06'), startingBalanceCents: 5_000, minimumPaymentCents: 2_500, aprBasisPoints: 0 }
 
+describe('amortize, given what it cannot plan (architecture-a-12)', () => {
+  it('refuses no debts, where it gave the debt-free date "-Infinity-NaN-NaN"', () => {
+    expect(() => amortize({ startDate: '2025-03-01', debts: [], extraPayments: [] })).toThrow(new RangeError('amortize needs at least one debt'))
+  })
+
+  it('refuses an extra payment naming a debt that was not passed in, rather than drop it', () => {
+    // $10.00 at 0%, $1.00 a month: paid in ten payments, 9 months after the
+    // first (the workbook's count). Ignoring a $9.00 extra in month 1 kept it
+    // at 9, where paying $10.00 at once clears it in the first: 0.
+    const debts = [{ name: 'A', startingBalanceCents: 1_000, minimumPaymentCents: 100, aprBasisPoints: 0 }]
+    expect(() => amortize({ startDate: '2025-03-01', debts, extraPayments: [{ debtName: 'Typo', month: 1, amountCents: 900 }] })).toThrow(
+      new RangeError('An extra payment names a debt that was not passed in'),
+    )
+    expect(amortize({ startDate: '2025-03-01', debts, extraPayments: [{ debtName: 'A', month: 1, amountCents: 900 }] }).perDebt[0]!.monthsToPayoff).toBe(0)
+  })
+})
+
 describe('debtPlan', () => {
+  it('refuses an extra payment naming a debt that was not passed in (architecture-a-12)', () => {
+    expect(() => debtPlan({ debts: [loan], extraPayments: [{ debtName: 'Typo', month: month('2026-02'), amountCents: 100 }] })).toThrow(
+      new RangeError('An extra payment names a debt that was not passed in'),
+    )
+  })
+
   it("is amortize() when every debt shares a start month, as the workbook's debts do", () => {
     const start = isoDate(golden.input.startDate)
     const plan = debtPlan({
