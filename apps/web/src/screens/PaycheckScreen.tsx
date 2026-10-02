@@ -10,6 +10,8 @@ import { PeriodSwitch } from './PeriodSwitch.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { MonthTitle } from '../components/ui/type.js'
 
+const NAMES = new Intl.Collator('en')
+
 /**
  * The workbook's Paycheck Budget (S15b): the pay period of an income source with a
  * schedule (F15 B). `day` is the address's `YYYY-MM-DD`, or null for
@@ -41,9 +43,11 @@ export function PaycheckScreen({ day }: { day: string | null }) {
   // Income sources only, in Setup's order. 0011 refuses a schedule anywhere
   // else, but not moving an income source that has one to another list
   // (N27); a schedule left behind on, say, a savings fund pays nobody.
+  // A tie on Setup's order goes in English order, as the AI apps server's
+  // paySources does, so both offer the same first source on any device.
   const paid = categories
     .filter((c) => c.kind === 'income')
-    .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name))
+    .sort((a, b) => a.sort_order - b.sort_order || NAMES.compare(a.name, b.name))
     .flatMap((source) => {
       const row = schedules?.find((s) => s.category_id === source.id)
       return row === undefined ? [] : [{ source, row }]

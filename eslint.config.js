@@ -402,6 +402,11 @@ export default tseslint.config(
       'no-restricted-syntax': [
         'error',
         { selector: "Identifier[name='console']", message: "Log through src/log.ts's log(code, counts) only: codes and counts, never content." },
+        {
+          // The same order on every server, as core's byName (architecture-a-02).
+          selector: "CallExpression[callee.property.name='localeCompare'][arguments.length<2]",
+          message: "No server locale: a bare localeCompare orders by where it runs. Use an Intl.Collator('en').",
+        },
         ...NO_FLOAT_MONEY,
       ],
     },

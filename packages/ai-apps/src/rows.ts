@@ -190,6 +190,13 @@ export function weekSheetInput(read: Read, asOf: IsoDate): WeekSheetInput {
 }
 
 /**
+ * Names that tie on Setup's order go in English order, the same on every
+ * device and the same as core's byName (architecture-a-02, F52): a bare
+ * localeCompare follows wherever the server runs.
+ */
+const NAMES = new Intl.Collator('en')
+
+/**
  * Each income source paid on a schedule, in Setup's order, as the Paycheck
  * offers them: a schedule left on another list pays nobody (N27).
  */
@@ -197,7 +204,7 @@ export function paySources(read: Read): { readonly name: string; readonly schedu
   const schedules = schedulesFrom(read['schedules'])
   return categoriesFrom(read['categories'])
     .filter((c) => c.kind === 'income')
-    .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name))
+    .sort((a, b) => a.sort_order - b.sort_order || NAMES.compare(a.name, b.name))
     .flatMap((c) => {
       const s = schedules.find((row) => row.categoryId === c.id)
       return s === undefined ? [] : [{ name: c.name, schedule: { firstPayDate: s.firstPayDate, frequency: s.frequency } }]
