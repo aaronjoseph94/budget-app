@@ -106,7 +106,7 @@ describe('the Week beside last week (D26)', () => {
       table === 'transactions' && query.getAll('posted_on').includes('gte.2026-09-14') ? 'PGRST205' : null
     renderScreen(<WeekScreen />, fake)
 
-    expect((await line()).getByText('Last week did not load, so there is no comparison. Reload to try again.')).toBeTruthy()
+    expect((await line()).getByText('Last week did not load, so there is no comparison.', { exact: false })).toBeTruthy()
     const summary = within(screen.getByRole('region', { name: 'Summary' }))
     expect(summary.getByText('Spent').nextSibling?.textContent).toBe('$40.00')
     expect(screen.queryByText(/14 – 17 Sep/)).toBeNull()

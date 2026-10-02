@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppDataProvider } from '../src/app-data.js'
 import { MonthScreen } from '../src/screens/MonthScreen.js'
@@ -81,5 +81,28 @@ describe('the Month, on an app left open', () => {
     rerender(ui('2026-08'))
     await waitFor(() => expect(document.body.textContent).toContain('45.00'))
     expect(document.body.textContent).not.toContain('names a category that did not load')
+  })
+
+  it('offers Try again where the month cannot be shown, and shows it once the categories are read again', async () => {
+    vi.setSystemTime(new Date(2026, 8, 23, 12))
+    const fake = createFakeSupabase({
+      categories: [cat('groceries', 'Groceries', 0)],
+      transactions: [tx('t1', '2026-09-12', -6412, 'groceries'), tx('t0', '2026-08-12', -1000, 'groceries')],
+    })
+    const ui = (month: string) => (
+      <AppDataProvider supabase={fake.client} userId="u1" email="you@example.com">
+        <MonthScreen month={month} />
+      </AppDataProvider>
+    )
+    const { rerender } = render(ui('2026-09'))
+    await waitFor(() => expect(document.body.textContent).toContain('64.12'))
+    fake.tables.categories.push(cat('pets', 'Pets', 1))
+    fake.tables.transactions.push(tx('t9', '2026-08-20', -4500, 'pets'))
+
+    // No wake: the phone steps straight back to August.
+    rerender(ui('2026-08'))
+    await waitFor(() => expect(document.body.textContent).toContain('names a category that did not load'))
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    await waitFor(() => expect(document.body.textContent).toContain('45.00'))
   })
 })

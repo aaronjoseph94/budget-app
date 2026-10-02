@@ -66,6 +66,11 @@ const RECENT_MS = 30_000
 
 const Context = createContext<AppData | null>(null)
 
+/** The provider's refresh, or null outside one (a component tested on its own). */
+export function useRefresh(): (() => Promise<void>) | null {
+  return useContext(Context)?.refresh ?? null
+}
+
 export function useAppData(): AppData {
   const data = useContext(Context)
   if (data === null) throw new Error('useAppData outside AppDataProvider')

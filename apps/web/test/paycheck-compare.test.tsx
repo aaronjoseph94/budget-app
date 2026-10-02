@@ -75,7 +75,7 @@ describe('the Paycheck beside the last pay period (D26)', () => {
       table === 'transactions' && query.getAll('posted_on').includes('gte.2026-09-04') ? '42P01' : null
     renderScreen(<PaycheckScreen day={null} />, fake)
 
-    expect((await line()).getByText('The last pay period did not load, so there is no comparison. Reload to try again.')).toBeTruthy()
+    expect((await line()).getByText('The last pay period did not load, so there is no comparison.', { exact: false })).toBeTruthy()
     // The period's own figures still show: its Spent is the whole share plus 30.00.
     expect(within(screen.getByRole('region', { name: 'Summary' })).getByText('Spent').nextSibling?.textContent).toBe('$445.38')
     expect(screen.queryByRole('alert')).toBeNull()

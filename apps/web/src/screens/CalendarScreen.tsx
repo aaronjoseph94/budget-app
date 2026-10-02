@@ -15,6 +15,7 @@ import { MonthCharges } from './MonthCharges.js'
 import { StepButton } from './MonthScreen.js'
 import { LIST_HEADING } from '../lists.js'
 import { HelpButton } from '../help/HelpButton.js'
+import { TryAgain } from '../try-again.js'
 
 /**
  * The workbook's Bill Calendar (S15c): a month's bills, debts and subscriptions on
@@ -77,7 +78,7 @@ export function CalendarScreen({ month }: { month: string | null }) {
         })),
       })
     } catch {
-      return 'A charge, a monthly amount or a payday this month names a category that did not load, so the calendar is not shown. Reload to try again.'
+      return 'A charge, a monthly amount or a payday this month names a category that did not load, so the calendar is not shown.'
     }
   }, [here, categories, start])
 
@@ -113,7 +114,7 @@ export function CalendarScreen({ month }: { month: string | null }) {
       </header>
 
       {error !== null ? <Alert tone="error" title="Could not load this calendar">{error}</Alert> : null}
-      {typeof calendar === 'string' ? <Alert tone="error" title="Could not show this calendar">{calendar}</Alert> : null}
+      {typeof calendar === 'string' ? <Alert tone="error" title="Could not show this calendar">{calendar} <TryAgain />.</Alert> : null}
       {/* A first load that failed is said above the screen, by App, as on the Month. */}
       {calendar === null && error === null && (version > 0 || loadError === null) ? (
         <Loading what="this calendar" />

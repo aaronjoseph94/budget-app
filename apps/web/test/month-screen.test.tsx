@@ -260,7 +260,7 @@ describe('MonthScreen budgets and goals', () => {
 
     expect((await screen.findByRole('alert')).textContent).toBe(
       'Could not show this month' +
-        'A charge, a budget or a monthly amount this month names a category that did not load, so the month is not shown. Reload to try again.',
+        'A charge, a budget or a monthly amount this month names a category that did not load, so the month is not shown. Try again.',
     )
     expect(screen.queryByRole('region')).toBeNull()
   })

@@ -33,6 +33,7 @@ import { goalsForCore } from '../coach/goals.js'
 import { GoalLever } from '../coach/GoalLever.js'
 import { useGoalOutlooks } from '../coach/outlook.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
+import { TryAgain } from '../try-again.js'
 
 /**
  * The workbook's Savings tab (S16): a yellow card for every goal, with what
@@ -175,7 +176,7 @@ export function SavingsScreen() {
       </header>
       {state.status === 'loading' ? <Loading what="your savings goals" /> : null}
       {notice !== null ? <Alert tone={notice.ok ? 'success' : 'error'}>{notice.text}</Alert> : null}
-      {state.status === 'failed' ? <Alert tone="error" title="Could not load your savings funds">{state.message}</Alert> : null}
+      {state.status === 'failed' ? <Alert tone="error" title="Could not load your savings funds">{state.message}{state.missingUpdate ? null : <> <TryAgain />.</>}</Alert> : null}
       {comparison === null ? null : (
         // A card but not a region: the regions on this screen are the funds.
         // Tinted to Savings' amber, the list it counts (ADR 0010).

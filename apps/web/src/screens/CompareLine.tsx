@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import type { Change, DateWindow, PeriodComparison } from '@budget/core'
 import { formatBasisPoints, formatCents, formatChange, formatDateRange, formatDayMonth } from '../format.js'
+import { TryAgain } from '../try-again.js'
 
 /**
  * One period beside the one before it (D26, F25): both figures, both windows
@@ -40,7 +41,7 @@ export function CompareLine({
     </div>
   )
   if (comparison === 'failed') {
-    return line(<p>{sentence(earlier)} did not load, so there is no comparison. Reload to try again.</p>)
+    return line(<p>{sentence(earlier)} did not load, so there is no comparison. <TryAgain />.</p>)
   }
   if (comparison.status === 'before_records') {
     return line(

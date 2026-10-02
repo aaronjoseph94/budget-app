@@ -26,6 +26,7 @@ import { PlanFields, PlanHeadings, TotalTile, useMonthlyAmounts, type MonthlyAmo
 import { useBillNudges } from '../bill-nudges.js'
 import { PayFields, PayHeadings, usePaySchedules, type PaySchedules } from './SetupPay.js'
 import { HelpButton } from '../help/HelpButton.js'
+import { TryAgain } from '../try-again.js'
 
 interface ListCard {
   readonly kind: CategoryKind
@@ -208,7 +209,7 @@ function AmountsProblem({ amounts }: { amounts: MonthlyAmounts }) {
   if (amounts.status === 'ready' && amounts.mismatch) {
     return (
       <Alert tone="error">
-        A monthly amount names a category that did not load, so the totals are not shown. Reload to try again.
+        A monthly amount names a category that did not load, so the totals are not shown. <TryAgain />.
       </Alert>
     )
   }

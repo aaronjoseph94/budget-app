@@ -78,7 +78,7 @@ describe('the Year against last year (D26)', () => {
       table === 'transactions' && query.getAll('posted_on').includes('gte.2025-01-01') ? 'PGRST205' : null
     renderScreen(<YearScreen start="2026-01" />, fake)
 
-    expect((await card()).getByText('Last year did not load, so there is no comparison. Reload to try again.')).toBeTruthy()
+    expect((await card()).getByText('Last year did not load, so there is no comparison.', { exact: false })).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Year at a glance' })).toBeTruthy()
     expect(screen.queryByRole('alert')).toBeNull()
   })

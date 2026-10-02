@@ -7,6 +7,7 @@ import { Figure } from '../components/ui/type.js'
 import { cn } from '../lib/cn.js'
 import { useReturnFocus } from '../lib/return-focus.js'
 import { StartEditor } from './StartEditor.js'
+import { TryAgain } from '../try-again.js'
 
 /**
  * The workbook's summary card, Jan!B5:F16: Start, Spent, Left to spend and End of
@@ -174,7 +175,7 @@ function LastMonth({ comparison }: { comparison: PeriodComparison | 'failed' | n
     </div>
   )
   if (comparison === 'failed') {
-    return line(<p className="text-summary-label">Last month did not load, so there is no comparison. Reload to try again.</p>)
+    return line(<p className="text-summary-label">Last month did not load, so there is no comparison. <TryAgain />.</p>)
   }
   const earlierMonth = formatMonthName(comparison.before.from)
   if (comparison.status === 'before_records') {

@@ -28,6 +28,7 @@ import { ImportedThrough, PeriodBlocks, StepButton, TransfersNote } from './Mont
 import { NOT_SPENDING, OpenedCharges } from './MonthCharges.js'
 import { FREQUENCY_WORD } from './SetupPay.js'
 import { HelpButton } from '../help/HelpButton.js'
+import { TryAgain } from '../try-again.js'
 
 /** In words, how a monthly amount is shared across this pay (F15). */
 const SHARE: Readonly<Record<PaySchedule['frequency'], string>> = {
@@ -107,7 +108,7 @@ export function PaycheckPeriod({
         startingBalanceCents: null,
       })
     } catch {
-      return 'A charge, a budget or a monthly amount in this pay period names a category that did not load, so it is not shown. Reload to try again.'
+      return 'A charge, a budget or a monthly amount in this pay period names a category that did not load, so it is not shown.'
     }
   }, [here, categories, start, schedule])
 
@@ -159,7 +160,7 @@ export function PaycheckPeriod({
       </header>
 
       {error !== null ? <Alert tone="error" title="Could not load this pay period">{error}</Alert> : null}
-      {typeof sheet === 'string' ? <Alert tone="error" title="Could not show this pay period">{sheet}</Alert> : null}
+      {typeof sheet === 'string' ? <Alert tone="error" title="Could not show this pay period">{sheet} <TryAgain />.</Alert> : null}
       {sheet === null && error === null ? <Loading what="this pay period" /> : null}
 
       {sheet !== null && typeof sheet !== 'string' ? (

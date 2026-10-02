@@ -78,7 +78,7 @@ export function useMonthlyAmounts(month: string): MonthlyAmounts {
     } catch {
       // Core refuses what 0009 refuses; the database never sends it, so this
       // is a fault, said plainly and never as its message.
-      return { status: 'failed', message: 'Your monthly amounts could not be shown. Reload to try again.' }
+      return { status: 'failed', message: 'Your monthly amounts could not be shown.' }
     }
     try {
       const totals = billsTotals({ month: asOf, categories: categories.map((c) => ({ id: c.id, kind: c.kind })), planHistory: history })

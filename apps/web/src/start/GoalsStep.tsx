@@ -9,6 +9,7 @@ import { AddGoalSheet, type GoalPreset } from '../screens/AddGoalSheet.js'
 import { Alert, Badge } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
+import { TryAgain } from '../try-again.js'
 
 /**
  * The flight-training goal as the plan names it (§8.1 step 5): $30,000 at
@@ -45,7 +46,7 @@ export function GoalsStep() {
         </ul>
       )}
       {notice === null ? null : <Alert tone={notice.ok ? 'success' : 'error'}>{notice.text}</Alert>}
-      {funds.status === 'failed' ? <Alert tone="error">{funds.message}</Alert> : null}
+      {funds.status === 'failed' ? <Alert tone="error">{funds.message}{funds.missingUpdate ? null : <> <TryAgain />.</>}</Alert> : null}
       <div className="flex flex-wrap gap-2">
         {active.length === 0 ? (
           <>

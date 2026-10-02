@@ -158,7 +158,7 @@ describe('the Coach, in the app’s own words', () => {
     go('/coach')
     renderScreen(<Shell />, fake)
 
-    expect(await screen.findByText('Your insights did not load. Reload to try again; everything else still works.')).toBeTruthy()
+    expect(await screen.findByText('Your insights did not load.', { exact: false })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Flight training' })).toBeTruthy()
     expect(screen.queryByRole('region', { name: 'Insights' })).toBeNull()
   })

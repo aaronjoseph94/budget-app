@@ -24,6 +24,7 @@ import { CheckinLink } from '../coach/CheckinLink.js'
 import { AskBox } from '../coach/AskBox.js'
 import type { ListedGoalRow } from '../ledger.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
+import { TryAgain } from '../try-again.js'
 
 /**
  * The Coach (plan §2.3): the day's line, the main goal's card with the
@@ -205,12 +206,12 @@ function MainOutlook({ outlooks, funds, goal }: { outlooks: Outlooks; funds: Fun
         </a>
       </p>
     ) : (
-      <p className="text-sm text-muted-foreground">When you will get there did not load. Reload to try again.</p>
+      <p className="text-sm text-muted-foreground">When you will get there did not load. <TryAgain />.</p>
     )
   }
   if (outlooks.status === 'loading') return <p className="text-sm text-muted-foreground">Working out when you will get there…</p>
   if (outlooks.status === 'failed') {
-    return <p className="text-sm text-muted-foreground">When you will get there did not load. Reload to try again.</p>
+    return <p className="text-sm text-muted-foreground">When you will get there did not load. <TryAgain />.</p>
   }
   const outlook = outlooks.byGoal.get(goal.id)
   if (outlook === undefined) return null

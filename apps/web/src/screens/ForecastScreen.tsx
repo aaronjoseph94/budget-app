@@ -19,6 +19,7 @@ import { GoalsAheadCard } from '../forecast/Goals.js'
 import { MonthsAheadCard } from '../forecast/Months.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
 import { MonthTitle } from '../components/ui/type.js'
+import { TryAgain } from '../try-again.js'
 
 /**
  * The Forecast (plan §2.5, A13, A14): one sentence, safe to spend, where
@@ -66,7 +67,7 @@ export function ForecastScreen() {
           </a>
         </p>
       ) : null}
-      {figures === 'failed' ? <p className="text-sm text-muted-foreground">The forecast did not load. Reload to try again; everything else still works.</p> : null}
+      {figures === 'failed' ? <p className="text-sm text-muted-foreground">The forecast did not load. <TryAgain />; everything else still works.</p> : null}
       {ready === null ? null : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:gap-5">
           <SafeCard safe={ready.figures.safe} names={namesOf(categories)} />

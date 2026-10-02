@@ -57,6 +57,7 @@ import { MonthCharts } from './MonthCharts.js'
 import { MonthSummary } from './MonthSummary.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { ErrorBoundary } from '../components/ErrorBoundary.js'
+import { TryAgain } from '../try-again.js'
 
 // The coach line and the forecast line are their own chunks, fetched once the Month has drawn (D27).
 const MonthCoachLine = lazy(() => import('./MonthCoachLine.js'))
@@ -150,7 +151,7 @@ export function MonthScreen({ month }: { month: string | null }) {
       // The engine refuses a charge, a budget or a monthly amount whose
       // category it was not given rather than leave it out of every total.
       // Said plainly, never as its message.
-      return 'A charge, a budget or a monthly amount this month names a category that did not load, so the month is not shown. Reload to try again.'
+      return 'A charge, a budget or a monthly amount this month names a category that did not load, so the month is not shown.'
     }
   }, [here, categories, start])
   // Null while either read is out; 'failed' hides the comparison with one line.
@@ -279,7 +280,7 @@ export function MonthScreen({ month }: { month: string | null }) {
       ) : null}
       {typeof sheet === 'string' ? (
         <Alert tone="error" title="Could not show this month">
-          {sheet}
+          {sheet} <TryAgain />.
         </Alert>
       ) : null}
       {/* A first load that failed is said above the screen, by App, and this

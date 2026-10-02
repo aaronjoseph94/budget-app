@@ -12,6 +12,7 @@ import { SvgChart } from '../components/ui/chart.js'
 import { Icon } from '../components/ui/icons.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
 import { HelpButton } from '../help/HelpButton.js'
+import { TryAgain } from '../try-again.js'
 
 /**
  * The workbook's Debt Calculator (S17): the summary card (Current Debt Total,
@@ -72,7 +73,7 @@ export function DebtsScreen() {
       </p>
       {state.status === 'loading' ? <Loading what="your debts" /> : null}
       {notice !== null ? <Alert tone={notice.ok ? 'success' : 'error'}>{notice.text}</Alert> : null}
-      {state.status === 'failed' ? <Alert tone="error" title="Could not load your debts">{state.message}</Alert> : null}
+      {state.status === 'failed' ? <Alert tone="error" title="Could not load your debts">{state.message} <TryAgain />.</Alert> : null}
       {state.status === 'ready' ? (
         <>
           {state.debts.plan.neverPaidOff.map((name) => (

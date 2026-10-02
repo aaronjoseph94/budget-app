@@ -9,6 +9,7 @@ import { hashOf } from '../nav.js'
 import { SvgChart, fitted } from '../components/ui/chart.js'
 import { NoStart, Section } from './parts.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
+import { TryAgain } from '../try-again.js'
 
 /**
  * The Forecast's next 30 days (F32): the tightest day, the line, the bills
@@ -115,7 +116,7 @@ export function DebtFreeCard() {
           </a>
         </p>
       ) : null}
-      {state.status === 'failed' && !state.missingUpdate ? <p className="text-muted-foreground">Your debt-free date did not load. Reload to try again.</p> : null}
+      {state.status === 'failed' && !state.missingUpdate ? <p className="text-muted-foreground">Your debt-free date did not load. <TryAgain />.</p> : null}
       {state.status === 'ready' ? (
         <p>
           {state.debts === 0

@@ -71,7 +71,7 @@ export function useFunds(): FundsState {
     } catch {
       return {
         status: 'failed',
-        message: 'A savings goal could not be read as the app expects, so your funds are not shown. Reload to try again.',
+        message: 'A savings goal could not be read as the app expects, so your funds are not shown.',
         missingUpdate: false,
       }
     }

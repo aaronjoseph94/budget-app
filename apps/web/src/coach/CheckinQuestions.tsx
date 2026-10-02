@@ -15,6 +15,7 @@ import { cn } from '../lib/cn.js'
 import { Section } from '../forecast/parts.js'
 import { readAnswers, saveAnswer, type AnswerRow } from './answers.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
+import { TryAgain } from '../try-again.js'
 
 export interface CheckinAnswers {
   /** Charges answered when the check-in opened; null while they load. */
@@ -79,7 +80,7 @@ export function CheckinQuestions(props: {
   if (answers.status === 'failed') {
     return (
       <Section title="Was it planned?" className={CHECKIN_CARD}>
-        <p className="text-muted-foreground">Your answers did not load. Reload to try again.</p>
+        <p className="text-muted-foreground">Your answers did not load. <TryAgain />.</p>
       </Section>
     )
   }

@@ -34,6 +34,7 @@ import { PeriodSwitch } from './PeriodSwitch.js'
 import { WaitingBanner } from './MonthScreen.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { LINE_BUTTON } from '../components/ui/link.js'
+import { TryAgain } from '../try-again.js'
 
 /**
  * The workbook's Annual Budget (plan §6.4): twelve months from a start month the
@@ -93,7 +94,7 @@ export function YearScreen({ start: address }: { start: string | null }) {
       })
     } catch {
       // Said plainly, never as the engine's message, as on the Month.
-      return 'A charge, a budget or a monthly amount this year names a category that did not load, so the year is not shown. Reload to try again.'
+      return 'A charge, a budget or a monthly amount this year names a category that did not load, so the year is not shown.'
     }
   }, [here, categories, start, today])
   const thisMonth = monthBounds(isoDate(today)).start
@@ -155,7 +156,7 @@ export function YearScreen({ start: address }: { start: string | null }) {
       ) : null}
       {typeof sheet === 'string' ? (
         <Alert tone="error" title="Could not show this year">
-          {sheet}
+          {sheet} <TryAgain />.
         </Alert>
       ) : null}
       {sheet === null && error === null && (version > 0 || loadError === null) ? (

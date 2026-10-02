@@ -9,6 +9,7 @@ import { Icon, type IconName } from '../components/ui/icons.js'
 import type { CardText, Narration, Words } from './narration.js'
 import { CoachText } from './words.js'
 import { WhySheet } from './WhySheet.js'
+import { TryAgain } from '../try-again.js'
 
 /**
  * The day's line and up to three cards (plan §2.3). Which facts become
@@ -69,7 +70,7 @@ export function CoachCards(props: {
 }) {
   const { digest, cards: all, narration, onDismiss } = props
   if (digest === 'failed') {
-    return <p className="text-sm text-muted-foreground">Your insights did not load. Reload to try again; everything else still works.</p>
+    return <p className="text-sm text-muted-foreground">Your insights did not load. <TryAgain />; everything else still works.</p>
   }
   if (digest === null || all === null || narration === null) return <p className="text-sm text-muted-foreground">Working out today’s insights…</p>
   // The forecast has a card of its own (ForecastCard); these are the ranked three.

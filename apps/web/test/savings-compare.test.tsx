@@ -82,7 +82,7 @@ describe('Savings, saved this month against last (D26)', () => {
       table === 'transactions' && query.getAll('posted_on').includes('gte.2026-08-01') ? '42703' : null
     renderScreen(<SavingsScreen />, fake)
 
-    expect((await total()).getByText('Last month did not load, so there is no comparison. Reload to try again.')).toBeTruthy()
+    expect((await total()).getByText('Last month did not load, so there is no comparison.', { exact: false })).toBeTruthy()
     // 2,500.00 typed on 31 Aug, and 125.00 moved in since.
     expect(within(await screen.findByRole('region', { name: 'Flight training' })).getByText('$2,625.00')).toBeTruthy()
     expect(screen.queryByRole('alert')).toBeNull()

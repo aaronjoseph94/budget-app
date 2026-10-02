@@ -10,6 +10,7 @@ import { useGoalOutlooks } from '../coach/outlook.js'
 import { Section } from './parts.js'
 import { WhatIfPanel } from './WhatIf.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
+import { TryAgain } from '../try-again.js'
 
 /**
  * When each active goal is reached (F33), every active goal with the main
@@ -34,13 +35,13 @@ export function GoalsAheadCard({ read, end, month }: { read: DigestRows; end: Sp
             </a>
           </p>
         ) : (
-          <p className="text-muted-foreground">Your goals’ dates did not load. Reload to try again.</p>
+          <p className="text-muted-foreground">Your goals’ dates did not load. <TryAgain />.</p>
         )}
       </Section>
     )
   }
   if (core === null || outlooks.status === 'loading') return <Section title={title} large><p className="text-muted-foreground">Working out your goals’ dates…</p></Section>
-  if (outlooks.status === 'failed') return <Section title={title} large><p className="text-muted-foreground">Your goals’ dates did not load. Reload to try again.</p></Section>
+  if (outlooks.status === 'failed') return <Section title={title} large><p className="text-muted-foreground">Your goals’ dates did not load. <TryAgain />.</p></Section>
   if (core.length === 0) {
     return (
       <Section title={title} large>

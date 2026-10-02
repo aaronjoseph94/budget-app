@@ -14,6 +14,7 @@ import { Badge } from '../components/ui/feedback.js'
 import { notSubscriptionCause, type Dismissals } from '../coach/dismissals.js'
 import { Section } from '../forecast/parts.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
+import { TryAgain } from '../try-again.js'
 
 const CADENCE: Readonly<Record<Cadence, string>> = { weekly: 'Weekly', fortnightly: 'Every two weeks', monthly: 'Monthly', yearly: 'Yearly' }
 
@@ -73,7 +74,7 @@ export function SubscriptionsCard({ series, dismissals }: { series: readonly Rec
           </a>
         </p>
       ) : (
-        <p className="text-muted-foreground">Marking one as not a subscription is not available right now. Reload to try again.</p>
+        <p className="text-muted-foreground">Marking one as not a subscription is not available right now. <TryAgain />.</p>
       )}
     </Section>
   )

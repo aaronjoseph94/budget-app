@@ -19,6 +19,7 @@ import { useCheckinWords, type CheckinWordsState } from '../coach/use-checkin-wo
 import { markCheckinSeen } from '../coach/checkin-seen.js'
 import { CoachText } from '../coach/words.js'
 import { CHECKIN_CARD, CheckinQuestions, useCheckinAnswers } from '../coach/CheckinQuestions.js'
+import { TryAgain } from '../try-again.js'
 
 const link = 'inline-flex min-h-11 items-center font-medium underline underline-offset-4'
 
@@ -79,7 +80,7 @@ export function CheckinScreen() {
         </MonthTitle>
         <HelpButton screen="coach" topic="checkin" />
       </div>
-      {figures === 'failed' ? <p className="text-muted-foreground">The check-in did not load. Reload to try again.</p> : null}
+      {figures === 'failed' ? <p className="text-muted-foreground">The check-in did not load. <TryAgain />.</p> : null}
       {figures === null || figures === 'failed' || facts === null || said === null || words === null || impulse === null ? (
         figures === 'failed' ? null : <p className="text-muted-foreground">Looking back at last week…</p>
       ) : (

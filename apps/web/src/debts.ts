@@ -81,7 +81,7 @@ export function useDebts(): DebtsState {
       const status = plan.amortization === null ? null : debtStatus({ amortization: plan.amortization, asOf: isoDate(loaded.asOf) })
       return { status: 'ready', debts: { ...loaded, plan, status, strategies: payoffStrategies(input) } }
     } catch {
-      return { status: 'failed', message: 'A debt could not be read as the app expects, so your debts are not shown. Reload to try again.' }
+      return { status: 'failed', message: 'A debt could not be read as the app expects, so your debts are not shown.' }
     }
   }, [loaded, error])
 }
