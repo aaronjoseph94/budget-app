@@ -24,13 +24,12 @@ function pairShop(pair: ChargePair): string {
 }
 
 function flagsOf(unusual: UnusualCharges, nameOf: (id: string) => string): Flag[] {
-  const amount = (cents: number) => formatCents(cents)
   return [
     ...unusual.doubles.map((p) => ({
       key: `double:${p.first.id}:${p.second.id}`,
       title: 'Possible repeat charge',
       shop: pairShop(p),
-      detail: `${amount(p.amountCents)} on ${formatDayMonth(p.first.postedOn)}, and the same again on ${formatDayMonth(p.second.postedOn)}.`,
+      detail: `${formatCents(p.amountCents)} on ${formatDayMonth(p.first.postedOn)}, and the same again on ${formatDayMonth(p.second.postedOn)}.`,
       help: 'If one was a mistake, ask the shop for a refund.',
     })),
     ...unusual.countedTwice.map((p) => {
@@ -40,7 +39,7 @@ function flagsOf(unusual: UnusualCharges, nameOf: (id: string) => string): Flag[
         key: `twice:${p.first.id}:${p.second.id}`,
         title: 'Maybe counted twice',
         shop: pairShop(p),
-        detail: `${amount(p.amountCents)} you added on ${formatDayMonth(added.postedOn)}, and ${amount(p.amountCents)} from your statement on ${formatDayMonth(imported.postedOn)}.`,
+        detail: `${formatCents(p.amountCents)} you added on ${formatDayMonth(added.postedOn)}, and ${formatCents(p.amountCents)} from your statement on ${formatDayMonth(imported.postedOn)}.`,
         help: 'If they are one purchase, remove the one you added in All transactions.',
       }
     }),
@@ -48,14 +47,14 @@ function flagsOf(unusual: UnusualCharges, nameOf: (id: string) => string): Flag[
       key: `large:${c.id}`,
       title: 'Bigger than usual',
       shop: c.shop,
-      detail: `${amount(c.amountCents)} on ${formatDayMonth(c.postedOn)}. A usual charge in ${nameOf(c.categoryId)} is about ${amount(c.usualCents)}.`,
+      detail: `${formatCents(c.amountCents)} on ${formatDayMonth(c.postedOn)}. A usual charge in ${nameOf(c.categoryId)} is about ${formatCents(c.usualCents)}.`,
       help: null,
     })),
     ...unusual.newShop.map((c) => ({
       key: `new:${c.id}`,
       title: 'First charge from a new shop',
       shop: c.shop,
-      detail: `${amount(c.amountCents)} on ${formatDayMonth(c.postedOn)}.`,
+      detail: `${formatCents(c.amountCents)} on ${formatDayMonth(c.postedOn)}.`,
       help: null,
     })),
   ]

@@ -161,7 +161,7 @@ interface Loaded {
  * The calendar as a list, a week at a time: each day with something on it,
  * its bills and who is paid, and the week's total (the workbook's Q8).
  */
-export function Agenda({ calendar, className, onOpen }: { calendar: BillCalendar; className?: string; onOpen?: OpenBill }) {
+function Agenda({ calendar, className, onOpen }: { calendar: BillCalendar; className?: string; onOpen: OpenBill }) {
   return (
     <div className={cn('space-y-3', className)}>
       {calendar.weeks.map((week) => {
@@ -196,7 +196,7 @@ export function Agenda({ calendar, className, onOpen }: { calendar: BillCalendar
   )
 }
 
-function AgendaDay({ day, weekday, onOpen }: { day: CalendarDay; weekday: number; onOpen?: OpenBill | undefined }) {
+function AgendaDay({ day, weekday, onOpen }: { day: CalendarDay; weekday: number; onOpen: OpenBill }) {
   return (
     <li className="flex gap-3 px-4 py-2.5">
       <span className="w-10 shrink-0 text-center leading-tight text-calendar-day">

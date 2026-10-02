@@ -17,7 +17,7 @@ export interface Access {
   readonly connectUntil: string | null
 }
 
-export const NO_ACCESS: Access = { enabled: false, allowAdd: true, connectUntil: null }
+const NO_ACCESS: Access = { enabled: false, allowAdd: true, connectUntil: null }
 
 /** How long Connect a new AI app keeps the door open (PLAN §2.10). */
 export const CONNECT_MINUTES = 15

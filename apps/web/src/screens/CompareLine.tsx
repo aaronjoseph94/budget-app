@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { Change, DateWindow, PeriodComparison } from '@budget/core'
+import type { Change, PeriodComparison } from '@budget/core'
 import { formatBasisPoints, formatCents, formatChange, formatDateRange, formatDayMonth } from '../format.js'
 import { TryAgain } from '../try-again.js'
 
@@ -20,7 +20,6 @@ export function CompareLine({
   earlier,
   pick = (c) => c.summary.spent,
   word = 'spent',
-  dates = (w) => formatDateRange(w.from, w.to),
   day = formatDayMonth,
 }: {
   /** Null while it loads; 'failed' when the earlier window could not be read. */
@@ -30,7 +29,6 @@ export function CompareLine({
   earlier: string
   pick?: (c: Extract<PeriodComparison, { status: 'compared' }>) => Change
   word?: string
-  dates?: (w: DateWindow) => string
   /** How the day the records start is written; the Year adds its year. */
   day?: (isoDate: string) => string
 }) {
@@ -61,13 +59,13 @@ export function CompareLine({
         in a narrow card stood on a line alone. */}
       <p>
         <span className="inline-block">
-          {dates(comparison.now)}:{' '}
+          {formatDateRange(comparison.now.from, comparison.now.to)}:{' '}
           <span className="whitespace-nowrap">
             <span className="tnum font-semibold">{formatCents(c.nowCents)}</span> {word}
           </span>
         </span>{' '}
         <span className="inline-block">
-          · {dates(comparison.before)}: <span className="tnum font-semibold">{formatCents(c.beforeCents)}</span>
+          · {formatDateRange(comparison.before.from, comparison.before.to)}: <span className="tnum font-semibold">{formatCents(c.beforeCents)}</span>
         </span>
       </p>
       <p className="mt-0.5 font-medium">

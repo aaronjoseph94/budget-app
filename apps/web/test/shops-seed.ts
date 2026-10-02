@@ -18,7 +18,7 @@ const tx = (id: string, posted_on: string, amount_cents: number, category_id: st
 })
 const WEEKLY = ['07-04', '07-11', '07-18', '07-25', '08-01', '08-08', '08-15', '08-22', '08-29', '09-05', '09-12', '09-19']
 
-export const SHOP_CATEGORIES: readonly Category[] = [
+const SHOP_CATEGORIES: readonly Category[] = [
   cat('music', 'Music', 'subscription', 1),
   cat('dining', 'Dining out', 'variable', 2),
   cat('fitness', 'Fitness', 'variable', 3),

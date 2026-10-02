@@ -44,11 +44,10 @@ export function WhatIfPanel({ goals, outlooks, end, month, asOf }: { goals: read
 }
 
 const KINDS = ['quarter', 'tenth', 'best_month'] as const
-const TWO = 2
 
 /** The levers of the two categories with the largest, each's quarter, tenth and best month. */
 function chipsOf(levers: readonly Lever[]): readonly Lever[] {
-  const categories = [...new Set(levers.map((l) => l.categoryId))].slice(0, TWO)
+  const categories = [...new Set(levers.map((l) => l.categoryId))].slice(0, 2)
   return categories.flatMap((id) => KINDS.flatMap((kind) => levers.filter((l) => l.categoryId === id && l.kind === kind)))
 }
 

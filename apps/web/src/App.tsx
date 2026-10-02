@@ -96,8 +96,8 @@ const SWITCHED: ReadonlySet<Screen> = new Set(['week', 'paycheck', 'year'])
  * The tab lit while a screen shows: its own; the Month for a view reached
  * through the Month's switch; More for everything reached through More.
  */
-function tabOf(screen: Screen, tabs: readonly Tab[]): Screen {
-  if (tabs.some((t) => t.screen === screen)) return screen
+function tabOf(screen: Screen): Screen {
+  if (PHONE_TABS.some((t) => t.screen === screen)) return screen
   return SWITCHED.has(screen) ? 'month' : 'more'
 }
 
@@ -192,7 +192,7 @@ export function Shell() {
         >
           <div className="mx-auto grid max-w-md grid-cols-5">
             {PHONE_TABS.map((t) => {
-              const active = tabOf(screen, PHONE_TABS) === t.screen
+              const active = tabOf(screen) === t.screen
               return (
                 <a
                   key={t.screen}

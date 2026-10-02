@@ -449,7 +449,7 @@ export function WaitingBanner({ children }: { children: ReactNode }) {
   )
 }
 
-export type BlockKind = keyof PeriodSheet['blocks']
+type BlockKind = keyof PeriodSheet['blocks']
 
 /** Mini bars under each name on these lists only: on the others every row is usually all paid, and a full bar is noise (design-review P1 item 5). */
 const MINI_BARS: ReadonlySet<BlockKind> = new Set(['variable', 'income'])
@@ -539,7 +539,7 @@ export interface EditorDone {
  * month's budgets and a week's are stored apart. Paycheck has none: its
  * budgets are the month's, shared across the period (F15), and typed there.
  */
-export function Block({
+function Block({
   kind,
   block,
   compare,

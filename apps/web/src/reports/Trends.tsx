@@ -17,7 +17,7 @@ import { Row, Section } from '../forecast/parts.js'
 import { Failed } from './Failed.js'
 import { trendsOf, useTrendsRead } from './trends-read.js'
 
-export function labelText(label: TrendLabel): string {
+function labelText(label: TrendLabel): string {
   switch (label.status) {
     case 'rising':
       return 'Rising steadily'

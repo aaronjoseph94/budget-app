@@ -15,7 +15,7 @@ import { chooseModel, COMPANY, forgetKey, saveKey, testKey, type KeyResult } fro
  * what they are sent, as the owner accepted for Gemini (ADR 0002), and
  * each free card says so before a key is pasted (ADR 0004).
  */
-export const CARDS: Readonly<Record<AiProvider, { readonly title: string; readonly getKey: string; readonly getLabel: string; readonly where: string; readonly about: string }>> = {
+const CARDS: Readonly<Record<AiProvider, { readonly title: string; readonly getKey: string; readonly getLabel: string; readonly where: string; readonly about: string }>> = {
   gemini: {
     title: 'Free Google Gemini',
     getKey: 'https://aistudio.google.com/apikey',

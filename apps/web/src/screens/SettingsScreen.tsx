@@ -138,12 +138,10 @@ function BudgetsCard() {
           <Icon name="plus" /> Add
         </Button>
       </form>
-      <p className="text-sm text-muted-foreground">{refreshHint}</p>
+      <p className="text-sm text-muted-foreground">Budgets save when you leave the field.</p>
     </Section>
   )
 }
-
-const refreshHint = 'Budgets save when you leave the field.'
 
 function BudgetRow({ category, onError }: { category: Category; onError: (m: string | null) => void }) {
   const { supabase, refresh } = useAppData()

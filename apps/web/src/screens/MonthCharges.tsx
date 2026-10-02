@@ -177,7 +177,7 @@ export function MonthCharges({
 export const NOT_SPENDING = 'not-spending'
 
 /** A period other than a month: its dates as a title, and as said in a sentence. */
-export interface Period {
+interface Period {
   readonly title: string
   readonly inWords: string
   /** What the comparison line calls the period before, e.g. "Last week". */

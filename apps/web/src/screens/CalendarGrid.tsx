@@ -5,15 +5,14 @@ import { cn } from '../lib/cn.js'
 /** Sunday first, as the workbook's B6:N6 are. */
 export const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const
 
-/** Opens a bill's charges for the month (N51); without it a bill's name is only text. */
+/** Opens a bill's charges for the month (N51). */
 export type OpenBill = (bill: CalendarBill) => void
 
 /**
- * A bill's name, as a button that opens its charges when there is a way to.
- * 44 px to a finger, as the Month's row names are, and never markup.
+ * A bill's name, as a button that opens its charges. 44 px to a finger, as
+ * the Month's row names are, and never markup.
  */
-export function BillName({ bill, onOpen, className }: { bill: CalendarBill; onOpen?: OpenBill | undefined; className?: string }) {
-  if (onOpen === undefined) return <span className={className}>{bill.name}</span>
+export function BillName({ bill, onOpen, className }: { bill: CalendarBill; onOpen: OpenBill; className?: string }) {
   return (
     <button
       type="button"
@@ -37,7 +36,7 @@ export const RULE: Record<CalendarBill['kind'], string> = {
 }
 
 /** Opens a day with more on it than its cell shows (design-review P2 item 8). */
-export type OpenDay = (day: CalendarDay, weekday: number) => void
+type OpenDay = (day: CalendarDay, weekday: number) => void
 
 /** Bills a cell shows before "+N more" (design-review P2 item 8). */
 const SHOWN = 2
@@ -60,8 +59,8 @@ export function MonthGrid({
   calendar: BillCalendar
   today: string
   className?: string
-  onOpen?: OpenBill
-  onOpenDay?: OpenDay
+  onOpen: OpenBill
+  onOpenDay: OpenDay
 }) {
   const cell = 'border border-calendar-rule px-1 xl:px-3'
   return (
@@ -96,7 +95,7 @@ export function MonthGrid({
                     aria-current={day.date === today ? 'date' : undefined}
                     className={cn(cell, 'h-28 py-2.5 align-top', day.date === today && 'bg-calendar-today')}
                   >
-                    <GridDay day={day} today={day.date === today} onOpen={onOpen} onOpenDay={onOpenDay && (() => onOpenDay(day, weekday))} />
+                    <GridDay day={day} today={day.date === today} onOpen={onOpen} onOpenDay={() => onOpenDay(day, weekday)} />
                   </td>
                 ),
               )}
@@ -112,9 +111,8 @@ export function MonthGrid({
   )
 }
 
-function GridDay({ day, today, onOpen, onOpenDay }: { day: CalendarDay; today: boolean; onOpen?: OpenBill | undefined; onOpenDay?: (() => void) | undefined }) {
-  // Every bill when there is nowhere to open the day, so none is lost.
-  const shown = onOpenDay === undefined ? day.bills : day.bills.slice(0, SHOWN)
+function GridDay({ day, today, onOpen, onOpenDay }: { day: CalendarDay; today: boolean; onOpen: OpenBill; onOpenDay: () => void }) {
+  const shown = day.bills.slice(0, SHOWN)
   const more = day.bills.slice(shown.length)
   return (
     <div className="space-y-1.5">
@@ -143,7 +141,7 @@ function GridDay({ day, today, onOpen, onOpenDay }: { day: CalendarDay; today: b
           </span>
         </p>
       ))}
-      {more.length > 0 && onOpenDay !== undefined ? (
+      {more.length > 0 ? (
         <button
           type="button"
           aria-haspopup="dialog"

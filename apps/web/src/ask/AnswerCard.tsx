@@ -18,7 +18,7 @@ export function namesOf(names: readonly string[]): string {
 const named = (line: AnswerLine): Named => ({ subject: { label: namesOf(line.names) }, figures: line.figures })
 
 /** One line of an answer, in the app's own words, each blank filled with core's figure. */
-export function LineText({ line, under }: { line: AnswerLine; under?: AnswerLine | undefined }) {
+function LineText({ line, under }: { line: AnswerLine; under?: AnswerLine | undefined }) {
   return <CoachText text={ANSWER_WORDS[line.say].text} facts={under === undefined ? { A: named(line) } : { A: named(line), B: named(under) }} />
 }
 
@@ -33,7 +33,7 @@ const PERIOD_WORDS: Readonly<Record<string, string>> = {
 }
 
 /** "I read that as": what was asked, about what, and when, in the owner's words. */
-export function ReadAs({ read, by, names, answer }: { read: Extract<AskRead, { kind: 'intent' }>; by: ReadBy; names: readonly string[]; answer: Answer | null }) {
+function ReadAs({ read, by, names, answer }: { read: Extract<AskRead, { kind: 'intent' }>; by: ReadBy; names: readonly string[]; answer: Answer | null }) {
   const p = read.period
   const days = answer?.status === 'answered' ? answer.now : null
   const when =

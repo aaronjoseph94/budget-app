@@ -33,8 +33,7 @@ export function GoalActions({
   saved: { readonly goalCents: number; readonly balanceCents: number }
   /** Whether it is a Savings-list fund's goal, which stays when the goal goes. */
   onFund: boolean
-  /** Null where this goal cannot be edited here. */
-  onEdit: (() => void) | null
+  onEdit: () => void
   onNotice: (notice: Notice) => void
 }) {
   const { supabase, goals, mainGoal, goalsOrdered, refresh } = useAppData()
@@ -76,12 +75,11 @@ export function GoalActions({
     </Button>
   )
 
-  const edit =
-    onEdit === null ? null : (
-      <Button variant="outline" size="sm" onClick={onEdit}>
-        Edit goal
-      </Button>
-    )
+  const edit = (
+    <Button variant="outline" size="sm" onClick={onEdit}>
+      Edit goal
+    </Button>
+  )
   const remove = (
     <Button variant="ghost" size="sm" disabled={busy} onClick={() => setRemoving((open) => !open)}>
       <Icon name="trash" /> Remove

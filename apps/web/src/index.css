@@ -297,7 +297,6 @@
   --color-spend-bar: var(--spend-bar);
   --color-income: var(--income);
   --color-warning: var(--warning);
-  --color-summary: var(--summary);
   --color-summary-label: var(--summary-label);
   --color-summary-value: var(--summary-value);
   --color-summary-negative: var(--summary-negative);
@@ -318,7 +317,6 @@
   --color-income-header: var(--income-header);
   --color-income-ink: var(--income-ink);
   --color-income-accent: var(--income-accent);
-  --color-income-rule: var(--income-rule);
   --color-savings-band: var(--savings-band);
   --color-savings-header: var(--savings-header);
   --color-savings-ink: var(--savings-ink);
@@ -356,11 +354,6 @@
   --color-year-header: var(--year-header);
   --color-year-header-ink: var(--year-header-ink);
   --color-year-today: var(--year-today);
-  --color-home-ink: var(--home-ink);
-  --color-year-chart-ink: var(--year-chart-ink);
-  --color-debt-ink: var(--debt-ink);
-  --color-debt-left: var(--debt-left);
-  --color-debt-paid: var(--debt-paid);
 }
 
 @layer base {
@@ -441,9 +434,6 @@
 }
 .spec-chart .chart-income-ink {
   fill: var(--income-ink);
-}
-.spec-chart .chart-variable-ink {
-  fill: var(--variable-ink);
 }
 .spec-chart .chart-variable-track {
   fill: var(--variable-tile);

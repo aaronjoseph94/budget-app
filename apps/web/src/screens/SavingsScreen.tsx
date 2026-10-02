@@ -216,7 +216,7 @@ export function SavingsScreen() {
               <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 xl:gap-5">
                 {withoutGoal.map((fund) => (
                   <li key={fund.categoryId}>
-                    <FundCard fund={fund} goal={goalOf(fund)} comparison={comparison} onEdit={() => setEditing(fund.categoryId)}>
+                    <FundCard fund={fund} goal={null} comparison={comparison} onEdit={() => setEditing(fund.categoryId)}>
                       {unlinked.map((g) => (
                         <Button key={g.id} variant="outline" size="sm" className="mr-2" onClick={() => void link(g, fund)}>
                           Use “{g.name}” for this fund
