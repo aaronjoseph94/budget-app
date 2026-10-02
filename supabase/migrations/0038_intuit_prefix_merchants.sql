@@ -43,7 +43,12 @@ begin
       raise exception '0038 is already in; nothing to do';
     end if;
   end if;
-  if to_regprocedure('public.schema_level()') is null or public.schema_level() < 29 then
+  -- Two checks, not one with 'or': plpgsql plans an expression whole,
+  -- so naming schema_level() before it exists fails as "does not exist".
+  if to_regprocedure('public.schema_level()') is null then
+    raise exception 'Paste 0029 first: 0038 needs 0029_lookalike_charge_waits.sql, which is not in yet';
+  end if;
+  if public.schema_level() < 29 then
     raise exception 'Paste 0029 first: 0038 needs 0029_lookalike_charge_waits.sql, which is not in yet';
   end if;
   if to_regprocedure('public._ai_app_clean_old_rows()') is null then

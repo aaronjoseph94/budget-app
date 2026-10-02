@@ -29,7 +29,12 @@ begin
       raise exception '0025 is already in; nothing to do';
     end if;
   end if;
-  if to_regprocedure('public.schema_level()') is null or public.schema_level() < 24 then
+  -- Two checks, not one with 'or': plpgsql plans an expression whole,
+  -- so naming schema_level() before it exists fails as "does not exist".
+  if to_regprocedure('public.schema_level()') is null then
+    raise exception 'Paste 0024 first: 0025 needs 0024_learned_shops_own_category.sql, which is not in yet';
+  end if;
+  if public.schema_level() < 24 then
     raise exception 'Paste 0024 first: 0025 needs 0024_learned_shops_own_category.sql, which is not in yet';
   end if;
 end $$;

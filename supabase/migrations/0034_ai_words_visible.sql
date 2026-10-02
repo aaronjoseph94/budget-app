@@ -31,7 +31,12 @@
 -- paste-order-check start
 do $$
 begin
-  if to_regprocedure('public.ai_app_update_level()') is null or public.ai_app_update_level() < 33 then
+  -- Two checks, not one with 'or': plpgsql plans an expression whole,
+  -- so naming ai_app_update_level() before it exists fails as "does not exist".
+  if to_regprocedure('public.ai_app_update_level()') is null then
+    raise exception 'Paste 0033 first: 0034 needs 0033_ai_search_masked.sql, which is not in yet';
+  end if;
+  if public.ai_app_update_level() < 33 then
     raise exception 'Paste 0033 first: 0034 needs 0033_ai_search_masked.sql, which is not in yet';
   end if;
   -- Pasted again after it is in: its line is still there once, so the

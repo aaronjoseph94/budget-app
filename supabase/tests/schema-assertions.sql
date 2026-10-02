@@ -4118,6 +4118,66 @@ begin
 end $$;
 rollback;
 
+-- With the level function itself missing (0021 not in, or 0030 not in),
+-- each check says which file to paste first, not "function does not
+-- exist": an 'or' would have named the function before it existed.
+\set first_check_23 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0023_typed_entry_once.sql`
+\set first_check_24 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0024_learned_shops_own_category.sql`
+\set first_check_25 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0025_ingested_text_format_characters.sql`
+\set first_check_26 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0026_goal_check_on_link.sql`
+\set first_check_27 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0027_receipt_photo_twice_waits.sql`
+\set first_check_28 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0028_ai_words_no_invisible_characters.sql`
+\set first_check_29 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0029_lookalike_charge_waits.sql`
+\set first_check_38 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0038_intuit_prefix_merchants.sql`
+\set first_check_32 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0032_ai_rows_teach_no_rule.sql`
+\set first_check_33 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0033_ai_search_masked.sql`
+\set first_check_34 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0034_ai_words_visible.sql`
+begin;
+drop function public.schema_level();
+set local verify.f23 = :'first_check_23';
+set local verify.f24 = :'first_check_24';
+set local verify.f25 = :'first_check_25';
+set local verify.f26 = :'first_check_26';
+set local verify.f27 = :'first_check_27';
+set local verify.f28 = :'first_check_28';
+set local verify.f29 = :'first_check_29';
+set local verify.f38 = :'first_check_38';
+do $$
+declare
+  n integer;
+begin
+  foreach n in array array[23, 24, 25, 26, 27, 28, 29, 38] loop
+    begin
+      execute current_setting('verify.f' || n);
+      raise exception 'NOT REFUSED: 00% ran without schema_level()', n;
+    exception when raise_exception then
+      if sqlerrm not like 'Paste 00%' then raise; end if;
+    end;
+  end loop;
+  raise notice 'with schema_level() missing, each check names the file to paste first';
+end $$;
+rollback;
+begin;
+drop function public.ai_app_update_level();
+set local verify.f32 = :'first_check_32';
+set local verify.f33 = :'first_check_33';
+set local verify.f34 = :'first_check_34';
+do $$
+declare
+  n integer;
+begin
+  foreach n in array array[32, 33, 34] loop
+    begin
+      execute current_setting('verify.f' || n);
+      raise exception 'NOT REFUSED: 00% ran without ai_app_update_level()', n;
+    exception when raise_exception then
+      if sqlerrm not like 'Paste 00%' then raise; end if;
+    end;
+  end loop;
+  raise notice 'with ai_app_update_level() missing, each check names the file to paste first';
+end $$;
+rollback;
+
 -- 0038 leaves no '(0038)' mark, so ai_app_updates_in() answers 37 with
 -- everything in (docs/adr/0012-mcp-server.md). The next AI-app update must
 -- re-create ai_app_updates_in() to count itself, not rely on its own mark

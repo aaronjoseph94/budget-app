@@ -39,7 +39,12 @@ begin
       raise exception '0023 is already in; nothing to do';
     end if;
   end if;
-  if to_regprocedure('public.schema_level()') is null or public.schema_level() < 22 then
+  -- Two checks, not one with 'or': plpgsql plans an expression whole,
+  -- so naming schema_level() before it exists fails as "does not exist".
+  if to_regprocedure('public.schema_level()') is null then
+    raise exception 'Paste 0022 first: 0023 needs 0022_removed_charge_waits.sql, which is not in yet';
+  end if;
+  if public.schema_level() < 22 then
     raise exception 'Paste 0022 first: 0023 needs 0022_removed_charge_waits.sql, which is not in yet';
   end if;
 end $$;

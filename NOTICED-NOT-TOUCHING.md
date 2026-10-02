@@ -3729,3 +3729,20 @@ are unchanged; it also checks `ai_app_updates_in()` is 37, so the next
 AI-app update must re-create it (ADR 0012). The owner-facing sentences
 now say a repeat is refused, or for `0030`, `0031`, `0035` and `0037`
 runs again to the same result.
+
+---
+
+## N161 — "Paste 00NN first" was "function does not exist" with the level missing *(settled 2026-10-02)*
+
+**Seen:** 2026-10-02, while fixing N160. `0023`-`0029` and `0038`
+checked `to_regprocedure('public.schema_level()') is null or
+public.schema_level() < N`, and `0032`-`0034` the same with
+`ai_app_update_level()`. PL/pgSQL plans that expression whole, so with
+`0021` (or `0030`) not in, the paste failed with "function
+public.schema_level() does not exist" instead of naming the file to paste
+first. Nothing changed either way, but the message misled.
+
+**Done:** each is now two checks, the function's presence first. Edited
+in place: none of these is applied to the hosted project. The schema gate
+runs each check with the level function dropped and expects "Paste 00NN
+first".
