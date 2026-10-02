@@ -1187,6 +1187,10 @@ across unchanged.
 **To settle:** when the savings coach's weekly limits are built (plan
 slice 12), either build them on it or remove it with its tests.
 
+**Settled, 2026-10-02 (cleanup):** the weekly limits were built as F42's
+`suggestedWeeklyLimit` in `checkin.ts`, not on this, so `weeklySummary`,
+the types only it used and its tests are removed.
+
 ---
 
 ## N45 — The Week shows no starting or ending balance

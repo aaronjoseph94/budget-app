@@ -214,13 +214,7 @@ export {
   shiftMonth,
   shiftWeek,
   weekBounds,
-  weeklySummary,
-  type BudgetedCategory,
   type CategoryKind,
-  type CategoryWeek,
-  type LedgerEntry,
-  type WeeklySummary,
-  type WeeklySummaryInput,
 } from './week.js'
 
 export {
