@@ -3405,3 +3405,23 @@ together to 4.1.x; replace `testTransformMode` with Vitest 4's per-project
 transform option (or move the two Node-built tests to their own project);
 run `pnpm vitest run --coverage` alone until the figures are stable;
 confirm `grep -c "^  vite@" pnpm-lock.yaml` shows one Vite.
+
+---
+
+## N148 — Screens still hand-roll the read protocol that useRead now holds
+
+**Seen:** 2026-10-01, architecture review (architecture-b-06). apps/web/src
+had 36 `let live = true` effects in 33 files, 20 `version === 0` guards
+and 18 latest-read counters, each a copy of one protocol, and the copies
+drifted (FE-5, FE-8, FE-13).
+
+**Done:** `apps/web/src/lib/use-read.ts` holds it once (tested in
+`use-read.test.tsx`: a stale answer dropped, the same key's rows kept
+while read again, retry after a failure, nothing read before the first
+load), and All transactions reads through it.
+
+**Still to do:** move the other screens over, one per commit, deleting each
+screen's own `live` flag, counter and `version === 0` guard as it moves:
+Review and Ask first (FE-8, FE-13), then Week, Month, Paycheck, Calendar,
+Year, Savings, Debts and the Coach's reads. Each screen's tests should
+pass unchanged, bar a wasted first read some of them waited for.

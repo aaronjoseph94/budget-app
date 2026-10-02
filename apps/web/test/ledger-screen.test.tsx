@@ -53,8 +53,9 @@ const rowOf = (merchant: string) => within(screen.getByText(merchant).closest('l
 
 /**
  * Open the screen and wait until its rows are the ones it keeps: it reads
- * the month on mounting and again once the app's first load is in, and a
- * row found from the first read is gone for a moment while the second runs.
+ * the month once, when the app's first load is in. It used to read on
+ * mounting too, and again after; the shared read waits for the first load
+ * (architecture-b-06).
  */
 async function open(fake: FakeSupabase) {
   let reads = 0
@@ -63,7 +64,7 @@ async function open(fake: FakeSupabase) {
     return null
   }
   renderScreen(<LedgerScreen />, fake)
-  await waitFor(() => expect(reads).toBe(2))
+  await waitFor(() => expect(reads).toBe(1))
   await screen.findByText('CORNER MARKET')
   fake.server.hold = null
 }

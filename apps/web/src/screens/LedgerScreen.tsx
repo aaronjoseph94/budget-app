@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { useDeferredValue, useMemo, useState } from 'react'
 import { isoDate, monthBounds, shiftMonth, summariseImport } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { deleteTransaction, listTransactions, type LedgerRow } from '../ledger.js'
@@ -12,31 +12,27 @@ import { Icon } from '../components/ui/icons.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
 import { StepButton } from './MonthScreen.js'
 import { cn } from '../lib/cn.js'
+import { useRead } from '../lib/use-read.js'
 import { HelpButton } from '../help/HelpButton.js'
 
 /** All transactions: everything that reached the ledger, a month at a time. */
 export function LedgerScreen() {
-  const { supabase, categories, refresh, version } = useAppData()
+  const { supabase, categories, refresh } = useAppData()
   const [month, setMonth] = useState(() => shiftMonth(isoDate(todayIso()), 0))
-  // The rows with the month they are for. A read again after a removal keeps
-  // the rows on screen, and the scroll with them, until it lands; only a new
-  // month shows "Loading…" (FE-5).
-  const [loaded, setLoaded] = useState<{ readonly month: string; readonly rows: readonly LedgerRow[] } | null>(null)
   const [query, setQuery] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [removeError, setRemoveError] = useState<string | null>(null)
   const [confirming, setConfirming] = useState<string | null>(null)
+  // Removed here: off the list at once, before the month is read again.
+  const [removed, setRemoved] = useState<ReadonlySet<string>>(new Set())
   const bounds = useMemo(() => monthBounds(month), [month])
 
-  useEffect(() => {
-    let live = true
-    listTransactions(supabase, { from: bounds.start, to: bounds.end })
-      .then((r) => live && (setLoaded({ month, rows: r }), setError(null)))
-      .catch((e: unknown) => live && setError(e instanceof Error ? e.message : 'Could not load the ledger.'))
-    return () => {
-      live = false
-    }
-  }, [supabase, month, bounds.start, bounds.end, version])
-  const rows = loaded?.month === month ? loaded.rows : null
+  // The month's rows by the shared read protocol (lib/use-read.ts): a read
+  // again after a removal keeps the rows on screen, and the scroll with
+  // them, until it lands; only a new month shows "Loading…" (FE-5).
+  const read = useRead(month, () => listTransactions(supabase, { from: bounds.start, to: bounds.end }))
+  const rows = useMemo(() => (read.status === 'ready' ? read.value.filter((r) => !removed.has(r.id)) : null), [read, removed])
+  const readError = read.status === 'failed' ? (read.error instanceof Error ? read.error.message : 'Could not load the ledger.') : null
+  const error = removeError ?? readError
 
   const names = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories])
   // The field shows each key at once; the month's rows are filtered and
@@ -61,15 +57,16 @@ export function LedgerScreen() {
 
   const remove = async (id: string) => {
     setConfirming(null)
+    setRemoveError(null)
     try {
       await deleteTransaction(supabase, id)
       // Off the list as soon as it is deleted: the rows stay while the month
       // is read again (FE-5), and a deleted row kept with them still offered
       // Remove, and its amount, until the read landed.
-      setLoaded((l) => (l === null ? null : { ...l, rows: l.rows.filter((r) => r.id !== id) }))
+      setRemoved((s) => new Set([...s, id]))
       await refresh()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not remove it.')
+      setRemoveError(cause instanceof Error ? cause.message : 'Could not remove it.')
     }
   }
 
