@@ -118,7 +118,7 @@ export function monthReport(input: MonthReportInput): MonthReport {
   })
 
   const comparison = periodComparison({ period: 'month', month: start, asOf, historyStart, categories: input.categories, planHistory: input.planHistory, entries: input.entries })
-  const lastMonth = lastMonthOf(input, comparison)
+  const lastMonth = lastMonthOf(comparison)
   const pairs = comparison.status === 'compared' ? paired(variable, comparison.blocks.variable.rows) : []
   return { status, month: start, window, totals, lastMonth, usual: running ? null : usualOf(input, before, totals), usualMonths: before.length, movers, pairs }
 }
@@ -126,7 +126,7 @@ export function monthReport(input: MonthReportInput): MonthReport {
 type Compared = ReturnType<typeof periodComparison>
 
 /** F25 and F26 on the three totals, each sized by the summary's band (F27). */
-function lastMonthOf(input: MonthReportInput, comparison: Compared): LastMonth {
+function lastMonthOf(comparison: Compared): LastMonth {
   if (comparison.status === 'before_records') return { status: 'before_records', window: comparison.before }
   // The month reviewed has started (checked above), so the only other answer is a comparison.
   if (comparison.status !== 'compared') throw new RangeError('A month that has started is always compared or before the records')

@@ -16,6 +16,7 @@ import { monthActuals } from './month-actuals.js'
 import { usualMonth } from './notable.js'
 import { type PeriodEntry, type WeekCategory, weekSheet } from './period-sheet.js'
 import { byName } from './order.js'
+import { coveredFrom } from './shops.js'
 import { type CheckinWeek, checkinWeek } from './week.js'
 
 export { type CheckinWeek, checkinWeek }
@@ -95,13 +96,6 @@ export function weeklyRecap(input: CheckinInput): WeeklyRecap {
     noSpendDays,
     top,
   }
-}
-
-/** The first day the records cover: the later of history start and the first day read (F38, F40). */
-function coveredFrom(input: CheckinInput): IsoDate | null {
-  const start = input.historyStart
-  if (start === null) return null
-  return start > input.readFrom ? start : input.readFrom
 }
 
 /** The window's rows on the Variable list. A row naming a category not passed in is refused, as periodSheet refuses it. */

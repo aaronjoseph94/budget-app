@@ -36,7 +36,7 @@ import {
 } from '@budget/money-primitives'
 
 /** Guard against a minimum payment that never clears its own interest. */
-const MAX_MONTHS = 600
+export const MAX_MONTHS = 600
 
 export interface DebtInput {
   readonly name: string

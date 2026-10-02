@@ -2,7 +2,7 @@ import { afterAll, describe, expect, it } from 'vitest'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { countScheduleRows, loadGolden } from '../src/index.js'
+import { loadGolden } from '../src/index.js'
 
 /**
  * This module is the project's only External check — the one opinion the
@@ -78,18 +78,5 @@ describe('loadGolden provenance guard', () => {
       expected: {},
     })
     expect(() => loadGolden(PROBE, SCRATCH)).not.toThrow()
-  })
-})
-
-describe('countScheduleRows', () => {
-  it('counts every row across every schedule', () => {
-    // Feeds CONSTRAINTS.md's golden-assertion ratchet, which must not fall.
-    expect(countScheduleRows({ a: [1, 2, 3], b: [4, 5] })).toBe(5)
-  })
-
-  it('counts nothing for an empty set, and ignores empty schedules', () => {
-    expect(countScheduleRows({})).toBe(0)
-    expect(countScheduleRows({ a: [], b: [] })).toBe(0)
-    expect(countScheduleRows({ a: [1], b: [] })).toBe(1)
   })
 })

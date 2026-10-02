@@ -68,7 +68,7 @@ export function shopRows(input: ShopRowsInput): readonly ShopRow[] {
   return spendingRows(input).filter((r) => r.shop !== '')
 }
 
-export function byDateThenId(a: ShopEntry, b: ShopEntry): number {
+function byDateThenId(a: ShopEntry, b: ShopEntry): number {
   return a.postedOn < b.postedOn ? -1 : a.postedOn > b.postedOn ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0
 }
 

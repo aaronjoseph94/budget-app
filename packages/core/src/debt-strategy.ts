@@ -31,6 +31,7 @@ import {
   subCents,
 } from '@budget/money-primitives'
 import type { DebtPlanInput, PlannedDebt } from './debt-plan.js'
+import { MAX_MONTHS } from './debt.js'
 
 export type PayoffStrategy = 'flat' | 'snowball' | 'avalanche'
 
@@ -45,8 +46,6 @@ export interface StrategyOutcome {
 /** Each plan's outcome; null for one that does not pay every debt off within 600 months. */
 export type PayoffStrategies = Readonly<Record<PayoffStrategy, StrategyOutcome | null>>
 
-/** amortize()'s guard, from the first debt's start. */
-const MAX_MONTHS = 600
 
 export function payoffStrategies(input: DebtPlanInput): PayoffStrategies | null {
   if (input.debts.length === 0) return null
@@ -73,6 +72,7 @@ function payOff(input: DebtPlanInput, order: readonly PlannedDebt[] | null): Str
     if (left === 0) paidOffIn.set(d, month)
   }
 
+  // amortize()'s guard, counted from the first debt's start.
   for (let step = 0; step < MAX_MONTHS; step++) {
     const month = addMonths(first, step)
     let freed = ZERO_CENTS

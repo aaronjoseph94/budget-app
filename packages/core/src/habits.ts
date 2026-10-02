@@ -12,6 +12,7 @@
  */
 import { type Cents, type IsoDate, ZERO_CENTS, addDays, cents, daysBetween, sumCents } from '@budget/money-primitives'
 import { completeMonths } from './history.js'
+import { coveredFrom } from './shops.js'
 import { monthActuals } from './month-actuals.js'
 import { type PeriodEntry, type WeekCategory, weekSheet } from './period-sheet.js'
 import { goalBars } from './shares.js'
@@ -317,13 +318,6 @@ function completeWeeks(input: HabitsInput): { readonly status: 'none' } | { read
   const thisWeek = weekBounds(input.asOf).start
   const count = firstWhole < thisWeek ? daysBetween(firstWhole, thisWeek) / 7 : 0
   return { status: 'some', starts: Array.from({ length: count }, (_, i) => addDays(firstWhole, 7 * i)), firstWhole }
-}
-
-/** The first day the records cover: the later of history start and the first day read (F38). */
-function coveredFrom(input: HabitsInput): IsoDate | null {
-  const start = input.historyStart
-  if (start === null) return null
-  return start > input.readFrom ? start : input.readFrom
 }
 
 /** Each day's Variable spending, net: what was spent is the negated net of its rows (D3). */

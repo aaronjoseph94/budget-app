@@ -15,6 +15,7 @@ import { completeMonths } from './history.js'
 import { monthActuals } from './month-actuals.js'
 import { usualMonth } from './notable.js'
 import type { PeriodCategory, PeriodEntry } from './period-sheet.js'
+import { halfUp } from './round.js'
 
 export interface GoalLeversInput {
   readonly asOf: IsoDate
@@ -114,11 +115,6 @@ function lever(input: GoalLeversInput, remaining: Cents, categoryId: string, kin
     weeksToGoal: pace === null || pace <= 0 ? weeks(weekly) : null,
     minutesPerMonth: rate === null ? null : timeEquivalent({ amountCents: monthly, unitCostPerHourCents: rate }).totalMinutes,
   }
-}
-
-/** part ÷ whole for a part of 0 or more, half-up. */
-function halfUp(part: bigint, whole: bigint): number {
-  return Number((part * 2n + whole) / (2n * whole))
 }
 
 /** The engine's own sheets list every category given, so this cannot miss. */

@@ -16,6 +16,8 @@ import { monthActuals } from './month-actuals.js'
 import { type MonthForecastInput, monthPosition } from './month-position.js'
 import { median } from './stats.js'
 import { monthBounds } from './week.js'
+import { halfUp } from './round.js'
+import { FIRST_DAY_WITH_A_PACE } from './pace.js'
 
 /** The least, the median and the most, each rounded to $10; all three the median when rough. */
 export interface Spread { readonly low: Cents; readonly mid: Cents; readonly high: Cents }
@@ -45,7 +47,6 @@ export interface MonthEndForecast {
   readonly end: Spread | null
 }
 
-const FIRST_DAY_WITH_A_PACE = 7
 const MONTHS = 6
 
 export function monthEndForecast(input: MonthForecastInput): MonthEndForecast {
@@ -106,11 +107,6 @@ export function monthEndForecast(input: MonthForecastInput): MonthEndForecast {
 export function toTen(value: number): Cents {
   const size = Math.floor((Math.abs(value) + 500) / 1_000) * 1_000
   return value < 0 ? cents(ZERO_CENTS - size) : cents(size)
-}
-
-/** part ÷ whole for a part of 0 or more, half-up. */
-function halfUp(part: bigint, whole: bigint): number {
-  return Number((part * 2n + whole) / (2n * whole))
 }
 
 function dayOf(monthStart: IsoDate, day: number): IsoDate {

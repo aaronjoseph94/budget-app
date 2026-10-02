@@ -12,6 +12,7 @@ import { projectGoal, timeEquivalent } from './goal.js'
 import type { GoalPace } from './goal-forecast.js'
 import { type Spread, toTen } from './month-end.js'
 import { monthBounds } from './week.js'
+import { halfUp } from './round.js'
 
 export interface WhatIfInput {
   readonly asOf: IsoDate
@@ -93,9 +94,4 @@ function goalWith(input: WhatIfInput, weekly: Cents): WhatIfGoal {
     dates: { early: at(pace.weekly.high + weekly)!, middle: middleDate, late: at(pace.weekly.low + weekly) },
     weeksSooner,
   }
-}
-
-/** part ÷ whole for a part of 0 or more, half-up. */
-function halfUp(part: bigint, whole: bigint): number {
-  return Number((part * 2n + whole) / (2n * whole))
 }

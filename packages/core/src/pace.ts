@@ -10,6 +10,7 @@
  */
 import { type Cents, type IsoDate, cents } from '@budget/money-primitives'
 import { monthBounds } from './week.js'
+import { halfUp } from './round.js'
 
 export interface CategoryPaceInput {
   /** Today. */
@@ -30,7 +31,8 @@ export interface CategoryPace {
   readonly notable: boolean
 }
 
-const FIRST_DAY_WITH_A_PACE = 7
+/** The first day of a month with a pace; F30's forecast starts on the same day. */
+export const FIRST_DAY_WITH_A_PACE = 7
 
 export function categoryPace(input: CategoryPaceInput): CategoryPace {
   const { start, end } = monthBounds(input.month)
@@ -72,9 +74,4 @@ export function budgetStanding(input: BudgetStandingInput): BudgetStanding {
   }
   const near = BigInt(actual) * 10_000n >= 9_000n * BigInt(budget)
   return { standing: near ? 'near' : 'under', overCents: null, leftCents: cents(budget - actual), notable: near }
-}
-
-/** part ÷ whole for a part of 0 or more, half-up. */
-function halfUp(part: bigint, whole: bigint): number {
-  return Number((part * 2n + whole) / (2n * whole))
 }

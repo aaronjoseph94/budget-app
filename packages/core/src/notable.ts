@@ -11,6 +11,7 @@
 import { type Cents, type IsoDate, cents } from '@budget/money-primitives'
 import { type Evidence, evidenceOf } from './history.js'
 import { mad, median } from './stats.js'
+import { halfUp } from './round.js'
 
 export interface UsualMonthInput {
   /** A category's total in each complete month (F24), in any order. */
@@ -91,9 +92,4 @@ export function changeSize(input: { readonly changeCents: Cents; readonly bandCe
 /** |amount| × bp ÷ 10,000, half-up. */
 function percent(amount: Cents, bp: number): number {
   return halfUp(BigInt(Math.abs(amount)) * BigInt(bp), 10_000n)
-}
-
-/** part ÷ whole for a part of 0 or more, half-up. */
-function halfUp(part: bigint, whole: bigint): number {
-  return Number((part * 2n + whole) / (2n * whole))
 }

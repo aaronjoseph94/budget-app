@@ -53,8 +53,3 @@ export function loadGolden<TInput, TExpected, TExtra = Record<string, never>>(
   }
   return parsed
 }
-
-/** Count the golden assertions a fixture carries, for the CONSTRAINTS.md ratchet. */
-export function countScheduleRows(schedules: Readonly<Record<string, readonly unknown[]>>): number {
-  return Object.values(schedules).reduce((n, rows) => n + rows.length, 0)
-}
