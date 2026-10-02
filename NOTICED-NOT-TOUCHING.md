@@ -3704,3 +3704,28 @@ screen's own `live` flag, counter and `version === 0` guard as it moves:
 Review and Ask first (FE-8, FE-13), then Week, Month, Paycheck, Calendar,
 Year, Savings, Debts and the Coach's reads. Each screen's tests should
 pass unchanged, bar a wasted first read some of them waited for.
+
+---
+
+## N160 — Updates pasted again set schema_level() back *(settled 2026-10-02)*
+
+**Seen:** 2026-10-02, review of 54cfa0a. With `0001`-`0038` in, pasting
+`0021`, `0022` or `0026`-`0029` again ran: each set `schema_level()`
+back to its own number, and `0022`, `0027` and `0029` added their
+`save_import` condition a second time. After `0021` or `0022`, `0023`
+was refused for good ("already exists"), so `0024`-`0029` and `0038`
+said "Paste 002N first" and One-time updates could never finish. `0034`
+did the same to `ai_app_add_candidate`, although `0035`'s header said it
+was refused. HANDOFF, setup.md and Help said every repeat is refused.
+
+**Done:** `0021`-`0029` and `0038` now start with "if `schema_level()`
+is already N or more, stop: '00NN is already in; nothing to do'", and
+`0034` refuses by its own "(0034)" mark. These files were edited in
+place: none of `0015` onwards is applied to the hosted project (only
+`0001`-`0014` are), so the forward-only rule does not apply yet. The
+schema gate pastes each whole file again after `0038` and checks
+`schema_level()` stays 38 and `save_import` and `ai_app_add_candidate`
+are unchanged; it also checks `ai_app_updates_in()` is 37, so the next
+AI-app update must re-create it (ADR 0012). The owner-facing sentences
+now say a repeat is refused, or for `0030`, `0031`, `0035` and `0037`
+runs again to the same result.

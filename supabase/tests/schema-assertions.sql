@@ -4042,6 +4042,7 @@ end $$;
 rollback;
 begin;
 drop function public._ai_app_clean_old_rows();
+create or replace function public.schema_level() returns integer language sql immutable as $$ select 29 $$;
 set local verify.paste_check = :'paste_check_38';
 do $$
 begin
@@ -4054,6 +4055,80 @@ begin
   raise notice '0038 says to paste 0037 first when it is missing';
 end $$;
 rollback;
+
+-- Each of 0021 to 0029, 0034 and 0038, pasted again with everything in,
+-- is refused before it changes anything: schema_level() stays at the last
+-- update, and save_import and ai_app_add_candidate keep one copy of each
+-- condition. Without this,
+-- re-pasting 0021 or 0022 set the level back and left 0023 refused for good
+-- (review of 2026-10-02). Each whole file is run, begin and commit taken out.
+\set repaste_21 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0021_category_holds.sql`
+\set repaste_22 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0022_removed_charge_waits.sql`
+\set repaste_23 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0023_typed_entry_once.sql`
+\set repaste_24 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0024_learned_shops_own_category.sql`
+\set repaste_25 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0025_ingested_text_format_characters.sql`
+\set repaste_26 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0026_goal_check_on_link.sql`
+\set repaste_27 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0027_receipt_photo_twice_waits.sql`
+\set repaste_28 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0028_ai_words_no_invisible_characters.sql`
+\set repaste_29 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0029_lookalike_charge_waits.sql`
+\set repaste_34 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0034_ai_words_visible.sql`
+\set repaste_38 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0038_intuit_prefix_merchants.sql`
+begin;
+set local verify.r21 = :'repaste_21';
+set local verify.r22 = :'repaste_22';
+set local verify.r23 = :'repaste_23';
+set local verify.r24 = :'repaste_24';
+set local verify.r25 = :'repaste_25';
+set local verify.r26 = :'repaste_26';
+set local verify.r27 = :'repaste_27';
+set local verify.r28 = :'repaste_28';
+set local verify.r29 = :'repaste_29';
+set local verify.r34 = :'repaste_34';
+set local verify.r38 = :'repaste_38';
+do $$
+declare
+  level  constant integer := public.schema_level();
+  saving constant text := (select prosrc from pg_proc
+                            where oid = 'public.save_import(uuid, public.ingest_source, integer, jsonb, jsonb)'::regprocedure);
+  adding constant text := (select prosrc from pg_proc
+                            where oid = 'public.ai_app_add_candidate(uuid, date, bigint, text, integer, text, integer, text)'::regprocedure);
+  n integer;
+begin
+  if level <> 38 then raise exception 'schema_level() is %, not 38, before the re-pastes', level; end if;
+  foreach n in array array[21, 22, 23, 24, 25, 26, 27, 28, 29, 34, 38] loop
+    begin
+      execute current_setting('verify.r' || n);
+      raise exception 'NOT REFUSED: 00% pasted again ran', n;
+    exception when raise_exception then
+      if sqlerrm <> format('00%s is already in; nothing to do', n) then raise; end if;
+    end;
+    if public.schema_level() <> level then
+      raise exception '00% pasted again moved schema_level() to %', n, public.schema_level();
+    end if;
+    if (select prosrc from pg_proc
+         where oid = 'public.save_import(uuid, public.ingest_source, integer, jsonb, jsonb)'::regprocedure) <> saving then
+      raise exception '00% pasted again changed save_import', n;
+    end if;
+    if (select prosrc from pg_proc
+         where oid = 'public.ai_app_add_candidate(uuid, date, bigint, text, integer, text, integer, text)'::regprocedure) <> adding then
+      raise exception '00% pasted again changed ai_app_add_candidate', n;
+    end if;
+  end loop;
+  raise notice 'pasting 0021 to 0029, 0034 or 0038 again is refused and changes nothing';
+end $$;
+rollback;
+
+-- 0038 leaves no '(0038)' mark, so ai_app_updates_in() answers 37 with
+-- everything in (docs/adr/0012-mcp-server.md). The next AI-app update must
+-- re-create ai_app_updates_in() to count itself, not rely on its own mark
+-- alone; when it does, change 37 here to its number.
+do $$
+begin
+  if public.ai_app_updates_in() <> 37 then
+    raise exception 'ai_app_updates_in() says %, not 37: if a new AI-app update is in, see ADR 0012 and update this check', public.ai_app_updates_in();
+  end if;
+  raise notice 'ai_app_updates_in() names the last AI-app update, 0037';
+end $$;
 
 -- The level the app reads (0021) names the last update in this folder, so a
 -- new update that forgets to raise it fails here.

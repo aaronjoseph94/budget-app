@@ -29,6 +29,13 @@
 -- paste-order-check start
 do $$
 begin
+  -- Pasted again after it is in: refused before anything changes, so
+  -- schema_level() never goes back (re-paste guard).
+  if to_regprocedure('public.schema_level()') is not null then
+    if public.schema_level() >= 22 then
+      raise exception '0022 is already in; nothing to do';
+    end if;
+  end if;
   if to_regprocedure('public.schema_level()') is null then
     raise exception 'Paste 0021 first: 0022 needs 0021_category_holds.sql, which is not in yet';
   end if;

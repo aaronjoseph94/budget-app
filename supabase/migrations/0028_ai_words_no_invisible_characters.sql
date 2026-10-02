@@ -28,6 +28,13 @@
 -- paste-order-check start
 do $$
 begin
+  -- Pasted again after it is in: refused before anything changes, so
+  -- schema_level() never goes back (re-paste guard).
+  if to_regprocedure('public.schema_level()') is not null then
+    if public.schema_level() >= 28 then
+      raise exception '0028 is already in; nothing to do';
+    end if;
+  end if;
   if to_regprocedure('public.schema_level()') is null or public.schema_level() < 27 then
     raise exception 'Paste 0027 first: 0028 needs 0027_receipt_photo_twice_waits.sql, which is not in yet';
   end if;

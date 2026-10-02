@@ -219,7 +219,7 @@ export function UpdatesPanel() {
                 after it in number order, one at a time.
               </p>
               {next.fromStart ? (
-                <p>{FIRST_FILE} is the first. A file already pasted is refused rather than applied twice, so that does no harm.</p>
+                <p>{FIRST_FILE} is the first. A file already pasted is refused with nothing changed, or runs again to the same result, so that does no harm.</p>
               ) : null}
             </>
           )}

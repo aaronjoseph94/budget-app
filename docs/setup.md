@@ -10,8 +10,10 @@ Run each file in `supabase/migrations/` once, in filename order, in
 **SQL Editor → New query → paste → Run**. `0001` and `0002` were applied
 to the hosted project on 2026-09-22, and `0003` to `0014` on 2026-09-24
 (the owner: "the pasting to supabase is done"). Anything newer starts at
-`0015`. Each ends in "Success. No rows returned." Running one twice is
-refused rather than applied twice.
+`0015`. Each ends in "Success. No rows returned." Running one twice does
+no harm: it is refused with nothing changed ("is already in; nothing to
+do", "already exists" or similar), or, for `0030`, `0031`, `0035` and
+`0037`, it runs again to the same result.
 
 | File | What it adds |
 |---|---|

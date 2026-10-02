@@ -28,6 +28,13 @@
 -- paste-order-check start
 do $$
 begin
+  -- Pasted again after it is in: refused before anything changes, so
+  -- schema_level() never goes back (re-paste guard).
+  if to_regprocedure('public.schema_level()') is not null then
+    if public.schema_level() >= 29 then
+      raise exception '0029 is already in; nothing to do';
+    end if;
+  end if;
   if to_regprocedure('public.schema_level()') is null or public.schema_level() < 28 then
     raise exception 'Paste 0028 first: 0029 needs 0028_ai_words_no_invisible_characters.sql, which is not in yet';
   end if;

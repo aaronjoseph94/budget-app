@@ -34,6 +34,14 @@ begin
   if to_regprocedure('public.ai_app_update_level()') is null or public.ai_app_update_level() < 33 then
     raise exception 'Paste 0033 first: 0034 needs 0033_ai_search_masked.sql, which is not in yet';
   end if;
+  -- Pasted again after it is in: its line is still there once, so the
+  -- check below would pass and add the condition a second time. Its own
+  -- "(0034)" mark refuses it first (review of 2026-10-02).
+  if (select p.prosrc from pg_proc p
+       where p.oid = 'public.ai_app_add_candidate(uuid, date, bigint, text, integer, text, integer, text)'::regprocedure)
+     like '%(0034)%' then
+    raise exception '0034 is already in; nothing to do';
+  end if;
 end $$;
 -- paste-order-check end
 

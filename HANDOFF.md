@@ -312,8 +312,10 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
 
     Each update refuses to run before the one it needs ("Paste 0018
     first", "Paste 0035 first" and so on) and changes nothing then.
-    Pasting one again by mistake is harmless: it is refused ("is not as
-    0019 left it" or similar). If one says anything else, stop there:
+    Pasting one again by mistake is harmless: it is refused with nothing
+    changed ("is already in; nothing to do", "already exists", "is not as
+    0019 left it" or similar), or, for `0030`, `0031`, `0035` and `0037`,
+    it runs again to the same result. If one says anything else, stop there:
     nothing is lost, and the next agent needs that message word for word
     (MCP plan K10, K11).
 

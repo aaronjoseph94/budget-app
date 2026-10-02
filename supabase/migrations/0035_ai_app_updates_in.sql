@@ -27,11 +27,12 @@
 -- it is in. It is offered straight after 0020, before 0030, since it
 -- needs nothing but 0020 and keeps every later step honest.
 --
--- 0030 to 0034 are not edited: they may already have been offered by the
--- Copy button. Pasting one of them again still runs; 0030 and 0031 change
--- nothing but ai_app_update_level(), which only their own paste-order
--- checks read, and 0032 to 0034 are refused with nothing changed, as
--- before. Neither moves what this function answers.
+-- Pasting one of 0030 to 0034 again: 0030 and 0031 still run and change
+-- nothing but ai_app_update_level(), which only the paste-order checks
+-- read, and 0032 to 0034 are refused with nothing changed. (0034 was
+-- edited before it was ever applied, on 2026-10-02, to refuse by its own
+-- "(0034)" mark: its line check alone let it add its condition twice.)
+-- Neither moves what this function answers.
 --
 -- Numbering: 0030 to 0039 are reserved for this line of updates
 -- (ADR 0012). Reads pg_proc only; writes nothing; the same for everyone.

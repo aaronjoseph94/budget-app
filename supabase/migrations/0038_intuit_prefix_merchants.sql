@@ -36,6 +36,13 @@
 -- paste-order-check start
 do $$
 begin
+  -- Pasted again after it is in: refused before anything changes, so
+  -- schema_level() never goes back (re-paste guard).
+  if to_regprocedure('public.schema_level()') is not null then
+    if public.schema_level() >= 38 then
+      raise exception '0038 is already in; nothing to do';
+    end if;
+  end if;
   if to_regprocedure('public.schema_level()') is null or public.schema_level() < 29 then
     raise exception 'Paste 0029 first: 0038 needs 0029_lookalike_charge_waits.sql, which is not in yet';
   end if;

@@ -32,6 +32,13 @@
 -- paste-order-check start
 do $$
 begin
+  -- Pasted again after it is in: refused before anything changes, so
+  -- schema_level() never goes back (re-paste guard).
+  if to_regprocedure('public.schema_level()') is not null then
+    if public.schema_level() >= 23 then
+      raise exception '0023 is already in; nothing to do';
+    end if;
+  end if;
   if to_regprocedure('public.schema_level()') is null or public.schema_level() < 22 then
     raise exception 'Paste 0022 first: 0023 needs 0022_removed_charge_waits.sql, which is not in yet';
   end if;

@@ -445,7 +445,8 @@ export type NextStep =
  * The one thing to do next: the first update not in, in number order,
  * because each builds on the ones before. With 0005 missing that is
  * HANDOFF's first file, 0003, since 0003 and 0004 cannot be told apart
- * without writing; one already in is refused, which does no harm.
+ * without writing; one already in is refused or runs again to the same result,
+ * which does no harm.
  */
 export function nextStep(checked: readonly Checked[]): NextStep {
   // An older helper is pasted again, over itself, as one not in yet is.
