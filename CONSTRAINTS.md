@@ -37,6 +37,16 @@ whether a commit is clean.
   no `|| 0`. A $0 balance, a 0% APR, and a 0-month term are legitimate values;
   missing data fails loudly into the review queue instead.
 
+The Floor said "always enforced" and was checked by nothing until
+2026-10-01 (architecture-a-07). Now `eslint` refuses, in every package's
+`src` but the AI apps server's (the MCP build's, written up for it):
+`?? 0` and `|| 0`, `?? ZERO_CENTS`, `?? cents(…)`, `as unknown as`,
+`new Error("Not implemented")` and an empty `catch {}`. Each was planted in
+`core`, `money-primitives`, `schema`, `statement-parsers`, `chart-specs`,
+`savings-coach` and `report-export` and seen `RED`. The four places that
+had one (the Rogers summary, the yearless period, the PDF text mover and
+the debt extras) now branch on the missing value instead.
+
 ## Enforced now
 
 | Dimension | Rule | Command | Runs at |

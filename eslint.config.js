@@ -73,6 +73,35 @@ const NO_FLOAT_MONEY = [
   },
 ]
 
+/**
+ * CONSTRAINTS.md's Floor, which said "always enforced" and was checked by
+ * nothing (architecture-a-07): no silent numeric fallback (`?? 0`, `|| 0`,
+ * `?? ZERO_CENTS`, `?? cents(…)`), no `as unknown as`, no "not implemented"
+ * stub. A $0 balance is a legitimate value; missing data fails loudly.
+ */
+const NO_SILENT_FALLBACK = [
+  {
+    selector: "LogicalExpression[operator=/^(\\?\\?|\\|\\|)$/][right.type='Literal'][right.value=0]",
+    message: 'No silent numeric fallback (CONSTRAINTS.md Floor): missing data fails loudly, it is never 0.',
+  },
+  {
+    selector: "LogicalExpression[operator='??'][right.name='ZERO_CENTS']",
+    message: 'No silent numeric fallback (CONSTRAINTS.md Floor): a missing amount is not $0. Branch on it.',
+  },
+  {
+    selector: "LogicalExpression[operator='??'][right.callee.name='cents']",
+    message: 'No silent numeric fallback (CONSTRAINTS.md Floor): a missing amount is not an amount. Branch on it.',
+  },
+  {
+    selector: "TSAsExpression[expression.type='TSAsExpression'][expression.typeAnnotation.type='TSUnknownKeyword']",
+    message: 'No `as unknown as` (CONSTRAINTS.md Floor): parse or narrow the value instead.',
+  },
+  {
+    selector: "NewExpression[callee.name='Error'][arguments.0.value=/not implemented/i]",
+    message: 'No unimplemented stubs (CONSTRAINTS.md Floor).',
+  },
+]
+
 const NO_WEAK_ASSERTIONS = [
   {
     selector: "CallExpression[callee.property.name='toBeCloseTo']",
@@ -110,7 +139,7 @@ export default tseslint.config(
   {
     files: ['packages/core/src/**/*.ts', 'packages/money-primitives/src/**/*.ts'],
     rules: {
-      'no-restricted-syntax': ['error', ...NO_AMBIENT_STATE, ...NO_FLOAT_MONEY],
+      'no-restricted-syntax': ['error', ...NO_AMBIENT_STATE, ...NO_FLOAT_MONEY, ...NO_SILENT_FALLBACK],
       'no-restricted-imports': [
         'error',
         {
@@ -137,11 +166,18 @@ export default tseslint.config(
     rules: { 'no-restricted-globals': ['error', ...ambientGlobals('packages/core', ['Intl'])] },
   },
   {
+    // The Floor's "no empty catch" (architecture-a-07): a swallowed error
+    // is a failure that ends nowhere. The AI apps server is the MCP build's.
+    files: ['packages/*/src/**/*.ts'],
+    ignores: ['packages/ai-apps/**'],
+    rules: { 'no-empty': ['error', { allowEmptyCatch: false }] },
+  },
+  {
     // schema-contracts is allowed zod — it owns it — but money is still integer
     // Cents here, and the engine stays on the other side of the boundary.
     files: ['packages/schema/src/**/*.ts'],
     rules: {
-      'no-restricted-syntax': ['error', ...NO_FLOAT_MONEY],
+      'no-restricted-syntax': ['error', ...NO_FLOAT_MONEY, ...NO_SILENT_FALLBACK],
       'no-restricted-imports': [
         'error',
         {
@@ -165,6 +201,7 @@ export default tseslint.config(
         'error',
         ...NO_AMBIENT_STATE.map((rule) => ({ ...rule, message: rule.message.replace('packages/core', 'statement-parsers') })),
         ...NO_FLOAT_MONEY,
+        ...NO_SILENT_FALLBACK,
       ],
       'no-restricted-globals': ['error', ...ambientGlobals('statement-parsers')],
       'no-restricted-imports': [
@@ -198,6 +235,7 @@ export default tseslint.config(
         // the file it is in.
         ...NO_AMBIENT_STATE.map((rule) => ({ ...rule, message: rule.message.replace('packages/core', 'chart-specs') })),
         ...NO_FLOAT_MONEY,
+        ...NO_SILENT_FALLBACK,
       ],
       'no-restricted-globals': [
         'error',
@@ -242,6 +280,7 @@ export default tseslint.config(
         'error',
         ...NO_AMBIENT_STATE.map((rule) => ({ ...rule, message: rule.message.replace('packages/core', 'savings-coach') })),
         ...NO_FLOAT_MONEY,
+        ...NO_SILENT_FALLBACK,
       ],
       'no-restricted-globals': [
         'error',
@@ -284,6 +323,7 @@ export default tseslint.config(
         'error',
         ...NO_AMBIENT_STATE.map((rule) => ({ ...rule, message: rule.message.replace('packages/core', 'report-export') })),
         ...NO_FLOAT_MONEY,
+        ...NO_SILENT_FALLBACK,
       ],
       'no-restricted-globals': [
         'error',

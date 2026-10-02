@@ -100,8 +100,8 @@ export function amortize(input: AmortizeInput): AmortizeOutput {
   const extrasByDebt = new Map<string, Map<number, Cents>>()
   for (const e of input.extraPayments) {
     const forDebt = extrasByDebt.get(e.debtName) ?? new Map<number, Cents>()
-    const existing = forDebt.get(e.month) ?? ZERO_CENTS
-    forDebt.set(e.month, cents(existing + cents(e.amountCents)))
+    const existing = forDebt.get(e.month)
+    forDebt.set(e.month, existing === undefined ? cents(e.amountCents) : cents(existing + cents(e.amountCents)))
     extrasByDebt.set(e.debtName, forDebt)
   }
 
@@ -134,7 +134,9 @@ function amortizeOne(
     const afterInterest = cents(balance + interest)
     totalInterest = cents(totalInterest + interest)
 
-    const extra = extras?.get(month) ?? ZERO_CENTS
+    // A month with no extra payment typed pays the minimum alone.
+    const typed = extras?.get(month)
+    const extra = typed === undefined ? ZERO_CENTS : typed
     const payment = minCents(cents(minimum + extra), afterInterest)
     balance = subCents(afterInterest, payment)
 

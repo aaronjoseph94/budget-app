@@ -167,9 +167,11 @@ export function extractRuns(stream: Uint8Array): readonly TextRun[] {
       y = p[5] ?? y
     } else if (g['td'] !== undefined) {
       const [dx, dy] = g['td'].split(/\s+/).map(Number)
-      x += dx ?? 0
-      y += dy ?? 0
-      if (g['tdOp'] === 'TD') leading = -(dy ?? 0)
+      // The pattern takes two operands; a move missing one is no move.
+      if (dx === undefined || dy === undefined) continue
+      x += dx
+      y += dy
+      if (g['tdOp'] === 'TD') leading = -dy
     } else if (g['tstar'] !== undefined) {
       y -= leading
     } else if (g['lit'] !== undefined) {

@@ -24,7 +24,7 @@
  * negative. Every amount is flipped on the way through.
  */
 
-import { type Cents, cents, isoDate } from '@budget/money-primitives'
+import { type Cents, isoDate } from '@budget/money-primitives'
 import { IngestedTextSchema, type RejectionReason } from '@budget/schema'
 import { US_AMOUNT_FORMAT, applySignConvention, parseAmountToCents } from '../amount.js'
 import { groupRows } from '../pdf/layout.js'
@@ -129,8 +129,12 @@ const SUMMARY_LABELS = [
  * purchases — so an amount taken from anywhere but after its own label is the
  * wrong one, and wrong in a way that still reconciles against itself.
  */
+type SummaryKey = (typeof SUMMARY_LABELS)[number][0]
+
 export function readSummary(pages: readonly (readonly TextRun[])[]): RogersSummary | null {
-  const found = new Map<string, Cents>()
+  // Keyed by the labels' own names, so a mistyped key does not compile
+  // (architecture-a-07).
+  const found = new Map<SummaryKey, Cents>()
 
   for (const page of pages.slice(0, 2)) {
     for (const row of groupRows(page, [0])) {
@@ -145,16 +149,27 @@ export function readSummary(pages: readonly (readonly TextRun[])[]): RogersSumma
     }
   }
 
-  if (found.size !== SUMMARY_LABELS.length) return null
-  return {
-    previousBalanceCents: found.get('previousBalanceCents') ?? cents(0),
-    paymentsAndCreditsCents: found.get('paymentsAndCreditsCents') ?? cents(0),
-    purchasesAndDebitsCents: found.get('purchasesAndDebitsCents') ?? cents(0),
-    cashAdvancesCents: found.get('cashAdvancesCents') ?? cents(0),
-    feesCents: found.get('feesCents') ?? cents(0),
-    interestCents: found.get('interestCents') ?? cents(0),
-    newBalanceCents: found.get('newBalanceCents') ?? cents(0),
+  // Every figure, or none: a figure not found is not $0.
+  const figure = (key: SummaryKey): Cents | undefined => found.get(key)
+  const previousBalanceCents = figure('previousBalanceCents')
+  const paymentsAndCreditsCents = figure('paymentsAndCreditsCents')
+  const purchasesAndDebitsCents = figure('purchasesAndDebitsCents')
+  const cashAdvancesCents = figure('cashAdvancesCents')
+  const feesCents = figure('feesCents')
+  const interestCents = figure('interestCents')
+  const newBalanceCents = figure('newBalanceCents')
+  if (
+    previousBalanceCents === undefined ||
+    paymentsAndCreditsCents === undefined ||
+    purchasesAndDebitsCents === undefined ||
+    cashAdvancesCents === undefined ||
+    feesCents === undefined ||
+    interestCents === undefined ||
+    newBalanceCents === undefined
+  ) {
+    return null
   }
+  return { previousBalanceCents, paymentsAndCreditsCents, purchasesAndDebitsCents, cashAdvancesCents, feesCents, interestCents, newBalanceCents }
 }
 
 /**
