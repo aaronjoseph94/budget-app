@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { SIGNED_OUT_HERE_ONLY } from '../src/supabase.js'
 import { SettingsScreen } from '../src/screens/SettingsScreen.js'
 import type { Category } from '../src/ledger.js'
 import { createFakeSupabase } from './fake-supabase.js'
@@ -28,6 +29,26 @@ describe('SettingsScreen, Mockup A', () => {
     // The address and Sign out share the account card's one row.
     expect(within(cardOf('Account')).getByRole('button', { name: 'Sign out' })).toBeTruthy()
     await screen.findByText(/None yet|Learned shops/)
+  })
+})
+
+describe('SettingsScreen, signing out', () => {
+  it('signs out on this device even when the server cannot be reached, as the sidebar does (security-a-06)', async () => {
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://abcdefghijklmnopqrst.supabase.co')
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'a-public-anon-key-of-some-length')
+    const key = 'sb-abcdefghijklmnopqrst-auth-token'
+    window.localStorage.setItem(key, '{"refresh_token":"still-live"}')
+    const fake = createFakeSupabase()
+    vi.spyOn(fake.client.auth, 'signOut').mockResolvedValue({ error: new Error('Failed to fetch') } as never)
+    renderScreen(<SettingsScreen />, fake)
+    const account = screen.getByRole('heading', { level: 2, name: 'Account' }).parentElement!
+    fireEvent.click(within(account).getByRole('button', { name: 'Sign out' }))
+
+    await waitFor(() => expect(window.sessionStorage.getItem(SIGNED_OUT_HERE_ONLY)).toBe('1'))
+    expect(window.localStorage.getItem(key)).toBeNull()
+    window.sessionStorage.removeItem(SIGNED_OUT_HERE_ONLY)
+    vi.unstubAllEnvs()
+    await screen.findByText(/its shop is learned/)
   })
 })
 

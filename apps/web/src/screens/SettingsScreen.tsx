@@ -14,6 +14,7 @@ import { navigate } from '../nav.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { LearnedShopsCard } from './LearnedShops.js'
 import { AiAppsCard } from '../ai-apps/AiAppsCard.js'
+import { signOutHere } from '../sign-out.js'
 
 const ProgressLine = lazy(() => import('../start/ProgressLine.js').then((m) => ({ default: m.ProgressLine })))
 
@@ -65,7 +66,7 @@ export function SettingsScreen() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               {/* An address is one long word: it breaks only where it cannot fit. */}
               <p className="min-w-0 text-muted-foreground [overflow-wrap:anywhere]">{email}</p>
-              <Button variant="outline" onClick={() => void supabase.auth.signOut()}>
+              <Button variant="outline" onClick={() => void signOutHere(supabase)}>
                 <Icon name="logout" /> Sign out
               </Button>
             </div>
