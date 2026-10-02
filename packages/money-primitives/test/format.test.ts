@@ -28,3 +28,12 @@ describe('formatCents', () => {
     expect(formatCents(-0)).toBe('$0.00')
   })
 })
+
+describe('formatCents, given something that is not whole cents (architecture-a-09)', () => {
+  // It printed these as amounts: "$0.12.5", "$0.0.30000000000000004",
+  // "$NaN.NaN" and "-$0.0.5".
+  it.each([[12.5], [0.1 + 0.2], [Number.NaN], [-0.5], [Number.POSITIVE_INFINITY], [2 ** 53]])('refuses %s', (amount) => {
+    expect(() => formatCents(amount)).toThrow(new RangeError('formatCents takes whole cents'))
+  })
+})
+

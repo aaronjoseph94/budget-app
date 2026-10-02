@@ -13,6 +13,10 @@
 const GROUPED = new Intl.NumberFormat('en-US')
 
 export function formatCents(amountCents: number): string {
+  // A float or NaN printed as a plausible amount ("$0.12.5", "$NaN.NaN")
+  // would hide the bug that made it; the message names no value, per the
+  // log rule (architecture-a-09).
+  if (!Number.isSafeInteger(amountCents)) throw new RangeError('formatCents takes whole cents')
   const negative = amountCents < 0
   const magnitude = Math.abs(amountCents)
   const whole = Math.floor(magnitude / 100)
