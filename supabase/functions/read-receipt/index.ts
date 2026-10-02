@@ -58,9 +58,15 @@ const ORIGINS = [
 const EnvSchema = z.object({
   SUPABASE_URL: z.string().regex(/^https?:\/\/[A-Za-z0-9.-]+(:\d+)?$/).optional(),
   SUPABASE_ANON_KEY: z.string().min(1).optional(),
+  // The project's new public keys, a JSON object by name; the legacy anon
+  // key is retired by the end of 2026, and a project can switch it off sooner.
+  SUPABASE_PUBLISHABLE_KEYS: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().optional(),
   EXTRA_ORIGINS: z.string().optional(),
+  // Optional: the owner's user id. Set, every other account is refused
+  // before the key is spent (backend-b-06). Not a user id, nothing is served.
+  OWNER_USER_ID: z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i).optional(),
 })
 type Env = z.infer<typeof EnvSchema>
 
@@ -122,9 +128,49 @@ function reply(status: number, body: unknown, origin: string | null, origins: Se
 // The one place this file writes a log line, and all it can say: a fixed
 // code and numbers. Never the image, the prompt, the reply, an amount or a
 // merchant (CLAUDE.md); the types leave no room for them.
-type LogCode = 'provider_unreachable' | 'provider_status' | 'auth_unreachable' | 'auth_status'
+type LogCode = 'provider_unreachable' | 'provider_status' | 'auth_unreachable' | 'auth_status' | 'settings_unreachable' | 'settings_status'
 function log(code: LogCode, counts: Record<string, number> = {}): void {
   console.log(JSON.stringify({ fn: 'read-receipt', code, ...counts }))
+}
+
+/** The public key the auth server is asked with: the new publishable key, else the legacy anon key (backend-b-04). */
+function publicKey(env: Env): string | null {
+  let fresh: unknown = null
+  try {
+    const keys: unknown = JSON.parse(env.SUPABASE_PUBLISHABLE_KEYS ?? 'null')
+    fresh = typeof keys === 'object' && keys !== null && 'default' in keys ? keys.default : null
+  } catch {
+    fresh = null
+  }
+  return typeof fresh === 'string' && fresh !== '' ? fresh : (env.SUPABASE_ANON_KEY ?? null)
+}
+
+/** How long the auth server, and Gemini, may take to answer, body and all (backend-b-05). */
+const AUTH_MS = 10_000
+const GEMINI_MS = 30_000
+
+/**
+ * One call with its body read as JSON, both inside `ms`: a reply that sends
+ * its headers and then stalls is cut off too. Null body: not JSON.
+ */
+async function bounded(
+  fetchFn: typeof fetch,
+  url: string,
+  init: RequestInit,
+  ms: number,
+): Promise<{ status: number; ok: boolean; body: unknown } | 'timeout' | 'unreachable'> {
+  const stop = new AbortController()
+  const timer = setTimeout(() => stop.abort(), ms)
+  const aborted = new Promise<null>((resolve) => stop.signal.addEventListener('abort', () => resolve(null)))
+  try {
+    const res = await fetchFn(url, { ...init, signal: stop.signal })
+    const body: unknown = await Promise.race([res.json().catch(() => null), aborted])
+    return stop.signal.aborted ? 'timeout' : { status: res.status, ok: res.ok, body }
+  } catch {
+    return stop.signal.aborted ? 'timeout' : 'unreachable'
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -136,14 +182,15 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
  * (it carries client_id, which the owner's own sign-in never has) and one
  * whose payload cannot be read.
  */
-async function whoIs(project: string, anonKey: string, bearer: string, fetchFn: typeof fetch): Promise<'owner' | 'not_signed_in' | 'auth_unreachable'> {
-  let res: Response
-  try {
-    res = await fetchFn(`${project}/auth/v1/user`, {
-      method: 'GET',
-      headers: { apikey: anonKey, Authorization: bearer },
-    })
-  } catch {
+async function whoIs(
+  project: string,
+  anonKey: string,
+  bearer: string,
+  owner: string | undefined,
+  fetchFn: typeof fetch,
+): Promise<'owner' | 'not_signed_in' | 'auth_unreachable'> {
+  const res = await bounded(fetchFn, `${project}/auth/v1/user`, { method: 'GET', headers: { apikey: anonKey, Authorization: bearer } }, AUTH_MS)
+  if (typeof res === 'string') {
     log('auth_unreachable')
     return 'auth_unreachable'
   }
@@ -152,15 +199,51 @@ async function whoIs(project: string, anonKey: string, bearer: string, fetchFn: 
     log('auth_status', { status: res.status })
     return 'auth_unreachable'
   }
-  const user: unknown = await res.json().catch(() => null)
+  const user: unknown = res.body
   const id = typeof user === 'object' && user !== null && 'id' in user ? user.id : null
   if (typeof id !== 'string' || !UUID.test(id)) return 'not_signed_in'
+  if (owner !== undefined && id.toLowerCase() !== owner.toLowerCase()) return 'not_signed_in'
   try {
     const claims: unknown = JSON.parse(atob((bearer.split('.')[1] ?? '').replace(/-/g, '+').replace(/_/g, '/')))
     return typeof claims === 'object' && claims !== null && !('client_id' in claims && claims.client_id !== null) ? 'owner' : 'not_signed_in'
   } catch {
     return 'not_signed_in'
   }
+}
+
+/** PostgREST's and Postgres's "no such table": 0016 is not pasted, so no switch exists yet. */
+const NO_SETTINGS_TABLE = new Set(['PGRST205', '42P01'])
+
+/**
+ * Whether the owner left AI on: their own ai_settings row (0016), read with
+ * their own token, so RLS scopes it to them and no service key is needed.
+ * The app sends a photo here only when the AI helper is missing or an older
+ * copy, and an older helper can be there with AI switched off, so this is
+ * the switch's last word (architecture-c2-04). No row is on; anything that
+ * cannot be read is not, so a database fault never sends a photo.
+ */
+async function aiSwitch(project: string, anonKey: string, bearer: string, fetchFn: typeof fetch): Promise<'on' | 'off' | 'unreadable'> {
+  const res = await bounded(
+    fetchFn,
+    `${project}/rest/v1/ai_settings?select=enabled`,
+    { method: 'GET', headers: { apikey: anonKey, Authorization: bearer, Accept: 'application/json' } },
+    AUTH_MS,
+  )
+  if (typeof res === 'string') {
+    log('settings_unreachable')
+    return 'unreadable'
+  }
+  if (!res.ok) {
+    const code = typeof res.body === 'object' && res.body !== null && 'code' in res.body ? res.body.code : null
+    if (typeof code === 'string' && NO_SETTINGS_TABLE.has(code)) return 'on'
+    log('settings_status', { status: res.status })
+    return 'unreadable'
+  }
+  if (!Array.isArray(res.body)) return 'unreadable'
+  const row: unknown = res.body[0]
+  if (row === undefined) return 'on'
+  const enabled = typeof row === 'object' && row !== null && 'enabled' in row ? row.enabled : null
+  return enabled === true ? 'on' : enabled === false ? 'off' : 'unreadable'
 }
 
 export async function handle(
@@ -191,8 +274,8 @@ export async function handle(
   const key = env.GEMINI_API_KEY
   if (key === undefined || key === '') return send(503, { ok: false, code: 'not_configured' })
   const project = env.SUPABASE_URL
-  const anonKey = env.SUPABASE_ANON_KEY
-  if (project === undefined || anonKey === undefined) return send(503, { ok: false, code: 'not_configured' })
+  const anonKey = publicKey(env)
+  if (project === undefined || anonKey === null) return send(503, { ok: false, code: 'not_configured' })
 
   const model = env.GEMINI_MODEL ?? DEFAULT_MODEL
   if (!MODEL_NAME.test(model)) return send(503, { ok: false, code: 'not_configured' })
@@ -206,12 +289,17 @@ export async function handle(
     return send(400, { ok: false, code: 'bad_request' })
   }
 
-  const who = await whoIs(project, anonKey, bearer, fetchFn)
+  const who = await whoIs(project, anonKey, bearer, env.OWNER_USER_ID, fetchFn)
   if (who !== 'owner') return send(who === 'not_signed_in' ? 401 : 503, { ok: false, code: who })
 
-  let upstream: Response
-  try {
-    upstream = await fetchFn(`${HOST}${model}:generateContent`, {
+  const switched = await aiSwitch(project, anonKey, bearer, fetchFn)
+  if (switched === 'off') return send(409, { ok: false, code: 'ai_off' })
+  if (switched === 'unreadable') return send(503, { ok: false, code: 'settings_unreachable' })
+
+  const upstream = await bounded(
+    fetchFn,
+    `${HOST}${model}:generateContent`,
+    {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify({
@@ -227,10 +315,12 @@ export async function handle(
         ],
         generationConfig: { temperature: 0, responseMimeType: 'application/json', responseSchema: RESPONSE_SCHEMA },
       }),
-    })
-  } catch {
+    },
+    GEMINI_MS,
+  )
+  if (upstream === 'timeout' || upstream === 'unreachable') {
     log('provider_unreachable')
-    return send(502, { ok: false, code: 'provider_unreachable' })
+    return send(upstream === 'timeout' ? 504 : 502, { ok: false, code: 'provider_unreachable' })
   }
 
   if (upstream.status === 429) return send(429, { ok: false, code: 'rate_limited' })
@@ -241,13 +331,8 @@ export async function handle(
 
   // Only the reply text is passed on. Everything else Gemini returns — safety
   // ratings, token counts, other candidates — stays here.
-  let text: unknown
-  try {
-    const data = await upstream.json()
-    text = data?.candidates?.[0]?.content?.parts?.[0]?.text
-  } catch {
-    text = undefined
-  }
+  const data = upstream.body as { candidates?: { content?: { parts?: { text?: unknown }[] } }[] } | null
+  const text: unknown = data?.candidates?.[0]?.content?.parts?.[0]?.text
   if (typeof text !== 'string') return send(502, { ok: false, code: 'provider_error' })
   return send(200, { ok: true, reply: text })
 }
@@ -261,9 +346,11 @@ if (typeof Deno !== 'undefined') {
       {
         SUPABASE_URL: Deno.env.get('SUPABASE_URL'),
         SUPABASE_ANON_KEY: Deno.env.get('SUPABASE_ANON_KEY'),
+        SUPABASE_PUBLISHABLE_KEYS: Deno.env.get('SUPABASE_PUBLISHABLE_KEYS'),
         GEMINI_API_KEY: Deno.env.get('GEMINI_API_KEY'),
         GEMINI_MODEL: Deno.env.get('GEMINI_MODEL'),
         EXTRA_ORIGINS: Deno.env.get('EXTRA_ORIGINS'),
+        OWNER_USER_ID: Deno.env.get('OWNER_USER_ID'),
       },
       fetch,
     ),

@@ -70,7 +70,8 @@ it("lays the lists two across in list order, with the Month's table", () => {
   const lists = screen.getAllByRole('region').filter((r) => r.querySelector('table, p') && r.getAttribute('aria-label') !== 'Summary')
   expect(lists.map((r) => r.getAttribute('aria-label'))).toEqual(['Variable expenses', 'Bills', 'Subscriptions', 'Debts', 'Income', 'Savings'])
   expect(lists.some((r) => r.className.includes('xl:order-'))).toBe(false)
-  expect(lists[0]?.parentElement?.className.split(' ')).toEqual(expect.arrayContaining(['md:grid-cols-2']))
+  expect(lists[0]?.parentElement?.className.split(' ')).toEqual(expect.arrayContaining(['lg:grid-cols-2']))
+  expect(lists[0]?.parentElement?.className.split(' ')).not.toContain('md:grid-cols-2')
 })
 
 // Mockup A's stat cards, as the Month's: Left to spend the hero, with the

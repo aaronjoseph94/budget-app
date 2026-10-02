@@ -1,5 +1,6 @@
 import type { SupabaseClient } from './supabase.js'
 import { describeWriteFailure } from './format.js'
+import { readAll } from './ledger.js'
 
 /**
  * The shops the app has learned to file by themselves: merchant_rules,
@@ -20,10 +21,21 @@ export interface LearnedShop {
 }
 
 export async function listLearnedShops(supabase: SupabaseClient): Promise<readonly LearnedShop[]> {
-  const { data, error } = await supabase.from('merchant_rules').select('id, match_merchant, category_id').order('match_merchant')
-  // A read saves nothing, so it never says "nothing was saved" (N28).
-  if (error !== null) throw new Error(`The shops the app has learned could not be read just now. Try again. (code ${error.code || 'unknown'})`)
-  return ((data ?? []) as { id: string; match_merchant: string; category_id: string }[]).map((r) => ({
+  // Every shop, page by page: one request stopped at the server's 1,000
+  // rows, and this is the only list that can forget a shop that files
+  // itself (architecture-c1-03). A read saves nothing, so it never says
+  // "nothing was saved" (N28).
+  const rows = await readAll<{ id: string; match_merchant: string; category_id: string }>(
+    (from, to) =>
+      // A shop's name is unique to its owner (0001), so it orders the pages.
+      supabase.from('merchant_rules').select('id, match_merchant, category_id', { count: 'exact' }).order('match_merchant').range(from, to),
+    {
+      changed: 'The shops the app has learned changed while they were read. Try again.',
+      describe: (error) => `The shops the app has learned could not be read just now. Try again. (code ${error?.code || 'unknown'})`,
+    },
+    (r) => r.match_merchant,
+  )
+  return rows.map((r) => ({
     id: r.id,
     merchant: r.match_merchant,
     categoryId: r.category_id,

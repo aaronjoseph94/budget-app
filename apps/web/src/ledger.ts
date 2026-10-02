@@ -25,6 +25,7 @@ import {
   describePlanFailure,
   describeScheduleFailure,
   describeSetupFailure,
+  describeIngestFailure,
   describeWriteFailure,
   scheduleShownBy,
   shownBy,
@@ -36,8 +37,11 @@ import {
 import type { GoalStatus } from '@budget/core'
 import { LIST_HEADING, type CategoryKind } from './lists.js'
 import type { SupabaseClient } from './supabase.js'
+import type { IngestBatchCounts, IngestCandidateRowWire, IngestSource, TransactionRowWire } from '@budget/schema'
 
-export type IngestSource = 'card_csv' | 'card_xlsx' | 'card_pdf' | 'receipt_photo' | 'typed' | 'ai_app'
+// One naming of where a row came from: schema's, which the migrations hold
+// it to (architecture-b-04).
+export type { IngestSource }
 
 /** What a reader hands over to be saved. */
 export type ImportRequest = {
@@ -155,57 +159,67 @@ export async function saveImport(
       ? args
       : { ...args, p_period_start: input.period.from, p_period_end: input.period.to },
   )
-  if (error !== null) throw new Error(describeWriteFailure(error))
+  if (error !== null) failIngest(error)
 
-  const result = (Array.isArray(data) ? data[0] : data) as SavedCounts | undefined
-  if (result === undefined) throw new Error(describeWriteFailure(null))
+  const result: unknown = Array.isArray(data) ? data[0] : data
+  // Every count is read, or the import is said not to have been recorded:
+  // an auto_approved that fell back to 0 called every row a rule filed
+  // "waiting" (architecture-b-04). 0004 made it always present.
+  const counts = savedCounts(result)
+  if (counts === null) throw new Error(describeWriteFailure(null))
 
   return {
-    batchId: String(result.batch_id),
-    inserted: Number(result.inserted),
-    deduped: Number(result.deduped),
-    rejected: Number(result.rejected),
-    autoApproved: Number(result.auto_approved ?? 0),
-    waiting: Number(result.inserted) - Number(result.auto_approved ?? 0),
+    batchId: counts.batch_id,
+    inserted: counts.inserted,
+    deduped: counts.deduped,
+    rejected: counts.rejected,
+    autoApproved: counts.auto_approved,
+    waiting: counts.inserted - counts.auto_approved,
   }
 }
 
-/** What save_import returns. Shaped by migrations 0003 and 0004. */
-interface SavedCounts {
-  readonly batch_id: string
-  readonly parsed: number
-  readonly deduped: number
-  readonly inserted: number
-  readonly rejected: number
-  readonly auto_approved?: number
+/** What save_import returns (0003, 0004): schema's batch counts, and how many a rule filed. */
+type SavedCounts = Omit<IngestBatchCounts, 'batch_id'> & { readonly batch_id: string; readonly auto_approved: number }
+
+function savedCounts(reply: unknown): SavedCounts | null {
+  if (typeof reply !== 'object' || reply === null) return null
+  const r = reply as Readonly<Record<string, unknown>>
+  const whole = (key: string): number | null => {
+    const n = typeof r[key] === 'string' ? Number(r[key]) : r[key]
+    return typeof n === 'number' && Number.isSafeInteger(n) && n >= 0 ? n : null
+  }
+  const [parsed, deduped, inserted, rejected, auto] = ['parsed', 'deduped', 'inserted', 'rejected', 'auto_approved'].map(whole)
+  if (typeof r.batch_id !== 'string' || parsed == null || deduped == null || inserted == null || rejected == null || auto == null) return null
+  return { batch_id: r.batch_id, parsed, deduped, inserted, rejected, auto_approved: auto }
 }
 
 function fail(error: { code?: string | null } | null): never {
-  throw new Error(describeWriteFailure(error))
+  throw refused(describeWriteFailure(error), error)
+}
+
+/** As fail, for the functions that say a category, account or line they cannot find with 42501. */
+function failIngest(error: { code?: string | null } | null): never {
+  throw refused(describeIngestFailure(error), error)
 }
 
 // ---------------------------------------------------------------------------
 // The review queue
 // ---------------------------------------------------------------------------
 
-export interface PendingCandidate {
-  readonly id: string
-  readonly posted_on: string
-  readonly amount_cents: number
-  /** Normalised: what a learned rule matches on. */
-  readonly merchant: string
-  readonly merchant_raw: string
-  /**
-   * Set on a row waiting here only by a model's suggestion (0018), which
-   * the owner still confirms: 0004 refuses approving it as the model's.
-   */
-  readonly category_id: string | null
-  readonly category_source: 'model' | 'user' | 'merchant_rule' | null
-  /** Where it came from: an AI app's addition says so in Review (0020). */
-  readonly source: IngestSource
-  /** Its import, which names the AI app that added it (0020's ai_client_id). */
-  readonly batch_id: string
-}
+/**
+ * A row waiting in Review, as schema's row describes it, so a column
+ * dropped there breaks this compile (architecture-b-04). `merchant` is
+ * normalised: what a learned rule matches on. `category_id` is set on a row
+ * waiting here only by a model's suggestion (0018), which the owner still
+ * confirms: 0004 refuses approving it as the model's. `source` says an AI
+ * app's addition in Review (0020), and `batch_id`, its import, names the AI
+ * app that added it (0020's ai_client_id).
+ */
+export type PendingCandidate = Readonly<
+  Pick<IngestCandidateRowWire, 'id' | 'posted_on' | 'merchant' | 'merchant_raw' | 'category_id' | 'category_source' | 'source' | 'batch_id'> & {
+    readonly amount_cents: number
+  }
+>
 
 export interface PendingPage {
   readonly rows: readonly PendingCandidate[]
@@ -229,7 +243,10 @@ export async function listPending(supabase: SupabaseClient, limit = 300): Promis
     .limit(limit)
   if (error !== null) fail(error)
   const rows = (data ?? []) as PendingCandidate[]
-  return { rows: rows.map((r) => ({ ...r, amount_cents: Number(r.amount_cents) })), total: count ?? rows.length }
+  // The true size, or a refusal: the page's length is the cap the count is
+  // there to see past (architecture-b-04).
+  if (count === null) throw new Error('The review queue could not be counted. Try again.')
+  return { rows: rows.map((r) => ({ ...r, amount_cents: Number(r.amount_cents) })), total: count }
 }
 
 export type ApproveOutcome = 'approved' | 'already_handled' | 'already_in_ledger'
@@ -251,7 +268,7 @@ export async function approveCandidate(
     p_candidate: candidateId,
     p_category: categoryId,
   })
-  if (error !== null) fail(error)
+  if (error !== null) failIngest(error)
   const outcome = String(data)
   return outcome === 'approved' || outcome === 'already_in_ledger' ? outcome : 'already_handled'
 }
@@ -321,7 +338,8 @@ export async function listUnreadable(supabase: SupabaseClient, limit = 200): Pro
     .limit(limit)
   if (error !== null) fail(error)
   const lines = ((data ?? []) as UnreadableLine[]).map((l) => ({ ...l, source_line: Number(l.source_line) }))
-  if (lines.length === 0) return { batches: [], lines, total: count ?? lines.length }
+  if (count === null) throw new Error('The lines no import could read could not be counted. Try again.')
+  if (lines.length === 0) return { batches: [], lines, total: count }
 
   const imports = await supabase
     .from('ingest_batches')
@@ -329,7 +347,7 @@ export async function listUnreadable(supabase: SupabaseClient, limit = 200): Pro
     .in('id', [...new Set(lines.map((l) => l.batch_id))])
     .order('created_at', { ascending: false })
   if (imports.error !== null) fail(imports.error)
-  return { batches: (imports.data ?? []) as UnreadableBatch[], lines, total: count ?? lines.length }
+  return { batches: (imports.data ?? []) as UnreadableBatch[], lines, total: count }
 }
 
 /**
@@ -341,7 +359,7 @@ export async function listUnreadable(supabase: SupabaseClient, limit = 200): Pro
  */
 export async function dismissUnreadableLine(supabase: SupabaseClient, lineId: string): Promise<void> {
   const { error } = await supabase.rpc('dismiss_unreadable_line', { p_line: lineId })
-  if (error !== null) fail(error)
+  if (error !== null) failIngest(error)
 }
 
 /**
@@ -422,9 +440,14 @@ export async function countPendingBetween(
 
 /** merchant -> category id, for suggesting what the user chose last time. */
 export async function listRules(supabase: SupabaseClient): Promise<ReadonlyMap<string, string>> {
-  const { data, error } = await supabase.from('merchant_rules').select('match_merchant, category_id')
-  if (error !== null) fail(error)
-  const rules = (data ?? []) as { match_merchant: string; category_id: string }[]
+  // Every rule, page by page: one request stops at the server's 1,000 rows
+  // (architecture-c1-03).
+  // A shop's name is unique to its owner (0001), so it orders the pages.
+  const rules = await readAll<{ match_merchant: string; category_id: string }>(
+    (from, to) => supabase.from('merchant_rules').select('match_merchant, category_id', { count: 'exact' }).order('match_merchant').range(from, to),
+    { changed: 'The shops the app has learned changed while they were read. Try again.', describe: describeWriteFailure },
+    (r) => r.match_merchant,
+  )
   return new Map(rules.map((r) => [r.match_merchant, r.category_id]))
 }
 
@@ -433,6 +456,12 @@ export async function listRules(supabase: SupabaseClient): Promise<ReadonlyMap<s
 // ---------------------------------------------------------------------------
 
 export interface TypedEntry {
+  /**
+   * One id for one entry as filled in, kept when Add is pressed again after
+   * an answer that never came: the database then takes it as the same entry,
+   * not a second purchase (0023, backend-a-07).
+   */
+  readonly entryId: string
   readonly accountId: string
   readonly postedOn: string
   /** Signed, ledger convention: a purchase is negative. */
@@ -442,15 +471,25 @@ export interface TypedEntry {
 }
 
 export async function addTypedTransaction(supabase: SupabaseClient, entry: TypedEntry): Promise<void> {
-  const { error } = await supabase.rpc('add_typed_transaction', {
+  const args = {
     p_account_id: entry.accountId,
     p_posted_on: entry.postedOn,
     p_amount_cents: entry.amountCents,
     p_merchant: normalizeMerchant(entry.merchantRaw),
     p_merchant_raw: entry.merchantRaw,
     p_category: entry.categoryId,
-  })
-  if (error !== null) fail(error)
+  }
+  const { error } = await supabase.rpc('add_typed_transaction', { ...args, p_entry: entry.entryId })
+  if (error === null) return
+  // Only the stored-text domain (0001, 0025) refuses a typed entry this way.
+  if (error.code === '23514') {
+    throw new Error('What it was has characters the app cannot store, so nothing was saved. Use letters, numbers and ordinary punctuation. (code 23514)')
+  }
+  // Before 0023 is pasted there is no call that takes an entry id; the one
+  // without it still adds, as before (each call a new entry).
+  if (error.code !== 'PGRST202' && error.code !== '42883') failIngest(error)
+  const before = await supabase.rpc('add_typed_transaction', args)
+  if (before.error !== null) failIngest(before.error)
 }
 
 // ---------------------------------------------------------------------------
@@ -583,7 +622,7 @@ export async function addCategories(
     )
     .select('id')
   // Nothing back with no error is not "none added"; say it failed instead.
-  if (error !== null || data === null) throw new Error(describeSetupFailure('add', error))
+  if (error !== null || data === null) throw refused(describeSetupFailure('add', error), error)
   return data.length
 }
 
@@ -608,7 +647,7 @@ export async function listCategories(supabase: SupabaseClient): Promise<readonly
  */
 export async function renameCategory(supabase: SupabaseClient, categoryId: string, name: string): Promise<void> {
   const { error } = await supabase.from('categories').update({ name }).eq('id', categoryId)
-  if (error !== null) throw new Error(describeSetupFailure('rename', error))
+  if (error !== null) throw refused(describeSetupFailure('rename', error), error)
 }
 
 /**
@@ -622,7 +661,7 @@ export async function setCategoryOrder(
 ): Promise<void> {
   for (const change of changes) {
     const { error } = await supabase.from('categories').update({ sort_order: change.sortOrder }).eq('id', change.id)
-    if (error !== null) throw new Error(describeSetupFailure('reorder', error))
+    if (error !== null) throw refused(describeSetupFailure('reorder', error), error)
   }
 }
 
@@ -636,7 +675,7 @@ export async function moveCategory(
     .from('categories')
     .update({ kind: to.kind, sort_order: to.sortOrder })
     .eq('id', categoryId)
-  if (error !== null) throw new Error(describeSetupFailure('move', error))
+  if (error !== null) throw refused(describeSetupFailure('move', error), error)
 }
 
 /**
@@ -646,7 +685,7 @@ export async function moveCategory(
  */
 export async function removeCategory(supabase: SupabaseClient, categoryId: string): Promise<void> {
   const { error } = await supabase.from('categories').delete().eq('id', categoryId)
-  if (error !== null) throw new Error(describeSetupFailure('remove', error))
+  if (error !== null) throw refused(describeSetupFailure('remove', error), error)
 }
 
 export async function setWeeklyBudget(
@@ -665,14 +704,14 @@ export async function setWeeklyBudget(
 // The ledger
 // ---------------------------------------------------------------------------
 
-export interface LedgerRow {
-  readonly id: string
-  readonly posted_on: string
-  readonly amount_cents: number
-  readonly merchant_raw: string
-  readonly category_id: string
-  readonly source: string
-}
+/**
+ * A ledger row as the screens read it: schema's row (architecture-b-04),
+ * its amount a number after Number(). `source` stays a plain string: the
+ * screens only print it, and test rows name sources freely.
+ */
+export type LedgerRow = Readonly<
+  Pick<TransactionRowWire, 'id' | 'posted_on' | 'merchant_raw' | 'category_id'> & { readonly amount_cents: number; readonly source: string }
+>
 
 /**
  * Rows per request. Supabase answers at most 1,000 rows a request (PostgREST's
@@ -692,6 +731,16 @@ export class ReadRefused extends Error {
     this.name = 'ReadRefused'
     this.code = code
   }
+}
+
+/**
+ * A refusal in the sentence its describer wrote, keeping the database's
+ * code, so needsOneTimeUpdate can tell an update not yet pasted from a lost
+ * connection after a write or a single read too, not only after readAll's
+ * (architecture-b-05). The sentence is unchanged.
+ */
+function refused(sentence: string, error: { code?: string | null } | null): ReadRefused {
+  return new ReadRefused(sentence, error?.code ?? '')
 }
 
 /** A table, column or function a one-time update adds, not there yet (Help → One-time updates). */
@@ -726,6 +775,17 @@ interface Page {
 export async function readAll<T extends { readonly id: string }>(
   page: (from: number, to: number) => PromiseLike<Page>,
   failure: { readonly changed: string; readonly describe: (error: WriteError) => string },
+): Promise<T[]>
+/** As above, for a table keyed by another column (coach_answers, insight_dismissals; architecture-c1-03). */
+export async function readAll<T>(
+  page: (from: number, to: number) => PromiseLike<Page>,
+  failure: { readonly changed: string; readonly describe: (error: WriteError) => string },
+  keyOf: (row: T) => string,
+): Promise<T[]>
+export async function readAll<T>(
+  page: (from: number, to: number) => PromiseLike<Page>,
+  failure: { readonly changed: string; readonly describe: (error: WriteError) => string },
+  keyOf: (row: T) => string = (row) => (row as { readonly id: string }).id,
 ): Promise<T[]> {
   const rows: T[] = []
   let expected: number | null = null
@@ -738,7 +798,7 @@ export async function readAll<T extends { readonly id: string }>(
     if (got.length === 0 && rows.length < expected) throw new Error(failure.changed)
     rows.push(...got)
   } while (rows.length < expected)
-  if (rows.length !== expected || new Set(rows.map((r) => r.id)).size !== rows.length) {
+  if (rows.length !== expected || new Set(rows.map(keyOf)).size !== rows.length) {
     throw new Error(failure.changed)
   }
   return rows
@@ -788,7 +848,7 @@ export async function recategoriseTransaction(supabase: SupabaseClient, move: Re
     p_category: move.categoryId,
     p_learn: move.learn,
   })
-  if (error !== null) throw new Error(describeMoveFailure(error))
+  if (error !== null) throw refused(describeMoveFailure(error), error)
 }
 
 export async function deleteTransaction(supabase: SupabaseClient, id: string): Promise<void> {
@@ -876,7 +936,7 @@ export async function setBudget(supabase: SupabaseClient, edit: BudgetEdit): Pro
   const { error } = await supabase
     .from('category_budgets')
     .upsert(rows, { onConflict: 'user_id,category_id,month,applies' })
-  if (error !== null) throw new Error(describeBudgetFailure('save', error))
+  if (error !== null) throw refused(describeBudgetFailure('save', error), error)
 }
 
 // ---------------------------------------------------------------------------
@@ -957,7 +1017,7 @@ export async function setPlan(supabase: SupabaseClient, edit: PlanEdit): Promise
     },
     { onConflict: 'user_id,category_id,effective_month' },
   )
-  if (error !== null) throw new Error(describePlanFailure('save', error))
+  if (error !== null) throw refused(describePlanFailure('save', error), error)
 }
 
 // ---------------------------------------------------------------------------
@@ -1014,13 +1074,13 @@ export async function setPaySchedule(supabase: SupabaseClient, edit: ScheduleEdi
     { user_id: edit.userId, category_id: edit.categoryId, first_pay_date: edit.firstPayDate, frequency: edit.frequency },
     { onConflict: 'user_id,category_id' },
   )
-  if (error !== null) throw new Error(describeScheduleFailure('save', error))
+  if (error !== null) throw refused(describeScheduleFailure('save', error), error)
 }
 
 /** Forget when an income source pays: 0011 stores no half schedule, so none is a missing row. */
 export async function removePaySchedule(supabase: SupabaseClient, categoryId: string): Promise<void> {
   const { error } = await supabase.from('pay_schedules').delete().eq('category_id', categoryId)
-  if (error !== null) throw new Error(describeScheduleFailure('save', error))
+  if (error !== null) throw refused(describeScheduleFailure('save', error), error)
 }
 
 // ---------------------------------------------------------------------------
@@ -1046,7 +1106,7 @@ export async function getMonthBalance(supabase: SupabaseClient, month: string): 
     .select('starting_balance_cents')
     .eq('month', month)
     .maybeSingle()
-  if (error !== null) throw new Error(describeBalanceFailure('read', error))
+  if (error !== null) throw refused(describeBalanceFailure('read', error), error)
   return data === null ? null : Number((data as Pick<MonthBalanceRow, 'starting_balance_cents'>).starting_balance_cents)
 }
 
@@ -1075,7 +1135,7 @@ export async function setMonthBalance(supabase: SupabaseClient, edit: BalanceEdi
             { user_id: edit.userId, month: edit.month, starting_balance_cents: edit.startingBalanceCents },
             { onConflict: 'user_id,month' },
           )
-  if (error !== null) throw new Error(describeBalanceFailure('save', error))
+  if (error !== null) throw refused(describeBalanceFailure('save', error), error)
 }
 
 // ---------------------------------------------------------------------------
@@ -1222,9 +1282,13 @@ export async function listFundTransfers(
 
 export interface FundEdit {
   readonly goalCents: number
-  /** What is in the fund today, typed; true at the end of `asOf` (D16). */
-  readonly savedCents: number
-  readonly asOf: string
+  /**
+   * What is in the fund, typed, and the day it is true at the end of (D16);
+   * null when the owner left it as it was, so the stored pair stays and
+   * transfers dated after its day keep adding to it (backend-c1-01). A new
+   * goal always carries it: 0013 requires a fund's goal to have its day.
+   */
+  readonly saved: { readonly cents: number; readonly asOf: string } | null
   readonly startDate: string | null
   readonly goalDate: string | null
   /** What an hour costs and what the hours are of; both null for a goal in dollars (F45). */
@@ -1235,7 +1299,10 @@ export interface FundEdit {
 /**
  * Save a fund's goal. The typed balance and the day it is true are always
  * written together (N52): a balance retyped without moving its day would
- * count the transfers since the old day twice. A new goal takes its fund's
+ * count the transfers since the old day twice. Neither is written when the
+ * owner did not retype the balance: writing core's kept figure back as typed
+ * would re-date it, and a transfer dated before today that reaches the ledger
+ * later would never be counted (backend-c1-01). A new goal takes its fund's
  * name, which 0004 keeps unique among goals.
  */
 export async function saveFund(
@@ -1244,10 +1311,10 @@ export async function saveFund(
   target: { readonly userId: string; readonly categoryId: string | null; readonly name: string; readonly goalId: string | null },
   edit: FundEdit,
 ): Promise<void> {
+  if (target.goalId === null && edit.saved === null) throw new Error('A new goal needs what is saved in it.')
   const row = {
     target_cents: edit.goalCents,
-    saved_cents: edit.savedCents,
-    balance_as_of: edit.asOf,
+    ...(edit.saved === null ? {} : { saved_cents: edit.saved.cents, balance_as_of: edit.saved.asOf }),
     start_date: edit.startDate,
     target_date: edit.goalDate,
     unit_cost_cents: edit.unitCostCents,
@@ -1259,7 +1326,7 @@ export async function saveFund(
           .from('savings_goals')
           .insert({ user_id: target.userId, name: target.name, category_id: target.categoryId, ...row })
       : await supabase.from('savings_goals').update(row).eq('id', target.goalId)
-  if (error !== null) throw new Error(describeFundFailure('save', error))
+  if (error !== null) throw refused(describeFundFailure('save', error), error)
 }
 
 /**
@@ -1275,7 +1342,7 @@ export async function linkFund(
     .from('savings_goals')
     .update({ category_id: link.categoryId, balance_as_of: link.asOf })
     .eq('id', link.goalId)
-  if (error !== null) throw new Error(describeFundFailure('save', error))
+  if (error !== null) throw refused(describeFundFailure('save', error), error)
 }
 
 // ---------------------------------------------------------------------------
@@ -1370,13 +1437,13 @@ export async function saveDebt(
     target.debtId === null
       ? await supabase.from('debts').insert({ user_id: target.userId, sort_order: target.sortOrder, ...row })
       : await supabase.from('debts').update(row).eq('id', target.debtId)
-  if (error !== null) throw new Error(describeDebtFailure('save', error))
+  if (error !== null) throw refused(describeDebtFailure('save', error), error)
 }
 
 /** Remove a debt; its extra payments go with it (0014: ON DELETE CASCADE). */
 export async function removeDebt(supabase: SupabaseClient, debtId: string): Promise<void> {
   const { error } = await supabase.from('debts').delete().eq('id', debtId)
-  if (error !== null) throw new Error(describeDebtFailure('save', error))
+  if (error !== null) throw refused(describeDebtFailure('save', error), error)
 }
 
 /** Set a debt's extra payment for a month; one per debt a month, as the workbook has one cell. */
@@ -1390,10 +1457,10 @@ export async function saveDebtExtra(
       { user_id: extra.userId, debt_id: extra.debtId, month: extra.month, amount_cents: extra.amountCents },
       { onConflict: 'user_id,debt_id,month' },
     )
-  if (error !== null) throw new Error(describeDebtFailure('extra', error))
+  if (error !== null) throw refused(describeDebtFailure('extra', error), error)
 }
 
 export async function removeDebtExtra(supabase: SupabaseClient, extraId: string): Promise<void> {
   const { error } = await supabase.from('debt_extra_payments').delete().eq('id', extraId)
-  if (error !== null) throw new Error(describeDebtFailure('extra', error))
+  if (error !== null) throw refused(describeDebtFailure('extra', error), error)
 }

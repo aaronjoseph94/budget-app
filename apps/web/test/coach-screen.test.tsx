@@ -411,7 +411,7 @@ describe('when each goal is reached at your pace (A08, F33)', () => {
     go('/coach')
     renderScreen(<Shell />, fake)
 
-    expect(await screen.findByText('When you will get there did not load. Reload to try again.')).toBeTruthy()
+    expect(await screen.findByText('When you will get there did not load.', { exact: false })).toBeTruthy()
   })
 })
 

@@ -53,8 +53,9 @@ const rowOf = (merchant: string) => within(screen.getByText(merchant).closest('l
 
 /**
  * Open the screen and wait until its rows are the ones it keeps: it reads
- * the month on mounting and again once the app's first load is in, and a
- * row found from the first read is gone for a moment while the second runs.
+ * the month once, when the app's first load is in. It used to read on
+ * mounting too, and again after; the shared read waits for the first load
+ * (architecture-b-06).
  */
 async function open(fake: FakeSupabase) {
   let reads = 0
@@ -63,7 +64,7 @@ async function open(fake: FakeSupabase) {
     return null
   }
   renderScreen(<LedgerScreen />, fake)
-  await waitFor(() => expect(reads).toBe(2))
+  await waitFor(() => expect(reads).toBe(1))
   await screen.findByText('CORNER MARKET')
   fake.server.hold = null
 }
@@ -82,6 +83,47 @@ describe('LedgerScreen, removing a transaction', () => {
     await waitFor(() => expect(screen.queryByText('CORNER MARKET')).toBeNull())
     expect(fake.tables.transactions.map((t) => t.id)).toEqual(['t2', 't3'])
     expect(screen.getByText('LITWARE BOOKS')).toBeTruthy()
+  })
+
+  it('keeps the other rows on screen while the month is read again after a removal (FE-5)', async () => {
+    const fake = seeded()
+    await open(fake)
+    let release: () => void = () => undefined
+    const held = new Promise<void>((done) => (release = done))
+    fake.server.hold = (target) => (target === 'transactions' ? held : null)
+
+    fireEvent.click(rowOf('CORNER MARKET').getByRole('button', { name: 'Remove this transaction' }))
+    fireEvent.click(rowOf('CORNER MARKET').getByRole('button', { name: 'Remove' }))
+    await waitFor(() => expect(fake.tables.transactions).toHaveLength(2))
+    await new Promise((r) => setTimeout(r, 20))
+
+    expect(screen.getByText('LITWARE BOOKS')).toBeTruthy()
+    expect(screen.queryByRole('status', { name: /Loading/ })).toBeNull()
+    fake.server.hold = null
+    release()
+    await waitFor(() => expect(screen.queryByText('CORNER MARKET')).toBeNull())
+  })
+
+  it('takes a removed row, and its amount, off at once while the app reads again', async () => {
+    const fake = seeded()
+    await open(fake)
+    const moneyOut = () => screen.getByText('Money out').nextElementSibling?.textContent
+    expect(moneyOut()).toContain('62.09')
+    let release: () => void = () => undefined
+    const held = new Promise<void>((done) => (release = done))
+    // Every read waits, the app's own refresh and the month's: a slow phone.
+    fake.server.hold = () => held
+
+    fireEvent.click(rowOf('CORNER MARKET').getByRole('button', { name: 'Remove this transaction' }))
+    fireEvent.click(rowOf('CORNER MARKET').getByRole('button', { name: 'Remove' }))
+    await waitFor(() => expect(fake.tables.transactions).toHaveLength(2))
+
+    // Gone, with no Remove left to press on a row already deleted.
+    await waitFor(() => expect(screen.queryByText('CORNER MARKET')).toBeNull())
+    expect(screen.getByText('LITWARE BOOKS')).toBeTruthy()
+    expect(moneyOut()).toContain('19.99')
+    fake.server.hold = null
+    release()
   })
 
   it('says why when the removal is refused, and keeps the row', async () => {
@@ -112,7 +154,7 @@ describe('LedgerScreen, finding a transaction', () => {
 
   it('narrows the month to a merchant or a category typed in the search', async () => {
     await open(seeded())
-    const search = screen.getByPlaceholderText('Search merchant or category')
+    const search = screen.getByRole('searchbox', { name: "Search this month's transactions" })
 
     fireEvent.change(search, { target: { value: 'litware' } })
     expect(screen.queryByText('CORNER MARKET')).toBeNull()

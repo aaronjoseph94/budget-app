@@ -27,14 +27,15 @@ export default defineConfig({
       // Transformed as the DOM tests are (web, not ssr): a source file both
       // projects load was otherwise compiled two ways, and coverage kept one
       // file map or the other depending on which process reported first, so
-      // format.ts's branches read 153 on one run and 112 on the next.
+      // format.ts's branches read 153 on one run and 112 on the next. The two
+      // that load build-time Node code (setup-files, the Vite config) stay ssr.
       {
         test: {
           name: 'app',
           root: './apps/web',
           include: ['test/**/*.test.ts'],
           environment: 'node',
-          testTransformMode: { web: ['**/!(setup-files).test.ts'] },
+          testTransformMode: { web: ['**/!(setup-files|vite-config).test.ts'] },
           css: { include: [/index\.css/] },
         },
       },

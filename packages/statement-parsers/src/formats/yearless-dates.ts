@@ -52,7 +52,14 @@ export function daysInMonth(y: number, m: number): number {
   return m === 4 || m === 6 || m === 9 || m === 11 ? 30 : 31
 }
 
-export function isoDate(y: number, m: number, d: number): IsoDate {
+/**
+ * A year, month and day as an IsoDate string, padded and nothing more: it
+ * checks no day. Only for parts already checked (resolveYear, daysInMonth),
+ * or passed on to money-primitives' isoDate, which checks (architecture-a-06).
+ * Internal to statement-parsers; money-primitives' isoDate is the one the
+ * other packages use.
+ */
+export function civilDate(y: number, m: number, d: number): IsoDate {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}` as IsoDate
 }
 
@@ -68,9 +75,11 @@ export function isoDate(y: number, m: number, d: number): IsoDate {
 export function resolveYear(month: number, day: number, period: StatementPeriod): number | null {
   const from = period.from.split('-').map(Number)
   const to = period.to.split('-').map(Number)
-  const [fromY, fromM, fromD] = [from[0] ?? 0, from[1] ?? 0, from[2] ?? 0]
-  const [toY, toM, toD] = [to[0] ?? 0, to[1] ?? 0, to[2] ?? 0]
-  if (fromY === 0 || toY === 0) return null
+  // A period that is not three numbers each way is no period, not year 0.
+  const [fromY, fromM, fromD] = from
+  const [toY, toM, toD] = to
+  if (from.length !== 3 || to.length !== 3 || from.some(Number.isNaN) || to.some(Number.isNaN)) return null
+  if (fromY === undefined || fromM === undefined || fromD === undefined || toY === undefined || toM === undefined || toD === undefined) return null
 
   const earliest = daysFromCivil(fromY, fromM, fromD) - LOOKBACK_DAYS
   const latest = daysFromCivil(toY, toM, toD)

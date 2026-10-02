@@ -88,7 +88,7 @@ describe('shiftPayPeriod', () => {
 })
 
 describe('payShare (F15: × 12 ÷ paydays a year, half-up to the cent)', () => {
-  const share = (monthlyCents: number, frequency: PayFrequency) => payShare({ monthlyCents, frequency })
+  const share = (monthlyCents: number, frequency: PayFrequency) => payShare({ monthlyCents, frequency }).shareCents
 
   it("gives the owner's example: $1,600 rent is $738.46 a bi-weekly period", () => {
     // 160000 × 12 ÷ 26 = 73846.15…

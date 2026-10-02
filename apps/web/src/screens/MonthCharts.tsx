@@ -1,8 +1,8 @@
 import { useId, useMemo } from 'react'
 import { goalBars, type PeriodRow, type PeriodSheet } from '@budget/core'
-import { incomeBars, spendingDoughnut, type SvgMarkup } from '@budget/chart-specs'
+import { incomeBars, spendingDoughnut } from '@budget/chart-specs'
 import { formatCents, formatShare } from '../format.js'
-import { SvgChart } from '../components/ui/chart.js'
+import { SvgChart, fitted, type Fitted } from '../components/ui/chart.js'
 
 /**
  * The workbook's chart panel, Jan!H3:K18: the income chart (chart12) and the
@@ -63,7 +63,7 @@ function draw(
   income: readonly PeriodRow[],
   variable: readonly PeriodRow[],
   refunded: readonly PeriodRow[],
-): { income: SvgMarkup | null; spending: SvgMarkup | null } {
+): { income: Fitted | null; spending: Fitted | null } {
   const named = new Map(income.map((r) => [r.categoryId, r]))
   const bars = goalBars({ rows: income }).bars.flatMap((b) => {
     const r = named.get(b.categoryId)
@@ -88,7 +88,7 @@ function draw(
     income:
       bars.length === 0
         ? null
-        : incomeBars({
+        : fitted(incomeBars, {
             id: `${id}-income`,
             title: 'Income against goals',
             description: said(
@@ -103,7 +103,7 @@ function draw(
     spending:
       slices.length === 0
         ? null
-        : spendingDoughnut({
+        : fitted(spendingDoughnut, {
             id: `${id}-spending`,
             title: 'Variable expenses by category',
             description: said([

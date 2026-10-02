@@ -38,8 +38,10 @@ export interface GoldenFixture<TInput, TExpected> {
  */
 export function loadGolden<TInput, TExpected, TExtra = Record<string, never>>(
   name: string,
+  /** The committed fixtures; the harness's own test passes a scratch folder (architecture-b-08). */
+  dir: string = join(HERE, '..', 'fixtures'),
 ): GoldenFixture<TInput, TExpected> & TExtra {
-  const path = join(HERE, '..', 'fixtures', `${name}.golden.json`)
+  const path = join(dir, `${name}.golden.json`)
   const parsed = JSON.parse(readFileSync(path, 'utf8')) as GoldenFixture<TInput, TExpected> & TExtra
 
   const p = parsed.$provenance

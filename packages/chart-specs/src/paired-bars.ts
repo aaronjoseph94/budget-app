@@ -6,7 +6,7 @@
  * nothing here divides money. The same figures are the list beside it and
  * its description.
  */
-import { FONT, WIDTH, type ChartFrame, fit, frame, lengthOf } from './frame.js'
+import { FONT, type ChartFrame, fit, frame, lengthOf, widthOf } from './frame.js'
 import { type SvgMarkup, type SvgNode, el } from './svg.js'
 
 export interface PairedBar {
@@ -39,13 +39,14 @@ const NOW = { fill: '#4F46E5', class: 'chart-report-now' } as const
 const BEFORE = { fill: '#A7A3F2', class: 'chart-report-before' } as const
 
 export function pairedBars(input: PairedBarsInput): SvgMarkup {
-  const rows = input.rows.map((r, i) => row(r, KEY + i * ROW, input))
-  return frame(input, KEY + input.rows.length * ROW + 20, [key(input.nowName, input.beforeName), ...rows])
+  const width = widthOf(input)
+  const rows = input.rows.map((r, i) => row(r, KEY + i * ROW, input, width))
+  return frame(input, KEY + input.rows.length * ROW + 20, [key(input.nowName, input.beforeName, width), ...rows])
 }
 
 /** Two series, so a key names them: colour is never the only way to tell them apart. */
-function key(nowName: string, beforeName: string): SvgNode {
-  const half = WIDTH / 2
+function key(nowName: string, beforeName: string, width: number): SvgNode {
+  const half = width / 2
   return el('g', {}, [
     el('rect', { x: 0, y: 30, width: BAR, height: BAR, rx: ROUND / 2, ...NOW }),
     el('text', { x: 160, y: FONT, ...INK }, [fit(nowName, half - 260)]),
@@ -54,8 +55,8 @@ function key(nowName: string, beforeName: string): SvgNode {
   ])
 }
 
-function row(bar: PairedBar, top: number, names: PairedBarsInput): SvgNode {
-  const span = WIDTH - AMOUNT
+function row(bar: PairedBar, top: number, names: PairedBarsInput, width: number): SvgNode {
+  const span = width - AMOUNT
   const line = (bp: number, y: number, paint: typeof NOW | typeof BEFORE, text: string): SvgNode[] => {
     const length = lengthOf(bp, span)
     const marks: SvgNode[] = []
@@ -65,7 +66,7 @@ function row(bar: PairedBar, top: number, names: PairedBarsInput): SvgNode {
   }
   return el('g', {}, [
     el('title', {}, [`${bar.label}: ${names.nowName} ${bar.nowText}, ${names.beforeName} ${bar.beforeText}`]),
-    el('text', { x: 0, y: top + 120, ...INK }, [fit(bar.label, WIDTH)]),
+    el('text', { x: 0, y: top + 120, ...INK }, [fit(bar.label, width)]),
     ...line(bar.nowBp, top + 170, NOW, bar.nowText),
     ...line(bar.beforeBp, top + 300, BEFORE, bar.beforeText),
   ])

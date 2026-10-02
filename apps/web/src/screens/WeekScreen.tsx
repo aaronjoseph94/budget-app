@@ -13,7 +13,7 @@ import { useAppData } from '../app-data.js'
 import { latestStatementEnd, listPlanHistory, listTransactions, type LedgerRow, type PlanRow } from '../ledger.js'
 import { categoriesForCore, entriesForCore, plansForCore, weekCategoriesForCore } from '../sheet-input.js'
 import { useEarlier } from '../earlier.js'
-import { formatDateRange, todayIso } from '../format.js'
+import { formatDateRange } from '../format.js'
 import { OpenedCharges } from './MonthCharges.js'
 import { StepButton, WaitingBanner } from './MonthScreen.js'
 import { MonthTitle } from '../components/ui/type.js'
@@ -25,6 +25,7 @@ import { WeekBlocks } from './WeekBlocks.js'
 import { PeriodSwitch } from './PeriodSwitch.js'
 import { GoalCard, NoGoal } from './WeekGoal.js'
 import { HelpButton } from '../help/HelpButton.js'
+import { TryAgain } from '../try-again.js'
 
 /**
  * The workbook's Weekly Budget: the Month's summary and six blocks over the
@@ -40,8 +41,8 @@ import { HelpButton } from '../help/HelpButton.js'
  * address, as the Month's do, so a refresh or the back gesture returns to it.
  */
 export function WeekScreen({ monday }: { monday: string | null }) {
-  const { supabase, categories, mainGoal, pendingTotal, loadError, version } = useAppData()
-  const today = isoDate(todayIso())
+  const { supabase, categories, mainGoal, pendingTotal, loadError, version, today: day } = useAppData()
+  const today = isoDate(day)
   // This week counts its days left from today, not its Monday.
   const asOf = monday === null || monday === weekBounds(today).start ? today : isoDate(monday)
   const [loaded, setLoaded] = useState<Loaded | null>(null)
@@ -92,7 +93,7 @@ export function WeekScreen({ monday }: { monday: string | null }) {
     } catch {
       // As on the Month: core refuses a row it cannot file rather than
       // leave it out of every total. Said plainly, never as its message.
-      return 'A charge or a monthly amount this week names a category that did not load, so the week is not shown. Reload to try again.'
+      return 'A charge or a monthly amount this week names a category that did not load, so the week is not shown.'
     }
   }, [here, categories, asOf])
   const sheet = typeof week === 'string' ? null : week
@@ -162,7 +163,7 @@ export function WeekScreen({ monday }: { monday: string | null }) {
 
       {error !== null ? <Alert tone="error" title="Could not load this week">{error}</Alert> : null}
       {unsaved !== null ? <Alert tone="error" title="A weekly budget or goal was not saved">{unsaved}</Alert> : null}
-      {typeof week === 'string' ? <Alert tone="error" title="Could not show this week">{week}</Alert> : null}
+      {typeof week === 'string' ? <Alert tone="error" title="Could not show this week">{week} <TryAgain />.</Alert> : null}
       {/* A first load that failed is said above the screen, by App, as on the Month. */}
       {week === null && error === null && (version > 0 || loadError === null) ? <SkeletonCard /> : null}
 
@@ -202,7 +203,7 @@ interface Loaded {
 /** A busy status, so a screen reader is told the week is loading, as the eye is (CR-10). */
 function SkeletonCard() {
   return (
-    <Card role="status" aria-label="Loading this week" aria-busy="true" className="animate-pulse">
+    <Card role="status" aria-label="Loading this week" aria-busy="true" className="animate-pulse motion-reduce:animate-none">
       <CardContent className="space-y-3 pt-5">
         <div className="h-4 w-16 rounded bg-muted" />
         <div className="h-9 w-40 rounded bg-muted" />

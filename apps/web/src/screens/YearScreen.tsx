@@ -22,7 +22,7 @@ import {
 } from '../ledger.js'
 import { navigate } from '../nav.js'
 import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
-import { formatAmount, formatCents, formatMonthName, formatMonthTitle, formatShortMonth, MONTH_NAMES, todayIso } from '../format.js'
+import { formatAmount, formatCents, formatMonthName, formatMonthTitle, formatShortMonth, MONTH_NAMES } from '../format.js'
 import { Alert, Loading } from '../components/ui/feedback.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
 import { NativeSelect } from '../components/ui/form.js'
@@ -34,6 +34,7 @@ import { PeriodSwitch } from './PeriodSwitch.js'
 import { WaitingBanner } from './MonthScreen.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { LINE_BUTTON } from '../components/ui/link.js'
+import { TryAgain } from '../try-again.js'
 
 /**
  * The workbook's Annual Budget (plan §6.4): twelve months from a start month the
@@ -48,8 +49,7 @@ import { LINE_BUTTON } from '../components/ui/link.js'
  * the start month's typed balance; this screen only formats them.
  */
 export function YearScreen({ start: address }: { start: string | null }) {
-  const { supabase, categories, pendingTotal, loadError, version } = useAppData()
-  const today = todayIso()
+  const { supabase, categories, pendingTotal, loadError, version, today } = useAppData()
   const start = monthBounds(isoDate(address === null ? `${today.slice(0, 4)}-01-01` : `${address}-01`)).start
   const last = shiftMonth(start, 11)
   const end = monthBounds(last).end
@@ -94,7 +94,7 @@ export function YearScreen({ start: address }: { start: string | null }) {
       })
     } catch {
       // Said plainly, never as the engine's message, as on the Month.
-      return 'A charge, a budget or a monthly amount this year names a category that did not load, so the year is not shown. Reload to try again.'
+      return 'A charge, a budget or a monthly amount this year names a category that did not load, so the year is not shown.'
     }
   }, [here, categories, start, today])
   const thisMonth = monthBounds(isoDate(today)).start
@@ -156,7 +156,7 @@ export function YearScreen({ start: address }: { start: string | null }) {
       ) : null}
       {typeof sheet === 'string' ? (
         <Alert tone="error" title="Could not show this year">
-          {sheet}
+          {sheet} <TryAgain />.
         </Alert>
       ) : null}
       {sheet === null && error === null && (version > 0 || loadError === null) ? (
@@ -340,8 +340,11 @@ function YearTable({
       <div className={cn('flex flex-wrap items-center gap-x-3 gap-y-1 py-4', left, right)}>
         <span aria-hidden="true" className={cn('size-3 shrink-0 rounded-[4px]', tone.dot)} />
         <h2 className={cn('flex-1 font-semibold', compact ? 'text-base' : 'text-lg')}>{g.heading}</h2>
-        {/* Drops under the name before it would break inside the number. */}
-        <Figure className={cn('shrink-0 font-bold', compact ? 'text-base' : 'text-lg')}>{formatCents(total.actualCents)}</Figure>
+        {/* Drops under the name before it would break inside the number.
+          Four across, always under it, in line with the name: "Variable
+          expenses" took two lines where the others took one, and the tables
+          below started at different heights (V3). */}
+        <Figure className={cn('shrink-0 font-bold', compact ? 'basis-full pl-6 text-base' : 'text-lg')}>{formatCents(total.actualCents)}</Figure>
       </div>
       <table className={cn('w-full', compact ? 'text-xs whitespace-nowrap min-[1400px]:text-[0.8125rem]' : 'text-sm md:text-[0.9375rem]')}>
         <thead className={cn(tone.header, tone.ink)}>

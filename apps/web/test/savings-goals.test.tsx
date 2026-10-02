@@ -86,6 +86,9 @@ describe('Savings, with more than one goal (G1)', () => {
     renderScreen(<SavingsScreen />, fake)
     const flight = await screen.findByRole('region', { name: 'Flight training' })
     expect(flight.textContent).toContain('$2,500.00 saved of $30,000.00')
+    // Kept on one line; the card fills its grid cell, its actions at the foot (V17).
+    expect(within(flight).getByText(/saved of \$30,000\.00/).className).toContain('whitespace-nowrap')
+    expect(flight.className.split(' ')).toEqual(expect.arrayContaining(['h-full', 'flex', 'flex-col']))
     expect(screen.queryByText('Main goal')).toBeNull()
     expect(screen.queryByText(/^Reached and paused/)).toBeNull()
   })

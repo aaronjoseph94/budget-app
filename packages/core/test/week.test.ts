@@ -165,6 +165,13 @@ describe('weeklySummary edge cases', () => {
     expect(week.categories).toEqual([])
   })
 
+  it('is not over at exactly its budget, and is a cent past it (architecture-a-05)', () => {
+    const at = weeklySummary({ entries: [{ postedOn: asOf, amountCents: -10_000, categoryId: 'food' }], categories: [FOOD], asOf })
+    expect(at.categories[0]).toMatchObject({ spentCents: 10_000, remainingCents: 0, over: false })
+    const past = weeklySummary({ entries: [{ postedOn: asOf, amountCents: -10_001, categoryId: 'food' }], categories: [FOOD], asOf })
+    expect(past.categories[0]).toMatchObject({ spentCents: 10_001, remainingCents: -1, over: true })
+  })
+
   it('lists a budgeted category with no spending, so its full budget shows', () => {
     const week = weeklySummary({ entries: [], categories: [FOOD], asOf })
     expect(week.categories).toEqual([

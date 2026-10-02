@@ -1,8 +1,8 @@
 import { useId, useMemo, type ReactNode } from 'react'
 import { goalBars, partShares, stackedColumns, type DebtStatus, type SavingsFund, type TopExpense, type YearGroups, type YearSheet } from '@budget/core'
-import { debtBars, goalActualColumns, incomeExpenseColumns, savingsGoalBars, shareRing, yearPie, type SvgMarkup } from '@budget/chart-specs'
+import { debtBars, goalActualColumns, incomeExpenseColumns, savingsGoalBars, shareRing, yearPie } from '@budget/chart-specs'
 import { formatCents, formatShare, formatShortMonth } from '../format.js'
-import { SvgChart } from '../components/ui/chart.js'
+import { SvgChart, fitted, type Fitted } from '../components/ui/chart.js'
 import { cn } from '../lib/cn.js'
 
 /**
@@ -26,7 +26,7 @@ const said = (parts: readonly string[]) => parts.join('. ') + '.'
  */
 export function YearPie({ sheet, palette }: { sheet: YearSheet; palette: 'home' | 'annual' }) {
   const id = useChartId()
-  const svg = useMemo((): SvgMarkup => {
+  const svg = useMemo((): Fitted => {
     const named: readonly [string, number][] = [
       ['Income', sheet.totals.income.actualCents],
       ['Expenses', sheet.totals.expenses.actualCents],
@@ -41,7 +41,7 @@ export function YearPie({ sheet, palette }: { sheet: YearSheet; palette: 'home' 
         valueText: shareBp === null ? formatCents(cents) : `${formatCents(cents)} · ${formatShare(shareBp)}`,
       }
     })
-    return yearPie({
+    return fitted(yearPie, {
       id,
       title: 'Income, expenses and savings',
       description: said(slices.map((s) => `${s.label}: ${s.valueText}`)),
@@ -92,7 +92,7 @@ export function SavingsGoalsChart({ funds }: { funds: readonly SavingsFund[] }) 
       return [{ label: f.name, valueText, goalBp: 10_000, actualBp: g.progressBp === 0 ? null : g.progressBp }]
     })
     if (bars.length === 0) return null
-    return savingsGoalBars({
+    return fitted(savingsGoalBars, {
       id,
       title: 'Savings goals',
       description: said(bars.map((b) => `${b.label}: ${b.valueText}`)),
@@ -120,7 +120,7 @@ export function DebtsChart({ status }: { status: DebtStatus }) {
       goalBp: lengths[i]!.goalBp,
       actualBp: lengths[i]!.actualBp === 0 ? null : lengths[i]!.actualBp,
     }))
-    return debtBars({ id, title: 'Debts', description: said(bars.map((b) => `${b.label}: ${b.valueText}`)), bars })
+    return fitted(debtBars, { id, title: 'Debts', description: said(bars.map((b) => `${b.label}: ${b.valueText}`)), bars })
   }, [id, status])
   return <SvgChart svg={svg} className="max-w-md" />
 }
@@ -138,7 +138,7 @@ const TOTALS: readonly [keyof YearGroups, string, string][] = [
 /**
  * Annual's chart row (row 23): income and expenses by month (chart40), and
  * each list's Goal against its Actual over the Year (chart42). Annual's pie
- * (chart41) joins them on a desktop; a phone already has Home's above.
+ * (chart41) is the glance row's pie, drawn once (V12).
  */
 export function AnnualCharts({ sheet, wide, className }: { sheet: YearSheet; wide: boolean; className?: string }) {
   const id = useChartId()
@@ -146,7 +146,7 @@ export function AnnualCharts({ sheet, wide, className }: { sheet: YearSheet; wid
     const stacked = stackedColumns({
       columns: sheet.months.map((m) => ({ key: m.month, parts: [m.income.actualCents, m.expenses.actualCents] })),
     }).columns
-    const columns = incomeExpenseColumns({
+    const columns = fitted(incomeExpenseColumns, {
       id: `${id}-months`,
       title: 'Income and expenses by month',
       description: said(
@@ -158,7 +158,7 @@ export function AnnualCharts({ sheet, wide, className }: { sheet: YearSheet; wid
       columns: sheet.months.map((m, i) => ({
         label: formatShortMonth(m.month).slice(0, 3),
         valueText: `income ${formatCents(m.income.actualCents)}, expenses ${formatCents(m.expenses.actualCents)}`,
-        parts: [stacked[i]!.parts[0] ?? null, stacked[i]!.parts[1] ?? null],
+        parts: [stacked[i]!.parts[0] ?? null, stacked[i]!.parts[1] ?? null] as const,
       })),
     })
     const bars = goalBars({
@@ -170,7 +170,7 @@ export function AnnualCharts({ sheet, wide, className }: { sheet: YearSheet; wid
     }).bars
     const text = (key: keyof YearGroups) =>
       `${formatCents(sheet.totals[key].actualCents)} of ${formatCents(sheet.totals[key].budgetCents)}`
-    const totals = goalActualColumns({
+    const totals = fitted(goalActualColumns, {
       id: `${id}-totals`,
       title: 'Goals and budgets against actuals',
       description: said(TOTALS.map(([key, , name]) => `${name}: ${text(key)}`)),
@@ -189,17 +189,16 @@ export function AnnualCharts({ sheet, wide, className }: { sheet: YearSheet; wid
       aria-label="Year charts"
       className={cn('grid min-w-0 gap-6 rounded-xl border bg-card p-4 md:px-6 md:py-[1.375rem]', wide ? 'grid-cols-4' : 'grid-cols-1', className)}
     >
+      {/* Two across on a desktop. Annual's own pie (chart41) is left out:
+        the glance row above already draws the Year's totals as a pie, and
+        the page showed it twice (V12). Each chart's words are 13 px
+        whatever its width (SvgChart); the cap keeps its bars from
+        stretching across the card. */}
       <Chart title="Income and expenses by month" className={cn(wide && 'col-span-2')}>
-        {/* Text scales with a chart, so it stops at about a phone's width. */}
         <SvgChart svg={drawn.columns} className="max-w-md" />
       </Chart>
-      {wide ? (
-        <Chart title="Annual totals">
-          <YearPie sheet={sheet} palette="annual" />
-        </Chart>
-      ) : null}
-      <Chart title="Against goals and budgets">
-        <SvgChart svg={drawn.totals} className={cn(!wide && 'max-w-sm')} />
+      <Chart title="Against goals and budgets" className={cn(wide && 'col-span-2')}>
+        <SvgChart svg={drawn.totals} className="max-w-md" />
       </Chart>
     </section>
   )

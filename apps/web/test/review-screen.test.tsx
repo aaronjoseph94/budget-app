@@ -140,7 +140,9 @@ describe('ReviewScreen', () => {
 
     const coffee = await row('SQ *LITWARE COFFEE')
     fireEvent.change(coffee.getByRole('combobox', { name: 'Category' }), { target: { value: '__new__' } })
-    fireEvent.change(coffee.getByPlaceholderText(/Category name/), { target: { value: '  Coffee  ' } })
+    const name = coffee.getByRole('textbox', { name: 'Name of the new category for SQ *LITWARE COFFEE' })
+    await expectNoAxeViolations()
+    fireEvent.change(name, { target: { value: '  Coffee  ' } })
     fireEvent.click(coffee.getByRole('button', { name: /Approve/ }))
 
     await screen.findByText(/^Added\./)
@@ -203,6 +205,18 @@ describe('ReviewScreen', () => {
 
     expect(await screen.findByText('Removed from the queue. It will not be counted.')).toBeTruthy()
     expect(fake.rpcCalls).toEqual([{ name: 'reject_candidate', args: { p_candidate: 'p3' } }])
+  })
+
+  it('says the category may have gone on another device, not to sign out, when approving into it is refused (backend-b-08)', async () => {
+    const fake = seeded()
+    fake.fail('rpc/approve_candidate', '42501')
+    renderScreen(<ReviewScreen />, fake)
+
+    fireEvent.click((await row('CORNER MARKET #12')).getByRole('button', { name: /Approve/ }))
+
+    const alert = await screen.findByRole('alert')
+    expect(within(alert).getByText('That category, account or line is no longer there — it may have changed on another device. Reload this screen and try again; if it keeps happening, sign out and back in. Nothing was saved. (code 42501)')).toBeTruthy()
+    expect(screen.getByText('CORNER MARKET #12')).toBeTruthy()
   })
 
   it('shows a readable message when approving fails, and keeps the queue', async () => {
@@ -389,10 +403,9 @@ describe('ReviewScreen, lines an import could not read', () => {
     const section = within(await screen.findByRole('region', { name: '4 lines could not be read' }))
     fireEvent.click(section.getByRole('button', { name: 'Dismiss line 5' }))
 
+    // 0012 says a line it cannot find with 42501, as on another device (backend-b-08).
     const alert = await screen.findByRole('alert')
-    expect(
-      within(alert).getByText('Your sign-in does not allow this. Signing out and back in usually fixes it. (code 42501)'),
-    ).toBeTruthy()
+    expect(within(alert).getByText('That category, account or line is no longer there — it may have changed on another device. Reload this screen and try again; if it keeps happening, sign out and back in. Nothing was saved. (code 42501)')).toBeTruthy()
     expect(section.getByRole('button', { name: 'Dismiss line 5' })).toHaveProperty('disabled', false)
     expect(screen.queryByText(/^Dismissed\./)).toBeNull()
   })

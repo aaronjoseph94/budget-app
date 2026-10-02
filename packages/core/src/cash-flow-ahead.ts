@@ -21,6 +21,7 @@ import type { MonthForecastInput } from './month-position.js'
 import { paydaysIn } from './pay-period.js'
 import { billsTotals } from './plans.js'
 import { median, quantile } from './stats.js'
+import { byName } from './order.js'
 import { monthBounds, shiftMonth } from './week.js'
 
 export interface AheadMonth {
@@ -71,7 +72,7 @@ export function cashFlowAhead(input: MonthForecastInput): CashFlowAhead {
   // The least spent is the best case: low and high are the 25th and 75th percentiles.
   const spend = rough ? { low: mid, mid, high: mid } : { low: quantile({ values: totals, pBp: 2_500 })!, mid, high: quantile({ values: totals, pBp: 7_500 })! }
 
-  const incomes = input.categories.filter((c) => c.kind === 'income').sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+  const incomes = input.categories.filter((c) => c.kind === 'income').sort((a, b) => a.sortOrder - b.sortOrder || byName(a.name, b.name))
   const usual = new Map(incomes.map((c) => [c.id, usualPay(input.entries.filter((e) => e.categoryId === c.id), input.historyStart, asOf)]))
   const notCounted = new Set<string>()
 

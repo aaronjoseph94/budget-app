@@ -8,7 +8,8 @@ import { MonthScreen } from '../src/screens/MonthScreen.js'
 import { PaycheckScreen } from '../src/screens/PaycheckScreen.js'
 import { SavingsScreen } from '../src/screens/SavingsScreen.js'
 import { YearScreen } from '../src/screens/YearScreen.js'
-import { Loading } from '../src/components/ui/feedback.js'
+import { Loading, Progress } from '../src/components/ui/feedback.js'
+import { WeekScreen } from '../src/screens/WeekScreen.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { expectNoAxeViolations } from './axe.js'
@@ -21,6 +22,18 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   vi.useRealTimers()
+})
+
+describe('motion, with reduced motion asked for (FE-11)', () => {
+  it('stills the Week\'s loading pulse and a bar\'s growth', async () => {
+    const fake = createFakeSupabase()
+    fake.server.hold = (target) => (target === 'transactions' ? new Promise<void>(() => undefined) : null)
+    renderScreen(<WeekScreen monday={null} />, fake)
+    expect((await screen.findByRole('status', { name: 'Loading this week' })).className).toContain('motion-reduce:animate-none')
+    cleanup()
+    const { container } = render(<Progress basisPoints={5_000} />)
+    expect(container.querySelector('[style]')?.className).toContain('motion-reduce:transition-none')
+  })
 })
 
 describe('a screen loading', () => {

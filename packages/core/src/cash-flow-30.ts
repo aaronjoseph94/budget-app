@@ -13,6 +13,7 @@ import { type MonthForecastInput, monthPosition } from './month-position.js'
 import { paydaysIn } from './pay-period.js'
 import { plansInEffect } from './period-sheet.js'
 import { monthBounds, shiftMonth } from './week.js'
+import { byName } from './order.js'
 
 export interface CashFlowBill {
   readonly date: IsoDate
@@ -96,7 +97,7 @@ export function cashFlow30(input: MonthForecastInput): CashFlow30 {
   }
   bills.sort((a, b) => {
     const [x, y] = [rank(a.categoryId), rank(b.categoryId)]
-    return a.date < b.date ? -1 : a.date > b.date ? 1 : x[0] - y[0] || x[1] - y[1] || x[2].localeCompare(y[2])
+    return a.date < b.date ? -1 : a.date > b.date ? 1 : x[0] - y[0] || x[1] - y[1] || byName(x[2], y[2])
   })
 
   const daily = dailyVariable(input)

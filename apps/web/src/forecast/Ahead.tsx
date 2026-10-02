@@ -6,9 +6,10 @@ import { debtsForCore } from '../debts.js'
 import { listDebtExtras, listDebts, needsOneTimeUpdate } from '../ledger.js'
 import { formatCents, formatDayMonth, formatMonthTitle } from '../format.js'
 import { hashOf } from '../nav.js'
-import { SvgChart } from '../components/ui/chart.js'
+import { SvgChart, fitted } from '../components/ui/chart.js'
 import { NoStart, Section } from './parts.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
+import { TryAgain } from '../try-again.js'
 
 /**
  * The Forecast's next 30 days (F32): the tightest day, the line, the bills
@@ -31,7 +32,7 @@ export function NextDaysCard({ flow, line, asOf, names }: { flow: CashFlow30; li
             <span className="tnum font-semibold">{formatCents(lowest.balanceCents)}</span>.
           </p>
           <SvgChart
-            svg={balanceLine({
+            svg={fitted(balanceLine, {
               id: 'forecast-next-30',
               title: 'The next 30 days',
               description: `Your balance from today to ${formatDayMonth(last.date)}; lowest on ${formatDayMonth(lowest.date)}, at ${formatCents(lowest.balanceCents)}.`,
@@ -115,7 +116,7 @@ export function DebtFreeCard() {
           </a>
         </p>
       ) : null}
-      {state.status === 'failed' && !state.missingUpdate ? <p className="text-muted-foreground">Your debt-free date did not load. Reload to try again.</p> : null}
+      {state.status === 'failed' && !state.missingUpdate ? <p className="text-muted-foreground">Your debt-free date did not load. <TryAgain />.</p> : null}
       {state.status === 'ready' ? (
         <p>
           {state.debts === 0

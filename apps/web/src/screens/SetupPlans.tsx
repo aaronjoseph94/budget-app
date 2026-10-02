@@ -78,7 +78,7 @@ export function useMonthlyAmounts(month: string): MonthlyAmounts {
     } catch {
       // Core refuses what 0009 refuses; the database never sends it, so this
       // is a fault, said plainly and never as its message.
-      return { status: 'failed', message: 'Your monthly amounts could not be shown. Reload to try again.' }
+      return { status: 'failed', message: 'Your monthly amounts could not be shown.' }
     }
     try {
       const totals = billsTotals({ month: asOf, categories: categories.map((c) => ({ id: c.id, kind: c.kind })), planHistory: history })
@@ -102,12 +102,14 @@ export function PlanHeadings({ month }: { month: string }) {
     <>
       <p className="mt-3 px-4 text-sm text-muted-foreground sm:px-5">
         The day of each month it is paid: the 5th is 5. A yearly cost can go in as a monthly share, $100 a year as
-        $8.34 a month; if your card is charged for it once a year, leave the amount blank instead.
+        $8.34 a month; if your card is charged for it once a year, leave the amount blank instead. Amounts apply
+        from {monthName} on.
       </p>
+      {/* A one-line head, the month said once above, so the heads sit level (V16). */}
       <ColumnHeads>
-        <span className="flex min-w-0 gap-2 @2xl:w-[17rem]">
+        <span className="flex min-w-0 items-end gap-2 @2xl:w-[17rem]">
           <span className="w-[4.5rem] shrink-0">Day paid</span>
-          <span className="min-w-0 [overflow-wrap:anywhere]">Monthly amount (from {monthName} on)</span>
+          <span className="min-w-0 [overflow-wrap:anywhere]">Monthly amount</span>
         </span>
       </ColumnHeads>
     </>

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { useAppData } from '../app-data.js'
 import { listRules } from '../ledger.js'
 import { todayIso } from '../format.js'
@@ -52,22 +52,32 @@ function said(help: QuickHelp): ReactNode {
  * fills the typed form below it. It never saves: the form's own **Add**
  * does, once the owner has checked it (plan §3.9).
  */
-export function JustTypeIt({ onFill }: { onFill: (fill: QuickFill) => void }) {
+export function JustTypeIt({ onFill, edits }: { onFill: (fill: QuickFill) => void; edits: { readonly current: number } }) {
   const { supabase, categories } = useAppData()
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const [help, setHelp] = useState<QuickHelp | null>(null)
+  // Which reading is current. A slow AI's answer is dropped once the owner
+  // has changed or sent the form meanwhile (`edits`, counted by the form),
+  // so it never writes over what they typed (FE-4).
+  const asked = useRef(0)
 
   const go = async () => {
     if (text.trim().length === 0) return
+    const mine = ++asked.current
+    const since = edits.current
+    const current = () => mine === asked.current && since === edits.current
     setBusy(true)
     setHelp(null)
     try {
       // Without the learned rules the category is left for the owner or the AI; the rest still reads.
       const rules = await listRules(supabase).catch(() => new Map<string, string>())
       const read = await readQuickEntry(supabase, { text, asOf: todayIso(), rules, categories })
+      if (!current()) return
       onFill(read.fill)
       setHelp(read.help)
+    } catch {
+      if (current()) setHelp({ kind: 'unreadable' })
     } finally {
       setBusy(false)
     }

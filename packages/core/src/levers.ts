@@ -112,7 +112,7 @@ function lever(input: GoalLeversInput, remaining: Cents, categoryId: string, kin
     weeklyCents: weekly,
     weeksSooner: pace === null || pace <= 0 ? null : weeks(pace) - weeks(pace + weekly),
     weeksToGoal: pace === null || pace <= 0 ? weeks(weekly) : null,
-    minutesPerMonth: rate === null ? null : timeEquivalent(monthly, rate).totalMinutes,
+    minutesPerMonth: rate === null ? null : timeEquivalent({ amountCents: monthly, unitCostPerHourCents: rate }).totalMinutes,
   }
 }
 

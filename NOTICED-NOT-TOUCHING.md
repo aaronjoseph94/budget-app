@@ -440,6 +440,8 @@ Setup), reading `merchant_rules`, with a way to re-point or delete one.
 
 
 **Settled, A27 (a7561a4):** Settings lists every learned shop with the category it files to, and **Forget** deletes the rule under 0001's own-rows policy; a refusal is said in words. A category held only by a shop rule can now be freed.
+
+**Settled, backend review (0021, backend-a-01/a-02, 2026-10-01):** the candidate half was still open: an approved candidate whose ledger row was removed, and an AI guess on a row the owner rejected, held the category for good. 0021's trigger before a category is deleted lets go of both, so only a charge, a learned shop or a fund's goal holds a category now.
 ---
 
 ## N18 — Two of Setup's messages wait on monthly amounts *(settled 2026-09-23, S9)*
@@ -2692,7 +2694,7 @@ and run one set of gates at a time on a shared machine.
 
 ---
 
-## N114 — Two reads Getting started makes cannot tell a missing update from a lost connection
+## N114 — Two reads Getting started makes cannot tell a missing update from a lost connection *(settled 2026-10-01, architecture-b-05)*
 
 **Seen:** 2026-09-28, A25. `getMonthBalance` and `hasImportedStatement`
 throw a plain `Error` with the describer's sentence, not `ReadRefused`,
@@ -2707,6 +2709,11 @@ change.
 **To settle:** throw `ReadRefused` with the code from both, as `readAll`
 does, and let each screen say "needs a one-time update" where that is
 the reason.
+
+**Settled:** every refusal in ledger.ts (`fail`, `failIngest` and the
+describers' throws) is now a `ReadRefused` carrying the database's code, in
+the same sentence, so `needsOneTimeUpdate` sees it after a write or a single
+read too (apps/web/test/ledger-refusals.test.ts).
 
 ---
 
@@ -3522,6 +3529,18 @@ tree is another agent's.
 two files with one number: the Supabase CLI and One-time updates both
 key on it.
 
+**Settled at the merge (2026-10-02):** the other line had already
+written its next update as `0030_intuit_prefix_merchants.sql`. At the
+merge it became `0038`, the next free number after this line's `0037`
+(the owner's instruction for the merge named it): nothing of it was in
+the hosted project, which holds `0001`-`0014`. Its paste-order check
+now asks for `0029` and `0037`, `schema_level()` answers 38, and it
+leaves no `(0038)` mark, so `ai_app_updates_in()` still answers at most
+37. With one line again, the reserved range has done its job: the next
+update of any kind is `0039`, and an AI-app one there re-creates
+`ai_app_updates_in()` with its own mark rather than relying on the
+`0035`-`0039` scan (ADR 0012, "Numbering after the merge").
+
 ---
 
 ## N154 — The merged schema gate needs three changes
@@ -3544,3 +3563,135 @@ snapshot taken before `0030`, or leave out `approve_candidate`,
 which `0032`, `0033`, `0034` and `0036` change afterwards. Also mind
 `0037`'s seeded user (`37373737-...`): assertions that count every AI
 row must name their own user, as this line's now do.
+
+**Settled at the merge (2026-10-02):** (a) this line's hash assertion
+is the merged one (git took it, the other line never changed it); (b)
+the other line's assertions make no AI-app claims of their own, so none
+needed a `session_id`; (c) `supabase/tests/before/0030_ai_app_gate_live_session.sql`
+keeps every browser-callable SECURITY DEFINER function as it stood
+before `0030`, and `0029`'s "one condition and nothing else" reads that
+instead of the live catalogue. `0019`'s check reads the snapshot taken
+before `0022`, the first later change to a guarded function.
+
+---
+
+## N155 — 0020 writes four invisible characters as themselves
+
+**Seen:** 2026-10-01, review of ecd31c8. Line 527 of
+`0020_ai_apps.sql`, the `bad_words` check in the AI apps' add-purchase
+function, holds U+2028, U+202E, U+2066 and U+2069 written as themselves
+inside `'[\x01-\x1F\x7F-\x9F...]'`. The check works; but a raw U+202E in
+a SQL line makes the rest of it display reordered in an editor and in
+GitHub's diff (the Trojan Source pattern), and the owner pastes this file.
+0025 and 0028 write the same characters as `\uXXXX` escapes, and
+`apps/web/test/setup-files.test.ts` now refuses a raw one in 0021 on.
+
+**Why not fixed here:** 0020 belongs to the AI apps build now under way,
+and may be applied to the hosted project; a migration already applied is
+never edited.
+
+**To settle:** if 0020 has not been applied anywhere, write that class as
+`'[\x01-\x1F\x7F-\x9F -‮⁦-⁩]'` and lower the guard
+test's `'0021'` to `'0015'`. If it has, leave it: 0025 already holds the
+same characters out of every ingested text, written escaped.
+
+---
+
+## N156 — Table and column names in the app's queries are checked by nothing
+
+**Seen:** 2026-10-01, architecture review (architecture-b-04). The app's
+~100 queries name tables, columns and functions in strings
+(`.select('id, posted_on, …')`), and their replies are cast to types. Since
+0530b56 those types are Picks of `packages/schema`'s rows, so a column
+dropped from schema breaks the compile; a column renamed in a migration
+but not in schema, or misspelt in a `.select`, still compiles.
+
+**Why not fixed here:** the fix is the database's own types, generated
+from the migrations (`supabase gen types typescript --db-url …` against
+verify-migrations' throwaway cluster) and `createClient<Database>`. That
+is a new dev dependency, the Supabase CLI, and some versions of its type
+generator start a container, which neither CI nor the session has.
+
+**To settle:** add the CLI in its own commit, pinned; generate
+`packages/schema/src/database.ts` inside `scripts/verify-migrations.sh`
+and fail the schema gate when it differs from the committed file
+(MISCONFIGURED when the generator cannot run); then create the client as
+`createClient<Database>`.
+
+---
+
+## N157 — 'IN*' is now a processor prefix, with its backfill *(settled 2026-10-01, architecture-a-10)*
+
+**Seen:** 2026-10-01, architecture review. `normalizeMerchant` listed
+Intuit's `'IN *'` twice and `'IN*'` never, so `IN*ACME PLUMBING` and
+`IN *ACME PLUMBING` were two shops and a learned rule for one never filed
+the other.
+
+**Decided:** CLAUDE.md asks first before merchant normalization changes;
+the owner's instruction of 2026-09-30 ("don't ask me any questions;
+auto-allow and say yes to everything") is that answer. The duplicate is
+now `'IN*'`, and migration 0038 (written as 0030; renumbered at the
+merge of the two lines of updates, 2026-10-02) rewrites the names stored before it in
+the same change, from the rows' own statement text, renaming learned
+shops to match (the more recently made or used one kept where two would
+share a name). The dedupe hash is over the raw text and does not move,
+so no hash version bump is needed.
+
+**0038 deletes rows** *(recorded 2026-10-02, review of a95f03f)*: where
+two or more of the owner's learned shops would share one tidied name
+(`IN*X` beside `X`, or `IN*X` beside `IN* X`), every one but the most
+recently made or used is permanently deleted from `merchant_rules`, and
+with it the category decision it held. That makes 0038 a destructive
+migration. CLAUDE.md asks first before one, and asks for it in its own
+commit after a verified `pg_dump`. The owner's 2026-09-30 pre-approval
+("don't ask me any questions; auto-allow and say yes to everything") is
+the answer to the ask. The "own commit" rule was not met: it shipped in
+a95f03f with the `merchant.ts` change, and splitting it now would rewrite
+the branch. The backup is the owner's step, because the owner pastes
+migrations into the hosted project by hand: take one before pasting
+0038. HANDOFF §3 ("Before 0038, a backup") has the steps; One-time
+updates says the same beside 0038.
+
+---
+
+## N158 — Tests run the app through Vite 7 while the site builds with Vite 8
+
+**Seen:** 2026-10-01, architecture review (architecture-b-09). The
+lockfile resolves `vitest@3.2.7` with `vite@7.3.6`, while `apps/web`
+builds with `vite@^8.3.0` (Rolldown/Oxc). A transform difference between
+the two would pass the tests and ship something else.
+
+**Why not fixed here:** the first Vitest that peers Vite 8 is 4.1. Vitest
+4 removes `testTransformMode`, which `vitest.config.ts` uses to compile
+the source both app projects load one way (the fix for coverage reading
+153 branches on one run and 112 the next), and changes how v8 coverage is
+mapped, so the per-file thresholds (WeekScreen.tsx's 95/100/76 and the
+rest) would move. That needs the full suite with coverage run several
+times on an idle machine, which this review's shared four-core machine
+could not give, and a threshold may not be lowered to make it pass.
+
+**To settle:** in its own commit, move `vitest` and `@vitest/coverage-v8`
+together to 4.1.x; replace `testTransformMode` with Vitest 4's per-project
+transform option (or move the two Node-built tests to their own project);
+run `pnpm vitest run --coverage` alone until the figures are stable;
+confirm `grep -c "^  vite@" pnpm-lock.yaml` shows one Vite.
+
+---
+
+## N159 — Screens still hand-roll the read protocol that useRead now holds
+
+**Seen:** 2026-10-01, architecture review (architecture-b-06). apps/web/src
+had 36 `let live = true` effects in 33 files, 20 `version === 0` guards
+and 18 latest-read counters, each a copy of one protocol, and the copies
+drifted (FE-5, FE-8, FE-13).
+
+**Done:** `apps/web/src/lib/use-read.ts` holds it once (tested in
+`use-read.test.tsx`: a stale answer dropped, the same key's rows kept
+while read again, retry after a failure, nothing read before the first
+load), and All transactions reads through it.
+
+**Still to do:** move the other screens over, one per commit, deleting each
+screen's own `live` flag, counter and `version === 0` guard as it moves:
+Review and Ask first (FE-8, FE-13), then Week, Month, Paycheck, Calendar,
+Year, Savings, Debts and the Coach's reads. Each screen's tests should
+pass unchanged, bar a wasted first read some of them waited for.

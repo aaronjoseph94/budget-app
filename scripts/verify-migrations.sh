@@ -18,7 +18,9 @@ ROOT="$(pwd)"
 PGBIN="$(ls -d /usr/lib/postgresql/*/bin 2>/dev/null | sort -V | tail -1 || true)"
 if [ -z "$PGBIN" ] || [ ! -x "$PGBIN/initdb" ]; then
   echo "verify-migrations: no PostgreSQL server found (looked in /usr/lib/postgresql/*/bin)" >&2
-  exit 2 # MISCONFIGURED, per the fail-closed convention in gates.sh
+  # gates.sh looks for the server before running this and reports the gate
+  # MISCONFIGURED; run alone, this exits 2 for the same reason.
+  exit 2
 fi
 
 WORK="$(mktemp -d)"

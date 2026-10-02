@@ -15,7 +15,7 @@
  * axis ("$"#,##0) is not drawn: every amount is in the chart's description,
  * each column's own title, and the tables beside it.
  */
-import { FONT, WIDTH, type ChartFrame, fit, frame, lengthOf, textUnits } from './frame.js'
+import { FONT, type ChartFrame, fit, frame, lengthOf, textUnits, widthOf } from './frame.js'
 import { type SvgMarkup, type SvgNode, el } from './svg.js'
 
 /** Where a stacked part starts and ends, from core (`stackedColumns`). */
@@ -64,8 +64,10 @@ const GOAL = { fill: '#9CA3AF', class: 'chart-year-goal' } as const
 const ACTUAL = { fill: '#4F46E5', class: 'chart-year-actual' } as const
 
 export function incomeExpenseColumns(input: IncomeExpenseInput): SvgMarkup {
-  const step = Math.floor(WIDTH / Math.max(input.columns.length, 1))
+  const width = widthOf(input)
+  const step = Math.floor(width / Math.max(input.columns.length, 1))
   const bar = Math.floor((step * 3) / 5)
+  const look = monthLabels(input.columns.map((c) => c.label), step)
   const columns = input.columns.map((c, i) => {
     const x = i * step + Math.floor((step - bar) / 2)
     const marks = c.parts.flatMap((p, s): SvgNode[] => {
@@ -74,8 +76,8 @@ export function incomeExpenseColumns(input: IncomeExpenseInput): SvgMarkup {
       const height = top - lengthOf(p.fromBp, PLOT)
       return height > 0 ? [el('rect', { x, y: BASE - top, width: bar, height, ...(s === 0 ? INCOME : EXPENSES) })] : []
     })
-    const label = el('text', { x: i * step + Math.floor(step / 2), y: BASE + 160, 'text-anchor': 'middle', ...INK }, [
-      fit(c.label, step),
+    const label = el('text', { x: i * step + Math.floor(step / 2), y: BASE + 160, 'text-anchor': 'middle', ...look.size, ...INK }, [
+      look.text(c.label),
     ])
     return el('g', {}, [el('title', {}, [`${c.label}: ${c.valueText}`]), ...marks, label])
   })
@@ -84,13 +86,14 @@ export function incomeExpenseColumns(input: IncomeExpenseInput): SvgMarkup {
       ['Income', INCOME],
       ['Expenses', EXPENSES],
     ]),
-    baseline(),
+    baseline(width),
     ...columns,
   ])
 }
 
 export function goalActualColumns(input: GoalActualInput): SvgMarkup {
-  const step = Math.floor(WIDTH / Math.max(input.groups.length, 1))
+  const width = widthOf(input)
+  const step = Math.floor(width / Math.max(input.groups.length, 1))
   const bar = Math.floor((step * 7) / 20)
   // Labels a little smaller than the chart's text, so a list's name fits
   // under its pair of columns; `fit` counts characters at FONT.
@@ -118,9 +121,26 @@ export function goalActualColumns(input: GoalActualInput): SvgMarkup {
       ['Goal', GOAL],
       ['Actual', ACTUAL],
     ]),
-    baseline(),
+    baseline(width),
     ...groups,
   ])
+}
+
+/** The narrowest gap between two months' names, 6 px at the designed size. */
+const GAP = 60
+
+/**
+ * How the months under the columns are written so that no two touch (V6):
+ * whole at the chart's size where they fit with a gap, a little smaller
+ * where that is enough (no smaller than four fifths), and otherwise by
+ * their first letter, "J F M". The whole name stays in each column's title.
+ */
+function monthLabels(labels: readonly string[], step: number): { size: Readonly<Record<string, number>>; text: (label: string) => string } {
+  const widest = Math.max(0, ...labels.map((l) => textUnits(l)))
+  if (widest + GAP <= step) return { size: {}, text: (l) => fit(l, step) }
+  const size = Math.floor((FONT * (step - GAP)) / widest)
+  if (size >= Math.ceil((FONT * 4) / 5)) return { size: { 'font-size': size }, text: (l) => l }
+  return { size: {}, text: (l) => Array.from(l)[0] ?? '' }
 }
 
 /** Two series, so a key names them: colour is never the only way to tell them apart. */
@@ -137,11 +157,11 @@ function key(series: readonly [string, { readonly fill: string; readonly class: 
   return el('g', {}, marks)
 }
 
-function baseline(): SvgNode {
+function baseline(width: number): SvgNode {
   return el('line', {
     x1: 0,
     y1: BASE,
-    x2: WIDTH,
+    x2: width,
     y2: BASE,
     stroke: '#E5E7EB',
     'stroke-width': 10,

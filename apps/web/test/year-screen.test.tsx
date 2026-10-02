@@ -201,8 +201,9 @@ describe('YearScreen', () => {
     expect(said('Best savings month')).toBe('March 2026$500.00')
     // 14,400 of 14,550 is 9,897 bp; 150 of it 103 bp. Each has a ring in
     // its rank's chart hue, drawn to its share.
+    // Each name over its amount and share, the same two lines at every width (V2).
     const top = glance.getAllByRole('listitem')
-    expect(top.map((li) => [...li.querySelectorAll(':scope > span')].map((s) => s.textContent))).toEqual([
+    expect(top.map((li) => [...li.querySelectorAll('p')].map((s) => s.textContent))).toEqual([
       ['Rent', '$14,400.00 · 99%'],
       ['Groceries', '$150.00 · 1%'],
     ])
@@ -288,11 +289,19 @@ describe('YearScreen', () => {
     expect(screen.queryByRole('group', { name: 'Table' })).toBeNull()
     expect(screen.getAllByText('Left over')).toHaveLength(1)
     expect((await rowsOf('Bills by month'))[8]).toEqual(['Sep 2026', '', '1,600.00'])
-    // Annual's pie in the chart row, in Mockup A's colours as Home's is.
-    const annual = within(screen.getByRole('region', { name: 'Year charts' })).getByRole('img', {
-      name: 'Income, expenses and savings',
-    })
-    expect([...annual.querySelectorAll('path')].map((p) => p.getAttribute('fill'))).toEqual(['#10B981', '#9CA3AF', '#F59E0B'])
+    // Four across, each card's total on a line of its own under the name, so
+    // every head is two lines and the tables start level (V3).
+    for (const name of tables.filter((t) => t?.endsWith(' by month'))) {
+      const head = screen.getByRole('region', { name: name! }).firstElementChild
+      expect(head?.lastElementChild?.className.split(' ')).toEqual(expect.arrayContaining(['basis-full']))
+    }
+    // The Year's totals pie once on the page, in the glance row, and not
+    // again in the chart row beside it (V12); the chart row's two charts
+    // take two columns each.
+    expect(screen.getAllByRole('img', { name: 'Income, expenses and savings' })).toHaveLength(1)
+    const charts = within(screen.getByRole('region', { name: 'Year charts' }))
+    expect(charts.queryByRole('img', { name: 'Income, expenses and savings' })).toBeNull()
+    expect(charts.getAllByRole('heading').map((h) => h.parentElement?.className)).toEqual(['space-y-2 col-span-2', 'space-y-2 col-span-2'])
   })
 
   it('keeps the chips from 1024px to 1279px, each table in its list\'s hue, with the charts beside it', async () => {

@@ -112,6 +112,13 @@ describe('IngestCandidateRowSchema — the approval invariant', () => {
     expect(IngestCandidateRowSchema.safeParse(pending).success).toBe(true)
   })
 
+  it('refuses an approved row whose category a model chose, auto-approved or not, as 0004 does (architecture-a-13)', () => {
+    const row = candidate({ category_id: UUID, category_source: 'model', status: 'approved', auto_approved_at: null })
+    const result = IngestCandidateRowSchema.safeParse(row)
+    expect(result.success).toBe(false)
+    expect(result.error?.issues.map((i) => i.path.join('.'))).toEqual(['status'])
+  })
+
   it('accepts auto-approval from an exact merchant-rule match', () => {
     const row = candidate({
       category_id: UUID,

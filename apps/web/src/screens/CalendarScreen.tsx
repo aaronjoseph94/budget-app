@@ -4,7 +4,7 @@ import { useAppData } from '../app-data.js'
 import { listPaySchedules, listPlanHistory, listTransactions, type LedgerRow, type PayScheduleRow, type PlanRow } from '../ledger.js'
 import { navigate } from '../nav.js'
 import { categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
-import { formatCents, formatDateRange, formatIsoDate, formatMonthTitle, formatShortMonth, todayIso } from '../format.js'
+import { formatCents, formatDateRange, formatIsoDate, formatMonthTitle, formatShortMonth } from '../format.js'
 import { Alert, Loading } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Sheet } from '../components/ui/sheet.js'
@@ -15,6 +15,7 @@ import { MonthCharges } from './MonthCharges.js'
 import { StepButton } from './MonthScreen.js'
 import { LIST_HEADING } from '../lists.js'
 import { HelpButton } from '../help/HelpButton.js'
+import { TryAgain } from '../try-again.js'
 
 /**
  * The workbook's Bill Calendar (S15c): a month's bills, debts and subscriptions on
@@ -27,8 +28,7 @@ import { HelpButton } from '../help/HelpButton.js'
  * rows' pay schedules. This screen lays them out. Names are plain text.
  */
 export function CalendarScreen({ month }: { month: string | null }) {
-  const { supabase, categories, loadError, version } = useAppData()
-  const today = todayIso()
+  const { supabase, categories, loadError, version, today } = useAppData()
   const { start, end } = monthBounds(isoDate(month === null ? today : `${month}-01`))
   const step = (months: number) => navigate('calendar', shiftMonth(start, months).slice(0, 7))
   const [loaded, setLoaded] = useState<Loaded | null>(null)
@@ -78,7 +78,7 @@ export function CalendarScreen({ month }: { month: string | null }) {
         })),
       })
     } catch {
-      return 'A charge, a monthly amount or a payday this month names a category that did not load, so the calendar is not shown. Reload to try again.'
+      return 'A charge, a monthly amount or a payday this month names a category that did not load, so the calendar is not shown.'
     }
   }, [here, categories, start])
 
@@ -114,7 +114,7 @@ export function CalendarScreen({ month }: { month: string | null }) {
       </header>
 
       {error !== null ? <Alert tone="error" title="Could not load this calendar">{error}</Alert> : null}
-      {typeof calendar === 'string' ? <Alert tone="error" title="Could not show this calendar">{calendar}</Alert> : null}
+      {typeof calendar === 'string' ? <Alert tone="error" title="Could not show this calendar">{calendar} <TryAgain />.</Alert> : null}
       {/* A first load that failed is said above the screen, by App, as on the Month. */}
       {calendar === null && error === null && (version > 0 || loadError === null) ? (
         <Loading what="this calendar" />

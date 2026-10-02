@@ -11,7 +11,7 @@ import type { GridDay, GridLevel, PersonalBests, SpendingGrid, Streaks, WeekdayP
 import { useAppData } from '../app-data.js'
 import { formatCents, formatDayMonth, formatIsoDate, formatMagnitude, formatMonthTitle } from '../format.js'
 import { hashOf } from '../nav.js'
-import { SvgChart } from '../components/ui/chart.js'
+import { SvgChart, fitted } from '../components/ui/chart.js'
 import { Row, Section } from '../forecast/parts.js'
 import { Failed } from './Failed.js'
 import { habitsOf, useHabitsRead } from './habits-read.js'
@@ -195,7 +195,7 @@ function WeekdayCard({ pattern }: { pattern: WeekdayPattern }) {
           : `${WEEKDAY_NAMES[costliest - 1]} costs most: ${formatCents(days[costliest - 1]!.averageCents)} on average, over ${span}.`}
       </p>
       <SvgChart
-        svg={weekdayBars({
+        svg={fitted(weekdayBars, {
           id: 'weekday-bars',
           title: 'Everyday spending on each weekday, on average',
           description: days.map((x, i) => `${WEEKDAY_NAMES[i]} ${formatCents(x.averageCents)}`).join(', '),

@@ -179,15 +179,37 @@ open GitHub. Easiest on a computer.
    and wait for "Success. No rows returned." Then a new query for
    `0016_ai_foundation.sql`, then `0017_coach_memory.sql`,
    `0018_category_suggestions.sql`, `0019_ai_apps_cannot_write.sql`,
-   `0020_ai_apps.sql`, then `0035_ai_app_updates_in.sql` (it only reads,
-   and needs nothing but `0020`), then the security fixes `0030` to `0034`,
-   `0036` and `0037`, in that order (One-time updates lists them in this order and names the
-   next). `0019` stops with "Paste 0018 first" if `0018` is not in, `0020`
-   with "Paste 0019 first", and each fix with the one before it. Pasting
-   one again by mistake is harmless: `0032` to `0034` refuse ("it is not as
-   0019 left it" or similar) and change nothing. If one
-   says anything else, stop there: nothing is lost, the message says which
+   `0020_ai_apps.sql`, then the review fixes `0021` to `0029` in number
+   order, then `0035_ai_app_updates_in.sql` (it only reads, and needs
+   nothing but `0020`), then the security fixes `0030` to `0034`, `0036`
+   and `0037`, in that order, and last `0038_intuit_prefix_merchants.sql`,
+   **after the backup below** (One-time updates lists them in this order
+   and names the next). `0019` stops with "Paste 0018 first" if `0018` is
+   not in, `0020` with "Paste 0019 first", and each fix with the one
+   before it; `0038` asks for both `0029` and `0037`. Pasting one again by
+   mistake is harmless: `0022`, `0027`, `0029` and `0032` to `0034` refuse
+   ("is not as 0019 left it" or similar) and change nothing. If one says
+   anything else, stop there: nothing is lost, the message says which
    line, and the next agent needs that message (MCP plan K10, K11).
+
+   **Before 0038, a backup.** `0038` tidies shop names that begin `IN*`
+   (Intuit's prefix) and, where two of your learned shops would end up
+   with one name, **permanently deletes** all but the one made or used
+   most recently. (Numbering: it was written as `0030` and renumbered
+   `0038` when two lines of updates were merged on 2026-10-02.) So,
+   before pasting it:
+   - On a computer with PostgreSQL's `pg_dump`: Supabase → **Project
+     Settings → Database → Connection string** → copy the **Session
+     pooler** address and put your database password in it, then run
+     `pg_dump "<that address>" --data-only --schema=public -f budget-before-0038.sql`.
+     Open the file and check it holds `merchant_rules` with your shops'
+     names in it.
+   - With no such computer, at least keep the rows it can delete:
+     **Table Editor** → `merchant_rules` → **Export → Export table as
+     CSV**, and check the file has as many rows as **SQL Editor** →
+     `select count(*) from merchant_rules;` says.
+   Keep the file somewhere private, never in GitHub: it is your
+   financial history. Then paste `0038`.
 2. **Paste the AI helper.** Supabase → **Edge Functions** → **Deploy a new
    function** → **Via Editor**. Name it exactly `ai`. In the app, **Copy**
    beside "The AI helper", paste it over everything in the editor. Set

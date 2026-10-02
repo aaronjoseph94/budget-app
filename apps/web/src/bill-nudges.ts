@@ -10,7 +10,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { billNudges, historyStart, isoDate, monthBounds, recurringCharges, shiftMonth, type BillNudge } from '@budget/core'
 import { useAppData } from './app-data.js'
-import { todayIso } from './format.js'
 import { listTransactions, readRecordsStart, type LedgerRow } from './ledger.js'
 import { categoriesForCore, shopEntriesForCore } from './sheet-input.js'
 import { notSubscriptionsOf, useDismissals } from './coach/dismissals.js'
@@ -27,7 +26,7 @@ const NONE: ReadonlyMap<string, BillNudge> = new Map()
 
 /** Each category's nudge, by id; none while anything loads or when a read failed. */
 export function useBillNudges(amounts: MonthlyAmounts): ReadonlyMap<string, BillNudge> {
-  const { supabase, categories, version } = useAppData()
+  const { supabase, categories, version, today } = useAppData()
   const { dismissed } = useDismissals()
   const [read, setRead] = useState<NudgeRows | null>(null)
 
@@ -35,14 +34,14 @@ export function useBillNudges(amounts: MonthlyAmounts): ReadonlyMap<string, Bill
     // Nothing is read before the first load brings the categories (N35).
     if (version === 0) return
     let live = true
-    const asOf = todayIso()
+    const asOf = today
     const readFrom = shiftMonth(monthBounds(isoDate(asOf)).start, -12)
     Promise.all([listTransactions(supabase, { from: readFrom, to: asOf }), readRecordsStart(supabase)])
       .then(([rows, records]) => live && setRead({ asOf, readFrom, rows, records }))
       // A nudge is a convenience: without it Setup is as it was.
       .catch(() => live && setRead(null))
     return () => void (live = false)
-  }, [supabase, version])
+  }, [supabase, version, today])
 
   return useMemo(() => {
     if (read === null || dismissed === null || amounts.status !== 'ready') return NONE

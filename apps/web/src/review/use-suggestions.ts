@@ -25,6 +25,8 @@ export type SuggestStatus =
   | { readonly kind: 'done'; readonly suggested: number; readonly stopped: Stopped | null }
   | { readonly kind: 'missing' }
   | { readonly kind: 'no_shop_names' }
+  /** Share shop names could not be read, so nothing was sent (backend-b-02). */
+  | { readonly kind: 'settings_unreadable' }
 
 const ASKED_KEY = 'budget.review.suggest-asked'
 /** Enough for a few statements; the oldest are forgotten first. */
@@ -64,7 +66,9 @@ export function useSuggestions(input: CategoriseInput | null, reload: () => Prom
     setStatus({ kind: 'asking' })
     if ((await suggestionsReady(supabase)) === 'missing') return setStatus({ kind: 'missing' })
     const settings = await readCoachSettings(supabase, userId)
-    if (settings.ok && !settings.settings.shareShopNames) return setStatus({ kind: 'no_shop_names' })
+    // Share shop names is a privacy choice: unread, it is taken as off.
+    if (!settings.ok) return setStatus({ kind: 'settings_unreadable' })
+    if (!settings.settings.shareShopNames) return setStatus({ kind: 'no_shop_names' })
     // Only once the AI is really asked: rows that waited for 0018 or for
     // Share shop names are still asked about by themselves afterwards.
     markAsked(waiting)

@@ -264,7 +264,7 @@ export function OpenedCharges({
 function TimeToward({ charge, toward }: { charge: LedgerRow; toward: { readonly goalName: string; readonly unitCostCents: number } | null }) {
   // Only money spent: a charge is a negative row (D3), and its size is what it cost.
   if (toward === null || charge.amount_cents >= 0) return null
-  const { totalMinutes } = timeEquivalent(Math.abs(charge.amount_cents), toward.unitCostCents)
+  const { totalMinutes } = timeEquivalent({ amountCents: Math.abs(charge.amount_cents), unitCostPerHourCents: toward.unitCostCents })
   if (totalMinutes === 0) return null
   return (
     <p className="text-xs text-muted-foreground">

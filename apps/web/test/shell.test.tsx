@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import { MORE_GROUPS } from '../src/screens/MoreScreen.js'
+import { SIGNED_OUT_HERE_ONLY } from '../src/supabase.js'
 import { createFakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
@@ -239,6 +240,17 @@ describe('Shell, when the first load is refused (FE-7-NEW)', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Budget' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
     expect(signOut).toHaveBeenCalledTimes(1)
+  })
+
+  it('signs out on this device from there too, even when the server cannot be reached (security-a-06)', async () => {
+    const fake = createFakeSupabase()
+    fake.fail('categories', '42501')
+    vi.spyOn(fake.client.auth, 'signOut').mockResolvedValue({ error: new Error('Failed to fetch') } as never)
+    renderScreen(<Shell />, fake)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Sign out' }))
+    await waitFor(() => expect(window.sessionStorage.getItem(SIGNED_OUT_HERE_ONLY)).toBe('1'))
+    window.sessionStorage.removeItem(SIGNED_OUT_HERE_ONLY)
   })
 
   it('names the page while it loads, too', async () => {

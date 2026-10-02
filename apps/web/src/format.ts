@@ -124,7 +124,9 @@ const WRITE_FAILURES: Record<string, string> = {
   '42501': 'Your sign-in does not allow this. Signing out and back in usually fixes it.',
   '28000': 'You are not signed in any more. Sign in again and retry — nothing was saved.',
   PGRST301: 'Your session expired. Sign in again and retry — nothing was saved.',
-  '': 'Could not reach the database. Check your connection and try again — nothing was saved.',
+  // No answer at all: the write may have gone through before the connection
+  // dropped, so this never claims nothing was saved (backend-b-03).
+  '': 'Could not reach the database, or its answer was lost on the way back, so this may or may not have been saved. Check your connection, then look before trying again.',
   // A table, column or function that a one-time update adds, not there yet
   // (N28): said as what it is, where "something went wrong" said nothing.
   ...Object.fromEntries(MISSING_UPDATE.map((code) => [code, 'This needs a one-time update, so nothing was saved.'])),
@@ -149,6 +151,9 @@ export function describeWriteFailure(error: WriteError | null | undefined): stri
 /** What Setup was doing when a write failed. */
 export type SetupAction = 'add' | 'rename' | 'move' | 'reorder' | 'remove'
 
+// The name domain (0001, 0025) refuses control and format characters and empty names.
+const NAME_REFUSED = 'That name has characters the app cannot store. Use letters, numbers and ordinary punctuation.'
+
 /**
  * Setup's own sentences for the refusals its writes can meet.
  *
@@ -160,11 +165,10 @@ export type SetupAction = 'add' | 'rename' | 'move' | 'reorder' | 'remove'
  * sign-in failures that can happen anywhere.
  */
 const SETUP_FAILURES: Readonly<Record<SetupAction, Readonly<Record<string, string>>>> = {
-  add: {},
+  add: { '23514': NAME_REFUSED },
   rename: {
     '23505': 'You already have a category with that name, on this list or another. Use a different name.',
-    // The name domain (0001) refuses control characters and empty names.
-    '23514': 'That name has characters the app cannot store. Use letters, numbers and ordinary punctuation.',
+    '23514': NAME_REFUSED,
   },
   // 0009's trigger raises check_violation while an amount is in effect this
   // month or set for a later one. Stop is how Setup removes it (S9).
@@ -205,6 +209,23 @@ const MOVE_FAILURES: Readonly<Record<string, string>> = {
   PGRST202:
     'Moving a charge needs a one-time update. Nothing was moved.',
   '23514': 'That move breaks a rule the ledger follows, so nothing was moved.',
+}
+
+/**
+ * Why approving, adding, bringing in or dismissing was refused. Those
+ * functions (0004, 0012) say 42501 when the category, account or line they
+ * were given is not the owner's any more: removed, most likely, on another
+ * device. Signing out, the everyday 42501 sentence, would not help (backend-b-08).
+ */
+const INGEST_FAILURES: Readonly<Record<string, string>> = {
+  '42501':
+    'That category, account or line is no longer there — it may have changed on another device. Reload this screen and try again; if it keeps happening, sign out and back in. Nothing was saved.',
+}
+
+export function describeIngestFailure(error: WriteError | null | undefined): string {
+  const code = typeof error?.code === 'string' ? error.code : ''
+  const body = INGEST_FAILURES[code]
+  return body === undefined ? describeWriteFailure(error) : `${body} (code ${code})`
 }
 
 export function describeMoveFailure(error: WriteError | null | undefined): string {

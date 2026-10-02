@@ -20,6 +20,9 @@
 -- U+2028-U+202E; U+2060-U+2069; U+FEFF), and the search compares that,
 -- with runs of '*' made one as 0033 did. It reads nothing and is the same
 -- for everyone.
+-- Those characters are written as \uXXXX escapes, which Postgres's
+-- regular expressions read, so this file holds none of them as itself
+-- (written so at the merge of 2026-10-02; the function is unchanged).
 --
 -- ai_app_search is re-created from its own definition as it stands, with
 -- 0033's two compared lines changed and nothing else; create or replace
@@ -57,7 +60,7 @@ as $$
   -- each run of six or more digits masked, cut to 80 characters.
   select left(coalesce(string_agg(case when r.m[1] ~ '^[0-9]{6,}$' then repeat('*', length(r.m[1])) else r.m[1] end, '' order by r.i), ''), 80)
     from regexp_matches(
-           regexp_replace(p_name, '[\u0001-\u001f\u007f-\u009f​-‏ -‮⁠-⁩﻿]', '', 'g'),
+           regexp_replace(p_name, '[\u0001-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\u2060-\u2069\ufeff]', '', 'g'),
            '[0-9]+|[^0-9]+', 'g') with ordinality as r(m, i)
 $$;
 

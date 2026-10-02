@@ -467,6 +467,10 @@ into savings (a negative ledger row, D3) adds, money taken back out
 subtracts. Retyping the amount sets that day again, so nothing is counted
 twice. A category moved off the Savings list fills no fund (N52), and a
 goal not yet linked to a fund keeps its typed amount, as before.
+Only retyping the amount sets its day again. Editing the goal, its dates or
+its unit leaves the typed amount and its day as they were, so a transfer
+dated before the edit that reaches the ledger after it is still counted
+(backend-c1-01, 2026-10-01).
 
 ---
 

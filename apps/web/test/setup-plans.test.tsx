@@ -84,7 +84,7 @@ describe('SetupScreen, reading monthly amounts', () => {
     renderScreen(<SetupScreen />, fake)
 
     expect((await screen.findByRole('alert')).textContent).toBe(
-      'A monthly amount names a category that did not load, so the totals are not shown. Reload to try again.',
+      'A monthly amount names a category that did not load, so the totals are not shown. Try again.',
     )
   })
 
@@ -94,7 +94,7 @@ describe('SetupScreen, reading monthly amounts', () => {
     fake.tables.category_plans.push({ ...plan('p9', 'rent', '2026-02', 5_000, 3), effective_month: '2026-02-15' })
     renderScreen(<SetupScreen />, fake)
 
-    expect((await screen.findByRole('alert')).textContent).toBe('Your monthly amounts could not be shown. Reload to try again.')
+    expect((await screen.findByRole('alert')).textContent).toBe('Your monthly amounts could not be shown.')
     const bills = await card('Bills')
     expect(bills.getByRole('textbox', { name: 'Rename Rent' })).toBeTruthy()
     expect(bills.queryByRole('textbox', { name: /^Day paid/ })).toBeNull()
@@ -172,7 +172,9 @@ describe('SetupScreen, day paid and monthly amount', () => {
     expect((await field('Subscriptions', 'Day paid for Netflix')).value).toBe('23')
     expect((await card('Subscriptions')).queryByRole('button', { name: /^Stop / })).toBeNull()
     expect((await field('Debts', 'Monthly amount for Car Loan, from September on')).value).toBe('')
-    expect((await card('Bills')).getByText('Monthly amount (from September on)')).toBeTruthy()
+    // A head on one line, and the month it starts from said once in the hint (V16).
+    expect((await card('Bills')).getByText('Monthly amount')).toBeTruthy()
+    expect((await card('Bills')).getByText(/Amounts apply from September on\./)).toBeTruthy()
     // F8: an amount with no day counts in the month, never in a week.
     expect((await card('Bills')).getAllByText('Add a day paid so this shows in weeks.')).toHaveLength(1)
     // Car Loan has neither, so there is nothing to nudge.

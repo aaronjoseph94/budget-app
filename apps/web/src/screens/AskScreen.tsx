@@ -22,6 +22,7 @@ import { readQuestion, type QuestionRead, type ReadBy } from '../ask/read.js'
 import { suggestions } from '../ask/suggest.js'
 import { forgetQuestions, keepQuestion, recentQuestions } from '../ask/recent.js'
 import { takeHandedOver } from '../ask/handoff.js'
+import { TryAgain } from '../try-again.js'
 
 const link = 'inline-flex min-h-11 items-center font-medium underline underline-offset-4'
 const TOPICS = ARTICLES.map((a) => ({ id: a.id, title: a.title }))
@@ -76,6 +77,9 @@ export function AskScreen({ topic }: { topic: HelpTopic | null }) {
     if (question.trim() === '' || busy) return
     setBusy(true)
     setRecent(keepQuestion(question))
+    // A payoff plan that failed to load (offline, say) is read again for
+    // this question, rather than answer "failed" until Ask reopens (FE-13).
+    setDebts((d) => (d === 'failed' ? null : d))
     try {
       const reading = await readQuestion(supabase, { question, asOf: todayIso(), categories, topics: TOPICS, chip })
       setAsked({ question: question.trim(), read: reading })
@@ -170,7 +174,7 @@ export function AskScreen({ topic }: { topic: HelpTopic | null }) {
         {intent === null || asked === null ? null : answer === 'loading' ? (
           <p className="text-sm text-muted-foreground">Working it out…</p>
         ) : answer === 'failed' ? (
-          <p className="text-sm text-muted-foreground">Your records did not load, so this can’t be answered right now. Reload to try again; everything else still works.</p>
+          <p className="text-sm text-muted-foreground">Your records did not load, so this can’t be answered right now. <TryAgain />; everything else still works.</p>
         ) : answer === null ? null : (
           <AnswerCard read={intent} by={asked.read.by} names={intent.categoryIds.map((id) => categories.find((c) => c.id === id)?.name ?? '')} answer={answer} missingUpdate={missingUpdate}>
             {intent.intent === 'what_if_cut' ? <AmountChip amount={amount} answer={answer} fromQuestion={intent.amountText !== null} onChange={setAmount} /> : null}

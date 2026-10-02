@@ -24,13 +24,13 @@
  * negative. Every amount is flipped on the way through.
  */
 
-import { type Cents, cents } from '@budget/money-primitives'
+import { type Cents, isoDate } from '@budget/money-primitives'
 import { IngestedTextSchema, type RejectionReason } from '@budget/schema'
 import { US_AMOUNT_FORMAT, applySignConvention, parseAmountToCents } from '../amount.js'
 import { groupRows } from '../pdf/layout.js'
 import type { TextRun } from '../pdf/text.js'
 import type { AcceptedRow, RejectedRow } from '../read.js'
-import { isoDate, resolveYear, type StatementPeriod } from './yearless-dates.js'
+import { civilDate, resolveYear, type StatementPeriod } from './yearless-dates.js'
 
 /** Measured from a real statement. See the note above. */
 export const ROGERS_COLUMNS: readonly number[] = [20, 55, 90, 300]
@@ -93,9 +93,17 @@ export function readPeriod(pages: readonly (readonly TextRun[])[]): StatementPer
       const fromM = MONTHS[m[1] ?? '']
       const toM = MONTHS[m[4] ?? '']
       if (fromM === undefined || toM === undefined) continue
-      return {
-        from: isoDate(Number(m[3]), fromM, Number(m[2])),
-        to: isoDate(Number(m[6]), toM, Number(m[5])),
+      // Both ends through money-primitives' isoDate, which refuses a day the
+      // month lacks ("Feb 30"), and in order: a period that is no date, or
+      // runs backwards, is no period (architecture-a-06).
+      try {
+        const from = isoDate(civilDate(Number(m[3]), fromM, Number(m[2])))
+        const to = isoDate(civilDate(Number(m[6]), toM, Number(m[5])))
+        if (from > to) continue
+        return { from, to }
+      } catch (e) {
+        if (!(e instanceof RangeError)) throw e
+        continue
       }
     }
   }
@@ -121,8 +129,12 @@ const SUMMARY_LABELS = [
  * purchases — so an amount taken from anywhere but after its own label is the
  * wrong one, and wrong in a way that still reconciles against itself.
  */
+type SummaryKey = (typeof SUMMARY_LABELS)[number][0]
+
 export function readSummary(pages: readonly (readonly TextRun[])[]): RogersSummary | null {
-  const found = new Map<string, Cents>()
+  // Keyed by the labels' own names, so a mistyped key does not compile
+  // (architecture-a-07).
+  const found = new Map<SummaryKey, Cents>()
 
   for (const page of pages.slice(0, 2)) {
     for (const row of groupRows(page, [0])) {
@@ -137,16 +149,27 @@ export function readSummary(pages: readonly (readonly TextRun[])[]): RogersSumma
     }
   }
 
-  if (found.size !== SUMMARY_LABELS.length) return null
-  return {
-    previousBalanceCents: found.get('previousBalanceCents') ?? cents(0),
-    paymentsAndCreditsCents: found.get('paymentsAndCreditsCents') ?? cents(0),
-    purchasesAndDebitsCents: found.get('purchasesAndDebitsCents') ?? cents(0),
-    cashAdvancesCents: found.get('cashAdvancesCents') ?? cents(0),
-    feesCents: found.get('feesCents') ?? cents(0),
-    interestCents: found.get('interestCents') ?? cents(0),
-    newBalanceCents: found.get('newBalanceCents') ?? cents(0),
+  // Every figure, or none: a figure not found is not $0.
+  const figure = (key: SummaryKey): Cents | undefined => found.get(key)
+  const previousBalanceCents = figure('previousBalanceCents')
+  const paymentsAndCreditsCents = figure('paymentsAndCreditsCents')
+  const purchasesAndDebitsCents = figure('purchasesAndDebitsCents')
+  const cashAdvancesCents = figure('cashAdvancesCents')
+  const feesCents = figure('feesCents')
+  const interestCents = figure('interestCents')
+  const newBalanceCents = figure('newBalanceCents')
+  if (
+    previousBalanceCents === undefined ||
+    paymentsAndCreditsCents === undefined ||
+    purchasesAndDebitsCents === undefined ||
+    cashAdvancesCents === undefined ||
+    feesCents === undefined ||
+    interestCents === undefined ||
+    newBalanceCents === undefined
+  ) {
+    return null
   }
+  return { previousBalanceCents, paymentsAndCreditsCents, purchasesAndDebitsCents, cashAdvancesCents, feesCents, interestCents, newBalanceCents }
 }
 
 /**
@@ -220,7 +243,7 @@ function readRow(
   sink.statementAmountsCents.push(amount.value)
   sink.accepted.push({
     line: sink.line,
-    postedOn: isoDate(year, month, day),
+    postedOn: civilDate(year, month, day),
     // The statement writes a purchase as a positive. The ledger writes an
     // outflow as a negative.
     amountCents: applySignConvention(amount.value, { kind: 'debit_positive' }),

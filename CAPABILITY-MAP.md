@@ -8,20 +8,20 @@ Dependency arrows point one way only.
 
 | Module id | Responsibility | Depends on |
 |---|---|---|
-| `money-primitives` | Branded `Cents` type, entity ids, date helpers, the single rounding and sign-convention policy transcribed from the workbook, and the one display helper. Zero dependencies, including zod. | — |
-| `golden-verification` | Extracts the workbook's cached Excel values into committed fixtures, and the replay harness that asserts a calculator reproduces them exactly. | `money-primitives` |
+| `money-primitives` | Branded `Cents`, `BasisPoints` and `IsoDate` types, date helpers, the single rounding and sign-convention policy transcribed from the workbook, and the one display helper. Zero dependencies, including zod. | — |
+| `golden-verification` | The workbook's cached Excel values, transcribed by hand into committed fixtures, each naming its sheet and cells, and the loader that refuses one without them. | — (Node's `fs` only) |
 | `calc-engine` | All arithmetic: budget rollups, debt amortization, future value, 50/30/20, cash-flow forecast, net worth. Pure functions, no I/O, no ambient clock. | `money-primitives`, `golden-verification` |
-| `chart-specs` | Chart layout and SVG generation as pure functions: Sankey flows, the contribution grid, category bars, trend lines. No React, no DOM. | `money-primitives`, `calc-engine` |
+| `chart-specs` | Chart layout and SVG generation as pure functions: Sankey flows, the contribution grid, category bars, trend lines. No React, no DOM. Given basis points and labels, it imports nothing (its lint allows `calc-engine`'s types, should it need them). | — |
 | `schema-contracts` | Every zod schema and the DB row types. The executed contract between client, Edge Functions, and Postgres. | `money-primitives` |
 | `persistence-schema` | Migrations, RLS policies, the dedupe unique index, private Storage bucket policies, seed fixtures. From 0016, the AI tables and the functions only the AI helper may call. | `schema-contracts` |
 | `statement-parsers` | Deterministic CSV/XLSX parsing, merchant normalization, the dedupe hash. Bytes in, validated rows out. | `money-primitives`, `schema-contracts` |
 | `llm-providers` | One interface over Gemini, Groq and OpenRouter (free) and OpenAI and Anthropic (paid): the hardcoded endpoint and model allowlist, the failover router with its daily limits and cooldowns, each task's prompt paired with its JSON schema, and the encryption of pasted keys. Realised as the `ai` Edge Function, one pasteable file, beside `read-receipt` (ADR 0004). | `schema-contracts` (held to it by contract tests; the file imports only zod), `persistence-schema` |
-| `ingest-pipeline` | The candidate lifecycle: creation, merchant-rule lookup and learning, review-queue state machine, guarded promotion to `transactions`. | `schema-contracts`, `persistence-schema`, `statement-parsers`, `llm-providers` |
+| `ingest-pipeline` | The candidate lifecycle: creation, merchant-rule lookup and learning, review-queue state machine, guarded promotion to `transactions`. Realised as the database functions `save_import`, `approve_candidate`, `reject_candidate` and `recategorise_transaction` (0003–0006, guarded since by 0022, 0027 and 0029) and their callers in `apps/web/src/ledger.ts`. | `schema-contracts`, `persistence-schema`, `statement-parsers`, `llm-providers` |
 | `ai-apps` | The MCP server outside AI apps connect to: the token check, ten tools and the rows renamed for the engine; built into one pasteable Edge Function, `mcp` (ADR 0012). Realised as `packages/ai-apps`. | `calc-engine`, `money-primitives`, `statement-parsers`, `schema-contracts`, `persistence-schema` (by RPC only, with the caller's own token) |
 | `savings-coach` | Weekly limits and streaks, savings-capacity analysis, goal tracking and tradeoff conversion, the spend-interrogation loop and the answers it learns from, and the surfacing of insights: ranking, dismissal state, cadence and narration. The behavioural layer; every number it shows and every detector that fires comes from `calc-engine`. Realised as `packages/savings-coach`: templates and tones, the blank renderer, card ranking, the quotes and tips library, the AI's brief and its signatures, the check of a model's reply, Ask's intents, the check-in's rules (ADR 0005). | `calc-engine`, `schema-contracts` (types), `money-primitives` (types) |
 | `report-export` | Excel workbook and PDF report generation. Formats engine output and embeds `chart-specs` SVG; computes nothing. Dynamically imported, runs on the client. Realised in part as `packages/report-export`: a month as CSV, with the formula guard (N4); the PDF is the browser's print of Reports. The Excel workbook is not built. | none for the CSV writer, which takes rows of text; `calc-engine`, `chart-specs`, `schema-contracts` once the Excel workbook is built |
 | `reminders-scheduler` | pg_cron bill reminders plus the heartbeat row that proves the job is still firing. | `persistence-schema`, `calc-engine` |
-| `app-client` | Vite + React PWA: hash navigation (ADR 0003, ADR 0006), magic-link auth, the Supabase data layer, design tokens, every screen, and the Help and Getting started content. Renders engine output. Computes nothing. Reaches `llm-providers` only by `supabase.functions.invoke('ai')`. | `calc-engine`, `chart-specs`, `schema-contracts`, `persistence-schema` (the coach's tables), `ingest-pipeline`, `llm-providers` (by `functions.invoke('ai')` only, never an import), `savings-coach`, `report-export` (loaded when used) |
+| `app-client` | Vite + React PWA: hash navigation (ADR 0003, ADR 0006), magic-link auth, the Supabase data layer, design tokens, every screen, and the Help and Getting started content. Renders engine output. Computes nothing. Reaches `llm-providers` only by `supabase.functions.invoke('ai')`. | `calc-engine`, `chart-specs`, `schema-contracts`, `statement-parsers` (the readers and the dedupe hash run in the browser), `persistence-schema` (the coach's tables), `ingest-pipeline`, `llm-providers` (by `functions.invoke('ai')` only, never an import), `savings-coach`, `report-export` (loaded when used) |
 
 *Changed 2026-09-24* (`docs/ai-first-plan.md`, decided by the engineer under
 the owner's 2026-09-24 instruction to proceed without questions):
@@ -33,6 +33,14 @@ and `llm-providers`; as a package it does no reading, writing or calling,
 so those arrows now start at `app-client`, which reads and writes the
 coach's tables and calls the helper. `app-client` always drew
 `chart-specs`' charts; the arrow was missing.
+
+*Corrected 2026-10-01* (architecture-a-15): the table had fallen behind
+the code. `money-primitives` holds no entity ids; `golden-verification`'s
+fixtures are transcribed by hand and the package imports only Node's
+`fs`, `url` and `path`; `chart-specs` imports no `@budget` package (its
+two unused package dependencies are gone); `app-client` imports
+`statement-parsers`, as `.dependency-cruiser.cjs` allows; and
+`ingest-pipeline` is realised as the database functions above.
 
 **Build order**
 

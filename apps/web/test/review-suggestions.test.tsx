@@ -100,6 +100,37 @@ describe('Review shows suggested categories', () => {
     expect(fake.tables.ingest_candidates[0]).toMatchObject({ category_id: null, category_source: null })
   })
 
+  it('keeps a suggestion gone when a read begun before Not this lands after it (FE-8)', async () => {
+    const fake = seeded()
+    renderScreen(<ReviewScreen />, fake)
+    await row('CORNER MARKET #12')
+    // After an approval the app's count is read, then Review's queue; that
+    // read is asked while p1 is still suggested, and answers late.
+    let release: () => void = () => undefined
+    const held = new Promise<void>((done) => (release = done))
+    let reads = 0
+    let holding = false
+    fake.server.hold = (target) => {
+      if (target !== 'ingest_candidates' || reads === -1) return null
+      reads += 1
+      if (reads < 2) return null
+      reads = -1
+      holding = true
+      return held
+    }
+    fireEvent.change(await picker('SQ *LITWARE COFFEE'), { target: { value: 'c2' } })
+    fireEvent.click((await row('SQ *LITWARE COFFEE')).getByRole('button', { name: /Approve/ }))
+    await waitFor(() => expect(holding).toBe(true))
+
+    fireEvent.click((await row('CORNER MARKET #12')).getByRole('button', { name: 'Not this' }))
+    await waitFor(() => expect(fake.rpcCalls.map((c) => c.name)).toContain('clear_candidate_suggestion'))
+    await waitFor(async () => expect((await picker('CORNER MARKET #12')).value).toBe(''))
+    release()
+    await new Promise((r) => setTimeout(r, 50))
+    expect((await picker('CORNER MARKET #12')).value).toBe('')
+    expect((await row('CORNER MARKET #12')).queryByText(/Suggested:/)).toBeNull()
+  })
+
   it('prefers a rule the owner taught over the AI’s suggestion', async () => {
     const fake = seeded()
     fake.tables.merchant_rules.push({ match_merchant: 'CORNER MARKET', category_id: 'c2' })
@@ -229,6 +260,17 @@ describe('Review asks the AI for categories', () => {
     expect(await screen.findByText(/Suggestions are off while Share shop names is off\./)).toBeTruthy()
     expect(runs(fake)).toEqual([])
   })
+
+  it('sends nothing when Share shop names could not be read, and says so (backend-b-02)', async () => {
+    const fake = fresh()
+    aiOn(fake)
+    fake.tables.ai_settings.push({ user_id: 'u1', share_shop_names: false })
+    fake.fail('GET ai_settings', '57014')
+    renderScreen(<ReviewScreen />, fake)
+    expect(await screen.findByText(/Your AI settings could not be read, so nothing was sent\. Try again\./)).toBeTruthy()
+    expect(runs(fake)).toEqual([])
+    expect(screen.getByRole('button', { name: /Suggest categories/ })).toBeTruthy()
+  })
 })
 
 describe('Review says why nothing was suggested, in its own words', () => {
@@ -300,7 +342,11 @@ describe('Approve these N', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Approve these 2' }))
     const asking = within(screen.getByRole('group', { name: 'Approve these 2?' }))
-    expect(asking.getAllByRole('listitem').map((li) => li.textContent)).toEqual(['CORNER MARKET #12Groceries', 'SQ *LITWARE COFFEECoffee'])
+    expect(asking.getAllByRole('listitem').map((li) => li.textContent)).toEqual([
+      'CORNER MARKET #12Suggested by AI: Groceries',
+      'SQ *LITWARE COFFEESuggested by AI: Coffee',
+    ])
+    expect(asking.getByText('✨ marks a category the AI suggested. Check it.')).toBeTruthy()
     expect(approvals(fake)).toEqual([])
 
     fireEvent.click(asking.getByRole('button', { name: 'Approve all 2' }))
@@ -325,6 +371,19 @@ describe('Approve these N', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Approve all 3' }))
     await screen.findByText(/^Filed 3\./)
     expect(approvals(fake).map((a) => a['p_category'])).toEqual(['c1', 'c1', 'c1'])
+  })
+
+  it('marks only the categories the AI chose, not one the owner picked (FE-7)', async () => {
+    const fake = twoReady()
+    renderScreen(<ReviewScreen />, fake)
+    fireEvent.change(await picker('SQ *LITWARE COFFEE'), { target: { value: 'c1' } })
+    fireEvent.click(await screen.findByRole('button', { name: 'Approve these 2' }))
+    const asking = within(screen.getByRole('group', { name: 'Approve these 2?' }))
+    expect(asking.getAllByRole('listitem').map((li) => li.textContent)).toEqual([
+      'CORNER MARKET #12Suggested by AI: Groceries',
+      'SQ *LITWARE COFFEEGroceries',
+    ])
+    await expectNoAxeViolations()
   })
 
   it('approves nothing on Cancel', async () => {

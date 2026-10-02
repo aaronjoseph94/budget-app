@@ -52,7 +52,7 @@ describe('SavingsScreen, setting and linking goals', () => {
     await expectNoAxeViolations()
   })
 
-  it('edits a goal with what is saved filled in as the kept balance, and writes it as of today (N52)', async () => {
+  it('edits a goal with what is saved filled in as the kept balance, leaving the typed balance and its day alone when only the goal changes', async () => {
     const fake = seeded()
     renderScreen(<SavingsScreen />, fake)
     fireEvent.click(within(await card('Travel')).getByRole('button', { name: 'Edit goal' }))
@@ -64,11 +64,36 @@ describe('SavingsScreen, setting and linking goals', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save goal' }))
     expect(await screen.findByText("Travel's goal is saved.")).toBeTruthy()
     expect(fake.tables.savings_goals[1]).toMatchObject({
-      target_cents: 120_000, saved_cents: 15_000, balance_as_of: '2026-09-23', start_date: '2026-01-01', target_date: '2026-11-01',
+      target_cents: 120_000, saved_cents: 10_000, balance_as_of: '2026-09-01', start_date: '2026-01-01', target_date: '2026-11-01',
     })
     // $1,050.00 needed over 10 months: $105.00 a month; the $50.00 is counted once.
     await waitFor(async () => expect(within(await card('Travel')).queryByText('$105.00')).toBeTruthy())
     expect(within(await card('Travel')).getByText('$150.00')).toBeTruthy()
+  })
+
+  it('still counts a move into the fund dated before the edit that reaches the ledger after it (backend-c1-01)', async () => {
+    const fake = seeded()
+    const { unmount } = renderScreen(<SavingsScreen />, fake)
+    fireEvent.click(within(await card('Travel')).getByRole('button', { name: 'Edit goal' }))
+    type(/^Goal date/, '2026-11-01')
+    fireEvent.click(screen.getByRole('button', { name: 'Save goal' }))
+    await screen.findByText("Travel's goal is saved.")
+    unmount()
+    // Approved from Review the day after the edit, dated three days before it.
+    fake.tables.transactions.push({ id: 't2', posted_on: '2026-09-20', amount_cents: -2_500, merchant_raw: 'TO SAVINGS', category_id: 'travel', source: 'card_csv' })
+    renderScreen(<SavingsScreen />, fake)
+    // $100.00 typed on the 1st, then $50.00 and $25.00 moved in.
+    await waitFor(async () => expect(within(await card('Travel')).queryByText('$175.00')).toBeTruthy())
+  })
+
+  it('writes a retyped balance with today as its day (N52)', async () => {
+    const fake = seeded()
+    renderScreen(<SavingsScreen />, fake)
+    fireEvent.click(within(await card('Travel')).getByRole('button', { name: 'Edit goal' }))
+    type(/^Saved today/, '400')
+    fireEvent.click(screen.getByRole('button', { name: 'Save goal' }))
+    await screen.findByText("Travel's goal is saved.")
+    expect(fake.tables.savings_goals[1]).toMatchObject({ target_cents: 100_000, saved_cents: 40_000, balance_as_of: '2026-09-23' })
   })
 
   it('sets a first goal on a fund under its name', async () => {

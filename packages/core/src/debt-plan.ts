@@ -49,6 +49,10 @@ export interface DebtPlan {
 export function debtPlan(input: DebtPlanInput): DebtPlan {
   const schedules: DebtSchedule[] = []
   const neverPaidOff: string[] = []
+  const names = new Set(input.debts.map((d) => d.name))
+  if (input.extraPayments.some((e) => !names.has(e.debtName))) {
+    throw new RangeError('An extra payment names a debt that was not passed in')
+  }
   for (const debt of input.debts) {
     const extras = input.extraPayments
       .filter((e) => e.debtName === debt.name)

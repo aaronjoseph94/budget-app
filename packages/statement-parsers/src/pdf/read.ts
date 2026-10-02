@@ -4,7 +4,7 @@
  * The one entry point; objects.ts, text.ts and layout.ts are its parts.
  */
 
-import { MAX_PDF_PAGES, inflateStream, splitObjects, type PdfFailure } from './objects.js'
+import { MAX_DOCUMENT_INFLATED_BYTES, MAX_PDF_PAGES, inflateStream, splitObjects, type PdfFailure } from './objects.js'
 import { extractRuns, type TextRun } from './text.js'
 
 export interface PdfDocument {
@@ -36,19 +36,46 @@ export async function readPdfText(bytes: Uint8Array): Promise<PdfReadOutcome> {
   const { byId, contentIds } = split.objects
   if (contentIds.length === 0) return { ok: false, failure: 'no_pages' }
 
+  // Each distinct stream is inflated and read once, however many pages name
+  // it, and all of them together are held to a budget: 200 pages naming one
+  // stream inflated it 200 times (security-b-03). A stream or a file over
+  // its limit refuses the whole read, as the file-size check does, rather
+  // than leaving an empty page.
+  const read = new Map<number, readonly TextRun[]>()
+  let inflatedBytes = 0
   const pages: Array<readonly TextRun[]> = []
   for (const id of contentIds.slice(0, MAX_PDF_PAGES)) {
-    const object = byId.get(id)
-    if (object === undefined) {
-      pages.push([])
+    const known = read.get(id)
+    if (known !== undefined) {
+      pages.push(known)
       continue
     }
-    const inflated = await inflateStream(object)
-    pages.push(inflated.ok ? extractRuns(inflated.bytes) : [])
+    const object = byId.get(id)
+    let runs: readonly TextRun[] = []
+    if (object !== undefined) {
+      const inflated = await inflateStream(object)
+      if (!inflated.ok && inflated.failure === 'too_large') return { ok: false, failure: 'too_large' }
+      if (inflated.ok) {
+        inflatedBytes += inflated.bytes.byteLength
+        if (inflatedBytes > MAX_DOCUMENT_INFLATED_BYTES) return { ok: false, failure: 'too_large' }
+        runs = runsOf(inflated.bytes)
+      }
+    }
+    read.set(id, runs)
+    pages.push(runs)
   }
 
   const total = pages.reduce((n, page) => n + page.length, 0)
   if (total === 0) return { ok: false, failure: 'no_text_layer' }
 
   return { ok: true, document: { pages } }
+}
+
+/** A page's runs, or none when reading them throws: an unreadable page is an empty one. */
+function runsOf(bytes: Uint8Array): readonly TextRun[] {
+  try {
+    return extractRuns(bytes)
+  } catch {
+    return []
+  }
 }

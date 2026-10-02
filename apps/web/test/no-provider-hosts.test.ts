@@ -36,3 +36,34 @@ describe('the app’s source', () => {
     for (const [path, text] of Object.entries(sources)) expect(text, path).not.toMatch(/SERVICE_ROLE/)
   })
 })
+
+/**
+ * Vite compiles every `import.meta.env.VITE_…` it sees into the page as a
+ * bare value, with no `VITE_` name left beside it for check-bundle.mjs to
+ * find (architecture-c2-03). So the only public values, the Supabase URL
+ * and anon key, are the only ones the browser's code may name, read by
+ * name in env.ts; a computed read could reach any of them.
+ */
+const PUBLIC_VALUES = new Set(['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY'])
+const browserCode = {
+  ...sources,
+  ...import.meta.glob<string>('../*.ts', { query: '?raw', import: 'default', eager: true }),
+  ...import.meta.glob<string>('../../../packages/*/src/**/*.ts', { query: '?raw', import: 'default', eager: true }),
+}
+
+describe('the browser’s code and the packages it builds from', () => {
+  it('is read in full: the app, its config and every package', () => {
+    const paths = Object.keys(browserCode)
+    for (const part of ['../vite.config.ts', '/packages/core/src/', '/packages/statement-parsers/src/', '/packages/money-primitives/src/']) {
+      expect(paths.some((path) => path.includes(part)), part).toBe(true)
+    }
+  })
+
+  it('reads no build variable but the Supabase URL and anon key, and none by a computed name', () => {
+    for (const [path, text] of Object.entries(browserCode)) {
+      for (const [, name] of text.matchAll(/import\.meta\.env\.([A-Za-z_]\w*)/g)) expect(PUBLIC_VALUES.has(name!), `${name} in ${path}`).toBe(true)
+      expect(text, path).not.toMatch(/import\.meta\.env\s*\[/)
+    }
+  })
+})
+

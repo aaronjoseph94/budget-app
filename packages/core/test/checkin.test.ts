@@ -55,6 +55,18 @@ describe('weeklyRecap (F42)', () => {
     expect(recap.top).toEqual({ categoryId: 'dining', spentCents: 10_420 })
   })
 
+  it('breaks a tie for the top category by name in English order, the same on every device (architecture-a-02)', () => {
+    // Holds the order; a bare localeCompare in an English process sorts the
+    // same, so test/order.test.ts and the lint rule (F53) are the guard.
+    const tied: CheckinInput['categories'] = [
+      { id: 'z', name: 'Zoo', kind: 'variable', sortOrder: 0, weeklyBudgetCents: null },
+      { id: 'a', name: 'Ärenden', kind: 'variable', sortOrder: 0, weeklyBudgetCents: null },
+    ]
+    const recap = weeklyRecap(input({ categories: tied, entries: [row('2026-09-22', -5_000, 'z'), row('2026-09-23', -5_000, 'a')] }))
+    if (recap.status !== 'ready') throw new Error(recap.status)
+    expect(recap.top).toEqual({ categoryId: 'a', spentCents: 5_000 })
+  })
+
   it('compares with the week before, where the records cover it', () => {
     const recap = weeklyRecap(input())
     if (recap.status !== 'ready') throw new Error(recap.status)

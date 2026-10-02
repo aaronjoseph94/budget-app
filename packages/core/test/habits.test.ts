@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { isoDate } from '@budget/money-primitives'
-import { gridLevel, personalBest, spendingGrid, streaks, weekdayPattern, type HabitsInput } from '../src/index.js'
+import { personalBest, spendingGrid, streaks, weekdayPattern, type HabitsInput } from '../src/index.js'
+import { gridLevel } from '../src/habits.js'
 
 /** Suite tests, worked by hand from F40 (docs/formula-decisions.md). Thursday 24 September 2026. */
 

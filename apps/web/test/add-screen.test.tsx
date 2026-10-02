@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, screen, within } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AddScreen } from '../src/screens/AddScreen.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
@@ -87,6 +87,13 @@ describe('AddScreen, typing one in with a new category', () => {
     await screen.findByText('Added $12.50 — Farmers market.')
     expect(fake.tables.categories.find((c) => c.name === 'Market')).toMatchObject({ kind: 'subscription' })
     expect(fake.rpcCalls[0]?.args.p_amount_cents).toBe(-1250)
+  })
+
+  it('labels the list picker with the words it is named by (FE-12, WCAG 2.5.3)', async () => {
+    renderScreen(<AddScreen />, seeded())
+    await typeOne('I spent', '12.50', 'Farmers market')
+    const list = screen.getByRole('combobox', { name: 'Which list' })
+    expect(list.closest('label')?.firstElementChild?.textContent).toBe('Which list')
   })
 
   it('moves back to Variable expenses when switched from received to spent', async () => {
@@ -230,5 +237,50 @@ describe('AddScreen, in Mockup A (step 10)', () => {
       [false, true],
       [false, true],
     ])
+  })
+})
+
+describe('AddScreen, an entry sent again (backend-a-07, backend-b-03)', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  it('sends the same entry id when Add is pressed again after an answer that never came, and a new one for the next entry', async () => {
+    const fake = seeded()
+    const rpc = vi.spyOn(fake.client, 'rpc')
+    renderScreen(<AddScreen />, fake)
+    await typeOne('I spent', '4.50', 'Invented kiosk')
+    fireEvent.change(screen.getByRole('combobox', { name: 'Category' }), { target: { value: 'c1' } })
+    // The write may have gone through; its answer was lost on the way back.
+    rpc.mockReturnValueOnce(Promise.resolve({ data: null, error: { code: '', message: 'TypeError: Failed to fetch', details: '', hint: '' } }) as never)
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+    expect(await screen.findByText(/^Could not reach the database, or its answer was lost/)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+    expect(await screen.findByText('Added $4.50 — Invented kiosk.')).toBeTruthy()
+
+    await typeOne('I spent', '4.50', 'Invented kiosk')
+    fireEvent.change(screen.getByRole('combobox', { name: 'Category' }), { target: { value: 'c1' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+    await screen.findAllByText('Added $4.50 — Invented kiosk.')
+    await vi.waitFor(() => expect(rpc.mock.calls.filter(([name]) => name === 'add_typed_transaction')).toHaveLength(3))
+
+    const entries = rpc.mock.calls.filter(([name]) => name === 'add_typed_transaction').map(([, args]) => (args as { p_entry?: unknown }).p_entry)
+    expect(entries[0]).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
+    expect(entries[1]).toBe(entries[0])
+    expect(entries[2]).not.toBe(entries[0])
+  })
+
+  it('sends a new entry id once the form is changed after a failure', async () => {
+    const fake = seeded()
+    const rpc = vi.spyOn(fake.client, 'rpc')
+    renderScreen(<AddScreen />, fake)
+    await typeOne('I spent', '4.50', 'Invented kiosk')
+    fireEvent.change(screen.getByRole('combobox', { name: 'Category' }), { target: { value: 'c1' } })
+    rpc.mockReturnValueOnce(Promise.resolve({ data: null, error: { code: '', message: 'TypeError: Failed to fetch', details: '', hint: '' } }) as never)
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+    await screen.findByText(/^Could not reach the database, or its answer was lost/)
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '5.50' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+    expect(await screen.findByText('Added $5.50 — Invented kiosk.')).toBeTruthy()
+    const [first, second] = rpc.mock.calls.filter(([name]) => name === 'add_typed_transaction').map(([, args]) => (args as { p_entry?: unknown }).p_entry)
+    expect(second).not.toBe(first)
   })
 })

@@ -95,9 +95,17 @@ const isCode = (c: unknown): c is AiCode => AI_CODES.some((k) => k === c)
 
 export type AiAnswer = { readonly ok: true; readonly data: unknown } | { readonly ok: false; readonly view: AiView }
 
+/**
+ * How long the app waits for the helper: past its own 100 s deadline for a
+ * run, so the helper always answers first, but not for as long as the
+ * platform would hold a stalled request (backend-b-05).
+ */
+const HELPER_WAIT_MS = 110_000
+
 /** One request to the helper: its reply, or the state it came to. */
 export async function askAi(supabase: SupabaseClient, request: AiRequest): Promise<AiAnswer> {
-  const { data, error } = await supabase.functions.invoke('ai', { body: request })
+  // Given up on, it is the same as no reply at all: no Response below.
+  const { data, error } = await supabase.functions.invoke('ai', { body: request, timeout: HELPER_WAIT_MS })
   if (error === null) return { ok: true, data }
   const reply = (error as { context?: unknown }).context
   // No reply at all: the phone is offline, or the request never arrived.

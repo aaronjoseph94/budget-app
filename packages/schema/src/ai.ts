@@ -75,7 +75,7 @@ export type AiAction = AiRequest['action']
  * new version to be pasted over it. Bumped with every change to the
  * helper, as `YYYY-MM-DD.N`.
  */
-export const AI_HELPER_VERSION = '2026-09-30.1'
+export const AI_HELPER_VERSION = '2026-10-01.5'
 
 /**
  * read-receipt's version, which it answers to GET from this one on, so

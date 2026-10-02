@@ -90,7 +90,7 @@ describe('the Month beside last month (D26)', () => {
       table === 'transactions' && query.getAll('posted_on').includes('gte.2026-08-01') ? 'PGRST205' : null
     renderScreen(<MonthScreen month="2026-09" />, fake)
 
-    expect((await strip()).getByText('Last month did not load, so there is no comparison. Reload to try again.')).toBeTruthy()
+    expect((await strip()).getByText('Last month did not load, so there is no comparison.', { exact: false })).toBeTruthy()
     expect(screen.queryByText(/by 24 Aug/)).toBeNull()
     expect(within(screen.getByRole('region', { name: 'Variable expenses' })).getByRole('rowheader', { name: 'Groceries' })).toBeTruthy()
     expect(screen.queryByRole('alert')).toBeNull()

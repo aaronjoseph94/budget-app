@@ -115,7 +115,7 @@ workbook's own saved results exactly. The canonical case: four debts from
 | `packages/chart-specs` | What each chart draws, worked out from engine output |
 | `packages/report-export` | The CSV writer for Reports |
 | `packages/ai-apps` | The MCP server for Claude and ChatGPT, built into one pasteable file |
-| `supabase/migrations` | Database changes `0001` to `0020`, applied in number order, never edited once applied |
+| `supabase/migrations` | Database changes `0001` to `0038`, applied in number order, never edited once applied |
 | `supabase/functions` | The `ai` helper and the older `read-receipt` function, with their tests |
 | `supabase/tests` | Checks that the database refuses what it should |
 | `scripts` | The checks (`gates.sh`), the bundle-size budget, the migration replay, the gitleaks installer |

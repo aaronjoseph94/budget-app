@@ -19,6 +19,7 @@ import {
 } from './ledger.js'
 import type { Cents } from '@budget/money-primitives'
 import { NO_MARKS, type SetupMarks } from './profile.js'
+import { todayIso } from './format.js'
 import type { SupabaseClient } from './supabase.js'
 
 const DEFAULT_ACCOUNT = 'Main Card'
@@ -52,9 +53,23 @@ export interface AppData {
   /** Reload the shared data; bump `version` so screens reload theirs too. */
   readonly refresh: () => Promise<void>
   readonly version: number
+  /**
+   * The owner's date, read again whenever the app is woken and at midnight.
+   * A screen that needs today reads it here, so a page left open overnight
+   * moves to the new day with everything else (architecture-c1-01).
+   */
+  readonly today: string
 }
 
+/** A switch back within this long of the last read on the same day reads nothing again. */
+const RECENT_MS = 30_000
+
 const Context = createContext<AppData | null>(null)
+
+/** The provider's refresh, or null outside one (a component tested on its own). */
+export function useRefresh(): (() => Promise<void>) | null {
+  return useContext(Context)?.refresh ?? null
+}
 
 export function useAppData(): AppData {
   const data = useContext(Context)
@@ -92,9 +107,12 @@ export function AppDataProvider({
   // The account does not change within a session, so it is read once, not
   // on every refresh after every save (PERF-2).
   const account = useRef<Promise<{ readonly id: string }> | null>(null)
+  const [today, setToday] = useState(todayIso)
+  const lastRead = useRef(0)
 
   const refresh = useCallback(async () => {
     const mine = ++latest.current
+    lastRead.current = Date.now()
     try {
       account.current ??= ensureAccount(supabase, userId, DEFAULT_ACCOUNT)
       const [resolved, cats, read, pending] = await Promise.all([
@@ -124,6 +142,40 @@ export function AppDataProvider({
     void refresh()
   }, [refresh])
 
+  // An installed app is suspended with its page loaded, not closed, so the
+  // next morning it is woken, not opened. Waking, the network coming back
+  // and midnight each read today and the shared data again; refresh bumps
+  // `version`, which every screen's read lists, so their rows follow.
+  const shown = useRef(todayIso())
+  useEffect(() => {
+    const wake = (always: boolean) => {
+      const now = todayIso()
+      const newDay = now !== shown.current
+      shown.current = now
+      setToday(now)
+      if (always || newDay || Date.now() - lastRead.current >= RECENT_MS) void refresh()
+    }
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') wake(false)
+    }
+    const onShow = (event: PageTransitionEvent) => {
+      if (event.persisted) wake(false)
+    }
+    const onOnline = () => wake(true)
+    const midnight = setInterval(() => {
+      if (todayIso() !== shown.current) wake(true)
+    }, 60_000)
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('pageshow', onShow)
+    window.addEventListener('online', onOnline)
+    return () => {
+      clearInterval(midnight)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('pageshow', onShow)
+      window.removeEventListener('online', onOnline)
+    }
+  }, [refresh])
+
   const inOrder = useMemo(() => goalsInOrder(goals.rows), [goals.rows])
 
   return (
@@ -144,6 +196,7 @@ export function AppDataProvider({
         status,
         refresh,
         version,
+        today,
       }}
     >
       {children}

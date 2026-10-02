@@ -51,7 +51,12 @@ describe('the Paycheck beside the last pay period (D26)', () => {
     renderScreen(<PaycheckScreen day={null} />, seeded())
 
     const s = await line()
-    expect(s.getByText(text('18 – 24 Sep: $445.38 spent · 4 – 10 Sep: $465.38'))).toBeTruthy()
+    const both = s.getByText(text('18 – 24 Sep: $445.38 spent · 4 – 10 Sep: $465.38'))
+    // The dot starts the second part, so it never ends a line or stands alone on one (V7).
+    expect([...both.children].map((c) => c.textContent)).toEqual(['18 – 24 Sep: $445.38 spent', '· 4 – 10 Sep: $465.38'])
+    // A figure keeps its word: in a narrow card "spent" stood on a line alone.
+    const kept = s.getByText('$445.38').parentElement
+    expect([kept?.textContent, kept?.className]).toEqual(['$445.38 spent', 'whitespace-nowrap'])
     expect(s.getByText(text('▼ $20.00 less (4%)'))).toBeTruthy()
     await expectNoAxeViolations()
   })
@@ -70,7 +75,7 @@ describe('the Paycheck beside the last pay period (D26)', () => {
       table === 'transactions' && query.getAll('posted_on').includes('gte.2026-09-04') ? '42P01' : null
     renderScreen(<PaycheckScreen day={null} />, fake)
 
-    expect((await line()).getByText('The last pay period did not load, so there is no comparison. Reload to try again.')).toBeTruthy()
+    expect((await line()).getByText('The last pay period did not load, so there is no comparison.', { exact: false })).toBeTruthy()
     // The period's own figures still show: its Spent is the whole share plus 30.00.
     expect(within(screen.getByRole('region', { name: 'Summary' })).getByText('Spent').nextSibling?.textContent).toBe('$445.38')
     expect(screen.queryByRole('alert')).toBeNull()

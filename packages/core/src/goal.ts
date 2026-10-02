@@ -21,6 +21,7 @@ import {
   daysBetween,
   subCents,
 } from '@budget/money-primitives'
+import { shareOf } from './shares.js'
 
 export interface SavingsGoal {
   readonly name: string
@@ -49,9 +50,12 @@ export function goalProgress(goal: SavingsGoal): GoalProgress {
 
   return {
     remainingCents: remaining,
-    percentCompleteBasisPoints: Math.min(10_000, Math.round((saved * 10_000) / target)),
+    // The same rule as fundProgress, so the Sidebar, the Week and Savings
+    // print one figure for one fund: a fund withdrawals took under zero is
+    // 0%, never a negative share (architecture-a-01).
+    percentCompleteBasisPoints: saved <= 0 ? 0 : saved >= target ? 10_000 : shareOf(saved, target),
     unitsRemaining: unitCost && unitCost > 0 ? Math.floor(remaining / unitCost) : null,
-    unitsEarned: unitCost && unitCost > 0 ? Math.floor(saved / unitCost) : null,
+    unitsEarned: unitCost && unitCost > 0 ? (saved <= 0 ? 0 : Math.floor(saved / unitCost)) : null,
   }
 }
 
@@ -65,12 +69,13 @@ export interface GoalProjection {
  * fabricated date when the contribution is zero — "never" is the honest
  * answer, and CONSTRAINTS.md forbids a silent numeric fallback here.
  */
-export function projectGoal(
-  goal: SavingsGoal,
-  weeklyContributionCents: number,
-  asOf: IsoDate,
-): GoalProjection {
-  const weekly = cents(weeklyContributionCents)
+export function projectGoal(input: {
+  readonly goal: SavingsGoal
+  readonly weeklyContributionCents: number
+  readonly asOf: IsoDate
+}): GoalProjection {
+  const { goal, asOf } = input
+  const weekly = cents(input.weeklyContributionCents)
   const { remainingCents } = goalProgress(goal)
 
   if (remainingCents === 0) return { weeksRemaining: 0, projectedDate: asOf }
@@ -81,13 +86,14 @@ export function projectGoal(
 }
 
 /** The weekly contribution that lands the goal on `targetDate`. */
-export function requiredWeeklyContribution(
-  goal: SavingsGoal,
-  asOf: IsoDate,
-  targetDate: IsoDate,
-): Cents {
+export function requiredWeeklyContribution(input: {
+  readonly goal: SavingsGoal
+  readonly asOf: IsoDate
+  readonly targetDate: IsoDate
+}): { readonly weeklyCents: Cents } {
+  const { goal, asOf, targetDate } = input
   const { remainingCents } = goalProgress(goal)
-  if (remainingCents === 0) return ZERO_CENTS
+  if (remainingCents === 0) return { weeklyCents: ZERO_CENTS }
 
   const days = daysBetween(asOf, targetDate)
   if (days <= 0) {
@@ -95,7 +101,7 @@ export function requiredWeeklyContribution(
       `Target date ${targetDate} is not after ${asOf}; no weekly contribution can reach it.`,
     )
   }
-  return cents(Math.ceil(remainingCents / (days / 7)))
+  return { weeklyCents: cents(Math.ceil(remainingCents / (days / 7))) }
 }
 
 export interface TimeEquivalent {
@@ -108,9 +114,9 @@ export interface TimeEquivalent {
  * What a purchase costs in goal-units, for the tradeoff framing.
  * At $275/hr, an $80 dinner is 17 minutes of flight time.
  */
-export function timeEquivalent(amountCents: number, unitCostPerHourCents: number): TimeEquivalent {
-  const amount = cents(amountCents)
-  const rate = cents(unitCostPerHourCents)
+export function timeEquivalent(input: { readonly amountCents: number; readonly unitCostPerHourCents: number }): TimeEquivalent {
+  const amount = cents(input.amountCents)
+  const rate = cents(input.unitCostPerHourCents)
   if (rate <= 0) throw new RangeError('Unit cost per hour must be positive')
 
   const totalMinutes = Math.round((amount * 60) / rate)

@@ -102,9 +102,9 @@ export function paydaysIn(input: { readonly schedule: PaySchedule; readonly from
  * largest integer a double holds. Amounts and budgets are never below zero
  * (0008, 0009), so one that is is refused rather than rounded some way.
  */
-export function payShare(input: { readonly monthlyCents: number; readonly frequency: PayFrequency }): Cents {
+export function payShare(input: { readonly monthlyCents: number; readonly frequency: PayFrequency }): { readonly shareCents: Cents } {
   const monthly = cents(input.monthlyCents)
   if (monthly < 0) throw new RangeError(`A monthly amount to share cannot be negative, received ${monthly}`)
   const paydays = BigInt(PAYDAYS_A_YEAR[input.frequency])
-  return cents(Number((BigInt(monthly) * 24n + paydays) / (2n * paydays)))
+  return { shareCents: cents(Number((BigInt(monthly) * 24n + paydays) / (2n * paydays))) }
 }

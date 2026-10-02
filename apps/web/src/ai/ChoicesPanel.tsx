@@ -5,7 +5,7 @@ import { Button } from '../components/ui/button.js'
 import { NativeSelect, SWITCH } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { hashOf } from '../nav.js'
-import { DAILY_CAPS, moved, readChoices, saveChoices, type AiChoices } from './choices.js'
+import { DAILY_CAPS, moved, readChoices, saveChoices, saveEnabled, type AiChoices } from './choices.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
 
 const NAME: Readonly<Record<AiProvider, string>> = {
@@ -34,7 +34,9 @@ function keyLine(s: AiServiceStatus): string {
 type Loaded = { readonly state: 'loading' } | { readonly state: 'missing' | 'unreachable' } | { readonly state: 'ready'; readonly choices: AiChoices }
 
 /**
- * Try in this order, Use paid services and Daily limit (plan §8.3, A11),
+ * Use AI, the switch that stops anything being sent to an AI service
+ * (plan §8.3, backend-c2-01), then Try in this order, Use paid services
+ * and Daily limit (plan §8.3, A11),
  * with today's calls. Each change is saved to ai_settings at once, and the
  * helper follows it from its next call. If 0016 is not in, this panel says
  * so in one line and the rest of AI settings still works.
@@ -44,7 +46,7 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
   const [loaded, setLoaded] = useState<Loaded>({ state: 'loading' })
   const [saving, setSaving] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
-  const ids = { order: useId(), paid: useId(), cap: useId(), capHint: useId() }
+  const ids = { use: useId(), order: useId(), paid: useId(), cap: useId(), capHint: useId() }
 
   useEffect(() => {
     let live = true
@@ -76,7 +78,8 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
     setSaving(true)
     setProblem(null)
     setLoaded({ state: 'ready', choices: next })
-    const saved = await saveChoices(supabase, userId, next)
+    // The switch writes its own column alone; the rest write theirs together.
+    const saved = next.enabled !== choices.enabled ? await saveEnabled(supabase, userId, next.enabled) : await saveChoices(supabase, userId, next)
     setSaving(false)
     if (saved !== true) {
       // Show what is really stored: the change did not happen.
@@ -93,7 +96,27 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
     <div className="space-y-2">
       {/* Mockup A: the order, paid services and the daily limit in one card, split by rules. */}
       <div className="divide-y rounded-xl border bg-card px-5 sm:px-6">
-        <section aria-labelledby={ids.order} className="space-y-3 pb-5 pt-5 sm:pt-6">
+        <section aria-label="Use AI" className="space-y-1 pb-4 pt-4 sm:pt-5">
+          <label htmlFor={ids.use} className="flex min-h-11 cursor-pointer items-center gap-3">
+            <span className="flex-1 text-lg font-semibold leading-tight">Use AI</span>
+            <input
+              id={ids.use}
+              type="checkbox"
+              role="switch"
+              className={SWITCH}
+              checked={choices.enabled}
+              disabled={saving}
+              onChange={(e) => void change({ ...choices, enabled: e.target.checked })}
+            />
+          </label>
+          <p className="text-sm text-muted-foreground">
+            {choices.enabled
+              ? 'On: the services below are asked, in their order, for the Coach, suggestions, Just type it and receipt photos.'
+              : 'Off: the Coach, suggestions, Just type it and receipt photos send nothing to any AI service and use the app’s own words. AI apps you connect have their own switch in Settings.'}
+          </p>
+        </section>
+
+        <section aria-labelledby={ids.order} className="space-y-3 pb-5 pt-5">
           <h2 id={ids.order} className="text-lg font-semibold leading-tight">
             Try in this order
           </h2>

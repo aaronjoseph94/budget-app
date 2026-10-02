@@ -41,6 +41,9 @@ const MESSAGES: Record<string, string> = {
   provider_error: 'Gemini could not read that photo right now. Try again in a moment.',
   bad_request: 'That photo could not be sent. Try a different one.',
   image_unreadable: 'That file could not be opened as a photo.',
+  // read-receipt reads the Use AI switch itself, behind an older helper
+  // that does not (architecture-c2-04).
+  ai_off: 'AI is off in AI settings, so the photo was not read. Type it in below.',
 }
 
 const fallback = 'Receipt reading is not available right now. Try again, or type it in.'
@@ -49,12 +52,15 @@ const fallback = 'Receipt reading is not available right now. Try again, or type
 const BY: Readonly<Record<AiProvider, string>> = { gemini: 'Gemini', groq: 'Groq', openrouter: 'OpenRouter', openai: 'OpenAI', anthropic: 'Anthropic' }
 
 /**
- * When read-receipt answers instead: the helper is not deployed, 0016 is
- * not pasted, or the helper cannot do its part (an older copy refuses the
- * receipt task as a bad request, which reads as helper_error). The owner's
- * own choices, AI off, a limit or a rest, are never gone around.
+ * When read-receipt answers instead: the helper is not deployed, or 0016 is
+ * not pasted, so there are no AI settings to go around. Never on
+ * helper_error: the helper says that for a database or sign-in hiccup, a
+ * request it refused, or a crash, all before it has read whether the owner
+ * turned AI off, and read-receipt never reads it (backend-b-01). An older
+ * helper that refuses the receipt task is flagged by One-time updates. The
+ * owner's own choices, AI off, a limit or a rest, are never gone around.
  */
-const FALLS_BACK: ReadonlySet<AiState> = new Set(['not_deployed', 'needs_update', 'helper_error'])
+const FALLS_BACK: ReadonlySet<AiState> = new Set(['not_deployed', 'needs_update'])
 
 /** Why the helper read nothing, in the Photo tab's words, with the one place that fixes it. */
 function stopped(state: AiState, sentence: string): Extract<ReceiptRead, { ok: false }> {
@@ -135,7 +141,9 @@ export async function readReceiptPhoto(supabase: SupabaseClient, photo: ReceiptP
 
 /** read-receipt, as the app called it before the helper: the Gemini secret, one model, no failover. */
 async function viaReadReceipt(supabase: SupabaseClient, photo: ReceiptPhoto): Promise<ReceiptRead> {
-  const { data, error } = await supabase.functions.invoke('read-receipt', { body: photo })
+  // Past read-receipt's 10 s sign-in check plus its 30 s wait for Gemini, with
+  // room for a cold start, so its own 504 answers first (backend-b-05, review-r-02).
+  const { data, error } = await supabase.functions.invoke('read-receipt', { body: photo, timeout: 50_000 })
 
   if (error !== null) {
     // The function answers failures with { ok: false, code }. supabase-js

@@ -69,6 +69,7 @@ export interface FakeTables {
   /** The owner's AI choices (0016), as the app writes them. */
   ai_settings: {
     readonly user_id: string
+    readonly enabled?: boolean
     readonly models?: Readonly<Record<string, string>>
     readonly provider_order?: readonly string[]
     readonly allow_paid?: boolean
@@ -441,7 +442,10 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
       functions.calls.push(body)
       if (functions.ai === null) return json({ code: 'NOT_FOUND', message: 'Requested function was not found' }, 404)
-      return functions.ai(body)
+      // As a real fetch does, a request given up on stops waiting for its answer.
+      const signal = init?.signal
+      const given = new Promise<never>((_, reject) => signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError'))))
+      return Promise.race([functions.ai(body), given])
     }
     if (url.pathname === '/functions/v1/mcp/health') {
       if (functions.mcpHealth === null) return json({ code: 'NOT_FOUND', message: 'Requested function was not found' }, 404)
@@ -456,7 +460,10 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
       functions.receiptCalls.push(body)
       if (functions.readReceipt === null) return json({ code: 'NOT_FOUND', message: 'Requested function was not found' }, 404)
-      return functions.readReceipt(body)
+      // As a real fetch does, a request given up on stops waiting for its answer.
+      const signal = init?.signal
+      const given = new Promise<never>((_, reject) => signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError'))))
+      return Promise.race([functions.readReceipt(body), given])
     }
     const target = url.pathname.replace(/^\/rest\/v1\//, '')
     const failure = failures.get(target) ?? failures.get(`${method} ${target}`)

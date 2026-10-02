@@ -66,7 +66,7 @@ export function goalsProgress(input: GoalsProgressInput): GoalsProgressOutput {
         hours:
           g.unitCostCents === null || saved < 0
             ? null
-            : { saved: timeEquivalent(saved, g.unitCostCents).hours, target: timeEquivalent(target, g.unitCostCents).hours },
+            : { saved: timeEquivalent({ amountCents: saved, unitCostPerHourCents: g.unitCostCents }).hours, target: timeEquivalent({ amountCents: target, unitCostPerHourCents: g.unitCostCents }).hours },
       }
     }),
   }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_CHOICES, moved, orderOf, readChoices, saveChoices } from '../src/ai/choices.js'
+import { DEFAULT_CHOICES, moved, orderOf, readChoices, saveChoices, saveEnabled } from '../src/ai/choices.js'
 import { createFakeSupabase } from './fake-supabase.js'
 
 /**
@@ -26,17 +26,29 @@ describe('the order', () => {
 describe('reading and saving', () => {
   it('gives 0016’s defaults when nothing is saved: free Gemini first, paid off, 40 a day', async () => {
     expect(await readChoices(createFakeSupabase().client, 'u1')).toEqual({ ok: true, choices: DEFAULT_CHOICES })
-    expect(DEFAULT_CHOICES).toEqual({ order: ['gemini', 'groq', 'openrouter', 'openai', 'anthropic'], allowPaid: false, dailyCap: 40 })
+    expect(DEFAULT_CHOICES).toEqual({ enabled: true, order: ['gemini', 'groq', 'openrouter', 'openai', 'anthropic'], allowPaid: false, dailyCap: 40 })
   })
 
   it('reads the owner’s own row, and saves all three in one write, keeping the model choices', async () => {
     const fake = createFakeSupabase({ ai_settings: [{ user_id: 'u1', models: { gemini: 'gemini-3.5-flash' }, provider_order: ['groq'], allow_paid: true, daily_cap: 60 }] })
     const read = await readChoices(fake.client, 'u1')
-    expect(read).toEqual({ ok: true, choices: { order: ['groq', 'gemini', 'openrouter', 'openai', 'anthropic'], allowPaid: true, dailyCap: 60 } })
-    expect(await saveChoices(fake.client, 'u1', { order: ['anthropic', 'gemini'], allowPaid: false, dailyCap: 10 })).toBe(true)
+    expect(read).toEqual({ ok: true, choices: { enabled: true, order: ['groq', 'gemini', 'openrouter', 'openai', 'anthropic'], allowPaid: true, dailyCap: 60 } })
+    expect(await saveChoices(fake.client, 'u1', { enabled: true, order: ['anthropic', 'gemini'], allowPaid: false, dailyCap: 10 })).toBe(true)
     expect(fake.tables.ai_settings).toEqual([
       { user_id: 'u1', models: { gemini: 'gemini-3.5-flash' }, provider_order: ['anthropic', 'gemini'], allow_paid: false, daily_cap: 10 },
     ])
+  })
+
+  it('reads AI switched off, and saves the switch alone, keeping every other choice (backend-c2-01)', async () => {
+    const fake = createFakeSupabase({ ai_settings: [{ user_id: 'u1', enabled: false, models: { gemini: 'gemini-3.5-flash' }, provider_order: ['groq'], daily_cap: 60 }] })
+    expect(await readChoices(fake.client, 'u1')).toMatchObject({ ok: true, choices: { enabled: false, dailyCap: 60 } })
+    expect(await saveEnabled(fake.client, 'u1', true)).toBe(true)
+    expect(fake.tables.ai_settings).toEqual([{ user_id: 'u1', enabled: true, models: { gemini: 'gemini-3.5-flash' }, provider_order: ['groq'], daily_cap: 60 }])
+    const none = createFakeSupabase()
+    expect(await saveEnabled(none.client, 'u1', false)).toBe(true)
+    expect(none.tables.ai_settings).toMatchObject([{ user_id: 'u1', enabled: false }])
+    none.fail('ai_settings', '08006')
+    expect(await saveEnabled(none.client, 'u1', true)).toBe('unreachable')
   })
 
   it('tells a missing one-time update from a lost connection', async () => {

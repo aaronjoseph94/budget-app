@@ -20,6 +20,25 @@ web-build/
 *.xlsx
 *.xls
 *.csv
+# Statements come as PDFs and exports; receipts are phone photos. App icons
+# are PNG, so *.png stays tracked.
+*.pdf
+*.ofx
+*.qfx
+*.qif
+*.numbers
+*.ods
+*.heic
+*.heif
+*.jpg
+*.jpeg
+*.webp
+# Patterns here match case, and iPhones name files IMG_0001.HEIC.
+*.PDF
+*.HEIC
+*.HEIF
+*.JPG
+*.JPEG
 receipts/
 statements/
 !packages/*/test/fixtures/**/*.csv

@@ -3,7 +3,7 @@ import type { IsoDate } from '@budget/money-primitives'
 import {
   daysFromCivil,
   daysInMonth,
-  isoDate,
+  civilDate,
   resolveYear,
   type StatementPeriod,
 } from '../../src/formats/yearless-dates.js'
@@ -104,7 +104,7 @@ describe('the day arithmetic underneath', () => {
   })
 
   it('pads an ISO date', () => {
-    expect(isoDate(2026, 8, 6)).toBe('2026-08-06')
-    expect(isoDate(2026, 12, 31)).toBe('2026-12-31')
+    expect(civilDate(2026, 8, 6)).toBe('2026-08-06')
+    expect(civilDate(2026, 12, 31)).toBe('2026-12-31')
   })
 })

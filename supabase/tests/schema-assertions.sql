@@ -257,6 +257,39 @@ begin
   raise notice 'every public table has an owner policy';
 end $$;
 
+-- An owner policy alone does not isolate: permissive policies are OR'd, so a
+-- second `using (true)` beside it opens the table to every account and the
+-- check above still passes. So the owner policy must be the ONLY permissive
+-- policy on a public table. Restrictive policies (0019, 0020) only narrow it,
+-- and are left alone (backend-a-04).
+do $$
+declare loose text;
+begin
+  select string_agg(format('%s.%s', tablename, policyname), ', ' order by tablename, policyname) into loose
+    from pg_policies
+   where schemaname = 'public' and permissive = 'PERMISSIVE'
+     and not (cmd = 'ALL' and qual = '(user_id = auth.uid())' and with_check = '(user_id = auth.uid())');
+  if loose is not null then
+    raise exception 'permissive policies other than the owner''s: %', loose;
+  end if;
+  raise notice 'the owner policy is the only permissive policy on every public table';
+end $$;
+
+-- And no SECURITY DEFINER function in public is callable by the anonymous
+-- role, found from the catalog rather than kept as a list by hand (N12).
+do $$
+declare open_ text;
+begin
+  select string_agg(oid::regprocedure::text, ', ') into open_
+    from pg_proc
+   where pronamespace = 'public'::regnamespace and prosecdef
+     and has_function_privilege('anon', oid, 'execute');
+  if open_ is not null then
+    raise exception 'SECURITY DEFINER functions the anonymous role can call: %', open_;
+  end if;
+  raise notice 'the anonymous role can call no SECURITY DEFINER function';
+end $$;
+
 -- The receipts bucket is private. A public bucket puts every receipt behind a
 -- guessable URL with no authentication at all.
 do $$
@@ -2301,7 +2334,7 @@ end $$;
 -- ---------------------------------------------------------------------------
 -- Each guarded function is exactly as it stood before 0019, plus its guard as
 -- the first statement, with the same settings and grants. Read as they stood
--- before 0032, which changes two of them again and is checked on its own.
+-- before 0022, which changes save_import again and is checked on its own.
 do $$
 declare
   r     record;
@@ -2312,8 +2345,8 @@ declare
 begin
   for r in select * from verify.guarded_before loop
     select prosrc, prosecdef, provolatile, proconfig, acl into p
-      from verify.before_0032 where fn = r.fn;
-    if not found then raise exception '% is not among the functions the browser could call before 0032', r.fn; end if;
+      from verify.before_0022 where fn = r.fn;
+    if not found then raise exception '% is not among the functions the browser could call before 0022', r.fn; end if;
     guard := case r.lang when 'sql' then E'\n  select public._not_an_ai_app();' else E'\n  perform public._not_an_ai_app();' end;
     at := case r.lang when 'sql' then 1 else strpos(r.prosrc, E'\nbegin\n') + 6 end;
     if strpos(p.prosrc, guard) <> at or replace(p.prosrc, guard, '') <> r.prosrc then
@@ -2673,9 +2706,9 @@ begin
       ('bad_date', acc, day + 2, -1250, 'Lunch at Subway', 1, h.lunch, 1, null),
       ('bad_date', acc, day - 366, -1250, 'Lunch at Subway', 1, h.lunch, 1, null),
       ('bad_words', acc, day, -1250, E'Lunch\tat Subway', 1, h.lunch, 1, null),
-      ('bad_words', acc, day, -1250, E'Lunch ‮yawbus', 1, h.lunch, 1, null),
+      ('bad_words', acc, day, -1250, E'Lunch \u202Eyawbus', 1, h.lunch, 1, null),
       ('bad_words', acc, day, -1250, E'Lunch\u0085at Subway', 1, h.lunch, 1, null),
-      ('bad_words', acc, day, -1250, E'Lunch⁦at Subway', 1, h.lunch, 1, null),
+      ('bad_words', acc, day, -1250, E'Lunch\u2066at Subway', 1, h.lunch, 1, null),
       ('bad_occurrence', acc, day, -1250, 'Lunch at Subway', 0, h.lunch, 1, null),
       ('bad_occurrence', acc, day, -1250, 'Lunch at Subway', 10, h.lunch, 1, null),
       ('no_account', 'aaaaaaaa-0000-4000-8000-000000000301'::uuid, day, -1250, 'Lunch at Subway', 1, h.lunch, 1, null),
@@ -2779,6 +2812,542 @@ begin
 end $$;
 rollback;
 
+-- ---------------------------------------------------------------------------
+-- 0021: a category is held only by what still files money into it. A guess
+-- on a row the owner rejected, or an approval whose ledger row the owner
+-- removed, no longer stops the category being removed (backend-a-01, a-02).
+-- A category a ledger row still names is still refused.
+-- ---------------------------------------------------------------------------
+reset role;
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000002101', '11111111-1111-4111-8111-111111111111', 'Guessed then rejected', 'variable'),
+  ('cccccccc-0000-4000-8000-000000002102', '11111111-1111-4111-8111-111111111111', 'Typed then removed', 'variable'),
+  ('cccccccc-0000-4000-8000-000000002103', '11111111-1111-4111-8111-111111111111', 'Still in the ledger', 'variable');
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+do $$
+declare
+  acc     uuid := 'aaaaaaaa-0000-4000-8000-000000000001';
+  guessed uuid := 'cccccccc-0000-4000-8000-000000002101';
+  typed   uuid := 'cccccccc-0000-4000-8000-000000002102';
+  kept    uuid := 'cccccccc-0000-4000-8000-000000002103';
+  r       record;
+  cand    uuid;
+  c       record;
+begin
+  -- a-01: suggested, then rejected, then the category goes.
+  select * into r from public.save_import(acc, 'card_csv', 1, jsonb_build_array(jsonb_build_object(
+    'posted_on','2025-08-01','amount_cents',-910,'merchant','HELD 2101','merchant_raw','HELD 2101',
+    'dedupe_hash', repeat('2',63) || '1', 'dedupe_hash_v', 1)), '[]'::jsonb);
+  select id into cand from public.ingest_candidates where batch_id = r.batch_id;
+  if public.suggest_candidate_categories(jsonb_build_array(jsonb_build_object('candidate', cand, 'category', guessed))) <> 1 then
+    raise exception 'the guess was not set';
+  end if;
+  perform public.reject_candidate(cand);
+  delete from public.categories where id = guessed;
+  select status::text, category_id, rejection_reason::text into c from public.ingest_candidates where id = cand;
+  if c.status <> 'rejected' or c.category_id is not null or c.rejection_reason <> 'user_rejected' then
+    raise exception 'a rejected row kept its guess, or lost its decision: %', c;
+  end if;
+
+  -- a-02: typed, its ledger row removed, then the category goes.
+  cand := public.add_typed_transaction(acc, '2025-08-02', -920, 'HELD 2102', 'Held 2102', typed);
+  delete from public.transactions where candidate_id = cand;
+  delete from public.categories where id = typed;
+  select status::text, category_id, rejection_reason::text into c from public.ingest_candidates where id = cand;
+  if c.status <> 'rejected' or c.category_id is not null or c.rejection_reason <> 'user_rejected' then
+    raise exception 'an approval with no ledger row still reads %', c;
+  end if;
+
+  -- A charge still in the ledger still holds its category.
+  cand := public.add_typed_transaction(acc, '2025-08-03', -930, 'HELD 2103', 'Held 2103', kept);
+  begin
+    delete from public.categories where id = kept;
+    raise exception 'NOT REFUSED: a category a ledger row names was removed';
+  exception when foreign_key_violation then null;
+  end;
+  if not exists (select 1 from public.ingest_candidates where id = cand and status = 'approved' and category_id = kept) then
+    raise exception 'a refused delete still changed the approval behind a ledger row';
+  end if;
+  raise notice 'a guess on a rejected row, or an approval with no ledger row left, no longer holds its category';
+end $$;
+reset role;
+
+-- ---------------------------------------------------------------------------
+-- 0022: a charge the owner already decided on is never filed by a learned
+-- shop on its own. Removed from All transactions and brought in again, it
+-- waits in Review (backend-c2-02).
+-- ---------------------------------------------------------------------------
+reset role;
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000002201', '11111111-1111-4111-8111-111111111111', 'Cafes 2201', 'variable');
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+do $$
+declare
+  acc   uuid := 'aaaaaaaa-0000-4000-8000-000000000001';
+  cafes uuid := 'cccccccc-0000-4000-8000-000000002201';
+  row_  jsonb := jsonb_build_object('posted_on','2025-09-01','amount_cents',-500,'merchant','CAFE 2201',
+                   'merchant_raw','CAFE 2201','dedupe_hash', repeat('2',62) || '01', 'dedupe_hash_v', 1);
+  other jsonb := jsonb_build_object('posted_on','2025-09-02','amount_cents',-600,'merchant','CAFE 2201',
+                   'merchant_raw','CAFE 2201','dedupe_hash', repeat('2',62) || '02', 'dedupe_hash_v', 1);
+  kept  jsonb := jsonb_build_object('posted_on','2025-09-03','amount_cents',-700,'merchant','CAFE 2201',
+                   'merchant_raw','CAFE 2201','dedupe_hash', repeat('2',62) || '03', 'dedupe_hash_v', 1);
+  r     record;
+  cand  uuid;
+begin
+  -- Approved by hand, which teaches the rule, then removed from the ledger.
+  select * into r from public.save_import(acc, 'card_csv', 1, jsonb_build_array(row_), '[]'::jsonb);
+  select id into cand from public.ingest_candidates where batch_id = r.batch_id;
+  perform public.approve_candidate(cand, cafes);
+  delete from public.transactions where candidate_id = cand;
+
+  -- And a charge the rule filed that stays in the ledger.
+  select * into r from public.save_import(acc, 'card_csv', 1, jsonb_build_array(kept), '[]'::jsonb);
+  if r.auto_approved <> 1 then raise exception 'the learned shop did not file a new charge: %', r; end if;
+
+  -- The same statement again, with a new charge from the same shop.
+  select * into r from public.save_import(acc, 'card_csv', 3, jsonb_build_array(row_, other, kept), '[]'::jsonb);
+  if r.inserted <> 2 or r.deduped <> 1 or r.auto_approved <> 1 then
+    raise exception 'the import again read inserted=% deduped=% auto_approved=%, not 2, 1, 1', r.inserted, r.deduped, r.auto_approved;
+  end if;
+  if exists (select 1 from public.transactions where dedupe_hash = row_->>'dedupe_hash') then
+    raise exception 'a charge removed from the ledger came back without review';
+  end if;
+  if not exists (select 1 from public.ingest_candidates where batch_id = r.batch_id
+                  and dedupe_hash = row_->>'dedupe_hash' and status = 'pending' and category_id is null) then
+    raise exception 'the removed charge is not waiting in Review';
+  end if;
+  if not exists (select 1 from public.transactions where dedupe_hash = other->>'dedupe_hash') then
+    raise exception 'a new charge from the same shop was not filed by its rule';
+  end if;
+  raise notice 'a charge removed from the ledger waits in Review when brought in again; new ones are still filed';
+end $$;
+reset role;
+
+-- 0022 changed save_import by that one condition and nothing else: the body
+-- as it stood before 0022, plus the condition, with the same settings and
+-- grants; every other function the browser may call is as it stood. Read
+-- as they stood before 0027, which changes save_import again and is
+-- checked on its own.
+do $$
+declare
+  r    record;
+  p    record;
+  cond constant text := E'\n       and not exists (select 1 from public.ingest_candidates d\n                        where d.user_id = v_user and d.dedupe_hash = c.dedupe_hash and d.id <> c.id)';
+  at   constant text := E'\n       and r.match_merchant = c.merchant';
+begin
+  for r in select * from verify.before_0022 loop
+    select prosrc, prosecdef, provolatile, proconfig, acl into p
+      from verify.before_0027 where fn = r.fn;
+    if not found then raise exception '% is gone after 0022', r.fn; end if;
+    if r.fn = 'save_import(uuid,ingest_source,integer,jsonb,jsonb)' then
+      if p.prosrc <> replace(r.prosrc, at, at || cond) or strpos(r.prosrc, at) = 0 then
+        raise exception 'save_import is not its old body plus the one condition';
+      end if;
+    elsif p.prosrc <> r.prosrc then
+      raise exception '% changed in 0022', r.fn;
+    end if;
+    if (p.prosecdef, p.provolatile, p.proconfig, p.acl) is distinct from (r.prosecdef, r.provolatile, r.proconfig, r.acl) then
+      raise exception '% changed its settings or grants in 0022', r.fn;
+    end if;
+  end loop;
+  if not exists (select 1 from verify.before_0022 where fn = 'save_import(uuid,ingest_source,integer,jsonb,jsonb)') then
+    raise exception 'save_import was not among the functions checked';
+  end if;
+  raise notice '0022 changed save_import by one condition, and nothing else';
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- 0027: a second photo of a receipt already brought in waits in Review,
+-- even for a learned shop. Another day or total from that shop, or a
+-- statement row, is still filed by its rule (review-r-03).
+-- ---------------------------------------------------------------------------
+reset role;
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000002701', '11111111-1111-4111-8111-111111111111', 'Bakery 2701', 'variable');
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+do $$
+declare
+  acc    uuid := 'aaaaaaaa-0000-4000-8000-000000000001';
+  bakery uuid := 'cccccccc-0000-4000-8000-000000002701';
+  first_ jsonb := jsonb_build_object('posted_on','2025-10-01','amount_cents',-1250,'merchant','BAKERY 2701',
+                    'merchant_raw','BAKERY 2701','dedupe_hash', repeat('7',62) || '01', 'dedupe_hash_v', 1);
+  again  jsonb := jsonb_build_object('posted_on','2025-10-01','amount_cents',-1250,'merchant','BAKERY 2701',
+                    'merchant_raw','BAKERY 2701','dedupe_hash', repeat('7',62) || '02', 'dedupe_hash_v', 1);
+  later  jsonb := jsonb_build_object('posted_on','2025-10-08','amount_cents',-1250,'merchant','BAKERY 2701',
+                    'merchant_raw','BAKERY 2701','dedupe_hash', repeat('7',62) || '03', 'dedupe_hash_v', 1);
+  card   jsonb := jsonb_build_object('posted_on','2025-10-01','amount_cents',-1250,'merchant','BAKERY 2701',
+                    'merchant_raw','BAKERY 2701','dedupe_hash', repeat('7',62) || '04', 'dedupe_hash_v', 1);
+  r      record;
+  cand   uuid;
+  before_ bigint;
+begin
+  -- The first photo, approved by hand, which teaches the rule.
+  select * into r from public.save_import(acc, 'receipt_photo', 1, jsonb_build_array(first_), '[]'::jsonb);
+  select id into cand from public.ingest_candidates where batch_id = r.batch_id;
+  perform public.approve_candidate(cand, bakery);
+  select count(*) into before_ from public.transactions;
+
+  -- A second photo of the same receipt: another photo, so another hash.
+  select * into r from public.save_import(acc, 'receipt_photo', 1, jsonb_build_array(again), '[]'::jsonb);
+  if (r.inserted, r.deduped, r.auto_approved) is distinct from (1, 0, 0) then
+    raise exception 'the second photo read inserted=% deduped=% auto_approved=%, not 1, 0, 0', r.inserted, r.deduped, r.auto_approved;
+  end if;
+  if not exists (select 1 from public.ingest_candidates where batch_id = r.batch_id
+                  and dedupe_hash = again->>'dedupe_hash' and status = 'pending' and category_id is null) then
+    raise exception 'a second photo of a receipt already brought in is not waiting in Review';
+  end if;
+  if (select count(*) from public.transactions) <> before_ then
+    raise exception 'a second photo of a receipt already brought in went into the ledger without review';
+  end if;
+
+  -- Another day from the same shop is still filed by its rule.
+  select * into r from public.save_import(acc, 'receipt_photo', 1, jsonb_build_array(later), '[]'::jsonb);
+  if r.auto_approved <> 1 or not exists (select 1 from public.transactions where dedupe_hash = later->>'dedupe_hash') then
+    raise exception 'a receipt from a learned shop on another day was not filed by its rule: %', r;
+  end if;
+
+  -- A statement row alike is not a receipt photo, so 0027 lets it through;
+  -- but it is the receipt's own charge, in the ledger already, so 0029
+  -- holds it in Review (architecture-c2-02).
+  select * into r from public.save_import(acc, 'card_csv', 1, jsonb_build_array(card), '[]'::jsonb);
+  if r.auto_approved <> 0 or not exists (select 1 from public.ingest_candidates where batch_id = r.batch_id
+                                         and status = 'pending' and category_id is null) then
+    raise exception 'a statement row for a receipt already in the ledger was filed without review: %', r;
+  end if;
+  raise notice 'a second photo of a receipt waits in Review; other receipts are still filed';
+end $$;
+reset role;
+
+-- 0027 changed save_import by that one condition, right after 0022's, and
+-- nothing else: the body as it stood before 0027, plus the condition, with
+-- the same settings and grants; every other function the browser may call
+-- is as it stood.
+do $$
+declare
+  r    record;
+  p    record;
+  at   constant text := E'\n       and r.match_merchant = c.merchant'
+                     || E'\n       and not exists (select 1 from public.ingest_candidates d'
+                     || E'\n                        where d.user_id = v_user and d.dedupe_hash = c.dedupe_hash and d.id <> c.id)';
+  cond constant text := E'\n       and not (c.source = ''receipt_photo'' and exists (select 1 from public.ingest_candidates e'
+                     || E'\n                        where e.user_id = v_user and e.id <> c.id and e.source = ''receipt_photo'''
+                     || E'\n                          and e.posted_on = c.posted_on and e.amount_cents = c.amount_cents'
+                     || E'\n                          and e.merchant = c.merchant))';
+begin
+  for r in select * from verify.before_0027 loop
+    select prosrc, prosecdef, provolatile, proconfig, acl into p
+      from verify.before_0029 where fn = r.fn;
+    if not found then raise exception '% is gone after 0027', r.fn; end if;
+    if r.fn = 'save_import(uuid,ingest_source,integer,jsonb,jsonb)' then
+      if p.prosrc <> replace(r.prosrc, at, at || cond) or strpos(r.prosrc, at) = 0 then
+        raise exception 'save_import is not its old body plus the one condition';
+      end if;
+    elsif p.prosrc <> r.prosrc then
+      raise exception '% changed in 0027', r.fn;
+    end if;
+    if (p.prosecdef, p.provolatile, p.proconfig, p.acl) is distinct from (r.prosecdef, r.provolatile, r.proconfig, r.acl) then
+      raise exception '% changed its settings or grants in 0027', r.fn;
+    end if;
+  end loop;
+  if not exists (select 1 from verify.before_0027 where fn = 'save_import(uuid,ingest_source,integer,jsonb,jsonb)') then
+    raise exception 'save_import was not among the functions checked';
+  end if;
+  raise notice '0027 changed save_import by one condition, and nothing else';
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- 0029: a charge that looks like one already in the ledger (same account,
+-- amount and normalised shop, within three days) waits in Review, even for
+-- a learned shop: the same charge read from a PDF and from a CSV has two
+-- hashes, and was counted twice (architecture-c2-02).
+-- ---------------------------------------------------------------------------
+reset role;
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000002901', '11111111-1111-4111-8111-111111111111', 'Garden 2901', 'variable');
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+do $$
+declare
+  acc    uuid := 'aaaaaaaa-0000-4000-8000-000000000001';
+  garden uuid := 'cccccccc-0000-4000-8000-000000002901';
+  -- The PDF prints the transaction date and its own spelling of the shop;
+  -- the CSV the posting date, three days on, and another spelling. Both
+  -- normalise to the same shop, so the hashes differ and the rule matches.
+  pdf    jsonb := jsonb_build_object('posted_on','2025-11-03','amount_cents',-4210,'merchant','GARDEN 2901',
+                    'merchant_raw','SQ *GARDEN 2901','dedupe_hash', repeat('9',62) || '01', 'dedupe_hash_v', 1);
+  csv    jsonb := jsonb_build_object('posted_on','2025-11-06','amount_cents',-4210,'merchant','GARDEN 2901',
+                    'merchant_raw','GARDEN 2901','dedupe_hash', repeat('9',62) || '02', 'dedupe_hash_v', 1);
+  week   jsonb := jsonb_build_object('posted_on','2025-11-07','amount_cents',-4210,'merchant','GARDEN 2901',
+                    'merchant_raw','GARDEN 2901','dedupe_hash', repeat('9',62) || '03', 'dedupe_hash_v', 1);
+  other  jsonb := jsonb_build_object('posted_on','2025-11-04','amount_cents',-1999,'merchant','GARDEN 2901',
+                    'merchant_raw','GARDEN 2901','dedupe_hash', repeat('9',62) || '04', 'dedupe_hash_v', 1);
+  r      record;
+  cand   uuid;
+  before_ bigint;
+begin
+  -- From the PDF, approved by hand, which teaches the rule.
+  select * into r from public.save_import(acc, 'card_pdf', 1, jsonb_build_array(pdf), '[]'::jsonb);
+  select id into cand from public.ingest_candidates where batch_id = r.batch_id;
+  perform public.approve_candidate(cand, garden);
+  select count(*) into before_ from public.transactions;
+
+  -- The CSV of the same card: the same charge three days on waits; another
+  -- amount from the same shop is filed by its rule.
+  select * into r from public.save_import(acc, 'card_csv', 2, jsonb_build_array(csv, other), '[]'::jsonb);
+  if (r.inserted, r.deduped, r.auto_approved) is distinct from (2, 0, 1) then
+    raise exception 'the CSV read inserted=% deduped=% auto_approved=%, not 2, 0, 1', r.inserted, r.deduped, r.auto_approved;
+  end if;
+  if not exists (select 1 from public.ingest_candidates where batch_id = r.batch_id
+                  and dedupe_hash = csv->>'dedupe_hash' and status = 'pending' and category_id is null) then
+    raise exception 'a charge already in the ledger from the PDF is not waiting in Review';
+  end if;
+  if (select count(*) from public.transactions) <> before_ + 1
+     or not exists (select 1 from public.transactions where dedupe_hash = other->>'dedupe_hash') then
+    raise exception 'the PDF''s charge was filed twice, or another charge was not filed';
+  end if;
+
+  -- Four days on is outside the window, and is filed by its rule.
+  select * into r from public.save_import(acc, 'card_csv', 1, jsonb_build_array(week), '[]'::jsonb);
+  if r.auto_approved <> 1 then
+    raise exception 'a charge four days from its lookalike was not filed by its rule: %', r;
+  end if;
+  raise notice 'a charge already in the ledger under another hash waits in Review; others are still filed';
+end $$;
+reset role;
+
+-- 0029 changed save_import by that one condition, after 0027's, and nothing
+-- else: the body as it stood before 0029, plus the condition, with the same
+-- settings and grants; every other function the browser may call is as it
+-- stood. Read as they stood before 0030, since 0032 to 0036 change four of
+-- them again and are checked on their own.
+do $$
+declare
+  r    record;
+  p    record;
+  at   constant text := E'\n                          and e.merchant = c.merchant))';
+  cond constant text := E'\n       and not exists (select 1 from public.transactions t'
+                     || E'\n                        where t.user_id = v_user and t.account_id = c.account_id'
+                     || E'\n                          and t.amount_cents = c.amount_cents and t.merchant = c.merchant'
+                     || E'\n                          and t.posted_on between c.posted_on - 3 and c.posted_on + 3)';
+begin
+  for r in select * from verify.before_0029 loop
+    select prosrc, prosecdef, provolatile, proconfig, acl into p
+      from verify.before_0030 where fn = r.fn;
+    if not found then raise exception '% is gone after 0029', r.fn; end if;
+    if r.fn = 'save_import(uuid,ingest_source,integer,jsonb,jsonb)' then
+      if p.prosrc <> replace(r.prosrc, at, at || cond) or strpos(r.prosrc, at) = 0 then
+        raise exception 'save_import is not its old body plus the one condition';
+      end if;
+    elsif p.prosrc <> r.prosrc then
+      raise exception '% changed in 0029', r.fn;
+    end if;
+    if (p.prosecdef, p.provolatile, p.proconfig, p.acl) is distinct from (r.prosecdef, r.provolatile, r.proconfig, r.acl) then
+      raise exception '% changed its settings or grants in 0029', r.fn;
+    end if;
+  end loop;
+  if not exists (select 1 from verify.before_0029 where fn = 'save_import(uuid,ingest_source,integer,jsonb,jsonb)') then
+    raise exception 'save_import was not among the functions checked';
+  end if;
+  raise notice '0029 changed save_import by one condition, and nothing else';
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- 0023: a typed entry sent again, after an answer that never arrived, is
+-- the same entry: one ledger row, and its own batch says it was a repeat.
+-- Two entries typed alike are still two (backend-a-07, backend-b-03).
+-- ---------------------------------------------------------------------------
+reset role;
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000002301', '11111111-1111-4111-8111-111111111111', 'Cash 2301', 'variable');
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+do $$
+declare
+  acc    uuid := 'aaaaaaaa-0000-4000-8000-000000000001';
+  cash   uuid := 'cccccccc-0000-4000-8000-000000002301';
+  entry  uuid := '23232323-0000-4000-8000-000000000001';
+  first_ uuid;
+  again  uuid;
+  other  uuid;
+  b      record;
+begin
+  first_ := public.add_typed_transaction(acc, '2025-10-01', -450, 'COFFEE 2301', 'Coffee 2301', cash, entry);
+  again  := public.add_typed_transaction(acc, '2025-10-01', -450, 'COFFEE 2301', 'Coffee 2301', cash, entry);
+  if again <> first_ then raise exception 'the same entry sent again made a second candidate'; end if;
+  if (select count(*) from public.transactions where merchant = 'COFFEE 2301') <> 1 then
+    raise exception 'the same entry sent again reached the ledger twice';
+  end if;
+  select parsed, deduped, inserted, rejected into b from public.ingest_batches
+   where source = 'typed' and id <> (select batch_id from public.ingest_candidates where id = first_)
+     and account_id = acc order by created_at desc limit 1;
+  if (b.parsed, b.deduped, b.inserted, b.rejected) is distinct from (1, 1, 0, 0) then
+    raise exception 'the repeat''s batch reads %, not parsed 1 = deduped 1', b;
+  end if;
+
+  -- A second coffee, typed alike, is a second coffee.
+  other := public.add_typed_transaction(acc, '2025-10-01', -450, 'COFFEE 2301', 'Coffee 2301', cash, '23232323-0000-4000-8000-000000000002');
+  if other = first_ or (select count(*) from public.transactions where merchant = 'COFFEE 2301') <> 2 then
+    raise exception 'two entries typed alike were taken as one';
+  end if;
+  -- And the older call, with no entry, still posts every time.
+  perform public.add_typed_transaction(acc, '2025-10-01', -450, 'COFFEE 2301', 'Coffee 2301', cash);
+  if (select count(*) from public.transactions where merchant = 'COFFEE 2301') <> 3 then
+    raise exception 'the call without an entry stopped posting';
+  end if;
+  raise notice 'a typed entry sent again is one entry, and two typed alike are two';
+end $$;
+reset role;
+do $$
+begin
+  if has_function_privilege('anon', 'public.add_typed_transaction(uuid, date, bigint, text, text, uuid, uuid)', 'execute') then
+    raise exception 'the anonymous role can add a typed entry';
+  end if;
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- 0024: a learned shop is written only by approving or moving a charge, and
+-- names only its owner's category (backend-a-05).
+-- ---------------------------------------------------------------------------
+reset role;
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000002401', '11111111-1111-4111-8111-111111111111', 'Shops 2401', 'variable'),
+  ('cccccccc-0000-4000-8000-000000002402', '22222222-2222-4222-8222-222222222222', 'Theirs 2402', 'variable');
+insert into public.merchant_rules (id, user_id, match_merchant, category_id) values
+  ('dddddddd-0000-4000-8000-000000002401', '11111111-1111-4111-8111-111111111111', 'SHOP 2401', 'cccccccc-0000-4000-8000-000000002401');
+do $$
+begin
+  begin
+    insert into public.merchant_rules (user_id, match_merchant, category_id)
+    values ('11111111-1111-4111-8111-111111111111', 'SHOP 2402', 'cccccccc-0000-4000-8000-000000002402');
+    raise exception 'NOT REFUSED: a learned shop naming another account''s category';
+  exception when foreign_key_violation then null;
+  end;
+end $$;
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+do $$
+begin
+  begin
+    insert into public.merchant_rules (user_id, match_merchant, category_id)
+    values ('11111111-1111-4111-8111-111111111111', 'SHOP 2403', 'cccccccc-0000-4000-8000-000000002401');
+    raise exception 'NOT REFUSED: the browser wrote a learned shop itself';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    update public.merchant_rules set category_id = 'cccccccc-0000-4000-8000-000000002401' where id = 'dddddddd-0000-4000-8000-000000002401';
+    raise exception 'NOT REFUSED: the browser changed a learned shop itself';
+  exception when insufficient_privilege then null;
+  end;
+  -- Forget, in Settings, still works.
+  delete from public.merchant_rules where id = 'dddddddd-0000-4000-8000-000000002401';
+  if exists (select 1 from public.merchant_rules where id = 'dddddddd-0000-4000-8000-000000002401') then
+    raise exception 'the browser could not forget a learned shop';
+  end if;
+  raise notice 'learned shops are written only by approving, name only their owner''s categories, and can be forgotten';
+end $$;
+reset role;
+
+-- ---------------------------------------------------------------------------
+-- 0025: stored text refuses what IngestedTextSchema refuses: C1 controls,
+-- line and paragraph separators, and the bidi embeddings, overrides and
+-- isolates, which make a reviewer read one thing and approve another
+-- (backend-a-06). Ordinary accented, CJK and symbol text is still stored.
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  bad text;
+  n   int := 0;
+begin
+  foreach bad in array array[
+    'BAD' || chr(8238) || 'NAME', 'LINE' || chr(8232) || 'BREAK', 'PARA' || chr(8233) || 'BREAK',
+    'C1' || chr(133) || 'NEL', 'C1' || chr(128) || 'LOW', 'C1' || chr(159) || 'HIGH',
+    'EMBED' || chr(8234) || 'LRE', 'ISOLATE' || chr(8294) || 'LRI', 'ISOLATE' || chr(8297) || 'PDI'
+  ] loop
+    begin
+      insert into public.categories (user_id, name, kind) values ('11111111-1111-4111-8111-111111111111', bad, 'variable');
+      raise exception 'NOT REFUSED: stored text with format character %', n;
+    exception when check_violation then n := n + 1;
+    end;
+  end loop;
+  insert into public.categories (user_id, name, kind) values
+    ('11111111-1111-4111-8111-111111111111', 'Café Zürich 2501', 'variable'),
+    ('11111111-1111-4111-8111-111111111111', '咖啡 2501', 'variable'),
+    ('11111111-1111-4111-8111-111111111111', 'Fun € ☕ 2501', 'variable');
+  raise notice 'stored text refuses % kinds of format character, and keeps accented, CJK and symbol text', n;
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- 0026: a goal whose fund moved off the Savings list can still be
+-- reordered, paused, reached or retyped; only linking it to a category
+-- that is not on Savings is refused (backend-a-08).
+-- ---------------------------------------------------------------------------
+reset role;
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000002601', '11111111-1111-4111-8111-111111111111', 'Fund 2601', 'savings'),
+  ('cccccccc-0000-4000-8000-000000002602', '11111111-1111-4111-8111-111111111111', 'Spend 2602', 'variable');
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+do $$
+declare
+  fund  uuid := 'cccccccc-0000-4000-8000-000000002601';
+  spend uuid := 'cccccccc-0000-4000-8000-000000002602';
+  goal  uuid;
+begin
+  insert into public.savings_goals (user_id, name, target_cents, saved_cents, category_id, balance_as_of)
+    values ('11111111-1111-4111-8111-111111111111', 'Fund 2601', 100000, 5000, fund, '2026-09-01')
+    returning id into goal;
+  -- Nothing stops the fund's category moving list (N52).
+  update public.categories set kind = 'variable' where id = fund;
+
+  update public.savings_goals set sort_order = 3 where id = goal;
+  update public.savings_goals set status = 'paused' where id = goal;
+  update public.savings_goals set saved_cents = 6000, balance_as_of = '2026-09-30' where id = goal;
+  update public.savings_goals set status = 'reached', reached_on = '2026-09-30' where id = goal;
+
+  begin
+    update public.savings_goals set category_id = spend where id = goal;
+    raise exception 'NOT REFUSED: a goal linked to a category off the Savings list';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.savings_goals (user_id, name, target_cents, category_id, balance_as_of)
+      values ('11111111-1111-4111-8111-111111111111', 'Spend 2602', 100000, spend, '2026-09-01');
+    raise exception 'NOT REFUSED: a new goal on a category off the Savings list';
+  exception when check_violation then null;
+  end;
+  raise notice 'a goal whose fund moved list can still be changed; linking off Savings is still refused';
+end $$;
+reset role;
+
+-- 0028: the AI's kept words refuse the invisible characters the app's rule
+-- refuses (security-b-01): a bidi override around a blank draws a figure
+-- reversed, and a zero-width space or soft hyphen hides a number word.
+set role app_user;
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+do $$
+declare
+  u   uuid := '11111111-1111-4111-8111-111111111111';
+  bad text;
+begin
+  foreach bad in array array[E'spent \u202E{{A.now}}\u202C', E'spent \u2066{{A.now}}\u2069', E't\u200Bwenty', E'fif\u00ADty',
+                             E'cryp\u200Dto', E'a\uFEFFb', E'a\u061Cb', E'a\u2060b', E'a\uE000b'] loop
+    begin
+      insert into public.ai_notes (user_id, surface, scope, facts_sig, prompt_v, body, provider, model)
+        values (u, 'daily', 'day:2026-10-01', repeat('e', 64), 1, jsonb_build_object('summary', bad), 'gemini', 'gemini-3.5-flash-lite');
+      raise exception 'NOT REFUSED: AI words holding U+%', upper(to_hex(ascii(regexp_replace(bad, '^[^\u00AD\u061C\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF\uE000]*', ''))));
+    exception when check_violation then null;
+    end;
+  end loop;
+  -- Accents, other scripts and plain punctuation are still words.
+  insert into public.ai_notes (user_id, surface, scope, facts_sig, prompt_v, body, provider, model)
+    values (u, 'daily', 'day:2026-10-01', repeat('e', 64), 1, '{"summary": "Café, 東京 and naïve — still words."}', 'gemini', 'gemini-3.5-flash-lite');
+  delete from public.ai_notes where facts_sig = repeat('e', 64);
+  raise notice 'the AI''s kept words refuse invisible characters';
+end $$;
+reset role;
 -- ---------------------------------------------------------------------------
 -- 0030: a disconnected AI app is refused at once. The gate lets a token
 -- through only while the sign-in it came from is still live: Disconnect
@@ -3416,3 +3985,92 @@ begin
   raise notice '0037 says to paste 0036 first when it is missing';
 end $$;
 rollback;
+
+-- ---------------------------------------------------------------------------
+-- 0038 (written as 0030 before the merge): shop names stored while 'IN*'
+-- was not a processor prefix are tidied as the app now tidies them; a
+-- learned shop follows, and where two would share a name the more recent
+-- is kept (architecture-a-10). Rows seeded by
+-- supabase/tests/before/0038_intuit_prefix_merchants.sql.
+-- ---------------------------------------------------------------------------
+reset role;
+do $$
+declare
+  u3 constant uuid := '33333333-3333-4333-8333-333333333333';
+begin
+  if (select array_agg(merchant::text order by id) from public.ingest_candidates where user_id = u3 and batch_id = 'bbbbbbbb-0000-4000-8000-000000003001')
+     is distinct from array['ACME PLUMBING', 'ACME PLUMBING', 'IN*KEEP'] then
+    raise exception 'the review rows were not tidied as the app now tidies them: %',
+      (select array_agg(merchant::text order by id) from public.ingest_candidates where user_id = u3 and batch_id = 'bbbbbbbb-0000-4000-8000-000000003001');
+  end if;
+  if (select merchant from public.transactions where candidate_id = 'eeeeeeee-0000-4000-8000-000000003001') <> 'ACME PLUMBING'
+     or (select merchant_raw from public.transactions where candidate_id = 'eeeeeeee-0000-4000-8000-000000003001') <> 'IN*ACME PLUMBING 4155551234' then
+    raise exception 'the ledger row was not tidied, or its statement text changed';
+  end if;
+  if (select array_agg(match_merchant::text || '=' || category_id order by match_merchant) from public.merchant_rules where user_id = u3)
+     is distinct from array['ACME PLUMBING=cccccccc-0000-4000-8000-000000003001', 'IN*KEEP=cccccccc-0000-4000-8000-000000003002',
+                            'ZED SHOP=cccccccc-0000-4000-8000-000000003002'] then
+    raise exception 'the learned shops are not as expected: %',
+      (select array_agg(match_merchant::text || '=' || category_id order by match_merchant) from public.merchant_rules where user_id = u3);
+  end if;
+  -- Two old names that both tidy to 'ZED SHOP': both review rows follow,
+  -- and only the learned shop used most recently is left.
+  if (select array_agg(merchant::text order by id) from public.ingest_candidates where user_id = u3 and batch_id = 'bbbbbbbb-0000-4000-8000-000000003002')
+     is distinct from array['ZED SHOP', 'ZED SHOP'] then
+    raise exception 'two old names for one shop were not both tidied: %',
+      (select array_agg(merchant::text order by id) from public.ingest_candidates where user_id = u3 and batch_id = 'bbbbbbbb-0000-4000-8000-000000003002');
+  end if;
+  raise notice 'shop names stored before IN* was a prefix are tidied, and their learned shops follow';
+end $$;
+
+-- 0038 is pasted last: its own check, taken from the file, refuses it with
+-- 0029 missing and with 0037 missing, each gone in turn, then put back.
+\set paste_check_38 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0038_intuit_prefix_merchants.sql`
+begin;
+create or replace function public.schema_level() returns integer language sql immutable as $$ select 28 $$;
+set local verify.paste_check = :'paste_check_38';
+do $$
+begin
+  begin
+    execute current_setting('verify.paste_check');
+    raise exception 'NOT REFUSED: 0038 ran without 0029';
+  exception when raise_exception then
+    if sqlerrm not like 'Paste 0029 first%' then raise; end if;
+  end;
+  raise notice '0038 says to paste 0029 first when it is missing';
+end $$;
+rollback;
+begin;
+drop function public._ai_app_clean_old_rows();
+set local verify.paste_check = :'paste_check_38';
+do $$
+begin
+  begin
+    execute current_setting('verify.paste_check');
+    raise exception 'NOT REFUSED: 0038 ran without 0037';
+  exception when raise_exception then
+    if sqlerrm not like 'Paste 0037 first%' then raise; end if;
+  end;
+  raise notice '0038 says to paste 0037 first when it is missing';
+end $$;
+rollback;
+
+-- The level the app reads (0021) names the last update in this folder, so a
+-- new update that forgets to raise it fails here.
+\set last_migration `ls supabase/migrations | tail -1 | cut -c1-4`
+set verify.last_migration = :'last_migration';
+set role app_user;
+do $$
+begin
+  if public.schema_level() <> current_setting('verify.last_migration')::int then
+    raise exception 'schema_level() answers %, but the last update is %', public.schema_level(), current_setting('verify.last_migration');
+  end if;
+  raise notice 'schema_level() names the last update';
+end $$;
+reset role;
+do $$
+begin
+  if has_function_privilege('anon', 'public.schema_level()', 'execute') then
+    raise exception 'the anonymous role can call schema_level';
+  end if;
+end $$;

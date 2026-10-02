@@ -35,13 +35,23 @@ refused rather than applied twice.
 | `0018_category_suggestions.sql` | Where Review keeps the category the AI suggested for a row, until you approve or change it. Without it, Review works as before and says suggestions need the update |
 | `0019_ai_apps_cannot_write.sql` | Stops an AI app you connect (Claude, ChatGPT) from changing anything itself: the database refuses every write from an AI app's sign-in, and every function that writes says "AI apps cannot do this" to one. Your own sign-in is unaffected. It stops with "Paste 0018 first" if `0018` is not in |
 | `0020_ai_apps.sql` | What an AI app may read, and its one way to add something to Review, always waiting for you; the switch in Settings → AI apps, its daily limits, and when each app last asked. Without it, Settings → AI apps says it needs the update. It stops with "Paste 0019 first" if `0019` is not in |
+| `0021_category_holds.sql` | Lets you remove a category that only a rejected guess or a charge you removed still names: before it, Setup said it "still has charges". It stops with "Paste 0018 first" if `0018` is not in |
+| `0022_removed_charge_waits.sql` | A charge you removed from All transactions waits in Review when its statement comes in again, instead of a learned shop filing it straight back. It stops with "Paste 0021 first" if `0021` is not in |
+| `0023_typed_entry_once.sql` | Pressing Add again after an answer that never arrived adds a typed purchase once, not twice |
+| `0024_learned_shops_own_category.sql` | A learned shop names only your own categories, and is written only by approving or moving a charge |
+| `0025_ingested_text_format_characters.sql` | Stored text refuses hidden format characters, as the app already does |
+| `0026_goal_check_on_link.sql` | A goal whose fund moved off the Savings list can still be edited; it is checked only when it is linked |
+| `0027_receipt_photo_twice_waits.sql` | A second photo of a receipt already brought in waits in Review, even for a learned shop |
+| `0028_ai_words_no_invisible_characters.sql` | The AI's kept words refuse characters that draw as nothing |
+| `0029_lookalike_charge_waits.sql` | A charge that looks like one already in the ledger (same card, amount and shop, within three days) waits in Review, so a PDF and a CSV of the same statement do not count it twice. Each of `0023` to `0029` stops with "Paste 00NN first" if the one before is not in |
 | `0030_ai_app_gate_live_session.sql` | Stops an AI app the moment you press Disconnect: before it, a copy of the app's sign-in could still reach your budget for up to an hour. Changes nothing you see. It stops with "Paste 0020 first" if `0020` is not in. Numbered from 0030 so it never collides with other updates in preparation |
 | `0031_ai_app_hash_own_kind.sql` | Keeps what an AI app adds from ever hiding a real charge: before it, an AI app could add an entry that matched next month's statement line exactly, and the real charge was skipped on import as already waiting. Now both wait in Review. It stops with "Paste 0030 first" if `0030` is not in |
 | `0032_ai_rows_teach_no_rule.sql` | Approving or moving something an AI app added no longer teaches the app a shop: before it, one approval could make every later statement charge from that shop file itself into the AI's category without Review. It stops with "Paste 0031 first" if `0031` is not in |
 | `0033_ai_search_masked.sql` | An AI app's search sees shop names as it is shown them, with long numbers (card, phone and reference numbers) masked: before it, counting what matched could read a masked number back one digit at a time. It stops with "Paste 0032 first" if `0032` is not in |
 | `0034_ai_words_visible.sql` | What an AI app adds may not hold characters that draw as nothing (zero-width spaces and the like): before it, two entries could look the same in Review while being different. It stops with "Paste 0033 first" if `0033` is not in |
+| `0038_intuit_prefix_merchants.sql` | Tidies shop names stored with Intuit's `IN*` prefix, so `IN*ACME` and `ACME` are one shop. **It permanently deletes** a learned shop where two would end up with one name (the one made or used most recently stays), so take a backup first (HANDOFF §3, "Before 0038, a backup"). Pasted last: it stops with "Paste 0029 first" or "Paste 0037 first". Written as `0030` and renumbered at the merge of two lines of updates (2026-10-02) |
 
-**`0015` to `0020` can be pasted after `main-tnlcto` is merged into
+**`0015` to `0038` can be pasted after `main-tnlcto` is merged into
 `main`.** Nothing the app needs to open depends on them: each new part
 says in one line that it needs a one-time update until its file is in
 (HANDOFF §3). In the app, **Help → One-time updates** shows which are

@@ -309,6 +309,17 @@ below was made under those words and is recorded with them.
   taken before `0030`, or leave out the functions `0032`, `0033`, `0034`
   and `0036` change (`approve_candidate`, `recategorise_transaction`,
   `ai_app_search`, `ai_app_add_candidate`).
+- **Numbering after the merge (2026-10-02).** The two lines were merged
+  into one branch. The other line had numbered its last update
+  `0030_intuit_prefix_merchants.sql`, which collided with this line's
+  `0030`; nothing from `0015` on was in the hosted project, so it was
+  renumbered to `0038`, the next free number, with its paste-order check
+  asking for both `0029` and `0037`, and `schema_level()` answering 38.
+  This line's `0030`-`0037` kept their numbers and words. `0038` leaves
+  no `(0038)` mark, so `ai_app_updates_in()` answers at most 37; the
+  next update of either kind is `0039`, and an AI-app one re-creates
+  `ai_app_updates_in()` with its marks instead of relying on the
+  `0035`-`0039` scan. The merged schema gate made N154's changes.
 - **Disconnect and the session (second pass).** Whether Supabase's
   `revokeGrant` deletes the app's `auth.sessions` row is HANDOFF §4
   check 21, not yet run. Until it passes, Settings, the consent page and

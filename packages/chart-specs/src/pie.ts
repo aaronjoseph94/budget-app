@@ -13,7 +13,7 @@
  * (nothing above zero) has no slice but keeps its legend row, so the three
  * are always named.
  */
-import { FONT, WIDTH, type ChartFrame, fit, frame, lengthOf, textUnits } from './frame.js'
+import { FONT, WIDTH, type ChartFrame, fit, frame, lengthOf, textUnits, widthOf } from './frame.js'
 import { type SvgMarkup, type SvgNode, el } from './svg.js'
 
 export interface PieSlice {
@@ -44,7 +44,6 @@ const INKS = [
 /** Slices parted by a line in the card's colour, as the donut's are. */
 const GAP = { stroke: '#FFFFFF', 'stroke-width': 20, 'stroke-linejoin': 'round', class: 'chart-surface-gap' } as const
 const R = 800
-const CX = WIDTH / 2
 const CY = R + 40
 const ROW = 200
 const SWATCH = 100
@@ -52,6 +51,7 @@ const SWATCH = 100
 export function yearPie(input: PieInput): SvgMarkup {
   if (input.slices.length !== 3) throw new RangeError(`The Year's pie has three parts, received ${input.slices.length}`)
   const palette = PALETTES[input.palette]
+  const width = widthOf(input)
   let from = 0
   const marks: SvgNode[] = []
   input.slices.forEach((s, i) => {
@@ -60,7 +60,7 @@ export function yearPie(input: PieInput): SvgMarkup {
     const to = Math.min(from + lengthOf(s.shareBp, 10_000), 10_000)
     if (to > from) {
       marks.push(
-        el('path', { d: sector(CX, CY, R, 0, from, to), fill: palette.fills[i]!, ...GAP, class: `chart-pie-${i} chart-surface-gap` }, [
+        el('path', { d: sector(width / 2, CY, R, 0, from, to), fill: palette.fills[i]!, ...GAP, class: `chart-pie-${i} chart-surface-gap` }, [
           el('title', {}, [`${s.label}: ${s.valueText}`]),
         ]),
       )
@@ -70,7 +70,7 @@ export function yearPie(input: PieInput): SvgMarkup {
   const legendTop = CY + R + 200
   const legend = input.slices.map((s, i) => {
     const y = legendTop + i * ROW
-    const room = WIDTH - SWATCH - 60 - textUnits(s.valueText) - 60
+    const room = width - SWATCH - 60 - textUnits(s.valueText) - 60
     const ink = INKS[i]!
     return el('g', {}, [
       el('rect', {
@@ -83,7 +83,7 @@ export function yearPie(input: PieInput): SvgMarkup {
         class: `chart-pie-${i}`,
       }),
       el('text', { x: SWATCH + 60, y, ...ink }, [fit(s.label, room)]),
-      el('text', { x: WIDTH, y, 'text-anchor': 'end', ...ink, style: 'font-variant-numeric:tabular-nums' }, [
+      el('text', { x: width, y, 'text-anchor': 'end', ...ink, style: 'font-variant-numeric:tabular-nums' }, [
         s.valueText,
       ]),
     ])
@@ -132,7 +132,8 @@ export function shareRing(input: ShareRingInput): SvgMarkup {
     fill: '#111827',
     class: 'chart-home-ink',
   }
-  return frame(input, WIDTH, [...marks, el('text', text, [input.centreText])])
+  // A ring is square and sits in a box of its own size, so always WIDTH across.
+  return frame({ ...input, width: WIDTH }, WIDTH, [...marks, el('text', text, [input.centreText])])
 }
 
 export interface DebtRingInput extends ChartFrame {
@@ -157,7 +158,8 @@ export function debtRing(input: DebtRingInput): SvgMarkup {
     marks.push(el('path', { d: sector(c, c, RING, RING / 2, 0, paid), fill: '#4F46E5', 'fill-rule': 'evenodd', class: 'chart-debt-paid' }))
   }
   const text = { x: c, y: c + 150, 'text-anchor': 'middle', 'font-size': FONT * 4, fill: '#111827', class: 'chart-debt-ink' }
-  return frame(input, WIDTH, [...marks, el('text', text, [input.centreText])])
+  // A ring is square and sits in a box of its own size, so always WIDTH across.
+  return frame({ ...input, width: WIDTH }, WIDTH, [...marks, el('text', text, [input.centreText])])
 }
 
 /**

@@ -17,7 +17,7 @@ import { expectNoAxeViolations } from './axe.js'
  */
 const read = vi.hoisted(() => ({ result: null as PdfImport | null }))
 vi.mock('../src/pdf-import.js', () => ({
-  readStatementPdf: async () => {
+  readStatementFile: async () => {
     if (read.result === null) throw new Error('no reading set for this test')
     return read.result
   },

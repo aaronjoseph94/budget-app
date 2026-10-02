@@ -78,6 +78,8 @@ describe('unusualCharges (F39): charged or counted twice', () => {
         second: { id: b.id, postedOn: '2026-09-23', shop: 'COFFEE HOUSE', categoryId: 'dining', by: 'statement', amountCents: 450 },
       },
     ])
+    // At most 3 days apart: the 20th and the 23rd are a pair, the 19th and the 23rd not (architecture-a-05).
+    expect(flagged([row('2026-09-20', -4.5, 'COFFEE HOUSE'), row('2026-09-23', -4.5, 'COFFEE HOUSE')]).doubles).toHaveLength(1)
     expect(flagged([row('2026-09-19', -4.5, 'COFFEE HOUSE'), row('2026-09-23', -4.5, 'COFFEE HOUSE')]).doubles).toEqual([])
     expect(flagged([row('2026-09-21', -4.5, 'COFFEE HOUSE'), row('2026-09-21', -4.55, 'COFFEE HOUSE')]).doubles).toEqual([])
     expect(flagged([row('2026-09-21', -4.5, 'COFFEE HOUSE'), row('2026-09-21', -4.5, 'TEA ROOM')]).doubles).toEqual([])
@@ -101,6 +103,7 @@ describe('unusualCharges (F39): charged or counted twice', () => {
     expect(flagged([card, later]).countedTwice[0]!.shop).toBe('COFFEE HOUSE')
     expect(flagged([row('2026-09-22', -6.25, 'COFFEE', 'dining', 'hand'), row('2026-09-23', -6.25, '')]).countedTwice[0]!.shop).toBe('COFFEE')
     expect(result.doubles).toEqual([])
+    expect(flagged([row('2026-09-20', -6.25, 'COFFEE', 'dining', 'hand'), row('2026-09-23', -6.25, 'COFFEE HOUSE')]).countedTwice).toHaveLength(1)
     expect(flagged([row('2026-09-19', -6.25, 'COFFEE', 'dining', 'hand'), card]).countedTwice).toEqual([])
   })
 

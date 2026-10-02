@@ -2524,3 +2524,34 @@ so the totals agree with the rows a `spent` or `received` search lists.
 100.00), received **$2,505.00**, count **7**, Not spending **1**. Only the
 card payment: spent **$0.00**, received **$0.00**, count **1**, Not
 spending **1**. No rows: all **0**.
+
+---
+
+## F53 — Names tied on their place: one order on every device
+
+**Decided 2026-10-01 (architecture review, architecture-a-02), under the
+owner's instruction of 2026-09-30: "don't ask me any questions; auto-allow
+and say yes to everything".** No workbook cell orders categories by name:
+the workbook's lists are in the order the owner typed them, which the app
+keeps as `sort_order`. Where two categories share a place (every category
+made before 0005 has `sort_order` 0), the engine broke the tie with a bare
+`localeCompare`, which follows the device's language. A Swedish phone put
+'Zoo' above 'Ärenden'; an English one, below. The check-in's top category on
+a tie followed it.
+
+- **A.** Code-point order (debt-strategy's `byName`, goals' `byText`): the
+  same everywhere, but every capital before every lower-case letter, so
+  'Zoo' above 'apple', a visible change on the Month.
+- **B.** English order, named once (`new Intl.Collator('en')`,
+  packages/core/src/order.ts): the same everywhere, and the order the owner
+  already sees on an English device ('apple', 'Ärenden', 'Zoo').
+- **C.** Keep the device's order.
+
+**Chosen: B.** C makes an engine answer depend on where it runs; A moves
+names the owner has been looking at for no gain. Every name tie-break in
+core goes through `byName` in order.ts (period-sheet, bill-calendar,
+cash-flow-30, cash-flow-ahead, checkin, expected-pay, habits, savings,
+week). Debt-strategy's and goals' code-point helpers stay: they order debts
+and ids, and their tests fix their order. **Worked example:** three
+Variable categories at `sort_order` 0 named 'Zoo', 'apple' and 'Ärenden'
+list as apple, Ärenden, Zoo on every device.

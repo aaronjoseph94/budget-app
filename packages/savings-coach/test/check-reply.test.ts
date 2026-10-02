@@ -51,6 +51,9 @@ describe('checkReply', () => {
     expect(fell.reply.cards.map((c) => c.fact)).toEqual([STALE])
     // This month's summary went up; "less" beside it contradicts the figure.
     expect(checkReply({ reply: { ...GOOD, summary: 'You spent {{A.change}}, so less than before.' }, brief }).dropped).toEqual([{ part: 'summary', reason: 'direction' }])
+    // And "more" beside a fall (architecture-a-05: no case had it).
+    const aDown = { ...brief, facts: brief.facts.map((f) => (f.id === 'A' ? { ...f, direction: 'down' as const } : f)) }
+    expect(checkReply({ reply: { ...GOOD, summary: 'You spent {{A.change}}, so more than before.' }, brief: aDown }).dropped).toEqual([{ part: 'summary', reason: 'direction' }])
     const down = { ...brief, facts: brief.facts.map((f) => (f.id === DINING ? { ...f, direction: 'down' as const } : f)) }
     expect(checkReply({ reply: card({ body: 'It rose: {{' + DINING + '.change}}.' }), brief: down }).dropped).toEqual([{ part: 'card', reason: 'direction' }])
     expect(checkReply({ reply: card({ body: 'You spent {{' + DINING + '.change}} more on it.' }), brief }).dropped).toEqual([{ part: 'card', reason: 'direction' }])

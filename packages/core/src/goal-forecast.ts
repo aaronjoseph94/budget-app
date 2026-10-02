@@ -88,7 +88,7 @@ export function goalForecast(input: GoalForecastInput): GoalForecast {
   const needed =
     remaining === 0 || goal.targetDate === null || goal.targetDate <= asOf
       ? null
-      : requiredWeeklyContribution(asSavingsGoal, asOf, goal.targetDate)
+      : requiredWeeklyContribution({ goal: asSavingsGoal, asOf, targetDate: goal.targetDate }).weeklyCents
   const without = (pace: GoalPace): GoalForecast => ({ remainingCents: remaining, pace, paceWeeklyCents: null, neededWeeklyCents: needed })
   if (remaining === 0) return without({ status: 'met' })
 
@@ -104,7 +104,7 @@ export function goalForecast(input: GoalForecastInput): GoalForecast {
   const middle = weekly(median({ values }))
   if (middle <= 0) return without({ status: 'no_pace', months: months.length, evidence })
 
-  const dateAt = (weeklyCents: Cents): IsoDate | null => projectGoal(asSavingsGoal, weeklyCents, asOf).projectedDate
+  const dateAt = (weeklyCents: Cents): IsoDate | null => projectGoal({ goal: asSavingsGoal, weeklyContributionCents: weeklyCents, asOf }).projectedDate
   const paced = (pace: GoalPace): GoalForecast => ({ remainingCents: remaining, pace, paceWeeklyCents: middle, neededWeeklyCents: needed })
   // A middle pace above $0 always lands, so its date is never null.
   const middleDate = dateAt(middle) ?? missing(fund.id)

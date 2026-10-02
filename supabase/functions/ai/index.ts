@@ -27,7 +27,7 @@
 import { z } from 'npm:zod@4.6.5'
 
 /** Which copy is deployed, so One-time updates can tell an old paste from this one. */
-export const VERSION = '2026-09-30.1'
+export const VERSION = '2026-10-01.5'
 
 // Browsers allowed to call this, as read-receipt's: the Cloudflare and
 // Netlify sites and a local dev server, plus exact https origins in the
@@ -39,11 +39,14 @@ const ORIGINS = [
 ]
 
 // The secrets this helper reads, parsed at the "env loading" boundary.
-// Supabase sets the first four itself. SUPABASE_SECRET_KEYS is a JSON
-// object of the project's new secret keys, by name.
+// Supabase sets the first five itself. SUPABASE_SECRET_KEYS and
+// SUPABASE_PUBLISHABLE_KEYS are JSON objects of the project's new keys, by
+// name; the legacy anon and service_role keys are retired by the end of
+// 2026, and a project can switch them off sooner.
 const EnvSchema = z.object({
   SUPABASE_URL: z.string().regex(/^https?:\/\/[A-Za-z0-9.-]+(:\d+)?$/).optional(),
   SUPABASE_ANON_KEY: z.string().min(1).optional(),
+  SUPABASE_PUBLISHABLE_KEYS: z.string().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
   SUPABASE_SECRET_KEYS: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
@@ -52,6 +55,10 @@ const EnvSchema = z.object({
   // Optional: a root of the owner's own for sealing pasted keys, so they
   // survive a change of Supabase's keys (ADR 0004).
   AI_KEYS_ROOT: z.string().optional(),
+  // Optional: the owner's user id. Set, every other account is refused,
+  // so one that signed up on its own cannot spend the owner's keys or the
+  // receipts secret (backend-b-06). Not a user id, nothing is served.
+  OWNER_USER_ID: z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i).optional(),
 })
 type Env = z.infer<typeof EnvSchema>
 
@@ -285,17 +292,13 @@ const list = (v: unknown): readonly unknown[] => (Array.isArray(v) ? v : [])
 type Who = { readonly user: string } | { readonly code: Code }
 
 async function whoIs(env: Env, bearer: string, fetchFn: typeof fetch): Promise<Who> {
-  if (env.SUPABASE_URL === undefined || env.SUPABASE_ANON_KEY === undefined) {
+  const apikey = publicKey(env)
+  if (env.SUPABASE_URL === undefined || apikey === null) {
     log('not_configured')
     return { code: 'helper_error' }
   }
-  let res: Response
-  try {
-    res = await fetchFn(`${env.SUPABASE_URL}/auth/v1/user`, {
-      method: 'GET',
-      headers: { apikey: env.SUPABASE_ANON_KEY, Authorization: bearer },
-    })
-  } catch {
+  const res = await callService(fetchFn, `${env.SUPABASE_URL}/auth/v1/user`, { method: 'GET', headers: { apikey, Authorization: bearer } }, BACKEND_MS)
+  if (typeof res === 'string') {
     log('auth_unreachable')
     return { code: 'helper_error' }
   }
@@ -304,9 +307,10 @@ async function whoIs(env: Env, bearer: string, fetchFn: typeof fetch): Promise<W
     log('auth_status', { status: res.status })
     return { code: 'helper_error' }
   }
-  const user: unknown = await res.json().catch(() => null)
+  const user: unknown = res.body
   const id = typeof user === 'object' && user !== null && 'id' in user ? user.id : null
   if (typeof id !== 'string' || !UUID.test(id)) return { code: 'not_signed_in' }
+  if (env.OWNER_USER_ID !== undefined && id.toLowerCase() !== env.OWNER_USER_ID.toLowerCase()) return { code: 'not_signed_in' }
   return fromAnAiApp(bearer) ? { code: 'not_signed_in' } : { user: id.toLowerCase() }
 }
 
@@ -381,12 +385,31 @@ const ATTEMPT_MS = 20_000
 /** What one call to a service came to (plan §3.3). */
 export type Outcome = 'ok' | 'rate_limited' | 'rejected' | 'model_not_found' | 'provider_error' | 'timeout' | 'unreachable'
 
-/** One call, cut off at the attempt's limit. No reply at all is a timeout or no route. */
-async function callService(fetchFn: typeof fetch, url: string, init: RequestInit, ms = ATTEMPT_MS): Promise<Response | 'timeout' | 'unreachable'> {
+/** How long the auth server or the database may take to answer one call. */
+const BACKEND_MS = 10_000
+
+/** A whole answer: its status and headers, and its body as JSON (null when it is not JSON). */
+interface Answered {
+  readonly status: number
+  readonly ok: boolean
+  readonly headers: Headers
+  readonly body: unknown
+}
+
+/**
+ * One call, cut off at the attempt's limit, its body read inside the same
+ * limit: a service that sends its headers and then stalls is a timeout too
+ * (backend-b-05). No reply at all is a timeout or no route.
+ */
+async function callService(fetchFn: typeof fetch, url: string, init: RequestInit, ms = ATTEMPT_MS): Promise<Answered | 'timeout' | 'unreachable'> {
   const stop = new AbortController()
   const timer = setTimeout(() => stop.abort(), ms)
+  const aborted = new Promise<null>((resolve) => stop.signal.addEventListener('abort', () => resolve(null)))
   try {
-    return await fetchFn(url, { ...init, signal: stop.signal })
+    const res = await fetchFn(url, { ...init, signal: stop.signal })
+    const body: unknown = await Promise.race([res.json().catch(() => null), aborted])
+    if (stop.signal.aborted) return 'timeout'
+    return { status: res.status, ok: res.ok, headers: res.headers, body }
   } catch {
     return stop.signal.aborted ? 'timeout' : 'unreachable'
   } finally {
@@ -443,9 +466,8 @@ function listedIn(provider: Provider, body: unknown): readonly string[] {
 export async function listModels(provider: Provider, key: string, fetchFn: typeof fetch): Promise<{ outcome: Outcome; listed: readonly string[] }> {
   const res = await callService(fetchFn, LIST_URL[provider], { method: 'GET', headers: keyHeaders(provider, key) })
   if (typeof res === 'string') return { outcome: res, listed: [] }
-  const body: unknown = await res.json().catch(() => null)
-  const outcome = outcomeOf(res.status, body)
-  return outcome === 'ok' ? { outcome, listed: listedIn(provider, body) } : { outcome, listed: [] }
+  const outcome = outcomeOf(res.status, res.body)
+  return outcome === 'ok' ? { outcome, listed: listedIn(provider, res.body) } : { outcome, listed: [] }
 }
 
 /**
@@ -714,16 +736,30 @@ export function chatReply(provider: Provider, status: number, body: unknown): Re
   return typeof message['content'] === 'string' ? jsonObject(message['content']) : cut
 }
 
-/** The project's new secret key, from the JSON of them all, when it has one. */
-function secretKeysDefault(env: Env): string | null {
+/** The `default` key from one of Supabase's JSON objects of new keys, when it has one. */
+function keysDefault(json: string | undefined): string | null {
   let fresh: unknown = null
   try {
-    const keys: unknown = JSON.parse(env.SUPABASE_SECRET_KEYS ?? 'null')
+    const keys: unknown = JSON.parse(json ?? 'null')
     fresh = typeof keys === 'object' && keys !== null && 'default' in keys ? keys.default : null
   } catch {
     fresh = null
   }
   return typeof fresh === 'string' && fresh !== '' ? fresh : null
+}
+
+/** The project's new secret key, from the JSON of them all, when it has one. */
+function secretKeysDefault(env: Env): string | null {
+  return keysDefault(env.SUPABASE_SECRET_KEYS)
+}
+
+/**
+ * The public key the auth server is asked with: the project's new
+ * publishable key when it has one, else the legacy anon key, which stops
+ * working once the project's legacy keys are switched off (backend-b-04).
+ */
+function publicKey(env: Env): string | null {
+  return keysDefault(env.SUPABASE_PUBLISHABLE_KEYS) ?? env.SUPABASE_ANON_KEY ?? null
 }
 
 /**
@@ -831,14 +867,12 @@ async function callDb(env: Env, fn: string, args: Record<string, unknown>, fetch
   }
   const headers: Record<string, string> = { apikey: key, 'Content-Type': 'application/json' }
   if (JWT.test(key)) headers['Authorization'] = `Bearer ${key}`
-  let res: Response
-  try {
-    res = await fetchFn(`${env.SUPABASE_URL}/rest/v1/rpc/${fn}`, { method: 'POST', headers, body: JSON.stringify(args) })
-  } catch {
+  const res = await callService(fetchFn, `${env.SUPABASE_URL}/rest/v1/rpc/${fn}`, { method: 'POST', headers, body: JSON.stringify(args) }, BACKEND_MS)
+  if (typeof res === 'string') {
     log('db_unreachable')
     return { code: 'helper_error' }
   }
-  const body: unknown = await res.json().catch(() => null)
+  const body = res.body
   if (res.ok) return { data: body }
   const code = typeof body === 'object' && body !== null && 'code' in body ? body.code : null
   if (typeof code === 'string' && NOT_THERE.has(code)) return { code: 'needs_update' }
@@ -1327,8 +1361,11 @@ export async function route(env: Env, user: string, task: TaskName, ask: Ask, st
       tried.push({ provider, model, result: 'over_budget' })
       continue
     }
-    // An attempt starts only if its whole timeout fits in what is left.
-    if (Date.now() - started + ms > DEADLINE_MS) break
+    // An attempt starts only if all it may take fits in what is left: its
+    // claim, its own timeout, and the note and key mark after it, each of
+    // which the database may take BACKEND_MS to answer. So the helper always
+    // answers inside DEADLINE_MS, before the app stops waiting (review-r-01).
+    if (Date.now() - started + BACKEND_MS + ms + 2 * BACKEND_MS > DEADLINE_MS) break
 
     const claim = await callDb(
       env,
@@ -1349,7 +1386,7 @@ export async function route(env: Env, user: string, task: TaskName, ask: Ask, st
 
     attempts += 1
     const res = await callService(fetchFn, built.url, built.init, ms)
-    const body: unknown = typeof res === 'string' ? null : await res.json().catch(() => null)
+    const body: unknown = typeof res === 'string' ? null : res.body
     const replied = typeof res === 'string' ? { outcome: res, text: null } : chatReply(provider, res.status, body)
     log(`attempt_${replied.outcome}`)
     const until = restUntil(provider, replied.outcome, typeof res === 'string' ? null : res.headers, body, Date.now())
@@ -1362,11 +1399,14 @@ export async function route(env: Env, user: string, task: TaskName, ask: Ask, st
       },
       fetchFn,
     )
-    if ('code' in noted) return end(noted.code)
+    // A good reply is kept even when noting it failed: only bookkeeping
+    // failed, the claim is already counted, and the answer was paid for
+    // (backend-b-07). callDb has logged why.
     if (replied.outcome === 'ok' && replied.text !== null) {
       log('run_ok', { attempts, tried: tried.length })
       return [200, { ok: true, provider, model, text: replied.text }]
     }
+    if ('code' in noted) return end(noted.code)
     if (replied.outcome === 'rejected' && found.source === 'saved') {
       const mark = await callDb(env, 'ai_key_mark', { p_user: user, p_provider: provider, p_status: 'rejected' }, fetchFn)
       if ('code' in mark) return end(mark.code)
@@ -1460,12 +1500,14 @@ if (typeof Deno !== 'undefined') {
       {
         SUPABASE_URL: Deno.env.get('SUPABASE_URL'),
         SUPABASE_ANON_KEY: Deno.env.get('SUPABASE_ANON_KEY'),
+        SUPABASE_PUBLISHABLE_KEYS: Deno.env.get('SUPABASE_PUBLISHABLE_KEYS'),
         SUPABASE_SERVICE_ROLE_KEY: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
         SUPABASE_SECRET_KEYS: Deno.env.get('SUPABASE_SECRET_KEYS'),
         GEMINI_API_KEY: Deno.env.get('GEMINI_API_KEY'),
         GEMINI_MODEL: Deno.env.get('GEMINI_MODEL'),
         EXTRA_ORIGINS: Deno.env.get('EXTRA_ORIGINS'),
         AI_KEYS_ROOT: Deno.env.get('AI_KEYS_ROOT'),
+        OWNER_USER_ID: Deno.env.get('OWNER_USER_ID'),
       },
       fetch,
     ),

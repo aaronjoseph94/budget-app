@@ -18,7 +18,7 @@
  */
 import { z } from 'zod'
 
-export type ProseProblem = 'empty' | 'stray_brace' | 'number' | 'markup' | 'link' | 'number_word' | 'product' | 'line_breaks' | 'too_long'
+export type ProseProblem = 'empty' | 'stray_brace' | 'number' | 'markup' | 'link' | 'number_word' | 'product' | 'line_breaks' | 'too_long' | 'invisible'
 
 /** Two braces, one or two capitals, a dot, a slot name, two braces: no digit fits in one. */
 const BLANK = /\{\{[A-Z]{1,2}\.[a-z_]{1,24}\}\}/g
@@ -48,11 +48,24 @@ const PRODUCT = wholeWord(PRODUCTS)
 
 const MAX_LINE_BREAKS = 2
 
+/**
+ * Characters that draw nothing yet change what is read: format characters
+ * (bidi overrides and isolates, zero-width joiners, the soft hyphen, the
+ * byte-order mark), private-use and unassigned code points, and controls
+ * other than a line end or a tab. NFKC keeps them all. A bidi override
+ * around a blank shows the engine's $12.34 as 43.21$, and a zero-width
+ * space inside "twenty" or "crypto" slips it past the word rules
+ * (security-b-01). Property classes, so no control character is written here.
+ */
+const INVISIBLE = /[\p{Cf}\p{Co}\p{Cn}]|[^\P{Cc}\n\r\t]/u
+
 /** The first rule the text breaks, or null when it passes. `limit` is the field's length. */
 export function proseProblem(raw: string, limit: number): ProseProblem | null {
   // Rule 1: fullwidth letters, ligatures and compatibility forms read as what they are.
   const text = raw.normalize('NFKC')
   if (text.trim() === '') return 'empty'
+  // Before the word rules, which an invisible character would split.
+  if (INVISIBLE.test(text)) return 'invisible'
   // Rule 2: what is left once the well-formed blanks are out.
   const bare = text.replace(BLANK, '')
   if (/[{}]/.test(bare)) return 'stray_brace'

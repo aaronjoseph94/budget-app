@@ -123,7 +123,7 @@ describe('the Month’s coach line (D27)', () => {
     await vi.waitFor(() => expect(caught).toHaveBeenCalled())
     expect(screen.queryByRole('button', { name: /Open the Coach/ })).toBeNull()
     expect(screen.getByRole('region', { name: 'Variable expenses' })).toBeTruthy()
-    expect(screen.getByText('Last month did not load, so there is no comparison. Reload to try again.')).toBeTruthy()
+    expect(screen.getByText('Last month did not load, so there is no comparison.', { exact: false })).toBeTruthy()
   })
 
   describe('with the AI’s words (A12)', () => {

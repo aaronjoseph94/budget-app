@@ -10,6 +10,18 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Env } from './env.js'
 import { watchNetwork } from './offline.js'
 
+/**
+ * Where the client keeps the session on this device: Supabase's own default
+ * name, written out so sign-out can remove it when the client will not
+ * (security-a-06). Naming the same key signs no one out.
+ */
+export function sessionKeyOf(url: string): string {
+  return `sb-${new URL(url).hostname.split('.')[0] ?? ''}-auth-token`
+}
+
+/** A note, for the sign-in screen after a reload, that only this device was signed out. */
+export const SIGNED_OUT_HERE_ONLY = 'budget.signed-out-here-only'
+
 export function createSupabase(env: Env): SupabaseClient {
   return createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY, {
     auth: {
@@ -23,6 +35,7 @@ export function createSupabase(env: Env): SupabaseClient {
       // bar, as the implicit flow sent them (SEC-5). So a link opens only in
       // the browser it was asked from; sign-in says so.
       flowType: 'pkce',
+      storageKey: sessionKeyOf(env.VITE_SUPABASE_URL),
     },
     // Watched so a request that gets no reply says "offline" once, above
     // the screen, rather than only as each screen's own failure (A26).

@@ -132,6 +132,75 @@ describe('the AI helper learns who is calling from the auth server', () => {
   })
 })
 
+describe('the AI helper waits a bounded time for the auth server and the database (backend-b-05)', () => {
+  const hangs = (_url: string, init?: RequestInit) =>
+    new Promise<Response>((_, reject) => init?.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError'))))
+  afterEach(() => vi.useRealTimers())
+
+  it('answers helper_error after 10 s when the auth server does not answer, and asks nothing else', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    const calls: string[] = []
+    const pending = handle(request(), ENV, (async (url: string | URL | Request, init?: RequestInit) => {
+      calls.push(String(url))
+      return hangs(String(url), init)
+    }) as typeof fetch)
+    await vi.advanceTimersByTimeAsync(10_000)
+    const res = await pending
+    expect([res.status, (await res.json()).code]).toEqual([503, 'helper_error'])
+    expect(calls).toEqual([`${PROJECT}/auth/v1/user`])
+  })
+
+  it('answers helper_error after 10 s when the database does not answer', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    const env = { ...ENV, SUPABASE_SERVICE_ROLE_KEY: ['header', 'payload', 'signature'].join('.') }
+    const pending = handle(request({ body: { action: 'status' } }), env, (async (url: string | URL | Request, init?: RequestInit) =>
+      String(url).endsWith('/auth/v1/user') ? signedIn(String(url)) : hangs(String(url), init)) as typeof fetch)
+    await vi.advanceTimersByTimeAsync(10_000)
+    const res = await pending
+    expect([res.status, (await res.json()).code]).toEqual([503, 'helper_error'])
+  })
+})
+
+describe('the AI helper serves only the owner once OWNER_USER_ID is set (backend-b-06)', () => {
+  const OTHER = '0a1b2c3d-4e5f-4a6b-8c7d-998877665544'
+
+  it('refuses any other signed-in account as not signed in, before asking anything else', async () => {
+    const stranger = await run(request(), { ...ENV, OWNER_USER_ID: OTHER })
+    expect([stranger.res.status, stranger.body.code]).toEqual([401, 'not_signed_in'])
+    expect(stranger.calls.map((c) => c.url)).toEqual([`${PROJECT}/auth/v1/user`])
+    const owner = await run(request(), { ...ENV, OWNER_USER_ID: USER.toUpperCase() })
+    expect(owner.res.status).toBe(200)
+    expect((await run(request(), ENV)).res.status).toBe(200)
+  })
+
+  it('serves no one when the setting is not a user id, rather than everyone', async () => {
+    const typo = await run(request(), { ...ENV, OWNER_USER_ID: 'my user id' })
+    expect([typo.res.status, typo.body.code, typo.calls.length]).toEqual([503, 'helper_error', 0])
+  })
+})
+
+describe('the AI helper asks the auth server with the project’s public key (backend-b-04)', () => {
+  const apikeyOf = (c: Call | undefined) => new Headers(c?.init.headers).get('apikey')
+  const PUBLISHABLE = JSON.stringify({ default: 'sb_publishable_notarealkey0001' })
+
+  it('uses the new publishable key when Supabase gives one, with the legacy anon key off', async () => {
+    const only = await run(request(), { SUPABASE_URL: PROJECT, SUPABASE_PUBLISHABLE_KEYS: PUBLISHABLE })
+    expect([only.res.status, only.body.ok]).toEqual([200, true])
+    expect(apikeyOf(only.calls[0])).toBe('sb_publishable_notarealkey0001')
+    const both = await run(request(), { ...ENV, SUPABASE_PUBLISHABLE_KEYS: PUBLISHABLE })
+    expect(apikeyOf(both.calls[0])).toBe('sb_publishable_notarealkey0001')
+  })
+
+  it('falls back to the legacy anon key when the publishable keys are missing or unreadable', async () => {
+    for (const keys of [undefined, 'not json', '{"default":""}', '{"other":"sb_publishable_x"}']) {
+      const r = await run(request(), { ...ENV, SUPABASE_PUBLISHABLE_KEYS: keys })
+      expect(apikeyOf(r.calls[0]), String(keys)).toBe('anon-key-for-tests')
+    }
+    const none = await run(request(), { SUPABASE_URL: PROJECT, SUPABASE_PUBLISHABLE_KEYS: 'not json' })
+    expect([none.res.status, none.body.code, none.calls.length]).toEqual([503, 'helper_error', 0])
+  })
+})
+
 describe('the AI helper reaches the database as itself, for the caller alone', () => {
   const LEGACY = ['header', 'payload', 'signature'].join('.') // a legacy key's three-part shape, and nothing a scanner could take for one
   const FRESH = 'sb_secret_notarealkey0001'

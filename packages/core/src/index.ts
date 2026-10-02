@@ -225,7 +225,6 @@ export {
 
 export {
   completeMonths,
-  evidenceOf,
   historyStart,
   type CompleteMonths,
   type CompleteMonthsInput,
@@ -258,7 +257,6 @@ export {
   type TrendWindowInput,
 } from './trends.js'
 export {
-  gridLevel,
   personalBest,
   spendingGrid,
   streaks,
@@ -303,7 +301,6 @@ export {
   type UsualTotals,
 } from './month-report.js'
 
-export { mad, median, quantile, type QuantileInput, type StatsInput } from './stats.js'
 
 export {
   changeSize,

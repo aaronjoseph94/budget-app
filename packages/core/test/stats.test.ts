@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mad, median, quantile } from '../src/index.js'
+import { mad, median, quantile } from '../src/stats.js'
 
 // Every figure worked by hand (F27, docs/formula-decisions.md).
 describe('median', () => {

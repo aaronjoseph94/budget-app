@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { isoDate, shiftMonth } from '@budget/core'
 import { useAppData } from '../app-data.js'
-import { formatMonthTitle, todayIso } from '../format.js'
+import { formatMonthTitle } from '../format.js'
 import { hashOf } from '../nav.js'
 import { Badge } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
@@ -36,8 +36,7 @@ const TABS: readonly { readonly id: ReportTab; readonly name: string }[] = [
  * Download CSV (A19) writes the month's charges or those figures to a file.
  */
 export function ReportsScreen({ month }: { month: string | null }) {
-  const { categories } = useAppData()
-  const asOf = todayIso()
+  const { categories, today: asOf } = useAppData()
   const shown = `${month ?? asOf.slice(0, 7)}-01`
   const read = useReportRead(shown, asOf)
   const figures = useMemo(() => {
@@ -100,7 +99,10 @@ export function ReportsScreen({ month }: { month: string | null }) {
                 <Icon name="chevronRight" className="size-4" />
               </a>
             ) : (
-              <span className="size-11" aria-hidden="true" />
+              // A dimmed chevron, as the Week's and Pay's steppers show at the latest (V15).
+              <span aria-hidden="true" className="flex size-11 items-center justify-center opacity-40 print:invisible">
+                <Icon name="chevronRight" className="size-4" />
+              </span>
             )}
           </nav>
           {/* The browser's own print makes the PDF: nothing is loaded and nothing leaves the phone. */}

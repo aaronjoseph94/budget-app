@@ -12,6 +12,8 @@ describe('normalizeMerchant strips what cannot change who was paid', () => {
     ['a phone number', 'BLUE BOTTLE 415-555-1234', 'BLUE BOTTLE'],
     ['both a prefix and a number', 'SQ *BLUE BOTTLE COFFEE 4155551234', 'BLUE BOTTLE COFFEE'],
     ['trailing punctuation', 'SHELL OIL -', 'SHELL OIL'],
+    ['an Intuit prefix with a space', 'IN *ACME PLUMBING', 'ACME PLUMBING'],
+    ['an Intuit prefix without one', 'IN*ACME PLUMBING', 'ACME PLUMBING'],
   ])('removes %s', (_label, raw, expected) => {
     expect(normalizeMerchant(raw)).toBe(expected)
   })
@@ -73,6 +75,8 @@ describe('sameMerchant', () => {
     expect(sameMerchant('SQ *BLUE BOTTLE 4155551234', 'Blue Bottle')).toBe(true)
     expect(sameMerchant('SQ *BLUE BOTTLE COFFEE 4155551234', 'blue bottle coffee')).toBe(true)
     expect(sameMerchant('WALMART #1234', 'walmart')).toBe(true)
+    // 'IN *' was listed twice and 'IN*' never (architecture-a-10).
+    expect(sameMerchant('IN*ACME PLUMBING', 'IN *ACME PLUMBING')).toBe(true)
   })
 
   it('is equality, never similarity', () => {

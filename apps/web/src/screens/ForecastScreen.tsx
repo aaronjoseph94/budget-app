@@ -5,7 +5,7 @@ import { useAppData } from '../app-data.js'
 import { useFunds } from '../funds.js'
 import { formatCents, formatDayMonth, formatMonthName, formatWholeDollars } from '../format.js'
 import { hashOf } from '../nav.js'
-import { SvgChart } from '../components/ui/chart.js'
+import { SvgChart, fitted } from '../components/ui/chart.js'
 import { Badge } from '../components/ui/feedback.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { Said } from '../coach/CoachCards.js'
@@ -19,6 +19,7 @@ import { GoalsAheadCard } from '../forecast/Goals.js'
 import { MonthsAheadCard } from '../forecast/Months.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
 import { MonthTitle } from '../components/ui/type.js'
+import { TryAgain } from '../try-again.js'
 
 /**
  * The Forecast (plan §2.5, A13, A14): one sentence, safe to spend, where
@@ -66,7 +67,7 @@ export function ForecastScreen() {
           </a>
         </p>
       ) : null}
-      {figures === 'failed' ? <p className="text-sm text-muted-foreground">The forecast did not load. Reload to try again; everything else still works.</p> : null}
+      {figures === 'failed' ? <p className="text-sm text-muted-foreground">The forecast did not load. <TryAgain />; everything else still works.</p> : null}
       {ready === null ? null : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:gap-5">
           <SafeCard safe={ready.figures.safe} names={namesOf(categories)} />
@@ -169,7 +170,7 @@ function MonthEndCard({ monthEnd, figures, month }: { monthEnd: MonthEndForecast
       {end === null ? <NoStart /> : monthEnd.status === 'range' ? <p className="text-muted-foreground">Most likely {formatWholeDollars(end.mid)}.</p> : null}
       {end === null || range === null || today === null ? null : (
         <SvgChart
-          svg={rangeBar({
+          svg={fitted(rangeBar, {
             id: 'forecast-month-end',
             title: `Where ${name} ends`,
             description: `Today ${formatCents(today)}; the month ends between ${formatWholeDollars(end.low)} and ${formatWholeDollars(end.high)}, most likely ${formatWholeDollars(end.mid)}.`,

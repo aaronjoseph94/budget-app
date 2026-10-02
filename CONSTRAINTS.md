@@ -37,28 +37,41 @@ whether a commit is clean.
   no `|| 0`. A $0 balance, a 0% APR, and a 0-month term are legitimate values;
   missing data fails loudly into the review queue instead.
 
+The Floor said "always enforced" and was checked by nothing until
+2026-10-01 (architecture-a-07). Now `eslint` refuses, in every package's
+`src` but the AI apps server's (the MCP build's, written up for it):
+`?? 0` and `|| 0`, `?? ZERO_CENTS`, `?? cents(…)`, `as unknown as`,
+`new Error("Not implemented")` and an empty `catch {}`. Each was planted in
+`core`, `money-primitives`, `schema`, `statement-parsers`, `chart-specs`,
+`savings-coach` and `report-export` and seen `RED`. The four places that
+had one (the Rogers summary, the yearless period, the PDF text mover and
+the debt extras) now branch on the missing value instead.
+
 ## Enforced now
 
 | Dimension | Rule | Command | Runs at |
 |---|---|---|---|
 | Types | Zero type errors | `tsc --build` | every edit |
 | Lint | Zero errors | `eslint .` | every edit |
-| Engine purity | `packages/core` imports only `money-primitives`; no ambient clock, randomness, or env | `depcruise` + `eslint` | every edit |
-| Float money | No `toFixed` / `parseFloat` in the engine; `Cents` brand enforced by the type system | `eslint` + `tsc --build` | every edit |
-| Weak assertions | No `toBeCloseTo`, no snapshots, no `vi.mock` under `packages/core` | `eslint` | every edit |
-| Secrets | Zero findings in the working tree | `gitleaks dir --redact --no-banner` | every edit |
-| Secret history | Zero findings in committed history | `gitleaks detect --redact --no-banner` | CI |
-| Golden replay | 100% exact match, zero tolerance | `vitest run` | every edit |
-| Coverage | ≥80% lines and functions, ≥75% branches, per module | `vitest run --coverage` | CI |
+| Engine purity | `packages/core` imports only `money-primitives`; no ambient clock, randomness, env, locale, time zone, network, timer or storage, in `core` and in the pure packages (`statement-parsers`, `chart-specs`, `savings-coach`, `report-export`), whose dedupe hash alone may use `crypto` | `depcruise` + `eslint` (`no-restricted-globals`, `NO_AMBIENT_STATE`) | every edit |
+| Float money | No `toFixed` / `parseFloat` in the engine, the packages, the app (`apps/web/src`) or the Edge Functions; `Cents` brand enforced by the type system | `eslint` + `tsc --build` | every edit |
+| Weak assertions | No `toBeCloseTo`, no snapshots, in any package's tests (golden harness and money-primitives included), the app's or the Edge Functions'; no `vi.mock` in the packages' tests | `eslint` | every edit |
+| Secrets | Zero findings in the working tree (local `.env` files allowed there only) | `gitleaks dir --config .gitleaks-tree.toml --redact --no-banner` | every edit |
+| Tracked env files | No `.env` file is tracked but `.env.example` | `git ls-files` (`no_env_files` in `scripts/gates.sh`) | every edit |
+| Secret history | Zero findings in committed history, `.env` files included | `gitleaks detect --config .gitleaks.toml --redact --no-banner` | CI |
+| Golden replay | 100% exact match, zero tolerance | `vitest run` (at full level, the same run as Coverage) | every edit |
+| Coverage | ≥80% lines and functions, ≥75% branches, per module | `vitest run --coverage` (gate `golden+coverage`: the suite runs once at full level) | CI |
 | Migration replay | Applies cleanly to an empty database | `scripts/verify-migrations.sh` | CI |
-| RLS coverage | `pg_tables WHERE NOT rowsecurity` returns 0; every public table has an all-commands `user_id = auth.uid()` policy (`pg_policies`); policies isolate | `scripts/verify-migrations.sh` | CI |
+| Ingest idempotency | Re-import yields 0 new rows (`save_import` again: inserted 0, every row deduped); double-approve yields 1 transaction (`approve_candidate` again: `already_handled`) | `scripts/verify-migrations.sh` (`schema-assertions.sql`) | CI |
+| RLS coverage | `pg_tables WHERE NOT rowsecurity` returns 0; every public table has an all-commands `user_id = auth.uid()` policy (`pg_policies`), and it is the only permissive policy on the table, so policies isolate; no SECURITY DEFINER function is callable by `anon` | `scripts/verify-migrations.sh` | CI |
 | Dependencies | Nothing high or above | `pnpm audit --audit-level high` | CI |
 | Web first load | The JavaScript a phone loads before the first screen (the entry and the chunks it preloads) ≤200 KB gzipped | `node scripts/check-bundle.mjs` | CI |
 | Edge Functions | Every `supabase/functions/*/index.ts` type-checks; imports zod alone, so it can be pasted as one file (its tests: the function, vitest, Node and `packages/schema`); uses `console` only inside its one `log(code, counts)` helper; and is tested to ≥80% lines and functions, ≥75% branches | `tsc --build` + `depcruise` + `eslint` + `vitest run --coverage` | every edit (coverage: CI) |
 | AI apps server | `packages/ai-apps` (ADR 0012) imports only `core`, `money-primitives`, `statement-parsers`, `schema`, zod and the official MCP SDK, and never the app; uses `console` only in `src/log.ts`, whose `log(code, counts)` takes a fixed code and numbers; and is tested to ≥80% lines and functions, ≥75% branches. The file built from it, `setup/mcp-function.ts`, imports only `npm:zod@4.6.5` and `npm:@modelcontextprotocol/server@2.2.0` and names no service key or AI host; only `apps/web/setup-files.ts` may import the package | `depcruise` + `eslint` + `vitest run --coverage` (`mcp-bundle.test.ts`) + `node scripts/check-bundle.mjs` | every edit (coverage, bundle: CI) |
-| Browser holds no AI key | No AI service's API host (`generativelanguage.googleapis.com`, `api.groq.com`, `openrouter.ai/api`, `api.openai.com`, `api.anthropic.com`) and no `SERVICE_ROLE` in `apps/web/src` or the built JavaScript (`/setup/` left out: it is the AI helper's own source, never run by the page); `connect-src` is `'self'` and the Supabase project alone | `vitest run` (`no-provider-hosts.test.ts`, `headers.test.ts`) + `node scripts/check-bundle.mjs` | every edit (bundle: CI) |
-| Model text carries no numbers | Every string a model writes is held to ADR 0005's text rule (`ModelProse`: NFKC, then no `\p{N}` or `\p{Sc}`, no markup or link characters, no number word but "one", no product or investing words, at most two line breaks, each field within its length) before it is drawn or kept; the database refuses any digit, in five scripts, and `$ ＄ % ％ € £ ¥ ¢ ₹` in the AI's kept words (`ai_text_is_clean`, 0017) | `vitest run` (`model-prose.test.ts`; `templates.test.ts` holds the app's own words to the same rule) + `scripts/verify-migrations.sh` | every edit (schema: CI) |
-| Brand | The workbook vendor's name is in no tracked file's text or path, in any letter case | `git grep -niI -e "w[i]nky"` + `git ls-files` | every edit |
+| Browser holds no AI key | No AI service's API host (`generativelanguage.googleapis.com`, `api.groq.com`, `openrouter.ai/api`, `api.openai.com`, `api.anthropic.com`) and no `SERVICE_ROLE` in `apps/web/src` or the built JavaScript (`/setup/` left out: it is the AI helper's own source, never run by the page); `connect-src` is `'self'` and the Supabase project alone; and no code the browser runs (`apps/web/src`, `apps/web/*.ts`, `packages/*/src`) reads a build variable but `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`, or one by a computed name: Vite compiles such a read into the page as a bare value that no bundle scan can name | `vitest run` (`no-provider-hosts.test.ts`, `headers.test.ts`) + `node scripts/check-bundle.mjs` | every edit (bundle: CI) |
+| Model text carries no numbers | Every string a model writes is held to ADR 0005's text rule (`ModelProse`: NFKC, then no invisible character (`\p{Cf}`, `\p{Co}`, `\p{Cn}`, or a control but a line end or tab), no `\p{N}` or `\p{Sc}`, no markup or link characters, no number word but "one", no product or investing words, at most two line breaks, each field within its length) before it is drawn or kept; the database refuses any digit, in five scripts, and `$ ＄ % ％ € £ ¥ ¢ ₹` in the AI's kept words, and the bidi, zero-width and private-use characters (`ai_text_is_clean`, 0017, 0028); each filled blank is drawn in its own `<bdi>` | `vitest run` (`model-prose.test.ts`; `templates.test.ts` holds the app's own words to the same rule) + `scripts/verify-migrations.sh` | every edit (schema: CI) |
+| Brand | The workbook vendor's name is in no tracked or new (not ignored) file's text or path, in any letter case | `git grep -niI --untracked -e "w[i]nky"` + `git ls-files --cached --others --exclude-standard` | every edit |
+| Source data | No statement, export or receipt photo (`.pdf .csv .xls(x) .ofx .qfx .qif .numbers .ods .heic .heif .jp(e)g .webp`) is tracked or waiting unstaged, but reduced fixtures under `packages/*/test/fixtures` | `git ls-files --cached --others --exclude-standard` (`no_source_data` in `scripts/gates.sh`) | every edit |
 | Phone width | No class in `apps/web/src` fixes a width, minimum width, size or basis over 320 px outside a breakpoint; every grid has a column for a phone; every band that bleeds to the screen's edge takes back the 12 px gutter below 360 px; a link inside a sentence takes its 44 px from padding (`SENTENCE_LINK`), and a button drawn as underlined words from `LINE_BUTTON`; a date beside another field stacks below 360 px; every chart is held to a width (A26) | `vitest run` (`width-guard.test.ts`) | every edit |
 
 The web first-load row replaced the pending "≤700 KB gzipped" entry-bundle
@@ -117,6 +130,22 @@ each time.
 
 Verified to bite: injecting `Date.now()` and `toFixed()` into `packages/core`
 turns the gate run `RED`. A gate never seen to fail has not been tested.
+
+The purity rule caught only four spellings until 2026-10-01
+(architecture-a-03): `Date()`, `globalThis.Date.now()`, `performance.now()`,
+`crypto.randomUUID()`, a bare `localeCompare`, `new Intl.DateTimeFormat()`,
+`fetch`, `setTimeout`, `process.versions` and `toLocaleString()` all linted
+clean in `packages/core/src`, and `statement-parsers`, whose dedupe hash
+must read a file the same way every time, had no such rule at all. Each of
+those ten spellings was then planted in `core`, `statement-parsers`,
+`chart-specs`, `savings-coach` and `report-export` and seen `RED` in every
+one; `localeCompare` with a named locale stays allowed, `Intl` only in
+core's `order.ts` (F53), `crypto` only in `dedupe.ts`. In `money-primitives`,
+which keeps `Date` for its UTC calendar, a local getter, `Date()` and a
+parsed date string were seen `RED`. `packages/core` still type-checks with
+Node's types visible to `src`: its tsconfig builds `src` and `test` as one
+project that the other packages reference, and the lint rule names the
+same globals.
 
 Every module has a coverage floor. `statement-parsers` and
 `golden-verification` had none: thresholds apply only to files a glob matches,
@@ -177,7 +206,6 @@ the command to actually run.
 | Dimension | Rule | Activated by |
 |---|---|---|
 | Extraction accuracy | ≥90% zod-valid, ≥98% exact amounts over ≥20 labeled samples; no live provider calls in CI | `llm-providers`, and 20 labelled receipts that may be committed (see below) |
-| Ingest idempotency | Re-import yields 0 new rows; double-approve yields 1 transaction | `ingest-pipeline` |
 | Web entry charts | Chart code out of the entry chunk (N39: the Month draws its charts on every open, so this is still open) | a lazy MonthCharts, measured |
 | Engine speed | Full recompute over 5,000 transactions ≤50 ms | `calc-engine` rollups |
 | Feedback loop | `gates.sh fast` ≤5s · full ≤90s · CI ≤5 min | CI setup |

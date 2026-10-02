@@ -21,7 +21,7 @@ export interface Cell {
   readonly text: string
 }
 
-async function deflate(input: Uint8Array): Promise<Uint8Array> {
+export async function deflate(input: Uint8Array): Promise<Uint8Array> {
   const source = new ReadableStream({
     start(controller) {
       controller.enqueue(input)

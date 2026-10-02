@@ -10,8 +10,7 @@ import { createFakeSupabase } from './fake-supabase.js'
 
 const edit = (over: Partial<FundEdit> = {}): FundEdit => ({
   goalCents: 200_000,
-  savedCents: 13_300,
-  asOf: '2026-09-23',
+  saved: { cents: 13_300, asOf: '2026-09-23' },
   startDate: '2026-01-08',
   goalDate: '2027-10-08',
   unitCostCents: null,
@@ -54,8 +53,20 @@ describe('savings funds', () => {
       user_id: 'u1', name: 'Travel', category_id: 'travel', target_cents: 200_000, saved_cents: 13_300,
       balance_as_of: '2026-09-23', start_date: '2026-01-08', target_date: '2027-10-08',
     })
-    await saveFund(fake.client, { userId: 'u1', categoryId: 'travel', name: 'Travel', goalId: made!.id }, edit({ savedCents: 20_000, asOf: '2026-10-01', startDate: null }))
+    await saveFund(fake.client, { userId: 'u1', categoryId: 'travel', name: 'Travel', goalId: made!.id }, edit({ saved: { cents: 20_000, asOf: '2026-10-01' }, startDate: null }))
     expect(fake.tables.savings_goals[1]).toMatchObject({ saved_cents: 20_000, balance_as_of: '2026-10-01', start_date: null, name: 'Travel' })
+    expect(fake.tables.savings_goals).toHaveLength(2)
+  })
+
+  it('leaves the typed balance and its day alone when it was not retyped, and never makes a goal without them (backend-c1-01)', async () => {
+    const fake = withFunds()
+    await saveFund(fake.client, { userId: 'u1', categoryId: 'travel', name: 'Travel', goalId: null }, edit())
+    const made = fake.tables.savings_goals[1]
+    await saveFund(fake.client, { userId: 'u1', categoryId: 'travel', name: 'Travel', goalId: made!.id }, edit({ goalCents: 300_000, saved: null }))
+    expect(fake.tables.savings_goals[1]).toMatchObject({ target_cents: 300_000, saved_cents: 13_300, balance_as_of: '2026-09-23' })
+    await expect(saveFund(fake.client, { userId: 'u1', categoryId: 'flight', name: 'Flight', goalId: null }, edit({ saved: null }))).rejects.toThrow(
+      'A new goal needs what is saved in it.',
+    )
     expect(fake.tables.savings_goals).toHaveLength(2)
   })
 

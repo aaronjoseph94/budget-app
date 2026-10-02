@@ -60,6 +60,8 @@ export const TransactionRowSchema = z.object({
   created_at: TimestampSchema,
 })
 export type TransactionRow = z.infer<typeof TransactionRowSchema>
+/** The row as it arrives, before parsing: plain strings for dates, a number or string for cents. */
+export type TransactionRowWire = z.input<typeof TransactionRowSchema>
 
 const candidateShape = z.object({
   id: UuidSchema,
@@ -103,6 +105,11 @@ export const IngestCandidateRowSchema = candidateShape.superRefine((row, ctx) =>
   if (row.auto_approved_at !== null && row.category_source !== 'merchant_rule') {
     deny('Only an exact merchant_rules match may auto-approve', 'auto_approved_at')
   }
+  // 0004's candidates_model_category_never_approved: a model's guess is
+  // never the category of an approved row; approving it makes it the user's.
+  if (row.status === 'approved' && row.category_source === 'model') {
+    deny('A model-categorized candidate can never be approved', 'status')
+  }
   if (row.auto_approved_at !== null && row.status !== 'approved') {
     deny('An auto-approved candidate must be approved', 'status')
   }
@@ -122,6 +129,7 @@ export const IngestCandidateRowSchema = candidateShape.superRefine((row, ctx) =>
   }
 })
 export type IngestCandidateRow = z.infer<typeof IngestCandidateRowSchema>
+export type IngestCandidateRowWire = z.input<typeof IngestCandidateRowSchema>
 
 /**
  * A learned rule. An exact match on `match_merchant` is the only thing allowed

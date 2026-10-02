@@ -46,6 +46,16 @@ const sheet = (entries: PeriodEntry[], from = '2026-09-01', to = '2026-09-30') =
   periodSheet({ ...BASE, from: isoDate(from), to: isoDate(to), entries })
 
 describe('periodSheet (suite)', () => {
+  it('orders names tied on sortOrder the same on every device, in English order (architecture-a-02)', () => {
+    // Under a Swedish locale a bare localeCompare puts 'Zoo' before 'Ärenden'.
+    // This holds the order; it cannot see a bare localeCompare in an English
+    // process, which sorts the same. test/order.test.ts and the lint rule
+    // against a bare localeCompare in core (F53) guard that.
+    const tied = ['Zoo', 'apple', 'Ärenden'].map((name) => ({ id: name, name, kind: 'variable' as const, sortOrder: 0 }))
+    const s = periodSheet({ ...BASE, categories: tied })
+    expect(s.blocks.variable.rows.map((r) => r.categoryId)).toEqual(['apple', 'Ärenden', 'Zoo'])
+  })
+
   it('sums every row of a category, nets refunds, and totals the block', () => {
     const s = sheet([
       row('2026-09-02', -3_000, 'food'),

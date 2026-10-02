@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 /** A run's reply, either way, read field by field. The app reads none yet; its tasks arrive from A12. */
 type Answer = { ok: boolean; code?: string; provider?: string; model?: string; text?: string; tried?: { provider: string; model: string; result: string }[] }
-import { handle, route, sealKey } from '../ai/index.js'
+import { handle, listModels, route, sealKey } from '../ai/index.js'
 
 /**
  * `run` and its router (plan §3.5, ADR 0004): the owner's order, paid
@@ -38,6 +38,17 @@ const answers: Record<Service, () => Response> = {
   openai: () => json({ choices: [{ finish_reason: 'stop', message: { content: '{"ok":true}', refusal: null } }] }),
   anthropic: () => json({ stop_reason: 'end_turn', content: [{ type: 'text', text: '{"ok":true}' }] }),
 }
+/** A service that sends its headers at once, then never finishes its body until its call is given up on. */
+const stalls = (init: RequestInit) =>
+  new Response(
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('{"candidates":'))
+        init.signal?.addEventListener('abort', () => controller.error(new DOMException('aborted', 'AbortError')))
+      },
+    }),
+    { status: 200, headers: { 'content-type': 'application/json' } },
+  )
 /** A service that never answers until its call is given up on. */
 const silent = (init: RequestInit) =>
   new Promise<Response>((_, reject) => init.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError'))))
@@ -50,6 +61,10 @@ interface World {
   services?: Partial<Record<Service, (init: RequestInit) => Response | Promise<Response>>>
   claims?: string[]
   authAfterMs?: number
+  /** ai_note_outcome answers this status, as a database that fails just then would. */
+  noteStatus?: number
+  /** ai_usage_claim and ai_note_outcome each answer only after this long, as a slow database would. */
+  dbAfterMs?: number
 }
 
 const SETTINGS = { enabled: true, provider_order: ['gemini', 'groq', 'openrouter', 'openai', 'anthropic'], models: {}, daily_cap: 40, allow_paid: false }
@@ -82,7 +97,10 @@ async function world(w: World = {}, env: Record<string, string | undefined> = EN
       return json({ id: USER })
     }
     if (u === `${PROJECT}/rest/v1/rpc/ai_context_for`) return json(context)
+    const slow = u === `${PROJECT}/rest/v1/rpc/ai_usage_claim` || u === `${PROJECT}/rest/v1/rpc/ai_note_outcome`
+    if (slow && w.dbAfterMs !== undefined) await new Promise((r) => setTimeout(r, w.dbAfterMs))
     if (u === `${PROJECT}/rest/v1/rpc/ai_usage_claim`) return json(claims.shift() ?? 'ok')
+    if (u === `${PROJECT}/rest/v1/rpc/ai_note_outcome` && w.noteStatus !== undefined) return json({ code: '40001' }, w.noteStatus)
     if (u.startsWith(`${PROJECT}/rest/v1/rpc/`)) return new Response(null, { status: 204 })
     const service = serviceOf(u)
     if (service === undefined) return json({}, 404)
@@ -175,24 +193,94 @@ describe('failing over, in the owner’s order', () => {
     expect(r.rpc('ai_note_outcome')[0]).toMatchObject({ p_provider: 'gemini', p_code: 'timeout', p_cooldown_until: null })
   })
 
+  it('gives up on a service whose reply stalls after its headers, and asks the next (backend-b-05)', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    const { pending, calls, when } = await run({ saved: ['groq'], services: { gemini: stalls, groq: answers.groq } })
+    await when(() => calls.some((c) => serviceOf(c.url) === 'gemini'))
+    await vi.advanceTimersByTimeAsync(20_000)
+    const res = await pending
+    const r = summary(res.status, await res.text(), calls)
+    expect(r.body).toMatchObject({ ok: true, provider: 'groq' })
+    expect(r.rpc('ai_note_outcome')[0]).toMatchObject({ p_provider: 'gemini', p_code: 'timeout', p_cooldown_until: null })
+  })
+
+  it('gives up on a key test whose list stalls after its headers (backend-b-05)', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    const pending = listModels('groq', 'test-not-a-real-groq-key', (async (_url: string | URL | Request, init?: RequestInit) => stalls(init ?? {})) as typeof fetch)
+    await vi.advanceTimersByTimeAsync(20_000)
+    expect(await pending).toEqual({ outcome: 'timeout', listed: [] })
+  })
+
   it('starts no attempt whose whole timeout would pass the deadline', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
-    // Signing in took 45 s; two silent services take 20 s each, leaving 15 s: too little for a third.
-    const { pending, calls, when } = await run({ saved: ['groq', 'openrouter'], authAfterMs: 45_000, services: { gemini: silent, groq: silent, openrouter: answers.openrouter } })
+    // 15 s already spent on the request; two silent services take 20 s each, leaving 45 s: too little
+    // for a third attempt's 20 s plus up to 10 s each for its claim, its note and a key mark.
+    const { calls, fetchFn, when } = await world({ saved: ['groq', 'openrouter'], services: { gemini: silent, groq: silent, openrouter: answers.openrouter } })
+    const ask = { system: 'Answer.', data: {}, schema: { type: 'object' }, maxOutputTokens: 64 }
+    const pending = route(ENV, USER, 'test', ask, Date.now() - 15_000, fetchFn)
     const asked = (service: Service) => () => calls.some((c) => serviceOf(c.url) === service)
-    await when(() => calls.length > 0)
-    await vi.advanceTimersByTimeAsync(45_000)
     await when(asked('gemini'))
     await vi.advanceTimersByTimeAsync(20_000)
     await when(asked('groq'))
     await vi.advanceTimersByTimeAsync(20_000)
-    const res = await pending
-    const r = summary(res.status, await res.text(), calls)
+    const [status, body] = (await pending) as [number, Answer]
+    const r = { status, body, services: calls.map((c) => serviceOf(c.url)).filter((s) => s !== undefined) }
     expect(r.services).toEqual(['gemini', 'groq'])
     expect([r.status, r.body.code, r.body.tried]).toEqual([502, 'all_failed', [
       { provider: 'gemini', model: 'gemini-3.5-flash-lite', result: 'timeout' },
       { provider: 'groq', model: 'openai/gpt-oss-20b', result: 'timeout' },
     ]])
+  })
+
+  it('counts the database calls around an attempt, so the reply comes inside the deadline (review-r-01)', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    // Every claim and every note takes 9.9 s, just inside the database's 10 s; each service is
+    // silent for its 20 s. Two attempts end at 79.6 s. A third would be claimed until 89.5 s,
+    // asked until 109.5 s and noted until 119.4 s: past the app's 110 s wait, so it must not start.
+    const { calls, fetchFn, when } = await world({
+      saved: ['groq', 'openrouter'], dbAfterMs: 9_900,
+      settings: { provider_order: ['groq', 'openrouter', 'gemini'] },
+      services: { groq: silent, openrouter: silent, gemini: silent },
+    })
+    const ask = { system: 'Answer.', data: {}, schema: { type: 'object' }, maxOutputTokens: 64 }
+    const started = Date.now()
+    let answeredAt = Number.NaN
+    const pending = route(ENV, USER, 'test', ask, started, fetchFn).then((reply) => {
+      answeredAt = Date.now()
+      return reply
+    })
+    const made = (fn: string, n: number) => () => calls.filter((c) => c.url === `${PROJECT}/rest/v1/rpc/${fn}`).length === n
+    const asked = (service: Service) => () => calls.some((c) => serviceOf(c.url) === service)
+    await when(made('ai_usage_claim', 1))
+    await vi.advanceTimersByTimeAsync(9_900)
+    await when(asked('groq'))
+    await vi.advanceTimersByTimeAsync(20_000)
+    await when(made('ai_note_outcome', 1))
+    await vi.advanceTimersByTimeAsync(9_900)
+    await when(made('ai_usage_claim', 2))
+    await vi.advanceTimersByTimeAsync(9_900)
+    await when(asked('openrouter'))
+    await vi.advanceTimersByTimeAsync(20_000)
+    await when(made('ai_note_outcome', 2))
+    // Gemini's key needs no opening, so a third attempt would run on fake time alone.
+    await vi.advanceTimersByTimeAsync(60_000)
+    const [status, body] = (await pending) as [number, Answer]
+    const services = calls.map((c) => serviceOf(c.url)).filter((s) => s !== undefined)
+    expect(services).toEqual(['groq', 'openrouter'])
+    expect([status, body.code]).toEqual([502, 'all_failed'])
+    expect(answeredAt - started).toBe(79_600)
+  })
+
+  it('keeps a good reply when only noting its outcome failed (backend-b-07)', async () => {
+    const r = await ran({ noteStatus: 500, services: { gemini: answers.gemini } })
+    expect([r.status, r.body]).toEqual([200, { ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: '{"ok":true}' }])
+    expect(r.services).toEqual(['gemini'])
+  })
+
+  it('still stops when noting a failed attempt fails, rather than trying on blind', async () => {
+    const r = await ran({ saved: ['groq'], noteStatus: 500, services: { gemini: () => json({}, 503), groq: answers.groq } })
+    expect([r.status, r.body.code]).toEqual([503, 'helper_error'])
+    expect(r.services).toEqual(['gemini'])
   })
 
   it('makes at most three attempts', async () => {

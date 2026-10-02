@@ -10,6 +10,7 @@ import { useDebts } from '../debts.js'
 import { CompareLine } from './CompareLine.js'
 import { DebtsChart, SavingsGoalsChart, TopRing, YearPie } from './YearCharts.js'
 import { LINE_BUTTON } from '../components/ui/link.js'
+import { TryAgain } from '../try-again.js'
 
 /**
  * The workbook's Home, as the top of the Year (plan §2, §6.4), in Mockup A's
@@ -102,14 +103,18 @@ export function YearGlance({
         ) : (
           <ol className="space-y-3 text-sm">
             {atAGlance.top3.map((t, i) => (
-              // The figure drops under the name when both do not fit, as
-              // with the phone's text at 200%, rather than run off (N58).
-              <li key={t.categoryId} className="flex flex-wrap items-center gap-x-2">
+              // The name over its amount and share beside the ring: the same
+              // two lines at every width, where the figure dropped under the
+              // name at some widths and not others (V2). Both wrap rather
+              // than run off with the phone's text at 200% (N58).
+              <li key={t.categoryId} className="flex items-center gap-3">
                 <TopRing top={t} rank={i} />
-                <span className="min-w-0 flex-1 basis-20 break-words font-medium [overflow-wrap:anywhere]">{t.name}</span>
-                <span className="tnum ml-auto shrink-0 text-right text-muted-foreground">
-                  {formatCents(t.amountCents)} · {formatShare(t.shareBp)}
-                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium [overflow-wrap:anywhere]">{t.name}</p>
+                  <p className="tnum text-[0.8125rem] text-muted-foreground">
+                    {formatCents(t.amountCents)} · {formatShare(t.shareBp)}
+                  </p>
+                </div>
               </li>
             ))}
           </ol>
@@ -119,7 +124,7 @@ export function YearGlance({
       <Card className="sm:col-span-2">
         <h3 className={cn(TITLE, 'mb-3')}>Savings goals today</h3>
         {funds.status === 'loading' ? <p className="text-sm">Loading…</p> : null}
-        {funds.status === 'failed' ? <p className="text-sm">{funds.message}</p> : null}
+        {funds.status === 'failed' ? <p className="text-sm">{funds.message}{funds.missingUpdate ? null : <> <TryAgain />.</>}</p> : null}
         {funds.status === 'ready' ? (
           funds.funds.funds.some((f) => f.figures !== null) ? (
             <SavingsGoalsChart funds={funds.funds.funds} />
@@ -134,7 +139,7 @@ export function YearGlance({
       <Card className="sm:col-span-2">
         <h3 className={cn(TITLE, 'mb-3')}>Debts today</h3>
         {debts.status === 'loading' ? <p className="text-sm">Loading…</p> : null}
-        {debts.status === 'failed' ? <p className="text-sm">{debts.message}</p> : null}
+        {debts.status === 'failed' ? <p className="text-sm">{debts.message} <TryAgain />.</p> : null}
         {debts.status === 'ready' ? (
           debts.debts.status === null ? (
             <button type="button" className={cn('text-left text-sm underline underline-offset-4', LINE_BUTTON)} onClick={() => navigate('debts')}>

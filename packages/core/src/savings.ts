@@ -24,6 +24,7 @@
  */
 import { type Cents, type IsoDate, ZERO_CENTS, addCents, cents, monthsBetween, subCents, sumCents } from '@budget/money-primitives'
 import { shareOf } from './shares.js'
+import { byName } from './order.js'
 
 export interface SavingsFundPlanInput {
   /** Savings!B7, the Goal Amount. */
@@ -188,7 +189,7 @@ export interface SavingsFunds {
 export function savingsFunds(input: SavingsFundsInput): SavingsFunds {
   const onSavings = input.categories
     .filter((c) => c.kind === 'savings')
-    .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+    .sort((a, b) => a.sortOrder - b.sortOrder || byName(a.name, b.name))
   const fundIds = new Set(onSavings.map((c) => c.id))
   const planFor = (g: FundGoal, balance: Cents) =>
     savingsFundPlan({ goalCents: g.goalCents, currentCents: balance, startDate: g.startDate, goalDate: g.goalDate })

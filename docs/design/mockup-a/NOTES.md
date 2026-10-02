@@ -70,7 +70,8 @@ and the amber Review count.
 - **The "Review ›" on the waiting banner** is hidden from a screen reader
   (the banner's name already says Review) and below 480 px, where it
   squeezed the sentence to three words a line.
-- **Layout:** two across from 768 px; from 1280 px the lists two across
+- **Layout:** two across from 1024 px (768 px until the 2026-10-01
+  review, V8); from 1280 px the lists two across
   and the charts in a right column (17rem, 20rem from 1400 px, where the
   pill and the table's side padding also grow back to the mockup's).
 
@@ -537,6 +538,7 @@ the fixes below; every touch target is 44px or sits in a 44px label.
   Variable table fits its card; the Forecast's month table lost 4px
   between columns so it fits its card at 1280.
 - **N127 stays open:** chart text is one shared constant (see its entry).
+  Closed by the 2026-10-01 review (V1, below).
   N124 and N128 were already settled.
 
 ### Every deliberate difference from the mockups
@@ -585,8 +587,9 @@ Layout:
 - Ask's suggestion chips keep the small button's corners, not 14px pills.
 - Goal and debt actions keep every word (Mark as reached, Remove), where
   the mockup shows a bin alone.
-- Chart words are drawn by chart-specs at one scale, so the Month's
-  desktop legend is near 9px, where the mockup writes 14px HTML (N127).
+- Chart words are 13 px wherever a chart sits (V1, 2026-10-01), where the
+  mockup writes 12 to 14 px; until then they scaled with the card, 9 px
+  in the Month's column and 18 px on the Forecast (N127).
 
 Copy (the app's own; screens.md is the inventory):
 - Left out, as not the app's: the Month's hint lines under the stat cards
@@ -606,3 +609,98 @@ Copy (the app's own; screens.md is the inventory):
 Figures: none is computed on a screen. Every percentage, bar, ring and
 share is core's (goalProgress, budgetUsedBp, shareBp, partShares,
 goalBars, scaleSeries and the rest).
+
+## 2026-10-01 — The frontend and visual reviews
+
+Two reviews (frontend: FE-*, visual: V*) found what follows; each fix is
+its own commit with a test seen failing first. What the owner would feel,
+then why.
+
+Charts:
+- **Chart words are 13 px on every screen and width (V1, N127).** A chart
+  measures the box it is drawn in and chart-specs draws it on as many
+  units across as put its 12 px-designed words at 13 px (`widthFor`,
+  2,000 to 5,000 units). Heights, row pitches and every length from core
+  are unchanged; only the horizontal span moves, so a narrow card shortens
+  a long name with "…" sooner, and a wide one gives it more room. Rings
+  and sparklines sit in boxes of their own size and stay at 3,000. Before
+  a chart is measured (and in an exported file) it is drawn at 3,000, as
+  before. Chosen over three fixed sizes: one size per chart could not hold
+  12 to 14 px for a chart whose card is 222 px at 1440 and 324 px on a
+  phone. Measured at 320, 390, 768, 1024, 1280 and 1440, three stay under
+  13 px: the Year's pie in the glance row at 1280 (183 px across, 11 px;
+  drawn on fewer units its legend would cut "Expenses" short), the twelve
+  month names, which shrink to 11.7 px on a phone to keep their gap (V6),
+  and the Against goals labels, four fifths of the text by design.
+- **The donut's legend names are in the ink, the figures muted (V5),** as
+  Month.dc.html writes them; the hue stays on the slices and swatches.
+- **A Goal's pale key swatch is edged in its Actual's colour (V4);** the
+  bars are not, since they sit on their own track.
+- **Twelve months' names never touch (V6):** whole where they fit with a
+  6 px gap, a little smaller (not under four fifths) where that is
+  enough, and by first letter ("J F M") on the narrowest charts. Each
+  column's title keeps the whole month.
+- **The Year draws its totals pie once (V12),** in the glance row; the
+  chart row's two charts take two columns each, so "Against goals and
+  budgets" is on one line (V19).
+
+Layout:
+- **The Month, Week and Pay lay their lists one across below 1024 px
+  (V8).** Two beside the tablet rail were 225 px each and broke "Variable
+  expenses" and most names onto three lines; the 13 px table head that
+  squeezed them in is gone.
+- **A list with every row folded says "Nothing on this list this month."
+  (this week, this pay period) with its Show N empty (V9),** not a tinted
+  table head over no rows.
+- **On a phone a list card's tile is 40 px and its name 16 px, and "of
+  $budget" stays whole (V20),** so the head is two lines, not five.
+- **The Year's Top 3 is each name over its amount and share, at every
+  width (V2);** four across, each table card's total sits under its name,
+  so every head is two lines and the tables start level (V3).
+- **Bill calendar days: each bill's name over its amount, on every day
+  and width (V13);** still no "…". Two columns, tried first, squeezed a
+  tablet's day to a letter a line ("R e n t") and broke "Insuranc e" on a
+  desktop, so the name wraps between words and breaks only a word wider
+  than the day.
+- **Comparison lines start their second half with the dot (V7),** so "·"
+  never ends a line or stands alone, and a figure keeps its word ("$1,860.23
+  spent"), where "spent" stood on a line alone in a narrow card.
+- **Reports' stepper shows a dimmed chevron at the latest month (V15),**
+  as the Week's and Pay's do.
+- **Setup's column head is "Monthly amount" on one line; "Amounts apply
+  from September on." joins the hint above (V16).** Each field's own name
+  still says the month.
+- **Savings goal cards fill their row, actions at the foot (V17),** and
+  "saved of $30,000.00" stays on one line (Savings and the Coach).
+- **Help's two closing cards are one height (V18); the sign-in subtitle
+  is balanced (V23).**
+
+Behaviour:
+- **A screen that cannot load says so, with Reload (FE-1),** where a
+  missing chunk or a screen's error left a blank page; a chunk from an
+  older deploy reloads the page once by itself. Not offline, where the
+  reload would fail too and the browser's own error page would take the
+  app's place: the note stays and says to check the connection.
+- **A late AI reading never overwrites what the owner did meanwhile:** a
+  receipt read after "Use another photo" is dropped and its preview let go
+  (FE-2); Just type it's fill is dropped once the form has been changed or
+  sent, and a reading that fails says so (FE-4). An Add pressed early that
+  only said what was missing sent nothing, so the reading still fills in.
+- **All transactions keeps its rows on screen while it reads again after a
+  removal (FE-5);** only a new month shows "Loading…". The removed row and
+  its amount go at once, so a row already deleted never offers Remove.
+- **Approve these N marks each category the AI chose with ✨, and says
+  so once (FE-7);** a category the owner picked has no mark. "Not this"
+  can no longer be undone by a read that was already out (FE-8).
+- **Every field has a name a screen reader says (FE-6, FE-12):** the
+  search on All transactions, a new category's name on Review; Add's list
+  picker is labelled "Which list", the words it is named by.
+- **The Week's loading pulse and a progress bar's growth stop under
+  reduced motion (FE-11).**
+- **Ask reads the payoff plan again after a read that failed (FE-13).**
+
+Left as they were, and why: the reviews' taste calls (V10 Review's
+disabled Approve, V14 the Year chip's ink, V21 today's dark calendar
+cell, V22 the sidebar's group spacing) and FE-3, FE-10, which the
+verification refuted. Settings' new-category row (FE-6 in part, FE-9,
+V11) is the AI-apps build's file and waits for it.

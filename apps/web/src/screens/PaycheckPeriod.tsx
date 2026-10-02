@@ -15,7 +15,7 @@ import { useAppData } from '../app-data.js'
 import { latestStatementEnd, listBudgetHistory, listPlanHistory, listTransactions } from '../ledger.js'
 import type { BudgetRow, Category, LedgerRow, PayScheduleRow, PlanRow } from '../ledger.js'
 import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
-import { formatCents, formatDateRange, formatMonthTitle, todayIso } from '../format.js'
+import { formatCents, formatDateRange, formatMonthTitle } from '../format.js'
 import { navigate } from '../nav.js'
 import { Alert, Loading } from '../components/ui/feedback.js'
 import { Icon } from '../components/ui/icons.js'
@@ -28,6 +28,7 @@ import { ImportedThrough, PeriodBlocks, StepButton, TransfersNote } from './Mont
 import { NOT_SPENDING, OpenedCharges } from './MonthCharges.js'
 import { FREQUENCY_WORD } from './SetupPay.js'
 import { HelpButton } from '../help/HelpButton.js'
+import { TryAgain } from '../try-again.js'
 
 /** In words, how a monthly amount is shared across this pay (F15). */
 const SHARE: Readonly<Record<PaySchedule['frequency'], string>> = {
@@ -59,10 +60,10 @@ export function PaycheckPeriod({
   /** Which source drives the period, when there is a choice; shown above how it is counted. */
   chooser?: ReactNode
 }) {
-  const { supabase, categories, version } = useAppData()
+  const { supabase, categories, version, today: day0 } = useAppData()
   const { first_pay_date: first, frequency } = row
   const schedule = useMemo((): PaySchedule => ({ firstPayDate: isoDate(first), frequency }), [first, frequency])
-  const today = isoDate(todayIso())
+  const today = isoDate(day0)
   const { start, end } = payPeriod({ schedule, asOf: day === null ? today : isoDate(day) })
   const month = monthBounds(start).start
   const [loaded, setLoaded] = useState<Loaded | null>(null)
@@ -107,7 +108,7 @@ export function PaycheckPeriod({
         startingBalanceCents: null,
       })
     } catch {
-      return 'A charge, a budget or a monthly amount in this pay period names a category that did not load, so it is not shown. Reload to try again.'
+      return 'A charge, a budget or a monthly amount in this pay period names a category that did not load, so it is not shown.'
     }
   }, [here, categories, start, schedule])
 
@@ -159,7 +160,7 @@ export function PaycheckPeriod({
       </header>
 
       {error !== null ? <Alert tone="error" title="Could not load this pay period">{error}</Alert> : null}
-      {typeof sheet === 'string' ? <Alert tone="error" title="Could not show this pay period">{sheet}</Alert> : null}
+      {typeof sheet === 'string' ? <Alert tone="error" title="Could not show this pay period">{sheet} <TryAgain />.</Alert> : null}
       {sheet === null && error === null ? <Loading what="this pay period" /> : null}
 
       {sheet !== null && typeof sheet !== 'string' ? (
@@ -188,8 +189,8 @@ export function PaycheckPeriod({
             </section>
           </div>
           <ImportedThrough through={sheet.importedThrough} />
-          <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:gap-5">
-            <PeriodBlocks blocks={sheet.blocks} onOpen={setOpened} />
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2 xl:gap-5">
+            <PeriodBlocks blocks={sheet.blocks} period="this pay period" onOpen={setOpened} />
           </div>
           <TransfersNote cents={sheet.transfersCents} onOpen={() => setOpened(NOT_SPENDING)} />
           {here !== null && opened !== null ? (

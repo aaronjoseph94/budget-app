@@ -42,7 +42,6 @@ import {
   formatMonthName,
   formatMonthTitle,
   formatShortMonth,
-  todayIso,
 } from '../format.js'
 import { Alert, Loading, SavedNote } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
@@ -58,6 +57,7 @@ import { MonthCharts } from './MonthCharts.js'
 import { MonthSummary } from './MonthSummary.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { ErrorBoundary } from '../components/ErrorBoundary.js'
+import { TryAgain } from '../try-again.js'
 
 // The coach line and the forecast line are their own chunks, fetched once the Month has drawn (D27).
 const MonthCoachLine = lazy(() => import('./MonthCoachLine.js'))
@@ -75,8 +75,8 @@ const MonthForecastLine = lazy(() => import('./MonthForecastLine.js'))
  * in it.
  */
 export function MonthScreen({ month }: { month: string | null }) {
-  const { supabase, categories, pendingTotal, loadError, status, version } = useAppData()
-  const { start, end } = monthBounds(isoDate(month === null ? todayIso() : `${month}-01`))
+  const { supabase, categories, pendingTotal, loadError, status, version, today } = useAppData()
+  const { start, end } = monthBounds(isoDate(month === null ? today : `${month}-01`))
   const step = (months: number) => navigate('month', shiftMonth(start, months).slice(0, 7))
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -151,7 +151,7 @@ export function MonthScreen({ month }: { month: string | null }) {
       // The engine refuses a charge, a budget or a monthly amount whose
       // category it was not given rather than leave it out of every total.
       // Said plainly, never as its message.
-      return 'A charge, a budget or a monthly amount this month names a category that did not load, so the month is not shown. Reload to try again.'
+      return 'A charge, a budget or a monthly amount this month names a category that did not load, so the month is not shown.'
     }
   }, [here, categories, start])
   // Null while either read is out; 'failed' hides the comparison with one line.
@@ -163,7 +163,7 @@ export function MonthScreen({ month }: { month: string | null }) {
       return periodComparison({
         period: 'month',
         month: start,
-        asOf: isoDate(todayIso()),
+        asOf: isoDate(today),
         historyStart: historyStart({
           statementPeriodStarts: before.statementStarts.map((d) => isoDate(d)),
           entryDates: before.entryDates.map((d) => isoDate(d)),
@@ -176,7 +176,7 @@ export function MonthScreen({ month }: { month: string | null }) {
       // As the month's own sheet: a row naming a category that did not load.
       return 'failed'
     }
-  }, [here, earlier, categories, start])
+  }, [here, earlier, categories, start, today])
   // Left, or the change against the same days last month, in every block's
   // third column: one choice for the whole Month, kept on this device.
   const [third, setThird] = useState<ThirdColumn>(readThird)
@@ -187,7 +187,6 @@ export function MonthScreen({ month }: { month: string | null }) {
   const compared = comparison !== null && comparison !== 'failed' && comparison.status === 'compared' ? comparison : null
   // The coach line speaks of today, so only on this month, and only from
   // the two months already read: never a read of its own (D27).
-  const today = todayIso()
   const lastMonth = earlier !== null && earlier.start === start && !('failed' in earlier) ? earlier : null
   const coachRead = useMemo(
     () =>
@@ -281,7 +280,7 @@ export function MonthScreen({ month }: { month: string | null }) {
       ) : null}
       {typeof sheet === 'string' ? (
         <Alert tone="error" title="Could not show this month">
-          {sheet}
+          {sheet} <TryAgain />.
         </Alert>
       ) : null}
       {/* A first load that failed is said above the screen, by App, and this
@@ -338,12 +337,14 @@ export function MonthScreen({ month }: { month: string | null }) {
           />
           {vsLabel === null ? null : <ThirdSwitch third={third} vsLabel={vsLabel} onChange={chooseThird} />}
           {/* Phones: the block every statement changes first, and the charts
-            last (§6.2). Two columns from 768px; from 1280px Mockup A's
+            last (§6.2). Two columns from 1024px, one below it, where two
+            beside the tablet rail were 225px each and broke every name (V8);
+            from 1280px Mockup A's
             layout, the lists two across and the charts in a column on the
             right. The page stays in phone order, which a screen reader follows. */}
-          <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,17rem)] xl:gap-5 min-[1400px]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,20rem)]">
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,17rem)] xl:gap-5 min-[1400px]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,20rem)]">
             <PeriodBlocks blocks={sheet.blocks} {...blockProps} />
-            <MonthCharts sheet={sheet} className="order-7 md:col-span-2 xl:col-span-1 xl:col-start-3 xl:row-span-3 xl:row-start-1" />
+            <MonthCharts sheet={sheet} className="order-7 lg:col-span-2 xl:col-span-1 xl:col-start-3 xl:row-span-3 xl:row-start-1" />
           </div>
           <TransfersNote cents={sheet.transfersCents} onOpen={() => setOpened(NOT_SPENDING)} />
           {here !== null && opened !== null ? (
@@ -545,6 +546,7 @@ export function Block({
   onOpen,
   onEditStart,
   editor,
+  period = 'this month',
   className,
 }: {
   kind: BlockKind
@@ -559,6 +561,8 @@ export function Block({
   onEditStart?: () => void
   /** The form that types a row's budget, in a row of its own under it; without it a budget is only shown. */
   editor?: (row: Row, word: BudgetWord, done: EditorDone) => ReactNode
+  /** The period in words, for a list with every row folded: "this week". */
+  period?: string
   className: string
 }) {
   const [showEmpty, setShowEmpty] = useState(false)
@@ -599,14 +603,15 @@ export function Block({
         goalBars. */}
       <div className="flex flex-col gap-3.5 px-4 pt-4 pb-3.5 max-[359px]:px-3 md:px-5 md:pt-5">
         <div className="flex items-center gap-3.5">
-          <span aria-hidden="true" className={cn('flex size-12 shrink-0 items-center justify-center rounded-lg', tone.tile, tone.icon)}>
+          {/* A smaller tile and name on a phone, so the head keeps to two lines (V20). */}
+          <span aria-hidden="true" className={cn('flex size-12 shrink-0 items-center justify-center rounded-lg max-sm:size-10', tone.tile, tone.icon)}>
             <Icon name={tone.glyph} className="size-5" />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-semibold leading-snug">{heading}</h2>
+            <h2 className="text-lg font-semibold leading-snug max-sm:text-base">{heading}</h2>
             <p className="text-[0.9375rem] text-muted-foreground">
               <Figure className="font-semibold text-foreground">{formatCents(block.actualTotalCents)}</Figure>
-              {budgeted ? <span className="tnum"> of {formatCents(block.effectiveBudgetTotalCents)}</span> : null}
+              {budgeted ? <span className="tnum whitespace-nowrap"> of {formatCents(block.effectiveBudgetTotalCents)}</span> : null}
               {/* Under $1 is the same (F26), and a chip saying so on every quiet list is noise. */}
               {/* Kept whole where it fits; with the phone's text at 200% it was
                 wider than the card and pushed the Month sideways (N58). */}
@@ -637,15 +642,16 @@ export function Block({
             Add one in Setup
           </a>
         </p>
+      ) : shown.length === 0 ? (
+        // Every row folded: a sentence, not a tinted head over no rows (V9).
+        <p className="px-4 py-3 text-sm text-muted-foreground md:px-5">Nothing on this list {period}.</p>
       ) : (
         // A table wider than its card scrolls rather than clip a column.
         // Below 360 px a 13 px type and 12 px edges keep every column in
         // view in both of the last column's modes (N66).
         <div className="overflow-x-auto">
           <table className="w-full text-sm max-[359px]:text-[0.8125rem]">
-            {/* Beside the rail, 768 to 1023px, a 13px head keeps "Budgeted" and an
-              overspent Left inside a two-across card. */}
-            <thead className={cn(tone.header, tone.ink, 'md:max-lg:text-[0.8125rem]')}>
+            <thead className={cn(tone.header, tone.ink)}>
               <tr>
                 <th scope="col" className={cn('py-2.5 pl-4 pr-1 text-left font-medium max-[359px]:pl-3', left)}>
                   Category
@@ -788,7 +794,7 @@ export function Block({
 /**
  * The six blocks in list order, as the Month, the Week and Paycheck all lay
  * them (Mockup A): the order a phone shows and a screen reader follows,
- * two across from 768px in the grid the screen gives them. The workbook's
+ * two across from 1024px in the grid the screen gives them. The workbook's
  * four-across order retired with step 4 (CR-2: each had its own copy).
  */
 export function PeriodBlocks({

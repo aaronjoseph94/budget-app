@@ -31,10 +31,10 @@ export function GoalCard({ weekSpentCents, asOf }: { weekSpentCents: number; asO
     ...(goal.unit_label !== null ? { unitLabel: goal.unit_label } : {}),
   }
   const progress = goalProgress(saving)
-  const spentAsTime = goal.unit_cost_cents !== null && weekSpentCents > 0 ? timeEquivalent(weekSpentCents, goal.unit_cost_cents) : null
+  const spentAsTime = goal.unit_cost_cents !== null && weekSpentCents > 0 ? timeEquivalent({ amountCents: weekSpentCents, unitCostPerHourCents: goal.unit_cost_cents }) : null
   const perWeek =
     goal.target_date !== null && goal.target_date > asOf
-      ? requiredWeeklyContribution(saving, isoDate(asOf), isoDate(goal.target_date))
+      ? requiredWeeklyContribution({ goal: saving, asOf: isoDate(asOf), targetDate: isoDate(goal.target_date) }).weeklyCents
       : null
 
   const bp = progress.percentCompleteBasisPoints
@@ -44,8 +44,8 @@ export function GoalCard({ weekSpentCents, asOf }: { weekSpentCents: number; asO
         <span className="relative flex size-24 shrink-0 items-center justify-center">
           {/* The ring is the percentage in it, drawn: a track in the soft
             accent and an arc of core's basis points, a length of 100. No
-            arc at 0 or below, where withdrawals took a fund under zero: a
-            negative dash is invalid and would draw the whole ring. */}
+            arc at 0, which is also where core puts a fund withdrawals took
+            under zero: a zero-length round cap would still draw a dot. */}
           <svg aria-hidden="true" viewBox="0 0 100 100" className="absolute inset-0 size-full -rotate-90">
             <circle cx="50" cy="50" r="42" fill="none" strokeWidth="10" className="stroke-primary-soft" />
             {bp > 0 ? (

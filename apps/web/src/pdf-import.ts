@@ -12,6 +12,7 @@
  */
 import { reconcileStatement, type Reconciliation } from '@budget/core'
 import {
+  MAX_PDF_BYTES,
   readPdfText,
   readRogersStatement,
   type AcceptedRow,
@@ -74,4 +75,13 @@ export async function readStatementPdf(bytes: Uint8Array): Promise<PdfImport> {
     rejected,
     reconciliation: reconcileStatement({ amountsCents: statementAmountsCents, summary }),
   }
+}
+
+/**
+ * A chosen file, refused by its size before any of it is read: reading a
+ * huge file into memory is itself what would exhaust a phone (security-b-03).
+ */
+export async function readStatementFile(file: { readonly size: number; arrayBuffer(): Promise<ArrayBuffer> }): Promise<PdfImport> {
+  if (file.size > MAX_PDF_BYTES) return { ok: false, ...(PDF_FAILURES['too_large'] ?? fallback) }
+  return readStatementPdf(new Uint8Array(await file.arrayBuffer()))
 }

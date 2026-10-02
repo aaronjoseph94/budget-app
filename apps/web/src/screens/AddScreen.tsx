@@ -4,7 +4,7 @@ import { isoDate } from '@budget/core'
 import { parseMoneyInput, useAppData } from '../app-data.js'
 import { addTypedTransaction, ensureCategory, saveImport } from '../ledger.js'
 import { ImportScreen, type SaveRequest } from '../ImportScreen.js'
-import { readStatementPdf, type PdfImport } from '../pdf-import.js'
+import { readStatementFile, type PdfImport } from '../pdf-import.js'
 import { readReceipt, type ReceiptLink } from '../receipt.js'
 import { formatCents, formatDayMonth, formatIsoDate, todayIso } from '../format.js'
 import { IngestedText } from '../ui.js'
@@ -135,7 +135,7 @@ export function StatementImport() {
     // "Reading…" with no way back (CR-7).
     try {
       if (isPdf) {
-        const result = await readStatementPdf(new Uint8Array(await file.arrayBuffer()))
+        const result = await readStatementFile(file)
         setLoaded({ kind: 'pdf', name: file.name, result })
       } else {
         setLoaded({ kind: 'csv', name: file.name, text: await file.text() })
@@ -414,9 +414,21 @@ function TypedEntry() {
   // The amount Just type it's AI read, until the owner changes it (plan A22).
   const [aiAmount, setAiAmount] = useState(false)
   const amountError = useId()
+  // Every change to the form and every Add that sends it, so a late Just
+  // type it reading knows the form moved on without it (FE-4).
+  const edits = useRef(0)
+  // This entry as filled in: kept when Add is pressed again after a failure,
+  // so a write whose answer was lost is not added twice; new once the form
+  // changes or the entry is added (backend-a-07).
+  const entry = useRef(crypto.randomUUID())
+  const changed = () => {
+    edits.current += 1
+    entry.current = crypto.randomUUID()
+  }
 
   const cents = parseMoneyInput(amount)
   const fill = (f: QuickFill) => {
+    entry.current = crypto.randomUUID()
     setDirection(f.flow)
     setNewKind(f.flow === 'spent' ? 'variable' : 'income')
     setAmount(f.amount)
@@ -446,6 +458,10 @@ function TypedEntry() {
     if (!ready) return setTried((n) => n + 1)
     if (accountId === null) return setOutcome({ ok: false, message: NO_ACCOUNT })
     if (cents === null) return
+    // The form is being sent, so a Just type it reading still out would
+    // refill what was just added (FE-4). An Add that only said what was
+    // missing sent nothing, and the reading is still wanted.
+    edits.current += 1
     setBusy(true)
     setOutcome(null)
     try {
@@ -454,6 +470,7 @@ function TypedEntry() {
           ? (await ensureCategory(supabase, userId, atEndOf(categories, newCategory.trim(), newKind))).id
           : categoryId
       await addTypedTransaction(supabase, {
+        entryId: entry.current,
         accountId,
         postedOn: isoDate(date),
         // The parser's own sign convention, not arithmetic here: spending is an
@@ -463,6 +480,7 @@ function TypedEntry() {
         categoryId: category,
       })
       setOutcome({ ok: true, message: `Added ${formatCents(cents)} — ${merchant.trim()}.` })
+      entry.current = crypto.randomUUID()
       setTried(0)
       setAmount('')
       setAiAmount(false)
@@ -480,13 +498,14 @@ function TypedEntry() {
   return (
     <Card>
       <CardContent className="space-y-4 pt-5 md:space-y-[1.125rem] md:px-6 md:pt-[1.375rem] md:pb-[1.375rem]">
-        <JustTypeIt onFill={fill} />
+        <JustTypeIt onFill={fill} edits={edits} />
         <hr className="border-border" />
         {/* noValidate: the browser's own bubble would stop the press before
           StillNeeded can say, in words kept on the page, what is missing. */}
         <form
           className="space-y-4"
           noValidate
+          onChange={changed}
           onSubmit={(e) => {
             e.preventDefault()
             void submit()
@@ -563,7 +582,8 @@ function TypedEntry() {
               <Field label="New category name">
                 <Input value={newCategory} maxLength={60} onChange={(e) => setNewCategory(e.target.value)} />
               </Field>
-              <Field label="On the list">
+              {/* The picker's own name, so what is heard is what is seen (FE-12). */}
+              <Field label="Which list">
                 <ListSelect value={newKind} onChange={setNewKind} lists={LISTS_FOR[direction]} />
               </Field>
             </div>
@@ -626,6 +646,16 @@ const PHOTO_LINKS: Readonly<Record<ReceiptLink, { readonly href: string; readonl
   'ai-rests': { href: hashOf({ screen: 'help', param: 'ai-rests' }), words: 'Why?' },
 }
 
+/** A photo's bytes as SHA-256 hex; null when the file cannot be read, and the receipt is then told apart only by its fields. */
+async function photoDigest(file: File): Promise<string | null> {
+  try {
+    const digest = await crypto.subtle.digest('SHA-256', await file.arrayBuffer())
+    return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')
+  } catch {
+    return null
+  }
+}
+
 /**
  * A receipt photo, read by an AI service that reads images (the AI
  * helper, or read-receipt before it is installed), checked by the user,
@@ -656,11 +686,33 @@ function PhotoEntry() {
   ].filter((n): n is string => n !== null)
   const ready = needed.length === 0
 
+  // Which photo is being read: "Use another photo" during a read, or the
+  // screen closing, makes a late reading stale, and it is dropped (FE-2).
+  const reading = useRef(0)
+  // The photo's own SHA-256, its identity for the dedupe hash: two receipts
+  // with the same shop, day and total are two purchases, and the same photo
+  // sent twice is one (backend-c1-02). Never logged or shown.
+  const photoId = useRef<Promise<string | null> | null>(null)
+  // The preview on show, let go of when the screen closes.
+  const shown = useRef<string | null>(null)
+  useEffect(
+    () => () => {
+      reading.current += 1
+      if (shown.current !== null) URL.revokeObjectURL(shown.current)
+    },
+    [],
+  )
+
   const onPhoto = async (file: File) => {
+    const mine = ++reading.current
+    if (shown.current !== null) URL.revokeObjectURL(shown.current)
     const preview = URL.createObjectURL(file)
+    shown.current = preview
     setOutcome(null)
     setState({ kind: 'reading', preview })
+    photoId.current = photoDigest(file)
     const result = await readReceipt(supabase, file)
+    if (mine !== reading.current) return
     if (result.ok) {
       setMerchant(result.reading.merchant ?? '')
       setAmount(result.reading.total)
@@ -672,7 +724,10 @@ function PhotoEntry() {
   }
 
   const reset = () => {
+    reading.current += 1
     if (state.kind !== 'none') URL.revokeObjectURL(state.preview)
+    shown.current = null
+    photoId.current = null
     setState({ kind: 'none' })
     setMerchant('')
     setAmount('')
@@ -689,6 +744,7 @@ function PhotoEntry() {
     setBusy(true)
     setOutcome(null)
     try {
+      const digest = photoId.current === null ? null : await photoId.current
       const counts = await saveImport(supabase, {
         userId,
         accountId,
@@ -701,7 +757,7 @@ function PhotoEntry() {
             postedOn: isoDate(date),
             amountCents: applySignConvention(cents, { kind: 'debit_positive' }),
             merchantRaw: merchant.trim(),
-            issuerTransactionId: undefined,
+            issuerTransactionId: digest === null ? undefined : `receipt:${digest}`,
           },
         ],
       })
@@ -711,7 +767,7 @@ function PhotoEntry() {
           counts.autoApproved > 0
             ? 'Added — filed automatically from your past choices.'
             : counts.deduped > 0
-              ? 'You already had this one, so nothing was added.'
+              ? 'This photo was already sent, so nothing was added.'
               : 'Sent to Review. Pick a category there and it counts.',
       })
       await refresh()
