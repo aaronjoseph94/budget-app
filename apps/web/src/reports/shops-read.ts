@@ -8,7 +8,6 @@
  */
 import { useEffect, useState } from 'react'
 import {
-  historyStart,
   isoDate,
   monthBounds,
   recurringCharges,
@@ -21,7 +20,7 @@ import {
 } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { listTransactions, needsOneTimeUpdate, readRecordsStart, type Category, type LedgerRow } from '../ledger.js'
-import { categoriesForCore, shopEntriesForCore } from '../sheet-input.js'
+import { categoriesForCore, historyFrom, type RecordsStart, shopEntriesForCore } from '../sheet-input.js'
 
 /** Months read before the one shown. */
 const BEFORE = 24
@@ -31,7 +30,7 @@ export interface ShopsRows {
   readonly month: string
   readonly readFrom: string
   readonly rows: readonly LedgerRow[]
-  readonly records: { readonly statementStarts: readonly string[]; readonly entryDates: readonly string[] }
+  readonly records: RecordsStart
 }
 
 export type ShopsRead =
@@ -82,10 +81,7 @@ export interface ShopFigures {
  * where the engine refuses a row.
  */
 export function shopsOf(rows: ShopsRows, categories: readonly Category[], notSubscriptions: readonly string[]): ShopFigures | null {
-  const start = historyStart({
-    statementPeriodStarts: rows.records.statementStarts.map((d) => isoDate(d)),
-    entryDates: rows.records.entryDates.map((d) => isoDate(d)),
-  }).start
+  const start = historyFrom(rows.records)
   const input = { historyStart: start, readFrom: isoDate(rows.readFrom), categories: categoriesForCore(categories), entries: shopEntriesForCore(rows.rows) }
   const top = topShops({ ...input, asOf: isoDate(rows.asOf), month: isoDate(rows.month) })
   if (top.status !== 'ready') return null

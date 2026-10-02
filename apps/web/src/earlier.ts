@@ -8,9 +8,9 @@
  * core's to say; this only reads the rows.
  */
 import { useEffect, useState } from 'react'
-import { historyStart, isoDate } from '@budget/core'
 import { useAppData } from './app-data.js'
 import { listTransactions, readRecordsStart, type LedgerRow } from './ledger.js'
+import { historyFrom } from './sheet-input.js'
 
 export interface EarlierRead {
   /** Every row from `from` to `to`; core keeps the days it compares. */
@@ -36,10 +36,7 @@ export function useEarlier(range: { readonly from: string; readonly to: string }
     let live = true
     Promise.all([listTransactions(supabase, { from, to }), readRecordsStart(supabase)])
       .then(([rows, records]) => {
-        const start = historyStart({
-          statementPeriodStarts: records.statementStarts.map((d) => isoDate(d)),
-          entryDates: records.entryDates.map((d) => isoDate(d)),
-        }).start
+        const start = historyFrom(records)
         if (live) setRead({ key: asked, value: { rows, historyStart: start } })
       })
       .catch(() => live && setRead({ key: asked, value: 'failed' }))

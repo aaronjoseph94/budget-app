@@ -9,7 +9,6 @@
  */
 import { useEffect, useState } from 'react'
 import {
-  historyStart,
   isoDate,
   personalBest,
   shiftMonth,
@@ -23,7 +22,7 @@ import {
 } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { listTransactions, needsOneTimeUpdate, readRecordsStart, type Category, type LedgerRow } from '../ledger.js'
-import { entriesForCore, weekCategoriesForCore } from '../sheet-input.js'
+import { entriesForCore, historyFrom, type RecordsStart, weekCategoriesForCore } from '../sheet-input.js'
 
 /** Months read before this one. */
 const MONTHS = 12
@@ -32,7 +31,7 @@ export interface HabitRows {
   readonly asOf: string
   readonly readFrom: string
   readonly rows: readonly LedgerRow[]
-  readonly records: { readonly statementStarts: readonly string[]; readonly entryDates: readonly string[] }
+  readonly records: RecordsStart
 }
 
 export type HabitsRead =
@@ -78,10 +77,7 @@ export interface HabitFigures {
 export function habitsOf(rows: HabitRows, categories: readonly Category[]): HabitFigures {
   const input = {
     asOf: isoDate(rows.asOf),
-    historyStart: historyStart({
-      statementPeriodStarts: rows.records.statementStarts.map((d) => isoDate(d)),
-      entryDates: rows.records.entryDates.map((d) => isoDate(d)),
-    }).start,
+    historyStart: historyFrom(rows.records),
     readFrom: isoDate(rows.readFrom),
     categories: weekCategoriesForCore(categories),
     entries: entriesForCore(rows.rows),

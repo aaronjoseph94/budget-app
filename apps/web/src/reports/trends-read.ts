@@ -7,10 +7,10 @@
  * say what each month came to, and whether a line is steady (F37).
  */
 import { useEffect, useState } from 'react'
-import { categoryTrends, historyStart, isoDate, monthBounds, monthlyTrend, shiftMonth, type CategoryTrend, type MonthlyTrend } from '@budget/core'
+import { categoryTrends, isoDate, monthBounds, monthlyTrend, shiftMonth, type CategoryTrend, type MonthlyTrend } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { listPlanHistory, listTransactions, needsOneTimeUpdate, readRecordsStart, type Category } from '../ledger.js'
-import { categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
+import { categoriesForCore, entriesForCore, historyFrom, plansForCore } from '../sheet-input.js'
 import type { ReportRows } from './read.js'
 
 /** The longer view's months. */
@@ -58,10 +58,7 @@ export interface TrendFigures {
 export function trendsOf(rows: Omit<ReportRows, 'month'>, categories: readonly Category[], months: 6 | 12): TrendFigures {
   const input = {
     asOf: isoDate(rows.asOf),
-    historyStart: historyStart({
-      statementPeriodStarts: rows.records.statementStarts.map((d) => isoDate(d)),
-      entryDates: rows.records.entryDates.map((d) => isoDate(d)),
-    }).start,
+    historyStart: historyFrom(rows.records),
     readFrom: isoDate(rows.readFrom),
     months,
     categories: categoriesForCore(categories),

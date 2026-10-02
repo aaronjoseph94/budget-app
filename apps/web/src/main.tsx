@@ -13,18 +13,10 @@ import { reloadOnceOnPreloadError } from './shell/preload-reload.js'
 // the first load stays as it was.
 const ConsentScreen = lazyPart(() => import('./ai-apps/ConsentScreen.js').then((m) => ({ default: m.ConsentScreen })))
 
-// Reading localStorage can itself throw (storage blocked), so ask carefully.
-function deviceStorage(): Storage | null {
+/** Reading a storage can itself throw (storage blocked), so ask carefully. */
+function storage(which: 'localStorage' | 'sessionStorage'): Storage | null {
   try {
-    return window.localStorage
-  } catch {
-    return null
-  }
-}
-
-function sessionStore(): Storage | null {
-  try {
-    return window.sessionStorage
+    return window[which]
   } catch {
     return null
   }
@@ -33,7 +25,7 @@ function sessionStore(): Storage | null {
 // A screen's chunk from an older deploy: reload once for the new one (FE-1),
 // but not offline, where the screen's own note says what to do.
 window.addEventListener('vite:preloadError', (event) => {
-  if (reloadOnceOnPreloadError(sessionStore(), () => window.location.reload(), navigator.onLine !== false)) event.preventDefault()
+  if (reloadOnceOnPreloadError(storage('sessionStorage'), () => window.location.reload(), navigator.onLine !== false)) event.preventDefault()
 })
 
 const root = document.getElementById('root')
@@ -43,7 +35,7 @@ if (root === null) throw new Error('no #root element to mount into')
 takeTokensOutOfAddress()
 const consent = isConsentPath(window.location.pathname)
 // Not on the consent page, so a remembered screen can never replace it.
-if (!consent) restoreAddress(deviceStorage())
+if (!consent) restoreAddress(storage('localStorage'))
 
 createRoot(root).render(
   <StrictMode>

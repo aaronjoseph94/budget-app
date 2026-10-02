@@ -9,7 +9,7 @@ import { useMemo } from 'react'
 import { heatGrid, weekdayBars } from '@budget/chart-specs'
 import type { GridDay, GridLevel, PersonalBests, SpendingGrid, Streaks, WeekdayPattern } from '@budget/core'
 import { useAppData, useCategoryName } from '../app-data.js'
-import { formatCents, formatDayMonth, formatIsoDate, formatMagnitude, formatMonthTitle } from '../format.js'
+import { formatCents, formatDayMonth, formatIsoDate, formatMagnitude, formatMonthTitle, formatWeeks } from '../format.js'
 import { hashOf } from '../nav.js'
 import { SvgChart, fitted } from '../components/ui/chart.js'
 import { Row, Section } from '../forecast/parts.js'
@@ -132,7 +132,6 @@ function GridCard({ grid }: { grid: SpendingGrid }) {
   )
 }
 
-const weeksText = (n: number) => (n === 1 ? '1 week' : `${n} weeks`)
 
 function StreakCard({ streaks }: { streaks: Streaks }) {
   if (streaks.status === 'no_budget') {
@@ -157,8 +156,8 @@ function StreakCard({ streaks }: { streaks: Streaks }) {
     <Section title="Weeks within budget" large>
       {current > 0 && current === best ? <p className="font-medium">Your best run yet. Keep it going!</p> : null}
       <dl className="divide-y">
-        <Row label="In a row now" value={weeksText(current)} />
-        <Row label="Your longest run" value={bestEnded === null ? 'none yet' : weeksText(best)} />
+        <Row label="In a row now" value={formatWeeks(current)} />
+        <Row label="Your longest run" value={bestEnded === null ? 'none yet' : formatWeeks(best)} />
       </dl>
       {bestEnded === null ? null : <p className="text-muted-foreground">Your longest run ended with the week of {formatDayMonth(bestEnded)}.</p>}
       <p className="text-muted-foreground">A week counts when the Week’s Left to spend stays at $0.00 or more.</p>

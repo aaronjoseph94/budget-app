@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { historyStart, isoDate, monthBounds, shiftMonth, starterBudgets, type StarterBudgets } from '@budget/core'
+import { isoDate, monthBounds, shiftMonth, starterBudgets, type StarterBudgets } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { getMonthBalance, listBudgetHistory, listTransactions, needsOneTimeUpdate, readRecordsStart, setBudget } from '../ledger.js'
-import { budgetsForCore, categoriesForCore, entriesForCore } from '../sheet-input.js'
+import { budgetsForCore, categoriesForCore, entriesForCore, historyFrom } from '../sheet-input.js'
 import { formatCents, formatMonthName, todayIso } from '../format.js'
 import { hashOf } from '../nav.js'
 import { StatementImport } from '../screens/AddScreen.js'
@@ -112,10 +112,10 @@ function useStarterBudgets(month: string): Read<StarterBudgets> {
     const readFrom = shiftMonth(isoDate(month), -3)
     Promise.all([listTransactions(supabase, { from: readFrom, to: monthBounds(isoDate(month)).end }), listBudgetHistory(supabase, month), readRecordsStart(supabase)])
       .then(([rows, budgets, records]) => {
-        const start = historyStart({ statementPeriodStarts: records.statementStarts.map((d) => isoDate(d)), entryDates: records.entryDates.map((d) => isoDate(d)) })
+        const start = historyFrom(records)
         const value = starterBudgets({
           asOf: isoDate(todayIso()),
-          historyStart: start.start,
+          historyStart: start,
           readFrom,
           categories: categoriesForCore(categories),
           entries: entriesForCore(rows),

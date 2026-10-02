@@ -6,7 +6,7 @@
  * amount is in effect, and what counts where, is core's to say. The Month
  * and the Year read the same rows, so they read them through one place.
  */
-import { isoDate, type BudgetHistoryRow, type PeriodCategory, type PeriodEntry, type PlanHistoryRow, type ShopEntry, type WeekCategory } from '@budget/core'
+import { historyStart, isoDate, type BudgetHistoryRow, type PeriodCategory, type PeriodEntry, type PlanHistoryRow, type ShopEntry, type WeekCategory } from '@budget/core'
 import { normalizeMerchant } from '@budget/statement-parsers'
 import type { BudgetRow, Category, LedgerRow, PlanRow } from './ledger.js'
 
@@ -63,4 +63,18 @@ export function shopEntriesForCore(rows: readonly LedgerRow[]): ShopEntry[] {
     shop: normalizeMerchant(r.merchant_raw),
     by: BY_HAND.has(r.source) ? 'hand' : 'statement',
   }))
+}
+
+/** Where the records start, as readRecordsStart reads them. */
+export interface RecordsStart {
+  readonly statementStarts: readonly string[]
+  readonly entryDates: readonly string[]
+}
+
+/** Where the records start (F24): readRecordsStart's rows renamed for core, which says where. */
+export function historyFrom(records: RecordsStart): ReturnType<typeof historyStart>['start'] {
+  return historyStart({
+    statementPeriodStarts: records.statementStarts.map((d) => isoDate(d)),
+    entryDates: records.entryDates.map((d) => isoDate(d)),
+  }).start
 }

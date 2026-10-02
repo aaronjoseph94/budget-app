@@ -27,7 +27,7 @@ import {
   type PayScheduleRow,
   type PlanRow,
 } from '../ledger.js'
-import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore, shopEntriesForCore } from '../sheet-input.js'
+import { budgetsForCore, categoriesForCore, entriesForCore, historyFrom, type RecordsStart, plansForCore, shopEntriesForCore } from '../sheet-input.js'
 
 /** What the digest reads, as the database gave it. */
 export interface DigestRows {
@@ -38,7 +38,7 @@ export interface DigestRows {
   readonly budgets: readonly BudgetRow[]
   readonly plans: readonly PlanRow[]
   readonly statementEnds: readonly string[]
-  readonly records: { readonly statementStarts: readonly string[]; readonly entryDates: readonly string[] }
+  readonly records: RecordsStart
   /** Rows waiting in Review, or null when that count did not load. */
   readonly pending: number | null
   /** What the month's forecast needs besides (plan A13); left out where no forecast is made. */
@@ -52,10 +52,7 @@ export type ForecastRows =
 
 /** Where the records start (F24), from what was read. */
 export function historyOf(read: DigestRows): ReturnType<typeof historyStart>['start'] {
-  return historyStart({
-    statementPeriodStarts: read.records.statementStarts.map((d) => isoDate(d)),
-    entryDates: read.records.entryDates.map((d) => isoDate(d)),
-  }).start
+  return historyFrom(read.records)
 }
 
 /**

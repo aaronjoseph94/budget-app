@@ -3,7 +3,6 @@ import { lazyPart } from '../lib/lazy-part.js'
 import {
   budgetUsedBp,
   goalBars,
-  historyStart,
   isoDate,
   monthBounds,
   monthSheet,
@@ -31,7 +30,7 @@ import {
 import { LIST_HEADING } from '../lists.js'
 import { hashOf, navigate } from '../nav.js'
 import { PeriodSwitch } from './PeriodSwitch.js'
-import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
+import { budgetsForCore, categoriesForCore, entriesForCore, historyFrom, plansForCore } from '../sheet-input.js'
 import {
   formatAmount,
   formatBasisPoints,
@@ -165,10 +164,7 @@ export function MonthScreen({ month }: { month: string | null }) {
         period: 'month',
         month: start,
         asOf: isoDate(today),
-        historyStart: historyStart({
-          statementPeriodStarts: before.statementStarts.map((d) => isoDate(d)),
-          entryDates: before.entryDates.map((d) => isoDate(d)),
-        }).start,
+        historyStart: historyFrom(before),
         categories: categoriesForCore(categories),
         planHistory: plansForCore(here.plans),
         entries: entriesForCore([...here.rows, ...before.rows]),

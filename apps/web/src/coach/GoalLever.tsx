@@ -1,5 +1,5 @@
 import type { Lever } from '@budget/core'
-import { formatCents, formatMinutes } from '../format.js'
+import { formatCents, formatMinutes, formatWeeks } from '../format.js'
 
 /**
  * What to trim to reach a goal sooner (F34), in the app's own words: the
@@ -15,15 +15,12 @@ export function GoalLever({ lever, categoryName, unitLabel }: { lever: Lever; ca
   return (
     <p className="text-sm">
       {lever.weeksSooner !== null
-        ? `${trim} to get there ${weeks(lever.weeksSooner)} sooner.${time}`
-        : `${trim}, and that alone gets you there in ${weeks(lever.weeksToGoal ?? missing())}.${time}`}
+        ? `${trim} to get there ${formatWeeks(lever.weeksSooner)} sooner.${time}`
+        : `${trim}, and that alone gets you there in ${formatWeeks(lever.weeksToGoal ?? missing())}.${time}`}
     </p>
   )
 }
 
-function weeks(n: number): string {
-  return n === 1 ? '1 week' : `${n} weeks`
-}
 
 /** goalLevers gives a lever weeks sooner with a pace, and weeks to the goal without one. */
 function missing(): never {

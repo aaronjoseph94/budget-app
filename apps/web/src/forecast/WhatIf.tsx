@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { isoDate, whatIf, type Lever, type Spread, type WhatIf } from '@budget/core'
-import { formatCents, formatMinutes, formatShortMonth, formatWholeDollars } from '../format.js'
+import { formatCents, formatMinutes, formatShortMonth, formatWeeks, formatWholeDollars } from '../format.js'
 import { cn } from '../lib/cn.js'
 import { useCategoryName } from '../app-data.js'
 import type { CoreGoal } from '../coach/goals.js'
@@ -95,7 +95,6 @@ function WhatIfChips(props: { goal: CoreGoal; outlook: GoalOutlook; end: Spread 
 
 function WhatIfResult({ lever, result, goal, name, month }: { lever: Lever; result: WhatIf; goal: CoreGoal; name: string; month: string }) {
   const { goal: date, end } = result
-  const weeks = (n: number) => (n === 1 ? '1 week' : `${n} weeks`)
   return (
     <>
       <p>
@@ -107,12 +106,12 @@ function WhatIfResult({ lever, result, goal, name, month }: { lever: Lever; resu
         {date.status === 'met'
           ? 'already there.'
           : date.status === 'alone'
-            ? `this alone gets you there in ${weeks(date.weeks)}, about ${formatShortMonth(date.date)}.`
+            ? `this alone gets you there in ${formatWeeks(date.weeks)}, about ${formatShortMonth(date.date)}.`
             : date.dates.late === null
-              ? `${formatShortMonth(date.dates.early)} or later, ${weeks(date.weeksSooner)} sooner.`
+              ? `${formatShortMonth(date.dates.early)} or later, ${formatWeeks(date.weeksSooner)} sooner.`
               : date.rough || formatShortMonth(date.dates.early) === formatShortMonth(date.dates.late)
-                ? `about ${formatShortMonth(date.dates.middle)}, ${weeks(date.weeksSooner)} sooner.`
-                : `${formatShortMonth(date.dates.early)} – ${formatShortMonth(date.dates.late)}, ${weeks(date.weeksSooner)} sooner.`}
+                ? `about ${formatShortMonth(date.dates.middle)}, ${formatWeeks(date.weeksSooner)} sooner.`
+                : `${formatShortMonth(date.dates.early)} – ${formatShortMonth(date.dates.late)}, ${formatWeeks(date.weeksSooner)} sooner.`}
       </p>
       {result.minutesPerMonth === null ? null : (
         <p className="text-muted-foreground">

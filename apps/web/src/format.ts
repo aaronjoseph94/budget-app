@@ -595,6 +595,11 @@ export function formatRate(bp: number): string {
   return hundredths === 0 ? `${(bp - hundredths) / 100}%` : `${(bp - hundredths) / 100}.${String(hundredths).padStart(2, '0')}%`
 }
 
+/** "1 week", "3 weeks". Display only. */
+export function formatWeeks(n: number): string {
+  return n === 1 ? '1 week' : `${n} weeks`
+}
+
 /**
  * A share of a whole from the engine, as a whole percentage. A category with
  * spending never reads "0%": under half a percent says so instead.

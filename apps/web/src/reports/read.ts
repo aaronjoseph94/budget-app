@@ -7,10 +7,10 @@
  * monthReport says what the month came to.
  */
 import { useEffect, useState } from 'react'
-import { historyStart, isoDate, monthBounds, monthReport, shiftMonth, type MonthReport } from '@budget/core'
+import { isoDate, monthBounds, monthReport, shiftMonth, type MonthReport } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { listPlanHistory, listTransactions, needsOneTimeUpdate, readRecordsStart, type Category, type LedgerRow, type PlanRow } from '../ledger.js'
-import { categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
+import { categoriesForCore, entriesForCore, historyFrom, type RecordsStart, plansForCore } from '../sheet-input.js'
 
 /** Months read before the one reviewed: the usual month's six. */
 const BEFORE = 6
@@ -21,7 +21,7 @@ export interface ReportRows {
   readonly readFrom: string
   readonly rows: readonly LedgerRow[]
   readonly plans: readonly PlanRow[]
-  readonly records: { readonly statementStarts: readonly string[]; readonly entryDates: readonly string[] }
+  readonly records: RecordsStart
 }
 
 export type ReportRead =
@@ -65,10 +65,7 @@ export interface ReportFigures {
 
 /** The rows, renamed for core, through monthReport. Throws where the engine refuses a row. */
 export function reportOf(rows: ReportRows, categories: readonly Category[]): ReportFigures {
-  const start = historyStart({
-    statementPeriodStarts: rows.records.statementStarts.map((d) => isoDate(d)),
-    entryDates: rows.records.entryDates.map((d) => isoDate(d)),
-  }).start
+  const start = historyFrom(rows.records)
   const report = monthReport({
     asOf: isoDate(rows.asOf),
     month: isoDate(rows.month),

@@ -160,11 +160,7 @@ export function UpdatesPanel() {
           ) : next.file === SIGNUPS_OFF ? (
             <>
               <p>Next: stop strangers making an account. About 2 minutes, on a computer.</p>
-              <ol className="list-decimal space-y-1 pl-5">
-                {SIGNUPS_STEPS.map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ol>
+              <Steps steps={SIGNUPS_STEPS} />
             </>
           ) : next.file === HELPER_FILE ? (
             <>
@@ -173,11 +169,7 @@ export function UpdatesPanel() {
                   ? 'Next: paste the AI helper’s new version over the one you have. About 5 minutes, easiest on a computer.'
                   : 'Next: install the AI helper. About 5 minutes, easiest on a computer.'}
               </p>
-              <ol className="list-decimal space-y-1 pl-5">
-                {helperSteps(helperOld, newKey).map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ol>
+              <Steps steps={helperSteps(helperOld, newKey)} />
             </>
           ) : next.file === SIGNING_KEY || next.file === OAUTH_SERVER ? (
             <>
@@ -186,20 +178,12 @@ export function UpdatesPanel() {
                   ? 'Next: move Supabase to its new signing key, which ChatGPT needs to sign in. About 5 minutes, on a computer.'
                   : 'Next: turn on sign-in for AI apps in Supabase, so Claude or ChatGPT can ask you to allow them. About 5 minutes, on a computer.'}
               </p>
-              <ol className="list-decimal space-y-1 pl-5">
-                {(next.file === SIGNING_KEY ? SIGNING_KEY_STEPS : oauthSteps(window.location.origin)).map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ol>
+              <Steps steps={next.file === SIGNING_KEY ? SIGNING_KEY_STEPS : oauthSteps(window.location.origin)} />
             </>
           ) : next.file === READ_RECEIPT_FILE ? (
             <>
               <p>Next: delete read-receipt, or paste its new version over it. About 2 minutes, on a computer.</p>
-              <ol className="list-decimal space-y-1 pl-5">
-                {READ_RECEIPT_STEPS.map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ol>
+              <Steps steps={READ_RECEIPT_STEPS} />
             </>
           ) : next.file === SERVER_FILE ? (
             <>
@@ -208,11 +192,7 @@ export function UpdatesPanel() {
                   ? 'Next: paste the AI apps server’s new version over the one you have. About 5 minutes, on a computer.'
                   : 'Next: install the AI apps server, which Claude or ChatGPT connect to. About 5 minutes, on a computer.'}
               </p>
-              <ol className="list-decimal space-y-1 pl-5">
-                {(serverOld ? SERVER_AGAIN_STEPS : SERVER_STEPS).map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ol>
+              <Steps steps={serverOld ? SERVER_AGAIN_STEPS : SERVER_STEPS} />
             </>
           ) : (
             <>
@@ -261,5 +241,16 @@ export function UpdatesPanel() {
         {busy ? 'Checking…' : 'Check again'}
       </Button>
     </section>
+  )
+}
+
+/** A one-time update's steps, numbered. */
+function Steps({ steps }: { steps: readonly string[] }) {
+  return (
+    <ol className="list-decimal space-y-1 pl-5">
+      {steps.map((step) => (
+        <li key={step}>{step}</li>
+      ))}
+    </ol>
   )
 }

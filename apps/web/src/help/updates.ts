@@ -319,6 +319,11 @@ async function signupsOff(supabase: SupabaseClient): Promise<UpdateState> {
   }
 }
 
+/** The version a function's reply names, or null. */
+const versionOf = (data: unknown): unknown => (typeof data === 'object' && data !== null && 'version' in data ? data.version : null)
+/** A refusal's code, or '' where it has none. */
+const codeOf = (error: { code?: unknown }): string => (typeof error.code === 'string' ? error.code : '')
+
 async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateState> {
   if (check.kind === 'signups') return signupsOff(supabase)
   if (check.kind === 'signing_key') return signingKey(supabase)
@@ -326,8 +331,7 @@ async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateStat
   if (check.kind === 'helper') {
     const answer = await askAi(supabase, { action: 'ping' })
     if (!answer.ok) return answer.view.state === 'not_deployed' ? 'missing' : 'unknown'
-    const version = typeof answer.data === 'object' && answer.data !== null && 'version' in answer.data ? answer.data.version : null
-    return isOlder(version) ? 'old' : 'in'
+    return isOlder(versionOf(answer.data)) ? 'old' : 'in'
   }
   if (check.kind === 'read_receipt') {
     const { data, error } = await supabase.functions.invoke('read-receipt', { method: 'GET' })
@@ -337,8 +341,7 @@ async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateStat
       // Deleted is in; the copy from before 2026-10-01 refuses GET.
       return status.status === 404 ? 'in' : status.status === 405 ? 'old' : 'unknown'
     }
-    const version = typeof data === 'object' && data !== null && 'version' in data ? data.version : null
-    return isOlder(version, READ_RECEIPT_VERSION) ? 'old' : 'in'
+    return isOlder(versionOf(data), READ_RECEIPT_VERSION) ? 'old' : 'in'
   }
   if (check.kind === 'server') {
     const { data, error } = await supabase.functions.invoke('mcp/health', { method: 'GET' })
@@ -346,13 +349,12 @@ async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateStat
       const reply = (error as { context?: unknown }).context
       return reply instanceof Response && reply.status === 404 ? 'missing' : 'unknown'
     }
-    const version = typeof data === 'object' && data !== null && 'version' in data ? data.version : null
-    return isOlder(version, MCP_SERVER_VERSION) ? 'old' : 'in'
+    return isOlder(versionOf(data), MCP_SERVER_VERSION) ? 'old' : 'in'
   }
   if (check.kind === 'level') {
     for (const name of ['ai_app_updates_in', 'ai_app_update_level']) {
       const { data, error } = await supabase.rpc(name, {})
-      const gone = error !== null && MISSING.level.has(typeof error.code === 'string' ? error.code : '')
+      const gone = error !== null && MISSING.level.has(codeOf(error))
       if (gone && name === 'ai_app_updates_in') continue
       if (error !== null) return gone ? 'missing' : 'unknown'
       return typeof data !== 'number' ? 'unknown' : data >= check.level ? 'in' : 'missing'
@@ -361,7 +363,7 @@ async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateStat
   }
   if (check.kind === 'schema') {
     const { data, error } = await supabase.rpc('schema_level', {})
-    if (error !== null) return MISSING.schema.has(typeof error.code === 'string' ? error.code : '') ? 'missing' : 'unknown'
+    if (error !== null) return MISSING.schema.has(codeOf(error)) ? 'missing' : 'unknown'
     return typeof data !== 'number' ? 'unknown' : data >= check.level ? 'in' : 'missing'
   }
   const { error } =
@@ -369,7 +371,7 @@ async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateStat
       ? await supabase.rpc(check.name, check.args)
       : await supabase.from(check.table).select(check.kind === 'column' ? check.column : '*').limit(0)
   if (error === null) return 'in'
-  const code = typeof error.code === 'string' ? error.code : ''
+  const code = codeOf(error)
   if (MISSING[check.kind].has(code)) return 'missing'
   // The function ran, and refused the nil id: it is there.
   return check.kind === 'function' && code === '42501' ? 'in' : 'unknown'

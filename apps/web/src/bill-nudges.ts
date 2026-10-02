@@ -8,10 +8,10 @@
  * on which day, is core's recurringCharges and billNudges.
  */
 import { useEffect, useMemo, useState } from 'react'
-import { billNudges, historyStart, isoDate, monthBounds, recurringCharges, shiftMonth, type BillNudge } from '@budget/core'
+import { billNudges, isoDate, monthBounds, recurringCharges, shiftMonth, type BillNudge } from '@budget/core'
 import { useAppData } from './app-data.js'
 import { listTransactions, readRecordsStart, type LedgerRow } from './ledger.js'
-import { categoriesForCore, shopEntriesForCore } from './sheet-input.js'
+import { categoriesForCore, historyFrom, type RecordsStart, shopEntriesForCore } from './sheet-input.js'
 import { notSubscriptionsOf, useDismissals } from './coach/dismissals.js'
 import type { MonthlyAmounts } from './screens/SetupPlans.js'
 
@@ -19,7 +19,7 @@ interface NudgeRows {
   readonly asOf: string
   readonly readFrom: string
   readonly rows: readonly LedgerRow[]
-  readonly records: { readonly statementStarts: readonly string[]; readonly entryDates: readonly string[] }
+  readonly records: RecordsStart
 }
 
 const NONE: ReadonlyMap<string, BillNudge> = new Map()
@@ -47,10 +47,7 @@ export function useBillNudges(amounts: MonthlyAmounts): ReadonlyMap<string, Bill
     if (read === null || dismissed === null || amounts.status !== 'ready') return NONE
     try {
       const input = {
-        historyStart: historyStart({
-          statementPeriodStarts: read.records.statementStarts.map((d) => isoDate(d)),
-          entryDates: read.records.entryDates.map((d) => isoDate(d)),
-        }).start,
+        historyStart: historyFrom(read.records),
         readFrom: isoDate(read.readFrom),
         categories: categoriesForCore(categories),
       }
