@@ -4,7 +4,7 @@ import { useAppData } from '../app-data.js'
 import { listPaySchedules, listPlanHistory, listTransactions, type LedgerRow, type PayScheduleRow, type PlanRow } from '../ledger.js'
 import { navigate } from '../nav.js'
 import { categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
-import { formatCents, formatDateRange, formatIsoDate, formatMonthTitle, formatShortMonth, todayIso } from '../format.js'
+import { formatCents, formatDateRange, formatIsoDate, formatMonthTitle, formatShortMonth } from '../format.js'
 import { Alert, Loading } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Sheet } from '../components/ui/sheet.js'
@@ -27,8 +27,7 @@ import { HelpButton } from '../help/HelpButton.js'
  * rows' pay schedules. This screen lays them out. Names are plain text.
  */
 export function CalendarScreen({ month }: { month: string | null }) {
-  const { supabase, categories, loadError, version } = useAppData()
-  const today = todayIso()
+  const { supabase, categories, loadError, version, today } = useAppData()
   const { start, end } = monthBounds(isoDate(month === null ? today : `${month}-01`))
   const step = (months: number) => navigate('calendar', shiftMonth(start, months).slice(0, 7))
   const [loaded, setLoaded] = useState<Loaded | null>(null)

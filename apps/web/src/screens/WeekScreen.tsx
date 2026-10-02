@@ -13,7 +13,7 @@ import { useAppData } from '../app-data.js'
 import { latestStatementEnd, listPlanHistory, listTransactions, type LedgerRow, type PlanRow } from '../ledger.js'
 import { categoriesForCore, entriesForCore, plansForCore, weekCategoriesForCore } from '../sheet-input.js'
 import { useEarlier } from '../earlier.js'
-import { formatDateRange, todayIso } from '../format.js'
+import { formatDateRange } from '../format.js'
 import { OpenedCharges } from './MonthCharges.js'
 import { StepButton, WaitingBanner } from './MonthScreen.js'
 import { MonthTitle } from '../components/ui/type.js'
@@ -40,8 +40,8 @@ import { HelpButton } from '../help/HelpButton.js'
  * address, as the Month's do, so a refresh or the back gesture returns to it.
  */
 export function WeekScreen({ monday }: { monday: string | null }) {
-  const { supabase, categories, mainGoal, pendingTotal, loadError, version } = useAppData()
-  const today = isoDate(todayIso())
+  const { supabase, categories, mainGoal, pendingTotal, loadError, version, today: day } = useAppData()
+  const today = isoDate(day)
   // This week counts its days left from today, not its Monday.
   const asOf = monday === null || monday === weekBounds(today).start ? today : isoDate(monday)
   const [loaded, setLoaded] = useState<Loaded | null>(null)

@@ -15,7 +15,7 @@ import { useAppData } from '../app-data.js'
 import { latestStatementEnd, listBudgetHistory, listPlanHistory, listTransactions } from '../ledger.js'
 import type { BudgetRow, Category, LedgerRow, PayScheduleRow, PlanRow } from '../ledger.js'
 import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
-import { formatCents, formatDateRange, formatMonthTitle, todayIso } from '../format.js'
+import { formatCents, formatDateRange, formatMonthTitle } from '../format.js'
 import { navigate } from '../nav.js'
 import { Alert, Loading } from '../components/ui/feedback.js'
 import { Icon } from '../components/ui/icons.js'
@@ -59,10 +59,10 @@ export function PaycheckPeriod({
   /** Which source drives the period, when there is a choice; shown above how it is counted. */
   chooser?: ReactNode
 }) {
-  const { supabase, categories, version } = useAppData()
+  const { supabase, categories, version, today: day0 } = useAppData()
   const { first_pay_date: first, frequency } = row
   const schedule = useMemo((): PaySchedule => ({ firstPayDate: isoDate(first), frequency }), [first, frequency])
-  const today = isoDate(todayIso())
+  const today = isoDate(day0)
   const { start, end } = payPeriod({ schedule, asOf: day === null ? today : isoDate(day) })
   const month = monthBounds(start).start
   const [loaded, setLoaded] = useState<Loaded | null>(null)

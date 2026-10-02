@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { isoDate, shiftMonth } from '@budget/core'
 import { useAppData } from '../app-data.js'
-import { formatMonthTitle, todayIso } from '../format.js'
+import { formatMonthTitle } from '../format.js'
 import { hashOf } from '../nav.js'
 import { Badge } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
@@ -36,8 +36,7 @@ const TABS: readonly { readonly id: ReportTab; readonly name: string }[] = [
  * Download CSV (A19) writes the month's charges or those figures to a file.
  */
 export function ReportsScreen({ month }: { month: string | null }) {
-  const { categories } = useAppData()
-  const asOf = todayIso()
+  const { categories, today: asOf } = useAppData()
   const shown = `${month ?? asOf.slice(0, 7)}-01`
   const read = useReportRead(shown, asOf)
   const figures = useMemo(() => {

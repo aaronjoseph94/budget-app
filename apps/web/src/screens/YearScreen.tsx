@@ -22,7 +22,7 @@ import {
 } from '../ledger.js'
 import { navigate } from '../nav.js'
 import { budgetsForCore, categoriesForCore, entriesForCore, plansForCore } from '../sheet-input.js'
-import { formatAmount, formatCents, formatMonthName, formatMonthTitle, formatShortMonth, MONTH_NAMES, todayIso } from '../format.js'
+import { formatAmount, formatCents, formatMonthName, formatMonthTitle, formatShortMonth, MONTH_NAMES } from '../format.js'
 import { Alert, Loading } from '../components/ui/feedback.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
 import { NativeSelect } from '../components/ui/form.js'
@@ -48,8 +48,7 @@ import { LINE_BUTTON } from '../components/ui/link.js'
  * the start month's typed balance; this screen only formats them.
  */
 export function YearScreen({ start: address }: { start: string | null }) {
-  const { supabase, categories, pendingTotal, loadError, version } = useAppData()
-  const today = todayIso()
+  const { supabase, categories, pendingTotal, loadError, version, today } = useAppData()
   const start = monthBounds(isoDate(address === null ? `${today.slice(0, 4)}-01-01` : `${address}-01`)).start
   const last = shiftMonth(start, 11)
   const end = monthBounds(last).end

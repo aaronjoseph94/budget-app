@@ -42,7 +42,6 @@ import {
   formatMonthName,
   formatMonthTitle,
   formatShortMonth,
-  todayIso,
 } from '../format.js'
 import { Alert, Loading, SavedNote } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
@@ -75,8 +74,8 @@ const MonthForecastLine = lazy(() => import('./MonthForecastLine.js'))
  * in it.
  */
 export function MonthScreen({ month }: { month: string | null }) {
-  const { supabase, categories, pendingTotal, loadError, status, version } = useAppData()
-  const { start, end } = monthBounds(isoDate(month === null ? todayIso() : `${month}-01`))
+  const { supabase, categories, pendingTotal, loadError, status, version, today } = useAppData()
+  const { start, end } = monthBounds(isoDate(month === null ? today : `${month}-01`))
   const step = (months: number) => navigate('month', shiftMonth(start, months).slice(0, 7))
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -163,7 +162,7 @@ export function MonthScreen({ month }: { month: string | null }) {
       return periodComparison({
         period: 'month',
         month: start,
-        asOf: isoDate(todayIso()),
+        asOf: isoDate(today),
         historyStart: historyStart({
           statementPeriodStarts: before.statementStarts.map((d) => isoDate(d)),
           entryDates: before.entryDates.map((d) => isoDate(d)),
@@ -176,7 +175,7 @@ export function MonthScreen({ month }: { month: string | null }) {
       // As the month's own sheet: a row naming a category that did not load.
       return 'failed'
     }
-  }, [here, earlier, categories, start])
+  }, [here, earlier, categories, start, today])
   // Left, or the change against the same days last month, in every block's
   // third column: one choice for the whole Month, kept on this device.
   const [third, setThird] = useState<ThirdColumn>(readThird)
@@ -187,7 +186,6 @@ export function MonthScreen({ month }: { month: string | null }) {
   const compared = comparison !== null && comparison !== 'failed' && comparison.status === 'compared' ? comparison : null
   // The coach line speaks of today, so only on this month, and only from
   // the two months already read: never a read of its own (D27).
-  const today = todayIso()
   const lastMonth = earlier !== null && earlier.start === start && !('failed' in earlier) ? earlier : null
   const coachRead = useMemo(
     () =>

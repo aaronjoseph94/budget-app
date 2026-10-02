@@ -12,7 +12,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { factsDigest, historyStart, isoDate, monthBounds, shiftMonth, type DigestGoal, type FactsDigest, type IncomeSchedule } from '@budget/core'
 import { useAppData } from '../app-data.js'
-import { todayIso } from '../format.js'
 import {
   getMonthBalance,
   latestStatementEnd,
@@ -112,14 +111,14 @@ export function forecastOf(rows: Extract<ForecastRows, { status: 'ready' }>): {
  * waiting in Review is the shared load's, added by whoever digests it.
  */
 export function useCoachRead(): DigestRows | 'failed' | null {
-  const { supabase, version } = useAppData()
+  const { supabase, version, today } = useAppData()
   const [read, setRead] = useState<DigestRows | 'failed' | null>(null)
 
   useEffect(() => {
     // Nothing is read before the first load brings the categories (N35).
     if (version === 0) return
     let live = true
-    const asOf = todayIso()
+    const asOf = today
     const { start, end } = monthBounds(isoDate(asOf))
     const readFrom = shiftMonth(start, -12)
     // The forecast's own reads fail on their own: without them the cards and goals still show.
@@ -146,7 +145,7 @@ export function useCoachRead(): DigestRows | 'failed' | null {
     return () => {
       live = false
     }
-  }, [supabase, version])
+  }, [supabase, version, today])
 
   return read
 }

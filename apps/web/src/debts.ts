@@ -21,7 +21,6 @@ import {
 } from '@budget/core'
 import { useAppData } from './app-data.js'
 import { listDebtExtras, listDebts, type DebtExtraRow, type DebtRow } from './ledger.js'
-import { todayIso } from './format.js'
 
 export interface DebtsFigures {
   readonly asOf: string
@@ -57,13 +56,13 @@ export function debtsForCore(rows: readonly DebtRow[], extras: readonly DebtExtr
 }
 
 export function useDebts(): DebtsState {
-  const { supabase, version } = useAppData()
+  const { supabase, version, today } = useAppData()
   const [loaded, setLoaded] = useState<{ asOf: string; rows: readonly DebtRow[]; extras: readonly DebtExtraRow[] } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let live = true
-    const asOf = todayIso()
+    const asOf = today
     setError(null)
     Promise.all([listDebts(supabase), listDebtExtras(supabase)])
       .then(([rows, extras]) => live && setLoaded({ asOf, rows, extras }))
@@ -71,7 +70,7 @@ export function useDebts(): DebtsState {
     return () => {
       live = false
     }
-  }, [supabase, version])
+  }, [supabase, version, today])
 
   return useMemo((): DebtsState => {
     if (error !== null) return { status: 'failed', message: error }

@@ -21,7 +21,6 @@ import { askForHelpSearch } from './help/search-focus.js'
 import { useSidebarState } from './shell/sidebar-state.js'
 import { SCREEN_NAME } from './shell/places.js'
 import { cn } from './lib/cn.js'
-import { todayIso } from './format.js'
 import { checkinDue } from './coach/checkin-seen.js'
 import { OfflineBanner } from './offline.js'
 
@@ -130,7 +129,7 @@ function tabOf(screen: Screen, tabs: readonly Tab[]): Screen {
 
 export function Shell() {
   const { screen, param } = useAddress()
-  const { supabase, pendingTotal, loadError, status, refresh } = useAppData()
+  const { supabase, pendingTotal, loadError, status, refresh, today } = useAppData()
   // Month, Week, Paycheck and Year widen on a desktop to take the workbook's four
   // columns (§6.3, §6.4), the Bill Calendar to give its seven room for names,
   // the Coach for its insights and goal side by side (Mockup A step 7), and the
@@ -147,7 +146,7 @@ export function Shell() {
   useAnnounceScreen(screen, main)
   // Read again on every move: opening the check-in marks it seen. Not on
   // the Coach itself, whose own card says the check-in is ready.
-  const dot = useMemo(() => screen !== 'coach' && checkinDue(todayIso()), [screen, param])
+  const dot = useMemo(() => screen !== 'coach' && checkinDue(today), [screen, param, today])
   useSearchKey()
 
   return (

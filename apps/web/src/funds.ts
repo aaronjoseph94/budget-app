@@ -11,7 +11,6 @@ import { isoDate, savingsFunds, type SavingsFunds } from '@budget/core'
 import { useAppData } from './app-data.js'
 import { listFundTransfers, listFunds, needsOneTimeUpdate, type FundRow, type LedgerRow } from './ledger.js'
 import { categoriesForCore } from './sheet-input.js'
-import { todayIso } from './format.js'
 
 export type FundsState =
   | { readonly status: 'loading' }
@@ -20,7 +19,7 @@ export type FundsState =
   | { readonly status: 'ready'; readonly asOf: string; readonly goals: readonly FundRow[]; readonly funds: SavingsFunds }
 
 export function useFunds(): FundsState {
-  const { supabase, categories, version } = useAppData()
+  const { supabase, categories, version, today } = useAppData()
   const [loaded, setLoaded] = useState<{ asOf: string; goals: readonly FundRow[]; rows: readonly LedgerRow[] } | null>(null)
   const [error, setError] = useState<{ readonly message: string; readonly missingUpdate: boolean } | null>(null)
 
@@ -28,7 +27,7 @@ export function useFunds(): FundsState {
     // Nothing is read before the first load brings the categories (N35).
     if (version === 0) return
     let live = true
-    const asOf = todayIso()
+    const asOf = today
     setError(null)
     listFunds(supabase)
       .then(async (goals) => {
@@ -48,7 +47,7 @@ export function useFunds(): FundsState {
     return () => {
       live = false
     }
-  }, [supabase, version])
+  }, [supabase, version, today])
 
   return useMemo((): FundsState => {
     if (error !== null) return { status: 'failed', ...error }

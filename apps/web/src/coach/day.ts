@@ -11,7 +11,6 @@ import type { FactsDigest } from '@budget/core'
 import { forecastCard } from '@budget/savings-coach'
 import { useAppData } from '../app-data.js'
 import type { FundsState } from '../funds.js'
-import { todayIso } from '../format.js'
 import { todaysCards, todaysLine } from './CoachCards.js'
 import { useCoachFacts, type DigestRows } from './facts.js'
 import { goalsForCore } from './goals.js'
@@ -30,14 +29,14 @@ export interface CoachDay {
 }
 
 export function useCoachDay(read: DigestRows | 'failed' | null, funds: FundsState): CoachDay {
-  const { goals, mainGoal } = useAppData()
+  const { goals, mainGoal, today } = useAppData()
   const coreGoals = useMemo(() => goalsForCore(goals, funds), [goals, funds])
   const dismissals = useDismissals()
   const { dismissed } = dismissals
   const notSubscriptions = useMemo(() => (dismissed === null ? null : notSubscriptionsOf(dismissed)), [dismissed])
   const digest = useCoachFacts(read, coreGoals, notSubscriptions)
   const settings = useCoachSettings()
-  const asOf = todayIso()
+  const asOf = today
   const facts = digest === null || digest === 'failed' ? null : digest.facts
   // The forecast's own card rides with the day's cards, so it is worded, kept and reused as they are.
   const forecast = useMemo(() => (digest === null || digest === 'failed' ? null : forecastCard(digest.forecast)), [digest])
