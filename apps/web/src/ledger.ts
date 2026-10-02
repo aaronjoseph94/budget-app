@@ -182,12 +182,12 @@ interface SavedCounts {
 }
 
 function fail(error: { code?: string | null } | null): never {
-  throw new Error(describeWriteFailure(error))
+  throw refused(describeWriteFailure(error), error)
 }
 
 /** As fail, for the functions that say a category, account or line they cannot find with 42501. */
 function failIngest(error: { code?: string | null } | null): never {
-  throw new Error(describeIngestFailure(error))
+  throw refused(describeIngestFailure(error), error)
 }
 
 // ---------------------------------------------------------------------------
@@ -603,7 +603,7 @@ export async function addCategories(
     )
     .select('id')
   // Nothing back with no error is not "none added"; say it failed instead.
-  if (error !== null || data === null) throw new Error(describeSetupFailure('add', error))
+  if (error !== null || data === null) throw refused(describeSetupFailure('add', error), error)
   return data.length
 }
 
@@ -628,7 +628,7 @@ export async function listCategories(supabase: SupabaseClient): Promise<readonly
  */
 export async function renameCategory(supabase: SupabaseClient, categoryId: string, name: string): Promise<void> {
   const { error } = await supabase.from('categories').update({ name }).eq('id', categoryId)
-  if (error !== null) throw new Error(describeSetupFailure('rename', error))
+  if (error !== null) throw refused(describeSetupFailure('rename', error), error)
 }
 
 /**
@@ -642,7 +642,7 @@ export async function setCategoryOrder(
 ): Promise<void> {
   for (const change of changes) {
     const { error } = await supabase.from('categories').update({ sort_order: change.sortOrder }).eq('id', change.id)
-    if (error !== null) throw new Error(describeSetupFailure('reorder', error))
+    if (error !== null) throw refused(describeSetupFailure('reorder', error), error)
   }
 }
 
@@ -656,7 +656,7 @@ export async function moveCategory(
     .from('categories')
     .update({ kind: to.kind, sort_order: to.sortOrder })
     .eq('id', categoryId)
-  if (error !== null) throw new Error(describeSetupFailure('move', error))
+  if (error !== null) throw refused(describeSetupFailure('move', error), error)
 }
 
 /**
@@ -666,7 +666,7 @@ export async function moveCategory(
  */
 export async function removeCategory(supabase: SupabaseClient, categoryId: string): Promise<void> {
   const { error } = await supabase.from('categories').delete().eq('id', categoryId)
-  if (error !== null) throw new Error(describeSetupFailure('remove', error))
+  if (error !== null) throw refused(describeSetupFailure('remove', error), error)
 }
 
 export async function setWeeklyBudget(
@@ -712,6 +712,16 @@ export class ReadRefused extends Error {
     this.name = 'ReadRefused'
     this.code = code
   }
+}
+
+/**
+ * A refusal in the sentence its describer wrote, keeping the database's
+ * code, so needsOneTimeUpdate can tell an update not yet pasted from a lost
+ * connection after a write or a single read too, not only after readAll's
+ * (architecture-b-05). The sentence is unchanged.
+ */
+function refused(sentence: string, error: { code?: string | null } | null): ReadRefused {
+  return new ReadRefused(sentence, error?.code ?? '')
 }
 
 /** A table, column or function a one-time update adds, not there yet (Help → One-time updates). */
@@ -808,7 +818,7 @@ export async function recategoriseTransaction(supabase: SupabaseClient, move: Re
     p_category: move.categoryId,
     p_learn: move.learn,
   })
-  if (error !== null) throw new Error(describeMoveFailure(error))
+  if (error !== null) throw refused(describeMoveFailure(error), error)
 }
 
 export async function deleteTransaction(supabase: SupabaseClient, id: string): Promise<void> {
@@ -896,7 +906,7 @@ export async function setBudget(supabase: SupabaseClient, edit: BudgetEdit): Pro
   const { error } = await supabase
     .from('category_budgets')
     .upsert(rows, { onConflict: 'user_id,category_id,month,applies' })
-  if (error !== null) throw new Error(describeBudgetFailure('save', error))
+  if (error !== null) throw refused(describeBudgetFailure('save', error), error)
 }
 
 // ---------------------------------------------------------------------------
@@ -977,7 +987,7 @@ export async function setPlan(supabase: SupabaseClient, edit: PlanEdit): Promise
     },
     { onConflict: 'user_id,category_id,effective_month' },
   )
-  if (error !== null) throw new Error(describePlanFailure('save', error))
+  if (error !== null) throw refused(describePlanFailure('save', error), error)
 }
 
 // ---------------------------------------------------------------------------
@@ -1034,13 +1044,13 @@ export async function setPaySchedule(supabase: SupabaseClient, edit: ScheduleEdi
     { user_id: edit.userId, category_id: edit.categoryId, first_pay_date: edit.firstPayDate, frequency: edit.frequency },
     { onConflict: 'user_id,category_id' },
   )
-  if (error !== null) throw new Error(describeScheduleFailure('save', error))
+  if (error !== null) throw refused(describeScheduleFailure('save', error), error)
 }
 
 /** Forget when an income source pays: 0011 stores no half schedule, so none is a missing row. */
 export async function removePaySchedule(supabase: SupabaseClient, categoryId: string): Promise<void> {
   const { error } = await supabase.from('pay_schedules').delete().eq('category_id', categoryId)
-  if (error !== null) throw new Error(describeScheduleFailure('save', error))
+  if (error !== null) throw refused(describeScheduleFailure('save', error), error)
 }
 
 // ---------------------------------------------------------------------------
@@ -1066,7 +1076,7 @@ export async function getMonthBalance(supabase: SupabaseClient, month: string): 
     .select('starting_balance_cents')
     .eq('month', month)
     .maybeSingle()
-  if (error !== null) throw new Error(describeBalanceFailure('read', error))
+  if (error !== null) throw refused(describeBalanceFailure('read', error), error)
   return data === null ? null : Number((data as Pick<MonthBalanceRow, 'starting_balance_cents'>).starting_balance_cents)
 }
 
@@ -1095,7 +1105,7 @@ export async function setMonthBalance(supabase: SupabaseClient, edit: BalanceEdi
             { user_id: edit.userId, month: edit.month, starting_balance_cents: edit.startingBalanceCents },
             { onConflict: 'user_id,month' },
           )
-  if (error !== null) throw new Error(describeBalanceFailure('save', error))
+  if (error !== null) throw refused(describeBalanceFailure('save', error), error)
 }
 
 // ---------------------------------------------------------------------------
@@ -1286,7 +1296,7 @@ export async function saveFund(
           .from('savings_goals')
           .insert({ user_id: target.userId, name: target.name, category_id: target.categoryId, ...row })
       : await supabase.from('savings_goals').update(row).eq('id', target.goalId)
-  if (error !== null) throw new Error(describeFundFailure('save', error))
+  if (error !== null) throw refused(describeFundFailure('save', error), error)
 }
 
 /**
@@ -1302,7 +1312,7 @@ export async function linkFund(
     .from('savings_goals')
     .update({ category_id: link.categoryId, balance_as_of: link.asOf })
     .eq('id', link.goalId)
-  if (error !== null) throw new Error(describeFundFailure('save', error))
+  if (error !== null) throw refused(describeFundFailure('save', error), error)
 }
 
 // ---------------------------------------------------------------------------
@@ -1397,13 +1407,13 @@ export async function saveDebt(
     target.debtId === null
       ? await supabase.from('debts').insert({ user_id: target.userId, sort_order: target.sortOrder, ...row })
       : await supabase.from('debts').update(row).eq('id', target.debtId)
-  if (error !== null) throw new Error(describeDebtFailure('save', error))
+  if (error !== null) throw refused(describeDebtFailure('save', error), error)
 }
 
 /** Remove a debt; its extra payments go with it (0014: ON DELETE CASCADE). */
 export async function removeDebt(supabase: SupabaseClient, debtId: string): Promise<void> {
   const { error } = await supabase.from('debts').delete().eq('id', debtId)
-  if (error !== null) throw new Error(describeDebtFailure('save', error))
+  if (error !== null) throw refused(describeDebtFailure('save', error), error)
 }
 
 /** Set a debt's extra payment for a month; one per debt a month, as the workbook has one cell. */
@@ -1417,10 +1427,10 @@ export async function saveDebtExtra(
       { user_id: extra.userId, debt_id: extra.debtId, month: extra.month, amount_cents: extra.amountCents },
       { onConflict: 'user_id,debt_id,month' },
     )
-  if (error !== null) throw new Error(describeDebtFailure('extra', error))
+  if (error !== null) throw refused(describeDebtFailure('extra', error), error)
 }
 
 export async function removeDebtExtra(supabase: SupabaseClient, extraId: string): Promise<void> {
   const { error } = await supabase.from('debt_extra_payments').delete().eq('id', extraId)
-  if (error !== null) throw new Error(describeDebtFailure('extra', error))
+  if (error !== null) throw refused(describeDebtFailure('extra', error), error)
 }

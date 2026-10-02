@@ -2694,7 +2694,7 @@ and run one set of gates at a time on a shared machine.
 
 ---
 
-## N114 — Two reads Getting started makes cannot tell a missing update from a lost connection
+## N114 — Two reads Getting started makes cannot tell a missing update from a lost connection *(settled 2026-10-01, architecture-b-05)*
 
 **Seen:** 2026-09-28, A25. `getMonthBalance` and `hasImportedStatement`
 throw a plain `Error` with the describer's sentence, not `ReadRefused`,
@@ -2709,6 +2709,11 @@ change.
 **To settle:** throw `ReadRefused` with the code from both, as `readAll`
 does, and let each screen say "needs a one-time update" where that is
 the reason.
+
+**Settled:** every refusal in ledger.ts (`fail`, `failIngest` and the
+describers' throws) is now a `ReadRefused` carrying the database's code, in
+the same sentence, so `needsOneTimeUpdate` sees it after a write or a single
+read too (apps/web/test/ledger-refusals.test.ts).
 
 ---
 
