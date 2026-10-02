@@ -14,7 +14,7 @@
     "verify": "./scripts/gates.sh full"
   },
   "devDependencies": {
-    "@types/node": "^26.6.2",
+    "@types/node": "^22.19.0",
     "@vitest/coverage-v8": "^3.2.7",
     "dependency-cruiser": "^18.4.0",
     "eslint": "^10.11.0",
