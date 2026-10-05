@@ -186,6 +186,22 @@ describe('WeekScreen', () => {
     await expectNoAxeViolations()
   })
 
+  // e2e-plan-09: a week stepped back showed today's balance, with what each
+  // week needs counted from that week's Monday: a figure true of neither
+  // day. It is today's, the $10,775.00 above, whichever week is shown.
+  it('says what each week needs from today, whichever week is shown', async () => {
+    const fake = seeded()
+    fake.tables.savings_goals.push({
+      id: 'g1', name: 'Flight training', target_cents: 3_000_000, saved_cents: 845_000,
+      target_date: '2026-03-25', unit_cost_cents: 27_500, unit_label: 'flight time',
+    })
+    window.location.hash = '/week/2026-03-02'
+    renderScreen(<WeekScreen />, fake)
+    expect(await screen.findByRole('heading', { name: 'Week of' })).toBeTruthy()
+    expect(await screen.findByText('of $30,000.00 · $21,550.00 to go')).toBeTruthy()
+    expect(screen.getByText('$10,775.00')).toBeTruthy()
+  })
+
   // Hand-derived: 8,450.00 typed at the end of 1 March, and 200.00 moved in
   // on the 5th (D16): 8,650.00, which Savings shows too.
   it("shows a fund's goal with the balance its transfers keep", async () => {

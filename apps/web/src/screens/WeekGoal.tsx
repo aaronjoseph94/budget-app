@@ -17,7 +17,7 @@ import { cn } from '../lib/cn.js'
  * well, beside the summary: Mockup A's wide card tinted to the accent, with
  * a ring drawn from goalProgress's basis points and the percentage in it.
  */
-export function GoalCard({ weekSpentCents, asOf }: { weekSpentCents: number; asOf: string }) {
+export function GoalCard({ weekSpentCents, today }: { weekSpentCents: number; today: string }) {
   const { mainGoal: goal, goals } = useAppData()
   const funds = useFunds()
   if (goal === null) return null
@@ -32,9 +32,11 @@ export function GoalCard({ weekSpentCents, asOf }: { weekSpentCents: number; asO
   }
   const progress = goalProgress(saving)
   const spentAsTime = goal.unit_cost_cents !== null && weekSpentCents > 0 ? timeEquivalent({ amountCents: weekSpentCents, unitCostPerHourCents: goal.unit_cost_cents }) : null
+  // From today, as what is saved is today's, whichever week is shown: from
+  // a past week's Monday it was a figure true of neither day (e2e-plan-09).
   const perWeek =
-    goal.target_date !== null && goal.target_date > asOf
-      ? requiredWeeklyContribution({ goal: saving, asOf: isoDate(asOf), targetDate: isoDate(goal.target_date) }).weeklyCents
+    goal.target_date !== null && goal.target_date > today
+      ? requiredWeeklyContribution({ goal: saving, asOf: isoDate(today), targetDate: isoDate(goal.target_date) }).weeklyCents
       : null
 
   const bp = progress.percentCompleteBasisPoints

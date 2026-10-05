@@ -172,7 +172,7 @@ export function WeekScreen({ monday }: { monday: string | null }) {
         <WeekBlocks
           sheet={sheet}
           comparison={comparison}
-          aside={mainGoal !== null ? <GoalCard weekSpentCents={sheet.summary.spentCents} asOf={asOf} /> : <NoGoal />}
+          aside={mainGoal !== null ? <GoalCard weekSpentCents={sheet.summary.spentCents} today={today} /> : <NoGoal />}
           onUnsaved={setUnsaved}
           onOpen={setOpened}
         />
