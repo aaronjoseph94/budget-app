@@ -41,8 +41,26 @@ export const US_AMOUNT_FORMAT: AmountFormat = {
   parenthesesMeanNegative: true,
 }
 
-/** Symbols that carry no numeric meaning and are dropped before parsing. */
-const CURRENCY = /[$£€¥\s ]/g
+/**
+ * A currency sign or a space: no numeric meaning at either edge of the
+ * number, or between a sign and it ("$ 12.34", "-$1,234.56", "12.34 €").
+ * Inside the number, a currency sign is refused, and a space is read as
+ * the grouping separator and held to the same rule ("1 234,56" is a
+ * statement's grouping; "12 34" is not). Dropping both anywhere read
+ * "12 34" as $1,234.00 and "4$50" as $450.00 (testing fuzz-04).
+ */
+const EDGE = /[$£€¥\s]/
+const SIGN_INSIDE = /[$£€¥]/
+const SPACE_INSIDE = /\s/
+
+/** The text without currency signs and spaces at either end. */
+function edgesOff(text: string): string {
+  let from = 0
+  let to = text.length
+  while (from < to && EDGE.test(text.charAt(from))) from += 1
+  while (to > from && EDGE.test(text.charAt(to - 1))) to -= 1
+  return text.slice(from, to)
+}
 
 export function parseAmountToCents(raw: string, format: AmountFormat): ParseOutcome<Cents> {
   const trimmed = raw.trim()
@@ -57,19 +75,26 @@ export function parseAmountToCents(raw: string, format: AmountFormat): ParseOutc
     body = body.slice(1, -1)
   }
 
-  body = body.replace(CURRENCY, '')
+  body = edgesOff(body)
 
   if (body.startsWith('-')) {
     // "-(12.34)" is not a convention anywhere; two negatives means malformed.
     if (negative) return { ok: false, reason: 'unparseable_amount' }
     negative = true
-    body = body.slice(1)
+    body = edgesOff(body.slice(1))
   } else if (body.startsWith('+')) {
-    body = body.slice(1)
+    body = edgesOff(body.slice(1))
   }
 
   // The grouping separator is whichever one is not the decimal separator.
   const grouping = format.decimalSeparator === '.' ? ',' : '.'
+
+  if (SIGN_INSIDE.test(body)) return { ok: false, reason: 'unparseable_amount' }
+  if (SPACE_INSIDE.test(body)) {
+    // Spaces or the separator as grouping, never both in one number.
+    if (body.includes(grouping)) return { ok: false, reason: 'unparseable_amount' }
+    body = body.split(/\s/).join(grouping)
+  }
 
   // Split on the decimal separator BEFORE touching grouping, so the grouping
   // that remains can be checked for position rather than blindly deleted.

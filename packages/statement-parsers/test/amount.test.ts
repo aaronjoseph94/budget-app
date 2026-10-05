@@ -94,6 +94,33 @@ describe('parseAmountToCents', () => {
     expect(parsed('1,23')).toEqual({ ok: false, reason: 'unparseable_amount' })
   })
 
+  // Testing fuzz-04: a space or a currency sign anywhere was dropped before
+  // the grouping check, so '12 34' read as $1,234.00 and '4$50' as $450.00,
+  // every row reporting ok.
+  it.each(['12 34', '4 50', '1 2 3', '5 0', '12$34', '1€2', '4$50', '(1 3€8)', '12.3 4', '1 234,567.00'])(
+    'rejects %j: a space or a sign inside the number, where no grouping goes',
+    (raw) => {
+      expect(parsed(raw)).toEqual({ ok: false, reason: 'unparseable_amount' })
+    },
+  )
+
+  it.each([
+    ['$ 12.34', 1234],
+    ['- 12.34', -1234],
+    ['-$ 12.34', -1234],
+    ['$-12.34', -1234],
+    ['12.34 €', 1234],
+    ['( $12.34 )', -1234],
+    ['1 234.56', 123456],
+  ])('still reads %j: signs and spaces at the edges, a space where grouping goes', (raw, expected) => {
+    expect(parsed(raw)).toEqual({ ok: true, value: cents(expected) })
+  })
+
+  it('reads a space as grouping in a European statement too', () => {
+    expect(parsed('1 234,56', EU)).toEqual({ ok: true, value: cents(123456) })
+    expect(parsed('12 34,56', EU)).toEqual({ ok: false, reason: 'unparseable_amount' })
+  })
+
   it.each([
     ['a group of two', '1,23'],
     ['single-digit groups', '1,2,3'],
@@ -178,7 +205,7 @@ describe('parseTypedAmount', () => {
     expect(parseTypedAmount(text)).toBe(expected)
   })
 
-  it.each(['', '   ', '$', 'abc', '12.345', '1.2.3', '12,5'])('reads %j as no amount', (text) => {
+  it.each(['', '   ', '$', 'abc', '12.345', '1.2.3', '12,5', '4 50', '12 34', '12$34'])('reads %j as no amount', (text) => {
     expect(parseTypedAmount(text)).toBeNull()
   })
 })
