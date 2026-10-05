@@ -82,7 +82,9 @@ const PERIOD = new RegExp(
   'u',
 )
 const DAY_CELL = new RegExp(String.raw`^(${MONTH_NAMES})\s*(\d{1,2})$`, 'u')
-const MONEY = String.raw`\$?(-?[\d,]+\.\d{2})`
+// Two decimals and no more: without the end, '1,234.567' was read as
+// $1,234.56 (testing fuzz-10). Nothing is guessed.
+const MONEY = String.raw`\$?(-?[\d,]+\.\d{2})(?!\d)`
 
 /** The statement period, which is where the year comes from. */
 export function readPeriod(pages: readonly (readonly TextRun[])[]): StatementPeriod | null {
