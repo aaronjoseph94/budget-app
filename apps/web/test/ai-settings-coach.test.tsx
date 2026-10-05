@@ -57,7 +57,8 @@ describe('How the Coach talks', () => {
     const panel = await open(fake)
     fireEvent.click(await panel.findByRole('radio', { name: /Straight talker/ }))
     await waitFor(() => expect(fake.tables.ai_settings).toEqual([{ user_id: 'u1', daily_cap: 60, tone: 'straight', share_shop_names: true }]))
-    await waitFor(() => expect(panel.getByRole<HTMLInputElement>('switch', { name: 'Share shop names with the AI' }).disabled).toBe(false))
+    // Greyed with aria-disabled while it saves, never disabled, which drops focus (FE-6, e2e-setup-01).
+    await waitFor(() => expect(panel.getByRole<HTMLInputElement>('switch', { name: 'Share shop names with the AI' }).getAttribute('aria-disabled')).toBe('false'))
     fireEvent.click(panel.getByRole('switch', { name: 'Share shop names with the AI' }))
     await waitFor(() => expect(fake.tables.ai_settings).toEqual([{ user_id: 'u1', daily_cap: 60, tone: 'straight', share_shop_names: false }]))
     expect(panel.getByText(/the Coach tells the AI “a shop” instead of the name, and Review suggests no categories/)).toBeTruthy()

@@ -114,6 +114,8 @@ describe('AI settings says what is true, whatever the helper does', () => {
     await open(fake, 'The AI helper isn’t installed yet. Everything else works. One-time updates shows how.')
     fake.functions.ai = json({ ok: false, code: 'needs_update' }, 503)
     fireEvent.click(screen.getByRole('button', { name: 'Check again' }))
+    // Greyed while it asks, never disabled, which drops focus (FE-6, e2e-setup-01).
+    expect([screen.getByRole<HTMLButtonElement>('button', { name: 'Checking…' }).disabled, screen.getByRole('button', { name: 'Checking…' }).getAttribute('aria-disabled')]).toEqual([false, 'true'])
     expect(await screen.findByText('AI needs a one-time update. Everything else works. One-time updates shows which.')).toBeTruthy()
     expect(fake.functions.calls).toEqual([{ action: 'status' }, { action: 'status' }])
   })

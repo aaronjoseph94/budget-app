@@ -13,7 +13,9 @@ import { cn } from '../../lib/cn.js'
 const FIELD =
   'flex w-full rounded-md border border-input bg-card py-2 text-base transition-colors ' +
   'placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-[3px] ' +
-  'focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 pointer-coarse:min-h-11'
+  'focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 pointer-coarse:min-h-11 ' +
+  // Greyed the same while it saves, where it keeps focus (FE-6).
+  'aria-disabled:cursor-not-allowed aria-disabled:opacity-50'
 
 export function Input({
   className,
@@ -49,7 +51,8 @@ export const SWITCH =
   'h-7 w-12 shrink-0 cursor-pointer appearance-none rounded-full bg-muted-foreground bg-left bg-no-repeat ' +
   'bg-[length:1.75rem_1.75rem] [background-image:radial-gradient(circle,var(--card)_55%,transparent_58%)] ' +
   'transition-[background-position,background-color] motion-reduce:transition-none checked:bg-primary checked:bg-right ' +
-  'outline-none focus-visible:ring-[3px] focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50'
+  'outline-none focus-visible:ring-[3px] focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ' +
+  'aria-disabled:cursor-not-allowed aria-disabled:opacity-50'
 
 const CHEVRON = {
   backgroundImage:

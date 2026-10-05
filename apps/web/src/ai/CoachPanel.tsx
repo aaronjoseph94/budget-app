@@ -35,7 +35,9 @@ export function CoachPanel() {
     return () => void (live = false)
   }, [supabase, userId])
 
+  // Greyed with aria-disabled while it saves, never disabled, which drops focus (FE-6, e2e-setup-01).
   const change = async (settings: CoachSettings, next: CoachSettings) => {
+    if (saving) return
     setSaving(true)
     setProblem(null)
     setLoaded({ state: 'ready', settings: next })
@@ -79,9 +81,9 @@ export function CoachPanel() {
                 <input
                   type="radio"
                   name="coach-tone"
-                  className="mt-1 size-5 shrink-0 accent-primary"
+                  className="mt-1 size-5 shrink-0 accent-primary aria-disabled:opacity-50"
                   checked={loaded.settings.tone === t.tone}
-                  disabled={saving}
+                  aria-disabled={saving}
                   onChange={() => void change(loaded.settings, { ...loaded.settings, tone: t.tone })}
                 />
                 <span className="min-w-0">
@@ -100,7 +102,7 @@ export function CoachPanel() {
               aria-describedby={ids.shareHint}
               className={SWITCH}
               checked={loaded.settings.shareShopNames}
-              disabled={saving}
+              aria-disabled={saving}
               onChange={(e) => void change(loaded.settings, { ...loaded.settings, shareShopNames: e.target.checked })}
             />
           </label>

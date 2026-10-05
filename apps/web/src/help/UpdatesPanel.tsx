@@ -237,7 +237,10 @@ export function UpdatesPanel() {
           ) : null}
         </div>
       )}
-      <Button variant="outline" disabled={busy} onClick={() => void check()}>
+      {/* aria-disabled, not disabled, while it checks: disabled drops focus (FE-6, e2e-setup-01). */}
+      <Button variant="outline" aria-disabled={busy} onClick={() => {
+        if (!busy) void check()
+      }}>
         {busy ? 'Checking…' : 'Check again'}
       </Button>
     </section>

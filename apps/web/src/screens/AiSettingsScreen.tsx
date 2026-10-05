@@ -83,7 +83,10 @@ export function AiSettingsScreen() {
             </a>
           )}
         </div>
-        <Button variant="outline" disabled={view === null} onClick={() => void check()}>
+        {/* aria-disabled, not disabled, while it checks: disabled drops focus (FE-6, e2e-setup-01). */}
+        <Button variant="outline" aria-disabled={view === null} onClick={() => {
+          if (view !== null) void check()
+        }}>
           {view === null ? 'Checking…' : 'Check again'}
         </Button>
       </section>

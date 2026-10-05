@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import type { AiProvider, AiServiceStatus, AiStatusReply } from '@budget/schema'
 import { useAppData } from '../app-data.js'
 import { Button } from '../components/ui/button.js'
@@ -47,6 +47,16 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
   const [saving, setSaving] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
   const ids = { use: useId(), order: useId(), paid: useId(), cap: useId(), capHint: useId() }
+  // Every control is greyed with aria-disabled while a change saves, not
+  // disabled: a browser drops focus from a control that is disabled, and a
+  // second Enter on "Move … up" went nowhere (FE-6, e2e-setup-01). The move
+  // button last pressed is also given back focus when its row is moved in
+  // the page, which drops it the same way.
+  const pressed = useRef<HTMLButtonElement | null>(null)
+  useLayoutEffect(() => {
+    const button = pressed.current
+    if (button !== null && button.isConnected && (document.activeElement === null || document.activeElement === document.body)) button.focus()
+  }, [loaded])
 
   useEffect(() => {
     let live = true
@@ -75,6 +85,7 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
 
   const { choices } = loaded
   const change = async (next: AiChoices) => {
+    if (saving) return
     setSaving(true)
     setProblem(null)
     setLoaded({ state: 'ready', choices: next })
@@ -105,7 +116,7 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
               role="switch"
               className={SWITCH}
               checked={choices.enabled}
-              disabled={saving}
+              aria-disabled={saving}
               onChange={(e) => void change({ ...choices, enabled: e.target.checked })}
             />
           </label>
@@ -135,8 +146,12 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
                   size="icon"
                   className="min-h-11 min-w-11 shrink-0 text-muted-foreground"
                   aria-label={`Move ${NAME[s.provider]} up`}
-                  disabled={saving || i === 0}
-                  onClick={() => void change({ ...choices, order: moved(choices.order, s.provider, -1) })}
+                  aria-disabled={saving || i === 0}
+                  onClick={(e) => {
+                    if (i === 0) return
+                    pressed.current = e.currentTarget
+                    void change({ ...choices, order: moved(choices.order, s.provider, -1) })
+                  }}
                 >
                   <Icon name="up" />
                 </Button>
@@ -145,8 +160,12 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
                   size="icon"
                   className="min-h-11 min-w-11 shrink-0 text-muted-foreground"
                   aria-label={`Move ${NAME[s.provider]} down`}
-                  disabled={saving || i === services.length - 1}
-                  onClick={() => void change({ ...choices, order: moved(choices.order, s.provider, 1) })}
+                  aria-disabled={saving || i === services.length - 1}
+                  onClick={(e) => {
+                    if (i === services.length - 1) return
+                    pressed.current = e.currentTarget
+                    void change({ ...choices, order: moved(choices.order, s.provider, 1) })
+                  }}
                 >
                   <Icon name="down" />
                 </Button>
@@ -166,7 +185,7 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
               role="switch"
               className={SWITCH}
               checked={choices.allowPaid}
-              disabled={saving}
+              aria-disabled={saving}
               onChange={(e) => void change({ ...choices, allowPaid: e.target.checked })}
             />
           </label>
@@ -185,7 +204,7 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
             id={ids.cap}
             aria-describedby={ids.capHint}
             value={String(choices.dailyCap)}
-            disabled={saving}
+            aria-disabled={saving}
             onChange={(e) => void change({ ...choices, dailyCap: Number(e.target.value) })}
           >
             {[...new Set([...DAILY_CAPS, choices.dailyCap])].sort((a, b) => a - b).map((n) => (

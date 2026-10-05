@@ -154,6 +154,9 @@ describe('One-time updates', () => {
     expect(screen.queryByRole('link', { name: /on GitHub$/ })).toBeNull()
     fake.functions.mcpHealth = () => new Response(JSON.stringify({ ok: true, version: '2026-09-29.1' }), { headers: { 'content-type': 'application/json' } })
     fireEvent.click(screen.getByRole('button', { name: 'Check again' }))
+    // Greyed while it checks, never disabled, which drops focus (FE-6, e2e-setup-01).
+    const checking = screen.getByRole<HTMLButtonElement>('button', { name: 'Checking…' })
+    expect([checking.disabled, checking.getAttribute('aria-disabled')]).toEqual([false, 'true'])
     await screen.findByText('Open its settings and check Enforce JWT verification is still off.')
   })
 

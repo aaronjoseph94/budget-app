@@ -171,6 +171,39 @@ describe('Settings → AI apps: the switches', () => {
   })
 })
 
+describe('Settings → AI apps: focus while a switch saves (FE-6, e2e-setup-01)', () => {
+  // Disabled while it saved, the switch pressed dropped focus to the page.
+  it('greys every switch and Connect a new AI app with aria-disabled, never disabled, and takes no second press', async () => {
+    const fake = fakeSupabase({ ai_app_access: [{ user_id: 'u1', enabled: true, allow_add: true, time_zone: 'UTC', connect_until: null }] })
+    renderScreen(<AiAppsCard />, fake)
+    const add = await screen.findByRole<HTMLInputElement>('switch', { name: 'Let them add to Review' })
+    let release = (): void => undefined
+    fake.server.hold = (target) => (target === 'POST ai_app_access' ? new Promise<void>((resolve) => (release = resolve)) : null)
+    add.focus()
+    fireEvent.click(add)
+    await waitFor(() => expect(add.getAttribute('aria-disabled')).toBe('true'))
+    const controls = [add, await connect(), screen.getByRole('switch', { name: 'Let AI apps suggest changes' })]
+    expect(controls.map((c) => [(c as HTMLInputElement).disabled, c.getAttribute('aria-disabled')])).toEqual(controls.map(() => [false, 'true']))
+    fireEvent.click(add)
+    fake.server.hold = null
+    release()
+    await waitFor(() => expect(add.getAttribute('aria-disabled')).toBe('false'))
+    expect(fake.tables.ai_app_access).toMatchObject([{ allow_add: false, connect_until: null }])
+    expect(document.activeElement).toBe(add)
+
+    // Connect a new AI app is greyed the same while it opens the window, and takes no second press.
+    fake.server.hold = (target) => (target === 'POST ai_app_access' ? new Promise<void>((resolve) => (release = resolve)) : null)
+    const opening = screen.getByRole<HTMLButtonElement>('button', { name: 'Connect a new AI app' })
+    fireEvent.click(opening)
+    await waitFor(() => expect([opening.disabled, opening.getAttribute('aria-disabled')]).toEqual([false, 'true']))
+    fireEvent.click(opening)
+    fake.server.hold = null
+    release()
+    await waitFor(() => expect(opening.getAttribute('aria-disabled')).toBe('false'))
+    expect(writeText).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('Settings → AI apps: Connect a new AI app', () => {
   const on = () => fakeSupabase({ ai_app_access: [{ user_id: 'u1', enabled: true, allow_add: true, time_zone: 'UTC', connect_until: null }] })
 

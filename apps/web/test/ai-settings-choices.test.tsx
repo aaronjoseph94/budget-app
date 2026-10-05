@@ -55,14 +55,17 @@ describe('Try in this order', () => {
   it('moves a service up or down, saving the whole order, with nothing to move past either end', async () => {
     const fake = createFakeSupabase()
     const order = await open(fake)
-    expect((order.getByRole('button', { name: 'Move Google Gemini up' }) as HTMLButtonElement).disabled).toBe(true)
-    expect((order.getByRole('button', { name: 'Move Anthropic down' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(order.getByRole('button', { name: 'Move Google Gemini up' }).getAttribute('aria-disabled')).toBe('true')
+    expect(order.getByRole('button', { name: 'Move Anthropic down' }).getAttribute('aria-disabled')).toBe('true')
+    fireEvent.click(order.getByRole('button', { name: 'Move Google Gemini up' }))
+    fireEvent.click(order.getByRole('button', { name: 'Move Anthropic down' }))
+    expect(fake.tables.ai_settings).toEqual([])
     // A finger's 44 px, with a mouse too: jsdom has no layout, so the classes that give it.
     expect(order.getByRole('button', { name: 'Move Groq up' }).className).toMatch(/(^|\s)min-h-11\s(.*\s)?min-w-11(\s|$)/)
     fireEvent.click(order.getByRole('button', { name: 'Move Groq up' }))
     await waitFor(() => expect(fake.tables.ai_settings).toMatchObject([{ user_id: 'u1', provider_order: ['groq', 'gemini', 'openrouter', 'openai', 'anthropic'] }]))
     expect(names(order)).toEqual(['1. Groq', '2. Google Gemini', '3. OpenRouter', '4. OpenAI', '5. Anthropic'])
-    await waitFor(() => expect((order.getByRole('button', { name: 'Move OpenRouter down' }) as HTMLButtonElement).disabled).toBe(false))
+    await waitFor(() => expect(order.getByRole('button', { name: 'Move OpenRouter down' }).getAttribute('aria-disabled')).toBe('false'))
     fireEvent.click(order.getByRole('button', { name: 'Move OpenRouter down' }))
     await waitFor(() => expect(fake.tables.ai_settings[0]?.provider_order).toEqual(['groq', 'gemini', 'openai', 'openrouter', 'anthropic']))
     // The helper is asked again, so the sentence at the top follows.
@@ -93,7 +96,7 @@ describe('Use AI', () => {
     expect(await screen.findByText(/^AI is off\./)).toBeTruthy()
     // The switch stops the helper alone; an AI app the owner connects keeps its own switch (review-r-04).
     expect(screen.getByText('Off: the Coach, suggestions, Just type it and receipt photos send nothing to any AI service and use the app’s own words. AI apps you connect have their own switch in Settings.')).toBeTruthy()
-    await waitFor(() => expect(use.disabled).toBe(false))
+    await waitFor(() => expect(use.getAttribute('aria-disabled')).toBe('false'))
     fake.functions.aiStatus = aiStatusReply()
     fireEvent.click(use)
     await waitFor(() => expect(fake.tables.ai_settings).toEqual([{ user_id: 'u1', daily_cap: 60, enabled: true }]))
@@ -111,6 +114,40 @@ describe('Use AI', () => {
   })
 })
 
+describe('focus while a choice saves (FE-6, e2e-setup-01)', () => {
+  // A control disabled while it saves drops focus to the page in a browser,
+  // so a second Enter on "Move … up" went nowhere. Each is greyed with
+  // aria-disabled instead, keeps focus, and ignores a press until the save
+  // is done; a row the page moves gives its button focus back.
+  it('keeps every control focusable while a change saves, and does nothing more until it is saved', async () => {
+    const fake = createFakeSupabase()
+    const order = await open(fake)
+    let release = (): void => undefined
+    fake.server.hold = (target) => (target === 'POST ai_settings' ? new Promise<void>((resolve) => (release = resolve)) : null)
+    const up = order.getByRole<HTMLButtonElement>('button', { name: 'Move OpenRouter up' })
+    up.focus()
+    fireEvent.click(up)
+    await waitFor(() => expect(up.getAttribute('aria-disabled')).toBe('true'))
+    const controls = [up, screen.getByRole('switch', { name: 'Use AI' }), screen.getByRole('switch', { name: 'Use paid services' }), screen.getByRole('combobox', { name: 'Daily limit' })]
+    expect(controls.map((c) => [(c as HTMLButtonElement).disabled, c.getAttribute('aria-disabled')])).toEqual(controls.map(() => [false, 'true']))
+    fireEvent.click(up)
+    fireEvent.click(screen.getByRole('switch', { name: 'Use AI' }))
+    fake.server.hold = null
+    release()
+    await waitFor(() => expect(up.getAttribute('aria-disabled')).toBe('false'))
+    expect(fake.tables.ai_settings).toEqual([expect.objectContaining({ provider_order: ['gemini', 'openrouter', 'groq', 'openai', 'anthropic'] })])
+    expect(fake.tables.ai_settings[0]).not.toHaveProperty('enabled')
+    expect(document.activeElement).toBe(up)
+    // Moved down, its row is moved in the page; focus comes back to it.
+    const down = order.getByRole<HTMLButtonElement>('button', { name: 'Move OpenRouter down' })
+    down.focus()
+    fireEvent.click(down)
+    await waitFor(() => expect(fake.tables.ai_settings[0]?.provider_order).toEqual(['gemini', 'groq', 'openrouter', 'openai', 'anthropic']))
+    await waitFor(() => expect(down.getAttribute('aria-disabled')).toBe('false'))
+    expect(document.activeElement).toBe(down)
+  })
+})
+
 describe('Use paid services', () => {
   it('is off until switched on, and the switch is saved', async () => {
     const fake = createFakeSupabase()
@@ -123,7 +160,7 @@ describe('Use paid services', () => {
     await waitFor(() => expect(fake.tables.ai_settings).toMatchObject([{ user_id: 'u1', allow_paid: true, daily_cap: 40 }]))
     expect(paid.checked).toBe(true)
     expect(screen.getByText(/^On: OpenAI and Anthropic are asked/)).toBeTruthy()
-    await waitFor(() => expect(paid.disabled).toBe(false))
+    await waitFor(() => expect(paid.getAttribute('aria-disabled')).toBe('false'))
     fireEvent.click(paid)
     await waitFor(() => expect(fake.tables.ai_settings).toMatchObject([{ allow_paid: false }]))
   })

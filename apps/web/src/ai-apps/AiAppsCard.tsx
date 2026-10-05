@@ -57,7 +57,9 @@ export function AiAppsCard() {
     return () => void (live = false)
   }, [supabase, userId])
 
+  // Greyed with aria-disabled while it saves, never disabled, which drops focus (FE-6, e2e-setup-01).
   const change = async (was: Access, next: Access, saved: Parameters<typeof saveAccess>[2]) => {
+    if (saving) return
     setSaving(true)
     setSaid('')
     setFirst(false)
@@ -118,7 +120,7 @@ export function AiAppsCard() {
               aria-describedby={ids.onHint}
               className={SWITCH}
               checked={loaded.access.enabled}
-              disabled={saving}
+              aria-disabled={saving}
               onChange={(e) => void change(loaded.access, { ...loaded.access, enabled: e.target.checked }, { enabled: e.target.checked })}
             />
           </label>
@@ -138,7 +140,7 @@ export function AiAppsCard() {
                   aria-describedby={ids.addHint}
                   className={SWITCH}
                   checked={loaded.access.allowAdd}
-                  disabled={saving}
+                  aria-disabled={saving}
                   onChange={(e) => void change(loaded.access, { ...loaded.access, allowAdd: e.target.checked }, { allowAdd: e.target.checked })}
                 />
               </label>
@@ -165,7 +167,7 @@ export function AiAppsCard() {
                       aria-describedby={ids.suggestHint}
                       className={SWITCH}
                       checked={loaded.access.allowPropose}
-                      disabled={saving}
+                      aria-disabled={saving}
                       onChange={(e) => void change(loaded.access, { ...loaded.access, allowPropose: e.target.checked }, { allowPropose: e.target.checked })}
                     />
                   </label>

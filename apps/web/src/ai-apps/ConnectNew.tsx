@@ -30,6 +30,7 @@ export function ConnectNew() {
   const address = serverAddress(supabase)
 
   const connect = async () => {
+    if (busy) return
     setBusy(true)
     setSaid('')
     const until = new Date(Date.now() + CONNECT_MINUTES * 60_000).toISOString()
@@ -57,7 +58,8 @@ export function ConnectNew() {
           </Fragment>
         ))}
       </p>
-      <Button size="tall" disabled={busy} onClick={() => void connect()}>
+      {/* aria-disabled, not disabled, while it works: disabled drops focus (FE-6, e2e-setup-01). */}
+      <Button size="tall" aria-disabled={busy} onClick={() => void connect()}>
         <Icon name="plus" /> Connect a new AI app
       </Button>
       <p className="text-sm text-muted-foreground">
