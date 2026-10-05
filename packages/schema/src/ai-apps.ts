@@ -7,7 +7,7 @@ import { IngestedTextSchema } from './primitives.js'
  * One-time updates can tell an old paste of `mcp-function.ts` from this
  * site's. Bumped with every change the owner must paste, as `YYYY-MM-DD.N`.
  */
-export const MCP_SERVER_VERSION = '2026-10-05.5'
+export const MCP_SERVER_VERSION = '2026-10-05.6'
 
 /*
  * What an AI app may send the server's tools (PLAN §2.4): each tool's input
@@ -78,6 +78,13 @@ const shown = (text: string) =>
 /** What an AI app adds was: the owner's own words, held as ingested text, trimmed, every character visible. */
 export const WordsSchema = z.string().trim().max(120).pipe(IngestedTextSchema).refine(shown, 'Expected no invisible characters')
 
+/**
+ * A day an AI app asks about. Years before 1900 or after 2999 are no one's
+ * records: year 1 gave a month ending in 1901, and year 0 or 9999 a period
+ * the database refused, answered as the server's fault (testing mcp-04).
+ */
+const DaySchema = z.iso.date().refine((day) => day >= '1900-01-01' && day <= '2999-12-31', 'Expected a date from 1900-01-01 to 2999-12-31')
+
 /** `list_categories` takes nothing. */
 export const ListCategoriesInputSchema = z.object({}).strict()
 
@@ -91,7 +98,7 @@ export const NoteTextSchema = z.string().trim().max(300).pipe(IngestedTextSchema
 export const GetPeriodInputSchema = z
   .object({
     period: z.enum(['month', 'week', 'pay_period', 'year']).default('month'),
-    date: z.iso.date().optional(),
+    date: DaySchema.optional(),
     income: NameSchema.optional(),
     list: ListSchema.optional(),
     categories: z.array(NameSchema).min(1).max(10).optional(),
@@ -138,8 +145,8 @@ export const SearchTransactionsInputSchema = z
     text: z.string().trim().max(60).pipe(IngestedTextSchema).optional(),
     categories: z.array(NameSchema).min(1).max(10).optional(),
     list: z.enum([...ListSchema.options, 'transfer']).optional(),
-    from: z.iso.date().optional(),
-    to: z.iso.date().optional(),
+    from: DaySchema.optional(),
+    to: DaySchema.optional(),
     min_amount: AmountTextSchema.optional(),
     max_amount: AmountTextSchema.optional(),
     flow: z.enum(['spent', 'received', 'any']).default('any'),
