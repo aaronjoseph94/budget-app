@@ -49,6 +49,9 @@ export function Drawn({ words }: { words: Words }) {
   return words.map((w, i) => (typeof w === 'string' ? w : <IngestedText key={i}>{w.data}</IngestedText>))
 }
 
+/** `busy` while Apply all works through its cards: every card waits. */
+const ALL = '__all__'
+
 const DONE = {
   applied: 'Applied. Your budget shows the change.',
   already: 'That is already so, so nothing was changed.',
@@ -67,6 +70,7 @@ export function SuggestedChanges() {
   const [busy, setBusy] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [confirming, setConfirming] = useState(false)
   const reads = useRef(0)
   const said = useRef<HTMLDivElement>(null)
 
@@ -110,6 +114,31 @@ export function SuggestedChanges() {
     said.current?.focus()
   }
 
+  // Apply all: every ready card but a shop rule, which lasts and is applied one at a time.
+  const all = shown.flatMap((item) => (item.state === 'ready' && item.suggestion !== null && item.suggestion.kind !== 'learn_shop' ? [{ item, s: item.suggestion }] : []))
+  const applyAll = async () => {
+    setBusy(ALL)
+    setNote(null)
+    setError(null)
+    let applied = 0
+    let problem: string | null = null
+    // One at a time, oldest first; one stale or refused is left waiting and the rest go on.
+    for (const { s } of all) {
+      try {
+        if ((await applySuggestion(supabase, userId, s)) === 'applied') applied += 1
+      } catch (cause) {
+        problem ??= cause instanceof Error ? cause.message : 'That did not work.'
+      }
+    }
+    setNote(`Applied ${applied} of ${all.length}.`)
+    if (applied < all.length) setError(`${all.length - applied} left waiting${problem === null ? ': each card says why.' : `. ${problem}`}`)
+    setBusy(null)
+    setConfirming(false)
+    reads.current += 1
+    await refresh()
+    said.current?.focus()
+  }
+
   if (shown.length === 0 && error === null) return null
   return (
     <section aria-labelledby="suggested-title" className="space-y-3">
@@ -118,8 +147,29 @@ export function SuggestedChanges() {
           Suggested changes
         </h2>
         {shown.length > 0 ? <Badge variant="accent">{shown.length}</Badge> : null}
+        {all.length >= 2 && !confirming ? (
+          <Button variant="outline" className="ml-auto" disabled={busy !== null} onClick={() => setConfirming(true)}>
+            Apply all {all.length}
+          </Button>
+        ) : null}
       </div>
       <p className="text-sm text-muted-foreground">An AI app you connected suggested these. Nothing changes until you tap Apply.</p>
+      {confirming && all.length > 0 ? (
+        <Card className="p-4 md:px-5" role="group" aria-labelledby="apply-all-title">
+          <h3 id="apply-all-title" className="font-medium">
+            Apply {all.length} suggested changes?
+          </h3>
+          <p className="mt-1 text-sm text-muted-foreground">Each changes your budget as its card says. Shop rules are applied one at a time.</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button disabled={busy !== null} onClick={() => void applyAll()}>
+              Apply all {all.length}
+            </Button>
+            <Button variant="outline" disabled={busy !== null} onClick={() => setConfirming(false)}>
+              Cancel
+            </Button>
+          </div>
+        </Card>
+      ) : null}
       <div ref={said} tabIndex={-1} className="space-y-3 outline-none empty:hidden">
         {note !== null ? <Alert tone="success">{note}</Alert> : null}
         {error !== null ? <Alert tone="error" title="That did not work">{error}</Alert> : null}

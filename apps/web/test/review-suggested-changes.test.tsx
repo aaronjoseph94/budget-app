@@ -97,3 +97,46 @@ describe('Suggested changes', () => {
     expect(screen.queryByText('Suggested changes')).toBeNull()
   })
 })
+
+describe('Apply all', () => {
+  const TXN = '44444444-4444-4444-8444-444444444444'
+  function three(): FakeSupabase {
+    const fake = seeded([
+      row('set_weekly_limit', { category_id: FOOD }, { cents: 12000 }, { cents: 10000 }),
+      row('learn_shop', { transaction_id: TXN }, { category_id: FOOD }, { category_id: FOOD, rule_category_id: null }),
+      row('rename_category', { category_id: FOOD }, { name: 'Food' }, { name: 'Groceries' }),
+    ])
+    fake.tables.transactions.push({ id: TXN, posted_on: '2026-09-03', amount_cents: -5420, merchant_raw: 'COSTCO', category_id: FOOD, source: 'card_csv' })
+    return fake
+  }
+
+  it('asks first, then applies every ready card but a shop rule, oldest first', async () => {
+    const fake = three()
+    renderScreen(<ReviewScreen />, fake)
+    fireEvent.click(await screen.findByRole('button', { name: 'Apply all 2' }))
+    expect(screen.getByText('Apply 2 suggested changes?')).toBeTruthy()
+    expect(fake.tables.categories[0]?.weekly_budget_cents).toBe(10000)
+    await expectNoAxeViolations()
+    fireEvent.click(within(screen.getByRole('group', { name: 'Apply 2 suggested changes?' })).getByRole('button', { name: 'Apply all 2' }))
+    expect(await screen.findByText('Applied 2 of 2.')).toBeTruthy()
+    expect(fake.tables.categories[0]).toMatchObject({ name: 'Food', weekly_budget_cents: 12000 })
+    expect(fake.tables.ai_app_proposals.map((r) => r['status'])).toEqual(['applied', 'pending', 'applied'])
+  })
+
+  it('leaves one the database refuses waiting, and says how many went', async () => {
+    const fake = three()
+    fake.fail('PATCH categories', '23514')
+    renderScreen(<ReviewScreen />, fake)
+    fireEvent.click(await screen.findByRole('button', { name: 'Apply all 2' }))
+    fireEvent.click(within(screen.getByRole('group', { name: 'Apply 2 suggested changes?' })).getByRole('button', { name: 'Apply all 2' }))
+    expect(await screen.findByText('Applied 0 of 2.')).toBeTruthy()
+    expect(screen.getByText(/2 left waiting\./)).toBeTruthy()
+    expect(fake.tables.ai_app_proposals.map((r) => r['status'])).toEqual(['pending', 'pending', 'pending'])
+  })
+
+  it('is not offered for one ready card', async () => {
+    renderScreen(<ReviewScreen />, seeded([row('set_weekly_limit', { category_id: FOOD }, { cents: 12000 }, { cents: 10000 })]))
+    expect(await screen.findByRole('button', { name: 'Apply' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /Apply all/ })).toBeNull()
+  })
+})
