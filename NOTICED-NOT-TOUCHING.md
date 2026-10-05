@@ -3811,3 +3811,33 @@ that re-validates `ai_notes`, outside an AI-app fix.
 
 **To settle:** if `ai_notes` ever gets a writer other than the app,
 re-create `ai_text_is_clean` with 0040's class, as its own update.
+
+---
+
+## N165 — normalizeMerchant is not idempotent, though its doc and test say so
+
+**Seen:** 2026-10-05, testing fuzz-05. One pass strips one processor
+prefix, then leading punctuation, and one trailing number, so what it
+returns can be stripped again: `#SQ *COFFEE` gives `SQ *COFFEE`, then
+`COFFEE`; `SHOP 1234 #5678` gives `SHOP 1234`, then `SHOP`; `SQ *SQ
+*COFFEE` gives `SQ *COFFEE`, then `COFFEE`. `merchant.ts` calls the
+function idempotent and `merchant.test.ts` says the result "is stored and
+normalized again later". Where it is: Quick Add of `SHOP 1234 12.50`,
+with a shop learned from `SHOP 1234 #5678` (stored as `SHOP 1234`), finds
+no rule, and `similarMerchant` normalizes learned names again. It fails
+safe: a missed rule leaves the row waiting in Review.
+
+**Why not fixed here (deferred):** any version that is idempotent stores
+some descriptors under a new name (keeping `SHOP 1234 #5678` whole, for
+the least change), so a shop already learned under the old name would
+stop matching new rows. CLAUDE.md allows a change to merchant
+normalization only with a version bump and a backfill in the same
+migration. There is no normalization version yet, and the backfill needs
+`normalizeMerchant` in SQL, where `upper()` and `\s` differ from
+JavaScript's; 0038 shows how narrow such a rewrite has to be. That is its
+own reviewed change, not a fix found in testing.
+
+**To settle:** make `normalizeMerchant` return the descriptor upper-cased
+and trimmed whenever one pass would not be stable (the least change), add
+a `merchant_v` column, and backfill the stored names and learned shops of
+the rows it changes in one migration, as 0038 did for `IN*`.
