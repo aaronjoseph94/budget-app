@@ -39,6 +39,13 @@ describe('a budget change', () => {
     expect(change({ kind: 'set_budget', category: 'Rent', amount: '5' })).toMatchObject({ item: { before: { cents: null } } })
   })
 
+  it('says, from a month on, the onward value every later month keeps, not that month’s own', () => {
+    // $400 from August on, $420 for November only: "from November on" changes $400.
+    expect(change({ kind: 'set_budget', category: 'Groceries', month: '2026-11', amount: '420' })).toMatchObject({
+      item: { month: '2026-11-01', applies: 'onward', amount: 42000, before: { cents: 40000 } },
+    })
+  })
+
   it.each([
     ['a category the owner does not have', { category: 'Petrol' }, 'unknown_category'],
     ['last month', { month: '2026-09' }, 'bad_month'],

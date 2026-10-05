@@ -126,7 +126,12 @@ function amountChange(owner: Owner, change: Extract<Change, { kind: 'set_budget'
   if (change.kind === 'set_budget') {
     const amount = centsOf(change.amount, 0, MOST_CENTS)
     if (amount === undefined) return { refused: 'bad_amount' }
-    const now = resolveBudgets({ asOf: month, history: owner.budgets }).budgets.find((b) => b.categoryId === category.id)
+    // From a month on, the "from" is the onward rows' value, which every
+    // later month without its own keeps: a month's own "just this month"
+    // value is replaced with it in the same write (setBudget's
+    // replacesOnly), never what is changed after it (D12).
+    const history = change.applies === 'onward' ? owner.budgets.filter((b) => b.applies === 'onward') : owner.budgets
+    const now = resolveBudgets({ asOf: month, history }).budgets.find((b) => b.categoryId === category.id)
     const before = { cents: now === undefined ? null : now.budgetCents }
     return { item: { kind: change.kind, category: category.id, month, applies: change.applies, amount, before, reason: change.reason } }
   }

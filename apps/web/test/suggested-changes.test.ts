@@ -133,6 +133,28 @@ describe('what each target is now', () => {
   })
 })
 
+describe('a budget from a month on', () => {
+  const onward = (cents: number, before: number) =>
+    row('set_budget', { category_id: FOOD, month: '2026-11-01', applies: 'onward' }, { cents }, { cents: before })
+  async function states(rows: Record<string, unknown>[], budgets: FakeTables['category_budgets']) {
+    const fake = createFakeSupabase({ ...seed(), category_budgets: budgets, ai_app_proposals: rows })
+    const parsed = (await listWaiting(fake.client)).flatMap((w) => (w.suggestion === null ? [] : [w.suggestion]))
+    const sources = await readSources(fake.client, fake.tables.categories, parsed)
+    return parsed.map((s) => [currentOf(s, sources), stateOf(s, currentOf(s, sources), TODAY)])
+  }
+  const AUG = { id: 'b1', category_id: FOOD, month: '2026-08-01', applies: 'onward', budget_cents: 40000 } as const
+  const NOV = { id: 'b2', category_id: FOOD, month: '2026-11-01', applies: 'only', budget_cents: 45000 } as const
+
+  it('changes the onward value, not the month’s own, and is already so only when both are', async () => {
+    // $400 on, $450 for November only: "from November on, $450" still changes December on.
+    expect(await states([onward(45000, 40000)], [AUG, NOV])).toEqual([[{ value: { cents: 40000 }, also: { cents: 45000 } }, 'ready']])
+    expect(await states([onward(45000, 40000)], [{ ...AUG, budget_cents: 45000 }, { ...NOV, budget_cents: 30000 }])).toEqual([
+      [{ value: { cents: 45000 }, also: { cents: 30000 } }, 'stale'],
+    ])
+    expect(await states([onward(45000, 40000)], [{ ...AUG, budget_cents: 45000 }, NOV])).toEqual([[{ value: { cents: 45000 }, also: { cents: 45000 } }, 'already']])
+  })
+})
+
 describe('a card’s state', () => {
   const s = StoredSuggestionSchema.parse(row('set_weekly_limit', { category_id: FOOD }, { cents: 12000 }, { cents: 10000 }))
   const at = (cents: number | null): Now => ({ value: { cents } })

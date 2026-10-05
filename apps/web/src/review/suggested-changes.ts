@@ -123,7 +123,13 @@ async function readCharges(supabase: SupabaseClient, ids: readonly string[]): Pr
  * list the screens offer no such value on ('moved'), as 0039 refuses one
  * suggested there (wrong_list): Apply's rules are the screens'.
  */
-export type Now = { readonly value: Readonly<Record<string, unknown>> } | { readonly gone: 'removed' | 'moved' }
+export type Now =
+  | {
+      readonly value: Readonly<Record<string, unknown>>
+      /** From a month on: that month's own "just this month" value, which Apply replaces too. */
+      readonly also?: Readonly<Record<string, unknown>>
+    }
+  | { readonly gone: 'removed' | 'moved' }
 
 const GONE: Now = { gone: 'removed' }
 const MOVED: Now = { gone: 'moved' }
@@ -137,8 +143,15 @@ export function currentOf(s: StoredSuggestion, sources: Sources): Now {
       const c = category(s.target.category_id)
       if (c === undefined) return GONE
       if (c.kind === 'transfer') return MOVED
-      const now = resolveBudgets({ asOf: isoDate(s.target.month), history: budgetsForCore(sources.budgets) }).budgets.find((b) => b.categoryId === s.target.category_id)
-      return { value: { cents: now === undefined ? null : now.budgetCents } }
+      // From a month on, as the server worked out its "from": the onward
+      // rows' value, with that month's own value beside it (D12).
+      const onward = s.target.applies === 'onward'
+      const rows = budgetsForCore(sources.budgets)
+      const history = onward ? rows.filter((b) => b.applies === 'onward') : rows
+      const now = resolveBudgets({ asOf: isoDate(s.target.month), history }).budgets.find((b) => b.categoryId === s.target.category_id)
+      const value = { cents: now === undefined ? null : now.budgetCents }
+      const own = onward ? sources.budgets.find((b) => b.category_id === c.id && b.month === s.target.month && b.applies === 'only') : undefined
+      return own === undefined ? { value } : { value, also: { cents: own.budget_cents } }
     }
     case 'set_bill': {
       const c = category(s.target.category_id)
@@ -199,7 +212,7 @@ export function stateOf(s: StoredSuggestion | null, now: Now | null, today: stri
   if (s.kind === 'learn_shop') {
     const to = s.after.category_id
     if (now.value['category_id'] === to && now.value['rule_category_id'] === to) return 'already'
-  } else if (same(now.value, s.after)) {
+  } else if (same(now.value, s.after) && (now.also === undefined || same(now.also, s.after))) {
     return 'already'
   }
   return same(now.value, s.before) ? 'ready' : 'stale'
