@@ -325,7 +325,11 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
     Pasting one again by mistake is harmless: it is refused with nothing
     changed ("is already in; nothing to do", "already exists", "is not as
     0019 left it" or similar), or, for `0030`, `0031`, `0035` and `0037`,
-    it runs again to the same result. If one says anything else, stop there:
+    it runs again to the same result. After `0039`, pasting `0030` or
+    `0035` again takes back part of it, and One-time updates offers
+    `0039` again: paste it again, and it puts back only what they took
+    (your **Let AI apps suggest changes** choice stays). If one says
+    anything else, stop there:
     nothing is lost, and the next agent needs that message word for word
     (MCP plan K10, K11).
 
@@ -393,8 +397,10 @@ connect an AI app to it.
     paste, **Deploy**, then open its **Settings** and check the switch is
     still off: Supabase has been seen to turn it back on.) Version
     `2026-10-05.1` or later is current: after `0039`, paste the server
-    again this way, as One-time updates asks, or an AI app cannot suggest
-    changes.
+    again this way, as One-time updates asks. Until you do, **Let AI apps
+    connect** cannot be turned on and a new connection's page offers no
+    **Allow**; AI apps already connected keep reading, but cannot
+    suggest changes.
 23. **Check again** on One-time updates: it should say **All done**.
 24. **Connect Claude** (any plan): in the app, **Settings → AI apps** →
     turn on **Let AI apps connect** → **Connect a new AI app** (copies the
@@ -423,7 +429,8 @@ connect an AI app to it.
     `delete from auth.sessions;` in the SQL Editor; then the **OAuth
     Server** off, as §4 step 18 says); "How is my month going?" matches the
     Month; "add a test coffee for $1.00 today" waits in Review as "Added
-    by Claude" (press **✕**); **Disconnect** lowers
+    by Claude" (press **✕**); a suggested change waits under **Review →
+    Suggested changes** (press **Dismiss**); **Disconnect** lowers
     `select count(*) from auth.sessions;` by one; ChatGPT's page says
     **chatgpt.com**; and step 24 is done with the next agent.
 
@@ -490,7 +497,7 @@ what to do, and reporting the words on the screen is enough.
 
 15. **The server answers** (K4, K6). In a browser tab, open
     `https://bnodrfghxbavlopxkgju.supabase.co/functions/v1/mcp/health`.
-    Expect `{"ok":true,"version":"…","tools":10}`. A 401 means **Enforce
+    Expect `{"ok":true,"version":"…","tools":13}`. A 401 means **Enforce
     JWT verification** is on for `mcp`: turn it off. Anything else, or
     `"tools":0`, means the server did not start: report what it shows.
 16. **Sign-in starts** (K3, K8). After **Connect a new AI app** and
@@ -526,8 +533,14 @@ what to do, and reporting the words on the screen is enough.
 19. **Your figures** (K11). Ask "How is my month going?": the figures match
     the Month. If every answer says the app could not read your records,
     turn off **Let AI apps connect** and report it.
-20. **An addition.** Ask "add a test coffee for $1.00 today". **Review**
-    shows it, with "Added by Claude"; press **✕** on it.
+20. **An addition, then a suggestion.** Ask "add a test coffee for $1.00
+    today". **Review** shows it, with "Added by Claude"; press **✕** on
+    it. Then ask "suggest raising my Groceries weekly budget by $1"
+    (or another category of yours). **Review → Suggested changes** shows
+    it, from → to, with "Claude's reason"; press **Dismiss**. If Claude
+    says suggesting is switched off, turn on **Settings → AI apps → Let AI
+    apps suggest changes**; if it says the budget app needs an update,
+    paste `0039` (§3 step 15). Report anything else word for word.
 21. **Disconnect** (K2). **Settings → AI apps → Connected apps** lists
     Claude, "Last asked" today. First, in Supabase's **SQL Editor**, run
     `select count(*) from auth.sessions;` and note the number. Press
