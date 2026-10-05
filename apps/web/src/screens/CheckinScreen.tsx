@@ -141,6 +141,9 @@ function LastWeek({ figures, facts, words }: { figures: CheckinFigures; facts: C
             ? 'There are no records yet, so there is no recap this week. Import a statement and it starts with your first whole week.'
             : `Your records start on ${formatDayMonth(recap.coveredFrom)}, so last week isn’t all there. The recap starts with your first whole week.`}
         </p>
+      ) : recap.status === 'not_in_yet' ? (
+        // Never "$0.00 … Well done!" for a week no statement covers yet (e2e-setup-04).
+        <p>{`Your latest statement runs to ${formatDayMonth(recap.importedThrough)}, so last week isn’t all in yet. Import the next one and the recap fills in.`}</p>
       ) : (
         <p className="[overflow-wrap:anywhere]">
           <Said part={words.recap} facts={facts} />

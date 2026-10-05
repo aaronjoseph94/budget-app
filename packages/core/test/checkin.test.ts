@@ -115,6 +115,23 @@ describe('weeklyRecap (F42)', () => {
     expect(weeklyRecap(input({ readFrom: d('2026-09-23') }))).toMatchObject({ status: 'not_covered', coveredFrom: '2026-09-23' })
     expect(weeklyRecap(input({ historyStart: null }))).toMatchObject({ status: 'not_covered', coveredFrom: null })
   })
+
+  // e2e-setup-04: with the latest statement ending before the week's
+  // Sunday, the week read "$0.00 … Well done!". Its spending is not all in
+  // yet, not $0, so it is not recapped and nothing is suggested from it.
+  it('is not in yet when the latest statement ends before the week does, and suggests no limit', () => {
+    expect(weeklyRecap(input({ importedThrough: d('2026-09-26') }))).toEqual({
+      status: 'not_in_yet',
+      week: { start: '2026-09-21', end: '2026-09-27' },
+      importedThrough: '2026-09-26',
+    })
+    expect(suggestedWeeklyLimit(input({ importedThrough: d('2026-09-26') }))).toBeNull()
+    // Through the week's Sunday, or with no statement end known, it is recapped as before.
+    expect(weeklyRecap(input({ importedThrough: d('2026-09-27') }))).toEqual(weeklyRecap(input()))
+    expect(weeklyRecap(input({ importedThrough: null }))).toEqual(weeklyRecap(input()))
+    // Records that start inside the week say so first.
+    expect(weeklyRecap(input({ historyStart: d('2026-09-22'), importedThrough: d('2026-09-26') }))).toMatchObject({ status: 'not_covered' })
+  })
 })
 
 describe('questionsToAsk (F42)', () => {

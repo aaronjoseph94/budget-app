@@ -44,6 +44,19 @@ afterEach(() => {
 })
 
 describe('the Sunday check-in', () => {
+  // e2e-setup-04: a week past the latest statement read "$0.00 … Well done!".
+  it('says last week is not all in yet when the latest statement ends before its Sunday, and praises nothing', async () => {
+    const fake = checkinFake()
+    fake.tables.ingest_batches.splice(0, 1, { ...fake.tables.ingest_batches[0]!, period_end: '2026-09-25' })
+    fake.functions.ai = () => json({ ok: false, code: 'ai_off' }, 409)
+    renderScreen(<Shell />, fake)
+
+    expect(await screen.findByText(whole('P', 'Your latest statement runs to 25 Sep, so last week isn’t all in yet. Import the next one and the recap fills in.'))).toBeTruthy()
+    expect(screen.queryByText(whole('P', RECAP))).toBeNull()
+    expect(screen.queryByText(/a win!|Well done/)).toBeNull()
+    expect(screen.queryByText(/^Keep Dining out under/)).toBeNull()
+  })
+
   it('is whole with AI off: the recap, a win, the questions, one thing to try and the goals, in the app’s own words', async () => {
     const fake = checkinFake()
     fake.functions.ai = () => json({ ok: false, code: 'ai_off' }, 409)

@@ -38,6 +38,8 @@ export function checkinFigures(read: DigestRows, categories: readonly Category[]
     asOf: isoDate(read.asOf),
     historyStart: historyOf(read),
     readFrom: isoDate(read.readFrom),
+    // The latest statement's last day, as the Week's "imported up to": a week past it is not all in yet.
+    importedThrough: read.statementEnds.map((e) => isoDate(e)).sort().at(-1) ?? null,
     categories: weekCategoriesForCore(categories),
     entries: entriesForCore(read.rows),
   }

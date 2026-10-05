@@ -28,6 +28,12 @@ export interface CheckinInput {
   readonly historyStart: IsoDate | null
   /** The first day `entries` covers: a day before it was not read, and is not $0. */
   readonly readFrom: IsoDate
+  /**
+   * The last day the latest statement covers, as the Week's "imported up
+   * to"; null or left out when no statement gives one. A day after it is
+   * not all in yet, and is not $0 (e2e-setup-04).
+   */
+  readonly importedThrough?: IsoDate | null
   /** Every category the entries name, each with its one weekly budget (0004). */
   readonly categories: readonly WeekCategory[]
   readonly entries: readonly PeriodEntry[]
@@ -62,11 +68,15 @@ export type WeeklyRecap =
     }
   /** The week starts before the records covered (or there are none), so its spending is unknown, not $0. */
   | { readonly status: 'not_covered'; readonly week: CheckinWeek; readonly coveredFrom: IsoDate | null }
+  /** The week ends after the latest statement, so its spending is not all in yet, not $0. */
+  | { readonly status: 'not_in_yet'; readonly week: CheckinWeek; readonly importedThrough: IsoDate }
 
 export function weeklyRecap(input: CheckinInput): WeeklyRecap {
   const week = checkinWeek(input)
   const covered = coveredFrom(input)
   if (covered === null || week.start < covered) return { status: 'not_covered', week, coveredFrom: covered }
+  const through = input.importedThrough
+  if (through !== undefined && through !== null && week.end > through) return { status: 'not_in_yet', week, importedThrough: through }
 
   const byCategory = variableSpending(input, week)
   const spentCents = sumCents([...byCategory.values()])

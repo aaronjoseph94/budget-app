@@ -1930,6 +1930,12 @@ is about, whichever day it was answered.
 - Only when the whole week lies inside the records covered; otherwise
   "not covered", naming where the records start, so a gap is never read
   as a thrifty week.
+- **Amended 2026-10-05 (e2e-setup-04):** nor when the week ends after
+  the latest statement's last day (the Week's "imported up to", F44's
+  `latestStatementEnd`): "not in yet", naming that day. A week after a
+  monthly statement read "$0.00 … Well done!", the gap this rule is for.
+  With no statement end known (typed entries alone, or a CSV with no
+  period), the end cannot be told, and the week is recapped as before.
 - **Spent:** the week's Variable spending, net; below $0 in a week of
   refunds.
 - **The weekly budgets:** the sum of the Variable weekly budgets set, or
