@@ -31,7 +31,7 @@ export function Input({
   )
 }
 
-export function NativeSelect({ className, children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
+export function NativeSelect({ className, children, ...props }: SelectHTMLAttributes<HTMLSelectElement> & { ref?: Ref<HTMLSelectElement> }) {
   return (
     <select className={cn(FIELD, 'h-11 appearance-none bg-no-repeat pl-3 pr-9', className)} style={CHEVRON} {...props}>
       {children}

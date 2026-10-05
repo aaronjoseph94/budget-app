@@ -85,6 +85,21 @@ describe('LedgerScreen, removing a transaction', () => {
     expect(screen.getByText('LITWARE BOOKS')).toBeTruthy()
   })
 
+  // e2e-money-03: the trash button gave way to Remove, and Remove to
+  // nothing, and focus fell to the page each time. Remove takes focus, and
+  // after it the next row's trash button.
+  it('moves focus to Remove, then to the next row', async () => {
+    const fake = seeded()
+    await open(fake)
+    const trash = rowOf('CORNER MARKET').getByRole('button', { name: 'Remove this transaction' })
+    trash.focus()
+    fireEvent.click(trash)
+    expect(document.activeElement).toBe(rowOf('CORNER MARKET').getByRole('button', { name: 'Remove' }))
+    fireEvent.click(rowOf('CORNER MARKET').getByRole('button', { name: 'Remove' }))
+    await waitFor(() => expect(screen.queryByText('CORNER MARKET')).toBeNull())
+    await waitFor(() => expect(document.activeElement).toBe(rowOf('LITWARE BOOKS').getByRole('button', { name: 'Remove this transaction' })))
+  })
+
   it('keeps the other rows on screen while the month is read again after a removal (FE-5)', async () => {
     const fake = seeded()
     await open(fake)

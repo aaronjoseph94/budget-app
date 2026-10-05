@@ -120,6 +120,19 @@ describe('Savings, choosing the main goal and the order (G1)', () => {
     await waitFor(async () => expect((await button('Move Travel down')).disabled).toBe(true))
   })
 
+  // e2e-money-03: a goal's buttons are disabled while it saves, and its card
+  // moves, so focus fell to the page. It stays on the card: on the button
+  // pressed, or the card's first that can take it.
+  it('keeps focus on the card moved', async () => {
+    const fake = seeded()
+    renderScreen(<SavingsScreen />, fake)
+    const down = within(await screen.findByRole('region', { name: 'Travel' })).getByRole('button', { name: 'Move Travel down' })
+    down.focus()
+    fireEvent.click(down)
+    await waitFor(() => expect(regions().slice(0, 2)).toEqual(['Flight training', 'Travel']))
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Travel' }).contains(document.activeElement)).toBe(true))
+  })
+
   // Fail soft: 0015's columns are not there (42703), so the goals come in the
   // order they were made, the oldest leading, and only Edit is offered.
   it('before 0015, shows the goals as before with Edit alone, and says once why the rest wait', async () => {
@@ -153,6 +166,17 @@ describe('Savings, pausing, finishing and resuming a goal (G1)', () => {
     expect(stored(fake, 'g2')).toMatchObject({ status: 'paused', reached_on: null })
     await waitFor(async () => expect(within(await folded()).getByRole('region', { name: 'Travel' })).toBeTruthy())
     expect(screen.queryByText('Main goal')).toBeNull()
+  })
+
+  // e2e-money-03: Pause went with the card's move, and focus fell to the page; it goes to what was said.
+  it('moves focus to what was said once a paused goal folds away', async () => {
+    renderScreen(<SavingsScreen />, seeded())
+    const pause = within(await screen.findByRole('region', { name: 'Travel' })).getByRole('button', { name: 'Pause' })
+    pause.focus()
+    fireEvent.click(pause)
+    const said = await screen.findByText(/^Travel is paused\./)
+    await waitFor(async () => expect(within(await folded()).getByRole('region', { name: 'Travel' })).toBeTruthy())
+    await waitFor(() => expect([document.activeElement === document.body, document.activeElement?.contains(said)]).toEqual([false, true]))
   })
 
   it('marks a goal reached on the day, with a word of celebration and no motion', async () => {

@@ -455,6 +455,16 @@ const ReviewRow = memo(function ReviewRow({
   const [newKind, setNewKind] = useState<CategoryKind | ''>(row.amount_cents < 0 ? 'variable' : '')
   const creating = categoryId === NEW_CATEGORY
   const ready = creating ? newName.trim().length > 0 && newKind !== '' : categoryId !== ''
+  // Not this goes with the suggestion, and focus fell to the page: once the
+  // suggestion is gone, the row's Category takes it, what to do next (e2e-money-03).
+  const picker = useRef<HTMLSelectElement>(null)
+  const clearing = useRef(false)
+  useEffect(() => {
+    if (!clearing.current || suggestion === 'model') return
+    clearing.current = false
+    const now = document.activeElement
+    if (now === null || now === document.body) picker.current?.focus()
+  }, [suggestion])
 
   return (
     <li>
@@ -481,6 +491,7 @@ const ReviewRow = memo(function ReviewRow({
         <div className="mt-3.5 flex flex-col gap-2 min-[480px]:grid min-[480px]:grid-cols-[minmax(0,1fr)_auto_auto] min-[480px]:items-start">
           <div className="flex min-w-0 flex-col gap-2">
             <NativeSelect
+              ref={picker}
               aria-label="Category"
               value={categoryId}
               onChange={(e) => onPick(row.id, e.target.value)}
@@ -532,7 +543,12 @@ const ReviewRow = memo(function ReviewRow({
               <span className="truncate">✨ Suggested: {suggestedName}</span>
             </Badge>
             <span>By AI from the shop’s name. Check it.</span>
-            <Button variant="ghost" size="sm" className="-my-1 underline underline-offset-4" disabled={busy} onClick={() => onClear(row)}>
+            <Button variant="ghost" size="sm" className="-my-1 underline underline-offset-4" disabled={busy}
+              onClick={() => {
+                clearing.current = true
+                onClear(row)
+              }}
+            >
               Not this
             </Button>
           </div>

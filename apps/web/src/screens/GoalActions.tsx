@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { goalAtEnd, goalsProgress, moveGoal } from '@budget/core'
 import { placedGoal, useAppData } from '../app-data.js'
 import type { ListedGoalRow } from '../ledger.js'
@@ -47,7 +47,26 @@ export function GoalActions({
   const next = mainGoal?.id === goal.id ? active.find((g) => g.id !== goal.id) : undefined
   const handover = next === undefined ? '' : ` ${next.name} is your main goal now.`
 
+  // Every button is disabled while a change saves, and the card can move,
+  // so focus fell to the page: when it has, it goes back to the button
+  // pressed, or the card's first that can take it (e2e-money-03). A card
+  // that folds away to Reached and paused is drawn anew; Savings puts
+  // focus on what was said then.
+  const root = useRef<HTMLDivElement>(null)
+  const pressed = useRef<Element | null>(null)
+  useEffect(() => {
+    const was = pressed.current
+    if (busy || was === null) return
+    pressed.current = null
+    const now = document.activeElement
+    if (now !== null && now !== document.body) return
+    const buttons = [...(root.current?.querySelectorAll('button') ?? [])].filter((b) => !b.disabled)
+    const back = was instanceof HTMLButtonElement && buttons.includes(was) ? was : buttons[0]
+    back?.focus()
+  }, [busy])
+
   const write = async (save: () => Promise<void>, done: string | null) => {
+    pressed.current = document.activeElement
     setBusy(true)
     try {
       await save()
@@ -119,7 +138,7 @@ export function GoalActions({
   // Editing and placing on the first line, pausing, finishing and removing
   // on the second, so each line reads as one kind of thing at 320px too.
   const rows = (first: ReactNode, second: ReactNode = null) => (
-    <div className="space-y-2">
+    <div ref={root} className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
         {first}
         {second === null ? remove : null}

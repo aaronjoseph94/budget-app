@@ -100,6 +100,17 @@ describe('Review shows suggested categories', () => {
     expect(fake.tables.ingest_candidates[0]).toMatchObject({ category_id: null, category_source: null })
   })
 
+  // e2e-money-03: Not this went with the suggestion, and focus fell to the
+  // page. It goes to the row's Category, which is what to do next.
+  it('moves focus to the row’s Category once Not this is done', async () => {
+    renderScreen(<ReviewScreen />, seeded())
+    const notThis = (await row('CORNER MARKET #12')).getByRole('button', { name: 'Not this' })
+    notThis.focus()
+    fireEvent.click(notThis)
+    await waitFor(async () => expect((await picker('CORNER MARKET #12')).value).toBe(''))
+    await waitFor(async () => expect(document.activeElement).toBe(await picker('CORNER MARKET #12')))
+  })
+
   it('keeps a suggestion gone when a read begun before Not this lands after it (FE-8)', async () => {
     const fake = seeded()
     renderScreen(<ReviewScreen />, fake)

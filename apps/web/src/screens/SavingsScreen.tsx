@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   goalProgress,
   isoDate,
@@ -70,6 +70,13 @@ export function SavingsScreen() {
   const [editingLoose, setEditingLoose] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
   const [notice, setNotice] = useState<Notice | null>(null)
+  // A goal paused, reached or resumed is drawn anew in its new place, and
+  // focus fell to the page: it goes to what was said instead (e2e-money-03).
+  const said = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const now = document.activeElement
+    if (notice !== null && (now === null || now === document.body)) said.current?.focus()
+  }, [notice, goals])
   const ready = state.status === 'ready' ? state : null
   const goalOf = (fund: SavingsFund) => ready?.goals.find((g) => g.id === fund.figures?.goalId) ?? null
   // Goals on no fund, such as the one Settings saved before there were funds:
@@ -175,7 +182,9 @@ export function SavingsScreen() {
         )}
       </header>
       {state.status === 'loading' ? <Loading what="your savings goals" /> : null}
-      {notice !== null ? <Alert tone={notice.ok ? 'success' : 'error'}>{notice.text}</Alert> : null}
+      <div ref={said} tabIndex={-1} className="outline-none empty:hidden">
+        {notice !== null ? <Alert tone={notice.ok ? 'success' : 'error'}>{notice.text}</Alert> : null}
+      </div>
       {state.status === 'failed' ? <Alert tone="error" title="Could not load your savings funds">{state.message}{state.missingUpdate ? null : <> <TryAgain />.</>}</Alert> : null}
       {comparison === null ? null : (
         // A card but not a region: the regions on this screen are the funds.

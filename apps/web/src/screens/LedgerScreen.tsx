@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { isoDate, monthBounds, shiftMonth, summariseImport } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { deleteTransaction, listTransactions, type LedgerRow } from '../ledger.js'
@@ -55,7 +55,25 @@ export function LedgerScreen() {
 
   const isCurrent = shiftMonth(isoDate(todayIso()), 0) === month
 
+  // Remove gives way to nothing, and focus fell to the page: once the row
+  // is off the list, the next row's trash button takes it, or the one
+  // before, or the search (e2e-money-03).
+  const list = useRef<HTMLDivElement>(null)
+  const search = useRef<HTMLInputElement>(null)
+  const after = useRef<string | null>(null)
+  useEffect(() => {
+    const id = after.current
+    const now = document.activeElement
+    if (id === null || (now !== null && now !== document.body)) return
+    after.current = null
+    const next = id === '' ? null : list.current?.querySelector<HTMLButtonElement>(`[data-row="${id}"] button`)
+    ;(next ?? search.current)?.focus()
+  }, [visible])
+
   const remove = async (id: string) => {
+    const shown = visible ?? []
+    const at = shown.findIndex((r) => r.id === id)
+    after.current = (shown[at + 1] ?? shown[at - 1])?.id ?? ''
     setConfirming(null)
     setRemoveError(null)
     try {
@@ -73,7 +91,7 @@ export function LedgerScreen() {
   return (
     // Mockup A: the Month's title row and its ‹ Sep 2026 › stepper, the two
     // totals as flat stat cards, and each day's rows in a flat card.
-    <div className="space-y-4 md:space-y-5">
+    <div ref={list} className="space-y-4 md:space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
         <div className="min-w-0">
           {/* More's name for it: one screen, one name. */}
@@ -117,6 +135,7 @@ export function LedgerScreen() {
       ) : null}
 
       <Input
+        ref={search}
         type="search"
         aria-label="Search this month's transactions"
         placeholder="Search merchant or category"
@@ -143,7 +162,7 @@ export function LedgerScreen() {
           <Card className="overflow-hidden">
             <ul className="divide-y">
               {items.map((r) => (
-                <li key={r.id} className="flex flex-wrap items-center gap-3 px-4 py-3 md:px-5 md:py-3.5">
+                <li key={r.id} data-row={r.id} className="flex flex-wrap items-center gap-3 px-4 py-3 md:px-5 md:py-3.5">
                   <div className="min-w-0 flex-1">
                     {/* As the statement printed it, in the mockup's fixed-width face. */}
                     <p className="truncate font-mono text-sm">
@@ -160,7 +179,8 @@ export function LedgerScreen() {
                     {formatCents(r.amount_cents)}
                   </span>
                   {confirming === r.id ? (
-                    <Button variant="destructive" size="sm" onClick={() => void remove(r.id)}>
+                    // Takes focus from the trash button it replaces, which went (e2e-money-03).
+                    <Button variant="destructive" size="sm" autoFocus onClick={() => void remove(r.id)}>
                       Remove
                     </Button>
                   ) : (
