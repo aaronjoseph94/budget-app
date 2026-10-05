@@ -14,7 +14,8 @@ const match = (posted_on: string, amount_cents: number, merchant_raw: string, ca
 const FOUND = {
   today: '2026-09-30',
   total: 4,
-  rows: [match('2026-09-29', -1275, 'FRESHCO 1234567', 'Groceries', 'variable'), match('2026-09-20', 500, 'FRESHCO REFUND', 'Groceries\u202e', 'variable')],
+  // The second as a database before 0039 gives it, with no id.
+  rows: [{ id: 't-1', ...match('2026-09-29', -1275, 'FRESHCO 1234567', 'Groceries', 'variable') }, match('2026-09-20', 500, 'FRESHCO REFUND', 'Groceries\u202e', 'variable')],
   all: [
     { amount_cents: -1275, kind: 'variable' },
     { amount_cents: 500, kind: 'variable' },
@@ -56,8 +57,8 @@ describe('search_transactions', () => {
       returned: 2,
       truncated: true,
       rows: [
-        { date: '2026-09-29', shop: 'FRESHCO *******', flow: 'spent', amount: $(-1275, '-$12.75'), category: 'Groceries', list: 'variable', source: 'card_csv' },
-        { date: '2026-09-20', shop: 'FRESHCO REFUND', flow: 'received', amount: $(500, '$5.00'), category: 'Groceries', list: 'variable', source: 'card_csv' },
+        { id: 't-1', date: '2026-09-29', shop: 'FRESHCO *******', flow: 'spent', amount: $(-1275, '-$12.75'), category: 'Groceries', list: 'variable', source: 'card_csv' },
+        { id: null, date: '2026-09-20', shop: 'FRESHCO REFUND', flow: 'received', amount: $(500, '$5.00'), category: 'Groceries', list: 'variable', source: 'card_csv' },
       ],
     })
   })

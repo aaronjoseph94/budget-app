@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MCP_SERVER_VERSION } from '@budget/schema'
 import { handle as serve } from '../src/handle.js'
+import { TOOLS } from '../src/server.js'
 
 /**
  * What the AI apps server answers around the MCP endpoint itself (PLAN
@@ -70,7 +71,8 @@ describe('/mcp/health', () => {
   it('says the version and the tool count, with no token', async () => {
     const res = await handle(at('/functions/v1/mcp/health', { headers: { origin: SITE } }), ENV)
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ ok: true, version: MCP_SERVER_VERSION, tools: 10 })
+    expect(await res.json()).toEqual({ ok: true, version: MCP_SERVER_VERSION, tools: TOOLS.length })
+    expect(TOOLS.length).toBe(11)
     expect(res.headers.get('access-control-allow-origin')).toBe(SITE)
     const bare = await handle(at('/mcp/health'), ENV)
     expect(bare.headers.get('access-control-allow-origin')).toBeNull()

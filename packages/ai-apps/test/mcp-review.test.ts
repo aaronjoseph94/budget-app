@@ -13,7 +13,7 @@ const QUEUE = {
   waiting: '3',
   unreadable_lines: '1',
   rows: [
-    { posted_on: '2026-09-28', amount_cents: -1275, merchant_raw: 'coffee‮ 4111111111', category: 'Eating out\u2066', category_source: 'model', source: 'ai_app', ai_client_id: 'c0ffee00-0000-4000-8000-000000000000' },
+    { id: 'eeeeeeee-0000-4000-8000-000000000001', posted_on: '2026-09-28', amount_cents: -1275, merchant_raw: 'coffee‮ 4111111111', category: 'Eating out\u2066', category_source: 'model', source: 'ai_app', ai_client_id: 'c0ffee00-0000-4000-8000-000000000000' },
     { posted_on: '2026-09-29', amount_cents: '250000', merchant_raw: 'PAYROLL', category: null, category_source: null, source: 'card_csv', ai_client_id: null },
   ],
 }
@@ -30,8 +30,19 @@ describe('list_review_queue', () => {
       unreadable_lines: 1,
       returned: 2,
       rows: [
-        { date: '2026-09-28', shop: 'coffee **********', flow: 'spent', amount: $(-1275, '-$12.75'), suggested_category: 'Eating out', source: 'ai_app', added_by_ai_app: true },
-        { date: '2026-09-29', shop: 'PAYROLL', flow: 'received', amount: $(250000, '$2,500.00'), suggested_category: null, source: 'card_csv', added_by_ai_app: false },
+        {
+          id: 'eeeeeeee-0000-4000-8000-000000000001',
+          date: '2026-09-28',
+          shop: 'coffee **********',
+          flow: 'spent',
+          amount: $(-1275, '-$12.75'),
+          suggested_category: 'Eating out',
+          suggested_by: 'model',
+          source: 'ai_app',
+          added_by_ai_app: true,
+        },
+        // Before 0039, a row has no id.
+        { id: null, date: '2026-09-29', shop: 'PAYROLL', flow: 'received', amount: $(250000, '$2,500.00'), suggested_category: null, suggested_by: null, source: 'card_csv', added_by_ai_app: false },
       ],
     })
   })

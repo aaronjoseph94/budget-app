@@ -15,7 +15,15 @@ import { log } from './log.js'
 /** Who is asking, and how to reach the database as them. */
 export type Caller = { readonly token: string; readonly project: Project; readonly fetchFn: typeof fetch }
 
-export type RpcName = 'ai_app_read' | 'ai_app_search' | 'ai_app_review' | 'ai_app_add_candidate'
+export type RpcName =
+  | 'ai_app_read'
+  | 'ai_app_search'
+  | 'ai_app_review'
+  | 'ai_app_add_candidate'
+  // 0039 (ADR 0013): suggesting changes and Review categories.
+  | 'ai_app_propose'
+  | 'ai_app_suggestions'
+  | 'ai_app_suggest_categories'
 
 /** Each refusal, in the words the AI app passes on to the owner. */
 export const SENTENCES = {
@@ -23,6 +31,8 @@ export const SENTENCES = {
   // 0030: the sign-in this token came from has ended, as Disconnect ends it.
   disconnected: 'This connection to the budget app has ended. The owner can connect again from Settings → AI apps.',
   adding_off: 'Adding to Review is switched off in the budget app’s Settings → AI apps.',
+  suggesting_off: 'Suggesting changes is switched off in the budget app’s Settings → AI apps.',
+  bad_change: 'The budget app could not read that as a change. Each change needs its kind, what it changes and a reason, as the tool describes.',
   limit_reached: 'Today’s limit for AI apps is used up. It resets at midnight, the owner’s time.',
   needs_update: 'The budget app needs a one-time update. The owner can open Help → One-time updates.',
   no_account: 'Open the budget app once so it can set up the card account, then try again.',
@@ -88,7 +98,11 @@ export async function rpc(caller: Caller, fn: RpcName, args: Readonly<Record<str
 /** Read tools overwrite nothing and read the same twice (ChatGPT confirms any tool without readOnlyHint). */
 export const READ_ONLY = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false } as const
 
-/** The two add tools write, but overwrite nothing, and the dedupe hash makes a repeat add nothing. */
+/**
+ * The two add tools write, but overwrite nothing, and the dedupe hash makes
+ * a repeat add nothing. Suggesting is the same: a repeated suggestion is
+ * already suggested, and nothing changes until the owner applies it.
+ */
 export const ADDS = { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false } as const
 
 /** Sign-in declared per tool, where OpenAI's Apps SDK reads it; other clients ignore it. */

@@ -105,6 +105,8 @@ const EVERYTHING = {
   unreadable_lines: 0,
   account: 'aaaaaaaa-0000-4000-8000-000000000001',
   status: 'added',
+  suggested: 1,
+  skipped: 0,
 }
 const TOOLS: [string, Record<string, unknown>][] = [
   ['list_categories', {}],
@@ -117,6 +119,7 @@ const TOOLS: [string, Record<string, unknown>][] = [
   ['list_review_queue', {}],
   ['add_expense', { amount: '12.50', what: `Lunch ${SENTINEL}`, category: `Groceries ${SENTINEL}` }],
   ['add_note', { text: `Lunch ${SENTINEL} 12.50 yesterday`, category: `Groceries ${SENTINEL}` }],
+  ['suggest_review_categories', { suggestions: [{ id: 'eeeeeeee-0000-4000-8000-000000000001', category: `Groceries ${SENTINEL}` }] }],
 ]
 
 describe('the tools log codes and counts only', () => {

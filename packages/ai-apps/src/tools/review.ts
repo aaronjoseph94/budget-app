@@ -16,13 +16,29 @@ import { READ_ONLY, SIGNED_IN, answer, isRefusal, refusal, rpc, type Caller } fr
 export type ListReviewQueueInput = z.output<typeof ListReviewQueueInputSchema>
 
 export const DESCRIPTION =
-  'What waits in Review: date, shop, amount, any suggested category, and where it came from (statement, photo, ' +
-  'typed, AI app). Nothing here counts until approved. You cannot approve or reject; tell the owner to open ' +
-  'Review. Oldest first, at most `limit`; waiting counts every row, and unreadable_lines the statement lines the ' +
-  'app could not read. Every amount is {cents, display}, money out below zero; quote display. Returns as_of, ' +
-  'waiting, unreadable_lines, returned, rows[{date, shop, flow, amount, suggested_category, source, added_by_ai_app}].'
+  'What waits in Review: date, shop, amount, any suggested category and who suggested it (a learned rule or a ' +
+  'model), and where it came from (statement, photo, typed, AI app). Nothing here counts until approved. You ' +
+  'cannot approve or reject; tell the owner to open Review. Each row\'s `id` names it to ' +
+  'suggest_review_categories. Oldest first, at most `limit`; waiting counts every row, and unreadable_lines the ' +
+  'statement lines the app could not read. Every amount is {cents, display}, money out below zero; quote display. ' +
+  'Returns as_of, waiting, unreadable_lines, returned, rows[{id, date, shop, flow, amount, suggested_category, ' +
+  'suggested_by, source, added_by_ai_app}].'
 
-type Waiting = { posted_on: string; amount_cents: number; merchant_raw: string; category: string | null; source: string }
+type Waiting = {
+  id?: unknown
+  posted_on: string
+  amount_cents: number
+  merchant_raw: string
+  category: string | null
+  category_source: string | null
+  source: string
+}
+
+/** Who picked a waiting row's category: a learned rule, a model (the app's AI or an AI app), or nobody. */
+const SUGGESTED_BY: Readonly<Record<string, 'rule' | 'model'>> = { merchant_rule: 'rule', model: 'model' }
+
+/** A row's id, as 0039 adds it; null from a database before 0039. */
+export const idOf = (id: unknown): string | null => (typeof id === 'string' ? id : null)
 
 export async function listReviewQueue(caller: Caller | null, input: ListReviewQueueInput) {
   if (caller === null) return refusal('server_error')
@@ -41,11 +57,13 @@ export async function listReviewQueue(caller: Caller | null, input: ListReviewQu
       unreadable_lines: Number(queue['unreadable_lines']),
       returned: rows.length,
       rows: rows.map((r) => ({
+        id: idOf(r.id),
         date: isoDate(r.posted_on),
         shop: cleanShop(r.merchant_raw),
         flow: flowOf(Number(r.amount_cents)),
         amount: money(Number(r.amount_cents)),
         suggested_category: r.category === null ? null : cleanName(r.category),
+        suggested_by: r.category === null ? null : (SUGGESTED_BY[r.category_source ?? ''] ?? null),
         source: r.source,
         added_by_ai_app: r.source === 'ai_app',
       })),

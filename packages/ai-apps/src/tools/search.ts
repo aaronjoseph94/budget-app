@@ -16,6 +16,7 @@ import { cleanName, cleanShop, flowOf, money } from '../money.js'
 import { categoriesFrom, type CategoryRow } from '../rows.js'
 import { READ_ONLY, SIGNED_IN, answer, isRefusal, refusal, rpc, type Caller, type Refusal } from '../rpc.js'
 import { searchWindow, utcToday } from '../windows.js'
+import { idOf } from './review.js'
 
 export type SearchTransactionsInput = z.output<typeof SearchTransactionsInputSchema>
 
@@ -26,8 +27,8 @@ export const DESCRIPTION =
   'every match, not only those returned: totals{spent, received, count, not_spending_left_out}, gross (a refund is ' +
   'money received, never taken off spent). Not-spending rows (like card payments) are listed but left out of the ' +
   'totals. totals is null past 5,000 matches: narrow the search. Every amount is {cents, display}, money out ' +
-  'below zero; quote display. Returns as_of, window, total_matches, totals, returned, truncated, ' +
-  'rows[{date, shop, flow, amount, category, list, source}].'
+  'below zero; quote display. Each row\'s `id` names it to propose_change. Returns as_of, window, total_matches, ' +
+  'totals, returned, truncated, rows[{id, date, shop, flow, amount, category, list, source}].'
 
 /**
  * The stored names of the categories asked for, each matched as
@@ -50,7 +51,7 @@ async function storedNames(caller: Caller, wanted: readonly string[], day: IsoDa
   return wanted.every((n) => named.some((c) => cleanName(c.name) === n)) ? named.map((c) => c.name) : { refused: 'unknown_category' }
 }
 
-type Match = { posted_on: string; amount_cents: number; merchant_raw: string; category: string; kind: CategoryKind; source: string }
+type Match = { id?: unknown; posted_on: string; amount_cents: number; merchant_raw: string; category: string; kind: CategoryKind; source: string }
 
 export async function searchTransactions(caller: Caller | null, input: SearchTransactionsInput) {
   if (caller === null) return refusal('server_error')
@@ -98,6 +99,7 @@ export async function searchTransactions(caller: Caller | null, input: SearchTra
       returned: rows.length,
       truncated: total > rows.length,
       rows: rows.map((r) => ({
+        id: idOf(r.id),
         date: isoDate(r.posted_on),
         shop: cleanShop(r.merchant_raw),
         flow: flowOf(Number(r.amount_cents)),
