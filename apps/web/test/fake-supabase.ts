@@ -266,7 +266,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     _not_an_ai_app: null,
     // 0030 on: which AI-app security update is in, the latest by default.
     ai_app_update_level: 34,
-    ai_app_updates_in: 37,
+    ai_app_updates_in: 39,
     // 0021 on: the last review fix in, 0038 by default.
     schema_level: 38,
   }

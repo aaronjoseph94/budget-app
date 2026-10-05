@@ -90,7 +90,7 @@ export interface Update {
 
 const NIL = '00000000-0000-0000-0000-000000000000'
 
-/** Sign-ups off, 0005 to 0029, 0035, 0030 to 0038, the AI helper, the two settings and the AI apps server, each with what it adds. */
+/** Sign-ups off, 0005 to 0029, 0035, 0030 to 0039, the AI helper, the two settings and the AI apps server, each with what it adds. */
 export const UPDATES: readonly Update[] = [
   // First: it needs nothing, and it is what keeps strangers out.
   { file: SIGNUPS_OFF, name: 'Sign-ups off', adds: 'Stops anyone who finds the site making an account', checks: [{ kind: 'signups' }] },
@@ -217,6 +217,12 @@ export const UPDATES: readonly Update[] = [
     file: '0038_intuit_prefix_merchants.sql',
     adds: 'Makes IN*SHOP and SHOP one shop. It deletes duplicate learned shops, so first export merchant_rules from Supabase’s Table Editor as a CSV',
     checks: [{ kind: 'schema', level: 38 }],
+  },
+  {
+    // An AI-app update (ADR 0013): it needs 0037, and comes after 0038 in HANDOFF's order.
+    file: '0039_ai_apps_suggest_changes.sql',
+    adds: 'Lets an AI app suggest changes, which wait in Review until you apply them',
+    checks: [{ kind: 'level', level: 39 }],
   },
   { file: HELPER_FILE, adds: 'The AI helper, which every AI feature goes through', checks: [{ kind: 'helper' }] },
   {
