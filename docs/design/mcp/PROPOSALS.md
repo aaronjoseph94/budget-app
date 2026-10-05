@@ -175,8 +175,11 @@ changes, and never saying a change was made. `prompts/list` and
     line once, or nothing changes.
 11. **`ai_app_updates_in()`** re-created with explicit marks (30–37 as
     `0035` reads them; 38 left out; 39: `ai_app_propose(jsonb)` carries
-    `(0039)`), keeping its own `(0035)` comment; **`ai_app_update_level()`**
-    answers 39. `schema_level()` is untouched.
+    `(0039)` and the gate `'suggesting_off'`), keeping its own `(0035)`
+    comment; **`ai_app_update_level()`** answers 39. `schema_level()` is
+    untouched. Refused when `ai_app_updates_in()` already answers 39, and
+    otherwise safe to run again, so 0030 or 0035 pasted over it is put
+    right by pasting 0039 again.
 12. Grants: every new function revoked from `public, anon`, granted to
     `authenticated`.
 

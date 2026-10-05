@@ -38,12 +38,18 @@
 --   suggestion can name it. Edited in place, every earlier mark kept.
 -- - ai_app_updates_in(): re-created with an explicit mark for each AI-app
 --   update, 0030 to 0037 as 0035 reads them, 0038 left out (it is not one
---   and leaves no mark), and 0039's own: ai_app_propose carries "(0039)".
---   ai_app_update_level() answers 39. schema_level() is not moved.
+--   and leaves no mark), and 0039's two: ai_app_propose carries "(0039)"
+--   and the gate 'suggesting_off'. ai_app_update_level() answers 39.
+--   schema_level() is not moved.
 --
--- Pasted again it is refused before anything changes; pasted before 0037
--- it says to paste 0037 first. A function body not as 0037 left it stops
--- this update, and nothing changes.
+-- Pasted again with everything in, it is refused before anything changes;
+-- pasted before 0037 it says to paste 0037 first. 0030 pasted again puts
+-- back the gate without 'propose', and 0035 pasted again its own
+-- ai_app_updates_in(), which reads 0038 as missing: either way
+-- ai_app_updates_in() answers 37, One-time updates offers 0039 again, and
+-- pasting it puts back only what was taken away. Every step here is safe
+-- to run twice. A function body not as 0037 left it stops this update, and
+-- nothing changes.
 --
 -- Numbering: the next number after 0038 (ADR 0012, "Numbering after the
 -- merge"). Destroys nothing: it adds a table, a column and functions,
@@ -54,9 +60,6 @@
 -- paste-order-check start
 do $$
 begin
-  if to_regprocedure('public.ai_app_propose(jsonb)') is not null then
-    raise exception '0039 is already in; nothing to do';
-  end if;
   -- Two checks, not one with 'or': plpgsql plans an expression whole,
   -- so naming ai_app_updates_in() before it exists fails as "does not exist".
   if to_regprocedure('public.ai_app_updates_in()') is null then
@@ -64,6 +67,11 @@ begin
   end if;
   if public.ai_app_updates_in() < 37 then
     raise exception 'Paste 0037 first: 0039 needs 0030 to 0037, which are not all in yet';
+  end if;
+  -- Read from 0039's own marks, so an earlier update pasted again over it
+  -- lets it run again and put back what that one took away.
+  if public.ai_app_updates_in() >= 39 then
+    raise exception '0039 is already in; nothing to do';
   end if;
 end $$;
 -- paste-order-check end
@@ -73,11 +81,12 @@ begin;
 -- ---------------------------------------------------------------------------
 -- The switch and the count
 -- ---------------------------------------------------------------------------
--- On whenever AI apps are on, until the owner turns it off.
-alter table public.ai_app_access add column allow_propose boolean not null default true;
+-- On whenever AI apps are on, until the owner turns it off. Pasted again,
+-- the owner's choice stays.
+alter table public.ai_app_access add column if not exists allow_propose boolean not null default true;
 
 alter table public.ai_app_usage
-  drop constraint ai_app_usage_kind_check,
+  drop constraint if exists ai_app_usage_kind_check,
   add constraint ai_app_usage_kind_check check (kind in ('read', 'add', 'propose'));
 
 -- ---------------------------------------------------------------------------
@@ -86,7 +95,7 @@ alter table public.ai_app_usage
 -- Every before and after is a value as typed or stored, kept only to see
 -- whether it changed and to tell the AI app what it suggested; no figure is
 -- ever read from it.
-create table public.ai_app_proposals (
+create table if not exists public.ai_app_proposals (
   id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null references auth.users (id) on delete cascade,
   -- Which AI app: from the token, never from an argument.
@@ -107,25 +116,44 @@ create table public.ai_app_proposals (
 );
 
 -- One waiting suggestion per target.
-create unique index ai_app_proposals_one_waiting on public.ai_app_proposals (user_id, target_key) where status = 'pending';
-create index ai_app_proposals_by_owner on public.ai_app_proposals (user_id, status, created_at);
+create unique index if not exists ai_app_proposals_one_waiting on public.ai_app_proposals (user_id, target_key) where status = 'pending';
+create index if not exists ai_app_proposals_by_owner on public.ai_app_proposals (user_id, status, created_at);
 
 alter table public.ai_app_proposals enable row level security;
 
-create policy ai_app_proposals_own_rows on public.ai_app_proposals
-  for all
-  using (user_id = auth.uid())
-  with check (user_id = auth.uid());
-
--- 0019's rule, and 0020's read only through the gate, for this table too.
-create policy ai_apps_cannot_insert on public.ai_app_proposals as restrictive for insert to authenticated
-  with check ((select auth.jwt() ->> 'client_id') is null);
-create policy ai_apps_cannot_update on public.ai_app_proposals as restrictive for update to authenticated
-  using ((select auth.jwt() ->> 'client_id') is null) with check ((select auth.jwt() ->> 'client_id') is null);
-create policy ai_apps_cannot_delete on public.ai_app_proposals as restrictive for delete to authenticated
-  using ((select auth.jwt() ->> 'client_id') is null);
-create policy ai_apps_read_through_the_gate on public.ai_app_proposals as restrictive for select to authenticated
-  using ((select auth.jwt() ->> 'client_id') is null or (select current_setting('budget.ai_app_read', true)) = 'on');
+-- Each policy made once: pasted again, the ones there stay as they are.
+do $$
+declare
+  missing constant text[] := array(
+    select n from unnest(array['ai_app_proposals_own_rows', 'ai_apps_cannot_insert', 'ai_apps_cannot_update',
+                               'ai_apps_cannot_delete', 'ai_apps_read_through_the_gate']) n
+     where not exists (select 1 from pg_policies p
+                        where p.schemaname = 'public' and p.tablename = 'ai_app_proposals' and p.policyname = n));
+begin
+  if 'ai_app_proposals_own_rows' = any (missing) then
+    create policy ai_app_proposals_own_rows on public.ai_app_proposals
+      for all
+      using (user_id = auth.uid())
+      with check (user_id = auth.uid());
+  end if;
+  -- 0019's rule, and 0020's read only through the gate, for this table too.
+  if 'ai_apps_cannot_insert' = any (missing) then
+    create policy ai_apps_cannot_insert on public.ai_app_proposals as restrictive for insert to authenticated
+      with check ((select auth.jwt() ->> 'client_id') is null);
+  end if;
+  if 'ai_apps_cannot_update' = any (missing) then
+    create policy ai_apps_cannot_update on public.ai_app_proposals as restrictive for update to authenticated
+      using ((select auth.jwt() ->> 'client_id') is null) with check ((select auth.jwt() ->> 'client_id') is null);
+  end if;
+  if 'ai_apps_cannot_delete' = any (missing) then
+    create policy ai_apps_cannot_delete on public.ai_app_proposals as restrictive for delete to authenticated
+      using ((select auth.jwt() ->> 'client_id') is null);
+  end if;
+  if 'ai_apps_read_through_the_gate' = any (missing) then
+    create policy ai_apps_read_through_the_gate on public.ai_app_proposals as restrictive for select to authenticated
+      using ((select auth.jwt() ->> 'client_id') is null or (select current_setting('budget.ai_app_read', true)) = 'on');
+  end if;
+end $$;
 
 -- The browser reads them; only the functions below write them.
 revoke all on public.ai_app_proposals from anon, authenticated;
@@ -152,6 +180,10 @@ declare
   i   int;
 begin
   select p.prosrc into src from pg_proc p where p.oid = f;
+  -- Pasted again with the gate as 0039 left it: nothing to change.
+  if strpos(src, '''suggesting_off''') > 0 then
+    return;
+  end if;
   new := src;
   for i in 1 .. array_length(edits, 1) loop
     -- Each expected line is there exactly once, or nothing changes.
@@ -172,7 +204,7 @@ end $$;
 -- ---------------------------------------------------------------------------
 -- Words an AI app writes: as 0020 and 0034 hold what it adds, every
 -- character visible, trimmed, within a length. Reads nothing.
-create function public._ai_app_words_shown(p_text text, p_most integer)
+create or replace function public._ai_app_words_shown(p_text text, p_most integer)
 returns boolean
 language sql
 immutable
@@ -185,7 +217,7 @@ $$;
 
 -- A JSON number that is whole and within [p_low, p_high]. Reads nothing.
 -- A case, not an 'and': only a number is ever read as one.
-create function public._ai_app_whole(p jsonb, p_low bigint, p_high bigint)
+create or replace function public._ai_app_whole(p jsonb, p_low bigint, p_high bigint)
 returns boolean
 language sql
 immutable
@@ -197,7 +229,7 @@ as $$
 $$;
 
 -- A JSON string that is an id, as an id; null for anything else. Reads nothing.
-create function public._ai_app_id(p jsonb)
+create or replace function public._ai_app_id(p jsonb)
 returns uuid
 language sql
 immutable
@@ -214,7 +246,7 @@ $$;
 -- two the engine works out (a budget and a monthly amount in effect) come
 -- from the caller, checked for shape: Review never trusts a before, and a
 -- wrong one can only make a card stale. Internal: granted to nobody.
-create function public._ai_app_proposal(p_user uuid, p_today date, p jsonb)
+create or replace function public._ai_app_proposal(p_user uuid, p_today date, p jsonb)
 returns jsonb
 language plpgsql
 stable
@@ -426,7 +458,7 @@ revoke all on function public._ai_app_proposal(uuid, date, jsonb) from public, a
 -- Expected refusals are answers. Each change stands alone: one refused
 -- leaves the others. Returns {results: [{index, status, id?, refused?,
 -- before?, after?}], waiting}.
-create function public.ai_app_propose(p_items jsonb)
+create or replace function public.ai_app_propose(p_items jsonb)
 returns jsonb
 language plpgsql
 volatile
@@ -514,7 +546,7 @@ $$;
 -- What the AI app suggested, newest first, with the names they need. A
 -- waiting row past its day reads as expired. SECURITY INVOKER: an AI app
 -- reads these rows only after the gate, as the owner.
-create function public.ai_app_suggestions(p_status text, p_limit integer)
+create or replace function public.ai_app_suggestions(p_status text, p_limit integer)
 returns jsonb
 language plpgsql
 volatile
@@ -565,7 +597,7 @@ $$;
 -- Category suggestions on rows waiting in Review, by an AI app: 0018's
 -- update, with 0018's conditions word for word, at most 50 at once. An
 -- element that does not name two ids is skipped, never read as one.
-create function public.ai_app_suggest_categories(p jsonb)
+create or replace function public.ai_app_suggest_categories(p jsonb)
 returns jsonb
 language plpgsql
 volatile
@@ -616,7 +648,7 @@ $$;
 -- Apply's mark, after the screen's own write path made the change, or
 -- Dismiss. The approval pattern: one conditional update, true when it
 -- changed the row. Never an AI app: 0019's guard first.
-create function public.decide_suggestion(p_id uuid, p_outcome text)
+create or replace function public.decide_suggestion(p_id uuid, p_outcome text)
 returns boolean
 language plpgsql
 volatile
@@ -656,6 +688,8 @@ begin
   foreach f in array array['public.ai_app_review(integer)',
     'public.ai_app_search(text, date, date, bigint, bigint, text[], text, text, integer)']::regprocedure[] loop
     select p.prosrc into src from pg_proc p where p.oid = f;
+    -- Pasted again with the rows already carrying their ids: nothing to change.
+    continue when strpos(src, with_id) > 0;
     -- The line is there exactly once, or nothing changes.
     if (length(src) - length(replace(src, was, ''))) / length(was) <> 1 then
       raise exception 'could not change %: it is not as 0037 left it', f;
@@ -689,7 +723,9 @@ as $$
     (35, 'public.ai_app_updates_in()', '(0035)'),
     (36, 'public._ai_app_shown_shop(text)', '(0036)'),
     (37, 'public._ai_app_clean_old_rows()', '(0037)'),
-    (39, 'public.ai_app_propose(jsonb)', '(0039)')
+    (39, 'public.ai_app_propose(jsonb)', '(0039)'),
+    -- 0030 pasted again puts back a gate without 0039's kind: 0039 is not in.
+    (39, 'public._ai_app_gate(text)', '''suggesting_off''')
   ), missing(n) as (
     select m.n from mark m
      where coalesce(strpos((select p.prosrc from pg_catalog.pg_proc p where p.oid = to_regprocedure(m.fn)), m.word), 0) = 0

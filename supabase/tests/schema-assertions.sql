@@ -3785,12 +3785,14 @@ end $$;
 rollback;
 
 -- Pasting 0030 and 0031 again after everything is in: the level they set
--- goes back, what One-time updates reads does not, and 0032 pasted again
--- is refused with nothing changed.
+-- goes back, what One-time updates reads goes back no further than 37
+-- (0030's gate lacks 0039's lines, and 0039 pasted again puts them back,
+-- checked under 0039), and 0032 pasted again is refused with nothing
+-- changed.
 \set repaste_30 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0030_ai_app_gate_live_session.sql`
 \set repaste_31 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0031_ai_app_hash_own_kind.sql`
 \set repaste_32 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0032_ai_rows_teach_no_rule.sql`
-select public.ai_app_updates_in() as all_in \gset
+select least(public.ai_app_updates_in(), 37) as all_in \gset
 begin;
 :repaste_30
 :repaste_31
@@ -3814,7 +3816,7 @@ begin
      or public.ai_app_updates_in() <> current_setting('verify.all_in')::int then
     raise exception '0032 pasted twice changed something';
   end if;
-  raise notice 'pasting an AI-app update again never makes One-time updates offer one already in';
+  raise notice 'pasting an AI-app update again never makes One-time updates offer one that cannot be pasted';
 end $$;
 rollback;
 
@@ -4681,6 +4683,62 @@ begin
   end loop;
   raise notice '0039 says it is already in, or to paste 0037 first';
 end $$;
+rollback;
+
+-- 0030 pasted again puts back the gate without 'propose', and 0035 pasted
+-- again its own ai_app_updates_in(), which reads 0038 as missing. Either
+-- way One-time updates reads 37 and offers 0039 again, and 0039 pasted
+-- again puts back only what was taken: suggesting works, the owner's
+-- switch stays as set, and nothing is doubled.
+\set repaste_35 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0035_ai_app_updates_in.sql`
+begin;
+update public.ai_app_access set allow_propose = false where user_id = '22222222-2222-4222-8222-222222222222';
+:repaste_30
+do $$
+begin
+  if public.ai_app_updates_in() <> 37 then
+    raise exception 'with 0030 pasted again over 0039, ai_app_updates_in() says %, not 37', public.ai_app_updates_in();
+  end if;
+end $$;
+:repaste_35
+do $$
+begin
+  if public.ai_app_updates_in() <> 37 then
+    raise exception 'with 0035 pasted again over 0039, ai_app_updates_in() says %, not 37', public.ai_app_updates_in();
+  end if;
+end $$;
+:repaste_39
+do $$
+declare
+  gate   constant text := (select prosrc from pg_proc where oid = 'public._ai_app_gate(text)'::regprocedure);
+  review constant text := (select prosrc from pg_proc where oid = 'public.ai_app_review(integer)'::regprocedure);
+begin
+  if public.ai_app_updates_in() <> 39 or public.ai_app_update_level() <> 39 then
+    raise exception '0039 pasted again did not put itself back: % and %', public.ai_app_updates_in(), public.ai_app_update_level();
+  end if;
+  if (length(gate) - length(replace(gate, '''suggesting_off''', ''))) / length('''suggesting_off''') <> 1
+     or strpos(gate, E'not in (''read'', ''add'', ''propose'') then') = 0
+     or (length(review) - length(replace(review, '''id'', r.id,', ''))) / length('''id'', r.id,') <> 1 then
+    raise exception '0039 pasted again did not put back the gate once, or changed Review''s rows twice';
+  end if;
+  if (select count(*) from pg_policies where schemaname = 'public' and tablename = 'ai_app_proposals') <> 5 then
+    raise exception '0039 pasted again did not leave the suggestions'' five policies';
+  end if;
+  if (select allow_propose from public.ai_app_access where user_id = '22222222-2222-4222-8222-222222222222') then
+    raise exception '0039 pasted again turned the owner''s Let AI apps suggest changes back on';
+  end if;
+end $$;
+set role app_user;
+do $$
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}', true);
+  if public.ai_app_propose('[1]') #>> '{results,0,refused}' is distinct from 'bad_change' then
+    raise exception 'after 0030, 0035 and 0039 pasted again, the gate does not take a suggestion';
+  end if;
+  raise notice '0030 or 0035 pasted again over 0039 is read as 0039 missing, and pasting 0039 again puts it back';
+end $$;
+reset role;
 rollback;
 
 -- 0038 leaves no '(0038)' mark; 0039 re-created ai_app_updates_in() with
