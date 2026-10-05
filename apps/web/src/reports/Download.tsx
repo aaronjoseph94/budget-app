@@ -3,7 +3,7 @@ import type { Row } from '@budget/report-export'
 import { Button } from '../components/ui/button.js'
 import { Section } from '../forecast/parts.js'
 import type { Category, LedgerRow } from '../ledger.js'
-import { chargesCsvRows, summaryCsvRows } from './download.js'
+import { chargesCsvRows, summaryCsvRows } from './download-rows.js'
 import type { Reviewed } from './Overview.js'
 
 /** How long a download's link lives: Safari reads it after the click returns, so not at once. */

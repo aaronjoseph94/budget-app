@@ -7,16 +7,25 @@ export default defineConfig({
     // editor's run) at twice the cores, and the DOM tests' one-second finds
     // failed at random. Half each keeps two runs within the machine.
     maxWorkers: '50%',
+    // Vitest 5 also discovers compiled copies under dist/; those resolve
+    // fixtures and migrations from the wrong place. Source tests only.
+    exclude: ['**/node_modules/**', '**/dist/**'],
+    // Vitest 5 defaults clearMocks to true; several DOM suites set Date and
+    // fetch mocks that must survive across the file's tests (shell, narration).
+    clearMocks: false,
+    // Vitest 5 defaults clearMocks to true; several DOM suites set Date and
+    // fetch mocks that must survive across the file's tests (shell, narration).
+    clearMocks: false,
     projects: [
-      { test: { name: 'core', root: './packages/core' } },
-      { test: { name: 'money', root: './packages/money-primitives' } },
-      { test: { name: 'schema', root: './packages/schema' } },
-      { test: { name: 'parsers', root: './packages/statement-parsers' } },
-      { test: { name: 'golden', root: './packages/golden-verification' } },
-      { test: { name: 'charts', root: './packages/chart-specs' } },
-      { test: { name: 'coach', root: './packages/savings-coach' } },
-      { test: { name: 'export', root: './packages/report-export' } },
-      { test: { name: 'ai-apps', root: './packages/ai-apps' } },
+      { test: { name: 'core', root: './packages/core', include: ['test/**/*.test.ts'], exclude: ['**/dist/**'] } },
+      { test: { name: 'money', root: './packages/money-primitives', include: ['test/**/*.test.ts'], exclude: ['**/dist/**'] } },
+      { test: { name: 'schema', root: './packages/schema', include: ['test/**/*.test.ts'], exclude: ['**/dist/**'] } },
+      { test: { name: 'parsers', root: './packages/statement-parsers', include: ['test/**/*.test.ts'], exclude: ['**/dist/**'] } },
+      { test: { name: 'golden', root: './packages/golden-verification', include: ['test/**/*.test.ts'], exclude: ['**/dist/**'] } },
+      { test: { name: 'charts', root: './packages/chart-specs', include: ['test/**/*.test.ts'], exclude: ['**/dist/**'] } },
+      { test: { name: 'coach', root: './packages/savings-coach', include: ['test/**/*.test.ts'], exclude: ['**/dist/**'] } },
+      { test: { name: 'export', root: './packages/report-export', include: ['test/**/*.test.ts'], exclude: ['**/dist/**'] } },
+      { test: { name: 'ai-apps', root: './packages/ai-apps', include: ['test/**/*.test.ts'], exclude: ['**/dist/**'] } },
       // Split by extension: a .tsx test renders a component and needs a DOM,
       // a .ts test checks plain functions and keeps Node's faster, stricter
       // environment, where reaching for `window` by accident is an error.
@@ -32,20 +41,39 @@ export default defineConfig({
           name: 'app',
           root: './apps/web',
           include: ['test/**/*.test.ts'],
+          exclude: ['**/dist/**'],
           environment: 'node',
           testTransformMode: { web: ['**/!(setup-files|vite-config).test.ts'] },
           css: { include: [/index\.css/] },
+          sequence: { groupOrder: 1 },
         },
       },
       // Each lazy part is fetched before a DOM test draws (test/setup-dom.ts).
       {
-        test: { name: 'app-dom', root: './apps/web', include: ['test/**/*.test.tsx'], environment: 'jsdom', setupFiles: ['./test/setup-dom.ts'] },
+        test: {
+          name: 'app-dom',
+          root: './apps/web',
+          include: ['test/**/*.test.tsx'],
+          exclude: ['**/dist/**'],
+          environment: 'jsdom',
+          setupFiles: ['./test/setup-dom.ts'],
+          // Vitest 5 requires a unique groupOrder when maxWorkers differs
+          // from a sibling project that shares the same root.
+          sequence: { groupOrder: 2 },
+          maxWorkers: 2,
+          testTimeout: 15_000,
+        },
       },
       // The Edge Functions import zod by Deno's pinned URL so each can be
       // pasted alone; here that name is the package's own zod, as in its
       // tsconfig.
       {
-        test: { name: 'functions', root: './supabase/functions' },
+        test: {
+          name: 'functions',
+          root: './supabase/functions',
+          include: ['test/**/*.test.ts'],
+          exclude: ['**/dist/**'],
+        },
         resolve: { alias: { 'npm:zod@4.6.5': 'zod' } },
       },
     ],

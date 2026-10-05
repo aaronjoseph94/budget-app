@@ -40,15 +40,21 @@ const PROVIDER_HOSTS = ['generativelanguage.googleapis.com', 'api.groq.com', 'op
 
 const out = mkdtempSync(join(tmpdir(), 'budget-bundle-'))
 try {
-  execFileSync('pnpm', ['--filter', '@budget/app-client', 'exec', 'vite', 'build', '--outDir', out, '--emptyOutDir'], {
-    stdio: 'pipe',
-    env: {
-      ...process.env,
-      VITE_SUPABASE_URL: 'https://example.supabase.co',
-      VITE_SUPABASE_ANON_KEY: 'placeholder-public-key-for-measuring',
-      VITE_BUNDLE_PROBE: PROBE,
+  // Windows Node cannot spawn .cmd without a shell; CI (Linux) uses the bare name.
+  execFileSync(
+    process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm',
+    ['--filter', '@budget/app-client', 'exec', 'vite', 'build', '--outDir', out, '--emptyOutDir'],
+    {
+      stdio: 'pipe',
+      shell: process.platform === 'win32',
+      env: {
+        ...process.env,
+        VITE_SUPABASE_URL: 'https://example.supabase.co',
+        VITE_SUPABASE_ANON_KEY: 'placeholder-public-key-for-measuring',
+        VITE_BUNDLE_PROBE: PROBE,
+      },
     },
-  })
+  )
 
   const html = readFileSync(join(out, 'index.html'), 'utf8')
   const first = [...html.matchAll(/<(?:script[^>]*\ssrc|link[^>]*rel="modulepreload"[^>]*\shref)="\/([^"]+\.js)"/g)].map((m) => m[1])

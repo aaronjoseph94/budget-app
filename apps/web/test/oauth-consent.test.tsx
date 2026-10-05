@@ -83,7 +83,14 @@ describe('the consent page: Allow', () => {
     expect(approve).toHaveBeenCalledWith('auth-1', { skipBrowserRedirect: true })
     expect(fake.oauth.consents).toEqual([{ id: 'auth-1', action: 'approve' }])
     // Allow never turns anything on, and it closes the window: one Connect, one connection (mcp-1-02).
-    expect(fake.tables.ai_app_access).toMatchObject([{ ...ON, enabled: true, allow_add: true, connect_until: minutes(0) }])
+    expect(fake.tables.ai_app_access).toMatchObject([{
+      ...ON,
+      enabled: true,
+      allow_add: true,
+      // Allow writes the browser's zone (access.ts); CI is UTC, local machines vary.
+      time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      connect_until: minutes(0),
+    }])
   })
 
   // Security review mcp-3-03: the AI helper before 2026-09-30.1 accepts an AI app's token.

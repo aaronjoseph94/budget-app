@@ -96,7 +96,7 @@ workbook's own saved results exactly. The canonical case: four debts from
 
 ## Stack
 
-- pnpm monorepo (pnpm 10.33.0, Node 22 or later)
+- pnpm monorepo (pnpm 10.34.6, Node 22 or later; CI and Cloudflare use Node 24)
 - Vite, React 19, TypeScript, Tailwind v4; an installable web app (PWA),
   web first rather than a native app ([ADR 0001](docs/adr/0001-web-first-vite-react.md))
 - Hand-rolled navigation instead of a router library
