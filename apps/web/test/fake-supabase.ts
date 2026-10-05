@@ -325,9 +325,10 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     return new Response(null, { status: 204 })
   }
 
-  // What 0039's decide_suggestion does: only a waiting suggestion is decided, once.
+  // What 0039's decide_suggestion does: only a waiting suggestion not past its day is decided, once.
   function decide(args: Readonly<Record<string, unknown>>): Response {
-    const at = tables.ai_app_proposals.findIndex((r) => r['id'] === args['p_id'] && r['status'] === 'pending')
+    const now = new Date().toISOString()
+    const at = tables.ai_app_proposals.findIndex((r) => r['id'] === args['p_id'] && r['status'] === 'pending' && String(r['expires_at']) > now)
     const row = tables.ai_app_proposals[at]
     if (row === undefined) return json(false)
     tables.ai_app_proposals[at] = { ...row, status: args['p_outcome'] }

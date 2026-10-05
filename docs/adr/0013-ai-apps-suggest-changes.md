@@ -169,10 +169,14 @@ pending row to Review. What constrains going further:
   wrong, by a race or by a caller lying, can only make a card stale, never
   show a false "from" or overwrite a newer change. When the current value
   already equals the suggested one, the card says "Already so".
-- **Apply is the screen's own write, then the mark.** Stale check → the
-  write path → `decide_suggestion(id, 'applied')`. A refused write leaves
-  the suggestion waiting with the screen's own refusal words; a mark lost
-  after a successful write leaves a card that reads "Already so". Every
+- **Apply is the screen's own write, then the mark.** The suggestion read
+  again (still pending, not past its day, as the card read it, or nothing
+  is written) → stale check → the write path →
+  `decide_suggestion(id, 'applied')`. A refused write leaves the
+  suggestion waiting with the screen's own refusal words; a mark refused
+  after a successful write (the suggestion stopped waiting in between) is
+  said, never reported as a plain "Applied"; a mark lost on the network
+  leaves a card that reads "Already so". Every
   write path here is idempotent (an upsert, an update to a value, a move
   to a category, an insert that finds the name), so nothing applies twice.
 - **Category suggestions on Review rows** use 0018's mechanism: a new
@@ -243,8 +247,10 @@ pending row to Review. What constrains going further:
 **Lost**
 
 - Two more one-time steps: paste `0039`, re-paste the AI apps server.
-- Apply is two requests (the write, then the mark), not one transaction;
-  the "Already so" card covers the gap.
+- Apply is three requests (the suggestion read again, the write, then
+  the mark), not one transaction; the re-read keeps a decided, replaced
+  or expired suggestion from being written, and the "Already so" card and
+  the refused mark's own words cover what is left.
 - The AI app's reasons are kept in Supabase with each suggestion (PLAN §1's
   "nothing the AI writes is kept, except the items it adds to Review" now
   also excepts suggestions); they are not deleted when decided.

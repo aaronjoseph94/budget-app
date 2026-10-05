@@ -56,6 +56,9 @@ const DONE = {
   applied: 'Applied. Your budget shows the change.',
   already: 'That is already so, so nothing was changed.',
   stale: 'That changed since it was suggested, so nothing was changed. Dismiss it, or ask the AI app again.',
+  gone: 'That suggestion was already decided, replaced or expired, so nothing was changed.',
+  applied_unmarked:
+    'Your budget shows the change, but the suggestion stopped waiting just before (decided elsewhere, replaced or expired), so look over any newer card.',
 } as const
 
 /**
@@ -122,16 +125,20 @@ export function SuggestedChanges() {
     setError(null)
     let applied = 0
     let problem: string | null = null
-    // One at a time, oldest first; one stale or refused is left waiting and the rest go on.
+    // One at a time, oldest first; one stale, gone or refused is not
+    // applied and the rest go on. A change made whose mark was refused was
+    // still made.
     for (const { s } of all) {
       try {
-        if ((await applySuggestion(supabase, userId, s)) === 'applied') applied += 1
+        const done = await applySuggestion(supabase, userId, s)
+        if (done === 'applied' || done === 'applied_unmarked') applied += 1
+        else if (done === 'gone') problem ??= DONE.gone
       } catch (cause) {
         problem ??= cause instanceof Error ? cause.message : 'That did not work.'
       }
     }
     setNote(`Applied ${applied} of ${all.length}.`)
-    if (applied < all.length) setError(`${all.length - applied} left waiting${problem === null ? ': each card says why.' : `. ${problem}`}`)
+    if (applied < all.length) setError(`${all.length - applied} not applied${problem === null ? ': each card still waiting says why.' : `. ${problem}`}`)
     setBusy(null)
     setConfirming(false)
     reads.current += 1

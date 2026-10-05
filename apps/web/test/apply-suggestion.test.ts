@@ -92,6 +92,37 @@ describe('Apply', () => {
     }
   })
 
+  it.each([
+    ['dismissed on another device', { status: 'dismissed' }],
+    ['replaced by the AI app', { status: 'replaced' }],
+    ['past its day while Review stayed open', { expires_at: '2020-01-01T00:00:00+00:00' }],
+  ])('writes nothing for one %s, and says it no longer waits', async (_, now) => {
+    const { fake, apply } = setup('set_weekly_limit', { category_id: FOOD }, { cents: 12000 }, { cents: 10000 })
+    fake.tables.ai_app_proposals[0] = { ...fake.tables.ai_app_proposals[0], ...now }
+    expect(await apply()).toBe('gone')
+    expect(fake.tables.categories.find((c) => c.id === FOOD)?.weekly_budget_cents).toBe(10000)
+    expect(fake.rpcCalls.some((c) => c.name === 'decide_suggestion')).toBe(false)
+  })
+
+  it('writes nothing when the waiting row is not what the card read', async () => {
+    const { fake, s } = setup('set_weekly_limit', { category_id: FOOD }, { cents: 12000 }, { cents: 10000 })
+    fake.tables.ai_app_proposals[0] = { ...fake.tables.ai_app_proposals[0], after: { cents: 99000 } }
+    expect(await applySuggestion(fake.client, 'u1', s)).toBe('gone')
+    expect(fake.tables.categories.find((c) => c.id === FOOD)?.weekly_budget_cents).toBe(10000)
+  })
+
+  it('says so when the change was made but the suggestion stopped waiting just before its mark', async () => {
+    const { fake, apply } = setup('set_bill', { category_id: RENT, month: '2026-11-01' }, { cents: 155000, due_day: 3 }, { cents: 150000, due_day: 1 })
+    // Dismissed elsewhere between the write and the mark.
+    fake.server.hold = (what) => {
+      if (what === 'POST category_plans') fake.tables.ai_app_proposals[0] = { ...fake.tables.ai_app_proposals[0], status: 'dismissed' }
+      return null
+    }
+    expect(await apply()).toBe('applied_unmarked')
+    expect(fake.tables.category_plans.some((p) => p.effective_month === '2026-11-01' && p.planned_cents === 155000)).toBe(true)
+    expect(marked(fake)).toEqual(['dismissed'])
+  })
+
   it('leaves it waiting when the write is refused, in the screen’s own words', async () => {
     const { fake, apply } = setup('set_bill', { category_id: RENT, month: '2026-11-01' }, { cents: 155000, due_day: 3 }, { cents: 150000, due_day: 1 })
     fake.fail('POST category_plans', '23514')

@@ -132,7 +132,7 @@ describe('Apply all', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Apply all 2' }))
     fireEvent.click(within(screen.getByRole('group', { name: 'Apply 2 suggested changes?' })).getByRole('button', { name: 'Apply all 2' }))
     expect(await screen.findByText('Applied 0 of 2.')).toBeTruthy()
-    expect(screen.getByText(/2 left waiting\./)).toBeTruthy()
+    expect(screen.getByText(/2 not applied\./)).toBeTruthy()
     expect(fake.tables.ai_app_proposals.map((r) => r['status'])).toEqual(['pending', 'pending', 'pending'])
   })
 

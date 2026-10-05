@@ -215,9 +215,12 @@ nothing; the AI app is told why, as a refused add is (PLAN §2.8).
   `IngestedText`. States: **ready** (Apply, Dismiss), **stale** ("Changed
   since it was suggested: now $420.00", Dismiss only), **already so**
   (Clear, which dismisses), **unreadable** (Dismiss only).
-- **Apply** (`apply-suggestion.ts`): read again, stale check, the §2 write
-  path, `decide_suggestion(id, 'applied')`, `refresh()`. Busy while it
-  runs; the screen's refusal words on failure.
+- **Apply** (`apply-suggestion.ts`): the suggestion read again (pending,
+  unexpired, unchanged, else `gone` and nothing written), the target read
+  again, stale check, the §2 write path, `decide_suggestion(id,
+  'applied')` (false after the write is `applied_unmarked`, with its own
+  words), `refresh()`. Busy while it runs; the screen's refusal words on
+  failure.
 - **Apply all N**: shown with two or more ready cards; N counts ready cards
   other than `learn_shop`. Confirm inline (as Approve all): "Apply N
   suggested changes? Each changes your budget as its card says. Shop rules
