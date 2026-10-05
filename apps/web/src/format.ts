@@ -573,15 +573,24 @@ export function localDateOf(timestamp: string): string {
   return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`
 }
 
-/** `2026-09-21`..`2026-09-27` as `21 – 27 Sep`, or across months `28 Sep – 4 Oct`. */
-export function formatDateRange(from: string, to: string): string {
-  const [, fm, fd] = from.split('-')
-  const [, tm, td] = to.split('-')
+/**
+ * `2026-09-21`..`2026-09-27` as `21 – 27 Sep`, or across months
+ * `28 Sep – 4 Oct`; one day once, `5 Oct`, never `5 – 5 Oct`. Given
+ * today, a range outside today's year carries its year, `22 – 28 Dec
+ * 2025`, so a week stepped back into last year never reads as this year's
+ * (e2e-plan-08).
+ */
+export function formatDateRange(from: string, to: string, today?: string): string {
+  const [fy, fm, fd] = from.split('-')
+  const [ty, tm, td] = to.split('-')
   const fromMonth = MONTHS[Number(fm) - 1] ?? ''
   const toMonth = MONTHS[Number(tm) - 1] ?? ''
-  return fm === tm
-    ? `${Number(fd)} – ${Number(td)} ${toMonth}`
-    : `${Number(fd)} ${fromMonth} – ${Number(td)} ${toMonth}`
+  const thisYear = today?.slice(0, 4)
+  const years = thisYear !== undefined && (fy !== thisYear || ty !== thisYear)
+  const end = `${Number(td)} ${toMonth}${years ? ` ${ty}` : ''}`
+  if (from === to) return end
+  if (years && fy !== ty) return `${Number(fd)} ${fromMonth} ${fy} – ${end}`
+  return fm === tm ? `${Number(fd)} – ${end}` : `${Number(fd)} ${fromMonth} – ${end}`
 }
 
 /** Basis points from the engine, shown as a whole percentage. Display only. */

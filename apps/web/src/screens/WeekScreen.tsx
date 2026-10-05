@@ -141,7 +141,8 @@ export function WeekScreen({ monday }: { monday: string | null }) {
             <HelpButton screen="week" className="text-muted-foreground" />
           </div>
           <p className="text-muted-foreground md:text-base">
-            {formatDateRange(bounds.start, bounds.end)}
+            {/* With its year when not this year's, here where it can wrap (e2e-plan-08). */}
+            {formatDateRange(bounds.start, bounds.end, today)}
             {isThisWeek && sheet !== null ? ` · ${sheet.daysLeft} ${sheet.daysLeft === 1 ? 'day' : 'days'} left` : ''}
           </p>
         </div>

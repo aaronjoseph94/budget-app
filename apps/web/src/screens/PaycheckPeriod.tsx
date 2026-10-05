@@ -144,7 +144,8 @@ export function PaycheckPeriod({
             <HelpButton screen="paycheck" className="text-muted-foreground" />
           </div>
           <p className="text-muted-foreground md:text-base">
-            {formatDateRange(start, end)} · {source.name}, paid {FREQUENCY_WORD[schedule.frequency].toLowerCase()}
+            {/* With its year when not this year's, here where it can wrap (e2e-plan-08). */}
+            {formatDateRange(start, end, today)} · {source.name}, paid {FREQUENCY_WORD[schedule.frequency].toLowerCase()}
           </p>
         </div>
         <div className="flex items-stretch rounded-md border bg-card">

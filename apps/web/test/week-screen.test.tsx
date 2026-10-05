@@ -93,6 +93,14 @@ describe('WeekScreen', () => {
     expect(screen.queryByText(/days left/)).toBeNull()
   })
 
+  // e2e-plan-08: a week stepped back into last year read as this year's.
+  it('names the year of a week in another year', async () => {
+    window.location.hash = '/week/2025-12-22'
+    renderScreen(<WeekScreen />, seeded())
+    expect(await screen.findByRole('heading', { name: 'Week of' })).toBeTruthy()
+    expect(screen.getByText('22 – 28 Dec 2025')).toBeTruthy()
+  })
+
   it('opens the week its address names, and writes each step into the address (ADR 0006)', async () => {
     window.location.hash = '/week/2026-03-02'
     renderScreen(<WeekScreen />, seeded())

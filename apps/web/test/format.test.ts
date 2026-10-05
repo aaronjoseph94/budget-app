@@ -137,6 +137,17 @@ describe('the smaller display helpers', () => {
     expect(formatDateRange('2026-09-28', '2026-10-04')).toBe('28 Sep – 4 Oct')
   })
 
+  // e2e-plan-08: Monday's "so far" read "5 – 5 Oct", and a week stepped
+  // back into last year read as this year's.
+  it('shows one day once, and the year of a range outside the year given', () => {
+    expect(formatDateRange('2026-10-05', '2026-10-05')).toBe('5 Oct')
+    expect(formatDateRange('2026-09-21', '2026-09-27', '2026-10-05')).toBe('21 – 27 Sep')
+    expect(formatDateRange('2025-12-22', '2025-12-28', '2026-10-05')).toBe('22 – 28 Dec 2025')
+    expect(formatDateRange('2025-11-28', '2025-12-04', '2026-10-05')).toBe('28 Nov – 4 Dec 2025')
+    expect(formatDateRange('2025-12-29', '2026-01-04', '2026-10-05')).toBe('29 Dec 2025 – 4 Jan 2026')
+    expect(formatDateRange('2025-10-05', '2025-10-05', '2026-10-05')).toBe('5 Oct 2025')
+  })
+
   it('shows basis points as a whole percentage', () => {
     expect(formatBasisPoints(6_500)).toBe('65%')
     expect(formatBasisPoints(12_000)).toBe('120%')
