@@ -138,6 +138,27 @@ function amountChange(owner: Owner, change: Extract<Change, { kind: 'set_budget'
   return { item: { kind: change.kind, category: category.id, month, amount, due_day: dueDay, before, reason: change.reason } }
 }
 
+/**
+ * One category or charge change. A category on any list may be named,
+ * Not spending too: the database refuses what does not fit a list. A
+ * charge is named by its id from search_transactions, which the database
+ * checks is the owner's.
+ */
+function categoryChange(owner: Owner, change: Exclude<Change, { kind: 'set_budget' | 'set_weekly_limit' | 'set_bill' | 'set_goal' }>): Prepared {
+  if (change.kind === 'add_category') return { item: { kind: change.kind, name: change.name, list: change.list, reason: change.reason } }
+  const category = categoryNamed(owner, change.category)
+  if (category === undefined) return { refused: 'unknown_category' }
+  switch (change.kind) {
+    case 'rename_category':
+      return { item: { kind: change.kind, category: category.id, new_name: change.new_name, reason: change.reason } }
+    case 'move_category':
+      return { item: { kind: change.kind, category: category.id, to_list: change.to_list, reason: change.reason } }
+    case 'recategorise':
+    case 'learn_shop':
+      return { item: { kind: change.kind, transaction: change.transaction, category: category.id, reason: change.reason } }
+  }
+}
+
 /** One change as ai_app_propose takes it, or why it was refused here. */
 export function prepare(owner: Owner, change: Change): Prepared {
   switch (change.kind) {
@@ -147,6 +168,6 @@ export function prepare(owner: Owner, change: Change): Prepared {
     case 'set_goal':
       return amountChange(owner, change)
     default:
-      return { refused: 'bad_change' }
+      return categoryChange(owner, change)
   }
 }

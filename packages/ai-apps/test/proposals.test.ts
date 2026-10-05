@@ -96,3 +96,18 @@ it('says every refusal in a sentence of its own', () => {
   expect(Object.values(CHANGE_SENTENCES).every((s) => s.length > 20 && !s.includes('undefined'))).toBe(true)
   expect(isoDate(OWNER.today)).toBe('2026-10-05')
 })
+
+describe('a category or charge change', () => {
+  const TXN = 'eeeeeeee-0000-4000-8000-000000000001'
+  it('names the category by id, and leaves a charge and a new name for the database to check', () => {
+    expect(change({ kind: 'rename_category', category: 'Rent', new_name: 'Housing' })).toEqual({ item: { kind: 'rename_category', category: 'c-rent', new_name: 'Housing', ...why } })
+    expect(change({ kind: 'add_category', name: 'Pet care', list: 'variable' })).toEqual({ item: { kind: 'add_category', name: 'Pet care', list: 'variable', ...why } })
+    expect(change({ kind: 'move_category', category: 'Groceries', to_list: 'transfer' })).toEqual({ item: { kind: 'move_category', category: 'c-food', to_list: 'transfer', ...why } })
+    expect(change({ kind: 'recategorise', transaction: TXN, category: 'Rent' })).toEqual({ item: { kind: 'recategorise', transaction: TXN, category: 'c-rent', ...why } })
+    expect(change({ kind: 'learn_shop', transaction: TXN, category: 'Rent' })).toMatchObject({ item: { kind: 'learn_shop', category: 'c-rent' } })
+  })
+
+  it('refuses a category the owner does not have', () => {
+    expect(change({ kind: 'move_category', category: 'Petrol', to_list: 'bill' })).toEqual({ refused: 'unknown_category' })
+  })
+})
