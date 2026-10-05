@@ -2361,7 +2361,8 @@ begin
   -- And any such function added later must carry the guard too.
   select count(*) into n from pg_proc
    where pronamespace = 'public'::regnamespace and prosecdef
-     and proname not in ('_not_an_ai_app', '_ai_app_gate', 'ai_app_add_candidate') -- 0020's, gated instead
+     -- 0020's and 0039's AI-app functions, gated instead.
+     and proname not in ('_not_an_ai_app', '_ai_app_gate', 'ai_app_add_candidate', 'ai_app_propose', 'ai_app_suggest_categories')
      and has_function_privilege('authenticated', oid, 'execute')
      and strpos(prosrc, 'public._not_an_ai_app();') = 0;
   if n <> 0 then raise exception '% SECURITY DEFINER functions the browser may call have no guard', n; end if;
@@ -2434,6 +2435,11 @@ insert into public.ai_app_access (user_id, time_zone) values ('11111111-1111-411
 insert into public.ai_app_usage (user_id, day, kind, calls) values ('11111111-1111-4111-8111-111111111111', '2026-01-01', 'read', 1);
 insert into public.ai_app_last_use (user_id, client_id, last_used_at)
   values ('11111111-1111-4111-8111-111111111111', '99999999-9999-4999-8999-999999999999', now());
+-- And 0039's: a suggestion waiting for the owner.
+insert into public.ai_app_proposals (user_id, client_id, kind, target, after, before, reason, target_key, expires_at)
+  values ('11111111-1111-4111-8111-111111111111', '99999999-9999-4999-8999-999999999999', 'move_category',
+          '{"category_id": "cccccccc-0000-4000-8000-000000000001"}', '{"list": "bill"}', '{"list": "variable"}',
+          'Seeded for the write checks', 'list:cccccccc-0000-4000-8000-000000000001', now() + interval '14 days');
 create role wide_user nologin;
 grant authenticated to wide_user;
 grant all on all tables in schema public to wide_user;
@@ -3717,7 +3723,8 @@ end $$;
 rollback;
 
 -- 0034 added that one condition to ai_app_add_candidate and nothing else;
--- every other function the browser may call is as it stood.
+-- every other function the browser may call is as it stood. Read as they
+-- stood before 0039, which edits the gate and is checked on its own.
 do $$
 declare
   r   record;
@@ -3726,7 +3733,8 @@ declare
   add constant text := E'     or p_words ~ ''[\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2060-\\u2065\\uFEFF]'' -- drawn as nothing (0034)\n';
 begin
   for r in select * from verify.before_0034 loop
-    select prosrc, prosecdef, provolatile, proconfig, proacl::text as acl into p from pg_proc where oid = r.fn::regprocedure;
+    select prosrc, prosecdef, provolatile, proconfig, acl into p from verify.before_0039 where fn = r.fn;
+    if not found then raise exception '% is gone before 0039', r.fn; end if;
     if r.fn = 'ai_app_add_candidate(uuid,date,bigint,text,integer,text,integer,text)' then
       if strpos(r.prosrc, at) = 0 or p.prosrc <> replace(r.prosrc, at, at || add) then
         raise exception 'ai_app_add_candidate is not its old body plus the one condition';
@@ -4178,29 +4186,256 @@ begin
 end $$;
 rollback;
 
--- 0038 leaves no '(0038)' mark, so ai_app_updates_in() answers 37 with
--- everything in (docs/adr/0012-mcp-server.md). The next AI-app update must
--- re-create ai_app_updates_in() to count itself, not rely on its own mark
--- alone; when it does, change 37 here to its number.
+-- ---------------------------------------------------------------------------
+-- 0039: an AI app may suggest changes, which wait for the owner (ADR 0013).
+-- Its token writes only pending suggestions, through ai_app_propose, gated
+-- as 'propose' (60 a day, its own switch): every id is the caller's, every
+-- stored before is read by the database, and only the owner's session
+-- marks one applied or dismissed.
+-- ---------------------------------------------------------------------------
+reset role;
+update public.ai_app_usage set calls = 0 where user_id = '11111111-1111-4111-8111-111111111111';
+update public.ai_app_access set enabled = true, allow_propose = true where user_id = '11111111-1111-4111-8111-111111111111';
+insert into public.categories (id, user_id, name, kind, weekly_budget_cents) values
+  ('cccccccc-0000-4000-8000-000000003901', '11111111-1111-4111-8111-111111111111', 'Groceries 39', 'variable', 10000),
+  ('cccccccc-0000-4000-8000-000000003902', '11111111-1111-4111-8111-111111111111', 'Rent 39', 'bill', null),
+  ('cccccccc-0000-4000-8000-000000003903', '11111111-1111-4111-8111-111111111111', 'Card payment 39', 'transfer', null),
+  ('cccccccc-0000-4000-8000-000000003904', '22222222-2222-4222-8222-222222222222', 'Theirs 39', 'variable', null);
+insert into public.savings_goals (id, user_id, name, target_cents, target_date) values
+  ('dddddddd-0000-4000-8000-000000003901', '11111111-1111-4111-8111-111111111111', 'Trip 39', 200000, '2099-03-01'),
+  ('dddddddd-0000-4000-8000-000000003902', '22222222-2222-4222-8222-222222222222', 'Their trip 39', 100000, null);
+insert into public.transactions (id, user_id, account_id, posted_on, amount_cents, merchant, merchant_raw, category_id, dedupe_hash, dedupe_hash_v, source) values
+  ('eeeeeeee-0000-4000-8000-000000003901', '11111111-1111-4111-8111-111111111111', 'aaaaaaaa-0000-4000-8000-000000000001',
+   (now() at time zone 'UTC')::date - 5, -5420, 'COSTCO 39', 'COSTCO 39 #123', 'cccccccc-0000-4000-8000-000000003901',
+   encode(sha256(convert_to('0039 costco', 'UTF8')), 'hex'), 1, 'card_csv'),
+  ('eeeeeeee-0000-4000-8000-000000003902', '11111111-1111-4111-8111-111111111111', 'aaaaaaaa-0000-4000-8000-000000000001',
+   (now() at time zone 'UTC')::date - 5, -999, 'Lunch words 39', 'Lunch words 39', 'cccccccc-0000-4000-8000-000000003901',
+   encode(sha256(convert_to('0039 ai row', 'UTF8')), 'hex'), 1, 'ai_app');
 do $$
+declare
+  f text;
 begin
-  if public.ai_app_updates_in() <> 37 then
-    raise exception 'ai_app_updates_in() says %, not 37: if a new AI-app update is in, see ADR 0012 and update this check', public.ai_app_updates_in();
+  if has_table_privilege('authenticated', 'public.ai_app_proposals', 'insert')
+     or has_table_privilege('authenticated', 'public.ai_app_proposals', 'update')
+     or has_table_privilege('authenticated', 'public.ai_app_proposals', 'delete')
+     or not has_table_privilege('authenticated', 'public.ai_app_proposals', 'select') then
+    raise exception 'the browser may do more than read the suggestions, or cannot read them';
   end if;
-  raise notice 'ai_app_updates_in() names the last AI-app update, 0037';
+  foreach f in array array['ai_app_propose(jsonb)', 'ai_app_suggestions(text,integer)', 'ai_app_suggest_categories(jsonb)',
+    'decide_suggestion(uuid,text)'] loop
+    if (select provolatile from pg_proc where oid = ('public.' || f)::regprocedure) <> 'v' then raise exception '% is not VOLATILE', f; end if;
+    if (select proconfig from pg_proc where oid = ('public.' || f)::regprocedure) is null then raise exception '% has no pinned search_path', f; end if;
+    if has_function_privilege('anon', 'public.' || f, 'execute') then raise exception 'the anonymous role can call %', f; end if;
+    if not has_function_privilege('authenticated', 'public.' || f, 'execute') then raise exception 'a signed-in token cannot call %', f; end if;
+  end loop;
+  if (select prosecdef from pg_proc where oid = 'public.ai_app_suggestions(text,integer)'::regprocedure) then
+    raise exception 'ai_app_suggestions is SECURITY DEFINER: it must read as the owner, under row-level security';
+  end if;
+  foreach f in array array['_ai_app_proposal(uuid,date,jsonb)', '_ai_app_words_shown(text,integer)', '_ai_app_whole(jsonb,bigint,bigint)', '_ai_app_id(jsonb)'] loop
+    if has_function_privilege('authenticated', 'public.' || f, 'execute') then raise exception 'the browser can call the internal %', f; end if;
+  end loop;
+  raise notice 'the suggestions are only read by the browser; their four functions are volatile, pinned and signed-in only';
 end $$;
 
--- The level the app reads (0021) names the last update in this folder, so a
--- new update that forgets to raise it fails here.
+set role app_user;
+do $$
+declare
+  owner_ text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated"}';
+  ai_app text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}';
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', owner_, true);
+  if public.ai_app_propose('[]') <> '{"refused": "not_an_ai_app"}'
+     or public.ai_app_suggestions('any', 1) <> '{"refused": "not_an_ai_app"}'
+     or public.ai_app_suggest_categories('[]') <> '{"refused": "not_an_ai_app"}' then
+    raise exception 'an AI app''s suggestion function served the owner''s own session';
+  end if;
+  begin
+    insert into public.ai_app_proposals (user_id, client_id, kind, target, after, before, reason, target_key, expires_at)
+    values (auth.uid(), gen_random_uuid(), 'set_weekly_limit', '{}', '{}', '{}', 'x', 'k', now());
+    raise exception 'NOT REFUSED: the browser wrote a suggestion directly';
+  exception when insufficient_privilege then null;
+  end;
+  perform set_config('request.jwt.claims', ai_app, true);
+  begin
+    perform public.decide_suggestion(gen_random_uuid(), 'applied');
+    raise exception 'NOT REFUSED: an AI app applied a suggestion';
+  exception when insufficient_privilege then
+    if sqlerrm <> 'AI apps cannot do this' then raise; end if;
+  end;
+  raise notice 'the owner cannot suggest as an AI app, nor write one directly; an AI app cannot apply';
+end $$;
+
+-- Every hostile change refused with its own code, each standing alone.
+do $$
+declare
+  today date := (now() at time zone 'UTC')::date;
+  first text := to_char(date_trunc('month', (now() at time zone 'UTC')::date), 'YYYY-MM-DD');
+  mine  text := 'cccccccc-0000-4000-8000-000000003901';
+  r     jsonb;
+  c     record;
+  items jsonb;
+  codes text[];
+  pass  int;
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}', true);
+  if public.ai_app_propose('{}') <> '{"refused": "bad_change"}' or public.ai_app_propose('[]') <> '{"refused": "bad_change"}'
+     or public.ai_app_propose((select jsonb_agg(n) from generate_series(1, 21) n)) <> '{"refused": "bad_change"}' then
+    raise exception 'NOT REFUSED: a call with no changes, or more than 20';
+  end if;
+  for pass in 1..2 loop
+    items := '[]';
+    codes := '{}';
+    for c in select * from (values
+        (1, 'bad_change', jsonb_build_object('kind', 'delete_category', 'category', mine, 'reason', 'r')),
+        (1, 'bad_change', jsonb_build_object('kind', 'set_weekly_limit', 'category', mine, 'amount', 1, 'reason', 'r', 'before', '{"cents": 5}'::jsonb)),
+        (1, 'bad_change', jsonb_build_object('kind', 'set_weekly_limit', 'category', mine, 'reason', 'r')),
+        (1, 'bad_change', '"set_weekly_limit"'::jsonb),
+        (1, 'unknown_category', jsonb_build_object('kind', 'set_weekly_limit', 'category', 'cccccccc-0000-4000-8000-000000003904', 'amount', 1, 'reason', 'r')),
+        (1, 'unknown_category', jsonb_build_object('kind', 'set_weekly_limit', 'category', 'not an id', 'amount', 1, 'reason', 'r')),
+        (1, 'wrong_list', jsonb_build_object('kind', 'set_weekly_limit', 'category', 'cccccccc-0000-4000-8000-000000003903', 'amount', 1, 'reason', 'r')),
+        (1, 'bad_amount', jsonb_build_object('kind', 'set_weekly_limit', 'category', mine, 'amount', -1, 'reason', 'r')),
+        (1, 'bad_amount', jsonb_build_object('kind', 'set_weekly_limit', 'category', mine, 'amount', 10000001, 'reason', 'r')),
+        (1, 'bad_amount', jsonb_build_object('kind', 'set_weekly_limit', 'category', mine, 'amount', 12.5, 'reason', 'r')),
+        (1, 'bad_amount', jsonb_build_object('kind', 'set_weekly_limit', 'category', mine, 'amount', '1200', 'reason', 'r')),
+        (1, 'same_as_now', jsonb_build_object('kind', 'set_weekly_limit', 'category', mine, 'amount', 10000, 'reason', 'r')),
+        (1, 'bad_words', jsonb_build_object('kind', 'set_weekly_limit', 'category', mine, 'amount', 1, 'reason', E'Two\nlines')),
+        (1, 'bad_words', jsonb_build_object('kind', 'set_weekly_limit', 'category', mine, 'amount', 1, 'reason', 'Cof' || chr(x'200B'::int) || 'fee')),
+        (1, 'bad_words', jsonb_build_object('kind', 'set_weekly_limit', 'category', mine, 'amount', 1, 'reason', repeat('x', 301))),
+        (1, 'bad_words', jsonb_build_object('kind', 'set_weekly_limit', 'category', mine, 'amount', 1, 'reason', ' padded')),
+        (1, 'bad_words', jsonb_build_object('kind', 'set_weekly_limit', 'category', mine, 'amount', 1, 'reason', chr(x'202E'::int) || 'reversed')),
+        (2, 'bad_month', jsonb_build_object('kind', 'set_budget', 'category', mine, 'month', to_char(today - 40, 'YYYY-MM-01'), 'applies', 'onward', 'amount', 1, 'before', '{"cents": null}'::jsonb, 'reason', 'r')),
+        (2, 'bad_month', jsonb_build_object('kind', 'set_budget', 'category', mine, 'month', to_char((first::date + interval '13 months')::date, 'YYYY-MM-DD'), 'applies', 'onward', 'amount', 1, 'before', '{"cents": null}'::jsonb, 'reason', 'r')),
+        (2, 'bad_month', jsonb_build_object('kind', 'set_budget', 'category', mine, 'month', to_char(first::date + 1, 'YYYY-MM-DD'), 'applies', 'onward', 'amount', 1, 'before', '{"cents": null}'::jsonb, 'reason', 'r')),
+        (2, 'bad_change', jsonb_build_object('kind', 'set_budget', 'category', mine, 'month', first, 'applies', 'always', 'amount', 1, 'before', '{"cents": null}'::jsonb, 'reason', 'r')),
+        (2, 'bad_change', jsonb_build_object('kind', 'set_budget', 'category', mine, 'month', first, 'applies', 'onward', 'amount', 1, 'before', '{"cents": -5}'::jsonb, 'reason', 'r')),
+        (2, 'wrong_list', jsonb_build_object('kind', 'set_budget', 'category', 'cccccccc-0000-4000-8000-000000003903', 'month', first, 'applies', 'onward', 'amount', 1, 'before', '{"cents": null}'::jsonb, 'reason', 'r')),
+        (2, 'wrong_list', jsonb_build_object('kind', 'set_bill', 'category', mine, 'month', first, 'amount', 1, 'due_day', 1, 'before', '{"cents": null, "due_day": null}'::jsonb, 'reason', 'r')),
+        (2, 'bad_change', jsonb_build_object('kind', 'set_bill', 'category', 'cccccccc-0000-4000-8000-000000003902', 'month', first, 'amount', 1, 'due_day', 32, 'before', '{"cents": null, "due_day": null}'::jsonb, 'reason', 'r')),
+        (2, 'unknown_goal', jsonb_build_object('kind', 'set_goal', 'goal', 'dddddddd-0000-4000-8000-000000003902', 'target', 5, 'reason', 'r')),
+        (2, 'bad_amount', jsonb_build_object('kind', 'set_goal', 'goal', 'dddddddd-0000-4000-8000-000000003901', 'target', 0, 'reason', 'r')),
+        (2, 'bad_date', jsonb_build_object('kind', 'set_goal', 'goal', 'dddddddd-0000-4000-8000-000000003901', 'target_date', to_char(today, 'YYYY-MM-DD'), 'reason', 'r')),
+        (2, 'bad_date', jsonb_build_object('kind', 'set_goal', 'goal', 'dddddddd-0000-4000-8000-000000003901', 'target_date', '2027-02-30', 'reason', 'r')),
+        (2, 'bad_change', jsonb_build_object('kind', 'set_goal', 'goal', 'dddddddd-0000-4000-8000-000000003901', 'reason', 'r')),
+        (2, 'name_taken', jsonb_build_object('kind', 'rename_category', 'category', mine, 'new_name', 'Coffee', 'reason', 'r')),
+        (2, 'same_as_now', jsonb_build_object('kind', 'rename_category', 'category', mine, 'new_name', 'Groceries 39', 'reason', 'r')),
+        (2, 'name_taken', jsonb_build_object('kind', 'add_category', 'name', 'Moved for AI', 'list', 'variable', 'reason', 'r')),
+        (2, 'bad_words', jsonb_build_object('kind', 'add_category', 'name', repeat('n', 61), 'list', 'variable', 'reason', 'r')),
+        (2, 'same_as_now', jsonb_build_object('kind', 'move_category', 'category', mine, 'to_list', 'variable', 'reason', 'r')),
+        (2, 'unknown_transaction', jsonb_build_object('kind', 'recategorise', 'transaction', gen_random_uuid(), 'category', mine, 'reason', 'r')),
+        (2, 'same_as_now', jsonb_build_object('kind', 'recategorise', 'transaction', 'eeeeeeee-0000-4000-8000-000000003901', 'category', mine, 'reason', 'r')),
+        (1, 'ai_row_not_learned', jsonb_build_object('kind', 'learn_shop', 'transaction', 'eeeeeeee-0000-4000-8000-000000003902', 'category', 'cccccccc-0000-4000-8000-000000000001', 'reason', 'r'))
+      ) as v(call, code, item) where v.call = pass loop
+      items := items || jsonb_build_array(c.item);
+      codes := codes || c.code;
+    end loop;
+    r := public.ai_app_propose(items);
+    for i in 1 .. cardinality(codes) loop
+      if r -> 'results' -> (i - 1) ->> 'refused' is distinct from codes[i] or r -> 'results' -> (i - 1) ->> 'status' <> 'refused' then
+        raise exception 'NOT REFUSED as % (call %, change %): %', codes[i], pass, i, r -> 'results' -> (i - 1);
+      end if;
+    end loop;
+  end loop;
+  if exists (select 1 from public.ai_app_proposals where user_id = auth.uid() and target_key <> 'list:cccccccc-0000-4000-8000-000000000001') then
+    raise exception 'a refused change was stored';
+  end if;
+  raise notice 'every hostile change is refused with its own code, and none is stored';
+end $$;
+
+-- What it accepts only ever waits: the token's app, the database's before,
+-- fourteen days. One waiting per target: the same again is already
+-- suggested, another value replaces it, and two in one call are one.
+do $$
+declare
+  first text := to_char(date_trunc('month', (now() at time zone 'UTC')::date), 'YYYY-MM-DD');
+  mine  text := 'cccccccc-0000-4000-8000-000000003901';
+  r     jsonb;
+  s     public.ai_app_proposals;
+  first_id uuid;
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}', true);
+  r := public.ai_app_propose(jsonb_build_array(
+    jsonb_build_object('kind', 'set_weekly_limit', 'category', mine, 'amount', 12000, 'reason', 'You spent $118.40 a week lately.'),
+    jsonb_build_object('kind', 'set_weekly_limit', 'category', mine, 'amount', 13000, 'reason', 'Or more.'),
+    jsonb_build_object('kind', 'set_budget', 'category', mine, 'month', first, 'applies', 'onward', 'amount', 45000, 'before', '{"cents": 40000}'::jsonb, 'reason', 'Budget'),
+    jsonb_build_object('kind', 'set_bill', 'category', 'cccccccc-0000-4000-8000-000000003902', 'month', first, 'amount', 155000, 'due_day', 3, 'before', '{"cents": 150000, "due_day": 1}'::jsonb, 'reason', 'Rent rose'),
+    jsonb_build_object('kind', 'set_goal', 'goal', 'dddddddd-0000-4000-8000-000000003901', 'target', 250000, 'reason', 'Flights cost more'),
+    jsonb_build_object('kind', 'learn_shop', 'transaction', 'eeeeeeee-0000-4000-8000-000000003901', 'category', 'cccccccc-0000-4000-8000-000000000001', 'reason', 'Always coffee'),
+    jsonb_build_object('kind', 'add_category', 'name', 'Pet care 39', 'list', 'variable', 'reason', 'A new kind of spending'),
+    jsonb_build_object('kind', 'rename_category', 'category', 'cccccccc-0000-4000-8000-000000003902', 'new_name', 'Housing 39', 'reason', 'Clearer')));
+  if (select array_agg(e ->> 'status' order by (e ->> 'index')::int) from jsonb_array_elements(r -> 'results') e)
+       <> '{suggested,refused,suggested,suggested,suggested,suggested,suggested,suggested}'
+     or r #>> '{results,1,refused}' <> 'duplicate_in_call' or (r ->> 'waiting')::int <> 8 then
+    raise exception 'a good call was not taken change by change: %', r;
+  end if;
+  first_id := (r #>> '{results,0,id}')::uuid;
+  select * into s from public.ai_app_proposals where id = first_id;
+  if s.status <> 'pending' or s.client_id <> '99999999-9999-4999-8999-999999999999' or s.kind <> 'set_weekly_limit'
+     or s.target <> jsonb_build_object('category_id', mine) or s.after <> '{"cents": 12000}' or s.before <> '{"cents": 10000}'
+     or s.reason <> 'You spent $118.40 a week lately.' or s.target_key <> 'weekly:' || mine or s.decided_at is not null
+     or s.expires_at not between now() + interval '14 days' - interval '1 minute' and now() + interval '14 days' then
+    raise exception 'a suggestion was not stored as sent, waiting 14 days, from the token''s app: %', to_jsonb(s);
+  end if;
+  if r #> '{results,0,before}' <> '{"cents": 10000}' or r #> '{results,0,after}' <> '{"cents": 12000}' then
+    raise exception 'the answer does not say what was suggested: %', r -> 'results' -> 0;
+  end if;
+  -- The parts each kind reads itself.
+  if (select after from public.ai_app_proposals where id = (r #>> '{results,4,id}')::uuid) <> '{"target_cents": 250000, "target_date": "2099-03-01"}'
+     or (select before from public.ai_app_proposals where id = (r #>> '{results,4,id}')::uuid) <> '{"target_cents": 200000, "target_date": "2099-03-01"}'
+     or (select before from public.ai_app_proposals where id = (r #>> '{results,5,id}')::uuid) <> '{"category_id": "cccccccc-0000-4000-8000-000000003901", "rule_category_id": null}'
+     or (select before from public.ai_app_proposals where id = (r #>> '{results,7,id}')::uuid) <> '{"name": "Rent 39"}'
+     or (select target_key from public.ai_app_proposals where id = (r #>> '{results,2,id}')::uuid) <> 'budget:' || mine || ':' || first
+     or (select before from public.ai_app_proposals where id = (r #>> '{results,3,id}')::uuid) <> '{"cents": 150000, "due_day": 1}' then
+    raise exception 'a stored before or after is not what the database read';
+  end if;
+
+  r := public.ai_app_propose(jsonb_build_array(jsonb_build_object('kind', 'set_weekly_limit', 'category', mine, 'amount', 12000, 'reason', 'Again')));
+  if r #>> '{results,0,status}' <> 'already_suggested' or (r #>> '{results,0,id}')::uuid <> first_id then
+    raise exception 'the same change again was not already suggested: %', r;
+  end if;
+  r := public.ai_app_propose(jsonb_build_array(jsonb_build_object('kind', 'set_weekly_limit', 'category', mine, 'amount', 12500, 'reason', 'A little more')));
+  if r #>> '{results,0,status}' <> 'suggested' or (r #>> '{results,0,id}')::uuid = first_id
+     or (select status from public.ai_app_proposals where id = first_id) <> 'replaced'
+     or (select decided_at from public.ai_app_proposals where id = first_id) is null
+     or (select count(*) from public.ai_app_proposals where user_id = auth.uid() and target_key = 'weekly:' || mine and status = 'pending') <> 1 then
+    raise exception 'another value for a waiting target did not replace it: %', r;
+  end if;
+  raise notice 'a suggestion waits as sent, with the database''s before; one waits per target';
+end $$;
+
+
+
+-- 0038 leaves no '(0038)' mark; 0039 re-created ai_app_updates_in() with
+-- a mark for each AI-app update, its own too (docs/adr/0012-mcp-server.md,
+-- ADR 0013), so it answers 39 with everything in. The next AI-app update
+-- re-creates it again with its own mark; when it does, change 39 here.
+do $$
+begin
+  if public.ai_app_updates_in() <> 39 then
+    raise exception 'ai_app_updates_in() says %, not 39: if a new AI-app update is in, see ADR 0012 and update this check', public.ai_app_updates_in();
+  end if;
+  if public.ai_app_update_level() <> 39 then raise exception 'ai_app_update_level() says %, not 39', public.ai_app_update_level(); end if;
+  raise notice 'ai_app_updates_in() names the last AI-app update, 0039';
+end $$;
+
+-- The two levels the app reads name the last update in this folder: the
+-- review fixes' schema_level() (0021) and the AI-app updates'
+-- ai_app_updates_in() (0035), one of them its number. So a new update that
+-- forgets to raise its own fails here. 0039 is an AI-app update and leaves
+-- schema_level() at 38 (ADR 0013), so 0038 is still offered by it alone.
 \set last_migration `ls supabase/migrations | tail -1 | cut -c1-4`
 set verify.last_migration = :'last_migration';
 set role app_user;
 do $$
 begin
-  if public.schema_level() <> current_setting('verify.last_migration')::int then
-    raise exception 'schema_level() answers %, but the last update is %', public.schema_level(), current_setting('verify.last_migration');
+  if greatest(public.schema_level(), public.ai_app_updates_in()) <> current_setting('verify.last_migration')::int then
+    raise exception 'schema_level() answers % and ai_app_updates_in() %, but the last update is %',
+      public.schema_level(), public.ai_app_updates_in(), current_setting('verify.last_migration');
   end if;
-  raise notice 'schema_level() names the last update';
+  if public.schema_level() <> 38 then raise exception 'schema_level() answers %, not 38: 0039 must not move it', public.schema_level(); end if;
+  raise notice 'schema_level() and ai_app_updates_in() name the last update';
 end $$;
 reset role;
 do $$
