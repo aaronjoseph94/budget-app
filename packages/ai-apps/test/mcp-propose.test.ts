@@ -40,7 +40,7 @@ describe('propose_change', () => {
         results: [
           { index: 0, status: 'suggested', id: 'p-1', before: { cents: 10000 }, after: { cents: 12000 } },
           { index: 1, status: 'already_suggested', id: 'p-2', before: { category_id: 'c-food', rule_category_id: null }, after: { category_id: 'c-home' } },
-          { index: 2, status: 'refused', refused: 'dismissed_recently' },
+          { index: 2, status: 'refused', refused: 'has_monthly_amount' },
         ],
         waiting: 2,
       }),
@@ -70,7 +70,7 @@ describe('propose_change', () => {
           status: 'already_suggested',
           change: { kind: 'learn_shop', transaction: TXN, from: { category: 'Groceries', always_filed_under: null }, to: { category: 'Household' } },
         },
-        { index: 3, status: 'refused', refused: 'dismissed_recently', sentence: CHANGE_SENTENCES.dismissed_recently },
+        { index: 3, status: 'refused', refused: 'has_monthly_amount', sentence: CHANGE_SENTENCES.has_monthly_amount },
       ],
     })
     expect(result.structuredContent).toMatchObject({ message: expect.stringMatching(/Nothing has changed yet/) })

@@ -154,10 +154,15 @@ changes, and never saying a change was made. `prompts/list` and
    `expired`; per item: kind and keys exactly as §2, every id the caller's,
    the lists and ranges of §2, the reason's characters as `0034` checks
    words (every character visible, trimmed), SQL befores read here,
-   `same_as_now`, `dismissed_recently` (same `target_key` and `after`
-   dismissed in 14 days), the one-waiting rule, then 100 waiting at most
-   (`too_many_waiting`); inserts `pending` with `client_id` from the token
-   and `expires_at = now() + 14 days`. Returns `{results, waiting}`.
+   `same_as_now`, `has_monthly_amount` (a move 0009's trigger refuses),
+   `dismissed_recently` (the same kind, target, `after` and `before`
+   dismissed in 14 days), the one-waiting rule (the waiting row locked
+   `for update`; `already_suggested` only when kind, target, `after` and
+   `before` all match, otherwise it is `replaced` while still pending and
+   the new one inserted), then 100 waiting at most (`too_many_waiting`);
+   inserts `pending` with `client_id` from the token and `expires_at` 14
+   days on, or at the end of its month in the owner's time zone for a
+   budget or monthly amount if sooner. Returns `{results, waiting}`.
 7. **`ai_app_suggestions(p_status, p_limit)`**: invoker, gate (`read`);
    rows, the waiting count, and the names they need (categories, goals,
    the transactions named).
@@ -190,7 +195,8 @@ changes is switched off in the budget app's Settings → AI apps."),
 `bad_change`. Per change (inside `results`, with a sentence):
 `unknown_category`, `unknown_goal`, `unknown_transaction`, `wrong_list`,
 `same_as_now`, `name_taken`, `bad_month`, `bad_date`, `bad_amount`,
-`bad_words`, `ai_row_not_learned`, `dismissed_recently`,
+`bad_words`, `ai_row_not_learned`, `has_monthly_amount`,
+`dismissed_recently`,
 `duplicate_in_call`, `too_many_waiting` ("100 suggested changes already
 wait for the owner; list_suggestions shows them"). A refused change writes
 nothing; the AI app is told why, as a refused add is (PLAN §2.8).

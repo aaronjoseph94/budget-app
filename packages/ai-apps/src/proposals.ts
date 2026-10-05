@@ -55,6 +55,7 @@ export const CHANGE_SENTENCES = {
   bad_amount: 'An amount must be from $0.00 to $100,000.00, and a goal’s target from $0.01 to $999,999.99.',
   bad_words: 'A reason, or a new name, must be one line of visible characters: at most 300 for a reason and 60 for a name.',
   ai_row_not_learned: 'An AI app added that charge, so the app never learns its shop from it. Suggest recategorise instead.',
+  has_monthly_amount: 'That category has a monthly amount, which keeps it on its list. Stop its monthly amount first (set_bill with amount null).',
   dismissed_recently: 'The owner dismissed this same change in the last 14 days, so it is not suggested again yet.',
   duplicate_in_call: 'Another change in this call is for the same thing; only the first was kept.',
   too_many_waiting: '100 suggested changes already wait for the owner; list_suggestions shows them.',

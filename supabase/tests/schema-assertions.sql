@@ -4522,6 +4522,173 @@ reset role;
 delete from public.ai_app_proposals where user_id = '11111111-1111-4111-8111-111111111111' and target_key like 'add:filler %';
 update public.ai_app_usage set calls = 0 where user_id = '11111111-1111-4111-8111-111111111111';
 
+-- One card per target, saying what the AI app was told: another kind (a
+-- one-off move or a lasting rule), another scope (from a month on, or that
+-- month only) or another "from" replaces the waiting one, so a stale card
+-- is renewed. A dismissal holds only for the same change from the same
+-- value, and no AI call undoes what the owner decided.
+set role app_user;
+do $$
+declare
+  owner_ text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated"}';
+  ai_app text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}';
+  first  text := to_char(date_trunc('month', (now() at time zone 'UTC')::date), 'YYYY-MM-DD');
+  mine   text := 'cccccccc-0000-4000-8000-000000003901';
+  txn    text := 'eeeeeeee-0000-4000-8000-000000003901';
+  one_off jsonb := jsonb_build_object('kind', 'recategorise', 'transaction', 'eeeeeeee-0000-4000-8000-000000003901', 'category', 'cccccccc-0000-4000-8000-000000000001', 'reason', 'Just this one');
+  learn  jsonb := jsonb_build_object('kind', 'learn_shop', 'transaction', 'eeeeeeee-0000-4000-8000-000000003901', 'category', 'cccccccc-0000-4000-8000-000000000001', 'reason', 'Always coffee');
+  r      jsonb;
+  was    uuid;
+  shop_rule uuid;
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', owner_, true);
+  select id into was from public.ai_app_proposals
+   where target_key = 'budget:' || mine || ':' || first and status = 'pending' and target ->> 'applies' = 'onward';
+  select id into shop_rule from public.ai_app_proposals where target_key = 'txn:' || txn and status = 'pending' and kind = 'learn_shop';
+  if was is null or shop_rule is null then raise exception 'the waiting budget and shop rule from above are not there'; end if;
+
+  -- The same $450 for that month only is not the waiting "from that month on".
+  perform set_config('request.jwt.claims', ai_app, true);
+  r := public.ai_app_propose(jsonb_build_array(jsonb_build_object('kind', 'set_budget', 'category', mine, 'month', first, 'applies', 'only',
+         'amount', 45000, 'before', '{"cents": 40000}'::jsonb, 'reason', 'Just this month')));
+  perform set_config('request.jwt.claims', owner_, true);
+  if r #>> '{results,0,status}' <> 'suggested' or (select status from public.ai_app_proposals where id = was) <> 'replaced'
+     or (select target ->> 'applies' from public.ai_app_proposals where id = (r #>> '{results,0,id}')::uuid) <> 'only' then
+    raise exception 'NOT REFUSED: "that month only" was taken as the waiting "from that month on": %', r;
+  end if;
+  was := (r #>> '{results,0,id}')::uuid;
+
+  -- A one-off move is not the waiting lasting rule, and back.
+  perform set_config('request.jwt.claims', ai_app, true);
+  r := public.ai_app_propose(jsonb_build_array(one_off));
+  perform set_config('request.jwt.claims', owner_, true);
+  if r #>> '{results,0,status}' <> 'suggested' or (select status from public.ai_app_proposals where id = shop_rule) <> 'replaced'
+     or (select kind from public.ai_app_proposals where id = (r #>> '{results,0,id}')::uuid) <> 'recategorise' then
+    raise exception 'NOT REFUSED: a one-off move was taken as the waiting shop rule: %', r;
+  end if;
+  shop_rule := (r #>> '{results,0,id}')::uuid;
+  perform set_config('request.jwt.claims', ai_app, true);
+  r := public.ai_app_propose(jsonb_build_array(learn));
+  perform set_config('request.jwt.claims', owner_, true);
+  if r #>> '{results,0,status}' <> 'suggested' or (select status from public.ai_app_proposals where id = shop_rule) <> 'replaced'
+     or (select kind from public.ai_app_proposals where id = (r #>> '{results,0,id}')::uuid) <> 'learn_shop' then
+    raise exception 'NOT REFUSED: a shop rule was taken as the waiting one-off move: %', r;
+  end if;
+  shop_rule := (r #>> '{results,0,id}')::uuid;
+
+  -- From another value it renews the card; from the same, it is already suggested.
+  perform set_config('request.jwt.claims', ai_app, true);
+  r := public.ai_app_propose(jsonb_build_array(jsonb_build_object('kind', 'set_budget', 'category', mine, 'month', first, 'applies', 'only',
+         'amount', 45000, 'before', '{"cents": 42000}'::jsonb, 'reason', 'Still')));
+  perform set_config('request.jwt.claims', owner_, true);
+  if r #>> '{results,0,status}' <> 'suggested' or (select status from public.ai_app_proposals where id = was) <> 'replaced'
+     or (select before from public.ai_app_proposals where id = (r #>> '{results,0,id}')::uuid) <> '{"cents": 42000}' then
+    raise exception 'NOT REFUSED: a stale card was kept when its change came again from the value now: %', r;
+  end if;
+  was := (r #>> '{results,0,id}')::uuid;
+  perform set_config('request.jwt.claims', ai_app, true);
+  r := public.ai_app_propose(jsonb_build_array(jsonb_build_object('kind', 'set_budget', 'category', mine, 'month', first, 'applies', 'only',
+         'amount', 45000, 'before', '{"cents": 42000}'::jsonb, 'reason', 'Again')));
+  if r #>> '{results,0,status}' <> 'already_suggested' or (r #>> '{results,0,id}')::uuid <> was then
+    raise exception 'the same change from the same value was not already suggested: %', r;
+  end if;
+
+  -- The owner dismisses both. Only the same change from the same value is
+  -- held back; another kind goes through; neither decision is undone.
+  perform set_config('request.jwt.claims', owner_, true);
+  if not public.decide_suggestion(was, 'dismissed') or not public.decide_suggestion(shop_rule, 'dismissed') then
+    raise exception 'the owner could not dismiss';
+  end if;
+  perform set_config('request.jwt.claims', ai_app, true);
+  r := public.ai_app_propose(jsonb_build_array(
+    jsonb_build_object('kind', 'set_budget', 'category', mine, 'month', first, 'applies', 'only', 'amount', 45000, 'before', '{"cents": 42000}'::jsonb, 'reason', 'r'),
+    one_off));
+  if r #>> '{results,0,refused}' is distinct from 'dismissed_recently' or r #>> '{results,1,status}' <> 'suggested' then
+    raise exception 'a dismissal held back another kind, or let the same change through: %', r;
+  end if;
+  r := public.ai_app_propose(jsonb_build_array(jsonb_build_object('kind', 'set_budget', 'category', mine, 'month', first, 'applies', 'only',
+         'amount', 45000, 'before', '{"cents": 43000}'::jsonb, 'reason', 'r')));
+  if r #>> '{results,0,status}' <> 'suggested' then
+    raise exception 'a dismissal held back the same change from another value: %', r;
+  end if;
+  perform set_config('request.jwt.claims', owner_, true);
+  if not public.decide_suggestion((select id from public.ai_app_proposals where target_key = 'txn:' || txn and status = 'pending'), 'applied') then
+    raise exception 'the owner could not apply the move';
+  end if;
+  perform set_config('request.jwt.claims', ai_app, true);
+  r := public.ai_app_propose(jsonb_build_array(one_off));
+  perform set_config('request.jwt.claims', owner_, true);
+  if (select array_agg(status order by status) from public.ai_app_proposals where target_key = 'txn:' || txn and kind = 'recategorise')
+       <> '{applied,pending,replaced}' or r #>> '{results,0,status}' <> 'suggested'
+     or (select status from public.ai_app_proposals where id = was) <> 'dismissed'
+     or (select status from public.ai_app_proposals where id = shop_rule) <> 'dismissed' then
+    raise exception 'NOT REFUSED: an AI call changed a suggestion the owner decided';
+  end if;
+  raise notice 'one card per target says what the AI app was told; a dismissal holds for the same change only; no AI call undoes a decision';
+end $$;
+reset role;
+
+-- A budget or monthly amount suggested for a month ends with that month,
+-- in the owner's time zone, or in 14 days if sooner; anything else in 14.
+do $$
+declare
+  u    constant uuid := '11111111-1111-4111-8111-111111111111';
+  zone constant text := (select time_zone from public.ai_app_access where user_id = '11111111-1111-4111-8111-111111111111');
+begin
+  if not exists (select 1 from public.ai_app_proposals where user_id = u and status = 'pending' and target ? 'month')
+     or exists (select 1 from public.ai_app_proposals s where s.user_id = u and s.status = 'pending'
+                 and s.expires_at <> case when s.target ? 'month'
+                                          then least(s.created_at + interval '14 days', ((s.target ->> 'month')::date + interval '1 month')::timestamp at time zone zone)
+                                          else s.created_at + interval '14 days' end) then
+    raise exception 'a suggestion does not end with its month, or in 14 days';
+  end if;
+end $$;
+
+-- A category with a monthly amount in effect, or set to start later, stays
+-- on its list (0009's trigger): moving it is refused as has_monthly_amount.
+insert into public.categories (id, user_id, name, kind) values
+  ('cccccccc-0000-4000-8000-000000003905', '11111111-1111-4111-8111-111111111111', 'Gym 39', 'subscription');
+insert into public.category_plans (user_id, category_id, effective_month, planned_cents, due_day) values
+  ('11111111-1111-4111-8111-111111111111', 'cccccccc-0000-4000-8000-000000003902', date_trunc('month', current_date), 150000, 1),
+  ('11111111-1111-4111-8111-111111111111', 'cccccccc-0000-4000-8000-000000003905', date_trunc('month', current_date), null, null),
+  ('11111111-1111-4111-8111-111111111111', 'cccccccc-0000-4000-8000-000000003905', date_trunc('month', current_date) + interval '2 months', 3000, null);
+set role app_user;
+do $$
+declare
+  r jsonb;
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}', true);
+  r := public.ai_app_propose(jsonb_build_array(
+    jsonb_build_object('kind', 'move_category', 'category', 'cccccccc-0000-4000-8000-000000003902', 'to_list', 'debt', 'reason', 'r'),
+    jsonb_build_object('kind', 'move_category', 'category', 'cccccccc-0000-4000-8000-000000003905', 'to_list', 'variable', 'reason', 'r'),
+    jsonb_build_object('kind', 'move_category', 'category', 'cccccccc-0000-4000-8000-000000003905', 'to_list', 'subscription', 'reason', 'r')));
+  if (select array_agg(e ->> 'refused' order by (e ->> 'index')::int) from jsonb_array_elements(r -> 'results') e)
+       <> '{has_monthly_amount,has_monthly_amount,same_as_now}' then
+    raise exception 'NOT REFUSED: a move 0009 refuses was suggested: %', r;
+  end if;
+end $$;
+reset role;
+delete from public.category_plans where category_id = 'cccccccc-0000-4000-8000-000000003905' and planned_cents is not null;
+set role app_user;
+do $$
+declare
+  r jsonb;
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}', true);
+  r := public.ai_app_propose(jsonb_build_array(
+    jsonb_build_object('kind', 'move_category', 'category', 'cccccccc-0000-4000-8000-000000003905', 'to_list', 'subscription', 'reason', 'r'),
+    jsonb_build_object('kind', 'move_category', 'category', 'cccccccc-0000-4000-8000-000000003905', 'to_list', 'variable', 'reason', 'r')));
+  if r #>> '{results,0,refused}' is distinct from 'same_as_now' or r #>> '{results,1,status}' is distinct from 'suggested' then
+    raise exception 'a stopped monthly amount still held a category to its list: %', r;
+  end if;
+  raise notice 'a category with a monthly amount in effect or to come is never suggested onto another list';
+end $$;
+reset role;
+update public.ai_app_usage set calls = 0 where user_id = '11111111-1111-4111-8111-111111111111';
+
 -- Category suggestions on rows waiting in Review: 0018's conditions, as the
 -- AI app's. Only the caller's own pending rows that nobody filled, only its
 -- own categories not on Not spending, and never an approval.

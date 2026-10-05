@@ -11,7 +11,9 @@
 -- - ai_app_proposals: one row per suggested change, always written
 --   'pending' by an AI app, with its target, the value it suggests, the
 --   value it read as now, the AI app's reason (as ingested text), and the
---   day it expires (14 days on). Row-level security with the owner policy,
+--   day it expires (14 days on, or sooner when its month ends: a budget
+--   or monthly amount for a month gone by is never written). Row-level
+--   security with the owner policy,
 --   0019's three restrictive write policies and 0020's read-through-the-
 --   gate policy, in this file. The browser may only read it.
 -- - ai_app_propose(items): the AI app's one way to write it, SECURITY
@@ -21,7 +23,8 @@
 --   checks every id is the caller's, reads every stored "before" itself,
 --   takes client_id from the token, sets expires_at itself, and only ever
 --   inserts pending rows. It may retire an earlier waiting suggestion for
---   the same target ('replaced') or one past its day ('expired'):
+--   the same target ('replaced', only while it still waits, so an owner's
+--   decision is never overwritten) or one past its day ('expired'):
 --   bookkeeping on suggestions, never on the budget. At most 100 wait.
 -- - ai_app_suggestions(status, limit): the AI app reads back what it
 --   suggested, through the gate, as the owner (SECURITY INVOKER).
@@ -418,6 +421,19 @@ begin
        or (p ->> 'to_list') not in ('variable', 'bill', 'debt', 'subscription', 'income', 'savings', 'transfer') then
       return '{"refused": "bad_change"}';
     end if;
+    -- 0009's trigger refuses a move to another list while a monthly amount
+    -- is in effect, or set to start later, by the same test.
+    if (p ->> 'to_list') <> v_cat.kind::text
+       and ((select cp.planned_cents is not null from public.category_plans cp
+              where cp.category_id = v_cat.id and cp.user_id = p_user
+                and cp.effective_month <= date_trunc('month', current_date)::date
+              order by cp.effective_month desc limit 1)
+            or exists (select 1 from public.category_plans cp
+                        where cp.category_id = v_cat.id and cp.user_id = p_user
+                          and cp.effective_month > date_trunc('month', current_date)::date
+                          and cp.planned_cents is not null)) then
+      return '{"refused": "has_monthly_amount"}';
+    end if;
     v_target := jsonb_build_object('category_id', v_cat.id);
     v_after := jsonb_build_object('list', p ->> 'to_list');
     v_before := jsonb_build_object('list', v_cat.kind);
@@ -470,6 +486,7 @@ declare
   v_user    uuid := auth.uid();
   v_refused text := public._ai_app_gate('propose');
   v_today   date;
+  v_zone    text;
   v_item    jsonb;
   v_index   integer := 0;
   v_check   jsonb;
@@ -486,6 +503,7 @@ begin
     return jsonb_build_object('refused', 'bad_change');
   end if;
   v_today := public._ai_app_today();
+  select a.time_zone into v_zone from public.ai_app_access a where a.user_id = v_user;
   -- A waiting suggestion past its day is expired.
   update public.ai_app_proposals s set status = 'expired', decided_at = now()
    where s.user_id = v_user and s.status = 'pending' and s.expires_at <= now();
@@ -497,26 +515,43 @@ begin
         v_check := '{"refused": "duplicate_in_call"}';
       elsif exists (select 1 from public.ai_app_proposals s
                      where s.user_id = v_user and s.target_key = v_check ->> 'key' and s.status = 'dismissed'
-                       and s.after = v_check -> 'after' and s.decided_at > now() - interval '14 days') then
-        -- The owner said no to exactly this lately: not asked again every chat.
+                       and s.kind = v_item ->> 'kind' and s.target = v_check -> 'target'
+                       and s.after = v_check -> 'after' and s.before = v_check -> 'before'
+                       and s.decided_at > now() - interval '14 days') then
+        -- The owner said no to exactly this lately, from this same value:
+        -- not asked again every chat. Once the value moves, it may be.
         v_seen := v_seen || (v_check ->> 'key');
         v_check := '{"refused": "dismissed_recently"}';
       else
         v_seen := v_seen || (v_check ->> 'key');
+        -- Locked, so an owner's Apply or Dismiss is never overwritten: one
+        -- decided meanwhile is not found here, and stays as decided.
         select * into v_old from public.ai_app_proposals s
-         where s.user_id = v_user and s.target_key = v_check ->> 'key' and s.status = 'pending';
+         where s.user_id = v_user and s.target_key = v_check ->> 'key' and s.status = 'pending'
+         for update;
         v_had := found;
-        if v_had and v_old.after = v_check -> 'after' then
+        -- The same change only when everything the card shows is the same;
+        -- another kind, scope, value or "from" replaces it, so the one card
+        -- waiting says what the AI app was told, and a stale one is renewed.
+        if v_had and v_old.kind = v_item ->> 'kind' and v_old.target = v_check -> 'target'
+           and v_old.after = v_check -> 'after' and v_old.before = v_check -> 'before' then
           v_check := jsonb_build_object('status', 'already_suggested', 'id', v_old.id, 'before', v_old.before, 'after', v_old.after);
         elsif not v_had and (select count(*) from public.ai_app_proposals s where s.user_id = v_user and s.status = 'pending') >= 100 then
           v_check := '{"refused": "too_many_waiting"}';
         else
           if v_had then
-            update public.ai_app_proposals s set status = 'replaced', decided_at = now() where s.id = v_old.id;
+            update public.ai_app_proposals s set status = 'replaced', decided_at = now()
+             where s.id = v_old.id and s.status = 'pending';
           end if;
+          -- A budget or monthly amount suggested for a month ends with it,
+          -- in the owner's time zone: Setup never writes a month gone by.
           insert into public.ai_app_proposals (user_id, client_id, kind, target, after, before, reason, target_key, expires_at)
           values (v_user, (auth.jwt() ->> 'client_id')::uuid, v_item ->> 'kind', v_check -> 'target', v_check -> 'after',
-                  v_check -> 'before', (v_item ->> 'reason')::public.ingested_text, v_check ->> 'key', now() + interval '14 days')
+                  v_check -> 'before', (v_item ->> 'reason')::public.ingested_text, v_check ->> 'key',
+                  case when v_check -> 'target' ? 'month'
+                       then least(now() + interval '14 days',
+                                  ((v_check #>> '{target,month}')::date + interval '1 month')::timestamp at time zone v_zone)
+                       else now() + interval '14 days' end)
           on conflict (user_id, target_key) where status = 'pending' do nothing
           returning id into v_id;
           if v_id is null then
