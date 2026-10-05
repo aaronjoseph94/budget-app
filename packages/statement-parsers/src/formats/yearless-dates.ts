@@ -60,7 +60,8 @@ export function daysInMonth(y: number, m: number): number {
  * other packages use.
  */
 export function civilDate(y: number, m: number, d: number): IsoDate {
-  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}` as IsoDate
+  // The year to four digits too: year 19 was '19-01-05' (testing fuzz-06).
+  return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}` as IsoDate
 }
 
 /**

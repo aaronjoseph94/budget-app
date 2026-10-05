@@ -17,6 +17,7 @@
  */
 import { addDays, type Cents, type IsoDate } from '@budget/money-primitives'
 import { parseAmountToCents, US_AMOUNT_FORMAT } from './amount.js'
+import { EARLIEST_YEAR } from './date.js'
 import { civilDate, daysFromCivil, daysInMonth } from './formats/yearless-dates.js'
 import { normalizeMerchant } from './merchant.js'
 
@@ -114,7 +115,7 @@ function readDate(words: Word[], asOf: IsoDate): IsoDate | null {
 }
 
 function validDate(y: number, m: number, d: number): IsoDate | null {
-  return m >= 1 && m <= 12 && d >= 1 && d <= daysInMonth(y, m) ? civilDate(y, m, d) : null
+  return y >= EARLIEST_YEAR && m >= 1 && m <= 12 && d >= 1 && d <= daysInMonth(y, m) ? civilDate(y, m, d) : null
 }
 
 /** The latest such weekday, today counted when `today` is true. */

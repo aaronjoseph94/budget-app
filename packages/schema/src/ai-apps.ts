@@ -7,7 +7,7 @@ import { IngestedTextSchema } from './primitives.js'
  * One-time updates can tell an old paste of `mcp-function.ts` from this
  * site's. Bumped with every change the owner must paste, as `YYYY-MM-DD.N`.
  */
-export const MCP_SERVER_VERSION = '2026-10-05.4'
+export const MCP_SERVER_VERSION = '2026-10-05.5'
 
 /*
  * What an AI app may send the server's tools (PLAN §2.4): each tool's input

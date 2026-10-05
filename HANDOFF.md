@@ -401,7 +401,7 @@ connect an AI app to it.
     One-time updates says "an older copy": **Edge Functions → mcp → Code**,
     paste, **Deploy**, then open its **Settings** and check the switch is
     still off: Supabase has been seen to turn it back on.) Version
-    `2026-10-05.4` or later is current (it also refuses, and leaves out of
+    `2026-10-05.5` or later is current (it also refuses, and leaves out of
     every name it hands an AI app, the characters that draw as nothing,
     stops every request at 20 seconds, whichever app is asking, and
     carries the fixes of 2026-10-05's testing to debts, amounts and dates):

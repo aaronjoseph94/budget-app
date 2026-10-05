@@ -36,6 +36,14 @@ export const DATE_FORMATS: readonly DateFormat[] = [
  */
 const TWO_DIGIT_PIVOT = 69
 
+/**
+ * The first year a date read from text may be in. An earlier one is a
+ * typo, never a purchase: '0025-03-15' was read as a day, and every sum on
+ * it fell in 1925 (testing fuzz-07). It goes to the review queue instead,
+ * and Just type it leaves the day empty (fuzz-06).
+ */
+export const EARLIEST_YEAR = 1900
+
 const ISO = /^(\d{4})-(\d{1,2})-(\d{1,2})$/
 /** Slash formats also appear dash-separated; the separator carries no meaning. */
 const SLASHED = /^(\d{1,2})[/-](\d{1,2})[/-](\d{2}|\d{4})$/
@@ -45,7 +53,7 @@ export function parseStatementDate(raw: string, format: DateFormat): ParseOutcom
   if (trimmed.length === 0) return { ok: false, reason: 'missing_date' }
 
   const parts = extractParts(trimmed, format)
-  if (parts === null) return { ok: false, reason: 'unparseable_date' }
+  if (parts === null || parts.y < EARLIEST_YEAR) return { ok: false, reason: 'unparseable_date' }
 
   const pad = (n: number, width = 2) => String(n).padStart(width, '0')
   try {
