@@ -19,6 +19,7 @@ import {
 } from './ledger.js'
 import type { Cents } from '@budget/money-primitives'
 import { NO_MARKS, type SetupMarks } from './profile.js'
+import { countWaiting } from './review/suggested-changes.js'
 import { todayIso } from './format.js'
 import type { SupabaseClient } from './supabase.js'
 
@@ -41,6 +42,8 @@ export interface AppData {
   /** Whether 0015 is in: without it, choosing the main goal, moving, pausing and reaching one wait for it. */
   readonly goalsOrdered: boolean
   readonly pendingTotal: number
+  /** How many changes an AI app suggested wait in Review (0039); a count from the database, never added to pendingTotal. */
+  readonly suggestedTotal: number
   readonly loadError: string | null
   /**
    * Whether the data above has been read yet. Until it is 'ready', an empty
@@ -102,6 +105,7 @@ export function AppDataProvider({
   const [categories, setCategories] = useState<readonly Category[]>([])
   const [goals, setGoals] = useState<{ readonly rows: readonly ListedGoalRow[]; readonly ordered: boolean }>({ rows: [], ordered: true })
   const [pendingTotal, setPendingTotal] = useState(0)
+  const [suggestedTotal, setSuggestedTotal] = useState(0)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [status, setStatus] = useState<AppData['status']>('loading')
   const [version, setVersion] = useState(0)
@@ -121,17 +125,19 @@ export function AppDataProvider({
     lastRead.current = Date.now()
     try {
       account.current ??= ensureAccount(supabase, userId, DEFAULT_ACCOUNT)
-      const [resolved, cats, read, pending] = await Promise.all([
+      const [resolved, cats, read, pending, suggested] = await Promise.all([
         account.current,
         listCategories(supabase),
         listGoals(supabase),
         listPending(supabase, 1),
+        countWaiting(supabase),
       ])
       if (mine !== latest.current) return
       setAccountId(resolved.id)
       setCategories(cats)
       setGoals({ rows: read.goals, ordered: read.ordered })
       setPendingTotal(pending.total)
+      setSuggestedTotal(suggested)
       setLoadError(null)
       setStatus('ready')
       setVersion((v) => v + 1)
@@ -198,6 +204,7 @@ export function AppDataProvider({
         mainGoal: inOrder.main,
         goalsOrdered: goals.ordered,
         pendingTotal,
+        suggestedTotal,
         loadError,
         status,
         refresh,

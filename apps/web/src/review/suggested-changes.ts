@@ -52,6 +52,22 @@ export async function listWaiting(supabase: SupabaseClient): Promise<readonly Wa
   })
 }
 
+/** How many suggestions wait, for the sidebar and the tab bar: 0 before 0039 is in. */
+export async function countWaiting(supabase: SupabaseClient): Promise<number> {
+  const { error, count } = await supabase
+    .from('ai_app_proposals')
+    .select('id', { count: 'exact' })
+    .eq('status', 'pending')
+    .gt('expires_at', new Date().toISOString())
+    .limit(1)
+  if (error !== null) {
+    if (NOT_YET.has(error.code)) return 0
+    throw new ReadRefused(describeWriteFailure(error), error.code)
+  }
+  if (count === null) throw new Error('The suggested changes could not be counted. Try again.')
+  return count
+}
+
 /** A charge a suggestion names, as the Month's Move reads it, with its shop as a learned rule keys it. */
 export interface Charge {
   readonly id: string

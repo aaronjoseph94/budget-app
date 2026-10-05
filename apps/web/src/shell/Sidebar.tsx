@@ -1,7 +1,7 @@
 import { hashOf, type Screen } from '../nav.js'
 import { Icon } from '../components/ui/icons.js'
 import { cn } from '../lib/cn.js'
-import { Count, Dot, RING_INSET, labelOf } from './marks.js'
+import { Count, Dot, RING_INSET, Suggested, labelOf } from './marks.js'
 import { SIDEBAR_GROUPS, litOf } from './places.js'
 import type { SidebarState } from './sidebar-state.js'
 import { SidebarFoot } from './SidebarFoot.js'
@@ -18,12 +18,15 @@ export function Sidebar({
   screen,
   state,
   pendingTotal,
+  suggestedTotal = 0,
   dot,
   ready,
 }: {
   screen: Screen
   state: SidebarState
   pendingTotal: number
+  /** Changes an AI app suggested, waiting in Review (ADR 0013). */
+  suggestedTotal?: number
   dot: boolean
   /** Whether the shared data is read, which the foot's goal and name need. */
   ready: boolean
@@ -84,7 +87,7 @@ export function Sidebar({
                       <a
                         href={hashOf({ screen: item.screen, param: null })}
                         aria-current={active ? 'page' : undefined}
-                        aria-label={labelOf(item, pendingTotal, dot)}
+                        aria-label={labelOf(item, pendingTotal, dot, suggestedTotal)}
                         title={item.label}
                         className={cn(
                           RING_INSET,
@@ -98,6 +101,16 @@ export function Sidebar({
                         {item.screen === 'review' && pendingTotal > 0 ? (
                           <span className={cn('absolute right-0.5 top-0.5', !folded && 'lg:static')}>
                             <Count n={pendingTotal} />
+                          </span>
+                        ) : null}
+                        {item.screen === 'review' && suggestedTotal > 0 ? (
+                          <span className={cn('absolute bottom-0.5 right-0.5', !folded && 'lg:static')}>
+                            <span className={words}>
+                              <Suggested n={suggestedTotal} words />
+                            </span>
+                            <span className={cn(!folded && 'lg:hidden')}>
+                              <Suggested n={suggestedTotal} />
+                            </span>
                           </span>
                         ) : null}
                         {item.screen === 'coach' && dot ? <Dot className={cn('absolute right-1.5 top-1.5', !folded && 'lg:static')} /> : null}

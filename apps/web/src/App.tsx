@@ -10,7 +10,7 @@ import { Alert } from './components/ui/feedback.js'
 import { Button } from './components/ui/button.js'
 import { AnnounceProvider } from './components/ui/announce.js'
 import { Icon, type IconName } from './components/ui/icons.js'
-import { Count, Dot, labelOf } from './shell/marks.js'
+import { Count, Dot, Suggested, labelOf } from './shell/marks.js'
 import { Sidebar } from './shell/Sidebar.js'
 import { ScreenBoundary } from './shell/ScreenBoundary.js'
 import { VIEWS } from './shell/screens.js'
@@ -104,7 +104,7 @@ function tabOf(screen: Screen): Screen {
 
 export function Shell() {
   const { screen, param } = useAddress()
-  const { supabase, pendingTotal, loadError, status, refresh, today } = useAppData()
+  const { supabase, pendingTotal, suggestedTotal, loadError, status, refresh, today } = useAppData()
   // How wide each screen stands is said beside what it draws (shell/screens.tsx).
   const wide = VIEWS[screen].wide(param)
   const width = wide ? 'max-w-3xl lg:max-w-7xl' : 'max-w-3xl'
@@ -132,7 +132,7 @@ export function Shell() {
         >
           Skip to content
         </a>
-        <Sidebar screen={screen} state={sidebar} pendingTotal={pendingTotal} dot={dot} ready={status === 'ready'} />
+        <Sidebar screen={screen} state={sidebar} pendingTotal={pendingTotal} suggestedTotal={suggestedTotal} dot={dot} ready={status === 'ready'} />
         {/* From 768px the screen sits in a white panel on the grey canvas, beside
           the rail or the sidebar (ADR 0010, 0011); on a phone it is the panel. */}
         <div className={cn('md:py-3 md:pl-[72px] md:pr-3 print:p-0', !sidebar.folded && 'lg:pl-[248px]')}>
@@ -199,7 +199,7 @@ export function Shell() {
                   key={t.screen}
                   href={hashOf({ screen: t.screen, param: null })}
                   aria-current={active ? 'page' : undefined}
-                  aria-label={labelOf(t, pendingTotal, dot)}
+                  aria-label={labelOf(t, pendingTotal, dot, suggestedTotal)}
                   className={cn(
                     'relative flex flex-col items-center gap-0.5 pb-1.5 pt-2 text-[11px] font-medium transition-colors',
                     active ? 'text-foreground' : 'text-muted-foreground',
@@ -219,6 +219,11 @@ export function Shell() {
                   {t.screen === 'review' && pendingTotal > 0 ? (
                     <span className="absolute right-[22%] top-1">
                       <Count n={pendingTotal} />
+                    </span>
+                  ) : null}
+                  {t.screen === 'review' && suggestedTotal > 0 ? (
+                    <span className="absolute left-[22%] top-1">
+                      <Suggested n={suggestedTotal} />
                     </span>
                   ) : null}
                   {t.screen === 'coach' && dot ? <Dot className="absolute right-[30%] top-2" /> : null}
