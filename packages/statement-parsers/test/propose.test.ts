@@ -44,6 +44,22 @@ describe('proposeMapping', () => {
     expect(p.merchantIndex).toBe(2)
   })
 
+  // Testing fuzz-08: with every row at one shop, the Description column was
+  // the same on every row and was dropped, and the card numbers, which
+  // differed, became every row's shop.
+  it.each([
+    ['two masked cards', ['Date,Description,Amount,Card', '01/02/2025,COFFEE CO,4.50,****1234', '01/03/2025,COFFEE CO,5.25,****5678']],
+    ['two full card numbers', ['Date,Description,Amount,Card', '01/02/2025,COFFEE CO,4.50,4111111111111111', '01/03/2025,COFFEE CO,5.25,5500000000000004']],
+    ['three rows on two cards', ['Date,Description,Card No.,Amount', '01/02/2025,AMAZON MKTPLACE,****1234,-4.50', '01/03/2025,AMAZON MKTPLACE,****5678,-5.25', '01/04/2025,AMAZON MKTPLACE,****1234,-9.99']],
+  ])('keeps the shop column a header names, every row at one shop, over %s', (_, lines) => {
+    expect(propose(lines).merchantIndex).toBe(1)
+  })
+
+  it('still never offers a cardholder name, the same on every row, over a shop column no header names', () => {
+    const p = propose(['Date,Cardholder Name,Where,Amount', '09/02/2026,A PERSON,CORNER MARKET,-42.10', '09/13/2026,A PERSON,LITWARE BOOKS,-19.99', '09/24/2026,A PERSON,CORNER MARKET,-8.00'])
+    expect(p.merchantIndex).toBe(2)
+  })
+
   it('drops a running balance explained by another money column', () => {
     // The balance is never blank and has cents too; it moves by each Amount.
     const p = propose([
