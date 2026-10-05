@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import type { SavingsFund } from '@budget/core'
-import { parseMoneyInput, tooLargeInput, useAppData } from '../app-data.js'
+import { goalAtEnd, type SavingsFund } from '@budget/core'
+import { parseMoneyInput, placedGoal, tooLargeInput, useAppData } from '../app-data.js'
 import { saveFund, type FundRow } from '../ledger.js'
 import { formatForInput, todayIso } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
@@ -38,7 +38,7 @@ export function FundEditor({
   onSaved: (note: string) => void
   onFailedAfterClose: (message: string) => void
 }) {
-  const { supabase, userId, refresh } = useAppData()
+  const { supabase, userId, goals, goalsOrdered, refresh } = useAppData()
   const [target, setTarget] = useState(formatForInput(goal === null ? null : goal.target_cents))
   const [saved, setSaved] = useState(formatForInput(fund.figures === null ? null : fund.figures.balanceCents))
   const [savedTouched, setSavedTouched] = useState(false)
@@ -70,7 +70,15 @@ export function FundEditor({
     try {
       await saveFund(
         supabase,
-        { userId, categoryId: fund.categoryId, name: fund.name, goalId: goal === null ? null : goal.id },
+        {
+          userId,
+          categoryId: fund.categoryId,
+          name: fund.name,
+          goalId: goal === null ? null : goal.id,
+          // After every goal, as Add a goal and Resume place one: written
+          // with no place it took 0 and could become the main goal (e2e-money-01).
+          ...(goal === null && goalsOrdered ? goalAtEnd({ goals: goals.map(placedGoal) }) : {}),
+        },
         {
           goalCents,
           saved: goal === null || savedTouched ? { cents: savedCents, asOf: todayIso() } : null,

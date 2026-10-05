@@ -229,6 +229,35 @@ describe('Savings, removing a goal (G1)', () => {
   })
 })
 
+describe('Savings, setting a goal on a fund', () => {
+  // e2e-money-01: the goal was written with no place, so it took 0015's
+  // 0 and went ahead of every goal at 1 or more, and became the main goal
+  // when the one at 0 was paused. It goes after every goal, as Add a goal
+  // and Resume put one (goalAtEnd).
+  it('puts it after every other goal, so it never becomes the main goal by itself', async () => {
+    const fake = seeded()
+    renderScreen(<SavingsScreen />, fake)
+    fireEvent.click(within(await screen.findByRole('region', { name: 'House' })).getByRole('button', { name: 'Set a goal' }))
+    fireEvent.change(screen.getByLabelText(/^Goal \(\$\)/), { target: { value: '2500' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save goal' }))
+    expect(await screen.findByText("House's goal is saved.")).toBeTruthy()
+    expect(fake.tables.savings_goals.find((g) => g.name === 'House')).toMatchObject({ sort_order: 2 })
+    await waitFor(() => expect(regions()).toEqual(['Travel', 'Flight training', 'House', 'Car']))
+    expect(within(screen.getByRole('region', { name: 'Travel' })).getByText('Main goal')).toBeTruthy()
+  })
+
+  it('leaves the place out before 0015, which has no column for it', async () => {
+    const fake = seeded()
+    fake.server.lacks = { savings_goals: ['sort_order', 'status', 'reached_on'] }
+    renderScreen(<SavingsScreen />, fake)
+    fireEvent.click(within(await screen.findByRole('region', { name: 'House' })).getByRole('button', { name: 'Set a goal' }))
+    fireEvent.change(screen.getByLabelText(/^Goal \(\$\)/), { target: { value: '2500' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save goal' }))
+    expect(await screen.findByText("House's goal is saved.")).toBeTruthy()
+    expect(fake.tables.savings_goals.find((g) => g.name === 'House')).not.toHaveProperty('sort_order')
+  })
+})
+
 describe('Savings, adding a goal (G1)', () => {
   const type = (label: RegExp, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } })
   const add = async (fields: Readonly<Record<string, string>>) => {

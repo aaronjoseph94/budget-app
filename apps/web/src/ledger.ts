@@ -1324,8 +1324,18 @@ export interface FundEdit {
  */
 export async function saveFund(
   supabase: SupabaseClient,
-  /** A goal on no fund has no category; it is only ever edited, never made, here. */
-  target: { readonly userId: string; readonly categoryId: string | null; readonly name: string; readonly goalId: string | null },
+  /**
+   * A goal on no fund has no category; it is only ever edited, never made,
+   * here. A new goal's place is core's goalAtEnd, after every goal; left
+   * out before 0015, which has no place to write (e2e-money-01).
+   */
+  target: {
+    readonly userId: string
+    readonly categoryId: string | null
+    readonly name: string
+    readonly goalId: string | null
+    readonly sortOrder?: number
+  },
   edit: FundEdit,
 ): Promise<void> {
   if (target.goalId === null && edit.saved === null) throw new Error('A new goal needs what is saved in it.')
@@ -1341,7 +1351,13 @@ export async function saveFund(
     target.goalId === null
       ? await supabase
           .from('savings_goals')
-          .insert({ user_id: target.userId, name: target.name, category_id: target.categoryId, ...row })
+          .insert({
+            user_id: target.userId,
+            name: target.name,
+            category_id: target.categoryId,
+            ...(target.sortOrder === undefined ? {} : { sort_order: target.sortOrder }),
+            ...row,
+          })
       : await supabase.from('savings_goals').update(row).eq('id', target.goalId)
   if (error !== null) throw refused(describeFundFailure('save', error), error)
 }
