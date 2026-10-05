@@ -13,11 +13,13 @@ import type { SupabaseClient } from '../supabase.js'
 export interface Access {
   readonly enabled: boolean
   readonly allowAdd: boolean
+  /** Whether they may suggest changes (0039, ADR 0013); null before 0039 is in. */
+  readonly allowPropose: boolean | null
   /** Until when the consent page may allow a new connection, as stored; null when never opened. */
   readonly connectUntil: string | null
 }
 
-const NO_ACCESS: Access = { enabled: false, allowAdd: true, connectUntil: null }
+const NO_ACCESS: Access = { enabled: false, allowAdd: true, allowPropose: true, connectUntil: null }
 
 /** How long Connect a new AI app keeps the door open (PLAN §2.10). */
 export const CONNECT_MINUTES = 15
@@ -26,13 +28,22 @@ export type Why = 'needs_update' | 'unreachable'
 export type AccessRead = { readonly ok: true; readonly access: Access } | { readonly ok: false; readonly why: Why }
 
 export async function readAccess(supabase: SupabaseClient, userId: string): Promise<AccessRead> {
-  const { data, error } = await supabase.from('ai_app_access').select('enabled, allow_add, connect_until').eq('user_id', userId).maybeSingle()
+  const read = (columns: string) => supabase.from('ai_app_access').select(columns).eq('user_id', userId).maybeSingle()
+  let { data, error } = await read('enabled, allow_add, allow_propose, connect_until')
+  // Before 0039 there is no allow_propose: read the rest, and say suggesting needs the update.
+  const before0039 = error !== null && error.code === '42703'
+  if (before0039) ({ data, error } = await read('enabled, allow_add, connect_until'))
   if (error !== null) return { ok: false, why: whyRefused(error) }
-  if (data === null) return { ok: true, access: NO_ACCESS }
-  const row = data as { enabled?: unknown; allow_add?: unknown; connect_until?: unknown }
+  if (data === null) return { ok: true, access: { ...NO_ACCESS, allowPropose: before0039 ? null : true } }
+  const row = data as { enabled?: unknown; allow_add?: unknown; allow_propose?: unknown; connect_until?: unknown }
   return {
     ok: true,
-    access: { enabled: row.enabled === true, allowAdd: row.allow_add !== false, connectUntil: typeof row.connect_until === 'string' ? row.connect_until : null },
+    access: {
+      enabled: row.enabled === true,
+      allowAdd: row.allow_add !== false,
+      allowPropose: before0039 ? null : row.allow_propose !== false,
+      connectUntil: typeof row.connect_until === 'string' ? row.connect_until : null,
+    },
   }
 }
 
@@ -45,13 +56,14 @@ export async function readAccess(supabase: SupabaseClient, userId: string): Prom
 export async function saveAccess(
   supabase: SupabaseClient,
   userId: string,
-  change: { readonly enabled?: boolean; readonly allowAdd?: boolean; readonly connectUntil?: string },
+  change: { readonly enabled?: boolean; readonly allowAdd?: boolean; readonly allowPropose?: boolean; readonly connectUntil?: string },
 ): Promise<true | Why> {
   const row = {
     user_id: userId,
     time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     ...(change.enabled === undefined ? {} : { enabled: change.enabled }),
     ...(change.allowAdd === undefined ? {} : { allow_add: change.allowAdd }),
+    ...(change.allowPropose === undefined ? {} : { allow_propose: change.allowPropose }),
     ...(change.connectUntil === undefined ? {} : { connect_until: change.connectUntil }),
   }
   const { error } = await supabase.from('ai_app_access').upsert(row, { onConflict: 'user_id' })

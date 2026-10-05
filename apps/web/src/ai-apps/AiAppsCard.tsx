@@ -47,7 +47,7 @@ export function AiAppsCard() {
   const [saving, setSaving] = useState(false)
   const [said, setSaid] = useState('')
   const [first, setFirst] = useState(false)
-  const ids = { on: useId(), onHint: useId(), add: useId(), addHint: useId() }
+  const ids = { on: useId(), onHint: useId(), add: useId(), addHint: useId(), suggest: useId(), suggestHint: useId() }
 
   useEffect(() => {
     let live = true
@@ -82,7 +82,8 @@ export function AiAppsCard() {
   return (
     <Section large title="AI apps">
       <p className="text-muted-foreground">
-        Ask Claude or ChatGPT about your budget, and let them add purchases to Review. Nothing they add counts until you approve it.
+        Ask Claude or ChatGPT about your budget, let them add purchases to Review, and let them suggest changes for you to apply. Nothing they
+        add or suggest counts until you approve or apply it.
       </p>
       {/* Help's articles, readable before the switch is on (M12a). */}
       <p className="text-sm">
@@ -146,6 +147,35 @@ export function AiAppsCard() {
                   ? 'On: they can add a purchase or money received to Review, where it waits for you.'
                   : 'Off: they can only read. Nothing is added to Review.'}
               </p>
+              {loaded.access.allowPropose === null ? (
+                <p className="border-t pt-3 text-sm">
+                  Letting them suggest changes needs a one-time update first.{' '}
+                  <a href={hashOf({ screen: 'help', param: 'updates' })} className={SENTENCE_LINK}>
+                    One-time updates
+                  </a>
+                </p>
+              ) : (
+                <>
+                  <label htmlFor={ids.suggest} className="flex min-h-11 cursor-pointer items-center gap-3 border-t pt-3">
+                    <span className="flex-1 text-base font-semibold">Let AI apps suggest changes</span>
+                    <input
+                      id={ids.suggest}
+                      type="checkbox"
+                      role="switch"
+                      aria-describedby={ids.suggestHint}
+                      className={SWITCH}
+                      checked={loaded.access.allowPropose}
+                      disabled={saving}
+                      onChange={(e) => void change(loaded.access, { ...loaded.access, allowPropose: e.target.checked }, { allowPropose: e.target.checked })}
+                    />
+                  </label>
+                  <p id={ids.suggestHint} className="text-sm text-muted-foreground">
+                    {loaded.access.allowPropose
+                      ? 'On: they can suggest changes to your budget, which wait in Review until you tap Apply. They never make a change themselves.'
+                      : 'Off: they cannot suggest changes. Any already waiting stay in Review for you to apply or dismiss.'}
+                  </p>
+                </>
+              )}
               <ConnectNew />
             </>
           ) : null}

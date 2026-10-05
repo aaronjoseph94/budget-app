@@ -120,6 +120,28 @@ describe('Settings → AI apps: the switches', () => {
     await expectNoAxeViolations()
   })
 
+  // ADR 0013: suggesting has its own switch, on whenever AI apps are on.
+  it('lets AI apps suggest changes while they are on, and saves turning it off', async () => {
+    const fake = fakeSupabase({ ai_app_access: [{ user_id: 'u1', enabled: true, allow_add: true, time_zone: ZONE }] })
+    renderScreen(<AiAppsCard />, fake)
+    const suggest = await screen.findByRole<HTMLInputElement>('switch', { name: 'Let AI apps suggest changes' })
+    expect(suggest.checked).toBe(true)
+    expect(screen.getByText(/which wait in Review until you tap Apply\. They never make a change themselves\./)).toBeTruthy()
+    fireEvent.click(suggest)
+    await waitFor(() => expect(fake.tables.ai_app_access).toMatchObject([{ enabled: true, allow_propose: false }]))
+    expect(screen.getByText(/Off: they cannot suggest changes\./)).toBeTruthy()
+    await expectNoAxeViolations()
+  })
+
+  it('says suggesting needs 0039 before it is in, and still shows the rest', async () => {
+    const fake = fakeSupabase({ ai_app_access: [{ user_id: 'u1', enabled: true, allow_add: false, time_zone: ZONE }] })
+    fake.server.lacks = { ai_app_access: ['allow_propose'] }
+    renderScreen(<AiAppsCard />, fake)
+    expect((await screen.findByRole<HTMLInputElement>('switch', { name: 'Let them add to Review' })).checked).toBe(false)
+    expect(screen.getByText(/Letting them suggest changes needs a one-time update first\./)).toBeTruthy()
+    expect(screen.queryByRole('switch', { name: 'Let AI apps suggest changes' })).toBeNull()
+  })
+
   it('shows the switch as it was stored when the save fails, and says so', async () => {
     const fake = fakeSupabase()
     fake.fail('POST ai_app_access', '08006')
