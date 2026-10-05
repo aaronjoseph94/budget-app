@@ -4064,7 +4064,7 @@ begin
 end $$;
 rollback;
 
--- Each of 0021 to 0029, 0034 and 0038, pasted again with everything in,
+-- Each of 0021 to 0029, 0034, 0038 and 0039, pasted again with everything in,
 -- is refused before it changes anything: schema_level() stays at the last
 -- update, and save_import and ai_app_add_candidate keep one copy of each
 -- condition. Without this,
@@ -4081,6 +4081,7 @@ rollback;
 \set repaste_29 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0029_lookalike_charge_waits.sql`
 \set repaste_34 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0034_ai_words_visible.sql`
 \set repaste_38 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0038_intuit_prefix_merchants.sql`
+\set repaste_39 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0039_ai_apps_suggest_changes.sql`
 begin;
 set local verify.r21 = :'repaste_21';
 set local verify.r22 = :'repaste_22';
@@ -4093,6 +4094,7 @@ set local verify.r28 = :'repaste_28';
 set local verify.r29 = :'repaste_29';
 set local verify.r34 = :'repaste_34';
 set local verify.r38 = :'repaste_38';
+set local verify.r39 = :'repaste_39';
 do $$
 declare
   level  constant integer := public.schema_level();
@@ -4103,7 +4105,7 @@ declare
   n integer;
 begin
   if level <> 38 then raise exception 'schema_level() is %, not 38, before the re-pastes', level; end if;
-  foreach n in array array[21, 22, 23, 24, 25, 26, 27, 28, 29, 34, 38] loop
+  foreach n in array array[21, 22, 23, 24, 25, 26, 27, 28, 29, 34, 38, 39] loop
     begin
       execute current_setting('verify.r' || n);
       raise exception 'NOT REFUSED: 00% pasted again ran', n;
@@ -4122,7 +4124,7 @@ begin
       raise exception '00% pasted again changed ai_app_add_candidate', n;
     end if;
   end loop;
-  raise notice 'pasting 0021 to 0029, 0034 or 0038 again is refused and changes nothing';
+  raise notice 'pasting 0021 to 0029, 0034, 0038 or 0039 again is refused and changes nothing';
 end $$;
 rollback;
 
@@ -4405,7 +4407,281 @@ begin
   raise notice 'a suggestion waits as sent, with the database''s before; one waits per target';
 end $$;
 
+-- Only the owner decides, once, on their own waiting suggestion; a change
+-- dismissed lately is not suggested again; a suggestion past its day is
+-- expired and cannot be applied.
+reset role;
+update public.ai_app_proposals set expires_at = now() - interval '1 minute'
+ where user_id = '11111111-1111-4111-8111-111111111111' and kind = 'rename_category' and status = 'pending';
+set role app_user;
+do $$
+declare
+  owner_ text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated"}';
+  ai_app text := '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}';
+  mine   text := 'cccccccc-0000-4000-8000-000000003901';
+  weekly uuid;
+  goal   uuid;
+  late   uuid;
+  r      jsonb;
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', owner_, true);
+  select id into weekly from public.ai_app_proposals where target_key = 'weekly:' || mine and status = 'pending';
+  select id into goal from public.ai_app_proposals where kind = 'set_goal' and status = 'pending';
+  select id into late from public.ai_app_proposals where kind = 'rename_category' and status = 'pending';
+  begin
+    perform public.decide_suggestion(weekly, 'approved');
+    raise exception 'NOT REFUSED: an outcome that is neither applied nor dismissed';
+  exception when invalid_parameter_value then null;
+  end;
+  perform set_config('request.jwt.claim.sub', '22222222-2222-4222-8222-222222222222', true);
+  perform set_config('request.jwt.claims', '{"sub": "22222222-2222-4222-8222-222222222222", "role": "authenticated"}', true);
+  if public.decide_suggestion(weekly, 'dismissed') then raise exception 'NOT REFUSED: another user decided the owner''s suggestion'; end if;
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', owner_, true);
+  if not public.decide_suggestion(weekly, 'dismissed') or not public.decide_suggestion(goal, 'applied') then
+    raise exception 'the owner could not dismiss or apply a waiting suggestion';
+  end if;
+  if public.decide_suggestion(weekly, 'applied') then raise exception 'NOT REFUSED: a dismissed suggestion was applied after all'; end if;
+  if public.decide_suggestion(late, 'applied') then raise exception 'NOT REFUSED: a suggestion past its day was applied'; end if;
+  if (select status from public.ai_app_proposals where id = weekly) <> 'dismissed'
+     or (select status from public.ai_app_proposals where id = goal) <> 'applied' then
+    raise exception 'the owner''s decisions were not kept';
+  end if;
 
+  perform set_config('request.jwt.claims', ai_app, true);
+  r := public.ai_app_propose(jsonb_build_array(
+    jsonb_build_object('kind', 'set_weekly_limit', 'category', mine, 'amount', 12500, 'reason', 'Asking again'),
+    jsonb_build_object('kind', 'set_weekly_limit', 'category', 'cccccccc-0000-4000-8000-000000000303', 'amount', 2000, 'reason', 'Lunch')));
+  if r #>> '{results,0,refused}' is distinct from 'dismissed_recently' or r #>> '{results,1,status}' <> 'suggested' then
+    raise exception 'NOT REFUSED: a change the owner dismissed lately was suggested again: %', r;
+  end if;
+  if (select status from public.ai_app_proposals where id = late) <> 'expired' then
+    raise exception 'a suggestion past its day was not marked expired';
+  end if;
+  raise notice 'only the owner decides, once; a dismissal holds for 14 days; a suggestion past its day expires';
+end $$;
+
+-- The gate: suggesting has its own switch and its own 60 a day; reads go on.
+reset role;
+update public.ai_app_access set allow_propose = false where user_id = '11111111-1111-4111-8111-111111111111';
+set role app_user;
+do $$
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}', true);
+  if public.ai_app_propose('[1]') <> '{"refused": "suggesting_off"}' or public.ai_app_suggest_categories('[1]') <> '{"refused": "suggesting_off"}' then
+    raise exception 'NOT REFUSED: a suggestion with suggesting off';
+  end if;
+  if public.ai_app_review(1) ? 'refused' or public.ai_app_suggestions('any', 1) ? 'refused' then
+    raise exception 'suggesting off stopped a read';
+  end if;
+  raise notice 'with suggesting off, nothing is suggested and reads go on';
+end $$;
+reset role;
+update public.ai_app_access set allow_propose = true where user_id = '11111111-1111-4111-8111-111111111111';
+update public.ai_app_usage set calls = 59 where user_id = '11111111-1111-4111-8111-111111111111' and kind = 'propose';
+set role app_user;
+do $$
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}', true);
+  if public.ai_app_propose('[1]') #>> '{results,0,refused}' is distinct from 'bad_change' then
+    raise exception 'the 60th suggestion call was refused by the gate';
+  end if;
+  if public.ai_app_propose('[1]') <> '{"refused": "limit_reached"}' then raise exception 'NOT REFUSED: a 61st suggestion call'; end if;
+  if public.ai_app_review(1) ? 'refused' then raise exception 'the suggestion count stopped a read'; end if;
+  raise notice 'the 60th suggestion call goes through, the 61st is refused, and reads are counted apart';
+end $$;
+reset role;
+-- At most 100 wait: a new target is refused, a waiting one may still be replaced.
+update public.ai_app_usage set calls = 0 where user_id = '11111111-1111-4111-8111-111111111111';
+insert into public.ai_app_proposals (user_id, client_id, kind, target, after, before, reason, target_key, expires_at)
+  select '11111111-1111-4111-8111-111111111111', '99999999-9999-4999-8999-999999999999', 'add_category', '{}', '{}', '{}',
+         'Filler', 'add:filler ' || n, now() + interval '1 day'
+    from generate_series(1, 100 - (select count(*)::int from public.ai_app_proposals
+                                    where user_id = '11111111-1111-4111-8111-111111111111' and status = 'pending')) n;
+set role app_user;
+do $$
+declare
+  r jsonb;
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}', true);
+  r := public.ai_app_propose(jsonb_build_array(
+    jsonb_build_object('kind', 'move_category', 'category', 'cccccccc-0000-4000-8000-000000003901', 'to_list', 'bill', 'reason', 'One too many'),
+    jsonb_build_object('kind', 'set_weekly_limit', 'category', 'cccccccc-0000-4000-8000-000000000303', 'amount', 2500, 'reason', 'Replaces')));
+  if r #>> '{results,0,refused}' is distinct from 'too_many_waiting' or r #>> '{results,1,status}' <> 'suggested' or (r ->> 'waiting')::int <> 100 then
+    raise exception 'NOT REFUSED: a 101st waiting suggestion: %', r;
+  end if;
+  raise notice 'at most 100 suggestions wait';
+end $$;
+reset role;
+delete from public.ai_app_proposals where user_id = '11111111-1111-4111-8111-111111111111' and target_key like 'add:filler %';
+update public.ai_app_usage set calls = 0 where user_id = '11111111-1111-4111-8111-111111111111';
+
+-- Category suggestions on rows waiting in Review: 0018's conditions, as the
+-- AI app's. Only the caller's own pending rows that nobody filled, only its
+-- own categories not on Not spending, and never an approval.
+insert into public.ingest_candidates
+  (id, user_id, batch_id, account_id, posted_on, amount_cents, merchant, merchant_raw,
+   category_id, category_source, status, dedupe_hash, dedupe_hash_v, source)
+select v.id::uuid, '11111111-1111-4111-8111-111111111111', 'bbbbbbbb-0000-4000-8000-000000000001',
+       'aaaaaaaa-0000-4000-8000-000000000001', '2026-09-20', -1234, v.m, v.m,
+       v.cat::uuid, v.src::public.category_source, v.st::public.candidate_status,
+       encode(sha256(convert_to(v.id, 'UTF8')), 'hex'), 1, 'card_csv'
+  from (values
+    ('eeeeeeee-0000-4000-8000-000000003911', 'OPEN 39', null, null, 'pending'),
+    ('eeeeeeee-0000-4000-8000-000000003912', 'OWNER FILLED 39', 'cccccccc-0000-4000-8000-000000000001', 'user', 'pending'),
+    ('eeeeeeee-0000-4000-8000-000000003913', 'RULE FILLED 39', 'cccccccc-0000-4000-8000-000000000001', 'merchant_rule', 'pending'),
+    ('eeeeeeee-0000-4000-8000-000000003914', 'APPROVED 39', 'cccccccc-0000-4000-8000-000000000001', 'user', 'approved'),
+    ('eeeeeeee-0000-4000-8000-000000003915', 'GUESSED 39', 'cccccccc-0000-4000-8000-000000000001', 'model', 'pending'),
+    ('eeeeeeee-0000-4000-8000-000000003916', 'OPEN TOO 39', null, null, 'pending')
+  ) as v(id, m, cat, src, st);
+set role app_user;
+do $$
+declare
+  groceries text := 'cccccccc-0000-4000-8000-000000003901';
+  r jsonb;
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}', true);
+  if public.ai_app_suggest_categories('{}') <> '{"refused": "bad_change"}'
+     or public.ai_app_suggest_categories((select jsonb_agg(n) from generate_series(1, 51) n)) <> '{"refused": "bad_change"}' then
+    raise exception 'NOT REFUSED: no suggestions, or more than 50';
+  end if;
+  r := public.ai_app_suggest_categories(jsonb_build_array(
+    jsonb_build_object('candidate', 'eeeeeeee-0000-4000-8000-000000003911', 'category', groceries),
+    jsonb_build_object('candidate', 'eeeeeeee-0000-4000-8000-000000003912', 'category', groceries),
+    jsonb_build_object('candidate', 'eeeeeeee-0000-4000-8000-000000003913', 'category', groceries),
+    jsonb_build_object('candidate', 'eeeeeeee-0000-4000-8000-000000003914', 'category', groceries),
+    jsonb_build_object('candidate', 'eeeeeeee-0000-4000-8000-000000003915', 'category', groceries),
+    jsonb_build_object('candidate', 'eeeeeeee-0000-4000-8000-000000000186', 'category', groceries),
+    jsonb_build_object('candidate', 'eeeeeeee-0000-4000-8000-000000003916', 'category', 'cccccccc-0000-4000-8000-000000003903'),
+    jsonb_build_object('candidate', 'eeeeeeee-0000-4000-8000-000000003916', 'category', 'cccccccc-0000-4000-8000-000000003904'),
+    jsonb_build_object('candidate', 'not an id', 'category', groceries),
+    '42'::jsonb));
+  if r <> '{"suggested": 2, "skipped": 8}' then raise exception 'the AI app''s category suggestions were not 0018''s: %', r; end if;
+  raise notice 'an AI app suggests categories only where 0018 would';
+end $$;
+reset role;
+do $$
+begin
+  if (select array_agg(coalesce(category_id::text, '-') || ' ' || coalesce(category_source::text, '-') || ' ' || status order by id)
+        from public.ingest_candidates where id::text like 'eeeeeeee-0000-4000-8000-00000000391_')
+     <> array['cccccccc-0000-4000-8000-000000003901 model pending', 'cccccccc-0000-4000-8000-000000000001 user pending',
+              'cccccccc-0000-4000-8000-000000000001 merchant_rule pending', 'cccccccc-0000-4000-8000-000000000001 user approved',
+              'cccccccc-0000-4000-8000-000000003901 model pending', '- - pending'] then
+    raise exception 'an AI app''s category suggestion touched a row 0018 would not';
+  end if;
+  if (select category_id from public.ingest_candidates where id = 'eeeeeeee-0000-4000-8000-000000000186') is not null then
+    raise exception 'NOT REFUSED: an AI app suggested a category on another user''s row';
+  end if;
+end $$;
+
+-- Review's and a search's rows carry their ids.
+set role app_user;
+do $$
+declare
+  r jsonb;
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}', true);
+  r := public.ai_app_review(50);
+  if not (r -> 'rows') @> '[{"id": "eeeeeeee-0000-4000-8000-000000003911", "merchant_raw": "OPEN 39"}]' then
+    raise exception 'Review''s rows do not carry their ids: %', r;
+  end if;
+  r := public.ai_app_search('COSTCO 39', (now() at time zone 'UTC')::date - 30, (now() at time zone 'UTC')::date, null, null, null, null, 'any', 5);
+  if not (r -> 'rows') @> '[{"id": "eeeeeeee-0000-4000-8000-000000003901"}]' then
+    raise exception 'a search''s rows do not carry their ids: %', r;
+  end if;
+  raise notice 'Review''s and a search''s rows carry their ids';
+end $$;
+reset role;
+
+-- 0039 changed the gate, ai_app_review and ai_app_search by those lines
+-- and nothing else, and re-created the two level functions; every other
+-- function is as it stood, with the same settings and grants.
+do $$
+declare
+  r   record;
+  p   record;
+  row constant text := $x$    'rows', (select coalesce(jsonb_agg(jsonb_build_object($x$;
+  n   int := 0;
+begin
+  for r in select * from verify.before_0039 loop
+    select prosrc, prosecdef, provolatile, proconfig, proacl::text as acl into p from pg_proc where oid = r.fn::regprocedure;
+    if not found then raise exception '% is gone after 0039', r.fn; end if;
+    if r.fn = '_ai_app_gate(text)' then
+      if p.prosrc <> replace(replace(replace(r.prosrc,
+           E'not in (''read'', ''add'') then\n', E'not in (''read'', ''add'', ''propose'') then\n'),
+           E'    return ''adding_off'';\n  end if;\n',
+           E'    return ''adding_off'';\n  end if;\n  -- Suggesting changes has its own switch (0039).\n' ||
+           E'  if p_kind = ''propose'' and not v_access.allow_propose then\n    return ''suggesting_off'';\n  end if;\n'),
+           E'when ''read'' then 300 else 30 end\n', E'when ''read'' then 300 when ''propose'' then 60 else 30 end\n') then
+        raise exception 'the gate is not its old body with 0039''s lines';
+      end if;
+      n := n + 1;
+    elsif r.fn in ('ai_app_review(integer)', 'ai_app_search(text,date,date,bigint,bigint,text[],text,text,integer)') then
+      if p.prosrc <> replace(r.prosrc, row || '''posted_on''', row || '''id'', r.id, ''posted_on''') or strpos(r.prosrc, row || '''posted_on''') = 0 then
+        raise exception '% is not its old body with each row''s id', r.fn;
+      end if;
+      n := n + 1;
+    elsif r.fn not in ('ai_app_updates_in()', 'ai_app_update_level()') and p.prosrc <> r.prosrc then
+      raise exception '% changed in 0039', r.fn;
+    end if;
+    if (p.prosecdef, p.provolatile, p.proconfig, p.acl) is distinct from (r.prosecdef, r.provolatile, r.proconfig, r.acl) then
+      raise exception '% changed its settings or grants in 0039', r.fn;
+    end if;
+  end loop;
+  if n <> 3 then raise exception '0039''s three edited functions were not all checked'; end if;
+  if strpos((select prosrc from pg_proc where oid = 'public._ai_app_gate(text)'::regprocedure), '''disconnected''') = 0
+     or strpos((select prosrc from pg_proc where oid = 'public.ai_app_search(text,date,date,bigint,bigint,text[],text,text,integer)'::regprocedure), '(0036)') = 0 then
+    raise exception '0039 lost an earlier update''s mark';
+  end if;
+  raise notice '0039 changed only those lines of the gate, Review and the search';
+end $$;
+
+-- Each AI-app update is read from its own mark: one taken away is read as
+-- that update and every later one not in. 0038 is not one, and is skipped.
+begin;
+do $$
+begin
+  execute replace(pg_get_functiondef('public.ai_app_propose(jsonb)'::regprocedure), '(0039)', '(----)');
+  if public.ai_app_updates_in() <> 37 then raise exception 'with 0039''s mark gone, ai_app_updates_in() says %, not 37', public.ai_app_updates_in(); end if;
+  execute replace(pg_get_functiondef('public._ai_app_shown_shop(text)'::regprocedure), '(0036)', '(----)');
+  if public.ai_app_updates_in() <> 35 then raise exception 'with 0036''s mark gone, ai_app_updates_in() says %, not 35', public.ai_app_updates_in(); end if;
+  execute replace(pg_get_functiondef('public._ai_app_gate(text)'::regprocedure), '''disconnected''', '''gone''');
+  if public.ai_app_updates_in() <> 29 then raise exception 'with 0030''s mark gone, ai_app_updates_in() says %, not 29', public.ai_app_updates_in(); end if;
+end $$;
+rollback;
+
+-- 0039 refuses to run before 0037, and when it is already in. Its own
+-- check, taken from the file.
+\set paste_check_39 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0039_ai_apps_suggest_changes.sql`
+begin;
+set local verify.paste_check = :'paste_check_39';
+do $$
+declare
+  pass int;
+begin
+  for pass in 1..3 loop
+    if pass = 2 then
+      drop function public.ai_app_propose(jsonb);
+      create or replace function public.ai_app_updates_in() returns integer language sql stable as $f$ select 36 $f$;
+    elsif pass = 3 then
+      drop function public.ai_app_updates_in();
+    end if;
+    begin
+      execute current_setting('verify.paste_check');
+      raise exception 'NOT REFUSED: 0039 ran (pass %)', pass;
+    exception when raise_exception then
+      if sqlerrm not like (case pass when 1 then '0039 is already in; nothing to do' else 'Paste 0037 first%' end) then raise; end if;
+    end;
+  end loop;
+  raise notice '0039 says it is already in, or to paste 0037 first';
+end $$;
+rollback;
 
 -- 0038 leaves no '(0038)' mark; 0039 re-created ai_app_updates_in() with
 -- a mark for each AI-app update, its own too (docs/adr/0012-mcp-server.md,
