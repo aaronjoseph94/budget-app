@@ -26,7 +26,8 @@ export const DESCRIPTION =
   'suggest few changes, each with a short reason that quotes the app’s figures as given. Kinds: set_budget ' +
   '(category, month like 2026-11 or this month, applies onward or only, amount or null for none), set_weekly_limit ' +
   '(category, amount or null), set_bill (a category on Bills, Debts or Subscriptions, from_month, amount and/or ' +
-  'due_day), set_goal (goal, target and/or target_date), rename_category (category, new_name), add_category (name, ' +
+  'due_day; on Bills, Debts and Subscriptions a category with no budget typed has its monthly amount as its budget: ' +
+  'change it with set_bill), set_goal (goal, target and/or target_date), rename_category (category, new_name), add_category (name, ' +
   'list), move_category (category, to_list), recategorise (a charge\'s id from search_transactions, category), ' +
   'learn_shop (the same, and the shop\'s later statement lines are filed there with no review). Amounts are dollars ' +
   'as text like \'450\'; names exactly as list_categories and get_savings_goals give them. No deletes, debts, pay ' +

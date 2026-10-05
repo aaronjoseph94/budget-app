@@ -133,6 +133,16 @@ describe('what each target is now', () => {
   })
 })
 
+describe('the rows read', () => {
+  it('read monthly amounts for a budget on Bills, Debts or Subscriptions, and not for one elsewhere', async () => {
+    const fake = createFakeSupabase(seed())
+    const budget = (category_id: string) =>
+      StoredSuggestionSchema.parse(row('set_budget', { category_id, month: '2026-11-01', applies: 'only' }, { cents: 1 }, { cents: null }))
+    expect((await readSources(fake.client, fake.tables.categories, [budget(RENT)])).plans).toHaveLength(1)
+    expect((await readSources(fake.client, fake.tables.categories, [budget(FOOD)])).plans).toEqual([])
+  })
+})
+
 describe('a budget from a month on', () => {
   const onward = (cents: number, before: number) =>
     row('set_budget', { category_id: FOOD, month: '2026-11-01', applies: 'onward' }, { cents }, { cents: before })

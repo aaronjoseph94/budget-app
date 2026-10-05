@@ -36,7 +36,22 @@ describe('a budget change', () => {
     expect(change({ kind: 'set_budget', category: 'Groceries', month: '2026-11', applies: 'only', amount: null })).toMatchObject({
       item: { month: '2026-11-01', applies: 'only', amount: null, before: { cents: 42000 } },
     })
-    expect(change({ kind: 'set_budget', category: 'Rent', amount: '5' })).toMatchObject({ item: { before: { cents: null } } })
+  })
+
+  it('refuses a budget where a monthly amount stands as one, and takes one where a budget is typed or no amount is set', () => {
+    // Rent has $1,500.00 a month from January and no budget: the Month shows "1,500.00 planned" (F51).
+    expect(change({ kind: 'set_budget', category: 'Rent', amount: '1,550' })).toEqual({ refused: 'planned_stands' })
+    expect(change({ kind: 'set_budget', category: 'Rent', amount: null })).toEqual({ refused: 'planned_stands' })
+    const typed = ownerOf({
+      today: '2026-10-05',
+      categories: [{ id: 'c-rent', name: 'Rent', kind: 'bill', sort_order: 0, weekly_budget_cents: null }],
+      budgets: [{ id: 'b1', category_id: 'c-rent', month: '2026-01-01', applies: 'onward', budget_cents: 160000 }],
+      plans: [{ id: 'p1', category_id: 'c-rent', effective_month: '2026-01-01', planned_cents: 150000, due_day: 1 }],
+      goals: [],
+    })
+    expect(prepare(typed, ChangeSchema.parse({ ...why, kind: 'set_budget', category: 'Rent', amount: null }))).toMatchObject({ item: { amount: null, before: { cents: 160000 } } })
+    const none = { ...typed, budgets: [], plans: [] }
+    expect(prepare(none, ChangeSchema.parse({ ...why, kind: 'set_budget', category: 'Rent', amount: '5' }))).toMatchObject({ item: { before: { cents: null } } })
   })
 
   it('says, from a month on, the onward value every later month keeps, not that month’s own', () => {

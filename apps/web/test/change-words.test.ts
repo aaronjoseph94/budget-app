@@ -44,6 +44,26 @@ const read = (s: ReturnType<typeof suggestion>) => {
   return [line(w.title), w.change === null ? null : `${line(w.change.from)} → ${line(w.change.to)}`, w.note]
 }
 
+describe('a budget on Bills, Debts or Subscriptions', () => {
+  const RENT = '77777777-7777-4777-8777-777777777777'
+  const sources = (plans: Sources['plans']): Sources => ({
+    ...SOURCES,
+    categories: [...SOURCES.categories, { id: RENT, name: 'Rent', kind: 'bill', sort_order: 0, weekly_budget_cents: null }],
+    plans,
+  })
+  const clear = suggestion('set_budget', { category_id: RENT, month: '2026-11-01', applies: 'onward' }, { cents: null }, { cents: 160000 })
+
+  it('says no budget is its monthly amount standing, as the Month marks it', () => {
+    const w = cardWords(clear, sources([{ id: 'p1', category_id: RENT, effective_month: '2026-01-01', planned_cents: 150000, due_day: 1 }]))
+    expect(`${line(w.change?.from)} → ${line(w.change?.to)}`).toBe('$1,600.00 → $1,500.00 planned')
+  })
+
+  it('says no budget where no monthly amount is in effect', () => {
+    const w = cardWords(clear, sources([{ id: 'p1', category_id: RENT, effective_month: '2026-01-01', planned_cents: null, due_day: null }]))
+    expect(line(w.change?.to)).toBe('no budget')
+  })
+})
+
 describe('a suggested change, in words', () => {
   it.each([
     [

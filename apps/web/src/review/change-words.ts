@@ -9,7 +9,7 @@
 import type { StoredSuggestion } from '@budget/schema'
 import { formatCents, formatIsoDate, formatMonthTitle } from '../format.js'
 import { LIST_HEADING, type CategoryKind } from '../lists.js'
-import type { Sources } from './suggested-changes.js'
+import { plannedStanding, type Sources } from './suggested-changes.js'
 
 /** Words to draw: plain text, or data (a name, a shop) drawn as ingested text. */
 export type Words = readonly (string | { readonly data: string })[]
@@ -41,7 +41,12 @@ const money = (cents: unknown, none: string) => (typeof cents === 'number' ? for
 /** One value of a suggestion's kind, as stored or as it is now, in words. */
 export function valueWords(s: StoredSuggestion, value: Value, sources: Sources): Words {
   switch (s.kind) {
-    case 'set_budget':
+    case 'set_budget': {
+      // No budget typed on Bills, Debts or Subscriptions is the monthly
+      // amount standing as one, as the Month marks it "planned" (F51).
+      const planned = typeof value['cents'] === 'number' ? null : plannedStanding(sources, s.target.category_id, s.target.month)
+      return [planned === null ? money(value['cents'], `no ${wordFor(sources, s.target.category_id)}`) : `${formatCents(planned)} planned`]
+    }
     case 'set_weekly_limit':
       return [money(value['cents'], `no ${wordFor(sources, s.target.category_id)}`)]
     case 'set_bill': {

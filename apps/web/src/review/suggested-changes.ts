@@ -89,17 +89,19 @@ export interface Sources {
   readonly rules: ReadonlyMap<string, string>
 }
 
-/** The latest month a kind's suggestions name, or null when none of that kind waits. */
-function latest(suggestions: readonly StoredSuggestion[], kind: 'set_budget' | 'set_bill'): string | null {
-  const months = suggestions.flatMap((s) => (s.kind === kind ? [s.target.month] : []))
+/** The latest month the suggestions name, or null when none names one. */
+function latest(suggestions: readonly StoredSuggestion[]): string | null {
+  const months = suggestions.flatMap((s) => (s.kind === 'set_budget' || s.kind === 'set_bill' ? [s.target.month] : []))
   return months.length === 0 ? null : months.reduce((a, b) => (a > b ? a : b))
 }
 
 /** Only what the waiting kinds need, each with the screens' own reads. */
 export async function readSources(supabase: SupabaseClient, categories: readonly Category[], suggestions: readonly StoredSuggestion[]): Promise<Sources> {
   const has = (kinds: readonly StoredSuggestion['kind'][]) => suggestions.some((s) => kinds.includes(s.kind))
-  const budgetMonth = latest(suggestions, 'set_budget')
-  const planMonth = latest(suggestions, 'set_bill')
+  const budgetMonth = latest(suggestions.filter((s) => s.kind === 'set_budget'))
+  // A budget on Bills, Debts or Subscriptions reads its monthly amount too (F51).
+  const onPlanList = (id: string) => RECURRING.has(categories.find((c) => c.id === id)?.kind ?? '')
+  const planMonth = latest(suggestions.filter((s) => s.kind === 'set_bill' || (s.kind === 'set_budget' && onPlanList(s.target.category_id))))
   const ids = [...new Set(suggestions.flatMap((s) => (s.kind === 'recategorise' || s.kind === 'learn_shop' ? [s.target.transaction_id] : [])))]
   const [budgets, plans, funds, charges, rules] = await Promise.all([
     budgetMonth === null ? [] : listBudgetHistory(supabase, budgetMonth),
@@ -224,4 +226,15 @@ export function staleWhy(s: StoredSuggestion | null, now: Now | null, today: str
   if (monthPassed(s, today)) return 'Its month has passed, so it can no longer be applied.'
   if (!('gone' in now)) return null
   return now.gone === 'moved' ? 'Its category moved to another list since it was suggested.' : 'Changed since it was suggested, and no longer there.'
+}
+
+/**
+ * A bill's, debt's or subscription's monthly amount in effect in a month,
+ * which stands as its budget where none is typed (F51); null on another
+ * list, or with none in effect.
+ */
+export function plannedStanding(sources: Sources, categoryId: string, month: string): number | null {
+  if (!RECURRING.has(sources.categories.find((c) => c.id === categoryId)?.kind ?? '')) return null
+  const plan = resolvePlans({ asOf: isoDate(month), history: plansForCore(sources.plans) }).plans.find((p) => p.categoryId === categoryId)
+  return plan === undefined ? null : plan.plannedCents
 }

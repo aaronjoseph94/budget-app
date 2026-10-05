@@ -54,6 +54,7 @@ export const CHANGE_SENTENCES = {
   bad_date: 'A goal’s date must be after today and before 2100.',
   bad_amount: 'An amount must be from $0.00 to $100,000.00, and a goal’s target from $0.01 to $999,999.99.',
   bad_words: 'A reason, or a new name, must be one line of visible characters: at most 300 for a reason and 60 for a name.',
+  planned_stands: 'On Bills, Debts and Subscriptions the monthly amount is the budget; use set_bill to change it.',
   ai_row_not_learned: 'An AI app added that charge, so the app never learns its shop from it. Suggest recategorise instead.',
   has_monthly_amount: 'That category has a monthly amount, which keeps it on its list. Stop its monthly amount first (set_bill with amount null).',
   dismissed_recently: 'The owner dismissed this same change in the last 14 days, so it is not suggested again yet.',
@@ -102,6 +103,9 @@ function goalDateOf(text: string | null, today: IsoDate): IsoDate | null | undef
 
 const categoryNamed = (owner: Owner, name: string) => owner.categories.find((c) => cleanName(c.name) === name)
 
+/** The lists with a monthly amount (0009), whose amount stands as the budget where none is typed (F51). */
+const RECURRING: ReadonlySet<string> = new Set(['bill', 'debt', 'subscription'])
+
 /** One budget, weekly limit, monthly amount or goal change, ready to store, or why not. */
 function amountChange(owner: Owner, change: Extract<Change, { kind: 'set_budget' | 'set_weekly_limit' | 'set_bill' | 'set_goal' }>): Prepared {
   if (change.kind === 'set_goal') {
@@ -126,6 +130,14 @@ function amountChange(owner: Owner, change: Extract<Change, { kind: 'set_budget'
   if (change.kind === 'set_budget') {
     const amount = centsOf(change.amount, 0, MOST_CENTS)
     if (amount === undefined) return { refused: 'bad_amount' }
+    // F51, as the Month shows it: on these lists with no budget typed in
+    // effect, the monthly amount is the budget, and a budget typed over it
+    // would stop a later change in Setup reaching it. set_bill changes it.
+    if (RECURRING.has(category.kind)) {
+      const typed = resolveBudgets({ asOf: month, history: owner.budgets }).budgets.find((b) => b.categoryId === category.id)
+      const plan = resolvePlans({ asOf: month, history: owner.plans }).plans.find((p) => p.categoryId === category.id)
+      if ((typed === undefined || typed.budgetCents === null) && plan !== undefined && plan.plannedCents !== null) return { refused: 'planned_stands' }
+    }
     // From a month on, the "from" is the onward rows' value, which every
     // later month without its own keeps: a month's own "just this month"
     // value is replaced with it in the same write (setBudget's
