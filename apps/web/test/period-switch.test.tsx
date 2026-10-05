@@ -55,6 +55,19 @@ describe('the Month · Week · Pay · Year switch (ADR 0006)', () => {
     for (const a of links) expect(a.classList.contains(a.textContent === current ? 'bg-card' : 'text-canvas-muted')).toBe(true)
   })
 
+  // e2e-plan-11: with 14 px a side, "Month" made each segment 72 px, and at
+  // 320 px the row was 12 px wider than its box, "Year" under the edge
+  // fade. Below 640 px each takes 8 px a side: four of 64 px, the gaps and
+  // the padding are 284 of the 296 px there. jsdom has no layout, so the
+  // classes that give it are what is checked.
+  it('keeps all four in view on a 320 px phone, 8 px a side below 640 px', async () => {
+    go('/month')
+    renderScreen(<Shell />, createFakeSupabase())
+    for (const a of (await views()).getAllByRole('link')) {
+      expect([a.classList.contains('px-2'), a.classList.contains('px-3.5'), a.classList.contains('sm:px-3.5'), a.classList.contains('min-w-16')]).toEqual([true, false, true, true])
+    }
+  })
+
   // The design review's Accessibility list: the Views switch takes the arrow
   // keys as the Add screen's tabs do, wrapping at each end, with Home and End.
   it('moves along the four with the arrow keys, Home and End', async () => {

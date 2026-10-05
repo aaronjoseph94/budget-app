@@ -28,7 +28,7 @@ function onArrow(e: KeyboardEvent<HTMLAnchorElement>) {
  * Each is a link to that view's bare address, so it opens as it does from
  * anywhere else (this month, this week, this pay period, this year): a
  * month has no one week or pay period to carry across. Four segments are
- * about 68px each at 320px; at large text sizes the row scrolls inside its
+ * about 69px each at 320px, each 8px a side below 640px; at large text sizes the row scrolls inside its
  * own box rather than the page sideways, its right edge fading while there
  * is more to see (edge-fade, index.css).
  *
@@ -51,7 +51,9 @@ export function PeriodSwitch({ current }: { current: 'month' | 'week' | 'paychec
             aria-current={v.screen === current ? 'page' : undefined}
             onKeyDown={onArrow}
             className={cn(
-              'flex min-h-9 min-w-16 items-center justify-center rounded-sm px-3.5 text-sm font-medium transition-colors pointer-coarse:min-h-11 sm:min-w-22',
+              // 8 px a side below 640 px, so "Month" fits 64 px and the four
+              // fit a 320 px phone; 14 px made each 72 and ran "Year" under the fade (e2e-plan-11).
+              'flex min-h-9 min-w-16 items-center justify-center rounded-sm px-2 text-sm font-medium transition-colors pointer-coarse:min-h-11 sm:min-w-22 sm:px-3.5',
               'outline-none focus-visible:ring-[3px] focus-visible:ring-ring',
               v.screen === current ? 'bg-card text-foreground shadow-sm' : 'text-canvas-muted hover:text-foreground',
             )}
