@@ -250,10 +250,13 @@ describe('ReviewScreen', () => {
 describe('ReviewScreen, lines an import could not read', () => {
   const withLines = () => {
     const fake = seeded()
+    // Each at local noon, so it is that day in the host's own time zone, as
+    // the screen shows it: noon UTC was the next day east of UTC+12 (suite-02).
+    const noon = (month: number, day: number) => new Date(2026, month - 1, day, 12).toISOString()
     fake.tables.ingest_batches.push(
-      { id: 'b-old', source: 'card_csv', created_at: '2026-07-01T12:00:00+00:00' },
-      { id: 'b-pdf', source: 'card_pdf', created_at: '2026-09-20T12:00:00+00:00' },
-      { id: 'b-clean', source: 'card_csv', created_at: '2026-09-21T12:00:00+00:00' },
+      { id: 'b-old', source: 'card_csv', created_at: noon(7, 1) },
+      { id: 'b-pdf', source: 'card_pdf', created_at: noon(9, 20) },
+      { id: 'b-clean', source: 'card_csv', created_at: noon(9, 21) },
     )
     fake.tables.ingest_unreadable_lines.push(
       { id: 'l-old', batch_id: 'b-old', source_line: 5, reason: 'missing_date' },

@@ -252,12 +252,15 @@ describe('Settings → AI apps: connected apps and Disconnect', () => {
     scopes: ['email'],
     granted_at,
   })
+  // Each at local noon, so it is that day in the host's own time zone, as
+  // the card shows it: noon UTC was the next day east of UTC+12 (suite-02).
+  const noon = (month: number, day: number) => new Date(2026, month - 1, day, 12).toISOString()
   async function connected(on = true) {
     const fake = fakeSupabase({
       ai_app_access: [{ user_id: 'u1', enabled: on, allow_add: true, time_zone: 'UTC', connect_until: null }],
-      ai_app_last_use: [{ user_id: 'u1', client_id: 'id-claude', last_used_at: '2026-10-01T12:00:00Z' }],
+      ai_app_last_use: [{ user_id: 'u1', client_id: 'id-claude', last_used_at: noon(10, 1) }],
     })
-    fake.oauth.grants = [grant('id-claude', 'Claude', '2026-09-30T12:00:00Z'), grant('id-other', '<img src=x>‮tpGtahC', '2026-09-29T12:00:00Z')]
+    fake.oauth.grants = [grant('id-claude', 'Claude', noon(9, 30)), grant('id-other', '<img src=x>‮tpGtahC', noon(9, 29))]
     await fake.signIn()
     renderScreen(<AiAppsCard />, fake)
     return fake
