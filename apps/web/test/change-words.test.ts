@@ -13,11 +13,13 @@ const PAY = '22222222-2222-4222-8222-222222222222'
 const FUND = '33333333-3333-4333-8333-333333333333'
 const GOAL = '44444444-4444-4444-8444-444444444444'
 const TXN = '55555555-5555-4555-8555-555555555555'
+const CARD = '88888888-8888-4888-8888-888888888888'
 const SOURCES: Sources = {
   categories: [
     { id: FOOD, name: 'Groceries', kind: 'variable', sort_order: 0, weekly_budget_cents: 10000 },
     { id: PAY, name: 'Pay', kind: 'income', sort_order: 0, weekly_budget_cents: null },
     { id: FUND, name: 'Trip fund', kind: 'savings', sort_order: 0, weekly_budget_cents: null },
+    { id: CARD, name: 'Card payment', kind: 'transfer', sort_order: 0, weekly_budget_cents: null },
   ],
   budgets: [],
   plans: [],
@@ -77,7 +79,7 @@ describe('a suggested change, in words', () => {
     [suggestion('set_weekly_limit', { category_id: FOOD }, { cents: 12000 }, { cents: null }), ['[Groceries] weekly budget', 'no budget → $120.00', null]],
     [
       suggestion('set_bill', { category_id: FOOD, month: '2026-11-01' }, { cents: 155000, due_day: 3 }, { cents: null, due_day: 1 }),
-      ['[Groceries] from November 2026 on', 'stopped on day 1 → $1,550.00 on day 3', null],
+      ['[Groceries] monthly amount from November 2026 on', 'no monthly amount, paid on day 1 → $1,550.00 a month, paid on day 3', null],
     ],
     [
       suggestion('set_goal', { goal_id: GOAL }, { target_cents: 250000, target_date: null }, { target_cents: 200000, target_date: '2027-03-01' }),
@@ -95,6 +97,17 @@ describe('a suggested change, in words', () => {
     [
       suggestion('learn_shop', { transaction_id: TXN }, { category_id: PAY }, { category_id: FOOD, rule_category_id: null }),
       ['Always file [COSTCO WHOLESALE] under [Pay]', 'under [Groceries] (filed by hand) → under [Pay] (always)', 'From now on its statement lines skip Review. This charge moves too.'],
+    ],
+    [suggestion('set_bill', { category_id: FOOD, month: '2026-11-01' }, { cents: 5000, due_day: null }, { cents: 4000, due_day: null }), ['[Groceries] monthly amount from November 2026 on', '$40.00 a month → $50.00 a month', null]],
+    [suggestion('recategorise', { transaction_id: TXN }, { category_id: CARD }, { category_id: FOOD }), ['[COSTCO WHOLESALE], 3 Sep 2026, -$54.20', '[Groceries] → [Card payment]', 'This charge stops counting as spending.']],
+    [suggestion('recategorise', { transaction_id: TXN }, { category_id: FOOD }, { category_id: CARD }), ['[COSTCO WHOLESALE], 3 Sep 2026, -$54.20', '[Card payment] → [Groceries]', 'This charge starts counting as spending.']],
+    [
+      suggestion('learn_shop', { transaction_id: TXN }, { category_id: CARD }, { category_id: FOOD, rule_category_id: null }),
+      [
+        'Always file [COSTCO WHOLESALE] under [Card payment]',
+        'under [Groceries] (filed by hand) → under [Card payment] (always)',
+        'From now on its statement lines skip Review. This charge moves too. It and the shop’s later charges stop counting as spending.',
+      ],
     ],
   ])('%#: %j', (s, words) => {
     expect(read(s)).toEqual(words)

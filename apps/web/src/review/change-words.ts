@@ -50,8 +50,9 @@ export function valueWords(s: StoredSuggestion, value: Value, sources: Sources):
     case 'set_weekly_limit':
       return [money(value['cents'], `no ${wordFor(sources, s.target.category_id)}`)]
     case 'set_bill': {
-      const day = typeof value['due_day'] === 'number' ? ` on day ${value['due_day']}` : ''
-      return [typeof value['cents'] === 'number' ? `${formatCents(value['cents'])}${day}` : `stopped${day}`]
+      // As Setup says it: "no monthly amount" whether stopped or never set.
+      const day = typeof value['due_day'] === 'number' ? `, paid on day ${value['due_day']}` : ''
+      return [typeof value['cents'] === 'number' ? `${formatCents(value['cents'])} a month${day}` : `no monthly amount${day}`]
     }
     case 'set_goal': {
       const date = typeof value['target_date'] === 'string' ? `by ${formatIsoDate(value['target_date'])}` : 'no date'
@@ -87,6 +88,20 @@ function moveNote(s: Extract<StoredSuggestion, { kind: 'move_category' }>, sourc
   return null
 }
 
+/** Whether moving a charge between two categories takes it out of spending or into it, as a move to or from Not spending does. */
+function spending(sources: Sources, from: string, to: string): 'stop' | 'start' | null {
+  const kind = (id: string) => sources.categories.find((c) => c.id === id)?.kind
+  if (kind(to) === 'transfer' && kind(from) !== 'transfer') return 'stop'
+  if (kind(from) === 'transfer' && kind(to) !== 'transfer') return 'start'
+  return null
+}
+
+/** A learned shop's note: it lasts, and, to or from Not spending, its charges' spending with it. */
+function noteForRule(turn: 'stop' | 'start' | null): string {
+  const lasting = 'From now on its statement lines skip Review. This charge moves too.'
+  return turn === null ? lasting : `${lasting} It and the shop’s later charges ${turn} counting as spending.`
+}
+
 export function cardWords(s: StoredSuggestion, sources: Sources): CardWords {
   const fromTo = (from: Value, to: Value) => ({ from: valueWords(s, from, sources), to: valueWords(s, to, sources) })
   switch (s.kind) {
@@ -99,7 +114,7 @@ export function cardWords(s: StoredSuggestion, sources: Sources): CardWords {
     case 'set_weekly_limit':
       return { title: [...categoryName(sources, s.target.category_id), ` weekly ${wordFor(sources, s.target.category_id)}`], change: fromTo(s.before, s.after), note: null }
     case 'set_bill':
-      return { title: [...categoryName(sources, s.target.category_id), ` from ${formatMonthTitle(s.target.month)} on`], change: fromTo(s.before, s.after), note: null }
+      return { title: [...categoryName(sources, s.target.category_id), ` monthly amount from ${formatMonthTitle(s.target.month)} on`], change: fromTo(s.before, s.after), note: null }
     case 'set_goal': {
       const goal = sources.funds.find((g) => g.id === s.target.goal_id)
       return { title: [goal === undefined ? 'A removed goal' : { data: goal.name }, ' savings goal'], change: fromTo(s.before, s.after), note: null }
@@ -110,15 +125,17 @@ export function cardWords(s: StoredSuggestion, sources: Sources): CardWords {
       return { title: ['Add ', { data: s.target.name }, ` to ${LIST_HEADING[s.target.list]}`], change: null, note: null }
     case 'move_category':
       return { title: ['Move ', ...categoryName(sources, s.target.category_id)], change: fromTo(s.before, s.after), note: moveNote(s, sources) }
-    case 'recategorise':
-      return { title: chargeWords(sources, s.target.transaction_id), change: fromTo(s.before, s.after), note: null }
+    case 'recategorise': {
+      const turn = spending(sources, s.before.category_id, s.after.category_id)
+      return { title: chargeWords(sources, s.target.transaction_id), change: fromTo(s.before, s.after), note: turn === null ? null : `This charge ${turn}s counting as spending.` }
+    }
     case 'learn_shop': {
       const charge = sources.charges.find((c) => c.id === s.target.transaction_id)
       const shop: Words = charge === undefined ? ['a removed charge’s shop'] : [{ data: charge.merchant_raw }]
       return {
         title: ['Always file ', ...shop, ' under ', ...categoryName(sources, s.after.category_id)],
         change: { from: valueWords(s, s.before, sources), to: ['under ', ...categoryName(sources, s.after.category_id), ' (always)'] },
-        note: 'From now on its statement lines skip Review. This charge moves too.',
+        note: noteForRule(spending(sources, s.before.category_id, s.after.category_id)),
       }
     }
   }
