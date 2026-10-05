@@ -231,7 +231,7 @@ it hands out (testing mcp-01); `2026-10-05.3` holds a 2025-era request to
 the 20-second deadline too, which it had stopped watching once the SDK
 began its answer (testing mcp-02); `2026-10-05.4` carries the engine's
 fixes to a debt never paid off, amounts and dates long ago (testing
-fuzz-03, fuzz-04, fuzz-07); `2026-10-05.5` leaves the day of a note empty for a year before 1900 (testing fuzz-06); `2026-10-05.6` refuses a day before 1900 or after 2999 in get_period and search_transactions, saying which days it reads (testing mcp-04).
+fuzz-03, fuzz-04, fuzz-07); `2026-10-05.5` leaves the day of a note empty for a year before 1900 (testing fuzz-06); `2026-10-05.6` refuses a day before 1900 or after 2999 in get_period and search_transactions, saying which days it reads (testing mcp-04); `2026-10-05.7` takes the bearer scheme in any letter case, as RFC 7235 has it (testing mcp-06).
 
 **Enforce JWT verification on `mcp` must stay off.** With it on,
 Supabase answers Claude and ChatGPT before the server can, without the

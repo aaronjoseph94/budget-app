@@ -72,6 +72,15 @@ describe('the challenge', () => {
     expect(calls).toEqual([])
   })
 
+  // Testing mcp-06: the scheme's letter case means nothing (RFC 7235 §2.1),
+  // and 'bearer <token>' was told its good token was invalid.
+  it.each(['bearer', 'BEARER', 'BeArEr'])('takes the scheme written "%s"', async (scheme) => {
+    const { res, calls } = call(`${scheme} ${AI_APP_TOKEN}`)
+    expect((await res).status).toBe(200)
+    // Auth is asked with the scheme as it expects it.
+    expect((calls[0]?.init.headers as Record<string, string>)['Authorization']).toBe(`Bearer ${AI_APP_TOKEN}`)
+  })
+
   it.each([401, 403])("turns Auth's %i into invalid_token", async (status) => {
     const r = await call(`Bearer ${AI_APP_TOKEN}`, () => new Response('{}', { status })).res
     expect(r.status).toBe(401)
