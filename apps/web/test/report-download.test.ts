@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Category, LedgerRow } from '../src/ledger.js'
-import { chargesCsvRows, summaryCsvRows } from '../src/reports/download.js'
+import { chargesCsvRows, summaryCsvRows } from '../src/reports/download-rows.js'
 import { reportOf, type ReportRows } from '../src/reports/read.js'
 
 /**

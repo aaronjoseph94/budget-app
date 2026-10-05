@@ -176,7 +176,9 @@ describe('the deadline', () => {
 describe('no service key', () => {
   it('is named nowhere in the source', () => {
     const dir = new URL('../src/', import.meta.url)
-    const files = readdirSync(dir, { recursive: true, encoding: 'utf8' }).filter((f) => f.endsWith('.ts'))
+    const files = readdirSync(dir, { recursive: true, encoding: 'utf8' })
+      .map((f) => f.replaceAll('\\', '/'))
+      .filter((f) => f.endsWith('.ts'))
     expect(files).toContain('tools/categories.ts')
     const source = files.map((f) => readFileSync(new URL(f, dir), 'utf8')).join('\n')
     expect(source).not.toMatch(/service_role|secret_keys|SUPABASE_SECRET|sb_secret_/i)

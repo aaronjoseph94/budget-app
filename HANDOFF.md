@@ -212,7 +212,7 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
    preset **None**, build command `pnpm --filter @budget/app-client build`,
    build output directory `apps/web/dist`, root directory empty.
    **Environment variables** (same screen, before the first deploy):
-   `NODE_VERSION` = `22`, `PNPM_VERSION` = `10.33.0`,
+   `NODE_VERSION` = `24`, `PNPM_VERSION` = `10.34.6`,
    `VITE_SUPABASE_URL` = `https://bnodrfghxbavlopxkgju.supabase.co`,
    `VITE_SUPABASE_ANON_KEY` = the **publishable** key (`sb_publishable_…`,
    the same value as in `netlify.toml`), never a secret or `service_role`

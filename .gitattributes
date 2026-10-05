@@ -1,0 +1,11 @@
+# Keep source line endings LF so CSS/?raw and string tests match on every OS.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary

@@ -2,7 +2,7 @@
   "name": "budget-app",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@10.34.6",
   "engines": {
     "node": ">=22"
   },
@@ -14,12 +14,12 @@
     "verify": "./scripts/gates.sh full"
   },
   "devDependencies": {
-    "@types/node": "^22.19.0",
-    "@vitest/coverage-v8": "^3.2.7",
-    "dependency-cruiser": "^18.4.0",
-    "eslint": "^10.11.0",
-    "typescript": "^5.7.0",
-    "typescript-eslint": "^8.70.0",
-    "vitest": "^3.0.0"
+    "@types/node": "^24.19.1",
+    "@vitest/coverage-v8": "^5.0.3",
+    "dependency-cruiser": "^18.5.0",
+    "eslint": "^10.12.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.71.0",
+    "vitest": "^5.0.3"
   }
 }

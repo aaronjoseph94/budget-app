@@ -14,8 +14,12 @@ import { expectNoAxeViolations } from './axe.js'
  */
 // The repository's root, from this file's own address. Vite rewrites a
 // `new URL(…, import.meta.url)` in a test, so the path is cut as text.
-const ROOT = decodeURIComponent(import.meta.url.replace(/^file:\/\//, '').replace(/apps\/web\/test\/[^/]+$/, ''))
-const committed = (path: string) => readFileSync(`${ROOT}${path}`, 'utf8')
+// Normalise file:// and Windows drive forms so Git Bash and PowerShell agree.
+const ROOT = decodeURIComponent(import.meta.url.replace(/^file:\/\//, ''))
+  .replace(/^\/([A-Za-z]:\/)/, '$1')
+  .replace(/\\/g, '/')
+  .replace(/apps\/web\/test\/[^/]+$/, '')
+const committed = (path: string) => readFileSync(`${ROOT}${path}`, 'utf8').replace(/\r\n/g, '\n')
 const SITE: Record<string, string> = {
   '/setup/0016_ai_foundation.sql': committed('supabase/migrations/0016_ai_foundation.sql'),
   '/setup/ai-function.ts': committed('supabase/functions/ai/index.ts'),

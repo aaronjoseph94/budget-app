@@ -17,7 +17,8 @@ export function isCopyable(file: string): boolean {
  * name, and each function with its own.
  */
 function looksRight(file: string, text: string): boolean {
-  const first = text.slice(0, text.indexOf('\n'))
+  // Strip a trailing CR so Windows checkouts (CRLF) match the committed header.
+  const first = text.slice(0, text.indexOf('\n')).replace(/\r$/, '')
   if (file === HELPER_FILE) return first.startsWith('// ai — the AI helper')
   if (file === READ_RECEIPT_FILE) return first.startsWith('// read-receipt — a photo of a receipt in')
   if (file === SERVER_FILE) return first.startsWith('// mcp-function.ts — ')
@@ -46,7 +47,8 @@ export function CopyFile({ file }: { file: string }) {
       .then(async (res) => (res.ok ? res.text() : null))
       .catch(() => null)
       .then((text) => {
-        if (live) setGot(text !== null && looksRight(file, text) ? { kind: 'ready', text } : { kind: 'failed' })
+        const normalised = text === null ? null : text.replace(/\r\n/g, '\n')
+        if (live) setGot(normalised !== null && looksRight(file, normalised) ? { kind: 'ready', text: normalised } : { kind: 'failed' })
       })
     return () => void (live = false)
   }, [file])
