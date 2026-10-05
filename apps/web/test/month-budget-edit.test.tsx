@@ -127,6 +127,8 @@ describe('Typing a budget on the Month', () => {
       ['', 'Type the budget as an amount, like 250 or 250.00.'],
       ['12.345', 'Type the budget as an amount, like 250 or 250.00.'],
       ['-5', 'A budget cannot be below zero.'],
+      // e2e-plan-01: taken, it broke every month from here on.
+      ['90071992547409.91', 'That amount is too large. The most you can type is $999,999,999.99.'],
     ] as const) {
       fireEvent.change(field, { target: { value: text } })
       fireEvent.click(screen.getByRole('button', { name: 'Save' }))

@@ -70,6 +70,10 @@ describe('WeekBudgetEditor', () => {
     type('Weekly budget for Groceries', '-5')
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     expect(screen.getByText('A budget cannot be below zero.')).toBeTruthy()
+    // e2e-plan-01: taken, it broke the week.
+    type('Weekly budget for Groceries', '90071992547409.91')
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    expect(screen.getByText('That amount is too large. The most you can type is $999,999,999.99.')).toBeTruthy()
     expect(fake.tables.categories[0]?.weekly_budget_cents).toBe(15000)
   })
 

@@ -1,6 +1,6 @@
 import { useId, useState } from 'react'
 import type { PeriodRow } from '@budget/core'
-import { parseMoneyInput, useAppData } from '../app-data.js'
+import { parseMoneyInput, tooLargeInput, useAppData } from '../app-data.js'
 import { setBudget } from '../ledger.js'
 import { formatCents, formatForInput, formatMonthName } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
@@ -51,7 +51,7 @@ export function BudgetEditor({
   const save = async (clear: boolean) => {
     const cents = clear ? null : parseMoneyInput(text)
     if (!clear && cents === null) {
-      setError(`Type the ${lower} as an amount, like 250 or 250.00.`)
+      setError(tooLargeInput(text) ?? `Type the ${lower} as an amount, like 250 or 250.00.`)
       return
     }
     if (cents !== null && cents < 0) {

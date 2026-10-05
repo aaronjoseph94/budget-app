@@ -108,6 +108,10 @@ describe('Typing the starting balance on the Month', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Save' }))
       expect(screen.getByRole('alert').textContent).toBe('Type the balance as an amount, like 2400 or 2,400.00.')
     }
+    // e2e-plan-01: taken, it broke the month.
+    fireEvent.change(typed, { target: { value: '90071992547409.91' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    expect(screen.getByRole('alert').textContent).toBe('That amount is too large. The most you can type is $999,999,999.99.')
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(screen.queryByRole('textbox')).toBeNull()
     expect(fake.tables.month_balances).toEqual([])

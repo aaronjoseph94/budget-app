@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { SavingsFund } from '@budget/core'
-import { parseMoneyInput, useAppData } from '../app-data.js'
+import { parseMoneyInput, tooLargeInput, useAppData } from '../app-data.js'
 import { saveFund, type FundRow } from '../ledger.js'
 import { formatForInput, todayIso } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
@@ -53,11 +53,11 @@ export function FundEditor({
     const goalCents = parseMoneyInput(target)
     const savedCents = saved.trim() === '' ? parseMoneyInput('0') : parseMoneyInput(saved)
     if (goalCents === null || goalCents <= 0) {
-      setError('Type the goal as an amount above zero, like 2000 or 2,000.00.')
+      setError(tooLargeInput(target) ?? 'Type the goal as an amount above zero, like 2000 or 2,000.00.')
       return
     }
     if (savedCents === null || savedCents < 0) {
-      setError('Type what is saved as an amount, like 150 or 150.00, or leave it empty for nothing yet.')
+      setError(tooLargeInput(saved) ?? 'Type what is saved as an amount, like 150 or 150.00, or leave it empty for nothing yet.')
       return
     }
     const inUnit = readUnit(unit)

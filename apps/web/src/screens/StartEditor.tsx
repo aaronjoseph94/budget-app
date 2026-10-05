@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { parseMoneyInput, useAppData } from '../app-data.js'
+import { parseMoneyInput, tooLargeInput, useAppData } from '../app-data.js'
 import { setMonthBalance } from '../ledger.js'
 import { formatCents, formatForInput, formatMonthName } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
@@ -52,9 +52,10 @@ export function StartEditor({
   const open = useStillOpen()
 
   const save = async (clear: boolean) => {
-    const cents = clear ? null : parseMoneyInput(overdrawn ? `-${text.trim()}` : text)
+    const typed = overdrawn ? `-${text.trim()}` : text
+    const cents = clear ? null : parseMoneyInput(typed)
     if (!clear && cents === null) {
-      setError('Type the balance as an amount, like 2400 or 2,400.00.')
+      setError(tooLargeInput(typed) ?? 'Type the balance as an amount, like 2400 or 2,400.00.')
       return
     }
     setBusy(true)

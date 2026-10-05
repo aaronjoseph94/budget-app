@@ -1,5 +1,5 @@
 import { useId } from 'react'
-import { parseMoneyInput } from '../app-data.js'
+import { parseMoneyInput, tooLargeInput } from '../app-data.js'
 import { formatForInput } from '../format.js'
 import { Field, Input } from '../components/ui/form.js'
 
@@ -23,7 +23,7 @@ export function readUnit(
 ): { readonly unitCostCents: number | null; readonly unitLabel: string | null } | { readonly problem: string } {
   if (!unit.inHours) return { unitCostCents: null, unitLabel: null }
   const cost = parseMoneyInput(unit.cost)
-  if (cost === null || cost <= 0) return { problem: 'Type what an hour costs, like 275 or 275.00.' }
+  if (cost === null || cost <= 0) return { problem: tooLargeInput(unit.cost) ?? 'Type what an hour costs, like 275 or 275.00.' }
   const label = unit.label.trim()
   return label === '' ? { problem: 'Say what the hours are of, like flight time.' } : { unitCostCents: cost, unitLabel: label }
 }

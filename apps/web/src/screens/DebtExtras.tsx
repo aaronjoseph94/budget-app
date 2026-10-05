@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { parseMoneyInput, useAppData } from '../app-data.js'
+import { parseMoneyInput, tooLargeInput, useAppData } from '../app-data.js'
 import { removeDebtExtra, saveDebtExtra, type DebtExtraRow, type DebtRow } from '../ledger.js'
 import { formatCents, formatMonthTitle, todayIso } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
@@ -51,7 +51,7 @@ export function DebtExtras({
 
   const add = () => {
     const amountCents = parseMoneyInput(amount)
-    if (amountCents === null || amountCents <= 0) return setError('Type the extra payment as an amount above zero, like 50.')
+    if (amountCents === null || amountCents <= 0) return setError(tooLargeInput(amount) ?? 'Type the extra payment as an amount above zero, like 50.')
     if (!/^\d{4}-\d{2}$/.test(month)) return setError('Choose the month you pay it in.')
     if (`${month}-01` < row.start_date) {
       return setError(`An extra payment cannot come before ${formatMonthTitle(row.start_date)}, when this debt starts.`)

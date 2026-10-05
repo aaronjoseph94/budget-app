@@ -3787,3 +3787,28 @@ asserts, which a cleanup must not do.
 Week's rule (no arc at 0), and update the Week's assertions in the same
 commit.
 
+
+---
+
+## N164 — A statement amount past $999,999,999.99 still reaches Review, and the Month blames a category
+
+**Seen:** 2026-10-05, fixing e2e-plan-01. Typed amounts now stop at
+`MAX_TYPED_CENTS` ($999,999,999.99) in `parseTypedAmount`, which the app's
+money fields and the AI apps server share, so a field says "That amount is
+too large" instead of saving one the engine cannot add up. Two edges stay:
+a statement row read by `parseAmountToCents` has no such bound, so a CSV
+line of `90071992547409.91` can still be approved and break the month; and
+when the engine refuses a sheet for any reason, the Month, Week, Pay period,
+Year and Calendar all say a row "names a category that did not load", which
+is wrong when the reason is an amount too large to add up. The database's
+`budget_cents`, `planned_cents` and the like have no upper bound either.
+
+**Why not fixed here:** a statement bound changes what an import refuses
+(its own slice, with a rejection reason and its words), the catch-all
+sentence lives in six screens, and a CHECK needs a migration this tree must
+not add.
+
+**To settle:** give `parseAmountToCents` the same bound with an
+`amount_too_large` rejection; word each screen's catch-all as "something in
+this month could not be added up"; a later migration adds
+`check (x between -99999999999 and 99999999999)` to each money column.

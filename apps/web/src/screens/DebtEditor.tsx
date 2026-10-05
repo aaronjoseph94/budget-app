@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { parseMoneyInput, parsePercentInput, useAppData } from '../app-data.js'
+import { parseMoneyInput, parsePercentInput, tooLargeInput, useAppData } from '../app-data.js'
 import { removeDebt, saveDebt, type DebtExtraRow, type DebtRow } from '../ledger.js'
 import { formatForInput, todayIso } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
@@ -72,8 +72,8 @@ export function DebtEditor({
     const aprBasisPoints = apr.trim() === '' ? parsePercentInput('0') : parsePercentInput(apr)
     const startMonth = `${start}-01`
     if (name.trim() === '') return setError('Give the debt a name.')
-    if (startingBalanceCents === null || startingBalanceCents < 0) return setError('Type the balance as an amount, like 3000 or 3,000.00.')
-    if (minimumPaymentCents === null || minimumPaymentCents < 0) return setError('Type the minimum payment as an amount, like 150.')
+    if (startingBalanceCents === null || startingBalanceCents < 0) return setError(tooLargeInput(balance) ?? 'Type the balance as an amount, like 3000 or 3,000.00.')
+    if (minimumPaymentCents === null || minimumPaymentCents < 0) return setError(tooLargeInput(minimum) ?? 'Type the minimum payment as an amount, like 150.')
     if (aprBasisPoints === null || aprBasisPoints < 0) return setError('Type the APR as a percentage, like 19.99, or leave it empty for 0%.')
     if (!/^\d{4}-\d{2}$/.test(start)) return setError('Choose the month the balance is as of.')
     if (extras.some((e) => e.month < startMonth)) {

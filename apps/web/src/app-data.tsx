@@ -8,7 +8,7 @@
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { orderGoals, type PlacedGoal } from '@budget/core'
-import { parseTypedAmount } from '@budget/statement-parsers'
+import { MAX_TYPED_CENTS, parseTypedAmount, readTypedAmount } from '@budget/statement-parsers'
 import {
   ensureAccount,
   listCategories,
@@ -20,7 +20,7 @@ import {
 import type { Cents } from '@budget/money-primitives'
 import { NO_MARKS, type SetupMarks } from './profile.js'
 import { countWaiting } from './review/suggested-changes.js'
-import { todayIso } from './format.js'
+import { formatCents, todayIso } from './format.js'
 import type { SupabaseClient } from './supabase.js'
 
 const DEFAULT_ACCOUNT = 'Main Card'
@@ -241,6 +241,18 @@ export function parseMoneyInput(text: string): Cents | null {
 }
 
 /**
+ * The sentence for typed money past what the app takes (MAX_TYPED_CENTS),
+ * or null when that is not why it was refused. A field that refuses an
+ * amount says this before its own "type it as an amount" (e2e-plan-01).
+ */
+export function tooLargeInput(text: string): string | null {
+  const read = readTypedAmount(text)
+  return !read.ok && read.reason === 'too_large'
+    ? `That amount is too large. The most you can type is ${formatCents(MAX_TYPED_CENTS)}.`
+    : null
+}
+
+/**
  * A weekly budget or goal as typed, or the sentence saying why it is not
  * one. The Week's editor and Settings both read budgets through this, so
  * they refuse the same things in the same words (CR-5). `word` is what the
@@ -249,7 +261,7 @@ export function parseMoneyInput(text: string): Cents | null {
  */
 export function readBudgetInput(text: string, word: string): { readonly cents: Cents } | { readonly problem: string } {
   const cents = parseMoneyInput(text)
-  if (cents === null) return { problem: `Type the ${word} as an amount, like 150 or 150.00.` }
+  if (cents === null) return { problem: tooLargeInput(text) ?? `Type the ${word} as an amount, like 150 or 150.00.` }
   if (cents < 0) return { problem: `A ${word} cannot be below zero.` }
   return { cents }
 }

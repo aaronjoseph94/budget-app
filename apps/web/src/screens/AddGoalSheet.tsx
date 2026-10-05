@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { goalAtEnd } from '@budget/core'
-import { parseMoneyInput, placedGoal, useAppData } from '../app-data.js'
+import { parseMoneyInput, placedGoal, tooLargeInput, useAppData } from '../app-data.js'
 import { addGoal } from '../goal-writes.js'
 import { atEndOf, LIST_HEADING } from '../lists.js'
 import { todayIso } from '../format.js'
@@ -67,9 +67,9 @@ export function AddGoalSheet({
           : taken !== undefined && goalOnFund.has(taken.id)
             ? `Your ${named} fund already has a goal. Edit it on its card, or use another name.`
             : targetCents === null || targetCents <= 0
-              ? 'Type the target as an amount above zero, like 2000 or 2,000.00.'
+              ? (tooLargeInput(target) ?? 'Type the target as an amount above zero, like 2000 or 2,000.00.')
               : savedCents === null || savedCents < 0
-                ? 'Type what is saved as an amount, like 150 or 150.00, or leave it empty for nothing yet.'
+                ? (tooLargeInput(saved) ?? 'Type what is saved as an amount, like 150 or 150.00, or leave it empty for nothing yet.')
                 : 'problem' in inUnit
                   ? inUnit.problem
                   : null

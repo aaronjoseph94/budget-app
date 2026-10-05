@@ -176,9 +176,32 @@ export function applySignConvention(amount: Cents, convention: SignConvention): 
  * amounts through this, so the same words mean the same amount in both.
  */
 export function parseTypedAmount(text: string): Cents | null {
+  const read = readTypedAmount(text)
+  return read.ok ? read.value : null
+}
+
+/**
+ * The most a person may type in a money field, either way: $999,999,999.99.
+ * Far past any household figure, and far enough inside whole-number range
+ * that the engine can add a year of every budget without refusing. Taken
+ * unbounded, 90071992547409.91 was saved, then every Month, Week and Year
+ * that added it up failed to draw, and hid the editor that could undo it
+ * (e2e-plan-01).
+ */
+export const MAX_TYPED_CENTS: Cents = cents(99_999_999_999)
+
+/** A typed amount, or why it is not one: not an amount at all, or past MAX_TYPED_CENTS. */
+export type TypedAmount =
+  | { readonly ok: true; readonly value: Cents }
+  | { readonly ok: false; readonly reason: 'not_an_amount' | 'too_large' }
+
+/** parseTypedAmount, saying which way the text failed, so a field can say "too large". */
+export function readTypedAmount(text: string): TypedAmount {
   const trimmed = text.trim().replace(/^\$/, '')
-  if (trimmed.length === 0) return null
+  if (trimmed.length === 0) return { ok: false, reason: 'not_an_amount' }
   const withCents = /\.\d{2}$/.test(trimmed) ? trimmed : /\.\d$/.test(trimmed) ? `${trimmed}0` : `${trimmed}.00`
   const parsed = parseAmountToCents(withCents, US_AMOUNT_FORMAT)
-  return parsed.ok ? parsed.value : null
+  if (!parsed.ok) return { ok: false, reason: 'not_an_amount' }
+  if (parsed.value > MAX_TYPED_CENTS || parsed.value < -MAX_TYPED_CENTS) return { ok: false, reason: 'too_large' }
+  return { ok: true, value: parsed.value }
 }

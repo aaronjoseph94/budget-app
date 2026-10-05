@@ -3,7 +3,9 @@ import { cents } from '@budget/money-primitives'
 import {
   US_AMOUNT_FORMAT,
   applySignConvention,
+  MAX_TYPED_CENTS,
   parseTypedAmount,
+  readTypedAmount,
   parseAmountToCents,
   type AmountFormat,
 } from '../src/index.js'
@@ -180,5 +182,20 @@ describe('parseTypedAmount', () => {
 
   it.each(['', '   ', '$', 'abc', '12.345', '1.2.3', '12,5'])('reads %j as no amount', (text) => {
     expect(parseTypedAmount(text)).toBeNull()
+    expect(readTypedAmount(text)).toEqual({ ok: false, reason: 'not_an_amount' })
+  })
+
+  // e2e-plan-01: 90071992547409.91 was taken, then every Month, Week and
+  // Year that added it up refused to draw. The most is $999,999,999.99
+  // either way, and past it the text is too large, not "no amount".
+  it('takes up to $999,999,999.99 either way, and calls more too large', () => {
+    expect(MAX_TYPED_CENTS).toBe(99_999_999_999)
+    expect(parseTypedAmount('999,999,999.99')).toBe(99_999_999_999)
+    expect(parseTypedAmount('-999999999.99')).toBe(-99_999_999_999)
+    for (const text of ['1000000000', '-1,000,000,000.00', '90071992547409.91', '8000000000000']) {
+      expect(parseTypedAmount(text), text).toBeNull()
+      expect(readTypedAmount(text), text).toEqual({ ok: false, reason: 'too_large' })
+    }
+    expect(readTypedAmount('$12.50')).toEqual({ ok: true, value: 1250 })
   })
 })

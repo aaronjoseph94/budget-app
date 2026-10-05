@@ -5,13 +5,16 @@
  * card export, and none of it needs a model. See CAPABILITY-MAP.md.
  */
 export {
+  MAX_TYPED_CENTS,
   US_AMOUNT_FORMAT,
   applySignConvention,
   parseAmountToCents,
   parseTypedAmount,
+  readTypedAmount,
   type AmountFormat,
   type ParseOutcome,
   type SignConvention,
+  type TypedAmount,
 } from './amount.js'
 
 export {
