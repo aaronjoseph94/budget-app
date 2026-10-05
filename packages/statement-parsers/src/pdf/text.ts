@@ -33,7 +33,14 @@ const latin1 = new TextDecoder('latin1')
  * so each attempt costs a constant. An array's body cannot hold a bare `[`,
  * so each `[` scans no further than the next; a `[` inside one of its
  * strings is still read, because strings are matched whole.
+ *
+ * A string or an array starts only at a bracket no backslash escapes
+ * (testing fuzz-01): an escaped one can sit inside a body, so each could
+ * start a scan to the end of the page, and `(` then 40,000 `\(` took
+ * seconds. Outside a string a backslash means nothing, so no real string
+ * or array starts after one.
  */
+const OPEN = String.raw`(?<!\\)`
 const NUMBER_START = String.raw`(?<![-\d.])`
 const NUMBER = String.raw`[-\d.]{1,32}`
 const GAP = String.raw`\s{1,16}`
@@ -47,9 +54,9 @@ const ARRAY_LITERAL = String.raw`\((?:\\[\s\S]|[^\\()])*\)`
  */
 const TOKEN = new RegExp(
   [
-    String.raw`\((?<lit>(?:\\[\s\S]|[^\\()])*)\)\s*(?<litOp>Tj|TJ|'|")`,
+    String.raw`${OPEN}\((?<lit>(?:\\[\s\S]|[^\\()])*)\)\s*(?<litOp>Tj|TJ|'|")`,
     String.raw`<(?<hex>[0-9A-Fa-f\s]*)>\s*(?:Tj|TJ)`,
-    String.raw`\[(?<arr>(?:${ARRAY_LITERAL}|<[0-9A-Fa-f\s]*>|\\[\s\S]|[^\[\]()<>\\])*)\]\s*TJ`,
+    String.raw`${OPEN}\[(?<arr>(?:${ARRAY_LITERAL}|<[0-9A-Fa-f\s]*>|\\[\s\S]|[^\[\]()<>\\])*)\]\s*TJ`,
     String.raw`${NUMBER_START}(?<tm>(?:${NUMBER}${GAP}){5}${NUMBER})${GAP}Tm`,
     String.raw`${NUMBER_START}(?<td>${NUMBER}${GAP}${NUMBER})${GAP}(?<tdOp>Td|TD)`,
     String.raw`(?<tstar>T\*)`,
@@ -61,7 +68,7 @@ const TOKEN = new RegExp(
 
 const ARRAY_PIECE = new RegExp(
   [
-    String.raw`\((?<lit>(?:\\[\s\S]|[^\\()])*)\)`,
+    String.raw`${OPEN}\((?<lit>(?:\\[\s\S]|[^\\()])*)\)`,
     String.raw`<(?<hex>[0-9A-Fa-f\s]*)>`,
     String.raw`(?<adv>-?[\d.]+)`,
   ].join('|'),

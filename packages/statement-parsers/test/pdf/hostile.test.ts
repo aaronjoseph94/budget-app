@@ -114,6 +114,25 @@ describe('runs that made the patterns backtrack (security-b-04)', () => {
     expect(runs.map((r) => r.text)).toEqual(['A synthetic line', 'A synthetic line'])
   })
 
+  // Testing fuzz-01: a literal or an array could start at every escaped
+  // bracket, and each start read to the end of the page, so a 339-byte file
+  // held the main thread for 14 s.
+  it.each([
+    ['escaped open parentheses after an open one', `(${'\\('.repeat(RUN / 2)}`],
+    ['escaped open brackets after an open one', `[${'\\['.repeat(RUN / 2)}`],
+    ['escaped open parentheses in a TJ array', `[${'\\('.repeat(RUN / 2)}] TJ`],
+  ])('reads a page holding %s quickly', (_, hostile) => {
+    const started = performance.now()
+    const runs = extractRuns(encoder.encode(`${LINE}${hostile}\n${LINE}`))
+    expect(performance.now() - started).toBeLessThan(2000)
+    expect(runs.map((r) => r.text)).toEqual(['A synthetic line', 'A synthetic line'])
+  })
+
+  it('still reads escaped parentheses inside a string', () => {
+    const runs = extractRuns(encoder.encode('BT 1 0 0 1 20 700 Tm (a \\(b\\) c) Tj [(d \\(e\\)) -250 (f)] TJ ET'))
+    expect(runs.map((r) => r.text)).toEqual(['a (b) c', 'd (e) f'])
+  })
+
   it('still reads a TJ array whose string holds a bracket', () => {
     const runs = extractRuns(encoder.encode('BT 1 0 0 1 20 700 Tm [(see [note]) -250 (x)] TJ ET'))
     expect(runs.map((r) => r.text)).toEqual(['see [note] x'])
