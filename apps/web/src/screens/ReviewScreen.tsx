@@ -32,6 +32,7 @@ import { SuggestButton, SuggestLine, suggestOffered } from '../review/SuggestBar
 import { MonthTitle } from '../components/ui/type.js'
 import { useSuggestions } from '../review/use-suggestions.js'
 import { addedBy } from '../ai-apps/access.js'
+import { SuggestedChanges } from '../review/SuggestedChanges.js'
 
 /** `busy` while Approve these N works through its rows: every row waits. */
 const ALL = '__all__'
@@ -352,6 +353,9 @@ export function ReviewScreen() {
             to swap the whole queue for an error card until the page was reloaded. */}
         {(error ?? loadError) !== null ? <Alert tone="error" title="That did not work">{error ?? loadError}</Alert> : null}
       </div>
+
+      {/* What a connected AI app suggested, above the rows waiting (ADR 0013). */}
+      <SuggestedChanges />
 
       {rows !== null && rows.length === 0 && unreadable?.total === 0 ? (
         <Card>
