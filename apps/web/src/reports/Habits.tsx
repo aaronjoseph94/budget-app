@@ -12,6 +12,7 @@ import { useAppData, useCategoryName } from '../app-data.js'
 import { formatCents, formatDayMonth, formatIsoDate, formatMagnitude, formatMonthTitle, formatWeeks } from '../format.js'
 import { hashOf } from '../nav.js'
 import { SvgChart, fitted } from '../components/ui/chart.js'
+import { ScrollX } from '../components/ui/scroll-x.js'
 import { Row, Section } from '../forecast/parts.js'
 import { Failed } from './Failed.js'
 import { habitsOf, useHabitsRead } from './habits-read.js'
@@ -92,7 +93,7 @@ function GridCard({ grid }: { grid: SpendingGrid }) {
       <p className="text-muted-foreground">
         Everyday spending (Variable expenses), each day of the last {grid.weeks.length} weeks. {allowanceText(grid)}
       </p>
-      <div className="overflow-x-auto">
+      <ScrollX label="Your spending grid, day by day">
         <SvgChart
           svg={heatGrid({
             id: 'spending-grid',
@@ -111,7 +112,7 @@ function GridCard({ grid }: { grid: SpendingGrid }) {
           })}
           className="mx-auto max-w-md"
         />
-      </div>
+      </ScrollX>
       <dl className="divide-y">
         <Row label="Days with no everyday spending" value={`${grid.noSpendDays} of ${grid.recordedDays}`} />
         {(['half', 'all', 'one_and_half', 'more'] as const).map((level) => (

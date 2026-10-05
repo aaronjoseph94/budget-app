@@ -43,6 +43,10 @@ describe('Reports, Habits: the spending grid (plan §2.6, A18)', () => {
     const grid = await card('Your spending grid')
     expect(within(grid).getByText(/each day of the last 26 weeks\. Against \$30\.00 a day: your weekly budgets spread over the week\./)).toBeTruthy()
     expect(within(grid).getByRole('img', { name: 'Everyday spending, day by day, from 30 Mar' })).toBeTruthy()
+    // e2e-money-02: the grid scrolls sideways on a phone; a keyboard reaches it.
+    const scroller = within(grid).getByRole('group', { name: 'Your spending grid, day by day' })
+    expect(scroller.tabIndex).toBe(0)
+    expect(scroller.contains(within(grid).getByRole('img', { name: 'Everyday spending, day by day, from 30 Mar' }))).toBe(true)
     // 25 Saturdays of Groceries and five Dining out days over; Coffee's $5.00 up to half; Rent is a bill.
     expect(figure(grid, 'Days with no everyday spending')).toBe('148 of 179')
     expect(figure(grid, 'Days over one and a half times the allowance')).toBe('30')

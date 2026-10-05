@@ -65,6 +65,13 @@ describe('the next three months on the Forecast (plan §2.5, A14, F35)', () => {
     expect(rowOf(card, 'Best case end')).toEqual(['$4,770', '$6,130', '$7,490'])
     // Each row's name stays in view as the months scroll sideways on a narrow phone.
     expect(within(card).getAllByRole('rowheader').every((th) => th.classList.contains('sticky'))).toBe(true)
+    // e2e-money-02: at 390 px the table scrolls, and with nothing focusable
+    // in it a keyboard on Safari could never reach the last month. The box
+    // that scrolls takes a Tab stop and a name.
+    const scroller = within(card).getByRole('group', { name: 'The next three months, month by month' })
+    expect(scroller.tabIndex).toBe(0)
+    expect(scroller.classList.contains('overflow-x-auto')).toBe(true)
+    expect(scroller.contains(within(card).getByRole('table'))).toBe(true)
     await expectNoAxeViolations()
   })
 

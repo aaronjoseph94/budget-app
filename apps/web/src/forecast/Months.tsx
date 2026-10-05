@@ -2,6 +2,7 @@ import { bandBars } from '@budget/chart-specs'
 import type { AheadMonth, CashFlowAhead, ScaledSeries, Spread } from '@budget/core'
 import { formatCents, formatIsoDate, formatShortMonth, formatWholeDollars } from '../format.js'
 import { SvgChart, fitted } from '../components/ui/chart.js'
+import { ScrollX } from '../components/ui/scroll-x.js'
 import { Badge } from '../components/ui/feedback.js'
 import { Section } from './parts.js'
 
@@ -51,7 +52,7 @@ export function MonthsAheadCard({ ahead, bars, names }: { ahead: CashFlowAhead; 
         })}
         className="mx-auto max-w-md"
       />
-      <div className="overflow-x-auto">
+      <ScrollX label="The next three months, month by month">
         <table className="w-full min-w-[18rem] text-sm">
           <thead>
             <tr className="text-muted-foreground">
@@ -80,7 +81,7 @@ export function MonthsAheadCard({ ahead, bars, names }: { ahead: CashFlowAhead; 
             ) : null}
           </tbody>
         </table>
-      </div>
+      </ScrollX>
       {withStart ? null : <p className="text-muted-foreground">Type this month’s starting balance on the Month to see where each month ends.</p>}
       {ahead.payNotCounted.length === 0 ? null : (
         <p className="text-muted-foreground">Leaves out pay from {ahead.payNotCounted.map(names).join(' and ')}: give it a pay schedule in Setup, or a goal on the Month.</p>
