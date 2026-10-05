@@ -1,6 +1,7 @@
 # AI apps suggest changes: the design
 
-**Status: designed 2026-10-05, not built.** Decision: ADR 0013
+**Status: designed and built 2026-10-05**, slice by slice as §7 says;
+nothing has run against the hosted project (ADR 0013, "Not yet met"). Decision: ADR 0013
 (`docs/adr/0013-ai-apps-suggest-changes.md`). Builds on `PLAN.md` (ADR
 0012); every convention there holds unless this file says otherwise: money
 out `{cents, display}`, money in as `AmountText`, names as data, constant

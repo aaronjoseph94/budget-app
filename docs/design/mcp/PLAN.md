@@ -141,12 +141,17 @@ is updated when the apps change (§2.11).
 **It can:** read your figures (a month, week, pay period or year; what is
 left in each category; the forecast; your savings goals; your debts),
 search your approved charges, see what is waiting in Review, see your
-category names, and add a purchase or money received to Review.
+category names, and add a purchase or money received to Review. *From
+2026-10-05 (ADR 0013, PROPOSALS.md):* it can also suggest a category for
+a row waiting in Review, and suggest changes to the budget (a budget, a
+weekly budget, a bill's amount or day, a goal's target or date, renaming,
+adding or moving a category, a charge's category, always filing a shop),
+which wait in Review under Suggested changes until the owner applies them.
 
-**It cannot:** approve, reject, change or delete anything in the budget;
-change budgets, categories, goals, settings or keys; see receipt photos;
-use the app's own AI keys; or reach the budget while AI apps are switched
-off.
+**It cannot:** approve, reject, apply, change or delete anything in the
+budget itself; change budgets, categories, goals, settings or keys except
+by a suggestion the owner applies; see receipt photos; use the app's own
+AI keys; or reach the budget while AI apps are switched off.
 
 **Its sign-in** is like any sign-in to your account: until you press
 **Disconnect**, it could also be used on the Supabase account itself (its
@@ -157,7 +162,9 @@ anything" and "nothing at all while switched off", which is untrue of the
 credential the owner hands over.
 
 **Limits:** 300 look-ups (one question may take a few) and 30 additions
-a day, across all AI apps together. They reset at midnight your time.
+a day, across all AI apps together, and from 0039 60 requests to suggest
+changes. They reset at midnight your time. At most 100 suggestions wait
+at once, and each expires after 14 days.
 
 **A wrong figure in a chat.** The app hands the AI its figures ready to
 quote. What the AI then writes in its own chat is the AI's. If a chat says

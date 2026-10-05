@@ -58,8 +58,11 @@ the owner's to-do list and the next agent's starting point.
 
 The app can act as an MCP server (Model Context Protocol, the way AI apps
 call tools on another service). Once connected, Claude or ChatGPT can read
-your figures and add entries to **Review**. They cannot approve, change or
-delete anything. It is off until you turn it on: in **Settings** (on a
+your figures and add entries to **Review**, and you can ask either one to
+"Review my whole budget and suggest any changes": each suggestion waits in
+**Review → Suggested changes** until you press **Apply** (**Help → Let
+Claude or ChatGPT review your budget**). They cannot approve, apply, change
+or delete anything themselves. It is off until you turn it on: in **Settings** (on a
 phone, under **More**), under **AI apps**, turn on **Let AI apps connect**,
 press **Connect a new AI app**, and then press **Allow** on the budget
 app's own page. Connecting is done once, on a computer.
@@ -118,7 +121,7 @@ workbook's own saved results exactly. The canonical case: four debts from
 | `packages/chart-specs` | What each chart draws, worked out from engine output |
 | `packages/report-export` | The CSV writer for Reports |
 | `packages/ai-apps` | The MCP server for Claude and ChatGPT, built into one pasteable file |
-| `supabase/migrations` | Database changes `0001` to `0038`, pasted in the order One-time updates names, never edited once applied |
+| `supabase/migrations` | Database changes `0001` to `0039`, pasted in the order One-time updates names, never edited once applied |
 | `supabase/functions` | The `ai` helper (and the retired `read-receipt` source, kept for an optional paste), with their tests |
 | `supabase/tests` | Checks that the database refuses what it should |
 | `scripts` | The checks (`gates.sh`), the bundle-size budget, the migration replay, the gitleaks installer |

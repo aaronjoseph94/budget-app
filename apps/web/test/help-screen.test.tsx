@@ -51,7 +51,7 @@ describe('Help', () => {
     const search = await screen.findByRole('searchbox', { name: 'Search help' })
 
     fireEvent.change(search, { target: { value: 'STARTING balance' } })
-    expect(titles()).toEqual(['Start here', 'Debts', 'How the forecast works', 'Two month-end figures', 'Why does a number look wrong?'])
+    expect(titles()).toEqual(['Start here', 'Debts', 'How the forecast works', 'Two month-end figures', 'Let Claude or ChatGPT review your budget', 'Why does a number look wrong?'])
     // A button's name counts as its words, without the stars around it.
     fireEvent.change(search, { target: { value: 'add to home screen' } })
     expect(titles()).toEqual(['Signing in and out', 'Put it on your iPhone'])
@@ -87,6 +87,7 @@ describe('Help', () => {
     expect(related.map((a) => [a.textContent, a.getAttribute('href')])).toEqual([
       ['Bring in a statement', '#/help/statements'],
       ['Add: a statement, a photo, or type it', '#/help/add'],
+      ['Let Claude or ChatGPT review your budget', '#/help/ai-review'],
       ['Why does a number look wrong?', '#/help/wrong-number'],
     ])
     expect(within(page).getByRole('link', { name: '‹ Help' }).getAttribute('href')).toBe('#/help')

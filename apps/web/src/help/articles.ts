@@ -157,7 +157,7 @@ export const ARTICLES: readonly Article[] = [
     done: 'Review says "Nothing waiting." A shop you approved once is filed the same way next time, without waiting.',
     stuck:
       'If a shop keeps landing in the wrong place, move one of its charges from the Month with **Move to…** and leave **Always file** ticked. With free AI on, categories are suggested by themselves after an import; press **Suggest categories** to ask again, and the line beside it says if something is missing, such as a one-time update. The AI is sent each shop’s name, whether it was money in or out, and whether it was small, medium or large, never the amount or the date, and nothing it suggests counts until you approve it. Turn off **Share shop names** in AI settings to send nothing. To stop a shop filing itself, press **Forget** beside it under **Shops filed by themselves** in Settings.',
-    related: ['statements', 'add', 'wrong-number'],
+    related: ['statements', 'add', 'ai-review', 'wrong-number'],
   },
   {
     id: 'add',
@@ -475,26 +475,26 @@ export const ARTICLES: readonly Article[] = [
     id: 'ai-apps',
     title: 'Use Claude or ChatGPT with your budget',
     summary:
-      'Connect your own Claude or ChatGPT, then ask about your budget in a chat, or tell it what you bought and it waits in Review for you. Every figure it is given is the app’s own, worked out the way your screens work it out. Off until you turn it on.',
+      'Connect your own Claude or ChatGPT, then ask about your budget in a chat, tell it what you bought and it waits in Review for you, or ask it to review your budget and suggest changes, which wait in Review until you apply them. Every figure it is given is the app’s own, worked out the way your screens work it out. Off until you turn it on.',
     steps: [
       'Open **Settings** (on a phone, under **More**), and find **AI apps**.',
       'Turn on **Let AI apps connect**.',
       'Connect your AI app once, on a computer, as Connect Claude or Connect ChatGPT below says.',
       'In a chat, ask something like “How is my month going?” or “How much is left for groceries this week?”.',
       'Say what you bought, such as “I spent $12.50 on lunch at Subway today”, then open **Review** to approve it.',
-      'To let AI apps only read, turn off **Let them add to Review**.',
+      'To let AI apps only read, turn off **Let them add to Review** and **Let AI apps suggest changes**.',
       'To stop one app, press **Disconnect** beside it under **Connected apps**, then **Yes, disconnect**, and remove it in Claude or ChatGPT too.',
       'To stop every AI app reaching your budget at once, turn off **Let AI apps connect**; it does not end an app’s sign-in, which Disconnect should.',
     ],
-    done: 'your AI app answers with the figures your screens show, and anything it adds waits in Review until you approve it.',
+    done: 'your AI app answers with the figures your screens show, and anything it adds or suggests waits in Review until you approve or apply it.',
     stuck:
-      'An AI app cannot approve, reject, change or delete anything: only you can, in the app. What it adds is marked Added by an AI app in Review, and in All transactions once you approve it. Approving or moving it files that one entry only: an AI app’s words are never learned as a shop the app files by itself. If a chat gives a figure that differs from your screen, your screen is right: the app hands the AI its figures ready to quote, and what it then writes is its own. Shop names come from your statements, and anyone can name a shop to read like an instruction. All Budget lets an AI do is add to Review, but one that also has a connector able to send email or messages could be tricked into sending your figures on, so use Budget in chats where no other connector can send anything. If your AI app says the budget app needs a one-time update, or cannot reach it, or Let AI apps connect will not turn on, open One-time updates: AI apps wait for Allow new users to sign up to be off in Supabase, for the AI helper’s new version, and for read-receipt to be deleted or replaced. In an emergency, in this order: first press **Disconnect** beside each app under Connected apps, which should end its sign-in; then turn off **Let AI apps connect**, which stops every AI app reaching your budget; then in Supabase open the **SQL Editor** and run delete from auth.sessions; which ends every sign-in to your account for certain, yours too, so you sign in again after; and only then open **Authentication**, then **OAuth Server**, and turn it off, so no AI app can sign in again. With it off first, Connected apps cannot list an app to disconnect.',
-    related: ['connect-claude', 'connect-chatgpt', 'ai-sees', 'review', 'updates'],
+      'An AI app cannot approve, reject, change or delete anything: only you can, in the app. A change it suggests waits under Suggested changes in Review, and only your **Apply** makes it. What it adds is marked Added by an AI app in Review, and in All transactions once you approve it. Approving or moving it files that one entry only: an AI app’s words are never learned as a shop the app files by itself. If a chat gives a figure that differs from your screen, your screen is right: the app hands the AI its figures ready to quote, and what it then writes is its own. Shop names come from your statements, and anyone can name a shop to read like an instruction. All Budget lets an AI do is add to Review and suggest changes for you to apply, but one that also has a connector able to send email or messages could be tricked into sending your figures on, so use Budget in chats where no other connector can send anything. If your AI app says the budget app needs a one-time update, or cannot reach it, or Let AI apps connect will not turn on, open One-time updates: AI apps wait for Allow new users to sign up to be off in Supabase, for the AI helper’s new version, and for read-receipt to be deleted or replaced. In an emergency, in this order: first press **Disconnect** beside each app under Connected apps, which should end its sign-in; then turn off **Let AI apps connect**, which stops every AI app reaching your budget; then in Supabase open the **SQL Editor** and run delete from auth.sessions; which ends every sign-in to your account for certain, yours too, so you sign in again after; and only then open **Authentication**, then **OAuth Server**, and turn it off, so no AI app can sign in again. With it off first, Connected apps cannot list an app to disconnect.',
+    related: ['connect-claude', 'connect-chatgpt', 'ai-review', 'ai-sees', 'review', 'updates'],
     terms: [
-      { term: 'It can', meaning: 'read your figures (a month, week, pay period or year, what is left in each category, the forecast, your savings goals and your debts), search your approved charges, see what waits in Review and your category names, and add a purchase or money received to Review.' },
-      { term: 'It cannot', meaning: 'approve or change anything in your budget; change a budget, category, goal or setting; see a receipt photo; use the AI keys you saved in the app; or reach your budget while Let AI apps connect is off.' },
+      { term: 'It can', meaning: 'read your figures (a month, week, pay period or year, what is left in each category, the forecast, your savings goals and your debts), search your approved charges, see what waits in Review and your category names, add a purchase or money received to Review, suggest a category for a row waiting there, and suggest changes to your budget, which wait in Review until you apply them.' },
+      { term: 'It cannot', meaning: 'approve or apply anything, or change anything in your budget itself: a budget, category, goal, charge or setting changes only when you tap Apply; delete anything; see a receipt photo; use the AI keys you saved in the app; or reach your budget while Let AI apps connect is off.' },
       { term: 'Its sign-in', meaning: 'like any sign-in, it could also be used on your Supabase account itself, such as its email or password, until its sign-in ends, which **Disconnect** should do (the emergency steps make sure of it); turning off Let AI apps connect does not end it. Only allow an app you trust.' },
-      { term: 'Limits', meaning: '300 look-ups and 30 additions a day, across all AI apps together; one question in a chat may use a few look-ups. They start again at midnight, your time.' },
+      { term: 'Limits', meaning: '300 look-ups and 30 additions a day, and 60 requests to suggest changes, across all AI apps together; one question in a chat may use a few look-ups. They start again at midnight, your time. At most 100 suggestions wait at once, and each expires after 14 days.' },
       { term: 'Who sees it', meaning: 'what the app tells your AI app goes to the company that runs it, Anthropic for Claude, OpenAI for ChatGPT, and stays in your chat history there: figures, the names of categories, shops, goals and debts, and dates. Signing in tells it your email address.' },
       { term: 'Never sent', meaning: 'your password, the AI keys you saved in the app, or a receipt photo.' },
     ],
@@ -503,7 +503,7 @@ export const ARTICLES: readonly Article[] = [
     id: 'connect-claude',
     title: 'Connect Claude',
     summary:
-      'Let Claude read your budget and add purchases to Review. Once, on a computer, in about 5 minutes; Claude’s desktop and iPhone apps then have it too. Any Claude plan works, Free included.',
+      'Let Claude read your budget, add purchases to Review and suggest changes for you to apply. Once, on a computer, in about 5 minutes; Claude’s desktop and iPhone apps then have it too. Any Claude plan works, Free included.',
     steps: [
       'In this app, open **Settings** (on a phone, under **More**), and turn on **Let AI apps connect** under **AI apps**.',
       'Press **Connect a new AI app**, which copies the address, and do the steps below within 15 minutes.',
@@ -517,13 +517,13 @@ export const ARTICLES: readonly Article[] = [
     done: 'Claude answers “How is my month going?” with your own figures.',
     stuck:
       'Claude’s Free plan allows one custom connector. Claude marks its published identity as recommended, but the budget app’s sign-in cannot use it yet, so choose Register automatically. If the page says the connection wasn’t started from the budget app, press **Connect a new AI app** again and connect within 15 minutes; if it says the request has expired, press Connect in Claude again. If Claude says it cannot reach the server, or never opens the page, open One-time updates and do the step it names next. Connect from a computer: the app opened from its icon on an iPhone keeps a sign-in of its own. If the page names anything other than claude.ai, press **Deny**. These menus are as Anthropic’s help described them on 30 September 2026; if one has moved, look for Connectors in Claude’s settings.',
-    related: ['ai-apps', 'connect-chatgpt', 'updates'],
+    related: ['ai-apps', 'ai-review', 'connect-chatgpt', 'updates'],
   },
   {
     id: 'connect-chatgpt',
     title: 'Connect ChatGPT',
     summary:
-      'Let ChatGPT read your budget and add purchases to Review. It needs ChatGPT Plus, Pro, Business, Enterprise or Edu, and works on the chatgpt.com website, not in the phone app. Once, on a computer, in about 5 minutes.',
+      'Let ChatGPT read your budget, add purchases to Review and suggest changes for you to apply. It needs ChatGPT Plus, Pro, Business, Enterprise or Edu, and works on the chatgpt.com website, not in the phone app. Once, on a computer, in about 5 minutes.',
     steps: [
       'In this app, open **Settings** (on a phone, under **More**), and turn on **Let AI apps connect** under **AI apps**.',
       'Press **Connect a new AI app**, which copies the address, and do the steps below within 15 minutes.',
@@ -537,7 +537,26 @@ export const ARTICLES: readonly Article[] = [
     done: 'ChatGPT answers with your own figures, and asks you before it adds anything.',
     stuck:
       'Free ChatGPT cannot connect apps. ChatGPT warns that Developer mode is higher risk; that is expected. If the page says the connection wasn’t started from the budget app, press **Connect a new AI app** again and connect within 15 minutes; if it says the request has expired, go back to ChatGPT and connect again. If sign-in fails, open One-time updates and do the step it names next: ChatGPT cannot sign in until every step there is done. If the page names anything other than chatgpt.com, press **Deny**. These menus are as OpenAI’s help described them on 30 September 2026; if one has moved, look for Developer mode in ChatGPT’s settings.',
-    related: ['ai-apps', 'connect-claude', 'updates'],
+    related: ['ai-apps', 'ai-review', 'connect-claude', 'updates'],
+  },
+  {
+    id: 'ai-review',
+    title: 'Let Claude or ChatGPT review your budget',
+    summary:
+      'Ask the AI app you connected to look over your whole budget and suggest changes. Each one waits in Review, under Suggested changes, with the AI’s reason, and nothing changes until you tap Apply. The thinking is done by the model you pick in Claude or ChatGPT, such as Opus, on your own subscription; the budget app calls no AI for it.',
+    steps: [
+      'Connect Claude or ChatGPT once, as Connect Claude or Connect ChatGPT says, and leave **Let AI apps suggest changes** on under **AI apps** in **Settings**.',
+      'In a new chat, pick the model you want and switch **Budget** on, as you did to connect it.',
+      'Type “Review my whole budget and suggest any changes” and send it.',
+      'Let it read, and say yes when it asks to look something up or to suggest a change.',
+      'Open **Review**, where each suggestion waits under **Suggested changes** with what it changes, from what to what, and why.',
+      'Press **Apply** on each one you want, or **Dismiss** on one you do not.',
+      'To apply every one at once, press **Apply all 3** (with your own number), read what it says, and press **Apply all 3** again.',
+    ],
+    done: 'Suggested changes is gone from Review, and the changes you applied show on your screens.',
+    stuck:
+      'If your app lists the budget app’s prompts, Review my budget asks for the same review in one tap. A card that says **Changed since it was suggested** offers only **Dismiss**: you, or something else, changed it since, and applying it could undo that. **Already so** means it is done already; press **Clear**. Apply all leaves out "always file this shop here", since its shop’s later charges skip Review: apply each of those on its own card. Suggestions expire after 14 days, at most 100 wait at once, and one you dismissed is not suggested again for 14 days. An AI app can suggest a budget, a weekly budget, a bill’s amount or day, a savings goal’s target or date, renaming, adding or moving a category, which category a charge belongs in, and always filing a shop there; it cannot delete anything, or change your debts, pay or starting balances. Shop names come from your statements, and anyone can name a shop to read like an instruction, so read each suggestion before you apply it. If your AI app says suggesting is switched off, turn **Let AI apps suggest changes** back on; if it says the budget app needs an update, open One-time updates.',
+    related: ['ai-apps', 'connect-claude', 'connect-chatgpt', 'review'],
   },
   {
     id: 'wrong-number',

@@ -54,9 +54,10 @@ do", "already exists" or similar), or, for `0030`, `0031`, `0035` and
 | `0035_ai_app_updates_in.sql` | Lets One-time updates see exactly which AI-app safety updates are in. It only reads, needs nothing but `0020`, and is pasted **before** `0030` (One-time updates lists it there) |
 | `0036_ai_search_as_shown.sql` | An AI app's searches match shop names only as it is shown them. It stops with "Paste 0035 first" unless `0030` to `0035` are all in |
 | `0037_ai_rows_before_the_fixes.sql` | Tidies anything an AI app added before these safety updates. It stops with "Paste 0036 first" if `0036` is not in |
-| `0038_intuit_prefix_merchants.sql` | Tidies shop names stored with Intuit's `IN*` prefix, so `IN*ACME` and `ACME` are one shop. **It permanently deletes** a learned shop where two would end up with one name (the one made or used most recently stays), so take a backup first (HANDOFF §3, steps 13 and 15). Pasted last: it stops with "Paste 0029 first" or "Paste 0037 first". Written as `0030` and renumbered at the merge of two lines of updates (2026-10-02) |
+| `0038_intuit_prefix_merchants.sql` | Tidies shop names stored with Intuit's `IN*` prefix, so `IN*ACME` and `ACME` are one shop. **It permanently deletes** a learned shop where two would end up with one name (the one made or used most recently stays), so take a backup first (HANDOFF §3, steps 13 and 15). It stops with "Paste 0029 first" or "Paste 0037 first". Written as `0030` and renumbered at the merge of two lines of updates (2026-10-02) |
+| `0039_ai_apps_suggest_changes.sql` | Lets an AI app you connect suggest changes (a budget, a weekly budget, a bill, a goal, a category, a charge's category, a shop always filed somewhere), each waiting in Review under Suggested changes until you apply it; the switch Settings → AI apps → Let AI apps suggest changes; 60 suggestion requests a day, at most 100 waiting, 14 days each (ADR 0013). Deletes nothing. Pasted last, after `0038`: it stops with "Paste 0037 first" if `0037` is not in, and "0039 is already in; nothing to do" if pasted again. Paste the `mcp` server again after it |
 
-**`0015` to `0038` can be pasted after `main-tnlcto` is merged into
+**`0015` to `0039` can be pasted after `main-tnlcto` is merged into
 `main`.** Nothing the app needs to open depends on them: each new part
 says in one line that it needs a one-time update until its file is in
 (HANDOFF §3). In the app, **Help → One-time updates** shows which are
@@ -199,9 +200,11 @@ Supabase secret — never in the app, never in this repository.
 
 ## AI apps: Claude and ChatGPT (MCP)
 
-Lets your own Claude or ChatGPT read your figures and add items to
-Review over MCP. Chosen in `docs/adr/0012-mcp-server.md`; the design and
-every check is `docs/design/mcp/PLAN.md`. The steps, in order, are
+Lets your own Claude or ChatGPT read your figures, add items to Review,
+and suggest changes that wait in Review until you apply them, over MCP.
+Chosen in `docs/adr/0012-mcp-server.md` and, for suggestions,
+`docs/adr/0013-ai-apps-suggest-changes.md`; the design and every check is
+`docs/design/mcp/PLAN.md` and `docs/design/mcp/PROPOSALS.md`. The steps, in order, are
 HANDOFF §3 Part F; One-time updates checks each one. What they leave set:
 
 | Where in Supabase | Setting |
@@ -219,7 +222,9 @@ is used first, so retiring the legacy keys signs no AI app out), and `EXTRA_ORIG
 functions, is read the same way. It never holds a service key or an AI
 key. Check it at
 `https://bnodrfghxbavlopxkgju.supabase.co/functions/v1/mcp/health`:
-`{"ok":true,"version":"…","tools":10}`.
+`{"ok":true,"version":"…","tools":13}`. After `0039`, paste the server
+again from One-time updates' **Copy**: its version `2026-10-05.1` brings
+the three tools that suggest changes, and the prompt `review_my_budget`.
 
 **Enforce JWT verification on `mcp` must stay off.** With it on,
 Supabase answers Claude and ChatGPT before the server can, without the

@@ -271,7 +271,7 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
     `main-tnlcto` first, waits for the green **gates** run, and only then
     pushes that same commit to `main`.
 
-### Part D: the database updates, 0015 to 0038, about 20 minutes, once
+### Part D: the database updates, 0015 to 0039, about 20 minutes, once
 
 13. **A backup first.** Some of these updates change saved rows, and
     `0038` **permanently deletes** a learned shop where two would end up
@@ -312,9 +312,13 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
     `0037_ai_rows_before_the_fixes.sql`.
 15. **Before `0038`, the backup again if you have used the app since step
     13**, the same way, named `budget-before-0038.sql`. Then paste
-    `0038_intuit_prefix_merchants.sql` last. (It was written as `0030` and
+    `0038_intuit_prefix_merchants.sql`. (It was written as `0030` and
     renumbered `0038` when two lines of updates merged on 2026-10-02;
-    neither number was ever applied.)
+    neither number was ever applied.) Then paste
+    `0039_ai_apps_suggest_changes.sql` last: it lets an AI app you
+    connect suggest changes that wait in Review until you apply them
+    (ADR 0013). It needs `0037`, says "Paste 0037 first" without it, and
+    deletes nothing.
 
     Each update refuses to run before the one it needs ("Paste 0018
     first", "Paste 0035 first" and so on) and changes nothing then.
@@ -388,7 +392,9 @@ connect an AI app to it.
     One-time updates says "an older copy": **Edge Functions → mcp → Code**,
     paste, **Deploy**, then open its **Settings** and check the switch is
     still off: Supabase has been seen to turn it back on.) Version
-    `2026-10-02.1` or later is current.
+    `2026-10-05.1` or later is current: after `0039`, paste the server
+    again this way, as One-time updates asks, or an AI app cannot suggest
+    changes.
 23. **Check again** on One-time updates: it should say **All done**.
 24. **Connect Claude** (any plan): in the app, **Settings → AI apps** →
     turn on **Let AI apps connect** → **Connect a new AI app** (copies the
@@ -397,7 +403,11 @@ connect an AI app to it.
     asked, **Sign in now** and **Register automatically** (not "Use
     Claude's published identity") → **Add → Connect** → on the budget
     app's **Connect an AI app** page check it says **claude.ai** in bold →
-    **Allow**.
+    **Allow**. Then, to have Claude look over everything, type "Review my
+    whole budget and suggest any changes" in a chat with **Budget** on;
+    what it suggests waits in the app's **Review → Suggested changes**
+    until you press **Apply** (Help → Let Claude or ChatGPT review your
+    budget).
 25. **Connect ChatGPT** (Plus or higher, chatgpt.com only): **Connect a
     new AI app** again first. On chatgpt.com: **Settings → Security and
     login → Developer mode** on → go to chatgpt.com/plugins → **+** → name
@@ -406,7 +416,7 @@ connect an AI app to it.
     **chatgpt.com** in bold → **Allow**.
 26. **The first-connection checks**, §4 steps 15 to 24, in order,
     stopping at the first that fails: the server's health page answers
-    `{"ok":true,…,"tools":10}`; sign-in opens the budget app's page with
+    `{"ok":true,…,"tools":13}`; sign-in opens the budget app's page with
     **claude.ai** in bold; "list my categories" lists yours (if it says
     the app did not recognise the sign-in as an AI app's, at once, in
     this order: **Disconnect**; **Let AI apps connect** off;

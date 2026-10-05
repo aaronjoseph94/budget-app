@@ -33,6 +33,7 @@ export const HELP_TOPICS = [
   'ai-apps',
   'connect-claude',
   'connect-chatgpt',
+  'ai-review',
   'wrong-number',
   'codes',
   'signing-in',

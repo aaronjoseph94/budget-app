@@ -144,7 +144,16 @@ describe('Help articles', () => {
     const apps = articleFor('ai-apps')
     const said = [apps?.stuck, ...(apps?.terms ?? []).map((t) => t.meaning)].join(' ')
     for (const words of [/Anthropic for Claude, OpenAI for ChatGPT/, /300 look-ups and 30 additions a day/, /cannot approve, reject, change or delete anything/]) expect(said).toMatch(words)
-    expect(apps?.related).toEqual(['connect-claude', 'connect-chatgpt', 'ai-sees', 'review', 'updates'])
+    expect(apps?.related).toEqual(['connect-claude', 'connect-chatgpt', 'ai-review', 'ai-sees', 'review', 'updates'])
+  })
+
+  // ADR 0013: the exact words to type, and that nothing changes until Apply.
+  it('says how to ask Claude or ChatGPT for a review, the words to type, and that only Apply changes anything', () => {
+    const review = articleFor('ai-review')
+    expect(review?.steps.join(' ')).toContain('Type “Review my whole budget and suggest any changes” and send it.')
+    expect(review?.summary).toMatch(/nothing changes until you tap Apply/)
+    expect(review?.stuck).toMatch(/\*\*Changed since it was suggested\*\* offers only \*\*Dismiss\*\*/)
+    for (const id of ['ai-apps', 'connect-claude', 'connect-chatgpt', 'review'] as const) expect(articleFor(id)?.related, id).toContain('ai-review')
   })
 
   // Security review mcp-3-01: the emergency steps end each sign-in, and Disconnect
