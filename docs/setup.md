@@ -227,7 +227,9 @@ again from One-time updates' **Copy**: its version `2026-10-05.1` brought
 the three tools that suggest changes, and the prompt `review_my_budget`;
 `2026-10-05.2` also refuses every character that draws as nothing (tag
 characters and variation selectors too) and leaves them out of the names
-it hands out (testing mcp-01).
+it hands out (testing mcp-01); `2026-10-05.3` holds a 2025-era request to
+the 20-second deadline too, which it had stopped watching once the SDK
+began its answer (testing mcp-02).
 
 **Enforce JWT verification on `mcp` must stay off.** With it on,
 Supabase answers Claude and ChatGPT before the server can, without the

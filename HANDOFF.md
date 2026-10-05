@@ -401,8 +401,9 @@ connect an AI app to it.
     One-time updates says "an older copy": **Edge Functions → mcp → Code**,
     paste, **Deploy**, then open its **Settings** and check the switch is
     still off: Supabase has been seen to turn it back on.) Version
-    `2026-10-05.2` or later is current (it also refuses, and leaves out of
-    every name it hands an AI app, the characters that draw as nothing):
+    `2026-10-05.3` or later is current (it also refuses, and leaves out of
+    every name it hands an AI app, the characters that draw as nothing,
+    and stops every request at 20 seconds, whichever app is asking):
     after `0039`, paste the server again this way, as One-time updates
     asks. Until you do, **Let AI apps
     connect** cannot be turned on and a new connection's page offers no

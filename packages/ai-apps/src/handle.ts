@@ -94,17 +94,41 @@ function noStore(res: Response): Response {
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers })
 }
 
-/** The work's answer, or 503 once the deadline passes. */
+/**
+ * The work's answer, read to its end, or 503 once the deadline passes.
+ *
+ * Read to its end because a 2025-era request is answered by an event
+ * stream the SDK hands back before the tool has run: racing only that let
+ * a tool run past the deadline and still answer 200 (testing mcp-02).
+ * Nothing streams (PLAN §2.2), so the whole answer is one message, held
+ * here and sent at once. At the deadline the reading stops.
+ */
 async function withDeadline(work: Promise<Response>): Promise<Response> {
   let timer: ReturnType<typeof setTimeout> | undefined
+  let reader: ReadableStreamDefaultReader<Uint8Array> | undefined
   const late = new Promise<Response>((resolve) => {
     timer = setTimeout(() => {
       log('deadline')
+      reader?.cancel().catch(() => undefined)
       resolve(json(503, { error: 'deadline' }))
     }, DEADLINE_MS)
   })
+  const whole = async (): Promise<Response> => {
+    const res = await work
+    if (res.body === null) return res
+    reader = res.body.getReader()
+    const parts: Uint8Array[] = []
+    for (let part = await reader.read(); !part.done; part = await reader.read()) parts.push(part.value)
+    const body = new Uint8Array(parts.reduce((n, p) => n + p.byteLength, 0))
+    let at = 0
+    for (const p of parts) {
+      body.set(p, at)
+      at += p.byteLength
+    }
+    return new Response(body, { status: res.status, statusText: res.statusText, headers: res.headers })
+  }
   try {
-    return await Promise.race([work, late])
+    return await Promise.race([whole(), late])
   } finally {
     clearTimeout(timer)
   }

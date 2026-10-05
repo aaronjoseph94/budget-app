@@ -171,6 +171,27 @@ describe('the deadline', () => {
     expect(r.status).toBe(503)
     expect(await r.json()).toEqual({ error: 'deadline' })
   })
+
+  // Testing mcp-02: for a 2025-era request the SDK hands back an event
+  // stream before the tool runs, so racing only that let a tool run past
+  // the deadline and still answer 200.
+  it.each(['2025-06-18', '2025-11-25'])('gives up on a tool still running at %s too', async (version) => {
+    vi.useFakeTimers()
+    const { fetchFn } = fakeFetch((url, init) => (url.includes('/rest/') ? new Promise<Response>(() => undefined) : signedIn(url, init)))
+    const res = handle(
+      new Request(`${PROJECT}/mcp`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', accept: 'application/json, text/event-stream', 'mcp-protocol-version': version, authorization: `Bearer ${AI_APP_TOKEN}` },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'list_categories', arguments: {} } }),
+      }),
+      ENV,
+      fetchFn,
+    )
+    await vi.advanceTimersByTimeAsync(DEADLINE_MS)
+    const r = await res
+    expect(r.status).toBe(503)
+    expect(await r.json()).toEqual({ error: 'deadline' })
+  })
 })
 
 describe('no service key', () => {
