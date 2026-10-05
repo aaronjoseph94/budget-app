@@ -91,6 +91,8 @@ export interface FakeTables {
   ai_app_access: Row[]
   /** When each AI app last asked something (0020). */
   ai_app_last_use: Row[]
+  /** What AI apps suggested (0039), as stored. */
+  ai_app_proposals: Row[]
 }
 
 export interface RpcCall {
@@ -249,6 +251,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     coach_answers: [],
     ai_app_access: [],
     ai_app_last_use: [],
+    ai_app_proposals: [],
     ...seed,
   }
   const rpcCalls: RpcCall[] = []
@@ -588,6 +591,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       const [op, operand] = [value.slice(0, value.indexOf('.')), value.slice(value.indexOf('.') + 1)]
       if (op === 'eq') tests.push((r) => String(r[key]) === operand)
       else if (op === 'gte') tests.push((r) => String(r[key]) >= operand)
+      else if (op === 'gt') tests.push((r) => String(r[key]) > operand)
       else if (op === 'lte') tests.push((r) => String(r[key]) <= operand)
       else if (op === 'not' && operand === 'is.null') tests.push((r) => r[key] !== null && r[key] !== undefined)
       else if (op === 'is' && operand === 'null') tests.push((r) => r[key] === null || r[key] === undefined)

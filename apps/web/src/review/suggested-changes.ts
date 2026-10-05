@@ -1,0 +1,174 @@
+/**
+ * Review's Suggested changes (ADR 0013, PROPOSALS.md §6): what an AI app
+ * suggested, waiting for the owner, and what each one's target is now.
+ *
+ * A stored suggestion is an AI app's output at rest, so each row is parsed
+ * with StoredSuggestionSchema; one that does not parse is shown as one
+ * that cannot be read. Its stored "before" is never trusted: each card's
+ * "from" is the current value, worked out from freshly read rows with the
+ * same core function the screen uses (resolveBudgets, resolvePlans) or
+ * read from the stored column. A card whose value moved since it was
+ * suggested is stale and can only be dismissed. Nothing here adds, takes
+ * away or compares amounts beyond "is it the same".
+ */
+import { isoDate, resolveBudgets, resolvePlans } from '@budget/core'
+import { StoredSuggestionSchema, type StoredSuggestion } from '@budget/schema'
+import { listBudgetHistory, listFunds, listPlanHistory, listRules, ReadRefused, type BudgetRow, type Category, type FundRow, type PlanRow } from '../ledger.js'
+import { describeWriteFailure } from '../format.js'
+import { budgetsForCore, plansForCore } from '../sheet-input.js'
+import type { SupabaseClient } from '../supabase.js'
+
+/** One waiting row: its suggestion, or null when it cannot be read, and the AI app that made it. */
+export interface Waiting {
+  readonly id: string
+  readonly clientId: string | null
+  readonly suggestion: StoredSuggestion | null
+}
+
+/** A missing table: 0039 not pasted yet, so nothing waits. */
+const NOT_YET: ReadonlySet<string> = new Set(['PGRST205', '42P01'])
+
+/** The suggestions waiting for the owner, oldest first; none before 0039 is in. */
+export async function listWaiting(supabase: SupabaseClient): Promise<readonly Waiting[]> {
+  const { data, error } = await supabase
+    .from('ai_app_proposals')
+    .select('id, kind, client_id, target, after, before, reason, created_at, expires_at')
+    .eq('status', 'pending')
+    .gt('expires_at', new Date().toISOString())
+    .order('created_at', { ascending: true })
+    .order('id', { ascending: true })
+    .limit(100)
+  if (error !== null) {
+    if (NOT_YET.has(error.code)) return []
+    throw new ReadRefused(describeWriteFailure(error), error.code)
+  }
+  return (data as readonly Readonly<Record<string, unknown>>[]).map((row) => {
+    const parsed = StoredSuggestionSchema.safeParse(row)
+    return {
+      id: String(row['id']),
+      clientId: typeof row['client_id'] === 'string' ? row['client_id'] : null,
+      suggestion: parsed.success ? parsed.data : null,
+    }
+  })
+}
+
+/** A charge a suggestion names, as the Month's Move reads it, with its shop as a learned rule keys it. */
+export interface Charge {
+  readonly id: string
+  readonly posted_on: string
+  readonly amount_cents: number
+  readonly merchant_raw: string
+  readonly merchant: string
+  readonly category_id: string
+  readonly source: string
+}
+
+/** The rows the cards' current values come from, read fresh. */
+export interface Sources {
+  readonly categories: readonly Category[]
+  readonly budgets: readonly BudgetRow[]
+  readonly plans: readonly PlanRow[]
+  readonly funds: readonly FundRow[]
+  readonly charges: readonly Charge[]
+  readonly rules: ReadonlyMap<string, string>
+}
+
+/** The latest month a kind's suggestions name, or null when none of that kind waits. */
+function latest(suggestions: readonly StoredSuggestion[], kind: 'set_budget' | 'set_bill'): string | null {
+  const months = suggestions.flatMap((s) => (s.kind === kind ? [s.target.month] : []))
+  return months.length === 0 ? null : months.reduce((a, b) => (a > b ? a : b))
+}
+
+/** Only what the waiting kinds need, each with the screens' own reads. */
+export async function readSources(supabase: SupabaseClient, categories: readonly Category[], suggestions: readonly StoredSuggestion[]): Promise<Sources> {
+  const has = (kinds: readonly StoredSuggestion['kind'][]) => suggestions.some((s) => kinds.includes(s.kind))
+  const budgetMonth = latest(suggestions, 'set_budget')
+  const planMonth = latest(suggestions, 'set_bill')
+  const ids = [...new Set(suggestions.flatMap((s) => (s.kind === 'recategorise' || s.kind === 'learn_shop' ? [s.target.transaction_id] : [])))]
+  const [budgets, plans, funds, charges, rules] = await Promise.all([
+    budgetMonth === null ? [] : listBudgetHistory(supabase, budgetMonth),
+    planMonth === null ? [] : listPlanHistory(supabase, planMonth, 'read'),
+    has(['set_goal', 'move_category']) ? listFunds(supabase) : [],
+    ids.length === 0 ? [] : readCharges(supabase, ids),
+    has(['learn_shop']) ? listRules(supabase) : new Map<string, string>(),
+  ])
+  return { categories, budgets, plans, funds, charges, rules }
+}
+
+async function readCharges(supabase: SupabaseClient, ids: readonly string[]): Promise<readonly Charge[]> {
+  const { data, error } = await supabase.from('transactions').select('id, posted_on, amount_cents, merchant_raw, merchant, category_id, source').in('id', [...ids])
+  if (error !== null) throw new ReadRefused(describeWriteFailure(error), error.code)
+  return (data as Charge[]).map((c) => ({ ...c, amount_cents: Number(c.amount_cents) }))
+}
+
+/** What a suggestion's target is now, shaped as its stored before; gone when it no longer exists. */
+export type Now = { readonly value: Readonly<Record<string, unknown>> } | { readonly gone: true }
+
+const GONE: Now = { gone: true }
+
+export function currentOf(s: StoredSuggestion, sources: Sources): Now {
+  const category = (id: string) => sources.categories.find((c) => c.id === id)
+  switch (s.kind) {
+    case 'set_budget': {
+      if (category(s.target.category_id) === undefined) return GONE
+      const now = resolveBudgets({ asOf: isoDate(s.target.month), history: budgetsForCore(sources.budgets) }).budgets.find((b) => b.categoryId === s.target.category_id)
+      return { value: { cents: now === undefined ? null : now.budgetCents } }
+    }
+    case 'set_bill': {
+      if (category(s.target.category_id) === undefined) return GONE
+      const now = resolvePlans({ asOf: isoDate(s.target.month), history: plansForCore(sources.plans) }).plans.find((p) => p.categoryId === s.target.category_id)
+      return { value: { cents: now === undefined ? null : now.plannedCents, due_day: now === undefined ? null : now.dueDay } }
+    }
+    case 'set_weekly_limit': {
+      const c = category(s.target.category_id)
+      return c === undefined ? GONE : { value: { cents: c.weekly_budget_cents } }
+    }
+    case 'set_goal': {
+      const goal = sources.funds.find((g) => g.id === s.target.goal_id)
+      return goal === undefined ? GONE : { value: { target_cents: goal.target_cents, target_date: goal.target_date } }
+    }
+    case 'rename_category': {
+      const c = category(s.target.category_id)
+      return c === undefined ? GONE : { value: { name: c.name } }
+    }
+    case 'move_category': {
+      const c = category(s.target.category_id)
+      return c === undefined ? GONE : { value: { list: c.kind } }
+    }
+    case 'add_category': {
+      const c = sources.categories.find((k) => k.name === s.target.name)
+      return { value: c === undefined ? { exists: false } : { name: c.name, list: c.kind } }
+    }
+    case 'recategorise':
+    case 'learn_shop': {
+      const charge = sources.charges.find((t) => t.id === s.target.transaction_id)
+      if (charge === undefined) return GONE
+      if (s.kind === 'recategorise') return { value: { category_id: charge.category_id } }
+      const rule = sources.rules.get(charge.merchant)
+      return { value: { category_id: charge.category_id, rule_category_id: rule === undefined ? null : rule } }
+    }
+  }
+}
+
+/** Two values of one shape, key by key. */
+const same = (a: Readonly<Record<string, unknown>>, b: Readonly<Record<string, unknown>>) =>
+  Object.keys(a).length === Object.keys(b).length && Object.keys(b).every((k) => a[k] === b[k])
+
+/**
+ * ready: Apply and Dismiss. stale: its target changed since it was
+ * suggested, or is gone; Dismiss only. already: it is already so; Clear,
+ * which dismisses it. unreadable: Dismiss only.
+ */
+export type CardState = 'ready' | 'stale' | 'already' | 'unreadable'
+
+export function stateOf(s: StoredSuggestion | null, now: Now | null): CardState {
+  if (s === null || now === null) return 'unreadable'
+  if ('gone' in now) return 'stale'
+  if (s.kind === 'learn_shop') {
+    const to = s.after.category_id
+    if (now.value['category_id'] === to && now.value['rule_category_id'] === to) return 'already'
+  } else if (same(now.value, s.after)) {
+    return 'already'
+  }
+  return same(now.value, s.before) ? 'ready' : 'stale'
+}
