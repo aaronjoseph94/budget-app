@@ -75,6 +75,8 @@ export {
   AddExpenseInputSchema,
   AddNoteInputSchema,
   AmountTextSchema,
+  ChangeSchema,
+  type Change,
   GetDebtsInputSchema,
   GetForecastInputSchema,
   GetPeriodInputSchema,
@@ -83,12 +85,18 @@ export {
   ListCategoriesInputSchema,
   ListReviewQueueInputSchema,
   ListSchema,
+  ListSuggestionsInputSchema,
   MCP_SERVER_VERSION,
   NameSchema,
+  ProposeChangeInputSchema,
+  ReasonSchema,
   SearchTransactionsInputSchema,
+  SuggestReviewCategoriesInputSchema,
   NoteTextSchema,
   WordsSchema,
 } from './ai-apps.js'
+
+export { SUGGESTION_KINDS, StoredSuggestionSchema, type StoredSuggestion, type SuggestionKind } from './suggestions.js'
 
 export {
   FACT_LETTER,
