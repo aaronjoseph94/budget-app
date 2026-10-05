@@ -66,6 +66,25 @@ describe('a budget on Bills, Debts or Subscriptions', () => {
   })
 })
 
+// skills-01: a budget "from a month on" replaces that month's own "just
+// this month" value too (setBudget's replacesOnly), even one typed after it
+// was suggested, and the card read only "$400.00 → $450.00". It says so.
+describe('a budget from a month on, where that month has its own', () => {
+  const s = suggestion('set_budget', { category_id: FOOD, month: '2026-11-01', applies: 'onward' }, { cents: 45000 }, { cents: 40000 })
+  const own = (budget_cents: number | null): Sources => ({ ...SOURCES, budgets: [{ id: 'b1', category_id: FOOD, month: '2026-11-01', applies: 'only', budget_cents }] })
+
+  it('says that month’s own value is replaced too', () => {
+    expect(cardWords(s, own(25000)).note).toBe('November 2026 has its own budget of $250.00, just for that month, and this replaces it. And every later month without its own budget.')
+    expect(cardWords(s, own(null)).note).toBe('November 2026 is set to no budget, just for that month, and this replaces it. And every later month without its own budget.')
+  })
+
+  it('says nothing more when its own is already the amount suggested, or for another month', () => {
+    expect(cardWords(s, own(45000)).note).toBe('And every later month without its own budget.')
+    const other: Sources = { ...SOURCES, budgets: [{ id: 'b1', category_id: FOOD, month: '2026-12-01', applies: 'only', budget_cents: 25000 }] }
+    expect(cardWords(s, other).note).toBe('And every later month without its own budget.')
+  })
+})
+
 describe('a suggested change, in words', () => {
   it.each([
     [

@@ -74,6 +74,10 @@ export function valueWords(s: StoredSuggestion, value: Value, sources: Sources):
   }
 }
 
+/** A month's own "just this month" budget for a category, as Apply reads it to replace. */
+const ownOnly = (sources: Sources, categoryId: string, month: string) =>
+  sources.budgets.find((b) => b.category_id === categoryId && b.month === month && b.applies === 'only')
+
 /** The charge a suggestion names, as the Month lists it: shop, day and amount. */
 function chargeWords(sources: Sources, id: string): Words {
   const charge = sources.charges.find((c) => c.id === id)
@@ -108,7 +112,15 @@ export function cardWords(s: StoredSuggestion, sources: Sources): CardWords {
     case 'set_budget': {
       const word = wordFor(sources, s.target.category_id)
       const when = s.target.applies === 'onward' ? ` from ${formatMonthTitle(s.target.month)} on` : ` for ${formatMonthTitle(s.target.month)} only`
-      const note = s.target.applies === 'onward' ? `And every later month without its own ${word}.` : null
+      const later = `And every later month without its own ${word}.`
+      // Apply replaces the month's own "just this month" value too (D12), one
+      // typed after the suggestion included: the card says so (skills-01).
+      const own = s.target.applies === 'onward' ? ownOnly(sources, s.target.category_id, s.target.month) : undefined
+      const replaced =
+        own === undefined || own.budget_cents === s.after.cents
+          ? ''
+          : `${formatMonthTitle(s.target.month)} ${own.budget_cents === null ? `is set to no ${word}` : `has its own ${word} of ${formatCents(own.budget_cents)}`}, just for that month, and this replaces it. `
+      const note = s.target.applies === 'onward' ? `${replaced}${later}` : null
       return { title: [...categoryName(sources, s.target.category_id), ` ${word}${when}`], change: fromTo(s.before, s.after), note }
     }
     case 'set_weekly_limit':
