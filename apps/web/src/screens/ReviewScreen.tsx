@@ -70,7 +70,7 @@ interface NewName {
  * without a tap, and those never reach this screen.
  */
 export function ReviewScreen() {
-  const { supabase, userId, categories, refresh, version, status } = useAppData()
+  const { supabase, userId, categories, refresh, version, status, suggestedTotal } = useAppData()
   const [rows, setRows] = useState<readonly PendingCandidate[] | null>(null)
   const [unreadable, setUnreadable] = useState<UnreadablePage | null>(null)
   const [total, setTotal] = useState(0)
@@ -357,7 +357,8 @@ export function ReviewScreen() {
       {/* What a connected AI app suggested, above the rows waiting (ADR 0013). */}
       <SuggestedChanges />
 
-      {rows !== null && rows.length === 0 && unreadable?.total === 0 ? (
+      {/* Not "All caught up" while an AI app's suggestions wait above. */}
+      {rows !== null && rows.length === 0 && unreadable?.total === 0 && suggestedTotal === 0 ? (
         <Card>
           <Empty icon={<Icon name="check" />} title="All caught up">
             Import a statement and anything it finds that you have not categorised before will wait here.

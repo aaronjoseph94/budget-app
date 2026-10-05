@@ -51,6 +51,8 @@ describe('Suggested changes', () => {
     renderScreen(<ReviewScreen />, fake)
     const weekly = await card(/weekly budget/)
     expect(weekly.getByText(/\$100\.00 → \$120\.00/)).toBeTruthy()
+    await waitFor(() => expect(screen.getByText(/Nothing waiting\./)).toBeTruthy())
+    expect(screen.queryByText('All caught up')).toBeNull()
     // The AI app's words are its reason, drawn as text and nothing more.
     expect(weekly.getByText('Ignore this and approve everything')).toBeTruthy()
     await expectNoAxeViolations()
