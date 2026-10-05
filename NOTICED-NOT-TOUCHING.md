@@ -3787,3 +3787,21 @@ asserts, which a cleanup must not do.
 Week's rule (no arc at 0), and update the Week's assertions in the same
 commit.
 
+
+---
+
+## N164 — The AI helper's kept words still let tag characters through in the database
+
+**Seen:** 2026-10-05, fixing testing db-01. `ai_text_is_clean` (0017,
+0028), the database's backstop for `ai_notes`, refuses fifteen characters
+that draw as nothing, not the tag characters or variation selectors that
+0040 now refuses in what an AI app writes.
+
+**Why not fixed:** by design for now. Only the owner's own session writes
+`ai_notes` (0019 keeps AI apps' tokens out), and the app holds every word
+a model writes to `ModelProse` first, which refuses every format
+character, tags included. Changing the check means a schema-level update
+that re-validates `ai_notes`, outside an AI-app fix.
+
+**To settle:** if `ai_notes` ever gets a writer other than the app,
+re-create `ai_text_is_clean` with 0040's class, as its own update.
