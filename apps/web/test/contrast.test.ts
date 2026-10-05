@@ -71,6 +71,23 @@ describe.each([
   })
 })
 
+// e2e-money-04: a success note's words are muted on its 5% green tint, and
+// #6b7280 read 4.4996:1 there in light, under the 4.5 that text needs.
+// Measured with the muted colour the success look itself sets, if any.
+const feedback = String(Object.values(import.meta.glob('../src/components/ui/feedback.tsx', { query: '?raw', import: 'default', eager: true }))[0])
+const successLook = /tone === 'success'\s*\?(?:\s*\/\/[^\n]*)*\s*'([^']*)'/.exec(feedback)?.[1]
+describe.each([
+  ['light', light],
+  ['dark', dark],
+])('%s scheme, a success note', (_, scheme) => {
+  it.each(['card', 'background'])('reads its muted words at 4.5:1 or more on its tint over --%s', (surface) => {
+    expect(successLook).toContain('bg-income/5')
+    const muted = /\[--muted-foreground:var\(--([\w-]+)\)\]/.exec(successLook ?? '')?.[1] ?? 'muted-foreground'
+    const tint = over(pick(scheme, 'income'), pick(scheme, surface), 0.05)
+    expect(ratio(pick(scheme, muted), tint)).toBeGreaterThanOrEqual(4.5)
+  })
+})
+
 describe('figures', () => {
   it('are tabular everywhere, set once on the body (Mockup A)', () => {
     const start = css.indexOf('  body {\n    font-family')

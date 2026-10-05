@@ -89,7 +89,9 @@ export function Alert({
     tone === 'error'
       ? 'border-destructive/40 bg-destructive/5 text-destructive'
       : tone === 'success'
-        ? 'border-income/40 bg-income/5'
+        ? // Its muted words take canvas-muted: #6b7280 read 4.4996:1 on the
+          // green tint in light, under 4.5 (e2e-money-04, ADR 0010).
+          'border-income/40 bg-income/5 [--muted-foreground:var(--canvas-muted)]'
         : 'bg-card'
   return (
     <div ref={own} id={id} role={tone === 'error' ? 'alert' : says ? undefined : 'status'} className={cn('rounded-lg border px-4 py-3 text-sm', look)}>
