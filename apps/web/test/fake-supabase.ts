@@ -272,6 +272,8 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     ai_app_updates_in: 39,
     // 0021 on: the last review fix in, 0038 by default.
     schema_level: 38,
+    // 0039: answered by decide() below.
+    decide_suggestion: true,
   }
   const failures = new Map<string, string>()
   const server: FakeSupabase['server'] = { refuse: null, maxRows: null, afterRead: null, hold: null, lacks: {}, offline: false, signupsOff: true }
@@ -321,6 +323,15 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     if (moving === undefined || !known) return pgError('42501', 403)
     tables.transactions[row] = { ...moving, category_id: String(args['p_category']) }
     return new Response(null, { status: 204 })
+  }
+
+  // What 0039's decide_suggestion does: only a waiting suggestion is decided, once.
+  function decide(args: Readonly<Record<string, unknown>>): Response {
+    const at = tables.ai_app_proposals.findIndex((r) => r['id'] === args['p_id'] && r['status'] === 'pending')
+    const row = tables.ai_app_proposals[at]
+    if (row === undefined) return json(false)
+    tables.ai_app_proposals[at] = { ...row, status: args['p_outcome'] }
+    return json(true)
   }
 
   // What 0009's trigger on categories asks before a move: is an amount in
@@ -502,6 +513,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       if (name === 'approve_candidate') return approve(args)
       if (name === 'suggest_candidate_categories') return suggest(args)
       if (name === 'clear_candidate_suggestion') return clearSuggestion(args)
+      if (name === 'decide_suggestion') return decide(args)
       return json(rpcReplies[name] ?? null)
     }
 
