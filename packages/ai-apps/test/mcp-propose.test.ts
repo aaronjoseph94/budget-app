@@ -92,6 +92,18 @@ describe('propose_change', () => {
     expect(result).toEqual({ isError: true, content: [{ type: 'text', text: sentence }] })
   })
 
+  // mcp-01 (testing, 2026-10-05): 'Groceries' and a tag character read the
+  // same in Review, and were a second category past name_taken.
+  it.each([
+    ['a tag character in a new name', { kind: 'add_category', name: 'Groceries\u{E0078}', list: 'variable', ...why }],
+    ['a variation selector in a new name', { kind: 'rename_category', category: 'Groceries', new_name: 'Food\u{FE0F}', ...why }],
+    ['tag characters in a reason', { kind: 'set_weekly_limit', category: 'Groceries', amount: '120', reason: 'Fits.\u{E0053}\u{E0059}\u{E0053}' }],
+  ])('reads nothing for %s', async (_, change) => {
+    const { result, rpcCalls } = await propose([change], () => ({}))
+    expect(result.isError).toBe(true)
+    expect(rpcCalls).toEqual([])
+  })
+
   it('reads nothing for more than twenty changes', async () => {
     const one = { kind: 'set_weekly_limit', category: 'Groceries', amount: '120', ...why }
     const { result, rpcCalls } = await propose(Array.from({ length: 21 }, () => one), () => ({}))

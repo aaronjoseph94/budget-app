@@ -5,13 +5,14 @@
  * helper's words for it, so an AI quotes exactly what the screen shows.
  *
  * Names out (shops, categories, goals, debts) came from statements or the
- * owner, and anyone can name a shop. They lose every control, zero-width
- * and direction-override character, so a name can neither hide text nor
+ * owner, and anyone can name a shop. They lose every control character
+ * and every one that draws as nothing, so a name can neither hide text nor
  * reverse how it reads; shop names lose every run of six or more digits,
  * since statements carry card, phone and reference numbers; then each is
  * cut to 80 characters. They are still data, never instructions.
  */
 import { formatCents } from '@budget/money-primitives'
+import { drawsAsNothing } from '@budget/schema'
 
 export type Money = { readonly cents: number; readonly display: string }
 
@@ -22,18 +23,13 @@ export function money(cents: number): Money {
 /** The longest name handed out, in characters. */
 export const NAME_LIMIT = 80
 
-// C0, DEL and C1; zero-width and direction marks (U+200B–U+200F); line and
-// paragraph separators and the embeddings and overrides (U+2028–U+202E);
-// the word joiner, invisible operators and isolates (U+2060–U+2069); the BOM.
+// C0, DEL and C1; line and paragraph separators (U+2028, U+2029); and
+// every character that draws as nothing (the schema's drawsAsNothing:
+// zero-width and direction marks, embeddings, overrides and isolates, the
+// BOM, variation selectors and the tag characters, which spell words a
+// model reads and no one sees; testing mcp-01).
 function hidden(code: number): boolean {
-  return (
-    code < 0x20 ||
-    (code >= 0x7f && code <= 0x9f) ||
-    (code >= 0x200b && code <= 0x200f) ||
-    (code >= 0x2028 && code <= 0x202e) ||
-    (code >= 0x2060 && code <= 0x2069) ||
-    code === 0xfeff
-  )
+  return code < 0x20 || (code >= 0x7f && code <= 0x9f) || code === 0x2028 || code === 0x2029 || drawsAsNothing(code)
 }
 
 // A character from spreading a string always has a code point; one without

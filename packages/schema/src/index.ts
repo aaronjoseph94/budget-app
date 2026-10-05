@@ -94,6 +94,7 @@ export {
   SuggestReviewCategoriesInputSchema,
   NoteTextSchema,
   WordsSchema,
+  drawsAsNothing,
 } from './ai-apps.js'
 
 export { SUGGESTION_KINDS, StoredSuggestionSchema, type StoredSuggestion, type SuggestionKind } from './suggestions.js'

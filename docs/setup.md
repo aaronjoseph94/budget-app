@@ -223,8 +223,11 @@ functions, is read the same way. It never holds a service key or an AI
 key. Check it at
 `https://bnodrfghxbavlopxkgju.supabase.co/functions/v1/mcp/health`:
 `{"ok":true,"version":"…","tools":13}`. After `0039`, paste the server
-again from One-time updates' **Copy**: its version `2026-10-05.1` brings
-the three tools that suggest changes, and the prompt `review_my_budget`.
+again from One-time updates' **Copy**: its version `2026-10-05.1` brought
+the three tools that suggest changes, and the prompt `review_my_budget`;
+`2026-10-05.2` also refuses every character that draws as nothing (tag
+characters and variation selectors too) and leaves them out of the names
+it hands out (testing mcp-01).
 
 **Enforce JWT verification on `mcp` must stay off.** With it on,
 Supabase answers Claude and ChatGPT before the server can, without the
