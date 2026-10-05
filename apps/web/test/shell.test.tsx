@@ -301,6 +301,31 @@ describe('Shell, telling a screen reader the screen changed (FE-13)', () => {
   })
 })
 
+describe('Shell, opening another page of the same screen (e2e-setup-03)', () => {
+  // Only a change of screen scrolled to the top and moved focus, so a Help
+  // article opened from the list kept the list's scroll, its title far
+  // above, and focus fell to the page; the check-in did the same.
+  it('opens a Help article, and the Sunday check-in, at the top with focus on it', async () => {
+    go('/help')
+    renderScreen(<Shell />, createFakeSupabase())
+    const link = await screen.findByRole('link', { name: /^Messages with a code in brackets/ })
+    link.focus()
+    const scrolled = vi.mocked(window.scrollTo).mock.calls.length
+    go('/help/codes')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Messages with a code in brackets' })).toBeTruthy()
+    expect(vi.mocked(window.scrollTo).mock.calls.slice(scrolled)).toEqual([[{ top: 0 }]])
+    expect(document.activeElement).toBe(screen.getByRole('main'))
+    expect(document.title).toBe('Help · Budget')
+
+    go('/coach')
+    await screen.findByRole('heading', { level: 1, name: 'Coach' })
+    ;(document.activeElement as HTMLElement | null)?.blur()
+    go('/coach/checkin')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Your Sunday check-in' })).toBeTruthy()
+    expect(document.activeElement).toBe(screen.getByRole('main'))
+  })
+})
+
 describe('Shell, reading out what an action did (FE-16)', () => {
   it('keeps one polite status region from the start, and writes a success message into it', async () => {
     const fake = createFakeSupabase({

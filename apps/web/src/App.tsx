@@ -110,7 +110,7 @@ export function Shell() {
   const width = wide ? 'max-w-3xl lg:max-w-7xl' : 'max-w-3xl'
   const main = useRef<HTMLElement>(null)
   const sidebar = useSidebarState()
-  useAnnounceScreen(screen, main)
+  useAnnounceScreen(screen, param, main)
   // Read again on every move: opening the check-in marks it seen. Not on
   // the Coach itself, whose own card says the check-in is ready.
   const dot = useMemo(() => screen !== 'coach' && checkinDue(today), [screen, param, today])
@@ -267,23 +267,41 @@ function useSearchKey(): void {
 }
 
 /**
+ * Screens whose param names another page rather than another period of
+ * the same one: a Help article, and the Coach's Sunday check-in.
+ */
+const PAGED: ReadonlySet<Screen> = new Set<Screen>(['help', 'coach'])
+
+/**
  * A screen changed only its hash, so the page kept the title "Budget" and
  * focus stayed on the tab pressed: a screen reader said nothing had
  * happened (FE-13). The title now names the screen, and choosing another
- * screen moves focus to it, where a screen reader starts reading. Opening
+ * screen moves focus to it, where a screen reader starts reading. So does
+ * another page of the same screen, a Help article or the check-in, which
+ * kept the last page's scroll and dropped focus (e2e-setup-03). Opening
  * the app, and stepping a month on the same screen, leave focus alone.
  */
-function useAnnounceScreen(screen: Screen, main: { readonly current: HTMLElement | null }): void {
-  const shown = useRef<Screen | null>(null)
+function useAnnounceScreen(screen: Screen, param: string | null, main: { readonly current: HTMLElement | null }): void {
+  const page = PAGED.has(screen) ? `${screen}/${param ?? ''}` : screen
+  const shown = useRef<string | null>(null)
+  // What had focus as the address changed: a link pressed in the page can
+  // stay in it (Help's side index), and is not the new page taking focus.
+  const before = useRef<Element | null>(null)
+  useEffect(() => {
+    const note = () => void (before.current = document.activeElement)
+    window.addEventListener('hashchange', note)
+    return () => window.removeEventListener('hashchange', note)
+  }, [])
   useEffect(() => {
     document.title = `${SCREEN_NAME[screen]} · Budget`
-    if (shown.current !== null && shown.current !== screen) {
+    if (shown.current !== null && shown.current !== page) {
       // The tabs are links now (FE-20), so the scroll navigate() gave them
       // happens here, for however the screen was reached.
       window.scrollTo({ top: 0 })
-      // Unless the new screen has put focus in itself, as Help's search does.
-      if (main.current?.contains(document.activeElement) !== true) main.current?.focus({ preventScroll: true })
+      // Unless the new page has put focus in itself, as Help's search does.
+      const taken = document.activeElement !== before.current && main.current?.contains(document.activeElement) === true
+      if (!taken) main.current?.focus({ preventScroll: true })
     }
-    shown.current = screen
-  }, [screen, main])
+    shown.current = page
+  }, [page, screen, main])
 }
