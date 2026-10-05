@@ -51,6 +51,25 @@ describe('AddScreen, which CSV column is which', () => {
     expect(await send(CARD('1234'))).toEqual(READ)
   })
 
+  // e2e-money-07: the screen offers a semicolon "common in Europe", but read
+  // every amount with a decimal point, so -4,50 could never be read. The
+  // decimal mark is the owner's to declare, as the separator is.
+  it('reads a European file once its separator and decimal comma are chosen', async () => {
+    const fake = createFakeSupabase()
+    fake.rpcReplies.save_import = [{ batch_id: 'b1', parsed: 2, deduped: 0, inserted: 2, rejected: 0, auto_approved: 0 }]
+    renderScreen(<AddScreen />, fake)
+    await screen.findByText('Choose a statement')
+    pick(new File(['Date;Description;Amount\n20/09/2026;SHOP A;-4,50\n21/09/2026;SHOP B;-1.234,56'], 'semi.csv', { type: 'text/csv' }))
+    fireEvent.change(await screen.findByLabelText('Column separator'), { target: { value: ';' } })
+    fireEvent.change(await screen.findByLabelText('Decimal mark'), { target: { value: ',' } })
+    fireEvent.click(await screen.findByRole('button', { name: 'Send 2 to the review queue' }))
+    await screen.findByText(/waiting for review/)
+    expect((fake.rpcCalls[0]?.args.p_rows as readonly { merchant_raw: string; amount_cents: number }[]).map((r) => [r.merchant_raw, r.amount_cents])).toEqual([
+      ['SHOP A', -450],
+      ['SHOP B', -123_456],
+    ])
+  })
+
   it('says so when more than one column looks like money', async () => {
     renderScreen(<AddScreen />, createFakeSupabase())
     await screen.findByText('Choose a statement')

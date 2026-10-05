@@ -8,12 +8,12 @@
  */
 import { useMemo, useState } from 'react'
 import {
-  US_AMOUNT_FORMAT,
   detectHeaderRow,
   profileColumns,
   proposeMapping,
   readStatement,
   tokenizeCsv,
+  type AmountFormat,
   type DateFormat,
   type StatementRead,
 } from '@budget/statement-parsers'
@@ -30,6 +30,11 @@ export interface Chosen {
 
 export function useCsvMapping(text: string) {
   const [delimiter, setDelimiter] = useState<string>(',')
+  // The decimal mark, declared as the separator is, never sniffed: "1.234"
+  // is a thousand in Berlin. A semicolon file "common in Europe" read every
+  // -4,50 as no amount with the point alone (e2e-money-07).
+  const [decimal, setDecimal] = useState<AmountFormat['decimalSeparator']>('.')
+  const amountFormat = useMemo((): AmountFormat => ({ decimalSeparator: decimal, parenthesesMeanNegative: true }), [decimal])
   // What the user has explicitly chosen. Everything unset falls through to the
   // proposal below, so nothing is assigned during render and a later file
   // cannot silently inherit an earlier file's columns.
@@ -48,15 +53,15 @@ export function useCsvMapping(text: string) {
 
   const analysis = useMemo(() => {
     if (!tokenized.ok) return null
-    const verdict = detectHeaderRow(tokenized.rows, US_AMOUNT_FORMAT)
+    const verdict = detectHeaderRow(tokenized.rows, amountFormat)
     const hasHeader = verdict !== 'data'
     const columns = profileColumns({
       rows: tokenized.rows,
       hasHeader,
-      amountFormat: US_AMOUNT_FORMAT,
+      amountFormat,
     })
     return { verdict, hasHeader, columns }
-  }, [tokenized])
+  }, [tokenized, amountFormat])
 
   // A proposal, applied once, that the user can override. It is never
   // re-applied after they touch a control: a screen that silently re-picks a
@@ -64,8 +69,8 @@ export function useCsvMapping(text: string) {
   // The guess itself is statement-parsers' (architecture-c2-01).
   const proposal = useMemo(() => {
     if (!tokenized.ok || analysis === null) return null
-    return proposeMapping({ rows: tokenized.rows, hasHeader: analysis.hasHeader, columns: analysis.columns, amountFormat: US_AMOUNT_FORMAT })
-  }, [tokenized, analysis])
+    return proposeMapping({ rows: tokenized.rows, hasHeader: analysis.hasHeader, columns: analysis.columns, amountFormat })
+  }, [tokenized, analysis, amountFormat])
 
   // The mapping actually in force: the user's choice where they made one, the
   // proposal otherwise. Derived, never stored, so the two cannot disagree.
@@ -96,11 +101,11 @@ export function useCsvMapping(text: string) {
         amountIndex,
         sign: { kind: signKind },
       },
-      amountFormat: US_AMOUNT_FORMAT,
+      amountFormat,
       dateFormat,
       hasHeader: analysis.hasHeader,
     })
-  }, [tokenized, analysis, dateIndex, merchantIndex, amountIndex, dateFormat, signKind])
+  }, [tokenized, analysis, dateIndex, merchantIndex, amountIndex, dateFormat, signKind, amountFormat])
 
   const summary = useMemo(
     () =>
@@ -122,6 +127,8 @@ export function useCsvMapping(text: string) {
   return {
     delimiter,
     setDelimiter,
+    decimal,
+    setDecimal,
     choose,
     clear,
     tokenized,

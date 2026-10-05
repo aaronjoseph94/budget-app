@@ -189,7 +189,7 @@ function SaveFooter({
  * signed, each proposed and each the owner's to change (FE-19).
  */
 function ColumnMapping({ mapping }: { mapping: Mapping }) {
-  const { delimiter, setDelimiter, choose, tokenized, analysis, dateIndex, merchantIndex, amountIndex, signKind, dateFormat, ambiguousDate, otherMoney } =
+  const { delimiter, setDelimiter, decimal, setDecimal, choose, tokenized, analysis, dateIndex, merchantIndex, amountIndex, signKind, dateFormat, ambiguousDate, otherMoney } =
     mapping
   return (
     <>
@@ -264,6 +264,16 @@ function ColumnMapping({ mapping }: { mapping: Mapping }) {
                 { value: 'debit_positive' as const, label: 'Purchases are positive' },
               ]}
               onChange={(v) => choose('signKind', v)}
+            />
+            {/* Declared, as the separator is: a European file writes -4,50 (e2e-money-07). */}
+            <OptionSelect
+              label="Decimal mark"
+              value={decimal}
+              options={[
+                { value: '.' as const, label: 'Point: 1,234.56' },
+                { value: ',' as const, label: 'Comma: 1.234,56 (common in Europe)' },
+              ]}
+              onChange={setDecimal}
             />
           </div>
 
