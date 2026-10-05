@@ -105,7 +105,7 @@ describe('add_expense', () => {
     expect(rpcCalls).toEqual([])
   })
 
-  // zod passes 0000-02-29, a leap day in year 0, which money-primitives' isoDate refuses (N147).
+  // 0000-02-29, a leap day in year 0: zod and money-primitives' isoDate pass it, and no owner's past year holds it.
   it('refuses a day the app cannot read before reading anything, as a bad date', async () => {
     const { result, rpcCalls } = await add({ ...LUNCH, date: '0000-02-29' })
     expect(result).toEqual(says(SENTENCES.bad_date))

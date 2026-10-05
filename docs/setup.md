@@ -229,7 +229,9 @@ the three tools that suggest changes, and the prompt `review_my_budget`;
 characters and variation selectors too) and leaves them out of the names
 it hands out (testing mcp-01); `2026-10-05.3` holds a 2025-era request to
 the 20-second deadline too, which it had stopped watching once the SDK
-began its answer (testing mcp-02).
+began its answer (testing mcp-02); `2026-10-05.4` carries the engine's
+fixes to a debt never paid off, amounts and dates long ago (testing
+fuzz-03, fuzz-04, fuzz-07).
 
 **Enforce JWT verification on `mcp` must stay off.** With it on,
 Supabase answers Claude and ChatGPT before the server can, without the

@@ -77,8 +77,45 @@ export function isoDate(value: string): IsoDate {
   return value as IsoDate
 }
 
+/**
+ * The calendar is worked out here, not by Date: Date.UTC reads a year from
+ * 0 to 99 as 1900 to 1999, so a day in year 25 plus one was in 1925, and
+ * 0000-02-29 was refused (testing fuzz-07, N147). The proleptic Gregorian
+ * calendar, every year 0000 to 9999 as written.
+ */
 function daysInMonth(year: number, month: number): number {
-  return new Date(Date.UTC(year, month, 0)).getUTCDate()
+  if (month === 2) return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0 ? 29 : 28
+  return month === 4 || month === 6 || month === 9 || month === 11 ? 30 : 31
+}
+
+/** Days from 1970-01-01 (Howard Hinnant's days_from_civil). */
+function dayNumber(date: IsoDate): number {
+  const [y, m, d] = date.split('-').map(Number) as [number, number, number]
+  const year = m <= 2 ? y - 1 : y
+  const era = Math.floor(year / 400)
+  const yoe = year - era * 400
+  const doy = Math.floor((153 * (m + (m > 2 ? -3 : 9)) + 2) / 5) + d - 1
+  return era * 146_097 + yoe * 365 + Math.floor(yoe / 4) - Math.floor(yoe / 100) + doy - 719_468
+}
+
+/** The date so many days from 1970-01-01 (civil_from_days), refused outside the years an ISO date writes. */
+function fromDayNumber(days: number): IsoDate {
+  const z = days + 719_468
+  const era = Math.floor(z / 146_097)
+  const doe = z - era * 146_097
+  const yoe = Math.floor((doe - Math.floor(doe / 1_460) + Math.floor(doe / 36_524) - Math.floor(doe / 146_096)) / 365)
+  const doy = doe - (365 * yoe + Math.floor(yoe / 4) - Math.floor(yoe / 100))
+  const mp = Math.floor((5 * doy + 2) / 153)
+  const d = doy - Math.floor((153 * mp + 2) / 5) + 1
+  const m = mp < 10 ? mp + 3 : mp - 9
+  return written(yoe + era * 400 + (m <= 2 ? 1 : 0), m, d)
+}
+
+/** A year, month and day as an IsoDate; a year an ISO date cannot write is refused. */
+function written(year: number, month: number, day: number): IsoDate {
+  if (year < 0 || year > 9999) throw new RangeError(`Year ${year} is outside 0000 to 9999`)
+  const pad = (n: number, w = 2) => String(n).padStart(w, '0')
+  return `${pad(year, 4)}-${pad(month)}-${pad(day)}` as IsoDate
 }
 
 /**
@@ -90,14 +127,12 @@ export function addMonths(date: IsoDate, months: number): IsoDate {
   const total = (y * 12 + (m - 1)) + months
   const year = Math.floor(total / 12)
   const month = (total % 12) + 1
-  const day = Math.min(d, daysInMonth(year, month))
-  const pad = (n: number, w = 2) => String(n).padStart(w, '0')
-  return `${pad(year, 4)}-${pad(month)}-${pad(day)}` as IsoDate
+  return written(year, month, Math.min(d, daysInMonth(year, month)))
 }
 
 /** Whole days between two dates. Positive when `to` is later. */
 export function daysBetween(from: IsoDate, to: IsoDate): number {
-  return Math.round((utcMs(to) - utcMs(from)) / 86_400_000)
+  return dayNumber(to) - dayNumber(from)
 }
 
 /**
@@ -117,14 +152,7 @@ export function monthsBetween(from: IsoDate, to: IsoDate): number {
 
 /** Add whole days. */
 export function addDays(date: IsoDate, days: number): IsoDate {
-  const d = new Date(utcMs(date) + days * 86_400_000)
-  const pad = (n: number, w = 2) => String(n).padStart(w, '0')
-  return `${pad(d.getUTCFullYear(), 4)}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}` as IsoDate
-}
-
-function utcMs(date: IsoDate): number {
-  const [y, m, d] = date.split('-').map(Number) as [number, number, number]
-  return Date.UTC(y, m - 1, d)
+  return fromDayNumber(dayNumber(date) + Math.floor(days))
 }
 
 export { formatCents } from './format.js'

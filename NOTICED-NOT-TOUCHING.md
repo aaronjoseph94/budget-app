@@ -3395,7 +3395,7 @@ settles it, as N144 did; never a longer timeout.
 
 ---
 
-## N147 — isoDate refuses 0000-02-29, which zod's date check passes
+## N147 — isoDate refuses 0000-02-29, which zod's date check passes *(settled 2026-10-05, testing fuzz-07)*
 
 **Seen:** 2026-10-01, reviewing M9. `daysInMonth` in
 `packages/money-primitives/src/index.ts` builds its date with
@@ -3415,6 +3415,12 @@ package reads dates through, outside M9 and M11a.
 **To settle:** build the date in `daysInMonth` with `setUTCFullYear`, so
 years 0 to 99 are read as written, with `isoDate` cases for 0000-02-29
 (a day) and 0001-02-29 (not one); then the two read tools need nothing.
+
+**Done:** money-primitives no longer uses `Date` for its calendar. It
+works days and months out itself (Howard Hinnant's civil-date algorithms),
+so every year from 0000 to 9999 is read as written and a day beyond them
+is refused with a `RangeError`. Testing fuzz-07 found the same cause in
+`addDays` and `daysBetween` (a day in year 25 plus one was in 1925).
 
 ---
 

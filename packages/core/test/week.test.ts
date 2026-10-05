@@ -51,3 +51,12 @@ describe('monthBounds', () => {
     expect(shiftMonth(isoDate('2026-01-15'), -1)).toBe('2025-12-01')
   })
 })
+
+// Testing fuzz-07: money-primitives read years 0 to 99 as 1900 to 1999, so
+// a week in year 25 was found in 1925, and its month ran to 1925.
+describe('a week and a month long ago', () => {
+  it('are found in their own year', () => {
+    expect(weekBounds(isoDate('0025-03-15'))).toEqual({ start: '0025-03-10', end: '0025-03-16' })
+    expect(monthBounds(isoDate('0025-03-15'))).toEqual({ start: '0025-03-01', end: '0025-03-31' })
+  })
+})
