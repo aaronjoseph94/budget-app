@@ -76,9 +76,10 @@ describe('Help', () => {
     renderScreen(<Shell />, createFakeSupabase())
     const page = (await screen.findByRole('heading', { level: 1, name: 'Why things wait in Review' })).closest('article')!
 
-    const steps = within(page).getAllByRole('listitem').slice(0, 5)
-    expect(steps[3]?.textContent).toBe('Press Approve on a row, or Approve these 12 (with your own number), check the list it shows, and press Approve all 12.')
-    expect([...(steps[3]?.querySelectorAll('strong') ?? [])].map((b) => b.textContent)).toEqual(['Approve', 'Approve these 12', 'Approve all 12'])
+    const steps = within(page).getAllByRole('listitem').slice(0, 6)
+    expect(steps[1]?.textContent).toMatch(/^At the top, Suggested changes lists what an AI app you connected suggested/)
+    expect(steps[4]?.textContent).toBe('Press Approve on a row, or Approve these 12 (with your own number), check the list it shows, and press Approve all 12.')
+    expect([...(steps[4]?.querySelectorAll('strong') ?? [])].map((b) => b.textContent)).toEqual(['Approve', 'Approve these 12', 'Approve all 12'])
     expect(within(page).getByRole('region', { name: 'You’re done when…' }).textContent).toContain('Review says "Nothing waiting."')
     // Side by side, the two cards stretch to one height (V18).
     expect(within(page).getByRole('region', { name: 'You’re done when…' }).parentElement?.className).not.toContain('items-start')

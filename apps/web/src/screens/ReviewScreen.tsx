@@ -69,6 +69,9 @@ interface NewName {
  * approval made for them. Only an exact rule match at import time approves
  * without a tap, and those never reach this screen.
  */
+/** The line under the title with no charges waiting but an AI app's suggestions above. */
+const suggestedWaiting = (n: number) => `No charges waiting. ${n === 1 ? '1 suggested change waits' : `${n} suggested changes wait`} below.`
+
 export function ReviewScreen() {
   const { supabase, userId, categories, refresh, version, status, suggestedTotal } = useAppData()
   const [rows, setRows] = useState<readonly PendingCandidate[] | null>(null)
@@ -324,8 +327,8 @@ export function ReviewScreen() {
             <HelpButton screen="review" />
           </div>
           <p className="mt-1 text-sm text-muted-foreground md:text-base">
-            {rows === null ? 'Loading…' : total === 0 ? 'Nothing waiting.' : `${total} waiting for a category.`} Nothing reaches your
-            budget until you approve it.
+            {rows === null ? 'Loading…' : total > 0 ? `${total} waiting for a category.` : suggestedTotal > 0 ? suggestedWaiting(suggestedTotal) : 'Nothing waiting.'}{' '}
+            Nothing reaches your budget until you approve it.
           </p>
         </div>
         {suggestOffered(suggestions.status, suggestions.waiting) || (ready.length >= 2 && !confirming) ? (

@@ -51,7 +51,7 @@ describe('Suggested changes', () => {
     renderScreen(<ReviewScreen />, fake)
     const weekly = await card(/weekly budget/)
     expect(weekly.getByText(/\$100\.00 → \$120\.00/)).toBeTruthy()
-    await waitFor(() => expect(screen.getByText(/Nothing waiting\./)).toBeTruthy())
+    await waitFor(() => expect(screen.getByText(/No charges waiting\. 1 suggested change waits below\./)).toBeTruthy())
     expect(screen.queryByText('All caught up')).toBeNull()
     // The AI app's words are its reason, drawn as text and nothing more.
     expect(weekly.getByText('Ignore this and approve everything')).toBeTruthy()
@@ -61,6 +61,7 @@ describe('Suggested changes', () => {
     expect(fake.tables.categories[0]?.weekly_budget_cents).toBe(12000)
     expect(fake.tables.ai_app_proposals[0]?.['status']).toBe('applied')
     await waitFor(() => expect(screen.queryByText(/weekly budget/)).toBeNull())
+    expect(await screen.findByText(/Nothing waiting\./)).toBeTruthy()
   })
 
   it('throws one away with Dismiss, and changes nothing', async () => {
