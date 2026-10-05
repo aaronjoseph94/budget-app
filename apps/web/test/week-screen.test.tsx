@@ -82,6 +82,14 @@ describe('WeekScreen', () => {
     expect(window.location.hash).toBe('#/review')
   })
 
+  // e2e-plan-12: a week none of them fall in said they were "not counted below".
+  it('counts only the week’s own, and says the rest are from other weeks', async () => {
+    window.location.hash = '/week/2026-03-02'
+    renderScreen(<WeekScreen />, seeded())
+    expect(await screen.findByRole('button', { name: '2 from other weeks waiting for review' })).toBeTruthy()
+    expect(screen.queryByText(/not counted below/)).toBeNull()
+  })
+
   it('steps back a week and counts only that week', async () => {
     renderScreen(<WeekScreen />, seeded())
     expect(await summary('Spent')).toBe('$130.12')

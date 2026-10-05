@@ -10,7 +10,7 @@ import {
   type WeekSheet,
 } from '@budget/core'
 import { useAppData } from '../app-data.js'
-import { latestStatementEnd, listPlanHistory, listTransactions, type LedgerRow, type PlanRow } from '../ledger.js'
+import { countPendingBetween, latestStatementEnd, listPlanHistory, listTransactions, type LedgerRow, type PlanRow } from '../ledger.js'
 import { categoriesForCore, entriesForCore, plansForCore, weekCategoriesForCore } from '../sheet-input.js'
 import { useEarlier } from '../earlier.js'
 import { formatDateRange } from '../format.js'
@@ -66,8 +66,9 @@ export function WeekScreen({ monday }: { monday: string | null }) {
       // month's amount on its own due day (D13).
       listPlanHistory(supabase, monthBounds(bounds.end).start, 'week'),
       latestStatementEnd(supabase),
+      countPendingBetween(supabase, { from: bounds.start, to: bounds.end }),
     ])
-      .then(([rows, plans, ends]) => live && setLoaded({ start: bounds.start, rows, plans, ends }))
+      .then(([rows, plans, ends, pendingHere]) => live && setLoaded({ start: bounds.start, rows, plans, ends, pendingHere }))
       .catch((e: unknown) => live && setError(e instanceof Error ? e.message : 'Could not load this week.'))
     return () => {
       live = false
@@ -156,9 +157,17 @@ export function WeekScreen({ monday }: { monday: string | null }) {
         </div>
       </header>
 
-      {pendingTotal > 0 ? (
+      {/* The week's own, as the Month counts its own: one from another week
+        is not "below" at all (e2e-plan-12). */}
+      {here !== null && (here.pendingHere > 0 || pendingTotal > 0) ? (
         <WaitingBanner>
-          <span className="font-semibold">{pendingTotal} waiting for review.</span> They are not counted below until you approve them.
+          {here.pendingHere > 0 ? (
+            <>
+              <span className="font-semibold">{here.pendingHere} waiting for review.</span> They are not counted below until you approve them.
+            </>
+          ) : (
+            <>{pendingTotal} from other weeks waiting for review</>
+          )}
         </WaitingBanner>
       ) : null}
 
@@ -199,6 +208,8 @@ interface Loaded {
   /** Every monthly amount typed from the week's last month or before it. */
   readonly plans: readonly PlanRow[]
   readonly ends: readonly string[]
+  /** Charges dated in the week waiting in Review. */
+  readonly pendingHere: number
 }
 
 /** A busy status, so a screen reader is told the week is loading, as the eye is (CR-10). */

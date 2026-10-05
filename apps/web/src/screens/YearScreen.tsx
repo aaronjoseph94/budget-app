@@ -12,6 +12,7 @@ import {
 import { useAppData } from '../app-data.js'
 import { useEarlier } from '../earlier.js'
 import {
+  countPendingBetween,
   getMonthBalance,
   listBudgetHistory,
   listPlanHistory,
@@ -69,8 +70,9 @@ export function YearScreen({ start: address }: { start: string | null }) {
       listBudgetHistory(supabase, last, 'year'),
       listPlanHistory(supabase, last, 'year'),
       getMonthBalance(supabase, start),
+      countPendingBetween(supabase, { from: start, to: end }),
     ])
-      .then(([rows, budgets, plans, balance]) => live && setLoaded({ start, rows, budgets, plans, balance }))
+      .then(([rows, budgets, plans, balance, pendingHere]) => live && setLoaded({ start, rows, budgets, plans, balance, pendingHere }))
       .catch((e: unknown) => live && setError(e instanceof Error ? e.message : 'Could not load this year.'))
     return () => {
       live = false
@@ -142,9 +144,17 @@ export function YearScreen({ start: address }: { start: string | null }) {
         Planned bills count up to {formatMonthTitle(thisMonth)}, this month. Later months show only what was charged or
         typed.
       </p>
-      {pendingTotal > 0 ? (
+      {/* The twelve months' own, as the Month counts its own: one from
+        another month is not "below" at all (e2e-plan-12). */}
+      {here !== null && (here.pendingHere > 0 || pendingTotal > 0) ? (
         <WaitingBanner>
-          <span className="font-semibold">{pendingTotal} waiting for review</span> — not counted below
+          {here.pendingHere > 0 ? (
+            <>
+              <span className="font-semibold">{here.pendingHere} waiting for review</span> — not counted below
+            </>
+          ) : (
+            <>{pendingTotal} from other months waiting for review</>
+          )}
         </WaitingBanner>
       ) : null}
 
@@ -219,6 +229,8 @@ interface Loaded {
   readonly plans: readonly PlanRow[]
   /** The start month's typed balance, or null when none was. */
   readonly balance: number | null
+  /** Charges dated in the twelve months waiting in Review. */
+  readonly pendingHere: number
 }
 
 /**

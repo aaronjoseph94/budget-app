@@ -105,6 +105,15 @@ describe('YearScreen', () => {
     expect(window.location.hash).toBe('#/review')
   })
 
+  // e2e-plan-12: a year none of them fall in said they were "not counted below".
+  it('counts only the year’s own, and says the rest are from other months', async () => {
+    const fake = seeded()
+    fake.tables.ingest_candidates.push({ id: 'c1', posted_on: '2026-09-10', amount_cents: -1349, merchant: 'SHOP', merchant_raw: 'SHOP', status: 'pending' })
+    renderScreen(<YearScreen start="2025-01" />, fake)
+    expect(await screen.findByRole('button', { name: '1 from other months waiting for review' })).toBeTruthy()
+    expect(screen.queryByText(/not counted below/)).toBeNull()
+  })
+
   it('counts planned bills up to this month only, and real rows in every month', async () => {
     renderScreen(<YearScreen start="2026-01" />, seeded())
     await screen.findByRole('region', { name: 'Income by month' })
