@@ -135,6 +135,17 @@ describe('the sidebar (ADR 0011)', () => {
     expect(within(review).getByText('2 suggested').classList.contains('text-primary')).toBe(true)
     expect(within(phoneBar()).getByRole('link', { name: 'Review, 1 waiting, 2 suggested' })).toBeTruthy()
   })
+
+  it('opens the app with no suggested count when the suggestions cannot be counted', async () => {
+    const fake = createFakeSupabase({
+      ingest_candidates: [
+        { id: 'p1', posted_on: '2026-09-10', amount_cents: -1349, merchant: 'LITWARE COFFEE', merchant_raw: 'LITWARE COFFEE', status: 'pending' },
+      ],
+    })
+    fake.fail('ai_app_proposals', 'PGRST301')
+    renderScreen(<Shell />, fake)
+    expect(await within(sidebar()).findByRole('link', { name: 'Review, 1 waiting' })).toBeTruthy()
+  })
 })
 
 describe('the sidebar’s foot (ADR 0011)', () => {

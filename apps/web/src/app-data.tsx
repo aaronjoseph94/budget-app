@@ -130,7 +130,9 @@ export function AppDataProvider({
         listCategories(supabase),
         listGoals(supabase),
         listPending(supabase, 1),
-        countWaiting(supabase),
+        // Only a count for the badge: one that cannot be read leaves it at
+        // 0, and never stops the app opening (Review reads its own).
+        countWaiting(supabase).catch(() => 0),
       ])
       if (mine !== latest.current) return
       setAccountId(resolved.id)
