@@ -116,11 +116,11 @@ async function write(supabase: SupabaseClient, userId: string, s: StoredSuggesti
 }
 
 /** Read again, check, write, mark. */
-export async function applySuggestion(supabase: SupabaseClient, userId: string, s: StoredSuggestion): Promise<Applied> {
+export async function applySuggestion(supabase: SupabaseClient, userId: string, s: StoredSuggestion, today: string): Promise<Applied> {
   if (!(await stillWaiting(supabase, s))) return 'gone'
   const categories = await listCategories(supabase)
   const sources = await readSources(supabase, categories, [s])
-  const state = stateOf(s, currentOf(s, sources))
+  const state = stateOf(s, currentOf(s, sources), today)
   if (state === 'already' || state === 'stale') return state
   await write(supabase, userId, s, sources, categories)
   return (await decideSuggestion(supabase, s.id, 'applied')) ? 'applied' : 'applied_unmarked'

@@ -31,7 +31,7 @@ function setup(kind: string, target: object, after: object, before: object) {
     transactions: [{ id: TXN, posted_on: '2026-09-03', amount_cents: -5420, merchant_raw: 'COSTCO #12', category_id: FOOD, source: 'card_csv' }],
     ai_app_proposals: [row],
   })
-  return { fake, s: StoredSuggestionSchema.parse(row), apply: () => applySuggestion(fake.client, 'u1', StoredSuggestionSchema.parse(row)) }
+  return { fake, s: StoredSuggestionSchema.parse(row), apply: () => applySuggestion(fake.client, 'u1', StoredSuggestionSchema.parse(row), '2026-10-05') }
 }
 const marked = (fake: ReturnType<typeof setup>['fake']) => fake.tables.ai_app_proposals.map((r) => r['status'])
 
@@ -81,6 +81,17 @@ describe('Apply', () => {
     expect(fake.rpcCalls.find((c) => c.name === 'recategorise_transaction')?.args).toEqual({ p_transaction: TXN, p_category: RENT, p_learn: learn })
   })
 
+  it('writes nothing for a month gone by, or a category now on a list the screens give no such value', async () => {
+    const past = setup('set_bill', { category_id: RENT, month: '2026-09-01' }, { cents: 155000, due_day: 3 }, { cents: 150000, due_day: 1 })
+    expect(await past.apply()).toBe('stale')
+    const moved = setup('set_bill', { category_id: FOOD, month: '2026-11-01' }, { cents: 5000, due_day: null }, { cents: null, due_day: null })
+    expect(await moved.apply()).toBe('stale')
+    for (const { fake } of [past, moved]) {
+      expect(fake.tables.category_plans).toHaveLength(1)
+      expect(marked(fake)).toEqual(['pending'])
+    }
+  })
+
   it('writes nothing for a target changed since, or already so, and leaves it waiting', async () => {
     const stale = setup('set_weekly_limit', { category_id: FOOD }, { cents: 12000 }, { cents: 9000 })
     expect(await stale.apply()).toBe('stale')
@@ -107,7 +118,7 @@ describe('Apply', () => {
   it('writes nothing when the waiting row is not what the card read', async () => {
     const { fake, s } = setup('set_weekly_limit', { category_id: FOOD }, { cents: 12000 }, { cents: 10000 })
     fake.tables.ai_app_proposals[0] = { ...fake.tables.ai_app_proposals[0], after: { cents: 99000 } }
-    expect(await applySuggestion(fake.client, 'u1', s)).toBe('gone')
+    expect(await applySuggestion(fake.client, 'u1', s, '2026-10-05')).toBe('gone')
     expect(fake.tables.categories.find((c) => c.id === FOOD)?.weekly_budget_cents).toBe(10000)
   })
 

@@ -9,7 +9,7 @@ import { Button } from '../components/ui/button.js'
 import { cn } from '../lib/cn.js'
 import { applySuggestion, dismissSuggestion } from './apply-suggestion.js'
 import { cardWords, valueWords, type CardWords, type Words } from './change-words.js'
-import { currentOf, listWaiting, readSources, stateOf, type CardState, type Waiting } from './suggested-changes.js'
+import { currentOf, listWaiting, readSources, staleWhy, stateOf, type CardState, type Waiting } from './suggested-changes.js'
 
 /** One card: its suggestion as read, its state, and its words. */
 export interface Shown {
@@ -19,12 +19,14 @@ export interface Shown {
   readonly words: CardWords | null
   /** What its target is now, in words; null when it cannot be read or is gone. */
   readonly now: Words | null
+  /** Why it is stale when not because its value moved; null otherwise. */
+  readonly why: string | null
   /** The AI app that suggested it, by its grant's name. */
   readonly app: string
 }
 
 /** Each waiting row as a card, from fresh rows. */
-async function readCards(supabase: Parameters<typeof listWaiting>[0], categories: Parameters<typeof readSources>[1]): Promise<readonly Shown[]> {
+async function readCards(supabase: Parameters<typeof listWaiting>[0], categories: Parameters<typeof readSources>[1], today: string): Promise<readonly Shown[]> {
   const waiting = await listWaiting(supabase)
   if (waiting.length === 0) return []
   const parsed = waiting.flatMap((w) => (w.suggestion === null ? [] : [w.suggestion]))
@@ -36,9 +38,10 @@ async function readCards(supabase: Parameters<typeof listWaiting>[0], categories
     return {
       id: w.id,
       suggestion: s,
-      state: stateOf(s, now),
+      state: stateOf(s, now, today),
       words: s === null ? null : cardWords(s, sources),
       now: s === null || now === null || 'gone' in now ? null : valueWords(s, now.value, sources),
+      why: staleWhy(s, now, today),
       app: names.get(w.clientId ?? '') ?? 'An AI app',
     }
   })
@@ -68,7 +71,7 @@ const DONE = {
  * none wait, and before 0039 is in.
  */
 export function SuggestedChanges() {
-  const { supabase, userId, categories, refresh, version } = useAppData()
+  const { supabase, userId, categories, refresh, version, today } = useAppData()
   const [shown, setShown] = useState<readonly Shown[]>([])
   const [busy, setBusy] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
@@ -80,12 +83,12 @@ export function SuggestedChanges() {
   const load = useCallback(async () => {
     const read = ++reads.current
     try {
-      const cards = await readCards(supabase, categories)
+      const cards = await readCards(supabase, categories, today)
       if (read === reads.current) setShown(cards)
     } catch (cause) {
       if (read === reads.current) setError(cause instanceof Error ? cause.message : 'Could not load the suggested changes.')
     }
-  }, [supabase, categories])
+  }, [supabase, categories, today])
 
   useEffect(() => {
     void load()
@@ -101,7 +104,7 @@ export function SuggestedChanges() {
         await dismissSuggestion(supabase, item.id)
         setNote('Dismissed. Nothing was changed.')
       } else {
-        setNote(DONE[await applySuggestion(supabase, userId, item.suggestion)])
+        setNote(DONE[await applySuggestion(supabase, userId, item.suggestion, today)])
       }
       done = true
     } catch (cause) {
@@ -130,7 +133,7 @@ export function SuggestedChanges() {
     // still made.
     for (const { s } of all) {
       try {
-        const done = await applySuggestion(supabase, userId, s)
+        const done = await applySuggestion(supabase, userId, s, today)
         if (done === 'applied' || done === 'applied_unmarked') applied += 1
         else if (done === 'gone') problem ??= DONE.gone
       } catch (cause) {
@@ -219,7 +222,11 @@ export function SuggestionCard({ item, busy, onAct }: { item: Shown; busy: boole
         ) : null}
         {state === 'stale' ? (
           <p className="mt-2 text-sm font-medium">
-            Changed since it was suggested{item.now === null ? ', and no longer there' : <>: now <Drawn words={item.now} /></>}.
+            {item.why ?? (
+              <>
+                Changed since it was suggested: now <Drawn words={item.now ?? []} />.
+              </>
+            )}
           </p>
         ) : state === 'already' ? (
           <p className="mt-2 text-sm font-medium">Already so.</p>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createFakeSupabase, type FakeTables } from './fake-supabase.js'
-import { currentOf, listWaiting, readSources, stateOf, type Now } from '../src/review/suggested-changes.js'
+import { currentOf, listWaiting, readSources, staleWhy, stateOf, type Now } from '../src/review/suggested-changes.js'
 import { StoredSuggestionSchema, type StoredSuggestion } from '@budget/schema'
 
 /**
@@ -13,6 +13,7 @@ const RENT = '22222222-2222-4222-8222-222222222222'
 const GOAL = '33333333-3333-4333-8333-333333333333'
 const TXN = '44444444-4444-4444-8444-444444444444'
 const APP = '99999999-9999-4999-8999-999999999999'
+const TODAY = '2026-10-05'
 let n = 0
 const row = (kind: string, target: object, after: object, before: object, over: Record<string, unknown> = {}) => ({
   id: `aaaaaaaa-0000-4000-8000-${String(++n).padStart(12, '0')}`,
@@ -93,7 +94,7 @@ describe('what each target is now', () => {
       { value: { name: 'Rent', list: 'bill' } },
       { value: { category_id: FOOD, rule_category_id: FOOD } },
     ])
-    expect(waiting.map((w, i) => stateOf(w.suggestion, values[i] ?? null))).toEqual(['ready', 'ready', 'ready', 'ready', 'ready', 'already', 'ready'])
+    expect(waiting.map((w, i) => stateOf(w.suggestion, values[i] ?? null, TODAY))).toEqual(['ready', 'ready', 'ready', 'ready', 'ready', 'already', 'ready'])
   })
 
   it('finds a target gone, and a charge or category it cannot see, as gone', async () => {
@@ -101,7 +102,34 @@ describe('what each target is now', () => {
       row('recategorise', { transaction_id: '55555555-5555-4555-8555-555555555555' }, { category_id: RENT }, { category_id: FOOD }),
       row('set_weekly_limit', { category_id: '66666666-6666-4666-8666-666666666666' }, { cents: 1 }, { cents: null }),
     ])
-    expect(waiting.map((w) => (w.suggestion === null ? null : now(w.suggestion)))).toEqual([{ gone: true }, { gone: true }])
+    expect(waiting.map((w) => (w.suggestion === null ? null : now(w.suggestion)))).toEqual([{ gone: 'removed' }, { gone: 'removed' }])
+  })
+
+  it('finds a budget, weekly limit or monthly amount whose category moved to a list with none as moved', async () => {
+    const CARD = '77777777-7777-4777-8777-777777777777'
+    const { fake, waiting } = await read([
+      row('set_budget', { category_id: CARD, month: '2026-11-01', applies: 'only' }, { cents: 1 }, { cents: null }),
+      row('set_weekly_limit', { category_id: CARD }, { cents: 1 }, { cents: null }),
+      row('set_bill', { category_id: FOOD, month: '2026-11-01' }, { cents: 1, due_day: null }, { cents: null, due_day: null }),
+    ])
+    fake.tables.categories.push({ id: CARD, name: 'Card payment', kind: 'transfer', sort_order: 0, weekly_budget_cents: null })
+    const sources = await readSources(fake.client, fake.tables.categories, waiting.flatMap((w) => (w.suggestion === null ? [] : [w.suggestion])))
+    const values = waiting.map((w) => (w.suggestion === null ? null : currentOf(w.suggestion, sources)))
+    expect(values).toEqual([{ gone: 'moved' }, { gone: 'moved' }, { gone: 'moved' }])
+    expect(waiting.map((w, i) => [stateOf(w.suggestion, values[i] ?? null, TODAY), staleWhy(w.suggestion, values[i] ?? null, TODAY)])).toEqual(
+      Array.from({ length: 3 }, () => ['stale', 'Its category moved to another list since it was suggested.']),
+    )
+  })
+
+  it('finds a budget or monthly amount for a month gone by stale, whatever its value', async () => {
+    const { waiting, now } = await read([
+      row('set_budget', { category_id: FOOD, month: '2026-09-01', applies: 'onward' }, { cents: 45000 }, { cents: 40000 }),
+      row('set_bill', { category_id: RENT, month: '2026-10-01' }, { cents: 155000, due_day: 3 }, { cents: 150000, due_day: 1 }),
+    ])
+    const [past, current] = waiting.map((w) => w.suggestion)
+    if (past === undefined || past === null || current === undefined || current === null) throw new Error('both read')
+    expect([stateOf(past, now(past), TODAY), staleWhy(past, now(past), TODAY)]).toEqual(['stale', 'Its month has passed, so it can no longer be applied.'])
+    expect([stateOf(current, now(current), TODAY), staleWhy(current, now(current), TODAY)]).toEqual(['ready', null])
   })
 })
 
@@ -113,9 +141,9 @@ describe('a card’s state', () => {
     [at(12000), 'already'],
     [at(11000), 'stale'],
     [at(null), 'stale'],
-    [{ gone: true } as Now, 'stale'],
+    [{ gone: 'removed' } as Now, 'stale'],
   ])('is %j → %s', (now, state) => {
-    expect(stateOf(s, now)).toBe(state)
-    expect(stateOf(null, now)).toBe('unreadable')
+    expect(stateOf(s, now, TODAY)).toBe(state)
+    expect(stateOf(null, now, TODAY)).toBe('unreadable')
   })
 })

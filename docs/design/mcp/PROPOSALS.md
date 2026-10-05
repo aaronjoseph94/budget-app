@@ -213,7 +213,9 @@ nothing; the AI app is told why, as a refused add is (PLAN §2.8).
 - **Card words** (`change-words.ts`, pure, tested): §2's last column, money
   by `formatCents`, months by `formatMonthName`, names and shops as
   `IngestedText`. States: **ready** (Apply, Dismiss), **stale** ("Changed
-  since it was suggested: now $420.00", Dismiss only), **already so**
+  since it was suggested: now $420.00"; also a budget, weekly limit or
+  monthly amount whose category moved to a list the screens give none on,
+  as `wrong_list`, and one for a month gone by; Dismiss only), **already so**
   (Clear, which dismisses), **unreadable** (Dismiss only).
 - **Apply** (`apply-suggestion.ts`): the suggestion read again (pending,
   unexpired, unchanged, else `gone` and nothing written), the target read

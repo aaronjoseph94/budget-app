@@ -11,7 +11,7 @@
  * suggested is stale and can only be dismissed. Nothing here adds, takes
  * away or compares amounts beyond "is it the same".
  */
-import { isoDate, resolveBudgets, resolvePlans } from '@budget/core'
+import { isoDate, monthBounds, resolveBudgets, resolvePlans } from '@budget/core'
 import { StoredSuggestionSchema, type StoredSuggestion } from '@budget/schema'
 import { listBudgetHistory, listFunds, listPlanHistory, listRules, ReadRefused, type BudgetRow, type Category, type FundRow, type PlanRow } from '../ledger.js'
 import { describeWriteFailure } from '../format.js'
@@ -117,27 +117,39 @@ async function readCharges(supabase: SupabaseClient, ids: readonly string[]): Pr
   return (data as Charge[]).map((c) => ({ ...c, amount_cents: Number(c.amount_cents) }))
 }
 
-/** What a suggestion's target is now, shaped as its stored before; gone when it no longer exists. */
-export type Now = { readonly value: Readonly<Record<string, unknown>> } | { readonly gone: true }
+/**
+ * What a suggestion's target is now, shaped as its stored before. Gone
+ * when it no longer exists ('removed'), or when its category is now on a
+ * list the screens offer no such value on ('moved'), as 0039 refuses one
+ * suggested there (wrong_list): Apply's rules are the screens'.
+ */
+export type Now = { readonly value: Readonly<Record<string, unknown>> } | { readonly gone: 'removed' | 'moved' }
 
-const GONE: Now = { gone: true }
+const GONE: Now = { gone: 'removed' }
+const MOVED: Now = { gone: 'moved' }
+/** The lists with a monthly amount, as Setup's three cards and 0009. */
+const RECURRING: ReadonlySet<string> = new Set(['bill', 'debt', 'subscription'])
 
 export function currentOf(s: StoredSuggestion, sources: Sources): Now {
   const category = (id: string) => sources.categories.find((c) => c.id === id)
   switch (s.kind) {
     case 'set_budget': {
-      if (category(s.target.category_id) === undefined) return GONE
+      const c = category(s.target.category_id)
+      if (c === undefined) return GONE
+      if (c.kind === 'transfer') return MOVED
       const now = resolveBudgets({ asOf: isoDate(s.target.month), history: budgetsForCore(sources.budgets) }).budgets.find((b) => b.categoryId === s.target.category_id)
       return { value: { cents: now === undefined ? null : now.budgetCents } }
     }
     case 'set_bill': {
-      if (category(s.target.category_id) === undefined) return GONE
+      const c = category(s.target.category_id)
+      if (c === undefined) return GONE
+      if (!RECURRING.has(c.kind)) return MOVED
       const now = resolvePlans({ asOf: isoDate(s.target.month), history: plansForCore(sources.plans) }).plans.find((p) => p.categoryId === s.target.category_id)
       return { value: { cents: now === undefined ? null : now.plannedCents, due_day: now === undefined ? null : now.dueDay } }
     }
     case 'set_weekly_limit': {
       const c = category(s.target.category_id)
-      return c === undefined ? GONE : { value: { cents: c.weekly_budget_cents } }
+      return c === undefined ? GONE : c.kind === 'transfer' ? MOVED : { value: { cents: c.weekly_budget_cents } }
     }
     case 'set_goal': {
       const goal = sources.funds.find((g) => g.id === s.target.goal_id)
@@ -172,14 +184,18 @@ const same = (a: Readonly<Record<string, unknown>>, b: Readonly<Record<string, u
 
 /**
  * ready: Apply and Dismiss. stale: its target changed since it was
- * suggested, or is gone; Dismiss only. already: it is already so; Clear,
- * which dismisses it. unreadable: Dismiss only.
+ * suggested, or is gone, or its month has passed; Dismiss only. already:
+ * it is already so; Clear, which dismisses it. unreadable: Dismiss only.
  */
 export type CardState = 'ready' | 'stale' | 'already' | 'unreadable'
 
-export function stateOf(s: StoredSuggestion | null, now: Now | null): CardState {
+/** A budget or monthly amount for a month before today's: Setup never writes one. */
+const monthPassed = (s: StoredSuggestion, today: string) =>
+  (s.kind === 'set_budget' || s.kind === 'set_bill') && s.target.month < monthBounds(isoDate(today)).start
+
+export function stateOf(s: StoredSuggestion | null, now: Now | null, today: string): CardState {
   if (s === null || now === null) return 'unreadable'
-  if ('gone' in now) return 'stale'
+  if ('gone' in now || monthPassed(s, today)) return 'stale'
   if (s.kind === 'learn_shop') {
     const to = s.after.category_id
     if (now.value['category_id'] === to && now.value['rule_category_id'] === to) return 'already'
@@ -187,4 +203,12 @@ export function stateOf(s: StoredSuggestion | null, now: Now | null): CardState 
     return 'already'
   }
   return same(now.value, s.before) ? 'ready' : 'stale'
+}
+
+/** Why a card is stale when not because its value moved, in words; null otherwise. */
+export function staleWhy(s: StoredSuggestion | null, now: Now | null, today: string): string | null {
+  if (s === null || now === null) return null
+  if (monthPassed(s, today)) return 'Its month has passed, so it can no longer be applied.'
+  if (!('gone' in now)) return null
+  return now.gone === 'moved' ? 'Its category moved to another list since it was suggested.' : 'Changed since it was suggested, and no longer there.'
 }
