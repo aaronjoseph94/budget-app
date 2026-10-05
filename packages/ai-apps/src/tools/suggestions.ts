@@ -2,7 +2,8 @@
  * `list_suggestions` (ADR 0013, PROPOSALS.md §3): the changes AI apps
  * suggested, newest first, and what became of each: waiting, applied or
  * dismissed by the owner, replaced by a later one, or expired after 14
- * days. One counted read, ai_app_suggestions (0039), which also hands
+ * days (a budget or monthly amount at its month's end, if sooner). One
+ * counted read, ai_app_suggestions (0039), which also hands
  * back the current names of what each names. A stored row is an AI app's
  * output at rest, so it is parsed as one (StoredSuggestionSchema); one
  * that does not parse is listed as unreadable.
@@ -20,8 +21,9 @@ export type ListSuggestionsInput = z.output<typeof ListSuggestionsInputSchema>
 
 export const DESCRIPTION =
   'The changes AI apps suggested to the owner, newest first, and what became of each: pending (waiting in the ' +
-  'app\'s Review for the owner), applied, dismissed, replaced by a later suggestion, or expired after 14 days. ' +
-  'Call it before suggesting, so you neither repeat a waiting change nor ask again for one the owner dismissed. ' +
+  'app\'s Review for the owner), applied, dismissed, replaced by a later suggestion, or expired after 14 days ' +
+  '(a budget or monthly amount at the end of its month, if sooner). Call it before suggesting, so you neither ' +
+  'repeat a waiting change nor ask again for one the owner dismissed. ' +
   'Names are as they are now. Returns as_of, waiting, returned, rows[{id, kind, status, suggested_at, decided_at, ' +
   'expires_at, change{category, goal, transaction, month, applies, name, list, from, to}, reason}]; money is ' +
   '{cents, display}.'

@@ -30,7 +30,8 @@ Yes, this is possible, and it is being built this way:
   lasts: that shop's later charges skip Review.
 - **If something changed since the suggestion,** the card says so and offers
   only Dismiss, so a suggestion can never undo something you did since.
-- **Suggestions expire after 14 days.** At most 100 wait at once.
+- **Suggestions expire after 14 days,** or when the month of a suggested
+  budget or monthly amount ends, if sooner. At most 100 wait at once.
 - **You can turn it off:** **Settings → AI apps → Let AI apps suggest
   changes**. It is on whenever AI apps are on.
 - **Which model:** whichever you pick in your own Claude app (you named Opus
@@ -198,9 +199,11 @@ pending row to Review. What constrains going further:
 - **The gate:** a third kind, `propose`, 60 calls a day across all AI apps
   (300 reads and 30 adds unchanged); a new switch,
   `ai_app_access.allow_propose`, default on, refused as `suggesting_off`
-  when off; at most 100 waiting (`too_many_waiting`); 14-day expiry; an
-  identical change dismissed in the last 14 days is refused
-  (`dismissed_recently`), so a dismissal is not re-asked every chat.
+  when off; at most 100 waiting (`too_many_waiting`); 14-day expiry, or
+  the end of its month for a budget or monthly amount; an identical change
+  (same kind, target, value and "from") dismissed in the last 14 days is
+  refused (`dismissed_recently`), so a dismissal is not re-asked every
+  chat, but is once what it changes has changed.
   Turning the switch or AI apps off leaves waiting suggestions for the owner
   to apply or dismiss.
 - **The app:** a **Suggested changes** section at the top of Review, its
