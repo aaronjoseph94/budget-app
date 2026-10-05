@@ -104,7 +104,7 @@ export function MonthCharges({
         <p className="px-4 py-6 text-center text-sm text-muted-foreground">
           No charges filed here in {period?.inWords ?? formatMonthName(month)}.
           {basis === 'planned'
-            ? ' The amount above is its monthly amount from Setup. A charge filed here counts instead.'
+            ? ` The amount above is ${period?.planned ?? 'its monthly amount from Setup'}. A charge filed here counts instead.`
             : null}
         </p>
       ) : (
@@ -182,6 +182,8 @@ interface Period {
   readonly inWords: string
   /** What the comparison line calls the period before, e.g. "Last week". */
   readonly before: string
+  /** What a planned figure is here, when a share of the monthly amount: a pay period's (e2e-plan-07). */
+  readonly planned?: string
 }
 
 /**
