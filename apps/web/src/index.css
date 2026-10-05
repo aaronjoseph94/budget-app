@@ -581,6 +581,14 @@
 .pb-safe {
   padding-bottom: calc(5rem + env(safe-area-inset-bottom));
 }
+/* The same room when the browser scrolls a control into view: below 768 px,
+   where the tab bar is fixed over the foot of the page, a field reached with
+   Tab sat wholly behind it (e2e-setup-02, WCAG 2.2 2.4.11). */
+@media (width < 48rem) {
+  html {
+    scroll-padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+}
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom);
 }
