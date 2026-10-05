@@ -108,6 +108,7 @@ const EVERYTHING = {
   suggested: 1,
   skipped: 0,
   results: [{ index: 0, status: 'suggested', id: 'p1', before: { cents: 1000 }, after: { cents: 1200 } }],
+  transactions: [],
 }
 const TOOLS: [string, Record<string, unknown>][] = [
   ['list_categories', {}],
@@ -121,6 +122,7 @@ const TOOLS: [string, Record<string, unknown>][] = [
   ['add_expense', { amount: '12.50', what: `Lunch ${SENTINEL}`, category: `Groceries ${SENTINEL}` }],
   ['add_note', { text: `Lunch ${SENTINEL} 12.50 yesterday`, category: `Groceries ${SENTINEL}` }],
   ['suggest_review_categories', { suggestions: [{ id: 'eeeeeeee-0000-4000-8000-000000000001', category: `Groceries ${SENTINEL}` }] }],
+  ['list_suggestions', {}],
   ['propose_change', { changes: [{ kind: 'set_weekly_limit', category: `Groceries ${SENTINEL}`, amount: '12', reason: `Because ${SENTINEL}` }] }],
 ]
 

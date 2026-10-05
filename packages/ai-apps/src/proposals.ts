@@ -14,7 +14,7 @@ import { monthBounds, resolveBudgets, resolvePlans, shiftMonth, type BudgetHisto
 import { isoDate, type Cents, type IsoDate } from '@budget/money-primitives'
 import type { Change } from '@budget/schema'
 import { parseTypedAmount } from '@budget/statement-parsers'
-import { cleanName } from './money.js'
+import { cleanName, money } from './money.js'
 import { SENTENCES } from './rpc.js'
 import { budgetsFrom, categoriesFrom, goalsFrom, plansFrom, type CategoryRow, type GoalRow, type Read } from './rows.js'
 
@@ -170,4 +170,30 @@ export function prepare(owner: Owner, change: Change): Prepared {
     default:
       return categoryChange(owner, change)
   }
+}
+
+/** How a stored before or after is named to the AI app. */
+const KEYS: Readonly<Record<string, string>> = { cents: 'amount', target_cents: 'target', category_id: 'category', rule_category_id: 'always_filed_under' }
+
+/**
+ * A stored before or after in the words the AI app reads: money as
+ * {cents, display}, categories by name (`gone` for one not among
+ * `names`), names cleaned. Anything else that is not as stored throws a
+ * RangeError.
+ */
+export function shownValue(part: unknown, names: ReadonlyMap<string, string>, gone: string): Record<string, unknown> {
+  if (typeof part !== 'object' || part === null) throw new RangeError('a stored value was not an object')
+  return Object.fromEntries(
+    Object.entries(part).flatMap(([key, value]): [string, unknown][] => {
+      if (key === 'exists') return []
+      const out = KEYS[key] ?? key
+      if (value === null) return [[out, null]]
+      if (key.endsWith('cents')) {
+        if (!Number.isSafeInteger(value)) throw new RangeError('a stored amount was not whole cents')
+        return [[out, money(Number(value))]]
+      }
+      if (key.endsWith('category_id')) return [[out, names.get(String(value)) ?? gone]]
+      return [[out, key === 'name' ? cleanName(String(value)) : value]]
+    }),
+  )
 }

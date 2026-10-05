@@ -12,8 +12,8 @@ import type { CallToolResult, McpServer } from '@modelcontextprotocol/server'
 import type { z } from 'zod'
 import { ProposeChangeInputSchema, type Change } from '@budget/schema'
 import { log } from '../log.js'
-import { cleanName, money } from '../money.js'
-import { CHANGE_SENTENCES, PARTS, isChangeCode, ownerOf, prepare, type ChangeCode, type Owner } from '../proposals.js'
+import { cleanName } from '../money.js'
+import { CHANGE_SENTENCES, PARTS, isChangeCode, ownerOf, prepare, shownValue, type ChangeCode, type Owner } from '../proposals.js'
 import { ADDS, SIGNED_IN, answer, isRefusal, refusal, rpc, type Caller, type RefusalCode } from '../rpc.js'
 import { monthsAround, utcToday } from '../windows.js'
 
@@ -41,25 +41,9 @@ const MESSAGE =
 /** What names a change's subject, echoed back as the AI app sent it. */
 const SUBJECT = ['category', 'goal', 'transaction', 'name', 'list', 'to_list', 'month', 'from_month', 'applies'] as const
 
-/** A stored before or after in the words the AI app reads: money as {cents, display}, categories by name. */
-const KEYS: Readonly<Record<string, string>> = { cents: 'amount', target_cents: 'target', category_id: 'category', rule_category_id: 'always_filed_under' }
-
+/** A stored before or after as the AI app reads it, categories by the names just read. */
 function shown(part: unknown, owner: Owner): Record<string, unknown> {
-  if (typeof part !== 'object' || part === null) throw new RangeError('a stored value was not an object')
-  const names = new Map(owner.categories.map((c) => [c.id, cleanName(c.name)]))
-  return Object.fromEntries(
-    Object.entries(part).flatMap(([key, value]): [string, unknown][] => {
-      if (key === 'exists') return []
-      const out = KEYS[key] ?? key
-      if (value === null) return [[out, null]]
-      if (key.endsWith('cents')) {
-        if (!Number.isSafeInteger(value)) throw new RangeError('a stored amount was not whole cents')
-        return [[out, money(Number(value))]]
-      }
-      if (key.endsWith('category_id')) return [[out, names.get(String(value)) ?? 'a category made since']]
-      return [[out, key === 'name' ? cleanName(String(value)) : value]]
-    }),
-  )
+  return shownValue(part, new Map(owner.categories.map((c) => [c.id, cleanName(c.name)])), 'a category made since')
 }
 
 const subjectOf = (change: Change) =>

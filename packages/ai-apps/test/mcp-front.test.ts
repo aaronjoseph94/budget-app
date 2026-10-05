@@ -72,7 +72,7 @@ describe('/mcp/health', () => {
     const res = await handle(at('/functions/v1/mcp/health', { headers: { origin: SITE } }), ENV)
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ ok: true, version: MCP_SERVER_VERSION, tools: TOOLS.length })
-    expect(TOOLS.length).toBe(12)
+    expect(TOOLS.length).toBe(13)
     expect(res.headers.get('access-control-allow-origin')).toBe(SITE)
     const bare = await handle(at('/mcp/health'), ENV)
     expect(bare.headers.get('access-control-allow-origin')).toBeNull()

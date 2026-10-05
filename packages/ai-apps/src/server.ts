@@ -21,6 +21,7 @@ import { registerGetForecast } from './tools/forecast.js'
 import { registerGetSavingsGoals } from './tools/goals.js'
 import { registerListReviewQueue } from './tools/review.js'
 import { registerSearchTransactions } from './tools/search.js'
+import { registerListSuggestions } from './tools/suggestions.js'
 import { registerGetPeriod } from './tools/period.js'
 import { registerGetSpending } from './tools/spending.js'
 import { registerSuggestReviewCategories } from './tools/suggest-categories.js'
@@ -42,7 +43,7 @@ export function callerOf(auth: AuthInfo | undefined): Caller | null {
 }
 
 /** The tools, in the order `tools/list` gives them. */
-export const TOOLS: readonly ((server: McpServer, caller: Caller | null) => void)[] = [registerListCategories, registerGetPeriod, registerGetSpending, registerGetForecast, registerGetSavingsGoals, registerGetDebts, registerSearchTransactions, registerListReviewQueue, registerAddExpense, registerAddNote, registerSuggestReviewCategories, registerProposeChange]
+export const TOOLS: readonly ((server: McpServer, caller: Caller | null) => void)[] = [registerListCategories, registerGetPeriod, registerGetSpending, registerGetForecast, registerGetSavingsGoals, registerGetDebts, registerSearchTransactions, registerListReviewQueue, registerAddExpense, registerAddNote, registerListSuggestions, registerSuggestReviewCategories, registerProposeChange]
 
 /** A fresh server for one request: nothing is kept between calls. */
 export function budgetServer(ctx?: McpRequestContext): McpServer {

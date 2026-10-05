@@ -39,6 +39,7 @@ describe('tools/list', () => {
       { name: 'list_review_queue', annotations: { readOnlyHint: true }, _meta: { securitySchemes: [{ type: 'oauth2' }] } },
       { name: 'add_expense', annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false }, _meta: { securitySchemes: [{ type: 'oauth2' }] } },
       { name: 'add_note', annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false }, _meta: { securitySchemes: [{ type: 'oauth2' }] } },
+      { name: 'list_suggestions', annotations: { readOnlyHint: true }, _meta: { securitySchemes: [{ type: 'oauth2' }] } },
       { name: 'suggest_review_categories', annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false }, _meta: { securitySchemes: [{ type: 'oauth2' }] } },
       { name: 'propose_change', annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false }, _meta: { securitySchemes: [{ type: 'oauth2' }] } },
     ])
