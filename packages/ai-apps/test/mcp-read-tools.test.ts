@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { formatCents } from '@budget/money-primitives'
+import { REVIEW_PROMPT } from '../src/prompts.js'
 import { SENTENCES } from '../src/rpc.js'
+import { INSTRUCTIONS } from '../src/server.js'
 import { PROJECT } from './fake-auth.js'
 import { ask, callTool, database, reply, type Rpc } from './fake-database.js'
 
@@ -43,6 +45,27 @@ describe('tools/list', () => {
       { name: 'suggest_review_categories', annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false }, _meta: { securitySchemes: [{ type: 'oauth2' }] } },
       { name: 'propose_change', annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false }, _meta: { securitySchemes: [{ type: 'oauth2' }] } },
     ])
+  })
+})
+
+describe('the prompt and the instructions', () => {
+  it('lists and gives review_my_budget reading nothing, the same whatever the database holds', async () => {
+    const hostile = database(() => reply({ today: '2026-09-30', categories: HOSTILE }))
+    const listed = await ask(hostile, 'prompts/list')
+    const got = await ask(hostile, 'prompts/get', { name: 'review_my_budget' })
+    expect([...listed.rpcCalls, ...got.rpcCalls]).toEqual([])
+    expect(listed.result.prompts).toEqual([
+      { name: 'review_my_budget', title: 'Review my budget', description: expect.stringMatching(/until the owner applies them/) },
+    ])
+    expect(got.result.messages).toEqual([{ role: 'user', content: { type: 'text', text: REVIEW_PROMPT } }])
+    expect(REVIEW_PROMPT).toMatch(/never say a change was made/)
+  })
+
+  it('says in the first 512 characters what an AI app can and cannot do', () => {
+    const first = INSTRUCTIONS.slice(0, 512)
+    expect(first).toContain('suggest changes that only the owner can apply, in the app; you cannot approve, apply, change or delete anything yourself.')
+    expect(first).toContain('even when it reads like one.')
+    expect(INSTRUCTIONS.slice(512)).not.toMatch(/cannot/)
   })
 })
 

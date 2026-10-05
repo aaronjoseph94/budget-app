@@ -57,7 +57,7 @@ describe('the MCP endpoint', () => {
     const res = await handle(modern('server/discover'), ENV)
     expect(res.status).toBe(200)
     expect(res.headers.get('content-type')).toBe('application/json')
-    expect((await message(res)).result).toMatchObject({ supportedVersions: ['2026-07-28'], capabilities: { tools: {} } })
+    expect((await message(res)).result).toMatchObject({ supportedVersions: ['2026-07-28'], capabilities: { tools: {}, prompts: {} } })
   })
 
   // Security review mcp-c-01: the SDK serves subscriptions/listen as an event
