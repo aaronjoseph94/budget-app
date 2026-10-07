@@ -3395,7 +3395,7 @@ settles it, as N144 did; never a longer timeout.
 
 ---
 
-## N147 — isoDate refuses 0000-02-29, which zod's date check passes
+## N147 — isoDate refuses 0000-02-29, which zod's date check passes *(settled 2026-10-05, testing fuzz-07)*
 
 **Seen:** 2026-10-01, reviewing M9. `daysInMonth` in
 `packages/money-primitives/src/index.ts` builds its date with
@@ -3415,6 +3415,12 @@ package reads dates through, outside M9 and M11a.
 **To settle:** build the date in `daysInMonth` with `setUTCFullYear`, so
 years 0 to 99 are read as written, with `isoDate` cases for 0000-02-29
 (a day) and 0001-02-29 (not one); then the two read tools need nothing.
+
+**Done:** money-primitives no longer uses `Date` for its calendar. It
+works days and months out itself (Howard Hinnant's civil-date algorithms),
+so every year from 0000 to 9999 is read as written and a day beyond them
+is refused with a `RangeError`. Testing fuzz-07 found the same cause in
+`addDays` and `daysBetween` (a day in year 25 plus one was in 1925).
 
 ---
 
@@ -3790,7 +3796,96 @@ commit.
 
 ---
 
-## N164 — A statement amount past $999,999,999.99 still reaches Review, and the Month blames a category
+## N164 — The AI helper's kept words still let tag characters through in the database
+
+**Seen:** 2026-10-05, fixing testing db-01. `ai_text_is_clean` (0017,
+0028), the database's backstop for `ai_notes`, refuses fifteen characters
+that draw as nothing, not the tag characters or variation selectors that
+0040 now refuses in what an AI app writes.
+
+**Why not fixed:** by design for now. Only the owner's own session writes
+`ai_notes` (0019 keeps AI apps' tokens out), and the app holds every word
+a model writes to `ModelProse` first, which refuses every format
+character, tags included. Changing the check means a schema-level update
+that re-validates `ai_notes`, outside an AI-app fix.
+
+**To settle:** if `ai_notes` ever gets a writer other than the app,
+re-create `ai_text_is_clean` with 0040's class, as its own update.
+
+---
+
+## N165 — normalizeMerchant is not idempotent, though its doc and test say so
+
+**Seen:** 2026-10-05, testing fuzz-05. One pass strips one processor
+prefix, then leading punctuation, and one trailing number, so what it
+returns can be stripped again: `#SQ *COFFEE` gives `SQ *COFFEE`, then
+`COFFEE`; `SHOP 1234 #5678` gives `SHOP 1234`, then `SHOP`; `SQ *SQ
+*COFFEE` gives `SQ *COFFEE`, then `COFFEE`. `merchant.ts` calls the
+function idempotent and `merchant.test.ts` says the result "is stored and
+normalized again later". Where it is: Quick Add of `SHOP 1234 12.50`,
+with a shop learned from `SHOP 1234 #5678` (stored as `SHOP 1234`), finds
+no rule, and `similarMerchant` normalizes learned names again. It fails
+safe: a missed rule leaves the row waiting in Review.
+
+**Why not fixed here (deferred):** any version that is idempotent stores
+some descriptors under a new name (keeping `SHOP 1234 #5678` whole, for
+the least change), so a shop already learned under the old name would
+stop matching new rows. CLAUDE.md allows a change to merchant
+normalization only with a version bump and a backfill in the same
+migration. There is no normalization version yet, and the backfill needs
+`normalizeMerchant` in SQL, where `upper()` and `\s` differ from
+JavaScript's; 0038 shows how narrow such a rewrite has to be. That is its
+own reviewed change, not a fix found in testing.
+
+**To settle:** make `normalizeMerchant` return the descriptor upper-cased
+and trimmed whenever one pass would not be stable (the least change), add
+a `merchant_v` column, and backfill the stored names and learned shops of
+the rows it changes in one migration, as 0038 did for `IN*`.
+
+---
+
+## N166 — Review's card for "back to the usual budget" reads "$400.00 → $400.00"
+
+**Seen:** 2026-10-07, fixing skills-02. 0040 now lets an AI app suggest
+"Groceries $400 from November on" when $400 is the onward budget and
+November has its own $250, because applying it puts November back to
+$400 (setBudget's replacesOnly). The stored before is the onward rows'
+value, $400, as the server works it out (D12), so Review's card
+(`apps/web/src/review/change-words.ts`, `cardWords`) reads "$400.00 →
+$400.00" for a change that moves November from $250. The card is
+`ready`, and Apply does the right thing.
+
+**Why not fixed here:** Review's files belong to the other line of
+fixes running at the same time.
+
+**To settle:** when `currentOf` finds that month's own value (`now.also`)
+and it differs from the after, have the card say so, for example "From
+November 2026 on: $400.00 → $400.00, and November's own $250.00 →
+$400.00".
+
+---
+
+## N167 — Moving a category to another list on Setup drops focus to the page
+
+**Seen:** 2026-10-07, fixing e2e-setup-06. Setup's "Move to another list"
+picker sits on the category's row, and the row leaves its card once the
+move is saved, so focus falls to <body>, as Remove did before. Remove now
+keeps focus on the list (the next row's Remove, or the card's title);
+the move was not in the report.
+
+**Why not fixed here:** where focus should go is a choice the report did
+not make: after the row in its new card, or on the list it left.
+
+**To settle:** most likely after the row: give `ListCardView` a way to
+focus a row's picker by category id once it is drawn on its new card,
+with `useFocusWhereItWas` (lib/return-focus.ts) as the fallback.
+
+---
+
+## N168 — A statement amount past $999,999,999.99 still reaches Review, and the Month blames a category
+
+*(Recorded as N164 in commit e72d346; renumbered N168 when test-fixes, whose
+N164 0040 cites, was merged.)*
 
 **Seen:** 2026-10-05, fixing e2e-plan-01. Typed amounts now stop at
 `MAX_TYPED_CENTS` ($999,999,999.99) in `parseTypedAmount`, which the app's

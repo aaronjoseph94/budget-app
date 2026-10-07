@@ -108,8 +108,14 @@ export async function addEntry(caller: Caller, owner: Owner, entry: Entry, tool:
   })
 }
 
-/** The day asked for, or null for one isoDate cannot read (zod passes 0000-02-29; N147). */
+/**
+ * The day asked for, or null for one no owner's past year can hold, refused
+ * before anything is read: a day before 1900 (0000-02-29 is a day since
+ * money-primitives reads year 0 as written; testing fuzz-07), or one
+ * isoDate cannot read.
+ */
 function dayOf(text: string): IsoDate | null {
+  if (text < '1900-01-01') return null
   try {
     return isoDate(text)
   } catch (error) {

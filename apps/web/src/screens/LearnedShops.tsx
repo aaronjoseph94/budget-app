@@ -5,7 +5,7 @@ import { IngestedText } from '../ui.js'
 import { Section } from '../forecast/parts.js'
 import { Alert, Loading, SavedNote } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
-import { useFocusDrawn } from '../lib/return-focus.js'
+import { useFocusDrawn, useFocusWhereItWas } from '../lib/return-focus.js'
 
 /** Shops drawn before "Show all", as the Month's charges are (PERF-4). */
 const FIRST = 20
@@ -35,6 +35,13 @@ export function LearnedShopsCard() {
   }, [supabase, version])
 
   const named = new Map(categories.map((c) => [c.id, c.name]))
+  const shown = shops === null ? [] : all ? shops : shops.slice(0, FIRST)
+  const list = useRef<HTMLUListElement>(null)
+  const focusFrom = useFocusDrawn(list, shown.length)
+  // Forget goes with its row: the next shop's Forget takes focus, or the
+  // line saying none are left (e2e-setup-06).
+  const none = useRef<HTMLParagraphElement>(null)
+  const refocus = useFocusWhereItWas(list, `${busy ?? ''} ${shown.map((s) => s.id).join(' ')}`, 'button', none)
   const forget = async (shop: LearnedShop) => {
     setBusy(shop.id)
     setError(null)
@@ -46,13 +53,11 @@ export function LearnedShopsCard() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'That shop was not forgotten. Try again.')
     } finally {
+      refocus(shown.indexOf(shop))
       setBusy(null)
     }
   }
 
-  const shown = shops === null ? [] : all ? shops : shops.slice(0, FIRST)
-  const list = useRef<HTMLUListElement>(null)
-  const focusFrom = useFocusDrawn(list, shown.length)
   return (
     <Section large title="Shops filed by themselves">
       <p className="text-muted-foreground">
@@ -63,7 +68,9 @@ export function LearnedShopsCard() {
       {note !== null ? <SavedNote className="text-sm text-income">{note}</SavedNote> : null}
       {shops === null && error === null ? <Loading what="the shops the app has learned" /> : null}
       {shops !== null && shops.length === 0 ? (
-        <p className="text-sm text-muted-foreground">None yet. Approve a charge in Review and its shop is learned.</p>
+        <p ref={none} tabIndex={-1} className="text-sm text-muted-foreground outline-none">
+          None yet. Approve a charge in Review and its shop is learned.
+        </p>
       ) : null}
       {shown.length > 0 ? (
         <ul ref={list} aria-label="Learned shops" className="divide-y rounded-lg border">

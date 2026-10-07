@@ -127,16 +127,24 @@ function amortizeOne(
   let totalInterest = ZERO_CENTS
 
   const months: ScheduleMonth[] = []
+  // Every extra still to come, within the months planned.
+  let extrasLeft = [...(extras ?? new Map<number, Cents>())].reduce((sum, [m, amount]) => (m >= 1 && m <= MAX_MONTHS ? sum + amount : sum), 0)
 
   for (let month = 1; month <= MAX_MONTHS; month++) {
     // Month 1 is payment-only; interest begins in month 2. See EXCEL SEMANTICS.
     const interest = month === 1 ? ZERO_CENTS : accrueMonthlyInterest(balance, apr)
+    // No month pays more than its minimum and its extra, and interest only
+    // adds: owing more than every payment left could pay, the debt is never
+    // paid off. Said now, before its interest outgrows any amount the app
+    // can hold, where it threw a RangeError (testing fuzz-03).
+    if (balance + interest > minimum * (MAX_MONTHS - month + 1) + extrasLeft) throw new NeverPaidOff(debt.name, MAX_MONTHS)
     const afterInterest = cents(balance + interest)
     totalInterest = cents(totalInterest + interest)
 
     // A month with no extra payment typed pays the minimum alone.
     const typed = extras?.get(month)
     const extra = typed === undefined ? ZERO_CENTS : typed
+    extrasLeft -= extra
     const payment = minCents(cents(minimum + extra), afterInterest)
     balance = subCents(afterInterest, payment)
 

@@ -80,6 +80,13 @@ describe('parseQuickEntry reads the day, and leaves it empty when it cannot be s
     expect(read('lunch 9 yesterday monday').date).toBeNull()
   })
 
+  // Testing fuzz-06: a year typed below 1000 came out as '19-01-05', no ISO
+  // date at all. A year before 1900 is a typo, as on a statement.
+  it('leaves the day empty for a year before 1900', () => {
+    for (const text of ['coffee 4.50 0019-01-05', 'coffee 4.50 jan 5 0019', 'coffee 4.50 1899-12-31']) expect(read(text).date).toBeNull()
+    expect(read('coffee 4.50 1900-01-01').date).toBe('1900-01-01')
+  })
+
   it('takes the same day said twice as that day', () => {
     expect(read('lunch 9 today sep 27').date).toBe('2026-09-27')
   })

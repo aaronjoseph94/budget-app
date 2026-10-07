@@ -96,6 +96,26 @@ describe('figures', () => {
   })
 })
 
+// e2e-money-11, e2e-setup-08: the phone's tab bar was 90% opaque, so its
+// muted labels read at 4.17:1 with an indigo button scrolled beneath, and
+// 4.49:1 over Review's tinted cards. A bar that stays put while the screen
+// scrolls under it is opaque, and its words are measured on its surface
+// alone below (muted-foreground and foreground on background).
+describe('a bar the screen scrolls under', () => {
+  it('draws an opaque surface, never one the content shows through', () => {
+    const sources = import.meta.glob('../src/**/*.tsx', { query: '?raw', import: 'default', eager: true })
+    const bars = Object.entries(sources).flatMap(([file, text]) =>
+      [...String(text).matchAll(/className="([^"]*)"/g)]
+        .map((m) => m[1] ?? '')
+        .filter((c) => /(^|\s)(fixed|sticky)(\s|$)/.test(c) && /(^|\s)bg-/.test(c))
+        .map((c) => ({ file, c })),
+    )
+    // The phone's tab bar and the top bar, at least.
+    expect(bars.filter(({ c }) => /(^|\s)(bottom|top)-0(\s|$)/.test(c)).length).toBeGreaterThanOrEqual(2)
+    expect(bars.filter(({ c }) => /(^|\s)bg-[\w-]+\/\d+(\s|$)|backdrop-blur/.test(c))).toEqual([])
+  })
+})
+
 describe('the focus ring', () => {
   it('is drawn at full strength, not faded to half', async () => {
     const sources = import.meta.glob('../src/**/*.tsx', { query: '?raw', import: 'default', eager: true })

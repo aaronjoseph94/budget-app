@@ -106,5 +106,7 @@ describe('the day arithmetic underneath', () => {
   it('pads an ISO date', () => {
     expect(civilDate(2026, 8, 6)).toBe('2026-08-06')
     expect(civilDate(2026, 12, 31)).toBe('2026-12-31')
+    // Testing fuzz-06: year 19 came out as '19-01-05', no ISO date at all.
+    expect(civilDate(19, 1, 5)).toBe('0019-01-05')
   })
 })

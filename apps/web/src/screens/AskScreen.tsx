@@ -200,7 +200,12 @@ export function AskScreen({ topic }: { topic: HelpTopic | null }) {
             variant="ghost"
             size="sm"
             className="min-h-11"
-            onClick={() => {
+            onClick={(e) => {
+              // The list goes with the button: from the keyboard, the
+              // question box takes focus rather than <body> (e2e-setup-06).
+              // A tap that gave the button no focus leaves it, so a phone's
+              // keyboard does not open.
+              if (document.activeElement === e.currentTarget) document.getElementById('ask-question')?.focus()
               forgetQuestions()
               setRecent([])
             }}

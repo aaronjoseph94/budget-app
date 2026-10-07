@@ -16,7 +16,10 @@
  * - money with cents is preferred to whole numbers (a reference, a card
  *   number); the header (/amount|debit|credit/) only breaks a tie;
  * - the shop is the text column a header names (/desc|merchant|payee|name/),
- *   else the one with the most different values that still repeats.
+ *   else the one with the most different values that still repeats; a
+ *   column named desc, merchant or payee stays the shop when every row has
+ *   the same one (every purchase at one shop), so a card number that
+ *   differs beside it is never taken instead (testing fuzz-08).
  * Every money column still in the running is returned, best first, so the
  * screen can say when more than one looks like money.
  */
@@ -46,6 +49,8 @@ export interface MappingProposal {
 
 const AMOUNT_HEADER = /amount|debit|credit/i
 const SHOP_HEADER = /desc|merchant|payee|name/i
+/** A header that can only name the shop, never a cardholder ("Cardholder Name"). */
+const SHOP_ONLY_HEADER = /desc|merchant|payee/i
 
 export function proposeMapping(input: ProposeInput): MappingProposal {
   const { columns } = input
@@ -67,8 +72,9 @@ export function proposeMapping(input: ProposeInput): MappingProposal {
   const rank = (c: ColumnProfile) => (hasCents(c) ? 0 : 2) + (AMOUNT_HEADER.test(c.header ?? '') ? 0 : 1)
   const amountCandidates = [...notBalances].sort((a, b) => rank(a) - rank(b) || a.index - b.index).map((c) => c.index)
 
-  const text = varying(columns.filter((c) => !c.readsAsAmount && c.dateFormats.length === 0))
-  const named = text.find((c) => SHOP_HEADER.test(c.header ?? ''))
+  const allText = columns.filter((c) => !c.readsAsAmount && c.dateFormats.length === 0)
+  const text = varying(allText)
+  const named = text.find((c) => SHOP_HEADER.test(c.header ?? '')) ?? allText.find((c) => SHOP_ONLY_HEADER.test(c.header ?? ''))
   const repeating = text.filter((c) => !c.unique).sort((a, b) => b.distinctValues - a.distinctValues || a.index - b.index)[0]
   const merchant = named ?? repeating ?? text[0]
 

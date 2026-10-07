@@ -92,6 +92,8 @@ function BudgetsCard() {
   const add = async () => {
     const name = newName.trim()
     if (name === '' || newKind === '') return
+    // Why the last one was refused goes with the next try, as on Setup's cards (e2e-setup-07).
+    setError(null)
     try {
       await ensureCategory(supabase, userId, atEndOf(categories, name, newKind))
       setNewName('')

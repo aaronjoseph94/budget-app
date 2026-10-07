@@ -186,10 +186,11 @@ export function Shell() {
           </div>
         </div>
 
-        {/* Phones: a bottom tab bar within thumb reach, clear of the home indicator. */}
+        {/* Phones: a bottom tab bar within thumb reach, clear of the home indicator.
+            Opaque: at 90% the screen beneath took its labels under 4.5:1. */}
         <nav
           aria-label="Screens"
-          className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t bg-background/90 backdrop-blur md:hidden print:hidden"
+          className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t bg-background md:hidden print:hidden"
         >
           <div className="mx-auto grid max-w-md grid-cols-5">
             {PHONE_TABS.map((t) => {
@@ -252,6 +253,9 @@ function openHelpSearch(): void {
  * ⌘K on a Mac, Ctrl+K elsewhere, from any screen, as the top bar's search
  * says. A Mac's Ctrl+K is left alone: in a text field it deletes to the end
  * of the line, and taking it would leave the screen and its typing.
+ * The field it is pressed in is left first, as pressing Search leaves it,
+ * so one that saves when left (a name on Setup, a weekly budget) saves what
+ * was typed rather than lose it with the screen (e2e-setup-09).
  */
 function useSearchKey(): void {
   useEffect(() => {
@@ -259,6 +263,7 @@ function useSearchKey(): void {
       const mac = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent)
       if (!(mac ? e.metaKey : e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || e.key.toLowerCase() !== 'k') return
       e.preventDefault()
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
       openHelpSearch()
     }
     window.addEventListener('keydown', onKey)

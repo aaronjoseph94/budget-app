@@ -183,7 +183,10 @@ function pageContentIds(byId: ReadonlyMap<number, PdfObject>): readonly number[]
     }
     const array = /\/Contents\s*\[([^\]]*)\]/.exec(object.dict)
     if (array === null) continue
-    for (const ref of array[1]?.matchAll(/(\d+)\s+\d+\s+R/g) ?? []) {
+    // Bounded, and only from a run's first digit, as OBJECT_HEADER: a long
+    // run of digits here tried every split of it from every digit, and an
+    // 80 KB file held the main thread for 6 s (testing fuzz-02).
+    for (const ref of array[1]?.matchAll(/(?<!\d)(\d{1,10})\s{1,8}\d{1,5}\s{1,8}R/g) ?? []) {
       ids.push({ page: id, content: Number(ref[1]) })
     }
   }

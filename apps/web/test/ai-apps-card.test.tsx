@@ -297,6 +297,31 @@ describe('Settings → AI apps: connected apps and Disconnect', () => {
     expect(rows().map((r) => r.querySelector('bdi')?.textContent)).toEqual(['<img src=x>tpGtahC'])
   })
 
+  // e2e-setup-06: Keep it and Yes, disconnect went as they were pressed, and focus fell to <body>.
+  it('keeps focus nearby: Disconnect after Keep it, the next app after Yes, then the heading', async () => {
+    await connected()
+    const press = (row: HTMLElement, name: string) => {
+      const button = within(row).getByRole('button', { name })
+      button.focus()
+      fireEvent.click(button)
+    }
+    const claude = await waitFor(() => rows()[0]!)
+
+    press(claude, 'Disconnect')
+    press(claude, 'Keep it')
+    expect(document.activeElement).toBe(within(claude).getByRole('button', { name: 'Disconnect' }))
+
+    press(claude, 'Disconnect')
+    press(claude, 'Yes, disconnect')
+    await screen.findByText('Disconnected “Claude”. It has to sign in again to come back.')
+    await waitFor(() => expect(document.activeElement).toBe(within(rows()[0]!).getByRole('button', { name: 'Disconnect' })))
+
+    press(rows()[0]!, 'Disconnect')
+    press(rows()[0]!, 'Yes, disconnect')
+    await screen.findByText('None yet.')
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Connected apps' })))
+  })
+
   it('lists an app registered with no name, so it can still be disconnected', async () => {
     const fake = await connected()
     fake.oauth.grants = [grant('id-unnamed', null as unknown as string, '2026-09-28T12:00:00Z')]

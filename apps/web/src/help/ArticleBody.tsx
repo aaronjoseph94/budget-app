@@ -37,7 +37,10 @@ export function ArticleBody({ article, carded = false }: { article: Article; car
           {article.terms.map((t) => (
             <div key={t.term} className="space-y-0.5 px-4 py-3">
               <dt className="font-semibold [overflow-wrap:anywhere]">{t.term}</dt>
-              <dd className="text-muted-foreground">{t.meaning}</dd>
+              {/* A meaning names buttons in bold as the steps do (e2e-setup-05). */}
+              <dd className="text-muted-foreground">
+                <HelpText text={t.meaning} />
+              </dd>
             </div>
           ))}
         </dl>

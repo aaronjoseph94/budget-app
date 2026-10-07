@@ -55,4 +55,27 @@ describe('the calendar', () => {
     expect(monthsBetween(isoDate('2024-01-08'), isoDate('2025-10-08'))).toBe(21)
     expect(() => monthsBetween(isoDate('2025-10-08'), isoDate('2024-01-08'))).toThrow(RangeError)
   })
+
+  // Testing fuzz-07 (and N147): Date.UTC reads a year from 0 to 99 as 1900
+  // to 1999, so a day in year 25 plus one was in 1925, and isoDate refused
+  // 0000-02-29, a day zod's date check passes.
+  it('counts in every year an ISO date can write, as written', () => {
+    expect(addDays(isoDate('0025-03-15'), 1)).toBe('0025-03-16')
+    expect(addDays(isoDate('0069-08-23'), -67)).toBe('0069-06-17')
+    expect(daysBetween(isoDate('0099-12-31'), isoDate('0100-01-01'))).toBe(1)
+    expect(daysBetween(isoDate('0001-01-01'), isoDate('1970-01-01'))).toBe(719_162)
+    expect(daysBetween(isoDate('1970-01-01'), isoDate('2026-10-05'))).toBe(20_731)
+    expect(addMonths(isoDate('0025-01-31'), 1)).toBe('0025-02-28')
+    expect(isoDate('0000-02-29')).toBe('0000-02-29')
+    expect(addDays(isoDate('2000-02-28'), 1)).toBe('2000-02-29')
+    for (const notADay of ['0001-02-29', '1900-02-29', '2100-02-29']) expect(() => isoDate(notADay)).toThrow(RangeError)
+  })
+
+  it('refuses a day before 0000 or after 9999, which an ISO date cannot write', () => {
+    expect(addDays(isoDate('9999-12-30'), 1)).toBe('9999-12-31')
+    expect(() => addDays(isoDate('9999-12-31'), 1)).toThrow(RangeError)
+    expect(() => addDays(isoDate('0000-01-01'), -1)).toThrow(RangeError)
+    expect(() => addMonths(isoDate('9999-12-01'), 1)).toThrow(RangeError)
+    expect(() => addMonths(isoDate('0000-01-01'), -1)).toThrow(RangeError)
+  })
 })

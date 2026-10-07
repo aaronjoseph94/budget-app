@@ -7,7 +7,7 @@ import { IngestedTextSchema } from './primitives.js'
  * One-time updates can tell an old paste of `mcp-function.ts` from this
  * site's. Bumped with every change the owner must paste, as `YYYY-MM-DD.N`.
  */
-export const MCP_SERVER_VERSION = '2026-10-05.1'
+export const MCP_SERVER_VERSION = '2026-10-05.7'
 
 /*
  * What an AI app may send the server's tools (PLAN §2.4): each tool's input
@@ -29,19 +29,61 @@ export const NameSchema = z.string().trim().min(1).max(60)
 export const ListSchema = z.enum(['variable', 'bill', 'debt', 'subscription', 'income', 'savings'])
 
 /**
- * Characters that draw as nothing: soft hyphen, the Arabic letter mark,
- * the Mongolian vowel separator, zero-width space/joiners and the LRM/RLM
- * marks, the word joiner and invisible operators, and the BOM. Two words
- * that differ only by one look the same in Review while hashing apart
- * (security review mcp-2-05). Refused only where an AI app adds: a shop's
- * own name on a statement may need U+200C or U+200D. 0034 refuses the same
- * set in ai_app_add_candidate.
+ * Characters that draw as nothing: every one Unicode marks
+ * Default_Ignorable_Code_Point. The soft hyphen, the Arabic letter mark,
+ * the combining grapheme joiner, the Hangul fillers, the Khmer inherent
+ * vowels, the Mongolian selectors and vowel separator, zero-width
+ * space/joiners and the direction marks and overrides, the word joiner,
+ * invisible operators and deprecated format characters, the variation
+ * selectors, the BOM, the shorthand and musical format controls, and the
+ * tag characters, which spell whole words no one sees but a model reads.
+ * Two words that differ only by one look the same in Review while hashing
+ * apart (security review mcp-2-05; testing mcp-01 found the tags and
+ * selectors missing). Refused only where an AI app adds: a shop's own
+ * name on a statement may need U+200C or U+200D. 0040 refuses the same
+ * set in the database, and the AI apps server drops them from every name
+ * it hands out.
  */
-const INVISIBLE = /[\u00AD\u061C\u180E\u200B-\u200F\u2060-\u2065\uFEFF]/
-const shown = (text: string) => !INVISIBLE.test(text)
+export function drawsAsNothing(code: number): boolean {
+  return (
+    code === 0x00ad ||
+    code === 0x034f ||
+    code === 0x061c ||
+    code === 0x115f ||
+    code === 0x1160 ||
+    code === 0x17b4 ||
+    code === 0x17b5 ||
+    (code >= 0x180b && code <= 0x180f) ||
+    (code >= 0x200b && code <= 0x200f) ||
+    (code >= 0x202a && code <= 0x202e) ||
+    (code >= 0x2060 && code <= 0x206f) ||
+    code === 0x3164 ||
+    (code >= 0xfe00 && code <= 0xfe0f) ||
+    code === 0xfeff ||
+    code === 0xffa0 ||
+    (code >= 0xfff0 && code <= 0xfff8) ||
+    (code >= 0x1bca0 && code <= 0x1bca3) ||
+    (code >= 0x1d173 && code <= 0x1d17a) ||
+    (code >= 0xe0000 && code <= 0xe0fff)
+  )
+}
+
+/** Whether every character of the text is drawn. */
+const shown = (text: string) =>
+  [...text].every((ch) => {
+    const code = ch.codePointAt(0)
+    return code !== undefined && !drawsAsNothing(code)
+  })
 
 /** What an AI app adds was: the owner's own words, held as ingested text, trimmed, every character visible. */
 export const WordsSchema = z.string().trim().max(120).pipe(IngestedTextSchema).refine(shown, 'Expected no invisible characters')
+
+/**
+ * A day an AI app asks about. Years before 1900 or after 2999 are no one's
+ * records: year 1 gave a month ending in 1901, and year 0 or 9999 a period
+ * the database refused, answered as the server's fault (testing mcp-04).
+ */
+const DaySchema = z.iso.date().refine((day) => day >= '1900-01-01' && day <= '2999-12-31', 'Expected a date from 1900-01-01 to 2999-12-31')
 
 /** `list_categories` takes nothing. */
 export const ListCategoriesInputSchema = z.object({}).strict()
@@ -56,7 +98,7 @@ export const NoteTextSchema = z.string().trim().max(300).pipe(IngestedTextSchema
 export const GetPeriodInputSchema = z
   .object({
     period: z.enum(['month', 'week', 'pay_period', 'year']).default('month'),
-    date: z.iso.date().optional(),
+    date: DaySchema.optional(),
     income: NameSchema.optional(),
     list: ListSchema.optional(),
     categories: z.array(NameSchema).min(1).max(10).optional(),
@@ -103,8 +145,8 @@ export const SearchTransactionsInputSchema = z
     text: z.string().trim().max(60).pipe(IngestedTextSchema).optional(),
     categories: z.array(NameSchema).min(1).max(10).optional(),
     list: z.enum([...ListSchema.options, 'transfer']).optional(),
-    from: z.iso.date().optional(),
-    to: z.iso.date().optional(),
+    from: DaySchema.optional(),
+    to: DaySchema.optional(),
     min_amount: AmountTextSchema.optional(),
     max_amount: AmountTextSchema.optional(),
     flow: z.enum(['spent', 'received', 'any']).default('any'),

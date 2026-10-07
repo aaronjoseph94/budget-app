@@ -59,9 +59,13 @@ export function challenge(p: Project, tokenSent: boolean): Response {
   })
 }
 
-/** The bearer token in an Authorization header, or null for none or any other form. */
+/**
+ * The bearer token in an Authorization header, or null for none or any
+ * other form. The scheme is read in any letter case, as RFC 7235 §2.1 has
+ * it: 'bearer <token>' was refused as an invalid token (testing mcp-06).
+ */
 export function bearerOf(header: string | null): string | null {
-  return header === null ? null : (/^Bearer ([A-Za-z0-9._~+/=-]+)$/.exec(header)?.[1] ?? null)
+  return header === null ? null : (/^Bearer ([A-Za-z0-9._~+/=-]+)$/i.exec(header)?.[1] ?? null)
 }
 
 function refuse(p: Project, check: keyof typeof CHECK): Response {

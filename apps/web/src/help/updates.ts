@@ -90,7 +90,7 @@ export interface Update {
 
 const NIL = '00000000-0000-0000-0000-000000000000'
 
-/** Sign-ups off, 0005 to 0029, 0035, 0030 to 0039, the AI helper, the two settings and the AI apps server, each with what it adds. */
+/** Sign-ups off, 0005 to 0029, 0035, 0030 to 0040, the AI helper, the two settings and the AI apps server, each with what it adds. */
 export const UPDATES: readonly Update[] = [
   // First: it needs nothing, and it is what keeps strangers out.
   { file: SIGNUPS_OFF, name: 'Sign-ups off', adds: 'Stops anyone who finds the site making an account', checks: [{ kind: 'signups' }] },
@@ -223,6 +223,13 @@ export const UPDATES: readonly Update[] = [
     file: '0039_ai_apps_suggest_changes.sql',
     adds: 'Lets an AI app suggest changes, which wait in Review until you apply them',
     checks: [{ kind: 'level', level: 39 }],
+  },
+  {
+    // An AI-app update: it needs 0039, whose words check it tightens (testing db-01),
+    // and lets a budget from a month on put that month's own back (skills-02).
+    file: '0040_ai_words_every_character_shown.sql',
+    adds: 'Keeps an AI app from adding or suggesting words with characters you cannot see, and lets it suggest putting a month back to your usual budget',
+    checks: [{ kind: 'level', level: 40 }],
   },
   { file: HELPER_FILE, adds: 'The AI helper, which every AI feature goes through', checks: [{ kind: 'helper' }] },
   {

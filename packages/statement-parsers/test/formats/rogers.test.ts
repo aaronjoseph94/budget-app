@@ -153,6 +153,12 @@ describe('the printed summary', () => {
     expect(summary?.newBalanceCents).toBe(45_500)
   })
 
+  // Testing fuzz-10: '1,234.567' was read as $1,234.56, its last digit cut.
+  it.each(['$1,234.567', '$0.007'])('reads no figure from %s rather than cut its third decimal', (figure) => {
+    const rows = SUMMARY_ROWS.map((r) => (r.text === '$0.00' && r.y === 572.94 ? { ...r, text: figure } : r))
+    expect(readSummary([rows])).toBeNull()
+  })
+
   it('returns null when a figure is missing rather than defaulting it to zero', () => {
     // A zero stands in for a real figure and reconciles as though the
     // statement said zero, which is how a misread passes.

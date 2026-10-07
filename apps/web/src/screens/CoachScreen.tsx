@@ -72,7 +72,7 @@ export function CoachScreen() {
           digest={digest}
           cards={day?.cards ?? null}
           narration={narration}
-          onDismiss={dismissals.canDismiss ? (card) => void dismissals.dismiss(card.fact.cause) : null}
+          onDismiss={dismissals.canDismiss ? (card) => dismissals.dismiss(card.fact.cause) : null}
         />
         <ForecastCard cards={day?.cards ?? null} narration={narration} />
         {/* Picked once the facts are in, so the day's pick does not change under the owner. */}

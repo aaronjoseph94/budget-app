@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { SettingsScreen } from '../src/screens/SettingsScreen.js'
 import type { Category } from '../src/ledger.js'
@@ -41,6 +41,20 @@ describe('SettingsScreen, shops filed by themselves (N17)', () => {
     expect(await screen.findByText('Forgotten. The next charge from <b>FABRIKAM FITNESS</b> waits in Review for a category.')).toBeTruthy()
     expect(fake.tables.merchant_rules.map((r) => r.match_merchant)).toEqual(['CONTOSO MARKET'])
     expect((await shops()).getAllByRole('listitem')).toHaveLength(1)
+  })
+
+  // e2e-setup-06: Forget went with its row, and focus fell to <body>.
+  it('keeps focus on the list: the next shop’s Forget, then the line saying none are left', async () => {
+    renderScreen(<SettingsScreen />, seeded())
+    const press = (button: HTMLElement) => {
+      button.focus()
+      fireEvent.click(button)
+    }
+
+    press((await shops()).getByRole('button', { name: 'Forget <b>FABRIKAM FITNESS</b>' }))
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Forget CONTOSO MARKET' })))
+    press(screen.getByRole('button', { name: 'Forget CONTOSO MARKET' }))
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByText('None yet. Approve a charge in Review and its shop is learned.')))
   })
 
   it('keeps the shop, and says why, when forgetting is refused', async () => {

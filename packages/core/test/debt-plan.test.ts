@@ -69,6 +69,32 @@ describe('debtPlan', () => {
     expect(() => amortize({ startDate: '2026-01-01', debts: [card], extraPayments: [] })).toThrow(NeverPaidOff)
   })
 
+  // Testing fuzz-03: at 60% (5% a month) $1.00 never clears the interest on
+  // $1,000.00, and the balance outgrew any amount the app can hold before
+  // the 600th month, so debtPlan threw a RangeError and the Debts screen
+  // showed no debts at all.
+  it('names a debt whose balance would outgrow any amount, and plans the rest', () => {
+    const start = month('2025-01')
+    const car: PlannedDebt = { name: 'Car', startMonth: start, startingBalanceCents: 1_500_000, minimumPaymentCents: 40_000, aprBasisPoints: 600 }
+    const payday: PlannedDebt = { name: 'Payday', startMonth: start, startingBalanceCents: 100_000, minimumPaymentCents: 100, aprBasisPoints: 6_000 }
+    const plan = debtPlan({ debts: [car, payday], extraPayments: [] })
+    expect(plan.neverPaidOff).toEqual(['Payday'])
+    expect(plan.amortization?.perDebt.map((d) => d.name)).toEqual(['Car'])
+    // $500.00 at 400% paying $10.00; $10,000.00 at 47% paying $1.00.
+    for (const d of [{ ...payday, startingBalanceCents: 50_000, minimumPaymentCents: 1_000, aprBasisPoints: 40_000 }, { ...payday, startingBalanceCents: 1_000_000, aprBasisPoints: 4_700 }]) {
+      expect(debtPlan({ debts: [d], extraPayments: [] })).toEqual({ amortization: null, neverPaidOff: ['Payday'] })
+    }
+  })
+
+  it('still plans a debt that an extra payment clears, however little its minimum', () => {
+    // $1,000.00 at 5% a month, $1.00 a month: 999.00 after January; February
+    // charges 49.95 (1,048.95), and a $2,000.00 extra pays it all.
+    const payday: PlannedDebt = { name: 'Payday', startMonth: month('2025-01'), startingBalanceCents: 100_000, minimumPaymentCents: 100, aprBasisPoints: 6_000 }
+    const plan = debtPlan({ debts: [payday], extraPayments: [{ debtName: 'Payday', month: month('2025-02'), amountCents: 200_000 }] })
+    expect(plan.neverPaidOff).toEqual([])
+    expect(plan.amortization?.perDebt[0]?.months.map((m) => [m.interestCents, m.paymentCents, m.balanceCents])).toEqual([[0, 100, 99_900], [4_995, 104_895, 0]])
+  })
+
   it('has no plan with no debts', () => {
     expect(debtPlan({ debts: [], extraPayments: [] })).toEqual({ amortization: null, neverPaidOff: [] })
   })

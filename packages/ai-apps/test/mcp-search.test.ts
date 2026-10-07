@@ -96,6 +96,17 @@ describe('search_transactions', () => {
     expect(SENTENCES.bad_search).toMatch(/six or more digits/)
   })
 
+  // Testing mcp-04: year 0 blamed the server ("Something went wrong").
+  it.each([
+    ['a start in year 0', { from: '0000-03-01', to: '0000-04-01' }],
+    ['an end past 2999', { to: '3000-01-01' }],
+  ])('refuses %s, saying which days it reads, before reading anything', async (_, args) => {
+    const { result, rpcCalls } = await callTool(() => reply(FOUND), 'search_transactions', args)
+    expect(result.isError).toBe(true)
+    expect(JSON.stringify(result.content)).toContain('Expected a date from 1900-01-01 to 2999-12-31')
+    expect(rpcCalls).toEqual([])
+  })
+
   it('refuses an amount sent as a number', async () => {
     const { result, rpcCalls } = await callTool(() => reply(FOUND), 'search_transactions', { min_amount: 5 })
     expect(result.isError).toBe(true)

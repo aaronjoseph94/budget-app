@@ -72,6 +72,15 @@ describe('the challenge', () => {
     expect(calls).toEqual([])
   })
 
+  // Testing mcp-06: the scheme's letter case means nothing (RFC 7235 §2.1),
+  // and 'bearer <token>' was told its good token was invalid.
+  it.each(['bearer', 'BEARER', 'BeArEr'])('takes the scheme written "%s"', async (scheme) => {
+    const { res, calls } = call(`${scheme} ${AI_APP_TOKEN}`)
+    expect((await res).status).toBe(200)
+    // Auth is asked with the scheme as it expects it.
+    expect((calls[0]?.init.headers as Record<string, string>)['Authorization']).toBe(`Bearer ${AI_APP_TOKEN}`)
+  })
+
   it.each([401, 403])("turns Auth's %i into invalid_token", async (status) => {
     const r = await call(`Bearer ${AI_APP_TOKEN}`, () => new Response('{}', { status })).res
     expect(r.status).toBe(401)
@@ -166,6 +175,27 @@ describe('the deadline', () => {
     expect(DEADLINE_MS).toBe(20_000)
     vi.useFakeTimers()
     const { res } = call(`Bearer ${AI_APP_TOKEN}`, () => new Promise<Response>(() => undefined))
+    await vi.advanceTimersByTimeAsync(DEADLINE_MS)
+    const r = await res
+    expect(r.status).toBe(503)
+    expect(await r.json()).toEqual({ error: 'deadline' })
+  })
+
+  // Testing mcp-02: for a 2025-era request the SDK hands back an event
+  // stream before the tool runs, so racing only that let a tool run past
+  // the deadline and still answer 200.
+  it.each(['2025-06-18', '2025-11-25'])('gives up on a tool still running at %s too', async (version) => {
+    vi.useFakeTimers()
+    const { fetchFn } = fakeFetch((url, init) => (url.includes('/rest/') ? new Promise<Response>(() => undefined) : signedIn(url, init)))
+    const res = handle(
+      new Request(`${PROJECT}/mcp`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', accept: 'application/json, text/event-stream', 'mcp-protocol-version': version, authorization: `Bearer ${AI_APP_TOKEN}` },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'list_categories', arguments: {} } }),
+      }),
+      ENV,
+      fetchFn,
+    )
     await vi.advanceTimersByTimeAsync(DEADLINE_MS)
     const r = await res
     expect(r.status).toBe(503)

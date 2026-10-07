@@ -79,6 +79,22 @@ describe('dismissing an insight', () => {
     await expectNoAxeViolations()
   })
 
+  // e2e-setup-06: ✕ went with its card, and focus fell to <body>.
+  it('keeps focus on the insights: the next card’s ✕, else the one before', async () => {
+    renderScreen(<Shell />, seeded())
+    expect(await headings()).toEqual(['Time for a fresh statement', 'Charges waiting for you', 'Running ahead: Dining out'])
+    const dismiss = (title: string) => within(screen.getByRole('heading', { name: title }).closest('li')!).getByRole('button', { name: 'Dismiss this insight' })
+    const press = (button: HTMLElement) => {
+      act(() => button.focus())
+      fireEvent.click(button)
+    }
+
+    press(dismiss('Charges waiting for you'))
+    await waitFor(() => expect(document.activeElement).toBe(dismiss('Running ahead: Dining out')))
+    press(dismiss('Running ahead: Dining out'))
+    await waitFor(() => expect(document.activeElement).toBe(dismiss('Time for a fresh statement')))
+  })
+
   it('brings back a new cause for the same thing', async () => {
     const fake = seeded()
     // Dismissed when the statements ended on 1 Sep; they now end on 7 Sep, which is news.

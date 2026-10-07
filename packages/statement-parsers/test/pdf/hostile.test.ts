@@ -114,6 +114,43 @@ describe('runs that made the patterns backtrack (security-b-04)', () => {
     expect(runs.map((r) => r.text)).toEqual(['A synthetic line', 'A synthetic line'])
   })
 
+  // Testing fuzz-01: a literal or an array could start at every escaped
+  // bracket, and each start read to the end of the page, so a 339-byte file
+  // held the main thread for 14 s.
+  it.each([
+    ['escaped open parentheses after an open one', `(${'\\('.repeat(RUN / 2)}`],
+    ['escaped open brackets after an open one', `[${'\\['.repeat(RUN / 2)}`],
+    ['escaped open parentheses in a TJ array', `[${'\\('.repeat(RUN / 2)}] TJ`],
+  ])('reads a page holding %s quickly', (_, hostile) => {
+    const started = performance.now()
+    const runs = extractRuns(encoder.encode(`${LINE}${hostile}\n${LINE}`))
+    expect(performance.now() - started).toBeLessThan(2000)
+    expect(runs.map((r) => r.text)).toEqual(['A synthetic line', 'A synthetic line'])
+  })
+
+  it('still reads escaped parentheses inside a string', () => {
+    const runs = extractRuns(encoder.encode('BT 1 0 0 1 20 700 Tm (a \\(b\\) c) Tj [(d \\(e\\)) -250 (f)] TJ ET'))
+    expect(runs.map((r) => r.text)).toEqual(['a (b) c', 'd (e) f'])
+  })
+
+  // Testing fuzz-02: a page's /Contents array tried every split of a run
+  // of digits, from every digit: an 80 KB file took 6 s.
+  it('splits a page whose /Contents array holds a long run of digits quickly', async () => {
+    const file = encoder.encode(`%PDF-1.4\n1 0 obj << /Type /Page /Contents [${'1'.repeat(RUN)}] >> endobj\n%%EOF\n`)
+    const started = performance.now()
+    const out = await readPdfText(file)
+    expect(performance.now() - started).toBeLessThan(2000)
+    expect(out).toEqual({ ok: false, failure: 'no_pages' })
+  })
+
+  it('still reads a page whose /Contents is an array', async () => {
+    const body = await deflate(encoder.encode(LINE))
+    const head = `%PDF-1.7\n2 0 obj\n<< /Length ${body.byteLength} /Filter /FlateDecode >>\nstream\n`
+    const file = join([encoder.encode(head), body, encoder.encode('\nendstream\nendobj\n10 0 obj\n<< /Type /Page /Contents [ 2  0  R ] >>\nendobj\n%%EOF\n')])
+    const out = await readPdfText(file)
+    expect(out.ok && out.document.pages[0]?.map((r) => r.text)).toEqual(['A synthetic line'])
+  })
+
   it('still reads a TJ array whose string holds a bracket', () => {
     const runs = extractRuns(encoder.encode('BT 1 0 0 1 20 700 Tm [(see [note]) -250 (x)] TJ ET'))
     expect(runs.map((r) => r.text)).toEqual(['see [note] x'])

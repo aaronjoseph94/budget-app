@@ -1,4 +1,4 @@
-import { Fragment, useId, useState, type ReactNode } from 'react'
+import { Fragment, useId, useRef, useState, type ReactNode } from 'react'
 import { useAppData } from '../app-data.js'
 import { appendToLists, isoDate, monthBounds, moveInList, type BillNudge, type BillsTotals } from '@budget/core'
 import {
@@ -21,6 +21,7 @@ import { Figure, MonthTitle } from '../components/ui/type.js'
 import { LIST_TONE } from '../list-tone.js'
 import { cn } from '../lib/cn.js'
 import { useFourAcross } from '../lib/wide.js'
+import { useFocusWhereItWas } from '../lib/return-focus.js'
 import { navigate } from '../nav.js'
 import { PlanFields, PlanHeadings, TotalTile, useMonthlyAmounts, type MonthlyAmounts } from './SetupPlans.js'
 import { useBillNudges } from '../bill-nudges.js'
@@ -384,6 +385,11 @@ function ListCardView({
   const Title = level === 2 ? 'h2' : 'h3'
   const eyebrow = card.eyebrow ?? group
   const tone = card.kind === 'transfer' ? NOT_SPENDING_TONE : LIST_TONE[card.kind]
+  // Remove goes with its row: the next row's Remove takes focus, or the
+  // card's title once none is left (e2e-setup-06).
+  const list = useRef<HTMLUListElement>(null)
+  const title = useRef<HTMLHeadingElement>(null)
+  const refocus = useFocusWhereItWas(list, rows.map((r) => r.id).join(' '), 'button[aria-label^="Remove "]', title)
 
   /** Run one write, then reload, or show why it was refused. */
   const write = async (change: () => Promise<unknown>): Promise<boolean> => {
@@ -416,7 +422,7 @@ function ListCardView({
         </span>
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{eyebrow}</p>
-          <Title id={titleId} className="text-lg font-semibold leading-tight">
+          <Title ref={title} id={titleId} tabIndex={-1} className="text-lg font-semibold leading-tight outline-none">
             {heading}
           </Title>
           <p className="mt-0.5 text-sm text-muted-foreground">{card.hint}</p>
@@ -433,9 +439,9 @@ function ListCardView({
         <>
           {plans !== null ? <PlanHeadings month={month} /> : null}
           {paid !== null ? <PayHeadings /> : null}
-          <ul className={cn('divide-y border-b', plans === null && paid === null && 'mt-3 border-t')}>
-            {rows.map((row) => (
-              <CategoryRow key={row.id} row={row} list={rows} write={write}>
+          <ul ref={list} className={cn('divide-y border-b', plans === null && paid === null && 'mt-3 border-t')}>
+            {rows.map((row, at) => (
+              <CategoryRow key={row.id} row={row} list={rows} write={write} onRemove={() => refocus(at)} onKept={() => refocus(null)}>
                 {plans !== null ? (
                   <PlanFields row={row} plan={plans.get(row.id)} month={month} write={write} onSaved={setNote} nudge={nudges.get(row.id)} />
                 ) : null}
@@ -483,12 +489,17 @@ function CategoryRow({
   row,
   list,
   write,
+  onRemove,
+  onKept,
   children,
 }: {
   row: Category
   /** The whole list it is on, in the order shown. */
   list: readonly Category[]
   write: (change: () => Promise<unknown>) => Promise<boolean>
+  /** Remove is pressed, and when it was refused. */
+  onRemove: () => void
+  onKept: () => void
   children?: ReactNode
 }) {
   const { supabase, categories } = useAppData()
@@ -586,7 +597,12 @@ function CategoryRow({
           size="icon"
           className={cn('text-muted-foreground', BUTTON_ORDER)}
           aria-label={`Remove ${row.name}`}
-          onClick={() => void write(() => removeCategory(supabase, row.id))}
+          onClick={() => {
+            onRemove()
+            void write(() => removeCategory(supabase, row.id)).then((removed) => {
+              if (!removed) onKept()
+            })
+          }}
         >
           <Icon name="trash" />
         </Button>

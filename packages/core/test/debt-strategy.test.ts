@@ -110,6 +110,16 @@ describe('payoffStrategies (F23)', () => {
     expect(s.avalanche!.totalInterestCents <= s.snowball!.totalInterestCents).toBe(true)
   })
 
+  // Testing fuzz-03: paying only minimums, the payday loan's balance
+  // outgrew any amount the app can hold, and payoffStrategies threw.
+  it('has no flat outcome, not an error, for a debt whose balance would outgrow any amount', () => {
+    const s = plans([debt('Car', 1_500_000, 40_000, 600), debt('Payday', 100_000, 100, 6_000)])
+    expect(s.flat).toBeNull()
+    // Rolled into it once the car is paid, the car's payment clears it.
+    expect(months(s.snowball)['Payday']).toBeDefined()
+    expect(s.avalanche).not.toBeNull()
+  })
+
   it('has no plan with no debts, and no outcome for one that never pays off', () => {
     expect(payoffStrategies({ debts: [], extraPayments: [] })).toBeNull()
     const s = plans([debt('Card', 100_000, 1_000, 2_400)])

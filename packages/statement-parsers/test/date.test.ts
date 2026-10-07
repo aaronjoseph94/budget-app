@@ -51,6 +51,15 @@ describe('parseStatementDate', () => {
     expect(parseStatementDate('02/29/2024', 'MM/DD/YYYY')).toEqual(ok('2024-02-29'))
   })
 
+  // Testing fuzz-07: '0025-03-15' was a day, and every sum on it fell in
+  // 1925. A statement year before 1900 is a typo, for the review queue.
+  it('rejects a year before 1900', () => {
+    expect(parseStatementDate('0025-03-15', 'YYYY-MM-DD')).toEqual({ ok: false, reason: 'unparseable_date' })
+    expect(parseStatementDate('03/15/0025', 'MM/DD/YYYY')).toEqual({ ok: false, reason: 'unparseable_date' })
+    expect(parseStatementDate('12/31/1899', 'MM/DD/YYYY')).toEqual({ ok: false, reason: 'unparseable_date' })
+    expect(parseStatementDate('1900-01-01', 'YYYY-MM-DD')).toEqual(ok('1900-01-01'))
+  })
+
   it('rejects an out-of-range month', () => {
     expect(parseStatementDate('13/01/2025', 'MM/DD/YYYY').ok).toBe(false)
     expect(parseStatementDate('00/01/2025', 'MM/DD/YYYY').ok).toBe(false)

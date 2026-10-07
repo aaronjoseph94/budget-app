@@ -74,6 +74,14 @@ function payOff(input: DebtPlanInput, order: readonly PlannedDebt[] | null): Str
   // amortize()'s guard, counted from the first debt's start.
   for (let step = 0; step < MAX_MONTHS; step++) {
     const month = addMonths(first, step)
+    // As amortize(): owing more than every minimum and extra left could pay,
+    // with interest only adding, no plan pays it all; said before a balance
+    // outgrows any amount the app can hold (testing fuzz-03).
+    const owing = input.debts.reduce((sum, d) => (paidOffIn.has(d) ? sum : sum + balance.get(d)!), 0)
+    const left =
+      input.debts.reduce((sum, d) => sum + d.minimumPaymentCents, 0) * (MAX_MONTHS - step) +
+      input.extraPayments.reduce((sum, e) => (e.month >= month ? sum + e.amountCents : sum), 0)
+    if (owing > left) return null
     let freed = ZERO_CENTS
     for (const d of input.debts) {
       if (d.startMonth > month) continue

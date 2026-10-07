@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AmountTextSchema, ListSchema, NameSchema, NoteTextSchema, WordsSchema } from '../src/index.js'
+import { AmountTextSchema, ChangeSchema, ListSchema, NameSchema, NoteTextSchema, ReasonSchema, WordsSchema, drawsAsNothing } from '../src/index.js'
 
 // What an AI app may send the server's tools (PLAN §2.4).
 describe('AmountTextSchema', () => {
@@ -49,6 +49,32 @@ describe('the words an AI app sends', () => {
   it.each(INVISIBLE.map((c) => [c.toString(16).padStart(4, '0'), String.fromCharCode(c)]))('refuses U+%s in what an AI app adds or notes', (_, ch) => {
     expect(WordsSchema.safeParse(`Cof${ch}fee`).success).toBe(false)
     expect(NoteTextSchema.safeParse(`coffee${ch} 4.50`).success).toBe(false)
+  })
+
+  // mcp-01 (testing, 2026-10-05): every character Unicode marks
+  // Default_Ignorable_Code_Point draws as nothing. Tag characters and
+  // variation selectors got 'Groceries' past name_taken, and tags spell
+  // hidden words a model reads.
+  const DRAWN_AS_NOTHING = [
+    0x34f, 0x115f, 0x1160, 0x17b4, 0x17b5, 0x180b, 0x180f, 0x206a, 0x206f, 0x3164, 0xfe00, 0xfe0f, 0xffa0, 0xfff0, 0x1bca0, 0x1d173, 0x1d17a,
+    0xe0001, 0xe0020, 0xe0041, 0xe007f, 0xe0100, 0xe01ef,
+  ]
+  it.each(DRAWN_AS_NOTHING.map((c) => [c.toString(16).padStart(4, '0'), String.fromCodePoint(c)]))('refuses U+%s wherever an AI app writes words', (_, ch) => {
+    expect(WordsSchema.safeParse(`Cof${ch}fee`).success).toBe(false)
+    expect(NoteTextSchema.safeParse(`coffee${ch} 4.50`).success).toBe(false)
+    expect(ReasonSchema.safeParse(`Fits recent spend.${ch}`).success).toBe(false)
+    const add = { kind: 'add_category', name: `Groceries${ch}`, list: 'variable', reason: 'r' }
+    expect(ChangeSchema.safeParse(add).success).toBe(false)
+  })
+
+  it('names exactly the characters Unicode says draw as nothing', () => {
+    const unicode = /\p{Default_Ignorable_Code_Point}/u
+    const differ: string[] = []
+    for (let c = 0; c <= 0x10ffff; c++) {
+      if (c >= 0xd800 && c <= 0xdfff) continue
+      if (drawsAsNothing(c) !== unicode.test(String.fromCodePoint(c))) differ.push(c.toString(16))
+    }
+    expect(differ).toEqual([])
   })
 
   it('holds a note to 300 characters', () => {

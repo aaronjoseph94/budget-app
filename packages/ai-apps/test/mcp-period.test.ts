@@ -216,6 +216,24 @@ describe('get_period', () => {
     expect((out.top_spending as { name: string }[]).map((t) => t.name)).toEqual(['Rent', 'Groceries'])
   })
 
+  // Testing mcp-04: year 1 gave a month ending in 1901, and year 0 or 9999
+  // blamed the server or the owner's records. Every such day is refused,
+  // saying which days the tool reads, before anything is read.
+  it.each([
+    ['0001-03-01', 'month'],
+    ['0001-01-01', 'month'],
+    ['0000-02-29', 'month'],
+    ['9999-12-31', 'year'],
+    ['9999-12-31', 'week'],
+    ['1899-12-31', 'pay_period'],
+    ['3000-01-01', 'month'],
+  ])('refuses %s (%s) before reading anything', async (date, kind) => {
+    const { result, rpcCalls } = await period({ date, period: kind })
+    expect(result.isError).toBe(true)
+    expect(JSON.stringify(result.content)).toContain('Expected a date from 1900-01-01 to 2999-12-31')
+    expect(rpcCalls).toEqual([])
+  })
+
   it.each([
     ['a category it does not have', { categories: ['Nope'] }, READ, SENTENCES.unknown_category],
     ['rows it cannot read', {}, { ...READ, txns: 'SECRET' }, SENTENCES.records_unreadable],

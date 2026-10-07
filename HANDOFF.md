@@ -271,7 +271,7 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
     `main-tnlcto` first, waits for the green **gates** run, and only then
     pushes that same commit to `main`.
 
-### Part D: the database updates, 0015 to 0039, about 20 minutes, once
+### Part D: the database updates, 0015 to 0040, about 20 minutes, once
 
 13. **A backup first.** Some of these updates change saved rows, and
     `0038` **permanently deletes** a learned shop where two would end up
@@ -315,10 +315,16 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
     `0038_intuit_prefix_merchants.sql`. (It was written as `0030` and
     renumbered `0038` when two lines of updates merged on 2026-10-02;
     neither number was ever applied.) Then paste
-    `0039_ai_apps_suggest_changes.sql` last: it lets an AI app you
+    `0039_ai_apps_suggest_changes.sql`: it lets an AI app you
     connect suggest changes that wait in Review until you apply them
     (ADR 0013). It needs `0037`, says "Paste 0037 first" without it, and
-    deletes nothing.
+    deletes nothing. Then paste `0040_ai_words_every_character_shown.sql`
+    last: it stops an AI app adding or suggesting words with characters
+    you cannot see, so two entries in Review that look the same always
+    are, and lets it suggest a budget from a month on that puts that
+    month's own "just this month" budget back to the usual one, which it
+    was told was "already so" (testing of 2026-10-05). It needs `0039`,
+    says "Paste 0039 first" without it, and deletes nothing.
 
     Each update refuses to run before the one it needs ("Paste 0018
     first", "Paste 0035 first" and so on) and changes nothing then.
@@ -328,7 +334,8 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
     it runs again to the same result. After `0039`, pasting `0030` or
     `0035` again takes back part of it, and One-time updates offers
     `0039` again: paste it again, and it puts back only what they took
-    (your **Let AI apps suggest changes** choice stays). If one says
+    (your **Let AI apps suggest changes** choice stays); then it offers
+    `0040` again, which puts back only what `0039` took. If one says
     anything else, stop there:
     nothing is lost, and the next agent needs that message word for word
     (MCP plan K10, K11).
@@ -396,8 +403,12 @@ connect an AI app to it.
     One-time updates says "an older copy": **Edge Functions → mcp → Code**,
     paste, **Deploy**, then open its **Settings** and check the switch is
     still off: Supabase has been seen to turn it back on.) Version
-    `2026-10-05.1` or later is current: after `0039`, paste the server
-    again this way, as One-time updates asks. Until you do, **Let AI apps
+    `2026-10-05.7` or later is current (it also refuses, and leaves out of
+    every name it hands an AI app, the characters that draw as nothing,
+    stops every request at 20 seconds, whichever app is asking, and
+    carries the fixes of 2026-10-05's testing to debts, amounts and dates):
+    after `0039`, paste the server again this way, as One-time updates
+    asks. Until you do, **Let AI apps
     connect** cannot be turned on and a new connection's page offers no
     **Allow**; AI apps already connected keep reading, but cannot
     suggest changes.
