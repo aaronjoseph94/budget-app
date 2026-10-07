@@ -106,6 +106,28 @@ describe('Suggested changes', () => {
     await expectNoAxeViolations()
   })
 
+  // skills-06: a read that failed kept its error over the cards a later read drew.
+  it('takes away a failed read’s error once a later read works', async () => {
+    const fake = seeded([row('set_weekly_limit', { category_id: FOOD }, { cents: 12000 }, { cents: 10000 })])
+    fake.fail('ai_app_proposals', '42501')
+    renderScreen(<ReviewScreen />, fake)
+    expect(await screen.findByText(/Your sign-in does not allow this/)).toBeTruthy()
+    fake.heal('ai_app_proposals')
+    // The network comes back and the app reads again.
+    window.dispatchEvent(new Event('online'))
+    expect(await screen.findByRole('button', { name: 'Apply' })).toBeTruthy()
+    expect(screen.queryByText(/Your sign-in does not allow this/)).toBeNull()
+    // With none waiting, the section goes too.
+    fake.tables.ai_app_proposals.length = 0
+    fake.fail('ai_app_proposals', '42501')
+    window.dispatchEvent(new Event('online'))
+    expect(await screen.findByText(/Your sign-in does not allow this/)).toBeTruthy()
+    fake.heal('ai_app_proposals')
+    window.dispatchEvent(new Event('online'))
+    await waitFor(() => expect(screen.queryByText('Suggested changes')).toBeNull())
+    expect(screen.queryByText(/Your sign-in does not allow this/)).toBeNull()
+  })
+
   it('is not there when none wait, or before 0039 is in', async () => {
     const fake = seeded([])
     fake.fail('ai_app_proposals', 'PGRST205')

@@ -76,6 +76,9 @@ export function SuggestedChanges() {
   const [busy, setBusy] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // A read's own failure, apart from an action's: the next read that works
+  // takes it away, and leaves an action's error alone (skills-06).
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
   const reads = useRef(0)
   const said = useRef<HTMLDivElement>(null)
@@ -84,9 +87,11 @@ export function SuggestedChanges() {
     const read = ++reads.current
     try {
       const cards = await readCards(supabase, categories, today)
-      if (read === reads.current) setShown(cards)
+      if (read !== reads.current) return
+      setShown(cards)
+      setLoadError(null)
     } catch (cause) {
-      if (read === reads.current) setError(cause instanceof Error ? cause.message : 'Could not load the suggested changes.')
+      if (read === reads.current) setLoadError(cause instanceof Error ? cause.message : 'Could not load the suggested changes.')
     }
   }, [supabase, categories, today])
 
@@ -150,7 +155,7 @@ export function SuggestedChanges() {
     said.current?.focus()
   }
 
-  if (shown.length === 0 && error === null) return null
+  if (shown.length === 0 && error === null && loadError === null) return null
   return (
     <section aria-labelledby="suggested-title" className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -184,6 +189,7 @@ export function SuggestedChanges() {
       <div ref={said} tabIndex={-1} className="space-y-3 outline-none empty:hidden">
         {note !== null ? <Alert tone="success">{note}</Alert> : null}
         {error !== null ? <Alert tone="error" title="That did not work">{error}</Alert> : null}
+        {loadError !== null ? <Alert tone="error" title="That did not work">{loadError}</Alert> : null}
       </div>
       <ul className="space-y-3">
         {shown.map((item) => (
