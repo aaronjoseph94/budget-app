@@ -670,7 +670,18 @@ function PhotoEntry() {
   const [busy, setBusy] = useState(false)
   const [outcome, setOutcome] = useState<Outcome | null>(null)
   const [tried, setTried] = useState(0)
+  // Once sent, the photo is done and its fields are locked: a total
+  // corrected here would be a second Review row for one purchase, since
+  // the total is in the dedupe hash (e2e-money-05). 'waiting' is in Review.
+  const [sent, setSent] = useState<'waiting' | 'done' | null>(null)
   const amountError = useId()
+  // Send to review goes once sent, and focus would fall to the page with
+  // it: Go to review, what comes next, takes it.
+  const toReview = useId()
+  useEffect(() => {
+    const now = document.activeElement
+    if (sent !== null && (now === null || now === document.body)) document.getElementById(toReview)?.focus()
+  }, [sent, toReview])
 
   const cents = parseMoneyInput(amount)
   // Named as Type it names them: a photo read without a date, or not read
@@ -730,10 +741,11 @@ function PhotoEntry() {
     setDate('')
     setOutcome(null)
     setTried(0)
+    setSent(null)
   }
 
   const send = async () => {
-    if (busy) return
+    if (busy || sent !== null) return
     if (!ready) return setTried((n) => n + 1)
     if (accountId === null) return setOutcome({ ok: false, message: NO_ACCOUNT })
     if (cents === null) return
@@ -766,6 +778,7 @@ function PhotoEntry() {
               ? 'This photo was already sent, so nothing was added.'
               : 'Sent to Review. Pick a category there and it counts.',
       })
+      setSent(counts.autoApproved === 0 && counts.deduped === 0 ? 'waiting' : 'done')
       await refresh()
     } catch (cause) {
       setOutcome({ ok: false, message: cause instanceof Error ? cause.message : 'Nothing was saved.' })
@@ -843,7 +856,7 @@ function PhotoEntry() {
             >
               <p className="text-xs text-muted-foreground">Every field is needed.</p>
               <Field label="Where">
-                <Input value={merchant} maxLength={120} onChange={(e) => setMerchant(e.target.value)} required />
+                <Input value={merchant} maxLength={120} onChange={(e) => setMerchant(e.target.value)} required readOnly={sent !== null} />
               </Field>
               <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
                 <Field label="Total spent">
@@ -853,24 +866,28 @@ function PhotoEntry() {
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     required
+                    readOnly={sent !== null}
                     {...notMoney(amount, cents, amountError)}
                   />
                 </Field>
                 <Field label="Date">
-                  <Input type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} required />
+                  <Input type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value)} required readOnly={sent !== null} />
                 </Field>
               </div>
               <NotMoney amount={amount} cents={cents} id={amountError} />
-              <Button type="submit" size="lg" className="w-full" aria-disabled={busy}>
-                {busy ? 'Sending…' : 'Send to review'}
-              </Button>
+              {sent === null ? (
+                <Button type="submit" size="lg" className="w-full" aria-disabled={busy}>
+                  {busy ? 'Sending…' : 'Send to review'}
+                </Button>
+              ) : null}
               {tried > 0 && !ready ? <StillNeeded key={tried} needed={needed} /> : null}
               {outcome !== null ? <Alert tone={outcome.ok ? 'success' : 'error'}>{outcome.message}</Alert> : null}
               {outcome?.ok === true ? (
-                <Button variant="outline" className="w-full" onClick={() => navigate('review')}>
+                <Button id={toReview} variant="outline" className="w-full" onClick={() => navigate('review')}>
                   Go to review
                 </Button>
               ) : null}
+              {sent === 'waiting' ? <p className="text-sm text-muted-foreground">To correct it, reject it in Review, then send this photo again.</p> : null}
               <p className="text-xs text-muted-foreground">
                 For cash. A card purchase also on your statement would count twice.
               </p>

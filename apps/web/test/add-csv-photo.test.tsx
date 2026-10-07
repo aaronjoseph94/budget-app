@@ -139,6 +139,51 @@ describe('AddScreen, two receipts alike (backend-c1-02)', () => {
   })
 })
 
+// e2e-money-05: a total corrected after sending went in as a second Review
+// row for the same photo, and approving both counted the purchase twice.
+describe('AddScreen, a receipt photo once sent', () => {
+  const real = { create: URL.createObjectURL, revoke: URL.revokeObjectURL }
+  beforeEach(() => {
+    URL.createObjectURL = () => 'blob:receipt'
+    URL.revokeObjectURL = () => undefined
+  })
+  afterEach(() => {
+    cleanup()
+    URL.createObjectURL = real.create
+    URL.revokeObjectURL = real.revoke
+  })
+
+  it('locks what was sent, and says to correct it in Review, never sending a second', async () => {
+    const fake = createFakeSupabase()
+    fake.rpcReplies.save_import = [{ batch_id: 'b1', parsed: 1, deduped: 0, inserted: 1, rejected: 0, auto_approved: 0 }]
+    renderScreen(<AddScreen />, fake)
+    fireEvent.click(await screen.findByRole('tab', { name: /Photo/ }))
+    pick('Take or choose a receipt photo', new File(['a receipt'], 'receipt.jpg', { type: 'image/jpeg' }))
+    await screen.findByText('That file could not be opened as a photo.')
+    fireEvent.change(screen.getByLabelText('Where'), { target: { value: 'LITWARE CAFE' } })
+    fireEvent.change(screen.getByLabelText('Total spent'), { target: { value: '14.23' } })
+    fireEvent.change(screen.getByLabelText('Date'), { target: { value: '2026-09-20' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Send to review' }))
+    expect(await screen.findByText('Sent to Review. Pick a category there and it counts.')).toBeTruthy()
+
+    expect(screen.queryByRole('button', { name: 'Send to review' })).toBeNull()
+    // Focus goes with it to what comes next, never to the page.
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Go to review' }))
+    for (const label of ['Where', 'Total spent', 'Date']) expect(screen.getByLabelText<HTMLInputElement>(label).readOnly, label).toBe(true)
+    expect(screen.getByText('To correct it, reject it in Review, then send this photo again.')).toBeTruthy()
+    // Enter in a field submits the form: still nothing more is sent.
+    fireEvent.submit(screen.getByLabelText('Total spent').closest('form')!)
+    expect(fake.rpcCalls.filter((c) => c.name === 'save_import')).toHaveLength(1)
+
+    // Another photo starts a fresh form.
+    fireEvent.click(screen.getByRole('button', { name: 'Use another photo' }))
+    pick('Take or choose a receipt photo', new File(['another receipt'], 'b.jpg', { type: 'image/jpeg' }))
+    await screen.findByText('That file could not be opened as a photo.')
+    expect(screen.getByLabelText<HTMLInputElement>('Total spent').readOnly).toBe(false)
+    expect(screen.getByRole('button', { name: 'Send to review' })).toBeTruthy()
+  })
+})
+
 describe('AddScreen, a receipt photo not read (FE-8)', () => {
   const real = { create: URL.createObjectURL, revoke: URL.revokeObjectURL }
   beforeEach(() => {
