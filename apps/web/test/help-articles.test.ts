@@ -36,6 +36,8 @@ describe('Help articles', () => {
         expect(step, a.id).toMatch(/[.…]$/)
         expect(/[.!?]\s+\S/.test(plainText(step)), `${a.id}: more than one sentence in "${step}"`).toBe(false)
       }
+      // A term's meaning names buttons the same way (e2e-setup-05).
+      for (const t of a.terms ?? []) expect(t.meaning.split('**').length % 2, `${a.id}: ${t.term}`).toBe(1)
     }
   })
 

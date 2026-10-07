@@ -145,6 +145,34 @@ describe('an article’s words', () => {
     expect(container.querySelector('b')).toBeNull()
     expect(screen.getByText(`${hostile} summary`)).toBeTruthy()
     expect(within(screen.getByRole('listitem')).getByText(hostile).tagName).toBe('STRONG')
-    expect(screen.getByText(`<b>${hostile}</b>`).tagName).toBe('DD')
+    expect(screen.getByText(`<b>${hostile}</b>`).closest('dd')).not.toBeNull()
+  })
+
+  // e2e-setup-05: "Its sign-in" read "which **Disconnect** should do", stars and all.
+  it('draws a button’s name in a term’s meaning in bold, as the steps do, still as text', () => {
+    const hostile = '<img src=x onerror="alert(1)">'
+    const article: Article = {
+      id: 'words',
+      title: 'Test',
+      summary: 'summary',
+      steps: ['Press **Go**.'],
+      done: 'done',
+      stuck: 'stuck',
+      related: [],
+      terms: [{ term: 'Its sign-in', meaning: `until it ends, which **${hostile}** should do` }],
+    }
+    const { container } = render(<ArticleBody article={article} />)
+    const meaning = container.querySelector('dd')!
+    expect(meaning.textContent).toBe(`until it ends, which ${hostile} should do`)
+    expect(within(meaning).getByText(hostile).tagName).toBe('STRONG')
+    expect(container.querySelector('img')).toBeNull()
+  })
+
+  it('shows no stars anywhere in any article', () => {
+    for (const article of ARTICLES) {
+      const { container, unmount } = render(<ArticleBody article={article} />)
+      expect(container.textContent, article.id).not.toContain('**')
+      unmount()
+    }
   })
 })
