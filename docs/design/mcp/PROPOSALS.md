@@ -154,7 +154,8 @@ changes, and never saying a change was made. `prompts/list` and
    `expired`; per item: kind and keys exactly as §2, every id the caller's,
    the lists and ranges of §2, the reason's characters as `0034` checks
    words (every character visible, trimmed), SQL befores read here,
-   `same_as_now`, `has_monthly_amount` (a move 0009's trigger refuses),
+   `same_as_now` (for a budget from a month on, that month's own `only`
+   value the same too, 0040), `has_monthly_amount` (a move 0009's trigger refuses),
    `dismissed_recently` (the same kind, target, `after` and `before`
    dismissed in 14 days), the one-waiting rule (the waiting row locked
    `for update`; `already_suggested` only when kind, target, `after` and

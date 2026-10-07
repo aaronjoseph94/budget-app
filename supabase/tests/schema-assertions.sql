@@ -5001,14 +5001,58 @@ end $$;
 reset role;
 rollback;
 
+-- An onward budget is the same as now only when that month's own "just
+-- this month" value is the same too, as Review's stateOf and setBudget's
+-- replacesOnly read it (testing skills-02): $400 onward and next month's
+-- own $250, "$400 from next month on" puts that month back to $400.
+begin;
+update public.ai_app_usage set calls = 0 where user_id = '11111111-1111-4111-8111-111111111111';
+insert into public.category_budgets (user_id, category_id, month, applies, budget_cents) values
+  ('11111111-1111-4111-8111-111111111111', 'cccccccc-0000-4000-8000-000000003901', date_trunc('month', (now() at time zone 'UTC')::date)::date, 'onward', 40000),
+  ('11111111-1111-4111-8111-111111111111', 'cccccccc-0000-4000-8000-000000003901', (date_trunc('month', (now() at time zone 'UTC')::date) + interval '1 month')::date, 'only', 25000),
+  ('11111111-1111-4111-8111-111111111111', 'cccccccc-0000-4000-8000-000000003901', (date_trunc('month', (now() at time zone 'UTC')::date) + interval '2 months')::date, 'only', 40000);
+set role app_user;
+do $$
+declare
+  month1 text := to_char(date_trunc('month', (now() at time zone 'UTC')::date) + interval '1 month', 'YYYY-MM-DD');
+  month2 text := to_char(date_trunc('month', (now() at time zone 'UTC')::date) + interval '2 months', 'YYYY-MM-DD');
+  mine   text := 'cccccccc-0000-4000-8000-000000003901';
+  r      jsonb;
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}', true);
+  r := public.ai_app_propose(jsonb_build_array(
+    jsonb_build_object('kind', 'set_budget', 'category', mine, 'month', month1, 'applies', 'onward', 'amount', 40000, 'before', '{"cents": 40000}'::jsonb, 'reason', 'Back to the usual'),
+    jsonb_build_object('kind', 'set_budget', 'category', mine, 'month', month2, 'applies', 'onward', 'amount', 40000, 'before', '{"cents": 40000}'::jsonb, 'reason', 'r'),
+    jsonb_build_object('kind', 'set_budget', 'category', mine, 'month', month1, 'applies', 'only', 'amount', 25000, 'before', '{"cents": 25000}'::jsonb, 'reason', 'r')));
+  if r #>> '{results,0,status}' is distinct from 'suggested' then
+    raise exception 'an onward budget that puts a month''s own value back was refused: %', r -> 'results' -> 0;
+  end if;
+  if r #>> '{results,1,refused}' is distinct from 'same_as_now' or r #>> '{results,2,refused}' is distinct from 'same_as_now' then
+    raise exception 'NOT REFUSED: a budget already so, the month''s own value too: %', r;
+  end if;
+  raise notice 'an onward budget is the same as now only when that month''s own value is the same too';
+end $$;
+reset role;
+rollback;
+
 -- 0040 added two lines to the add, re-created the words check, the shop
--- name as shown and the two level functions, and changed nothing else;
--- every function keeps its settings and grants, and every earlier mark.
+-- name as shown and the two level functions, widened the suggestions'
+-- same_as_now test, and changed nothing else; every function keeps its
+-- settings and grants, and every earlier mark.
 do $$
 declare
   r   record;
   p   record;
   at  constant text := E'     or p_words ~ ''[\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2060-\\u2065\\uFEFF]'' -- drawn as nothing (0034)\n';
+  was constant text := E'  elsif v_kind <> ''add_category'' and v_after = v_before then\n';
+  now_ constant text := E'  elsif v_kind <> ''add_category'' and v_after = v_before\n'
+                    || E'        -- (0040) From a month on, that month''s own "just this month" value is replaced\n'
+                    || E'        -- too (setBudget''s replacesOnly), so it is the same only when that value is too.\n'
+                    || E'        and not (v_kind = ''set_budget'' and p ->> ''applies'' = ''onward''\n'
+                    || E'                 and exists (select 1 from public.category_budgets b\n'
+                    || E'                              where b.user_id = p_user and b.category_id = v_cat.id and b.month = v_month\n'
+                    || E'                                and b.applies = ''only'' and b.budget_cents is distinct from (p ->> ''amount'')::numeric)) then\n';
   n   int := 0;
 begin
   for r in select * from verify.before_0040 loop
@@ -5025,6 +5069,12 @@ begin
     elsif r.fn in ('_ai_app_words_shown(text,integer)', '_ai_app_shown_shop(text)') then
       if strpos(p.prosrc, '(0040)') = 0 then raise exception '% has no (0040) mark', r.fn; end if;
       n := n + 1;
+    elsif r.fn = '_ai_app_proposal(uuid,date,jsonb)' then
+      -- 0039's same_as_now line, and only it, now 0040's lines.
+      if strpos(r.prosrc, was) = 0 or strpos(p.prosrc, now_) = 0 or replace(p.prosrc, now_, was) <> r.prosrc then
+        raise exception '_ai_app_proposal is not its old body with 0040''s same_as_now test';
+      end if;
+      n := n + 1;
     elsif r.fn not in ('ai_app_updates_in()', 'ai_app_update_level()') and p.prosrc <> r.prosrc then
       raise exception '% changed in 0040', r.fn;
     end if;
@@ -5032,12 +5082,12 @@ begin
       raise exception '% changed its settings or grants in 0040', r.fn;
     end if;
   end loop;
-  if n <> 3 then raise exception '0040''s three changed functions were not all checked'; end if;
+  if n <> 4 then raise exception '0040''s four changed functions were not all checked'; end if;
   if strpos((select prosrc from pg_proc where oid = 'public.ai_app_add_candidate(uuid,date,bigint,text,integer,text,integer,text)'::regprocedure), '(0034)') = 0
      or strpos((select prosrc from pg_proc where oid = 'public._ai_app_shown_shop(text)'::regprocedure), '(0036)') = 0 then
     raise exception '0040 lost an earlier update''s mark';
   end if;
-  raise notice '0040 changed only the add''s two lines, the words check and the shop name as shown';
+  raise notice '0040 changed only the add''s two lines, the words check, the shop name as shown and same_as_now';
 end $$;
 
 do $$
@@ -5089,12 +5139,19 @@ begin
   if not public._ai_app_words_shown('Cof' || chr(x'000E0041'::int) || 'fee', 60) then
     raise exception '0039 pasted again did not put back its own words check';
   end if;
+  if strpos((select prosrc from pg_proc where oid = 'public._ai_app_proposal(uuid,date,jsonb)'::regprocedure), '(0040)') > 0 then
+    raise exception '0039 pasted again did not put back its own same_as_now test';
+  end if;
 end $$;
 :repaste_40
 do $$
 declare
   add constant text := (select prosrc from pg_proc where oid = 'public.ai_app_add_candidate(uuid,date,bigint,text,integer,text,integer,text)'::regprocedure);
+  pro constant text := (select prosrc from pg_proc where oid = 'public._ai_app_proposal(uuid,date,jsonb)'::regprocedure);
 begin
+  if (length(pro) - length(replace(pro, '(0040)', ''))) / length('(0040)') <> 1 then
+    raise exception '0040 pasted again did not put back its same_as_now test once';
+  end if;
   if public.ai_app_updates_in() <> 40 or public.ai_app_update_level() <> 40 then
     raise exception '0040 pasted again did not put itself back: % and %', public.ai_app_updates_in(), public.ai_app_update_level();
   end if;

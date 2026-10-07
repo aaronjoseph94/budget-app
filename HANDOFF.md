@@ -321,8 +321,10 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
     deletes nothing. Then paste `0040_ai_words_every_character_shown.sql`
     last: it stops an AI app adding or suggesting words with characters
     you cannot see, so two entries in Review that look the same always
-    are (testing of 2026-10-05). It needs `0039`, says "Paste 0039 first"
-    without it, and deletes nothing.
+    are, and lets it suggest a budget from a month on that puts that
+    month's own "just this month" budget back to the usual one, which it
+    was told was "already so" (testing of 2026-10-05). It needs `0039`,
+    says "Paste 0039 first" without it, and deletes nothing.
 
     Each update refuses to run before the one it needs ("Paste 0018
     first", "Paste 0035 first" and so on) and changes nothing then.

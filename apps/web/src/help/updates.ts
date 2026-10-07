@@ -225,9 +225,10 @@ export const UPDATES: readonly Update[] = [
     checks: [{ kind: 'level', level: 39 }],
   },
   {
-    // An AI-app update: it needs 0039, whose words check it tightens (testing db-01).
+    // An AI-app update: it needs 0039, whose words check it tightens (testing db-01),
+    // and lets a budget from a month on put that month's own back (skills-02).
     file: '0040_ai_words_every_character_shown.sql',
-    adds: 'Keeps an AI app from adding or suggesting words with characters you cannot see',
+    adds: 'Keeps an AI app from adding or suggesting words with characters you cannot see, and lets it suggest putting a month back to your usual budget',
     checks: [{ kind: 'level', level: 40 }],
   },
   { file: HELPER_FILE, adds: 'The AI helper, which every AI feature goes through', checks: [{ kind: 'helper' }] },

@@ -3841,3 +3841,24 @@ own reviewed change, not a fix found in testing.
 and trimmed whenever one pass would not be stable (the least change), add
 a `merchant_v` column, and backfill the stored names and learned shops of
 the rows it changes in one migration, as 0038 did for `IN*`.
+
+---
+
+## N166 — Review's card for "back to the usual budget" reads "$400.00 → $400.00"
+
+**Seen:** 2026-10-07, fixing skills-02. 0040 now lets an AI app suggest
+"Groceries $400 from November on" when $400 is the onward budget and
+November has its own $250, because applying it puts November back to
+$400 (setBudget's replacesOnly). The stored before is the onward rows'
+value, $400, as the server works it out (D12), so Review's card
+(`apps/web/src/review/change-words.ts`, `cardWords`) reads "$400.00 →
+$400.00" for a change that moves November from $250. The card is
+`ready`, and Apply does the right thing.
+
+**Why not fixed here:** Review's files belong to the other line of
+fixes running at the same time.
+
+**To settle:** when `currentOf` finds that month's own value (`now.also`)
+and it differs from the after, have the card say so, for example "From
+November 2026 on: $400.00 → $400.00, and November's own $250.00 →
+$400.00".

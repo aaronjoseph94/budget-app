@@ -44,13 +44,23 @@
 -- ModelProse first, which refuses every format character (tags included)
 -- before anything is kept (NOTICED-NOT-TOUCHING N164).
 --
+-- And one more AI-app fix from the same testing (skills-02): a suggested
+-- budget "from a month on" whose amount is the onward value was refused
+-- as same_as_now, though that month has its own "just this month" value,
+-- which the change would replace (setBudget's replacesOnly; Review's
+-- stateOf reads it so too). With $400 onward and November's own $250,
+-- "Groceries $400 from November on" was answered "That is already so".
+-- - _ai_app_proposal (0039): its same_as_now test, marked "(0040)", now
+--   lets through an onward budget whose month has its own value that is
+--   not the amount; nothing else in it changes.
+--
 -- Pasted again with 0040 in, it is refused before anything changes.
 -- 0030 or 0035 pasted again over it reads 0039 as missing, and 0039
 -- pasted again then puts back its own weaker _ai_app_words_shown and
--- answers 39: One-time updates offers 0040 again, and pasting it puts
--- back only what was taken. Every step here is safe to run twice. A
--- function body not as 0034 left it stops this update, and nothing
--- changes.
+-- _ai_app_proposal and answers 39: One-time updates offers 0040 again,
+-- and pasting it puts back only what was taken. Every step here is safe
+-- to run twice. A function body not as 0034 or 0039 left it stops this
+-- update, and nothing changes.
 --
 -- Numbering: the next number after 0039 (ADR 0012). Destroys nothing: it
 -- re-creates functions in place.
@@ -147,6 +157,39 @@ as $$
 $$;
 
 -- ---------------------------------------------------------------------------
+-- A budget from a month on, over that month's own value (skills-02)
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  f   constant regprocedure := 'public._ai_app_proposal(uuid, date, jsonb)';
+  at  constant text := E'  elsif v_kind <> ''add_category'' and v_after = v_before then\n';
+  add constant text := E'  elsif v_kind <> ''add_category'' and v_after = v_before\n'
+                    || E'        -- (0040) From a month on, that month''s own "just this month" value is replaced\n'
+                    || E'        -- too (setBudget''s replacesOnly), so it is the same only when that value is too.\n'
+                    || E'        and not (v_kind = ''set_budget'' and p ->> ''applies'' = ''onward''\n'
+                    || E'                 and exists (select 1 from public.category_budgets b\n'
+                    || E'                              where b.user_id = p_user and b.category_id = v_cat.id and b.month = v_month\n'
+                    || E'                                and b.applies = ''only'' and b.budget_cents is distinct from (p ->> ''amount'')::numeric)) then\n';
+  src text;
+  def text;
+begin
+  select p.prosrc into src from pg_proc p where p.oid = f;
+  -- Already there: 0039 pasted again over 0040 puts back its own, without it.
+  if strpos(src, add) > 0 then
+    return;
+  end if;
+  -- 0039's line is there exactly once, or nothing changes.
+  if (length(src) - length(replace(src, at, ''))) / length(at) <> 1 then
+    raise exception 'could not change _ai_app_proposal: it is not as 0039 left it';
+  end if;
+  def := pg_get_functiondef(f);
+  if strpos(def, '$function$' || src || '$function$') = 0 then
+    raise exception 'could not change _ai_app_proposal';
+  end if;
+  execute replace(def, '$function$' || src || '$function$', '$function$' || replace(src, at, add) || '$function$');
+end $$;
+
+-- ---------------------------------------------------------------------------
 -- Which AI-app updates are in
 -- ---------------------------------------------------------------------------
 create or replace function public.ai_app_updates_in()
@@ -173,7 +216,9 @@ as $$
     (40, 'public.ai_app_add_candidate(uuid, date, bigint, text, integer, text, integer, text)', '(0040)'),
     -- 0039 pasted again puts back its own words check: 0040 is not in.
     (40, 'public._ai_app_words_shown(text, integer)', '(0040)'),
-    (40, 'public._ai_app_shown_shop(text)', '(0040)')
+    (40, 'public._ai_app_shown_shop(text)', '(0040)'),
+    -- And its own same_as_now test, which 0039 pasted again puts back.
+    (40, 'public._ai_app_proposal(uuid, date, jsonb)', '(0040)')
   ), missing(n) as (
     select m.n from mark m
      where coalesce(strpos((select p.prosrc from pg_catalog.pg_proc p where p.oid = to_regprocedure(m.fn)), m.word), 0) = 0
