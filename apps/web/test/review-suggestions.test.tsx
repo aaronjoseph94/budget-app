@@ -421,10 +421,32 @@ describe('Approve these N', () => {
     fireEvent.change(await picker('ADVENTURE WORKS REFUND'), { target: { value: 'c1' } })
     fireEvent.click(await screen.findByRole('button', { name: 'Approve these 3' }))
     fireEvent.click(screen.getByRole('button', { name: 'Approve all 3' }))
-    expect(await screen.findByText(/^1 of 3 were filed, then this:/)).toBeTruthy()
+    expect(await screen.findByText(/^1 of 3 were filed; the other 2 were not: This needs a one-time update\. \(code PGRST202\)$/)).toBeTruthy()
     expect(approvals(fake).map((a) => a['p_candidate'])).toEqual(['p1', 'p2'])
     expect(screen.queryByText('CORNER MARKET #12')).toBeNull()
     expect(screen.getByText('SQ *LITWARE COFFEE')).toBeTruthy()
+  })
+
+  // e2e-money-09: the refusal's "Nothing was saved" denied the ones filed.
+  it('never says nothing was saved after some were filed', async () => {
+    const fake = twoReady()
+    // The first approval is answered, and then the rows are no longer there.
+    Object.defineProperty(fake.rpcReplies, 'approve_candidate', {
+      configurable: true,
+      enumerable: true,
+      get: () => {
+        fake.fail('rpc/approve_candidate', '42501')
+        return 'approved'
+      },
+    })
+    renderScreen(<ReviewScreen />, fake)
+    fireEvent.change(await picker('ADVENTURE WORKS REFUND'), { target: { value: 'c1' } })
+    fireEvent.click(await screen.findByRole('button', { name: 'Approve these 3' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Approve all 3' }))
+    const said = await screen.findByText(/^1 of 3 were filed; the other 2 were not: That category, account or line is no longer there/)
+    expect(said.textContent).not.toMatch(/nothing was saved/i)
+    expect(said.textContent).toMatch(/\(code 42501\)$/)
+    expect(fake.tables.ingest_candidates.filter((r) => r.status === 'approved').map((r) => r.id)).toEqual(['p1'])
   })
 
   it('is not offered for a single row', async () => {

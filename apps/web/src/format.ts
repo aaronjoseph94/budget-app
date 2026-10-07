@@ -148,6 +148,19 @@ export function describeWriteFailure(error: WriteError | null | undefined): stri
   return code === '' ? body : `${body} (code ${code})`
 }
 
+/**
+ * A refusal's sentence for a batch that saved some before it stopped: its
+ * "nothing was saved" would deny those, so it goes (e2e-money-09). The
+ * caller says how many went in.
+ */
+export function afterSomeSaved(sentence: string): string {
+  return sentence
+    .replace(/^Something went wrong and nothing was saved\./, 'Something went wrong.')
+    .replace(/,? so nothing was (saved|added)\./g, '.')
+    .replace(/ — nothing was saved\./g, '.')
+    .replace(/ Nothing was saved\./g, '')
+}
+
 /** What Setup was doing when a write failed. */
 export type SetupAction = 'add' | 'rename' | 'move' | 'reorder' | 'remove'
 

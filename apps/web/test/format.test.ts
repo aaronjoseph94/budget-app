@@ -3,6 +3,7 @@ import {
   describeBalanceFailure,
   describeBudgetFailure,
   describeFailure,
+  describeIngestFailure,
   describePlanFailure,
   describeScheduleFailure,
   describeReason,
@@ -19,6 +20,7 @@ import {
   formatMagnitude,
   formatMinutes,
   formatWholeDollars,
+  afterSomeSaved,
   formatMonthTitle,
   formatMonthName,
   formatDayMonth,
@@ -128,6 +130,26 @@ describe('describeWriteFailure', () => {
 
   it('says something useful about a code it does not know', () => {
     expect(describeWriteFailure({ code: 'XX999' })).toBe('Something went wrong and nothing was saved. (code XX999)')
+  })
+})
+
+// e2e-money-09: "5 of 20 were filed, then this: … Nothing was saved."
+describe('afterSomeSaved', () => {
+  it('takes "nothing was saved" from every refusal, for a batch that saved some first', () => {
+    const codes = ['23505', '23514', '23503', '23502', '22001', '42501', '28000', 'PGRST301', '', 'PGRST202', '42P01', 'XX999']
+    for (const code of codes) {
+      for (const message of [describeWriteFailure({ code }), describeIngestFailure({ code })]) {
+        const said = afterSomeSaved(message)
+        expect(said, message).not.toMatch(/nothing was (saved|added)/i)
+        expect(said, message).toMatch(/[.)]$/)
+        expect(said).toContain(code === '' ? 'Could not reach the database' : `(code ${code})`)
+      }
+    }
+    expect(afterSomeSaved(describeIngestFailure({ code: '42501' }))).toBe(
+      'That category, account or line is no longer there — it may have changed on another device. Reload this screen and try again; if it keeps happening, sign out and back in. (code 42501)',
+    )
+    expect(afterSomeSaved(describeWriteFailure({ code: 'PGRST301' }))).toBe('Your session expired. Sign in again and retry. (code PGRST301)')
+    expect(afterSomeSaved(describeWriteFailure({ code: 'XX999' }))).toBe('Something went wrong. (code XX999)')
   })
 })
 

@@ -15,7 +15,7 @@ import {
   type PendingCandidate,
   type UnreadablePage,
 } from '../ledger.js'
-import { describeReason, formatCents, formatIsoDate, localDateOf } from '../format.js'
+import { afterSomeSaved, describeReason, formatCents, formatIsoDate, localDateOf } from '../format.js'
 import { IngestedText } from '../ui.js'
 import { atEndOf, CategoryOptions, ListSelect, NEW_CATEGORY, type CategoryKind } from '../lists.js'
 import { Card } from '../components/ui/card.js'
@@ -280,7 +280,9 @@ export function ReviewScreen() {
       }
       setNote(`Filed ${done}. Future charges from these shops will be filed the same way automatically.`)
     } catch (cause) {
-      setError(`${done} of ${list.length} were filed, then this: ${cause instanceof Error ? cause.message : 'That did not work.'}`)
+      const why = cause instanceof Error ? cause.message : 'That did not work.'
+      // Those filed were saved: never "nothing was saved" after them (e2e-money-09).
+      setError(done === 0 ? `0 of ${list.length} were filed, then this: ${why}` : `${done} of ${list.length} were filed; the other ${list.length - done} were not: ${afterSomeSaved(why)}`)
     } finally {
       setBusy(null)
       setConfirming(false)
