@@ -186,10 +186,11 @@ export function Shell() {
           </div>
         </div>
 
-        {/* Phones: a bottom tab bar within thumb reach, clear of the home indicator. */}
+        {/* Phones: a bottom tab bar within thumb reach, clear of the home indicator.
+            Opaque: at 90% the screen beneath took its labels under 4.5:1. */}
         <nav
           aria-label="Screens"
-          className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t bg-background/90 backdrop-blur md:hidden print:hidden"
+          className="safe-bottom fixed inset-x-0 bottom-0 z-20 border-t bg-background md:hidden print:hidden"
         >
           <div className="mx-auto grid max-w-md grid-cols-5">
             {PHONE_TABS.map((t) => {

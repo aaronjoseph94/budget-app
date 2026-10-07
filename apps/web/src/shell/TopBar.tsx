@@ -29,7 +29,7 @@ export function TopBar({
   // 44px on a touch screen (plan §9); a mouse keeps the mockup's 36 and 40.
   const tall = 'pointer-coarse:min-h-11 pointer-coarse:min-w-11'
   return (
-    <header className="safe-top sticky top-0 z-10 hidden min-h-16 items-center gap-3.5 border-b bg-background/85 px-5 backdrop-blur md:flex md:rounded-t-xl print:hidden">
+    <header className="safe-top sticky top-0 z-10 hidden min-h-16 items-center gap-3.5 border-b bg-background px-5 md:flex md:rounded-t-xl print:hidden">
       <button
         type="button"
         aria-label="Toggle sidebar"
