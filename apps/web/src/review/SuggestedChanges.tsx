@@ -62,6 +62,7 @@ const DONE = {
   gone: 'That suggestion was already decided, replaced or expired, so nothing was changed.',
   applied_unmarked:
     'Your budget shows the change, but the suggestion stopped waiting just before (decided elsewhere, replaced or expired), so look over any newer card.',
+  applied_mark_failed: 'Your budget shows the change, but the suggestion could not be marked applied, so its card may stay as “Already so”: press Clear.',
 } as const
 
 /**
@@ -133,6 +134,7 @@ export function SuggestedChanges() {
     setNote(null)
     setError(null)
     let applied = 0
+    let unmarked = 0
     let problem: string | null = null
     // One at a time, oldest first; one stale, gone or refused is not
     // applied and the rest go on. A change made whose mark was refused was
@@ -140,13 +142,14 @@ export function SuggestedChanges() {
     for (const { s } of all) {
       try {
         const done = await applySuggestion(supabase, userId, s, today)
-        if (done === 'applied' || done === 'applied_unmarked') applied += 1
+        if (done === 'applied' || done === 'applied_unmarked' || done === 'applied_mark_failed') applied += 1
         else if (done === 'gone') problem ??= DONE.gone
+        if (done === 'applied_mark_failed') unmarked += 1
       } catch (cause) {
         problem ??= cause instanceof Error ? cause.message : 'That did not work.'
       }
     }
-    setNote(`Applied ${applied} of ${all.length}.`)
+    setNote(`Applied ${applied} of ${all.length}.${unmarked === 0 ? '' : ` ${unmarked} could not be marked applied, so ${unmarked === 1 ? 'its card may stay' : 'their cards may stay'} as “Already so”: press Clear.`}`)
     if (applied < all.length) setError(`${all.length - applied} not applied${problem === null ? ': each card still waiting says why.' : `. ${problem}`}`)
     setBusy(null)
     setConfirming(false)

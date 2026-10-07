@@ -11,9 +11,10 @@
  * an AI app's token cannot call). A write the database refuses leaves the
  * suggestion waiting, in the screen's own words. A mark refused after a
  * good write (the suggestion stopped waiting in between) is said, never
- * hidden; a mark lost on the network leaves a card that reads "Already
- * so" next time. Every write here is idempotent, so nothing is ever
- * applied twice.
+ * hidden; a mark that fails (the network, an expired sign-in) is said as
+ * a change made, never "nothing was saved", and leaves a card that reads
+ * "Already so" next time. Every write here is idempotent, so nothing is
+ * ever applied twice.
  */
 import type { StoredSuggestion } from '@budget/schema'
 import { describeWriteFailure } from '../format.js'
@@ -49,9 +50,10 @@ export const dismissSuggestion = (supabase: SupabaseClient, id: string) => decid
  * suggested, so nothing was written. already: it is already so. gone: the
  * suggestion no longer waits as the card read it, so nothing was written.
  * applied_unmarked: made, but the suggestion stopped waiting in between,
- * so it could not be marked applied.
+ * so it could not be marked applied. applied_mark_failed: made, but the
+ * mark itself failed, so the suggestion still waits.
  */
-export type Applied = 'applied' | 'stale' | 'already' | 'gone' | 'applied_unmarked'
+export type Applied = 'applied' | 'stale' | 'already' | 'gone' | 'applied_unmarked' | 'applied_mark_failed'
 
 /** JSON with every object's keys in one order, to compare two values of one shape. */
 const canonical = (value: unknown) =>
@@ -123,5 +125,10 @@ export async function applySuggestion(supabase: SupabaseClient, userId: string, 
   const state = stateOf(s, currentOf(s, sources), today)
   if (state === 'already' || state === 'stale') return state
   await write(supabase, userId, s, sources, categories)
-  return (await decideSuggestion(supabase, s.id, 'applied')) ? 'applied' : 'applied_unmarked'
+  try {
+    return (await decideSuggestion(supabase, s.id, 'applied')) ? 'applied' : 'applied_unmarked'
+  } catch {
+    // The change is made; only its mark is missing (skills-05).
+    return 'applied_mark_failed'
+  }
 }

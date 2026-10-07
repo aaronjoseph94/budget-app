@@ -134,6 +134,15 @@ describe('Apply', () => {
     expect(marked(fake)).toEqual(['dismissed'])
   })
 
+  // skills-05: a mark refused after a good write threw "nothing was saved".
+  it('says the change was made when its mark is refused after the write', async () => {
+    const { fake, apply } = setup('set_weekly_limit', { category_id: FOOD }, { cents: 12000 }, { cents: 10000 })
+    fake.fail('rpc/decide_suggestion', 'PGRST301')
+    expect(await apply()).toBe('applied_mark_failed')
+    expect(fake.tables.categories.find((c) => c.id === FOOD)?.weekly_budget_cents).toBe(12000)
+    expect(marked(fake)).toEqual(['pending'])
+  })
+
   it('leaves it waiting when the write is refused, in the screen’s own words', async () => {
     const { fake, apply } = setup('set_bill', { category_id: RENT, month: '2026-11-01' }, { cents: 155000, due_day: 3 }, { cents: 150000, due_day: 1 })
     fake.fail('POST category_plans', '23514')

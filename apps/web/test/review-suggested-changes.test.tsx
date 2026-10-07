@@ -73,6 +73,24 @@ describe('Suggested changes', () => {
     expect(fake.tables.ai_app_proposals[0]?.['status']).toBe('dismissed')
   })
 
+  // skills-05: a mark refused after a good write said "nothing was saved"
+  // and kept offering Apply, with the change already made.
+  it('says the change was made when it could not be marked, and draws the card again', async () => {
+    const fake = seeded([row('set_weekly_limit', { category_id: FOOD }, { cents: 12000 }, { cents: 10000 })])
+    renderScreen(<ReviewScreen />, fake)
+    await screen.findByRole('button', { name: 'Apply' })
+    const weekly = await card(/weekly budget/)
+    fake.fail('rpc/decide_suggestion', 'PGRST301')
+    fireEvent.click(weekly.getByRole('button', { name: 'Apply' }))
+    expect(await screen.findByText(/Your budget shows the change, but the suggestion could not be marked applied/)).toBeTruthy()
+    expect(screen.queryByText(/nothing was saved/)).toBeNull()
+    expect(fake.tables.categories[0]?.weekly_budget_cents).toBe(12000)
+    // Read again, it is already so: Clear, never Apply.
+    const again = await card(/Already so\./)
+    expect(again.getByRole('button', { name: 'Clear' })).toBeTruthy()
+    expect(again.queryByRole('button', { name: 'Apply' })).toBeNull()
+  })
+
   // skills-04: Dismiss said "Dismissed" of one applied on another device.
   it('says when the one dismissed was already decided elsewhere', async () => {
     const fake = seeded([row('set_weekly_limit', { category_id: FOOD }, { cents: 12000 }, { cents: 10000 })])
@@ -171,6 +189,17 @@ describe('Apply all', () => {
     expect(await screen.findByText('Applied 0 of 2.')).toBeTruthy()
     expect(screen.getByText(/2 not applied\./)).toBeTruthy()
     expect(fake.tables.ai_app_proposals.map((r) => r['status'])).toEqual(['pending', 'pending', 'pending'])
+  })
+
+  it('counts one made but not marked as applied, and says its card waits for Clear', async () => {
+    const fake = three()
+    fake.fail('rpc/decide_suggestion', 'PGRST301')
+    renderScreen(<ReviewScreen />, fake)
+    fireEvent.click(await screen.findByRole('button', { name: 'Apply all 2' }))
+    fireEvent.click(within(screen.getByRole('group', { name: 'Apply 2 suggested changes?' })).getByRole('button', { name: 'Apply all 2' }))
+    expect(await screen.findByText(/Applied 2 of 2\. 2 could not be marked applied/)).toBeTruthy()
+    expect(screen.queryByText(/nothing was saved/)).toBeNull()
+    expect(fake.tables.categories[0]).toMatchObject({ name: 'Food', weekly_budget_cents: 12000 })
   })
 
   it('is not offered for one ready card', async () => {
