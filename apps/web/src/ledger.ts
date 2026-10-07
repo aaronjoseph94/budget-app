@@ -1320,7 +1320,9 @@ export interface FundEdit {
  * owner did not retype the balance: writing core's kept figure back as typed
  * would re-date it, and a transfer dated before today that reaches the ledger
  * later would never be counted (backend-c1-01). A new goal takes its fund's
- * name, which 0004 keeps unique among goals.
+ * name, which 0004 keeps unique among goals. An edit also writes the name,
+ * and when the goal has a fund, renames that category to match, so the card
+ * title (from the category) stays with the goal.
  */
 export async function saveFund(
   supabase: SupabaseClient,
@@ -1358,8 +1360,13 @@ export async function saveFund(
             ...(target.sortOrder === undefined ? {} : { sort_order: target.sortOrder }),
             ...row,
           })
-      : await supabase.from('savings_goals').update(row).eq('id', target.goalId)
+      : await supabase.from('savings_goals').update({ ...row, name: target.name }).eq('id', target.goalId)
   if (error !== null) throw refused(describeFundFailure('save', error), error)
+  // A fund's card title is the category name (savingsFunds); keep it with the goal.
+  if (target.goalId !== null && target.categoryId !== null) {
+    const { error: catError } = await supabase.from('categories').update({ name: target.name }).eq('id', target.categoryId)
+    if (catError !== null) throw refused(describeSetupFailure('rename', catError), catError)
+  }
 }
 
 /**

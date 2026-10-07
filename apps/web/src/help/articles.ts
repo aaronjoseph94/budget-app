@@ -223,6 +223,8 @@ export const ARTICLES: readonly Article[] = [
     steps: [
       'Open **Savings** (on a phone, under **More**).',
       'Read each goal’s card: what is saved, what is left, what to save a month, and one thing to trim to get there sooner.',
+      'Press **Edit goal** to change its name, target, what is saved, or its dates.',
+      'Press **Remove** (or **Remove…** inside Edit goal) to delete a goal that has nothing saved in it; its fund stays on your Savings list.',
       'Press **Make main goal** on the goal you want the Coach and the Week to show.',
       'Press the up and down arrows on a goal to put your goals in the order you like.',
       'Press **Pause** on a goal you are putting aside, or **Mark as reached** when it is done.',
@@ -230,7 +232,7 @@ export const ARTICLES: readonly Article[] = [
     ],
     done: 'your main goal is first on Savings, and the Coach and the Week show it.',
     stuck:
-      'If the saved amount looks low, check that each move into the fund was recorded under that fund, and not as spending. Paused and reached goals are folded away under Reached and paused, at the bottom of Savings, where Resume brings one back. When your main goal has a cost an hour, a spending charge opened from the Month also says what it cost in that goal’s time.',
+      'If the saved amount looks low, check that each move into the fund was recorded under that fund, and not as spending. A goal that still holds money cannot be removed: set Saved today to 0 and save first, or pause it or mark it reached. Paused and reached goals are folded away under Reached and paused, at the bottom of Savings, where Resume brings one back. When your main goal has a cost an hour, a spending charge opened from the Month also says what it cost in that goal’s time.',
     related: ['goals', 'coach', 'comparisons', 'budgets'],
   },
   {

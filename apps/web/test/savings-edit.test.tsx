@@ -126,4 +126,41 @@ describe('SavingsScreen, setting and linking goals', () => {
     expect(await screen.findByText(/^Only a fund on your Savings list can have a savings goal\./)).toBeTruthy()
     expect(fake.tables.savings_goals[1]).toMatchObject({ target_cents: 100_000, saved_cents: 10_000 })
   })
+
+  it('renames a goal and its fund together from Edit goal', async () => {
+    const fake = seeded()
+    renderScreen(<SavingsScreen />, fake)
+    fireEvent.click(within(await card('Travel')).getByRole('button', { name: 'Edit goal' }))
+    type(/^Name$/, 'Holiday')
+    fireEvent.click(screen.getByRole('button', { name: 'Save goal' }))
+    expect(await screen.findByText("Holiday's goal is saved.")).toBeTruthy()
+    expect(fake.tables.savings_goals[1]).toMatchObject({ name: 'Holiday', target_cents: 100_000 })
+    expect(fake.tables.categories.find((c) => c.id === 'travel')).toMatchObject({ name: 'Holiday' })
+    expect(await card('Holiday')).toBeTruthy()
+  })
+
+  it('removes an empty goal from Edit goal', async () => {
+    const fake = seeded()
+    const travel = fake.tables.savings_goals[1]
+    if (travel === undefined) throw new Error('expected Travel goal')
+    fake.tables.savings_goals[1] = { ...travel, saved_cents: 0, balance_as_of: '2026-09-23' }
+    fake.tables.transactions = []
+    renderScreen(<SavingsScreen />, fake)
+    fireEvent.click(within(await card('Travel')).getByRole('button', { name: 'Edit goal' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Remove…' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Travel' }))
+    expect(await screen.findByText(/Removed Travel\. Its fund stays on your Savings list/)).toBeTruthy()
+    expect(fake.tables.savings_goals.find((g) => g.id === 'g2')).toBeUndefined()
+    expect(fake.tables.categories.find((c) => c.id === 'travel')).toMatchObject({ name: 'Travel' })
+  })
+
+  it('refuses Remove… from Edit goal when the goal still holds money', async () => {
+    const held = seeded()
+    renderScreen(<SavingsScreen />, held)
+    fireEvent.click(within(await card('Travel')).getByRole('button', { name: 'Edit goal' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Remove…' }))
+    expect(screen.getByText(/Travel holds \$150\.00, so removing it would lose the record/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Remove Travel' })).toBeNull()
+    expect(held.tables.savings_goals[1]).toMatchObject({ id: 'g2' })
+  })
 })
