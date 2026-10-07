@@ -17,7 +17,7 @@ import type { Tone } from './templates.js'
 type Tones = Readonly<Record<Tone, string>>
 
 /** The headline, by which changes there are; U is the largest rise, D the largest fall, S Spent and V Saved. */
-export const REPORT_HEADLINES: Readonly<Record<'both' | 'up' | 'down' | 'compared' | 'compared_so_far' | 'plain', Tones>> = {
+export const REPORT_HEADLINES: Readonly<Record<'both' | 'up' | 'down' | 'compared' | 'compared_so_far' | 'same' | 'same_so_far' | 'plain', Tones>> = {
   both: {
     cheerleader: 'A win on {{D.name}}: {{D.change}} than usual. Keep an eye on {{U.name}}: {{U.change}} than usual.',
     straight: 'Biggest changes: {{U.name}}, {{U.change}} than usual, and {{D.name}}, {{D.change}} than usual.',
@@ -37,6 +37,16 @@ export const REPORT_HEADLINES: Readonly<Record<'both' | 'up' | 'down' | 'compare
   compared_so_far: {
     cheerleader: 'So far you’ve spent {{S.change}} than by this day in {{S.last_month}}.',
     straight: 'So far: spent {{S.change}} than by this day in {{S.last_month}}.',
+  },
+  // Under $1.00 either way is the same (F26), and "about the same than"
+  // is not English (e2e-money-08).
+  same: {
+    cheerleader: 'You spent about the same as in {{S.last_month}}.',
+    straight: 'Spent about the same as in {{S.last_month}}.',
+  },
+  same_so_far: {
+    cheerleader: 'So far you’ve spent about the same as by this day in {{S.last_month}}.',
+    straight: 'So far: spent about the same as by this day in {{S.last_month}}.',
   },
   plain: {
     cheerleader: 'You spent {{S.now}} and saved {{V.now}}.',
@@ -62,6 +72,10 @@ export interface ReportWords {
   readonly tryThis: string
 }
 
+/** A change under $1.00 either way, which reads "about the same" (F26). */
+const isSame = (change: ReportFacts['facts'][string]['figures'][string] | undefined): boolean =>
+  change !== undefined && change.unit === 'change' && change.direction === 'same'
+
 const as = (text: string, letter: string) => text.replaceAll('{{X.', `{{${letter}.`)
 
 /** One point, in the same words in either tone: it states figures. */
@@ -70,7 +84,14 @@ function point(facts: ReportFacts, letter: string): string {
   const has = (slot: string) => slot in fact.figures
   const soFar = facts.soFar
   const than = soFar ? 'than by this day in {{X.last_month}}' : 'than {{X.last_month}}'
-  const compare = has('change') ? ` That is {{X.change}} ${than}.` : ''
+  // Under $1.00 either way is the same (F26): "about the same as", never
+  // "about the same than" (e2e-money-08).
+  const same = isSame(fact.figures['change'])
+  const compare = !has('change')
+    ? ''
+    : same
+      ? ` That is about the same as ${soFar ? 'by this day in ' : ''}{{X.last_month}}.`
+      : ` That is {{X.change}} ${than}.`
   const usual = has('usual') ? ' Your usual month: {{X.usual}}.' : ''
   switch (fact.kind) {
     case 'month_spent':
@@ -90,7 +111,8 @@ export function reportWords(input: { readonly facts: ReportFacts; readonly tone:
   const { facts, tone } = input
   const { up, down } = facts
   const spent = facts.facts['A']!
-  const key = up !== null && down !== null ? 'both' : up !== null ? 'up' : down !== null ? 'down' : 'change' in spent.figures ? (facts.soFar ? 'compared_so_far' : 'compared') : 'plain'
+  const compared = isSame(spent.figures['change']) ? 'same' : 'compared'
+  const key = up !== null && down !== null ? 'both' : up !== null ? 'up' : down !== null ? 'down' : 'change' in spent.figures ? (facts.soFar ? (`${compared}_so_far` as const) : compared) : 'plain'
   // In one pass, so a letter put in for one name is never taken for another.
   const letters: Readonly<Record<string, string>> = { U: up ?? 'U', D: down ?? 'D', S: 'A', V: 'B' }
   const headline = REPORT_HEADLINES[key][tone].replace(/\{\{([UDSV])\./g, (_, name: string) => `{{${letters[name]!}.`)

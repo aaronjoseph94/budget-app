@@ -33,6 +33,37 @@ describe('reportWords', () => {
     expect(words.tryThis).toBe('Next month, try a weekly limit for {{D.name}} close to its usual, and check it each Sunday.')
   })
 
+  // e2e-money-08: under $1.00 either way is the same (F26), and the point
+  // read "about the same than by this day in September".
+  it('says a change too small to count is "about the same as", never "the same than"', () => {
+    const facts = ALL[0]!
+    const A = facts.facts['A']!
+    const change = A.figures['change']!
+    const same: ReportFacts = { ...facts, facts: { ...facts.facts, A: { ...A, figures: { ...A.figures, change: { ...change, direction: 'same' } as typeof change } } } }
+    expect(reportWords({ facts: same, tone: 'straight' }).points[0]).toEqual({
+      fact: 'A',
+      text: 'Spent {{A.now}}. That is about the same as {{A.last_month}}. Your usual month: {{A.usual}}.',
+    })
+    expect(reportWords({ facts: { ...same, soFar: true }, tone: 'straight' }).points[0]?.text).toBe(
+      'Spent so far {{A.now}}. That is about the same as by this day in {{A.last_month}}. Your usual month: {{A.usual}}.',
+    )
+    // The headline of a month with no shop moving says it too.
+    const quiet: ReportFacts = { ...same, up: null, down: null }
+    expect(reportWords({ facts: quiet, tone: 'straight' }).headline).toBe('Spent about the same as in {{A.last_month}}.')
+    expect(reportWords({ facts: { ...quiet, soFar: true }, tone: 'cheerleader' }).headline).toBe(
+      'So far you’ve spent about the same as by this day in {{A.last_month}}.',
+    )
+    for (const tone of TONES) {
+      for (const soFar of [false, true]) {
+        const words = reportWords({ facts: { ...quiet, soFar }, tone })
+        for (const text of [words.headline, ...words.points.map((p) => p.text)]) {
+          expect(text).not.toMatch(/same than/)
+          expect(proseProblem(text, 200), text).toBeNull()
+        }
+      }
+    }
+  })
+
   it('heads a month with no biggest change by what was spent', () => {
     expect(reportWords({ facts: ALL[2]!, tone: 'straight' }).headline).toBe('Spent {{A.now}}. Saved {{B.now}}.')
     expect(reportWords({ facts: ALL[2]!, tone: 'straight' }).tryThis).toBe('Next month: move your savings on payday, before you spend.')
