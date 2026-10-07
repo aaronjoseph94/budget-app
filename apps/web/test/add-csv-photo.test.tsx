@@ -33,7 +33,7 @@ describe('AddScreen, a CSV statement', () => {
     await screen.findByText('Choose a statement')
     pick('Choose a statement', new File([CSV], 'statement.csv', { type: 'text/csv' }))
 
-    expect(await screen.findByText('1 rows would not be imported')).toBeTruthy()
+    expect(await screen.findByText('1 row would not be imported')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Send 2 to the review queue' }))
 
     expect(await screen.findByText('2 waiting for review, 1 could not be read.')).toBeTruthy()

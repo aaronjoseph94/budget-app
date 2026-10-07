@@ -1,4 +1,5 @@
-import { DATE_FORMATS, type ColumnProfile, type DateFormat } from '@budget/statement-parsers'
+import { useMemo, type ReactNode } from 'react'
+import { DATE_FORMATS, looksLikeText, type ColumnProfile, type DateFormat } from '@budget/statement-parsers'
 import { useCsvMapping } from './csv-mapping.js'
 import type { ImportRequest } from './ledger.js'
 import { IngestedText, Label, Stat } from './ui.js'
@@ -31,6 +32,10 @@ export interface ImportScreenProps {
 export function ImportScreen({ fileName, text, onReset, onSave, saving = false, outcome = null }: ImportScreenProps) {
   const mapping = useCsvMapping(text)
   const { clear, result, summary } = mapping
+  // Nothing to map in bytes that are not text, or a file with no rows: say
+  // so, never columns of noise or none (e2e-money-10).
+  const notText = useMemo(() => !looksLikeText(text), [text])
+  const noRows = result !== null && result.parsed === 0
 
   const reset = () => {
     clear()
@@ -49,17 +54,43 @@ export function ImportScreen({ fileName, text, onReset, onSave, saving = false, 
         </Button>
       </div>
 
-      <ColumnMapping mapping={mapping} />
-
-      {result !== null && summary !== null ? (
+      {notText ? (
+        <NotAStatement title="This is not a text CSV">
+          It may be a spreadsheet, a PDF or a picture with a .csv name. Download the statement from your bank as CSV again, or
+          save it as CSV from your spreadsheet app, then choose it here.
+        </NotAStatement>
+      ) : noRows ? (
+        <NotAStatement title="This file has no transactions">
+          It is empty, or has only a heading row. Download the statement again for dates with charges in them, then choose it here.
+        </NotAStatement>
+      ) : (
         <>
-          <ReadRows result={result} summary={summary} />
-          <SaveFooter result={result} onSave={onSave} saving={saving} outcome={outcome} />
+          <ColumnMapping mapping={mapping} />
+
+          {result !== null && summary !== null ? (
+            <>
+              <ReadRows result={result} summary={summary} />
+              <SaveFooter result={result} onSave={onSave} saving={saving} outcome={outcome} />
+            </>
+          ) : null}
         </>
-      ) : null}
+      )}
     </div>
   )
 }
+
+/** A file with nothing to import, and why, in place of the mapping. */
+function NotAStatement({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <Card className="border-spend/40 p-4">
+      <Label>{title}</Label>
+      <p className="mt-2 text-sm">{children}</p>
+    </Card>
+  )
+}
+
+/** "1 row", "2 rows". */
+const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
 type Mapping = ReturnType<typeof useCsvMapping>
 
@@ -78,7 +109,7 @@ function ReadRows({ result, summary }: { result: NonNullable<Mapping['result']>;
 
       {result.rejected.length > 0 ? (
         <Card className="p-4">
-          <Label>{result.rejected.length} rows would not be imported</Label>
+          <Label>{count(result.rejected.length, 'row', 'rows')} would not be imported</Label>
           <ul className="mt-3 space-y-2">
             {result.rejected.map((r) => (
               <li key={r.line} className="flex gap-3 text-sm">
@@ -92,7 +123,7 @@ function ReadRows({ result, summary }: { result: NonNullable<Mapping['result']>;
 
       <Card className="overflow-hidden">
         <div className="border-b border-border px-4 py-3">
-          <Label>{result.accepted.length} transactions</Label>
+          <Label>{count(result.accepted.length, 'transaction', 'transactions')}</Label>
         </div>
         <ul className="divide-y divide-border">
           {result.accepted.map((row) => (
@@ -158,7 +189,7 @@ function SaveFooter({
           {saving
             ? 'Saving…'
             : result.accepted.length === 0
-              ? `Record ${result.rejected.length} unreadable rows`
+              ? `Record ${count(result.rejected.length, 'unreadable row', 'unreadable rows')}`
               : `Send ${result.accepted.length} to the review queue`}
         </Button>
         {outcome !== null ? (
@@ -176,8 +207,8 @@ function SaveFooter({
       </div>
 
       <p className="text-center text-xs text-muted-foreground">
-        {result.parsed} rows read · {result.accepted.length} readable ·{' '}
-        {result.rejected.length} not · {result.blankSkipped} blank lines skipped
+        {count(result.parsed, 'row', 'rows')} read · {result.accepted.length} readable · {result.rejected.length} not ·{' '}
+        {count(result.blankSkipped, 'blank line', 'blank lines')} skipped
       </p>
     </>
   )

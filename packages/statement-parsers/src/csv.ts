@@ -29,6 +29,27 @@ const BOM = '﻿'
 export const MAX_ROWS = 1_000_000
 export const MAX_FIELD_CHARS = 64 * 1024
 
+/** How much of a file is read to tell text from bytes that are not. */
+const TEXT_SAMPLE = 8192
+
+/**
+ * Whether a file read as UTF-8 is text at all (e2e-money-10). Random bytes,
+ * a spreadsheet's zip, a picture or a UTF-16 export with a .csv name decode
+ * to replacement characters and control characters by the dozen; a
+ * statement holds none but tab, line feed and carriage return. One NUL in
+ * a field, or a Latin-1 accent read wrong, leaves a file text: that row is
+ * refused on its own, so one in ten is the line.
+ */
+export function looksLikeText(text: string): boolean {
+  const sample = text.slice(0, TEXT_SAMPLE)
+  let odd = 0
+  for (let i = 0; i < sample.length; i++) {
+    const c = sample.charCodeAt(i)
+    if ((c < 0x20 && c !== 0x09 && c !== 0x0a && c !== 0x0d) || c === 0xfffd) odd += 1
+  }
+  return odd * 10 <= sample.length
+}
+
 /**
  * Why a whole file could not be read.
  *

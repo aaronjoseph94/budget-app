@@ -30,6 +30,7 @@ export {
   MAX_FIELD_CHARS,
   MAX_ROWS,
   isBlankRow,
+  looksLikeText,
   tokenizeCsv,
   type CsvFailure,
   type CsvOptions,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isBlankRow, tokenizeCsv, type CsvRow } from '../src/index.js'
+import { isBlankRow, looksLikeText, tokenizeCsv, type CsvRow } from '../src/index.js'
 
 /**
  * Cases enumerated before this tokenizer was written, by six independent
@@ -269,5 +269,28 @@ describe('encoding and delimiters', () => {
   it('reports the line each record started on', () => {
     const out = tokenizeCsv('h1,h2\na,b\nc,d', COMMA)
     expect(out.ok && out.rows.map((r) => r.line)).toEqual([1, 2, 3])
+  })
+})
+
+// e2e-money-10: random bytes named .csv were offered as columns of noise.
+describe('looksLikeText', () => {
+  const decoded = (bytes: readonly number[]) => new TextDecoder().decode(new Uint8Array(bytes))
+
+  it('says random bytes, a zip or a UTF-16 file is not text', () => {
+    // Every byte value in a fixed scramble, as random bytes have.
+    expect(looksLikeText(decoded(Array.from({ length: 400 }, (_, i) => (i * 167 + 13) % 256)))).toBe(false)
+    // A spreadsheet's zip, or a picture, renamed .csv: a short header, then binary.
+    expect(looksLikeText(`PK\u0003\u0004${decoded(Array.from({ length: 300 }, (_, i) => (i * 89 + 7) % 256))}`)).toBe(false)
+    // Excel's "Unicode text" is UTF-16: a NUL beside every letter.
+    expect(looksLikeText(decoded([0xff, 0xfe, ...[...'Date,Amount\n'].flatMap((c) => [c.charCodeAt(0), 0])]))).toBe(false)
+  })
+
+  it('keeps a statement text with a stray NUL, an accent read wrong or nothing at all', () => {
+    // A NUL inside a field is that row's to refuse, not the file's.
+    expect(looksLikeText('Date,Description,Amount\n2026-09-20,"X\u0000Y",-4.50\n2026-09-21,CORNER MARKET,-12.00\n')).toBe(true)
+    // A Latin-1 export read as UTF-8: CAFÉ's É is one replacement character.
+    expect(looksLikeText(`Date,Description,Amount\n2026-09-20,${decoded([0x43, 0x41, 0x46, 0xc9])} ROYAL,-4.50\n`)).toBe(true)
+    expect(looksLikeText('Date\tDescription\tAmount\r\n')).toBe(true)
+    expect(looksLikeText('')).toBe(true)
   })
 })
