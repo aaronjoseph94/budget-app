@@ -69,6 +69,22 @@ describe('SettingsScreen, adding a category', () => {
     await waitFor(() => expect(fake.tables.categories).toMatchObject([{ name: 'Rent', kind: 'bill', sort_order: 0 }]))
     await expectNoAxeViolations()
   })
+
+  // e2e-setup-07: the refusal stayed on screen after the next add went in.
+  it('takes away why the last add was refused once another goes in', async () => {
+    const fake = createFakeSupabase({ categories: [{ id: 'c1', name: 'Rent', kind: 'bill', sort_order: 0, weekly_budget_cents: null }] })
+    renderScreen(<SettingsScreen />, fake)
+
+    const name = await screen.findByPlaceholderText('New category')
+    fireEvent.change(name, { target: { value: 'Rent' } })
+    fireEvent.click(screen.getByRole('button', { name: /Add/ }))
+    expect((await screen.findByRole('alert')).textContent).toMatch(/You already have “Rent” in Bills/)
+
+    fireEvent.change(name, { target: { value: 'Pet food' } })
+    fireEvent.click(screen.getByRole('button', { name: /Add/ }))
+    await waitFor(() => expect(fake.tables.categories.map((c) => c.name)).toEqual(['Rent', 'Pet food']))
+    await waitFor(() => expect(screen.queryByText(/You already have/)).toBeNull())
+  })
 })
 
 describe('SettingsScreen, weekly budgets', () => {
