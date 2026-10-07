@@ -97,11 +97,16 @@ declare
   at  constant text := E'     or p_words ~ ''[\\u00AD\\u061C\\u180E\\u200B-\\u200F\\u2060-\\u2065\\uFEFF]'' -- drawn as nothing (0034)\n';
   add constant text := E'     or p_words ~ ''[\\u00AD\\u034F\\u061C\\u115F-\\u1160\\u17B4-\\u17B5\\u180B-\\u180F\\u200B-\\u200F\\u202A-\\u202E\\u2060-\\u206F\\u3164\\uFE00-\\uFE0F\\uFEFF\\uFFA0\\uFFF0-\\uFFF8\\U0001BCA0-\\U0001BCA3\\U0001D173-\\U0001D17A\\U000E0000-\\U000E0FFF]'' -- drawn as nothing, as Unicode lists them (0040)\n'
                     || E'     or p_words ~ ''^[ \\u00A0\\u1680\\u2000-\\u200A\\u202F\\u205F\\u3000]|[ \\u00A0\\u1680\\u2000-\\u200A\\u202F\\u205F\\u3000]$'' -- a space of any kind at either end (0040)\n';
+  raw text;
   src text;
   new text;
   def text;
 begin
-  select p.prosrc into src from pg_proc p where p.oid = f;
+  -- A body pasted from a Windows clipboard keeps its line ends as CR LF;
+  -- the lines are matched without the CR, and the body is written back
+  -- without it (it means nothing to plpgsql).
+  select p.prosrc into raw from pg_proc p where p.oid = f;
+  src := replace(raw, E'\r', '');
   -- Already there: 0039 pasted again over 0040 leaves the add as it was.
   if strpos(src, add) > 0 then
     return;
@@ -112,10 +117,10 @@ begin
   end if;
   new := replace(src, at, at || add);
   def := pg_get_functiondef(f);
-  if strpos(def, '$function$' || src || '$function$') = 0 then
+  if strpos(def, '$function$' || raw || '$function$') = 0 then
     raise exception 'could not change ai_app_add_candidate';
   end if;
-  execute replace(def, '$function$' || src || '$function$', '$function$' || new || '$function$');
+  execute replace(def, '$function$' || raw || '$function$', '$function$' || new || '$function$');
 end $$;
 
 -- ---------------------------------------------------------------------------
@@ -170,10 +175,13 @@ declare
                     || E'                 and exists (select 1 from public.category_budgets b\n'
                     || E'                              where b.user_id = p_user and b.category_id = v_cat.id and b.month = v_month\n'
                     || E'                                and b.applies = ''only'' and b.budget_cents is distinct from (p ->> ''amount'')::numeric)) then\n';
+  raw text;
   src text;
   def text;
 begin
-  select p.prosrc into src from pg_proc p where p.oid = f;
+  -- As above: CR LF line ends from a Windows paste are matched without the CR.
+  select p.prosrc into raw from pg_proc p where p.oid = f;
+  src := replace(raw, E'\r', '');
   -- Already there: 0039 pasted again over 0040 puts back its own, without it.
   if strpos(src, add) > 0 then
     return;
@@ -183,10 +191,10 @@ begin
     raise exception 'could not change _ai_app_proposal: it is not as 0039 left it';
   end if;
   def := pg_get_functiondef(f);
-  if strpos(def, '$function$' || src || '$function$') = 0 then
+  if strpos(def, '$function$' || raw || '$function$') = 0 then
     raise exception 'could not change _ai_app_proposal';
   end if;
-  execute replace(def, '$function$' || src || '$function$', '$function$' || replace(src, at, add) || '$function$');
+  execute replace(def, '$function$' || raw || '$function$', '$function$' || replace(src, at, add) || '$function$');
 end $$;
 
 -- ---------------------------------------------------------------------------
