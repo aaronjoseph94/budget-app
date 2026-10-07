@@ -98,6 +98,21 @@ describe('the top bar (ADR 0011)', () => {
     expect(window.location.hash).toBe('#/help')
   })
 
+  // e2e-setup-09: Ctrl+K in Setup's name field went to Help, and the name typed was lost.
+  it('saves a field that saves when left before Ctrl+K or ⌘K leaves its screen, as pressing Search does', async () => {
+    const fake = createFakeSupabase()
+    await fake.signIn()
+    go('/setup')
+    renderScreen(<Shell />, fake, 'Sam')
+    const field = await screen.findByRole<HTMLInputElement>('textbox', { name: 'My name is' })
+    act(() => field.focus())
+    fireEvent.change(field, { target: { value: 'Typing half' } })
+    expect(fireEvent.keyDown(field, { key: 'k', ctrlKey: true })).toBe(false)
+
+    expect(await screen.findByRole('searchbox', { name: 'Search help' })).toBe(document.activeElement)
+    await vi.waitFor(() => expect(fake.user.user_metadata).toEqual({ display_name: 'Typing half' }))
+  })
+
   it('offers + Add, and shows from 768px only, where the phone bar has its own Add', async () => {
     renderScreen(<Shell />, createFakeSupabase())
     await screen.findByRole('heading', { name: 'September 2026' })

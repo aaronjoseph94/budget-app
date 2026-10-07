@@ -253,6 +253,9 @@ function openHelpSearch(): void {
  * ⌘K on a Mac, Ctrl+K elsewhere, from any screen, as the top bar's search
  * says. A Mac's Ctrl+K is left alone: in a text field it deletes to the end
  * of the line, and taking it would leave the screen and its typing.
+ * The field it is pressed in is left first, as pressing Search leaves it,
+ * so one that saves when left (a name on Setup, a weekly budget) saves what
+ * was typed rather than lose it with the screen (e2e-setup-09).
  */
 function useSearchKey(): void {
   useEffect(() => {
@@ -260,6 +263,7 @@ function useSearchKey(): void {
       const mac = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent)
       if (!(mac ? e.metaKey : e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || e.key.toLowerCase() !== 'k') return
       e.preventDefault()
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
       openHelpSearch()
     }
     window.addEventListener('keydown', onKey)
