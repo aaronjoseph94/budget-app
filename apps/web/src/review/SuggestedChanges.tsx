@@ -101,8 +101,9 @@ export function SuggestedChanges() {
     let done = false
     try {
       if (what === 'dismiss' || item.suggestion === null) {
-        await dismissSuggestion(supabase, item.id)
-        setNote('Dismissed. Nothing was changed.')
+        // False when it no longer waited: applied on another device,
+        // replaced or expired, never "Dismissed" (skills-04).
+        setNote((await dismissSuggestion(supabase, item.id)) ? 'Dismissed. Nothing was changed.' : DONE.gone)
       } else {
         setNote(DONE[await applySuggestion(supabase, userId, item.suggestion, today)])
       }

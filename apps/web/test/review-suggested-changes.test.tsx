@@ -73,6 +73,20 @@ describe('Suggested changes', () => {
     expect(fake.tables.ai_app_proposals[0]?.['status']).toBe('dismissed')
   })
 
+  // skills-04: Dismiss said "Dismissed" of one applied on another device.
+  it('says when the one dismissed was already decided elsewhere', async () => {
+    const fake = seeded([row('set_weekly_limit', { category_id: FOOD }, { cents: 12000 }, { cents: 10000 })])
+    renderScreen(<ReviewScreen />, fake)
+    const weekly = await card(/weekly budget/)
+    // Another device applies it: the change is made and the row marked applied.
+    fake.tables.categories[0] = { ...fake.tables.categories[0]!, weekly_budget_cents: 12000 }
+    fake.tables.ai_app_proposals[0] = { ...fake.tables.ai_app_proposals[0]!, status: 'applied' }
+    fireEvent.click(weekly.getByRole('button', { name: 'Dismiss' }))
+    expect(await screen.findByText(/That suggestion was already decided, replaced or expired, so nothing was changed\./)).toBeTruthy()
+    expect(screen.queryByText(/Dismissed\./)).toBeNull()
+    expect(fake.tables.ai_app_proposals[0]?.['status']).toBe('applied')
+  })
+
   it('offers only Dismiss for one that moved since, Clear for one already so, and Dismiss for one it cannot read', async () => {
     renderScreen(
       <ReviewScreen />,
