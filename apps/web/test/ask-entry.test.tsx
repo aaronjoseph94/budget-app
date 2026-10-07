@@ -115,9 +115,13 @@ describe('the last five questions', () => {
 
     fireEvent.click(kept[0]!)
     expect(await screen.findByText(sentence(DINING))).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Clear these' }))
+    // e2e-setup-06: pressed from the keyboard, focus goes to the question box, not <body>.
+    const clear = screen.getByRole('button', { name: 'Clear these' })
+    clear.focus()
+    fireEvent.click(clear)
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Your last questions' })).toBeNull())
     expect(localStorage.getItem('budget.ask.recent')).toBeNull()
+    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Your question' }))
   })
 
   it('still answers when the browser refuses to keep them', async () => {

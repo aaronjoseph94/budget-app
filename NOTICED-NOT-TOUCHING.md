@@ -3862,3 +3862,20 @@ fixes running at the same time.
 and it differs from the after, have the card say so, for example "From
 November 2026 on: $400.00 → $400.00, and November's own $250.00 →
 $400.00".
+
+---
+
+## N167 — Moving a category to another list on Setup drops focus to the page
+
+**Seen:** 2026-10-07, fixing e2e-setup-06. Setup's "Move to another list"
+picker sits on the category's row, and the row leaves its card once the
+move is saved, so focus falls to <body>, as Remove did before. Remove now
+keeps focus on the list (the next row's Remove, or the card's title);
+the move was not in the report.
+
+**Why not fixed here:** where focus should go is a choice the report did
+not make: after the row in its new card, or on the list it left.
+
+**To settle:** most likely after the row: give `ListCardView` a way to
+focus a row's picker by category id once it is drawn on its new card,
+with `useFocusWhereItWas` (lib/return-focus.ts) as the fallback.

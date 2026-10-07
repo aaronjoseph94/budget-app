@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAppData } from '../app-data.js'
 import { hashOf } from '../nav.js'
 import { formatIsoDate, localDateOf } from '../format.js'
 import { Button } from '../components/ui/button.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
+import { useFocusWhereItWas } from '../lib/return-focus.js'
 import { disconnect, readConnectedApps, type AppsRead, type ConnectedApp } from './access.js'
 
 /**
@@ -19,6 +20,13 @@ export function ConnectedApps({ on }: { on: boolean }) {
   const [asking, setAsking] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [said, setSaid] = useState('')
+  // Keep it and Yes, disconnect go as they are pressed: focus goes to that
+  // app's Disconnect, the next app's once it is gone, or the heading (e2e-setup-06).
+  const list = useRef<HTMLUListElement>(null)
+  const heading = useRef<HTMLHeadingElement>(null)
+  const apps = read?.ok === true ? read.apps : []
+  const refocus = useFocusWhereItWas(list, `${asking ?? ''} ${apps.map((a) => a.clientId).join(' ')}`, 'button[aria-expanded]', heading)
+  const settle = (app: ConnectedApp) => refocus(apps.indexOf(app))
 
   useEffect(() => {
     let live = true
@@ -29,6 +37,7 @@ export function ConnectedApps({ on }: { on: boolean }) {
   }, [supabase])
 
   const end = async (app: ConnectedApp) => {
+    settle(app)
     setBusy(true)
     const done = await disconnect(supabase, app.clientId)
     if (done) setRead(await readConnectedApps(supabase))
@@ -41,7 +50,9 @@ export function ConnectedApps({ on }: { on: boolean }) {
   if (read === null || (!on && !listed && said === '')) return null
   return (
     <div className="space-y-2 border-t pt-3">
-      <h3 className="text-base font-semibold">Connected apps</h3>
+      <h3 ref={heading} tabIndex={-1} className="text-base font-semibold outline-none">
+        Connected apps
+      </h3>
       {read.ok === false ? (
         <>
           <p className="text-sm">
@@ -63,7 +74,7 @@ export function ConnectedApps({ on }: { on: boolean }) {
       ) : read.apps.length === 0 ? (
         <p className="text-sm text-muted-foreground">None yet.</p>
       ) : (
-        <ul className="divide-y rounded-lg border">
+        <ul ref={list} className="divide-y rounded-lg border">
           {read.apps.map((app) => (
             <li key={app.clientId} className="space-y-2 px-3 py-2">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -98,7 +109,15 @@ export function ConnectedApps({ on }: { on: boolean }) {
                     <Button variant="destructive" size="tall" disabled={busy} onClick={() => void end(app)}>
                       Yes, disconnect
                     </Button>
-                    <Button variant="outline" size="tall" disabled={busy} onClick={() => setAsking(null)}>
+                    <Button
+                      variant="outline"
+                      size="tall"
+                      disabled={busy}
+                      onClick={() => {
+                        settle(app)
+                        setAsking(null)
+                      }}
+                    >
                       Keep it
                     </Button>
                   </div>

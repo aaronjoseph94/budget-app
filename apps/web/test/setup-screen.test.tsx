@@ -209,6 +209,20 @@ describe('SetupScreen, removing a category', () => {
     expect(fake.tables.categories.some((c) => c.id === 'c4')).toBe(false)
   })
 
+  // e2e-setup-06: Remove went with its row, and focus fell to <body>.
+  it('keeps focus on the list: the next row’s Remove, then the card’s heading once it is empty', async () => {
+    renderScreen(<SetupScreen />, seeded())
+    const press = (button: HTMLElement) => {
+      button.focus()
+      fireEvent.click(button)
+    }
+
+    press(await screen.findByRole('button', { name: 'Remove Phone' }))
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Remove Rent' })))
+    press(screen.getByRole('button', { name: 'Remove Rent' }))
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('heading', { level: 2, name: 'Bills' })))
+  })
+
   it('says to move its charges first when something is still filed under it', async () => {
     const fake = seeded()
     fake.tables.transactions.push({ id: 't1', posted_on: '2026-09-01', amount_cents: -160000, merchant_raw: 'LANDLORD', category_id: 'c3', source: 'typed' })

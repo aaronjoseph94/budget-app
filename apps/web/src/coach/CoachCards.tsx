@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { Fact, FactsDigest } from '@budget/core'
 import { dayLine, rankCards, type Card as CoachCard, type CardAction, type Tone } from '@budget/savings-coach'
 import { navigate } from '../nav.js'
@@ -10,6 +10,7 @@ import type { CardText, Narration, Words } from './narration.js'
 import { AiMark, CoachText } from './words.js'
 import { WhySheet } from './WhySheet.js'
 import { TryAgain } from '../try-again.js'
+import { useFocusWhereItWas } from '../lib/return-focus.js'
 
 const NOTHING_DISMISSED: ReadonlySet<string> = new Set()
 
@@ -54,10 +55,23 @@ export function CoachCards(props: {
   digest: FactsDigest | 'failed' | null
   cards: readonly CoachCard[] | null
   narration: Narration | null
-  /** Dismiss a card's cause; absent when a dismissal could not be kept (0017 missing). */
-  onDismiss: ((card: CoachCard) => void) | null
+  /** Dismiss a card's cause, answering whether it was kept; absent when a dismissal could not be kept (0017 missing). */
+  onDismiss: ((card: CoachCard) => Promise<boolean>) | null
 }) {
   const { digest, cards: all, narration, onDismiss } = props
+  // ✕ goes with its card: the next card's ✕ takes focus, else the one
+  // before, else the line saying nothing needs attention (e2e-setup-06).
+  const drawn = (all ?? []).filter((c) => c.action !== 'forecast' && narration?.cards.get(c.fact.key) !== undefined)
+  const list = useRef<HTMLUListElement>(null)
+  const quiet = useRef<HTMLParagraphElement>(null)
+  const refocus = useFocusWhereItWas(list, drawn.map((c) => c.fact.key).join(' '), 'button[aria-label="Dismiss this insight"]', quiet)
+  const dismiss = (card: CoachCard) => {
+    if (onDismiss === null) return
+    refocus(drawn.indexOf(card))
+    void onDismiss(card).then((kept) => {
+      if (!kept) refocus(null)
+    })
+  }
   if (digest === 'failed') {
     return <p className="text-sm text-muted-foreground">Your insights did not load. <TryAgain />; everything else still works.</p>
   }
@@ -67,19 +81,19 @@ export function CoachCards(props: {
   return (
     <section aria-label="Insights" className="space-y-3">
       {cards.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
+        <p ref={quiet} tabIndex={-1} className="text-sm text-muted-foreground outline-none">
           Nothing needs your attention today. The Coach speaks up when a category moves more than it usually does, or a
           budget runs close.
         </p>
       ) : (
-        <ul className="space-y-3">
+        <ul ref={list} className="space-y-3">
           {cards.flatMap((card) => {
             const text = narration.cards.get(card.fact.key)
             return text === undefined
               ? []
               : [
                   <li key={card.fact.key}>
-                    <InsightCard card={card} text={text} onDismiss={onDismiss === null ? null : () => onDismiss(card)} />
+                    <InsightCard card={card} text={text} onDismiss={onDismiss === null ? null : () => dismiss(card)} />
                   </li>,
                 ]
           })}
