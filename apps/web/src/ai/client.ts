@@ -40,6 +40,15 @@ export interface AiView {
   readonly status: AiStatusReply | null
 }
 
+/** Each service's one name on screen. */
+export const SERVICE_NAME: Readonly<Record<AiProvider, string>> = {
+  gemini: 'Google Gemini',
+  groq: 'Groq',
+  openrouter: 'OpenRouter',
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+}
+
 /** Each service as a sentence names it: "Words by AI (free Google Gemini)". */
 export const PROVIDER_NAME: Readonly<Record<AiServiceStatus['provider'], string>> = {
   gemini: 'free Google Gemini',
@@ -123,12 +132,16 @@ export async function askAi(supabase: SupabaseClient, request: AiRequest): Promi
   return { ok: false, view: viewOf(isCode(code) ? STATE_OF[code] : 'helper_error') }
 }
 
-/** The helper's answer to a run, narrowed by hand: its own code talking, not a model. The text is the model's, for a task's parser. */
-export function ranOf(data: unknown): { provider: AiProvider; model: string; text: string } | null {
+/**
+ * The helper's answer to a run, narrowed by hand: its own code talking,
+ * not a model. The text is the model's, for a task's parser. `ms` is how
+ * long the attempt took (ADR 0015), null when the reply names none.
+ */
+export function ranOf(data: unknown): { provider: AiProvider; model: string; text: string; ms: number | null } | null {
   const d = typeof data === 'object' && data !== null ? (data as Record<string, unknown>) : {}
-  const [provider, model, text] = [AiProviderSchema.safeParse(d['provider']), d['model'], d['text']]
+  const [provider, model, text, ms] = [AiProviderSchema.safeParse(d['provider']), d['model'], d['text'], d['ms']]
   if (!provider.success || typeof model !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,79}$/.test(model) || typeof text !== 'string') return null
-  return { provider: provider.data, model, text }
+  return { provider: provider.data, model, text, ms: typeof ms === 'number' && Number.isFinite(ms) && ms >= 0 ? ms : null }
 }
 
 const PROVIDERS: readonly unknown[] = AiProviderSchema.options

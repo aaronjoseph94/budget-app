@@ -56,9 +56,10 @@ do", "already exists" or similar), or, for `0030`, `0031`, `0035` and
 | `0037_ai_rows_before_the_fixes.sql` | Tidies anything an AI app added before these safety updates. It stops with "Paste 0036 first" if `0036` is not in |
 | `0038_intuit_prefix_merchants.sql` | Tidies shop names stored with Intuit's `IN*` prefix, so `IN*ACME` and `ACME` are one shop. **It permanently deletes** a learned shop where two would end up with one name (the one made or used most recently stays), so take a backup first (HANDOFF §3, steps 13 and 15). It stops with "Paste 0029 first" or "Paste 0037 first". Written as `0030` and renumbered at the merge of two lines of updates (2026-10-02) |
 | `0039_ai_apps_suggest_changes.sql` | Lets an AI app you connect suggest changes (a budget, a weekly budget, a bill, a goal, a category, a charge's category, a shop always filed somewhere), each waiting in Review under Suggested changes until you apply it; the switch Settings → Account → AI apps → Let AI apps suggest changes; 60 suggestion requests a day, at most 100 waiting, 14 days each (ADR 0013). Deletes nothing. Pasted after `0038`: it stops with "Paste 0037 first" if `0037` is not in, and "0039 is already in; nothing to do" if pasted again. Paste the `mcp` server again after it |
-| `0040_ai_words_every_character_shown.sql` | Stops an AI app adding or suggesting words with characters you cannot see (tag characters, variation selectors and the like, or an unusual space at either end), so two entries in Review that look the same always are; and lets it suggest a budget "from a month on" that puts that month's own "just this month" budget back to the usual one, which it was told was "already so" (testing of 2026-10-05). Deletes nothing. Pasted last, after `0039`: it stops with "Paste 0039 first" if `0039` is not in, and "0040 is already in; nothing to do" if pasted again. If One-time updates offers `0039` again (after `0030` or `0035` was pasted again), paste `0039`, then `0040` |
+| `0040_ai_words_every_character_shown.sql` | Stops an AI app adding or suggesting words with characters you cannot see (tag characters, variation selectors and the like, or an unusual space at either end), so two entries in Review that look the same always are; and lets it suggest a budget "from a month on" that puts that month's own "just this month" budget back to the usual one, which it was told was "already so" (testing of 2026-10-05). Deletes nothing. Pasted after `0039`: it stops with "Paste 0039 first" if `0039` is not in, and "0040 is already in; nothing to do" if pasted again. If One-time updates offers `0039` again (after `0030` or `0035` was pasted again), paste `0039`, then `0040` |
+| `0041_ai_free_order.sql` | Tries the free, quick AI services first: OpenRouter, then Groq, then Gemini, then any paid one you switch on (ADR 0015). An order you never changed follows; one you changed is left alone. Deletes nothing. Pasted last, after `0040`: it stops with "Paste 0038 first" or "Paste 0016 first" if either is not in, and "0041 is already in; nothing to do" if pasted again |
 
-**`0015` to `0040` can be pasted after `main-tnlcto` is merged into
+**`0015` to `0041` can be pasted after `main-tnlcto` is merged into
 `main`.** Nothing the app needs to open depends on them: each new part
 says in one line that it needs a one-time update until its file is in
 (HANDOFF §3). In the app, **Help → One-time updates** shows which are
@@ -136,16 +137,20 @@ on a computer, after `0015` to `0020` above.
    it lets keys pasted in the app survive a change of Supabase's own keys;
    without it, such a change asks you to paste the key again.
 3. **Turn on free AI.** In the app: **Settings** (on a phone, under More)
-   → **AI** → **Get a free key** (Google AI Studio, **Create API key**), paste it, and press
-   **Save & test**: "Works · key ending …abcd". A key pasted here is
-   encrypted by the helper and stored where the browser cannot read it;
-   the app only ever shows its last four characters.
+   → **AI** → under **Free AI**, press a row's **Get a free … key** link
+   (OpenRouter and Groq are quick; Google AI Studio for Gemini), create a
+   key, paste it, and press **Save & test**: "Works · key ending …abcd".
+   **Test** times one call on that service: "Last test: 1.2 s on
+   OpenRouter · inkling-small". A key pasted here is encrypted by the
+   helper and stored where the browser cannot read it; the app only ever
+   shows its last four characters.
 
-**More services, optional.** Settings → AI → **More AI services** takes a key
-for Groq and OpenRouter (free) and for OpenAI and Anthropic (paid). Paid
-services are never asked until **Use paid services** is switched on. The
-order they are tried in, a daily limit (40 by default, 10 to 150), the
-coach's tone, and whether shop names are shared are set there too. Free
+**More, optional.** The Free AI card takes a key for each of OpenRouter,
+Groq and Google Gemini, tried in that order until you change it (ADR
+0015). **Advanced** takes a key for OpenAI and Anthropic (paid), never
+asked until **Use paid services** is switched on, and holds the order
+they are tried in, a daily limit (40 by default, 10 to 150), the coach's
+tone, and whether shop names are shared. Free
 services may keep and read what they are sent (ADR 0002, ADR 0004); for
 the Coach and Review the AI is never sent an amount, a balance or a date
 (Just type it and receipt photos send what you give them), **Use AI** off
@@ -153,7 +158,7 @@ sends nothing at all, and **What the AI sees** lists exactly what each
 sends.
 
 **Check it:** One-time updates says "All done", and Settings › AI says "AI
-is on, using free Google Gemini" (or "your receipts key").
+is on, using free OpenRouter" (or whichever free service has a key first).
 
 ## Receipt photos: Gemini (optional)
 

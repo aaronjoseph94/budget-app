@@ -60,7 +60,7 @@ function helper(fake: FakeSupabase, gemini: Partial<AiServiceStatus>, answer: ()
 
 async function open(fake: FakeSupabase) {
   renderScreen(<Shell />, fake)
-  return within(await screen.findByRole('region', { name: 'Free Google Gemini' }))
+  return within(await screen.findByRole('region', { name: 'Google Gemini' }))
 }
 
 async function paste(card: Awaited<ReturnType<typeof open>>, key: string) {
@@ -86,6 +86,11 @@ describe('the free Gemini card, with no key yet', () => {
     fireEvent.click(card.getByRole('button', { name: 'Show' }))
     expect(field.getAttribute('type')).toBe('text')
     expect(card.queryByRole('button', { name: 'Remove key' })).toBeNull()
+    // Short, and honest about speed (ADR 0015); the model the app will use is named before any key is pasted.
+    expect(card.getByText('Free. Reads photos. Slow for some. May keep what it is sent.')).toBeTruthy()
+    expect(card.getByText('Uses gemini-3.5-flash-lite')).toBeTruthy()
+    expect(card.getByText('Free')).toBeTruthy()
+    expect(card.queryByText('Recommended')).toBeNull()
     await expectNoAxeViolations()
   })
 

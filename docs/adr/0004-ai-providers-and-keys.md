@@ -282,3 +282,12 @@ already cover and nothing more.
 - Nothing here has been run against a real provider or the hosted project;
   this environment cannot reach them. Every adapter is tested against its
   documented request and reply shapes with a fake `fetch`.
+
+## Note, 2026-10-08: amended by ADR 0015
+
+The allowlist's models, the default order and AI settings' layout are
+ADR 0015's now: named models with a per-model image flag on OpenRouter
+and Groq, OpenRouter · Groq · Gemini as the default order (0041), a
+timed **Test** on each service's card, and one Free AI card with
+Advanced folded. The keys, the sealing, the limits, what each service
+is sent and the logging rules above stand.

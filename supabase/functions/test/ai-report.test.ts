@@ -61,7 +61,7 @@ afterEach(() => vi.restoreAllMocks())
 describe('the report pack', () => {
   it('sends the brief as data under its own fixed prompt, and passes the reply back as text', async () => {
     const r = await review()
-    expect([r.status, r.body]).toEqual([200, { ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: JSON.stringify(REPLY) }])
+    expect([r.status, r.body]).toEqual([200, { ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: JSON.stringify(REPLY), ms: expect.any(Number) }])
     const sent = JSON.parse(String(r.calls.find((c) => c.url === GEMINI)?.init.body)) as {
       systemInstruction: { parts: { text: string }[] }
       contents: { parts: { text: string }[] }[]

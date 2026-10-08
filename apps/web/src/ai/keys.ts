@@ -10,7 +10,7 @@
 import { AI_KEY_SHAPE, AiProviderSchema, type AiKeyReply, type AiModelChoice, type AiProvider } from '@budget/schema'
 import { whyRefused } from '../ledger.js'
 import type { SupabaseClient } from '../supabase.js'
-import { askAi, viewOf, type AiView } from './client.js'
+import { askAi, ranOf, SERVICE_NAME, viewOf, type AiState, type AiView } from './client.js'
 
 /** What the card says after a step: a sentence, whether it went well, and the models to choose from when it did. */
 export interface KeyResult {
@@ -84,6 +84,43 @@ export async function saveKey(supabase: SupabaseClient, provider: AiProvider, pa
 /** Check which models work: tests the key the helper would use, the pasted one or, for Gemini, the receipts secret. */
 export function testKey(supabase: SupabaseClient, provider: AiProvider): Promise<KeyResult> {
   return keyAsk(supabase, { action: 'test_key', provider })
+}
+
+/** A count of milliseconds in tenths of a second: 1234 is "1.2 s". A time, never money, so no display helper is owed. */
+function seconds(ms: number): string {
+  const tenths = Math.round(ms / 100)
+  return `${Math.floor(tenths / 10)}.${tenths % 10} s`
+}
+
+/** A model id as the card names it: without its vendor and OpenRouter's :free. */
+export const shortModel = (id: string): string => id.replace(/^.*\//, '').replace(/:free$/, '')
+
+/** Why a speed test gave no time, in a few words; any other state is said as the state is. */
+const NO_TIME: Partial<Record<AiState, (name: string) => string>> = {
+  all_failed: (name) => `${name} didn’t answer. Try again.`,
+  all_resting: (name) => `${name} is resting. Try later.`,
+  limit_reached: () => 'Daily limit reached. Try tomorrow.',
+  off: () => 'Turn on Use AI first.',
+  not_set_up: () => 'Needs a key, or paid services on.',
+  key_rejected: (name) => `${name} turned down the key. Paste it again.`,
+}
+
+/**
+ * Test: one real call on this service alone, timed by the helper (ADR
+ * 0015), said as "Last test: 1.2 s on OpenRouter · inkling-small". It
+ * spends one call. A reply with no time is an older helper's, which is
+ * its trouble, not a result.
+ */
+export async function speedTest(supabase: SupabaseClient, provider: AiProvider): Promise<KeyResult> {
+  const name = SERVICE_NAME[provider]
+  const answer = await askAi(supabase, { action: 'run', task: 'test', provider })
+  if (!answer.ok) {
+    const brief = NO_TIME[answer.view.state]
+    return brief === undefined ? said(answer.view) : { sentence: brief(name), good: false, help: null, models: null }
+  }
+  const ran = ranOf(answer.data)
+  if (ran === null || ran.ms === null) return said(viewOf('helper_error'))
+  return { sentence: `Last test: ${seconds(ran.ms)} on ${name} · ${shortModel(ran.model)}`, good: true, help: null, models: null }
 }
 
 /** Remove key: true when it is gone; a sentence when it could not be. */

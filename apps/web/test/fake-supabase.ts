@@ -114,7 +114,7 @@ export function aiStatusReply(over: Partial<AiStatusReply> = {}): AiStatusReply 
     services: [
       { provider: 'gemini', tier: 'free', model: 'gemini-3.5-flash-lite', ...none },
       { provider: 'groq', tier: 'free', model: 'openai/gpt-oss-20b', ...none },
-      { provider: 'openrouter', tier: 'free', model: 'openrouter/free', ...none },
+      { provider: 'openrouter', tier: 'free', model: 'thinkingmachines/inkling-small:free', ...none },
       { provider: 'openai', tier: 'paid', model: 'gpt-5-nano', ...none },
       { provider: 'anthropic', tier: 'paid', model: 'claude-haiku-4-5', ...none },
     ],
@@ -270,8 +270,8 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     // 0030 on: which AI-app security update is in, the latest by default.
     ai_app_update_level: 34,
     ai_app_updates_in: 40,
-    // 0021 on: the last review fix in, 0038 by default.
-    schema_level: 38,
+    // 0021 on: the last update to move it, 0041 by default.
+    schema_level: 41,
     // 0039: answered by decide() below.
     decide_suggestion: true,
   }

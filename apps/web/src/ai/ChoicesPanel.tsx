@@ -1,20 +1,13 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
-import type { AiProvider, AiServiceStatus, AiStatusReply } from '@budget/schema'
+import type { AiServiceStatus, AiStatusReply } from '@budget/schema'
 import { useAppData } from '../app-data.js'
 import { Button } from '../components/ui/button.js'
 import { NativeSelect, SWITCH } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { hashOf } from '../nav.js'
 import { DAILY_CAPS, moved, readChoices, saveChoices, saveEnabled, type AiChoices } from './choices.js'
+import { SERVICE_NAME as NAME } from './client.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
-
-const NAME: Readonly<Record<AiProvider, string>> = {
-  gemini: 'Google Gemini',
-  groq: 'Groq',
-  openrouter: 'OpenRouter',
-  openai: 'OpenAI',
-  anthropic: 'Anthropic',
-}
 
 const TESTED: Readonly<Record<NonNullable<AiServiceStatus['status']>, string>> = {
   ok: 'works',
@@ -34,19 +27,110 @@ function keyLine(s: AiServiceStatus): string {
 type Loaded = { readonly state: 'loading' } | { readonly state: 'missing' | 'unreachable' } | { readonly state: 'ready'; readonly choices: AiChoices }
 
 /**
- * Use AI, the switch that stops anything being sent to an AI service
- * (plan §8.3, backend-c2-01), then Try in this order, Use paid services
- * and Daily limit (plan §8.3, A11),
- * with today's calls. Each change is saved to ai_settings at once, and the
- * helper follows it from its next call. If 0016 is not in, this panel says
- * so in one line and the rest of AI settings still works.
+ * The owner's AI choices as AI settings holds them (plan §8.3, A11; ADR
+ * 0015): read once from ai_settings, changed from Use AI at the top of the
+ * page or from Advanced below it, one save at a time. Each change is
+ * saved at once, and the helper follows it from its next call.
  */
-export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusReply; readonly onChanged: () => void }) {
+export interface ChoicesState {
+  readonly loaded: Loaded
+  readonly saving: boolean
+  /** Save a change: null once it is stored; else what to say, with the shown choices put back to what is stored. */
+  readonly change: (next: AiChoices) => Promise<string | null>
+}
+
+export function useAiChoices(onChanged: () => void): ChoicesState {
   const { supabase, userId } = useAppData()
   const [loaded, setLoaded] = useState<Loaded>({ state: 'loading' })
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    let live = true
+    void readChoices(supabase, userId).then((read) => {
+      if (!live) return
+      setLoaded(read.ok ? { state: 'ready', choices: read.choices } : { state: read.why === 'needs_update' ? 'missing' : 'unreachable' })
+    })
+    return () => void (live = false)
+  }, [supabase, userId])
+
+  // A press while a save runs is ignored, as each control says with aria-disabled (FE-6).
+  const change = async (next: AiChoices): Promise<string | null> => {
+    if (saving || loaded.state !== 'ready') return null
+    const { choices } = loaded
+    setSaving(true)
+    setLoaded({ state: 'ready', choices: next })
+    // The switch writes its own column alone; the rest write theirs together.
+    const saved = next.enabled !== choices.enabled ? await saveEnabled(supabase, userId, next.enabled) : await saveChoices(supabase, userId, next)
+    setSaving(false)
+    if (saved !== true) {
+      // Show what is really stored: the change did not happen.
+      setLoaded({ state: 'ready', choices })
+      return saved === 'needs_update' ? 'That needs a one-time update first. See One-time updates in Help.' : 'Couldn’t save that just now. Try again.'
+    }
+    onChanged()
+    return null
+  }
+  return { loaded, saving, change }
+}
+
+/** One line when the choices could not be read: 0016 not in, or no connection. The rest of AI settings still works. */
+export function ChoicesLine({ state }: { readonly state: 'missing' | 'unreachable' }) {
+  return (
+    <p className="px-1 text-base">
+      {state === 'missing' ? 'Choosing the order, paid services and a daily limit needs a one-time update. ' : 'Couldn’t load your AI choices just now. Check your connection and try again. '}
+      {state === 'missing' ? (
+        <a href={hashOf({ screen: 'help', param: 'updates' })} className={SENTENCE_LINK}>
+          One-time updates
+        </a>
+      ) : null}
+    </p>
+  )
+}
+
+/**
+ * Use AI, the switch that stops anything being sent to an AI service
+ * (plan §8.3, backend-c2-01), at the top of AI settings (ADR 0015). On, the
+ * sentence beside it says what AI is using; off says what that means.
+ */
+export function UseAiSwitch({ choices: { loaded, saving, change } }: { readonly choices: ChoicesState }) {
   const [problem, setProblem] = useState<string | null>(null)
-  const ids = { use: useId(), order: useId(), paid: useId(), cap: useId(), capHint: useId() }
+  const id = useId()
+  if (loaded.state !== 'ready') return null
+  const { choices } = loaded
+  return (
+    <div className="space-y-1">
+      <label htmlFor={id} className="flex min-h-11 cursor-pointer items-center gap-3">
+        <span className="flex-1 text-lg font-semibold leading-tight">Use AI</span>
+        <input
+          id={id}
+          type="checkbox"
+          role="switch"
+          className={SWITCH}
+          checked={choices.enabled}
+          aria-disabled={saving}
+          onChange={(e) => void change({ ...choices, enabled: e.target.checked }).then(setProblem)}
+        />
+      </label>
+      {choices.enabled ? null : (
+        <p className="text-sm text-muted-foreground">
+          Off: the Coach, suggestions, Just type it and receipt photos use the app’s own words. Nothing is sent to any AI service. AI apps you connect have their own switch in Settings.
+        </p>
+      )}
+      <p aria-live="polite" className="text-base font-medium text-destructive">
+        {problem}
+      </p>
+    </div>
+  )
+}
+
+/**
+ * Try in this order, Use paid services and Daily limit (plan §8.3, A11),
+ * with today's calls, under Advanced (ADR 0015). Drawn only once the
+ * choices are read; ChoicesLine says why when they could not be.
+ */
+export function ChoicesPanel({ status, choices: { loaded, saving, change } }: { readonly status: AiStatusReply; readonly choices: ChoicesState }) {
+  const [problem, setProblem] = useState<string | null>(null)
+  const ids = { order: useId(), paid: useId(), cap: useId(), capHint: useId() }
   // Every control is greyed with aria-disabled while a change saves, not
   // disabled: a browser drops focus from a control that is disabled, and a
   // second Enter on "Move … up" went nowhere (FE-6, e2e-setup-01). The move
@@ -58,48 +142,9 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
     if (button !== null && button.isConnected && (document.activeElement === null || document.activeElement === document.body)) button.focus()
   }, [loaded])
 
-  useEffect(() => {
-    let live = true
-    void readChoices(supabase, userId).then((read) => {
-      if (!live) return
-      setLoaded(read.ok ? { state: 'ready', choices: read.choices } : { state: read.why === 'needs_update' ? 'missing' : 'unreachable' })
-    })
-    return () => void (live = false)
-  }, [supabase, userId])
-
-  if (loaded.state === 'loading') return <p className="px-1 text-sm text-muted-foreground">Loading your AI choices…</p>
-  if (loaded.state !== 'ready') {
-    return (
-      <p className="px-1 text-base">
-        {loaded.state === 'missing'
-          ? 'Choosing the order, paid services and a daily limit needs a one-time update. '
-          : 'Couldn’t load your AI choices just now. Check your connection and try again. '}
-        {loaded.state === 'missing' ? (
-          <a href={hashOf({ screen: 'help', param: 'updates' })} className={SENTENCE_LINK}>
-            One-time updates
-          </a>
-        ) : null}
-      </p>
-    )
-  }
-
+  if (loaded.state !== 'ready') return null
   const { choices } = loaded
-  const change = async (next: AiChoices) => {
-    if (saving) return
-    setSaving(true)
-    setProblem(null)
-    setLoaded({ state: 'ready', choices: next })
-    // The switch writes its own column alone; the rest write theirs together.
-    const saved = next.enabled !== choices.enabled ? await saveEnabled(supabase, userId, next.enabled) : await saveChoices(supabase, userId, next)
-    setSaving(false)
-    if (saved !== true) {
-      // Show what is really stored: the change did not happen.
-      setLoaded({ state: 'ready', choices })
-      setProblem(saved === 'needs_update' ? 'That needs a one-time update first. See One-time updates in Help.' : 'Couldn’t save that just now. Try again.')
-      return
-    }
-    onChanged()
-  }
+  const save = (next: AiChoices) => void change(next).then(setProblem)
   const byProvider = new Map(status.services.map((s) => [s.provider, s]))
   const services = choices.order.flatMap((p) => byProvider.get(p) ?? [])
 
@@ -107,27 +152,7 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
     <div className="space-y-2">
       {/* Mockup A: the order, paid services and the daily limit in one card, split by rules. */}
       <div className="divide-y rounded-xl border bg-card px-5 sm:px-6">
-        <section aria-label="Use AI" className="space-y-1 pb-4 pt-4 sm:pt-5">
-          <label htmlFor={ids.use} className="flex min-h-11 cursor-pointer items-center gap-3">
-            <span className="flex-1 text-lg font-semibold leading-tight">Use AI</span>
-            <input
-              id={ids.use}
-              type="checkbox"
-              role="switch"
-              className={SWITCH}
-              checked={choices.enabled}
-              aria-disabled={saving}
-              onChange={(e) => void change({ ...choices, enabled: e.target.checked })}
-            />
-          </label>
-          <p className="text-sm text-muted-foreground">
-            {choices.enabled
-              ? 'On: the services below are asked, in their order, for the Coach, suggestions, Just type it and receipt photos.'
-              : 'Off: the Coach, suggestions, Just type it and receipt photos send nothing to any AI service and use the app’s own words. AI apps you connect have their own switch in Settings.'}
-          </p>
-        </section>
-
-        <section aria-labelledby={ids.order} className="space-y-3 pb-5 pt-5">
+        <section aria-labelledby={ids.order} className="space-y-3 pb-5 pt-4 sm:pt-5">
           <h2 id={ids.order} className="text-lg font-semibold leading-tight">
             Try in this order
           </h2>
@@ -150,7 +175,7 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
                   onClick={(e) => {
                     if (i === 0) return
                     pressed.current = e.currentTarget
-                    void change({ ...choices, order: moved(choices.order, s.provider, -1) })
+                    save({ ...choices, order: moved(choices.order, s.provider, -1) })
                   }}
                 >
                   <Icon name="up" />
@@ -164,7 +189,7 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
                   onClick={(e) => {
                     if (i === services.length - 1) return
                     pressed.current = e.currentTarget
-                    void change({ ...choices, order: moved(choices.order, s.provider, 1) })
+                    save({ ...choices, order: moved(choices.order, s.provider, 1) })
                   }}
                 >
                   <Icon name="down" />
@@ -186,7 +211,7 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
               className={SWITCH}
               checked={choices.allowPaid}
               aria-disabled={saving}
-              onChange={(e) => void change({ ...choices, allowPaid: e.target.checked })}
+              onChange={(e) => save({ ...choices, allowPaid: e.target.checked })}
             />
           </label>
           <p className="text-sm text-muted-foreground">
@@ -205,7 +230,7 @@ export function ChoicesPanel({ status, onChanged }: { readonly status: AiStatusR
             aria-describedby={ids.capHint}
             value={String(choices.dailyCap)}
             aria-disabled={saving}
-            onChange={(e) => void change({ ...choices, dailyCap: Number(e.target.value) })}
+            onChange={(e) => save({ ...choices, dailyCap: Number(e.target.value) })}
           >
             {[...new Set([...DAILY_CAPS, choices.dailyCap])].sort((a, b) => a - b).map((n) => (
               <option key={n} value={n}>

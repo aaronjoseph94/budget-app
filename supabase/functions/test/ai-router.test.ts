@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-/** A run's reply, either way, read field by field. The app reads none yet; its tasks arrive from A12. */
-type Answer = { ok: boolean; code?: string; provider?: string; model?: string; text?: string; tried?: { provider: string; model: string; result: string }[] }
+/** A run's reply, either way, read field by field: the service and model that answered, how long the attempt took, or what was tried. */
+type Answer = { ok: boolean; code?: string; provider?: string; model?: string; text?: string; ms?: number; tried?: { provider: string; model: string; result: string; ms?: number }[] }
 import { handle, listModels, route, sealKey } from '../ai/index.js'
 
 /**
@@ -65,6 +65,8 @@ interface World {
   noteStatus?: number
   /** ai_usage_claim and ai_note_outcome each answer only after this long, as a slow database would. */
   dbAfterMs?: number
+  /** A service answers only after this long, in fake time, as a slow one would. */
+  answerAfterMs?: Partial<Record<Service, number>>
 }
 
 const SETTINGS = { enabled: true, provider_order: ['gemini', 'groq', 'openrouter', 'openai', 'anthropic'], models: {}, daily_cap: 40, allow_paid: false }
@@ -104,23 +106,26 @@ async function world(w: World = {}, env: Record<string, string | undefined> = EN
     if (u.startsWith(`${PROJECT}/rest/v1/rpc/`)) return new Response(null, { status: 204 })
     const service = serviceOf(u)
     if (service === undefined) return json({}, 404)
+    const wait = w.answerAfterMs?.[service]
+    if (wait !== undefined) await new Promise((r) => setTimeout(r, wait))
     return (w.services?.[service] ?? (() => json({}, 500)))(init ?? {})
   }) as typeof fetch
   return { calls, fetchFn, when }
 }
 
-async function run(w: World = {}, env: Record<string, string | undefined> = ENV) {
+const TEST = { action: 'run', task: 'test' }
+async function run(w: World = {}, env: Record<string, string | undefined> = ENV, body: unknown = TEST) {
   const { calls, fetchFn, when } = await world(w, env)
   const req = new Request(`${PROJECT}/functions/v1/ai`, {
     method: 'POST',
     headers: { authorization: 'Bearer e30.e30.caller-token', 'content-type': 'application/json' },
-    body: JSON.stringify({ action: 'run', task: 'test' }),
+    body: JSON.stringify(body),
   })
   const pending = handle(req, env, fetchFn)
   return { pending, calls, when }
 }
-async function ran(w: World = {}, env: Record<string, string | undefined> = ENV) {
-  const { pending, calls } = await run(w, env)
+async function ran(w: World = {}, env: Record<string, string | undefined> = ENV, body: unknown = TEST) {
+  const { pending, calls } = await run(w, env, body)
   const res = await pending
   const text = await res.text()
   return summary(res.status, text, calls)
@@ -146,7 +151,7 @@ describe('failing over, in the owner’s order', () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(Date.parse('2026-09-25T17:00:00Z'))
     const r = await ran({ saved: ['groq'], services: { gemini: () => json({}, 429, { 'retry-after': '120' }), groq: answers.groq } })
-    expect([r.status, r.body]).toEqual([200, { ok: true, provider: 'groq', model: 'openai/gpt-oss-20b', text: '{"ok":true}' }])
+    expect([r.status, r.body]).toEqual([200, { ok: true, provider: 'groq', model: 'openai/gpt-oss-20b', text: '{"ok":true}', ms: 0 }])
     expect(r.services).toEqual(['gemini', 'groq'])
     expect(r.rpc('ai_note_outcome')).toEqual([
       { p_user: USER, p_provider: 'gemini', p_model: 'gemini-3.5-flash-lite', p_task: 'test', p_code: 'rate_limited', p_cooldown_until: '2026-09-25T17:02:00.000Z' },
@@ -169,6 +174,13 @@ describe('failing over, in the owner’s order', () => {
     const r = await ran({ saved: ['groq', 'openrouter'], services: { gemini: () => json({}, 500), groq: () => json({}, 401), openrouter: answers.openrouter } })
     expect(r.body).toMatchObject({ ok: true, provider: 'openrouter' })
     expect(r.rpc('ai_key_mark')).toEqual([{ p_user: USER, p_provider: 'groq', p_status: 'rejected' }])
+  })
+
+  it('tries the services a stored order leaves out after it, free and quick first: OpenRouter, Groq, Gemini (ADR 0015)', async () => {
+    // Anthropic alone is stored, and paid services are off: the rest follow in the default order.
+    const r = await ran({ saved: ['groq', 'openrouter', 'anthropic'], settings: { provider_order: ['anthropic'] } })
+    expect(r.services).toEqual(['openrouter', 'groq', 'gemini'])
+    expect(r.rpc('ai_usage_claim').map((c) => c['p_provider'])).toEqual(['openrouter', 'groq', 'gemini'])
   })
 
   it('follows the owner’s order and chosen model, and passes over a key already turned down', async () => {
@@ -227,8 +239,8 @@ describe('failing over, in the owner’s order', () => {
     const r = { status, body, services: calls.map((c) => serviceOf(c.url)).filter((s) => s !== undefined) }
     expect(r.services).toEqual(['gemini', 'groq'])
     expect([r.status, r.body.code, r.body.tried]).toEqual([502, 'all_failed', [
-      { provider: 'gemini', model: 'gemini-3.5-flash-lite', result: 'timeout' },
-      { provider: 'groq', model: 'openai/gpt-oss-20b', result: 'timeout' },
+      { provider: 'gemini', model: 'gemini-3.5-flash-lite', result: 'timeout', ms: 20_000 },
+      { provider: 'groq', model: 'openai/gpt-oss-20b', result: 'timeout', ms: 20_000 },
     ]])
   })
 
@@ -273,7 +285,7 @@ describe('failing over, in the owner’s order', () => {
 
   it('keeps a good reply when only noting its outcome failed (backend-b-07)', async () => {
     const r = await ran({ noteStatus: 500, services: { gemini: answers.gemini } })
-    expect([r.status, r.body]).toEqual([200, { ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: '{"ok":true}' }])
+    expect([r.status, r.body]).toEqual([200, { ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: '{"ok":true}', ms: expect.any(Number) }])
     expect(r.services).toEqual(['gemini'])
   })
 
@@ -287,6 +299,43 @@ describe('failing over, in the owner’s order', () => {
     const r = await ran({ saved: ['groq', 'openrouter', 'openai'], settings: { allow_paid: true } })
     expect(r.services).toEqual(['gemini', 'groq', 'openrouter'])
     expect(r.rpc('ai_usage_claim')).toHaveLength(3)
+  })
+})
+
+describe('the speed test (ADR 0015)', () => {
+  const on = (provider: Service) => ({ action: 'run', task: 'test', provider })
+
+  it('asks only the service the test names, and says how long its attempt took', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    const { pending, calls, when } = await run({ saved: ['groq', 'openrouter'], answerAfterMs: { groq: 1234 }, services: { groq: answers.groq, gemini: answers.gemini } }, ENV, on('groq'))
+    await when(() => calls.some((c) => serviceOf(c.url) === 'groq'))
+    await vi.advanceTimersByTimeAsync(1234)
+    const res = await pending
+    const r = summary(res.status, await res.text(), calls)
+    expect([r.status, r.body]).toEqual([200, { ok: true, provider: 'groq', model: 'openai/gpt-oss-20b', text: '{"ok":true}', ms: 1234 }])
+    expect(r.services).toEqual(['groq'])
+  })
+
+  it('says how long each failed attempt took too, and logs nothing new', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    const { pending, calls, when } = await run({ saved: ['groq'], settings: { provider_order: ['groq', 'gemini'] }, answerAfterMs: { groq: 700 } })
+    await when(() => calls.some((c) => serviceOf(c.url) === 'groq'))
+    await vi.advanceTimersByTimeAsync(700)
+    const res = await pending
+    const r = summary(res.status, await res.text(), calls)
+    expect([r.status, r.body.code, r.body.tried]).toEqual([502, 'all_failed', [
+      { provider: 'groq', model: 'openai/gpt-oss-20b', result: 'provider_error', ms: 700 },
+      { provider: 'gemini', model: 'gemini-3.5-flash-lite', result: 'provider_error', ms: 0 },
+    ]])
+    for (const line of lines) expect(Object.keys(JSON.parse(line) as object).every((k) => ['fn', 'code', 'attempts', 'tried'].includes(k))).toBe(true)
+  })
+
+  it('on a service with no key, or a paid one while paid services are off, is not set up and asks nothing', async () => {
+    const none = await ran({ saved: ['groq'] }, ENV, on('openrouter'))
+    expect([none.status, none.body.code, none.services]).toEqual([409, 'not_set_up', []])
+    const paid = await ran({ saved: ['openai'] }, ENV, on('openai'))
+    expect([paid.status, paid.body.code, paid.services]).toEqual([409, 'not_set_up', []])
+    expect((await ran({ saved: ['openai'], settings: { allow_paid: true }, services: { openai: answers.openai } }, ENV, on('openai'))).body).toMatchObject({ ok: true, provider: 'openai' })
   })
 })
 

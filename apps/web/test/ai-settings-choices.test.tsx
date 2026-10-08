@@ -55,19 +55,19 @@ describe('Try in this order', () => {
   it('moves a service up or down, saving the whole order, with nothing to move past either end', async () => {
     const fake = createFakeSupabase()
     const order = await open(fake)
-    expect(order.getByRole('button', { name: 'Move Google Gemini up' }).getAttribute('aria-disabled')).toBe('true')
+    expect(order.getByRole('button', { name: 'Move OpenRouter up' }).getAttribute('aria-disabled')).toBe('true')
     expect(order.getByRole('button', { name: 'Move Anthropic down' }).getAttribute('aria-disabled')).toBe('true')
-    fireEvent.click(order.getByRole('button', { name: 'Move Google Gemini up' }))
+    fireEvent.click(order.getByRole('button', { name: 'Move OpenRouter up' }))
     fireEvent.click(order.getByRole('button', { name: 'Move Anthropic down' }))
     expect(fake.tables.ai_settings).toEqual([])
     // A finger's 44 px, with a mouse too: jsdom has no layout, so the classes that give it.
     expect(order.getByRole('button', { name: 'Move Groq up' }).className).toMatch(/(^|\s)min-h-11\s(.*\s)?min-w-11(\s|$)/)
     fireEvent.click(order.getByRole('button', { name: 'Move Groq up' }))
-    await waitFor(() => expect(fake.tables.ai_settings).toMatchObject([{ user_id: 'u1', provider_order: ['groq', 'gemini', 'openrouter', 'openai', 'anthropic'] }]))
-    expect(names(order)).toEqual(['1. Groq', '2. Google Gemini', '3. OpenRouter', '4. OpenAI', '5. Anthropic'])
-    await waitFor(() => expect(order.getByRole('button', { name: 'Move OpenRouter down' }).getAttribute('aria-disabled')).toBe('false'))
-    fireEvent.click(order.getByRole('button', { name: 'Move OpenRouter down' }))
-    await waitFor(() => expect(fake.tables.ai_settings[0]?.provider_order).toEqual(['groq', 'gemini', 'openai', 'openrouter', 'anthropic']))
+    await waitFor(() => expect(fake.tables.ai_settings).toMatchObject([{ user_id: 'u1', provider_order: ['groq', 'openrouter', 'gemini', 'openai', 'anthropic'] }]))
+    expect(names(order)).toEqual(['1. Groq', '2. OpenRouter', '3. Google Gemini', '4. OpenAI', '5. Anthropic'])
+    await waitFor(() => expect(order.getByRole('button', { name: 'Move Google Gemini down' }).getAttribute('aria-disabled')).toBe('false'))
+    fireEvent.click(order.getByRole('button', { name: 'Move Google Gemini down' }))
+    await waitFor(() => expect(fake.tables.ai_settings[0]?.provider_order).toEqual(['groq', 'openrouter', 'openai', 'gemini', 'anthropic']))
     // The helper is asked again, so the sentence at the top follows.
     expect(fake.functions.calls.filter((c) => c['action'] === 'status').length).toBeGreaterThan(1)
   })
@@ -78,7 +78,7 @@ describe('Try in this order', () => {
     fake.fail('POST ai_settings', '08006')
     fireEvent.click(order.getByRole('button', { name: 'Move Groq up' }))
     expect(await screen.findByText('Couldn’t save that just now. Try again.')).toBeTruthy()
-    expect(names(order)[0]).toBe('1. Google Gemini')
+    expect(names(order)[0]).toBe('1. OpenRouter')
   })
 })
 
@@ -94,8 +94,10 @@ describe('Use AI', () => {
     fireEvent.click(use)
     await waitFor(() => expect(fake.tables.ai_settings).toEqual([{ user_id: 'u1', daily_cap: 60, enabled: false }]))
     expect(await screen.findByText(/^AI is off\./)).toBeTruthy()
-    // The switch stops the helper alone; an AI app the owner connects keeps its own switch (review-r-04).
-    expect(screen.getByText('Off: the Coach, suggestions, Just type it and receipt photos send nothing to any AI service and use the app’s own words. AI apps you connect have their own switch in Settings.')).toBeTruthy()
+    // The switch stops the helper alone; an AI app the owner connects keeps its own switch (review-r-04). Three short sentences (ADR 0015).
+    expect(
+      screen.getByText('Off: the Coach, suggestions, Just type it and receipt photos use the app’s own words. Nothing is sent to any AI service. AI apps you connect have their own switch in Settings.'),
+    ).toBeTruthy()
     await waitFor(() => expect(use.getAttribute('aria-disabled')).toBe('false'))
     fake.functions.aiStatus = aiStatusReply()
     fireEvent.click(use)
@@ -112,6 +114,19 @@ describe('Use AI', () => {
     expect(await screen.findByText('Couldn’t save that just now. Try again.')).toBeTruthy()
     expect(use.checked).toBe(true)
   })
+
+  it('sits at the top, in the status card, with no hint while on, and is there with no AI helper installed (ADR 0015)', async () => {
+    const fake = createFakeSupabase()
+    fake.functions.ai = null
+    renderScreen(<Shell />, fake)
+    const top = within(await screen.findByRole('region', { name: 'AI now' }))
+    expect((await top.findByRole<HTMLInputElement>('switch', { name: 'Use AI' })).checked).toBe(true)
+    expect(screen.queryByText(/^On: the services below/)).toBeNull()
+    await screen.findByText(/The AI helper isn’t installed yet/)
+    fireEvent.click(top.getByRole('switch', { name: 'Use AI' }))
+    await waitFor(() => expect(fake.tables.ai_settings).toMatchObject([{ user_id: 'u1', enabled: false }]))
+    expect(top.getByText(/^Off: the Coach, suggestions/)).toBeTruthy()
+  })
 })
 
 describe('focus while a choice saves (FE-6, e2e-setup-01)', () => {
@@ -124,7 +139,7 @@ describe('focus while a choice saves (FE-6, e2e-setup-01)', () => {
     const order = await open(fake)
     let release = (): void => undefined
     fake.server.hold = (target) => (target === 'POST ai_settings' ? new Promise<void>((resolve) => (release = resolve)) : null)
-    const up = order.getByRole<HTMLButtonElement>('button', { name: 'Move OpenRouter up' })
+    const up = order.getByRole<HTMLButtonElement>('button', { name: 'Move Google Gemini up' })
     up.focus()
     fireEvent.click(up)
     await waitFor(() => expect(up.getAttribute('aria-disabled')).toBe('true'))
@@ -135,14 +150,14 @@ describe('focus while a choice saves (FE-6, e2e-setup-01)', () => {
     fake.server.hold = null
     release()
     await waitFor(() => expect(up.getAttribute('aria-disabled')).toBe('false'))
-    expect(fake.tables.ai_settings).toEqual([expect.objectContaining({ provider_order: ['gemini', 'openrouter', 'groq', 'openai', 'anthropic'] })])
+    expect(fake.tables.ai_settings).toEqual([expect.objectContaining({ provider_order: ['openrouter', 'gemini', 'groq', 'openai', 'anthropic'] })])
     expect(fake.tables.ai_settings[0]).not.toHaveProperty('enabled')
     expect(document.activeElement).toBe(up)
     // Moved down, its row is moved in the page; focus comes back to it.
-    const down = order.getByRole<HTMLButtonElement>('button', { name: 'Move OpenRouter down' })
+    const down = order.getByRole<HTMLButtonElement>('button', { name: 'Move Google Gemini down' })
     down.focus()
     fireEvent.click(down)
-    await waitFor(() => expect(fake.tables.ai_settings[0]?.provider_order).toEqual(['gemini', 'groq', 'openrouter', 'openai', 'anthropic']))
+    await waitFor(() => expect(fake.tables.ai_settings[0]?.provider_order).toEqual(['openrouter', 'groq', 'gemini', 'openai', 'anthropic']))
     await waitFor(() => expect(down.getAttribute('aria-disabled')).toBe('false'))
     expect(document.activeElement).toBe(down)
   })
@@ -171,7 +186,7 @@ describe('Use paid services', () => {
       services: aiStatusReply().services.map((s) => (s.provider === 'openai' ? { ...s, source: 'saved' as const, hint: 'abcd', status: 'ok' as const } : s)),
     })
     await open(fake)
-    fireEvent.click(screen.getByText('More AI services: Groq, OpenRouter, and paid ones'))
+    fireEvent.click(screen.getByText('Advanced'))
     const card = within(screen.getByRole('region', { name: 'OpenAI' }))
     expect(card.getByText('Saved, key ending …abcd. Not used until you turn on paid services.')).toBeTruthy()
   })
@@ -201,7 +216,7 @@ describe('without the one-time update that holds these choices', () => {
       expect(within(line).getByRole('link', { name: 'One-time updates' }).getAttribute('href')).toBe('#/help/updates')
       // 44 px to press, by padding on the link, so the sentence keeps its lines (N76).
       expect(within(line).getByRole('link', { name: 'One-time updates' }).className).toMatch(/\bpy-3\.5\b/)
-      expect(screen.getByRole('region', { name: 'Free Google Gemini' })).toBeTruthy()
+      expect(screen.getByRole('region', { name: 'Google Gemini' })).toBeTruthy()
       expect(screen.queryByRole('switch', { name: 'Use paid services' })).toBeNull()
       cleanup()
     }

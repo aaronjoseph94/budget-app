@@ -6,7 +6,8 @@ import { Input, NativeSelect } from '../components/ui/form.js'
 import { Badge } from '../components/ui/feedback.js'
 import { cn } from '../lib/cn.js'
 import { hashOf } from '../nav.js'
-import { chooseModel, COMPANY, forgetKey, saveKey, testKey, type KeyResult } from './keys.js'
+import { chooseModel, COMPANY, forgetKey, saveKey, shortModel, speedTest, testKey, type KeyResult } from './keys.js'
+import { SERVICE_NAME } from './client.js'
 import { LINE_LINK } from '../components/ui/link.js'
 
 /**
@@ -14,39 +15,35 @@ import { LINE_LINK } from '../components/ui/link.js'
  * service's own page, a fixed address opened in a new tab; the helper,
  * never the page, is what talks to the service. Free services may keep
  * what they are sent, as the owner accepted for Gemini (ADR 0002), and
- * each free card says so before a key is pasted (ADR 0004).
+ * each free card says so in a few words before a key is pasted (ADR
+ * 0004, ADR 0015); whether it is quick is what the owner asked to know.
  */
-const CARDS: Readonly<Record<AiProvider, { readonly title: string; readonly getKey: string; readonly getLabel: string; readonly where: string; readonly about: string }>> = {
+const CARDS: Readonly<Record<AiProvider, { readonly getKey: string; readonly getLabel: string; readonly where: string; readonly about: string }>> = {
   gemini: {
-    title: 'Free Google Gemini',
     getKey: 'https://aistudio.google.com/apikey',
     getLabel: 'Get a free key ↗',
     where: 'Google AI Studio opens in a new tab. Press Create API key, then copy it.',
-    about: 'Free, and about 2 minutes. A key is a password Google gives you for the app to use.',
+    about: 'Free. Reads photos. Slow for some. May keep what it is sent.',
   },
   groq: {
-    title: 'Groq',
     getKey: 'https://console.groq.com/keys',
     getLabel: 'Get a free Groq key ↗',
     where: 'Groq’s console opens in a new tab. Sign in, press Create API Key, then copy it.',
-    about: 'Free, and quick. Free services may keep what they are sent, and people there may read it.',
+    about: 'Free and very quick. Reads photos. May keep what it is sent.',
   },
   openrouter: {
-    title: 'OpenRouter',
     getKey: 'https://openrouter.ai/settings/keys',
     getLabel: 'Get a free OpenRouter key ↗',
     where: 'OpenRouter opens in a new tab. Sign in, press Create API Key, then copy it.',
-    about: 'Free: it passes each question to one of its free models. Free services may keep what they are sent, and people there may read it.',
+    about: 'Free and quick. Reads photos. May keep what it is sent.',
   },
   openai: {
-    title: 'OpenAI',
     getKey: 'https://platform.openai.com/api-keys',
     getLabel: 'Get an OpenAI key ↗',
     where: 'OpenAI opens in a new tab. Sign in, press Create new secret key, then copy it.',
     about: 'Paid: OpenAI bills you for each use. Tried only when Use paid services is on.',
   },
   anthropic: {
-    title: 'Anthropic',
     getKey: 'https://platform.claude.com/settings/keys',
     getLabel: 'Get an Anthropic key ↗',
     where: 'Anthropic opens in a new tab. Sign in, press Create Key, then copy it.',
@@ -60,32 +57,46 @@ const CARDS: Readonly<Record<AiProvider, { readonly title: string; readonly getK
  * field is emptied at once: it is never held in the screen's state, and
  * nothing shows more of it than its last four characters.
  *
- * Gemini's card is the recommended one, and says "Already on" when the
- * receipts secret is set. A paid service's saved key says it waits for
- * Use paid services. `onChanged` asks AI settings to read the helper's
- * status again, quietly, so the sentence at the top follows what happened.
+ * Each card names its service by its one name with a Free or Paid chip,
+ * and the model the app will use on it (ADR 0015); the order they sit in
+ * says which is tried first. Gemini's says "Already on" when the receipts
+ * secret is set. A paid service's saved key says it waits for Use paid
+ * services. `onChanged` asks AI settings to read the helper's status
+ * again, quietly, so the sentence at the top follows what happened.
+ *
+ * `frame` is `card` on its own, or `row` as one of a card's rows, parted
+ * by the parent's rules.
  */
 export function KeyCard({
   service,
   outdated,
   allowPaid,
   onChanged,
+  frame = 'card',
 }: {
   readonly service: AiServiceStatus
   /** The deployed helper is older than this app, so it cannot take this key yet (N78). */
   readonly outdated: boolean
   readonly allowPaid: boolean
   readonly onChanged: () => void
+  readonly frame?: 'card' | 'row'
 }) {
   const { supabase, userId } = useAppData()
   const provider = service.provider
   const card = CARDS[provider]
+  const title = SERVICE_NAME[provider]
+  const frameClass = frame === 'card' ? CARD : ROW
   const [shown, setShown] = useState(false)
-  const [working, setWorking] = useState<null | 'save' | 'test' | 'forget' | 'model'>(null)
+  const [working, setWorking] = useState<null | 'save' | 'test' | 'speed' | 'forget' | 'model'>(null)
   const [result, setResult] = useState<KeyResult | null>(null)
   const ids = { title: useId(), steps: useId(), key: useId(), model: useId() }
 
+  // A press while a step runs is ignored, as the row's buttons say with
+  // aria-disabled, not disabled: a browser drops focus from a control that
+  // is disabled, and Test is pressed again and again to compare services
+  // (FE-6, e2e-setup-01).
   const run = async (step: NonNullable<typeof working>, act: () => Promise<KeyResult | null>) => {
+    if (working !== null) return
     setWorking(step)
     const next = await act()
     setWorking(null)
@@ -120,7 +131,7 @@ export function KeyCard({
   const steps = (
     <form onSubmit={save} aria-labelledby={ids.steps}>
       <h3 id={ids.steps} className="sr-only">
-        Turn on {card.title}
+        Turn on {title}
       </h3>
       <ol className="space-y-4">
         <li className="space-y-1">
@@ -174,22 +185,22 @@ export function KeyCard({
   const waitsForPaid = saved && !again && service.tier === 'paid' && !allowPaid
 
   const heading = (
-    <div className="flex flex-wrap items-center gap-2">
-      <h2 id={ids.title} className="text-lg font-semibold">
-        {card.title}
-      </h2>
-      {/* Mockup A: Recommended in the accent; Free and Paid as quiet outlined chips. */}
-      {provider === 'gemini' ? (
-        <Badge variant="accent">Recommended</Badge>
-      ) : (
+    <div className="space-y-1">
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 id={ids.title} className="text-lg font-semibold">
+          {title}
+        </h2>
+        {/* Mockup A: Free and Paid as quiet outlined chips. */}
         <Badge variant="outline">{service.tier === 'free' ? 'Free' : 'Paid'}</Badge>
-      )}
+      </div>
+      {/* The model the helper will ask: the owner's choice, else the service's first (plan §3.3). */}
+      <p className="text-sm text-muted-foreground">Uses {shortModel(service.model)}</p>
     </div>
   )
 
   if (outdated) {
     return (
-      <section aria-labelledby={ids.title} className={cn('space-y-2', CARD)}>
+      <section aria-labelledby={ids.title} className={cn('space-y-2', frameClass)}>
         {heading}
         <p className="text-base">The AI helper you installed is an older copy, so it can’t take a key yet. Everything else works.</p>
         <a href={hashOf({ screen: 'help', param: 'updates' })} className={cn(LINE_LINK, 'text-sm')}>
@@ -200,7 +211,7 @@ export function KeyCard({
   }
 
   return (
-    <section aria-labelledby={ids.title} className={cn('space-y-4', CARD)}>
+    <section aria-labelledby={ids.title} className={cn('space-y-4', frameClass)}>
       {heading}
       {already ? (
         <p className="text-base">
@@ -231,11 +242,21 @@ export function KeyCard({
       </div>
       {already || saved ? (
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" className="min-h-11" disabled={working !== null} onClick={() => void run('test', () => testKey(supabase, provider))}>
+          {/* Test: one real call, timed, so the owner can see which service is quick (ADR 0015). A key not usable yet has nothing to time. It changes no model, so the list Check which models work found stays. */}
+          {again || waitsForPaid ? null : (
+            <Button
+              className="min-h-11"
+              aria-disabled={working !== null}
+              onClick={() => void run('speed', async () => ({ ...(await speedTest(supabase, provider)), models: result?.models ?? null }))}
+            >
+              {working === 'speed' ? 'Testing…' : 'Test'}
+            </Button>
+          )}
+          <Button variant="outline" className="min-h-11" aria-disabled={working !== null} onClick={() => void run('test', () => testKey(supabase, provider))}>
             {working === 'test' ? 'Checking…' : 'Check which models work'}
           </Button>
           {saved ? (
-            <Button variant="outline" className="min-h-11" disabled={working !== null} onClick={forget}>
+            <Button variant="outline" className="min-h-11" aria-disabled={working !== null} onClick={forget}>
               {working === 'forget' ? 'Removing…' : 'Remove key'}
             </Button>
           ) : null}
@@ -262,6 +283,8 @@ export function KeyCard({
 
 /** Mockup A's card: flat, 16px corners, 20 to 24px in. */
 const CARD = 'rounded-xl border bg-card p-5 sm:p-6'
+/** One row of a card that lists several services, parted by the card's rules. */
+const ROW = 'py-5 first:pt-0 last:pb-0'
 
 /** What the card says of a saved key, from its last test. */
 function savedSays(company: string, status: NonNullable<AiServiceStatus['status']>, ending: string): string {

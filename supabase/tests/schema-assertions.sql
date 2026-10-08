@@ -1610,10 +1610,10 @@ declare
   s    public.ai_settings;
   n    int;
 begin
-  -- A first save takes every default: on, the free services first, 40 a
-  -- day, paid services off, Cheerleader, shop names shared.
+  -- A first save takes every default: on, the free and quick services
+  -- first (0041), 40 a day, paid services off, Cheerleader, shop names shared.
   insert into public.ai_settings (user_id) values (u) returning * into s;
-  if not (s.enabled and s.provider_order = '{gemini,groq,openrouter,openai,anthropic}' and s.models = '{}'
+  if not (s.enabled and s.provider_order = '{openrouter,groq,gemini,openai,anthropic}' and s.models = '{}'
           and s.daily_cap = 40 and not s.allow_paid and s.tone = 'cheerleader' and s.share_shop_names) then
     raise exception 'ai_settings came out as %', s;
   end if;
@@ -1821,10 +1821,10 @@ begin
   perform public.ai_key_put('11111111-1111-4111-8111-111111111111', 'groq', repeat('T', 48), repeat('D', 16),
                             '0123456789abcdef', 1::smallint, 'lmno', 'ok', null);
 
-  -- An owner who has saved no choice gets the column defaults, and nothing else.
+  -- An owner who has saved no choice gets the column defaults (0041's order), and nothing else.
   ctx := public.ai_context_for(u);
   if ctx->'settings' is distinct from jsonb_build_object(
-       'enabled', true, 'provider_order', '["gemini","groq","openrouter","openai","anthropic"]'::jsonb,
+       'enabled', true, 'provider_order', '["openrouter","groq","gemini","openai","anthropic"]'::jsonb,
        'models', '{}'::jsonb, 'daily_cap', 40, 'allow_paid', false, 'tone', 'cheerleader', 'share_shop_names', true)
      or ctx->'keys' is distinct from '[]' or ctx->'usage' is distinct from '[]'
      or ctx->'resting' is distinct from '[]' or (ctx->>'day')::date is distinct from public.ai_today() then
@@ -4066,7 +4066,7 @@ begin
 end $$;
 rollback;
 
--- Each of 0021 to 0029, 0034, 0038 and 0039, pasted again with everything in,
+-- Each of 0021 to 0029, 0034, 0038, 0039 and 0041, pasted again with everything in,
 -- is refused before it changes anything: schema_level() stays at the last
 -- update, and save_import and ai_app_add_candidate keep one copy of each
 -- condition. Without this,
@@ -4084,6 +4084,7 @@ rollback;
 \set repaste_34 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0034_ai_words_visible.sql`
 \set repaste_38 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0038_intuit_prefix_merchants.sql`
 \set repaste_39 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0039_ai_apps_suggest_changes.sql`
+\set repaste_41 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0041_ai_free_order.sql`
 begin;
 set local verify.r21 = :'repaste_21';
 set local verify.r22 = :'repaste_22';
@@ -4097,6 +4098,7 @@ set local verify.r29 = :'repaste_29';
 set local verify.r34 = :'repaste_34';
 set local verify.r38 = :'repaste_38';
 set local verify.r39 = :'repaste_39';
+set local verify.r41 = :'repaste_41';
 do $$
 declare
   level  constant integer := public.schema_level();
@@ -4106,8 +4108,8 @@ declare
                             where oid = 'public.ai_app_add_candidate(uuid, date, bigint, text, integer, text, integer, text)'::regprocedure);
   n integer;
 begin
-  if level <> 38 then raise exception 'schema_level() is %, not 38, before the re-pastes', level; end if;
-  foreach n in array array[21, 22, 23, 24, 25, 26, 27, 28, 29, 34, 38, 39] loop
+  if level <> 41 then raise exception 'schema_level() is %, not 41, before the re-pastes', level; end if;
+  foreach n in array array[21, 22, 23, 24, 25, 26, 27, 28, 29, 34, 38, 39, 41] loop
     begin
       execute current_setting('verify.r' || n);
       raise exception 'NOT REFUSED: 00% pasted again ran', n;
@@ -4126,7 +4128,7 @@ begin
       raise exception '00% pasted again changed ai_app_add_candidate', n;
     end if;
   end loop;
-  raise notice 'pasting 0021 to 0029, 0034, 0038 or 0039 again is refused and changes nothing';
+  raise notice 'pasting 0021 to 0029, 0034, 0038, 0039 or 0041 again is refused and changes nothing';
 end $$;
 rollback;
 
@@ -4141,6 +4143,7 @@ rollback;
 \set first_check_28 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0028_ai_words_no_invisible_characters.sql`
 \set first_check_29 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0029_lookalike_charge_waits.sql`
 \set first_check_38 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0038_intuit_prefix_merchants.sql`
+\set first_check_41 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0041_ai_free_order.sql`
 \set first_check_32 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0032_ai_rows_teach_no_rule.sql`
 \set first_check_33 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0033_ai_search_masked.sql`
 \set first_check_34 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0034_ai_words_visible.sql`
@@ -4154,11 +4157,12 @@ set local verify.f27 = :'first_check_27';
 set local verify.f28 = :'first_check_28';
 set local verify.f29 = :'first_check_29';
 set local verify.f38 = :'first_check_38';
+set local verify.f41 = :'first_check_41';
 do $$
 declare
   n integer;
 begin
-  foreach n in array array[23, 24, 25, 26, 27, 28, 29, 38] loop
+  foreach n in array array[23, 24, 25, 26, 27, 28, 29, 38, 41] loop
     begin
       execute current_setting('verify.f' || n);
       raise exception 'NOT REFUSED: 00% ran without schema_level()', n;
@@ -5055,8 +5059,9 @@ declare
                     || E'                                and b.applies = ''only'' and b.budget_cents is distinct from (p ->> ''amount'')::numeric)) then\n';
   n   int := 0;
 begin
+  -- Read as they stood before 0041, which re-creates ai_context_for and is checked on its own.
   for r in select * from verify.before_0040 loop
-    select prosrc, prosecdef, provolatile, proconfig, proacl::text as acl into p from pg_proc where oid = r.fn::regprocedure;
+    select prosrc, prosecdef, provolatile, proconfig, acl into p from verify.before_0041 where fn = r.fn;
     if not found then raise exception '% is gone after 0040', r.fn; end if;
     if r.fn = 'ai_app_add_candidate(uuid,date,bigint,text,integer,text,integer,text)' then
       -- Its two lines, each marked, straight after 0034's; without them, the old body.
@@ -5179,11 +5184,106 @@ begin
   raise notice 'ai_app_updates_in() names the last AI-app update, 0040';
 end $$;
 
+-- ---------------------------------------------------------------------------
+-- 0041: the free, quick services first (ADR 0015). The column default and
+-- ai_context_for's answer for an owner who saved nothing both say
+-- openrouter, groq, gemini, openai, anthropic (checked in 0016's section
+-- above); an order still equal to 0016's default was moved to it, and one
+-- the owner changed was left alone. The rows were seeded by
+-- supabase/tests/before/0041_ai_free_order.sql.
+-- ---------------------------------------------------------------------------
+reset role;
+do $$
+declare
+  inherited public.ai_settings;
+  chosen    public.ai_settings;
+begin
+  select * into inherited from public.ai_settings where user_id = '41414141-4141-4141-8141-414141414141';
+  if inherited.provider_order <> '{openrouter,groq,gemini,openai,anthropic}' then
+    raise exception '0041 left an inherited order as %', inherited.provider_order;
+  end if;
+  select * into chosen from public.ai_settings where user_id = '41414141-4141-4141-8141-414141414142';
+  if chosen.provider_order <> '{groq,gemini,openrouter,openai,anthropic}' or chosen.daily_cap <> 60 then
+    raise exception '0041 changed an order the owner chose: % at %', chosen.provider_order, chosen.daily_cap;
+  end if;
+  if has_function_privilege('authenticated', 'public.ai_context_for(uuid)', 'execute')
+     or has_function_privilege('anon', 'public.ai_context_for(uuid)', 'execute')
+     or not has_function_privilege('service_role', 'public.ai_context_for(uuid)', 'execute') then
+    raise exception '0041 changed who may call ai_context_for';
+  end if;
+  raise notice '0041 moved only the inherited order, and ai_context_for stays the helper''s alone';
+end $$;
+
+-- 0041 re-created ai_context_for with one literal changed, and
+-- schema_level(); every other function is as it stood before, with the
+-- same settings and grants.
+do $$
+declare
+  r record;
+  p record;
+  n int := 0;
+begin
+  for r in select * from verify.before_0041 loop
+    select prosrc, prosecdef, provolatile, proconfig, proacl::text as acl into p from pg_proc where oid = r.fn::regprocedure;
+    if not found then raise exception '% is gone after 0041', r.fn; end if;
+    if r.fn = 'ai_context_for(uuid)' then
+      if p.prosrc = r.prosrc
+         or replace(p.prosrc, '{openrouter,groq,gemini,openai,anthropic}', '{gemini,groq,openrouter,openai,anthropic}') <> r.prosrc then
+        raise exception 'ai_context_for is not its old body with 0041''s order';
+      end if;
+      n := n + 1;
+    elsif r.fn = 'schema_level()' then
+      n := n + 1;
+    elsif p.prosrc <> r.prosrc then
+      raise exception '% changed in 0041', r.fn;
+    end if;
+    if (p.prosecdef, p.provolatile, p.proconfig, p.acl) is distinct from (r.prosecdef, r.provolatile, r.proconfig, r.acl) then
+      raise exception '% changed its settings or grants in 0041', r.fn;
+    end if;
+  end loop;
+  if n <> 2 then raise exception '0041''s two changed functions were not both checked'; end if;
+  raise notice '0041 changed only ai_context_for''s default order and schema_level()';
+end $$;
+
+-- 0041 is pasted after 0038 and needs 0016: its own check, taken from the
+-- file, refuses it with schema_level() below 38 and with ai_settings gone,
+-- each in a transaction rolled back.
+\set paste_check_41 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0041_ai_free_order.sql`
+begin;
+create or replace function public.schema_level() returns integer language sql immutable as $$ select 37 $$;
+set local verify.paste_check = :'paste_check_41';
+do $$
+begin
+  begin
+    execute current_setting('verify.paste_check');
+    raise exception 'NOT REFUSED: 0041 ran without 0038';
+  exception when raise_exception then
+    if sqlerrm not like 'Paste 0038 first%' then raise; end if;
+  end;
+  raise notice '0041 says to paste 0038 first when it is missing';
+end $$;
+rollback;
+begin;
+create or replace function public.schema_level() returns integer language sql immutable as $$ select 38 $$;
+drop table public.ai_settings cascade;
+set local verify.paste_check = :'paste_check_41';
+do $$
+begin
+  begin
+    execute current_setting('verify.paste_check');
+    raise exception 'NOT REFUSED: 0041 ran without 0016';
+  exception when raise_exception then
+    if sqlerrm not like 'Paste 0016 first%' then raise; end if;
+  end;
+  raise notice '0041 says to paste 0016 first when it is missing';
+end $$;
+rollback;
+
 -- The two levels the app reads name the last update in this folder: the
 -- review fixes' schema_level() (0021) and the AI-app updates'
 -- ai_app_updates_in() (0035), one of them its number. So a new update that
 -- forgets to raise its own fails here. 0039 and 0040 are AI-app updates and
--- leave schema_level() at 38 (ADR 0013), so 0038 is still offered by it alone.
+-- left schema_level() at 38 (ADR 0013); 0041 moves it to 41 (ADR 0015).
 \set last_migration `ls supabase/migrations | tail -1 | cut -c1-4`
 set verify.last_migration = :'last_migration';
 set role app_user;
@@ -5193,7 +5293,7 @@ begin
     raise exception 'schema_level() answers % and ai_app_updates_in() %, but the last update is %',
       public.schema_level(), public.ai_app_updates_in(), current_setting('verify.last_migration');
   end if;
-  if public.schema_level() <> 38 then raise exception 'schema_level() answers %, not 38: 0039 and 0040 must not move it', public.schema_level(); end if;
+  if public.schema_level() <> 41 then raise exception 'schema_level() answers %, not 41: 0041 moves it, and 0039 and 0040 must not', public.schema_level(); end if;
   raise notice 'schema_level() and ai_app_updates_in() name the last update';
 end $$;
 reset role;

@@ -49,11 +49,14 @@ export {
 
 export {
   AI_CODES,
+  AI_DEFAULT_ORDER,
   AI_HELPER_VERSION,
   READ_RECEIPT_VERSION,
   AI_KEY_SHAPE,
+  AI_MODELS,
   AiProviderSchema,
   type AiAction,
+  type AiModel,
   type AiCode,
   type AiFailureReply,
   type AiKeyProvider,
@@ -64,6 +67,7 @@ export {
   type AiPingReply,
   type AiProvider,
   type AiRequest,
+  type AiRunReply,
   type AiServiceStatus,
   type AiStatusReply,
   type AiTask,

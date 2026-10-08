@@ -46,8 +46,9 @@ describe('status says what is set up', () => {
     expect(service(body, 'gemini')).toEqual({
       provider: 'gemini', tier: 'free', source: 'secret', hint: '0001', status: null, model: 'gemini-3.5-flash-lite',
     })
+    // In the order they are tried by default (ADR 0015): free and quick first.
     expect(body.services.map((s) => [s.provider, s.tier, s.source])).toEqual([
-      ['gemini', 'free', 'secret'], ['groq', 'free', 'none'], ['openrouter', 'free', 'none'], ['openai', 'paid', 'none'], ['anthropic', 'paid', 'none'],
+      ['openrouter', 'free', 'none'], ['groq', 'free', 'none'], ['gemini', 'free', 'secret'], ['openai', 'paid', 'none'], ['anthropic', 'paid', 'none'],
     ])
     expect([body.enabled, body.allowPaid, body.today]).toEqual([true, false, { used: 0, cap: 40 }])
   })
@@ -69,7 +70,7 @@ describe('status says what is set up', () => {
     const settings = { ...SETTINGS, models: { groq: 'openai/gpt-oss-120b', openai: 'https://evil.example/v1' }, daily_cap: 12, allow_paid: true, enabled: false }
     const usage = [{ attempts: 3 }, { attempts: 4 }]
     const { body } = await status({ ...ENV, GEMINI_MODEL: 'gemini-3.5-flash' }, answer(context({ settings, usage })))
-    expect(body.services.map((s) => s.model)).toEqual(['gemini-3.5-flash', 'openai/gpt-oss-120b', 'openrouter/free', 'gpt-5-nano', 'claude-haiku-4-5'])
+    expect(body.services.map((s) => s.model)).toEqual(['thinkingmachines/inkling-small:free', 'openai/gpt-oss-120b', 'gemini-3.5-flash', 'gpt-5-nano', 'claude-haiku-4-5'])
     expect([body.enabled, body.allowPaid, body.today]).toEqual([false, true, { used: 7, cap: 12 }])
   })
 })

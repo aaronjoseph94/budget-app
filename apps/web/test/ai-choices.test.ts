@@ -9,30 +9,30 @@ import { createFakeSupabase } from './fake-supabase.js'
  */
 
 describe('the order', () => {
-  it('reads a stored order as the helper does: its services once each, then the rest', () => {
-    expect(orderOf(['openrouter', 'gemini', 'openrouter', 'made-up', 3])).toEqual(['openrouter', 'gemini', 'groq', 'openai', 'anthropic'])
-    expect(orderOf(null)).toEqual(['gemini', 'groq', 'openrouter', 'openai', 'anthropic'])
+  it('reads a stored order as the helper does: its services once each, then the rest, free and quick first (ADR 0015)', () => {
+    expect(orderOf(['gemini', 'openai', 'gemini', 'made-up', 3])).toEqual(['gemini', 'openai', 'openrouter', 'groq', 'anthropic'])
+    expect(orderOf(null)).toEqual(['openrouter', 'groq', 'gemini', 'openai', 'anthropic'])
   })
 
   it('moves one service a place, and nothing past either end', () => {
     const order = orderOf([])
-    expect(moved(order, 'groq', -1)).toEqual(['groq', 'gemini', 'openrouter', 'openai', 'anthropic'])
-    expect(moved(order, 'openai', 1)).toEqual(['gemini', 'groq', 'openrouter', 'anthropic', 'openai'])
-    expect(moved(order, 'gemini', -1)).toBe(order)
+    expect(moved(order, 'groq', -1)).toEqual(['groq', 'openrouter', 'gemini', 'openai', 'anthropic'])
+    expect(moved(order, 'openai', 1)).toEqual(['openrouter', 'groq', 'gemini', 'anthropic', 'openai'])
+    expect(moved(order, 'openrouter', -1)).toBe(order)
     expect(moved(order, 'anthropic', 1)).toBe(order)
   })
 })
 
 describe('reading and saving', () => {
-  it('gives 0016’s defaults when nothing is saved: free Gemini first, paid off, 40 a day', async () => {
+  it('gives 0041’s defaults when nothing is saved: OpenRouter, Groq, Gemini, paid off, 40 a day', async () => {
     expect(await readChoices(createFakeSupabase().client, 'u1')).toEqual({ ok: true, choices: DEFAULT_CHOICES })
-    expect(DEFAULT_CHOICES).toEqual({ enabled: true, order: ['gemini', 'groq', 'openrouter', 'openai', 'anthropic'], allowPaid: false, dailyCap: 40 })
+    expect(DEFAULT_CHOICES).toEqual({ enabled: true, order: ['openrouter', 'groq', 'gemini', 'openai', 'anthropic'], allowPaid: false, dailyCap: 40 })
   })
 
   it('reads the owner’s own row, and saves all three in one write, keeping the model choices', async () => {
     const fake = createFakeSupabase({ ai_settings: [{ user_id: 'u1', models: { gemini: 'gemini-3.5-flash' }, provider_order: ['groq'], allow_paid: true, daily_cap: 60 }] })
     const read = await readChoices(fake.client, 'u1')
-    expect(read).toEqual({ ok: true, choices: { enabled: true, order: ['groq', 'gemini', 'openrouter', 'openai', 'anthropic'], allowPaid: true, dailyCap: 60 } })
+    expect(read).toEqual({ ok: true, choices: { enabled: true, order: ['groq', 'openrouter', 'gemini', 'openai', 'anthropic'], allowPaid: true, dailyCap: 60 } })
     expect(await saveChoices(fake.client, 'u1', { enabled: true, order: ['anthropic', 'gemini'], allowPaid: false, dailyCap: 10 })).toBe(true)
     expect(fake.tables.ai_settings).toEqual([
       { user_id: 'u1', models: { gemini: 'gemini-3.5-flash' }, provider_order: ['anthropic', 'gemini'], allow_paid: false, daily_cap: 10 },

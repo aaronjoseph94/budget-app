@@ -326,7 +326,7 @@ describe('Getting started (plan §8.1)', () => {
     expect(screen.getByText(/^First, the one-time updates: about 15 minutes, once/)).toBeTruthy()
     expect(await screen.findByRole('heading', { name: /\d+ of \d+ in/ })).toBeTruthy()
     expect(screen.getByText('Not done yet')).toBeTruthy()
-    expect(screen.queryByRole('heading', { name: 'Free Google Gemini' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Google Gemini' })).toBeNull()
   })
 
   it('puts AI settings’ own Gemini card on the step when no key is set up', async () => {
@@ -336,7 +336,7 @@ describe('Getting started (plan §8.1)', () => {
 
     expect(await screen.findByRole('heading', { name: 'Turn on free AI' })).toBeTruthy()
     expect(await screen.findByText(/^AI isn’t set up yet/)).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Free Google Gemini' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Google Gemini' })).toBeTruthy()
     expect(screen.getByRole('link', { name: /Get a free key/ }).getAttribute('href')).toBe('https://aistudio.google.com/apikey')
   })
 
@@ -351,7 +351,7 @@ describe('Getting started (plan §8.1)', () => {
 
     expect(await screen.findByText('AI is on, using your receipts key.')).toBeTruthy()
     expect(screen.getByText('Done')).toBeTruthy()
-    expect(screen.queryByRole('heading', { name: 'Free Google Gemini' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Google Gemini' })).toBeNull()
   })
 
   it('says a step it could not read is can’t check yet, never done, and points to One-time updates', async () => {

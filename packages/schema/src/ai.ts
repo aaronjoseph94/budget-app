@@ -20,29 +20,78 @@ import type { QuickAddBrief } from './quick-add.js'
 import type { ReceiptPhoto } from './receipt.js'
 import type { AskBrief } from './ask.js'
 
-/**
- * The AI services, in 0016's `ai_provider` enum order, which is also the
- * order they are tried in until the owner chooses another: free Gemini
- * first, the other free services, then the paid ones.
- */
+/** The AI services, in 0016's `ai_provider` enum order. The order they are tried in is AI_DEFAULT_ORDER. */
 export const AiProviderSchema = z.enum(['gemini', 'groq', 'openrouter', 'openai', 'anthropic'])
 export type AiProvider = z.infer<typeof AiProviderSchema>
 
+/**
+ * The order the services are tried in until the owner chooses another:
+ * free and quick first (ADR 0015), the database's own default from 0041.
+ * The helper holds the same list; a contract test keeps the two equal.
+ */
+export const AI_DEFAULT_ORDER: readonly AiProvider[] = ['openrouter', 'groq', 'gemini', 'openai', 'anthropic']
+
 /** The services a key can be pasted for: every one of them (A11). */
 export type AiKeyProvider = AiProvider
+
+/** One model on the helper's committed list: its id, and whether it reads a photo. */
+export interface AiModel {
+  readonly id: string
+  readonly images: boolean
+}
+
+/**
+ * The helper's committed models, each service's default first, as the app
+ * shows them (ADR 0004, re-chosen for speed in ADR 0015). The helper is
+ * pasted as one file and holds its own copy; a contract test keeps the two
+ * equal. A photo goes to the first model on a service that reads one.
+ */
+export const AI_MODELS: Readonly<Record<AiProvider, readonly AiModel[]>> = {
+  gemini: [
+    { id: 'gemini-3.5-flash-lite', images: true },
+    { id: 'gemini-3.1-flash-lite', images: true },
+    { id: 'gemini-3.5-flash', images: true },
+  ],
+  groq: [
+    { id: 'openai/gpt-oss-20b', images: false },
+    { id: 'openai/gpt-oss-120b', images: false },
+    { id: 'qwen/qwen3.8-27b', images: true },
+  ],
+  openrouter: [
+    { id: 'thinkingmachines/inkling-small:free', images: true },
+    { id: 'google/gemma-4-26b-a4b-it:free', images: true },
+    { id: 'google/gemma-4-31b-it:free', images: true },
+    { id: 'thinkingmachines/inkling:free', images: true },
+    { id: 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', images: true },
+    { id: 'nvidia/nemotron-3-super-120b-a12b:free', images: false },
+    { id: 'inclusionai/ling-3.0-flash-sante:free', images: false },
+    { id: 'nvidia/nemotron-3.5-lightning:free', images: false },
+    { id: 'openrouter/free', images: false },
+  ],
+  openai: [
+    { id: 'gpt-5-nano', images: true },
+    { id: 'gpt-5-mini', images: true },
+  ],
+  anthropic: [
+    { id: 'claude-haiku-4-5', images: true },
+    { id: 'claude-sonnet-5', images: true },
+  ],
+}
 
 /**
  * Every request the helper answers. It learns who is asking from the token,
  * never the body. A pasted key is 20 to 200 characters of letters, digits
  * and `_ . : -` (AI_KEY_SHAPE); `save_key` sends it once and nothing sends
- * it back. `test_key` is also Check which models work.
+ * it back. `test_key` is also Check which models work. A `test` run may
+ * name one service: the speed test, whose reply says how long it took
+ * (`ms`, ADR 0015); with none it runs on the first service that answers.
  */
 export type AiRequest =
   | { readonly action: 'ping' }
   | { readonly action: 'status' }
   | { readonly action: 'save_key'; readonly provider: AiKeyProvider; readonly key: string }
   | { readonly action: 'test_key'; readonly provider: AiKeyProvider }
-  | { readonly action: 'run'; readonly task: 'test' }
+  | { readonly action: 'run'; readonly task: 'test'; readonly provider?: AiProvider | undefined }
   | { readonly action: 'run'; readonly task: 'narrate'; readonly pack: 'daily'; readonly data: NarrateDaily }
   | { readonly action: 'run'; readonly task: 'narrate'; readonly pack: 'report'; readonly data: NarrateReport }
   | { readonly action: 'run'; readonly task: 'narrate'; readonly pack: 'checkin'; readonly data: NarrateCheckin }
@@ -75,7 +124,7 @@ export type AiAction = AiRequest['action']
  * new version to be pasted over it. Bumped with every change to the
  * helper, as `YYYY-MM-DD.N`.
  */
-export const AI_HELPER_VERSION = '2026-10-01.5'
+export const AI_HELPER_VERSION = '2026-10-08.2'
 
 /**
  * read-receipt's version, which it answers to GET from this one on, so
@@ -144,6 +193,20 @@ export interface AiStatusReply {
 export interface AiFailureReply {
   readonly ok: false
   readonly code: AiCode
+}
+
+/**
+ * What a `run` answers: the service and model that wrote the reply, its
+ * text for the task's own parser, and how long the attempt took in
+ * milliseconds (ADR 0015), which AI settings' Test shows and nothing
+ * logs. The app narrows it by hand in ai/client.ts (`ranOf`).
+ */
+export interface AiRunReply {
+  readonly ok: true
+  readonly provider: AiProvider
+  readonly model: string
+  readonly text: string
+  readonly ms: number
 }
 
 /** A model on the helper's committed list, and whether the key's service lists it for this key. */
