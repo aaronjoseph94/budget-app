@@ -112,6 +112,19 @@ describe('Use AI', () => {
     expect(await screen.findByText('Couldn’t save that just now. Try again.')).toBeTruthy()
     expect(use.checked).toBe(true)
   })
+
+  it('sits at the top, in the status card, with no hint while on, and is there with no AI helper installed (ADR 0015)', async () => {
+    const fake = createFakeSupabase()
+    fake.functions.ai = null
+    renderScreen(<Shell />, fake)
+    const top = within(await screen.findByRole('region', { name: 'AI now' }))
+    expect((await top.findByRole<HTMLInputElement>('switch', { name: 'Use AI' })).checked).toBe(true)
+    expect(screen.queryByText(/^On: the services below/)).toBeNull()
+    await screen.findByText(/The AI helper isn’t installed yet/)
+    fireEvent.click(top.getByRole('switch', { name: 'Use AI' }))
+    await waitFor(() => expect(fake.tables.ai_settings).toMatchObject([{ user_id: 'u1', enabled: false }]))
+    expect(top.getByText(/^Off: the Coach, suggestions/)).toBeTruthy()
+  })
 })
 
 describe('focus while a choice saves (FE-6, e2e-setup-01)', () => {

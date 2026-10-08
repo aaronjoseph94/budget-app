@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AiServiceStatus } from '@budget/schema'
 import { useAppData } from '../app-data.js'
 import { aiStatus, NOT_SET_UP_HERE, type AiView } from '../ai/client.js'
-import { ChoicesPanel } from '../ai/ChoicesPanel.js'
+import { ChoicesLine, ChoicesPanel, useAiChoices, UseAiSwitch } from '../ai/ChoicesPanel.js'
 import { CoachPanel } from '../ai/CoachPanel.js'
 import { KeyCard } from '../ai/KeyCard.js'
 import { Button } from '../components/ui/button.js'
@@ -15,12 +15,13 @@ import { LINE_LINK } from '../components/ui/link.js'
 import { cn } from '../lib/cn.js'
 
 /**
- * AI settings (plan §8.3): one true sentence on whether AI is on, the free
- * Gemini card (A10: paste a key, test it, remove it, choose a model), the
- * other four services' cards folded under More AI services, then the order
- * they are tried in, Use paid services and the daily limit with today's
- * calls (A11); and how the Coach talks (A12), which is shown even with no
- * helper, since the app's own words follow its tone too.
+ * AI settings (plan §8.3; ADR 0015): Use AI and one true sentence on
+ * whether AI is on at the top, the free Gemini card (A10: paste a key,
+ * test it, remove it, choose a model), the other four services' cards
+ * folded under More AI services, then the order they are tried in, Use
+ * paid services and the daily limit with today's calls (A11); and how
+ * the Coach talks (A12), which is shown even with no helper, since the
+ * app's own words follow its tone too.
  *
  * Its own chunk. A helper not installed, or 0016 not pasted, is said here
  * with the way to fix it; elsewhere the app's own words stand in. Only the
@@ -31,7 +32,7 @@ export function AiSettingsScreen() {
   const [view, setView] = useState<AiView | null>(null)
   const latest = useRef(0)
 
-  // Quiet after a step on the card: the page stays as it is until the new status arrives.
+  // Quiet after a step on a card or a choice: the page stays as it is until the new status arrives.
   const check = useCallback(async (quiet = false) => {
     const run = ++latest.current
     if (!quiet) setView(null)
@@ -44,6 +45,8 @@ export function AiSettingsScreen() {
     return () => void ++latest.current
   }, [check])
 
+  // The choices are read from ai_settings itself, so Use AI is there with no helper installed.
+  const choices = useAiChoices(() => void check(true))
   const status = view?.status ?? null
   return (
     // Mockup A: a reading width of its own, the status across the top, then
@@ -62,34 +65,37 @@ export function AiSettingsScreen() {
         tile is the accent's, not the mockup's green, which names Income. */}
       <section
         aria-labelledby="ai-now"
-        className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl border bg-gradient-to-r from-card to-primary-tint p-5 sm:px-6 [--muted-foreground:var(--canvas-muted)]"
+        className="space-y-3 rounded-xl border bg-gradient-to-r from-card to-primary-tint p-5 sm:px-6 [--muted-foreground:var(--canvas-muted)]"
       >
         <h2 id="ai-now" className="sr-only">
           AI now
         </h2>
-        <span aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
-          <Icon name="sparkles" className="size-5" />
-        </span>
-        <div className="min-w-0 flex-1 basis-56">
-          <p aria-live="polite" className="text-lg font-semibold leading-snug">
-            {view === null ? 'Checking the AI helper…' : view.state === 'not_set_up' ? NOT_SET_UP_HERE : view.sentence}
-          </p>
+        <div className="flex items-center gap-4">
+          <span aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
+            <Icon name="sparkles" className="size-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <UseAiSwitch choices={choices} />
+          </div>
+        </div>
+        <p aria-live="polite" className="text-lg font-semibold leading-snug">
+          {view === null ? 'Checking the AI helper…' : view.state === 'not_set_up' ? NOT_SET_UP_HERE : view.sentence}
+        </p>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           {view === null || view.help === null ? null : (
-            <a
-              href={hashOf({ screen: 'help', param: view.help })}
-              className={cn(LINE_LINK, 'text-sm')}
-            >
+            <a href={hashOf({ screen: 'help', param: view.help })} className={cn(LINE_LINK, 'text-sm')}>
               {view.help === 'updates' ? 'Open One-time updates' : 'Show me how'}
             </a>
           )}
+          {/* aria-disabled, not disabled, while it checks: disabled drops focus (FE-6, e2e-setup-01). */}
+          <Button variant="outline" aria-disabled={view === null} onClick={() => {
+            if (view !== null) void check()
+          }}>
+            {view === null ? 'Checking…' : 'Check again'}
+          </Button>
         </div>
-        {/* aria-disabled, not disabled, while it checks: disabled drops focus (FE-6, e2e-setup-01). */}
-        <Button variant="outline" aria-disabled={view === null} onClick={() => {
-          if (view !== null) void check()
-        }}>
-          {view === null ? 'Checking…' : 'Check again'}
-        </Button>
       </section>
+      {choices.loaded.state === 'missing' || choices.loaded.state === 'unreachable' ? <ChoicesLine state={choices.loaded.state} /> : null}
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
         {status === null ? null : (
           <div className="space-y-5">
@@ -117,7 +123,7 @@ export function AiSettingsScreen() {
           </div>
         )}
         <div className="space-y-5">
-          {status === null ? null : <ChoicesPanel status={status} onChanged={() => void check(true)} />}
+          {status === null ? null : <ChoicesPanel status={status} choices={choices} />}
           <CoachPanel />
         </div>
       </div>
