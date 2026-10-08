@@ -78,8 +78,9 @@ it is merged into `main` (§3).
 
 **What moved, which you will notice:**
 - The phone bar is **Month · Coach · Add · Review · More**. **Week left the
-  bar**: it is the **Week** in the **Month · Week · Pay · Year** switch under
-  the Month's title, and `#/week` still works.
+  bar**: it is the **Week** in the **Week · Month · Year** switch under
+  the Month's title, and `#/week` still works. (Since 2026-10-08 the switch
+  runs shortest period first and Paycheck is a screen of its own, ADR 0014.)
 - On a computer, a sidebar replaces the old top bar (see Mockup A below).
 - **More** is in four groups: Plan, Understand, Set up and help, Records.
   On a computer, More is not needed: every screen is in the sidebar, or
@@ -103,8 +104,8 @@ difference from the mockups.
   1023 px it is a column of icons. The top bar holds the sidebar toggle,
   where you are ("Budget › Month"), **Search or jump to… ⌘K** (opens
   Help's search for now) and **+ Add**. On a phone nothing moved.
-- **Week is in the switch** under each title, Month · Week · Pay · Year,
-  as before on a phone, and now in the sidebar too.
+- **Week is in the switch** under each title, Week · Month · Year (ADR
+  0014), as before on a phone, and now in the sidebar too.
 - **The colours.** The workbook's pastel blocks, teal Setup, slate Year
   and handwritten month title are gone. The app is white cards on a light
   grey with an indigo accent; each list has one colour on every screen

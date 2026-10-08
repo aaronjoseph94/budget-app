@@ -30,23 +30,20 @@ afterEach(() => {
   window.location.hash = ''
 })
 
-describe('the Month · Week · Pay · Year switch (ADR 0006)', () => {
+describe('the Week · Month · Year switch (ADR 0014)', () => {
   it.each([
-    ['/month', 'Month', 'September 2026'],
     ['/week', 'Week', 'This week'],
-    // No pay schedule in the fake: the switch is there even so.
-    ['/paycheck', 'Pay', 'Paycheck'],
+    ['/month', 'Month', 'September 2026'],
     ['/year', 'Year', 'Year'],
-  ])('is on %s, with its own view marked', async (hash, current, heading) => {
+  ])('is on %s, with its own view marked, shortest period first', async (hash, current, heading) => {
     go(hash)
     renderScreen(<Shell />, createFakeSupabase())
     expect(await screen.findByRole('heading', { name: heading, level: 1 })).toBeTruthy()
 
     const links = (await views()).getAllByRole('link')
     expect(links.map((a) => [a.textContent, a.getAttribute('href')])).toEqual([
-      ['Month', '#/month'],
       ['Week', '#/week'],
-      ['Pay', '#/paycheck'],
+      ['Month', '#/month'],
       ['Year', '#/year'],
     ])
     expect(links.filter((a) => a.getAttribute('aria-current') === 'page').map((a) => a.textContent)).toEqual([current])
@@ -60,7 +57,7 @@ describe('the Month · Week · Pay · Year switch (ADR 0006)', () => {
   // fade. Below 640 px each takes 8 px a side: four of 64 px, the gaps and
   // the padding are 284 of the 296 px there. jsdom has no layout, so the
   // classes that give it are what is checked.
-  it('keeps all four in view on a 320 px phone, 8 px a side below 640 px', async () => {
+  it('keeps all three in view on a 320 px phone, 8 px a side below 640 px', async () => {
     go('/month')
     renderScreen(<Shell />, createFakeSupabase())
     for (const a of (await views()).getAllByRole('link')) {
@@ -70,25 +67,25 @@ describe('the Month · Week · Pay · Year switch (ADR 0006)', () => {
 
   // The design review's Accessibility list: the Views switch takes the arrow
   // keys as the Add screen's tabs do, wrapping at each end, with Home and End.
-  it('moves along the four with the arrow keys, Home and End', async () => {
+  it('moves along the three with the arrow keys, Home and End', async () => {
     go('/month')
     renderScreen(<Shell />, createFakeSupabase())
     await screen.findByRole('heading', { name: 'September 2026', level: 1 })
-    const [month, week, , year] = (await views()).getAllByRole('link')
+    const [week, month, year] = (await views()).getAllByRole('link')
 
-    month!.focus()
-    fireEvent.keyDown(month!, { key: 'ArrowRight' })
-    expect(document.activeElement).toBe(week)
-    fireEvent.keyDown(week!, { key: 'ArrowLeft' })
+    week!.focus()
+    fireEvent.keyDown(week!, { key: 'ArrowRight' })
     expect(document.activeElement).toBe(month)
     fireEvent.keyDown(month!, { key: 'ArrowLeft' })
+    expect(document.activeElement).toBe(week)
+    fireEvent.keyDown(week!, { key: 'ArrowLeft' })
     expect(document.activeElement).toBe(year)
     fireEvent.keyDown(year!, { key: 'ArrowRight' })
-    expect(document.activeElement).toBe(month)
-    fireEvent.keyDown(month!, { key: 'End' })
+    expect(document.activeElement).toBe(week)
+    fireEvent.keyDown(week!, { key: 'End' })
     expect(document.activeElement).toBe(year)
     fireEvent.keyDown(year!, { key: 'Home' })
-    expect(document.activeElement).toBe(month)
+    expect(document.activeElement).toBe(week)
     // Focus only moves; the hash is the Month's until a link is followed.
     expect(window.location.hash).toBe('#/month')
   })
@@ -99,6 +96,15 @@ describe('the Month · Week · Pay · Year switch (ADR 0006)', () => {
     await screen.findByRole('heading', { name: 'Savings goals' })
     expect(screen.queryByRole('navigation', { name: 'Views' })).toBeNull()
     await expectNoAxeViolations()
+  })
+
+  // Decision 1 (2026-10-08): Paycheck is its own screen under Plan, beside
+  // the Bill calendar, so it stops competing with the three everyday views.
+  it('is not on Paycheck, which keeps its screen and its address', async () => {
+    go('/paycheck')
+    renderScreen(<Shell />, createFakeSupabase())
+    await screen.findByRole('heading', { name: 'Paycheck', level: 1 })
+    expect(screen.queryByRole('navigation', { name: 'Views' })).toBeNull()
   })
 
   it('puts the Week one tap from the Month, which still opens first', async () => {

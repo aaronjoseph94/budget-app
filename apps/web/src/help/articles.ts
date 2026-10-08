@@ -81,7 +81,7 @@ export const ARTICLES: readonly Article[] = [
     ],
     done: 'you can reach every screen from the sidebar on a computer, or from the bottom buttons and More on a phone.',
     stuck:
-      'In a narrower window the sidebar shows only its icons: point at one to see its name. Ask and the Sunday check-in have no place of their own in the sidebar: open them from the **Coach**. Getting started and AI settings open from **Settings**, with **Open Getting started** and **Open AI settings**. Month, Week, Pay and Year are also in the switch at the top of each. A closed group says on its name how many rows wait in Review.',
+      'In a narrower window the sidebar shows only its icons: point at one to see its name. Ask and the Sunday check-in have no place of their own in the sidebar: open them from the **Coach**. Getting started and AI settings open from **Settings**, with **Open Getting started** and **Open AI settings**. Week, Month and Year are also in the switch at the top of each. A closed group says on its name how many rows wait in Review.',
     related: ['start', 'periods', 'signing-in'],
   },
   {
@@ -106,22 +106,22 @@ export const ARTICLES: readonly Article[] = [
   },
   {
     id: 'periods',
-    title: 'Month, Week, Pay and Year',
+    title: 'Week, Month and Year',
     summary:
-      'Four ways to look at the same money. The Month opens first; the switch at the top moves between them.',
+      'Three ways to look at the same money, shortest first. The Month opens first; the switch at the top moves between them. Paycheck is a screen of its own.',
     steps: [
       'Open the **Month** to see this month: what you planned, what you spent, and what is left.',
       'Tap **Week** in the switch at the top to see Monday to Sunday.',
-      'Tap **Pay** (called **Paycheck** in the sidebar and on More) to see one pay period, from one payday to the next.',
       'Tap **Year** to see twelve months side by side, and choose the first one under **Starts in**.',
-      'Use the arrows at the top right, around the month’s name, to step back or forward one month, week or pay period.',
+      'Open **Paycheck** from the sidebar, or from **More** on a phone, to see one pay period, from one payday to the next.',
+      'Use the arrows at the top right, around the period’s name, to step back or forward one week, month or pay period.',
       'Tap a row to see the charges behind it.',
       'Tap a budget to type it: every budget you can type is underlined with dots, and a pencil marks a row with none yet.',
       'Read the % pill on a list’s head: how much of its budget it has spent, or of its goal on Income and Savings.',
     ],
-    done: 'you can move between the four views and step back to last month.',
+    done: 'you can move between the three views, open Paycheck, and step back to last month.',
     stuck:
-      'Pay needs to know when you are paid: choose **How often** and a **First payday** on an Income row in Setup. On a phone, the Week is in the switch, not the bottom bar. Rows with nothing in them fold away: press **Show 3 empty** (with your own number) to see them.',
+      'Paycheck needs to know when you are paid: choose **How often** and a **First payday** on an Income row in Setup. On a phone, the Week is in the switch, not the bottom bar. Rows with nothing in them fold away: press **Show 3 empty** (with your own number) to see them.',
     related: ['comparisons', 'budgets', 'wrong-number'],
   },
   {

@@ -634,7 +634,7 @@
   }
 }
 
-/* A row that scrolls inside its own box, as the Month · Week · Pay · Year
+/* A row that scrolls inside its own box, as the Week · Month · Year
    switch and Reports' tabs do with the phone's text large (plan §9): its
    right edge fades while there is more to the right, so a hidden "Year"
    reads as there to scroll to. Tied to the row's own scroll, so a row that

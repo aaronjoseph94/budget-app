@@ -16,7 +16,7 @@ describe('the edge fade', () => {
     expect(css).toMatch(/@supports \(animation-timeline: scroll\(\)\) \{\s*\.edge-fade \{[^}]*mask-image:[^}]*animation-timeline: scroll\(x self\);/)
   })
 
-  it('is on the Month · Week · Pay · Year switch and on Reports’ tabs', () => {
+  it('is on the Week · Month · Year switch and on Reports’ tabs', () => {
     expect(source('/screens/PeriodSwitch.tsx')).toMatch(/className="edge-fade [^"]*overflow-x-auto/)
     // Reports' tabs scroll in the box around their segmented control, as the switch's do (Mockup A step 8).
     expect(source('/screens/ReportsScreen.tsx')).toMatch(/className="edge-fade [^"]*overflow-x-auto[^"]*">\s*<div role="tablist"/)

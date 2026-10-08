@@ -6,7 +6,6 @@ import { Alert, Loading } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { NativeSelect } from '../components/ui/form.js'
 import { PaycheckPeriod } from './PaycheckPeriod.js'
-import { PeriodSwitch } from './PeriodSwitch.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { MonthTitle } from '../components/ui/type.js'
 
@@ -56,8 +55,6 @@ export function PaycheckScreen({ day }: { day: string | null }) {
 
   return (
     <div className="space-y-4">
-      {/* First, so it is there while the schedule loads, fails or is missing. */}
-      <PeriodSwitch current="paycheck" />
       {/* The period's own header names it once it is found; until then,
         when when you are paid could not be read, and with no schedule, the
         screen keeps its title for a screen reader to land on (N116). One

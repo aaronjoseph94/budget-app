@@ -42,7 +42,7 @@ const never = () => false
  * What each screen draws and how wide it stands, one entry per screen.
  * The mapped type makes a screen added to nav.ts's SCREENS without an
  * entry here a type error; it used to compile and draw an empty page
- * (architecture-b-11). Month, Week, Paycheck and Year widen on a desktop
+ * (architecture-b-11). Week, Month, Year and Paycheck widen on a desktop
  * to take the workbook's four columns (§6.3, §6.4), the Bill Calendar to
  * give its seven room for names, the Coach for its insights and goal side
  * by side (Mockup A step 7), the Forecast and Reports for their sections

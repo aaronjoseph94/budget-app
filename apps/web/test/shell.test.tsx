@@ -86,7 +86,8 @@ describe('Shell', () => {
 
     const groups = within(deskBar()).getAllByRole('group')
     expect(groups.map((g) => [document.getElementById(g.getAttribute('aria-labelledby') ?? '')?.textContent, within(g).getAllByRole('link').map((b) => b.getAttribute('aria-label'))])).toEqual([
-      ['Plan', ['Month', 'Week', 'Paycheck', 'Bill calendar', 'Year']],
+      // Shortest period first, then the two Plan screens of their own (ADR 0014).
+      ['Plan', ['Week', 'Month', 'Year', 'Paycheck', 'Bill calendar']],
       ['Money', ['Savings', 'Debts', 'All transactions']],
       ['Coach', ['Coach', 'Forecast', 'Reports']],
       ['Inbox', ['Review', 'Add']],
@@ -104,6 +105,14 @@ describe('Shell', () => {
     expect(within(deskBar()).getByRole('link', { name: 'Week' }).getAttribute('aria-current')).toBe('page')
   })
 
+  it('lights More on a phone for Paycheck, which left the switch (ADR 0014), and Paycheck in the sidebar', async () => {
+    go('/paycheck')
+    renderScreen(<Shell />, createFakeSupabase())
+    await screen.findByRole('heading', { name: 'Paycheck', level: 1 })
+    expect(within(phoneBar()).getByRole('link', { name: 'More' }).getAttribute('aria-current')).toBe('page')
+    expect(within(deskBar()).getByRole('link', { name: 'Paycheck' }).getAttribute('aria-current')).toBe('page')
+  })
+
   it('groups More by what it is for, lists only what is built, and lights More while its screens show', async () => {
     renderScreen(<Shell />, createFakeSupabase())
     expect(within(phoneBar()).getByRole('link', { name: 'More' }).getAttribute('href')).toBe('#/more')
@@ -111,7 +120,7 @@ describe('Shell', () => {
 
     await screen.findByRole('heading', { name: 'More' })
     const expected = [
-      ['Plan', ['Paycheck', 'Bill calendar', 'Year', 'Savings', 'Debts', 'Forecast']],
+      ['Plan', ['Year', 'Paycheck', 'Bill calendar', 'Savings', 'Debts', 'Forecast']],
       ['Understand', ['Reports', 'Ask']],
       ['Set up and help', ['Getting started', 'Setup', 'AI settings', 'Settings', 'Help']],
       ['Records', ['All transactions']],
@@ -356,7 +365,7 @@ describe('Shell, its screens as links (FE-20)', () => {
       '#/month', '#/coach', '#/add', '#/review', '#/more',
     ])
     expect(within(deskBar()).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual([
-      '#/month', '#/week', '#/paycheck', '#/calendar', '#/year', '#/savings', '#/debts', '#/ledger',
+      '#/week', '#/month', '#/year', '#/paycheck', '#/calendar', '#/savings', '#/debts', '#/ledger',
       '#/coach', '#/forecast', '#/reports', '#/review', '#/add', '#/setup', '#/settings', '#/help',
     ])
 

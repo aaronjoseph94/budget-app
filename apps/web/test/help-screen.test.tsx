@@ -57,7 +57,7 @@ describe('Help', () => {
     expect(titles()).toEqual(['Signing in and out', 'Put it on your iPhone'])
     // The newer articles are found by their own words: getting around, Setup's lists, AI apps.
     fireEvent.change(search, { target: { value: 'sidebar' } })
-    expect(titles()).toEqual(['Finding your way around', 'Month, Week, Pay and Year', 'Signing in and out', 'Words the app uses'])
+    expect(titles()).toEqual(['Finding your way around', 'Week, Month and Year', 'Signing in and out', 'Words the app uses'])
     fireEvent.change(search, { target: { value: 'Rename' } })
     expect(titles()).toEqual(['Your lists and categories'])
     fireEvent.change(search, { target: { value: 'disconnect' } })

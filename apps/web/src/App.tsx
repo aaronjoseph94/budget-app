@@ -74,7 +74,7 @@ export function FirstRun() {
 
 /**
  * Phones: Month first, Add in the centre within thumb reach. The Coach has
- * the Week's old place; the Week is in the Month's switch (ADR 0006).
+ * the Week's old place; the Week is in the Month's switch (ADR 0006, 0014).
  */
 const PHONE_TABS: readonly Tab[] = [
   { screen: 'month', label: 'Month', icon: 'calendar' },
@@ -90,8 +90,8 @@ interface Tab {
   readonly icon: IconName
 }
 
-/** The views reached from the Month's switch. */
-const SWITCHED: ReadonlySet<Screen> = new Set(['week', 'paycheck', 'year'])
+/** The views reached from the Month's switch; Paycheck left it for More (ADR 0014). */
+const SWITCHED: ReadonlySet<Screen> = new Set(['week', 'year'])
 
 /**
  * The tab lit while a screen shows: its own; the Month for a view reached

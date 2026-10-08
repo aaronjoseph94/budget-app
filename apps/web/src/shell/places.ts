@@ -15,17 +15,18 @@ export interface PlaceGroup {
 /**
  * The sidebar's groups, as Mockup A draws them (ADR 0011). Plan is always
  * open; the others fold. Every screen More lists is here, or lights the
- * screen it belongs to (PARENT).
+ * screen it belongs to (PARENT). Plan runs shortest period first, then
+ * the two screens of their own (ADR 0014).
  */
 export const SIDEBAR_GROUPS: readonly PlaceGroup[] = [
   {
     title: 'Plan',
     items: [
-      { screen: 'month', label: 'Month', icon: 'calendar' },
       { screen: 'week', label: 'Week', icon: 'week' },
+      { screen: 'month', label: 'Month', icon: 'calendar' },
+      { screen: 'year', label: 'Year', icon: 'year' },
       { screen: 'paycheck', label: 'Paycheck', icon: 'wallet' },
       { screen: 'calendar', label: 'Bill calendar', icon: 'bills' },
-      { screen: 'year', label: 'Year', icon: 'year' },
     ],
   },
   {

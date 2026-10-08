@@ -2,12 +2,12 @@
 
 ## Shell — App.tsx
 - Phone bar: Month(calendar) · Coach(sparkles, dot when check-in ready) · Add(plus, centre) · Review(inbox, count badge) · More(menu)
-- Desktop bar (md+): Month · Week · Coach · Forecast · Reports · Savings · Debts · Review · Add · More. Switched views (week/paycheck/year) light Month; everything else lights More.
+- Desktop bar (md+): Month · Week · Coach · Forecast · Reports · Savings · Debts · Review · Add · More. Switched views (week/year) light Month; everything else, Paycheck included since ADR 0014, lights More.
 - Main: max-w-3xl, lg:max-w-7xl on month/week/paycheck/year/calendar. OfflineBanner "You're offline: figures may be out of date". Load error: Alert "Could not load your data" + Try again / Sign out / "Check the one-time updates".
 - Every screen: HelpButton (?) beside title → HelpSheet with the screen's article.
 
 ## Month — MonthScreen.tsx, MonthSummary.tsx, MonthCharges.tsx, MonthCharts.tsx, MonthCoachLine.tsx, MonthForecastLine.tsx, BudgetEditor.tsx, StartEditor.tsx, PeriodSwitch.tsx
-- PeriodSwitch: Month · Week · Pay · Year (4 links)
+- PeriodSwitch: Week · Month · Year (3 links; Paycheck left the switch for its own screen, ADR 0014)
 - Header: "September 2026"; buttons Bill calendar, Prev, Next, ?
 - First run card: "New here? Getting started sets up your lists, pay, bills and goals one step at a time, a few minutes each." [Get started] [Open Setup]
 - ReviewBanner: "Not filed yet: 3 from September waiting for review" + "— not counted below" | "{n} from other months waiting for review"
@@ -177,7 +177,7 @@
 - CoachPanel "How the Coach talks": radios Cheerleader "A win first, then one thing to try. Never shaming." / Straight talker "Says it plainly, and still gives one thing to try."; switch "Share shop names with the AI" + "On: when the Coach speaks of a shop, or Review asks for a category, the AI sees its name, with long numbers hidden. It never sees an amount or a date."; link "What the AI sees"
 
 ## Help — HelpScreen.tsx, help/HelpSheet.tsx, help/UpdatesPanel.tsx, help/ArticleBody.tsx, help/articles.ts, help/HelpButton.tsx
-- Index: "Help" / "Short answers, one step at a time."; search "Search help, such as “budget”"; list rows title + summary + chevron. Titles: Start here · One-time updates · Month, Week, Pay and Year · Bring in a statement · Why things wait in Review · Add: a statement, a photo, or type it · Budgets and bills · Savings and your goals · Add a savings goal · Debts · What the Coach does, and never does · The Sunday check-in · How the forecast works · Two month-end figures · Reports and trends · Comparisons with last month · Ask about your money · Turn on free AI · More AI services, paid ones too · What the AI sees, and how the Coach talks · Why the AI sometimes rests · Why does a number look wrong? · Messages with a code in brackets · Put it on your iPhone · Words the app uses
+- Index: "Help" / "Short answers, one step at a time."; search "Search help, such as “budget”"; list rows title + summary + chevron. Titles: Start here · One-time updates · Week, Month and Year · Bring in a statement · Why things wait in Review · Add: a statement, a photo, or type it · Budgets and bills · Savings and your goals · Add a savings goal · Debts · What the Coach does, and never does · The Sunday check-in · How the forecast works · Two month-end figures · Reports and trends · Comparisons with last month · Ask about your money · Turn on free AI · More AI services, paid ones too · What the AI sees, and how the Coach talks · Why the AI sometimes rests · Why does a number look wrong? · Messages with a code in brackets · Put it on your iPhone · Words the app uses
 - Article: "‹ Help"; title; (updates: UpdatesPanel first); body (what it is + numbered steps); card "You’re done when…"; card "Stuck?"; "Related" pills
 - UpdatesPanel: "4 of 6 in" / "All done"; rows ✓/✗ mono filename + what it adds; next box "Next: paste 0016_ai_foundation.sql, then each file after it in number order, one at a time." [Copy] link "Open 0016_ai_foundation.sql on GitHub"; helper steps list; [Check again]
 - HelpSheet (from each ?): sheet title = article; body; [Show me] (primary full); [✨ Ask about this] (outline full)
