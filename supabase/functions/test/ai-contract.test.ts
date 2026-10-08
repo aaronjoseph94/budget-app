@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
-import { AI_HELPER_VERSION, AI_KEY_SHAPE, AI_MODELS, AiProviderSchema, CATEGORY_ALIAS, type AiRequest, type NarrateDaily } from '@budget/schema'
-import { MODELS, RequestSchema, VERSION } from '../ai/index.js'
+import { AI_DEFAULT_ORDER, AI_HELPER_VERSION, AI_KEY_SHAPE, AI_MODELS, AiProviderSchema, CATEGORY_ALIAS, type AiRequest, type NarrateDaily } from '@budget/schema'
+import { DEFAULT_ORDER, MODELS, RequestSchema, VERSION } from '../ai/index.js'
 
 /** Readonly all the way down: the app's types are, and zod's output is not, which is no difference on the wire. */
 type Frozen<T> = T extends readonly (infer U)[] ? readonly Frozen<U>[] : T extends object ? { readonly [K in keyof T]: Frozen<T[K]> } : T
@@ -69,5 +69,11 @@ describe('the helper and the app agree on what may be asked', () => {
   it('names the same models, and which read a photo, as the app does', () => {
     expect(MODELS).toEqual(AI_MODELS)
     for (const provider of AiProviderSchema.options) expect(AI_MODELS[provider].length).toBeGreaterThan(0)
+  })
+
+  it('tries the services free and quick first, as the app and 0041 say: OpenRouter, Groq, Gemini, then the paid ones', () => {
+    expect(DEFAULT_ORDER).toEqual(['openrouter', 'groq', 'gemini', 'openai', 'anthropic'])
+    expect(AI_DEFAULT_ORDER).toEqual(DEFAULT_ORDER)
+    expect([...AI_DEFAULT_ORDER].sort()).toEqual([...AiProviderSchema.options].sort())
   })
 })

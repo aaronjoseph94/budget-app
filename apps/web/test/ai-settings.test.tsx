@@ -88,8 +88,9 @@ describe('AI settings says what is true, whatever the helper does', () => {
     await open(createFakeSupabase(), 'AI isn’t set up yet. Everything still works in the app’s own words. Turn on free AI below, in about 2 minutes.')
     expect(screen.getByRole('link', { name: 'Show me how' }).getAttribute('href')).toBe('#/help/free-ai')
     const services = within(await screen.findByRole('region', { name: 'Try in this order' }))
+    // Free and quick first, with no order saved (ADR 0015).
     expect(services.getAllByRole('listitem').map((li) => li.textContent)).toEqual([
-      '1. Google GeminiFreeNo key yet', '2. GroqFreeNo key yet', '3. OpenRouterFreeNo key yet', '4. OpenAIPaidNo key yet', '5. AnthropicPaidNo key yet',
+      '1. OpenRouterFreeNo key yet', '2. GroqFreeNo key yet', '3. Google GeminiFreeNo key yet', '4. OpenAIPaidNo key yet', '5. AnthropicPaidNo key yet',
     ])
     // Mockup A's chevrons in place of the ↑ ↓ glyphs; each still names what it moves.
     expect(services.getAllByRole('button').map((b) => [b.getAttribute('aria-label'), b.querySelector('svg') !== null])).toContainEqual(['Move Groq up', true])

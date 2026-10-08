@@ -371,6 +371,13 @@ export const MODELS: Readonly<Record<Provider, readonly Model[]>> = {
 const TIER: Readonly<Record<Provider, 'free' | 'paid'>> = { gemini: 'free', groq: 'free', openrouter: 'free', openai: 'paid', anthropic: 'paid' }
 const PROVIDERS = Object.keys(MODELS) as readonly Provider[]
 const isProvider = (p: unknown): p is Provider => typeof p === 'string' && (PROVIDERS as readonly string[]).includes(p)
+/**
+ * The order the services are tried in until the owner chooses another, and
+ * the order status lists them: free and quick first (ADR 0015). 0041 makes
+ * it the database's own default; packages/schema holds the same list, and
+ * a contract test keeps the two equal.
+ */
+export const DEFAULT_ORDER: readonly Provider[] = ['openrouter', 'groq', 'gemini', 'openai', 'anthropic']
 const idsOf = (provider: Provider): readonly string[] => MODELS[provider].map((m) => m.id)
 
 function modelFor(provider: Provider, ...choices: readonly unknown[]): string {
@@ -943,7 +950,7 @@ function statusOf(env: Env, context: unknown): Record<string, unknown> | null {
   if (typeof cap !== 'number' || !Array.isArray(ctx['keys']) || !Array.isArray(ctx['usage'])) return null
   const saved = new Map(list(ctx['keys']).map(obj).filter((k) => isProvider(k['provider'])).map((k) => [k['provider'], k]))
   const secret = env.GEMINI_API_KEY?.trim() ?? ''
-  const services = PROVIDERS.filter(isProvider).map((provider) => {
+  const services = DEFAULT_ORDER.map((provider) => {
     const key = saved.get(provider)
     // A pasted key wins over the secret; each line below asks for it first.
     const fromSecret = provider === 'gemini' && secret !== ''
@@ -1348,10 +1355,10 @@ function receiptAsk(data: Receipt): Ask {
 /** What happened on one service, as the owner's settings can say it: never a key, a prompt or a reply. */
 type Tried = { readonly provider: Provider; readonly model: string; readonly result: Outcome | 'resting' | 'over_budget' | 'service_cap' | 'locked' }
 
-/** The owner's order, then any service it leaves out, so a service is never lost to an older order. */
+/** The owner's order, then any service it leaves out in the default order, so a service is never lost to an older order. */
 function orderOf(stored: unknown): Provider[] {
   const chosen = list(stored).filter(isProvider)
-  return [...new Set([...chosen, ...(PROVIDERS.filter(isProvider))])]
+  return [...new Set([...chosen, ...DEFAULT_ORDER])]
 }
 
 /**

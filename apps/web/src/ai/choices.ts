@@ -7,7 +7,7 @@
  * With no row saved yet, the choices are the columns' defaults, so the
  * screen shows what the helper will actually do.
  */
-import { AiProviderSchema, type AiProvider } from '@budget/schema'
+import { AI_DEFAULT_ORDER, AiProviderSchema, type AiProvider } from '@budget/schema'
 import { whyRefused } from '../ledger.js'
 import type { SupabaseClient } from '../supabase.js'
 
@@ -20,16 +20,16 @@ export interface AiChoices {
   readonly dailyCap: number
 }
 
-/** 0016's defaults: AI on, free Gemini first, paid off, 40 calls a day. */
-export const DEFAULT_CHOICES: AiChoices = { enabled: true, order: AiProviderSchema.options, allowPaid: false, dailyCap: 40 }
+/** 0016's defaults, the order 0041's: AI on, free and quick first (OpenRouter, Groq, Gemini), paid off, 40 calls a day. */
+export const DEFAULT_CHOICES: AiChoices = { enabled: true, order: AI_DEFAULT_ORDER, allowPaid: false, dailyCap: 40 }
 
 /** The daily limits offered, inside 0016's CHECK of 10 to 150. */
 export const DAILY_CAPS: readonly number[] = [10, 20, 30, 40, 50, 60, 80, 100, 120, 150]
 
-/** A stored order as the helper reads it: the services it names, once each, then the rest in their usual order. */
+/** A stored order as the helper reads it: the services it names, once each, then the rest in the default order. */
 export function orderOf(stored: unknown): readonly AiProvider[] {
   const named = (Array.isArray(stored) ? stored : []).flatMap((p) => AiProviderSchema.options.filter((o) => o === p))
-  return [...new Set([...named, ...AiProviderSchema.options])]
+  return [...new Set([...named, ...AI_DEFAULT_ORDER])]
 }
 
 /** The order with one service moved a place earlier (-1) or later (+1); unchanged at either end. */

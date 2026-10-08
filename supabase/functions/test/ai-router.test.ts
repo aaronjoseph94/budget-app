@@ -171,6 +171,13 @@ describe('failing over, in the owner’s order', () => {
     expect(r.rpc('ai_key_mark')).toEqual([{ p_user: USER, p_provider: 'groq', p_status: 'rejected' }])
   })
 
+  it('tries the services a stored order leaves out after it, free and quick first: OpenRouter, Groq, Gemini (ADR 0015)', async () => {
+    // Anthropic alone is stored, and paid services are off: the rest follow in the default order.
+    const r = await ran({ saved: ['groq', 'openrouter', 'anthropic'], settings: { provider_order: ['anthropic'] } })
+    expect(r.services).toEqual(['openrouter', 'groq', 'gemini'])
+    expect(r.rpc('ai_usage_claim').map((c) => c['p_provider'])).toEqual(['openrouter', 'groq', 'gemini'])
+  })
+
   it('follows the owner’s order and chosen model, and passes over a key already turned down', async () => {
     const r = await ran({
       saved: ['groq', 'openrouter'], keyStatus: { groq: 'rejected' },

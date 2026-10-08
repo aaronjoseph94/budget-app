@@ -271,7 +271,7 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
     `main-tnlcto` first, waits for the green **gates** run, and only then
     pushes that same commit to `main`.
 
-### Part D: the database updates, 0015 to 0040, about 20 minutes, once
+### Part D: the database updates, 0015 to 0041, about 20 minutes, once
 
 13. **A backup first.** Some of these updates change saved rows, and
     `0038` **permanently deletes** a learned shop where two would end up
@@ -324,7 +324,12 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
     are, and lets it suggest a budget from a month on that puts that
     month's own "just this month" budget back to the usual one, which it
     was told was "already so" (testing of 2026-10-05). It needs `0039`,
-    says "Paste 0039 first" without it, and deletes nothing.
+    says "Paste 0039 first" without it, and deletes nothing. Then paste
+    `0041_ai_free_order.sql`: the AI services are tried free and quick
+    first, OpenRouter, then Groq, then Gemini (ADR 0015); an order you
+    never changed follows, one you changed stays. It needs `0038` and
+    `0016`, says "Paste 0038 first" or "Paste 0016 first" without them,
+    and deletes nothing.
 
     Each update refuses to run before the one it needs ("Paste 0018
     first", "Paste 0035 first" and so on) and changes nothing then.

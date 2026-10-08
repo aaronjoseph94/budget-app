@@ -20,13 +20,16 @@ import type { QuickAddBrief } from './quick-add.js'
 import type { ReceiptPhoto } from './receipt.js'
 import type { AskBrief } from './ask.js'
 
-/**
- * The AI services, in 0016's `ai_provider` enum order, which is also the
- * order they are tried in until the owner chooses another: free Gemini
- * first, the other free services, then the paid ones.
- */
+/** The AI services, in 0016's `ai_provider` enum order. The order they are tried in is AI_DEFAULT_ORDER. */
 export const AiProviderSchema = z.enum(['gemini', 'groq', 'openrouter', 'openai', 'anthropic'])
 export type AiProvider = z.infer<typeof AiProviderSchema>
+
+/**
+ * The order the services are tried in until the owner chooses another:
+ * free and quick first (ADR 0015), the database's own default from 0041.
+ * The helper holds the same list; a contract test keeps the two equal.
+ */
+export const AI_DEFAULT_ORDER: readonly AiProvider[] = ['openrouter', 'groq', 'gemini', 'openai', 'anthropic']
 
 /** The services a key can be pasted for: every one of them (A11). */
 export type AiKeyProvider = AiProvider

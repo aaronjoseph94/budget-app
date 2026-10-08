@@ -27,7 +27,7 @@ describe('checking the one-time updates', () => {
   it('finds each one in when everything it adds answers', async () => {
     const fake = await ready()
     const checked = await checkUpdates(fake.client)
-    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['sign', '0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', '0020', '0021', '0022', '0023', '0024', '0025', '0026', '0027', '0028', '0029', '0035', '0030', '0031', '0032', '0033', '0034', '0036', '0037', '0038', '0039', '0040', 'ai-f', 'read', 'sign', 'oaut', 'mcp-'])
+    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['sign', '0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', '0020', '0021', '0022', '0023', '0024', '0025', '0026', '0027', '0028', '0029', '0035', '0030', '0031', '0032', '0033', '0034', '0036', '0037', '0038', '0039', '0040', '0041', 'ai-f', 'read', 'sign', 'oaut', 'mcp-'])
     expect(missing(checked)).toEqual([])
     expect(nextStep(checked)).toEqual({ kind: 'done' })
   })
@@ -149,13 +149,13 @@ describe('checking the one-time updates', () => {
 
   // The review fixes change rules, not what the owner's session can see, so
   // each is proven by schema_level() (0021) at or above its number.
-  it('reads which review fixes are in from schema_level: 0021 to 0029 in order after 0020, and 0038 last', async () => {
+  it('reads which review fixes are in from schema_level: 0021 to 0029 in order after 0020, 0038, and 0041 last', async () => {
     const fake = await ready()
     const fixes = UPDATES.filter((u) => u.checks.some((c) => c.kind === 'schema')).map((u) => u.file.slice(0, 4))
-    expect(fixes).toEqual(['0021', '0022', '0023', '0024', '0025', '0026', '0027', '0028', '0029', '0038'])
+    expect(fixes).toEqual(['0021', '0022', '0023', '0024', '0025', '0026', '0027', '0028', '0029', '0038', '0041'])
     fake.rpcReplies['schema_level'] = 24
     let checked = await checkUpdates(fake.client)
-    expect(missing(checked)).toEqual(['0025', '0026', '0027', '0028', '0029', '0038'].map((n) => [n, 'missing']))
+    expect(missing(checked)).toEqual(['0025', '0026', '0027', '0028', '0029', '0038', '0041'].map((n) => [n, 'missing']))
     expect(nextStep(checked)).toEqual({ kind: 'paste', file: '0025_ingested_text_format_characters.sql', fromStart: false })
     // With 0029 in, 0038 is offered only once the AI-app updates before it are in.
     fake.rpcReplies['schema_level'] = 29
@@ -170,6 +170,10 @@ describe('checking the one-time updates', () => {
     // 0040 needs 0039, and is offered straight after it (testing db-01).
     expect(nextStep(await checkUpdates(fake.client))).toEqual({ kind: 'paste', file: '0040_ai_words_every_character_shown.sql', fromStart: false })
     fake.rpcReplies['ai_app_updates_in'] = 40
+    // 0041 moves schema_level() on from 38, and is offered after 0040 (ADR 0015).
+    expect(nextStep(await checkUpdates(fake.client))).toEqual({ kind: 'paste', file: '0041_ai_free_order.sql', fromStart: false })
+    fake.rpcReplies['schema_level'] = 41
+    expect(missing(await checkUpdates(fake.client))).toEqual([])
     // Before 0021, schema_level is not there: every fix is missing, and 0021 is next.
     delete fake.rpcReplies['schema_level']
     checked = await checkUpdates(fake.client)
@@ -369,13 +373,14 @@ describe('checking the one-time updates', () => {
       { name: '_not_an_ai_app', args: {} },
       // Each reads a number and nothing else: schema_level for 0021 to 0029,
       // ai_app_updates_in for 0035 and then each of 0030 to 0034, 0036 and
-      // 0037, schema_level again for 0038, and ai_app_updates_in for 0039
-      // and 0040.
+      // 0037, schema_level again for 0038, ai_app_updates_in for 0039
+      // and 0040, and schema_level once more for 0041.
       ...Array.from({ length: 9 }, () => ({ name: 'schema_level', args: {} })),
       ...Array.from({ length: 8 }, () => ({ name: 'ai_app_updates_in', args: {} })),
       { name: 'schema_level', args: {} },
       { name: 'ai_app_updates_in', args: {} },
       { name: 'ai_app_updates_in', args: {} },
+      { name: 'schema_level', args: {} },
     ])
     // The helper is only pinged.
     expect(fake.functions.calls).toEqual([{ action: 'ping' }])
