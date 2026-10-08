@@ -4029,3 +4029,18 @@ the 300-line slice, and nothing the owner sees.
 (`aria-label`, the visible word first, as Debts' "Edit Loan"), move each
 test's locator to the new name, and keep Help's `**bold**` words, which name
 what is drawn.
+
+## N175 — Lists' focus-after-remove test missed its 1-second wait once under coverage
+
+**Seen:** 2026-10-08, the final `./scripts/gates.sh full` before `main`.
+`lists-tab.test.tsx` › "keeps focus on the list: the next row's Remove,
+then the card's heading once it is empty" failed once in the coverage run
+(1,197 ms, focus still on the page body), then passed three runs alone and
+the next full gate. Nothing in that push touched Lists.
+
+**Why not fixed here:** the wait is `waitFor`'s default second, and a
+timeout is never raised to make a test pass; a flake needs its cause.
+
+**To settle:** find what the removal awaits before it moves focus (the
+fake's delete and the reload after it), and have the test wait for the
+row to leave before it asks where focus is, as N170 asks of its test.

@@ -73,6 +73,8 @@ it is merged into `main` (§3).
   checkboxes and date pickers dark; the Forecast asks for this month's
   starting balance once, not four times; each debt's **Edit** names its
   debt to a screen reader (`05-bug-bash.md`).
+- **The before and after** of the whole rework, measured the same way
+  twice, is `docs/design/rework/EVAL.md`.
 
 - **AI throughout, on a free key: OpenRouter, Groq or Google Gemini.** A Coach that says how the
   month is going, what changed, what to cut and when you will reach your
@@ -386,7 +388,8 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
     AI helper", paste it over everything in the editor. **Enforce JWT
     verification**: keep it **on** while One-time updates shows **Signing
     key** with a ✗, **off** once it shows ✓ (step 21). **Deploy**.
-    One-time updates shows ✓ once version `2026-10-01.5` or later answers.
+    One-time updates shows ✓ once version `2026-10-08.2` or later answers
+    (the speed test and the free-first order, ADR 0015).
 18. **read-receipt: delete it.** Supabase → **Edge Functions →
     read-receipt** (only if it is listed) → `⋯` → **Delete** → confirm.
     The helper reads receipts without it. (To keep it instead, open its
