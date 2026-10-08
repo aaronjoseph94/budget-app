@@ -23,8 +23,8 @@ export const SCREEN_HELP: Readonly<Record<Exclude<Screen, 'help'>, HelpTopic>> =
   more: 'getting-around',
   // Settings' ? opens the tab showing (SETTINGS_TAB_HELP); this is its first tab's.
   settings: 'lists',
-  // All transactions is where a charge counted twice is found and removed.
-  ledger: 'wrong-number',
+  // All transactions is where a charge counted twice is removed; Review says so.
+  ledger: 'review',
   savings: 'savings',
   debts: 'debts',
   coach: 'coach',

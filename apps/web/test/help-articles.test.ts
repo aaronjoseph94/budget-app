@@ -87,8 +87,7 @@ describe('Help articles', () => {
       const text = [a.title, a.summary, a.done, a.stuck, ...a.steps, ...(a.terms ?? []).flatMap((t) => [t.term, t.meaning])].join(' ')
       expect(text, a.id).not.toMatch(/flight (card|fund|goal)/i)
     }
-    expect(articleFor('goals')?.steps).toContain('Press **Add a goal**.')
-    expect(articleFor('savings')?.related).toContain('goals')
+    expect(articleFor('savings')?.steps.some((s) => s.startsWith('Press **Add a goal**'))).toBe(true)
   })
 
   // A18: Habits is written, and what it needs before each part shows.
@@ -105,7 +104,6 @@ describe('Help articles', () => {
     const coach = articleFor('coach')
     expect(coach?.stuck).toMatch(/what you really moved into the goal’s fund/)
     expect(coach?.stuck).toMatch(/never written by AI/)
-    expect(articleFor('savings')?.steps.join(' ')).toMatch(/one thing to trim/)
   })
 
   // A20: the check-in says when it is ready, what it asks about, and that nothing is saved without a tap.
@@ -167,7 +165,7 @@ describe('Help articles', () => {
     expect(review?.steps.join(' ')).toContain('Type “Review my whole budget and suggest any changes” and send it.')
     expect(review?.summary).toMatch(/nothing changes until you tap Apply/)
     expect(review?.stuck).toMatch(/\*\*Changed since it was suggested\*\* offers only \*\*Dismiss\*\*/)
-    for (const id of ['ai-apps', 'connect-claude', 'connect-chatgpt', 'review'] as const) expect(articleFor(id)?.related, id).toContain('ai-review')
+    for (const id of ['ai-apps', 'connect-claude', 'connect-chatgpt'] as const) expect(articleFor(id)?.related, id).toContain('ai-review')
   })
 
   // Security review mcp-3-01: the emergency steps end each sign-in, and Disconnect
@@ -214,7 +212,7 @@ const sentencesOf = (a: (typeof ARTICLES)[number]) =>
     .filter(Boolean)
 
 /** The articles rewritten short so far; the last slice lists all twelve (PRD 03). */
-const SHORT = ['start', 'getting-around'] as const
+const SHORT = ['start', 'getting-around', 'add', 'review', 'budgets', 'lists', 'savings', 'debts'] as const
 
 // The owner's brevity rule (PRD 03, 2026-10-08): twelve short articles.
 describe('Help’s length', () => {

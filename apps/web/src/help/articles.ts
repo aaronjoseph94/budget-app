@@ -85,6 +85,114 @@ export const ARTICLES: readonly Article[] = [
     ],
   },
   {
+    id: 'add',
+    title: 'Add a charge: statement, photo, typed',
+    summary: 'A statement from your bank, a receipt photo, or one typed entry.',
+    steps: [
+      'Open **Add**.',
+      'Choose **Statement** and press **Choose a statement**.',
+      'Check the rows, then press **Import 42 transactions** or **Send 42 to the review queue**.',
+      'For a receipt, choose **Photo**, then **Take or choose a receipt photo**, then **Send to review**.',
+      'For cash, pay or a move to savings, choose **Type it**.',
+      'Under **Just type it**, write “coffee 4.50 yesterday” and press **Fill in**.',
+      'Check each field, then press **Add**.',
+    ],
+    done: 'the rows wait in Review, or a typed entry shows on the Month.',
+    stuck:
+      'If it cannot read the file, try the other format. **Does not add up**: try the CSV. A photo goes to your first AI service that reads photos, never stored. A charge brought in twice waits in Review: reject it.',
+    related: ['review', 'updates'],
+  },
+  {
+    id: 'review',
+    title: 'Review',
+    summary: 'Nothing counts until you approve it here.',
+    steps: [
+      'Open **Review**.',
+      'Under **Suggested changes**, press **Apply** or **Dismiss** on each AI app suggestion.',
+      'Check each row’s category: **✨ Suggested: …** is the AI’s guess; **Suggested** is your own rule.',
+      'Pick another category where it is wrong, or press **Not this**.',
+      'Press **Approve**, or **Approve these 12**, then **Approve all 12**.',
+      'Press **✕** on a row that is not a real charge.',
+      'At the bottom, press **Dismiss** on an unread line once you have typed it yourself.',
+    ],
+    done: 'Review says “Nothing waiting.”',
+    stuck:
+      'A shop you approved once is filed the same way next time. To stop that, press **Forget** under **Shops filed by themselves** in Settings. A wrong number: approve what waits, bring in the latest statement, check **Start**. A charge counted twice: remove the typed one in **All transactions**.',
+    related: ['add', 'ai-apps'],
+  },
+  {
+    id: 'budgets',
+    title: 'Budgets and bills',
+    summary: 'A budget is what you plan to spend. A bill is a monthly amount on a day.',
+    steps: [
+      'On the **Month**, tap a row’s Budgeted figure.',
+      'Type the amount, choose **From this month on** or **Just this month**, and press **Save**.',
+      'For a bill, open **Settings**, then **Lists**, and type its **Monthly amount** and **Day paid**.',
+      'Open **Bill calendar** to see every bill on its day.',
+      'For weekly budgets, tap one on the **Week**.',
+    ],
+    done: 'each row shows Budgeted, Actual and Left, and each list’s head a % pill.',
+    stuck:
+      'A bill counts its planned amount until the real charge arrives and takes its place. A shop charging a row every month: Lists says **Looks like a monthly bill: add it?**. Press **Fill it in**, then **Save**.',
+    related: ['lists', 'getting-around'],
+    terms: [
+      { term: 'Start', meaning: 'The balance your bank showed on the 1st, as you typed it on the Month.' },
+    ],
+  },
+  {
+    id: 'lists',
+    title: 'Your lists',
+    summary: 'Your name and your categories, each on one list.',
+    steps: [
+      'Open **Settings**, then **Lists**.',
+      'Type your name after **My name is**.',
+      'With few categories, press **Use the starter list** for names to rename.',
+      'To add one, type its name at the foot of a list and press **Add**.',
+      'To rename one, type over its name; a tick shows it saved.',
+      'The arrows move it, the two-arrow button changes its list, the bin removes it.',
+      'On Bills, Debts and Subscriptions, type **Day paid** and **Monthly amount**.',
+      'On Income, choose **How often** and **First payday**.',
+    ],
+    done: 'each category sits on its list, and **Fixed monthly bills** shows the total.',
+    stuck:
+      'A card you pay off from your bank goes on Not spending: its purchases are already counted. A category with charges cannot be removed: move them first with **Move to…** on the Month. **Stop** clears a monthly amount from this month on.',
+    related: ['budgets', 'start'],
+  },
+  {
+    id: 'savings',
+    title: 'Savings',
+    summary: 'Each goal has a fund on your Savings list; money moved in counts toward it.',
+    steps: [
+      'Open **Savings** (on a phone, under **More**).',
+      'Press **Add a goal**, type its name and target, and press **Add goal**.',
+      'Choose **Dollars** or **Hours** under **Show progress in**.',
+      'Press **Edit goal** to change a goal; **Remove** deletes one with nothing saved.',
+      'Press **Make main goal** on the one the Coach and the Week should show.',
+      'Press **Pause** on a goal set aside, or **Mark as reached** when done.',
+      'Record each move into a fund on **Add** as **I spent**.',
+    ],
+    done: 'your main goal is first on Savings, and the Coach shows it.',
+    stuck:
+      'If the saved amount looks low, check each move was filed under the fund, not as spending. A goal holding money cannot be removed: pause it or mark it reached.',
+    related: ['coach', 'lists'],
+  },
+  {
+    id: 'debts',
+    title: 'Debts',
+    summary: 'The loans and card balances you are paying down, and when each is paid off.',
+    steps: [
+      'Open **Debts** (on a phone, under **More**).',
+      'Press **Add a debt**.',
+      'Type its name, **Starting balance**, the **As of** month, **Minimum payment** and **APR**.',
+      'Press **Save debt**.',
+      'Read **Ways to pay it off**: how much sooner Snowball or Avalanche finishes.',
+    ],
+    done: 'each debt shows when it is paid off, and the summary your debt-free date.',
+    stuck:
+      'An estimate is fine: the balance is as of the **As of** month. Press **Edit** to fix a figure or add one under **Extra payments**. These debts are separate from the Month’s Debts list, which counts each month’s payments.',
+    related: ['budgets', 'coach'],
+  },
+  {
     id: 'updates',
     title: 'One-time updates',
     summary:
@@ -105,152 +213,6 @@ export const ARTICLES: readonly Article[] = [
     related: ['start', 'free-ai', 'ai-apps', 'codes'],
   },
   {
-    id: 'statements',
-    title: 'Bring in a statement',
-    summary:
-      'Your card statement brings in most of your spending at once. Download it from your bank as a PDF or a CSV file first. About 3 minutes.',
-    steps: [
-      'Open **Add**: the middle button along the bottom on a phone, or **Add** at the top right on a computer.',
-      'Choose the **Statement** tab.',
-      'Press **Choose a statement** and pick the file you downloaded.',
-      'Check the rows it read, then press **Import 42 transactions** for a PDF, or **Send 42 to the review queue** for a CSV (with your own number).',
-      'Open **Review** to give the new rows their categories; after a PDF, **Go to review** takes you there.',
-    ],
-    done: 'Review lists the new rows, and a statement you bring in again adds nothing twice.',
-    stuck:
-      'If the app says it could not read the file, try the other format your bank offers (PDF or CSV). **This file has no transactions** means it is empty or has only a heading row: download it again for dates with charges in them. **This is not a text CSV** means the file is something else with a .csv name, such as a spreadsheet: download or save it as CSV again. A CSV that writes amounts like 4,50, common in Europe, needs **Semicolon** under **Column separator** and **Comma** under **Decimal mark**. Lines it could not read wait at the bottom of Review with the reason. If it says **Does not add up**, the rows it read do not match the statement’s printed totals, so nothing is imported: try the CSV instead. A charge you removed from All transactions comes back to Review, not to your totals, if you bring in that statement again: reject it there to keep it out. If the same charge comes in twice in different shapes (a PDF statement and a CSV of the same card, or a receipt photo and then the statement), the second copy waits in Review rather than going into your totals: reject it there.',
-    related: ['review', 'add', 'wrong-number'],
-  },
-  {
-    id: 'review',
-    title: 'Why things wait in Review',
-    summary:
-      'Nothing reaches your budget until you approve it. Every imported row waits here for its category, so a wrong guess never counts by itself.',
-    steps: [
-      'Open **Review**.',
-      'At the top, **Suggested changes** lists what an AI app you connected suggested: press **Apply** or **Dismiss** on each (Let Claude or ChatGPT review your budget).',
-      'Check the category on each row: **✨ Suggested: …** with “By AI” is the AI’s guess; **Suggested** with “How you filed this merchant last time” is your own rule; “You filed a similar shop under …” is a shop like it.',
-      'Choose another category where the pick is wrong, or press **Not this** to clear the AI’s guess.',
-      'Press **Approve** on a row, or **Approve these 12** (with your own number), check the list it shows, and press **Approve all 12**.',
-      'For a row that is not a real charge, press the **✕** beside it.',
-      'At the bottom, press **Dismiss** on a line the reader could not read once you have typed it yourself.',
-    ],
-    done: 'Review says "Nothing waiting." A shop you approved once is filed the same way next time, without waiting.',
-    stuck:
-      'If a shop keeps landing in the wrong place, move one of its charges from the Month with **Move to…** and leave **Always file** ticked. With free AI on, categories are suggested by themselves after an import; press **Suggest categories** to ask again, and the line beside it says if something is missing, such as a one-time update. The AI is sent each shop’s name, whether it was money in or out, and whether it was small, medium or large, never the amount or the date, and nothing it suggests counts until you approve it. Turn off **Share shop names** in AI settings to send nothing. To stop a shop filing itself, press **Forget** beside it under **Shops filed by themselves** in Settings.',
-    related: ['statements', 'add', 'ai-review', 'wrong-number'],
-  },
-  {
-    id: 'add',
-    title: 'Add: a statement, a photo, or type it',
-    summary: 'Three ways to put money in: a statement from your bank, a receipt photo, or one entry typed by hand.',
-    steps: [
-      'Open **Add**: the middle button along the bottom on a phone, or **Add** at the top right on a computer.',
-      'For a receipt, choose **Photo**, then **Take or choose a receipt photo**.',
-      'Check what it read, then press **Send to review**.',
-      'For cash, pay or a move to savings, choose **Type it**.',
-      'Choose **I spent** for cash or a move into a savings fund, or **I received** for pay.',
-      'Under **Just type it**, write it the way you would say it, such as “coffee 4.50 yesterday” or “got paid 2100”, and press **Fill in**.',
-      'Check each field, fill in anything left empty, then press **Add**.',
-    ],
-    done: 'a photo waits in Review, and a typed entry shows on the Month on its date.',
-    stuck:
-      'A photo is read by your first AI service that reads photos: free Google Gemini, or OpenAI or Anthropic once **Use paid services** is on; Groq and OpenRouter are never sent one. Before the AI helper is installed, the older receipt reader is used (see One-time updates). You can always type the receipt instead. Once a photo is sent, its fields are locked: to correct one, reject it in Review, then send the photo again. **Just type it** reads what it can by itself; with free AI on, the AI fills in the rest, but only an amount you actually typed, marked “Read by AI: check it”. What you typed, today’s date and your category names are sent to the AI, nothing else. Two numbers, such as “3 coffees 12”, leave the amount for you or the AI; a date with slashes is left for you, since 9/10 can be either month. Nothing is added until you press **Add**.',
-    related: ['statements', 'review', 'updates'],
-  },
-  {
-    id: 'budgets',
-    title: 'Budgets and bills',
-    summary:
-      'A budget is what you plan to spend on something. A bill has a monthly amount and a day it is paid, and counts as planned until the real charge arrives.',
-    steps: [
-      'On the **Month**, tap a row’s Budgeted figure.',
-      'Type the amount, choose **From this month on** or **Just this month**, and press **Save**.',
-      'For a bill, open **Settings**, then **Lists**, and type its **Monthly amount**.',
-      'Choose its **Day paid**.',
-      'To see every bill by its day, press the calendar button beside the month arrows, or open **Bill calendar**.',
-      'For weekly budgets, tap one on the **Week**, or open **Settings** (on a phone, under **More**) and type them under **Weekly budgets**.',
-    ],
-    done: 'each list’s head shows what it spent of its budget with a % pill, each row shows Budgeted, Actual and Left, and the Bill calendar shows your bills on their days.',
-    stuck:
-      'A bill with no charge yet this month counts its planned amount. When the real charge comes in, it takes the planned amount’s place, so it is never counted twice. With no budget typed, a bill’s planned amount is its budget, marked planned, so a bill paid as planned is 100% and 0.00 left; a budget you type, even $0.00, is used instead. When a shop charges a Bills, Debts or Subscriptions row every month and that row has no monthly amount, Lists says **Looks like a monthly bill: add it?** Press **Fill it in**, check the day and the amount, then press **Save**; nothing is saved until you do.',
-    related: ['getting-around', 'lists', 'wrong-number', 'start'],
-  },
-  {
-    id: 'lists',
-    title: 'Your lists and categories',
-    summary:
-      'Lists, under Settings, holds your name and your categories, each on one list: Income, Savings, Bills, Debts, Subscriptions, Variable expenses, and Not spending for money that only moves, such as paying off your card.',
-    steps: [
-      'Open **Settings**, then **Lists**.',
-      'Type your name after **My name is**.',
-      'With few categories yet, press **Use the starter list** for example names to rename.',
-      'To add a category, type its name in the box at the bottom of a list and press **Add**.',
-      'To rename one, type over its name, and a tick shows it is saved.',
-      'Use the up and down arrows to change its place, the button with two arrows, one each way, to move it to another list, and the bin to remove it.',
-      'On Bills, Debts and Subscriptions, type the **Day paid** and **Monthly amount**; on Income, choose **How often** and a **First payday**.',
-    ],
-    done: 'each category sits on the list it belongs to, and **Fixed monthly bills** shows what your bills come to.',
-    stuck:
-      'A card you pay off from your bank belongs on Not spending, since what you bought on it is already counted. A category with a monthly amount stays on its list until you press **Stop** under it. A category that still has charges cannot be removed: on the Month, tap its row and use **Move to…** on each charge first. When a shop charges a row every month, Lists says **Looks like a monthly bill: add it?**; press **Fill it in**, check the day and the amount, then press **Save**.',
-    related: ['budgets', 'getting-around', 'start'],
-  },
-  {
-    id: 'savings',
-    title: 'Savings and your goals',
-    summary:
-      'Each goal has a fund, a category on your Savings list, and money you move into the fund counts toward the goal. Your main goal is the one the Coach and the Week show.',
-    steps: [
-      'Open **Savings** (on a phone, under **More**).',
-      'Read each goal’s card: what is saved, what is left, what to save a month, and one thing to trim to get there sooner.',
-      'Press **Edit goal** to change its name, target, what is saved, or its dates.',
-      'Press **Remove** (or **Remove…** inside Edit goal) to delete a goal that has nothing saved in it; its fund stays on your Savings list.',
-      'Press **Make main goal** on the goal you want the Coach and the Week to show.',
-      'Press the up and down arrows on a goal to put your goals in the order you like.',
-      'Press **Pause** on a goal you are putting aside, or **Mark as reached** when it is done.',
-      'Each time you move money into a fund, record it on **Add** under **Type it** as **I spent**, filed under that fund.',
-    ],
-    done: 'your main goal is first on Savings, and the Coach and the Week show it.',
-    stuck:
-      'If the saved amount looks low, check that each move into the fund was recorded under that fund, and not as spending. A goal that still holds money cannot be removed: set Saved today to 0 and save first, or pause it or mark it reached. Paused and reached goals are folded away under Reached and paused, at the bottom of Savings, where Resume brings one back. When your main goal has a cost an hour, a spending charge opened from the Month also says what it cost in that goal’s time.',
-    related: ['goals', 'coach', 'comparisons', 'budgets'],
-  },
-  {
-    id: 'goals',
-    title: 'Add a savings goal',
-    summary:
-      'Save for anything, not only flying: a trip, a car, a rainy-day fund. Each goal gets its own fund on your Savings list. About 2 minutes.',
-    steps: [
-      'Open **Savings** (on a phone, under **More**).',
-      'Press **Add a goal**.',
-      'Type the goal’s name and its target.',
-      'Type what is saved already and a target date, if you have them.',
-      'Under **Show progress in**, choose **Dollars**, or **Hours** with what an hour costs.',
-      'Press **Add goal**.',
-    ],
-    done: 'the goal has its own card on Savings, and its fund is on your Savings list.',
-    stuck:
-      'A name already used on another list, such as Bills, cannot be a goal’s fund: use another name, or move that category to Savings in Lists. Money you move into the fund after today adds to the goal. Nothing breaks if you stop part way.',
-    related: ['savings', 'coach'],
-  },
-  {
-    id: 'debts',
-    title: 'Debts',
-    summary:
-      'The loans and card balances you are paying down, and when each is paid off. These are separate from the Month’s Debts list, which counts each month’s payments.',
-    steps: [
-      'Open **Debts** (on a phone, under **More**).',
-      'Press **Add a debt**.',
-      'Type its name, **Starting balance**, the **As of** month, **Minimum payment** and **APR**.',
-      'Press **Save debt**.',
-      'Read **Ways to pay it off** to see how much sooner Snowball or Avalanche finishes than minimums only.',
-    ],
-    done: 'each debt shows when it is paid off, and the summary shows the date you are debt-free.',
-    stuck:
-      'An estimate is fine: the balance is as of the **As of** month. Press **Edit** on a debt to fix a figure, or to add one under **Extra payments**.',
-    related: ['budgets', 'comparisons'],
-  },
-  {
     id: 'coach',
     title: 'What the Coach does, and never does',
     summary:
@@ -268,7 +230,7 @@ export const ARTICLES: readonly Article[] = [
     done: 'you have read the line, your goals’ dates and the cards, and you know why each one is there.',
     stuck:
       'Words marked ✨ were written by AI. The AI is never sent an amount, a balance or a date: it writes around blanks, and the app fills each blank with your own figure as it draws, so a figure is never the AI’s. A sentence that breaks the app’s rules is dropped, and that card shows the app’s own words. The AI is asked by itself at most once a day, and its words are kept and reused while what they say is still true. The Coach never moves money and never changes a budget without your tap. The date comes from what you really moved into the goal’s fund in each whole month: with under three months it is one rough date, and before a whole month is in, it says when to check back. A goal on no fund has no date until you press **Make it a fund** on Savings. Every quote and tip comes from a book, a speech or a public page, never written by AI; the AI may only pick one and say why it fits. A category shows only when it moves more than it usually does, so a quiet month has no cards. The same line sits at the top of the **Month**; tap it to come here. Under the cards, the forecast card says where the month is heading and what is safe to spend each day; press **Open the Forecast** for the whole of it. Some cards come from your shops: a price that went up, a new regular charge, a charge far above usual or the first at a new shop, the same charge twice, or a charge you added that a statement also holds. Press **See your shops** to see them all on Reports. Some cards cheer you on: two or more weeks in a row within your weekly budgets, or a category whose last whole month was its lowest; press **See your habits** for them on Reports. With **Share shop names** off in AI settings, the AI is told “a shop”, never its name.',
-    related: ['savings', 'goals', 'forecast', 'checkin', 'ai-sees', 'free-ai', 'comparisons'],
+    related: ['savings', 'forecast', 'checkin', 'ai-sees', 'free-ai', 'comparisons'],
   },
   {
     id: 'checkin',
@@ -285,7 +247,7 @@ export const ARTICLES: readonly Article[] = [
     done: 'you have answered the questions and chosen whether to set next week’s limit.',
     stuck:
       'Until Sunday, the check-in is about the week before; on Sunday it moves on to the week ending that day. It asks only about everyday charges of $20.00 or more, the three largest, and never again about one you have answered. Your answers show how much of your spending you called impulse over the last 8 weeks. The limit it suggests is the lower of what you spent last week and your usual week, rounded down to $5, and never above a weekly budget you already set; nothing is saved until you press the button. If your records do not cover all of last week yet (they start inside it, or your latest statement ends before its Sunday), there is no recap: import the statement that covers it. If the questions say they need a one-time update, see One-time updates; the rest of the check-in still works. Words marked ✨ were written by AI around your own figures; with AI off, the app’s own words show. The dot goes once you open the check-in on this phone or computer.',
-    related: ['coach', 'budgets', 'goals', 'updates'],
+    related: ['coach', 'budgets', 'updates'],
   },
   {
     id: 'forecast',
@@ -321,7 +283,7 @@ export const ARTICLES: readonly Article[] = [
     done: 'you know which figure counts only what has happened, and which one looks ahead.',
     stuck:
       'Both need this month’s starting balance, typed under **Start**; without it neither is shown. End of month stays as your workbook works it out, so it never moves because of a guess. The forecast shows only on this month, since it speaks of today.',
-    related: ['forecast', 'getting-around', 'wrong-number'],
+    related: ['forecast', 'getting-around'],
   },
   {
     id: 'reports',
@@ -357,7 +319,7 @@ export const ARTICLES: readonly Article[] = [
     done: 'you can see, row by row, what went up and what went down.',
     stuck:
       'A comparison needs records from last time. If it says your records start later, bring in the statement before that date on **Add**.',
-    related: ['getting-around', 'statements', 'wrong-number'],
+    related: ['getting-around', 'add'],
   },
   {
     id: 'ask',
@@ -543,23 +505,6 @@ export const ARTICLES: readonly Article[] = [
     related: ['ai-apps', 'connect-claude', 'connect-chatgpt', 'review'],
   },
   {
-    id: 'wrong-number',
-    title: 'Why does a number look wrong?',
-    summary:
-      'Almost always one of six things: a statement not brought in yet, rows waiting in Review, no starting balance, card payments, a planned bill, or a charge counted twice.',
-    steps: [
-      'Open **Review** and approve anything waiting, because a waiting row is not counted yet.',
-      'Open **Add** and bring in your latest statement if the last one ended a while ago.',
-      'On the **Month**, check that **Start** shows the balance your bank showed on the 1st.',
-      'Tap the row that looks wrong to see each charge behind it.',
-      'If one charge is there twice, typed once and imported once, open **All transactions** (on a phone, under **More**), press the bin beside the one marked added by hand, then **Remove**.',
-    ],
-    done: 'each row’s charges add up to what you expected.',
-    stuck:
-      'Card payments sit on Not spending and never count as spending, because the purchases on the card already did. A bill counts its planned amount until the real charge comes in, then the charge takes its place.',
-    related: ['review', 'budgets', 'statements'],
-  },
-  {
     id: 'codes',
     title: 'Messages with a code in brackets',
     summary:
@@ -572,7 +517,7 @@ export const ARTICLES: readonly Article[] = [
     ],
     done: 'what you were doing works without a message.',
     stuck: 'Nothing is lost when a message shows: a change that fails is not saved half way.',
-    related: ['updates', 'wrong-number', 'signing-in'],
+    related: ['updates', 'signing-in'],
     terms: [
       { term: 'PGRST205, 42P01, PGRST202, 42883, 42703', meaning: 'A one-time update is missing. Open Help, then One-time updates.' },
       { term: '42501', meaning: 'Something was changed on another device, or your sign-in needs refreshing. Sign out and back in.' },

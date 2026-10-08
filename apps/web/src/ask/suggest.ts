@@ -13,7 +13,6 @@ const ABOUT: Partial<Record<HelpTopic, readonly AskIntentName[]>> = {
   'getting-around': ['spend_in', 'compare', 'budget_left', 'explain_month'],
   budgets: ['budget_left', 'subscriptions', 'top_categories'],
   savings: ['goal_date', 'what_if_cut'],
-  goals: ['goal_date', 'what_if_cut'],
   debts: ['debt_free'],
   coach: ['explain_month', 'goal_date', 'what_if_cut'],
   checkin: ['budget_left', 'compare'],
@@ -21,7 +20,6 @@ const ABOUT: Partial<Record<HelpTopic, readonly AskIntentName[]>> = {
   'month-end': ['forecast', 'explain_month'],
   reports: ['top_categories', 'top_shops', 'subscriptions', 'compare'],
   comparisons: ['compare', 'explain_month'],
-  statements: ['help', 'spend_in'],
   review: ['help', 'top_shops'],
   add: ['help', 'spend_in'],
 }

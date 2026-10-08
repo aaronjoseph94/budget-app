@@ -51,7 +51,7 @@ describe('Help', () => {
     const search = await screen.findByRole('searchbox', { name: 'Search help' })
 
     fireEvent.change(search, { target: { value: 'STARTING balance' } })
-    expect(titles()).toEqual(['Debts', 'How the forecast works', 'Two month-end figures', 'Let Claude or ChatGPT review your budget', 'Why does a number look wrong?'])
+    expect(titles()).toEqual(['Debts', 'How the forecast works', 'Two month-end figures', 'Let Claude or ChatGPT review your budget'])
     // A button's name counts as its words, without the stars around it.
     fireEvent.change(search, { target: { value: 'add to home screen' } })
     expect(titles()).toEqual(['Signing in and out', 'Put it on your iPhone'])
@@ -59,7 +59,7 @@ describe('Help', () => {
     fireEvent.change(search, { target: { value: 'sidebar' } })
     expect(titles()).toEqual(['Getting around', 'Signing in and out'])
     fireEvent.change(search, { target: { value: 'Rename' } })
-    expect(titles()).toEqual(['Your lists and categories'])
+    expect(titles()).toEqual(['Your lists'])
     fireEvent.change(search, { target: { value: 'disconnect' } })
     expect(titles()).toEqual(['Use Claude or ChatGPT with your budget'])
 
@@ -74,22 +74,20 @@ describe('Help', () => {
   it('shows an article whole: what it is, its steps, when you are done, what to do when stuck, and where next', async () => {
     go('/help/review')
     renderScreen(<Shell />, createFakeSupabase())
-    const page = (await screen.findByRole('heading', { level: 1, name: 'Why things wait in Review' })).closest('article')!
+    const page = (await screen.findByRole('heading', { level: 1, name: 'Review' })).closest('article')!
 
-    const steps = within(page).getAllByRole('listitem').slice(0, 6)
-    expect(steps[1]?.textContent).toMatch(/^At the top, Suggested changes lists what an AI app you connected suggested/)
-    expect(steps[4]?.textContent).toBe('Press Approve on a row, or Approve these 12 (with your own number), check the list it shows, and press Approve all 12.')
+    const steps = within(page).getAllByRole('listitem').slice(0, 7)
+    expect(steps[1]?.textContent).toBe('Under Suggested changes, press Apply or Dismiss on each AI app suggestion.')
+    expect(steps[4]?.textContent).toBe('Press Approve, or Approve these 12, then Approve all 12.')
     expect([...(steps[4]?.querySelectorAll('strong') ?? [])].map((b) => b.textContent)).toEqual(['Approve', 'Approve these 12', 'Approve all 12'])
-    expect(within(page).getByRole('region', { name: 'You’re done when…' }).textContent).toContain('Review says "Nothing waiting."')
+    expect(within(page).getByRole('region', { name: 'You’re done when…' }).textContent).toContain('Review says “Nothing waiting.”')
     // Side by side, the two cards stretch to one height (V18).
     expect(within(page).getByRole('region', { name: 'You’re done when…' }).parentElement?.className).not.toContain('items-start')
-    expect(within(page).getByRole('region', { name: 'Stuck?' }).textContent).toContain('Always file')
+    expect(within(page).getByRole('region', { name: 'Stuck?' }).textContent).toContain('Shops filed by themselves')
     const related = within(within(page).getByRole('region', { name: 'Related' })).getAllByRole('link')
     expect(related.map((a) => [a.textContent, a.getAttribute('href')])).toEqual([
-      ['Bring in a statement', '#/help/statements'],
-      ['Add: a statement, a photo, or type it', '#/help/add'],
-      ['Let Claude or ChatGPT review your budget', '#/help/ai-review'],
-      ['Why does a number look wrong?', '#/help/wrong-number'],
+      ['Add a charge: statement, photo, typed', '#/help/add'],
+      ['Use Claude or ChatGPT with your budget', '#/help/ai-apps'],
     ])
     expect(within(page).getByRole('link', { name: '‹ Help' }).getAttribute('href')).toBe('#/help')
   })
@@ -103,7 +101,7 @@ describe('Help', () => {
     // The guide's way in comes before the words about it.
     expect(card.compareDocumentPosition(within(page).getAllByRole('list')[0]!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
     go('/help/review')
-    await screen.findByRole('heading', { level: 1, name: 'Why things wait in Review' })
+    await screen.findByRole('heading', { level: 1, name: 'Review' })
     expect(screen.queryByRole('link', { name: 'Open Getting started' })).toBeNull()
   })
 
@@ -112,7 +110,7 @@ describe('Help', () => {
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(min-width: 1024px)', addEventListener: () => undefined, removeEventListener: () => undefined }))
     go('/help/review')
     renderScreen(<Shell />, createFakeSupabase())
-    await screen.findByRole('heading', { level: 1, name: 'Why things wait in Review' })
+    await screen.findByRole('heading', { level: 1, name: 'Review' })
     expect(onScreen().getAllByRole('heading', { level: 1 })).toHaveLength(1)
     const list = onScreen().getByRole('navigation', { name: 'Help articles' })
     const links = within(list).getAllByRole('link')

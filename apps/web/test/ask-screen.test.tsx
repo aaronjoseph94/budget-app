@@ -133,11 +133,11 @@ describe('Ask with AI on', () => {
 
   it('opens the Help article a how-to question is about', async () => {
     const fake = forecastFakeWithGoals()
-    aiReads(fake, { intent: 'help', period: null, month: null, year: null, topic: 'statements', amount: null })
+    aiReads(fake, { intent: 'help', period: null, month: null, year: null, topic: 'add', amount: null })
     open(fake)
     await ask('where do my card statements go')
 
-    expect((await screen.findByRole('link', { name: 'Open this article' })).getAttribute('href')).toBe('#/help/statements')
+    expect((await screen.findByRole('link', { name: 'Open this article' })).getAttribute('href')).toBe('#/help/add')
   })
 })
 
