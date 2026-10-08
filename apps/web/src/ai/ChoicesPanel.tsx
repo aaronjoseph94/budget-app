@@ -113,7 +113,7 @@ export function UseAiSwitch({ choices: { loaded, saving, change } }: { readonly 
       </label>
       {choices.enabled ? null : (
         <p className="text-sm text-muted-foreground">
-          Off: the Coach, suggestions, Just type it and receipt photos send nothing to any AI service and use the app’s own words. AI apps you connect have their own switch in Settings.
+          Off: the Coach, suggestions, Just type it and receipt photos use the app’s own words. Nothing is sent to any AI service. AI apps you connect have their own switch in Settings.
         </p>
       )}
       <p aria-live="polite" className="text-base font-medium text-destructive">
