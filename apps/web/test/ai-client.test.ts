@@ -118,9 +118,17 @@ describe('a status reply is read only when it is one', () => {
 })
 
 describe('ranOf', () => {
-  const ran = { ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: '{"suggestions": []}' }
-  it('reads which service answered a run, with its model and the reply text', () => {
-    expect(ranOf(ran)).toEqual({ provider: 'gemini', model: 'gemini-3.5-flash-lite', text: '{"suggestions": []}' })
+  // An older helper's reply names no time; this one's says how long the attempt took (ADR 0015).
+  const older = { ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: '{"suggestions": []}' }
+  const ran = { ...older, ms: 1234 }
+  it('reads which service answered a run, with its model, the reply text and how long the attempt took', () => {
+    expect(ranOf(ran)).toEqual({ provider: 'gemini', model: 'gemini-3.5-flash-lite', text: '{"suggestions": []}', ms: 1234 })
+  })
+
+  it('reads a reply that names no time, or not one, as taking none it can say (ADR 0015)', () => {
+    expect(ranOf(older)?.ms).toBeNull()
+    expect(ranOf({ ...ran, ms: '1234' })?.ms).toBeNull()
+    expect(ranOf({ ...ran, ms: -1 })?.ms).toBeNull()
   })
 
   it('is null for a service it does not know, a model id that is not one, or a reply that is not text', () => {

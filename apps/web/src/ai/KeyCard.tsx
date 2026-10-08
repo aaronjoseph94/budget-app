@@ -6,7 +6,7 @@ import { Input, NativeSelect } from '../components/ui/form.js'
 import { Badge } from '../components/ui/feedback.js'
 import { cn } from '../lib/cn.js'
 import { hashOf } from '../nav.js'
-import { chooseModel, COMPANY, forgetKey, saveKey, testKey, type KeyResult } from './keys.js'
+import { chooseModel, COMPANY, forgetKey, saveKey, speedTest, testKey, type KeyResult } from './keys.js'
 import { LINE_LINK } from '../components/ui/link.js'
 
 /**
@@ -81,7 +81,7 @@ export function KeyCard({
   const provider = service.provider
   const card = CARDS[provider]
   const [shown, setShown] = useState(false)
-  const [working, setWorking] = useState<null | 'save' | 'test' | 'forget' | 'model'>(null)
+  const [working, setWorking] = useState<null | 'save' | 'test' | 'speed' | 'forget' | 'model'>(null)
   const [result, setResult] = useState<KeyResult | null>(null)
   const ids = { title: useId(), steps: useId(), key: useId(), model: useId() }
 
@@ -231,6 +231,12 @@ export function KeyCard({
       </div>
       {already || saved ? (
         <div className="flex flex-wrap gap-2">
+          {/* Test: one real call, timed, so the owner can see which service is quick (ADR 0015). A key not usable yet has nothing to time. */}
+          {again || waitsForPaid ? null : (
+            <Button className="min-h-11" disabled={working !== null} onClick={() => void run('speed', () => speedTest(supabase, provider))}>
+              {working === 'speed' ? 'Testing…' : 'Test'}
+            </Button>
+          )}
           <Button variant="outline" className="min-h-11" disabled={working !== null} onClick={() => void run('test', () => testKey(supabase, provider))}>
             {working === 'test' ? 'Checking…' : 'Check which models work'}
           </Button>

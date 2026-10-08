@@ -1,20 +1,13 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
-import type { AiProvider, AiServiceStatus, AiStatusReply } from '@budget/schema'
+import type { AiServiceStatus, AiStatusReply } from '@budget/schema'
 import { useAppData } from '../app-data.js'
 import { Button } from '../components/ui/button.js'
 import { NativeSelect, SWITCH } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { hashOf } from '../nav.js'
 import { DAILY_CAPS, moved, readChoices, saveChoices, saveEnabled, type AiChoices } from './choices.js'
+import { SERVICE_NAME as NAME } from './client.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
-
-const NAME: Readonly<Record<AiProvider, string>> = {
-  gemini: 'Google Gemini',
-  groq: 'Groq',
-  openrouter: 'OpenRouter',
-  openai: 'OpenAI',
-  anthropic: 'Anthropic',
-}
 
 const TESTED: Readonly<Record<NonNullable<AiServiceStatus['status']>, string>> = {
   ok: 'works',
