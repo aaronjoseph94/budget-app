@@ -98,6 +98,27 @@ describe('Settings, one screen with four tabs (ADR 0014 §2)', () => {
     expect(window.location.hash).toBe('#/settings/budgets')
   })
 
+  // In a browser the address's re-render lands after the key, so a quick
+  // second press has to count from the tab that has focus, not the one
+  // drawn: three quick ArrowRights from Lists ended on Budgets & goals
+  // (review of 2026-10-08).
+  it('counts each arrow from the tab that has focus, so quick presses are not lost', () => {
+    renderScreen(<SettingsScreen tab="lists" />, createFakeSupabase())
+    const [lists, budgets, ai, account] = tabs()
+    lists?.focus()
+    fireEvent.keyDown(lists!, { key: 'ArrowRight' })
+    expect(document.activeElement).toBe(budgets)
+    // The screen still draws Lists: the address changed, its render has not landed.
+    fireEvent.keyDown(budgets!, { key: 'ArrowRight' })
+    expect([window.location.hash, document.activeElement]).toEqual(['#/settings/ai', ai])
+    fireEvent.keyDown(ai!, { key: 'ArrowRight' })
+    expect([window.location.hash, document.activeElement]).toEqual(['#/settings/account', account])
+    fireEvent.keyDown(account!, { key: 'ArrowRight' })
+    expect([window.location.hash, document.activeElement]).toEqual(['#/settings/lists', lists])
+    fireEvent.keyDown(budgets!, { key: 'End' })
+    expect([window.location.hash, document.activeElement]).toEqual(['#/settings/account', account])
+  })
+
   it('opens Lists at a bare #/settings until a tab has been seen, then the last one seen on this device', async () => {
     renderScreen(<SettingsScreen tab={null} />, createFakeSupabase())
     expect(selected()).toBe('Lists')

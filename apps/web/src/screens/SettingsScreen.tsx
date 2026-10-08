@@ -38,9 +38,13 @@ export function SettingsScreen({ tab }: { tab: SettingsTab | null }) {
   useEffect(() => {
     if (tab !== null) rememberSettingsTab(tab)
   }, [tab])
-  // The arrow keys, Home and End choose along the tabs, as Reports' do.
+  // The arrow keys, Home and End choose along the tabs, as Reports' do. Each
+  // counts from the tab that has focus, not the one drawn: the address's
+  // re-render lands after the key, so a quick second press counted from
+  // the tab drawn went nowhere (review of 2026-10-08).
   const onKey = (e: KeyboardEvent<HTMLButtonElement>) => {
-    const to = arrowIndex(e.key, SETTINGS_TABS.indexOf(shown), SETTINGS_TABS.length)
+    const at = buttons.current.indexOf(e.currentTarget)
+    const to = arrowIndex(e.key, at === -1 ? SETTINGS_TABS.indexOf(shown) : at, SETTINGS_TABS.length)
     const next = to === null ? undefined : SETTINGS_TABS[to]
     if (to === null || next === undefined) return
     e.preventDefault()
