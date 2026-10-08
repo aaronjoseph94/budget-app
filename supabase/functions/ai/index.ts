@@ -27,7 +27,7 @@
 import { z } from 'npm:zod@4.6.5'
 
 /** Which copy is deployed, so One-time updates can tell an old paste from this one. */
-export const VERSION = '2026-10-01.5'
+export const VERSION = '2026-10-08.1'
 
 // Browsers allowed to call this, as read-receipt's: the Cloudflare and
 // Netlify sites and a local dev server, plus exact https origins in the
@@ -324,27 +324,72 @@ function fromAnAiApp(bearer: string): boolean {
   }
 }
 
-// The services, their tier, whether every model on the list reads a
-// photo, and their models, the default first (ADR 0004's allowlist). A
-// model is only ever one of these: the owner's choice, when it is on the
-// list, or the list's first. Groq's gpt-oss models read text only, and
-// OpenRouter's free router may pick one that does, so neither is ever
-// sent a photo (plan §3.3).
-const SERVICES = {
-  gemini: { tier: 'free', images: true, models: ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.5-flash'] },
-  groq: { tier: 'free', images: false, models: ['openai/gpt-oss-20b', 'openai/gpt-oss-120b'] },
-  openrouter: { tier: 'free', images: false, models: ['openrouter/free'] },
-  openai: { tier: 'paid', images: true, models: ['gpt-5-nano', 'gpt-5-mini'] },
-  anthropic: { tier: 'paid', images: true, models: ['claude-haiku-4-5', 'claude-sonnet-5'] },
-} as const
-type Provider = keyof typeof SERVICES
-const PROVIDERS = Object.keys(SERVICES) as readonly string[]
-const isProvider = (p: unknown): p is Provider => typeof p === 'string' && PROVIDERS.includes(p)
+// The services and their models, the default first (ADR 0004's allowlist,
+// re-chosen for speed on 2026-10-08: ADR 0015). Each model says whether it
+// reads a photo: OpenRouter's quickest free reader comes first, then its
+// other readers, then its quick text models, then its free router, which
+// may pick a model that reads text only; Groq's quickest words first, its
+// one reader after. A model is only ever one of these: the owner's choice,
+// when it is on the list, or the list's first (plan §3.3). packages/schema
+// holds the same list for the app, and a contract test keeps the two equal.
+type Provider = 'gemini' | 'groq' | 'openrouter' | 'openai' | 'anthropic'
+interface Model {
+  readonly id: string
+  readonly images: boolean
+}
+export const MODELS: Readonly<Record<Provider, readonly Model[]>> = {
+  gemini: [
+    { id: 'gemini-3.5-flash-lite', images: true },
+    { id: 'gemini-3.1-flash-lite', images: true },
+    { id: 'gemini-3.5-flash', images: true },
+  ],
+  groq: [
+    { id: 'openai/gpt-oss-20b', images: false },
+    { id: 'openai/gpt-oss-120b', images: false },
+    { id: 'qwen/qwen3.8-27b', images: true },
+  ],
+  openrouter: [
+    { id: 'thinkingmachines/inkling-small:free', images: true },
+    { id: 'google/gemma-4-26b-a4b-it:free', images: true },
+    { id: 'google/gemma-4-31b-it:free', images: true },
+    { id: 'thinkingmachines/inkling:free', images: true },
+    { id: 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', images: true },
+    { id: 'nvidia/nemotron-3-super-120b-a12b:free', images: false },
+    { id: 'inclusionai/ling-3.0-flash-sante:free', images: false },
+    { id: 'nvidia/nemotron-3.5-lightning:free', images: false },
+    { id: 'openrouter/free', images: false },
+  ],
+  openai: [
+    { id: 'gpt-5-nano', images: true },
+    { id: 'gpt-5-mini', images: true },
+  ],
+  anthropic: [
+    { id: 'claude-haiku-4-5', images: true },
+    { id: 'claude-sonnet-5', images: true },
+  ],
+}
+const TIER: Readonly<Record<Provider, 'free' | 'paid'>> = { gemini: 'free', groq: 'free', openrouter: 'free', openai: 'paid', anthropic: 'paid' }
+const PROVIDERS = Object.keys(MODELS) as readonly Provider[]
+const isProvider = (p: unknown): p is Provider => typeof p === 'string' && (PROVIDERS as readonly string[]).includes(p)
+const idsOf = (provider: Provider): readonly string[] => MODELS[provider].map((m) => m.id)
 
 function modelFor(provider: Provider, ...choices: readonly unknown[]): string {
-  const list: readonly string[] = SERVICES[provider].models
+  const list = idsOf(provider)
   const chosen = choices.find((c): c is string => typeof c === 'string' && list.includes(c))
   return chosen ?? list[0] ?? ''
+}
+
+/**
+ * The model a task runs on. For words: the owner's choice when it is on the
+ * list, else the service's first. For a photo: the choice when it reads
+ * one, else the first on the service that does; null when none does, so
+ * the service is passed over without a call (plan §3.3).
+ */
+export function modelForTask(provider: Provider, images: boolean, ...choices: readonly unknown[]): string | null {
+  if (!images) return modelFor(provider, ...choices)
+  const readers = MODELS[provider].filter((m) => m.images).map((m) => m.id)
+  const chosen = choices.find((c): c is string => typeof c === 'string' && readers.includes(c))
+  return chosen ?? readers[0] ?? null
 }
 
 // ---------------------------------------------------------------------------
@@ -361,12 +406,13 @@ const OPENAI_API = 'https://api.openai.com/v1'
 const ANTHROPIC_API = 'https://api.anthropic.com/v1'
 
 // Each service's key test, which spends no quota: a list of the models the
-// key can use, or for OpenRouter, whose free router is one name, the key's
-// own record. One page each; every service lists far fewer than this.
+// key can use. OpenRouter's is the list for this key, which refuses a wrong
+// key where its public list would not. One page each; every service lists
+// far fewer than this.
 const LIST_URL: Readonly<Record<Provider, string>> = {
   gemini: `${GEMINI_HOST}/v1beta/models?pageSize=1000`,
   groq: `${GROQ_API}/models`,
-  openrouter: `${OPENROUTER_API}/key`,
+  openrouter: `${OPENROUTER_API}/models/user`,
   openai: `${OPENAI_API}/models`,
   anthropic: `${ANTHROPIC_API}/models?limit=1000`,
 }
@@ -437,13 +483,11 @@ function outcomeOf(status: number, body: unknown): Outcome {
 /**
  * Which committed models a service's list offers. Google names a model
  * `models/<id>` and says what it can do; Anthropic may list an alias under
- * its dated id (`claude-haiku-4-5-20251001`); the others list the id as is.
- * OpenRouter's key test is the key's record, not a list: a key that works
- * can use its free router.
+ * its dated id (`claude-haiku-4-5-20251001`); the others list the id as is,
+ * OpenRouter with its `:free` suffix.
  */
 function listedIn(provider: Provider, body: unknown): readonly string[] {
-  const committed: readonly string[] = SERVICES[provider].models
-  if (provider === 'openrouter') return committed
+  const committed = idsOf(provider)
   if (provider === 'gemini') {
     const writes = new Set(
       list(obj(body)['models'])
@@ -543,8 +587,10 @@ export function geminiRequest(model: string, key: string, ask: Ask): Built {
  * The OpenAI-compatible request, for Groq, OpenRouter and OpenAI. OpenAI
  * holds the reply to the schema strictly. Groq and OpenRouter are asked for
  * any JSON object, with the schema written into the prompt, since strict
- * schemas are reported to be ignored on gpt-oss-120b and the free router's
- * models vary; zod in the app decides what is kept (plan §3.3).
+ * schemas are reported to be ignored on gpt-oss-120b and OpenRouter's free
+ * models vary; zod in the app decides what is kept (plan §3.3). Under JSON
+ * mode Groq puts a model's reasoning in a field of its own, so the content
+ * stays the object, and its Qwen reader thinks nothing at its default.
  */
 function openAiRequest(provider: 'groq' | 'openrouter' | 'openai', model: string, key: string, ask: Ask): Built {
   const api = { groq: GROQ_API, openrouter: OPENROUTER_API, openai: OPENAI_API }[provider]
@@ -904,7 +950,7 @@ function statusOf(env: Env, context: unknown): Record<string, unknown> | null {
     const hint = key !== undefined ? key['key_hint'] : fromSecret ? secret.slice(-4) : null
     return {
       provider,
-      tier: SERVICES[provider].tier,
+      tier: TIER[provider],
       source: key !== undefined ? 'saved' : fromSecret ? 'secret' : 'none',
       hint: typeof hint === 'string' && HINT.test(hint) ? hint : null,
       status: key !== undefined && KEY_STATUSES.includes(key['status']) ? key['status'] : null,
@@ -940,7 +986,7 @@ const failed = (code: Code): Reply => [STATUS_OF[code], { ok: false, code }]
 /** What a test found, as the app reads it: every committed model, ticked when the key can use it. */
 function keyReply(provider: Provider, source: 'saved' | 'secret' | 'none', status: KeyStatus, hint: string | null, listed: readonly string[]): Reply {
   log(`key_${status}`)
-  const models = status === 'ok' ? SERVICES[provider].models.map((id) => ({ id, listed: listed.includes(id) })) : []
+  const models = status === 'ok' ? MODELS[provider].map((m) => ({ id: m.id, listed: listed.includes(m.id) })) : []
   return [200, { ok: true, provider, source, status, hint: hint !== null && HINT.test(hint) ? hint : null, models }]
 }
 
@@ -1332,9 +1378,10 @@ export async function route(env: Env, user: string, task: TaskName, ask: Ask, st
 
   for (const provider of orderOf(settings['provider_order'])) {
     if (attempts >= MAX_ATTEMPTS) break
-    if (SERVICES[provider].tier === 'paid' && settings['allow_paid'] !== true) continue
-    // A photo goes only to a service that reads one; the rest are not asked, and spend nothing.
-    if (ask.image !== undefined && !SERVICES[provider].images) continue
+    if (TIER[provider] === 'paid' && settings['allow_paid'] !== true) continue
+    // A photo goes only to a model that reads one; a service with none is not asked, and spends nothing.
+    const model = modelForTask(provider, ask.image !== undefined, models[provider], provider === 'gemini' ? env.GEMINI_MODEL : undefined)
+    if (model === null) continue
     const found = await keyFor(env, user, provider, ctx['keys'])
     if (found === null) continue
     // A key its service turned down, or one no root opens, waits for the owner to paste or test it again.
@@ -1342,7 +1389,6 @@ export async function route(env: Env, user: string, task: TaskName, ask: Ask, st
       keyTrouble.add(found.status)
       continue
     }
-    const model = modelFor(provider, models[provider], provider === 'gemini' ? env.GEMINI_MODEL : undefined)
     if (found.key === null) {
       keyTrouble.add('locked')
       tried.push({ provider, model, result: 'locked' })

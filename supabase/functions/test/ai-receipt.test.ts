@@ -38,6 +38,8 @@ const ANSWERS: Record<Service, () => Response> = {
 interface World {
   readonly order?: readonly Service[]
   readonly saved?: readonly Service[]
+  /** The owner's chosen model per service, as ai_settings.models holds it. */
+  readonly models?: Readonly<Record<string, string>>
   readonly paid?: boolean
   readonly down?: readonly Service[]
   readonly env?: Record<string, string | undefined>
@@ -53,7 +55,7 @@ async function receipt(w: World = {}) {
   const keys = await Promise.all(
     (w.saved ?? []).map(async (provider) => ({ provider, ...(await sealKey(env, USER, provider, `test-not-a-real-${provider}-key`)), key_hint: 'key', status: 'ok' })),
   )
-  const settings = { enabled: true, provider_order: w.order ?? ALL, models: {}, daily_cap: 40, allow_paid: w.paid ?? false }
+  const settings = { enabled: true, provider_order: w.order ?? ALL, models: w.models ?? {}, daily_cap: 40, allow_paid: w.paid ?? false }
   const calls: { url: string; init: RequestInit }[] = []
   const fetchFn = (async (url: string | URL | Request, init?: RequestInit) => {
     const u = String(url)
@@ -117,14 +119,27 @@ describe('the receipt task', () => {
     expect(parseReceiptReply(String(r.reply['text']))).toEqual({ ok: true, reading: { merchant: 'LITWARE CAFE', total: '14.23', date: '2026-09-20' } })
   })
 
-  it('never sends Groq or OpenRouter the photo, whatever the owner’s order', async () => {
-    const r = await receipt({ order: ['groq', 'openrouter', 'gemini'], saved: ['groq', 'openrouter'], down: ['gemini'] })
-    expect(r.services).toEqual(['gemini'])
-    expect(r.reply).toMatchObject({ ok: false, code: 'all_failed' })
+  it('sends Groq the photo on the one model there that reads one, whatever text model the owner chose', async () => {
+    const r = await receipt({ order: ['groq', 'openrouter', 'gemini'], saved: ['groq', 'openrouter'], models: { groq: 'openai/gpt-oss-120b' } })
+    expect([r.status, r.reply]).toEqual([200, { ok: true, provider: 'groq', model: 'qwen/qwen3.8-27b', text: TEXT }])
+    expect(r.services).toEqual(['groq'])
+    const body = JSON.parse(r.sent('groq')!) as { model: string; messages: { role: string; content: unknown }[] }
+    expect(body.model).toBe('qwen/qwen3.8-27b')
+    expect(body.messages[1]).toMatchObject({ role: 'user', content: [{ type: 'image_url', image_url: { url: `data:image/jpeg;base64,${PHOTO.image}` } }, { type: 'text' }] })
+    expect(r.rpc('ai_usage_claim')[0]).toMatchObject({ p_provider: 'groq', p_model: 'qwen/qwen3.8-27b', p_task: 'receipt' })
   })
 
-  it('with only services that cannot read a photo, is not set up for receipts, and calls none', async () => {
-    const r = await receipt({ saved: ['groq', 'openrouter'], env: { ...ENV, GEMINI_API_KEY: undefined } })
+  it('sends OpenRouter the photo on a free model that reads one: the owner’s choice when it does, else the first that does', async () => {
+    const chosen = await receipt({ order: ['openrouter'], saved: ['openrouter'], models: { openrouter: 'google/gemma-4-31b-it:free' } })
+    expect([chosen.reply['model'], (JSON.parse(chosen.sent('openrouter')!) as { model: string }).model]).toEqual(['google/gemma-4-31b-it:free', 'google/gemma-4-31b-it:free'])
+    const words = await receipt({ order: ['openrouter'], saved: ['openrouter'], models: { openrouter: 'nvidia/nemotron-3-super-120b-a12b:free' } })
+    expect([words.reply['model'], (JSON.parse(words.sent('openrouter')!) as { model: string }).model]).toEqual(['thinkingmachines/inkling-small:free', 'thinkingmachines/inkling-small:free'])
+    const router = await receipt({ order: ['openrouter'], saved: ['openrouter'], models: { openrouter: 'openrouter/free' } })
+    expect(router.reply['model']).toBe('thinkingmachines/inkling-small:free')
+  })
+
+  it('with no key anywhere, is not set up for receipts, and calls none', async () => {
+    const r = await receipt({ env: { ...ENV, GEMINI_API_KEY: undefined } })
     expect([r.status, r.reply['code'], r.services]).toEqual([409, 'not_set_up', []])
   })
 

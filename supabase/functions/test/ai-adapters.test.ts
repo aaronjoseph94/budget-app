@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { chatReply, chatRequest, geminiReply, geminiRequest, listModels } from '../ai/index.js'
+import { chatReply, chatRequest, geminiReply, geminiRequest, listModels, MODELS, modelForTask } from '../ai/index.js'
 
 /**
  * Gemini's adapter (plan §3.3): the exact request, what its answers mean,
@@ -94,7 +94,7 @@ describe('Check which models work, on the other services', () => {
     const cases = [
       {
         provider: 'groq', url: 'https://api.groq.com/openai/v1/models', headers: { authorization: `Bearer ${KEY}` },
-        answer: ids('openai/gpt-oss-20b', 'llama-made-up'), listed: ['openai/gpt-oss-20b'],
+        answer: ids('openai/gpt-oss-20b', 'qwen/qwen3.8-27b', 'llama-made-up'), listed: ['openai/gpt-oss-20b', 'qwen/qwen3.8-27b'],
       },
       {
         provider: 'openai', url: 'https://api.openai.com/v1/models', headers: { authorization: `Bearer ${KEY}` },
@@ -107,9 +107,9 @@ describe('Check which models work, on the other services', () => {
         answer: ids('claude-haiku-4-5-20251001', 'claude-sonnet-5-preview'), listed: ['claude-haiku-4-5'],
       },
       {
-        // OpenRouter's test is the key's own record; a key that works can use the free router.
-        provider: 'openrouter', url: 'https://openrouter.ai/api/v1/key', headers: { authorization: `Bearer ${KEY}` },
-        answer: json({ data: { label: 'sk-or-…' } }), listed: ['openrouter/free'],
+        // OpenRouter's list for this key refuses a wrong key (401), so it is the key test too; only live committed ids are ticked.
+        provider: 'openrouter', url: 'https://openrouter.ai/api/v1/models/user', headers: { authorization: `Bearer ${KEY}` },
+        answer: ids('thinkingmachines/inkling-small:free', 'openrouter/free', 'made-up/model:free'), listed: ['thinkingmachines/inkling-small:free', 'openrouter/free'],
       },
     ] as const
     for (const c of cases) {
@@ -246,11 +246,43 @@ describe('Anthropic’s request', () => {
   })
 
   it('never puts a model off the list in a request: every service falls back to its first', () => {
-    for (const [provider, first] of [['groq', 'openai/gpt-oss-20b'], ['openrouter', 'openrouter/free'], ['openai', 'gpt-5-nano'], ['anthropic', 'claude-haiku-4-5']] as const) {
+    for (const [provider, first] of [['groq', 'openai/gpt-oss-20b'], ['openrouter', 'thinkingmachines/inkling-small:free'], ['openai', 'gpt-5-nano'], ['anthropic', 'claude-haiku-4-5']] as const) {
       const built = chatRequest(provider, 'https://evil.example/v1', KEY, ASK)
       expect([provider, (JSON.parse(String(built.init.body)) as { model: string }).model]).toEqual([provider, first])
       expect(built.url).not.toContain('evil')
     }
+  })
+})
+
+describe('the committed models, and which of them read a photo', () => {
+  const ID = /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,79}$/
+
+  it('names every id in the shape 0016 stores, each service with a model that reads images, the free router last', () => {
+    for (const [provider, models] of Object.entries(MODELS)) {
+      for (const m of models) expect([provider, m.id, ID.test(m.id)]).toEqual([provider, m.id, true])
+      expect([provider, models.some((m) => m.images)]).toEqual([provider, true])
+    }
+    expect(MODELS.openrouter.at(-1)).toEqual({ id: 'openrouter/free', images: false })
+    expect(MODELS.openrouter.slice(0, -1).every((m) => m.id.endsWith(':free'))).toBe(true)
+    // The research of 2026-10-08: the quickest free reader first on OpenRouter; Groq's quickest words first, its reader after.
+    expect(MODELS.openrouter[0]).toEqual({ id: 'thinkingmachines/inkling-small:free', images: true })
+    expect(MODELS.groq.map((m) => m.id)).toEqual(['openai/gpt-oss-20b', 'openai/gpt-oss-120b', 'qwen/qwen3.8-27b'])
+  })
+
+  it('for a photo picks the chosen model when it reads one, else the first on the service that does; for words, the chosen or the first', () => {
+    expect(modelForTask('openrouter', true)).toBe('thinkingmachines/inkling-small:free')
+    expect(modelForTask('openrouter', true, 'google/gemma-4-31b-it:free')).toBe('google/gemma-4-31b-it:free')
+    expect(modelForTask('openrouter', true, 'nvidia/nemotron-3-super-120b-a12b:free')).toBe('thinkingmachines/inkling-small:free')
+    expect(modelForTask('openrouter', true, 'openrouter/free')).toBe('thinkingmachines/inkling-small:free')
+    expect(modelForTask('groq', true)).toBe('qwen/qwen3.8-27b')
+    expect(modelForTask('groq', true, 'openai/gpt-oss-120b')).toBe('qwen/qwen3.8-27b')
+    expect(modelForTask('groq', false, 'openai/gpt-oss-120b')).toBe('openai/gpt-oss-120b')
+    expect(modelForTask('groq', false)).toBe('openai/gpt-oss-20b')
+    expect(modelForTask('gemini', true, 'gemini-3.5-flash')).toBe('gemini-3.5-flash')
+    expect(modelForTask('openrouter', false, 'nvidia/nemotron-3-super-120b-a12b:free')).toBe('nvidia/nemotron-3-super-120b-a12b:free')
+    // A choice off the list never reaches a request, photo or not.
+    expect(modelForTask('openrouter', true, 'https://evil.example/v1')).toBe('thinkingmachines/inkling-small:free')
+    expect(modelForTask('openrouter', false, '../../evil')).toBe('thinkingmachines/inkling-small:free')
   })
 })
 

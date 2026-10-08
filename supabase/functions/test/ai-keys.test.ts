@@ -136,7 +136,7 @@ describe('a key for another service', () => {
     expect(calls.some((c) => c.url === GOOGLE)).toBe(false)
     expect(body).toEqual({
       ok: true, provider: 'groq', source: 'saved', status: 'ok', hint: '0001',
-      models: [{ id: 'openai/gpt-oss-20b', listed: false }, { id: 'openai/gpt-oss-120b', listed: true }],
+      models: [{ id: 'openai/gpt-oss-20b', listed: false }, { id: 'openai/gpt-oss-120b', listed: true }, { id: 'qwen/qwen3.8-27b', listed: false }],
     })
     expect(new Headers(calls.find((c) => c.url === GROQ)?.init.headers).get('authorization')).toBe(`Bearer ${KEY}`)
     expect(rpc('ai_key_put')[0]).toMatchObject({ p_provider: 'groq', p_status: 'ok' })

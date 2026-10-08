@@ -69,7 +69,7 @@ describe('status says what is set up', () => {
     const settings = { ...SETTINGS, models: { groq: 'openai/gpt-oss-120b', openai: 'https://evil.example/v1' }, daily_cap: 12, allow_paid: true, enabled: false }
     const usage = [{ attempts: 3 }, { attempts: 4 }]
     const { body } = await status({ ...ENV, GEMINI_MODEL: 'gemini-3.5-flash' }, answer(context({ settings, usage })))
-    expect(body.services.map((s) => s.model)).toEqual(['gemini-3.5-flash', 'openai/gpt-oss-120b', 'openrouter/free', 'gpt-5-nano', 'claude-haiku-4-5'])
+    expect(body.services.map((s) => s.model)).toEqual(['gemini-3.5-flash', 'openai/gpt-oss-120b', 'thinkingmachines/inkling-small:free', 'gpt-5-nano', 'claude-haiku-4-5'])
     expect([body.enabled, body.allowPaid, body.today]).toEqual([false, true, { used: 7, cap: 12 }])
   })
 })

@@ -31,6 +31,50 @@ export type AiProvider = z.infer<typeof AiProviderSchema>
 /** The services a key can be pasted for: every one of them (A11). */
 export type AiKeyProvider = AiProvider
 
+/** One model on the helper's committed list: its id, and whether it reads a photo. */
+export interface AiModel {
+  readonly id: string
+  readonly images: boolean
+}
+
+/**
+ * The helper's committed models, each service's default first, as the app
+ * shows them (ADR 0004, re-chosen for speed in ADR 0015). The helper is
+ * pasted as one file and holds its own copy; a contract test keeps the two
+ * equal. A photo goes to the first model on a service that reads one.
+ */
+export const AI_MODELS: Readonly<Record<AiProvider, readonly AiModel[]>> = {
+  gemini: [
+    { id: 'gemini-3.5-flash-lite', images: true },
+    { id: 'gemini-3.1-flash-lite', images: true },
+    { id: 'gemini-3.5-flash', images: true },
+  ],
+  groq: [
+    { id: 'openai/gpt-oss-20b', images: false },
+    { id: 'openai/gpt-oss-120b', images: false },
+    { id: 'qwen/qwen3.8-27b', images: true },
+  ],
+  openrouter: [
+    { id: 'thinkingmachines/inkling-small:free', images: true },
+    { id: 'google/gemma-4-26b-a4b-it:free', images: true },
+    { id: 'google/gemma-4-31b-it:free', images: true },
+    { id: 'thinkingmachines/inkling:free', images: true },
+    { id: 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', images: true },
+    { id: 'nvidia/nemotron-3-super-120b-a12b:free', images: false },
+    { id: 'inclusionai/ling-3.0-flash-sante:free', images: false },
+    { id: 'nvidia/nemotron-3.5-lightning:free', images: false },
+    { id: 'openrouter/free', images: false },
+  ],
+  openai: [
+    { id: 'gpt-5-nano', images: true },
+    { id: 'gpt-5-mini', images: true },
+  ],
+  anthropic: [
+    { id: 'claude-haiku-4-5', images: true },
+    { id: 'claude-sonnet-5', images: true },
+  ],
+}
+
 /**
  * Every request the helper answers. It learns who is asking from the token,
  * never the body. A pasted key is 20 to 200 characters of letters, digits
@@ -75,7 +119,7 @@ export type AiAction = AiRequest['action']
  * new version to be pasted over it. Bumped with every change to the
  * helper, as `YYYY-MM-DD.N`.
  */
-export const AI_HELPER_VERSION = '2026-10-01.5'
+export const AI_HELPER_VERSION = '2026-10-08.1'
 
 /**
  * read-receipt's version, which it answers to GET from this one on, so

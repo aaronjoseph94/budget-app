@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
-import { AI_HELPER_VERSION, AI_KEY_SHAPE, AiProviderSchema, CATEGORY_ALIAS, type AiRequest, type NarrateDaily } from '@budget/schema'
-import { RequestSchema, VERSION } from '../ai/index.js'
+import { AI_HELPER_VERSION, AI_KEY_SHAPE, AI_MODELS, AiProviderSchema, CATEGORY_ALIAS, type AiRequest, type NarrateDaily } from '@budget/schema'
+import { MODELS, RequestSchema, VERSION } from '../ai/index.js'
 
 /** Readonly all the way down: the app's types are, and zod's output is not, which is no difference on the wire. */
 type Frozen<T> = T extends readonly (infer U)[] ? readonly Frozen<U>[] : T extends object ? { readonly [K in keyof T]: Frozen<T[K]> } : T
@@ -64,5 +64,10 @@ describe('the helper and the app agree on what may be asked', () => {
 
   it('knows the same services as the database', () => {
     expect(AiProviderSchema.options).toEqual(['gemini', 'groq', 'openrouter', 'openai', 'anthropic'])
+  })
+
+  it('names the same models, and which read a photo, as the app does', () => {
+    expect(MODELS).toEqual(AI_MODELS)
+    for (const provider of AiProviderSchema.options) expect(AI_MODELS[provider].length).toBeGreaterThan(0)
   })
 })

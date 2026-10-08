@@ -114,7 +114,7 @@ export function aiStatusReply(over: Partial<AiStatusReply> = {}): AiStatusReply 
     services: [
       { provider: 'gemini', tier: 'free', model: 'gemini-3.5-flash-lite', ...none },
       { provider: 'groq', tier: 'free', model: 'openai/gpt-oss-20b', ...none },
-      { provider: 'openrouter', tier: 'free', model: 'openrouter/free', ...none },
+      { provider: 'openrouter', tier: 'free', model: 'thinkingmachines/inkling-small:free', ...none },
       { provider: 'openai', tier: 'paid', model: 'gpt-5-nano', ...none },
       { provider: 'anthropic', tier: 'paid', model: 'claude-haiku-4-5', ...none },
     ],
