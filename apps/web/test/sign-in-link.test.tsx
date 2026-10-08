@@ -56,7 +56,7 @@ describe('a sign-in link that does not sign in (SEC-NEW-2)', () => {
   it('balances the subtitle over its lines, so no word is left alone on the last (V23)', async () => {
     window.history.replaceState(null, '', '/#/month')
     render(<Gate supabase={createFakeSupabase().client} />)
-    expect((await screen.findByText('Your statements and your spending, visible only to you.')).className).toContain('text-balance')
+    expect((await screen.findByText('Your money, visible only to you.')).className).toContain('text-balance')
   })
 
   it('says nothing of links when the page was opened plainly', async () => {

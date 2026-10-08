@@ -89,7 +89,7 @@ describe('the Sunday check-in', () => {
     expect(await screen.findByText(whole('P', '✨ Written by AI: A calmer week: $226.09 on everyday things.'))).toBeTruthy()
     expect(within(section('Last week')).getByText(whole('P', 'You spent $23.91 less than the week before. That’s a win!'))).toBeTruthy()
     expect(within(section('One thing to try')).getByText(whole('P', '✨ Written by AI: Cook at home a few nights, and keep Dining out under $65.00.'))).toBeTruthy()
-    expect(screen.getByText('✨ Words by AI (free Google Gemini) from your numbers. Every figure is the app’s own.')).toBeTruthy()
+    expect(screen.getByText('✨ Words by free Google Gemini; figures by the app.')).toBeTruthy()
     await waitFor(() => expect(fake.tables.ai_notes).toHaveLength(1))
     const note = fake.tables.ai_notes[0]!
     expect([note['surface'], note['scope']]).toEqual(['checkin', 'week:2026-09-21'])
@@ -102,7 +102,7 @@ describe('the Sunday check-in', () => {
     fake.functions.ai = () => json({ ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: JSON.stringify(reply) })
     renderScreen(<Shell />, fake)
 
-    expect(await screen.findByText(/^✨ Words by AI/)).toBeTruthy()
+    expect(await screen.findByText('✨ Words by free Google Gemini; figures by the app.')).toBeTruthy()
     expect(within(section('One thing to try')).getByText(whole('P', 'Try keeping Dining out under $65.00 next week.'))).toBeTruthy()
     expect(screen.queryByText(/Keep spending near/)).toBeNull()
   })

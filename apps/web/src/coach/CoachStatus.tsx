@@ -17,9 +17,9 @@ import { PROVIDER_NAME } from '../ai/client.js'
 export function CoachStatus({ state }: { state: NarrationState }) {
   const { status, view, provider } = state
   let said: ReactNode = 'In the app’s own words, from your records.'
-  if (status === 'loading') said = 'Looking for today’s AI words. The app’s own show meanwhile.'
-  else if (status === 'asking') said = 'Asking the AI for today’s words. The app’s own show meanwhile.'
-  else if (status === 'ai' && provider !== null) said = `✨ Words by AI (${PROVIDER_NAME[provider]}) from your numbers. Every figure is the app’s own.`
+  if (status === 'loading') said = 'Looking for today’s AI words.'
+  else if (status === 'asking') said = 'Asking the AI for today’s words.'
+  else if (status === 'ai' && provider !== null) said = `✨ Words by ${PROVIDER_NAME[provider]}; figures by the app.`
   else if (view?.state === 'not_set_up' || view?.state === 'off') {
     said = (
       <>

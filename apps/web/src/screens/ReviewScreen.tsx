@@ -329,8 +329,7 @@ export function ReviewScreen() {
             <HelpButton screen="review" />
           </div>
           <p className="mt-1 text-sm text-muted-foreground md:text-base">
-            {rows === null ? 'Loading…' : total > 0 ? `${total} waiting for a category.` : suggestedTotal > 0 ? suggestedWaiting(suggestedTotal) : 'Nothing waiting.'}{' '}
-            Nothing reaches your budget until you approve it.
+            {rows === null ? 'Loading…' : total > 0 ? `${total} waiting for a category.` : suggestedTotal > 0 ? suggestedWaiting(suggestedTotal) : 'Nothing waiting.'}
           </p>
         </div>
         {suggestOffered(suggestions.status, suggestions.waiting) || (ready.length >= 2 && !confirming) ? (

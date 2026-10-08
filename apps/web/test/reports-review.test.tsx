@@ -92,7 +92,7 @@ describe('the month in review', () => {
     go('/reports')
     renderScreen(<Shell />, fake)
 
-    expect(await screen.findByText('In the app’s own words. The AI reviews a month once it is over.')).toBeTruthy()
+    expect(await screen.findByText('The app’s own words until the month is over.')).toBeTruthy()
     expect(screen.getByText(whole('LI', 'Spent so far $1,400.00. That is $360.00 less than by this day in August.'))).toBeTruthy()
     expect(fake.functions.calls).toEqual([])
   })

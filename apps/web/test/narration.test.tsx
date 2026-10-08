@@ -104,7 +104,7 @@ describe('the AI’s words on the Coach', () => {
     renderScreen(<Shell />, fake)
 
     expect(await screen.findByText(whole('P', 'You’ve spent $300.00 more than by this day last month. There’s still time to ease off.'))).toBeTruthy()
-    await screen.findByText('Asking the AI for today’s words. The app’s own show meanwhile.')
+    await screen.findByText('Asking the AI for today’s words.')
     expect(headings()).toEqual(['Time for a fresh statement', 'Charges waiting for you', 'Running ahead: Dining out'])
     // The brief names things and directions; the amounts are nowhere in it.
     expect(JSON.stringify(briefs[0])).not.toMatch(/300|600|1000|700/)
@@ -113,7 +113,7 @@ describe('the AI’s words on the Coach', () => {
     expect(await screen.findByText(whole('P', '✨ Written by AI: Heads up: $300.00 more than by this day last month.'))).toBeTruthy()
     expect(headings()).toEqual(['✨ Written by AI: A quick one', '✨ Written by AI: A quick one', '✨ Written by AI: Busy month for Dining out'])
     expect(screen.getByText(whole('P', 'You spent $300.00 more on it than last month.'))).toBeTruthy()
-    expect(screen.getByText('✨ Words by AI (free Google Gemini) from your numbers. Every figure is the app’s own.').getAttribute('aria-live')).toBe('polite')
+    expect(screen.getByText('✨ Words by free Google Gemini; figures by the app.').getAttribute('aria-live')).toBe('polite')
     await expectNoAxeViolations()
   })
 

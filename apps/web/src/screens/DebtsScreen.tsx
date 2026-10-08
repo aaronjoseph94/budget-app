@@ -58,10 +58,7 @@ export function DebtsScreen() {
             <HelpButton screen="debts" />
           </div>
           {/* Plan 3.3: the debts here are not the Month's Debts list. */}
-          <p className="text-muted-foreground md:text-base">
-            The loans and card balances you are paying down, and when each is paid off. The Month&rsquo;s Debts list is
-            separate: it counts each month&rsquo;s payments.
-          </p>
+          <p className="text-muted-foreground md:text-base">Each debt, and when it is paid off.</p>
         </div>
         {state.status === 'ready' ? (
           <Button className="w-full sm:w-auto" onClick={add}>
@@ -70,8 +67,8 @@ export function DebtsScreen() {
         ) : null}
       </header>
       <p className="text-xs text-muted-foreground">
-        A card you pay off from your bank can go here too. Give it no monthly amount on the Month&rsquo;s Debts list;
-        its purchases already count.
+        The Month&rsquo;s Debts list is separate: it counts each month&rsquo;s payments. A card you pay off from your bank
+        can go here too. Give it no monthly amount on the Month&rsquo;s Debts list; its purchases already count.
       </p>
       {state.status === 'loading' ? <Loading what="your debts" /> : null}
       {notice !== null ? <Alert tone={notice.ok ? 'success' : 'error'}>{notice.text}</Alert> : null}

@@ -17,10 +17,10 @@ import { PROVIDER_NAME } from '../ai/client.js'
 function Whose({ state }: { state: ReviewState }) {
   const { status, view, provider } = state
   let said: ReactNode = 'In the app’s own words, from your records.'
-  if (status === 'so_far') said = 'In the app’s own words. The AI reviews a month once it is over.'
-  else if (status === 'looking') said = 'Looking for this month’s AI words. The app’s own show meanwhile.'
-  else if (status === 'asking') said = 'Asking the AI to review this month. The app’s own words show meanwhile.'
-  else if (status === 'ai' && provider !== null) said = `✨ Words by AI (${PROVIDER_NAME[provider]}) from your numbers. Every figure is the app’s own.`
+  if (status === 'so_far') said = 'The app’s own words until the month is over.'
+  else if (status === 'looking') said = 'Looking for this month’s AI words.'
+  else if (status === 'asking') said = 'Asking the AI to review this month.'
+  else if (status === 'ai' && provider !== null) said = `✨ Words by ${PROVIDER_NAME[provider]}; figures by the app.`
   else if (view !== null) {
     said = (
       <>

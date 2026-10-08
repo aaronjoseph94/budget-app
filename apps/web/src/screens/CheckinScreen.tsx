@@ -116,9 +116,9 @@ function Said({ part, facts }: { part: Checkin[keyof Checkin]; facts: CheckinFac
 function Whose({ state }: { state: CheckinWordsState }) {
   const { status, view, provider } = state
   let said: ReactNode = 'In the app’s own words, from your records.'
-  if (status === 'looking') said = 'Looking for this week’s AI words. The app’s own show meanwhile.'
-  else if (status === 'asking') said = 'Asking the AI for this week’s words. The app’s own show meanwhile.'
-  else if (status === 'ai' && provider !== null) said = `✨ Words by AI (${PROVIDER_NAME[provider]}) from your numbers. Every figure is the app’s own.`
+  if (status === 'looking') said = 'Looking for this week’s AI words.'
+  else if (status === 'asking') said = 'Asking the AI for this week’s words.'
+  else if (status === 'ai' && provider !== null) said = `✨ Words by ${PROVIDER_NAME[provider]}; figures by the app.`
   else if (view !== null) {
     said = (
       <>

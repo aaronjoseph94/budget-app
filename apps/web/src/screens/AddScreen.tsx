@@ -389,7 +389,7 @@ function FilePicker({ onFile }: { onFile: (file: File) => void }) {
           e.target.value = ''
         }}
       />
-      <span className="mt-2 text-xs text-muted-foreground">Read on this device. The file itself is never uploaded.</span>
+      <span className="mt-2 text-xs text-muted-foreground">Read on this device, never uploaded.</span>
     </label>
   )
 }
