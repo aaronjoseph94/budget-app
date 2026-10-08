@@ -40,8 +40,8 @@ function helperSteps(again: boolean, newKey: boolean): string[] {
  */
 const SIGNING_KEY_STEPS = [
   'In Supabase, open Edge Functions, then the function named ai, then its settings. Turn Enforce JWT verification off, and save.',
-  'If Edge Functions lists read-receipt, first paste its new version over it with Copy read-receipt below, or delete it: its older copy relies on that switch alone, and with it off anyone could use your Gemini key. Then turn its switch off the same way.',
-  'Open Project Settings, then JWT Keys, and press Rotate keys, so the current key is the ECC (P-256) one. Do not revoke the old key.',
+  'If read-receipt is listed, replace it with Copy read-receipt below, or delete it. Its older copy relies on that switch alone: with it off, anyone could use your Gemini key. Then turn its switch off the same way.',
+  'Open Project Settings, then JWT Keys, and press Rotate keys. The current key is then the ECC (P-256) one. Do not revoke the old key.',
   'Sign out of this app and back in, then press Check again.',
 ]
 
@@ -50,8 +50,8 @@ const oauthSteps = (site: string) => [
   `In Supabase, open Authentication, then URL Configuration, and check Site URL is ${site}.`,
   'Open Authentication, then OAuth Server, and press Enable.',
   'Set Authorization Path to /oauth/consent.',
-  'Turn on dynamic client registration, which lets Claude and ChatGPT register themselves, and press Save.',
-  'Under Sign In / Providers, keep Allow new users to sign up off, and under Email keep Secure email change on.',
+  'Turn on dynamic client registration, so Claude and ChatGPT can register themselves. Press Save.',
+  'Under Sign In / Providers, keep Allow new users to sign up off. Under Email, keep Secure email change on.',
 ]
 
 /**
@@ -59,7 +59,7 @@ const oauthSteps = (site: string) => [
  * between dashboard versions, so the older names are given too.
  */
 const SIGNUPS_STEPS = [
-  'In Supabase, open Authentication, then Sign In / Providers. On an older dashboard it is Authentication, then Providers, then Email, or Authentication, then Settings.',
+  'In Supabase, open Authentication, then Sign In / Providers. On an older dashboard, look under Authentication: Providers, then Email; or Settings.',
   'Turn off Allow new users to sign up, and press Save.',
   'Open Authentication, then Users, and delete any row that is not you.',
   'Press Check again.',
@@ -80,7 +80,7 @@ const SERVER_STEPS = [
 /** read-receipt from before 2026-10-01: deleted, as the helper reads receipts, or replaced (security review mcp-3-03). */
 const READ_RECEIPT_STEPS = [
   'In Supabase, open Edge Functions, then read-receipt, then its ⋯ menu, and press Delete.',
-  'Or, to keep it, open its code, paste its new version over everything with Copy below, and deploy it.',
+  'Or keep it: paste the new version from Copy below over its code, and deploy.',
 ]
 
 const SERVER_AGAIN_STEPS = [
@@ -176,7 +176,7 @@ export function UpdatesPanel() {
               <p>
                 {next.file === SIGNING_KEY
                   ? 'Next: move Supabase to its new signing key, which ChatGPT needs to sign in. About 5 minutes, on a computer.'
-                  : 'Next: turn on sign-in for AI apps in Supabase, so Claude or ChatGPT can ask you to allow them. About 5 minutes, on a computer.'}
+                  : 'Next: turn on sign-in for AI apps in Supabase, so Claude or ChatGPT can ask to connect. About 5 minutes, on a computer.'}
               </p>
               <Steps steps={next.file === SIGNING_KEY ? SIGNING_KEY_STEPS : oauthSteps(window.location.origin)} />
             </>
@@ -201,7 +201,7 @@ export function UpdatesPanel() {
                 after it in number order, one at a time.
               </p>
               {next.fromStart ? (
-                <p>{FIRST_FILE} is the first. A file already pasted is refused with nothing changed, or runs again to the same result, so that does no harm.</p>
+                <p>{FIRST_FILE} is the first. A file pasted twice is refused, or runs again to the same result. Either way, no harm.</p>
               ) : null}
             </>
           )}
@@ -220,8 +220,8 @@ export function UpdatesPanel() {
             <>
               {next.file === HELPER_FILE ? (
                 <p>
-                  If Edge Functions also lists read-receipt, paste its new version over it the same way, or delete it. The AI
-                  helper reads receipts without it, and its older copy lets anyone with the app’s public key use your Gemini key.
+                  If Edge Functions also lists read-receipt, replace it the same way, or delete it. The AI helper reads receipts
+                  without it. Its older copy lets anyone with the app’s public key use your Gemini key.
                 </p>
               ) : null}
               <CopyFile file={READ_RECEIPT_FILE} />

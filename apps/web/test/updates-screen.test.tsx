@@ -110,7 +110,7 @@ describe('One-time updates', () => {
     expect(row('Sign-ups off')).toBe('✗Not in yet: Sign-ups offStops anyone who finds the site making an account')
     expect(screen.getByText('Next: stop strangers making an account. About 2 minutes, on a computer.')).toBeTruthy()
     expect(clicks()).toEqual([
-      'In Supabase, open Authentication, then Sign In / Providers. On an older dashboard it is Authentication, then Providers, then Email, or Authentication, then Settings.',
+      'In Supabase, open Authentication, then Sign In / Providers. On an older dashboard, look under Authentication: Providers, then Email; or Settings.',
       'Turn off Allow new users to sign up, and press Save.',
       'Open Authentication, then Users, and delete any row that is not you.',
       'Press Check again.',
@@ -140,7 +140,7 @@ describe('One-time updates', () => {
     expect(screen.getByText('Next: delete read-receipt, or paste its new version over it. About 2 minutes, on a computer.')).toBeTruthy()
     expect(clicks()).toEqual([
       'In Supabase, open Edge Functions, then read-receipt, then its ⋯ menu, and press Delete.',
-      'Or, to keep it, open its code, paste its new version over everything with Copy below, and deploy it.',
+      'Or keep it: paste the new version from Copy below over its code, and deploy.',
     ])
   })
 
@@ -169,8 +169,8 @@ describe('One-time updates', () => {
     // read-receipt's older copy relies on the gateway alone, so it is replaced or deleted before its switch comes off.
     expect(clicks()).toEqual([
       'In Supabase, open Edge Functions, then the function named ai, then its settings. Turn Enforce JWT verification off, and save.',
-      'If Edge Functions lists read-receipt, first paste its new version over it with Copy read-receipt below, or delete it: its older copy relies on that switch alone, and with it off anyone could use your Gemini key. Then turn its switch off the same way.',
-      'Open Project Settings, then JWT Keys, and press Rotate keys, so the current key is the ECC (P-256) one. Do not revoke the old key.',
+      'If read-receipt is listed, replace it with Copy read-receipt below, or delete it. Its older copy relies on that switch alone: with it off, anyone could use your Gemini key. Then turn its switch off the same way.',
+      'Open Project Settings, then JWT Keys, and press Rotate keys. The current key is then the ECC (P-256) one. Do not revoke the old key.',
       'Sign out of this app and back in, then press Check again.',
     ])
     expect(githubLinks()).toEqual(['Open read-receipt on GitHub'])
@@ -194,8 +194,8 @@ describe('One-time updates', () => {
       `In Supabase, open Authentication, then URL Configuration, and check Site URL is ${window.location.origin}.`,
       'Open Authentication, then OAuth Server, and press Enable.',
       'Set Authorization Path to /oauth/consent.',
-      'Turn on dynamic client registration, which lets Claude and ChatGPT register themselves, and press Save.',
-      'Under Sign In / Providers, keep Allow new users to sign up off, and under Email keep Secure email change on.',
+      'Turn on dynamic client registration, so Claude and ChatGPT can register themselves. Press Save.',
+      'Under Sign In / Providers, keep Allow new users to sign up off. Under Email, keep Secure email change on.',
     ])
     expect(githubLinks()).toEqual([])
   })

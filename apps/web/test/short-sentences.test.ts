@@ -18,12 +18,6 @@ const NOT_PROSE = new Set(['../src/components/ui/icons.tsx', '../src/components/
 
 /** Files the cut has not reached yet (PRD 03); each slice removes its own, and the last empties it. */
 const NOT_YET = new Set([
-  '../src/ImportScreen.tsx',
-  '../src/auth.tsx',
-  '../src/format.ts',
-  '../src/help/UpdatesPanel.tsx',
-  '../src/help/updates.ts',
-  '../src/pdf-import.ts',
   '../src/reports/Habits.tsx',
   '../src/reports/Trends.tsx',
   '../src/review/SuggestedChanges.tsx',

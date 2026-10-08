@@ -58,13 +58,13 @@ export function formatDayMonth(isoDate: string): string {
  */
 const REASONS: Record<string, string> = {
   row_shape_mismatch:
-    'This row had a different number of columns than the rest of the file, so the values could not be trusted to line up.',
+    'This row has a different number of columns from the rest. Its values could not be trusted to line up.',
   missing_amount: 'This row had no amount.',
   missing_date: 'This row had no date.',
   unparseable_amount: 'The amount could not be read as money in the format you chose.',
   unparseable_date: 'The date could not be read in the format you chose.',
   missing_merchant: 'This row had no description.',
-  invalid_merchant: 'The description contained characters that could display as something other than what is stored.',
+  invalid_merchant: 'The description has characters that could show as something other than what is stored.',
   duplicate_within_batch: 'This row appeared twice in the same file.',
   already_in_ledger: 'You already have this transaction.',
   model_output_invalid: 'The suggestion came back in a form that could not be used.',
@@ -78,9 +78,9 @@ export function describeReason(reason: string): string {
 /** A file-level failure, which stops the whole import rather than one row. */
 const FAILURES: Record<string, string> = {
   unterminated_quote:
-    'A quotation mark opens somewhere in this file and never closes, so everything after it reads as one enormous value. Nothing was imported, because the rest of the file cannot be trusted.',
+    'A quotation mark opens in this file and never closes. Everything after it reads as one value, so nothing was imported.',
   text_after_closing_quote:
-    'A value in this file has text immediately after its closing quotation mark, which is not something a CSV can mean.',
+    'A value has text right after its closing quotation mark, which a CSV cannot mean.',
   too_many_rows: 'This file has more rows than the importer will read in one go.',
   field_too_large: 'A single value in this file is far larger than any transaction description should be.',
   invalid_delimiter: 'The column separator is not a single usable character.',
@@ -117,7 +117,7 @@ const MISSING_UPDATE = ['PGRST202', 'PGRST204', 'PGRST205', '42P01', '42703', '4
 const WRITE_FAILURES: Record<string, string> = {
   '23505': 'You already have this, so nothing was added.',
   '23514':
-    'The numbers did not add up, so nothing was saved. This usually means a row went missing while the file was being read — it is a fault in the import, not in your file.',
+    'The numbers did not add up, so nothing was saved. A row went missing as the file was read: a fault in the import, not your file.',
   '23503': 'This refers to an account or category that no longer exists.',
   '23502': 'Something required was missing from this import.',
   '22001': 'A description in this file is longer than the app will store.',
@@ -126,7 +126,7 @@ const WRITE_FAILURES: Record<string, string> = {
   PGRST301: 'Your session expired. Sign in again and retry — nothing was saved.',
   // No answer at all: the write may have gone through before the connection
   // dropped, so this never claims nothing was saved (backend-b-03).
-  '': 'Could not reach the database, or its answer was lost on the way back, so this may or may not have been saved. Check your connection, then look before trying again.',
+  '': 'Could not reach the database, or its answer was lost, so this may or may not be saved. Check your connection, then look before trying again.',
   // A table, column or function that a one-time update adds, not there yet
   // (N28): said as what it is, where "something went wrong" said nothing.
   ...Object.fromEntries(MISSING_UPDATE.map((code) => [code, 'This needs a one-time update, so nothing was saved.'])),
@@ -191,7 +191,7 @@ const SETUP_FAILURES: Readonly<Record<SetupAction, Readonly<Record<string, strin
   // rule does too (N17), and moving a charge with "Always file" moves both.
   remove: {
     '23503':
-      'This category still has charges, or shops the app learned to file here. On the Month, tap its row and use Move to… on each charge, with “Always file” ticked so the shop moves too.',
+      'This category still has charges or learned shops. On the Month, use Move to… on each charge, with “Always file” ticked.',
   },
 }
 

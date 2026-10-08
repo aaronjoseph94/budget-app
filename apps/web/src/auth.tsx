@@ -31,7 +31,7 @@ export const DASHBOARD_LINK_REFUSED =
 
 /** Said on sign-in after sign-out could not reach the server, so only this device was signed out. */
 export const SIGNED_OUT_HERE_ONLY_NOTE =
-  'Signed out on this device. The server could not be reached, so your other devices may still be signed in: sign in when you are back online and sign out again to end them.'
+  'Signed out on this device only: the server could not be reached. Sign in when back online, then sign out again to end other devices.'
 
 /** Whether sign-out left that note; read once, so it shows once. */
 function takeSignedOutNote(): boolean {
@@ -292,8 +292,8 @@ export function SignIn({
               <p className="mt-2 text-sm">
                 If <strong className="font-medium">{attempt.email}</strong> has an account here,{' '}
                 {attempt.kind === 'reset-sent' ? 'a link to choose a new password' : 'a sign-in link'} is on its way to it. Open it on this device, in
-                this same browser, and you are in. If you asked from the app on your Home Screen, sign in there with
-                your password instead: its links open in another browser.
+                this same browser, and you are in. From the app on your Home Screen, sign in with your password instead.
+                Its links open in another browser.
               </p>
               <div className="mt-4">
                 <Button variant="outline" onClick={() => setAttempt({ kind: 'idle' })}>
@@ -483,9 +483,9 @@ export function NotConfigured({ missing }: { missing: readonly string[] }) {
               <ol className="mt-2 list-inside list-decimal space-y-1 text-muted-foreground">
                 <li>Add both values to the site’s environment variables.</li>
                 <li>
-                  <strong className="font-medium text-foreground">Then trigger a new deploy.</strong> This
-                  is the step that is easy to miss: the values are compiled in when the site is
-                  built, so adding them changes nothing until it builds again.
+                  <strong className="font-medium text-foreground">Then trigger a new deploy.</strong> The
+                  values are compiled in when the site builds. Adding them changes nothing until it builds
+                  again.
                 </li>
               </ol>
             </>
@@ -504,10 +504,9 @@ export function NotConfigured({ missing }: { missing: readonly string[] }) {
         </div>
 
         <p className="mt-4 text-sm text-muted-foreground">
-          Both come from the Supabase project’s API settings and are safe to publish — they travel
-          in every request the browser makes, and the database’s own access rules are what protect
-          the data. The <code>service_role</code> key is a different thing entirely and does not
-          belong here.
+          Both come from the Supabase project’s API settings and are safe to publish. They travel in
+          every browser request; the database’s own access rules protect the data. The{' '}
+          <code>service_role</code> key is a different thing entirely and does not belong here.
         </p>
       </Card>
     </main>

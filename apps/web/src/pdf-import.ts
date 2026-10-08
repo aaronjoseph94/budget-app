@@ -41,7 +41,7 @@ const PDF_FAILURES: Record<string, { title: string; detail: string }> = {
   no_text_layer: {
     title: 'This PDF is a picture of a statement',
     detail:
-      'It has no readable text — it was probably scanned. Download the statement from your bank’s website instead, which gives a PDF with real text in it.',
+      'It has no readable text; it was probably scanned. Download it from your bank’s website instead, for a PDF with real text.',
   },
   no_statement_period: {
     title: 'This is not a statement the app can read yet',

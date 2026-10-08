@@ -279,7 +279,7 @@ describe('ReviewScreen, lines an import could not read', () => {
     expect(section.getAllByRole('listitem').map((li) => li.textContent)).toEqual([
       'Row 2This row had no amount.Dismiss',
       'Row 3The amount could not be read as money in the format you chose.Dismiss',
-      'Row 11The description contained characters that could display as something other than what is stored.Dismiss',
+      'Row 11The description has characters that could show as something other than what is stored.Dismiss',
       'Line 5This row had no date.Dismiss',
     ])
     // The queue is still there alongside it.

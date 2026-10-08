@@ -56,8 +56,8 @@ export function ImportScreen({ fileName, text, onReset, onSave, saving = false, 
 
       {notText ? (
         <NotAStatement title="This is not a text CSV">
-          It may be a spreadsheet, a PDF or a picture with a .csv name. Download the statement from your bank as CSV again, or
-          save it as CSV from your spreadsheet app, then choose it here.
+          It may be a spreadsheet, a PDF or a picture with a .csv name. Download it from your bank as CSV again, or save it as CSV
+          from your spreadsheet app.
         </NotAStatement>
       ) : noRows ? (
         <NotAStatement title="This file has no transactions">
@@ -201,8 +201,8 @@ function SaveFooter({
           </p>
         ) : null}
         <p className="text-xs text-muted-foreground">
-          A row from a shop you have filed before goes straight to its category; everything else
-          waits for you in Review. Check the rows above first.
+          A row from a shop you filed before goes straight to its category. The rest wait for you in Review. Check the rows above
+          first.
         </p>
       </div>
 
@@ -310,9 +310,8 @@ function ColumnMapping({ mapping }: { mapping: Mapping }) {
 
           {otherMoney ? (
             <p className="mt-4 rounded-lg border border-border bg-muted p-3 text-sm">
-              <strong className="font-medium">More than one column looks like money.</strong> Check
-              that the Amount column is the price of each purchase, not a fee, a balance or a
-              reference number.
+              <strong className="font-medium">More than one column looks like money.</strong> Check that Amount is each
+              purchase’s price, not a fee, a balance or a reference number.
             </p>
           ) : null}
 

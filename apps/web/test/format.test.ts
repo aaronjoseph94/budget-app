@@ -249,7 +249,7 @@ describe('the smaller display helpers', () => {
 describe('describeSetupFailure', () => {
   it("says what went wrong in Setup's own words, keeping the code", () => {
     expect(describeSetupFailure('remove', { code: '23503' })).toBe(
-      'This category still has charges, or shops the app learned to file here. On the Month, tap its row and use Move to… on each charge, with “Always file” ticked so the shop moves too. (code 23503)',
+      'This category still has charges or learned shops. On the Month, use Move to… on each charge, with “Always file” ticked. (code 23503)',
     )
     expect(describeSetupFailure('move', { code: '23514' })).toBe(
       'Remove the monthly amount first (Stop, under its amount), then move it to another list. (code 23514)',
