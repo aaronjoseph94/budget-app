@@ -1,0 +1,63 @@
+name: e2e
+
+# The browser suite (docs/design/rework/04-e2e.md): every screen, the
+# keyboard paths and the main flows, in WebKit at a phone's width and in
+# Chromium at a desktop's, against the fake Supabase in apps/web/e2e.
+# Its own job, apart from Gates: a browser suite is slower and its
+# failures read differently, and gates.sh stays the one gate.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+# Read-only, as Gates is: the token this job runs with cannot push.
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # Pinned to the same commits Gates uses (security-b-06).
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+
+      # The newest 22: e2e needs 22.22.3 or newer on this line.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Both browsers, with the libraries WebKit needs on Ubuntu, as their
+      # own step so the download stays out of the run's clock.
+      - name: Install browsers
+        run: pnpm exec e2e-web install --with-deps webkit chromium
+
+      - name: Run the browser suite
+        run: pnpm e2e --reporter list,junit
+
+      # The report and the failed attempts' traces, kept even when the run
+      # fails, so a failure can be read rather than guessed at.
+      - name: Keep the report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: e2e-report
+          path: |
+            .e2e/report.json
+            .e2e/junit.xml
+            .e2e/artifacts
+          if-no-files-found: ignore
+          retention-days: 14

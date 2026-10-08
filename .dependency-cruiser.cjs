@@ -280,6 +280,19 @@ module.exports = {
     { from: { path: '^apps/web/vite\\.config\\.ts$' }, to: { path: '^apps/web/src/public-key\\.ts$' } },
     // Its test runs that config, so taking the refusal out of it fails a test.
     { from: { path: '^apps/web/test/vite-config\\.test\\.ts$' }, to: { path: ['^apps/web/vite\\.config\\.ts$', 'node_modules/vite/'] } },
+    // The browser suite's app (docs/design/rework/04-e2e.md): a second Vite
+    // config with the same plugins and the /setup/ plugin, and a Supabase
+    // stood in by the screen tests' fake, which reads the app as a test
+    // does. Nothing in apps/web/src reaches e2e/, so none of it ships.
+    {
+      from: { path: '^apps/web/e2e/vite\\.preview\\.config\\.ts$' },
+      to: { path: ['node_modules/(vite|@vitejs/plugin-react|@tailwindcss/vite)/', '^apps/web/setup-files\\.ts$'] },
+    },
+    { from: { path: '^apps/web/e2e/vite\\.preview\\.config\\.ts$' }, to: { dependencyTypes: ['core'] } },
+    {
+      from: { path: '^apps/web/e2e/supabase-preview\\.ts$' },
+      to: { path: ['^apps/web/(src|test)/', 'node_modules/@supabase/supabase-js/'] },
+    },
     // Node's fs, for the /setup/ plugin, its test, and the Copy button's test, which serves those same files.
     { from: { path: '^apps/web/(setup-files\\.ts|test/setup-files\\.test\\.ts|test/updates-copy\\.test\\.tsx)$' }, to: { dependencyTypes: ['core'] } },
     { from: { path: '^apps/web/test/setup-files\\.test\\.ts$' }, to: { path: '^apps/web/setup-files\\.ts$' } },
