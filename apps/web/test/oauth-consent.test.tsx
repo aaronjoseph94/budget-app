@@ -122,6 +122,8 @@ describe('the consent page: Allow', () => {
     window.history.replaceState(null, '', '/oauth/consent?authorization_id=auth-2')
     render(<Consent supabase={fake.client} go={vi.fn()} />)
     expect(await screen.findByText(/wasn’t started from the budget app\./)).toBeTruthy()
+    // AI apps is on Settings' Account tab (ADR 0014 §2): the way back names it.
+    expect(screen.getByText(/open Settings → Account → AI apps, press Connect a new AI app/)).toBeTruthy()
     expect(allow()).toBeNull()
   })
 

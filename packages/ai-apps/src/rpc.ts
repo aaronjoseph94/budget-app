@@ -27,11 +27,11 @@ export type RpcName =
 
 /** Each refusal, in the words the AI app passes on to the owner. */
 export const SENTENCES = {
-  ai_apps_off: 'AI apps are switched off in the budget app. The owner can turn them on in Settings → AI apps.',
+  ai_apps_off: 'AI apps are switched off in the budget app. The owner can turn them on in Settings → Account → AI apps.',
   // 0030: the sign-in this token came from has ended, as Disconnect ends it.
-  disconnected: 'This connection to the budget app has ended. The owner can connect again from Settings → AI apps.',
-  adding_off: 'Adding to Review is switched off in the budget app’s Settings → AI apps.',
-  suggesting_off: 'Suggesting changes is switched off in the budget app’s Settings → AI apps.',
+  disconnected: 'This connection to the budget app has ended. The owner can connect again from Settings → Account → AI apps.',
+  adding_off: 'Adding to Review is switched off in the budget app’s Settings → Account → AI apps.',
+  suggesting_off: 'Suggesting changes is switched off in the budget app’s Settings → Account → AI apps.',
   bad_change: 'The budget app could not read that as a change. Each change needs its kind, what it changes and a reason, as the tool describes.',
   limit_reached: 'Today’s limit for AI apps is used up. It resets at midnight, the owner’s time.',
   needs_update: 'The budget app needs a one-time update. The owner can open Help → One-time updates.',
@@ -39,13 +39,13 @@ export const SENTENCES = {
   unknown_category: 'There is no category called that. Call list_categories for the exact names.',
   unknown_debt: 'There is no debt called that. Call get_debts without `debt` for the exact names.',
   no_pay_schedule:
-    'No income is set up with paydays, so there is no pay period. The owner can give an Income row how often it pays, and a first payday, in the app’s Setup.',
+    'No income is set up with paydays, so there is no pay period. The owner can give an Income row how often it pays, and a first payday, in the app’s Settings, under Lists.',
   bad_date: 'The date must be today or in the past year.',
   bad_amount: 'The amount must be more than $0.00 and at most $100,000.00.',
   bad_search:
     'A search’s dates must run forwards over at most three years, min_amount must not be above max_amount, and its words must not hold six or more digits in a row (those are masked in every shop name).',
   not_an_ai_app:
-    'The budget app did not recognise this sign-in as an AI app’s. The owner should switch AI apps off in Settings → AI apps and report it.',
+    'The budget app did not recognise this sign-in as an AI app’s. The owner should switch AI apps off in Settings → Account → AI apps and report it.',
   records_unreadable: 'The app could not read some of the records. The owner can open the app to see which.',
   server_error: 'Something went wrong in the budget app’s server. Nothing was changed.',
   // An add the database did not answer clearly may or may not have been written.

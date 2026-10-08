@@ -62,4 +62,14 @@ describe('what a tool answers', () => {
     expect(refusal('ai_apps_off')).toEqual({ isError: true, content: [{ type: 'text', text: SENTENCES.ai_apps_off }] })
     expect(SENTENCES.needs_update).toBe('The budget app needs a one-time update. The owner can open Help → One-time updates.')
   })
+
+  // ADR 0014 §2: Setup is Settings' Lists tab, and AI apps is on its Account
+  // tab, so a sentence Claude or ChatGPT repeats names the place as drawn.
+  it('sends the owner to Settings’ tabs as the app draws them, never to the Setup screen that was', () => {
+    expect(SENTENCES.no_pay_schedule).toMatch(/in the app’s Settings, under Lists\.$/)
+    for (const key of ['ai_apps_off', 'disconnected', 'adding_off', 'suggesting_off', 'not_an_ai_app'] as const) {
+      expect(SENTENCES[key], key).toMatch(/Settings → Account → AI apps/)
+    }
+    for (const [key, sentence] of Object.entries(SENTENCES)) expect(sentence, key).not.toMatch(/\bSetup\b/)
+  })
 })

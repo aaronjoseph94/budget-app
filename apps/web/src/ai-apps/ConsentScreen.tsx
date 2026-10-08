@@ -36,7 +36,8 @@ function followable(redirectUrl: string, callback: string | null): boolean {
 const opened = (access: Access | null, now: number) =>
   access !== null && access.enabled && access.connectUntil !== null && Date.parse(access.connectUntil) > now
 
-const AGAIN = 'If you are connecting Claude or ChatGPT yourself, open Settings → AI apps'
+// AI apps is on Settings' Account tab (ADR 0014 §2).
+const AGAIN = 'If you are connecting Claude or ChatGPT yourself, open Settings → Account → AI apps'
 const NOT_STARTED = `This connection wasn’t started from the budget app. ${AGAIN}, press Connect a new AI app, and press Connect in Claude or ChatGPT again.`
 const SWITCHED_OFF = `AI apps are switched off in the budget app. ${AGAIN}, turn on Let AI apps connect, press Connect a new AI app, and press Connect in Claude or ChatGPT again.`
 /** Something aiAppsReady checks (BEFORE_AI_APPS in help/updates.ts) is not in yet (mcp-3-03). */
@@ -56,7 +57,7 @@ type Seen =
     }
 
 const SAID = {
-  bad_link: { kind: 'said', title: 'This isn’t a connection request', words: 'To connect Claude or ChatGPT, start from Settings → AI apps in the budget app.' },
+  bad_link: { kind: 'said', title: 'This isn’t a connection request', words: 'To connect Claude or ChatGPT, start from Settings → Account → AI apps in the budget app.' },
   expired: { kind: 'said', title: 'This request has expired', words: 'Go back to Claude or ChatGPT and press Connect again.' },
   unreachable: { kind: 'said', title: 'Couldn’t reach Supabase', words: 'Check your connection, then reload this page.' },
   not_started: { kind: 'said', title: 'Start from the budget app', words: NOT_STARTED },
