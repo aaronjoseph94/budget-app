@@ -169,7 +169,7 @@ export function PayFields({
             value={date}
             onChange={(e) => setDate(e.target.value)}
             onBlur={() => commit(frequency, date)}
-            className="min-w-0 flex-1 px-2 text-sm [color-scheme:light_dark] sm:w-40 sm:flex-none"
+            className="min-w-0 flex-1 px-2 text-sm sm:w-40 sm:flex-none"
           />
           {stored === undefined ? null : (
             <Button

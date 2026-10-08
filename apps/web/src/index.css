@@ -364,6 +364,9 @@
   body {
     background: var(--color-background);
     color: var(--color-foreground);
+    /* The browser's own parts (scrollbars, a checkbox, a date field's icon,
+       a select's list) follow the scheme the tokens above are in. */
+    color-scheme: light dark;
   }
   body {
     font-family: ui-sans-serif, system-ui, -apple-system, 'SF Pro Text', 'Segoe UI', sans-serif;

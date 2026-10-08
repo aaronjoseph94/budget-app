@@ -96,6 +96,19 @@ describe('figures', () => {
   })
 })
 
+// Bug bash 05: in dark mode the page said `color-scheme: normal`, so the
+// browser drew scrollbars, checkboxes, a date field's icon and a select's
+// list in light colours on the dark panel; one date field patched its own.
+describe('the browser’s own controls', () => {
+  it('draw in the scheme the page is in, said once on the root', () => {
+    const start = css.indexOf('  html,\n  body {')
+    const root = css.slice(start, css.indexOf('}', start))
+    expect(root).toContain('color-scheme: light dark;')
+    const sources = import.meta.glob('../src/**/*.tsx', { query: '?raw', import: 'default', eager: true })
+    expect(Object.entries(sources).filter(([, text]) => String(text).includes('[color-scheme:')).map(([file]) => file)).toEqual([])
+  })
+})
+
 // e2e-money-11, e2e-setup-08: the phone's tab bar was 90% opaque, so its
 // muted labels read at 4.17:1 with an indigo button scrolled beneath, and
 // 4.49:1 over Review's tinted cards. A bar that stays put while the screen
