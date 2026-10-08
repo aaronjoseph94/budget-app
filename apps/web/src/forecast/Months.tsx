@@ -82,7 +82,6 @@ export function MonthsAheadCard({ ahead, bars, names }: { ahead: CashFlowAhead; 
           </tbody>
         </table>
       </ScrollX>
-      {withStart ? null : <p className="text-muted-foreground">Type this month’s starting balance on the Month to see where each month ends.</p>}
       {ahead.payNotCounted.length === 0 ? null : (
         <p className="text-muted-foreground">Leaves out pay from {ahead.payNotCounted.map(names).join(' and ')}: give it a pay schedule in Lists, or a goal on the Month.</p>
       )}

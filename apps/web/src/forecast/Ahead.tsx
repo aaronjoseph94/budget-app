@@ -7,7 +7,7 @@ import { listDebtExtras, listDebts, needsOneTimeUpdate } from '../ledger.js'
 import { formatCents, formatDayMonth, formatMonthTitle } from '../format.js'
 import { hashOf } from '../nav.js'
 import { SvgChart, fitted } from '../components/ui/chart.js'
-import { NoStart, Section } from './parts.js'
+import { Section } from './parts.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
 import { TryAgain } from '../try-again.js'
 
@@ -22,9 +22,8 @@ export function NextDaysCard({ flow, line, asOf, names }: { flow: CashFlow30; li
   const last = flow.days.at(-1)
   return (
     <Section title="The next 30 days" large>
-      {lowest === null || todayCents === null || line === null || last === undefined ? (
-        <NoStart />
-      ) : (
+      {/* Without this month's start there is no line; Safe to spend asks for it. */}
+      {lowest === null || todayCents === null || line === null || last === undefined ? null : (
         <>
           <p>
             Today: <span className="tnum font-semibold">{formatCents(todayCents)}</span>. Tightest day ahead:{' '}

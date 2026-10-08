@@ -165,7 +165,12 @@ function MonthEndCard({ monthEnd, figures, month }: { monthEnd: MonthEndForecast
         <Badge variant="accent">{monthEnd.status === 'rough' ? 'Rough' : 'Range'}</Badge>
         <Badge variant="outline">{monthEnd.completeMonths === 0 ? 'New: not enough history yet' : `Based on ${monthEnd.completeMonths} ${monthEnd.completeMonths === 1 ? 'month' : 'months'}`}</Badge>
       </div>
-      {end === null ? <NoStart /> : monthEnd.status === 'range' ? <p className="text-muted-foreground">Most likely {formatWholeDollars(end.mid)}.</p> : null}
+      {/* Safe to spend asks for the start, with its link; this card says only what it lacks. */}
+      {end === null ? (
+        <p className="text-muted-foreground">Needs this month’s starting balance.</p>
+      ) : monthEnd.status === 'range' ? (
+        <p className="text-muted-foreground">Most likely {formatWholeDollars(end.mid)}.</p>
+      ) : null}
       {end === null || range === null || today === null ? null : (
         <SvgChart
           svg={fitted(rangeBar, {

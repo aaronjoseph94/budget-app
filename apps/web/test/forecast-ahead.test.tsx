@@ -83,7 +83,8 @@ describe('the next three months on the Forecast (plan §2.5, A14, F35)', () => {
     expect(within(card).getByRole('img', { name: 'What the next three months leave over' })).toBeTruthy()
     expect(rowOf(card, 'Left over')).toEqual(['about $1,310', 'about $1,310', 'about $1,310'])
     expect(within(card).queryByRole('rowheader', { name: 'Most likely end' })).toBeNull()
-    expect(within(card).getByText('Type this month’s starting balance on the Month to see where each month ends.')).toBeTruthy()
+    // Safe to spend asks for the start; this card does not ask again (bug bash 05).
+    expect(within(card).queryByText(/starting balance/)).toBeNull()
   })
 
   it('gives one rough figure with under three whole months of records', async () => {

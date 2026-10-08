@@ -101,7 +101,11 @@ describe('the Forecast (plan §2.5, A13)', () => {
     const card = (await screen.findByRole('heading', { name: 'End of September' })).closest('div.rounded-xl') as HTMLElement
     expect(within(card).queryByText('$3,280 to $3,340')).toBeNull()
     expect(within(card).queryByRole('img')).toBeNull()
-    expect(within(card).getByText('Type this month’s starting balance to see where you’ll end.')).toBeTruthy()
+    expect(within(card).getByText('Needs this month’s starting balance.')).toBeTruthy()
+    // Asked once, in Safe to spend with its link; it was in three cards (bug bash 05).
+    expect(screen.getAllByText('Type this month’s starting balance to see where you’ll end.')).toHaveLength(1)
+    const next = screen.getByRole('heading', { name: 'The next 30 days' }).closest('div.rounded-xl') as HTMLElement
+    expect(within(next).queryByText(/starting balance/)).toBeNull()
     const toCome = screen.getByRole('heading', { name: 'Still to come' }).closest('div.rounded-xl') as HTMLElement
     expect(valueOf(toCome, 'Spent by the end of September')).toBe('about $2,390')
   })
