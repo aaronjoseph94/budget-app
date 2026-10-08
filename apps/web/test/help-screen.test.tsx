@@ -94,6 +94,19 @@ describe('Help', () => {
     expect(within(page).getByRole('link', { name: '‹ Help' }).getAttribute('href')).toBe('#/help')
   })
 
+  it('opens Getting started from Start here, and from no other article (decision 6)', async () => {
+    go('/help/start')
+    renderScreen(<Shell />, createFakeSupabase())
+    const page = (await screen.findByRole('heading', { level: 1, name: 'Start here' })).closest('article')!
+    const card = within(page).getByRole('region', { name: 'Getting started' })
+    expect(within(card).getByRole('link', { name: 'Open Getting started' }).getAttribute('href')).toBe('#/start')
+    // The guide's way in comes before the words about it.
+    expect(card.compareDocumentPosition(within(page).getAllByRole('list')[0]!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+    go('/help/review')
+    await screen.findByRole('heading', { level: 1, name: 'Why things wait in Review' })
+    expect(screen.queryByRole('link', { name: 'Open Getting started' })).toBeNull()
+  })
+
   // Mockup A: from 1024px an article has the list beside it, the one open lit.
   it('sets the list beside an article on a wide screen, its own article marked as the page', async () => {
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: query === '(min-width: 1024px)', addEventListener: () => undefined, removeEventListener: () => undefined }))

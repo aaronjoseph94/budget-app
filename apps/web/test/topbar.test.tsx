@@ -56,6 +56,11 @@ describe('the top bar (ADR 0011)', () => {
     expect(within(bar).getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe('#/settings')
     go('/settings/lists')
     await waitFor(() => expect(crumbs()).toEqual(['Settings', 'Lists']))
+    // Getting started opens from Help (decision 6), so Help is its parent.
+    go('/start')
+    await screen.findByRole('heading', { name: 'Getting started', level: 1 })
+    expect(crumbs()).toEqual(['Help', 'Getting started'])
+    expect(within(bar).getByRole('link', { name: 'Help' }).getAttribute('href')).toBe('#/help')
   })
 
   it('opens Help with its search box ready, from the search box, ⌘K and Ctrl+K', async () => {

@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppDataProvider } from '../src/app-data.js'
 import { FirstRun, Shell } from '../src/App.js'
-import { MoreScreen } from '../src/screens/MoreScreen.js'
+import { HelpScreen } from '../src/screens/HelpScreen.js'
 import { GettingStartedScreen } from '../src/screens/GettingStartedScreen.js'
 import { NO_MARKS, type SetupMarks } from '../src/profile.js'
 import type { Category } from '../src/ledger.js'
@@ -452,7 +452,7 @@ describe('the first sign-in (plan §8.1)', () => {
   })
 })
 
-describe('Getting started’s progress on More and Settings (plan §8.1)', () => {
+describe('Getting started’s progress on Help’s Start here (plan §8.1, decision 6)', () => {
   function renderWith(screenToShow: ReactNode, fake: FakeSupabase, marks: SetupMarks = NO_MARKS) {
     return render(
       <AppDataProvider supabase={fake.client} userId="u1" email="you@example.com" displayName="Alex" setupMarks={marks}>
@@ -461,10 +461,11 @@ describe('Getting started’s progress on More and Settings (plan §8.1)', () =>
     )
   }
 
-  it('says how many are done under Getting started on More, once every answer is in', async () => {
-    renderWith(<MoreScreen />, allButName())
-    const item = screen.getByRole('link', { name: /^Getting started/ })
-    expect(item.textContent).toBe('Getting startedOne step at a time')
-    await waitFor(() => expect(item.textContent).toBe('Getting started8 of 9 done'))
+  it('says how many are done beside Open Getting started on the Start here article, once every answer is in', async () => {
+    renderWith(<HelpScreen topic="start" />, allButName())
+    const card = screen.getByRole('region', { name: 'Getting started' })
+    expect(within(card).getByRole('link', { name: 'Open Getting started' }).getAttribute('href')).toBe('#/start')
+    expect(card.textContent).toContain('One step at a time')
+    await waitFor(() => expect(card.textContent).toContain('8 of 9 done'))
   })
 })

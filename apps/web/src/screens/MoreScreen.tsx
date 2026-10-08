@@ -1,11 +1,6 @@
-import { Suspense } from 'react'
-import { lazyPart } from '../lib/lazy-part.js'
 import { hashOf, type Screen } from '../nav.js'
 import { Icon, type IconName } from '../components/ui/icons.js'
 import { HelpButton } from '../help/HelpButton.js'
-
-// Getting started's count reads nine answers; fetched only when More opens.
-const ProgressLine = lazyPart(() => import('../start/ProgressLine.js').then((m) => ({ default: m.ProgressLine })))
 
 interface Item {
   readonly screen: Screen
@@ -36,9 +31,9 @@ export const MORE_GROUPS: readonly { readonly title: string; readonly items: rea
     ],
   },
   {
-    title: 'Set up and help',
+    // The sidebar's More group; Getting started opens from Help (decision 6).
+    title: 'Settings and help',
     items: [
-      { screen: 'start', label: 'Getting started', hint: 'One step at a time', icon: 'check' },
       { screen: 'settings', label: 'Settings', hint: 'Your lists, budgets, AI and account', icon: 'settings' },
       { screen: 'help', label: 'Help', hint: 'How each screen works, and what to do next', icon: 'help' },
     ],
@@ -73,15 +68,7 @@ export function MoreScreen() {
                   <Icon name={item.icon} className="size-5 shrink-0 text-muted-foreground" />
                   <span className="min-w-0 flex-1">
                     <span className="block font-medium">{item.label}</span>
-                    <span className="block text-sm text-muted-foreground">
-                      {item.screen === 'start' ? (
-                        <Suspense fallback={item.hint}>
-                          <ProgressLine fallback={item.hint} />
-                        </Suspense>
-                      ) : (
-                        item.hint
-                      )}
-                    </span>
+                    <span className="block text-sm text-muted-foreground">{item.hint}</span>
                   </span>
                   <Icon name="chevronRight" className="size-4 shrink-0 text-muted-foreground" />
                 </a>
@@ -94,7 +81,7 @@ export function MoreScreen() {
   )
 }
 
-/** "Set up and help" as an id: a space would split aria-labelledby into three. */
+/** "Settings and help" as an id: a space would split aria-labelledby into three. */
 function idOf(title: string): string {
   return `more-${title.toLowerCase().replaceAll(' ', '-')}`
 }

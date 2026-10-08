@@ -55,7 +55,7 @@ describe('the sidebar (ADR 0011)', () => {
     await screen.findByRole('heading', { name: 'Savings goals' })
 
     expect(within(sidebar()).queryByRole('button', { name: 'Plan' })).toBeNull()
-    expect(['Money', 'Coach', 'Inbox', 'Setup'].map((g) => fold(g).getAttribute('aria-expanded'))).toEqual(['true', 'false', 'false', 'false'])
+    expect(['Money', 'Coach', 'Inbox', 'More'].map((g) => fold(g).getAttribute('aria-expanded'))).toEqual(['true', 'false', 'false', 'false'])
     // Closed, a list is hidden in the full sidebar only; the rail shows every item.
     expect(listOf(fold('Coach')).classList.contains('lg:hidden')).toBe(true)
     expect(listOf(fold('Money')).classList.contains('lg:hidden')).toBe(false)
@@ -66,18 +66,18 @@ describe('the sidebar (ADR 0011)', () => {
   it('remembers which groups the owner opened and closed on this device', async () => {
     const first = renderScreen(<Shell />, createFakeSupabase())
     await screen.findByRole('heading', { name: 'September 2026' })
-    fireEvent.click(fold('Setup'))
+    fireEvent.click(fold('More'))
     fireEvent.click(fold('Money'))
     fireEvent.click(fold('Money'))
-    expect(fold('Setup').getAttribute('aria-expanded')).toBe('true')
-    expect(JSON.parse(window.localStorage.getItem(SIDEBAR_KEY) ?? '{}')).toEqual({ folded: false, open: { Setup: true, Money: false } })
+    expect(fold('More').getAttribute('aria-expanded')).toBe('true')
+    expect(JSON.parse(window.localStorage.getItem(SIDEBAR_KEY) ?? '{}')).toEqual({ folded: false, open: { More: true, Money: false } })
     first.unmount()
 
     // Opened again, even on a screen in Money, as the owner left them.
     go('/debts')
     renderScreen(<Shell />, createFakeSupabase())
     await screen.findByRole('heading', { name: 'Debt payoff' })
-    expect(fold('Setup').getAttribute('aria-expanded')).toBe('true')
+    expect(fold('More').getAttribute('aria-expanded')).toBe('true')
     expect(fold('Money').getAttribute('aria-expanded')).toBe('false')
   })
 

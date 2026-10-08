@@ -79,7 +79,7 @@ describe('Shell', () => {
     expect(window.location.hash).toBe('#/month/2026-01')
   })
 
-  it('groups the sidebar Plan, Money, Coach, Inbox and Setup, as Mockup A does (ADR 0011)', async () => {
+  it('groups the sidebar Plan, Money, Coach, Inbox and More, as Mockup A does (ADR 0011, 0014)', async () => {
     go('/coach')
     renderScreen(<Shell />, createFakeSupabase())
     await screen.findByRole('heading', { name: 'Coach', level: 1 })
@@ -91,8 +91,8 @@ describe('Shell', () => {
       ['Money', ['Savings', 'Debts', 'All transactions']],
       ['Coach', ['Coach', 'Forecast', 'Reports']],
       ['Inbox', ['Review', 'Add']],
-      // Setup is Settings' Lists tab (ADR 0014 §2).
-      ['Setup', ['Settings', 'Help']],
+      // Setup is Settings' Lists tab, and the group that held it is More (ADR 0014 §2).
+      ['More', ['Settings', 'Help']],
     ])
     expect(within(deskBar()).getByRole('link', { name: 'Coach' }).getAttribute('aria-current')).toBe('page')
     expect(within(phoneBar()).getByRole('link', { name: 'Coach' }).getAttribute('aria-current')).toBe('page')
@@ -123,7 +123,8 @@ describe('Shell', () => {
     const expected = [
       ['Plan', ['Year', 'Paycheck', 'Bill calendar', 'Savings', 'Debts', 'Forecast']],
       ['Understand', ['Reports', 'Ask']],
-      ['Set up and help', ['Getting started', 'Settings', 'Help']],
+      // Getting started opens from Help, and on the first run (decision 6).
+      ['Settings and help', ['Settings', 'Help']],
       ['Records', ['All transactions']],
     ] as const
     // Read as a screen reader reads them: each group by its heading, each
@@ -141,7 +142,7 @@ describe('Shell', () => {
     })
     expect(MORE_GROUPS.map((g) => [g.title, g.items.map((i) => i.label)])).toEqual(expected)
     // Settings' hint names its four tabs (ADR 0014 §2).
-    expect((await moreItem('Set up and help', 'Settings')).textContent).toContain('Your lists, budgets, AI and account')
+    expect((await moreItem('Settings and help', 'Settings')).textContent).toContain('Your lists, budgets, AI and account')
 
     expect((await moreItem('Records', 'All transactions')).getAttribute('href')).toBe('#/ledger')
     go('/ledger')
@@ -384,5 +385,7 @@ describe('Shell, Getting started (plan §8.1, A25)', () => {
     expect(await screen.findByRole('heading', { name: 'Your name' })).toBeTruthy()
     expect(document.title).toBe('Getting started · Budget')
     expect(within(phoneBar()).getByRole('link', { name: 'More' }).getAttribute('aria-current')).toBe('page')
+    // Opened from Help, it lights Help in the sidebar (decision 6).
+    expect(within(deskBar()).getByRole('link', { name: 'Help' }).getAttribute('aria-current')).toBe('page')
   })
 })

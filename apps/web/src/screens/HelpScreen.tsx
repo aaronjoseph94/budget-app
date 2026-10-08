@@ -1,14 +1,19 @@
-import { useRef, useState, type RefObject } from 'react'
+import { Suspense, useRef, useState, type RefObject } from 'react'
+import { lazyPart } from '../lib/lazy-part.js'
 import { articleFor, searchArticles, type Article } from '../help/articles.js'
 import { hashOf } from '../nav.js'
 import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { MonthTitle } from '../components/ui/type.js'
+import { LINE_LINK } from '../components/ui/link.js'
 import { ArticleBody, HelpText } from '../help/ArticleBody.js'
 import { UpdatesPanel } from '../help/UpdatesPanel.js'
 import { useHelpSearchFocus } from '../help/search-focus.js'
 import { useWide } from '../lib/wide.js'
 import { cn } from '../lib/cn.js'
+
+// Getting started's count reads nine answers; fetched only when Start here opens.
+const ProgressLine = lazyPart(() => import('../start/ProgressLine.js').then((m) => ({ default: m.ProgressLine })))
 
 /**
  * Help (plan §8.2): `#/help` lists every article with a search box, and
@@ -118,6 +123,26 @@ function IndexList({ query, current }: { query: string; current: string | null }
   )
 }
 
+/**
+ * The guide itself, at the top of the article about it: Help and the
+ * first run are Getting started's two ways in (decision 6 of 2026-10-08),
+ * with how many of its steps are done, as More and Settings once said.
+ */
+function StartHereCard() {
+  return (
+    <section aria-label="Getting started" className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-xl border bg-card px-5 py-3">
+      <p className="text-muted-foreground">
+        <Suspense fallback="One step at a time">
+          <ProgressLine fallback="One step at a time" />
+        </Suspense>
+      </p>
+      <a href={hashOf({ screen: 'start', param: null })} className={LINE_LINK}>
+        Open Getting started
+      </a>
+    </section>
+  )
+}
+
 function ArticlePage({ article, beside }: { article: Article; beside: boolean }) {
   return (
     <article className={cn('space-y-5', !beside && 'mx-auto max-w-3xl')}>
@@ -134,6 +159,7 @@ function ArticlePage({ article, beside }: { article: Article; beside: boolean })
         <MonthTitle>{article.title}</MonthTitle>
       </header>
       {/* What is in comes first: it is what the owner opened this page to learn. */}
+      {article.id === 'start' ? <StartHereCard /> : null}
       {article.id === 'updates' ? <UpdatesPanel /> : null}
       <ArticleBody article={article} carded />
       {/* Stretched, so the two cards side by side are one height (V18). */}

@@ -53,13 +53,13 @@ export const ARTICLES: readonly Article[] = [
     summary:
       'Getting started walks you through setting up, one step at a time: your name, lists, pay, bills, savings goals, first statement, this month’s starting balance, free AI and your iPhone. A few minutes each, and nothing breaks if you stop part way.',
     steps: [
-      'Open **Getting started** from **Settings**, or from **More** on a phone, and it says how many of the nine steps are done.',
+      'Press **Open Getting started**, above; it says how many of the nine steps are done.',
       'Do what the step shows, then press **Continue**.',
       'To leave a step for now, press **Do this later**, which moves it to the end.',
       'To go to any step, tap it in **All 9 steps** (open beside the step on a wide screen; on a phone, open it first).',
-      'Come back any time: More and Settings say how many are done.',
+      'Come back any time from **Help**: this page says how many are done.',
     ],
-    done: 'Getting started says "Your coach is ready", or Settings (More on a phone) says All done.',
+    done: 'Getting started says "Your coach is ready", or this page says All done.',
     stuck:
       'Do the steps you can and leave the rest. A step that says it can’t be checked yet could not be read just now; if it keeps saying so, open One-time updates. Every screen works with what it has, and says what it is missing in one line.',
     related: ['getting-around', 'updates', 'statements', 'review', 'free-ai', 'iphone'],
@@ -71,7 +71,7 @@ export const ARTICLES: readonly Article[] = [
       'On a phone, five buttons along the bottom; on a computer, a sidebar on the left and a bar along the top. Every screen is a tap or two away.',
     steps: [
       'On a phone, use the buttons along the bottom: **Month**, **Coach**, **Add**, **Review** and **More**, which holds the rest.',
-      'On a computer, use the sidebar on the left, grouped **Plan**, **Money**, **Coach**, **Inbox** and **Setup**.',
+      'On a computer, use the sidebar on the left, grouped **Plan**, **Money**, **Coach**, **Inbox** and **More**.',
       'Press a group’s name to open or close it; **Plan** always stays open.',
       'Press the sidebar button at the top left to fold the sidebar to its icons, and press it again to open it.',
       'Read where you are at the top, such as Coach › Ask, and press the first name to open it.',
@@ -81,7 +81,7 @@ export const ARTICLES: readonly Article[] = [
     ],
     done: 'you can reach every screen from the sidebar on a computer, or from the bottom buttons and More on a phone.',
     stuck:
-      'In a narrower window the sidebar shows only its icons: point at one to see its name. Ask and the Sunday check-in have no place of their own in the sidebar: open them from the **Coach**. AI settings is the **AI** tab of **Settings**. Getting started opens from **More** on a phone. Week, Month and Year are also in the switch at the top of each. A closed group says on its name how many rows wait in Review.',
+      'In a narrower window the sidebar shows only its icons: point at one to see its name. Ask and the Sunday check-in have no place of their own in the sidebar: open them from the **Coach**. AI settings is the **AI** tab of **Settings**. Getting started opens from **Help**, with **Open Getting started** on its first article. Week, Month and Year are also in the switch at the top of each. A closed group says on its name how many rows wait in Review.',
     related: ['start', 'periods', 'signing-in'],
   },
   {

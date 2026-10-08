@@ -17,7 +17,8 @@ export interface PlaceGroup {
  * The sidebar's groups, as Mockup A draws them (ADR 0011). Plan is always
  * open; the others fold. Every screen More lists is here, or lights the
  * screen it belongs to (PARENT). Plan runs shortest period first, then
- * the two screens of their own (ADR 0014).
+ * the two screens of their own; the last group is More, Settings and
+ * Help, since Setup is Settings' Lists tab (ADR 0014).
  */
 export const SIDEBAR_GROUPS: readonly PlaceGroup[] = [
   {
@@ -54,7 +55,7 @@ export const SIDEBAR_GROUPS: readonly PlaceGroup[] = [
     ],
   },
   {
-    title: 'Setup',
+    title: 'More',
     items: [
       { screen: 'settings', label: 'Settings', icon: 'settings' },
       { screen: 'help', label: 'Help', icon: 'help' },
@@ -86,8 +87,12 @@ export const SCREEN_NAME: Record<Screen, string> = {
   ai: 'AI settings',
 }
 
-/** The screens with no item of their own, and the item they light (design-review P1 item 2). */
-const PARENT: Partial<Record<Screen, Screen>> = { ask: 'coach', start: 'settings', ai: 'settings' }
+/**
+ * The screens with no item of their own, and the item they light
+ * (design-review P1 item 2). Getting started opens from Help, and on the
+ * first run (decision 6 of 2026-10-08).
+ */
+const PARENT: Partial<Record<Screen, Screen>> = { ask: 'coach', start: 'help', ai: 'settings' }
 
 /** The sidebar item lit while a screen shows, or null for More, which a wide screen does not list. */
 export function litOf(screen: Screen): Screen | null {
@@ -103,8 +108,8 @@ export interface Crumbs {
 /**
  * The top bar's breadcrumb: "Budget › Month" for a screen with an item of
  * its own, and its parent for one without, "Coach › Ask", "Coach ›
- * Check-in", "Settings › Getting started"; a Settings tab under
- * Settings, "Settings › AI" (ADR 0014 §2).
+ * Check-in", "Help › Getting started"; a Settings tab under Settings,
+ * "Settings › AI" (ADR 0014 §2).
  */
 export function crumbsOf(screen: Screen, param: string | null): Crumbs {
   if (screen === 'coach' && param === 'checkin') return { parent: { label: 'Coach', screen: 'coach' }, current: 'Check-in' }

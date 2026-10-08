@@ -131,7 +131,7 @@ export function GettingStartedScreen() {
                 Do this later
               </Button>
             </div>
-            <p className="text-sm text-muted-foreground">Nothing breaks if you stop here. You can come back any time from Settings, or More on a phone.</p>
+            <p className="text-sm text-muted-foreground">Nothing breaks if you stop here. Come back any time from Help.</p>
             {wide ? null : <AllSteps progress={progress} at={at} onGo={go} open={false} />}
           </>
         )}
