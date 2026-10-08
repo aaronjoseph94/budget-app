@@ -401,36 +401,37 @@ export const ARTICLES: readonly Article[] = [
     id: 'free-ai',
     title: 'Turn on free AI',
     summary:
-      'AI writes the Coach’s words for you, free with Google Gemini. Everything works without it, in the app’s own words. Pasting the key takes about 2 minutes, once the one-time updates are in.',
+      'AI writes the Coach’s words for you, free with OpenRouter, Groq or Google Gemini. Everything works without it, in the app’s own words. Pasting a key takes about 2 minutes, once the one-time updates are in.',
     steps: [
       'Open **AI settings** (from **Settings**, or **More** on a phone), and read the sentence at the top.',
       'If it says the AI helper isn’t installed, or needs a one-time update, press **Open One-time updates** and do what it names next.',
-      'If the Gemini card says **Already on**, you added a key for receipt photos and there is nothing more to do.',
-      'Otherwise press **Get a free key**, then **Create API key** in the Google AI Studio tab that opens, and copy the key.',
-      'Come back to AI settings, paste the key in the box, and press **Save & test**.',
+      'If Google Gemini’s row under **Free AI** says **Already on**, you added a key for receipt photos and there is nothing more to do.',
+      'Otherwise pick a row under **Free AI** (OpenRouter and Groq are quick), press its link that starts with **Get**, and copy the key the page that opens gives you.',
+      'Come back to AI settings, paste the key in that row, and press **Save & test**.',
+      'Press **Test** to see how long that service takes.',
       'To pick another model, press **Check which models work** and choose one the key can use.',
     ],
-    done: 'the Gemini card says "Works · key ending …" and the top says "AI is on".',
+    done: 'the row says "Works · key ending …" and the top says "AI is on".',
     stuck:
-      'If it says the key isn’t valid, copy it again from AI Studio, all of it. If Google is busy, the key is saved and tried again later. Nothing breaks while AI is off: the Coach and every other screen use the app’s own words. To stop using AI altogether, turn off **Use AI** at the top of AI settings: nothing from your records is sent to any AI service while it is off, and every screen uses the app’s own words. Turn it on again the same way. A key is a password Google gives you for the app to use; the app only ever shows its last four characters, and **Remove key** deletes it.',
+      'If it says the key isn’t valid, copy it again from the service’s page, all of it. If the service is busy, the key is saved and tried again later. Nothing breaks while AI is off: the Coach and every other screen use the app’s own words. To stop using AI altogether, turn off **Use AI** at the top of AI settings: nothing from your records is sent to any AI service while it is off, and every screen uses the app’s own words. Turn it on again the same way. A key is a password the service gives you for the app to use; the app only ever shows its last four characters, and **Remove key** deletes it.',
     related: ['updates', 'coach', 'more-ai'],
   },
   {
     id: 'more-ai',
     title: 'More AI services, paid ones too',
     summary:
-      'Optional. Gemini alone is enough. Adding Groq or OpenRouter, both free, means another service answers when Gemini is busy. OpenAI and Anthropic are paid, and used only if you switch them on.',
+      'Optional. One free service is enough; a second answers when the first is busy. OpenAI and Anthropic are paid, under Advanced, and used only if you switch them on.',
     steps: [
-      'Open **AI settings** (from **Settings**, or **More** on a phone), and press **More AI services** to unfold the cards.',
-      'On the card you want, press the link that starts with **Get**, and create a key on the page that opens.',
-      'Copy the key, paste it in that card, and press **Save & test**.',
-      'Under **Try in this order**, press the arrows to put the services in the order you want them asked.',
+      'Open **AI settings** (from **Settings**, or **More** on a phone), and find the service’s row under **Free AI**, or under **Advanced** for a paid one.',
+      'Press the link that starts with **Get**, and create a key on the page that opens.',
+      'Copy the key, paste it in that row, and press **Save & test**.',
+      'Under **Advanced**, **Try in this order** has arrows to put the services in the order you want them asked.',
       'To let OpenAI or Anthropic answer, turn on **Use paid services**, knowing each use is billed to you by them.',
       'Choose a **Daily limit** if 40 AI calls a day is too many or too few.',
     ],
-    done: 'the card says "Works · key ending …" and the service sits where you want it under Try in this order.',
+    done: 'the row says "Works · key ending …" and the service sits where you want it under Try in this order.',
     stuck:
-      'Free services may keep what they are sent, and people there may read it, as with Gemini’s free tier. A paid key does nothing until **Use paid services** is on, so nothing is billed by surprise. **Remove key** on a card deletes that key alone.',
+      'Free services may keep what they are sent, and people there may read it, as with Gemini’s free tier. A paid key does nothing until **Use paid services** is on, so nothing is billed by surprise. **Remove key** on a row deletes that key alone.',
     related: ['free-ai', 'ai-rests'],
   },
   {
@@ -439,7 +440,7 @@ export const ARTICLES: readonly Article[] = [
     summary:
       'For the Coach and Review, the AI is told what kind of thing changed, which way, and by a little or a lot, with your names for things, and never an amount, a balance or a date. You choose the Coach’s tone, and whether shop names are shared. **Use AI**, at the top of AI settings, turned off sends nothing at all.',
     steps: [
-      'Open **AI settings** (from **Settings**, or **More** on a phone), and find **How the Coach talks**.',
+      'Open **AI settings** (from **Settings**, or **More** on a phone), press **Advanced**, and find **How the Coach talks**.',
       'Choose **Cheerleader** for a win first and never a telling-off, or **Straight talker** for plain words.',
       'Turn **Share shop names with the AI** off to have the AI told “a shop” instead of the name, and Review’s suggestions stopped.',
       'Open **Coach** to read today’s words in the tone you chose.',
@@ -464,10 +465,10 @@ export const ARTICLES: readonly Article[] = [
     summary:
       'Free AI has daily limits, and so does the app. When a service is busy or out of free uses it rests for a while, and the next one is asked. When none can answer, the app shows its own words: nothing breaks.',
     steps: [
-      'Open **AI settings** (from **Settings**, or **More** on a phone), and read the sentence at the top and the line **Today: N of 40**.',
+      'Open **AI settings** (from **Settings**, or **More** on a phone), read the sentence at the top, and under **Advanced** the line **Today: N of 40**.',
       'If today’s calls reached the limit, wait until tomorrow, or raise the **Daily limit**.',
       'If every service is resting, wait a minute or two and press **Check again**.',
-      'To have another service answer while Gemini rests, add a free one under **More AI services**.',
+      'To have another service answer while one rests, add a free key under **Free AI**.',
     ],
     done: 'the top of AI settings says "AI is on" again.',
     stuck:

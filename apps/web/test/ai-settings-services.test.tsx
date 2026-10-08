@@ -8,11 +8,11 @@ import { warmScreen } from './warm-screen.js'
 import { expectNoAxeViolations } from './axe.js'
 
 /**
- * AI settings' other four services (plan §8.3, A11): Groq and OpenRouter
- * (free), OpenAI and Anthropic (paid), folded under More AI services, each
- * with its own get-a-key page, the same paste and test as Gemini's, and
- * Remove key. The key is obviously fake, and must be nowhere on the page
- * once it is sent.
+ * AI settings' other four services (plan §8.3, A11; ADR 0015): Groq and
+ * OpenRouter (free) in the Free AI card, OpenAI and Anthropic (paid)
+ * folded under Advanced, each with its own get-a-key page, the same paste
+ * and test as Gemini's, and Remove key. The key is obviously fake, and
+ * must be nowhere on the page once it is sent.
  */
 
 const TODAY = new Date(2026, 8, 23, 12)
@@ -43,18 +43,25 @@ afterEach(() => {
 
 const reply = (body: unknown) => new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } })
 
+/** Open the page and unfold Advanced; the paid cards are inside it, the free ones in the Free AI card above. */
 async function more(fake: FakeSupabase) {
   renderScreen(<Shell />, fake)
-  const summary = await screen.findByText('More AI services: Groq, OpenRouter, and paid ones')
+  // Advanced is drawn before the helper answers; the cards wait for its status.
+  await screen.findByRole('region', { name: 'Free AI' })
+  const summary = screen.getByText('Advanced')
   const details = summary.closest('details') as HTMLDetailsElement
   expect(details.open).toBe(false)
   fireEvent.click(summary)
   return (name: string) => within(screen.getByRole('region', { name }))
 }
 
-describe('More AI services', () => {
-  it('folds four cards away, each linking to its own key page in a new tab, the free ones warning before a key is pasted', async () => {
+describe('the other four services', () => {
+  it('each link to their own key page in a new tab, the free ones in the Free AI card, the paid ones under Advanced', async () => {
     const card = await more(createFakeSupabase())
+    const free = screen.getByRole('region', { name: 'Free AI' })
+    const advanced = screen.getByText('Advanced').closest('details') as HTMLDetailsElement
+    for (const name of ['Groq', 'OpenRouter']) expect(free.contains(screen.getByRole('region', { name }))).toBe(true)
+    for (const name of ['OpenAI', 'Anthropic']) expect(advanced.contains(screen.getByRole('region', { name }))).toBe(true)
     const cases = [
       ['Groq', 'Get a free Groq key ↗', 'https://console.groq.com/keys', 'Free'],
       ['OpenRouter', 'Get a free OpenRouter key ↗', 'https://openrouter.ai/settings/keys', 'Free'],

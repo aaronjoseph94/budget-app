@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
+import { AiSettingsScreen } from '../src/screens/AiSettingsScreen.js'
 import { aiStatusReply, createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { warmScreen } from './warm-screen.js'
@@ -40,26 +41,51 @@ async function open(fake: FakeSupabase, sentence: string) {
   return screen.findByText(sentence)
 }
 
-describe('AI settings, Mockup A', () => {
-  it('puts the status across the top, then the keys beside the choices and the tone from 1280px', async () => {
+/** The services a card lists, by their headings, top to bottom. */
+const listed = (card: HTMLElement) => within(card).getAllByRole('region').map((r) => within(r).getByRole('heading', { level: 2 }).textContent)
+
+describe('AI settings (ADR 0015)', () => {
+  it('reads top to bottom: Use AI with the sentence, the Free AI card with the three free services, then Advanced folded', async () => {
     await open(createFakeSupabase(), 'AI isn’t set up yet. Everything still works in the app’s own words. Turn on free AI below, in about 2 minutes.')
     const status = screen.getByRole('region', { name: 'AI now' })
     expect(status.className).toContain('to-primary-tint')
-    const gemini = await screen.findByRole('region', { name: 'Google Gemini' })
-    const columns = gemini.parentElement!.parentElement!
-    expect(columns.className).toContain('xl:grid-cols-2')
-    const [left, right] = [...columns.children]
-    expect(left?.contains(gemini)).toBe(true)
-    expect(right?.contains(await screen.findByRole('region', { name: 'Try in this order' }))).toBe(true)
-    expect(right?.contains(await screen.findByRole('region', { name: 'How the Coach talks' }))).toBe(true)
-    // Free or Paid on every card as a quiet outlined chip; the order says which is first (ADR 0015).
-    expect(within(gemini).getByText('Free').className).toContain('border')
-    expect(within(gemini).queryByText('Recommended')).toBeNull()
-    expect(within(gemini).getByText('Uses gemini-3.5-flash-lite')).toBeTruthy()
-    // The key field still shows nothing typed back: a password field, empty.
-    const field = within(gemini).getByLabelText('Step 2: paste it here') as HTMLInputElement
+    expect(within(status).getByRole('switch', { name: 'Use AI' })).toBeTruthy()
+    // The three free services in the order they are tried, each a row of the one card, with one line above them.
+    const free = await screen.findByRole('region', { name: 'Free AI' })
+    expect(listed(free)).toEqual(['OpenRouter', 'Groq', 'Google Gemini'])
+    expect(within(free).getByText('Tried in this order. Each needs a free key.')).toBeTruthy()
+    expect(within(free).getAllByText('Free').map((chip) => chip.className.includes('border'))).toEqual([true, true, true])
+    expect(within(free).queryByText('Recommended')).toBeNull()
+    expect(within(free).getByText('Uses gemini-3.5-flash-lite')).toBeTruthy()
+    // Everything else is under Advanced, folded: the paid keys, the order, paid services, the daily limit and the Coach's tone.
+    const advanced = screen.getByText('Advanced').closest('details') as HTMLDetailsElement
+    expect(advanced.open).toBe(false)
+    expect(within(advanced).getByText('Paid services, limits, order, Coach tone')).toBeTruthy()
+    for (const name of ['OpenAI', 'Anthropic', 'Try in this order', 'How the Coach talks']) expect(within(advanced).getByRole('region', { name })).toBeTruthy()
+    expect(within(advanced).getByRole('switch', { name: 'Use paid services' })).toBeTruthy()
+    expect(within(advanced).getByRole('combobox', { name: 'Daily limit' })).toBeTruthy()
+    expect(status.compareDocumentPosition(free) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(free.compareDocumentPosition(advanced) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    // One reading column; the key field still shows nothing typed back: a password field, empty.
+    expect(free.parentElement?.className).not.toContain('xl:grid-cols-2')
+    const field = within(free).getAllByLabelText('Step 2: paste it here')[0] as HTMLInputElement
     expect([field.type, field.value]).toEqual(['password', ''])
     await expectNoAxeViolations()
+  })
+
+  it('lists the free services in the owner’s own order', async () => {
+    const fake = createFakeSupabase({ ai_settings: [{ user_id: 'u1', provider_order: ['gemini', 'openai', 'groq'] }] })
+    await open(fake, 'AI isn’t set up yet. Everything still works in the app’s own words. Turn on free AI below, in about 2 minutes.')
+    const free = await screen.findByRole('region', { name: 'Free AI' })
+    await waitFor(() => expect(listed(free)).toEqual(['Google Gemini', 'Groq', 'OpenRouter']))
+  })
+
+  it('embedded, as Settings’ AI tab, draws no title or way back of its own', async () => {
+    renderScreen(<AiSettingsScreen embedded />, createFakeSupabase())
+    expect(await screen.findByRole('region', { name: 'AI now' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { level: 1 })).toBeNull()
+    expect(screen.queryByRole('link', { name: '← Settings' })).toBeNull()
+    expect(await screen.findByRole('region', { name: 'Free AI' })).toBeTruthy()
   })
 })
 

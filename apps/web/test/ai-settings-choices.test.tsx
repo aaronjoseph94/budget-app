@@ -184,7 +184,7 @@ describe('Use paid services', () => {
       services: aiStatusReply().services.map((s) => (s.provider === 'openai' ? { ...s, source: 'saved' as const, hint: 'abcd', status: 'ok' as const } : s)),
     })
     await open(fake)
-    fireEvent.click(screen.getByText('More AI services: Groq, OpenRouter, and paid ones'))
+    fireEvent.click(screen.getByText('Advanced'))
     const card = within(screen.getByRole('region', { name: 'OpenAI' }))
     expect(card.getByText('Saved, key ending …abcd. Not used until you turn on paid services.')).toBeTruthy()
   })
