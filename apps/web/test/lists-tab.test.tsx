@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { SetupScreen } from '../src/screens/SetupScreen.js'
+import { ListsTab } from '../src/settings/ListsTab.js'
 import { addCategories, type Category } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
@@ -40,9 +40,9 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('SetupScreen, the lists', () => {
+describe('Lists, the lists', () => {
   it("shows every list under the workbook's headings, each in its own order, then by name", async () => {
-    renderScreen(<SetupScreen />, seeded())
+    renderScreen(<ListsTab />, seeded())
 
     expect(screen.getByRole('heading', { level: 1, name: 'Start here!' })).toBeTruthy()
     // Mockup A: each list's card is its own section, the workbook's section
@@ -68,20 +68,20 @@ describe('SetupScreen, the lists', () => {
   })
 })
 
-describe('SetupScreen, the columns', () => {
+describe('Lists, the columns', () => {
   const at1280 = (matches: boolean) =>
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: matches && query === '(min-width: 1280px)', addEventListener: () => undefined, removeEventListener: () => undefined }))
   const titles = () => screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
 
   it('keeps the workbook\'s order in one column below 1280px', () => {
     at1280(false)
-    renderScreen(<SetupScreen />, seeded())
+    renderScreen(<ListsTab />, seeded())
     expect(titles()).toEqual(['Income', 'Savings', 'Bills', 'Debts', 'Subscriptions', 'Variable expenses', 'Not spending'])
   })
 
   it('puts the lists with columns on the left from 1280px, each column read top to bottom', () => {
     at1280(true)
-    renderScreen(<SetupScreen />, seeded())
+    renderScreen(<ListsTab />, seeded())
     expect(titles()).toEqual(['Income', 'Bills', 'Debts', 'Subscriptions', 'Savings', 'Variable expenses', 'Not spending'])
     const [left, right] = [...(screen.getByRole('region', { name: 'Income' }).parentElement?.parentElement?.children ?? [])]
     expect(left?.contains(screen.getByRole('region', { name: 'Subscriptions' }))).toBe(true)
@@ -89,10 +89,10 @@ describe('SetupScreen, the columns', () => {
   })
 })
 
-describe('SetupScreen, changing a list', () => {
+describe('Lists, changing a list', () => {
   it('renames a category where it stands, keeping its id', async () => {
     const fake = seeded()
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
 
     const field = await screen.findByRole('textbox', { name: 'Rename Phone' })
     fireEvent.change(field, { target: { value: ' Mobile ' } })
@@ -110,7 +110,7 @@ describe('SetupScreen, changing a list', () => {
 
   it('puts the old name back for an empty name or Escape, and saves nothing', async () => {
     const fake = seeded()
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
 
     const field = await screen.findByRole<HTMLInputElement>('textbox', { name: 'Rename Rent' })
     fireEvent.change(field, { target: { value: '   ' } })
@@ -124,7 +124,7 @@ describe('SetupScreen, changing a list', () => {
   })
 
   it('refuses a name another category has, in words, and keeps the old one', async () => {
-    renderScreen(<SetupScreen />, seeded())
+    renderScreen(<ListsTab />, seeded())
 
     const field = await screen.findByRole<HTMLInputElement>('textbox', { name: 'Rename Rent' })
     fireEvent.change(field, { target: { value: 'Groceries' } })
@@ -137,7 +137,7 @@ describe('SetupScreen, changing a list', () => {
 
   it('adds a category to the bottom of the list it was typed into', async () => {
     const fake = seeded()
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
 
     const input = await screen.findByRole('textbox', { name: 'New Bills category' })
     fireEvent.change(input, { target: { value: 'Water' } })
@@ -148,10 +148,10 @@ describe('SetupScreen, changing a list', () => {
   })
 })
 
-describe('SetupScreen, order and lists', () => {
+describe('Lists, order and lists', () => {
   it('moves a row up and down its list', async () => {
     const fake = seeded()
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
 
     const bills = within(await screen.findByRole('region', { name: 'Bills' }))
     expect(bills.getByRole('button', { name: 'Move Phone up' })).toHaveProperty('disabled', true)
@@ -166,7 +166,7 @@ describe('SetupScreen, order and lists', () => {
   // Both start at position 0, ordered by name; the move has to show anyway.
   it('moves a row past one sharing its position', async () => {
     const fake = seeded()
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
 
     fireEvent.click(await screen.findByRole('button', { name: 'Move Restaurants up' }))
     await waitFor(async () => expect(await namesOn('Variable expenses')).toEqual(['Restaurants', 'Groceries']))
@@ -174,7 +174,7 @@ describe('SetupScreen, order and lists', () => {
 
   it('moves a category to the bottom of another list', async () => {
     const fake = seeded()
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
 
     const picker = await screen.findByRole('combobox', { name: 'Move Groceries to another list' })
     expect(within(picker).queryByRole('option', { name: 'Variable expenses' })).toBeNull()
@@ -188,7 +188,7 @@ describe('SetupScreen, order and lists', () => {
   it('says to remove the monthly amount when a move is refused, and moves nothing', async () => {
     const fake = seeded()
     fake.fail('PATCH categories', '23514')
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
 
     fireEvent.change(await screen.findByRole('combobox', { name: 'Move Rent to another list' }), { target: { value: 'debt' } })
 
@@ -198,10 +198,10 @@ describe('SetupScreen, order and lists', () => {
   })
 })
 
-describe('SetupScreen, removing a category', () => {
+describe('Lists, removing a category', () => {
   it('removes one with nothing filed under it', async () => {
     const fake = seeded()
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
 
     fireEvent.click(await screen.findByRole('button', { name: 'Remove Phone' }))
 
@@ -211,7 +211,7 @@ describe('SetupScreen, removing a category', () => {
 
   // e2e-setup-06: Remove went with its row, and focus fell to <body>.
   it('keeps focus on the list: the next row’s Remove, then the card’s heading once it is empty', async () => {
-    renderScreen(<SetupScreen />, seeded())
+    renderScreen(<ListsTab />, seeded())
     const press = (button: HTMLElement) => {
       button.focus()
       fireEvent.click(button)
@@ -226,7 +226,7 @@ describe('SetupScreen, removing a category', () => {
   it('says to move its charges first when something is still filed under it', async () => {
     const fake = seeded()
     fake.tables.transactions.push({ id: 't1', posted_on: '2026-09-01', amount_cents: -160000, merchant_raw: 'LANDLORD', category_id: 'c3', source: 'typed' })
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
 
     fireEvent.click(await screen.findByRole('button', { name: 'Remove Rent' }))
 
@@ -236,9 +236,9 @@ describe('SetupScreen, removing a category', () => {
   })
 })
 
-describe('SetupScreen, your name', () => {
+describe('Lists, your name', () => {
   it('draws a ring round the name field when it has focus, not only a whiter underline (FE-3)', () => {
-    renderScreen(<SetupScreen />, seeded(), 'Sam')
+    renderScreen(<ListsTab />, seeded(), 'Sam')
     const classes = screen.getByRole('textbox', { name: 'My name is' }).classList
     // Mockup A: the field on the accent tint has its own edge and the app's accent ring.
     expect([classes.contains('focus-visible:ring-[3px]'), classes.contains('focus-visible:ring-ring')]).toEqual([true, true])
@@ -249,7 +249,7 @@ describe('SetupScreen, your name', () => {
   it('saves your name to your sign-in when you leave the field', async () => {
     const fake = seeded()
     await fake.signIn()
-    renderScreen(<SetupScreen />, fake, 'Sam')
+    renderScreen(<ListsTab />, fake, 'Sam')
 
     const field = screen.getByRole<HTMLInputElement>('textbox', { name: 'My name is' })
     expect(field.value).toBe('Sam')
@@ -264,7 +264,7 @@ describe('SetupScreen, your name', () => {
     const fake = seeded()
     await fake.signIn()
     fake.fail('auth/user', '500')
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
 
     const field = screen.getByRole('textbox', { name: 'My name is' })
     fireEvent.change(field, { target: { value: 'Alex' } })
@@ -277,7 +277,7 @@ describe('SetupScreen, your name', () => {
   })
 })
 
-describe('SetupScreen, starting from the starter list', () => {
+describe('Lists, starting from the starter list', () => {
   const start = async () => fireEvent.click(await screen.findByRole('button', { name: 'Use the starter list' }))
 
   it('adds the starter names under each list, after yours, your goal first on Savings', async () => {
@@ -286,7 +286,7 @@ describe('SetupScreen, starting from the starter list', () => {
       id: 'g1', name: 'Flight training', target_cents: 3_000_000, saved_cents: 0,
       target_date: null, unit_cost_cents: null, unit_label: null,
     })
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
     await start()
 
     // 31 starter names and the goal, less the five already here.
@@ -308,7 +308,7 @@ describe('SetupScreen, starting from the starter list', () => {
 
   it('adds each name once when pressed twice, and without a goal starts Savings with the starter names', async () => {
     const fake = seeded()
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
     const button = await screen.findByRole('button', { name: 'Use the starter list' })
     fireEvent.click(button)
     fireEvent.click(button)
@@ -323,7 +323,7 @@ describe('SetupScreen, starting from the starter list', () => {
     const fake = createFakeSupabase({
       categories: Array.from({ length: 20 }, (_, i) => category(`c${i}`, `Mine ${i}`, 'variable', i)),
     })
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
     // Before the first load every account reads as empty; not offered then either.
     expect(screen.queryByRole('button', { name: 'Use the starter list' })).toBeNull()
 
@@ -334,7 +334,7 @@ describe('SetupScreen, starting from the starter list', () => {
   it('says so when the names could not be added, and adds none', async () => {
     const fake = seeded()
     fake.fail('POST categories', '42501')
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
     await start()
 
     const card = within(screen.getByRole('region', { name: 'Starter list' }))

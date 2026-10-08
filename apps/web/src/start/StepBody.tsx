@@ -6,7 +6,7 @@ import { ARTICLES, boldParts } from '../help/articles.js'
 import { Alert, SavedNote } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Field, Input } from '../components/ui/form.js'
-import { SetupLists } from '../screens/SetupScreen.js'
+import { SetupLists } from '../settings/ListsTab.js'
 import { openFromHomeScreen } from './checks.js'
 import { GoalsStep } from './GoalsStep.js'
 import { BalanceStep, StatementStep } from './MoneySteps.js'
@@ -31,7 +31,7 @@ export interface StepBodyProps {
 export function StepBody(props: StepBodyProps) {
   if (props.id === 'name') return <NameStep name={props.name} onNamed={props.onNamed} />
   if (props.id === 'phone') return <PhoneStep ticked={props.phoneTicked} onTick={props.onTick} />
-  // Setup's own cards: the starter list and everyday spending, then income, then the three that owe.
+  // Lists' own cards: the starter list and everyday spending, then income, then the three that owe.
   if (props.id === 'lists') return <SetupLists kinds={['variable']} starter />
   if (props.id === 'pay') return <SetupLists kinds={['income']} />
   if (props.id === 'bills') return <SetupLists kinds={['bill', 'debt', 'subscription']} />
@@ -41,7 +41,7 @@ export function StepBody(props: StepBodyProps) {
   return <AiStep ai={props.ai} onChanged={props.onAiChanged} />
 }
 
-/** Step 1: the name Setup's "My name is" keeps, saved the same way. */
+/** Step 1: the name Lists' "My name is" keeps, saved the same way. */
 function NameStep({ name, onNamed }: { name: string; onNamed: (name: string) => void }) {
   const { supabase } = useAppData()
   const [text, setText] = useState(name)

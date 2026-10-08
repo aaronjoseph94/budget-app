@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { SetupScreen } from '../src/screens/SetupScreen.js'
+import { ListsTab } from '../src/settings/ListsTab.js'
 import { renderScreen } from './render-screen.js'
 import { SHOPS_TODAY, shopsFake } from './shops-seed.js'
 import { expectNoAxeViolations } from './axe.js'
@@ -31,7 +31,7 @@ describe('Setup’s monthly bill nudge', () => {
       if (target === 'POST category_plans') writes += 1
       return null
     }
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
     const card = await music()
     expect(await card.findByText('Looks like a monthly bill: add it?')).toBeTruthy()
     expect(card.getByText(/SPOTIFY charged/).textContent).toBe('SPOTIFY charged $12.99 each month, lately on day 14.')
@@ -60,14 +60,14 @@ describe('Setup’s monthly bill nudge', () => {
     }
     const marked = withRadio()
     marked.tables.insight_dismissals.push({ user_id: 'u1', insight_key: 'not_subscription:SPOTIFY' })
-    renderScreen(<SetupScreen />, marked)
+    renderScreen(<ListsTab />, marked)
     expect(await (await music()).findByText(/RADIO charged/)).toBeTruthy()
     expect(screen.queryByText(/SPOTIFY charged/)).toBeNull()
     cleanup()
 
     const planned = withRadio()
     planned.tables.category_plans.push({ id: 'p1', category_id: 'music', effective_month: '2026-01-01', planned_cents: 1_299, due_day: 14 })
-    renderScreen(<SetupScreen />, planned)
+    renderScreen(<ListsTab />, planned)
     expect(await (await music()).findByText(/RADIO charged/)).toBeTruthy()
     expect(screen.queryByText(/SPOTIFY charged/)).toBeNull()
   })
@@ -75,14 +75,14 @@ describe('Setup’s monthly bill nudge', () => {
   it('still offers it on a row whose monthly amount was stopped', async () => {
     const fake = shopsFake()
     fake.tables.category_plans.push({ id: 'p1', category_id: 'music', effective_month: '2026-01-01', planned_cents: null, due_day: null })
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
     expect(await (await music()).findByText(/SPOTIFY charged/)).toBeTruthy()
   })
 
   it('leaves Setup working, with no nudge, when the charges cannot be read', async () => {
     const fake = shopsFake()
     fake.fail('transactions', '08006')
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
     const card = await music()
     expect(await card.findByRole('textbox', { name: 'Day paid for Music' })).toBeTruthy()
     expect(screen.queryByText('Looks like a monthly bill: add it?')).toBeNull()

@@ -25,7 +25,7 @@ const ReportsScreen = lazyPart(() => import('../screens/ReportsScreen.js').then(
 const ReviewScreen = lazyPart(() => import('../screens/ReviewScreen.js').then((m) => ({ default: m.ReviewScreen })))
 const SavingsScreen = lazyPart(() => import('../screens/SavingsScreen.js').then((m) => ({ default: m.SavingsScreen })))
 const SettingsScreen = lazyPart(() => import('../screens/SettingsScreen.js').then((m) => ({ default: m.SettingsScreen })))
-const SetupScreen = lazyPart(() => import('../screens/SetupScreen.js').then((m) => ({ default: m.SetupScreen })))
+const ListsTab = lazyPart(() => import('../settings/ListsTab.js').then((m) => ({ default: m.ListsTab })))
 const WeekScreen = lazyPart(() => import('../screens/WeekScreen.js').then((m) => ({ default: m.WeekScreen })))
 const YearScreen = lazyPart(() => import('../screens/YearScreen.js').then((m) => ({ default: m.YearScreen })))
 
@@ -61,7 +61,7 @@ export const VIEWS: { readonly [S in Screen]: View } = {
   more: { wide: never, render: () => <MoreScreen /> },
   ledger: { wide: never, render: () => <LedgerScreen /> },
   settings: { wide: always, render: () => <SettingsScreen /> },
-  setup: { wide: always, render: () => <SetupScreen /> },
+  setup: { wide: always, render: () => <ListsTab /> },
   savings: { wide: always, render: () => <SavingsScreen /> },
   debts: { wide: always, render: () => <DebtsScreen /> },
   year: { wide: always, render: (param) => <YearScreen start={param} /> },

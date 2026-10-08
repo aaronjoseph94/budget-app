@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { SetupScreen } from '../src/screens/SetupScreen.js'
+import { ListsTab } from '../src/settings/ListsTab.js'
 import type { Category, PlanRow } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
@@ -60,11 +60,11 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-describe('SetupScreen, reading monthly amounts', () => {
+describe('Lists, reading monthly amounts', () => {
   it('says once that monthly amounts need 0009, and the lists still work', async () => {
     const fake = seeded()
     fake.fail('category_plans', 'PGRST205')
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
 
     const alert = await screen.findByRole('alert')
     expect(alert.textContent).toBe(
@@ -81,7 +81,7 @@ describe('SetupScreen, reading monthly amounts', () => {
   it('says so when an amount names a category that is not there, rather than total without it', async () => {
     const fake = seeded()
     fake.tables.category_plans.push(plan('p9', 'gone', '2026-02', 5_000, 3))
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
 
     expect((await screen.findByRole('alert')).textContent).toBe(
       'A monthly amount names a category that did not load, so the totals are not shown. Try again.',
@@ -92,7 +92,7 @@ describe('SetupScreen, reading monthly amounts', () => {
     const fake = seeded()
     // A row 0009 would refuse: a month is named by its first day.
     fake.tables.category_plans.push({ ...plan('p9', 'rent', '2026-02', 5_000, 3), effective_month: '2026-02-15' })
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
 
     expect((await screen.findByRole('alert')).textContent).toBe('Your monthly amounts could not be shown.')
     const bills = await card('Bills')
@@ -103,7 +103,7 @@ describe('SetupScreen, reading monthly amounts', () => {
 
   it('waits for the amounts read after a category is removed, rather than call them wrong', async () => {
     const fake = seeded()
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
     const bills = await card('Bills')
     await bills.findByRole('button', { name: 'Remove Phone' })
     // The amounts read after the removal are held back: until they arrive,
@@ -132,7 +132,7 @@ describe('SetupScreen, reading monthly amounts', () => {
       if (table !== 'categories' || asked.filter((t) => t === 'categories').length > 1) return null
       return new Promise<void>((resolve) => (release = resolve))
     }
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
 
     // Every other read of the first load is in, and none of the amounts was
     // asked for: nothing is read, or said, until the lists arrive. Waited on
@@ -158,9 +158,9 @@ const type = async (list: string, name: string, value: string) => {
 const september = (fake: FakeSupabase) =>
   fake.tables.category_plans.filter((p) => p.effective_month === '2026-09-01').map((p) => [p.category_id, p.planned_cents, p.due_day])
 
-describe('SetupScreen, day paid and monthly amount', () => {
+describe('Lists, day paid and monthly amount', () => {
   it('shows what is in effect this month on each recurring row, and nothing on the other lists', async () => {
-    renderScreen(<SetupScreen />, seeded())
+    renderScreen(<ListsTab />, seeded())
 
     const rentAmount = await field('Bills', 'Monthly amount for Rent, from September on')
     await waitFor(() => expect(rentAmount.value).toBe('1600.00'))
@@ -186,7 +186,7 @@ describe('SetupScreen, day paid and monthly amount', () => {
 
   it('saves an amount from this month on, keeping the day and every earlier month', async () => {
     const fake = seeded()
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
     await waitFor(async () => expect((await field('Bills', 'Monthly amount for Rent, from September on')).value).toBe('1600.00'))
 
     const input = await type('Bills', 'Monthly amount for Rent, from September on', '$1,650')
@@ -199,7 +199,7 @@ describe('SetupScreen, day paid and monthly amount', () => {
 
   it('saves a day paid from this month on, keeping the amount', async () => {
     const fake = seeded()
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
     await waitFor(async () => expect((await field('Bills', 'Monthly amount for Phone, from September on')).value).toBe('85.00'))
 
     await type('Bills', 'Day paid for Phone', '12')
@@ -211,7 +211,7 @@ describe('SetupScreen, day paid and monthly amount', () => {
 
   it('stops an amount from this month, keeping the day, which lets the category move', async () => {
     const fake = seeded()
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
 
     fireEvent.click(await (await card('Bills')).findByRole('button', { name: 'Stop Rent from September' }))
 
@@ -225,7 +225,7 @@ describe('SetupScreen, day paid and monthly amount', () => {
 
   it('stops an amount whose field is emptied, as Stop does', async () => {
     const fake = seeded()
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
     await waitFor(async () => expect((await field('Bills', 'Monthly amount for Rent, from September on')).value).toBe('1600.00'))
 
     await type('Bills', 'Monthly amount for Rent, from September on', '  ')
@@ -236,7 +236,7 @@ describe('SetupScreen, day paid and monthly amount', () => {
 
   it('keeps a day just typed when Stop is pressed next', async () => {
     const fake = seeded()
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
     await waitFor(async () => expect((await field('Bills', 'Day paid for Rent')).value).toBe('1'))
 
     await type('Bills', 'Day paid for Rent', '3')
@@ -247,7 +247,7 @@ describe('SetupScreen, day paid and monthly amount', () => {
 
   it('saves nothing for a field left as it was, or typed again the same', async () => {
     const fake = seeded()
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
     await waitFor(async () => expect((await field('Bills', 'Day paid for Rent')).value).toBe('1'))
 
     await type('Bills', 'Day paid for Rent', '1')
@@ -262,7 +262,7 @@ describe('SetupScreen, day paid and monthly amount', () => {
 
   it('refuses a day or an amount it cannot save, puts the field back, and saves nothing', async () => {
     const fake = seeded()
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
     await waitFor(async () => expect((await field('Bills', 'Day paid for Rent')).value).toBe('1'))
 
     for (const typed of ['45', '0']) {
@@ -282,10 +282,10 @@ describe('SetupScreen, day paid and monthly amount', () => {
   })
 })
 
-describe('SetupScreen, monthly amounts saved in quick succession or refused', () => {
+describe('Lists, monthly amounts saved in quick succession or refused', () => {
   it('keeps a day left just before the amount, sending the amount only once the day is saved', async () => {
     const fake = seeded()
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
     await waitFor(async () => expect((await field('Bills', 'Monthly amount for Phone, from September on')).value).toBe('85.00'))
     // The first save is stored and its answer held back, so the day is on its
     // way, and not yet read back, when the amount is left.
@@ -308,7 +308,7 @@ describe('SetupScreen, monthly amounts saved in quick succession or refused', ()
 
   it("says the list can't have an amount when the category moved on another device, and puts the field back", async () => {
     const fake = seeded()
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
     await waitFor(async () => expect((await field('Bills', 'Monthly amount for Phone, from September on')).value).toBe('85.00'))
     // Another device stopped Phone's amount and moved it to Variable expenses.
     fake.tables.categories = fake.tables.categories.map((c) => (c.id === 'phone' ? { ...c, kind: 'variable' } : c))
@@ -330,12 +330,12 @@ const tile = async (label: string, list?: string) => {
   return term.nextElementSibling?.textContent
 }
 
-describe("SetupScreen, the workbook's total tiles", () => {
+describe("Lists, the workbook's total tiles", () => {
   it('totals each card and all three together, to the cent, for this month', async () => {
     const fake = seeded()
     fake.tables.categories.push(category('spotify', 'Spotify', 'subscription', 1))
     fake.tables.category_plans.push(plan('p5', 'spotify', '2026-02', 1_199, 2))
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
 
     // Rent 1,600 + Phone 85; nothing on Debts; Netflix stopped, Spotify 11.99.
     await waitFor(async () => expect(await tile('Bills total', 'Bills')).toBe('$1,685.00'))
@@ -354,7 +354,7 @@ describe("SetupScreen, the workbook's total tiles", () => {
     const fake = seeded()
     // October's rise is typed already; September's totals do not see it (D13).
     fake.tables.category_plans.push(plan('p6', 'rent', '2026-10', 170_000, 1))
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
     await waitFor(async () => expect(await tile('Bills total', 'Bills')).toBe('$1,685.00'))
 
     await type('Debts', 'Monthly amount for Car Loan, from September on', '350')
@@ -369,7 +369,7 @@ describe("SetupScreen, the workbook's total tiles", () => {
   it('shows no tile under an empty card, and still counts the other two', async () => {
     const fake = seeded()
     fake.tables.categories = fake.tables.categories.filter((c) => c.id !== 'car-loan')
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
 
     await waitFor(async () => expect(await tile('Bills total', 'Bills')).toBe('$1,685.00'))
     expect((await card('Debts')).getByText('Nothing here yet.')).toBeTruthy()
@@ -380,7 +380,7 @@ describe("SetupScreen, the workbook's total tiles", () => {
   it('shows no totals while an amount names a category that did not load', async () => {
     const fake = seeded()
     fake.tables.category_plans.push(plan('p9', 'gone', '2026-02', 5_000, 3))
-    renderScreen(<SetupScreen />, fake)
+    renderScreen(<ListsTab />, fake)
 
     await screen.findByRole('alert')
     expect(screen.queryByText('Bills total')).toBeNull()

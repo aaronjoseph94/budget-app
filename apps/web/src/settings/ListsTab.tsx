@@ -23,9 +23,9 @@ import { cn } from '../lib/cn.js'
 import { useFourAcross } from '../lib/wide.js'
 import { useFocusWhereItWas } from '../lib/return-focus.js'
 import { navigate } from '../nav.js'
-import { PlanFields, PlanHeadings, TotalTile, useMonthlyAmounts, type MonthlyAmounts } from './SetupPlans.js'
+import { PlanFields, PlanHeadings, TotalTile, useMonthlyAmounts, type MonthlyAmounts } from '../screens/SetupPlans.js'
 import { useBillNudges } from '../bill-nudges.js'
-import { PayFields, PayHeadings, usePaySchedules, type PaySchedules } from './SetupPay.js'
+import { PayFields, PayHeadings, usePaySchedules, type PaySchedules } from '../screens/SetupPay.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { TryAgain } from '../try-again.js'
 import { LINE_LINK } from '../components/ui/link.js'
@@ -69,10 +69,11 @@ const SECTIONS: readonly { readonly label: string; readonly cards: readonly List
 const CARDS = SECTIONS.flatMap((section) => section.cards.map((card) => ({ card, group: section.label })))
 
 /**
- * Setup: the workbook's START HERE tab. Your name, and every category under the
+ * Lists: the workbook's START HERE tab, Settings' first tab (ADR 0014 §2),
+ * what the Setup screen was. Your name, and every category under the
  * list it belongs to, which decides where its charges are counted.
  */
-export function SetupScreen() {
+export function ListsTab() {
   const { categories, version } = useAppData()
   const lists = new Map(groupByList(categories).map((group) => [group.kind, group.rows]))
   // How many the starter button added, kept here so its message stays once
@@ -137,9 +138,9 @@ export function SetupScreen() {
 const WITH_COLUMNS: ReadonlySet<CategoryKind> = new Set(['income', 'bill', 'debt', 'subscription'])
 
 /**
- * Setup's own cards for some of the lists, as Getting started shows them
+ * Lists' own cards for some of the lists, as Getting started shows them
  * one step at a time (plan §8.1): the same editors, reading and saving
- * exactly as Setup does. With `starter`, the starter list's offer first.
+ * exactly as Lists does. With `starter`, the starter list's offer first.
  */
 export function SetupLists({ kinds, starter = false }: { kinds: readonly CategoryKind[]; starter?: boolean }) {
   const { categories, version } = useAppData()
@@ -221,7 +222,7 @@ function AmountsProblem({ amounts }: { amounts: MonthlyAmounts }) {
 }
 
 /**
- * Below this many categories, Setup offers the starter names. The starter list is 31
+ * Below this many categories, Lists offers the starter names. The starter list is 31
  * names, so once it has been added the offer is gone; someone who has
  * already built lists of their own is not asked.
  */
