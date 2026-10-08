@@ -120,7 +120,7 @@ describe('AnswerCard', () => {
 describe('suggestions', () => {
   it('offers four questions, the ones about the screen Ask was opened from first', () => {
     expect(suggestions(null)).toEqual(['How much did I spend this month?', 'How much is safe to spend today?', 'When will I reach my goal?', 'Where did my money go last month?'])
-    expect(suggestions('forecast')).toEqual(['Where will this month end?', 'How much is safe to spend today?', 'What if I saved $50 a month?', 'How much did I spend this month?'])
+    expect(suggestions('coach')).toEqual(['How did last month go?', 'Where will this month end?', 'How much is safe to spend today?', 'When will I reach my goal?'])
     expect(suggestions('debts')).toEqual(['When will I be debt-free?', 'How much did I spend this month?', 'How much is safe to spend today?', 'When will I reach my goal?'])
   })
 })

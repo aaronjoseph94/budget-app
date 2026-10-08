@@ -42,10 +42,10 @@ describe('the Month’s forecast line (D27, plan A13)', () => {
     fireEvent.click(info)
     expect(
       screen.getByText(
-        whole('P', 'End of month counts what has happened and your planned bills; the forecast adds pay still due and spending at your usual pace. Two month-end figures'),
+        whole('P', 'End of month counts what has happened and your planned bills; the forecast adds pay still due and spending at your usual pace. Coach, Ask and the forecast'),
       ),
     ).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Two month-end figures' }).getAttribute('href')).toBe('#/help/month-end')
+    expect(screen.getByRole('link', { name: 'Coach, Ask and the forecast' }).getAttribute('href')).toBe('#/help/coach')
   })
 
   it('shows no forecast without a typed start (D17), nor on another month', async () => {

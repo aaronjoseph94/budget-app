@@ -84,13 +84,13 @@ describe('Ask about this', () => {
     open('#/forecast')
     fireEvent.click(await screen.findByRole('button', { name: 'Help with this screen' }))
     const link = await screen.findByRole('link', { name: /Ask about this/ })
-    expect(link.getAttribute('href')).toBe('#/ask/forecast')
+    expect(link.getAttribute('href')).toBe('#/ask/coach')
 
     cleanup()
-    open('#/ask/forecast')
-    expect(await screen.findByText(/About: How the forecast works\./)).toBeTruthy()
+    open('#/ask/coach')
+    expect(await screen.findByText(/About: Coach, Ask and the forecast\./)).toBeTruthy()
     const suggested = within(screen.getByRole('region', { name: 'Suggested questions' })).getAllByRole('button').map((b) => b.textContent)
-    expect(suggested.slice(0, 3)).toEqual(['Where will this month end?', 'How much is safe to spend today?', 'What if I saved $50 a month?'])
+    expect(suggested.slice(0, 3)).toEqual(['How did last month go?', 'Where will this month end?', 'How much is safe to spend today?'])
   })
 
   it('offers no Ask about this on Ask’s own help', async () => {

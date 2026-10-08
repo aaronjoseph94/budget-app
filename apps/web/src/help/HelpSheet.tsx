@@ -1,4 +1,4 @@
-import { hashOf } from '../nav.js'
+import { hashOf, type Screen } from '../nav.js'
 import { Sheet } from '../components/ui/sheet.js'
 import { articleFor } from './articles.js'
 import { ArticleBody } from './ArticleBody.js'
@@ -11,7 +11,7 @@ import type { HelpTopic } from './topics.js'
  * screen as its subject (A24). Every built screen's topic has an article (the
  * tests hold it); were one missing, Show me would open the Help list.
  */
-export function HelpSheet({ topic, onClose }: { topic: HelpTopic; onClose: () => void }) {
+export function HelpSheet({ screen, topic, onClose }: { screen: Exclude<Screen, 'help'>; topic: HelpTopic; onClose: () => void }) {
   const article = articleFor(topic)
   return (
     <Sheet title={article?.title ?? 'Help'} onClose={onClose}>
@@ -23,8 +23,8 @@ export function HelpSheet({ topic, onClose }: { topic: HelpTopic; onClose: () =>
         >
           Show me
         </a>
-        {/* Ask's own ? has nothing further to ask about. */}
-        {topic === 'ask' ? null : (
+        {/* Ask's own ? has nothing further to ask about; its article is the Coach's (PRD 03). */}
+        {screen === 'ask' ? null : (
           <a
             href={hashOf({ screen: 'ask', param: topic })}
             className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-md border bg-card px-4 text-sm font-medium hover:bg-accent hover:text-accent-foreground"

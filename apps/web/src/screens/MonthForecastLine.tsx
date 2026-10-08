@@ -49,8 +49,8 @@ export default function MonthForecastLine() {
       {open ? (
         <p className="text-summary-label">
           End of month counts what has happened and your planned bills; the forecast adds pay still due and spending at your usual pace.{' '}
-          <a href={hashOf({ screen: 'help', param: 'month-end' })} className={SENTENCE_LINK}>
-            Two month-end figures
+          <a href={hashOf({ screen: 'help', param: 'coach' })} className={SENTENCE_LINK}>
+            Coach, Ask and the forecast
           </a>
         </p>
       ) : null}

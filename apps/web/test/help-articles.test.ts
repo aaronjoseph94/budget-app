@@ -90,29 +90,14 @@ describe('Help articles', () => {
     expect(articleFor('savings')?.steps.some((s) => s.startsWith('Press **Add a goal**'))).toBe(true)
   })
 
-  // A18: Habits is written, and what it needs before each part shows.
-  it('says how to open Habits, what a streak needs, and where the Coach’s cheers lead', () => {
-    const reports = articleFor('reports')
-    expect(reports?.steps.some((step) => step.startsWith('Press **Habits**'))).toBe(true)
-    expect(reports?.stuck).toMatch(/set weekly budgets on the \*\*Week\*\* to start one/)
-    expect(reports?.stuck).not.toMatch(/on their way/)
-    expect(articleFor('coach')?.stuck).toMatch(/\*\*See your habits\*\*/)
-  })
-
-  // A08: the owner is told where the goal's date and the quotes come from.
-  it('says the Coach’s date is from what really moved in, and its quotes never from AI', () => {
+  // A18, A08, A20, in the one Coach article (PRD 03): how Habits opens, where the
+  // goal's date comes from, whose words the ✨ ones are, and how the check-in opens.
+  it('says how to open Habits, where the goal’s date comes from, and how the check-in opens', () => {
     const coach = articleFor('coach')
-    expect(coach?.stuck).toMatch(/what you really moved into the goal’s fund/)
-    expect(coach?.stuck).toMatch(/never written by AI/)
-  })
-
-  // A20: the check-in says when it is ready, what it asks about, and that nothing is saved without a tap.
-  it('says how to open the check-in, what it asks about, and that the limit waits for a tap', () => {
-    const checkin = articleFor('checkin')
-    expect(checkin?.steps[0]).toMatch(/\*\*Your Sunday check-in is ready\*\*/)
-    expect(checkin?.stuck).toMatch(/\$20\.00 or more/)
-    expect(checkin?.stuck).toMatch(/nothing is saved until you press the button/)
-    expect(articleFor('coach')?.related).toContain('checkin')
+    expect(coach?.steps.some((step) => step.includes('**Habits**'))).toBe(true)
+    expect(coach?.stuck).toMatch(/what you really moved into its fund each month/)
+    expect(coach?.stuck).toMatch(/every figure is the app’s own/)
+    expect(coach?.steps.some((step) => step.includes('**Your Sunday check-in is ready**') && step.includes('**Was it planned?**'))).toBe(true)
   })
 
   // ADR 0011: More is a phone's; a computer has the sidebar, and AI
@@ -127,7 +112,7 @@ describe('Help articles', () => {
       // AI settings is Settings' AI tab (ADR 0014 §2).
       expect(articleFor(id)?.steps[0], id).toMatch(/^Open \*\*Settings\*\*, then \*\*AI\*\*, and /)
     }
-    expect(articleFor('reports')?.steps[0]).toBe('Open **Reports** (on a phone, under **More**).')
+    expect(articleFor('coach')?.steps).toContain('Open **Reports** for the month in review, **Trends**, **Shops** and **Habits**.')
   })
 
   // The owner's brevity rule (2026-10-08): a sentence written for ADR 0015
@@ -212,7 +197,7 @@ const sentencesOf = (a: (typeof ARTICLES)[number]) =>
     .filter(Boolean)
 
 /** The articles rewritten short so far; the last slice lists all twelve (PRD 03). */
-const SHORT = ['start', 'getting-around', 'add', 'review', 'budgets', 'lists', 'savings', 'debts'] as const
+const SHORT = ['start', 'getting-around', 'add', 'review', 'budgets', 'lists', 'savings', 'debts', 'coach'] as const
 
 // The owner's brevity rule (PRD 03, 2026-10-08): twelve short articles.
 describe('Help’s length', () => {
@@ -282,9 +267,6 @@ const OUTSIDE = new Set([
   '⋯',
 ])
 
-/** A name with the owner's own words in it, checked by the app's part: a what-if names the owner's category. */
-const APP_PART: Readonly<Record<string, string>> = { 'Dining out −25%': '−25%' }
-
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 /** A count in a name ("Approve these 12", "Today: N of 40") or "…" stands for whatever the app fills in there. */
 const shownAs = (name: string) =>
@@ -310,11 +292,11 @@ describe('Help’s bold names', () => {
       for (const name of boldNames(a)) {
         used.add(name)
         if (OUTSIDE.has(name)) continue
-        expect(shownAs(APP_PART[name] ?? name).test(APP_WORDS), `${a.id}: **${name}** is drawn nowhere in the app`).toBe(true)
+        expect(shownAs(name).test(APP_WORDS), `${a.id}: **${name}** is drawn nowhere in the app`).toBe(true)
       }
     }
     // The list of outside names holds only names an article still uses.
-    for (const name of [...OUTSIDE, ...Object.keys(APP_PART)]) expect(used, name).toContain(name)
+    for (const name of OUTSIDE) expect(used, name).toContain(name)
   })
 
   it('finds a name the app does not draw, reading the app without Help’s own words', () => {

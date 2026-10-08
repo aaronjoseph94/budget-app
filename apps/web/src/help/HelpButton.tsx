@@ -45,7 +45,7 @@ export function HelpButton({ screen, topic, className }: { screen: Exclude<Scree
       </button>
       {open ? (
         <Suspense fallback={null}>
-          <HelpSheet topic={topic ?? SCREEN_HELP[screen]} onClose={() => setOpen(false)} />
+          <HelpSheet screen={screen} topic={topic ?? SCREEN_HELP[screen]} onClose={() => setOpen(false)} />
         </Suspense>
       ) : null}
     </>

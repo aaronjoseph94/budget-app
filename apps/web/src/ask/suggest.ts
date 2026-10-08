@@ -14,12 +14,7 @@ const ABOUT: Partial<Record<HelpTopic, readonly AskIntentName[]>> = {
   budgets: ['budget_left', 'subscriptions', 'top_categories'],
   savings: ['goal_date', 'what_if_cut'],
   debts: ['debt_free'],
-  coach: ['explain_month', 'goal_date', 'what_if_cut'],
-  checkin: ['budget_left', 'compare'],
-  forecast: ['forecast', 'safe_to_spend', 'what_if_cut'],
-  'month-end': ['forecast', 'explain_month'],
-  reports: ['top_categories', 'top_shops', 'subscriptions', 'compare'],
-  comparisons: ['compare', 'explain_month'],
+  coach: ['explain_month', 'forecast', 'safe_to_spend', 'goal_date'],
   review: ['help', 'top_shops'],
   add: ['help', 'spend_in'],
 }

@@ -27,9 +27,10 @@ export const SCREEN_HELP: Readonly<Record<Exclude<Screen, 'help'>, HelpTopic>> =
   ledger: 'review',
   savings: 'savings',
   debts: 'debts',
+  // The Coach, the check-in, the Forecast, Reports and Ask share one article (PRD 03).
   coach: 'coach',
-  forecast: 'forecast',
-  reports: 'reports',
-  ask: 'ask',
+  forecast: 'coach',
+  reports: 'coach',
+  ask: 'coach',
   start: 'start',
 }

@@ -51,7 +51,7 @@ describe('Help', () => {
     const search = await screen.findByRole('searchbox', { name: 'Search help' })
 
     fireEvent.change(search, { target: { value: 'STARTING balance' } })
-    expect(titles()).toEqual(['Debts', 'How the forecast works', 'Two month-end figures', 'Let Claude or ChatGPT review your budget'])
+    expect(titles()).toEqual(['Debts', 'Let Claude or ChatGPT review your budget'])
     // A button's name counts as its words, without the stars around it.
     fireEvent.change(search, { target: { value: 'add to home screen' } })
     expect(titles()).toEqual(['Signing in and out', 'Put it on your iPhone'])

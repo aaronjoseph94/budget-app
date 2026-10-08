@@ -193,6 +193,23 @@ export const ARTICLES: readonly Article[] = [
     related: ['budgets', 'coach'],
   },
   {
+    id: 'coach',
+    title: 'Coach, Ask and the forecast',
+    summary: 'The Coach reads your records and says how the month is going.',
+    steps: [
+      'Open **Coach**: a line on the month, your main goal, and up to three cards.',
+      'Press **Why am I seeing this?** for the figures behind a card.',
+      'From Sunday, press **Your Sunday check-in is ready** and answer **Was it planned?**.',
+      'Open **Forecast** for **Safe to spend**, where the month ends, and each goal’s date.',
+      'Open **Reports** for the month in review, **Trends**, **Shops** and **Habits**.',
+      'Type a question under **Ask anything about your money**, or open **Ask**.',
+    ],
+    done: 'you know how the month is going, and when you reach your goals.',
+    stuck:
+      'Words marked ✨ are the AI’s; every figure is the app’s own. The AI never sees an amount or a date. Safe to spend needs **Start** on the Month. A goal’s date comes from what you really moved into its fund each month.',
+    related: ['savings', 'free-ai', 'budgets'],
+  },
+  {
     id: 'updates',
     title: 'One-time updates',
     summary:
@@ -211,133 +228,6 @@ export const ARTICLES: readonly Article[] = [
     stuck:
       'If Supabase says anything other than Success, stop there: nothing is lost, and the message names the line. A file already pasted is refused with nothing changed, or runs again to the same result, so pasting one again does no harm. The AI helper needs no new secrets: the receipts key is used again if you set one. The signing key, sign-in for AI apps and the AI apps server are for connecting Claude or ChatGPT; until they are done, this page names them next and the rest of the app works. If the signing key still shows after you changed it, sign out and back in, so your sign-in is made with the new key. If **Edge Functions** lists read-receipt, paste its new version over it or delete it: an older copy lets anyone with the app’s public key use your Gemini key. Updates from before this version are copied from GitHub, as the setup guide says; the Copy buttons carry only the newest ones.',
     related: ['start', 'free-ai', 'ai-apps', 'codes'],
-  },
-  {
-    id: 'coach',
-    title: 'What the Coach does, and never does',
-    summary:
-      'The Coach reads your own records and tells you, in plain words, how the month is going, what changed, when you will reach your goals, and what to trim to get there sooner. With free AI on, the AI writes the words; your own records write every figure.',
-    steps: [
-      'Open **Coach**, and read the small line under the title, which says whose words these are and offers **Refresh the AI’s words** when today has changed.',
-      'Read the line at the top: how your spending compares with the same days last month, or last week.',
-      'Read your main goal’s card: what is saved, when you will get there at your own pace, and one thing to trim to get there sooner.',
-      'Read the cards under it: at most three, the most important first, each with one thing to try.',
-      'Press a card’s button, such as **See the Month** or **See your goals**, to act on it.',
-      'Press **Why am I seeing this?** to see the figures behind a card.',
-      'Press **✕** on a card you have seen enough of, and it stays gone until something new happens.',
-      'Read the quote or tip at the bottom, picked for what your day is about, and type a question in **Ask anything about your money** under it.',
-    ],
-    done: 'you have read the line, your goals’ dates and the cards, and you know why each one is there.',
-    stuck:
-      'Words marked ✨ were written by AI. The AI is never sent an amount, a balance or a date: it writes around blanks, and the app fills each blank with your own figure as it draws, so a figure is never the AI’s. A sentence that breaks the app’s rules is dropped, and that card shows the app’s own words. The AI is asked by itself at most once a day, and its words are kept and reused while what they say is still true. The Coach never moves money and never changes a budget without your tap. The date comes from what you really moved into the goal’s fund in each whole month: with under three months it is one rough date, and before a whole month is in, it says when to check back. A goal on no fund has no date until you press **Make it a fund** on Savings. Every quote and tip comes from a book, a speech or a public page, never written by AI; the AI may only pick one and say why it fits. A category shows only when it moves more than it usually does, so a quiet month has no cards. The same line sits at the top of the **Month**; tap it to come here. Under the cards, the forecast card says where the month is heading and what is safe to spend each day; press **Open the Forecast** for the whole of it. Some cards come from your shops: a price that went up, a new regular charge, a charge far above usual or the first at a new shop, the same charge twice, or a charge you added that a statement also holds. Press **See your shops** to see them all on Reports. Some cards cheer you on: two or more weeks in a row within your weekly budgets, or a category whose last whole month was its lowest; press **See your habits** for them on Reports. With **Share shop names** off in AI settings, the AI is told “a shop”, never its name.',
-    related: ['savings', 'forecast', 'checkin', 'ai-sees', 'free-ai', 'comparisons'],
-  },
-  {
-    id: 'checkin',
-    title: 'The Sunday check-in',
-    summary:
-      'Once a week the Coach looks back at last week with you, Monday to Sunday: what your everyday spending came to, a win, a few questions about your biggest charges, one thing to try next week and how your goals are doing. It takes about 2 minutes.',
-    steps: [
-      'From Sunday, look for the dot on **Coach**, then press **Your Sunday check-in is ready** (on other days, **Your weekly check-in**).',
-      'Read **Last week**: what you spent on everyday things, against the week before and your weekly budgets, and a win.',
-      'Under **Was it planned?**, press **Planned**, **Impulse** or **Needed** for each charge; press another to change your answer.',
-      'Read **One thing to try**, and press **Yes, set it** (or **Yes, keep it**) to make it that category’s weekly budget on the **Week**.',
-      'Read **Your goals**: a line for them and how far each has come.',
-    ],
-    done: 'you have answered the questions and chosen whether to set next week’s limit.',
-    stuck:
-      'Until Sunday, the check-in is about the week before; on Sunday it moves on to the week ending that day. It asks only about everyday charges of $20.00 or more, the three largest, and never again about one you have answered. Your answers show how much of your spending you called impulse over the last 8 weeks. The limit it suggests is the lower of what you spent last week and your usual week, rounded down to $5, and never above a weekly budget you already set; nothing is saved until you press the button. If your records do not cover all of last week yet (they start inside it, or your latest statement ends before its Sunday), there is no recap: import the statement that covers it. If the questions say they need a one-time update, see One-time updates; the rest of the check-in still works. Words marked ✨ were written by AI around your own figures; with AI off, the app’s own words show. The dot goes once you open the check-in on this phone or computer.',
-    related: ['coach', 'budgets', 'updates'],
-  },
-  {
-    id: 'forecast',
-    title: 'How the forecast works',
-    summary:
-      'The Forecast says where this month is heading, how much is safe to spend each day, when you will reach each of your goals and how the next three months look, worked out by the app from your own records, your planned bills and the pay still to come.',
-    steps: [
-      'Open **Forecast** (on a phone, under **More**), or press **Open the Forecast** or **What if…** on the Coach.',
-      'Read the sentence at the top, then **Safe to spend**: what you can spend each day, today included, once your bills and savings are counted.',
-      'Read where the month ends: a range, or one rough figure early in the month or with little history, with what is still to come under it.',
-      'Read **The next 30 days**: your balance day by day, the tightest day ahead, and the bills due this week.',
-      'Read **When you’ll reach your goals**: each goal’s date at your pace, your main goal first.',
-      'Under **What if…**, choose a goal and tap a choice such as **Dining out −25%** to see how much sooner you get there and where this month ends; nothing is saved.',
-      'Read **The next three months**: where each month ends, worst case to best case, and a table of what makes it up.',
-      'Read **Debt-free**, the date on your payoff plan, and press **Open Debts** to change the plan.',
-    ],
-    done: 'you know what you can spend today, when you will reach your goals, and how the next few months look.',
-    stuck:
-      'Safe to spend needs this month’s starting balance: type it on the **Month**, under **Start**. It counts your pay still to come from each income’s pay schedule, at what it usually pays; if it says pay is not counted, give that income a pay schedule in **Lists**, or a goal on the **Month**. Savings you still plan to move this month are kept aside, so they are never counted as money to spend. The month’s end is worked out from this month’s pace and each of up to six earlier whole months, rounded to $10: before the 7th, or with under three whole months of records, it is one rough figure, and with no whole month before the 7th it says when to check back. The next 30 days add each payday and each bill on its day, and your everyday spending at its average over the last 90 days once there are 14 days of records; a bill whose day has passed with no charge yet is counted tomorrow. The next three months count your usual pay, the bills and savings set for each month (a change you typed for a later month counts from that month), and your everyday spending in a lighter, a usual and a heavier month you have really had; it is a guide, not a promise. Tap a what-if choice again to clear it. A goal’s date comes from what you have moved into its fund each month. If it says it needs a one-time update, see One-time updates.',
-    related: ['coach', 'budgets', 'updates'],
-  },
-  {
-    id: 'month-end',
-    title: 'Two month-end figures',
-    summary:
-      'The Month shows two figures for where the month ends. End of month is your workbook’s: what has happened so far and your planned bills. Forecast adds what is still to come.',
-    steps: [
-      'On the **Month**, read **End of month**: your start, plus what came in, less what you spent with your planned bills counted, less what you saved.',
-      'Read the line under it marked **Forecast**: it adds your pay still due, your spending at your usual pace, and the savings you still plan to move.',
-      'Press **ⓘ** beside it for the difference in one line.',
-      'Press **Forecast** to open the whole forecast.',
-    ],
-    done: 'you know which figure counts only what has happened, and which one looks ahead.',
-    stuck:
-      'Both need this month’s starting balance, typed under **Start**; without it neither is shown. End of month stays as your workbook works it out, so it never moves because of a guess. The forecast shows only on this month, since it speaks of today.',
-    related: ['forecast', 'getting-around'],
-  },
-  {
-    id: 'reports',
-    title: 'Reports and trends',
-    summary:
-      'Reports reviews a month: what came in, what you spent and what you saved, against last month and your usual month, the categories that moved most, and a short review in words with one thing to try. Trends shows how your months have moved, and which spending is creeping up. Habits shows your everyday spending day by day, your weeks within budget and your best months.',
-    steps: [
-      'Open **Reports** (on a phone, under **More**).',
-      'Press **‹** or **›** to choose a month; this month is marked **So far** and set against the same days of last month.',
-      'Read **The month in review**: a headline, three points and one thing to try next month.',
-      'Read **Income, Spent and Saved**, each against last month and your usual month, then **Biggest changes** and **This month and last, by category**, with a list of the same figures under the bars.',
-      'Press **Trends** for the last **6 months** or **12 months** of Income, Spent and Saved, and each everyday category against its usual month, marked **Rising steadily**, **Falling steadily** or **No clear trend**.',
-      'Press **Shops** for the shops you spent most at against last month, the new ones, your subscriptions and regular charges (press **Not a subscription** on any that is not one), and charges worth a second look.',
-      'Press **Habits** for the spending grid (each day of up to 26 weeks, darker the more you spent against your daily allowance), how many weeks in a row you stayed within your weekly budgets, which weekday costs most, and any category whose last whole month was its lowest.',
-      'To keep a copy, press **Save as PDF** and choose **Save as PDF** where the print window asks for a printer, or, under **Download CSV** at the foot of the Overview, press **Download charges** or **Download summary** for a file a spreadsheet opens.',
-    ],
-    done: 'you know how the month went, what changed most, and one thing to try next month.',
-    stuck:
-      'Your usual month is the middle of up to six whole months of records before the one shown, so it needs a whole month of records first. A month your records start partway through says so, and has nothing before it to compare with. Only everyday spending (Variable expenses) can be a biggest change: a bill moving is not a habit. With free AI on, a month that is over is reviewed in the AI’s words (✨) once, and kept; the AI never sees your amounts, and every figure is still the app’s own. A month still running is always in the app’s own words. A trend is only named with four whole months of records: most months moving the same way, and further than that category usually swings, so one dear month is never called a habit. Until then Trends says which month to check back in. A month before your records is left as a gap, never counted as $0. A charge is called regular once it has come three times at steady gaps for a steady amount, and a shop is called new once your records reach 60 days before the month. A charge worth a second look is only pointed out: nothing is hidden or left out of your totals. Your daily allowance on Habits is your weekly budgets for everyday spending spread over seven days; with none set, it is your usual day of spending. A week counts toward a streak when the Week’s Left to spend stays at $0.00 or more, so set weekly budgets on the **Week** to start one. Which weekday costs most needs four whole weeks of records, and a personal best three whole months; until then each says when to check back. A day before your records, or still to come, is left blank, never counted as $0. A downloaded file is made on this device and goes to your downloads: the charges oldest first, or the Overview’s figures. In it, a shop name that starts with = + - or @ begins with an apostrophe, so the spreadsheet shows it as text and never runs it. If it says Reports need a one-time update, see One-time updates.',
-    related: ['comparisons', 'coach', 'free-ai'],
-  },
-  {
-    id: 'comparisons',
-    title: 'Comparisons with last month',
-    summary:
-      'Each view shows what you did at the same point last time: this month against the same days of last month, this week against last week.',
-    steps: [
-      'On the **Month**, read the line under the summary: what you had spent by today, and by the same day last month.',
-      'Tap the **vs** choice beside **Last column** to swap each row’s Left for its change since last month.',
-      'Tap **Left** to swap it back.',
-      'On the **Week**, **Pay**, **Year**, **Savings** and **Debts**, read the line comparing with the time before.',
-    ],
-    done: 'you can see, row by row, what went up and what went down.',
-    stuck:
-      'A comparison needs records from last time. If it says your records start later, bring in the statement before that date on **Add**.',
-    related: ['getting-around', 'add'],
-  },
-  {
-    id: 'ask',
-    title: 'Ask about your money',
-    summary:
-      'Ask a question in your own words, such as “How much did I spend on coffee in August?”, and get the answer from your own records: how much, against last time, where it went, your subscriptions, where the month ends, what is safe to spend, when you reach your goals, what a saving would do, and your debt-free date.',
-    steps: [
-      'Open **Ask** from **More** on a phone, type in the box at the bottom of the **Coach**, or press **Ask about this** in any screen’s **?**.',
-      'Type your question and press **Ask**, or tap one of the questions under **Try asking**.',
-      'Read **I read that as**, to check the app understood which categories and which days you meant.',
-      'Read the answer: the figure, a sentence and, where there is one, the list under it.',
-      'For a what-if, change **A month’s saving** to see another amount; nothing is saved.',
-      'Press the link under the answer, such as **Open the Forecast**, to see the whole of it.',
-    ],
-    done: 'you have your answer, and you know which days and categories it counts.',
-    stuck:
-      'With free AI on, the AI reads your question (✨), and is sent only your question as you typed it, today’s date, your category names and the Help titles: never a figure or a charge from your records. It never works out the answer: the app does, from your records, the same way the Month, the Forecast and Savings do. With AI off, resting or not installed, the app reads the question itself, which works best with a category’s name and words like “this month” or “last week”. An amount the AI read is kept only when it is one you typed, and you can change it. Opened with **Ask about this**, Ask suggests that screen’s questions first. If it says “I can’t answer that from your figures yet”, try one of the questions it suggests. A question about days before your records says where they start: bring in an earlier statement on **Add**. The list of your last five questions is kept on this phone or computer only; **Clear these** forgets them.',
-    related: ['coach', 'forecast', 'free-ai', 'ai-sees'],
   },
   {
     id: 'free-ai',

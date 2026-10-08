@@ -60,8 +60,8 @@ describe('readAddress', () => {
   })
 
   it('reads Ask with the Help topic it was opened from, and only a committed one', () => {
-    expect(readAddress('#/ask/forecast')).toEqual({ screen: 'ask', param: 'forecast' })
-    for (const hash of ['#/ask/nowhere', '#/ask/Forecast', '#/ask/forecast/more']) expect(readAddress(hash), hash).toEqual({ screen: HOME, param: null })
+    expect(readAddress('#/ask/coach')).toEqual({ screen: 'ask', param: 'coach' })
+    for (const hash of ['#/ask/nowhere', '#/ask/Coach', '#/ask/coach/more']) expect(readAddress(hash), hash).toEqual({ screen: HOME, param: null })
   })
 
   it('reads a report by its month, and only a month', () => {
@@ -129,7 +129,7 @@ describe('readAddress', () => {
   it('writes back what it reads', () => {
     for (const hash of [
       '#/month/2026-09', '#/month', '#/settings', '#/year/2025-04', '#/paycheck/2026-09-11', '#/calendar/2026-02',
-      '#/coach', '#/coach/checkin', '#/forecast', '#/reports/2026-08', '#/ask', '#/ask/forecast', '#/help', '#/help/updates', '#/start', '#/week/2026-09-21', '#/settings/ai',
+      '#/coach', '#/coach/checkin', '#/forecast', '#/reports/2026-08', '#/ask', '#/ask/coach', '#/help', '#/help/updates', '#/start', '#/week/2026-09-21', '#/settings/ai',
     ]) expect(hashOf(readAddress(hash))).toBe(hash)
   })
 })

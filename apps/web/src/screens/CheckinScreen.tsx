@@ -77,7 +77,7 @@ export function CheckinScreen() {
           {/* Whole, never broken at its hyphen, where the line has room for it. */}
           Your Sunday <span className="whitespace-nowrap">check-in</span>
         </MonthTitle>
-        <HelpButton screen="coach" topic="checkin" />
+        <HelpButton screen="coach" />
       </div>
       {figures === 'failed' ? <p className="text-muted-foreground">The check-in did not load. <TryAgain />.</p> : null}
       {figures === null || figures === 'failed' || facts === null || said === null || words === null || impulse === null ? (
