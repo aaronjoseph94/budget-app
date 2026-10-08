@@ -97,9 +97,9 @@ export const ARTICLES: readonly Article[] = [
       'Press **Check again** here, and do the next one the same way.',
       'For the AI helper, press **Edge Functions**, **Deploy a new function** and **Via Editor**, name it ai, and paste what **Copy** gives you over everything there.',
       'For the helper’s switch, the signing key, sign-in for AI apps and the AI apps server, do the clicks this page lists under each, then press **Check again**.',
-      'Last, open **AI settings** and turn on free AI, in about 2 minutes.',
+      'Last, open **Settings**, then **AI**, and turn on free AI, in about 2 minutes.',
     ],
-    done: 'this page says "All done", and AI settings says AI is on.',
+    done: 'this page says "All done", and Settings › AI says AI is on.',
     stuck:
       'If Supabase says anything other than Success, stop there: nothing is lost, and the message names the line. A file already pasted is refused with nothing changed, or runs again to the same result, so pasting one again does no harm. The AI helper needs no new secrets: the receipts key is used again if you set one. The signing key, sign-in for AI apps and the AI apps server are for connecting Claude or ChatGPT; until they are done, this page names them next and the rest of the app works. If the signing key still shows after you changed it, sign out and back in, so your sign-in is made with the new key. If **Edge Functions** lists read-receipt, paste its new version over it or delete it: an older copy lets anyone with the app’s public key use your Gemini key. Updates from before this version are copied from GitHub, as the setup guide says; the Copy buttons carry only the newest ones.',
     related: ['start', 'free-ai', 'ai-apps', 'codes'],
@@ -403,7 +403,7 @@ export const ARTICLES: readonly Article[] = [
     summary:
       'AI writes the Coach’s words for you, free with Google Gemini. Everything works without it, in the app’s own words. Pasting the key takes about 2 minutes, once the one-time updates are in.',
     steps: [
-      'Open **AI settings** (from **Settings**, or **More** on a phone), and read the sentence at the top.',
+      'Open **Settings**, then **AI**, and read the sentence at the top.',
       'If it says the AI helper isn’t installed, or needs a one-time update, press **Open One-time updates** and do what it names next.',
       'If the Gemini card says **Already on**, you added a key for receipt photos and there is nothing more to do.',
       'Otherwise press **Get a free key**, then **Create API key** in the Google AI Studio tab that opens, and copy the key.',
@@ -421,7 +421,7 @@ export const ARTICLES: readonly Article[] = [
     summary:
       'Optional. Gemini alone is enough. Adding Groq or OpenRouter, both free, means another service answers when Gemini is busy. OpenAI and Anthropic are paid, and used only if you switch them on.',
     steps: [
-      'Open **AI settings** (from **Settings**, or **More** on a phone), and press **More AI services** to unfold the cards.',
+      'Open **Settings**, then **AI**, and press **More AI services** to unfold the cards.',
       'On the card you want, press the link that starts with **Get**, and create a key on the page that opens.',
       'Copy the key, paste it in that card, and press **Save & test**.',
       'Under **Try in this order**, press the arrows to put the services in the order you want them asked.',
@@ -439,7 +439,7 @@ export const ARTICLES: readonly Article[] = [
     summary:
       'For the Coach and Review, the AI is told what kind of thing changed, which way, and by a little or a lot, with your names for things, and never an amount, a balance or a date. You choose the Coach’s tone, and whether shop names are shared. **Use AI**, at the top of AI settings, turned off sends nothing at all.',
     steps: [
-      'Open **AI settings** (from **Settings**, or **More** on a phone), and find **How the Coach talks**.',
+      'Open **Settings**, then **AI**, and find **How the Coach talks**.',
       'Choose **Cheerleader** for a win first and never a telling-off, or **Straight talker** for plain words.',
       'Turn **Share shop names with the AI** off to have the AI told “a shop” instead of the name, and Review’s suggestions stopped.',
       'Open **Coach** to read today’s words in the tone you chose.',
@@ -464,7 +464,7 @@ export const ARTICLES: readonly Article[] = [
     summary:
       'Free AI has daily limits, and so does the app. When a service is busy or out of free uses it rests for a while, and the next one is asked. When none can answer, the app shows its own words: nothing breaks.',
     steps: [
-      'Open **AI settings** (from **Settings**, or **More** on a phone), and read the sentence at the top and the line **Today: N of 40**.',
+      'Open **Settings**, then **AI**, and read the sentence at the top and the line **Today: N of 40**.',
       'If today’s calls reached the limit, wait until tomorrow, or raise the **Daily limit**.',
       'If every service is resting, wait a minute or two and press **Check again**.',
       'To have another service answer while Gemini rests, add a free one under **More AI services**.',
@@ -650,7 +650,8 @@ export const ARTICLES: readonly Article[] = [
       { term: '% pill', meaning: 'What a list has spent of its budget, or received or saved of its goal on Income and Savings, on the list’s head; none shows with no budget.' },
       { term: 'Not spending', meaning: 'Money that moves but is not spent, such as paying off your card.' },
       { term: 'Pay period', meaning: 'From one payday to the day before the next.' },
-      { term: 'Pay, Paycheck', meaning: 'The same view, one pay period: the switch says Pay, the sidebar and More say Paycheck.' },
+      { term: 'Paycheck', meaning: 'Your budget one pay period at a time, under Plan in the sidebar and under More on a phone.' },
+      { term: 'Lists', meaning: 'Settings’ first tab: your name, and every category on its list, with monthly amounts and pay days.' },
       { term: 'Fund', meaning: 'A savings category that money is moved into, with a goal.' },
       { term: 'Main goal', meaning: 'The savings goal the Coach and the Week show. You choose it on Savings.' },
       { term: 'Review', meaning: 'Where new rows wait for you to approve them.' },

@@ -71,7 +71,7 @@ describe('Help articles', () => {
     expect(updates?.summary).toMatch(/The line at the top says how many are in; the rest take about 35 minutes, once, easiest on a computer/)
     expect(updates?.steps.some((s) => s.includes('the signing key, sign-in for AI apps and the AI apps server'))).toBe(true)
     expect(updates?.steps.some((s) => s.includes('**Deploy a new function**') && s.includes('name it ai'))).toBe(true)
-    expect(updates?.steps.at(-1)).toMatch(/\*\*AI settings\*\* and turn on free AI/)
+    expect(updates?.steps.at(-1)).toMatch(/\*\*Settings\*\*, then \*\*AI\*\*, and turn on free AI/)
   })
 
   it('has a written article for the ? on every screen', () => {
@@ -126,7 +126,8 @@ describe('Help articles', () => {
       expect(text, a.id).not.toMatch(/open \*\*More\*\*, then/i)
     }
     for (const id of ['free-ai', 'more-ai', 'ai-sees', 'ai-rests'] as const) {
-      expect(articleFor(id)?.steps[0], id).toMatch(/^Open \*\*AI settings\*\* \(from \*\*Settings\*\*, or \*\*More\*\* on a phone\)/)
+      // AI settings is Settings' AI tab (ADR 0014 §2).
+      expect(articleFor(id)?.steps[0], id).toMatch(/^Open \*\*Settings\*\*, then \*\*AI\*\*, and /)
     }
     expect(articleFor('reports')?.steps[0]).toBe('Open **Reports** (on a phone, under **More**).')
   })

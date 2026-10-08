@@ -21,7 +21,7 @@ do", "already exists" or similar), or, for `0030`, `0031`, `0035` and
 | `0002_unreadable_lines.sql` | A record of statement lines that could not be read |
 | `0003_save_import_atomically.sql` | Saving an import as one transaction |
 | `0004_one_path_into_the_ledger.sql` | Approval, rules that learn, budgets, the goal, PDF imports |
-| `0005_category_kinds.sql` | Which of the workbook's lists each category is on. Your existing categories go under Variable expenses until the Setup screen lets you move them |
+| `0005_category_kinds.sql` | Which of the workbook's lists each category is on. Your existing categories go under Variable expenses until Settings › Lists lets you move them |
 | `0006_recategorise.sql` | Moving a charge that is already saved to a different category |
 | `0007_statement_periods.sql` | Remembering which dates each imported statement covered |
 | `0008_category_budgets.sql` | The budgets and goals you type on a month, "from this month on" or "just this month". Needed by the Month as soon as this branch is merged |
@@ -32,11 +32,11 @@ do", "already exists" or similar), or, for `0030`, `0031`, `0035` and
 | `0013_savings_funds.sql` | Linking a savings goal to one of your Savings-list funds, with the date saving started and the date the amount you typed was true, so transfers you record after it can add to it. Your existing goal keeps working as it is. Needed by the Savings screen, and by the Year's savings chart |
 | `0014_debts.sql` | Your debts for the Debt Calculator: each one's starting balance, minimum payment, interest rate and start month, and any extra payments by month. Needed by the Debts screen, and by the Year's debt chart |
 | `0015_savings_goals_order.sql` | Which of your savings goals is the main one (the one the Coach and the Week show), the order Savings lists them in, and pausing a goal or marking it reached. Your goals stay as they are: the oldest leads until you choose another. Without it, goals are added, edited and shown as before, and only those choices wait |
-| `0016_ai_foundation.sql` | Where AI keeps your settings (on or off, the order services are tried, paid services, the daily limit, the coach's tone, sharing shop names), your AI keys, locked so the browser can never read them, and today's use. Without it, AI settings and the AI's words say they need a one-time update, and every screen uses the app's own words |
+| `0016_ai_foundation.sql` | Where AI keeps your settings (on or off, the order services are tried, paid services, the daily limit, the coach's tone, sharing shop names), your AI keys, locked so the browser can never read them, and today's use. Without it, Settings › AI and the AI's words say they need a one-time update, and every screen uses the app's own words |
 | `0017_coach_memory.sql` | Where the Coach keeps the AI's checked words (never a digit or a currency sign: the database refuses them), the cards you dismissed, and your check-in answers. Without it, AI words still show but are asked for afresh, ✕ on a card is hidden, and the check-in's questions say they need the update |
 | `0018_category_suggestions.sql` | Where Review keeps the category the AI suggested for a row, until you approve or change it. Without it, Review works as before and says suggestions need the update |
 | `0019_ai_apps_cannot_write.sql` | Stops an AI app you connect (Claude, ChatGPT) from changing anything itself: the database refuses every write from an AI app's sign-in, and every function that writes says "AI apps cannot do this" to one. Your own sign-in is unaffected. It stops with "Paste 0018 first" if `0018` is not in |
-| `0020_ai_apps.sql` | What an AI app may read, and its one way to add something to Review, always waiting for you; the switch in Settings → AI apps, its daily limits, and when each app last asked. Without it, Settings → AI apps says it needs the update. It stops with "Paste 0019 first" if `0019` is not in |
+| `0020_ai_apps.sql` | What an AI app may read, and its one way to add something to Review, always waiting for you; the switch in Settings → Account → AI apps, its daily limits, and when each app last asked. Without it, Settings → Account → AI apps says it needs the update. It stops with "Paste 0019 first" if `0019` is not in |
 | `0021_category_holds.sql` | Lets you remove a category that only a rejected guess or a charge you removed still names: before it, Setup said it "still has charges". It stops with "Paste 0018 first" if `0018` is not in |
 | `0022_removed_charge_waits.sql` | A charge you removed from All transactions waits in Review when its statement comes in again, instead of a learned shop filing it straight back. It stops with "Paste 0021 first" if `0021` is not in |
 | `0023_typed_entry_once.sql` | Pressing Add again after an answer that never arrived adds a typed purchase once, not twice |
@@ -55,7 +55,7 @@ do", "already exists" or similar), or, for `0030`, `0031`, `0035` and
 | `0036_ai_search_as_shown.sql` | An AI app's searches match shop names only as it is shown them. It stops with "Paste 0035 first" unless `0030` to `0035` are all in |
 | `0037_ai_rows_before_the_fixes.sql` | Tidies anything an AI app added before these safety updates. It stops with "Paste 0036 first" if `0036` is not in |
 | `0038_intuit_prefix_merchants.sql` | Tidies shop names stored with Intuit's `IN*` prefix, so `IN*ACME` and `ACME` are one shop. **It permanently deletes** a learned shop where two would end up with one name (the one made or used most recently stays), so take a backup first (HANDOFF §3, steps 13 and 15). It stops with "Paste 0029 first" or "Paste 0037 first". Written as `0030` and renumbered at the merge of two lines of updates (2026-10-02) |
-| `0039_ai_apps_suggest_changes.sql` | Lets an AI app you connect suggest changes (a budget, a weekly budget, a bill, a goal, a category, a charge's category, a shop always filed somewhere), each waiting in Review under Suggested changes until you apply it; the switch Settings → AI apps → Let AI apps suggest changes; 60 suggestion requests a day, at most 100 waiting, 14 days each (ADR 0013). Deletes nothing. Pasted after `0038`: it stops with "Paste 0037 first" if `0037` is not in, and "0039 is already in; nothing to do" if pasted again. Paste the `mcp` server again after it |
+| `0039_ai_apps_suggest_changes.sql` | Lets an AI app you connect suggest changes (a budget, a weekly budget, a bill, a goal, a category, a charge's category, a shop always filed somewhere), each waiting in Review under Suggested changes until you apply it; the switch Settings → Account → AI apps → Let AI apps suggest changes; 60 suggestion requests a day, at most 100 waiting, 14 days each (ADR 0013). Deletes nothing. Pasted after `0038`: it stops with "Paste 0037 first" if `0037` is not in, and "0039 is already in; nothing to do" if pasted again. Paste the `mcp` server again after it |
 | `0040_ai_words_every_character_shown.sql` | Stops an AI app adding or suggesting words with characters you cannot see (tag characters, variation selectors and the like, or an unusual space at either end), so two entries in Review that look the same always are; and lets it suggest a budget "from a month on" that puts that month's own "just this month" budget back to the usual one, which it was told was "already so" (testing of 2026-10-05). Deletes nothing. Pasted last, after `0039`: it stops with "Paste 0039 first" if `0039` is not in, and "0040 is already in; nothing to do" if pasted again. If One-time updates offers `0039` again (after `0030` or `0035` was pasted again), paste `0039`, then `0040` |
 
 **`0015` to `0040` can be pasted after `main-tnlcto` is merged into
@@ -135,13 +135,13 @@ on a computer, after `0015` to `0020` above.
    photos (below). `AI_KEYS_ROOT` is optional: set to a long random value,
    it lets keys pasted in the app survive a change of Supabase's own keys;
    without it, such a change asks you to paste the key again.
-3. **Turn on free AI.** In the app: More → **AI settings** → **Get a free
-   key** (Google AI Studio, **Create API key**), paste it, and press
+3. **Turn on free AI.** In the app: **Settings** (on a phone, under More)
+   → **AI** → **Get a free key** (Google AI Studio, **Create API key**), paste it, and press
    **Save & test**: "Works · key ending …abcd". A key pasted here is
    encrypted by the helper and stored where the browser cannot read it;
    the app only ever shows its last four characters.
 
-**More services, optional.** AI settings → **More AI services** takes a key
+**More services, optional.** Settings → AI → **More AI services** takes a key
 for Groq and OpenRouter (free) and for OpenAI and Anthropic (paid). Paid
 services are never asked until **Use paid services** is switched on. The
 order they are tried in, a daily limit (40 by default, 10 to 150), the
@@ -152,8 +152,8 @@ the Coach and Review the AI is never sent an amount, a balance or a date
 sends nothing at all, and **What the AI sees** lists exactly what each
 sends.
 
-**Check it:** One-time updates says "All done", and AI settings says "AI is
-on, using free Google Gemini" (or "your receipts key").
+**Check it:** One-time updates says "All done", and Settings › AI says "AI
+is on, using free Google Gemini" (or "your receipts key").
 
 ## Receipt photos: Gemini (optional)
 
@@ -240,16 +240,16 @@ pointer to the sign-in, and connecting silently fails. Supabase has been
 seen to turn it back on after an update, so check it after every paste.
 
 **Connecting** is Help → **Connect Claude** or **Connect ChatGPT**, each
-starting from Settings → AI apps → **Connect a new AI app**, which lets
+starting from Settings → Account → AI apps → **Connect a new AI app**, which lets
 a new app connect for 15 minutes. The first-connection checks are HANDOFF
 §4, 15 to 23.
 
 **Now and then:** Claude registers a new app in **Authentication → OAuth
 Apps** each time it connects afresh, and anyone can register one there
 (none gets past the connect page without your 15 minutes). Delete any
-that Settings → AI apps → **Connected apps** does not list.
+that Settings → Account → AI apps → **Connected apps** does not list.
 
-**To switch it all off:** Settings → AI apps → turn off **Let AI apps
+**To switch it all off:** Settings → Account → AI apps → turn off **Let AI apps
 connect**, which stops every AI app at once; then **Authentication →
 OAuth Server** → off, so none can sign in again.
 

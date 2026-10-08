@@ -9,7 +9,7 @@
 ## Month — MonthScreen.tsx, MonthSummary.tsx, MonthCharges.tsx, MonthCharts.tsx, MonthCoachLine.tsx, MonthForecastLine.tsx, BudgetEditor.tsx, StartEditor.tsx, PeriodSwitch.tsx
 - PeriodSwitch: Week · Month · Year (3 links; Paycheck left the switch for its own screen, ADR 0014)
 - Header: "September 2026"; buttons Bill calendar, Prev, Next, ?
-- First run card: "New here? Getting started sets up your lists, pay, bills and goals one step at a time, a few minutes each." [Get started] [Open Setup]
+- First run card: "New here? Getting started sets up your lists, pay, bills and goals one step at a time, a few minutes each." [Get started] [Open Lists]
 - ReviewBanner: "Not filed yet: 3 from September waiting for review" + "— not counted below" | "{n} from other months waiting for review"
 - Coach line (tap → Coach; ✨ when AI words)
 - "Statement imported up to 18 Sep 2026" | "No statement imported yet."
@@ -17,7 +17,7 @@
   - Forecast line: "Forecast: about $5,100 by 30 Sep" + ⓘ → "End of month counts what has happened and your planned bills; the forecast adds pay still due and spending at your usual pace." link "Two month-end figures"
   - Last month: "By 24 Sep: $X spent · by 24 Aug: $Y" / "▲ $120.40 more (12%)" | before records: "Your records start on 8 Aug. Import the statement before that to compare with August."
 - ThirdSwitch "Last column": [Left] [vs 1–24 Aug]
-- 6 blocks (phone order Variable, Bills, Subscriptions, Debts, Income, Savings): heading, "$actual of $budget", change chip "▲ $X more"; columns Budgeted/Actual/Left (Income Goal/Actual; Savings Goal/Actual/Difference); tap budget cell → inline editor ($ input, "From this month on" | "Just this month", hint, Save / Cancel / Clear budget); "planned" under amount; negative Left pill; "Show N empty"; empty list "Nothing on this list yet. Add one in Setup"
+- 6 blocks (phone order Variable, Bills, Subscriptions, Debts, Income, Savings): heading, "$actual of $budget", change chip "▲ $X more"; columns Budgeted/Actual/Left (Income Goal/Actual; Savings Goal/Actual/Difference); tap budget cell → inline editor ($ input, "From this month on" | "Just this month", hint, Save / Cancel / Clear budget); "planned" under amount; negative Left pill; "Show N empty"; empty list "Nothing on this list yet. Add one in Lists"
 - Charts: "Income against goals" bars; "Variable expenses by category" doughnut
 - TransfersNote: "Paid to your card: $1,450.00 — not counted. What it paid for is already in the blocks above. See these charges"
 - Charges sheet: title category, subtitle "Variable expenses · September 2026 · $286.40"; "Last month (same days): $X"; rows merchant / date (· added by hand) / "= 22 min toward Flight training" / amount; [Move to…] → select + "Always file SHOP here" + Move/Cancel; "Show all N"
@@ -34,7 +34,7 @@
 - Switch; header "This pay period" + ?; "15–29 Sep · Income 1, paid every two weeks"; prev/next
 - Summary (lavender): Spent, Left to spend (+ "No budgets on Variable expenses yet. They are typed on the Month."), CompareLine vs last pay period
 - "How this period is counted": chooser "Pay periods from" select; "Bills with no charge yet in this period, and budgets and goals, are September 2026's. You are paid every two weeks, so each shows 12 months over 26 paydays: two weeks' share. Charges count as they are." "Budgets and goals are typed on the Month."
-- Six blocks (no editors). NoSchedule: "This shows your budget one pay period at a time. It needs to know when you are paid: in Setup, give an Income row how often it pays and a first payday." [Open Setup]
+- Six blocks (no editors). NoSchedule: "This shows your budget one pay period at a time. It needs to know when you are paid: in Lists, give an Income row how often it pays and a first payday." [Open Lists]
 
 ## Year — YearScreen.tsx, YearGlance.tsx, YearCharts.tsx
 - Switch; header "Year" + ?; "January 2026 to December 2026"; StartPicker "Starts in [January] [2026]"
@@ -48,7 +48,7 @@
 - Header "September 2026" / "Bill calendar"; pill "Due this month $2,832.46"; prev/next/?
 - Phone: CompactGrid (S M T W T F S; day number, green circle on payday, dots per bill; legend "a bill due" "payday") + Agenda (per week: "1–5 Sep" + week total; day rows: weekday/number, "Income 1 payday" pill, bill name + amount + "planned"; "Nothing due.")
 - Desktop: MonthGrid (Sunday…Saturday + Week column; day cells with payday pill + bills; italics = planned; caption "Bills and paydays by day, with each week's total. Amounts in italics are planned: nothing has been charged for them yet this month.")
-- Undated: "No day paid" — "These have a monthly amount but no day paid, so they are not on the calendar or in its totals. The Month still counts them." [Add a day paid in Setup]
+- Undated: "No day paid" — "These have a monthly amount but no day paid, so they are not on the calendar or in its totals. The Month still counts them." [Add a day paid in Lists]
 - Bill → charges sheet.
 
 ## Coach — CoachScreen.tsx, coach/CoachCards.tsx, GoalPace.tsx, GoalLever.tsx, QuoteCard.tsx, CoachStatus.tsx, CheckinLink.tsx, AskBox.tsx, WhySheet.tsx; words: packages/savings-coach/src/templates.ts
@@ -76,7 +76,7 @@
 
 ## Forecast — ForecastScreen.tsx, forecast/Ahead.tsx, Goals.tsx, Months.tsx, WhatIf.tsx, parts.tsx
 - Title + ?; Sentence (lg): forecast card body
-- Safe to spend: "$58.30" (3xl) " a day for 7 days, today included"; "Pay from Side Hustle is not counted: give it a pay schedule in Setup, or a goal on the Month."; nothing_left: "Nothing left to spend safely this month, once your bills and savings are counted."
+- Safe to spend: "$58.30" (3xl) " a day for 7 days, today included"; "Pay from Side Hustle is not counted: give it a pay schedule in Lists, or a goal on the Month."; nothing_left: "Nothing left to spend safely this month, once your bills and savings are counted."
 - End of September: "$4,980 to $5,260" + badge Range + badge "Based on 2 months"; "Most likely $5,120."; range bar (Today $5,405.12 … Most likely $5,120); "Still to come": Pay still due $2,250.00 · Bills not charged yet (already in Spent) $509.99 · Spending at your usual pace about $350 · Savings still planned $0.00 · Spent by the end of September about $5,390
 - The next 30 days: "Today: $X. Tightest day ahead: 29 Sep, at $Y." balance line chart; "Counts $41.20 a day of everyday spending, your average over the last 30 days."; "Bills due in the next 7 days" rows date name amount ("Due, not seen yet"); "Leaves out $X you still plan to move to savings this month."
 - When you’ll reach your goals: per goal GoalPace; "What if…" goal select; chips "Restaurants −25%" "Restaurants −10%" "Restaurants to your best month" "Groceries −25%"…; "Tap one to see what it changes." result: "Trim Restaurants by $62.50 a month ($14.42 a week)." "Flight training: Feb 2027 – Apr 2027, 4 weeks sooner." "That’s 25 min of flight time a month." "End of September: $5,040 to $5,320 with $62.50 kept this month."
@@ -117,7 +117,7 @@
 - Loose goal: "On no savings fund yet, so money moved to savings does not count toward it." [Make it a fund]
 - "Funds with no goal yet": card "No goal yet." [Set a goal] / [Use “X” for this fund]
 - details "Reached and paused (2)"
-- Empty: "Your Savings list has no funds yet. Each fund on it gets a card here." [Add funds in Setup]
+- Empty: "Your Savings list has no funds yet. Each fund on it gets a card here." [Add funds in Lists]
 
 ## Debts — DebtsScreen.tsx, DebtStrategies.tsx, DebtEditor.tsx, DebtExtras.tsx
 - Banner "Debt payoff" + ?; "These are the loans and card balances you are paying down, to plan when each is paid off; they are separate from the Month’s Debts list, which counts the payments you make each month." + xs "A card you pay off from your bank can go here too, but give it no monthly amount on the Month’s Debts list: what you bought on it is already counted there."
@@ -153,24 +153,27 @@
 - Day groups (uppercase date) → card rows: merchant, category badge, "added by hand", amount, trash → [Remove]
 - Empty: list icon "Nothing this month" "Approved transactions appear here." | "No matches" "Try a different word."
 
-## Setup — SetupScreen.tsx, SetupPlans.tsx, SetupPay.tsx
-- Teal band: "‹ More"; "Start here!" + ?; "My name is [your first name]" (underlined input, ✓ saved)
+## Settings — SettingsScreen.tsx, settings/tab.ts, settings/ListsTab.tsx, settings/AiTab.tsx, LearnedShops.tsx, SetupPlans.tsx, SetupPay.tsx
+One screen, four tabs (ADR 0014 §2): "Settings" + ? (the showing tab's article); segmented control Lists · Budgets & goals · AI · Account, the tab in the address (`#/settings/ai`), a bare `#/settings` opening the tab last seen; arrow keys along the tabs. No lede; no cards that only link elsewhere.
+
+### Lists tab (what Setup was)
+- Tinted band: "Start here!" (h2); "My name is [your first name]" (underlined input, ✓ saved)
 - Starter card (<20 categories): "Fill your lists with example names — Rent, Groceries, Netflix and the rest — plus Card payments and Card interest & fees for your statement. Names you already have stay as they are." [Use the starter list] → success "Added 31 example names" "They are placeholders. Rename each one… None of them has an amount."
 - Sections (label in teal): Income [💵 Source — "What type of income do you receive?"; rows + pay fields (how often, first payday)] · Savings ["What are your savings goals?"] · Recurring expenses [🏠 Bills "What bills do you pay each month? Their amounts usually stay the same."; 💳 Debts "What loans are you paying off from the bank? A card you pay off from your bank is not a monthly debt payment here — its purchases are already counted."; 💻 Subscriptions "What are you subscribed to? A statement shows them."; rows with Day paid + Monthly amount columns (from this month on); total tile per card "Bills total" etc.; "Fixed monthly bills" tile + "Bills, debts and subscriptions together, in September 2026."] · Variable expenses ["What transactions have varied amounts?"] · Not spending ["Money that only moves, like paying off your card. Never counted as spending or income."]
 - Category row: inline rename input, ↑ ↓, move-to-list (icon over native select "Move to…"), trash. Empty "Nothing here yet." Add row: input "Add to Bills" [+ Add]
 - Nudge on a row: "Looks like a monthly bill" (bill-nudges)
 
-## Settings — SettingsScreen.tsx, LearnedShops.tsx
-- Title + ?; "Budgets, your savings goals, and your account."
-- Getting started card: progress line ("Step 4 of 9 done"-ish) [✓ Open Getting started]
-- Your lists: "Your name, and which list each category is on." [Open Setup]
+### Budgets & goals tab
 - Weekly budgets: "A limit per category, per week, on the lists the Week counts as spending. Leave one blank for no limit." groups (VARIABLE EXPENSES, BILLS…) rows name + $ input "No limit" (✓ saved); add: New category + list select + [+ Add]; "Budgets save when you leave the field."
 - Your savings goals: "3 goals. Your main goal is Flight training, which the Coach and the Week show." [Open Savings]
+
+### Account tab
 - Learned shops card "Shops filed by themselves" — "Each shop you have approved or moved with “Always file” is filed the same way from then on. Forget one and its next charge waits in Review again. Charges already filed stay where they are." rows SHOP / category [Forget]; "Show all 42"; note "Forgotten. The next charge from SHOP waits in Review for a category."
+- AI apps card (ADR 0012, 0013)
 - Account: email; [Sign out]
 
-## AI settings — AiSettingsScreen.tsx, ai/KeyCard.tsx, ai/ChoicesPanel.tsx, ai/CoachPanel.tsx
-- Title + ?; status card: "AI is on, using free Google Gemini." (lg) link "Show me how" / "Open One-time updates"; [Check again]
+### AI tab — AiSettingsScreen.tsx (drawn through settings/AiTab.tsx until the trees merge), ai/KeyCard.tsx, ai/ChoicesPanel.tsx, ai/CoachPanel.tsx
+- Status card: "AI is on, using free Google Gemini." (lg) link "Show me how" / "Open One-time updates"; [Check again]
 - Gemini KeyCard: title "Free Google Gemini" chip "Recommended"; saved: "Your key ending …abcd is saved." | "Already on, with your receipts key ending …abcd. There is nothing to paste." | new: "Free, and about 2 minutes. A key is a password Google gives you for the app to use."; steps: Step 1 [Get a free key ↗] "Google AI Studio opens in a new tab. Press Create API key, then copy it."; Step 2: paste it here [password input][Show]; Step 3 [Save & test]; result "Works · key ending …abcd"; details "Paste a different key"; [Check which models work] [Remove key]; Model select + "The first on the list is the app’s everyday choice: quick, and the most free uses a day."
 - Other cards: Groq (Free) "Free, and quick. Free services may keep what they are sent, and people there may read it."; OpenRouter (Free); OpenAI (Paid) "Paid: OpenAI bills you for each use. Tried only when Use paid services is on."; Anthropic (Paid) "More AI services: Groq, OpenRouter, and paid ones" — "Optional. When Gemini is busy or out of free uses, the next service with a key answers instead."
 - ChoicesPanel: "Try in this order" list "1. Google Gemini [Free]" / "Key ending …abcd works" ↑↓; "When one is busy or out of free uses, the next is asked."; card switch "Use paid services" + "Off: OpenAI and Anthropic are never asked, even with a key saved, so nothing is billed."; card "Daily limit" select "40 AI calls a day" + "Today: 0 of 40. Resets overnight. Past the limit, the app uses its own words until tomorrow."
@@ -184,14 +187,14 @@
 
 ## Getting started — GettingStartedScreen.tsx, start/steps.ts, start/StepBody.tsx, start/ProgressLine.tsx, start/Finish.tsx
 - Title + ?; "Step 3 of 9 · about 1 minute"; 9 segment bar (done filled, current ringed)
-- Step title (2xl), why (muted), check line "✓ Done" | "Not done yet" | "Can’t check this yet"; the step's real control (Setup cards, name field, statement picker, balance editor, AI key card, iPhone steps + "It’s on my home screen")
-- [Continue]/[Finish] (lg) + [Do this later] (ghost); "Nothing breaks if you stop here. You can come back any time from More."; details "All 9 steps · 3 done" list ✓/·/? + "Later"
+- Step title (2xl), why (muted), check line "✓ Done" | "Not done yet" | "Can’t check this yet"; the step's real control (Lists' cards, name field, statement picker, balance editor, AI key card, iPhone steps + "It’s on my home screen")
+- [Continue]/[Finish] (lg) + [Do this later] (ghost); "Nothing breaks if you stop here. Come back any time from Help."; details "All 9 steps · 3 done" list ✓/·/? + "Later"
 - Steps: Your name (under a minute) · Your lists (about 2 minutes) · When you’re paid (about 1 minute) · Your bills (about 3 minutes) · Your savings goals (about 2 minutes) · Your first statement (about 5 minutes) · This month’s starting balance (about 1 minute) · Turn on free AI (under 2 minutes) · Put it on your iPhone (about 1 minute); why lines in start/steps.ts
 - End: "6 of 9 done" + "Everything you set up is working now. The rest can wait: the app works with what it has, and says what it is missing." list of left + "Open the Month"; Finish: paper plane flies in
-- More row hint: "5 of 9 done" / "All done"
+- Help's Start here article, card "Getting started": "5 of 9 done" / "All done" + [Open Getting started] (decision 6: Help and the first run are its ways in)
 
 ## Sign in — auth.tsx
 - "Budget" / "Your statements and your spending, visible only to you."; card: EMAIL ADDRESS (you@example.com), PASSWORD; [Sign in] + "Email me a link instead"; link mode [Email me a link] + xs "Emailed links are limited to a few per hour on this project’s mail settings. A password has no such limit."; sent: "CHECK YOUR EMAIL" "A sign-in link is on its way to X. Open it on this device, in this same browser, and you are in…" [Back]; refused link alert "That sign-in link only works once, and only in the browser that asked for it. Ask for a new link here, or use your password."
 
 ## More — MoreScreen.tsx
-- "More" + ?; groups Plan (Paycheck wallet "Your budget one pay period at a time"; Bill calendar bills "What is due each day of the month, and paydays"; Year year "Twelve months at a glance, from any month"; Savings piggy "Each fund, what it needs, and what to save a month"; Debts card "Each loan and card balance, and when it is paid off"; Forecast trend "Where this month is heading, and safe to spend") · Understand (Reports report "The month in review, trends and shops"; Ask sparkles "A question about your money, in your own words") · Set up and help (Getting started check "5 of 9 done"; Setup list "Your name, and your lists"; AI settings sparkles "Turn on free AI, and choose services"; Settings settings "Weekly budgets, your savings goals, signing out"; Help help "How each screen works, and what to do next") · Records (All transactions file "Every approved charge and payment")
+- "More" + ?; groups Plan (Paycheck wallet "Your budget one pay period at a time"; Bill calendar bills "What is due each day of the month, and paydays"; Year year "Twelve months at a glance, from any month"; Savings piggy "Each fund, what it needs, and what to save a month"; Debts card "Each loan and card balance, and when it is paid off"; Forecast trend "Where this month is heading, and safe to spend") · Understand (Reports report "The month in review, trends and shops"; Ask sparkles "A question about your money, in your own words") · Settings and help (Settings settings "Your lists, budgets, AI and account"; Help help "How each screen works, and what to do next") · Records (All transactions file "Every approved charge and payment")

@@ -49,6 +49,23 @@ anywhere (the `brand` gate).
 Everything below is on branch `main-tnlcto` and reaches the live site when
 it is merged into `main` (§3).
 
+**Rework, wave 1 (2026-10-08, the owner's six decisions, ADR 0014):**
+- The switch at the top of the Week, the Month and the Year reads **Week ·
+  Month · Year**. **Paycheck** is its own screen under Plan, beside Bill
+  calendar. The Month still opens first.
+- **One Settings screen** with four tabs: **Lists** (what Setup was: your
+  name, lists, bills, pay days) · **Budgets & goals** · **AI** (what AI
+  settings was) · **Account** (learned shops, AI apps, sign out). The tab is
+  in the address (`#/settings/ai`); `#/setup` and `#/ai` still open theirs.
+  The sidebar's last group is **More**: Settings, Help.
+- **Getting started** opens on the first run and from Help's **Start
+  here** (with "5 of 9 done" and **Open Getting started**); it left More
+  and Settings.
+- Until this tree and the AI tree merge, the AI tab draws AI settings
+  through a wrapper that hides its own title (`settings/AiTab.tsx`), and
+  `ai` stays a screen id that is never drawn (`nav.ts`); both go with the
+  merge.
+
 - **AI throughout, on a free Google Gemini key.** A Coach that says how the
   month is going, what changed, what to cut and when you will reach your
   goals; a Sunday check-in; words on the Month, the Forecast and Reports;
@@ -57,7 +74,7 @@ it is merged into `main` (§3).
   one of them shows the app's own words instead, and says why in one line.
 - **Paid services too, only if you choose.** Groq and OpenRouter (free),
   OpenAI and Anthropic (paid, off until you switch **Use paid services**
-  on). AI settings has the order they are tried in and a daily limit.
+  on). Settings › AI has the order they are tried in and a daily limit.
 - **Forecast:** safe to spend a day, where the month will end, the next
   30 days, when you will reach each goal, what-ifs, the next three months.
 - **Reports:** the month in review, trends, shops and subscriptions,
@@ -82,10 +99,9 @@ it is merged into `main` (§3).
   the Month's title, and `#/week` still works. (Since 2026-10-08 the switch
   runs shortest period first and Paycheck is a screen of its own, ADR 0014.)
 - On a computer, a sidebar replaces the old top bar (see Mockup A below).
-- **More** is in four groups: Plan, Understand, Set up and help, Records.
+- **More** is in four groups: Plan, Understand, Settings and help, Records.
   On a computer, More is not needed: every screen is in the sidebar, or
-  one tap from Coach (Ask, Check-in) or Settings (AI settings, Getting
-  started).
+  one tap from Coach (Ask, Check-in) or Help (Getting started).
 
 ### Mockup A, the new look (2026-09-29 and 30)
 
@@ -99,7 +115,7 @@ difference from the mockups.
 
 **What the owner will notice:**
 - **A sidebar from 1024 px wide**, grouped Plan · Money · Coach · Inbox ·
-  Setup, with the main goal's progress and Sign out at its foot. Plan is
+  More, with the main goal's progress and Sign out at its foot. Plan is
   always open; the other groups fold and remember it. Between 768 and
   1023 px it is a column of icons. The top bar holds the sidebar toggle,
   where you are ("Budget › Month"), **Search or jump to… ⌘K** (opens
@@ -115,9 +131,8 @@ difference from the mockups.
   columns, and nothing but the sign-in card casts a shadow.
 
 **Left open, none urgent:** chart words are small in the Month's desktop
-column (N127); long names are cut in Setup's narrow column (N135) and in
-the calendar's payday pills (N131); AI settings has no link on a computer
-once AI is on (N136).
+column (N127); long names are cut in Lists' narrow column (N135) and in
+the calendar's payday pills (N131).
 
 **The app, screen by screen:**
 
@@ -133,8 +148,8 @@ once AI is on (N136).
 | Ask | A question about your money in your own words; the answer's figure is the engine's |
 | Savings, Debts | Every goal in your order; every debt and when it is paid off |
 | Add, Review | A statement, a photo, one typed or "just typed"; everything waits in Review, with suggested categories |
-| Setup, Settings, AI settings | Your lists and bills; weekly budgets, learned shops, sign out; AI on or off, keys, services, limit, tone |
-| Help, Getting started | An article per screen and One-time updates; nine steps to set up |
+| Settings | Four tabs (ADR 0014): Lists, your name, lists, bills and pay days; Budgets & goals; AI, on or off, keys, services, limit, tone; Account, learned shops, AI apps, sign out |
+| Help, Getting started | An article per screen and One-time updates; nine steps to set up, opened from Help's Start here and on the first run |
 
 **Underneath:** all arithmetic is in `packages/core`, checked against the
 workbook's own cached values (121 golden tests, unchanged); the coach's
@@ -365,11 +380,11 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
     `OWNER_USER_ID`. Paste it again after every helper update.) One-time
     updates shows ✓ once it is deleted or new.
 19. **Turn on free AI.** In the app: **Settings** (on a phone, **More**) →
-    **AI settings** → **Get a free key**. Google AI Studio opens: **Create
+    **AI** → **Get a free key**. Google AI Studio opens: **Create
     API key**, copy it, come back, paste it, **Save & test**. Expect
     "Works · key ending …abcd". If `GEMINI_API_KEY` is already set for
     receipts, the screen already says "AI is on". To stop all AI later,
-    turn off **Use AI** at the top of AI settings.
+    turn off **Use AI** at the top of Settings › AI.
 
 ### Part F: Claude and ChatGPT (AI apps), about 20 minutes, on a computer
 
@@ -414,7 +429,7 @@ connect an AI app to it.
     **Allow**; AI apps already connected keep reading, but cannot
     suggest changes.
 23. **Check again** on One-time updates: it should say **All done**.
-24. **Connect Claude** (any plan): in the app, **Settings → AI apps** →
+24. **Connect Claude** (any plan): in the app, **Settings → Account → AI apps** →
     turn on **Let AI apps connect** → **Connect a new AI app** (copies the
     address; you have 15 minutes). On claude.ai: **Customize → Connectors
     → Add custom connector** → name **Budget** → paste the address → if
@@ -470,7 +485,7 @@ One-time updates, which names what is missing.
 1. **Sign in.** With no lists yet, the app opens **Getting started**:
    "Step 1 of 9". Do the steps, or **Do this later** on any.
 2. **Help → One-time updates** says "All done" after §3's steps.
-3. **AI settings** says "AI is on, using free Google Gemini" (or "your
+3. **Settings → AI** says "AI is on, using free Google Gemini" (or "your
    receipts key"), and under More AI services, "Today: 0 of 40".
 4. **Add → Statement →** the card statement PDF. Expect "Matches your
    statement", then **Import**: "N waiting for review".
@@ -495,7 +510,7 @@ One-time updates, which names what is missing.
 11. **Ask.** "How much did I spend eating out this month?" gets the
     engine's figure and "I read that as: …".
 12. **Help.** Search "forecast"; each screen's **?** opens its article.
-13. **With AI off** (AI settings → the switch), every screen above still
+13. **With AI off** (Settings → AI → the switch), every screen above still
     works, in the app's own words.
 14. **iPhone:** open the Month, the Coach and the Forecast in Safari, and
     look at the ring, the tables and the 30-day line. Then make the text
@@ -525,7 +540,7 @@ what to do, and reporting the words on the screen is enough.
 18. **The first question** (K1, the one that matters most). Ask Claude
     "list my categories". It should list yours. **If it says the budget
     app did not recognise this sign-in as an AI app's, at once, in this
-    order: Settings → AI apps → Disconnect beside Claude; turn off Let AI
+    order: Settings → Account → AI apps → Disconnect beside Claude; turn off Let AI
     apps connect; Supabase → SQL Editor → run `delete from auth.sessions;`
     (it signs you out too: sign in again after); then Supabase →
     Authentication → OAuth Server → turn it off; and report it.** Turning
@@ -550,10 +565,10 @@ what to do, and reporting the words on the screen is enough.
     it. Then ask "suggest raising my Groceries weekly budget by $1"
     (or another category of yours). **Review → Suggested changes** shows
     it, from → to, with "Claude's reason"; press **Dismiss**. If Claude
-    says suggesting is switched off, turn on **Settings → AI apps → Let AI
+    says suggesting is switched off, turn on **Settings → Account → AI apps → Let AI
     apps suggest changes**; if it says the budget app needs an update,
     paste `0039` (§3 step 15). Report anything else word for word.
-21. **Disconnect** (K2). **Settings → AI apps → Connected apps** lists
+21. **Disconnect** (K2). **Settings → Account → AI apps → Connected apps** lists
     Claude, "Last asked" today. First, in Supabase's **SQL Editor**, run
     `select count(*) from auth.sessions;` and note the number. Press
     **Disconnect**, then **Yes, disconnect**, and ask Claude something: it
