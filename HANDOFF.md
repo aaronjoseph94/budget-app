@@ -62,6 +62,18 @@ it is merged into `main` (§3).
   here** (with "5 of 9 done" and **Open Getting started**); it left More
   and Settings.
 
+**Rework, wave 2 (2026-10-08):**
+- **Help is twelve short articles**, and every screen's words were cut to
+  one idea a sentence (PRD 03).
+- **A browser test suite, `pnpm e2e`**: every screen on a phone (WebKit)
+  and a computer (Chromium), at 390 and 320 wide, axe-clean, and the main
+  flows by keyboard (`docs/design/rework/04-e2e.md`).
+- **A bug bash** fixed four things you might notice: the Coach no longer
+  scrolls sideways on the smallest iPhone; dark mode draws scrollbars,
+  checkboxes and date pickers dark; the Forecast asks for this month's
+  starting balance once, not four times; each debt's **Edit** names its
+  debt to a screen reader (`05-bug-bash.md`).
+
 - **AI throughout, on a free key: OpenRouter, Groq or Google Gemini.** A Coach that says how the
   month is going, what changed, what to cut and when you will reach your
   goals; a Sunday check-in; words on the Month, the Forecast and Reports;
@@ -686,5 +698,6 @@ ADR 0009).
 - Every AI surface has the app's own words underneath, and every new read
   fails on its own (plan §3.10): a screen never waits on the AI.
 - Screen tests use a fake Supabase client (`apps/web/test/fake-supabase.ts`)
-  and end with an axe check (`apps/web/test/axe.ts`). The preview harness
-  that drives them in a browser lives in the agent's scratchpad, not here.
+  and end with an axe check (`apps/web/test/axe.ts`). The same fake serves
+  the app in a real browser for `pnpm e2e` (`apps/web/e2e`, tests in
+  `tests/`); `bash apps/web/e2e/start.sh` serves it by hand on :5275.

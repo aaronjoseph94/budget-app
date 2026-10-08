@@ -4008,3 +4008,24 @@ screen copy.
 ("…closes near $8,000." then "$1,153.71 a day to spend.") in the coach
 package, with its golden-like word tests; and whether a quote longer than
 the owner's line should be skipped by the quote picker.
+
+## N174 — A card's actions carry bare names, alike on every card
+
+**Seen:** 2026-10-08, the bug bash (`docs/design/rework/05-bug-bash.md`).
+Its keyboard walk lists two controls of one kind with one name. Debts'
+"Edit" was fixed there. The same pattern stands elsewhere: Savings' **Edit
+goal**, **Pause**, **Mark as reached**, **Remove** on each goal; Review's
+**Category** and "Not a real transaction — remove" on each row; the Coach's
+**Dismiss this insight** and **Why am I seeing this?** on each card; Settings
+› AI's **Show** and **Save & test** on each key; the Month's **Show 3 empty**
+on each list. Each sits inside its card or row, which a screen reader names
+on the way in, so it is not a WCAG A or AA failure; but Tab alone, or Voice
+Control's "tap Remove", meets several alike.
+
+**Why not fixed here:** one rename across five screens and their tests, past
+the 300-line slice, and nothing the owner sees.
+
+**To settle:** give each an accessible name ending in its card's
+(`aria-label`, the visible word first, as Debts' "Edit Loan"), move each
+test's locator to the new name, and keep Help's `**bold**` words, which name
+what is drawn.
