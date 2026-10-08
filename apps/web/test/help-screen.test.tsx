@@ -54,10 +54,10 @@ describe('Help', () => {
     expect(titles()).toEqual(['Debts'])
     // A button's name counts as its words, without the stars around it.
     fireEvent.change(search, { target: { value: 'add to home screen' } })
-    expect(titles()).toEqual(['Signing in and out', 'Put it on your iPhone'])
+    expect(titles()).toEqual(['One-time updates and signing in'])
     // The newer articles are found by their own words: getting around, Setup's lists, AI apps.
     fireEvent.change(search, { target: { value: 'sidebar' } })
-    expect(titles()).toEqual(['Getting around', 'Signing in and out'])
+    expect(titles()).toEqual(['Getting around'])
     fireEvent.change(search, { target: { value: 'Rename' } })
     expect(titles()).toEqual(['Your lists'])
     fireEvent.change(search, { target: { value: 'disconnect' } })
@@ -119,7 +119,7 @@ describe('Help', () => {
     // The list is the way back, so the article drops its own.
     expect(onScreen().queryByRole('link', { name: '‹ Help' })).toBeNull()
     fireEvent.change(within(list).getByRole('searchbox', { name: 'Search help' }), { target: { value: 'add to home screen' } })
-    expect(within(list).getAllByRole('link').map((a) => a.textContent)).toEqual(['Signing in and out', 'Put it on your iPhone'])
+    expect(within(list).getAllByRole('link').map((a) => a.textContent)).toEqual(['One-time updates and signing in'])
     // cn is a plain join: the carded steps carry one left padding, not two.
     const steps = onScreen().getByRole('article').querySelector('ol')!
     expect(steps.className.split(' ').filter((c) => c.startsWith('pl-'))).toEqual(['pl-11'])

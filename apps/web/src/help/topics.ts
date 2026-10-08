@@ -19,9 +19,6 @@ export const HELP_TOPICS = [
   'ai',
   'ai-apps',
   'updates',
-  'codes',
-  'signing-in',
-  'iphone',
 ] as const
 
 export type HelpTopic = (typeof HELP_TOPICS)[number]

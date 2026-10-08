@@ -258,77 +258,27 @@ export const ARTICLES: readonly Article[] = [
   },
   {
     id: 'updates',
-    title: 'One-time updates',
-    summary:
-      'Some parts of the app need a one-time update pasted into Supabase, where your budget is kept online, or a setting changed there. This page checks which are in, names the next one, and gives you a Copy button for it. The line at the top says how many are in; the rest take about 35 minutes, once, easiest on a computer. Until they are in, everything that worked before still works, and nothing breaks if you stop part way.',
+    title: 'One-time updates and signing in',
+    summary: 'Some parts need a one-time update in Supabase; this page names the next.',
     steps: [
-      'Open Supabase in a new tab and choose your project.',
-      'Press **SQL Editor**, then **New query**.',
-      'On this page, press the **Copy** button under Next, which names what it copies.',
-      'Paste it into the new query, press **Run**, and wait for Success.',
-      'Press **Check again** here, and do the next one the same way.',
-      'For the AI helper, press **Edge Functions**, **Deploy a new function** and **Via Editor**, name it ai, and paste what **Copy** gives you over everything there.',
-      'For the helper’s switch, the signing key, sign-in for AI apps and the AI apps server, do the clicks this page lists under each, then press **Check again**.',
-      'Last, open **Settings**, then **AI**, and turn on free AI, in about 2 minutes.',
+      'In Supabase, press **SQL Editor**, then **New query**.',
+      'Press **Copy** under Next, paste it there, press **Run**, and wait for Success.',
+      'Press **Check again**, and do the next one the same way.',
+      'The AI helper and AI apps steps list their clicks here.',
+      'Last, open **Settings**, then **AI**, and turn on free AI.',
+      'Sign in with **Email address** and **Password**, or **Email me a link instead**.',
     ],
-    done: 'this page says "All done", and Settings › AI says AI is on.',
+    done: 'this page says “All done”.',
     stuck:
-      'If Supabase says anything other than Success, stop there: nothing is lost, and the message names the line. A file already pasted is refused with nothing changed, or runs again to the same result, so pasting one again does no harm. The AI helper needs no new secrets: the receipts key is used again if you set one. The signing key, sign-in for AI apps and the AI apps server are for connecting Claude or ChatGPT; until they are done, this page names them next and the rest of the app works. If the signing key still shows after you changed it, sign out and back in, so your sign-in is made with the new key. If **Edge Functions** lists read-receipt, paste its new version over it or delete it: an older copy lets anyone with the app’s public key use your Gemini key. Updates from before this version are copied from GitHub, as the setup guide says; the Copy buttons carry only the newest ones.',
-    related: ['start', 'ai', 'ai-apps', 'codes'],
-  },
-  {
-    id: 'codes',
-    title: 'Messages with a code in brackets',
-    summary:
-      'When something does not work, the app says what happened, then a code in brackets such as (code 42501). The code is for looking it up.',
-    steps: [
-      'Read the sentence before the brackets: it says what happened.',
-      'Do what it says, such as pressing **Try again**.',
-      'If the code is in the list below, follow what it says there.',
-      'If it keeps happening, take a screenshot with the code showing.',
-    ],
-    done: 'what you were doing works without a message.',
-    stuck: 'Nothing is lost when a message shows: a change that fails is not saved half way.',
-    related: ['updates', 'signing-in'],
+      'If Supabase says anything but Success, stop: nothing is lost. Press **Forgot your password?** to set a new one by email. On an iPhone: **Safari**, **Share**, then **Add to Home Screen**.',
+    related: ['ai', 'ai-apps', 'start'],
     terms: [
-      { term: 'PGRST205, 42P01, PGRST202, 42883, 42703', meaning: 'A one-time update is missing. Open Help, then One-time updates.' },
-      { term: '42501', meaning: 'Something was changed on another device, or your sign-in needs refreshing. Sign out and back in.' },
-      { term: '28000, PGRST301', meaning: 'You were signed out. Sign in again; nothing was saved.' },
-      { term: '23505', meaning: 'You already have one with that name, so nothing was added.' },
-      { term: '23514, 23503', meaning: 'A rule your lists follow stopped the change, so nothing was saved.' },
-      { term: 'unknown, or no code', meaning: 'The app could not reach the internet. Check your connection and try again.' },
+      {
+        term: 'A code in brackets',
+        meaning:
+          'PGRST205, 42P01, PGRST202, 42883, 42703: a one-time update is missing. 42501, 28000, PGRST301: sign out and back in. No code: check your connection.',
+      },
     ],
-  },
-  {
-    id: 'signing-in',
-    title: 'Signing in and out',
-    summary:
-      'Only you can sign in: there is no sign-up page, and the sign-in page never says whether an address has an account here.',
-    steps: [
-      'Type your **Email address** and **Password**, and press **Sign in**.',
-      'Or press **Email me a link instead**, then **Email me a link**, and open the link on the same device, in the same browser.',
-      'In the app on your iPhone’s Home Screen, sign in with your password, since an emailed link opens in Safari instead.',
-      'To sign out, press the button beside your name at the foot of the sidebar, or **Sign out** under **Account** in **Settings** (on a phone, under **More**).',
-    ],
-    done: 'your budget opens, and signing out brings back the sign-in page.',
-    stuck:
-      'To change a forgotten password, type your email on the sign-in screen and choose **Forgot your password?**, then open the emailed link on the same device, in the same browser, and choose a new password. Links sent from the Supabase dashboard (Reset password, Send magic link) do not work with this app. “Check your email” shows for any address, with an account here or not, so no one can use the page to learn whether yours is here; if no email comes, check the spelling and use your password. A wrong password and an unknown address get the same message, for the same reason. Emailed links are limited to a few an hour, so a password is quicker when you sign in often.',
-    related: ['iphone', 'codes', 'getting-around'],
-  },
-  {
-    id: 'iphone',
-    title: 'Put it on your iPhone',
-    summary: 'Open the app from your home screen like any other app. About 1 minute.',
-    steps: [
-      'Open the app’s address in **Safari**.',
-      'Tap **Share**, the square with an arrow, or tap **⋯** first if you do not see it.',
-      'Scroll down and tap **Add to Home Screen**.',
-      'Tap **Add**.',
-    ],
-    done: 'the app’s icon is on your home screen and opens full screen.',
-    stuck:
-      'It has to be Safari. If Add to Home Screen is missing, tap **Edit Actions** at the bottom of the Share list and add it. Sign in there with your password: an emailed link opens in Safari instead of the app.',
-    related: ['start', 'signing-in'],
   },
 ]
 

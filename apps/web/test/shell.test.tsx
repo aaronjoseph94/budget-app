@@ -319,11 +319,11 @@ describe('Shell, opening another page of the same screen (e2e-setup-03)', () => 
   it('opens a Help article, and the Sunday check-in, at the top with focus on it', async () => {
     go('/help')
     renderScreen(<Shell />, createFakeSupabase())
-    const link = await screen.findByRole('link', { name: /^Messages with a code in brackets/ })
+    const link = await screen.findByRole('link', { name: /^One-time updates and signing in/ })
     link.focus()
     const scrolled = vi.mocked(window.scrollTo).mock.calls.length
-    go('/help/codes')
-    expect(await screen.findByRole('heading', { level: 1, name: 'Messages with a code in brackets' })).toBeTruthy()
+    go('/help/updates')
+    expect(await screen.findByRole('heading', { level: 1, name: 'One-time updates and signing in' })).toBeTruthy()
     expect(vi.mocked(window.scrollTo).mock.calls.slice(scrolled)).toEqual([[{ top: 0 }]])
     expect(document.activeElement).toBe(screen.getByRole('main'))
     expect(document.title).toBe('Help · Budget')

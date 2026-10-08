@@ -64,14 +64,15 @@ describe('Help articles', () => {
     }
   })
 
-  // HANDOFF's three steps, as One-time updates says them (plan §10.2, A28).
-  it('walks One-time updates to the end: the updates, the AI helper, the AI apps steps, then free AI', () => {
+  // HANDOFF's three steps, as One-time updates says them (plan §10.2, A28): the
+  // page itself lists the AI helper's and the AI apps' clicks, so the article
+  // names no count or click to go stale (M1, PRD 03).
+  it('walks One-time updates to the end: Copy, Run, Check again, the clicks on the page, then free AI', () => {
     const updates = articleFor('updates')
-    // The line at the top counts what is in, so the article names no count to go stale (M1).
-    expect(updates?.summary).toMatch(/The line at the top says how many are in; the rest take about 35 minutes, once, easiest on a computer/)
-    expect(updates?.steps.some((s) => s.includes('the signing key, sign-in for AI apps and the AI apps server'))).toBe(true)
-    expect(updates?.steps.some((s) => s.includes('**Deploy a new function**') && s.includes('name it ai'))).toBe(true)
-    expect(updates?.steps.at(-1)).toMatch(/\*\*Settings\*\*, then \*\*AI\*\*, and turn on free AI/)
+    expect(updates?.steps.some((s) => s.includes('**Copy**') && s.includes('**Run**'))).toBe(true)
+    expect(updates?.steps.some((s) => s.startsWith('Press **Check again**'))).toBe(true)
+    expect(updates?.steps).toContain('The AI helper and AI apps steps list their clicks here.')
+    expect(updates?.steps.some((s) => /\*\*Settings\*\*, then \*\*AI\*\*, and turn on free AI/.test(s))).toBe(true)
   })
 
   it('has a written article for the ? on every screen', () => {
@@ -176,21 +177,16 @@ const sentencesOf = (a: (typeof ARTICLES)[number]) =>
     .map((s) => s.trim())
     .filter(Boolean)
 
-/** The articles rewritten short so far; the last slice lists all twelve (PRD 03). */
-const SHORT = ['start', 'getting-around', 'add', 'review', 'budgets', 'lists', 'savings', 'debts', 'coach', 'ai', 'ai-apps'] as const
-
 // The owner's brevity rule (PRD 03, 2026-10-08): twelve short articles.
 describe('Help’s length', () => {
-  it('is at most 150 words an article, with no sentence over 90 characters', () => {
-    for (const id of SHORT) {
-      const a = articleFor(id)!
-      expect(wordsOf(a), `${id}: ${wordsOf(a)} words`).toBeLessThanOrEqual(150)
-      for (const s of sentencesOf(a)) expect(s.length, `${id}: ${s}`).toBeLessThanOrEqual(90)
-    }
+  it('is twelve articles of at most 150 words each, 3,000 in all, in Help’s order', () => {
+    expect(ARTICLES.map((a) => a.id)).toEqual(['start', 'getting-around', 'add', 'review', 'budgets', 'lists', 'savings', 'debts', 'coach', 'ai', 'ai-apps', 'updates'])
+    for (const a of ARTICLES) expect(wordsOf(a), `${a.id}: ${wordsOf(a)} words`).toBeLessThanOrEqual(150)
+    expect(ARTICLES.reduce((n, a) => n + wordsOf(a), 0)).toBeLessThanOrEqual(3000)
   })
 
-  it('lists the rewritten articles first, in Help’s order', () => {
-    expect(ARTICLES.slice(0, SHORT.length).map((a) => a.id)).toEqual([...SHORT])
+  it('keeps every sentence to 90 characters', () => {
+    for (const a of ARTICLES) for (const s of sentencesOf(a)) expect(s.length, `${a.id}: ${s}`).toBeLessThanOrEqual(90)
   })
 })
 
@@ -231,7 +227,7 @@ const SOURCES: Record<string, string> = import.meta.glob(['../src/**/*.{ts,tsx}'
 const APP_WORDS = Object.values(SOURCES).join('\n')
 
 /** Names on someone else's screen, which the app cannot draw: Supabase's, Claude's, ChatGPT's and Safari's. */
-const OUTSIDE = new Set(['New query', 'Register automatically', 'Developer mode', 'Edit Actions', 'Add to Home Screen', '⋯'])
+const OUTSIDE = new Set(['New query', 'Register automatically', 'Developer mode', 'Add to Home Screen'])
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 /** A count in a name ("Approve these 12", "Today: N of 40") or "…" stands for whatever the app fills in there. */

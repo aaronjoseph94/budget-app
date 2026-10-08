@@ -11,7 +11,7 @@ import { UPDATES } from '../src/help/updates.js'
 const ALL = UPDATES.length
 const ONE_LEFT = `${ALL - 1} of ${ALL} in`
 
-beforeAll(() => warmScreen('#/help/updates', 'One-time updates'))
+beforeAll(() => warmScreen('#/help/updates', 'One-time updates and signing in'))
 
 beforeEach(() => {
   vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
@@ -49,7 +49,7 @@ const githubLinks = () => screen.queryAllByRole('link', { name: /on GitHub$/ }).
 
 async function open(fake: FakeSupabase, status: string) {
   renderScreen(<Shell />, fake)
-  await screen.findByRole('heading', { level: 1, name: 'One-time updates' })
+  await screen.findByRole('heading', { level: 1, name: 'One-time updates and signing in' })
   await screen.findByRole('heading', { level: 2, name: status })
 }
 

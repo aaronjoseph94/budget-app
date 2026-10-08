@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { AiView } from '../ai/client.js'
 import { useAppData } from '../app-data.js'
 import { saveDisplayName } from '../profile.js'
-import { ARTICLES, boldParts } from '../help/articles.js'
+import { boldParts } from '../help/articles.js'
 import { Alert, SavedNote } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Field, Input } from '../components/ui/form.js'
@@ -88,9 +88,15 @@ function NameStep({ name, onNamed }: { name: string; onNamed: (name: string) => 
   )
 }
 
-const IPHONE = ARTICLES.find((a) => a.id === 'iphone')
+/** Safari's own four taps, in Help's shape (the iphone article folded into One-time updates, PRD 03). */
+const IPHONE_STEPS = [
+  'Open the app’s address in **Safari**.',
+  'Tap **Share**, the square with an arrow, or tap **⋯** first if you do not see it.',
+  'Scroll down and tap **Add to Home Screen**.',
+  'Tap **Add**.',
+]
 
-/** Step 9: Help's own four steps, and a tick for when it is done where the app cannot see it. */
+/** Step 9: the four taps, and a tick for when it is done where the app cannot see it. */
 function PhoneStep({ ticked, onTick }: { ticked: boolean; onTick: (ticked: boolean) => Promise<void> }) {
   const [busy, setBusy] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
@@ -100,7 +106,7 @@ function PhoneStep({ ticked, onTick }: { ticked: boolean; onTick: (ticked: boole
   return (
     <div className="space-y-3">
       <ol className="list-decimal space-y-2 pl-5 text-base">
-        {IPHONE?.steps.map((step) => (
+        {IPHONE_STEPS.map((step) => (
           <li key={step}>
             {boldParts(step).map((part, i) => (part.bold ? <strong key={i}>{part.text}</strong> : <span key={i}>{part.text}</span>))}
           </li>

@@ -70,7 +70,7 @@ const SAID: Readonly<Record<Exclude<AiState, 'on'>, { readonly sentence: string;
   all_failed: { sentence: 'The AI services couldn’t answer just now: showing the app’s own words.', help: 'ai' },
   key_rejected: { sentence: 'An AI service turned down its key. Paste it again in AI settings.', help: 'ai' },
   keys_locked: { sentence: 'Your saved key can’t be opened after a Supabase key change: paste it again.', help: 'ai' },
-  helper_error: { sentence: 'The AI helper couldn’t finish that. Everything else works; try again later.', help: 'codes' },
+  helper_error: { sentence: 'The AI helper couldn’t finish that. Everything else works; try again later.', help: 'updates' },
 }
 
 /** What each of the helper's codes means for the owner. */

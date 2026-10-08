@@ -69,7 +69,7 @@ describe('Save & test', () => {
   it('reads an answer that is not a key reply as the helper’s trouble, never as a result', async () => {
     for (const odd of [{ ok: true }, keyReply({ status: 'fine' as never }), { ...keyReply(), models: [{ id: 1 }] }, { ...keyReply(), hint: 4 }]) {
       const { result } = await saveWith(reply(odd))
-      expect([result.good, result.help]).toEqual([false, 'codes'])
+      expect([result.good, result.help]).toEqual([false, 'updates'])
     }
   })
 })
@@ -124,7 +124,7 @@ describe('Test', () => {
   it('reads a reply with no time, as an older helper writes one, as the helper’s trouble', async () => {
     for (const odd of [ran(undefined), ran('fast'), reply({ ok: true })]) {
       const { result } = await testWith(odd)
-      expect([result.good, result.help]).toEqual([false, 'codes'])
+      expect([result.good, result.help]).toEqual([false, 'updates'])
     }
   })
 })

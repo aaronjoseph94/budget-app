@@ -33,7 +33,7 @@ const host = (path: string) => new Response(SITE[path] ?? '<!doctype html><title
 let site = host
 const writeText = vi.fn<(text: string) => Promise<void>>()
 
-beforeAll(() => warmScreen('#/help/updates', 'One-time updates'))
+beforeAll(() => warmScreen('#/help/updates', 'One-time updates and signing in'))
 
 beforeEach(() => {
   asked = []
@@ -61,7 +61,7 @@ afterEach(() => {
 
 async function nextIs(fake: FakeSupabase, button: string) {
   renderScreen(<Shell />, fake)
-  await screen.findByRole('heading', { level: 1, name: 'One-time updates' })
+  await screen.findByRole('heading', { level: 1, name: 'One-time updates and signing in' })
   return screen.findByRole('button', { name: button })
 }
 
