@@ -132,16 +132,11 @@ describe('Help articles', () => {
     expect(articleFor('reports')?.steps[0]).toBe('Open **Reports** (on a phone, under **More**).')
   })
 
-  // The owner's brevity rule (2026-10-08): a sentence written for ADR 0014
-  // or ADR 0015 is short. The older sentences wait for the Help rewrite (decision 5).
-  it('keeps the sentences written for the plan order, Settings’ tabs and the Free AI card under 90 characters', () => {
-    const periods = articleFor('periods')
-    const lists = articleFor('words')?.terms?.find((t) => t.term === 'Lists')
+  // The owner's brevity rule (2026-10-08): a sentence written for ADR 0015
+  // is short. The older sentences wait for the Help rewrite (PRD 03).
+  it('keeps the sentences written for the Free AI card under 90 characters', () => {
     const [freeAi, moreAi, rests] = [articleFor('free-ai'), articleFor('more-ai'), articleFor('ai-rests')]
-    const written = [
-      periods?.summary, periods?.steps[3], periods?.steps[4], periods?.done, periods?.stuck?.split('. ')[0], lists?.meaning,
-      freeAi?.steps[2], freeAi?.steps[3], freeAi?.steps[5], moreAi?.summary, moreAi?.steps[0], moreAi?.steps[3], rests?.steps[0], rests?.steps[3],
-    ]
+    const written = [freeAi?.steps[2], freeAi?.steps[3], freeAi?.steps[5], moreAi?.summary, moreAi?.steps[0], moreAi?.steps[3], rests?.steps[0], rests?.steps[3]]
     for (const text of written) {
       expect(text).toBeTruthy()
       for (const sentence of (text ?? '').replaceAll('**', '').split(/(?<=[.!?])\s+/)) expect(sentence.length, sentence).toBeLessThanOrEqual(90)
@@ -201,6 +196,38 @@ describe('Help articles', () => {
   it('finds no article for a topic not written yet', () => {
     expect(articleFor('start')?.title).toBe('Start here')
     expect(articleFor('nowhere')).toBeUndefined()
+  })
+})
+
+/** Words as help.mjs counts them: title, summary, steps, done, stuck and terms, `**` stripped. */
+const wordsOf = (a: (typeof ARTICLES)[number]) =>
+  [a.title, a.summary, ...a.steps, a.done, a.stuck, ...(a.terms ?? []).flatMap((t) => [t.term, t.meaning])]
+    .join(' ')
+    .replaceAll('**', '')
+    .split(/\s+/)
+    .filter(Boolean).length
+
+const sentencesOf = (a: (typeof ARTICLES)[number]) =>
+  [a.summary, ...a.steps, a.done, a.stuck, ...(a.terms ?? []).map((t) => t.meaning)]
+    .flatMap((t) => t.replaceAll('**', '').split(/(?<=[.!?…])\s+(?=[^a-z])/))
+    .map((s) => s.trim())
+    .filter(Boolean)
+
+/** The articles rewritten short so far; the last slice lists all twelve (PRD 03). */
+const SHORT = ['start', 'getting-around'] as const
+
+// The owner's brevity rule (PRD 03, 2026-10-08): twelve short articles.
+describe('Help’s length', () => {
+  it('is at most 150 words an article, with no sentence over 90 characters', () => {
+    for (const id of SHORT) {
+      const a = articleFor(id)!
+      expect(wordsOf(a), `${id}: ${wordsOf(a)} words`).toBeLessThanOrEqual(150)
+      for (const s of sentencesOf(a)) expect(s.length, `${id}: ${s}`).toBeLessThanOrEqual(90)
+    }
+  })
+
+  it('lists the rewritten articles first, in Help’s order', () => {
+    expect(ARTICLES.slice(0, SHORT.length).map((a) => a.id)).toEqual([...SHORT])
   })
 })
 

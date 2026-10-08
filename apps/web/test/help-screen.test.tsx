@@ -51,13 +51,13 @@ describe('Help', () => {
     const search = await screen.findByRole('searchbox', { name: 'Search help' })
 
     fireEvent.change(search, { target: { value: 'STARTING balance' } })
-    expect(titles()).toEqual(['Start here', 'Debts', 'How the forecast works', 'Two month-end figures', 'Let Claude or ChatGPT review your budget', 'Why does a number look wrong?'])
+    expect(titles()).toEqual(['Debts', 'How the forecast works', 'Two month-end figures', 'Let Claude or ChatGPT review your budget', 'Why does a number look wrong?'])
     // A button's name counts as its words, without the stars around it.
     fireEvent.change(search, { target: { value: 'add to home screen' } })
     expect(titles()).toEqual(['Signing in and out', 'Put it on your iPhone'])
     // The newer articles are found by their own words: getting around, Setup's lists, AI apps.
     fireEvent.change(search, { target: { value: 'sidebar' } })
-    expect(titles()).toEqual(['Finding your way around', 'Week, Month and Year', 'Signing in and out', 'Words the app uses'])
+    expect(titles()).toEqual(['Getting around', 'Signing in and out'])
     fireEvent.change(search, { target: { value: 'Rename' } })
     expect(titles()).toEqual(['Your lists and categories'])
     fireEvent.change(search, { target: { value: 'disconnect' } })
@@ -144,7 +144,7 @@ describe('an article’s words', () => {
   it('are drawn as text, never as markup, even inside a button’s name', () => {
     const hostile = '<img src=x onerror="alert(1)">'
     const article: Article = {
-      id: 'words',
+      id: 'review',
       title: 'Test',
       summary: `${hostile} summary`,
       steps: [`Press **${hostile}**.`],
@@ -165,7 +165,7 @@ describe('an article’s words', () => {
   it('draws a button’s name in a term’s meaning in bold, as the steps do, still as text', () => {
     const hostile = '<img src=x onerror="alert(1)">'
     const article: Article = {
-      id: 'words',
+      id: 'review',
       title: 'Test',
       summary: 'summary',
       steps: ['Press **Go**.'],

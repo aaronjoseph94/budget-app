@@ -50,39 +50,39 @@ export const ARTICLES: readonly Article[] = [
   {
     id: 'start',
     title: 'Start here',
-    summary:
-      'Getting started walks you through setting up, one step at a time: your name, lists, pay, bills, savings goals, first statement, this month’s starting balance, free AI and your iPhone. A few minutes each, and nothing breaks if you stop part way.',
+    summary: 'Getting started sets the app up in nine short steps.',
     steps: [
-      'Press **Open Getting started**, above; it says how many of the nine steps are done.',
+      'Press **Open Getting started**, above.',
       'Do what the step shows, then press **Continue**.',
-      'To leave a step for now, press **Do this later**, which moves it to the end.',
-      'To go to any step, tap it in **All 9 steps** (open beside the step on a wide screen; on a phone, open it first).',
-      'Come back any time from **Help**: this page says how many are done.',
+      'Press **Do this later** to put a step off; it moves to the end.',
+      'Tap any step in **All 9 steps** to jump to it.',
+      'Come back from **Help** any time; this page says how many are done.',
     ],
-    done: 'Getting started says "Your coach is ready", or this page says All done.',
+    done: 'Getting started says “Your coach is ready”.',
     stuck:
-      'Do the steps you can and leave the rest. A step that says it can’t be checked yet could not be read just now; if it keeps saying so, open One-time updates. Every screen works with what it has, and says what it is missing in one line.',
-    related: ['getting-around', 'updates', 'statements', 'review', 'free-ai', 'iphone'],
+      'Do the steps you can and leave the rest. A step that says it can’t be checked yet could not be read just now. If it keeps saying so, open One-time updates.',
+    related: ['getting-around', 'add', 'updates'],
   },
   {
     id: 'getting-around',
-    title: 'Finding your way around',
-    summary:
-      'On a phone, five buttons along the bottom; on a computer, a sidebar on the left and a bar along the top. Every screen is a tap or two away.',
+    title: 'Getting around',
+    summary: 'Five buttons along the bottom on a phone; a sidebar on a computer.',
     steps: [
-      'On a phone, use the buttons along the bottom: **Month**, **Coach**, **Add**, **Review** and **More**, which holds the rest.',
-      'On a computer, use the sidebar on the left, grouped **Plan**, **Money**, **Coach**, **Inbox** and **More**.',
-      'Press a group’s name to open or close it; **Plan** always stays open.',
-      'Press the sidebar button at the top left to fold the sidebar to its icons, and press it again to open it.',
-      'Read where you are at the top, such as Coach › Ask, and press the first name to open it.',
-      'Press **Search or jump to…** at the top, or ⌘K on a Mac and Ctrl+K elsewhere, to search Help.',
-      'Press **Add** at the top right to bring in a statement, a photo or one entry.',
-      'To sign out, press the button beside your name at the foot of the sidebar, or **Sign out** under **Account** in **Settings**.',
+      'On a phone, use **Month**, **Coach**, **Add**, **Review** and **More**.',
+      'On a computer, open a sidebar group: **Plan**, **Money**, **Coach**, **Inbox**, **More**.',
+      'Tap **Week**, **Month** or **Year** in the switch at the top.',
+      'Open **Paycheck** under Plan, or under **More** on a phone.',
+      'Use the arrows by the period’s name to step back or forward.',
+      'Press **Search or jump to…**, or ⌘K, to search Help.',
     ],
-    done: 'you can reach every screen from the sidebar on a computer, or from the bottom buttons and More on a phone.',
+    done: 'you can reach every screen and step back a month.',
     stuck:
-      'In a narrower window the sidebar shows only its icons: point at one to see its name. Ask and the Sunday check-in have no place of their own in the sidebar: open them from the **Coach**. AI settings is the **AI** tab of **Settings**. Getting started opens from **Help**, with **Open Getting started** on its first article. Week, Month and Year are also in the switch at the top of each. A closed group says on its name how many rows wait in Review.',
-    related: ['start', 'periods', 'signing-in'],
+      'Paycheck needs **How often** and **First payday** on an Income row in **Lists**. Empty rows fold away: press **Show 3 empty**. A narrow sidebar shows icons only: point at one for its name.',
+    related: ['start', 'budgets', 'coach'],
+    terms: [
+      { term: 'Budgeted, Actual, Left', meaning: 'What you planned, what happened, and the difference.' },
+      { term: '% pill', meaning: 'What a list has spent of its budget, on the list’s head.' },
+    ],
   },
   {
     id: 'updates',
@@ -103,26 +103,6 @@ export const ARTICLES: readonly Article[] = [
     stuck:
       'If Supabase says anything other than Success, stop there: nothing is lost, and the message names the line. A file already pasted is refused with nothing changed, or runs again to the same result, so pasting one again does no harm. The AI helper needs no new secrets: the receipts key is used again if you set one. The signing key, sign-in for AI apps and the AI apps server are for connecting Claude or ChatGPT; until they are done, this page names them next and the rest of the app works. If the signing key still shows after you changed it, sign out and back in, so your sign-in is made with the new key. If **Edge Functions** lists read-receipt, paste its new version over it or delete it: an older copy lets anyone with the app’s public key use your Gemini key. Updates from before this version are copied from GitHub, as the setup guide says; the Copy buttons carry only the newest ones.',
     related: ['start', 'free-ai', 'ai-apps', 'codes'],
-  },
-  {
-    id: 'periods',
-    title: 'Week, Month and Year',
-    summary:
-      'Three ways to look at the same money, shortest first. The Month opens first; the switch at the top moves between them. Paycheck is a screen of its own.',
-    steps: [
-      'Open the **Month** to see this month: what you planned, what you spent, and what is left.',
-      'Tap **Week** in the switch at the top to see Monday to Sunday.',
-      'Tap **Year** to see twelve months side by side, and choose the first one under **Starts in**.',
-      'Open **Paycheck** from the sidebar, or **More** on a phone, for one pay period.',
-      'Use the arrows around the period’s name to step back or forward one period.',
-      'Tap a row to see the charges behind it.',
-      'Tap a budget to type it: every budget you can type is underlined with dots, and a pencil marks a row with none yet.',
-      'Read the % pill on a list’s head: how much of its budget it has spent, or of its goal on Income and Savings.',
-    ],
-    done: 'you can move between the three views, open Paycheck, and step back to last month.',
-    stuck:
-      'Paycheck needs to know when you are paid. Choose **How often** and a **First payday** on an Income row in **Lists**, under **Settings**. On a phone, the Week is in the switch, not the bottom bar. Rows with nothing in them fold away: press **Show 3 empty** (with your own number) to see them.',
-    related: ['comparisons', 'budgets', 'wrong-number'],
   },
   {
     id: 'statements',
@@ -194,7 +174,7 @@ export const ARTICLES: readonly Article[] = [
     done: 'each list’s head shows what it spent of its budget with a % pill, each row shows Budgeted, Actual and Left, and the Bill calendar shows your bills on their days.',
     stuck:
       'A bill with no charge yet this month counts its planned amount. When the real charge comes in, it takes the planned amount’s place, so it is never counted twice. With no budget typed, a bill’s planned amount is its budget, marked planned, so a bill paid as planned is 100% and 0.00 left; a budget you type, even $0.00, is used instead. When a shop charges a Bills, Debts or Subscriptions row every month and that row has no monthly amount, Lists says **Looks like a monthly bill: add it?** Press **Fill it in**, check the day and the amount, then press **Save**; nothing is saved until you do.',
-    related: ['periods', 'lists', 'wrong-number', 'start'],
+    related: ['getting-around', 'lists', 'wrong-number', 'start'],
   },
   {
     id: 'lists',
@@ -213,7 +193,7 @@ export const ARTICLES: readonly Article[] = [
     done: 'each category sits on the list it belongs to, and **Fixed monthly bills** shows what your bills come to.',
     stuck:
       'A card you pay off from your bank belongs on Not spending, since what you bought on it is already counted. A category with a monthly amount stays on its list until you press **Stop** under it. A category that still has charges cannot be removed: on the Month, tap its row and use **Move to…** on each charge first. When a shop charges a row every month, Lists says **Looks like a monthly bill: add it?**; press **Fill it in**, check the day and the amount, then press **Save**.',
-    related: ['budgets', 'periods', 'start'],
+    related: ['budgets', 'getting-around', 'start'],
   },
   {
     id: 'savings',
@@ -341,7 +321,7 @@ export const ARTICLES: readonly Article[] = [
     done: 'you know which figure counts only what has happened, and which one looks ahead.',
     stuck:
       'Both need this month’s starting balance, typed under **Start**; without it neither is shown. End of month stays as your workbook works it out, so it never moves because of a guess. The forecast shows only on this month, since it speaks of today.',
-    related: ['forecast', 'periods', 'wrong-number'],
+    related: ['forecast', 'getting-around', 'wrong-number'],
   },
   {
     id: 'reports',
@@ -377,7 +357,7 @@ export const ARTICLES: readonly Article[] = [
     done: 'you can see, row by row, what went up and what went down.',
     stuck:
       'A comparison needs records from last time. If it says your records start later, bring in the statement before that date on **Add**.',
-    related: ['periods', 'statements', 'wrong-number'],
+    related: ['getting-around', 'statements', 'wrong-number'],
   },
   {
     id: 'ask',
@@ -632,32 +612,6 @@ export const ARTICLES: readonly Article[] = [
     stuck:
       'It has to be Safari. If Add to Home Screen is missing, tap **Edit Actions** at the bottom of the Share list and add it. Sign in there with your password: an emailed link opens in Safari instead of the app.',
     related: ['start', 'signing-in'],
-  },
-  {
-    id: 'words',
-    title: 'Words the app uses',
-    summary: 'The words on the screens, in plain terms.',
-    steps: ['Find the word in the list below.', 'Tap **?** beside a screen’s title to read how that screen uses it.'],
-    done: 'the word on the screen makes sense.',
-    stuck: 'If a word is not here, search Help: press **Search or jump to…** at the top on a computer, or open **Help** from **More** on a phone.',
-    related: ['periods', 'wrong-number'],
-    terms: [
-      { term: 'Start', meaning: 'The balance your bank showed on the 1st of the month, as you typed it.' },
-      { term: 'Spent', meaning: 'Everything that went out this month, with each bill counted even before its charge arrives.' },
-      { term: 'Left to spend', meaning: 'What your Variable expenses budgets allow that is not spent yet.' },
-      { term: 'End of month', meaning: 'Start, plus what came in, less what was spent and saved.' },
-      { term: 'Budgeted, Actual, Left', meaning: 'What you planned, what happened, and the difference.' },
-      { term: 'Planned', meaning: 'A bill’s monthly amount, counted until its real charge comes in, and used as its budget when you have not typed one.' },
-      { term: '% pill', meaning: 'What a list has spent of its budget, or received or saved of its goal on Income and Savings, on the list’s head; none shows with no budget.' },
-      { term: 'Not spending', meaning: 'Money that moves but is not spent, such as paying off your card.' },
-      { term: 'Pay period', meaning: 'From one payday to the day before the next.' },
-      { term: 'Paycheck', meaning: 'Your budget one pay period at a time, under Plan in the sidebar and under More on a phone.' },
-      { term: 'Lists', meaning: 'Settings’ first tab: your name and your lists, with monthly amounts and pay days.' },
-      { term: 'Fund', meaning: 'A savings category that money is moved into, with a goal.' },
-      { term: 'Main goal', meaning: 'The savings goal the Coach and the Week show. You choose it on Savings.' },
-      { term: 'Review', meaning: 'Where new rows wait for you to approve them.' },
-      { term: 'One-time update', meaning: 'Something pasted into Supabase once, so a new part of the app has somewhere to keep its figures.' },
-    ],
   },
 ]
 

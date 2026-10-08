@@ -10,7 +10,7 @@ import type { HelpTopic } from '../help/topics.js'
 
 /** The questions each Help topic is most about; a topic not here suggests the general few. */
 const ABOUT: Partial<Record<HelpTopic, readonly AskIntentName[]>> = {
-  periods: ['spend_in', 'compare', 'budget_left', 'explain_month'],
+  'getting-around': ['spend_in', 'compare', 'budget_left', 'explain_month'],
   budgets: ['budget_left', 'subscriptions', 'top_categories'],
   savings: ['goal_date', 'what_if_cut'],
   goals: ['goal_date', 'what_if_cut'],

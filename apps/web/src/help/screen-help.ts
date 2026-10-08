@@ -11,10 +11,11 @@ export const SETTINGS_TAB_HELP: Readonly<Record<SettingsTab, HelpTopic>> = { lis
  * Help itself has no ?.
  */
 export const SCREEN_HELP: Readonly<Record<Exclude<Screen, 'help'>, HelpTopic>> = {
-  month: 'periods',
-  week: 'periods',
-  paycheck: 'periods',
-  year: 'periods',
+  // The four periods and the switch between them are in Getting around (PRD 03).
+  month: 'getting-around',
+  week: 'getting-around',
+  paycheck: 'getting-around',
+  year: 'getting-around',
   calendar: 'budgets',
   review: 'review',
   add: 'add',

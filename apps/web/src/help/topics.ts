@@ -10,7 +10,6 @@ export const HELP_TOPICS = [
   'start',
   'getting-around',
   'updates',
-  'periods',
   'statements',
   'review',
   'add',
@@ -38,7 +37,6 @@ export const HELP_TOPICS = [
   'codes',
   'signing-in',
   'iphone',
-  'words',
 ] as const
 
 export type HelpTopic = (typeof HELP_TOPICS)[number]
