@@ -3907,3 +3907,37 @@ not add.
 `amount_too_large` rejection; word each screen's catch-all as "something in
 this month could not be added up"; a later migration adds
 `check (x between -99999999999 and 99999999999)` to each money column.
+
+## `ai` is a screen id that is never drawn, and the AI tab hides a title by CSS
+
+**Seen:** 2026-10-08, building Settings' tabs (ADR 0014 §2). `#/ai` reads
+as Settings › AI, but `'ai'` stays in `SCREENS`, `SCREEN_NAME`,
+`SCREEN_HELP`, `PARENT` and `VIEWS` because `apps/web/src/ai/LineLink.tsx`
+and `AiSettingsScreen.tsx` still name it, and both belong to the AI tree
+until the two merge. The AI tab draws `AiSettingsScreen` through
+`settings/AiTab.tsx`, whose arbitrary variants hide the screen's own title
+row and "← Settings" by their place in the tree; in jsdom the hidden h1 is
+still found, so `ai-settings*.test.tsx` keep passing against a title the
+owner never sees.
+
+**Why not fixed here:** the files are the other tree's.
+
+**To settle:** at the merge, give `AiSettingsScreen` its `embedded` prop
+(the AI tree's AI-5d), make `AiTab.tsx` a pass-through or delete it, point
+`LineLink` at `{ screen: 'settings', param: 'ai' }`, and drop `'ai'` from
+the screen ids and every record keyed by them.
+
+## The Help bold-name check reads comments as drawn words
+
+**Seen:** 2026-10-08, removing the Setup screen. `help-articles.test.ts`
+holds every `**bold**` name in Help to a word the app draws, but it reads
+each source file's whole text, comments and doc blocks included, with a
+regex bounded by non-letters. "Setup" in a code comment would have kept
+`**Setup**` passing after the screen was gone; the articles were changed
+anyway, so nothing slipped, but the check is weaker than it reads.
+
+**Why not fixed here:** its own slice; a stricter reader (JSX text and
+string literals only) will surface names the app draws only in templates.
+
+**To settle:** strip comments before joining `APP_WORDS`, or match only
+inside quotes and JSX text, and fix what it then finds.
