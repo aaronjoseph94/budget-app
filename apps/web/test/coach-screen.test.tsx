@@ -60,6 +60,17 @@ describe('the Coach’s flight card', () => {
     await expectNoAxeViolations()
   })
 
+  // Beside the ring the figures get 8rem at 320 px; WebKit drew "saved of
+  // $30,000.00" on one line past the card and the screen (bug bash, 05).
+  // jsdom lays nothing out: the browser suite's 320 test measures it.
+  it('lets "saved of" and the target wrap beside the ring', async () => {
+    go('/coach')
+    renderScreen(<Shell />, withGoal(1_265_000))
+
+    const line = (await screen.findByText(para('$12,650.00 saved of $30,000.00'))) as HTMLElement
+    for (const part of line.querySelectorAll('span')) expect(part.classList.contains('whitespace-nowrap')).toBe(false)
+  })
+
   // Mockup A (step 7): the goal card alone is the wide screen's right column,
   // after the day's line on a phone; Ask closes the rest, never below the fold
   // of a sticky column (design-review P2 item 11).

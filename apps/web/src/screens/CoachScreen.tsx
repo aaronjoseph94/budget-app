@@ -145,7 +145,7 @@ function GoalsCard({ funds, outlooks, words }: { funds: FundsState; outlooks: Ou
             ) : null}
             <p className="text-sm">
               <span className="tnum font-semibold">{formatCents(main.savedCents)}</span>
-              <span className="whitespace-nowrap text-muted-foreground"> saved of {formatCents(main.targetCents)}</span>
+              <span className="text-muted-foreground"> saved of {formatCents(main.targetCents)}</span>
             </p>
           </div>
         </div>

@@ -20,3 +20,18 @@ for (const s of SCREENS) {
     await expectClean(browser)
   })
 }
+
+/**
+ * 320 CSS pixels, the width WCAG's reflow rule names (1.4.10) and the
+ * smallest iPhone's: every screen still fits without scrolling sideways.
+ * WebKit's wider fallback font found the Coach's goal card past the edge
+ * here when 390 fitted (docs/design/rework/05-bug-bash.md).
+ */
+for (const s of SCREENS) {
+  test(`${s.path} fits 320 wide`, async ({ app, screen, browser }) => {
+    await browser.setViewport({ width: 320, height: 640 })
+    await app.open(s.path)
+    await expectScreen(screen, browser, s.name)
+    await expectClean(browser)
+  })
+}
