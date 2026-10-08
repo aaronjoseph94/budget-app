@@ -302,7 +302,7 @@ describe('Getting started (plan §8.1)', () => {
     await screen.findByRole('heading', { name: 'Put it on your iPhone' })
     fireEvent.click(screen.getByText(/^All 9 steps/))
     fireEvent.click(screen.getByRole('button', { name: /This month’s starting balance/ }))
-    expect(await screen.findByText(/^Once a whole month of your records is in, this offers a budget/)).toBeTruthy()
+    expect(await screen.findByText('Once a whole month of records is in, this offers a budget for each spending category. Each comes from what you really spent.')).toBeTruthy()
   })
 
   it('says in one line when starter budgets need a one-time update, and the balance still works', async () => {

@@ -82,8 +82,8 @@ export function CoachCards(props: {
     <section aria-label="Insights" className="space-y-3">
       {cards.length === 0 ? (
         <p ref={quiet} tabIndex={-1} className="text-sm text-muted-foreground outline-none">
-          Nothing needs your attention today. The Coach speaks up when a category moves more than it usually does, or a
-          budget runs close.
+          Nothing needs your attention today. The Coach speaks up when a category moves more than usual, or a budget runs
+          close.
         </p>
       ) : (
         <ul ref={list} className="space-y-3">

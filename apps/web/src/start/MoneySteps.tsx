@@ -164,14 +164,14 @@ function StarterOffers({ month }: { month: string }) {
       </h3>
       {completeMonths === 0 ? (
         <p className="text-sm text-muted-foreground">
-          Once a whole month of your records is in, this offers a budget for each spending category, from what you really spent.
+          Once a whole month of records is in, this offers a budget for each spending category. Each comes from what you really spent.
         </p>
       ) : offers.length === 0 ? (
         <p className="text-sm text-muted-foreground">Every spending category already has a budget, or nothing to base one on.</p>
       ) : (
         <>
           <p className="text-sm text-muted-foreground">
-            What you usually spend, rounded up to $5. Nothing is saved until you press Accept; each applies from this month on, and you can change it on the Month.
+            What you usually spend, rounded up to $5. Nothing is saved until you press Accept. Each applies from this month on, and you can change it on the Month.
           </p>
           <ul className="divide-y rounded-xl border bg-card px-4">
             {offers.map((offer) => (

@@ -23,7 +23,7 @@ export const STEP_WORDS: Readonly<Record<StepId, StepWords>> = {
   },
   lists: {
     title: 'Your lists',
-    why: 'Every charge is filed under a category, and each category sits on a list, as in your workbook. The starter list fills them with names you can rename.',
+    why: 'Every charge is filed under a category, and each category sits on a list. The starter list fills them with names you can rename.',
     time: 'about 2 minutes',
   },
   pay: {
@@ -33,7 +33,7 @@ export const STEP_WORDS: Readonly<Record<StepId, StepWords>> = {
   },
   bills: {
     title: 'Your bills',
-    why: 'A bill’s monthly amount counts on the Month until its real charge arrives, so nothing due is forgotten.',
+    why: 'A bill’s monthly amount counts on the Month until its real charge arrives. Nothing due is forgotten.',
     time: 'about 3 minutes',
   },
   goals: {
@@ -48,7 +48,7 @@ export const STEP_WORDS: Readonly<Record<StepId, StepWords>> = {
   },
   balance: {
     title: 'This month’s starting balance',
-    why: 'With what your bank showed on the 1st, the Month can say where the month will end, and the Forecast what is safe to spend.',
+    why: 'With your bank’s balance on the 1st, the Month can say where it will end. The Forecast can say what is safe to spend.',
     time: 'about 1 minute',
   },
   ai: {

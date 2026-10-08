@@ -18,7 +18,7 @@ export function Finish({ headingRef }: { headingRef: RefObject<HTMLHeadingElemen
         Your coach is ready
       </h2>
       <p className="text-base text-muted-foreground">
-        Everything is set up. The Coach reads your month each day and says what changed, what to trim and how your goals are coming along.
+        Everything is set up. The Coach reads your month each day. It says what changed, what to trim and how your goals are going.
       </p>
       <Button size="lg" onClick={() => navigate('coach')}>
         Open the Coach

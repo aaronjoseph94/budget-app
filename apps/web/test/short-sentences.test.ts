@@ -20,8 +20,6 @@ const NOT_PROSE = new Set(['../src/components/ui/icons.tsx', '../src/components/
 const NOT_YET = new Set([
   '../src/ImportScreen.tsx',
   '../src/auth.tsx',
-  '../src/coach/CoachCards.tsx',
-  '../src/coach/WhySheet.tsx',
   '../src/format.ts',
   '../src/help/UpdatesPanel.tsx',
   '../src/help/updates.ts',
@@ -47,9 +45,6 @@ const NOT_YET = new Set([
   '../src/screens/WeekScreen.tsx',
   '../src/screens/YearScreen.tsx',
   '../src/settings/ListsTab.tsx',
-  '../src/start/Finish.tsx',
-  '../src/start/MoneySteps.tsx',
-  '../src/start/steps.ts',
 ])
 
 const LIMIT = 90

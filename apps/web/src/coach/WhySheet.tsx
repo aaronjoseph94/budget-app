@@ -26,33 +26,32 @@ const LABEL: Readonly<Record<string, string>> = {
 }
 
 const REASON: Readonly<Partial<Record<Fact['kind'], string>>> = {
-  category_change: 'It shows because the change is bigger than this category usually moves in a month, allowing for how far into the month it is.',
+  category_change: 'It shows because this category moved more than it usually does by this point in a month.',
   over_budget: 'It shows because spending on it is past the budget you set.',
   near_budget: 'It shows because 90% or more of its budget is used.',
   budget_pace: 'It shows because, at the pace so far, the month would end well over the budget you set.',
-  stale_data: 'It shows because your latest statement ends more than 10 days ago, so the Coach may be missing charges.',
+  stale_data: 'It shows because your latest statement ends over 10 days ago. The Coach may be missing charges.',
   rows_waiting: 'It shows because charges waiting in Review are not counted anywhere until you file them.',
-  category_trend:
-    'It shows because it moved the same way in most of the last few whole months, and further than it usually swings. See Reports, Trends.',
+  category_trend: 'It shows because it moved the same way in most recent whole months, past its usual swing. See Reports, Trends.',
   saved_more: 'It shows because more has gone into your savings than by this day last month.',
   goal_milestone:
-    'It shows because your savings passed a milestone since last week began: every 5 hours for a goal with a cost an hour, or every tenth of the target.',
+    'It shows because your savings passed a milestone since last week began. That is every 5 hours for a goal with a cost an hour, or every tenth of the target.',
   month_forecast:
-    'It shows every day: where the month is heading at your pace, from what has happened, your planned bills, pay still due and savings still planned. See Help, How the forecast works.',
+    'It shows every day: where the month is heading at your pace. It counts what has happened, planned bills, pay still due and savings still planned. See Help, Coach, Ask and the forecast.',
   price_rise:
-    'It shows because this shop charges you regularly, and its latest charge is at least 50 cents and 2% more than the one before. See Reports, Shops.',
+    'It shows because this shop charges you regularly and its latest charge rose. A rise is at least 50 cents and 2% over the one before. See Reports, Shops.',
   new_subscription:
-    'It shows because this shop has charged you a steady amount at regular gaps since a day in the last 100 days. If it is not a subscription, say so on Reports, Shops.',
-  large_charge: 'It shows because this charge is $50.00 or more, and at least three times a usual charge in its category over the 90 days before.',
-  new_shop: 'It shows because it is $100.00 or more, and the first charge from this shop in your records.',
+    'It shows because this shop charges a steady amount at regular gaps, all within 100 days. If it is not a subscription, say so on Reports, Shops.',
+  large_charge: 'It shows because this charge is $50.00 or more. It is at least three times a usual charge in its category over the 90 days before.',
+  new_shop: 'It shows because it is $100.00 or more, and this shop’s first charge in your records.',
   possible_double:
     'It shows because the same shop charged the same amount within 3 days. Nothing was removed or left out: if one was a mistake, ask the shop for a refund.',
   counted_twice:
-    'It shows because a charge you added and one from your statement are the same amount within 3 days, so one purchase may be counted twice. Nothing was removed.',
+    'It shows because a charge you added matches one from your statement within 3 days. One purchase may be counted twice. Nothing was removed.',
   spending_streak:
-    'It shows because the Week’s Left to spend stayed at $0.00 or more for 2 or more whole weeks in a row, against your weekly budgets. See Reports, Habits.',
+    'It shows because the Week’s Left to spend held at $0.00 or more for 2 whole weeks or more. See Reports, Habits.',
   personal_best:
-    'It shows because its last whole month was its lowest, by $1.00 or more, of up to 12 whole months, with 3 or more to go on. See Reports, Habits.',
+    'It shows because its last whole month was its lowest by $1.00 or more. It is set against up to 12 whole months, 3 at least. See Reports, Habits.',
 }
 
 /** The habits' wins (F40), whose slot names mean their own things. */
