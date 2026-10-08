@@ -4044,3 +4044,31 @@ timeout is never raised to make a test pass; a flake needs its cause.
 **To settle:** find what the removal awaits before it moves focus (the
 fake's delete and the reload after it), and have the test wait for the
 row to leave before it asks where focus is, as N170 asks of its test.
+
+## N176 — Supabase's API refuses a pass a moment after renewing it (PGRST303)
+
+**Seen:** 2026-10-08, by the owner: the Week said "Could not load your
+data … (code PGRST303)". The project's logs at 19:32:19 and 21:10:59 UTC
+show the same thing twice: a pass renewal succeeded, then four reads left
+together with the new pass, and the API answered three with 200 and one
+with 401. The client sent the same fresh pass each time (reproduced in
+Chromium with the app's supabase-js: it never sends an old pass after a
+renewal, waking from sleep or a hidden tab, with four reads at once, or
+with the device clock minutes off).
+
+**Cause:** Supabase's incident "401 errors due to JWT rejections"
+(2026-08-14 to 2026-09-29): newly refreshed JWTs rejected by PostgREST,
+a stale time cache. Fixed for projects upgraded to the latest Supabase
+version; this project still shows it.
+
+**Done here:** the client asks once more, a second later, with the pass
+it holds then, when PostgREST refuses the pass itself (PGRST301 or
+PGRST303, before any SQL runs); a pass refused twice reads as a sign-in
+to renew (`supabase.ts`, `format.ts`, tests in `supabase-client.test.tsx`).
+
+**Left:** the owner upgrades the project (Supabase → Project Settings →
+Infrastructure → Upgrade, or Restart project) so the API itself is fixed.
+The AI apps server (`packages/ai-apps`) calls PostgREST with a connected
+app's pass and has no such retry; if Claude or ChatGPT see the same 401
+right after a sign-in, give it the same one retry. A read that fails still
+borrows the import's "nothing was saved" wording in a few places.

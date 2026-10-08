@@ -151,6 +151,12 @@ describe('afterSomeSaved', () => {
     expect(afterSomeSaved(describeWriteFailure({ code: 'PGRST301' }))).toBe('Your session expired. Sign in again and retry. (code PGRST301)')
     expect(afterSomeSaved(describeWriteFailure({ code: 'XX999' }))).toBe('Something went wrong. (code XX999)')
   })
+
+  // A pass still refused after the client's one retry (N176) is a sign-in
+  // to renew, as PGRST301 is, not "something went wrong".
+  it('says a refused pass means signing in again (PGRST303)', () => {
+    expect(describeWriteFailure({ code: 'PGRST303' })).toBe('Your session expired. Sign in again and retry — nothing was saved. (code PGRST303)')
+  })
 })
 
 describe('the smaller display helpers', () => {

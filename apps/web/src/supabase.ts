@@ -22,8 +22,49 @@ export function sessionKeyOf(url: string): string {
 /** A note, for the sign-in screen after a reload, that only this device was signed out. */
 export const SIGNED_OUT_HERE_ONLY = 'budget.signed-out-here-only'
 
-export function createSupabase(env: Env): SupabaseClient {
-  return createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY, {
+/**
+ * What PostgREST answers when it turns down the sign-in pass itself, before
+ * any SQL runs: one it cannot read (PGRST301), or one whose times it will
+ * not accept (PGRST303). Nothing was read or written, so asking again is safe.
+ */
+const REFUSED_PASS = new Set(['PGRST301', 'PGRST303'])
+
+/** How long to wait before asking again: Supabase's API can refuse a pass for a moment after issuing it. */
+export const REFUSED_PASS_WAIT_MS = 1000
+
+/**
+ * One more try, a moment later, with the pass the client holds then, for a
+ * read or write whose pass PostgREST refused. Supabase's API refused passes
+ * a moment after a renewal (its stale time cache, Aug to Sep 2026; still
+ * seen here on 2026-10-08): one of four reads sent together failed and the
+ * Week said "Could not load your data". Its advice was to wait and try
+ * again. Only once: a pass refused twice is shown as it is.
+ */
+export function retryRefusedPass(inner: typeof fetch, currentPass: () => Promise<string | null>, waitMs: number): typeof fetch {
+  return async (input, init) => {
+    const reply = await inner(input, init)
+    if (reply.status !== 401 || input instanceof Request || !String(input).includes('/rest/v1/')) return reply
+    const answer: unknown = await reply
+      .clone()
+      .json()
+      .catch(() => null)
+    const code = typeof answer === 'object' && answer !== null && 'code' in answer ? answer.code : null
+    if (typeof code !== 'string' || !REFUSED_PASS.has(code)) return reply
+    await new Promise((resolve) => setTimeout(resolve, waitMs))
+    const pass = await currentPass()
+    if (pass === null) return reply
+    const headers = new Headers(init?.headers)
+    headers.set('Authorization', `Bearer ${pass}`)
+    return inner(input, { ...init, headers })
+  }
+}
+
+export function createSupabase(env: Env, { refusedPassWaitMs = REFUSED_PASS_WAIT_MS } = {}): SupabaseClient {
+  // The client is made below, so the retry reads it late, once a pass is refused.
+  let made: SupabaseClient | null = null
+  const currentPass = async () => (made === null ? null : ((await made.auth.getSession()).data.session?.access_token ?? null))
+  const send: typeof fetch = (input, init) => fetch(input, init)
+  made = createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY, {
     auth: {
       // The session is restored from storage and refreshed in the background,
       // so a magic link is clicked once rather than every visit.
@@ -39,8 +80,9 @@ export function createSupabase(env: Env): SupabaseClient {
     },
     // Watched so a request that gets no reply says "offline" once, above
     // the screen, rather than only as each screen's own failure (A26).
-    global: { fetch: watchNetwork((input, init) => fetch(input, init)) },
+    global: { fetch: watchNetwork(retryRefusedPass(send, currentPass, refusedPassWaitMs)) },
   })
+  return made
 }
 
 export type { SupabaseClient }

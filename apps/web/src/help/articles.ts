@@ -276,7 +276,7 @@ export const ARTICLES: readonly Article[] = [
       {
         term: 'A code in brackets',
         meaning:
-          'PGRST205, 42P01, PGRST202, 42883, 42703: a one-time update is missing. 42501, 28000, PGRST301: sign out and back in. No code: check your connection.',
+          'PGRST205, 42P01, PGRST202, 42883, 42703: a one-time update is missing. 42501, 28000, PGRST301, PGRST303: sign out and back in. No code: check your connection.',
       },
     ],
   },

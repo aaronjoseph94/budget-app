@@ -124,6 +124,8 @@ const WRITE_FAILURES: Record<string, string> = {
   '42501': 'Your sign-in does not allow this. Signing out and back in usually fixes it.',
   '28000': 'You are not signed in any more. Sign in again and retry — nothing was saved.',
   PGRST301: 'Your session expired. Sign in again and retry — nothing was saved.',
+  // Still refused after the client asked again a moment later (N176).
+  PGRST303: 'Your session expired. Sign in again and retry — nothing was saved.',
   // No answer at all: the write may have gone through before the connection
   // dropped, so this never claims nothing was saved (backend-b-03).
   '': 'Could not reach the database, or its answer was lost, so this may or may not be saved. Check your connection, then look before trying again.',
