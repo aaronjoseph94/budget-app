@@ -15,6 +15,7 @@
 import { useMemo, useSyncExternalStore } from 'react'
 import { isoDate, weekBounds } from '@budget/core'
 import { HELP_TOPICS } from './help/topics.js'
+import { isSettingsTab } from './settings/tab.js'
 
 export const SCREENS = [
   'month', 'week', 'review', 'add', 'more', 'ledger', 'settings', 'setup', 'year', 'paycheck', 'calendar', 'savings', 'debts',
@@ -34,8 +35,8 @@ export interface Address {
    * pay period on Paycheck (`#/paycheck/2026-09-11`); a Monday on the Week
    * (`#/week/2026-09-21`); a committed topic id on Help (`#/help/updates`);
    * `checkin` on the Coach; the Help topic Ask was opened from, "Ask about
-   * this" (`#/ask/forecast`). Null for the screen's own default, and on
-   * every other screen.
+   * this" (`#/ask/forecast`); a tab on Settings (`#/settings/lists`). Null
+   * for the screen's own default, and on every other screen.
    */
   readonly param: string | null
 }
@@ -64,6 +65,8 @@ const PARAM: Partial<Record<Screen, (param: string) => boolean>> = {
   help: (p) => HELP_TOPICS.some((t) => t === p),
   ask: (p) => HELP_TOPICS.some((t) => t === p),
   coach: (p) => p === 'checkin',
+  // One of Settings' four tabs (ADR 0014 §2).
+  settings: isSettingsTab,
 }
 
 /**

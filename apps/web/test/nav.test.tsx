@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { HOME, hashOf, readAddress, restoreAddress } from '../src/nav.js'
 import { HELP_TOPICS } from '../src/help/topics.js'
+import { SETTINGS_TABS } from '../src/settings/tab.js'
 
 afterEach(() => {
   window.location.hash = ''
@@ -78,6 +79,13 @@ describe('readAddress', () => {
     }
   })
 
+  it('reads a Settings tab, and only one of the four (ADR 0014 §2)', () => {
+    for (const tab of SETTINGS_TABS) expect(readAddress(`#/settings/${tab}`)).toEqual({ screen: 'settings', param: tab })
+    for (const hash of ['#/settings/Lists', '#/settings/setup', '#/settings/lists/more']) {
+      expect(readAddress(hash), hash).toEqual({ screen: HOME, param: null })
+    }
+  })
+
   it('reads a week by its Monday, and still opens this week at #/week (N46)', () => {
     expect(readAddress('#/week')).toEqual({ screen: 'week', param: null })
     expect(readAddress('#/week/2026-09-21')).toEqual({ screen: 'week', param: '2026-09-21' })
@@ -112,7 +120,7 @@ describe('readAddress', () => {
   it('writes back what it reads', () => {
     for (const hash of [
       '#/month/2026-09', '#/month', '#/settings', '#/year/2025-04', '#/paycheck/2026-09-11', '#/calendar/2026-02',
-      '#/coach', '#/coach/checkin', '#/forecast', '#/reports/2026-08', '#/ask', '#/ask/forecast', '#/help', '#/help/updates', '#/start', '#/ai', '#/week/2026-09-21',
+      '#/coach', '#/coach/checkin', '#/forecast', '#/reports/2026-08', '#/ask', '#/ask/forecast', '#/help', '#/help/updates', '#/start', '#/ai', '#/week/2026-09-21', '#/settings/ai',
     ]) expect(hashOf(readAddress(hash))).toBe(hash)
   })
 })
