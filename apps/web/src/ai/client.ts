@@ -60,16 +60,16 @@ export const PROVIDER_NAME: Readonly<Record<AiServiceStatus['provider'], string>
 
 const SAID: Readonly<Record<Exclude<AiState, 'on'>, { readonly sentence: string; readonly help: HelpTopic | null }>> = {
   off: { sentence: 'AI is off. Everything still works; the Coach uses the app’s own words.', help: null },
-  not_set_up: { sentence: 'AI isn’t set up yet. Everything still works in the app’s own words. Turn on free AI in AI settings, in about 2 minutes.', help: 'free-ai' },
+  not_set_up: { sentence: 'AI isn’t set up yet. Everything still works in the app’s own words. Turn on free AI in AI settings, in about 2 minutes.', help: 'ai' },
   not_deployed: { sentence: 'The AI helper isn’t installed yet. Everything else works. One-time updates shows how.', help: 'updates' },
   needs_update: { sentence: 'AI needs a one-time update. Everything else works. One-time updates shows which.', help: 'updates' },
   unreachable: { sentence: 'Couldn’t reach the AI helper. Check your connection and try again; everything else still works.', help: null },
   not_signed_in: { sentence: 'You’ve been signed out. Sign in again to use AI.', help: null },
-  limit_reached: { sentence: 'AI is resting until tomorrow: showing the app’s own words.', help: 'ai-rests' },
-  all_resting: { sentence: 'Every AI service is resting for a while: showing the app’s own words.', help: 'ai-rests' },
-  all_failed: { sentence: 'The AI services couldn’t answer just now: showing the app’s own words.', help: 'ai-rests' },
-  key_rejected: { sentence: 'An AI service turned down its key. Paste it again in AI settings.', help: 'free-ai' },
-  keys_locked: { sentence: 'Your saved key can’t be opened after a Supabase key change: paste it again.', help: 'free-ai' },
+  limit_reached: { sentence: 'AI is resting until tomorrow: showing the app’s own words.', help: 'ai' },
+  all_resting: { sentence: 'Every AI service is resting for a while: showing the app’s own words.', help: 'ai' },
+  all_failed: { sentence: 'The AI services couldn’t answer just now: showing the app’s own words.', help: 'ai' },
+  key_rejected: { sentence: 'An AI service turned down its key. Paste it again in AI settings.', help: 'ai' },
+  keys_locked: { sentence: 'Your saved key can’t be opened after a Supabase key change: paste it again.', help: 'ai' },
   helper_error: { sentence: 'The AI helper couldn’t finish that. Everything else works; try again later.', help: 'codes' },
 }
 

@@ -3,7 +3,7 @@ import type { SettingsTab } from '../settings/tab.js'
 import type { HelpTopic } from './topics.js'
 
 /** The article Settings' ? opens, by the tab showing (ADR 0014 §2). */
-export const SETTINGS_TAB_HELP: Readonly<Record<SettingsTab, HelpTopic>> = { lists: 'lists', budgets: 'budgets', ai: 'free-ai', account: 'ai-apps' }
+export const SETTINGS_TAB_HELP: Readonly<Record<SettingsTab, HelpTopic>> = { lists: 'lists', budgets: 'budgets', ai: 'ai', account: 'ai-apps' }
 
 /**
  * The article each screen's ? opens (plan §8.2), kept here rather than on

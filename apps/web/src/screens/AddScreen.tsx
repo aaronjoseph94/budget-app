@@ -639,7 +639,7 @@ type PhotoState =
 const PHOTO_LINKS: Readonly<Record<ReceiptLink, { readonly href: string; readonly words: string }>> = {
   updates: { href: hashOf({ screen: 'help', param: 'updates' }), words: 'See One-time updates' },
   ai: { href: hashOf({ screen: 'settings', param: 'ai' }), words: 'Open AI settings' },
-  'ai-rests': { href: hashOf({ screen: 'help', param: 'ai-rests' }), words: 'Why?' },
+  'ai-rests': { href: hashOf({ screen: 'help', param: 'ai' }), words: 'Why?' },
 }
 
 /** A photo's bytes as SHA-256 hex; null when the file cannot be read, and the receipt is then told apart only by its fields. */

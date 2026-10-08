@@ -111,7 +111,7 @@ export function CoachPanel() {
               ? 'On: when the Coach speaks of a shop, or Review asks for a category, the AI sees its name, with long numbers hidden. The Coach and Review never send an amount or a date; Just type it and receipt photos send what you give them.'
               : 'Off: the Coach tells the AI “a shop” instead of the name, and Review suggests no categories. The Coach and Review never send an amount or a date; Just type it and receipt photos send what you give them.'}
           </p>
-          <a href={hashOf({ screen: 'help', param: 'ai-sees' })} className={cn(LINE_LINK, 'text-sm')}>
+          <a href={hashOf({ screen: 'help', param: 'ai' })} className={cn(LINE_LINK, 'text-sm')}>
             What the AI sees
           </a>
         </>

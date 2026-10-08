@@ -61,7 +61,7 @@ describe('every way the AI helper can answer becomes one state and one sentence'
 describe('what AI settings says at the top', () => {
   it('says AI is not set up when no service has a key', async () => {
     const view = await statusWith(() => undefined)
-    expect([view.state, view.help]).toEqual(['not_set_up', 'free-ai'])
+    expect([view.state, view.help]).toEqual(['not_set_up', 'ai'])
     expect(view.status?.today).toEqual({ used: 0, cap: 40 })
   })
 
@@ -96,7 +96,7 @@ describe('what AI settings says at the top', () => {
     expect((await statusWith((f) => void (f.functions.aiStatus = aiStatusReply({ enabled: false })))).state).toBe('off')
     const services = aiStatusReply().services.map((s) => (s.provider === 'gemini' ? { ...s, ...saved() } : s))
     const spent = await statusWith((f) => void (f.functions.aiStatus = aiStatusReply({ services, today: { used: 40, cap: 40 } })))
-    expect([spent.state, spent.help]).toEqual(['limit_reached', 'ai-rests'])
+    expect([spent.state, spent.help]).toEqual(['limit_reached', 'ai'])
   })
 
   it('asks the helper for status with nothing but the action', async () => {

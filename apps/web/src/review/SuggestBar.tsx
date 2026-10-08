@@ -52,7 +52,7 @@ function stopLine(stopped: Stopped): ReactNode {
       return (
         <>
           The AI is resting. Try Suggest categories again later.{' '}
-          <a href={hashOf({ screen: 'help', param: 'ai-rests' })} className={SENTENCE_LINK}>
+          <a href={hashOf({ screen: 'help', param: 'ai' })} className={SENTENCE_LINK}>
             Why?
           </a>
         </>

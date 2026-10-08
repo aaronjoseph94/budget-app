@@ -28,7 +28,7 @@ function stopped(help: Extract<QuickHelp, { kind: 'stopped' }>): ReactNode {
     case 'limit_reached':
     case 'all_resting':
     case 'all_failed':
-      return <>The AI is resting, so fill in the rest yourself. {to(hashOf({ screen: 'help', param: 'ai-rests' }), 'Why?')}</>
+      return <>The AI is resting, so fill in the rest yourself. {to(hashOf({ screen: 'help', param: 'ai' }), 'Why?')}</>
     default:
       return help.view.sentence
   }

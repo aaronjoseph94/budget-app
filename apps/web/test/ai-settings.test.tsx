@@ -116,7 +116,7 @@ describe('AI settings says what is true, whatever the helper does', () => {
 
   it('says AI is not set up, with each service and today’s calls, when no key is anywhere', async () => {
     await open(createFakeSupabase(), 'AI isn’t set up yet. Everything still works in the app’s own words. Turn on free AI below, in about 2 minutes.')
-    expect(screen.getByRole('link', { name: 'Show me how' }).getAttribute('href')).toBe('#/help/free-ai')
+    expect(screen.getByRole('link', { name: 'Show me how' }).getAttribute('href')).toBe('#/help/ai')
     const services = within(await screen.findByRole('region', { name: 'Try in this order' }))
     // Free and quick first, with no order saved (ADR 0015).
     expect(services.getAllByRole('listitem').map((li) => li.textContent)).toEqual([

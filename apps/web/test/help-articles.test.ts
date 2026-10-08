@@ -108,22 +108,9 @@ describe('Help articles', () => {
       expect(text, a.id).not.toMatch(/bar at the top/)
       expect(text, a.id).not.toMatch(/open \*\*More\*\*, then/i)
     }
-    for (const id of ['free-ai', 'more-ai', 'ai-sees', 'ai-rests'] as const) {
-      // AI settings is Settings' AI tab (ADR 0014 §2).
-      expect(articleFor(id)?.steps[0], id).toMatch(/^Open \*\*Settings\*\*, then \*\*AI\*\*, and /)
-    }
+    // AI settings is Settings' AI tab (ADR 0014 §2).
+    expect(articleFor('ai')?.steps[0]).toBe('Open **Settings**, then **AI**.')
     expect(articleFor('coach')?.steps).toContain('Open **Reports** for the month in review, **Trends**, **Shops** and **Habits**.')
-  })
-
-  // The owner's brevity rule (2026-10-08): a sentence written for ADR 0015
-  // is short. The older sentences wait for the Help rewrite (PRD 03).
-  it('keeps the sentences written for the Free AI card under 90 characters', () => {
-    const [freeAi, moreAi, rests] = [articleFor('free-ai'), articleFor('more-ai'), articleFor('ai-rests')]
-    const written = [freeAi?.steps[2], freeAi?.steps[3], freeAi?.steps[5], moreAi?.summary, moreAi?.steps[0], moreAi?.steps[3], rests?.steps[0], rests?.steps[3]]
-    for (const text of written) {
-      expect(text).toBeTruthy()
-      for (const sentence of (text ?? '').replaceAll('**', '').split(/(?<=[.!?])\s+/)) expect(sentence.length, sentence).toBeLessThanOrEqual(90)
-    }
   })
 
   // MCP plan M12a: a connection starts from Connect a new AI app, inside its window.
@@ -141,7 +128,7 @@ describe('Help articles', () => {
     const apps = articleFor('ai-apps')
     const said = [apps?.stuck, ...(apps?.terms ?? []).map((t) => t.meaning)].join(' ')
     for (const words of [/Anthropic for Claude, OpenAI for ChatGPT/, /300 look-ups and 30 additions a day/, /cannot approve, reject, change or delete anything/]) expect(said).toMatch(words)
-    expect(apps?.related).toEqual(['connect-claude', 'connect-chatgpt', 'ai-review', 'ai-sees', 'review', 'updates'])
+    expect(apps?.related).toEqual(['connect-claude', 'connect-chatgpt', 'ai-review', 'ai', 'review', 'updates'])
   })
 
   // ADR 0013: the exact words to type, and that nothing changes until Apply.
@@ -197,7 +184,7 @@ const sentencesOf = (a: (typeof ARTICLES)[number]) =>
     .filter(Boolean)
 
 /** The articles rewritten short so far; the last slice lists all twelve (PRD 03). */
-const SHORT = ['start', 'getting-around', 'add', 'review', 'budgets', 'lists', 'savings', 'debts', 'coach'] as const
+const SHORT = ['start', 'getting-around', 'add', 'review', 'budgets', 'lists', 'savings', 'debts', 'coach', 'ai'] as const
 
 // The owner's brevity rule (PRD 03, 2026-10-08): twelve short articles.
 describe('Help’s length', () => {

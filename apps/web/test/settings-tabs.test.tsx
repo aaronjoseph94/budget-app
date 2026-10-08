@@ -142,8 +142,8 @@ describe('Settings, one screen with four tabs (ADR 0014 §2)', () => {
     expect(selected()).toBe('Lists')
   })
 
-  it('gives each tab its own article for the ?: Lists, Budgets and bills, Turn on free AI, and AI apps for Account', () => {
-    expect(SETTINGS_TAB_HELP).toEqual({ lists: 'lists', budgets: 'budgets', ai: 'free-ai', account: 'ai-apps' })
+  it('gives each tab its own article for the ?: Lists, Budgets and bills, AI, and AI apps for Account', () => {
+    expect(SETTINGS_TAB_HELP).toEqual({ lists: 'lists', budgets: 'budgets', ai: 'ai', account: 'ai-apps' })
   })
 })
 

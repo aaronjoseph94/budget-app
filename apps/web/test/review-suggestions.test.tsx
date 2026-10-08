@@ -317,7 +317,7 @@ describe('Review says why nothing was suggested, in its own words', () => {
     fake.functions.ai = (body) => (body['action'] === 'run' ? json({ ok: false, code: 'limit_reached' }, 429) : json(fake.functions.aiStatus))
     await asked(fake)
     expect(await screen.findByText(/The AI is resting\. Try Suggest categories again later\./)).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Why?' }).getAttribute('href')).toBe('#/help/ai-rests')
+    expect(screen.getByRole('link', { name: 'Why?' }).getAttribute('href')).toBe('#/help/ai')
   })
 
   it('keeps what was suggested before a limit stopped it, and says both', async () => {

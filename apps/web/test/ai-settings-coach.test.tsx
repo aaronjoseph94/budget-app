@@ -42,7 +42,7 @@ describe('How the Coach talks', () => {
     expect((await panel.findByRole<HTMLInputElement>('radio', { name: /Cheerleader/ })).checked).toBe(true)
     expect(panel.getByRole<HTMLInputElement>('radio', { name: /Straight talker/ }).checked).toBe(false)
     expect(panel.getByRole<HTMLInputElement>('switch', { name: 'Share shop names with the AI' }).checked).toBe(true)
-    expect(panel.getByRole('link', { name: 'What the AI sees' }).getAttribute('href')).toBe('#/help/ai-sees')
+    expect(panel.getByRole('link', { name: 'What the AI sees' }).getAttribute('href')).toBe('#/help/ai')
     await expectNoAxeViolations()
   })
 

@@ -47,7 +47,7 @@ function ReadByApp({ by }: { by: ReadBy }): ReactNode {
     ) : why.state === 'off' ? (
       <>AI is off, so the app read your question itself.</>
     ) : why.state === 'limit_reached' || why.state === 'all_resting' || why.state === 'all_failed' ? (
-      <>The AI is resting, so the app read your question itself. {to(hashOf({ screen: 'help', param: 'ai-rests' }), 'Why?')}</>
+      <>The AI is resting, so the app read your question itself. {to(hashOf({ screen: 'help', param: 'ai' }), 'Why?')}</>
     ) : (
       <>{why.sentence} The app read your question itself.</>
     )

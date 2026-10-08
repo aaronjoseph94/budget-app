@@ -207,7 +207,32 @@ export const ARTICLES: readonly Article[] = [
     done: 'you know how the month is going, and when you reach your goals.',
     stuck:
       'Words marked ✨ are the AI’s; every figure is the app’s own. The AI never sees an amount or a date. Safe to spend needs **Start** on the Month. A goal’s date comes from what you really moved into its fund each month.',
-    related: ['savings', 'free-ai', 'budgets'],
+    related: ['savings', 'ai', 'budgets'],
+  },
+  {
+    id: 'ai',
+    title: 'AI: turn it on, services, what it sees',
+    summary: 'AI writes the Coach’s words; all works without it.',
+    steps: [
+      'Open **Settings**, then **AI**.',
+      'If asked, press **Open One-time updates** first.',
+      'Press **Get** on a **Free AI** row and copy the key.',
+      'Paste it in that row and press **Save & test**.',
+      'Under **Advanced**: service order, **Use paid services**, tone.',
+      'Turn off **Share shop names with the AI** to send “a shop” instead.',
+      '**Use AI** off sends nothing at all.',
+    ],
+    done: 'it says “AI is on”.',
+    stuck:
+      'A busy service rests and the next is asked. Past the **Daily limit** the app uses its own words. Free services may keep what they are sent.',
+    related: ['coach', 'ai-apps', 'updates'],
+    terms: [
+      {
+        term: 'What the AI sees',
+        meaning:
+          'Coach and Review: kinds of change and names, never an amount, a balance or a date. Just type it and a photo: what you typed or the photo, today’s date, your category names.',
+      },
+    ],
   },
   {
     id: 'updates',
@@ -227,85 +252,7 @@ export const ARTICLES: readonly Article[] = [
     done: 'this page says "All done", and Settings › AI says AI is on.',
     stuck:
       'If Supabase says anything other than Success, stop there: nothing is lost, and the message names the line. A file already pasted is refused with nothing changed, or runs again to the same result, so pasting one again does no harm. The AI helper needs no new secrets: the receipts key is used again if you set one. The signing key, sign-in for AI apps and the AI apps server are for connecting Claude or ChatGPT; until they are done, this page names them next and the rest of the app works. If the signing key still shows after you changed it, sign out and back in, so your sign-in is made with the new key. If **Edge Functions** lists read-receipt, paste its new version over it or delete it: an older copy lets anyone with the app’s public key use your Gemini key. Updates from before this version are copied from GitHub, as the setup guide says; the Copy buttons carry only the newest ones.',
-    related: ['start', 'free-ai', 'ai-apps', 'codes'],
-  },
-  {
-    id: 'free-ai',
-    title: 'Turn on free AI',
-    summary:
-      'AI writes the Coach’s words for you, free with OpenRouter, Groq or Google Gemini. Everything works without it, in the app’s own words. Pasting a key takes about 2 minutes, once the one-time updates are in.',
-    steps: [
-      'Open **Settings**, then **AI**, and read the sentence at the top.',
-      'If it says the AI helper isn’t installed, or needs a one-time update, press **Open One-time updates** and do what it names next.',
-      'If Google Gemini’s row says **Already on**, you are done: that is your receipts key.',
-      'Otherwise press **Get** on a row under **Free AI**, and copy the key from the page that opens.',
-      'Come back to AI settings, paste the key in that row, and press **Save & test**.',
-      'Press **Test** to see how long that service takes.',
-      'To pick another model, press **Check which models work** and choose one the key can use.',
-    ],
-    done: 'the row says "Works · key ending …" and the top says "AI is on".',
-    stuck:
-      'If it says the key isn’t valid, copy it again from the service’s page, all of it. If the service is busy, the key is saved and tried again later. Nothing breaks while AI is off: the Coach and every other screen use the app’s own words. To stop using AI altogether, turn off **Use AI** at the top of AI settings: nothing from your records is sent to any AI service while it is off, and every screen uses the app’s own words. Turn it on again the same way. A key is a password the service gives you for the app to use; the app only ever shows its last four characters, and **Remove key** deletes it.',
-    related: ['updates', 'coach', 'more-ai'],
-  },
-  {
-    id: 'more-ai',
-    title: 'More AI services, paid ones too',
-    summary:
-      'Optional. One free service is enough; a second answers when the first is busy. OpenAI and Anthropic are paid, under Advanced, and used only if you switch them on.',
-    steps: [
-      'Open **Settings**, then **AI**, and find the service’s row under **Free AI** or **Advanced**.',
-      'Press the link that starts with **Get**, and create a key on the page that opens.',
-      'Copy the key, paste it in that row, and press **Save & test**.',
-      'Under **Advanced**, use the arrows in **Try in this order** to move a service up or down.',
-      'To let OpenAI or Anthropic answer, turn on **Use paid services**, knowing each use is billed to you by them.',
-      'Choose a **Daily limit** if 40 AI calls a day is too many or too few.',
-    ],
-    done: 'the row says "Works · key ending …" and the service sits where you want it under Try in this order.',
-    stuck:
-      'Free services may keep what they are sent, and people there may read it, as with Gemini’s free tier. A paid key does nothing until **Use paid services** is on, so nothing is billed by surprise. **Remove key** on a row deletes that key alone.',
-    related: ['free-ai', 'ai-rests'],
-  },
-  {
-    id: 'ai-sees',
-    title: 'What the AI sees, and how the Coach talks',
-    summary:
-      'For the Coach and Review, the AI is told what kind of thing changed, which way, and by a little or a lot, with your names for things, and never an amount, a balance or a date. You choose the Coach’s tone, and whether shop names are shared. **Use AI**, at the top of AI settings, turned off sends nothing at all.',
-    steps: [
-      'Open **Settings**, then **AI**, and press **Advanced** to find **How the Coach talks**.',
-      'Choose **Cheerleader** for a win first and never a telling-off, or **Straight talker** for plain words.',
-      'Turn **Share shop names with the AI** off to have the AI told “a shop” instead of the name, and Review’s suggestions stopped.',
-      'Open **Coach** to read today’s words in the tone you chose.',
-    ],
-    done: 'the Coach speaks in the tone you chose, and AI settings shows your choices.',
-    stuck:
-      'Free AI services may keep what they are sent, and people there may read it. That is why the Coach sends only kinds of change, directions and your names for things, with long numbers in a name hidden. Ask sends only your question as you typed it (so an amount you type is sent too), today’s date, your category names and the Help titles, never a figure or a charge from your records. If choosing a tone says it needs a one-time update, see **One-time updates**: until then the Coach cheers you on.',
-    related: ['coach', 'free-ai', 'updates'],
-    terms: [
-      { term: 'Sent for the Coach', meaning: 'what kind of change each is, up or down, a little or a lot, how many months of records it rests on, your category and goal names, and a short list of quotes.' },
-      { term: 'Sent for Review’s suggestions', meaning: 'each shop’s name with long numbers hidden, whether it was money in or out, whether it was small (under $20), medium (under $100) or large, and your category names.' },
-      { term: 'Never sent for the Coach or Review', meaning: 'an amount, a balance, a date, a card or account number, your name or your email.' },
-      { term: 'Sent for Just type it', meaning: 'what you typed, which can include an amount and a shop’s name, today’s date and your category names.' },
-      { term: 'Sent for a receipt photo', meaning: 'the photo, with the shop, total and date printed on it.' },
-      { term: 'Use AI off', meaning: 'nothing is sent to any AI service, and every screen uses the app’s own words.' },
-      { term: '✨', meaning: 'words written by AI from your numbers. Every figure in them is the app’s own.' },
-    ],
-  },
-  {
-    id: 'ai-rests',
-    title: 'Why the AI sometimes rests',
-    summary:
-      'Free AI has daily limits, and so does the app. When a service is busy or out of free uses it rests for a while, and the next one is asked. When none can answer, the app shows its own words: nothing breaks.',
-    steps: [
-      'Open **Settings**, then **AI**, and read the top sentence and **Today: N of 40** under **Advanced**.',
-      'If today’s calls reached the limit, wait until tomorrow, or raise the **Daily limit**.',
-      'If every service is resting, wait a minute or two and press **Check again**.',
-      'To have another service answer while one rests, add a free key under **Free AI**.',
-    ],
-    done: 'the top of AI settings says "AI is on" again.',
-    stuck:
-      'The free services reset overnight, at midnight Pacific time. A service that turns down its key is passed over until you paste the key again. While AI rests, the Coach and every other screen use the app’s own words, with your real figures.',
-    related: ['more-ai', 'free-ai'],
+    related: ['start', 'ai', 'ai-apps', 'codes'],
   },
   {
     id: 'ai-apps',
@@ -325,7 +272,7 @@ export const ARTICLES: readonly Article[] = [
     done: 'your AI app answers with the figures your screens show, and anything it adds or suggests waits in Review until you approve or apply it.',
     stuck:
       'An AI app cannot approve, reject, change or delete anything: only you can, in the app. A change it suggests waits under Suggested changes in Review, and only your **Apply** makes it. What it adds is marked Added by an AI app in Review, and in All transactions once you approve it. Approving or moving it files that one entry only: an AI app’s words are never learned as a shop the app files by itself. If a chat gives a figure that differs from your screen, your screen is right: the app hands the AI its figures ready to quote, and what it then writes is its own. Shop names come from your statements, and anyone can name a shop to read like an instruction. All Budget lets an AI do is add to Review and suggest changes for you to apply, but one that also has a connector able to send email or messages could be tricked into sending your figures on, so use Budget in chats where no other connector can send anything. If your AI app says the budget app needs a one-time update, or cannot reach it, or Let AI apps connect will not turn on, open One-time updates: AI apps wait for Allow new users to sign up to be off in Supabase, for the AI helper’s new version, and for read-receipt to be deleted or replaced. In an emergency, in this order: first press **Disconnect** beside each app under Connected apps, which should end its sign-in; then turn off **Let AI apps connect**, which stops every AI app reaching your budget; then in Supabase open the **SQL Editor** and run delete from auth.sessions; which ends every sign-in to your account for certain, yours too, so you sign in again after; and only then open **Authentication**, then **OAuth Server**, and turn it off, so no AI app can sign in again. With it off first, Connected apps cannot list an app to disconnect.',
-    related: ['connect-claude', 'connect-chatgpt', 'ai-review', 'ai-sees', 'review', 'updates'],
+    related: ['connect-claude', 'connect-chatgpt', 'ai-review', 'ai', 'review', 'updates'],
     terms: [
       { term: 'It can', meaning: 'read your figures (a month, week, pay period or year, what is left in each category, the forecast, your savings goals and your debts), search your approved charges, see what waits in Review and your category names, add a purchase or money received to Review, suggest a category for a row waiting there, and suggest changes to your budget, which wait in Review until you apply them.' },
       { term: 'It cannot', meaning: 'approve or apply anything, or change anything in your budget itself: a budget, category, goal, charge or setting changes only when you tap Apply; delete anything; see a receipt photo; use the AI keys you saved in the app; or reach your budget while Let AI apps connect is off.' },
