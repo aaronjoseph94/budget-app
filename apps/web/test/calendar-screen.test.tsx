@@ -297,12 +297,12 @@ describe('CalendarScreen, a bill opened (N51)', () => {
     ])
   })
 
-  it('says a planned bill has nothing charged yet, and that its amount is from Setup', async () => {
+  it('says a planned bill has nothing charged yet, and that its amount is from Lists', async () => {
     renderScreen(<CalendarScreen month="2026-09" />, seeded())
     const agenda = within(await screen.findByRole('region', { name: 'Week of 1 – 5 Sep' }))
     fireEvent.click(agenda.getByRole('button', { name: 'Rent' }))
 
     const sheet = within(screen.getByRole('dialog', { name: 'Rent' }))
-    expect(sheet.getByText(/^No charges filed here in September\. The amount above is its monthly amount from Setup\./)).toBeTruthy()
+    expect(sheet.getByText(/^No charges filed here in September\. The amount above is its monthly amount from Lists\./)).toBeTruthy()
   })
 })

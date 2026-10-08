@@ -124,10 +124,10 @@ function SafeCard({ safe, names }: { safe: SafeToSpend; names: (id: string) => s
         </p>
       )}
       {safe.status === 'nothing_left' ? <p>Nothing left to spend safely this month, once your bills and savings are counted.</p> : null}
-      {/* A pay schedule is set in Setup's Income card; an Income goal is typed on the Month, where the workbook types it. */}
+      {/* A pay schedule is set in Lists' Income card; an Income goal is typed on the Month, where the workbook types it. */}
       {safe.payNotCounted.length === 0 ? null : (
         <p className="text-sm text-muted-foreground">
-          {`Pay from ${safe.payNotCounted.map(names).join(' and ')} is not counted: give ${safe.payNotCounted.length === 1 ? 'it' : 'each'} a pay schedule in Setup, or a goal on the Month.`}
+          {`Pay from ${safe.payNotCounted.map(names).join(' and ')} is not counted: give ${safe.payNotCounted.length === 1 ? 'it' : 'each'} a pay schedule in Lists, or a goal on the Month.`}
         </p>
       )}
     </StatSection>

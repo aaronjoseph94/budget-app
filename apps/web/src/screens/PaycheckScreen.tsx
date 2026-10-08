@@ -39,7 +39,7 @@ export function PaycheckScreen({ day }: { day: string | null }) {
     }
   }, [supabase, version])
 
-  // Income sources only, in Setup's order. 0011 refuses a schedule anywhere
+  // Income sources only, in Lists' order. 0011 refuses a schedule anywhere
   // else, but not moving an income source that has one to another list
   // (N27); a schedule left behind on, say, a savings fund pays nobody.
   // A tie on Setup's order goes in English order, as the AI apps server's

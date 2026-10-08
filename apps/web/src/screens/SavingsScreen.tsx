@@ -139,7 +139,7 @@ export function SavingsScreen() {
     setNotice(null)
     const taken = categories.find((c) => c.name === goal.name)
     if (taken !== undefined && taken.kind !== 'savings') {
-      setNotice({ ok: false, text: `${goal.name} is on your ${LIST_HEADING[taken.kind]} list. Move it to Savings in Setup, then press Make it a fund again.` })
+      setNotice({ ok: false, text: `${goal.name} is on your ${LIST_HEADING[taken.kind]} list. Move it to Savings in Lists, then press Make it a fund again.` })
       return
     }
     try {

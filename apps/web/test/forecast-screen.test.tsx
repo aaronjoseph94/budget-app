@@ -135,7 +135,7 @@ describe('the Forecast (plan §2.5, A13)', () => {
     renderScreen(<Shell />, fake)
 
     const safe = (await screen.findByRole('heading', { name: 'Safe to spend' })).closest('div.rounded-xl') as HTMLElement
-    expect(within(safe).getByText('Pay from Pay is not counted: give it a pay schedule in Setup, or a goal on the Month.')).toBeTruthy()
+    expect(within(safe).getByText('Pay from Pay is not counted: give it a pay schedule in Lists, or a goal on the Month.')).toBeTruthy()
     const days = screen.getByRole('heading', { name: 'The next 30 days' }).closest('div.rounded-xl') as HTMLElement
     expect(within(days).getByText('Leaves out pay from Pay: the app can’t tell yet when it comes or how much.')).toBeTruthy()
   })

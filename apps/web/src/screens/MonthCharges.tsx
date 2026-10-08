@@ -104,7 +104,7 @@ export function MonthCharges({
         <p className="px-4 py-6 text-center text-sm text-muted-foreground">
           No charges filed here in {period?.inWords ?? formatMonthName(month)}.
           {basis === 'planned'
-            ? ` The amount above is ${period?.planned ?? 'its monthly amount from Setup'}. A charge filed here counts instead.`
+            ? ` The amount above is ${period?.planned ?? 'its monthly amount from Lists'}. A charge filed here counts instead.`
             : null}
         </p>
       ) : (

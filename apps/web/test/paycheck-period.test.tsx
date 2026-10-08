@@ -195,7 +195,7 @@ describe('PaycheckPeriod, a row opened (N48)', () => {
     expect(within(screen.getByRole('dialog', { name: 'Rent' })).getByText(/^No charges filed here in 11 – 24 Sep\./)).toBeTruthy()
     // e2e-plan-07: $738.46 is the pay period's share, not Rent's $1,600.00 a month.
     expect(within(screen.getByRole('dialog', { name: 'Rent' })).getByText(
-      'No charges filed here in 11 – 24 Sep. The amount above is its share of the monthly amount from Setup. A charge filed here counts instead.',
+      'No charges filed here in 11 – 24 Sep. The amount above is its share of the monthly amount from Lists. A charge filed here counts instead.',
     )).toBeTruthy()
   })
 
@@ -203,6 +203,6 @@ describe('PaycheckPeriod, a row opened (N48)', () => {
     show(seeded(), null, { ...BIWEEKLY, first_pay_date: '2026-01-15', frequency: 'monthly' })
     const block = within(await screen.findByRole('region', { name: 'Bills' }))
     fireEvent.click(block.getByRole('button', { name: 'Rent' }))
-    expect(within(screen.getByRole('dialog', { name: 'Rent' })).getByText(/The amount above is its monthly amount from Setup\./)).toBeTruthy()
+    expect(within(screen.getByRole('dialog', { name: 'Rent' })).getByText(/The amount above is its monthly amount from Lists\./)).toBeTruthy()
   })
 })

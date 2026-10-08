@@ -123,7 +123,7 @@ export function GoalActions({
           onClick={() =>
             void write(
               () => removeGoal(supabase, goal.id),
-              `Removed ${goal.name}.${onFund ? ' Its fund stays on your Savings list; remove it in Setup if you no longer need it.' : ''}`,
+              `Removed ${goal.name}.${onFund ? ' Its fund stays on your Savings list; remove it in Lists if you no longer need it.' : ''}`,
             )
           }
         >

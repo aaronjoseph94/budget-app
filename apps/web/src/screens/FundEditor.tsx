@@ -88,7 +88,7 @@ export function FundEditor({
         : goals.some((g) => g.name === named && g.id !== goal?.id)
           ? `You already have a goal called ${named}. Use another name.`
           : taken !== undefined && taken.id !== fund.categoryId && taken.kind !== 'savings'
-            ? `${named} is on your ${LIST_HEADING[taken.kind]} list. Use another name, or move it to Savings in Setup.`
+            ? `${named} is on your ${LIST_HEADING[taken.kind]} list. Use another name, or move it to Savings in Lists.`
             : taken !== undefined && taken.id !== fund.categoryId
               ? `You already have a Savings fund called ${named}. Use another name.`
               : goalCents === null || goalCents <= 0
@@ -197,7 +197,7 @@ export function FundEditor({
                   onClick={() =>
                     void write(
                       () => removeGoal(supabase, goal.id),
-                      `Removed ${fund.name}.${fund.categoryId !== null ? ' Its fund stays on your Savings list; remove it in Setup if you no longer need it.' : ''}`,
+                      `Removed ${fund.name}.${fund.categoryId !== null ? ' Its fund stays on your Savings list; remove it in Lists if you no longer need it.' : ''}`,
                       fund.name,
                     )
                   }

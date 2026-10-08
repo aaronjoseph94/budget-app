@@ -210,7 +210,7 @@ export function PaycheckPeriod({
                 inWords: formatDateRange(start, end),
                 before: 'Last pay period',
                 // Paid more often than monthly, a planned figure is the period's share (e2e-plan-07).
-                ...(schedule.frequency === 'monthly' ? {} : { planned: 'its share of the monthly amount from Setup' }),
+                ...(schedule.frequency === 'monthly' ? {} : { planned: 'its share of the monthly amount from Lists' }),
               }}
               compared={comparison !== null && comparison !== 'failed' && comparison.status === 'compared' ? comparison : null}
               onClose={() => setOpened(null)}

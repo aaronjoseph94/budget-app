@@ -115,7 +115,7 @@ describe('Month row charges', () => {
     const sheet = openRow('Bills', 'Rent')
     expect(sheet.getByText(/Bills · September 2026 ·/).textContent).toBe('Bills · September 2026 · $1,600.00 planned')
     expect(sheet.getByText(/^No charges filed here/).textContent).toBe(
-      'No charges filed here in September. The amount above is its monthly amount from Setup. A charge filed here counts instead.',
+      'No charges filed here in September. The amount above is its monthly amount from Lists. A charge filed here counts instead.',
     )
   })
 })

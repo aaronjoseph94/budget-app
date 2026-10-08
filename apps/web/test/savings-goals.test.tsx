@@ -234,7 +234,7 @@ describe('Savings, removing a goal (G1)', () => {
     expect(within(house).queryByRole('button', { name: 'Remove goal' })).toBeNull()
     fireEvent.click(within(house).getByRole('button', { name: 'Remove' }))
     fireEvent.click(within(house).getByRole('button', { name: 'Remove goal' }))
-    expect(await screen.findByText('Removed House. Its fund stays on your Savings list; remove it in Setup if you no longer need it.')).toBeTruthy()
+    expect(await screen.findByText('Removed House. Its fund stays on your Savings list; remove it in Lists if you no longer need it.')).toBeTruthy()
     expect(fake.tables.savings_goals.map((g) => g.id)).toEqual(['g1', 'g2'])
     expect(fake.tables.categories.map((c) => c.id)).toContain('house')
     await waitFor(() => expect(regions()).toEqual(['Travel', 'Flight training', 'House', 'Car']))
@@ -326,7 +326,7 @@ describe('Savings, adding a goal (G1)', () => {
     fake.tables.categories.push({ id: 'food', name: 'Groceries', kind: 'variable', sort_order: 0, weekly_budget_cents: null })
     renderScreen(<SavingsScreen />, fake)
     await add({ Name: 'Groceries', 'Target \\(\\$\\)': '100' })
-    expect(screen.getByText('Groceries is on your Variable expenses list. Use another name, or move it to Savings in Setup.')).toBeTruthy()
+    expect(screen.getByText('Groceries is on your Variable expenses list. Use another name, or move it to Savings in Lists.')).toBeTruthy()
     type(/^Name/, 'Travel')
     fireEvent.click(screen.getByRole('button', { name: 'Add goal' }))
     expect(screen.getByText('You already have a goal called Travel. Edit it on its card, or use another name.')).toBeTruthy()
@@ -430,7 +430,7 @@ describe('Savings, a goal on no fund (G1)', () => {
     renderScreen(<SavingsScreen />, fake)
     fireEvent.click(within(await loose()).getByRole('button', { name: 'Make it a fund' }))
     expect(
-      screen.getByText('Flight training is on your Variable expenses list. Move it to Savings in Setup, then press Make it a fund again.'),
+      screen.getByText('Flight training is on your Variable expenses list. Move it to Savings in Lists, then press Make it a fund again.'),
     ).toBeTruthy()
     expect(fake.tables.savings_goals[0]).toMatchObject({ category_id: null })
     expect(fake.tables.categories).toHaveLength(4)
@@ -476,7 +476,7 @@ describe('Savings, a goal whose fund has left the Savings list (G1, N52)', () =>
     fireEvent.click(within(loose).getByRole('button', { name: 'Pause' }))
     expect(
       await screen.findByText(
-        'A goal’s fund is no longer on your Savings list, so that goal cannot be changed. It may have been moved on another device. Move it back to Savings in Setup, then try again. (code 23514)',
+        'A goal’s fund is no longer on your Savings list, so that goal cannot be changed. It may have been moved on another device. Move it back to Savings in Lists, then try again. (code 23514)',
       ),
     ).toBeTruthy()
     expect(fake.tables.savings_goals[0]).not.toHaveProperty('status')

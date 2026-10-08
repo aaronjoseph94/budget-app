@@ -63,7 +63,7 @@ export function AddGoalSheet({
       goals.some((g) => g.name === named)
         ? `You already have a goal called ${named}. Edit it on its card, or use another name.`
         : taken !== undefined && taken.kind !== 'savings'
-          ? `${named} is on your ${LIST_HEADING[taken.kind]} list. Use another name, or move it to Savings in Setup.`
+          ? `${named} is on your ${LIST_HEADING[taken.kind]} list. Use another name, or move it to Savings in Lists.`
           : taken !== undefined && goalOnFund.has(taken.id)
             ? `Your ${named} fund already has a goal. Edit it on its card, or use another name.`
             : targetCents === null || targetCents <= 0

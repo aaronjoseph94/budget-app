@@ -121,7 +121,7 @@ export const ARTICLES: readonly Article[] = [
     ],
     done: 'you can move between the three views, open Paycheck, and step back to last month.',
     stuck:
-      'Paycheck needs to know when you are paid: choose **How often** and a **First payday** on an Income row in Setup. On a phone, the Week is in the switch, not the bottom bar. Rows with nothing in them fold away: press **Show 3 empty** (with your own number) to see them.',
+      'Paycheck needs to know when you are paid: choose **How often** and a **First payday** on an Income row in **Lists**, under **Settings**. On a phone, the Week is in the switch, not the bottom bar. Rows with nothing in them fold away: press **Show 3 empty** (with your own number) to see them.',
     related: ['comparisons', 'budgets', 'wrong-number'],
   },
   {
@@ -193,14 +193,14 @@ export const ARTICLES: readonly Article[] = [
     ],
     done: 'each list’s head shows what it spent of its budget with a % pill, each row shows Budgeted, Actual and Left, and the Bill calendar shows your bills on their days.',
     stuck:
-      'A bill with no charge yet this month counts its planned amount. When the real charge comes in, it takes the planned amount’s place, so it is never counted twice. With no budget typed, a bill’s planned amount is its budget, marked planned, so a bill paid as planned is 100% and 0.00 left; a budget you type, even $0.00, is used instead. When a shop charges a Bills, Debts or Subscriptions row every month and that row has no monthly amount, Setup says **Looks like a monthly bill: add it?** Press **Fill it in**, check the day and the amount, then press **Save**; nothing is saved until you do.',
+      'A bill with no charge yet this month counts its planned amount. When the real charge comes in, it takes the planned amount’s place, so it is never counted twice. With no budget typed, a bill’s planned amount is its budget, marked planned, so a bill paid as planned is 100% and 0.00 left; a budget you type, even $0.00, is used instead. When a shop charges a Bills, Debts or Subscriptions row every month and that row has no monthly amount, Lists says **Looks like a monthly bill: add it?** Press **Fill it in**, check the day and the amount, then press **Save**; nothing is saved until you do.',
     related: ['periods', 'lists', 'wrong-number', 'start'],
   },
   {
     id: 'lists',
     title: 'Your lists and categories',
     summary:
-      'Setup holds your name and your categories, each on one list: Income, Savings, Bills, Debts, Subscriptions, Variable expenses, and Not spending for money that only moves, such as paying off your card.',
+      'Lists, under Settings, holds your name and your categories, each on one list: Income, Savings, Bills, Debts, Subscriptions, Variable expenses, and Not spending for money that only moves, such as paying off your card.',
     steps: [
       'Open **Settings**, then **Lists**.',
       'Type your name after **My name is**.',
@@ -212,7 +212,7 @@ export const ARTICLES: readonly Article[] = [
     ],
     done: 'each category sits on the list it belongs to, and **Fixed monthly bills** shows what your bills come to.',
     stuck:
-      'A card you pay off from your bank belongs on Not spending, since what you bought on it is already counted. A category with a monthly amount stays on its list until you press **Stop** under it. A category that still has charges cannot be removed: on the Month, tap its row and use **Move to…** on each charge first. When a shop charges a row every month, Setup says **Looks like a monthly bill: add it?**; press **Fill it in**, check the day and the amount, then press **Save**.',
+      'A card you pay off from your bank belongs on Not spending, since what you bought on it is already counted. A category with a monthly amount stays on its list until you press **Stop** under it. A category that still has charges cannot be removed: on the Month, tap its row and use **Move to…** on each charge first. When a shop charges a row every month, Lists says **Looks like a monthly bill: add it?**; press **Fill it in**, check the day and the amount, then press **Save**.',
     related: ['budgets', 'periods', 'start'],
   },
   {
@@ -250,7 +250,7 @@ export const ARTICLES: readonly Article[] = [
     ],
     done: 'the goal has its own card on Savings, and its fund is on your Savings list.',
     stuck:
-      'A name already used on another list, such as Bills, cannot be a goal’s fund: use another name, or move that category to Savings in Setup. Money you move into the fund after today adds to the goal. Nothing breaks if you stop part way.',
+      'A name already used on another list, such as Bills, cannot be a goal’s fund: use another name, or move that category to Savings in Lists. Money you move into the fund after today adds to the goal. Nothing breaks if you stop part way.',
     related: ['savings', 'coach'],
   },
   {
@@ -324,7 +324,7 @@ export const ARTICLES: readonly Article[] = [
     ],
     done: 'you know what you can spend today, when you will reach your goals, and how the next few months look.',
     stuck:
-      'Safe to spend needs this month’s starting balance: type it on the **Month**, under **Start**. It counts your pay still to come from each income’s pay schedule, at what it usually pays; if it says pay is not counted, give that income a pay schedule in **Setup**, or a goal on the **Month**. Savings you still plan to move this month are kept aside, so they are never counted as money to spend. The month’s end is worked out from this month’s pace and each of up to six earlier whole months, rounded to $10: before the 7th, or with under three whole months of records, it is one rough figure, and with no whole month before the 7th it says when to check back. The next 30 days add each payday and each bill on its day, and your everyday spending at its average over the last 90 days once there are 14 days of records; a bill whose day has passed with no charge yet is counted tomorrow. The next three months count your usual pay, the bills and savings set for each month (a change you typed for a later month counts from that month), and your everyday spending in a lighter, a usual and a heavier month you have really had; it is a guide, not a promise. Tap a what-if choice again to clear it. A goal’s date comes from what you have moved into its fund each month. If it says it needs a one-time update, see One-time updates.',
+      'Safe to spend needs this month’s starting balance: type it on the **Month**, under **Start**. It counts your pay still to come from each income’s pay schedule, at what it usually pays; if it says pay is not counted, give that income a pay schedule in **Lists**, or a goal on the **Month**. Savings you still plan to move this month are kept aside, so they are never counted as money to spend. The month’s end is worked out from this month’s pace and each of up to six earlier whole months, rounded to $10: before the 7th, or with under three whole months of records, it is one rough figure, and with no whole month before the 7th it says when to check back. The next 30 days add each payday and each bill on its day, and your everyday spending at its average over the last 90 days once there are 14 days of records; a bill whose day has passed with no charge yet is counted tomorrow. The next three months count your usual pay, the bills and savings set for each month (a change you typed for a later month counts from that month), and your everyday spending in a lighter, a usual and a heavier month you have really had; it is a guide, not a promise. Tap a what-if choice again to clear it. A goal’s date comes from what you have moved into its fund each month. If it says it needs a one-time update, see One-time updates.',
     related: ['coach', 'budgets', 'updates'],
   },
   {

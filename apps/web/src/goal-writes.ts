@@ -28,7 +28,7 @@ const GOAL_FAILURES: Readonly<Record<string, string>> = {
   PGRST204: 'Choosing your main goal, moving, pausing and reaching goals need a one-time update. Nothing was saved.',
   '42703': 'Choosing your main goal, moving, pausing and reaching goals need a one-time update. Nothing was saved.',
   '23514':
-    'A goal’s fund is no longer on your Savings list, so that goal cannot be changed. It may have been moved on another device. Move it back to Savings in Setup, then try again.',
+    'A goal’s fund is no longer on your Savings list, so that goal cannot be changed. It may have been moved on another device. Move it back to Savings in Lists, then try again.',
 }
 
 function describeGoalFailure(error: WriteError | null | undefined): string {
