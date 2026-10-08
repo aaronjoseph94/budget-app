@@ -17,17 +17,15 @@ import { Alert, SavedNote } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
-import { Figure, MonthTitle } from '../components/ui/type.js'
+import { Figure } from '../components/ui/type.js'
 import { LIST_TONE } from '../list-tone.js'
 import { cn } from '../lib/cn.js'
 import { useFourAcross } from '../lib/wide.js'
 import { useFocusWhereItWas } from '../lib/return-focus.js'
-import { navigate } from '../nav.js'
 import { PlanFields, PlanHeadings, TotalTile, useMonthlyAmounts, type MonthlyAmounts } from '../screens/SetupPlans.js'
 import { useBillNudges } from '../bill-nudges.js'
 import { PayFields, PayHeadings, usePaySchedules, type PaySchedules } from '../screens/SetupPay.js'
 import { TryAgain } from '../try-again.js'
-import { LINE_LINK } from '../components/ui/link.js'
 
 interface ListCard {
   readonly kind: CategoryKind
@@ -109,14 +107,6 @@ export function ListsTab() {
 
   return (
     <div className="space-y-5">
-      {/* The sidebar and the rail list Setup from 768px, and More is a phone's screen. */}
-      <button
-        type="button"
-        onClick={() => navigate('more')}
-        className={cn('-mb-2', LINE_LINK, 'text-sm', 'md:hidden')}
-      >
-        ‹ More
-      </button>
       <NameBand />
       {/* Not before the first load, when every account reads as empty. */}
       {version > 0 && categories.length < FEW_CATEGORIES ? <StarterCard onAdded={setAdded} /> : null}
@@ -283,7 +273,9 @@ function StarterAdded({ count }: { count: number }) {
 /**
  * Mockup A's header card, tinted to the accent: "Start here!" and "My name
  * is ___", a field with its own edge and a ✓ once saved. Muted words and
- * the field's edge take `canvas-muted`, which reads on the tint.
+ * the field's edge take `canvas-muted`, which reads on the tint. Its
+ * heading sits under Settings' title, so it is an h2; Settings' ? is the
+ * Lists article's.
  */
 function NameBand() {
   const { supabase, displayName } = useAppData()
@@ -309,8 +301,7 @@ function NameBand() {
 
   return (
     <header className="rounded-xl bg-primary-tint px-4 py-5 sm:px-6 [--input:var(--canvas-muted)] [--muted-foreground:var(--canvas-muted)]">
-      {/* Settings' ? is the Lists article's (ADR 0014 §2). */}
-      <MonthTitle>Start here!</MonthTitle>
+      <h2 className="text-2xl font-bold leading-tight tracking-[-0.02em] text-title-ink">Start here!</h2>
       <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
         <label htmlFor={field} className="shrink-0 text-base">
           My name is

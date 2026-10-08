@@ -42,6 +42,7 @@ describe('heading levels', () => {
     // Each with the last heading it draws once everything it reads is in.
     ['week', 'This week', 'Flight training'],
     ['settings/budgets', 'Settings', 'Your savings goals'],
+    ['settings/lists', 'Settings', 'Not spending'],
     ['month', 'September 2026', 'Savings'],
     ['savings', 'Savings goals', 'Flight fund'],
   ])('never skip one on %s', async (route, title, last) => {

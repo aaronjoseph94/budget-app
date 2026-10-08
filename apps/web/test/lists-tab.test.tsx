@@ -44,10 +44,11 @@ describe('Lists, the lists', () => {
   it("shows every list under the workbook's headings, each in its own order, then by name", async () => {
     renderScreen(<ListsTab />, seeded())
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Start here!' })).toBeTruthy()
+    // The band's heading, under Settings' own title (ADR 0014 §2).
+    expect(screen.getByRole('heading', { level: 2, name: 'Start here!' })).toBeTruthy()
     // Mockup A: each list's card is its own section, the workbook's section
     // named over its title.
-    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => [h.previousElementSibling?.textContent, h.textContent])).toEqual([
+    expect(screen.getAllByRole('heading', { level: 2 }).slice(1).map((h) => [h.previousElementSibling?.textContent, h.textContent])).toEqual([
       ['Source', 'Income'],
       ['Savings', 'Savings'],
       ['Recurring expenses', 'Bills'],
@@ -71,7 +72,8 @@ describe('Lists, the lists', () => {
 describe('Lists, the columns', () => {
   const at1280 = (matches: boolean) =>
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: matches && query === '(min-width: 1280px)', addEventListener: () => undefined, removeEventListener: () => undefined }))
-  const titles = () => screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
+  // The list cards' titles, after the name band's heading.
+  const titles = () => screen.getAllByRole('heading', { level: 2 }).slice(1).map((h) => h.textContent)
 
   it('keeps the workbook\'s order in one column below 1280px', () => {
     at1280(false)

@@ -54,13 +54,21 @@ describe('Settings, one screen with four tabs (ADR 0014 §2)', () => {
     await expectNoAxeViolations()
   })
 
-  it('puts the shops filed by themselves, AI apps and Sign out on Account', async () => {
+  it('puts the shops filed by themselves, AI apps and Sign out on Account, and the name band and the lists on Lists', async () => {
     renderScreen(<SettingsScreen tab="account" />, createFakeSupabase())
     expect([...panel().querySelectorAll('h2')].map((h) => h.textContent)).toEqual(['Shops filed by themselves', 'AI apps', 'Account'])
     // The shops beside AI apps and the account from 1280px; the address and Sign out share one row.
     expect(cardOf('Shops filed by themselves').parentElement?.className).toContain('xl:grid-cols-2')
     expect(within(cardOf('Account')).getByRole('button', { name: 'Sign out' })).toBeTruthy()
     await screen.findByText(/None yet|Learned shops/)
+    cleanup()
+
+    renderScreen(<SettingsScreen tab="lists" />, createFakeSupabase())
+    // Settings keeps the one title: "Start here!" is the band's heading under it, and the way back to More is the bar's.
+    expect(await within(panel()).findByRole('heading', { level: 2, name: 'Start here!' })).toBeTruthy()
+    expect(within(panel()).getByRole('heading', { level: 2, name: 'Bills' })).toBeTruthy()
+    expect(screen.getAllByRole('heading', { level: 1 }).map((h) => h.textContent)).toEqual(['Settings'])
+    expect(screen.queryByRole('button', { name: '‹ More' })).toBeNull()
   })
 
   it('draws AI settings as the AI tab, under Settings’ own title', async () => {
