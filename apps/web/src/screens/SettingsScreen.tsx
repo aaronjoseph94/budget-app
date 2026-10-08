@@ -1,4 +1,4 @@
-import { Suspense, useId, useState } from 'react'
+import { Suspense, useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import { lazyPart } from '../lib/lazy-part.js'
 import { SPENDING_LISTS } from '@budget/core'
 import { readBudgetInput, useAppData } from '../app-data.js'
@@ -18,38 +18,60 @@ import { LearnedShopsCard } from './LearnedShops.js'
 import { AiAppsCard } from '../ai-apps/AiAppsCard.js'
 import { signOutHere } from '../sign-out.js'
 import { cn } from '../lib/cn.js'
-import { SETTINGS_TABS, SETTINGS_TAB_NAME, type SettingsTab } from '../settings/tab.js'
+import { arrowIndex } from '../lib/roving.js'
+import { SETTINGS_TABS, SETTINGS_TAB_NAME, rememberSettingsTab, rememberedSettingsTab, type SettingsTab } from '../settings/tab.js'
 
 // The two big tabs are fetched when first shown, as the screens were (PERF-3).
 const ListsTab = lazyPart(() => import('../settings/ListsTab.js').then((m) => ({ default: m.ListsTab })))
-const AiTab = lazyPart(() => import('./AiSettingsScreen.js').then((m) => ({ default: m.AiSettingsScreen })))
+const AiTab = lazyPart(() => import('../settings/AiTab.js').then((m) => ({ default: m.AiTab })))
 
 /**
  * Settings (ADR 0014 §2): one screen, four tabs. Lists is the workbook's
  * START HERE; Budgets & goals the weekly budgets, and where the goals are;
  * AI is AI settings; Account the learned shops, AI apps and Sign out. The
- * tab showing is in the address (`#/settings/ai`); bare, it opens Lists.
+ * tab showing is in the address (`#/settings/ai`); bare, it opens the tab
+ * last seen on this device, as Reports does.
  */
 export function SettingsScreen({ tab }: { tab: SettingsTab | null }) {
-  const shown = tab ?? 'lists'
+  const shown = tab ?? rememberedSettingsTab()
+  const buttons = useRef<(HTMLButtonElement | null)[]>([])
+  useEffect(() => {
+    if (tab !== null) rememberSettingsTab(tab)
+  }, [tab])
+  // The arrow keys, Home and End choose along the tabs, as Reports' do.
+  const onKey = (e: KeyboardEvent<HTMLButtonElement>) => {
+    const to = arrowIndex(e.key, SETTINGS_TABS.indexOf(shown), SETTINGS_TABS.length)
+    const next = to === null ? undefined : SETTINGS_TABS[to]
+    if (to === null || next === undefined) return
+    e.preventDefault()
+    navigate('settings', next)
+    buttons.current[to]?.focus()
+  }
+
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-center gap-1">
         <MonthTitle>Settings</MonthTitle>
         <HelpButton screen="settings" topic={SETTINGS_TAB_HELP[shown]} />
       </header>
-      {/* Mockup A's segmented control, as Reports draws it; the columns take their own widths, so all four fit a phone. */}
+      {/* Mockup A's segmented control, as Reports draws it; the columns take
+        their own widths, so all four fit a phone. One tab stop, the chosen one. */}
       <div className="edge-fade -mx-1 overflow-x-auto px-1">
         <div role="tablist" aria-label="Settings" className="grid w-full grid-cols-[repeat(4,auto)] gap-1 rounded-md bg-canvas p-1 sm:inline-grid sm:w-auto">
-          {SETTINGS_TABS.map((t) => (
+          {SETTINGS_TABS.map((t, i) => (
             <button
               key={t}
+              ref={(el) => {
+                buttons.current[i] = el
+              }}
               type="button"
               role="tab"
               aria-selected={shown === t}
               aria-controls={`settings-${t}`}
               id={`settings-tab-${t}`}
+              tabIndex={shown === t ? 0 : -1}
               onClick={() => navigate('settings', t)}
+              onKeyDown={onKey}
               className={cn(
                 'min-h-11 rounded-sm px-2 text-sm font-medium outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring sm:min-w-22 sm:px-4',
                 shown === t ? 'bg-card text-foreground shadow-sm' : 'text-canvas-muted hover:text-foreground',

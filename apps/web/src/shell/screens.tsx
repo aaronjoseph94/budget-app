@@ -10,7 +10,6 @@ import { MoreScreen } from '../screens/MoreScreen.js'
 // fetched the first time it opens. The Month opens first (decision 1), and
 // it waited for every other screen's code: 214 KB gzipped, most of it
 // unused on the Month (PERF-3). Add carries the statement readers with it.
-const AiSettingsScreen = lazyPart(() => import('../screens/AiSettingsScreen.js').then((m) => ({ default: m.AiSettingsScreen })))
 const AskScreen = lazyPart(() => import('../screens/AskScreen.js').then((m) => ({ default: m.AskScreen })))
 const AddScreen = lazyPart(() => import('../screens/AddScreen.js').then((m) => ({ default: m.AddScreen })))
 const CalendarScreen = lazyPart(() => import('../screens/CalendarScreen.js').then((m) => ({ default: m.CalendarScreen })))
@@ -67,7 +66,7 @@ export const VIEWS: { readonly [S in Screen]: View } = {
   debts: { wide: always, render: () => <DebtsScreen /> },
   year: { wide: always, render: (param) => <YearScreen start={param} /> },
   help: { wide: (param) => param !== null, render: (param) => <HelpScreen topic={param} /> },
-  ai: { wide: always, render: () => <AiSettingsScreen /> },
+  ai: { wide: always, render: () => <SettingsScreen tab="ai" /> },
   start: { wide: always, render: () => <GettingStartedScreen /> },
   forecast: { wide: always, render: () => <ForecastScreen /> },
   reports: { wide: always, render: (param) => <ReportsScreen month={param} /> },
