@@ -136,17 +136,20 @@ on a computer, after `0015` to `0020` above.
    photos (below). `AI_KEYS_ROOT` is optional: set to a long random value,
    it lets keys pasted in the app survive a change of Supabase's own keys;
    without it, such a change asks you to paste the key again.
-3. **Turn on free AI.** In the app: More → **AI settings** → **Get a free
-   key** (Google AI Studio, **Create API key**), paste it, and press
-   **Save & test**: "Works · key ending …abcd". A key pasted here is
-   encrypted by the helper and stored where the browser cannot read it;
-   the app only ever shows its last four characters.
+3. **Turn on free AI.** In the app: More → **AI settings** → under **Free
+   AI**, press a row's **Get a free … key** link (OpenRouter and Groq are
+   quick; Google AI Studio for Gemini), create a key, paste it, and press
+   **Save & test**: "Works · key ending …abcd". **Test** times one call on
+   that service: "Last test: 1.2 s on OpenRouter · inkling-small". A key
+   pasted here is encrypted by the helper and stored where the browser
+   cannot read it; the app only ever shows its last four characters.
 
-**More services, optional.** AI settings → **More AI services** takes a key
-for Groq and OpenRouter (free) and for OpenAI and Anthropic (paid). Paid
-services are never asked until **Use paid services** is switched on. The
-order they are tried in, a daily limit (40 by default, 10 to 150), the
-coach's tone, and whether shop names are shared are set there too. Free
+**More, optional.** The Free AI card takes a key for each of OpenRouter,
+Groq and Google Gemini, tried in that order until you change it (ADR
+0015). **Advanced** takes a key for OpenAI and Anthropic (paid), never
+asked until **Use paid services** is switched on, and holds the order
+they are tried in, a daily limit (40 by default, 10 to 150), the coach's
+tone, and whether shop names are shared. Free
 services may keep and read what they are sent (ADR 0002, ADR 0004); for
 the Coach and Review the AI is never sent an amount, a balance or a date
 (Just type it and receipt photos send what you give them), **Use AI** off
@@ -154,7 +157,7 @@ sends nothing at all, and **What the AI sees** lists exactly what each
 sends.
 
 **Check it:** One-time updates says "All done", and AI settings says "AI is
-on, using free Google Gemini" (or "your receipts key").
+on, using free OpenRouter" (or whichever free service has a key first).
 
 ## Receipt photos: Gemini (optional)
 

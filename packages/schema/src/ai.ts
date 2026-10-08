@@ -195,6 +195,20 @@ export interface AiFailureReply {
   readonly code: AiCode
 }
 
+/**
+ * What a `run` answers: the service and model that wrote the reply, its
+ * text for the task's own parser, and how long the attempt took in
+ * milliseconds (ADR 0015), which AI settings' Test shows and nothing
+ * logs. The app narrows it by hand in ai/client.ts (`ranOf`).
+ */
+export interface AiRunReply {
+  readonly ok: true
+  readonly provider: AiProvider
+  readonly model: string
+  readonly text: string
+  readonly ms: number
+}
+
 /** A model on the helper's committed list, and whether the key's service lists it for this key. */
 export interface AiModelChoice {
   readonly id: string

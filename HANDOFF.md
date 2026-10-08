@@ -49,15 +49,17 @@ anywhere (the `brand` gate).
 Everything below is on branch `main-tnlcto` and reaches the live site when
 it is merged into `main` (§3).
 
-- **AI throughout, on a free Google Gemini key.** A Coach that says how the
+- **AI throughout, on a free key: OpenRouter, Groq or Google Gemini.** A Coach that says how the
   month is going, what changed, what to cut and when you will reach your
   goals; a Sunday check-in; words on the Month, the Forecast and Reports;
   suggested categories in Review; "just type it" on Add; receipts; and Ask.
   Every figure is the app's own. With AI off, not set up or resting, every
   one of them shows the app's own words instead, and says why in one line.
-- **Paid services too, only if you choose.** Groq and OpenRouter (free),
-  OpenAI and Anthropic (paid, off until you switch **Use paid services**
-  on). AI settings has the order they are tried in and a daily limit.
+- **Three free services, the quick ones first: OpenRouter, Groq, Gemini
+  (ADR 0015).** Each row of AI settings' **Free AI** card has a **Test**
+  that times one call. OpenAI and Anthropic (paid, off until you switch
+  **Use paid services** on), the order they are tried in and a daily
+  limit are under **Advanced**.
 - **Forecast:** safe to spend a day, where the month will end, the next
   30 days, when you will reach each goal, what-ifs, the next three months.
 - **Reports:** the month in review, trends, shops and subscriptions,
@@ -369,11 +371,14 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
     `OWNER_USER_ID`. Paste it again after every helper update.) One-time
     updates shows ✓ once it is deleted or new.
 19. **Turn on free AI.** In the app: **Settings** (on a phone, **More**) →
-    **AI settings** → **Get a free key**. Google AI Studio opens: **Create
-    API key**, copy it, come back, paste it, **Save & test**. Expect
-    "Works · key ending …abcd". If `GEMINI_API_KEY` is already set for
-    receipts, the screen already says "AI is on". To stop all AI later,
-    turn off **Use AI** at the top of AI settings.
+    **AI settings** → under **Free AI**, the OpenRouter row → **Get a
+    free OpenRouter key**. OpenRouter opens: **Create API Key**, copy it,
+    come back, paste it, **Save & test**. Expect "Works · key ending
+    …abcd"; **Test** then says "Last test: 1.2 s on OpenRouter ·
+    inkling-small". The Groq and Google Gemini rows take a key the same
+    way. If `GEMINI_API_KEY` is already set for receipts, Gemini's row
+    already says "Already on". To stop all AI later, turn off **Use AI**
+    at the top of AI settings.
 
 ### Part F: Claude and ChatGPT (AI apps), about 20 minutes, on a computer
 
@@ -474,8 +479,9 @@ One-time updates, which names what is missing.
 1. **Sign in.** With no lists yet, the app opens **Getting started**:
    "Step 1 of 9". Do the steps, or **Do this later** on any.
 2. **Help → One-time updates** says "All done" after §3's steps.
-3. **AI settings** says "AI is on, using free Google Gemini" (or "your
-   receipts key"), and under More AI services, "Today: 0 of 40".
+3. **AI settings** says "AI is on, using free OpenRouter" (or whichever
+   free service has a key first), and under **Advanced**, "Today: 0 of
+   40".
 4. **Add → Statement →** the card statement PDF. Expect "Matches your
    statement", then **Import**: "N waiting for review".
 5. **Review → Suggest categories.** Rows show "✨ Suggested", already

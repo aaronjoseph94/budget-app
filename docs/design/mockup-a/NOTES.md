@@ -460,9 +460,14 @@ and the amber Review count.
   the mockup's green (Income's); its tile is a sparkle, which says nothing
   about whether AI is on, since the sentence beside it says that. The
   mockup's subtitle ("Turn on free AI, choose services, and how the Coach
-  talks.") is not the app's copy and is left out. Keys on the left, the
-  order, paid services, the daily limit (one card, as drawn) and the tone
-  on the right from 1280px. The order's ↑ ↓ became the app's chevrons.
+  talks.") is not the app's copy and is left out. The order's ↑ ↓ became
+  the app's chevrons. *Since 2026-10-08 (ADR 0015):* one reading column,
+  not two from 1280px. **Use AI** sits in the hero beside the sparkle,
+  the sentence under them; then the **Free AI** card, the three free
+  services as rows parted by rules, each with its key steps, **Test** and
+  the model it uses; then **Advanced**, folded, with the paid keys, the
+  order, paid services and the daily limit (one card, as drawn) and the
+  Coach's tone.
 - **Switches** were already the app's `SWITCH` checkbox with
   role="switch"; unchanged. **The key field** is unchanged: a password
   field emptied the moment it is sent, never shown back beyond the last

@@ -3907,3 +3907,38 @@ not add.
 `amount_too_large` rejection; word each screen's catch-all as "something in
 this month could not be added up"; a later migration adds
 `check (x between -99999999999 and 99999999999)` to each money column.
+
+---
+
+## N169 — Mistral's free API tier could not be confirmed, so it is not a fourth free service
+
+**Seen:** 2026-10-08, ADR 0015's research. Ministral 3 and Mistral Small 4
+read images, but the free API tier's page is 404 and the pricing page
+describes a consumer plan without API limits or whether a card is asked
+for. Cerebras is text only and its credit needs a card.
+
+**Why not fixed here:** adding a provider on a guess fails CLAUDE.md's
+ask-first rule; the owner's "any other Free" covers a service confirmed
+free, quick and able to read pictures, and none was.
+
+**To settle:** when the owner can open a Mistral account and see what
+Studio offers, add it as ADR 0004 and ADR 0015 describe: a fixed host,
+named models with the image flag, soft limits under its documented ones,
+a row in the Free AI card.
+
+---
+
+## N170 — packages/ai-apps/test/mcp-add.test.ts fails now and then
+
+**Seen:** 2026-10-08, gating slice AI-5d on rework-ai: "refuses a day the
+app cannot read before reading anything, as a bad date" failed in one
+full gate run and once alone, with one RPC call made where the test
+expects none, then passed three runs alone and the next two full gates.
+Nothing on rework-ai touches packages/ai-apps.
+
+**Why not fixed here:** another area, and a flake needs its cause found,
+not a rerun.
+
+**To settle:** run the file many times (`vitest --repeat`), read which
+RPC the stray call is, and pin the order of add_expense's date check
+against its reads.
