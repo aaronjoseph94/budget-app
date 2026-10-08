@@ -34,7 +34,7 @@
     </div>
     <div style="background:#FFFFFF;border-radius:16px;padding:20px 22px;display:flex;flex-direction:column;gap:10px;font-size:13px;line-height:1.5;">
       <h2 style="margin:0;font-size:16px;font-weight:600;">Navigation change (App.tsx, MoreScreen.tsx)</h2>
-      <p style="margin:0;">From 1024px the phone bottom bar and the desktop top bar are replaced by one sidebar grouped like More: <b>Plan</b> (Week, Month, Year, Paycheck, Bill calendar since ADR 0014) · <b>Money</b> (Savings, Debts, All transactions) · <b>Coach</b> (Coach, Forecast, Reports) · <b>Inbox</b> (Review with its count, Add) · <b>Setup</b> (Setup, Settings, Help). Ask, the check-in and AI settings open from their parents. Below 1024px the existing phone bar stays; the sidebar collapses to a 72px rail between 768 and 1024.</p>
+      <p style="margin:0;">From 1024px the phone bottom bar and the desktop top bar are replaced by one sidebar grouped like More: <b>Plan</b> (Week, Month, Year, Paycheck, Bill calendar since ADR 0014) · <b>Money</b> (Savings, Debts, All transactions) · <b>Coach</b> (Coach, Forecast, Reports) · <b>Inbox</b> (Review with its count, Add) · <b>More</b> (Settings, Help; since ADR 0014 Setup is Settings' Lists tab and AI settings its AI tab). Ask and the check-in open from the Coach, Getting started from Help. Below 1024px the existing phone bar stays; the sidebar collapses to a 72px rail between 768 and 1024.</p>
       <p style="margin:0;">The Week · Month · Year switch (<code>PeriodSwitch.tsx</code>) stays on those three screens; Paycheck left it for its own screen (ADR 0014). The <code>?</code> HelpButton stays beside every title. The top bar adds a ⌘K “Search or jump to…” (new) and the primary <b>+ Add</b>.</p>
     </div>
   </div>

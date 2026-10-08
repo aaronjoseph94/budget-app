@@ -132,6 +132,18 @@ describe('Help articles', () => {
     expect(articleFor('reports')?.steps[0]).toBe('Open **Reports** (on a phone, under **More**).')
   })
 
+  // The owner's brevity rule (2026-10-08): a sentence written for ADR 0014
+  // is short. The older sentences wait for the Help rewrite (decision 5).
+  it('keeps the sentences written for the plan order and Settings’ tabs under 90 characters', () => {
+    const periods = articleFor('periods')
+    const lists = articleFor('words')?.terms?.find((t) => t.term === 'Lists')
+    const written = [periods?.summary, periods?.steps[3], periods?.steps[4], periods?.done, periods?.stuck?.split('. ')[0], lists?.meaning]
+    for (const text of written) {
+      expect(text).toBeTruthy()
+      for (const sentence of (text ?? '').replaceAll('**', '').split(/(?<=[.!?])\s+/)) expect(sentence.length, sentence).toBeLessThanOrEqual(90)
+    }
+  })
+
   // MCP plan M12a: a connection starts from Connect a new AI app, inside its window.
   it('connects Claude and ChatGPT from Connect a new AI app, and says what an AI app may do and who sees it', () => {
     for (const id of ['connect-claude', 'connect-chatgpt'] as const) {
