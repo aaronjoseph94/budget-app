@@ -155,11 +155,17 @@ describe('Settings through the shell', () => {
     expect(selected()).toBe('Budgets & goals')
   })
 
-  it('opens #/ai, the old address, as Settings › AI', async () => {
+  it('opens #/ai and #/setup, the old addresses, as Settings › AI and Settings › Lists, and writes the new address over them', async () => {
     go('/ai')
     renderScreen(<Shell />, createFakeSupabase())
     expect(await screen.findByRole('heading', { level: 1, name: 'Settings' })).toBeTruthy()
     expect(selected()).toBe('AI')
     expect(await within(panel()).findByRole('region', { name: 'AI now' })).toBeTruthy()
+    await waitFor(() => expect(window.location.hash).toBe('#/settings/ai'))
+
+    go('/setup')
+    expect(await within(panel()).findByRole('heading', { level: 2, name: 'Start here!' })).toBeTruthy()
+    expect(selected()).toBe('Lists')
+    await waitFor(() => expect(window.location.hash).toBe('#/settings/lists'))
   })
 })

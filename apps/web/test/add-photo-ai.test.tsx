@@ -105,7 +105,7 @@ describe('AddScreen, a receipt photo read by the AI helper', () => {
     await takePhoto(fake)
 
     expect(await screen.findByText(/AI is off, so the photo was not read/)).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Open AI settings' }).getAttribute('href')).toBe('#/ai')
+    expect(screen.getByRole('link', { name: 'Open AI settings' }).getAttribute('href')).toBe('#/settings/ai')
     expect(fake.functions.receiptCalls).toEqual([])
   })
 

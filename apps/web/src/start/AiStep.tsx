@@ -19,7 +19,7 @@ import { cn } from '../lib/cn.js'
 export function AiStep({ ai, onChanged }: { ai: AiView | null; onChanged: () => void }) {
   if (ai === null) return <p className="text-sm text-muted-foreground">Asking the AI helper…</p>
   const settings = (
-    <a href={hashOf({ screen: 'ai', param: null })} className={cn(LINE_LINK, 'text-sm')}>
+    <a href={hashOf({ screen: 'settings', param: 'ai' })} className={cn(LINE_LINK, 'text-sm')}>
       More services and choices are in AI settings
     </a>
   )

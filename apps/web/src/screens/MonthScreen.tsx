@@ -287,7 +287,7 @@ export function MonthScreen({ month }: { month: string | null }) {
         <Loading what="this month" />
       ) : null}
 
-      {/* A first run: six empty blocks each saying "Add one in Setup" left
+      {/* A first run: six empty blocks each saying "Add one in Lists" left
         the first step unsaid, so it is said once, here. */}
       {version > 0 && categories.length === 0 ? (
         <section aria-label="Start here" className="rounded-xl border bg-card p-4">
@@ -298,8 +298,8 @@ export function MonthScreen({ month }: { month: string | null }) {
             <Button size="sm" onClick={() => navigate('start')}>
               Get started
             </Button>
-            <Button size="sm" variant="outline" onClick={() => navigate('setup')}>
-              Open Setup
+            <Button size="sm" variant="outline" onClick={() => navigate('settings', 'lists')}>
+              Open Lists
             </Button>
           </div>
         </section>
@@ -635,8 +635,8 @@ function Block({
           Nothing on this list yet.{' '}
           {/* A link, as the tabs are (FE-20): a button is its own box, and
             20 px tall it was under the 44 px a finger needs. */}
-          <a href={hashOf({ screen: 'setup', param: null })} className={cn(SENTENCE_LINK, 'text-foreground')}>
-            Add one in Setup
+          <a href={hashOf({ screen: 'settings', param: 'lists' })} className={cn(SENTENCE_LINK, 'text-foreground')}>
+            Add one in Lists
           </a>
         </p>
       ) : shown.length === 0 ? (

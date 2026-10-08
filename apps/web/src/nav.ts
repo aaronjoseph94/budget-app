@@ -12,13 +12,16 @@
  * here. Stepping one back or forward is `shiftMonth` or `shiftPayPeriod` in
  * packages/core.
  */
-import { useMemo, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useSyncExternalStore } from 'react'
 import { isoDate, weekBounds } from '@budget/core'
 import { HELP_TOPICS } from './help/topics.js'
 import { isSettingsTab } from './settings/tab.js'
 
+// `ai` is never drawn: its address reads as Settings › AI (OLD, below). It
+// stays an id only while the AI files, another tree's until the two merge,
+// still name it; it goes with that merge.
 export const SCREENS = [
-  'month', 'week', 'review', 'add', 'more', 'ledger', 'settings', 'setup', 'year', 'paycheck', 'calendar', 'savings', 'debts',
+  'month', 'week', 'review', 'add', 'more', 'ledger', 'settings', 'year', 'paycheck', 'calendar', 'savings', 'debts',
   'coach', 'forecast', 'reports', 'ask', 'help', 'start', 'ai',
 ] as const
 export type Screen = (typeof SCREENS)[number]
@@ -43,6 +46,17 @@ export interface Address {
 
 const DEFAULT: Address = { screen: HOME, param: null }
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/
+
+/**
+ * The Setup and AI settings screens are Settings' Lists and AI tabs (ADR
+ * 0014 §2). Their old addresses still open, as the tab, so a bookmark or
+ * an older link lands where it meant to; useAddress then writes the new
+ * address over the old one.
+ */
+const OLD: ReadonlyMap<string, Address> = new Map([
+  ['setup', { screen: 'settings', param: 'lists' }],
+  ['ai', { screen: 'settings', param: 'ai' }],
+])
 
 /** A real calendar day: `2026-02-30` is refused, not rolled into March. */
 function isDay(text: string): boolean {
@@ -77,8 +91,11 @@ const PARAM: Partial<Record<Screen, (param: string) => boolean>> = {
  */
 export function readAddress(hash: string): Address {
   const [name = '', param, ...rest] = hash.replace(/^#\/?/, '').split('/')
+  if (rest.length > 0) return DEFAULT
+  const old = param === undefined ? OLD.get(name) : undefined
+  if (old !== undefined) return old
   const screen = SCREENS.find((s) => s === name)
-  if (screen === undefined || rest.length > 0) return DEFAULT
+  if (screen === undefined) return DEFAULT
   if (param === undefined) return { screen, param: null }
   return PARAM[screen]?.(param) === true ? { screen, param } : DEFAULT
 }
@@ -96,7 +113,13 @@ const currentHash = () => window.location.hash
 
 export function useAddress(): Address {
   const hash = useSyncExternalStore(subscribe, currentHash, () => '')
-  return useMemo(() => readAddress(hash), [hash])
+  const address = useMemo(() => readAddress(hash), [hash])
+  // An old address is written over with the one it opened, so a refresh,
+  // the back gesture and a bookmark made now carry the new one.
+  useEffect(() => {
+    if (OLD.has(hash.replace(/^#\/?/, ''))) window.history.replaceState(null, '', hashOf(address))
+  }, [hash, address])
+  return address
 }
 
 /** Go to a screen, with a param only where its rule above reads one. */

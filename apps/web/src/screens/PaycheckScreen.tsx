@@ -106,10 +106,10 @@ function NoSchedule() {
   return (
     <section aria-label="Paycheck" className="space-y-3 rounded-xl border bg-card p-4 md:px-6 md:py-5">
       <p className="text-sm">
-        This shows your budget one pay period at a time. It needs to know when you are paid: in Setup, give an Income
+        This shows your budget one pay period at a time. It needs to know when you are paid: in Lists, give an Income
         row how often it pays and a first payday.
       </p>
-      <Button onClick={() => navigate('setup')}>Open Setup</Button>
+      <Button onClick={() => navigate('settings', 'lists')}>Open Lists</Button>
     </section>
   )
 }

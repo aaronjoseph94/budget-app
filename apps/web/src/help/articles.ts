@@ -186,7 +186,7 @@ export const ARTICLES: readonly Article[] = [
     steps: [
       'On the **Month**, tap a row’s Budgeted figure.',
       'Type the amount, choose **From this month on** or **Just this month**, and press **Save**.',
-      'For a bill, open **Setup** (on a phone, under **More**), and type its **Monthly amount**.',
+      'For a bill, open **Settings**, then **Lists**, and type its **Monthly amount**.',
       'Choose its **Day paid**.',
       'To see every bill by its day, press the calendar button beside the month arrows, or open **Bill calendar**.',
       'For weekly budgets, tap one on the **Week**, or open **Settings** (on a phone, under **More**) and type them under **Weekly budgets**.',
@@ -202,7 +202,7 @@ export const ARTICLES: readonly Article[] = [
     summary:
       'Setup holds your name and your categories, each on one list: Income, Savings, Bills, Debts, Subscriptions, Variable expenses, and Not spending for money that only moves, such as paying off your card.',
     steps: [
-      'Open **Setup** (on a phone, under **More**).',
+      'Open **Settings**, then **Lists**.',
       'Type your name after **My name is**.',
       'With few categories yet, press **Use the starter list** for example names to rename.',
       'To add a category, type its name in the box at the bottom of a list and press **Add**.',

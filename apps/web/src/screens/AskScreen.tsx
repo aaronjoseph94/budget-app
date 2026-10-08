@@ -43,7 +43,7 @@ function ReadByApp({ by }: { by: ReadBy }): ReactNode {
     ) : why.state === 'not_deployed' || why.state === 'needs_update' || why.state === 'helper_error' ? (
       <>The AI helper needs a one-time update, so the app read your question itself. {to(hashOf({ screen: 'help', param: 'updates' }), 'See One-time updates')}</>
     ) : why.state === 'not_set_up' ? (
-      <>The app read your question itself. {to(hashOf({ screen: 'ai', param: null }), 'Turn on free AI (2 minutes)')}</>
+      <>The app read your question itself. {to(hashOf({ screen: 'settings', param: 'ai' }), 'Turn on free AI (2 minutes)')}</>
     ) : why.state === 'off' ? (
       <>AI is off, so the app read your question itself.</>
     ) : why.state === 'limit_reached' || why.state === 'all_resting' || why.state === 'all_failed' ? (

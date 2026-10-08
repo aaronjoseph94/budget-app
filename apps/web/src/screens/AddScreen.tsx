@@ -638,7 +638,7 @@ type PhotoState =
 /** The one place that fixes a photo not read: One-time updates, AI settings, or why the AI rests. */
 const PHOTO_LINKS: Readonly<Record<ReceiptLink, { readonly href: string; readonly words: string }>> = {
   updates: { href: hashOf({ screen: 'help', param: 'updates' }), words: 'See One-time updates' },
-  ai: { href: hashOf({ screen: 'ai', param: null }), words: 'Open AI settings' },
+  ai: { href: hashOf({ screen: 'settings', param: 'ai' }), words: 'Open AI settings' },
   'ai-rests': { href: hashOf({ screen: 'help', param: 'ai-rests' }), words: 'Why?' },
 }
 

@@ -56,7 +56,8 @@ describe('the ? beside every screen’s title', () => {
     ['/review', 'review', 'Review'],
     ['/add', 'add', 'Add'],
     ['/more', 'more', 'More'],
-    ['/setup', 'setup', 'Settings'],
+    // The old address opens Settings › Lists (ADR 0014 §2).
+    ['/setup', 'settings', 'Settings'],
     ['/settings/lists', 'settings', 'Settings'],
     ['/ledger', 'ledger', 'All transactions'],
     ['/savings', 'savings', 'Savings goals'],

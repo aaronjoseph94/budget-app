@@ -22,9 +22,9 @@ function stopped(help: Extract<QuickHelp, { kind: 'stopped' }>): ReactNode {
     case 'helper_error':
       return <>The AI helper needs a one-time update to fill in the rest. {to(hashOf({ screen: 'help', param: 'updates' }), 'See One-time updates')}</>
     case 'not_set_up':
-      return <>Turn on free AI to have the rest filled in. {to(hashOf({ screen: 'ai', param: null }), 'Turn on free AI (2 minutes)')}</>
+      return <>Turn on free AI to have the rest filled in. {to(hashOf({ screen: 'settings', param: 'ai' }), 'Turn on free AI (2 minutes)')}</>
     case 'off':
-      return <>AI is off. {to(hashOf({ screen: 'ai', param: null }), 'Turn AI back on')}</>
+      return <>AI is off. {to(hashOf({ screen: 'settings', param: 'ai' }), 'Turn AI back on')}</>
     case 'limit_reached':
     case 'all_resting':
     case 'all_failed':

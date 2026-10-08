@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Shell } from '../src/App.js'
 import { SIDEBAR_KEY } from '../src/shell/sidebar-state.js'
@@ -49,10 +49,13 @@ describe('the top bar (ADR 0011)', () => {
     go('/coach/checkin')
     await screen.findByRole('heading', { name: 'Your Sunday check-in', level: 1 })
     expect(crumbs()).toEqual(['Coach', 'Check-in'])
+    // AI settings is Settings' AI tab (ADR 0014 §2): the old address opens it, and the crumb names the tab.
     go('/ai')
-    await screen.findByRole('heading', { name: 'AI settings', level: 1 })
-    expect(crumbs()).toEqual(['Settings', 'AI settings'])
+    await screen.findByRole('heading', { name: 'Settings', level: 1 })
+    await waitFor(() => expect(crumbs()).toEqual(['Settings', 'AI']))
     expect(within(bar).getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe('#/settings')
+    go('/settings/lists')
+    await waitFor(() => expect(crumbs()).toEqual(['Settings', 'Lists']))
   })
 
   it('opens Help with its search box ready, from the search box, ⌘K and Ctrl+K', async () => {

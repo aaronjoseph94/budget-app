@@ -1,5 +1,6 @@
 import type { Screen } from '../nav.js'
 import type { IconName } from '../components/ui/icons.js'
+import { SETTINGS_TAB_NAME, isSettingsTab } from '../settings/tab.js'
 
 export interface Place {
   readonly screen: Screen
@@ -55,7 +56,6 @@ export const SIDEBAR_GROUPS: readonly PlaceGroup[] = [
   {
     title: 'Setup',
     items: [
-      { screen: 'setup', label: 'Setup', icon: 'list' },
       { screen: 'settings', label: 'Settings', icon: 'settings' },
       { screen: 'help', label: 'Help', icon: 'help' },
     ],
@@ -71,7 +71,6 @@ export const SCREEN_NAME: Record<Screen, string> = {
   more: 'More',
   ledger: 'All transactions',
   settings: 'Settings',
-  setup: 'Setup',
   year: 'Year',
   paycheck: 'Paycheck',
   calendar: 'Bill calendar',
@@ -83,11 +82,12 @@ export const SCREEN_NAME: Record<Screen, string> = {
   ask: 'Ask',
   help: 'Help',
   start: 'Getting started',
+  // Never shown: `#/ai` opens Settings › AI (nav.ts).
   ai: 'AI settings',
 }
 
 /** The screens with no item of their own, and the item they light (design-review P1 item 2). */
-const PARENT: Partial<Record<Screen, Screen>> = { ask: 'coach', ai: 'settings', start: 'settings' }
+const PARENT: Partial<Record<Screen, Screen>> = { ask: 'coach', start: 'settings', ai: 'settings' }
 
 /** The sidebar item lit while a screen shows, or null for More, which a wide screen does not list. */
 export function litOf(screen: Screen): Screen | null {
@@ -103,10 +103,14 @@ export interface Crumbs {
 /**
  * The top bar's breadcrumb: "Budget › Month" for a screen with an item of
  * its own, and its parent for one without, "Coach › Ask", "Coach ›
- * Check-in", "Settings › AI settings".
+ * Check-in", "Settings › Getting started"; a Settings tab under
+ * Settings, "Settings › AI" (ADR 0014 §2).
  */
 export function crumbsOf(screen: Screen, param: string | null): Crumbs {
   if (screen === 'coach' && param === 'checkin') return { parent: { label: 'Coach', screen: 'coach' }, current: 'Check-in' }
+  if (screen === 'settings' && param !== null && isSettingsTab(param)) {
+    return { parent: { label: 'Settings', screen: 'settings' }, current: SETTINGS_TAB_NAME[param] }
+  }
   const parent = PARENT[screen]
   return parent === undefined
     ? { parent: { label: 'Budget', screen: 'month' }, current: SCREEN_NAME[screen] }

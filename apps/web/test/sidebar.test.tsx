@@ -98,7 +98,7 @@ describe('the sidebar (ADR 0011)', () => {
     renderScreen(<Shell />, createFakeSupabase())
     await screen.findByRole('heading', { name: 'September 2026' })
     const links = within(sidebar()).getAllByRole('link')
-    expect(links).toHaveLength(16)
+    expect(links).toHaveLength(15)
     for (const link of links) {
       expect(link.getAttribute('aria-label')?.startsWith(link.getAttribute('title') ?? '-')).toBe(true)
       expect(link.querySelector('svg')).toBeTruthy()

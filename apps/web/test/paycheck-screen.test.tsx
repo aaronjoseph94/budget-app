@@ -39,17 +39,17 @@ describe('PaycheckScreen', () => {
     renderScreen(<PaycheckScreen day={null} />, seeded([]))
 
     expect((await screen.findByRole('region', { name: 'Paycheck' })).textContent).toContain(
-      'It needs to know when you are paid: in Setup, give an Income row how often it pays and a first payday.',
+      'It needs to know when you are paid: in Lists, give an Income row how often it pays and a first payday.',
     )
-    fireEvent.click(screen.getByRole('button', { name: 'Open Setup' }))
-    expect(window.location.hash).toBe('#/setup')
+    fireEvent.click(screen.getByRole('button', { name: 'Open Lists' }))
+    expect(window.location.hash).toBe('#/settings/lists')
     await expectNoAxeViolations()
   })
 
   it('reads a schedule on an income source only, not one left on a category moved off Income (N27)', async () => {
     renderScreen(<PaycheckScreen day={null} />, seeded([schedule('s1', 'fund', '2026-09-11', 'biweekly')]))
 
-    expect(await screen.findByRole('button', { name: 'Open Setup' })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: 'Open Lists' })).toBeTruthy()
     expect(screen.queryByRole('heading', { name: 'This pay period' })).toBeNull()
   })
 
@@ -86,7 +86,7 @@ describe('PaycheckScreen', () => {
     expect((await screen.findByRole('alert')).textContent).toContain(
       'Pay schedules need a one-time update, so no pay period can be shown. (code PGRST205)',
     )
-    expect(screen.queryByRole('button', { name: 'Open Setup' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Open Lists' })).toBeNull()
   })
 
   it('keeps its title when when you are paid cannot be read (N116)', async () => {

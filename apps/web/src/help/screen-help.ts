@@ -18,9 +18,8 @@ export const SCREEN_HELP: Readonly<Record<Exclude<Screen, 'help'>, HelpTopic>> =
   calendar: 'budgets',
   review: 'review',
   add: 'add',
-  // More is where a phone finds the rest; Setup is its lists and categories.
+  // More is where a phone finds the rest.
   more: 'getting-around',
-  setup: 'lists',
   // Settings' ? opens the tab showing (SETTINGS_TAB_HELP); this is its first tab's.
   settings: 'lists',
   // All transactions is where a charge counted twice is found and removed.
@@ -32,5 +31,6 @@ export const SCREEN_HELP: Readonly<Record<Exclude<Screen, 'help'>, HelpTopic>> =
   reports: 'reports',
   ask: 'ask',
   start: 'start',
+  // AI settings' own ?, drawn inside Settings' AI tab for now (nav.ts on `ai`).
   ai: 'free-ai',
 }

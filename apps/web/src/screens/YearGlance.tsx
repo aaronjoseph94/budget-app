@@ -45,8 +45,8 @@ export function YearGlance({
       <Card tint className="sm:col-span-2 xl:col-span-4">
         <h2 className="text-2xl font-semibold">{displayName === '' ? 'Hi!' : `Hi, ${displayName}!`}</h2>
         {displayName === '' ? (
-          <button type="button" className={cn('mt-1 text-sm underline underline-offset-4', LINE_BUTTON)} onClick={() => navigate('setup')}>
-            Add your name in Setup
+          <button type="button" className={cn('mt-1 text-sm underline underline-offset-4', LINE_BUTTON)} onClick={() => navigate('settings', 'lists')}>
+            Add your name in Lists
           </button>
         ) : null}
       </Card>

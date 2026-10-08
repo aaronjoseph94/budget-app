@@ -53,7 +53,7 @@ describe('readAddress', () => {
   })
 
   it('reads the new screens that take nothing after their name', () => {
-    for (const screen of ['forecast', 'ask', 'help', 'start', 'ai'] as const) {
+    for (const screen of ['forecast', 'ask', 'help', 'start'] as const) {
       expect(readAddress(`#/${screen}`)).toEqual({ screen, param: null })
       expect(readAddress(`#/${screen}/2026-09`), screen).toEqual({ screen: HOME, param: null })
     }
@@ -82,6 +82,15 @@ describe('readAddress', () => {
   it('reads a Settings tab, and only one of the four (ADR 0014 §2)', () => {
     for (const tab of SETTINGS_TABS) expect(readAddress(`#/settings/${tab}`)).toEqual({ screen: 'settings', param: tab })
     for (const hash of ['#/settings/Lists', '#/settings/setup', '#/settings/lists/more']) {
+      expect(readAddress(hash), hash).toEqual({ screen: HOME, param: null })
+    }
+  })
+
+  it('reads the Setup and AI settings screens’ old addresses as their Settings tabs, and nothing else as old', () => {
+    expect(readAddress('#/setup')).toEqual({ screen: 'settings', param: 'lists' })
+    expect(readAddress('#/ai')).toEqual({ screen: 'settings', param: 'ai' })
+    // An old address took no param; an object's own names are not addresses.
+    for (const hash of ['#/setup/lists', '#/ai/gemini', '#/constructor', '#/has']) {
       expect(readAddress(hash), hash).toEqual({ screen: HOME, param: null })
     }
   })
@@ -120,7 +129,7 @@ describe('readAddress', () => {
   it('writes back what it reads', () => {
     for (const hash of [
       '#/month/2026-09', '#/month', '#/settings', '#/year/2025-04', '#/paycheck/2026-09-11', '#/calendar/2026-02',
-      '#/coach', '#/coach/checkin', '#/forecast', '#/reports/2026-08', '#/ask', '#/ask/forecast', '#/help', '#/help/updates', '#/start', '#/ai', '#/week/2026-09-21', '#/settings/ai',
+      '#/coach', '#/coach/checkin', '#/forecast', '#/reports/2026-08', '#/ask', '#/ask/forecast', '#/help', '#/help/updates', '#/start', '#/week/2026-09-21', '#/settings/ai',
     ]) expect(hashOf(readAddress(hash))).toBe(hash)
   })
 })

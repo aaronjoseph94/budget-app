@@ -197,8 +197,8 @@ export function SavingsScreen() {
       {state.status === 'ready' && state.funds.funds.length === 0 && goals.length === 0 ? (
         <div className="rounded-xl border bg-card p-4 text-sm">
           <p>Your Savings list has no funds yet. Each fund on it gets a card here.</p>
-          <Button variant="outline" size="sm" className="mt-3" onClick={() => navigate('setup')}>
-            Add funds in Setup
+          <Button variant="outline" size="sm" className="mt-3" onClick={() => navigate('settings', 'lists')}>
+            Add funds in Lists
           </Button>
         </div>
       ) : null}

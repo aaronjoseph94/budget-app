@@ -294,14 +294,14 @@ describe('Review says why nothing was suggested, in its own words', () => {
     const fake = fresh()
     await asked(fake)
     expect(await screen.findByText(/Turn on free AI to have categories suggested\./)).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Turn on free AI (2 minutes)' }).getAttribute('href')).toBe('#/ai')
+    expect(screen.getByRole('link', { name: 'Turn on free AI (2 minutes)' }).getAttribute('href')).toBe('#/settings/ai')
     cleanup()
 
     const off = fresh()
     off.functions.ai = (body) => (body['action'] === 'run' ? json({ ok: false, code: 'ai_off' }, 409) : json(off.functions.aiStatus))
     await asked(off)
     expect(await screen.findByText(/AI is off, so nothing is suggested\./)).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Turn AI back on' }).getAttribute('href')).toBe('#/ai')
+    expect(screen.getByRole('link', { name: 'Turn AI back on' }).getAttribute('href')).toBe('#/settings/ai')
   })
 
   it('asks for the helper’s new copy when an older one turns the request away', async () => {

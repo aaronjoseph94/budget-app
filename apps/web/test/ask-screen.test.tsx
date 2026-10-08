@@ -76,7 +76,7 @@ describe('Ask with AI off', () => {
     expect(within(card).getByText('1 – 31 Aug')).toBeTruthy()
     expect(within(card).getByRole('link', { name: 'See it on the Month' }).getAttribute('href')).toBe('#/month/2026-08')
     expect(screen.getByText(/The app read your question itself\./)).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Turn on free AI (2 minutes)' }).getAttribute('href')).toBe('#/ai')
+    expect(screen.getByRole('link', { name: 'Turn on free AI (2 minutes)' }).getAttribute('href')).toBe('#/settings/ai')
     await expectNoAxeViolations()
   })
 

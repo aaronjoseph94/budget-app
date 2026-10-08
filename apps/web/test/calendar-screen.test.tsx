@@ -159,13 +159,13 @@ describe('CalendarScreen', () => {
     expect(marked).toEqual(['1: 1', '8: 1', '11: 0 payday', '20: 1', '25: 0 payday', '30: 1'])
   })
 
-  it('lists a monthly amount with no day paid apart, and leads to Setup to add one', async () => {
+  it('lists a monthly amount with no day paid apart, and leads to Lists to add one', async () => {
     renderScreen(<CalendarScreen month="2026-09" />, seeded())
 
     const undated = within(await screen.findByRole('region', { name: 'No day paid' }))
     expect(undated.getByRole('listitem').textContent).toBe('Gym$45.00')
-    fireEvent.click(undated.getByRole('button', { name: 'Add a day paid in Setup' }))
-    expect(window.location.hash).toBe('#/setup')
+    fireEvent.click(undated.getByRole('button', { name: 'Add a day paid in Lists' }))
+    expect(window.location.hash).toBe('#/settings/lists')
   })
 
   it('steps a month at a time and writes it into the address', async () => {

@@ -91,7 +91,8 @@ describe('Shell', () => {
       ['Money', ['Savings', 'Debts', 'All transactions']],
       ['Coach', ['Coach', 'Forecast', 'Reports']],
       ['Inbox', ['Review', 'Add']],
-      ['Setup', ['Setup', 'Settings', 'Help']],
+      // Setup is Settings' Lists tab (ADR 0014 §2).
+      ['Setup', ['Settings', 'Help']],
     ])
     expect(within(deskBar()).getByRole('link', { name: 'Coach' }).getAttribute('aria-current')).toBe('page')
     expect(within(phoneBar()).getByRole('link', { name: 'Coach' }).getAttribute('aria-current')).toBe('page')
@@ -122,7 +123,7 @@ describe('Shell', () => {
     const expected = [
       ['Plan', ['Year', 'Paycheck', 'Bill calendar', 'Savings', 'Debts', 'Forecast']],
       ['Understand', ['Reports', 'Ask']],
-      ['Set up and help', ['Getting started', 'Setup', 'AI settings', 'Settings', 'Help']],
+      ['Set up and help', ['Getting started', 'Settings', 'Help']],
       ['Records', ['All transactions']],
     ] as const
     // Read as a screen reader reads them: each group by its heading, each
@@ -139,8 +140,8 @@ describe('Shell', () => {
       })
     })
     expect(MORE_GROUPS.map((g) => [g.title, g.items.map((i) => i.label)])).toEqual(expected)
-    // Goals are plural (G1): Settings lists every goal, so its hint says so.
-    expect((await moreItem('Set up and help', 'Settings')).textContent).toContain('your savings goals')
+    // Settings' hint names its four tabs (ADR 0014 §2).
+    expect((await moreItem('Set up and help', 'Settings')).textContent).toContain('Your lists, budgets, AI and account')
 
     expect((await moreItem('Records', 'All transactions')).getAttribute('href')).toBe('#/ledger')
     go('/ledger')
@@ -366,7 +367,7 @@ describe('Shell, its screens as links (FE-20)', () => {
     ])
     expect(within(deskBar()).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual([
       '#/week', '#/month', '#/year', '#/paycheck', '#/calendar', '#/savings', '#/debts', '#/ledger',
-      '#/coach', '#/forecast', '#/reports', '#/review', '#/add', '#/setup', '#/settings', '#/help',
+      '#/coach', '#/forecast', '#/reports', '#/review', '#/add', '#/settings', '#/help',
     ])
 
     go('/more')

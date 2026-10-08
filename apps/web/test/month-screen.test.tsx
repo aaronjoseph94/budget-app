@@ -144,9 +144,9 @@ describe('MonthScreen blocks', () => {
     expect(block('Bills').getByRole('rowheader', { name: 'Rent' }).closest('tr')?.textContent).toBe('Rent')
     fireEvent.click(block('Bills').getByRole('button', { name: 'Hide empty' }))
     expect(screen.queryByRole('rowheader', { name: 'Rent' })).toBeNull()
-    // A list with nothing on it at all points to Setup instead.
+    // A list with nothing on it at all points to Lists instead.
     // A link: jsdom does not follow its hash, so the address it names is checked.
-    expect(block('Debts').getByRole('link', { name: 'Add one in Setup' }).getAttribute('href')).toBe('#/setup')
+    expect(block('Debts').getByRole('link', { name: 'Add one in Lists' }).getAttribute('href')).toBe('#/settings/lists')
   })
 
   it('says a list has nothing this month when every row is folded, with no table head over no rows (V9)', async () => {
@@ -710,8 +710,8 @@ describe('MonthScreen, on a first run', () => {
     expect(start.textContent).toContain('New here? Getting started sets up your lists, pay, bills and goals one step at a time')
     fireEvent.click(within(start).getByRole('button', { name: 'Get started' }))
     expect(window.location.hash).toBe('#/start')
-    fireEvent.click(within(start).getByRole('button', { name: 'Open Setup' }))
-    expect(window.location.hash).toBe('#/setup')
+    fireEvent.click(within(start).getByRole('button', { name: 'Open Lists' }))
+    expect(window.location.hash).toBe('#/settings/lists')
   })
 
   it('says nothing of the kind once there are categories', async () => {

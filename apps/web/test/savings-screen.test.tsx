@@ -133,7 +133,7 @@ describe('SavingsScreen', () => {
   it('says when the Savings list is empty, and where to add to it', async () => {
     renderScreen(<SavingsScreen />, createFakeSupabase({ categories: [cat('food', 'Groceries', 'variable', 0)] }))
     expect(await screen.findByText('Your Savings list has no funds yet. Each fund on it gets a card here.')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Add funds in Setup' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Add funds in Lists' })).toBeTruthy()
   })
 
   it('says which update is missing when 0013 is not applied', async () => {

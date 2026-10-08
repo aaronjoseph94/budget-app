@@ -24,7 +24,7 @@ export function CoachStatus({ state }: { state: NarrationState }) {
     said = (
       <>
         The app’s own words.{' '}
-        <a href={hashOf({ screen: 'ai', param: null })} className={SENTENCE_LINK}>
+        <a href={hashOf({ screen: 'settings', param: 'ai' })} className={SENTENCE_LINK}>
           {view.state === 'off' ? 'Turn AI back on' : 'Turn on free AI (2 minutes)'}
         </a>
       </>

@@ -46,8 +46,8 @@ const never = () => false
  * give its seven room for names, the Coach for its insights and goal side
  * by side (Mockup A step 7), the Forecast and Reports for their sections
  * two across (step 8), Savings and Debts for their cards three across
- * (step 9), Setup, Settings and AI settings for their cards in columns
- * (step 11), a Help article for the list beside it and Getting started for
+ * (step 9), Settings for each tab's cards in columns (step 11), a Help
+ * article for the list beside it and Getting started for
  * its steps beside the step (step 12).
  */
 export const VIEWS: { readonly [S in Screen]: View } = {
@@ -61,11 +61,11 @@ export const VIEWS: { readonly [S in Screen]: View } = {
   ledger: { wide: never, render: () => <LedgerScreen /> },
   // nav.ts reads Settings' param only as one of its tabs (ADR 0014 §2).
   settings: { wide: always, render: (param) => <SettingsScreen tab={SETTINGS_TABS.find((t) => t === param) ?? null} /> },
-  setup: { wide: always, render: () => <SettingsScreen tab="lists" /> },
   savings: { wide: always, render: () => <SavingsScreen /> },
   debts: { wide: always, render: () => <DebtsScreen /> },
   year: { wide: always, render: (param) => <YearScreen start={param} /> },
   help: { wide: (param) => param !== null, render: (param) => <HelpScreen topic={param} /> },
+  // Never reached: nav.ts reads `#/ai` as Settings › AI. Here only while `ai` is still an id.
   ai: { wide: always, render: () => <SettingsScreen tab="ai" /> },
   start: { wide: always, render: () => <GettingStartedScreen /> },
   forecast: { wide: always, render: () => <ForecastScreen /> },

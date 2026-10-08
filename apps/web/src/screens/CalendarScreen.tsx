@@ -264,8 +264,8 @@ function Undated({ calendar }: { calendar: BillCalendar }) {
           </li>
         ))}
       </ul>
-      <Button variant="outline" size="sm" onClick={() => navigate('setup')}>
-        Add a day paid in Setup
+      <Button variant="outline" size="sm" onClick={() => navigate('settings', 'lists')}>
+        Add a day paid in Lists
       </Button>
     </section>
   )

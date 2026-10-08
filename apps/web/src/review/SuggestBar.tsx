@@ -19,7 +19,7 @@ function Updates({ children }: { children: string }) {
   )
 }
 
-const AI = hashOf({ screen: 'ai', param: null })
+const AI = hashOf({ screen: 'settings', param: 'ai' })
 
 /**
  * Why asking stopped, as Review can say it in one line, with the one place
