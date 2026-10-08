@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Serves the web app on a fake Supabase at http://localhost:5275, for a look
+# Serves the web app on a fake Supabase at http://127.0.0.1:5275, for a look
 # by hand or a one-off script (docs/design/rework/04-e2e.md). The suite,
 # `pnpm e2e`, starts the same server itself from e2e.config.ts.
 #

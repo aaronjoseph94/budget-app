@@ -23,5 +23,8 @@ export default defineConfig({
   root: web,
   plugins: [react(), tailwindcss(), setupFilesPlugin()],
   resolve: { alias: [{ find: /^\.\/supabase\.js$/, replacement: `${here}supabase-preview.ts` }] },
-  server: { port: 5275, strictPort: true, fs: { allow: [repo] } },
+  // 127.0.0.1, the address e2e.config.ts waits on, not Vite's default
+  // `localhost`: on GitHub's runner that name is ::1 first, so Vite listened
+  // on IPv6 alone and every CI run ended APP_UNREACHABLE before a test ran.
+  server: { host: '127.0.0.1', port: 5275, strictPort: true, fs: { allow: [repo] } },
 })
