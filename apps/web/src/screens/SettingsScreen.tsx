@@ -13,67 +13,89 @@ import { Input, refusal } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { navigate } from '../nav.js'
 import { HelpButton } from '../help/HelpButton.js'
+import { SETTINGS_TAB_HELP } from '../help/screen-help.js'
 import { LearnedShopsCard } from './LearnedShops.js'
 import { AiAppsCard } from '../ai-apps/AiAppsCard.js'
 import { signOutHere } from '../sign-out.js'
+import { cn } from '../lib/cn.js'
+import { SETTINGS_TABS, SETTINGS_TAB_NAME, type SettingsTab } from '../settings/tab.js'
 
-const ProgressLine = lazyPart(() => import('../start/ProgressLine.js').then((m) => ({ default: m.ProgressLine })))
+// The two big tabs are fetched when first shown, as the screens were (PERF-3).
+const ListsTab = lazyPart(() => import('../settings/ListsTab.js').then((m) => ({ default: m.ListsTab })))
+const AiTab = lazyPart(() => import('./AiSettingsScreen.js').then((m) => ({ default: m.AiSettingsScreen })))
 
-/** Settings: shortcuts to Getting started, Setup, AI settings and Savings, then weekly budgets, learned shops, AI apps and the account. */
-export function SettingsScreen() {
-  const { supabase, email } = useAppData()
-  // Mockup A: the shortcuts two across from 1024px and four from 1280px, then Weekly budgets
-  // beside the learned shops, AI apps and the account from 1280px.
+/**
+ * Settings (ADR 0014 §2): one screen, four tabs. Lists is the workbook's
+ * START HERE; Budgets & goals the weekly budgets, and where the goals are;
+ * AI is AI settings; Account the learned shops, AI apps and Sign out. The
+ * tab showing is in the address (`#/settings/ai`); bare, it opens Lists.
+ */
+export function SettingsScreen({ tab }: { tab: SettingsTab | null }) {
+  const shown = tab ?? 'lists'
   return (
     <div className="space-y-5">
-      <header>
-        <div className="flex flex-wrap items-center gap-1">
-          <MonthTitle>Settings</MonthTitle>
-          <HelpButton screen="settings" />
-        </div>
-        <p className="text-muted-foreground md:text-base">Budgets, your savings goals, and your account.</p>
+      <header className="flex flex-wrap items-center gap-1">
+        <MonthTitle>Settings</MonthTitle>
+        <HelpButton screen="settings" topic={SETTINGS_TAB_HELP[shown]} />
       </header>
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-4">
-        <Section large title="Getting started">
-          <p className="text-muted-foreground">
-            <Suspense fallback="One step at a time">
-              <ProgressLine fallback="One step at a time" />
-            </Suspense>
-          </p>
-          <Button variant="outline" onClick={() => navigate('start')}>
-            <Icon name="check" /> Open Getting started
-          </Button>
-        </Section>
-        <Section large title="Your lists">
-          <p className="text-muted-foreground">Your name, and which list each category is on.</p>
-          <Button variant="outline" onClick={() => navigate('setup')}>
-            <Icon name="list" /> Open Setup
-          </Button>
-        </Section>
-        {/* AI settings has no sidebar item; on a computer this is its way in (N136). */}
-        <Section large title="AI settings">
-          <p className="text-muted-foreground">Free AI, other services, the Coach’s tone and shop names.</p>
-          <Button variant="outline" onClick={() => navigate('ai')}>
-            <Icon name="sparkles" /> Open AI settings
-          </Button>
-        </Section>
-        <GoalsCard />
-      </div>
-      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-        <BudgetsCard />
-        <div className="space-y-5">
-          <LearnedShopsCard />
-          <AiAppsCard />
-          <Section large title="Account">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              {/* An address is one long word: it breaks only where it cannot fit. */}
-              <p className="min-w-0 text-muted-foreground [overflow-wrap:anywhere]">{email}</p>
-              <Button variant="outline" onClick={() => void signOutHere(supabase)}>
-                <Icon name="logout" /> Sign out
-              </Button>
-            </div>
-          </Section>
+      {/* Mockup A's segmented control, as Reports draws it; the columns take their own widths, so all four fit a phone. */}
+      <div className="edge-fade -mx-1 overflow-x-auto px-1">
+        <div role="tablist" aria-label="Settings" className="grid w-full grid-cols-[repeat(4,auto)] gap-1 rounded-md bg-canvas p-1 sm:inline-grid sm:w-auto">
+          {SETTINGS_TABS.map((t) => (
+            <button
+              key={t}
+              type="button"
+              role="tab"
+              aria-selected={shown === t}
+              aria-controls={`settings-${t}`}
+              id={`settings-tab-${t}`}
+              onClick={() => navigate('settings', t)}
+              className={cn(
+                'min-h-11 rounded-sm px-2 text-sm font-medium outline-none transition-colors focus-visible:ring-[3px] focus-visible:ring-ring sm:min-w-22 sm:px-4',
+                shown === t ? 'bg-card text-foreground shadow-sm' : 'text-canvas-muted hover:text-foreground',
+              )}
+            >
+              {SETTINGS_TAB_NAME[t]}
+            </button>
+          ))}
         </div>
+      </div>
+      <div role="tabpanel" id={`settings-${shown}`} aria-labelledby={`settings-tab-${shown}`}>
+        <Suspense fallback={<p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>}>
+          {shown === 'lists' ? <ListsTab /> : shown === 'ai' ? <AiTab /> : shown === 'account' ? <AccountTab /> : <BudgetsTab />}
+        </Suspense>
+      </div>
+    </div>
+  )
+}
+
+/** Weekly budgets beside the goals from 1280px (Mockup A). */
+function BudgetsTab() {
+  return (
+    <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+      <BudgetsCard />
+      <GoalsCard />
+    </div>
+  )
+}
+
+/** The learned shops beside AI apps and the account from 1280px. */
+function AccountTab() {
+  const { supabase, email } = useAppData()
+  return (
+    <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
+      <LearnedShopsCard />
+      <div className="space-y-5">
+        <AiAppsCard />
+        <Section large title="Account">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* An address is one long word: it breaks only where it cannot fit. */}
+            <p className="min-w-0 text-muted-foreground [overflow-wrap:anywhere]">{email}</p>
+            <Button variant="outline" onClick={() => void signOutHere(supabase)}>
+              <Icon name="logout" /> Sign out
+            </Button>
+          </div>
+        </Section>
       </div>
     </div>
   )

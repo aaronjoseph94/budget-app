@@ -1,5 +1,9 @@
 import type { Screen } from '../nav.js'
+import type { SettingsTab } from '../settings/tab.js'
 import type { HelpTopic } from './topics.js'
+
+/** The article Settings' ? opens, by the tab showing (ADR 0014 §2). */
+export const SETTINGS_TAB_HELP: Readonly<Record<SettingsTab, HelpTopic>> = { lists: 'lists', budgets: 'budgets', ai: 'free-ai', account: 'ai-apps' }
 
 /**
  * The article each screen's ? opens (plan §8.2), kept here rather than on
@@ -17,7 +21,8 @@ export const SCREEN_HELP: Readonly<Record<Exclude<Screen, 'help'>, HelpTopic>> =
   // More is where a phone finds the rest; Setup is its lists and categories.
   more: 'getting-around',
   setup: 'lists',
-  settings: 'budgets',
+  // Settings' ? opens the tab showing (SETTINGS_TAB_HELP); this is its first tab's.
+  settings: 'lists',
   // All transactions is where a charge counted twice is found and removed.
   ledger: 'wrong-number',
   savings: 'savings',

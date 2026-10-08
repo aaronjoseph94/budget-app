@@ -21,7 +21,7 @@ describe('AppData refresh, answered out of order (CR-1)', () => {
   it('keeps the newer read when an older one arrives after it', async () => {
     const fake = createFakeSupabase({ categories: [cat('c1', 'Groceries'), cat('c2', 'Restaurants')] })
     const data: { current: AppData | null } = { current: null }
-    renderScreen(<><SettingsScreen /><Probe into={data} /></>, fake)
+    renderScreen(<><SettingsScreen tab="budgets" /><Probe into={data} /></>, fake)
     const restaurants = await screen.findByRole<HTMLInputElement>('textbox', { name: 'Weekly budget for Restaurants' })
 
     // An older refresh reads categories while the budget is still unset, and

@@ -26,7 +26,6 @@ import { navigate } from '../nav.js'
 import { PlanFields, PlanHeadings, TotalTile, useMonthlyAmounts, type MonthlyAmounts } from '../screens/SetupPlans.js'
 import { useBillNudges } from '../bill-nudges.js'
 import { PayFields, PayHeadings, usePaySchedules, type PaySchedules } from '../screens/SetupPay.js'
-import { HelpButton } from '../help/HelpButton.js'
 import { TryAgain } from '../try-again.js'
 import { LINE_LINK } from '../components/ui/link.js'
 
@@ -310,10 +309,8 @@ function NameBand() {
 
   return (
     <header className="rounded-xl bg-primary-tint px-4 py-5 sm:px-6 [--input:var(--canvas-muted)] [--muted-foreground:var(--canvas-muted)]">
-      <div className="flex flex-wrap items-center gap-1">
-        <MonthTitle>Start here!</MonthTitle>
-        <HelpButton screen="setup" />
-      </div>
+      {/* Settings' ? is the Lists article's (ADR 0014 §2). */}
+      <MonthTitle>Start here!</MonthTitle>
       <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
         <label htmlFor={field} className="shrink-0 text-base">
           My name is

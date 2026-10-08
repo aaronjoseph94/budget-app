@@ -81,7 +81,7 @@ export const ARTICLES: readonly Article[] = [
     ],
     done: 'you can reach every screen from the sidebar on a computer, or from the bottom buttons and More on a phone.',
     stuck:
-      'In a narrower window the sidebar shows only its icons: point at one to see its name. Ask and the Sunday check-in have no place of their own in the sidebar: open them from the **Coach**. Getting started and AI settings open from **Settings**, with **Open Getting started** and **Open AI settings**. Week, Month and Year are also in the switch at the top of each. A closed group says on its name how many rows wait in Review.',
+      'In a narrower window the sidebar shows only its icons: point at one to see its name. Ask and the Sunday check-in have no place of their own in the sidebar: open them from the **Coach**. AI settings is the **AI** tab of **Settings**. Getting started opens from **More** on a phone. Week, Month and Year are also in the switch at the top of each. A closed group says on its name how many rows wait in Review.',
     related: ['start', 'periods', 'signing-in'],
   },
   {

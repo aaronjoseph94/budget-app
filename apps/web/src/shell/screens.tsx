@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { lazyPart } from '../lib/lazy-part.js'
 import type { Screen } from '../nav.js'
 import { HELP_TOPICS } from '../help/topics.js'
+import { SETTINGS_TABS } from '../settings/tab.js'
 import { MonthScreen } from '../screens/MonthScreen.js'
 import { MoreScreen } from '../screens/MoreScreen.js'
 
@@ -25,7 +26,6 @@ const ReportsScreen = lazyPart(() => import('../screens/ReportsScreen.js').then(
 const ReviewScreen = lazyPart(() => import('../screens/ReviewScreen.js').then((m) => ({ default: m.ReviewScreen })))
 const SavingsScreen = lazyPart(() => import('../screens/SavingsScreen.js').then((m) => ({ default: m.SavingsScreen })))
 const SettingsScreen = lazyPart(() => import('../screens/SettingsScreen.js').then((m) => ({ default: m.SettingsScreen })))
-const ListsTab = lazyPart(() => import('../settings/ListsTab.js').then((m) => ({ default: m.ListsTab })))
 const WeekScreen = lazyPart(() => import('../screens/WeekScreen.js').then((m) => ({ default: m.WeekScreen })))
 const YearScreen = lazyPart(() => import('../screens/YearScreen.js').then((m) => ({ default: m.YearScreen })))
 
@@ -60,8 +60,9 @@ export const VIEWS: { readonly [S in Screen]: View } = {
   add: { wide: never, render: () => <AddScreen /> },
   more: { wide: never, render: () => <MoreScreen /> },
   ledger: { wide: never, render: () => <LedgerScreen /> },
-  settings: { wide: always, render: () => <SettingsScreen /> },
-  setup: { wide: always, render: () => <ListsTab /> },
+  // nav.ts reads Settings' param only as one of its tabs (ADR 0014 §2).
+  settings: { wide: always, render: (param) => <SettingsScreen tab={SETTINGS_TABS.find((t) => t === param) ?? null} /> },
+  setup: { wide: always, render: () => <SettingsScreen tab="lists" /> },
   savings: { wide: always, render: () => <SavingsScreen /> },
   debts: { wide: always, render: () => <DebtsScreen /> },
   year: { wide: always, render: (param) => <YearScreen start={param} /> },
