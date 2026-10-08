@@ -21,7 +21,7 @@ function seeded(): FakeSupabase {
 const field = (label: RegExp) => screen.getByLabelText(label) as HTMLInputElement
 const type = (label: RegExp, value: string) => fireEvent.change(field(label), { target: { value } })
 const sheet = () => screen.getByRole('dialog')
-const edit = async () => fireEvent.click(within(await screen.findByRole('region', { name: 'Loan' })).getByRole('button', { name: 'Edit' }))
+const edit = async () => fireEvent.click(within(await screen.findByRole('region', { name: 'Loan' })).getByRole('button', { name: 'Edit Loan' }))
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
@@ -34,6 +34,14 @@ afterEach(() => {
 })
 
 describe('DebtsScreen, typing debts', () => {
+  // Bug bash 05: every card's button was a bare "Edit", four alike to a
+  // screen reader or Voice Control; each row's control names its row.
+  it('names each Edit after its debt, the word on it still Edit', async () => {
+    renderScreen(<DebtsScreen />, seeded())
+    const button = within(await screen.findByRole('region', { name: 'Loan' })).getByRole('button', { name: 'Edit Loan' })
+    expect(button.textContent).toBe('Edit')
+  })
+
   it("adds a debt at the end of the list, from this month, and shows its card", async () => {
     const fake = seeded()
     renderScreen(<DebtsScreen />, fake)

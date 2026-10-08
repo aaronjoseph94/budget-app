@@ -21,7 +21,7 @@ function seeded(): FakeSupabase {
 const field = (label: RegExp) => screen.getByLabelText(label) as HTMLInputElement
 const type = (label: RegExp, value: string) => fireEvent.change(field(label), { target: { value } })
 const sheet = () => screen.getByRole('dialog')
-const edit = async () => fireEvent.click(within(await screen.findByRole('region', { name: 'Loan' })).getByRole('button', { name: 'Edit' }))
+const edit = async () => fireEvent.click(within(await screen.findByRole('region', { name: 'Loan' })).getByRole('button', { name: 'Edit Loan' }))
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })

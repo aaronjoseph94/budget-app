@@ -253,7 +253,7 @@ function DebtCard({
         </Stat>
       </dl>
       <div className="px-4 pb-4 md:px-5">
-        <Button variant="outline" size="sm" onClick={onEdit}>
+        <Button variant="outline" size="sm" aria-label={`Edit ${row.name}`} onClick={onEdit}>
           Edit
         </Button>
       </div>
