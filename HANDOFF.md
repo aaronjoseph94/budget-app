@@ -191,6 +191,21 @@ to paste, so GitHub is not needed. Easiest on a computer.
 
 **Already done (2026-09-24): `0001` to `0014`.** Do not run them again.
 
+**Already done on the hosted project (2026-10-08, by the agent through
+the Supabase plugin, each checked afterwards):**
+- Part D is done: `0015` to `0041` are in. `schema_level()` answers 41
+  and the AI apps line 40. A second paste only says "already in".
+- Step 17 is done: the `ai` helper is `2026-10-08.2` (deploy 9, JWT
+  verification on). Its bytes equal this repository's file, and it
+  answers a call.
+- Step 18 is done: there is no `read-receipt`.
+- Step 19 is done: keys for OpenRouter, Groq and Gemini are saved. Your
+  own order, Groq then OpenRouter then Gemini, is kept; 0041 moves only
+  an order never chosen. Press **Test** on each row to time it.
+- Left for you: step 16 (`OWNER_USER_ID`), Part F (the `mcp` function is
+  too large for the plugin, and the OAuth server is a dashboard switch),
+  and whether the second account in **Authentication → Users** stays.
+
 **The agent pushes `main` first, and that is safe.** Cloudflare deploys
 the site when `main` changes. Netlify, until it is stopped in step 10,
 deploys from `main-tnlcto` (`netlify.toml`), so every push there goes

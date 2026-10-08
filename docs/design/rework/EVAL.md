@@ -152,12 +152,12 @@ each service's row times one real call from the owner's own phone.
 
 ## Left
 
-- **The owner's steps** (HANDOFF §3). Paste the updates `0015` to `0041`
-  after a backup, `0041_ai_free_order.sql` last. Paste the AI helper:
-  One-time updates shows ✓ once `2026-10-08.2` answers. Delete
-  read-receipt. Then add a free OpenRouter key in Settings › AI and
-  press **Test**. Nothing has touched the hosted project or a real AI
-  service yet.
+- **The owner's steps** (HANDOFF §3). After this table was measured, the
+  agent applied `0041_ai_free_order.sql` to the hosted project (it now
+  holds `0001` to `0041`) and deployed the helper `2026-10-08.2`
+  (deploy 9, byte-equal to the repository's file). No real AI service
+  has been timed yet: **Test** on each row in Settings › AI does that.
+  Left for the owner: `OWNER_USER_ID`, and Part F for AI apps.
 - **The browser suite on GitHub** failed on all five pushes from
   `9de9a7b` to `5a32ffd`. Each stopped at the 2-minute start-up wait
   (APP_UNREACHABLE), before any test ran. Vite listened on IPv6 alone;
