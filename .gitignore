@@ -48,6 +48,8 @@ supabase/.branches/
 # Test output
 coverage/
 .vitest/
+# The browser suite's report, traces, logs and cache (e2e.config.ts)
+.e2e/
 
 # OS / editor
 .DS_Store

@@ -10,6 +10,7 @@
     "gates": "./scripts/gates.sh",
     "check:fast": "./scripts/gates.sh fast",
     "check:task": "./scripts/gates.sh full",
+    "e2e": "e2e run",
     "test": "vitest run",
     "verify": "./scripts/gates.sh full"
   },

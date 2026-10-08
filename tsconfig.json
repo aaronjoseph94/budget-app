@@ -11,6 +11,7 @@
     { "path": "./packages/statement-parsers" },
     { "path": "./packages/ai-apps" },
     { "path": "./apps/web" },
-    { "path": "./supabase/functions" }
+    { "path": "./supabase/functions" },
+    { "path": "./tsconfig.e2e.json" }
   ]
 }
