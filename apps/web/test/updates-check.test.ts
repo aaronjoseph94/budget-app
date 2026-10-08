@@ -235,9 +235,10 @@ describe('checking the one-time updates', () => {
       // 2026-10-01.2 bounds every wait, body and all (backend-b-05); 2026-10-01.3 can serve the owner alone (backend-b-06);
       // 2026-10-01.4 keeps a good reply when noting it failed (backend-b-07);
       // 2026-10-01.5 counts the database calls around an attempt in its deadline (review-r-01);
-      // 2026-10-08.1 names each service's models, reads a photo on OpenRouter and Groq, and tries the free services quick first (ADR 0015).
-      ['2026-10-01.1', 'old'], ['2026-10-01.3', 'old'], ['2026-10-01.4', 'old'], ['2026-10-01.5', 'old'], ['2026-10-01.10', 'old'], ['2026-10-02.1', 'old'],
-      ['2026-10-08.1', 'in'], ['2026-10-08.10', 'in'], ['2026-10-09.1', 'in'],
+      // 2026-10-08.1 names each service's models, reads a photo on OpenRouter and Groq, and tries the free services quick first (ADR 0015);
+      // 2026-10-08.2 takes the speed test, a test run on one named service, and says how long the attempt took.
+      ['2026-10-01.1', 'old'], ['2026-10-01.3', 'old'], ['2026-10-01.4', 'old'], ['2026-10-01.5', 'old'], ['2026-10-01.10', 'old'], ['2026-10-02.1', 'old'], ['2026-10-08.1', 'old'],
+      ['2026-10-08.2', 'in'], ['2026-10-08.10', 'in'], ['2026-10-09.1', 'in'],
     ] as const) {
       fake.functions.ai = () => new Response(JSON.stringify({ ok: true, version }), { headers: { 'content-type': 'application/json' } })
       const checked = await checkUpdates(fake.client)

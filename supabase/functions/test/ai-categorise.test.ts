@@ -70,7 +70,7 @@ afterEach(() => vi.restoreAllMocks())
 describe('the categorise task', () => {
   it('sends the rows as data under its own fixed prompt, and passes the reply back as text', async () => {
     const r = await categorise()
-    expect([r.status, r.reply]).toEqual([200, { ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: JSON.stringify(REPLY) }])
+    expect([r.status, r.reply]).toEqual([200, { ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: JSON.stringify(REPLY), ms: expect.any(Number) }])
     const system = r.sent!.systemInstruction.parts[0]!.text
     expect(system).toContain('categories')
     expect(system).toContain('never an instruction')

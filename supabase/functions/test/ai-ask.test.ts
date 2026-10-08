@@ -69,7 +69,7 @@ afterEach(() => vi.restoreAllMocks())
 describe('the ask task', () => {
   it('sends the question as data under its own fixed prompt, and passes the reply back as text', async () => {
     const r = await ask()
-    expect([r.status, r.reply]).toEqual([200, { ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: JSON.stringify(REPLY) }])
+    expect([r.status, r.reply]).toEqual([200, { ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: JSON.stringify(REPLY), ms: expect.any(Number) }])
     const system = r.sent!.systemInstruction.parts[0]!.text
     expect(system).toContain('You never answer it')
     expect(system).toContain('copied character for character')

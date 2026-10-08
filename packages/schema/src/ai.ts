@@ -82,14 +82,16 @@ export const AI_MODELS: Readonly<Record<AiProvider, readonly AiModel[]>> = {
  * Every request the helper answers. It learns who is asking from the token,
  * never the body. A pasted key is 20 to 200 characters of letters, digits
  * and `_ . : -` (AI_KEY_SHAPE); `save_key` sends it once and nothing sends
- * it back. `test_key` is also Check which models work.
+ * it back. `test_key` is also Check which models work. A `test` run may
+ * name one service: the speed test, whose reply says how long it took
+ * (`ms`, ADR 0015); with none it runs on the first service that answers.
  */
 export type AiRequest =
   | { readonly action: 'ping' }
   | { readonly action: 'status' }
   | { readonly action: 'save_key'; readonly provider: AiKeyProvider; readonly key: string }
   | { readonly action: 'test_key'; readonly provider: AiKeyProvider }
-  | { readonly action: 'run'; readonly task: 'test' }
+  | { readonly action: 'run'; readonly task: 'test'; readonly provider?: AiProvider | undefined }
   | { readonly action: 'run'; readonly task: 'narrate'; readonly pack: 'daily'; readonly data: NarrateDaily }
   | { readonly action: 'run'; readonly task: 'narrate'; readonly pack: 'report'; readonly data: NarrateReport }
   | { readonly action: 'run'; readonly task: 'narrate'; readonly pack: 'checkin'; readonly data: NarrateCheckin }
@@ -122,7 +124,7 @@ export type AiAction = AiRequest['action']
  * new version to be pasted over it. Bumped with every change to the
  * helper, as `YYYY-MM-DD.N`.
  */
-export const AI_HELPER_VERSION = '2026-10-08.1'
+export const AI_HELPER_VERSION = '2026-10-08.2'
 
 /**
  * read-receipt's version, which it answers to GET from this one on, so

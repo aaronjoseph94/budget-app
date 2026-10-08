@@ -105,7 +105,7 @@ afterEach(() => {
 describe('the receipt task', () => {
   it('sends Gemini the photo with read-receipt’s prompt and shape, and passes the reply back as text the receipt zod reads', async () => {
     const r = await receipt()
-    expect([r.status, r.reply]).toEqual([200, { ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: TEXT }])
+    expect([r.status, r.reply]).toEqual([200, { ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: TEXT, ms: expect.any(Number) }])
     const body = JSON.parse(r.sent('gemini')!) as {
       systemInstruction: { parts: { text: string }[] }
       contents: { parts: Record<string, unknown>[] }[]
@@ -121,7 +121,7 @@ describe('the receipt task', () => {
 
   it('sends Groq the photo on the one model there that reads one, whatever text model the owner chose', async () => {
     const r = await receipt({ order: ['groq', 'openrouter', 'gemini'], saved: ['groq', 'openrouter'], models: { groq: 'openai/gpt-oss-120b' } })
-    expect([r.status, r.reply]).toEqual([200, { ok: true, provider: 'groq', model: 'qwen/qwen3.8-27b', text: TEXT }])
+    expect([r.status, r.reply]).toEqual([200, { ok: true, provider: 'groq', model: 'qwen/qwen3.8-27b', text: TEXT, ms: expect.any(Number) }])
     expect(r.services).toEqual(['groq'])
     const body = JSON.parse(r.sent('groq')!) as { model: string; messages: { role: string; content: unknown }[] }
     expect(body.model).toBe('qwen/qwen3.8-27b')

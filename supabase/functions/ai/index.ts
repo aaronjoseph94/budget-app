@@ -27,7 +27,7 @@
 import { z } from 'npm:zod@4.6.5'
 
 /** Which copy is deployed, so One-time updates can tell an old paste from this one. */
-export const VERSION = '2026-10-08.1'
+export const VERSION = '2026-10-08.2'
 
 // Browsers allowed to call this, as read-receipt's: the Cloudflare and
 // Netlify sites and a local dev server, plus exact https origins in the
@@ -198,7 +198,8 @@ export const RequestSchema = z.union([
   z.object({ action: z.literal('save_key'), provider: KeyProvider, key: z.string().regex(/^[A-Za-z0-9_.:-]{20,200}$/) }).strict(),
   z.object({ action: z.literal('test_key'), provider: KeyProvider }).strict(),
   // One task, carrying data and never a prompt: each task's prompt and reply shape live here.
-  z.object({ action: z.literal('run'), task: z.literal('test') }).strict(),
+  // A test may name one service, the speed test (ADR 0015); with none it runs on the first that answers.
+  z.object({ action: z.literal('run'), task: z.literal('test'), provider: KeyProvider.optional() }).strict(),
   z.object({ action: z.literal('run'), task: z.literal('narrate'), pack: z.literal('daily'), data: NarrateDailySchema }).strict(),
   z.object({ action: z.literal('run'), task: z.literal('narrate'), pack: z.literal('report'), data: NarrateReportSchema }).strict(),
   z.object({ action: z.literal('run'), task: z.literal('narrate'), pack: z.literal('checkin'), data: NarrateCheckinSchema }).strict(),
@@ -1352,8 +1353,8 @@ function receiptAsk(data: Receipt): Ask {
   return { system: RECEIPT_SYSTEM, data: { photo: 'Read this receipt.' }, schema: RECEIPT_SCHEMA, maxOutputTokens: 300, image: { mimeType: data.mimeType, data: data.image } }
 }
 
-/** What happened on one service, as the owner's settings can say it: never a key, a prompt or a reply. */
-type Tried = { readonly provider: Provider; readonly model: string; readonly result: Outcome | 'resting' | 'over_budget' | 'service_cap' | 'locked' }
+/** What happened on one service, as the owner's settings can say it: never a key, a prompt or a reply. `ms` is how long an attempt made took. */
+type Tried = { readonly provider: Provider; readonly model: string; readonly result: Outcome | 'resting' | 'over_budget' | 'service_cap' | 'locked'; readonly ms?: number }
 
 /** The owner's order, then any service it leaves out in the default order, so a service is never lost to an older order. */
 function orderOf(stored: unknown): Provider[] {
@@ -1362,11 +1363,13 @@ function orderOf(stored: unknown): Provider[] {
 }
 
 /**
- * Run one task: the reply's text and the service that wrote it, or a code
- * and what was tried. `started` is when the request arrived, so the
- * deadline counts the time already spent on it.
+ * Run one task: the reply's text, the service that wrote it and how long
+ * its attempt took (`ms`), or a code and what was tried. `started` is when
+ * the request arrived, so the deadline counts the time already spent on
+ * it. `only` names the one service a speed test asks, in place of the
+ * owner's order (ADR 0015); the switches still hold.
  */
-export async function route(env: Env, user: string, task: TaskName, ask: Ask, started: number, fetchFn: typeof fetch): Promise<Reply> {
+export async function route(env: Env, user: string, task: TaskName, ask: Ask, started: number, fetchFn: typeof fetch, only?: Provider): Promise<Reply> {
   const context = await callDb(env, 'ai_context_for', { p_user: user }, fetchFn)
   if ('code' in context) return failed(context.code)
   const ctx = obj(context.data)
@@ -1383,7 +1386,7 @@ export async function route(env: Env, user: string, task: TaskName, ask: Ask, st
     return [STATUS_OF[code], { ok: false, code, tried }]
   }
 
-  for (const provider of orderOf(settings['provider_order'])) {
+  for (const provider of only === undefined ? orderOf(settings['provider_order']) : [only]) {
     if (attempts >= MAX_ATTEMPTS) break
     if (TIER[provider] === 'paid' && settings['allow_paid'] !== true) continue
     // A photo goes only to a model that reads one; a service with none is not asked, and spends nothing.
@@ -1438,7 +1441,9 @@ export async function route(env: Env, user: string, task: TaskName, ask: Ask, st
     if (claim.data !== 'ok') return end('helper_error')
 
     attempts += 1
+    const began = Date.now()
     const res = await callService(fetchFn, built.url, built.init, ms)
+    const took = Date.now() - began
     const body: unknown = typeof res === 'string' ? null : res.body
     const replied = typeof res === 'string' ? { outcome: res, text: null } : chatReply(provider, res.status, body)
     log(`attempt_${replied.outcome}`)
@@ -1457,14 +1462,14 @@ export async function route(env: Env, user: string, task: TaskName, ask: Ask, st
     // (backend-b-07). callDb has logged why.
     if (replied.outcome === 'ok' && replied.text !== null) {
       log('run_ok', { attempts, tried: tried.length })
-      return [200, { ok: true, provider, model, text: replied.text }]
+      return [200, { ok: true, provider, model, text: replied.text, ms: took }]
     }
     if ('code' in noted) return end(noted.code)
     if (replied.outcome === 'rejected' && found.source === 'saved') {
       const mark = await callDb(env, 'ai_key_mark', { p_user: user, p_provider: provider, p_status: 'rejected' }, fetchFn)
       if ('code' in mark) return end(mark.code)
     }
-    tried.push({ provider, model, result: replied.outcome })
+    tried.push({ provider, model, result: replied.outcome, ms: took })
   }
 
   if (attempts > 0) return end('all_failed')
@@ -1532,7 +1537,7 @@ export async function handle(
           : body.pack === 'report'
             ? ['narrate_report', reportAsk(body.data)]
             : ['narrate_checkin', checkinAsk(body.data)]
-    return send(...(await route(env, who.user, task, ask, started, fetchFn)))
+    return send(...(await route(env, who.user, task, ask, started, fetchFn, body.task === 'test' ? body.provider : undefined)))
   }
 
   const context = await callDb(env, 'ai_context_for', { p_user: who.user }, fetchFn)

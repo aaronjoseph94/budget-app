@@ -22,7 +22,8 @@ describe('the helper and the app agree on what may be asked', () => {
       { action: 'status' },
       { action: 'save_key', provider: 'gemini', key: 'test-not-a-real-key-0001' },
       { action: 'test_key', provider: 'gemini' },
-      { action: 'run', task: 'test' },
+      // The speed test names one service; a test with none runs on the first that answers.
+      { action: 'run', task: 'test', provider: 'openrouter' },
       { action: 'run', task: 'narrate', pack: 'daily', data: BRIEF },
       { action: 'run', task: 'narrate', pack: 'report', data: { tone: 'straight', facts: [FACT], points: ['A'], tryThis: null } },
       { action: 'run', task: 'narrate', pack: 'checkin', data: { tone: 'straight', facts: [FACT], recap: 'A', win: null, tryThis: null, goals: [] } },
@@ -36,6 +37,8 @@ describe('the helper and the app agree on what may be asked', () => {
       expect(RequestSchema.safeParse({ action: 'test_key', provider }).success).toBe(true)
     }
     for (const body of sent) expect(RequestSchema.safeParse(body).success).toBe(true)
+    expect(RequestSchema.safeParse({ action: 'run', task: 'test' }).success).toBe(true)
+    expect(RequestSchema.safeParse({ action: 'run', task: 'test', provider: 'mistral' }).success).toBe(false)
     expect(RequestSchema.options.map((o) => o.shape.action.value)).toEqual(sent.map((b) => b.action))
     // A brief with anything more than the app sends, or a figure where a word goes, is refused.
     for (const data of [{ ...BRIEF, amount: 41200 }, { ...BRIEF, facts: [{ ...BRIEF.facts[0], value: 5 }] }, { ...BRIEF, summary: 'A1' }]) {
