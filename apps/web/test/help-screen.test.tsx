@@ -51,7 +51,7 @@ describe('Help', () => {
     const search = await screen.findByRole('searchbox', { name: 'Search help' })
 
     fireEvent.change(search, { target: { value: 'STARTING balance' } })
-    expect(titles()).toEqual(['Debts', 'Let Claude or ChatGPT review your budget'])
+    expect(titles()).toEqual(['Debts'])
     // A button's name counts as its words, without the stars around it.
     fireEvent.change(search, { target: { value: 'add to home screen' } })
     expect(titles()).toEqual(['Signing in and out', 'Put it on your iPhone'])
@@ -61,7 +61,7 @@ describe('Help', () => {
     fireEvent.change(search, { target: { value: 'Rename' } })
     expect(titles()).toEqual(['Your lists'])
     fireEvent.change(search, { target: { value: 'disconnect' } })
-    expect(titles()).toEqual(['Use Claude or ChatGPT with your budget'])
+    expect(titles()).toEqual(['Connect Claude or ChatGPT'])
 
     fireEvent.change(search, { target: { value: 'zeppelin' } })
     expect(onScreen().queryByRole('list')).toBeNull()
@@ -87,7 +87,7 @@ describe('Help', () => {
     const related = within(within(page).getByRole('region', { name: 'Related' })).getAllByRole('link')
     expect(related.map((a) => [a.textContent, a.getAttribute('href')])).toEqual([
       ['Add a charge: statement, photo, typed', '#/help/add'],
-      ['Use Claude or ChatGPT with your budget', '#/help/ai-apps'],
+      ['Connect Claude or ChatGPT', '#/help/ai-apps'],
     ])
     expect(within(page).getByRole('link', { name: '‹ Help' }).getAttribute('href')).toBe('#/help')
   })

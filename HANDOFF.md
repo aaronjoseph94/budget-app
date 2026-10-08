@@ -445,8 +445,7 @@ connect an AI app to it.
     **Allow**. Then, to have Claude look over everything, type "Review my
     whole budget and suggest any changes" in a chat with **Budget** on;
     what it suggests waits in the app's **Review → Suggested changes**
-    until you press **Apply** (Help → Let Claude or ChatGPT review your
-    budget).
+    until you press **Apply** (Help → Connect Claude or ChatGPT).
 25. **Connect ChatGPT** (Plus or higher, chatgpt.com only): **Connect a
     new AI app** again first. On chatgpt.com: **Settings → Security and
     login → Developer mode** on → go to chatgpt.com/plugins → **+** → name

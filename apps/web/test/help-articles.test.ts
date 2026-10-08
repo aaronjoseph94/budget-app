@@ -115,29 +115,22 @@ describe('Help articles', () => {
 
   // MCP plan M12a: a connection starts from Connect a new AI app, inside its window.
   it('connects Claude and ChatGPT from Connect a new AI app, and says what an AI app may do and who sees it', () => {
-    for (const id of ['connect-claude', 'connect-chatgpt'] as const) {
-      const steps = articleFor(id)?.steps ?? []
-      expect(steps[1], id).toMatch(new RegExp(`^Press \\*\\*Connect a new AI app\\*\\*.* within ${CONNECT_MINUTES} minutes\\.$`))
-      expect(steps.some((s) => s.includes('**Allow**')), id).toBe(true)
-      expect(articleFor(id)?.related, id).toContain('ai-apps')
-    }
-    const claude = articleFor('connect-claude')?.steps.join(' ')
-    expect(claude).toMatch(/\*\*Register automatically\*\*, not \*\*Use Claude’s published identity\*\*/)
-    expect(claude).toContain('**claude.ai**')
-    expect(articleFor('connect-chatgpt')?.steps.join(' ')).toMatch(/\*\*Developer mode\*\*.*\*\*chatgpt\.com\*\*/)
     const apps = articleFor('ai-apps')
-    const said = [apps?.stuck, ...(apps?.terms ?? []).map((t) => t.meaning)].join(' ')
-    for (const words of [/Anthropic for Claude, OpenAI for ChatGPT/, /300 look-ups and 30 additions a day/, /cannot approve, reject, change or delete anything/]) expect(said).toMatch(words)
-    expect(apps?.related).toEqual(['connect-claude', 'connect-chatgpt', 'ai-review', 'ai', 'review', 'updates'])
+    const steps = apps?.steps ?? []
+    expect(steps[1]).toMatch(new RegExp(`^Press \\*\\*Connect a new AI app\\*\\*.* within ${CONNECT_MINUTES} minutes\\.$`))
+    expect(steps.some((s) => s.includes('**Allow**'))).toBe(true)
+    expect(steps.join(' ')).toMatch(/\*\*Register automatically\*\*/)
+    expect(steps.join(' ')).toContain('**claude.ai**')
+    expect(steps.join(' ')).toMatch(/\*\*Developer mode\*\*.*\*\*chatgpt\.com\*\*/)
+    const said = [apps?.stuck, ...(apps?.terms ?? []).map((t) => `${t.term}: ${t.meaning}`)].join(' ')
+    for (const words of [/Anthropic or OpenAI/, /It cannot: approve, change or delete anything/, /It can: read your figures, add to Review/]) expect(said).toMatch(words)
+    expect(apps?.related).toEqual(['review', 'ai', 'updates'])
   })
 
-  // ADR 0013: the exact words to type, and that nothing changes until Apply.
-  it('says how to ask Claude or ChatGPT for a review, the words to type, and that only Apply changes anything', () => {
-    const review = articleFor('ai-review')
-    expect(review?.steps.join(' ')).toContain('Type “Review my whole budget and suggest any changes” and send it.')
-    expect(review?.summary).toMatch(/nothing changes until you tap Apply/)
-    expect(review?.stuck).toMatch(/\*\*Changed since it was suggested\*\* offers only \*\*Dismiss\*\*/)
-    for (const id of ['ai-apps', 'connect-claude', 'connect-chatgpt'] as const) expect(articleFor(id)?.related, id).toContain('ai-review')
+  // ADR 0013: a suggestion waits in Review, and only Apply changes anything.
+  it('says a suggestion waits in Review until Apply', () => {
+    expect(articleFor('ai-apps')?.done).toContain('**Apply**')
+    expect(articleFor('review')?.steps.some((s) => s.includes('**Suggested changes**') && s.includes('**Apply**'))).toBe(true)
   })
 
   // Security review mcp-3-01: the emergency steps end each sign-in, and Disconnect
@@ -160,7 +153,7 @@ describe('Help articles', () => {
     const meaning = (term: string) => terms.find((t) => t.term === term)?.meaning ?? ''
     expect(meaning('It cannot')).not.toMatch(/do anything while/)
     // Disconnect ending the session is HANDOFF check 21, not yet run: "should", and the emergency steps make sure.
-    expect(meaning('Its sign-in')).toMatch(/your Supabase account itself.*until its sign-in ends, which \*\*Disconnect\*\* should do/)
+    expect(meaning('Its sign-in')).toMatch(/your Supabase account until it ends; \*\*Disconnect\*\* ends it/)
   })
 
   it('finds no article for a topic not written yet', () => {
@@ -184,7 +177,7 @@ const sentencesOf = (a: (typeof ARTICLES)[number]) =>
     .filter(Boolean)
 
 /** The articles rewritten short so far; the last slice lists all twelve (PRD 03). */
-const SHORT = ['start', 'getting-around', 'add', 'review', 'budgets', 'lists', 'savings', 'debts', 'coach', 'ai'] as const
+const SHORT = ['start', 'getting-around', 'add', 'review', 'budgets', 'lists', 'savings', 'debts', 'coach', 'ai', 'ai-apps'] as const
 
 // The owner's brevity rule (PRD 03, 2026-10-08): twelve short articles.
 describe('Help’s length', () => {
@@ -238,21 +231,7 @@ const SOURCES: Record<string, string> = import.meta.glob(['../src/**/*.{ts,tsx}'
 const APP_WORDS = Object.values(SOURCES).join('\n')
 
 /** Names on someone else's screen, which the app cannot draw: Supabase's, Claude's, ChatGPT's and Safari's. */
-const OUTSIDE = new Set([
-  'New query',
-  'Customize',
-  'Connectors',
-  'Add custom connector',
-  'Sign in now',
-  'Register automatically',
-  'Use Claude’s published identity',
-  'Security and login',
-  'Developer mode',
-  'DCR',
-  'Edit Actions',
-  'Add to Home Screen',
-  '⋯',
-])
+const OUTSIDE = new Set(['New query', 'Register automatically', 'Developer mode', 'Edit Actions', 'Add to Home Screen', '⋯'])
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 /** A count in a name ("Approve these 12", "Today: N of 40") or "…" stands for whatever the app fills in there. */

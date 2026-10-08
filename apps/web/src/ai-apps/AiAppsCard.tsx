@@ -12,11 +12,7 @@ import { ConnectedApps } from './ConnectedApps.js'
 
 type Loaded = { readonly state: 'loading' | 'needs_update' | 'unreachable' } | { readonly state: 'ready'; readonly access: Access }
 
-const HELP: readonly (readonly [HelpTopic, string])[] = [
-  ['connect-claude', 'Connect Claude'],
-  ['connect-chatgpt', 'Connect ChatGPT'],
-  ['ai-apps', 'What AI apps can do'],
-]
+const HELP: readonly (readonly [HelpTopic, string])[] = [['ai-apps', 'Connect Claude or ChatGPT']]
 
 const SAVE_FAILED = { needs_update: 'That needs a one-time update first. See One-time updates in Help.', unreachable: 'Couldn’t save that just now. Try again.' }
 

@@ -244,7 +244,7 @@ Supabase answers Claude and ChatGPT before the server can, without the
 pointer to the sign-in, and connecting silently fails. Supabase has been
 seen to turn it back on after an update, so check it after every paste.
 
-**Connecting** is Help → **Connect Claude** or **Connect ChatGPT**, each
+**Connecting** is Help → **Connect Claude or ChatGPT**, each
 starting from Settings → Account → AI apps → **Connect a new AI app**, which lets
 a new app connect for 15 minutes. The first-connection checks are HANDOFF
 §4, 15 to 23.
