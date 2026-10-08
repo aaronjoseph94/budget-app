@@ -45,20 +45,20 @@ const SECTIONS: readonly { readonly label: string; readonly cards: readonly List
   {
     label: 'Recurring expenses',
     cards: [
-      { kind: 'bill', hint: 'What bills do you pay each month? Their amounts usually stay the same.' },
+      { kind: 'bill', hint: 'Bills paid each month, usually the same.' },
       {
         kind: 'debt',
-        // The workbook's note (D17) invites every open credit line; the second
-        // sentence is the plan's (§3.3), so the Rogers card is not put here.
-        hint: 'What loans are you paying off from the bank? A card you pay off from your bank is not a monthly debt payment here — its purchases are already counted.',
+        // The workbook's note (D17) invites every open credit line; the plan
+        // (§3.3) keeps the Rogers card out: its purchases are already counted.
+        hint: 'Bank loans only; a card is Not spending.',
       },
-      { kind: 'subscription', hint: 'What are you subscribed to? A statement shows them.' },
+      { kind: 'subscription', hint: 'Subscriptions; a statement shows them.' },
     ],
   },
   { label: 'Variable expenses', cards: [{ kind: 'variable', hint: 'What transactions have varied amounts?' }] },
   {
     label: 'Not spending',
-    cards: [{ kind: 'transfer', hint: 'Money that only moves, like paying off your card. Never counted as spending or income.' }],
+    cards: [{ kind: 'transfer', hint: 'Money that only moves, like card payments.' }],
   },
 ]
 
@@ -242,8 +242,8 @@ function StarterCard({ onAdded }: { onAdded: (count: number) => void }) {
   return (
     <section aria-label="Starter list" className="rounded-xl border bg-card p-5">
       <p className="text-sm">
-        Fill your lists with example names — Rent, Groceries, Netflix and the rest — plus Card payments and
-        Card interest &amp; fees for your statement. Names you already have stay as they are.
+        Fill your lists with example names: Rent, Groceries, Netflix and the rest. Card payments and Card interest &amp;
+        fees come too, for your statement. Names you already have stay as they are.
       </p>
       {message !== null ? (
         <div className="mt-2">
@@ -264,8 +264,8 @@ function StarterAdded({ count }: { count: number }) {
   }
   return (
     <Alert tone="success" title={`Added ${count} example ${count === 1 ? 'name' : 'names'}`}>
-      They are placeholders. Rename each one to your own, move any to another list, and remove the ones you don&apos;t
-      need. None of them has an amount.
+      They are placeholders. Rename each to your own, move any to another list, and remove any you don&apos;t need.
+      None of them has an amount.
     </Alert>
   )
 }

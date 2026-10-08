@@ -16,21 +16,6 @@ const SOURCES: Record<string, string> = import.meta.glob(['../src/**/*.{ts,tsx}'
 /** Files whose long strings are not prose: SVG paths, a data URI, a focus selector, a select's column list. */
 const NOT_PROSE = new Set(['../src/components/ui/icons.tsx', '../src/components/ui/form.tsx', '../src/components/ui/sheet.tsx', '../src/ledger.ts'])
 
-/** Files the cut has not reached yet (PRD 03); each slice removes its own, and the last empties it. */
-const NOT_YET = new Set([
-  '../src/reports/Habits.tsx',
-  '../src/reports/Trends.tsx',
-  '../src/review/SuggestedChanges.tsx',
-  '../src/screens/AddGoalSheet.tsx',
-  '../src/screens/DebtEditor.tsx',
-  '../src/screens/DebtStrategies.tsx',
-  '../src/screens/DebtsScreen.tsx',
-  '../src/screens/LearnedShops.tsx',
-  '../src/screens/MoreScreen.tsx',
-  '../src/screens/PaycheckPeriod.tsx',
-  '../src/screens/SetupPlans.tsx',
-  '../src/settings/ListsTab.tsx',
-])
 
 const LIMIT = 90
 const HINT_WORDS = 8
@@ -87,7 +72,7 @@ function scan(file: string, source: string): { long: Found[]; hints: Found[] } {
 }
 
 const found = Object.entries(SOURCES)
-  .filter(([file]) => !NOT_PROSE.has(file) && !NOT_YET.has(file))
+  .filter(([file]) => !NOT_PROSE.has(file))
   .map(([file, source]) => scan(file, source))
 const say = (f: Found) => `${f.file}:${f.line} (${f.text.length}) ${f.text}`
 

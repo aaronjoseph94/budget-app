@@ -59,8 +59,8 @@ export function DebtsScreen() {
           </div>
           {/* Plan 3.3: the debts here are not the Month's Debts list. */}
           <p className="text-muted-foreground md:text-base">
-            These are the loans and card balances you are paying down, to plan when each is paid off; they are separate
-            from the Month&rsquo;s Debts list, which counts the payments you make each month.
+            The loans and card balances you are paying down, and when each is paid off. The Month&rsquo;s Debts list is
+            separate: it counts each month&rsquo;s payments.
           </p>
         </div>
         {state.status === 'ready' ? (
@@ -70,8 +70,8 @@ export function DebtsScreen() {
         ) : null}
       </header>
       <p className="text-xs text-muted-foreground">
-        A card you pay off from your bank can go here too, but give it no monthly amount on the Month&rsquo;s Debts
-        list: what you bought on it is already counted there.
+        A card you pay off from your bank can go here too. Give it no monthly amount on the Month&rsquo;s Debts list;
+        its purchases already count.
       </p>
       {state.status === 'loading' ? <Loading what="your debts" /> : null}
       {notice !== null ? <Alert tone={notice.ok ? 'success' : 'error'}>{notice.text}</Alert> : null}

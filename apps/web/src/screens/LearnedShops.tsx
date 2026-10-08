@@ -61,8 +61,8 @@ export function LearnedShopsCard() {
   return (
     <Section large title="Shops filed by themselves">
       <p className="text-muted-foreground">
-        Each shop you have approved or moved with “Always file” is filed the same way from then on. Forget one and its next
-        charge waits in Review again. Charges already filed stay where they are.
+        A shop you approved or moved with “Always file” is filed the same way from then on. Forget one and its next charge
+        waits in Review again. Charges already filed stay where they are.
       </p>
       {error !== null ? <Alert tone="error">{error}</Alert> : null}
       {note !== null ? <SavedNote className="text-sm text-income">{note}</SavedNote> : null}

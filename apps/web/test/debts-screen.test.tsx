@@ -45,8 +45,8 @@ describe('DebtsScreen', () => {
   it("says what the debts here are, and that they are not the Month's Debts list", async () => {
     renderScreen(<DebtsScreen />, seeded())
     await screen.findByRole('region', { name: 'Debt summary' })
-    expect(screen.getByText(/separate from the Month’s Debts list, which counts the payments you make/)).toBeTruthy()
-    expect(screen.getByText(/give it no monthly amount on the Month’s Debts list/)).toBeTruthy()
+    expect(screen.getByText(/The Month’s Debts list is separate: it counts each month’s payments\./)).toBeTruthy()
+    expect(screen.getByText(/Give it no monthly amount on the Month’s Debts list/)).toBeTruthy()
     await expectNoAxeViolations()
   })
 

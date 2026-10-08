@@ -125,7 +125,7 @@ export function AddGoalSheet({
             <Input inputMode="decimal" value={saved} onChange={(e) => setSaved(e.target.value)} />
           </Field>
         </div>
-        <Field label="Target date" hint="Optional. With a date, the card shows what to save each month to get there.">
+        <Field label="Target date" hint="Optional; sets what to save a month.">
           <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </Field>
         <GoalUnitFields unit={unit} onChange={setUnit} />

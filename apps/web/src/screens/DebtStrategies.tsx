@@ -22,7 +22,7 @@ export function DebtStrategies({ strategies }: { strategies: PayoffStrategies })
   return (
     <section aria-label="Payoff plans" className="space-y-3 rounded-xl border bg-card p-4 md:px-6 md:py-5">
       <h2 className="text-lg font-semibold leading-tight">Ways to pay it off</h2>
-      <p className="text-sm text-muted-foreground md:text-[0.9375rem]">The same amount each month, spent three ways: what you pay now, plus what a paid-off debt frees up.</p>
+      <p className="text-sm text-muted-foreground md:text-[0.9375rem]">The same monthly amount, three ways: what you pay now, plus what a paid-off debt frees up.</p>
       <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {PLANS.map((p) => {
           const outcome = strategies[p.key]

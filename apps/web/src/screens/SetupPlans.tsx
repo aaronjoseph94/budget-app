@@ -101,9 +101,8 @@ export function PlanHeadings({ month }: { month: string }) {
   return (
     <>
       <p className="mt-3 px-4 text-sm text-muted-foreground sm:px-5">
-        The day of each month it is paid: the 5th is 5. A yearly cost can go in as a monthly share, $100 a year as
-        $8.34 a month; if your card is charged for it once a year, leave the amount blank instead. Amounts apply
-        from {monthName} on.
+        The day of each month it is paid: the 5th is 5. A yearly cost can go in as a monthly share: $100 a year as
+        $8.34 a month. If your card is charged once a year, leave the amount blank. Amounts apply from {monthName} on.
       </p>
       {/* A one-line head, the month said once above, so the heads sit level (V16). */}
       <ColumnHeads>

@@ -64,7 +64,7 @@ describe('Lists, the lists', () => {
     expect(within(screen.getByRole('region', { name: 'Savings' })).getByText('Nothing here yet.')).toBeTruthy()
     expect(within(screen.getByRole('region', { name: 'Debts' })).getByText('Nothing here yet.')).toBeTruthy()
     // Plan §3.3: the card itself is not a Debts row, or its purchases count twice.
-    expect(within(screen.getByRole('region', { name: 'Debts' })).getByText(/^What loans .* its purchases are already counted\.$/)).toBeTruthy()
+    expect(within(screen.getByRole('region', { name: 'Debts' })).getByText('Bank loans only; a card is Not spending.')).toBeTruthy()
     await expectNoAxeViolations()
   })
 })
@@ -293,7 +293,7 @@ describe('Lists, starting from the starter list', () => {
 
     // 31 starter names and the goal, less the five already here.
     expect(await screen.findByText('Added 27 example names')).toBeTruthy()
-    expect(screen.getByText(/^They are placeholders\. Rename each one/)).toBeTruthy()
+    expect(screen.getByText(/^They are placeholders\. Rename each to your own/)).toBeTruthy()
     expect(await namesOn('Savings')).toEqual(['Flight training', 'Emergency Fund', 'Travel Fund', 'Down Payment', 'Car Repair Fund'])
     expect(await namesOn('Income')).toEqual(['Pay', 'Income 1', 'Income 2', 'Side Hustle', 'Freelance Work', 'Donations'])
     expect(await namesOn('Bills')).toEqual(['Phone', 'Rent', 'Electricity Bill', 'Water Bill', 'Gas Bill', 'Car Insurance', 'Gym Membership'])

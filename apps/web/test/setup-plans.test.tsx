@@ -181,7 +181,7 @@ describe('Lists, day paid and monthly amount', () => {
     expect((await card('Debts')).queryByText('Add a day paid so this shows in weeks.')).toBeNull()
     expect((await card('Variable expenses')).queryByRole('textbox', { name: /^Day paid/ })).toBeNull()
     // Plan §3.3: the Debts card keeps saying the card itself is not a Debts row.
-    expect((await card('Debts')).getByText(/A card you pay off from your bank is not a monthly debt payment here/)).toBeTruthy()
+    expect((await card('Debts')).getByText('Bank loans only; a card is Not spending.')).toBeTruthy()
   })
 
   it('saves an amount from this month on, keeping the day and every earlier month', async () => {

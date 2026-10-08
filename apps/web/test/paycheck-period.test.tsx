@@ -110,7 +110,7 @@ describe('PaycheckPeriod', () => {
     show(fake, null)
 
     expect(await summary('Left to spend')).toBe('-$45.00')
-    expect(screen.getByText('No budgets on Variable expenses yet. They are typed on the Month.')).toBeTruthy()
+    expect(screen.getByText('No budgets yet; type them on the Month.')).toBeTruthy()
   })
 
   it('says nothing of missing budgets while one Variable expenses row has a budget, even if another has none', async () => {

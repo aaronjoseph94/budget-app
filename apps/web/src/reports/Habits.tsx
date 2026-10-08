@@ -138,7 +138,7 @@ function StreakCard({ streaks }: { streaks: Streaks }) {
   if (streaks.status === 'no_budget') {
     return (
       <Section title="Weeks within budget" large>
-        <p>Set a weekly budget for your everyday spending, and each week you stay within it counts toward a streak.</p>
+        <p>Set a weekly budget for everyday spending. Each week you stay within it counts toward a streak.</p>
         <a href={hashOf({ screen: 'week', param: null })} className={LINE_LINK}>
           Open the Week
         </a>

@@ -170,7 +170,7 @@ export function PaycheckPeriod({
               comparison={comparison}
               compareLabel="Compared with the last pay period"
               earlier="the last pay period"
-              noBudgetsHint="No budgets on Variable expenses yet. They are typed on the Month."
+              noBudgetsHint="No budgets yet; type them on the Month."
             />
             {/* Where the workbook's chart well stands (I3:M18): the owner was told a
               share is about $738 of $1,600 rent, and this says how it is found.

@@ -61,8 +61,8 @@ const DONE = {
   stale: 'That changed since it was suggested, so nothing was changed. Dismiss it, or ask the AI app again.',
   gone: 'That suggestion was already decided, replaced or expired, so nothing was changed.',
   applied_unmarked:
-    'Your budget shows the change, but the suggestion stopped waiting just before (decided elsewhere, replaced or expired), so look over any newer card.',
-  applied_mark_failed: 'Your budget shows the change, but the suggestion could not be marked applied, so its card may stay as “Already so”: press Clear.',
+    'Your budget shows the change, but the suggestion stopped waiting just before. It was decided elsewhere, replaced or expired; look over any newer card.',
+  applied_mark_failed: 'Your budget shows the change, but the suggestion could not be marked applied. Its card may stay as “Already so”: press Clear.',
 } as const
 
 /**

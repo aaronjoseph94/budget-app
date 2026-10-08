@@ -126,7 +126,7 @@ function TotalsTrend({ trend }: { trend: MonthlyTrend }) {
 function notYet(label: TrendLabel): string {
   if (label.status !== 'not_enough') return ''
   return label.possibleFrom === null
-    ? 'Bring in a statement or add a charge to begin; trends can be called once your records hold four whole months.'
+    ? 'Bring in a statement or add a charge to begin. Trends need four whole months of records.'
     : `Trends can be called from ${formatMonthTitle(label.possibleFrom)}, when your records hold four whole months.`
 }
 
