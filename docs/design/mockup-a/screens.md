@@ -31,7 +31,7 @@
 - Six blocks, weekly budgets. TransfersNote.
 
 ## Paycheck — PaycheckScreen.tsx, PaycheckPeriod.tsx
-- Switch; header "This pay period" + ?; "15–29 Sep · Income 1, paid every two weeks"; prev/next
+- No switch (its own screen since ADR 0014); header "This pay period" + ?; "15–29 Sep · Income 1, paid every two weeks"; prev/next
 - Summary (lavender): Spent, Left to spend (+ "No budgets on Variable expenses yet. They are typed on the Month."), CompareLine vs last pay period
 - "How this period is counted": chooser "Pay periods from" select; "Bills with no charge yet in this period, and budgets and goals, are September 2026's. You are paid every two weeks, so each shows 12 months over 26 paydays: two weeks' share. Charges count as they are." "Budgets and goals are typed on the Month."
 - Six blocks (no editors). NoSchedule: "This shows your budget one pay period at a time. It needs to know when you are paid: in Lists, give an Income row how often it pays and a first payday." [Open Lists]

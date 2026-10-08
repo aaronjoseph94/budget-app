@@ -133,11 +133,15 @@ describe('Help articles', () => {
   })
 
   // The owner's brevity rule (2026-10-08): a sentence written for ADR 0014
-  // is short. The older sentences wait for the Help rewrite (decision 5).
-  it('keeps the sentences written for the plan order and Settings’ tabs under 90 characters', () => {
+  // or ADR 0015 is short. The older sentences wait for the Help rewrite (decision 5).
+  it('keeps the sentences written for the plan order, Settings’ tabs and the Free AI card under 90 characters', () => {
     const periods = articleFor('periods')
     const lists = articleFor('words')?.terms?.find((t) => t.term === 'Lists')
-    const written = [periods?.summary, periods?.steps[3], periods?.steps[4], periods?.done, periods?.stuck?.split('. ')[0], lists?.meaning]
+    const [freeAi, moreAi, rests] = [articleFor('free-ai'), articleFor('more-ai'), articleFor('ai-rests')]
+    const written = [
+      periods?.summary, periods?.steps[3], periods?.steps[4], periods?.done, periods?.stuck?.split('. ')[0], lists?.meaning,
+      freeAi?.steps[2], freeAi?.steps[3], freeAi?.steps[5], moreAi?.summary, moreAi?.steps[0], moreAi?.steps[3], rests?.steps[0], rests?.steps[3],
+    ]
     for (const text of written) {
       expect(text).toBeTruthy()
       for (const sentence of (text ?? '').replaceAll('**', '').split(/(?<=[.!?])\s+/)) expect(sentence.length, sentence).toBeLessThanOrEqual(90)

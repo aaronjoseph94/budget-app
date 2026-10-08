@@ -405,8 +405,8 @@ export const ARTICLES: readonly Article[] = [
     steps: [
       'Open **Settings**, then **AI**, and read the sentence at the top.',
       'If it says the AI helper isn’t installed, or needs a one-time update, press **Open One-time updates** and do what it names next.',
-      'If Google Gemini’s row under **Free AI** says **Already on**, you added a key for receipt photos and there is nothing more to do.',
-      'Otherwise pick a row under **Free AI** (OpenRouter and Groq are quick), press its link that starts with **Get**, and copy the key the page that opens gives you.',
+      'If Google Gemini’s row says **Already on**, you are done: that is your receipts key.',
+      'Otherwise press **Get** on a row under **Free AI**, and copy the key from the page that opens.',
       'Come back to AI settings, paste the key in that row, and press **Save & test**.',
       'Press **Test** to see how long that service takes.',
       'To pick another model, press **Check which models work** and choose one the key can use.',
@@ -422,10 +422,10 @@ export const ARTICLES: readonly Article[] = [
     summary:
       'Optional. One free service is enough; a second answers when the first is busy. OpenAI and Anthropic are paid, under Advanced, and used only if you switch them on.',
     steps: [
-      'Open **Settings**, then **AI**, and find the service’s row under **Free AI**, or under **Advanced** for a paid one.',
+      'Open **Settings**, then **AI**, and find the service’s row under **Free AI** or **Advanced**.',
       'Press the link that starts with **Get**, and create a key on the page that opens.',
       'Copy the key, paste it in that row, and press **Save & test**.',
-      'Under **Advanced**, **Try in this order** has arrows to put the services in the order you want them asked.',
+      'Under **Advanced**, use the arrows in **Try in this order** to move a service up or down.',
       'To let OpenAI or Anthropic answer, turn on **Use paid services**, knowing each use is billed to you by them.',
       'Choose a **Daily limit** if 40 AI calls a day is too many or too few.',
     ],
@@ -465,7 +465,7 @@ export const ARTICLES: readonly Article[] = [
     summary:
       'Free AI has daily limits, and so does the app. When a service is busy or out of free uses it rests for a while, and the next one is asked. When none can answer, the app shows its own words: nothing breaks.',
     steps: [
-      'Open **Settings**, then **AI**, and read the sentence at the top and, under **Advanced**, the line **Today: N of 40**.',
+      'Open **Settings**, then **AI**, and read the top sentence and **Today: N of 40** under **Advanced**.',
       'If today’s calls reached the limit, wait until tomorrow, or raise the **Daily limit**.',
       'If every service is resting, wait a minute or two and press **Check again**.',
       'To have another service answer while one rests, add a free key under **Free AI**.',
