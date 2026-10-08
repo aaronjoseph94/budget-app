@@ -65,8 +65,6 @@ export const VIEWS: { readonly [S in Screen]: View } = {
   debts: { wide: always, render: () => <DebtsScreen /> },
   year: { wide: always, render: (param) => <YearScreen start={param} /> },
   help: { wide: (param) => param !== null, render: (param) => <HelpScreen topic={param} /> },
-  // Never reached: nav.ts reads `#/ai` as Settings › AI. Here only while `ai` is still an id.
-  ai: { wide: always, render: () => <SettingsScreen tab="ai" /> },
   start: { wide: always, render: () => <GettingStartedScreen /> },
   forecast: { wide: always, render: () => <ForecastScreen /> },
   reports: { wide: always, render: (param) => <ReportsScreen month={param} /> },

@@ -17,7 +17,8 @@ function go(hash: string) {
   })
 }
 
-beforeAll(() => warmScreen('#/ai', 'AI settings'))
+// `#/ai` is the old address: it opens Settings › AI (ADR 0014 §2).
+beforeAll(() => warmScreen('#/ai', 'Settings'))
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
@@ -37,7 +38,7 @@ const json = (body: unknown, status: number) => () => new Response(JSON.stringif
 
 async function open(fake: FakeSupabase, sentence: string) {
   renderScreen(<Shell />, fake)
-  await screen.findByRole('heading', { level: 1, name: 'AI settings' })
+  await screen.findByRole('heading', { level: 1, name: 'Settings' })
   return screen.findByText(sentence)
 }
 
@@ -80,8 +81,8 @@ describe('AI settings (ADR 0015)', () => {
     await waitFor(() => expect(listed(free)).toEqual(['Google Gemini', 'Groq', 'OpenRouter']))
   })
 
-  it('embedded, as Settings’ AI tab, draws no title or way back of its own', async () => {
-    renderScreen(<AiSettingsScreen embedded />, createFakeSupabase())
+  it('draws no title or way back of its own: it is Settings’ AI tab, and Settings’ stand above it', async () => {
+    renderScreen(<AiSettingsScreen />, createFakeSupabase())
     expect(await screen.findByRole('region', { name: 'AI now' })).toBeTruthy()
     expect(screen.queryByRole('heading', { level: 1 })).toBeNull()
     expect(screen.queryByRole('link', { name: '← Settings' })).toBeNull()

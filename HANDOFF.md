@@ -61,10 +61,6 @@ it is merged into `main` (§3).
 - **Getting started** opens on the first run and from Help's **Start
   here** (with "5 of 9 done" and **Open Getting started**); it left More
   and Settings.
-- Until this tree and the AI tree merge, the AI tab draws AI settings
-  through a wrapper that hides its own title (`settings/AiTab.tsx`), and
-  `ai` stays a screen id that is never drawn (`nav.ts`); both go with the
-  merge.
 
 - **AI throughout, on a free key: OpenRouter, Groq or Google Gemini.** A Coach that says how the
   month is going, what changed, what to cut and when you will reach your

@@ -7,8 +7,6 @@ import { CoachPanel } from '../ai/CoachPanel.js'
 import { KeyCard } from '../ai/KeyCard.js'
 import { Button } from '../components/ui/button.js'
 import { Icon } from '../components/ui/icons.js'
-import { MonthTitle } from '../components/ui/type.js'
-import { HelpButton } from '../help/HelpButton.js'
 import { isOlder } from '../help/updates.js'
 import { hashOf } from '../nav.js'
 import { LINE_LINK } from '../components/ui/link.js'
@@ -26,10 +24,11 @@ import { cn } from '../lib/cn.js'
  *
  * Its own chunk. A helper not installed, or 0016 not pasted, is said here
  * with the way to fix it; elsewhere the app's own words stand in. Only the
- * newest check is shown, as One-time updates does. `embedded` draws it as
- * a tab of Settings: no title or way back of its own.
+ * newest check is shown, as One-time updates does. It is Settings' AI tab
+ * (ADR 0014 §2), so it draws no title or way back of its own: Settings'
+ * stand above it, and its ? opens this tab's article.
  */
-export function AiSettingsScreen({ embedded = false }: { readonly embedded?: boolean }) {
+export function AiSettingsScreen() {
   const { supabase } = useAppData()
   const [view, setView] = useState<AiView | null>(null)
   const latest = useRef(0)
@@ -58,18 +57,6 @@ export function AiSettingsScreen({ embedded = false }: { readonly embedded?: boo
   return (
     // Mockup A: a reading width of its own, read top to bottom in one column.
     <div className="max-w-3xl space-y-5">
-      {embedded ? null : (
-        <>
-          {/* AI settings has no sidebar item of its own; its way back is on the page (design-review P1 item 2). */}
-          <a href={hashOf({ screen: 'settings', param: null })} className={cn('-mb-2', LINE_LINK, 'text-sm')}>
-            ← Settings
-          </a>
-          <div className="flex flex-wrap items-center gap-1">
-            <MonthTitle>AI settings</MonthTitle>
-            <HelpButton screen="ai" />
-          </div>
-        </>
-      )}
       {/* The one card tinted to the accent, as each screen's one hero is; its
         tile is the accent's, not the mockup's green, which names Income. */}
       <section

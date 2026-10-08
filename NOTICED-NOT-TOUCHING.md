@@ -3945,7 +3945,7 @@ against its reads.
 
 ---
 
-## N171 — `ai` is a screen id that is never drawn, and the AI tab hides a title by CSS
+## N171 — `ai` is a screen id that is never drawn, and the AI tab hides a title by CSS *(settled 2026-10-08, at the merge)*
 
 **Seen:** 2026-10-08, building Settings' tabs (ADR 0014 §2). `#/ai` reads
 as Settings › AI, but `'ai'` stays in `SCREENS`, `SCREEN_NAME`,
@@ -3963,6 +3963,15 @@ owner never sees.
 (the AI tree's AI-5d), make `AiTab.tsx` a pass-through or delete it, point
 `LineLink` at `{ screen: 'settings', param: 'ai' }`, and drop `'ai'` from
 the screen ids and every record keyed by them.
+
+**Settled at the merge (2026-10-08):** `AiTab.tsx` is gone, and Settings
+draws `AiSettingsScreen` itself, which draws no title or way back of its
+own. Its `embedded` prop went with its only other caller: the tab is the
+one place the screen is drawn (ADR 0014 §2), so a branch that drew a
+title would have been dead code. `LineLink` points at `#/settings/ai`;
+`'ai'` left `SCREENS` and every record keyed by it; only `OLD` in `nav.ts`
+still reads `#/ai`, as the tab. `settings-tabs.test.tsx` now holds
+Settings to its one h1, where it accepted the hidden one.
 
 ---
 

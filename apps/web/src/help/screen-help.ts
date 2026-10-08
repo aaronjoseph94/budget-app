@@ -31,6 +31,4 @@ export const SCREEN_HELP: Readonly<Record<Exclude<Screen, 'help'>, HelpTopic>> =
   reports: 'reports',
   ask: 'ask',
   start: 'start',
-  // AI settings' own ?, drawn inside Settings' AI tab for now (nav.ts on `ai`).
-  ai: 'free-ai',
 }

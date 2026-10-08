@@ -21,7 +21,7 @@ function go(hash: string) {
   })
 }
 
-beforeAll(() => warmScreen('#/ai', 'AI settings'))
+beforeAll(() => warmScreen('#/ai', 'Settings'))
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })

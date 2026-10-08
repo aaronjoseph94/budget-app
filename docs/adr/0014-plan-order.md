@@ -109,7 +109,9 @@ that only linked to the others. They read as the same thing.
   still name it; the AI tab draws `AiSettingsScreen` through
   `settings/AiTab.tsx`, which hides its title row and "← Settings" by
   their place. Both go with the merge, when the screen takes an
-  `embedded` prop.
+  `embedded` prop. *Merged 2026-10-08:* both went; Settings draws
+  `AiSettingsScreen` itself, and the screen draws no title at all, with
+  no prop, since the tab is its only caller (NOTICED N171).
 - Settings' `?` opens the showing tab's article (`SETTINGS_TAB_HELP`).
 - The sidebar group is **More**; a phone's More screen groups the same
   two as **Settings and help**, since a group called More inside More

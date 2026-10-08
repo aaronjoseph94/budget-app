@@ -23,7 +23,7 @@ import { SETTINGS_TABS, SETTINGS_TAB_NAME, rememberSettingsTab, rememberedSettin
 
 // The two big tabs are fetched when first shown, as the screens were (PERF-3).
 const ListsTab = lazyPart(() => import('../settings/ListsTab.js').then((m) => ({ default: m.ListsTab })))
-const AiTab = lazyPart(() => import('../settings/AiTab.js').then((m) => ({ default: m.AiTab })))
+const AiSettingsScreen = lazyPart(() => import('./AiSettingsScreen.js').then((m) => ({ default: m.AiSettingsScreen })))
 
 /**
  * Settings (ADR 0014 §2): one screen, four tabs. Lists is the workbook's
@@ -84,7 +84,7 @@ export function SettingsScreen({ tab }: { tab: SettingsTab | null }) {
       </div>
       <div role="tabpanel" id={`settings-${shown}`} aria-labelledby={`settings-tab-${shown}`}>
         <Suspense fallback={<p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>}>
-          {shown === 'lists' ? <ListsTab /> : shown === 'ai' ? <AiTab /> : shown === 'account' ? <AccountTab /> : <BudgetsTab />}
+          {shown === 'lists' ? <ListsTab /> : shown === 'ai' ? <AiSettingsScreen /> : shown === 'account' ? <AccountTab /> : <BudgetsTab />}
         </Suspense>
       </div>
     </div>

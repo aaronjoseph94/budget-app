@@ -17,12 +17,9 @@ import { isoDate, weekBounds } from '@budget/core'
 import { HELP_TOPICS } from './help/topics.js'
 import { isSettingsTab } from './settings/tab.js'
 
-// `ai` is never drawn: its address reads as Settings › AI (OLD, below). It
-// stays an id only while the AI files, another tree's until the two merge,
-// still name it; it goes with that merge.
 export const SCREENS = [
   'month', 'week', 'review', 'add', 'more', 'ledger', 'settings', 'year', 'paycheck', 'calendar', 'savings', 'debts',
-  'coach', 'forecast', 'reports', 'ask', 'help', 'start', 'ai',
+  'coach', 'forecast', 'reports', 'ask', 'help', 'start',
 ] as const
 export type Screen = (typeof SCREENS)[number]
 

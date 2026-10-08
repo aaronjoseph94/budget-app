@@ -113,7 +113,9 @@ card). Cerebras is text only and its credit needs a card. Neither passes
    and Remove key, and the model it will use; **Advanced**, folded,
    holds the paid services' keys, Use paid services, Daily limit, Try in
    this order and How the Coach talks. The screen takes `embedded`, so
-   Settings can mount it as a tab without its own title.
+   Settings can mount it as a tab without its own title. *(At the merge
+   of 2026-10-08 the prop went: Settings' AI tab is the one place the
+   screen is drawn, ADR 0014 §2, so it never draws a title.)*
    Every new sentence is short; hints are under eight words.
 
 ## Considered

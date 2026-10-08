@@ -49,10 +49,10 @@ the first run and from Help's Start here, with its progress line.
   address over the old one.
 - `SettingsScreen` draws the bar as Reports does; Lists and AI are lazy
   parts. Budgets & goals and Account are the cards Settings already had.
-- The AI tab draws `AiSettingsScreen` as it stands through
-  `settings/AiTab.tsx`, which hides its own title row until the AI tree's
-  `embedded` prop lands at the merge; `ai` stays a screen id, never drawn,
-  for the same reason.
+- The AI tab draws `AiSettingsScreen`, which has no title row of its own.
+  (Until the merge of 2026-10-08 it was drawn through `settings/AiTab.tsx`,
+  which hid the AI tree's title by CSS, and `ai` stayed a screen id, never
+  drawn; both went at the merge, NOTICED N171.)
 - `SCREEN_HELP.settings` is Lists' article; the `?` takes the showing
   tab's (`SETTINGS_TAB_HELP`).
 - Getting started's parent is Help (`PARENT` in `shell/places.ts`); Help's
@@ -76,7 +76,7 @@ the first run and from Help's Start here, with its progress line.
 - AI settings' own layout and words (the AI tree, ADR 0015).
 - The Help rewrite to about twelve articles (a later wave); articles are
   kept accurate meanwhile.
-- Removing the `ai` screen id and `AiTab.tsx`: the merge.
+- Removing the `ai` screen id and `AiTab.tsx`: the merge (done 2026-10-08).
 
 ## Done when
 

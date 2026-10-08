@@ -71,13 +71,13 @@ describe('Settings, one screen with four tabs (ADR 0014 §2)', () => {
     expect(screen.queryByRole('button', { name: '‹ More' })).toBeNull()
   })
 
-  it('draws AI settings as the AI tab, under Settings’ own title', async () => {
+  it('draws AI settings as the AI tab, with no title or way back of its own', async () => {
     renderScreen(<SettingsScreen tab="ai" />, createFakeSupabase())
     expect(await within(panel()).findByRole('region', { name: 'AI now' })).toBeTruthy()
     expect(await within(panel()).findByRole('region', { name: 'How the Coach talks' })).toBeTruthy()
-    // AI settings' own title row and its "← Settings" are hidden by their place in the wrapper (AiTab.tsx).
-    expect(within(panel()).getByRole('heading', { level: 1, name: 'AI settings' })).toBeTruthy()
-    expect(panel().firstElementChild?.className).toContain('[&>div>div:has(>h1)]:hidden')
+    // Settings keeps the one title: the screen draws none, rather than one hidden by CSS (N171).
+    expect(screen.getAllByRole('heading', { level: 1 }).map((h) => h.textContent)).toEqual(['Settings'])
+    expect(within(panel()).queryByRole('link', { name: '← Settings' })).toBeNull()
   })
 
   it('chooses with the arrow keys, Home and End, wrapping at the ends, and each choice is an address', () => {

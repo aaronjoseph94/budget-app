@@ -83,8 +83,6 @@ export const SCREEN_NAME: Record<Screen, string> = {
   ask: 'Ask',
   help: 'Help',
   start: 'Getting started',
-  // Never shown: `#/ai` opens Settings › AI (nav.ts).
-  ai: 'AI settings',
 }
 
 /**
@@ -92,7 +90,7 @@ export const SCREEN_NAME: Record<Screen, string> = {
  * (design-review P1 item 2). Getting started opens from Help, and on the
  * first run (decision 6 of 2026-10-08).
  */
-const PARENT: Partial<Record<Screen, Screen>> = { ask: 'coach', start: 'help', ai: 'settings' }
+const PARENT: Partial<Record<Screen, Screen>> = { ask: 'coach', start: 'help' }
 
 /** The sidebar item lit while a screen shows, or null for More, which a wide screen does not list. */
 export function litOf(screen: Screen): Screen | null {

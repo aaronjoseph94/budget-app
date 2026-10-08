@@ -153,7 +153,7 @@
 - Day groups (uppercase date) → card rows: merchant, category badge, "added by hand", amount, trash → [Remove]
 - Empty: list icon "Nothing this month" "Approved transactions appear here." | "No matches" "Try a different word."
 
-## Settings — SettingsScreen.tsx, settings/tab.ts, settings/ListsTab.tsx, settings/AiTab.tsx, LearnedShops.tsx, SetupPlans.tsx, SetupPay.tsx
+## Settings — SettingsScreen.tsx, settings/tab.ts, settings/ListsTab.tsx, LearnedShops.tsx, SetupPlans.tsx, SetupPay.tsx
 One screen, four tabs (ADR 0014 §2): "Settings" + ? (the showing tab's article); segmented control Lists · Budgets & goals · AI · Account, the tab in the address (`#/settings/ai`), a bare `#/settings` opening the tab last seen; arrow keys along the tabs. No lede; no cards that only link elsewhere.
 
 ### Lists tab (what Setup was)
@@ -172,7 +172,7 @@ One screen, four tabs (ADR 0014 §2): "Settings" + ? (the showing tab's article)
 - AI apps card (ADR 0012, 0013)
 - Account: email; [Sign out]
 
-### AI tab — AiSettingsScreen.tsx (drawn through settings/AiTab.tsx until the trees merge), ai/KeyCard.tsx, ai/ChoicesPanel.tsx, ai/CoachPanel.tsx
+### AI tab — AiSettingsScreen.tsx, ai/KeyCard.tsx, ai/ChoicesPanel.tsx, ai/CoachPanel.tsx
 - No title or ? of its own: Settings' stand above it. Status card: switch "Use AI" (off: "Off: the Coach, suggestions, Just type it and receipt photos use the app’s own words. Nothing is sent to any AI service. AI apps you connect have their own switch in Settings."); "AI is on, using free OpenRouter." (lg) link "Show me how" / "Open One-time updates"; [Check again]
 - Card "Free AI" / "Tried in this order. Each needs a free key."; rows OpenRouter, Groq, Google Gemini in the owner's order, each a KeyCard: title + chip "Free"; "Uses inkling-small"; new: "Free and quick. Reads photos. May keep what it is sent." (Groq: "Free and very quick. Reads photos. May keep what it is sent."; Gemini: "Free. Reads photos. Slow for some. May keep what it is sent."); saved: "Your key ending …abcd is saved." | "Already on, with your receipts key ending …abcd. There is nothing to paste."; steps: Step 1 [Get a free OpenRouter key ↗] "OpenRouter opens in a new tab. Sign in, press Create API Key, then copy it."; Step 2: paste it here [password input][Show]; Step 3 [Save & test]; result "Works · key ending …abcd" | "Last test: 1.2 s on OpenRouter · inkling-small" | "OpenRouter didn’t answer. Try again."; details "Paste a different key"; [Test] [Check which models work] [Remove key]; Model select + "The first on the list is the app’s everyday choice: quick, and the most free uses a day."
 - details "Advanced" / "Paid services, limits, order, Coach tone": rows OpenAI (Paid) "Paid: OpenAI bills you for each use. Tried only when Use paid services is on.", Anthropic (Paid); saved paid key: "Saved, key ending …abcd. Not used until you turn on paid services."; then ChoicesPanel, then CoachPanel

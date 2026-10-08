@@ -165,7 +165,7 @@ describe('the top bar (ADR 0011)', () => {
     expect(bare).toEqual([])
   })
 
-  it('gives Ask and AI settings a way back on the page, and lights their parent in the sidebar (P1 item 2)', async () => {
+  it('gives Ask a way back on the page, opens the old AI settings address as Settings › AI, and lights their parents in the sidebar (P1 item 2)', async () => {
     go('/ask')
     renderScreen(<Shell />, createFakeSupabase())
     await screen.findByRole('heading', { name: 'Ask', level: 1 })
@@ -173,9 +173,12 @@ describe('the top bar (ADR 0011)', () => {
     expect(within(screen.getByRole('main')).getByRole('link', { name: '← Coach' }).getAttribute('href')).toBe('#/coach')
     expect(within(sidebar).getByRole('link', { name: /^Coach/ }).getAttribute('aria-current')).toBe('page')
 
+    // AI settings is Settings' AI tab (ADR 0014 §2): Settings' one title, the tab chosen, and Settings lit; no title or link of its own.
     go('/ai')
-    await screen.findByRole('heading', { name: 'AI settings', level: 1 })
-    expect(within(screen.getByRole('main')).getByRole('link', { name: '← Settings' }).getAttribute('href')).toBe('#/settings')
+    await screen.findByRole('heading', { name: 'Settings', level: 1 })
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    expect(screen.getByRole('tab', { name: 'AI' }).getAttribute('aria-selected')).toBe('true')
+    expect(within(screen.getByRole('main')).queryByRole('link', { name: '← Settings' })).toBeNull()
     expect(within(sidebar).getByRole('link', { name: 'Settings' }).getAttribute('aria-current')).toBe('page')
     await expectNoAxeViolations()
   })
