@@ -214,7 +214,7 @@ describe('without the one-time update that holds these choices', () => {
       expect(within(line).getByRole('link', { name: 'One-time updates' }).getAttribute('href')).toBe('#/help/updates')
       // 44 px to press, by padding on the link, so the sentence keeps its lines (N76).
       expect(within(line).getByRole('link', { name: 'One-time updates' }).className).toMatch(/\bpy-3\.5\b/)
-      expect(screen.getByRole('region', { name: 'Free Google Gemini' })).toBeTruthy()
+      expect(screen.getByRole('region', { name: 'Google Gemini' })).toBeTruthy()
       expect(screen.queryByRole('switch', { name: 'Use paid services' })).toBeNull()
       cleanup()
     }

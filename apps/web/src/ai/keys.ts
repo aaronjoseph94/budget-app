@@ -93,7 +93,7 @@ function seconds(ms: number): string {
 }
 
 /** A model id as the card names it: without its vendor and OpenRouter's :free. */
-const shortModel = (id: string): string => id.replace(/^.*\//, '').replace(/:free$/, '')
+export const shortModel = (id: string): string => id.replace(/^.*\//, '').replace(/:free$/, '')
 
 /** Why a speed test gave no time, in a few words; any other state is said as the state is. */
 const NO_TIME: Partial<Record<AiState, (name: string) => string>> = {

@@ -67,7 +67,11 @@ describe('More AI services', () => {
       expect(card(name).getByText(tier)).toBeTruthy()
       expect(card(name).getByLabelText('Step 2: paste it here').getAttribute('type')).toBe('password')
     }
-    for (const free of ['Groq', 'OpenRouter']) expect(card(free).getByText(/Free services may keep what they are sent, and people there may read it\.$/)).toBeTruthy()
+    // Each free card says in a few words that it reads photos and may keep what it is sent (ADR 0004, ADR 0015), and the model it will use.
+    expect(card('Groq').getByText('Free and very quick. Reads photos. May keep what it is sent.')).toBeTruthy()
+    expect(card('OpenRouter').getByText('Free and quick. Reads photos. May keep what it is sent.')).toBeTruthy()
+    expect(card('Groq').getByText('Uses gpt-oss-20b')).toBeTruthy()
+    expect(card('OpenRouter').getByText('Uses inkling-small')).toBeTruthy()
     for (const paid of ['OpenAI', 'Anthropic']) expect(card(paid).getByText(/bills you for each use\. Tried only when Use paid services is on\.$/)).toBeTruthy()
     await expectNoAxeViolations()
   })

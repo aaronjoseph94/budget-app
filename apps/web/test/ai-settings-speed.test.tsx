@@ -49,7 +49,7 @@ function withKey(fake: FakeSupabase, answer: () => Response) {
 
 async function gemini(fake: FakeSupabase) {
   renderScreen(<Shell />, fake)
-  return within(await screen.findByRole('region', { name: 'Free Google Gemini' }))
+  return within(await screen.findByRole('region', { name: 'Google Gemini' }))
 }
 
 describe('Test', () => {

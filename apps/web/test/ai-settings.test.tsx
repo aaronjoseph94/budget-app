@@ -45,14 +45,17 @@ describe('AI settings, Mockup A', () => {
     await open(createFakeSupabase(), 'AI isn’t set up yet. Everything still works in the app’s own words. Turn on free AI below, in about 2 minutes.')
     const status = screen.getByRole('region', { name: 'AI now' })
     expect(status.className).toContain('to-primary-tint')
-    const gemini = await screen.findByRole('region', { name: 'Free Google Gemini' })
+    const gemini = await screen.findByRole('region', { name: 'Google Gemini' })
     const columns = gemini.parentElement!.parentElement!
     expect(columns.className).toContain('xl:grid-cols-2')
     const [left, right] = [...columns.children]
     expect(left?.contains(gemini)).toBe(true)
     expect(right?.contains(await screen.findByRole('region', { name: 'Try in this order' }))).toBe(true)
     expect(right?.contains(await screen.findByRole('region', { name: 'How the Coach talks' }))).toBe(true)
-    expect(within(gemini).getByText('Recommended').className).toContain('bg-primary-soft')
+    // Free or Paid on every card as a quiet outlined chip; the order says which is first (ADR 0015).
+    expect(within(gemini).getByText('Free').className).toContain('border')
+    expect(within(gemini).queryByText('Recommended')).toBeNull()
+    expect(within(gemini).getByText('Uses gemini-3.5-flash-lite')).toBeTruthy()
     // The key field still shows nothing typed back: a password field, empty.
     const field = within(gemini).getByLabelText('Step 2: paste it here') as HTMLInputElement
     expect([field.type, field.value]).toEqual(['password', ''])
