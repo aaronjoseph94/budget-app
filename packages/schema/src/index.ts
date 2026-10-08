@@ -67,6 +67,7 @@ export {
   type AiPingReply,
   type AiProvider,
   type AiRequest,
+  type AiRunReply,
   type AiServiceStatus,
   type AiStatusReply,
   type AiTask,
