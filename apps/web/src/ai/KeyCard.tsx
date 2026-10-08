@@ -91,7 +91,12 @@ export function KeyCard({
   const [result, setResult] = useState<KeyResult | null>(null)
   const ids = { title: useId(), steps: useId(), key: useId(), model: useId() }
 
+  // A press while a step runs is ignored, as the row's buttons say with
+  // aria-disabled, not disabled: a browser drops focus from a control that
+  // is disabled, and Test is pressed again and again to compare services
+  // (FE-6, e2e-setup-01).
   const run = async (step: NonNullable<typeof working>, act: () => Promise<KeyResult | null>) => {
+    if (working !== null) return
     setWorking(step)
     const next = await act()
     setWorking(null)
@@ -237,17 +242,21 @@ export function KeyCard({
       </div>
       {already || saved ? (
         <div className="flex flex-wrap gap-2">
-          {/* Test: one real call, timed, so the owner can see which service is quick (ADR 0015). A key not usable yet has nothing to time. */}
+          {/* Test: one real call, timed, so the owner can see which service is quick (ADR 0015). A key not usable yet has nothing to time. It changes no model, so the list Check which models work found stays. */}
           {again || waitsForPaid ? null : (
-            <Button className="min-h-11" disabled={working !== null} onClick={() => void run('speed', () => speedTest(supabase, provider))}>
+            <Button
+              className="min-h-11"
+              aria-disabled={working !== null}
+              onClick={() => void run('speed', async () => ({ ...(await speedTest(supabase, provider)), models: result?.models ?? null }))}
+            >
               {working === 'speed' ? 'Testing…' : 'Test'}
             </Button>
           )}
-          <Button variant="outline" className="min-h-11" disabled={working !== null} onClick={() => void run('test', () => testKey(supabase, provider))}>
+          <Button variant="outline" className="min-h-11" aria-disabled={working !== null} onClick={() => void run('test', () => testKey(supabase, provider))}>
             {working === 'test' ? 'Checking…' : 'Check which models work'}
           </Button>
           {saved ? (
-            <Button variant="outline" className="min-h-11" disabled={working !== null} onClick={forget}>
+            <Button variant="outline" className="min-h-11" aria-disabled={working !== null} onClick={forget}>
               {working === 'forget' ? 'Removing…' : 'Remove key'}
             </Button>
           ) : null}

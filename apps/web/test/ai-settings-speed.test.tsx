@@ -75,4 +75,35 @@ describe('Test', () => {
     const card = await gemini(createFakeSupabase())
     expect(card.queryByRole('button', { name: 'Test' })).toBeNull()
   })
+
+  it('keeps focus while it runs, greyed with aria-disabled, and after; a second press asks nothing (FE-6)', async () => {
+    const fake = createFakeSupabase()
+    withKey(fake, () => reply({ ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: '{"ok":true}', ms: 940 }))
+    const card = await gemini(fake)
+    const test = card.getByRole<HTMLButtonElement>('button', { name: 'Test' })
+    test.focus()
+    fireEvent.click(test)
+    // A browser drops focus from a control that is disabled (FE-6, e2e-setup-01), and the owner presses Test again and again to compare services.
+    expect([test.textContent, test.getAttribute('aria-disabled'), test.hasAttribute('disabled')]).toEqual(['Testing…', 'true', false])
+    fireEvent.click(test)
+    expect(await card.findByText('Last test: 0.9 s on Google Gemini · gemini-3.5-flash-lite')).toBeTruthy()
+    expect(fake.functions.calls.filter((c) => c['action'] === 'run')).toHaveLength(1)
+    expect(test.getAttribute('aria-disabled')).toBe('false')
+    expect(document.activeElement).toBe(test)
+  })
+
+  it('keeps the model list Check which models work found: a Test changes no model', async () => {
+    const fake = createFakeSupabase()
+    const ran = () => reply({ ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: '{"ok":true}', ms: 940 })
+    withKey(fake, ran)
+    const models = [{ id: 'gemini-3.5-flash-lite', listed: true }, { id: 'gemini-3.1-flash-lite', listed: true }]
+    fake.functions.ai = (body) =>
+      body['action'] === 'run' ? ran() : body['action'] === 'test_key' ? reply({ ok: true, provider: 'gemini', source: 'saved', status: 'ok', hint: '0001', models }) : reply(fake.functions.aiStatus)
+    const card = await gemini(fake)
+    fireEvent.click(card.getByRole('button', { name: 'Check which models work' }))
+    await card.findByLabelText('Model')
+    fireEvent.click(card.getByRole('button', { name: 'Test' }))
+    await card.findByText('Last test: 0.9 s on Google Gemini · gemini-3.5-flash-lite')
+    expect((card.getByLabelText('Model') as HTMLSelectElement).options.length).toBe(2)
+  })
 })
