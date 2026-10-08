@@ -79,10 +79,7 @@ export function AiAppsCard() {
 
   return (
     <Section large title="AI apps">
-      <p className="text-muted-foreground">
-        Ask Claude or ChatGPT about your budget, let them add purchases to Review, and let them suggest changes for you to apply. Nothing they
-        add or suggest counts until you approve or apply it.
-      </p>
+      <p className="text-muted-foreground">Your own Claude or ChatGPT can read your budget. What it adds or suggests waits in Review.</p>
       {/* Help's articles, readable before the switch is on (M12a). */}
       <p className="text-sm">
         Step by step:{' '}

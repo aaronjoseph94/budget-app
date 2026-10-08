@@ -37,11 +37,11 @@ const opened = (access: Access | null, now: number) =>
   access !== null && access.enabled && access.connectUntil !== null && Date.parse(access.connectUntil) > now
 
 // AI apps is on Settings' Account tab (ADR 0014 §2).
-const AGAIN = 'If you are connecting Claude or ChatGPT yourself, open Settings → Account → AI apps'
-const NOT_STARTED = `This connection wasn’t started from the budget app. ${AGAIN}, press Connect a new AI app, and press Connect in Claude or ChatGPT again.`
-const SWITCHED_OFF = `AI apps are switched off in the budget app. ${AGAIN}, turn on Let AI apps connect, press Connect a new AI app, and press Connect in Claude or ChatGPT again.`
+const AGAIN = 'Open Settings → Account → AI apps'
+const NOT_STARTED = `This connection wasn’t started from the budget app. ${AGAIN}, press Connect a new AI app, then connect again.`
+const SWITCHED_OFF = `AI apps are switched off in the budget app. ${AGAIN}, turn on Let AI apps connect, and connect again.`
 /** Something aiAppsReady checks (BEFORE_AI_APPS in help/updates.ts) is not in yet (mcp-3-03). */
-const NEEDS_UPDATE = 'The budget app needs a one-time update first. Open it, go to Help → One-time updates and do the step it names, then press Connect in Claude or ChatGPT again.'
+const NEEDS_UPDATE = 'The budget app needs a one-time update first. Do the step Help → One-time updates names, then connect again.'
 
 type Seen =
   | { readonly kind: 'reading' }
@@ -63,7 +63,7 @@ const SAID = {
   not_started: { kind: 'said', title: 'Start from the budget app', words: NOT_STARTED },
   switched_off: { kind: 'said', title: 'AI apps are switched off', words: SWITCHED_OFF },
   needs_update: { kind: 'said', title: 'A one-time update first', words: NEEDS_UPDATE },
-  bad_reply: { kind: 'said', title: 'Not sent back', words: 'Supabase answered with an address that is not Claude’s or ChatGPT’s, so this page went nowhere. Go back to Claude or ChatGPT and press Connect again.' },
+  bad_reply: { kind: 'said', title: 'Not sent back', words: 'Supabase answered with an address that is not Claude’s or ChatGPT’s. Go back to Claude or ChatGPT and press Connect again.' },
   refused: { kind: 'said', title: 'Refused', words: 'You can close this tab.' },
 } as const satisfies Record<string, Seen>
 
@@ -198,16 +198,17 @@ function Decide({ supabase, userId, go }: { supabase: SupabaseClient; userId: st
           </p>
           {callback.local ? (
             <p className="rounded-lg border border-waiting-border bg-waiting px-4 py-3">
-              This sends you to a program on this computer. Any program on it could be listening; only continue if you started this from a
+              This sends you to a program on this computer. Any program on it could be listening. Only continue if you started this from a
               program you trust.
             </p>
           ) : null}
           <p>
-            If you allow it, it can read your budget figures, search your charges, add items to Review, and suggest changes that wait in
-            Review until you apply them. In your budget it cannot approve, apply, change or delete anything. Like any sign-in, it could also be used on your Supabase account itself, such as its email
-            or password, until its sign-in ends, which Disconnect should do, so only allow an app you trust.
+            If you allow it, it can read your figures, search your charges, and add to Review. It can suggest changes, which wait in Review
+            until you apply them. In your budget it cannot approve, apply, change or delete anything. Like any sign-in, it could reach your
+            Supabase account, email and password included. That lasts until its sign-in ends, which Disconnect should do. Only allow an
+            app you trust.
           </p>
-          <p>Your budget details go to the company that runs this AI app: Anthropic for Claude, OpenAI for ChatGPT.</p>
+          <p>Your budget details go to the app’s maker: Anthropic for Claude, OpenAI for ChatGPT.</p>
           <p className="font-semibold">
             {allow
               ? 'Only continue if you just pressed Connect in Claude or ChatGPT yourself.'
@@ -220,8 +221,8 @@ function Decide({ supabase, userId, go }: { supabase: SupabaseClient; userId: st
         </>
       ) : (
         <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-destructive">
-          This app would send you to <strong className="font-semibold">{callback.host ?? 'an address that cannot be read'}</strong>, which
-          is not Claude or ChatGPT, so the budget app refused it.
+          This app would send you to <strong className="font-semibold">{callback.host ?? 'an address that cannot be read'}</strong>. That is
+          not Claude or ChatGPT, so the budget app refused it.
         </p>
       )}
       <div className="flex flex-wrap gap-3 pt-2">

@@ -206,6 +206,10 @@ module.exports = {
     // axe-core checks what the app's screen tests draw (ADR 0009). It is a
     // test tool: nothing in apps/web/src may reach it, so it never ships.
     { from: { path: '^apps/web/test/' }, to: { path: 'node_modules/axe-core/' } },
+    // The brevity test (PRD 03) reads every string the app draws with the
+    // TypeScript scanner the repository already builds with; nothing that
+    // ships may reach it.
+    { from: { path: '^apps/web/test/short-sentences\\.test\\.ts$' }, to: { path: 'node_modules/typescript/' } },
     { from: { path: '^(packages/[^/]+/test/|packages/golden-verification/src/)' }, to: { dependencyTypes: ['core'] } },
     // The graph in CAPABILITY-MAP.md. money-primitives has no line: it is the root.
     { from: { path: '^packages/core/' }, to: { path: '^packages/money-primitives/src/' } },

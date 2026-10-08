@@ -200,7 +200,7 @@ describe('Daily limit', () => {
     const cap = screen.getByRole('combobox', { name: 'Daily limit' }) as HTMLSelectElement
     expect(cap.value).toBe('45')
     expect([...cap.options].map((o) => Number(o.value))).toEqual([10, 20, 30, 40, 45, 50, 60, 80, 100, 120, 150])
-    expect(screen.getByText('Today: 7 of 45. Resets overnight. Past the limit, the app uses its own words until tomorrow.')).toBeTruthy()
+    expect(screen.getByText('Today: 7 of 45. Resets overnight.')).toBeTruthy()
     fireEvent.change(cap, { target: { value: '60' } })
     await waitFor(() => expect(fake.tables.ai_settings).toMatchObject([{ user_id: 'u1', daily_cap: 60 }]))
   })

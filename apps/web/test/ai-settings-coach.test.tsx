@@ -61,9 +61,9 @@ describe('How the Coach talks', () => {
     await waitFor(() => expect(panel.getByRole<HTMLInputElement>('switch', { name: 'Share shop names with the AI' }).getAttribute('aria-disabled')).toBe('false'))
     fireEvent.click(panel.getByRole('switch', { name: 'Share shop names with the AI' }))
     await waitFor(() => expect(fake.tables.ai_settings).toEqual([{ user_id: 'u1', daily_cap: 60, tone: 'straight', share_shop_names: false }]))
-    expect(panel.getByText(/the Coach tells the AI “a shop” instead of the name, and Review suggests no categories/)).toBeTruthy()
+    expect(panel.getByText(/^Off: the AI is told “a shop”, never the name, and Review suggests no categories\./)).toBeTruthy()
     // Scoped to what it is true of: Just type it and receipt photos send what is given them (backend-c1-03).
-    expect(panel.getByText(/The Coach and Review never send an amount or a date; Just type it and receipt photos send what you give them\.$/)).toBeTruthy()
+    expect(panel.getByText(/The Coach and Review never send an amount or a date\. Just type it and receipt photos send what you give them\.$/)).toBeTruthy()
     expect(panel.queryByText(/It never sees an amount or a date/)).toBeNull()
   })
 

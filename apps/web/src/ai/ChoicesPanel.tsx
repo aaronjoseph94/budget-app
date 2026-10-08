@@ -239,7 +239,7 @@ export function ChoicesPanel({ status, choices: { loaded, saving, change } }: { 
             ))}
           </NativeSelect>
           <p id={ids.capHint} className="text-sm text-muted-foreground">
-            Today: {status.today.used} of {status.today.cap}. Resets overnight. Past the limit, the app uses its own words until tomorrow.
+            Today: {status.today.used} of {status.today.cap}. Resets overnight.
           </p>
         </section>
       </div>

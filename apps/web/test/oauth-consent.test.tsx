@@ -72,8 +72,8 @@ describe('the consent page: Allow', () => {
     expect(screen.getByText('claude.ai').tagName).toBe('STRONG')
     expect(screen.getByText(/Anthropic for Claude, OpenAI for ChatGPT/)).toBeTruthy()
     // Security review mcp-2-03: true of the credential handed over, which also reaches the account itself.
-    expect(screen.getByText(/suggest changes that wait in Review until you apply them\. In your budget it cannot approve, apply, change or delete anything\./)).toBeTruthy()
-    expect(screen.getByText(/could also be used on your Supabase account itself, such as its email or password, until its sign-in ends, which Disconnect should do/)).toBeTruthy()
+    expect(screen.getByText(/It can suggest changes, which wait in Review until you apply them\. In your budget it cannot approve, apply, change or delete anything\./)).toBeTruthy()
+    expect(screen.getByText(/could reach your Supabase account, email and password included\. That lasts until its sign-in ends, which Disconnect should do\. Only allow an app you trust\./)).toBeTruthy()
     await expectNoAxeViolations()
 
     const approve = vi.spyOn(fake.client.auth.oauth, 'approveAuthorization')
@@ -123,7 +123,7 @@ describe('the consent page: Allow', () => {
     render(<Consent supabase={fake.client} go={vi.fn()} />)
     expect(await screen.findByText(/wasn’t started from the budget app\./)).toBeTruthy()
     // AI apps is on Settings' Account tab (ADR 0014 §2): the way back names it.
-    expect(screen.getByText(/open Settings → Account → AI apps, press Connect a new AI app/)).toBeTruthy()
+    expect(screen.getByText(/Open Settings → Account → AI apps, press Connect a new AI app/)).toBeTruthy()
     expect(allow()).toBeNull()
   })
 
@@ -192,7 +192,7 @@ describe('the consent page: Allow', () => {
   })
 
   it.each([
-    ['a callback that is not Claude’s or ChatGPT’s', { request: asking('https://evil.example/cb') }, /which is not Claude or ChatGPT, so the budget app refused it\./],
+    ['a callback that is not Claude’s or ChatGPT’s', { request: asking('https://evil.example/cb') }, /That is not Claude or ChatGPT, so the budget app refused it\./],
     ['AI apps off', { access: { ...ON, enabled: false } }, /AI apps are switched off in the budget app\./],
     ['no AI apps settings saved', { access: null }, /AI apps are switched off in the budget app\./],
     ['Connect a new AI app pressed over 15 minutes ago', { access: { ...ON, connect_until: minutes(-1) } }, /wasn’t started from the budget app\./],
@@ -293,7 +293,7 @@ describe('the consent page: an app allowed before', () => {
     const { go } = await open({ request: before, access })
 
     expect(await screen.findByRole('heading', { level: 1, name: 'AI apps are switched off' })).toBeTruthy()
-    expect(screen.getByText(/turn on Let AI apps connect, press Connect a new AI app/)).toBeTruthy()
+    expect(screen.getByText(/turn on Let AI apps connect, and connect again\./)).toBeTruthy()
     expect(go).not.toHaveBeenCalled()
   })
 })
