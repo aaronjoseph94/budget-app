@@ -147,7 +147,7 @@ the calendar's payday pills (N131).
 | Savings, Debts | Every goal in your order; every debt and when it is paid off |
 | Add, Review | A statement, a photo, one typed or "just typed"; everything waits in Review, with suggested categories |
 | Settings | Four tabs (ADR 0014): Lists, your name, lists, bills and pay days; Budgets & goals; AI, on or off, keys, services, limit, tone; Account, learned shops, AI apps, sign out |
-| Help, Getting started | An article per screen and One-time updates; nine steps to set up, opened from Help's Start here and on the first run |
+| Help, Getting started | Twelve short articles (PRD 03), the last of them One-time updates and signing in; nine steps to set up, opened from Help's Start here and on the first run |
 
 **Underneath:** all arithmetic is in `packages/core`, checked against the
 workbook's own cached values (121 golden tests, unchanged); the coach's

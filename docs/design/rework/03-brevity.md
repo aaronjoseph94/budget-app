@@ -119,4 +119,40 @@ over 8 words).
 
 ## Before and after
 
-Measured after the cut; written when `after-copy.json` is in.
+Measured 2026-10-08 after the cut (`eval/after-copy.json`), on the working
+tree's preview at :5273, the same 23 routes, clock, scheme and widths as
+`baseline.md`; the before column is `baseline.md`'s.
+
+| | before | after |
+|---|---:|---:|
+| Help articles | 32 | 12 |
+| Help words | 9,838 | 1,658 |
+| Help sentences over 90 characters | 247 of 518 | 0 of 148 |
+| Longest Help article, words | 855 | 150 |
+| Sentences over 90 characters on the screens, 390 · 1440 | 51 · 51 | 2 · 2 |
+| …of which in a screen's first view | measured after | 1 · 1 |
+| Ledes over one line at 390 | measured after | 1 |
+| Hints over 8 words | measured after | 0 |
+| Words in the first viewport, all screens, 390 · 1440 | 2,118 · 3,867 | 1,948 · 3,394 |
+| Words on the whole page, all screens, 390 · 1440 | 6,478 · 7,372 | 4,965 · 5,799 |
+| axe violations · page errors | 0 · 0 | 0 · 0 |
+
+The three that remain are not the app's own sentences, and are left:
+
+- Coach, 160 characters: a quotation from a book on the quote card. Quotes
+  are quoted whole, never cut.
+- Reports, 108 characters, in the first view: the preview fake's "one
+  thing to try" for the month in review (`?aiwords`, as the baseline
+  caveat says). The AI's words are the service's, bounded by the helper's
+  checks, not by this PRD.
+- Forecast's first paragraph, four lines at 390: the forecast's own
+  sentence about the month, the screen's first figure, not a lede.
+
+Per screen at 390 (words in the first view → whole page; sentences over 90):
+Help 204 → 120 words, 1,364 → 201, 27 → 0; the Help article 149 → 121,
+341 → 170, 8 → 0; Add 49 → 33; Debts 119 → 108, 3 → 0; AI 300 → 210 on
+the whole page, 3 → 0; Review 2 → 0; Settings and the calendar 2 and 1 →
+0. The Month, Week, Year, Paycheck, check-in, Forecast and sign-in were
+already under the line and are within a word or two of before. Settings'
+whole page reads 342 → 441 because the baseline measured the old cards
+screen and `#/settings` now opens Lists (PRD 02), not because of words.

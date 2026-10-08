@@ -3989,3 +3989,22 @@ string literals only) will surface names the app draws only in templates.
 
 **To settle:** strip comments before joining `APP_WORDS`, or match only
 inside quotes and JSX text, and fix what it then finds.
+
+## N173 — The Forecast's first paragraph is a four-line sentence at 390, and a quote card runs past 90
+
+**Seen:** 2026-10-08, measuring PRD 03 (`eval/brevity.mjs`). Under the
+Forecast's title, the first paragraph is the forecast's own sentence ("Keep
+this up and September closes near $8,000, with $1,153.71 a day to spend"),
+four lines on a phone: the screen's first figure, not a lede, so the cut
+left it. On the Coach, the quote card's quotation is 160 characters, quoted
+whole. Both are the only sentences over the line on any screen's first view
+apart from the preview fake's "one thing to try" on Reports.
+
+**Why not fixed here:** the forecast sentence is `packages/savings-coach`'s
+words around the engine's figures, and quotes are never cut; neither is
+screen copy.
+
+**To settle:** decide whether the Forecast's sentence should split into two
+("…closes near $8,000." then "$1,153.71 a day to spend.") in the coach
+package, with its golden-like word tests; and whether a quote longer than
+the owner's line should be skipped by the quote picker.
