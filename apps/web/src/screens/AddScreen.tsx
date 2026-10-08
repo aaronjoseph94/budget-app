@@ -71,7 +71,7 @@ export function AddScreen() {
           <MonthTitle>Add</MonthTitle>
           <HelpButton screen="add" />
         </div>
-        <p className="mt-1 text-sm text-muted-foreground md:text-base">A statement from your bank, a receipt photo, or one by hand: cash, pay or a move to savings.</p>
+        <p className="mt-1 text-sm text-muted-foreground md:text-base">A statement, a photo, or type it.</p>
       </header>
       <div role="tablist" aria-label="How to add" className="grid grid-cols-3 gap-1 rounded-lg bg-canvas p-1">
         {MODES.map((m, i) => (
@@ -280,8 +280,8 @@ function PdfPreview({
         {!rec.balances ? (
           <Alert tone="error" title="Nothing will be imported from this file">
             <p>
-              The transactions read from this PDF do not add up to the totals printed on the statement, which means something
-              was misread. Importing it would put wrong numbers in your budget.
+              The transactions read from this PDF do not add up to its printed totals. Something was misread, and importing
+              it would put wrong numbers in your budget.
             </p>
             <ul className="mt-2 space-y-1">
               {rec.discrepancies.map((d) => (
@@ -804,7 +804,7 @@ function PhotoEntry() {
           }}
         />
         <span className="mt-2 max-w-xs text-xs text-muted-foreground">
-          The photo goes only to an AI service that reads photos, such as free Google Gemini, and is not stored. A free service may use it to improve its products.
+          The photo goes only to an AI service that reads photos, and is not stored. A free service may use it to improve its products.
         </span>
       </label>
     )

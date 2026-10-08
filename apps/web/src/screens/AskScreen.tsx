@@ -140,7 +140,7 @@ export function AskScreen({ topic }: { topic: HelpTopic | null }) {
         <HelpButton screen="ask" />
       </div>
       <p className="-mt-2 text-muted-foreground md:text-[0.9375rem]">
-        {about === undefined ? 'Ask about your money in your own words.' : `About: ${about.title}.`} The app works out every figure from your own records.
+        {about === undefined ? 'Ask about your money in your own words.' : `About: ${about.title}.`}
       </p>
       <form
         className="space-y-2"

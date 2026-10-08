@@ -39,7 +39,7 @@ describe('PaycheckScreen', () => {
     renderScreen(<PaycheckScreen day={null} />, seeded([]))
 
     expect((await screen.findByRole('region', { name: 'Paycheck' })).textContent).toContain(
-      'It needs to know when you are paid: in Lists, give an Income row how often it pays and a first payday.',
+      'It needs to know when you are paid. In Lists, give an Income row How often and a First payday.',
     )
     fireEvent.click(screen.getByRole('button', { name: 'Open Lists' }))
     expect(window.location.hash).toBe('#/settings/lists')

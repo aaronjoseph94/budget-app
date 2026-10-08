@@ -35,7 +35,7 @@ describe('AddScreen, what it is for', () => {
   it('says pay and moves to savings are typed here, as well as cash', async () => {
     renderScreen(<AddScreen />, seeded())
 
-    expect(await screen.findByText(/or one by hand: cash, pay or a move to savings\./)).toBeTruthy()
+    expect(await screen.findByText('A statement, a photo, or type it.')).toBeTruthy()
     fireEvent.click(screen.getByRole('tab', { name: /Type it/ }))
     expect(screen.getByText(/^For what a card statement never shows: cash, pay and moves to savings\./)).toBeTruthy()
     await expectNoAxeViolations()

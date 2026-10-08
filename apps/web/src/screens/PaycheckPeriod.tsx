@@ -106,7 +106,7 @@ export function PaycheckPeriod({
         startingBalanceCents: null,
       })
     } catch {
-      return 'A charge, a budget or a monthly amount in this pay period names a category that did not load, so it is not shown.'
+      return 'Something in this pay period names a category that did not load, so it is not shown.'
     }
   }, [here, categories, start, schedule])
 

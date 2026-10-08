@@ -94,7 +94,7 @@ export function WeekScreen({ monday }: { monday: string | null }) {
     } catch {
       // As on the Month: core refuses a row it cannot file rather than
       // leave it out of every total. Said plainly, never as its message.
-      return 'A charge or a monthly amount this week names a category that did not load, so the week is not shown.'
+      return 'Something this week names a category that did not load, so the week is not shown.'
     }
   }, [here, categories, asOf])
   const sheet = typeof week === 'string' ? null : week

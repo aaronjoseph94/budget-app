@@ -42,7 +42,7 @@ describe('the Month’s forecast line (D27, plan A13)', () => {
     fireEvent.click(info)
     expect(
       screen.getByText(
-        whole('P', 'End of month counts what has happened and your planned bills; the forecast adds pay still due and spending at your usual pace. Coach, Ask and the forecast'),
+        whole('P', 'End of month counts what has happened and your planned bills. The forecast adds pay still due and your usual spending. Coach, Ask and the forecast'),
       ),
     ).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Coach, Ask and the forecast' }).getAttribute('href')).toBe('#/help/coach')

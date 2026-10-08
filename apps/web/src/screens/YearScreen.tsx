@@ -95,7 +95,7 @@ export function YearScreen({ start: address }: { start: string | null }) {
       })
     } catch {
       // Said plainly, never as the engine's message, as on the Month.
-      return 'A charge, a budget or a monthly amount this year names a category that did not load, so the year is not shown.'
+      return 'Something this year names a category that did not load, so the year is not shown.'
     }
   }, [here, categories, start, today])
   const thisMonth = monthBounds(isoDate(today)).start

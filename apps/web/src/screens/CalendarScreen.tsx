@@ -78,7 +78,7 @@ export function CalendarScreen({ month }: { month: string | null }) {
         })),
       })
     } catch {
-      return 'A charge, a monthly amount or a payday this month names a category that did not load, so the calendar is not shown.'
+      return 'Something this month names a category that did not load, so the calendar is not shown.'
     }
   }, [here, categories, start])
 
@@ -254,7 +254,7 @@ function Undated({ calendar }: { calendar: BillCalendar }) {
     <section aria-label="No day paid" className="space-y-2.5 rounded-xl border bg-card p-4 md:px-6 md:py-5">
       <h2 className="text-lg font-semibold">No day paid</h2>
       <p className="text-muted-foreground">
-        These have a monthly amount but no day paid, so they are not on the calendar or in its totals. The Month still counts them.
+        These have a monthly amount but no day paid. They are not on the calendar or in its totals. The Month still counts them.
       </p>
       <ul className="text-calendar-ink">
         {calendar.undated.map((b) => (

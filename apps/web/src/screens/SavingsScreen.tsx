@@ -173,7 +173,7 @@ export function SavingsScreen() {
             <MonthTitle>Savings goals</MonthTitle>
             <HelpButton screen="savings" />
           </div>
-          <p className="text-muted-foreground md:text-base">Your goals: what each needs, and what to put in it each month to get there by its date.</p>
+          <p className="text-muted-foreground md:text-base">Each goal, and what to save a month.</p>
         </div>
         {ready === null ? null : (
           <Button className="w-full sm:w-auto" onClick={() => setAdding(true)}>
@@ -206,7 +206,7 @@ export function SavingsScreen() {
         <>
           {goalsOrdered || goals.length === 0 ? null : (
             <p className="text-sm">
-              Choosing your main goal, moving goals, and pausing or finishing one need a one-time update.{' '}
+              Choosing a main goal, moving goals, and pausing or finishing one need a one-time update.{' '}
               <a href={hashOf({ screen: 'help', param: 'updates' })} className={SENTENCE_LINK}>
                 See One-time updates
               </a>

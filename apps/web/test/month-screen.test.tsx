@@ -260,7 +260,7 @@ describe('MonthScreen budgets and goals', () => {
 
     expect((await screen.findByRole('alert')).textContent).toBe(
       'Could not show this month' +
-        'A charge, a budget or a monthly amount this month names a category that did not load, so the month is not shown. Try again.',
+        'Something this month names a category that did not load, so the month is not shown. Try again.',
     )
     expect(screen.queryByRole('region')).toBeNull()
   })
@@ -707,7 +707,7 @@ describe('MonthScreen, on a first run', () => {
     renderScreen(<MonthScreen month={null} />, createFakeSupabase())
 
     const start = await screen.findByRole('region', { name: 'Start here' })
-    expect(start.textContent).toContain('New here? Getting started sets up your lists, pay, bills and goals one step at a time')
+    expect(start.textContent).toContain('New here? Getting started sets up your lists, pay, bills and goals, a few minutes each.')
     fireEvent.click(within(start).getByRole('button', { name: 'Get started' }))
     expect(window.location.hash).toBe('#/start')
     fireEvent.click(within(start).getByRole('button', { name: 'Open Lists' }))

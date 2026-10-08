@@ -151,7 +151,7 @@ export function MonthScreen({ month }: { month: string | null }) {
       // The engine refuses a charge, a budget or a monthly amount whose
       // category it was not given rather than leave it out of every total.
       // Said plainly, never as its message.
-      return 'A charge, a budget or a monthly amount this month names a category that did not load, so the month is not shown.'
+      return 'Something this month names a category that did not load, so the month is not shown.'
     }
   }, [here, categories, start])
   // Null while either read is out; 'failed' hides the comparison with one line.
@@ -292,7 +292,7 @@ export function MonthScreen({ month }: { month: string | null }) {
       {version > 0 && categories.length === 0 ? (
         <section aria-label="Start here" className="rounded-xl border bg-card p-4">
           <p className="text-sm">
-            New here? Getting started sets up your lists, pay, bills and goals one step at a time, a few minutes each.
+            New here? Getting started sets up your lists, pay, bills and goals, a few minutes each.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <Button size="sm" onClick={() => navigate('start')}>

@@ -366,7 +366,7 @@ export function ReviewScreen() {
       {rows !== null && rows.length === 0 && unreadable?.total === 0 && suggestedTotal === 0 ? (
         <Card>
           <Empty icon={<Icon name="check" />} title="All caught up">
-            Import a statement and anything it finds that you have not categorised before will wait here.
+            Import a statement; anything from a shop you have not filed before waits here.
           </Empty>
           {/* Not a dead end: what was just approved is counted on the Month. */}
           <div className="-mt-6 flex justify-center pb-8">
@@ -601,9 +601,9 @@ function UnreadableLines({
           </h2>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
-          These were left out of your budget. Find each one on the statement, and if it is a real charge, add it
-          yourself with Add, then Type it. Dismiss a line once you have dealt with it. A PDF statement's rows are
-          counted from its first transaction.
+          These were left out of your budget. Find each one on the statement. If it is a real charge, add it yourself
+          with Add, then Type it. Dismiss a line once you have dealt with it. A PDF statement's rows are counted from
+          its first transaction.
         </p>
         {page.batches.map((batch) => (
           <div key={batch.id} className="mt-4">
