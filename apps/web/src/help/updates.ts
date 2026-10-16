@@ -338,6 +338,26 @@ async function signupsOff(supabase: SupabaseClient): Promise<UpdateState> {
   }
 }
 
+/**
+ * Whether the platform has a function by this name (an address under
+ * functions/v1), asked with a plain GET and nothing of the owner's. With
+ * the sign-in headers a browser first asks permission, which Supabase
+ * answers with 404 for a function that is not there, and the browser then
+ * refuses to read the reply (Safari, 2026-10-16: every function row said
+ * "?"). A plain GET needs no such question, and its 404 can be read. False
+ * only on that 404; null when nothing could be read.
+ */
+async function isDeployed(supabase: SupabaseClient, path: string): Promise<boolean | null> {
+  try {
+    const reply = await fetch(`${new URL(serverAddress(supabase)).origin}/functions/v1/${path}`)
+    if (reply.status !== 404) return true
+    const said: unknown = await reply.json().catch(() => null)
+    return typeof said === 'object' && said !== null && 'code' in said && said.code === 'NOT_FOUND' ? false : null
+  } catch {
+    return null
+  }
+}
+
 /** The version a function's reply names, or null. */
 const versionOf = (data: unknown): unknown => (typeof data === 'object' && data !== null && 'version' in data ? data.version : null)
 /** A refusal's code, or '' where it has none. */
@@ -349,10 +369,13 @@ async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateStat
   if (check.kind === 'oauth') return signInForAiApps(supabase)
   if (check.kind === 'helper') {
     const answer = await askAi(supabase, { action: 'ping' })
-    if (!answer.ok) return answer.view.state === 'not_deployed' ? 'missing' : 'unknown'
-    return isOlder(versionOf(answer.data)) ? 'old' : 'in'
+    if (answer.ok) return isOlder(versionOf(answer.data)) ? 'old' : 'in'
+    if (answer.view.state === 'not_deployed') return 'missing'
+    return (await isDeployed(supabase, 'ai')) === false ? 'missing' : 'unknown'
   }
   if (check.kind === 'read_receipt') {
+    // Deleted is in; one still there says which copy it is to a signed-in GET.
+    if ((await isDeployed(supabase, 'read-receipt')) === false) return 'in'
     const { data, error } = await supabase.functions.invoke('read-receipt', { method: 'GET' })
     if (error !== null) {
       const status = (error as { context?: unknown }).context
@@ -363,6 +386,7 @@ async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateStat
     return isOlder(versionOf(data), READ_RECEIPT_VERSION) ? 'old' : 'in'
   }
   if (check.kind === 'server') {
+    if ((await isDeployed(supabase, 'mcp/health')) === false) return 'missing'
     const { data, error } = await supabase.functions.invoke('mcp/health', { method: 'GET' })
     if (error !== null) {
       const reply = (error as { context?: unknown }).context

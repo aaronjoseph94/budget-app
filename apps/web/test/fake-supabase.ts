@@ -158,6 +158,13 @@ export interface FakeSupabase {
     readReceiptVersion: () => Response | Promise<Response>
     /** `functions/v1/mcp/health`, the AI apps server's; null is one never deployed. By default it answers with this app's version. */
     mcpHealth: (() => Response | Promise<Response>) | null
+    /**
+     * As a browser reaches the platform: a request with the sign-in headers
+     * is preflighted, and the platform answers that preflight for a function
+     * never deployed with 404, so the browser refuses the reply and the
+     * fetch fails. A plain GET is not preflighted and reads the 404.
+     */
+    inBrowser: boolean
   }
   /**
    * Supabase's OAuth server (ADR 0012): `grants` are the AI apps the owner
@@ -292,6 +299,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     receiptCalls: [],
     readReceiptVersion: () => json({ ok: true, version: READ_RECEIPT_VERSION }),
     mcpHealth: () => json({ ok: true, version: MCP_SERVER_VERSION, tools: 0 }),
+    inBrowser: false,
   }
   const oauth: FakeSupabase['oauth'] = {
     metadata: { registration_endpoint: 'http://fake.supabase.test/auth/v1/oauth/clients/register', code_challenge_methods_supported: ['S256'] },
@@ -473,6 +481,14 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
         Object.assign(user.user_metadata, body.data)
       }
       return json({ ...user, aud: 'authenticated', app_metadata: {}, created_at: '2026-01-01T00:00:00Z' })
+    }
+    const fn = /^\/functions\/v1\/([^/]+)/.exec(url.pathname)?.[1]
+    if (fn !== undefined) {
+      const deployed = fn === 'ai' ? functions.ai !== null : fn === 'mcp' ? functions.mcpHealth !== null : fn === 'read-receipt' ? functions.readReceipt !== null : false
+      const signed = ['authorization', 'apikey', 'x-client-info'].some((h) => headers.has(h))
+      if (functions.inBrowser && signed && !deployed) throw new TypeError('Load failed')
+      // The platform's JWT check, on for the helper and read-receipt, refuses a request with no sign-in.
+      if (!signed && deployed && fn !== 'mcp') return json({ code: 'UNAUTHORIZED_NO_AUTH_HEADER', message: 'Missing authorization header' }, 401)
     }
     if (url.pathname === '/functions/v1/ai') {
       const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>

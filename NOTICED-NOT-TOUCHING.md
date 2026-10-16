@@ -4072,3 +4072,26 @@ The AI apps server (`packages/ai-apps`) calls PostgREST with a connected
 app's pass and has no such retry; if Claude or ChatGPT see the same 401
 right after a sign-in, give it the same one retry. A read that fails still
 borrows the import's "nothing was saved" wording in a few places.
+
+## N177 — A browser cannot read Supabase's 404 for a function that is not there
+
+**Seen:** 2026-10-16, by the owner in Safari: One-time updates said "?"
+for the AI helper, read-receipt and the AI apps server, and "Some could
+not be checked". Supabase's logs show only the browser's permission
+requests (OPTIONS): the platform answers them with 404 for a function
+that does not exist, and the browser then refuses the reply. Reproduced in
+WebKit against the project: a signed-in GET to the deleted read-receipt
+fails "Load failed"; a plain GET reads `404 NOT_FOUND`.
+
+**Done here:** One-time updates first asks with a plain GET, which needs
+no permission request, whether read-receipt and the AI apps server are
+there, and asks the same of the helper when its ping fails
+(`help/updates.ts`, `isDeployed`; the fake's `functions.inBrowser`).
+
+**Left:** the same 404 is read in two other places that only ever get a
+failed fetch in a browser: `askAi` says "Couldn't reach the AI helper"
+where it means "isn't installed yet", and the receipt fallback to
+read-receipt reads a deleted one as unreachable. Both could ask
+`isDeployed` before choosing their words. The owner's AI helper ping
+also failed in Safari on 2026-10-16 while it is deployed; that cause is
+not known yet (no request reached the helper in its logs).

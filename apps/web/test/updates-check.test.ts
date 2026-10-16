@@ -247,6 +247,24 @@ describe('checking the one-time updates', () => {
     }
   })
 
+  // Safari, 2026-10-16: with the sign-in headers, a missing function's 404 cannot be read, and every function row said "?".
+  it('in a browser, reads a function deleted or never deployed from a plain GET, which needs no preflight', async () => {
+    const fake = await ready()
+    fake.functions.inBrowser = true
+    // read-receipt is deleted by default: that is in.
+    expect(missing(await checkUpdates(fake.client))).toEqual([])
+    fake.functions.mcpHealth = null
+    const checked = await checkUpdates(fake.client)
+    expect(missing(checked)).toEqual([['mcp-', 'missing']])
+    expect(nextStep(checked)).toEqual({ kind: 'paste', file: SERVER_FILE, fromStart: false })
+    fake.functions.ai = null
+    expect(missing(await checkUpdates(fake.client))).toEqual([['ai-f', 'missing'], ['mcp-', 'missing']])
+    // One still there is asked with the sign-in, as before: an older read-receipt is old.
+    fake.functions.readReceipt = () => new Response('{}')
+    fake.functions.readReceiptVersion = () => new Response(JSON.stringify({ ok: false }), { status: 405 })
+    expect(stateOf(await checkUpdates(fake.client), 'read-receipt')).toBe('old')
+  })
+
   // The AI apps server (ADR 0012) answers /mcp/health; it comes last, after the helper.
   it('reads the AI apps server’s health: 404 not installed, an older version old, anything else could not check', async () => {
     const fake = await ready()
@@ -321,7 +339,10 @@ describe('checking the one-time updates', () => {
     expect(asked).toEqual([
       // Sign-ups, asked with the page's public key alone.
       ['http://fake.supabase.test/auth/v1/settings', { headers: { apikey: PUBLIC_KEY } }],
+      // Whether read-receipt and the AI apps server are there, asked with nothing at all.
+      ['http://fake.supabase.test/functions/v1/read-receipt', undefined],
       ['http://fake.supabase.test/.well-known/oauth-authorization-server/auth/v1', undefined],
+      ['http://fake.supabase.test/functions/v1/mcp/health', undefined],
     ])
     fake.oauth.grants = []
     for (const [metadata, state] of [
