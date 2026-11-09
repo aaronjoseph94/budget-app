@@ -10,7 +10,9 @@
  * the phone's own radio. And the Supabase client's `fetch` is watched: a
  * request that gets no reply at all, which is what `fetch` rejecting means,
  * turns the line on, and any reply, even a refusal, turns it off, since
- * the server was reached. An aborted request says nothing either way.
+ * the server was reached. An aborted request says nothing either way, and
+ * nor does an Edge Function's: a browser refuses the reply for a function
+ * that is not installed (N177), with every read still being answered.
  */
 import { useSyncExternalStore } from 'react'
 
@@ -31,7 +33,9 @@ export function watchNetwork(inner: typeof fetch): typeof fetch {
       setUnreached(false)
       return reply
     } catch (cause) {
-      if (!(cause instanceof DOMException && cause.name === 'AbortError')) setUnreached(true)
+      const aborted = cause instanceof DOMException && cause.name === 'AbortError'
+      const address = input instanceof Request ? input.url : String(input)
+      if (!aborted && !address.includes('/functions/v1/')) setUnreached(true)
       throw cause
     }
   }
