@@ -52,6 +52,19 @@ describe('periodComparison for a week (F25, F26)', () => {
     const c = compared({ ...BASE, period: 'week', week: d('2026-09-01'), entries: [] })
     expect(rowOf(c, 'bill', 'rent')).toMatchObject({ nowCents: 90000, beforeCents: 0, changeBp: null })
   })
+
+  it('leaves a bill out of the week of its due day once its month has a real charge, as the Week does (F54)', () => {
+    // Rent is due on the 23rd. On 30 September the week 21–27 is over, and
+    // is set whole against 14–20. Paid on the 2nd: neither week counts it.
+    const due23 = { ...BASE, asOf: d('2026-09-30'), planHistory: [rent('2026-01-01', 90000, 23)] }
+    const paid = compared({ ...due23, period: 'week', week: d('2026-09-21'), entries: [entry('2026-09-02', -90000, 'rent')] })
+    expect(rowOf(paid, 'bill', 'rent')).toMatchObject({ nowCents: 0, beforeCents: 0 })
+    expect(paid.summary.spent).toMatchObject({ nowCents: 0, beforeCents: 0 })
+    // Paid nowhere, it is planned on its due day; the week after, it was last week's.
+    expect(rowOf(compared({ ...due23, period: 'week', week: d('2026-09-21'), entries: [] }), 'bill', 'rent')).toMatchObject({ nowCents: 90000, beforeCents: 0 })
+    const after = compared({ ...due23, asOf: d('2026-10-06'), period: 'week', week: d('2026-09-28'), entries: [entry('2026-09-02', -90000, 'rent')] })
+    expect(rowOf(after, 'bill', 'rent')).toMatchObject({ nowCents: 0, beforeCents: 0 })
+  })
 })
 
 describe('periodComparison for a pay period (F25, F26)', () => {

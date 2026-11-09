@@ -16,6 +16,7 @@ import {
   type PeriodEntry,
   type PeriodPlan,
   type PeriodSheet,
+  notChargedElsewhere,
   payPlans,
   periodSheet,
   plansInEffect,
@@ -152,7 +153,11 @@ export type PeriodComparisonInput = ComparisonWindowInput & {
   readonly categories: readonly PeriodCategory[]
   /** Every monthly amount typed up to the period shown; each month resolves its own (D13). */
   readonly planHistory: readonly PlanHistoryRow[]
-  /** Ledger rows for both windows; any others are left out by the windows. */
+  /**
+   * Ledger rows for both windows; any others are left out by the windows.
+   * For a week, the rows of every month either week touches: one on another
+   * day says its bill was already charged that month (F54).
+   */
   readonly entries: readonly PeriodEntry[]
 }
 
@@ -238,13 +243,14 @@ function sheets(input: PeriodComparisonInput, window: DateWindow): PeriodSheet[]
   const out: PeriodSheet[] = []
   for (let month = monthBounds(window.from).start; month <= window.to; month = shiftMonth(month, 1)) {
     const end = monthBounds(month).end
-    out.push(
-      sheet(
-        month < window.from ? window.from : month,
-        end > window.to ? window.to : end,
-        plansInEffect(input.categories, input.planHistory, month),
-      ),
-    )
+    const from = month < window.from ? window.from : month
+    const to = end > window.to ? window.to : end
+    const plans = plansInEffect(input.categories, input.planHistory, month)
+    // F54: a week leaves out a bill charged on another day of its month, as
+    // the Week does. A month's or a Year's window starts on the 1st, so an
+    // earlier charge is always inside it and both sides count alike (F25).
+    const due = input.period !== 'week' ? plans : notChargedElsewhere(plans.map((p) => ({ ...p, month })), input.entries, from, to)
+    out.push(sheet(from, to, due))
   }
   return out
 }

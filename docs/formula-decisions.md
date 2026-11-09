@@ -2599,3 +2599,67 @@ week). Debt-strategy's and goals' code-point helpers stay: they order debts
 and ids, and their tests fix their order. **Worked example:** three
 Variable categories at `sort_order` 0 named 'Zoo', 'apple' and 'Ärenden'
 list as apple, Ärenden, Zoo on every device.
+
+---
+
+## F54 — A bill already charged in its month is not planned again in a week (amends F8 and F3)
+
+**Decided 2026-11-09. Engineering default, under the owner's decision 3
+(F3: a bill counts once).** Found by a tester on 2026-11-09: the Week of
+21–27 September 2026 showed "Netflix 17.99 planned" and counted it in
+Spent, though Netflix was charged on 1 September and the Month and the
+Bill calendar each count that charge alone.
+
+```
+Weekly Budget!D50  ...+if(C50="",,iferror(sum(FILTER(Bills!$D$7:$D$29,Bills!$C$7:$C$29=C50,
+                   regexmatch(Bills!$B$7:$B$29&"", <the week's days>))),0))   [800]
+Jan!E22            =Bills!D7+SUMIFS(Bills!Q:Q, …)                             [800]
+```
+
+**Workbook value.** A week adds a bill's Monthly Amount on its due day to
+whatever is logged in the week, and never looks at the rest of the month,
+as a month adds it to every payment logged (F3). With Netflix at $17.99,
+due on the 23rd and charged on the 1st, the five weeks of September add
+up to **$35.98**.
+
+**What F3 and F8 left open.** Both are worded for one window: a real row
+*in the window* replaces the plan (F3), and a partial window counts a plan
+on its due day (F8). A month is one window, so it counts once. A week is
+not: the charge sits in one week and the due day in another. F20 already
+reads the whole month for the Bill calendar, and F32 for the next 30 days.
+
+**Chosen value.** In a week, a monthly amount is left out when its own
+month holds a real ledger row for that bill, debt or subscription on any
+day outside the week, earlier or later. The same September adds up to
+**$17.99**, the Month's figure.
+
+- **Its own month.** A week across a month end is given each month's
+  amount (D13); each is judged by that month's rows alone. August's charge
+  says nothing about September's bill.
+- **A row inside the week** replaces the amount by itself, as before (F3),
+  and the amount stays as that row's budget (F51).
+- **The row left out** reads as any row with nothing due: no Actual, no
+  planned budget, and its sheet says no charges are filed in the week.
+- **What the caller gives.** `weekSheet`, and `periodComparison` for a
+  week, need the rows of every month the weeks touch. Given a week's rows
+  alone they cannot see the charge and count as before.
+- **Unchanged: the Paycheck.** F15's share of a monthly amount counts in
+  every pay period whatever its day paid, and a row outside the period
+  does not take it away (`paycheck-sheet.test.ts`, "Paid the day before
+  the period, so its share stands"). That is F15's recorded choice.
+- **Unchanged: the Month's and the Year's same-days comparisons** (F25).
+  Their windows start on the 1st, so an earlier charge is always inside
+  them, and a charge after "this day" is unknown this month; leaving the
+  plan on both sides keeps like for like.
+
+**Reason.** The owner chose that a card-paid bill counts once (decision
+3). The Bill calendar shows this bill paid on the 1st and nothing on the
+23rd; a Week that plans it again contradicts the screen beside it.
+
+**Worked examples.** Netflix $17.99, due on the 23rd, charged 1 Sep 2026;
+Phone $65.00, due on the 18th, charged 5 Sep. Week of 21 Sep: Netflix
+blank where it read **17.99 planned**; September's weeks add up to
+1,799 cents where they added up to **3,598**. Week of 14 Sep: Phone blank
+where it read **65.00 planned**. Netflix charged on the 29th instead: the
+week of 21 Sep is blank and the week of 28 Sep shows 17.99, real. Charged
+on the 22nd: the week of 21 Sep shows 17.99 against a planned 17.99.

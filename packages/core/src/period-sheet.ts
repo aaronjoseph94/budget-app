@@ -51,6 +51,12 @@
  *   end can be given each month's amount, which counts on its due day in its
  *   own month (D13), so a rent raised from February is paid at the new
  *   amount on February 1st whichever month the week started in.
+ * - F54, a bill already charged in its month. The workbook's week adds the
+ *   Monthly Amount on its due day to whatever was logged (`Weekly Budget!D50`),
+ *   as its month does (F3). Under D5 a month counts a bill once, on its real
+ *   row; so a week leaves a monthly amount out when its month holds a real
+ *   row on another day, earlier or later, as the Bill calendar does (F20).
+ *   A week must therefore be given the rows of every month it touches.
  * - F10, which months count planned amounts. The month tabs never gate them
  *   on a date (Dec!E22 is 800 whatever today is), so a month here never
  *   does, and a future month shows its planned bills. Only the Year will
@@ -504,6 +510,27 @@ export function plansInEffect(
   })
 }
 
+/**
+ * F54: the monthly amounts a window smaller than a month still counts, each
+ * naming its month. One whose month holds a real row outside the window is
+ * left out: the bill was charged on another day, and the Month and the Bill
+ * calendar count it once, on that row. A row inside the window replaces the
+ * amount by itself (F3) and keeps it as its budget (F51), so it stays.
+ * Exported for compare.ts, whose weeks count as the Week does; not from the package.
+ */
+export function notChargedElsewhere(
+  plans: readonly PeriodPlan[],
+  entries: readonly PeriodEntry[],
+  from: IsoDate,
+  to: IsoDate,
+): PeriodPlan[] {
+  const charged = new Set<string>()
+  for (const e of entries) {
+    if (e.postedOn < from || e.postedOn > to) charged.add(`${e.categoryId}|${e.postedOn.slice(0, 7)}`)
+  }
+  return plans.filter((p) => p.month === undefined || !charged.has(`${p.categoryId}|${p.month.slice(0, 7)}`))
+}
+
 /** A category as the Week reads it: its one weekly budget, for every week (0004). */
 export interface WeekCategory extends PeriodCategory {
   /** Budgeted, or on Income and Savings the Goal (Weekly Budget!D22, Q10, W10). Null is no budget, not $0. */
@@ -530,13 +557,20 @@ export interface WeekSheet extends PeriodSheet {
  * budget, one value for every week, as Weekly Budget types one set of its
  * own (D22:W44, Q10:Q16, W10:W16) apart from the month tabs'. workbook-week
  * replays its cells.
+ *
+ * `entries` are the rows of every month the week touches, not the week's
+ * alone: those on other days are in no total, and say only that a bill was
+ * already charged that month, so its amount is not planned again (F54).
  */
 export function weekSheet(input: WeekSheetInput): WeekSheet {
   const { asOf, planHistory, categories, ...rest } = input
   const { start, end } = weekBounds(asOf)
   const months = [...new Set([monthBounds(start).start, monthBounds(end).start])]
-  const plans = months.flatMap((month) =>
-    plansInEffect(categories, planHistory, month).map((p): PeriodPlan => ({ ...p, month })),
+  const plans = notChargedElsewhere(
+    months.flatMap((month) => plansInEffect(categories, planHistory, month).map((p): PeriodPlan => ({ ...p, month }))),
+    rest.entries,
+    start,
+    end,
   )
   const budgets = categories.map((c) => ({ categoryId: c.id, budgetCents: c.weeklyBudgetCents }))
   const sheet = periodSheet({ ...rest, categories, budgets, plans, from: start, to: end })
