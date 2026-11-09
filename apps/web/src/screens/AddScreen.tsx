@@ -397,8 +397,11 @@ function FilePicker({ onFile }: { onFile: (file: File) => void }) {
 
 /** Money typed by hand, out or in: cash, pay and moves to savings, which no card statement shows (decision 8). */
 function TypedEntry() {
-  const { supabase, userId, accountId, categories, refresh } = useAppData()
-  const [date, setDate] = useState(todayIso())
+  const { supabase, userId, accountId, categories, refresh, today } = useAppData()
+  // Today until a date is chosen, and today is the app's: a tab left open
+  // overnight offers the new day, not the one it was opened on.
+  const [chosen, setDate] = useState<string | null>(null)
+  const date = chosen ?? today
   const [amount, setAmount] = useState('')
   const [direction, setDirection] = useState<'spent' | 'received'>('spent')
   const [merchant, setMerchant] = useState('')
