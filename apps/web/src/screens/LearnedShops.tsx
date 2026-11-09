@@ -27,7 +27,12 @@ export function LearnedShopsCard() {
   useEffect(() => {
     let live = true
     listLearnedShops(supabase)
-      .then((read) => live && setShops(read))
+      .then((read) => {
+        if (!live) return
+        setShops(read)
+        // Read now: a refusal from an earlier try no longer stands.
+        setError(null)
+      })
       .catch((e: unknown) => live && setError(e instanceof Error ? e.message : 'The shops the app has learned could not be read just now.'))
     return () => {
       live = false
