@@ -120,10 +120,11 @@ const currentHash = () => window.location.hash
 export function useAddress(): Address {
   const hash = useSyncExternalStore(subscribe, currentHash, () => '')
   const address = useMemo(() => readAddress(hash), [hash])
-  // An old address is written over with the one it opened, so a refresh,
-  // the back gesture and a bookmark made now carry the new one.
+  // An old address, or one that could not be read, is written over with
+  // the one it opened, so the address bar, a refresh, the back gesture and
+  // a bookmark made now all say what is shown. The bare address stays bare.
   useEffect(() => {
-    if (OLD.has(hash.replace(/^#\/?/, ''))) window.history.replaceState(null, '', hashOf(address))
+    if (hash.replace(/^#\/?/, '') !== '' && hash !== hashOf(address)) window.history.replaceState(null, '', hashOf(address))
   }, [hash, address])
   return address
 }
