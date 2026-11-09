@@ -397,7 +397,8 @@ function ListCardView({
   const add = async () => {
     const name = newName.trim()
     if (name === '') return
-    if (await write(() => ensureCategory(supabase, userId, atEndOf(categories, name, card.kind)))) setNewName('')
+    // Cleared only if it still holds what was added: the next name may be typed while this one saves.
+    if (await write(() => ensureCategory(supabase, userId, atEndOf(categories, name, card.kind)))) setNewName((now) => (now.trim() === name ? '' : now))
   }
 
   return (
