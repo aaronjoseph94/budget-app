@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { IngestedText } from '../ui.js'
 import { Card } from '../components/ui/card.js'
 import { Button } from '../components/ui/button.js'
@@ -13,9 +14,21 @@ export interface ApproveItem {
 }
 
 /** Approve these N, on the title row: it only opens the question below. */
-export function ApproveAllButton({ n, busy, onOpen }: { n: number; busy: boolean; onOpen: () => void }) {
+export function ApproveAllButton({ n, busy, onOpen, takeFocus }: {
+  n: number
+  busy: boolean
+  onOpen: () => void
+  /** Set when its question was cancelled: the button, drawn again, takes the focus Cancel held. */
+  takeFocus?: { current: boolean }
+}) {
+  const own = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (takeFocus?.current !== true) return
+    takeFocus.current = false
+    own.current?.focus()
+  }, [takeFocus])
   return (
-    <Button size="tall" disabled={busy} onClick={onOpen}>
+    <Button ref={own} size="tall" disabled={busy} onClick={onOpen}>
       Approve these {n}
     </Button>
   )
@@ -34,9 +47,12 @@ export function ApproveAll({ items, busy, onConfirm, onCancel }: {
   onCancel: () => void
 }) {
   const n = items.length
+  // The button that opened it is gone, so its question takes the focus.
+  const title = useRef<HTMLHeadingElement>(null)
+  useEffect(() => title.current?.focus(), [])
   return (
     <Card className="p-4 md:px-5" role="group" aria-labelledby="approve-all-title">
-      <h2 id="approve-all-title" className="font-medium">
+      <h2 ref={title} tabIndex={-1} id="approve-all-title" className="font-medium outline-none">
         Approve these {n}?
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">Each goes into your budget under the category shown. Change any row below first if it is wrong.</p>

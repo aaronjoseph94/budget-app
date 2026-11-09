@@ -189,7 +189,10 @@ export function ReviewScreen() {
         const outcome = await approveCandidate(supabase, row.id, categoryId)
         setNote(
           outcome === 'approved'
-            ? 'Added. Future charges from this merchant will be filed the same way automatically.'
+            ? // An AI app's entry teaches no shop (0032), so nothing is promised of its next charges.
+              row.source === 'ai_app'
+              ? 'Added.'
+              : 'Added. Future charges from this merchant will be filed the same way automatically.'
             : outcome === 'already_in_ledger'
               ? 'You already had that one, so nothing was added.'
               : 'That one had already been handled.',
@@ -263,6 +266,8 @@ export function ReviewScreen() {
     return name === undefined ? [] : [{ row, categoryId, name, byAi }]
   })
   const [confirming, setConfirming] = useState(false)
+  // Cancel was pressed: Approve these N, drawn again, takes the focus back.
+  const cancelled = useRef(false)
   const approveAll = async (list: typeof ready) => {
     setBusy(ALL)
     setNote(null)
@@ -278,7 +283,12 @@ export function ReviewScreen() {
         reads.current += 1
         setRows((now) => now?.filter((r) => r.id !== row.id) ?? null)
       }
-      setNote(`Filed ${done}. Future charges from these shops will be filed the same way automatically.`)
+      const fromApps = list.filter(({ row }) => row.source === 'ai_app').length
+      setNote(
+        `Filed ${done}.` +
+          (fromApps < done ? ' Future charges from these shops will be filed the same way automatically.' : '') +
+          (fromApps > 0 ? ' An AI app’s entries teach no shop.' : ''),
+      )
     } catch (cause) {
       const why = cause instanceof Error ? cause.message : 'That did not work.'
       // Those filed were saved: never "nothing was saved" after them (e2e-money-09).
@@ -335,7 +345,7 @@ export function ReviewScreen() {
         {suggestOffered(suggestions.status, suggestions.waiting) || (ready.length >= 2 && !confirming) ? (
           <div className="flex flex-wrap gap-2">
             {suggestOffered(suggestions.status, suggestions.waiting) ? <SuggestButton onSuggest={suggestions.suggest} /> : null}
-            {ready.length >= 2 && !confirming ? <ApproveAllButton n={ready.length} busy={busy !== null} onOpen={() => setConfirming(true)} /> : null}
+            {ready.length >= 2 && !confirming ? <ApproveAllButton n={ready.length} busy={busy !== null} onOpen={() => setConfirming(true)} takeFocus={cancelled} /> : null}
           </div>
         ) : null}
       </header>
@@ -347,7 +357,10 @@ export function ReviewScreen() {
           items={ready.map((r) => ({ id: r.row.id, shop: r.row.merchant_raw, category: r.name, byAi: r.byAi }))}
           busy={busy !== null}
           onConfirm={() => void approveAll(ready)}
-          onCancel={() => setConfirming(false)}
+          onCancel={() => {
+            cancelled.current = true
+            setConfirming(false)
+          }}
         />
       ) : null}
 

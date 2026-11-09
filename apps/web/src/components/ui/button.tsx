@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from 'react'
+import type { ButtonHTMLAttributes, Ref } from 'react'
 import { cn } from '../../lib/cn.js'
 
 /** shadcn/ui Button, with its variants as plain maps instead of cva. */
@@ -26,6 +26,8 @@ const SIZES = {
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   readonly variant?: keyof typeof VARIANTS
   readonly size?: keyof typeof SIZES
+  /** Passed through with the rest, as Input's is: for giving a button the focus. */
+  readonly ref?: Ref<HTMLButtonElement>
 }
 
 export function Button({ variant = 'default', size = 'default', className, type = 'button', ...props }: ButtonProps) {
