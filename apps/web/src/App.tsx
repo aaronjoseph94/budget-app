@@ -297,6 +297,8 @@ function useAnnounceScreen(screen: Screen, param: string | null, main: { readonl
     window.addEventListener('hashchange', note)
     return () => window.removeEventListener('hashchange', note)
   }, [])
+  // Gone with the app: signed out, the tab is the app's own name again, not the last screen's.
+  useEffect(() => () => void (document.title = 'Budget'), [])
   useEffect(() => {
     document.title = `${SCREEN_NAME[screen]} · Budget`
     if (shown.current !== null && shown.current !== page) {
