@@ -150,9 +150,15 @@ export function explainsAsRunningBalance(
   // Converted up front, so a cell that does not read as money answers "no"
   // rather than contributing a zero. A fallback to 0 on a money path would
   // make an unreadable column look like a perfect match.
-  const balances = toCents(balanceCells, format)
-  const amounts = toCents(amountCells, format)
+  const balances = cellsAsCents(balanceCells, format)
+  const amounts = cellsAsCents(amountCells, format)
   if (balances === null || amounts === null) return false
+  return balanceMovesBy(balances, amounts)
+}
+
+/** The same check over amounts already read: a row's credit less its debit, say. */
+export function balanceMovesBy(balances: readonly number[], amounts: readonly number[]): boolean {
+  if (balances.length < 3 || balances.length !== amounts.length) return false
 
   // Four readings, because exports disagree on two independent axes. Rows may
   // run oldest-first, where a balance moves by the transaction on its own row,
@@ -181,7 +187,7 @@ export function explainsAsRunningBalance(
 }
 
 /** Every cell as cents, or null if any cell is not money. */
-function toCents(cells: readonly string[], format: AmountFormat): number[] | null {
+export function cellsAsCents(cells: readonly string[], format: AmountFormat): number[] | null {
   const out: number[] = []
   for (const cell of cells) {
     const parsed = parseAmountToCents(cell, format)

@@ -11,7 +11,7 @@
  */
 import { type Cents, type IsoDate } from '@budget/money-primitives'
 import { IngestedTextSchema, type RejectionReason } from '@budget/schema'
-import { type AmountFormat, type SignConvention, applySignConvention, parseAmountToCents } from './amount.js'
+import { type AmountFormat, type ParseOutcome, type SignConvention, applySignConvention, parseAmountToCents, parseDebitCredit } from './amount.js'
 import { type DateFormat, parseStatementDate } from './date.js'
 import { type CsvRow, isBlankRow } from './csv.js'
 
@@ -21,6 +21,12 @@ export interface ColumnMapping {
   readonly merchantIndex: number
   /** Absent when the export carries no transaction id of its own. */
   readonly issuerIdIndex?: number
+  /**
+   * Present when the statement writes money out and money in as two columns.
+   * `amountIndex` is then the money out (debit) and this the money in, a row
+   * is the credit less the debit, and `sign` does not apply.
+   */
+  readonly creditIndex?: number
   readonly sign: SignConvention
 }
 
@@ -123,7 +129,9 @@ function readRow(row: CsvRow, width: number, options: ReadOptions): RowOutcome {
   const date = parseStatementDate(dateCell, options.dateFormat)
   if (!date.ok) return { reason: date.reason }
 
-  const amount = parseAmountToCents(amountCell, options.amountFormat)
+  const creditCell = mapping.creditIndex === undefined ? undefined : row.fields[mapping.creditIndex]
+  if (mapping.creditIndex !== undefined && creditCell === undefined) return { reason: 'row_shape_mismatch' }
+  const amount = creditCell === undefined ? readSigned(amountCell, options) : parseDebitCredit(amountCell, creditCell, options.amountFormat)
   if (!amount.ok) return { reason: amount.reason }
 
   if (merchantCell.length === 0) return { reason: 'missing_merchant' }
@@ -141,13 +149,19 @@ function readRow(row: CsvRow, width: number, options: ReadOptions): RowOutcome {
     row: {
       line: row.line,
       postedOn: date.value,
-      amountCents: applySignConvention(amount.value, mapping.sign),
+      amountCents: amount.value,
       merchantRaw: merchantCell,
       // An id the export left blank is absent, not an identity — every such
       // row would otherwise share one dedupe key and all but the first vanish.
       issuerTransactionId: issuerCell !== undefined && issuerCell.length > 0 ? issuerCell : undefined,
     },
   }
+}
+
+/** One amount column, signed as the statement's convention says. */
+function readSigned(cell: string, options: ReadOptions): ParseOutcome<Cents> {
+  const amount = parseAmountToCents(cell, options.amountFormat)
+  return amount.ok ? { ok: true, value: applySignConvention(amount.value, options.mapping.sign) } : amount
 }
 
 /**

@@ -15,7 +15,7 @@
  * hold ids, enum codes and counts only, and a rejection reason is a thing that
  * gets logged.
  */
-import { type Cents, cents } from '@budget/money-primitives'
+import { type Cents, cents, subCents } from '@budget/money-primitives'
 import type { RejectionReason } from '@budget/schema'
 
 export type ParseOutcome<T> =
@@ -190,6 +190,22 @@ export function applySignConvention(amount: Cents, convention: SignConvention): 
   // A positive debit is an outflow; a negative one is the refund of a debit.
   // `negate` rather than `-amount`, so a zero does not become `-0`.
   return cents(negate(amount, true))
+}
+
+/**
+ * A row's amount where the statement writes money out and money in as two
+ * columns: the credit less the debit, so a purchase is negative as the app
+ * stores it. A blank cell is no movement that way, and both blank is a row
+ * with no amount; a cell that is there and unreadable refuses the row.
+ */
+export function parseDebitCredit(debit: string, credit: string, format: AmountFormat): ParseOutcome<Cents> {
+  const out = debit.trim().length === 0 ? null : parseAmountToCents(debit, format)
+  const paidIn = credit.trim().length === 0 ? null : parseAmountToCents(credit, format)
+  if (out !== null && !out.ok) return out
+  if (paidIn !== null && !paidIn.ok) return paidIn
+  if (out === null) return paidIn ?? { ok: false, reason: 'missing_amount' }
+  if (paidIn === null) return { ok: true, value: cents(negate(out.value, true)) }
+  return { ok: true, value: subCents(paidIn.value, out.value) }
 }
 
 /**

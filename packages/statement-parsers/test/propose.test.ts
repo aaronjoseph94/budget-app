@@ -17,7 +17,9 @@ const propose = (lines: readonly string[]) => {
 describe('proposeMapping', () => {
   it('reads the plain three-column file', () => {
     const p = propose(['Date,Description,Amount', '09/02/2026,CORNER MARKET,-42.10', '09/13/2026,LITWARE BOOKS,-19.99', '09/24/2026,CORNER MARKET,-8.00'])
-    expect(p).toEqual({ dateIndex: 0, merchantIndex: 1, amountIndex: 2, dateFormats: ['MM/DD/YYYY'], amountCandidates: [2] })
+    // One signed amount column: no second column, nothing to check (debit-credit.test.ts).
+    const amount = { amountIndex: 2, creditIndex: null, signKind: 'signed', signUnclear: false, amountCandidates: [2] }
+    expect(p).toEqual({ dateIndex: 0, merchantIndex: 1, dateFormats: ['MM/DD/YYYY'], ...amount })
   })
 
   const CARD = (card: string) => [

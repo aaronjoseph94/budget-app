@@ -22,9 +22,15 @@
  *   differs beside it is never taken instead (testing fuzz-08).
  * Every money column still in the running is returned, best first, so the
  * screen can say when more than one looks like money.
+ *
+ * Money out and money in as two columns (Debit, Credit) are offered as a
+ * pair. They were read as one, the Debit, signed as if purchases were
+ * negative: every purchase became money in and every credit row had "no
+ * amount". Which way a single column is signed is proposed only on its
+ * header's word and its values', and otherwise flagged, never guessed.
  */
-import { type AmountFormat } from './amount.js'
-import { type ColumnProfile, explainsAsRunningBalance } from './columns.js'
+import { type AmountFormat, type SignConvention, parseDebitCredit } from './amount.js'
+import { type ColumnProfile, balanceMovesBy, cellsAsCents, explainsAsRunningBalance } from './columns.js'
 import { type CsvRow, isBlankRow } from './csv.js'
 import { type DateFormat } from './date.js'
 
@@ -39,8 +45,14 @@ export interface MappingProposal {
   /** Null when no column reads as dates. */
   readonly dateIndex: number | null
   readonly merchantIndex: number | null
-  /** The best of amountCandidates; null when no column reads as money. */
+  /** The best of amountCandidates; null when no column reads as money. With creditIndex, the money out. */
   readonly amountIndex: number | null
+  /** The money-in column, when the file writes money out and money in as two columns. */
+  readonly creditIndex: number | null
+  /** How one amount column starts out signed; 'signed' unless its header and values say otherwise. */
+  readonly signKind: SignConvention['kind']
+  /** One amount column of mostly positives, which could be purchases either way: the screen says to check. */
+  readonly signUnclear: boolean
   /** The date column's possible formats; more than one means the owner must choose. */
   readonly dateFormats: readonly DateFormat[]
   /** Every column that could still be the amount, best first. */
@@ -48,7 +60,10 @@ export interface MappingProposal {
 }
 
 const AMOUNT_HEADER = /amount|debit|credit/i
-const SHOP_HEADER = /desc|merchant|payee|name/i
+/** Headers a bank gives a money-out column and a money-in column of a pair. */
+const DEBIT_HEADER = /debit|withdraw|paid out|money out/i
+const CREDIT_HEADER = /credit|deposit|paid in|money in/i
+const SHOP_HEADER =/desc|merchant|payee|name/i
 /** A header that can only name the shop, never a cardholder ("Cardholder Name"). */
 const SHOP_ONLY_HEADER = /desc|merchant|payee/i
 
@@ -70,7 +85,32 @@ export function proposeMapping(input: ProposeInput): MappingProposal {
   )
   const hasCents = (c: ColumnProfile) => cells(c.index).some((cell) => /[.,]\d{1,2}\)?$/.test(cell.trim()))
   const rank = (c: ColumnProfile) => (hasCents(c) ? 0 : 2) + (AMOUNT_HEADER.test(c.header ?? '') ? 0 : 1)
-  const amountCandidates = [...notBalances].sort((a, b) => rank(a) - rank(b) || a.index - b.index).map((c) => c.index)
+  const ranked = [...notBalances].sort((a, b) => rank(a) - rank(b) || a.index - b.index).map((c) => c.index)
+
+  // Money out and money in as two columns, each named so by its header: the
+  // pair is the amount, the debit first. A balance that the credit less the
+  // debit explains is dropped, as one a single amount column explains is.
+  const everyMoney = columns.filter((c) => c.readsAsAmount && c.index !== date?.index)
+  const debit = everyMoney.find((c) => DEBIT_HEADER.test(c.header ?? ''))
+  const credit = debit === undefined ? undefined : everyMoney.find((c) => c.index !== debit.index && CREDIT_HEADER.test(c.header ?? ''))
+  const pair = debit === undefined || credit === undefined ? null : { debit: debit.index, credit: credit.index }
+  const net = pair === null ? null : netCents(data, pair, input.amountFormat)
+  const explained = (index: number) => {
+    const balances = cellsAsCents(cells(index), input.amountFormat)
+    return net !== null && balances !== null && balanceMovesBy(balances, net)
+  }
+  const amountCandidates =
+    pair === null ? ranked : [pair.debit, ...ranked.filter((i) => i !== pair.debit && i !== pair.credit && !explained(i))]
+
+  // One amount column: which way it is signed is the owner's to say. A
+  // column named for money out with no negative in it starts on "purchases
+  // are positive"; mostly positives under any other name is only flagged.
+  const single = pair === null ? columns.find((c) => c.index === amountCandidates[0]) : undefined
+  const amounts = single === undefined ? [] : (cellsAsCents(cells(single.index).filter((cell) => cell.length > 0), input.amountFormat) ?? [])
+  const positives = amounts.filter((a) => a > 0).length
+  const negatives = amounts.filter((a) => a < 0).length
+  const debitNamed = single !== undefined && DEBIT_HEADER.test(single.header ?? '') && !CREDIT_HEADER.test(single.header ?? '')
+  const signKind = debitNamed && positives > 0 && negatives === 0 ? ('debit_positive' as const) : ('signed' as const)
 
   const allText = columns.filter((c) => !c.readsAsAmount && c.dateFormats.length === 0)
   const text = varying(allText)
@@ -82,7 +122,21 @@ export function proposeMapping(input: ProposeInput): MappingProposal {
     dateIndex: date?.index ?? null,
     merchantIndex: merchant?.index ?? null,
     amountIndex: amountCandidates[0] ?? null,
+    creditIndex: pair === null ? null : pair.credit,
+    signKind,
+    signUnclear: single !== undefined && signKind === 'signed' && positives > negatives,
     dateFormats: date?.dateFormats ?? [],
     amountCandidates,
   }
+}
+
+/** Every row's credit less its debit, or null when any row has no such amount. */
+function netCents(data: readonly CsvRow[], pair: { readonly debit: number; readonly credit: number }, format: AmountFormat): number[] | null {
+  const out: number[] = []
+  for (const row of data) {
+    const amount = parseDebitCredit(row.fields[pair.debit] ?? '', row.fields[pair.credit] ?? '', format)
+    if (!amount.ok) return null
+    out.push(amount.value)
+  }
+  return out
 }
