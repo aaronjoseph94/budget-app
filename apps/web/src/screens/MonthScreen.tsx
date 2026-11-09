@@ -688,7 +688,7 @@ function Block({
                           e.stopPropagation()
                           onOpen(r.categoryId)
                         }}
-                        className="break-words rounded-sm text-left underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:-my-2 pointer-coarse:flex pointer-coarse:min-h-11 pointer-coarse:w-full pointer-coarse:flex-col pointer-coarse:justify-center"
+                        className="rounded-sm text-left underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:-my-2 pointer-coarse:flex pointer-coarse:min-h-11 pointer-coarse:w-full pointer-coarse:flex-col pointer-coarse:justify-center"
                       >
                         <span className="block">{r.name}</span>
                         {bars ? <MiniBar row={r} fill={tone.bar} /> : null}

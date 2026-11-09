@@ -166,6 +166,16 @@ describe('MonthScreen blocks', () => {
     expect(variable.querySelector('h2')?.className.split(' ')).toEqual(expect.arrayContaining(['max-sm:text-base']))
   })
 
+  // `break-words` on the name's button beat the cell's `anywhere` in the
+  // built CSS: a 30-letter word set the column's width and pushed Actual
+  // and Left out of view at 320 (bug bash, phone).
+  it('lets a long one-word category name wrap anywhere, so the number columns stay in view', async () => {
+    renderScreen(<MonthScreen month="2026-09" />, seeded())
+    const name = (await loaded('Variable expenses')).getByRole('rowheader', { name: 'Groceries' })
+    const wraps = [name, ...name.querySelectorAll('*')].flatMap((el) => [...el.classList].filter((c) => /^(break-|wrap-|\[overflow-wrap)/.test(c)))
+    expect(wraps).toEqual(['[overflow-wrap:anywhere]'])
+  })
+
   it("shows another month's rows only under that month's title", async () => {
     renderScreen(<MonthScreen month="2026-08" />, seeded())
 
