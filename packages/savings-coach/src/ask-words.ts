@@ -62,6 +62,7 @@ export const ANSWER_WORDS: Readonly<Record<AnswerSay, AnswerWords>> = {
   no_goals: w('You have no active savings goal yet. Add one on Savings.'),
   what_if_sooner: w('Saving {{A.monthly}} a month gets you to {{B.name}} around {{A.middle}}, instead of {{A.was}}.', 'monthly'),
   what_if_alone: w('Saving {{A.monthly}} a month on its own gets you to {{B.name}} around {{A.date}}.', 'monthly'),
+  what_if_too_small: w('Saving {{A.monthly}} a month on its own is too little to give {{B.name}} a date.', 'monthly'),
   what_if_met: w('{{B.name}} is already reached. Well done!'),
   no_saving: w('There is no saving to suggest for that yet. Ask again with an amount a month.'),
   goal: w('{{A.name}}'),

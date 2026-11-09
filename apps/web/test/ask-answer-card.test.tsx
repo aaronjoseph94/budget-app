@@ -91,6 +91,15 @@ describe('AnswerCard', () => {
     )
     expect(screen.getByText(sentence('Saving $50.00 a month on its own gets you to Flight training around December 2029.'))).toBeTruthy()
     expect(screen.queryByRole('listitem')).toBeNull()
+    cleanup()
+
+    // A saving that alone would take past year 9999 has no month to name (F35).
+    card(
+      answered(line('what_if_too_small', [], { monthly: cents(5) }), { now: null, rows: [line('goal', ['Flight training'])] }),
+      { ...SPEND, intent: 'what_if_cut', categoryIds: [], period: null },
+      [],
+    )
+    expect(screen.getByText(sentence('Saving $0.05 a month on its own is too little to give Flight training a date.'))).toBeTruthy()
   })
 
   it('draws a name that looks like markup as the characters it is', () => {

@@ -103,6 +103,13 @@ describe('get_forecast', () => {
     expect((result.structuredContent as Record<string, unknown>).what_if).toEqual({ status: 'too_small' })
   })
 
+  it('gives the weeks and no date for a saving that alone would take past year 9999', async () => {
+    // $0.05 a month × 12 ÷ 52 is 1.15 cents, so $0.01 a week: $5,200.00 takes 520,000 weeks, about 9,966 years.
+    const { result } = await callTool(() => reply({ ...READ, ...GOALS }), 'get_forecast', { what_if_monthly_saving: '0.05' })
+    expect(result.isError).toBeUndefined()
+    expect((result.structuredContent as Record<string, unknown>).what_if).toMatchObject({ status: 'worked_out', reached: { status: 'alone', weeks: 520_000, date: null } })
+  })
+
   it.each([['0'], ['100,000.01'], [100]])('refuses a saving of %j before reading anything', async (saving) => {
     const { result, rpcCalls } = await callTool(() => reply({ ...READ, ...GOALS }), 'get_forecast', { what_if_monthly_saving: saving })
     expect(result.isError).toBe(true)

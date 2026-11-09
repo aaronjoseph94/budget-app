@@ -30,9 +30,9 @@ export interface WhatIfInput {
 
 export type WhatIfGoal =
   | { readonly status: 'met' }
-  /** With no pace: the saving alone reaches the goal in `weeks`. */
-  | { readonly status: 'alone'; readonly weeks: number; readonly date: IsoDate }
-  /** Each pace plus the saving; rough keeps one date, in all three places. No late date when the low pace still saves nothing. */
+  /** With no pace: the saving alone reaches the goal in `weeks`; no date when that is past year 9999 (F33). */
+  | { readonly status: 'alone'; readonly weeks: number; readonly date: IsoDate | null }
+  /** Each pace plus the saving; rough keeps one date, in all three places. No late date when the low pace still saves nothing, or too little to land by year 9999. */
   | {
       readonly status: 'sooner'
       readonly rough: boolean
@@ -79,19 +79,24 @@ function goalWith(input: WhatIfInput, weekly: Cents): WhatIfGoal {
   const weeks = (perWeek: number) => Math.ceil(remaining / perWeek)
   if (pace.status !== 'rough' && pace.status !== 'range') {
     // A saving of $0 reaches nothing; a lever is never $0 (F34), so this is a caller's slip.
-    const date = at(weekly)
-    if (date === null) throw new RangeError('A what-if with no pace needs a saving above $0')
-    return { status: 'alone', weeks: weeks(weekly), date }
+    if (weekly <= 0) throw new RangeError('A what-if with no pace needs a saving above $0')
+    return { status: 'alone', weeks: weeks(weekly), date: at(weekly) }
   }
   const middle = pace.status === 'rough' ? pace.weeklyCents : pace.weekly.middle
-  // A middle pace above $0 plus a saving of 0 or more always lands.
-  const middleDate = at(middle + weekly)!
+  // goalForecast gives a rough or ranged pace only when the middle one has a
+  // date, and a saving of 0 or more lands no later.
+  const middleDate = at(middle + weekly) ?? unlanded()
   const weeksSooner = weeks(middle) - weeks(middle + weekly)
   if (pace.status === 'rough') return { status: 'sooner', rough: true, dates: { early: middleDate, middle: middleDate, late: middleDate }, weeksSooner }
   return {
     status: 'sooner',
     rough: false,
-    dates: { early: at(pace.weekly.high + weekly)!, middle: middleDate, late: at(pace.weekly.low + weekly) },
+    dates: { early: at(pace.weekly.high + weekly) ?? unlanded(), middle: middleDate, late: at(pace.weekly.low + weekly) },
     weeksSooner,
   }
+}
+
+/** A pace that has a date in goalForecast has one here; one that does not was not goalForecast's for this goal. */
+function unlanded(): never {
+  throw new RangeError('A what-if needs the pace goalForecast gave for what is left of this goal')
 }

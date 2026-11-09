@@ -1452,6 +1452,13 @@ goal):
   (F34).
 - Worked on the phone from figures already loaded: a chip never reads or
   asks anything.
+- **Amended 2026-11-09 (review): past year 9999 a what-if has no date**
+  (F33's amendment). With no pace, a saving that alone takes that long
+  has its weeks and no date; `whatIf` threw there. The chip and Ask say it
+  is "too little to give a date". $115,000.00 to go and $1.00 a month:
+  $0.23 a week, 500,000 weeks. The low pace plus the saving, that slow,
+  has no late date ("or later"), as at $0. A saving of $0.00 a week on a
+  goal with no pace is still refused.
 
 **Worked example.** 24 September 2026, as in F30: June, July and August
 complete. Pay bi-weekly from 5 June, usual $2,100.00: October's paydays

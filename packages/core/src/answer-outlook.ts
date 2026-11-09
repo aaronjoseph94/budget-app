@@ -113,8 +113,11 @@ export function whatIfLines(base: OutlookBase, forecast: ForecastRead | null, ca
   switch (result.goal.status) {
     case 'met':
       return { main: one('what_if_met', names), rows }
-    case 'alone':
-      return { main: one('what_if_alone', names, { monthly: saving, date: month$(result.goal.date) }), rows }
+    case 'alone': {
+      // Past year 9999 there is no month to name (F33): the saving is too little.
+      const { date } = result.goal
+      return { main: date === null ? one('what_if_too_small', names, { monthly: saving }) : one('what_if_alone', names, { monthly: saving, date: month$(date) }), rows }
+    }
     case 'sooner': {
       const { pace } = paced
       // whatIf is sooner only from a rough or ranged pace, which always has a middle date.

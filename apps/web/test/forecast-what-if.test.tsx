@@ -74,4 +74,22 @@ describe('what if, on the Forecast (plan §2.5, A14, F35)', () => {
     expect(JSON.stringify(fake.tables)).toBe(before)
     await expectNoAxeViolations()
   })
+
+  it('says a trim is too little to give a date, when it alone would take past year 9999', async () => {
+    // Emergency, with nothing moved in, so no pace, and $49,999,480.00 to
+    // go: Dining out's quarter, $61.15 a week, takes 817,654 weeks, about
+    // 15,670 years. A date cannot be written there.
+    const fake = forecastFakeWithGoals()
+    const goals = fake.tables.savings_goals
+    const at = goals.findIndex((g) => g.id === 'g2')
+    goals[at] = { ...goals[at]!, target_cents: 5_000_000_000 }
+    go('/forecast')
+    renderScreen(<Shell />, fake)
+    const card = await goalsCard()
+
+    fireEvent.change(within(card).getByRole('combobox', { name: 'For the goal' }), { target: { value: 'g2' } })
+    fireEvent.click(within(card).getByRole('button', { name: 'Dining out −25%' }))
+    expect(within(card).getByText(para('Trim Dining out by $265.00 a month ($61.15 a week).'))).toBeTruthy()
+    expect(within(card).getByText(para('Emergency: this alone is too little to give a date.'))).toBeTruthy()
+  })
 })

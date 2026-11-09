@@ -106,7 +106,9 @@ function WhatIfResult({ lever, result, goal, name, month }: { lever: Lever; resu
         {date.status === 'met'
           ? 'already there.'
           : date.status === 'alone'
-            ? `this alone gets you there in ${formatWeeks(date.weeks)}, about ${formatShortMonth(date.date)}.`
+            ? date.date === null
+              ? 'this alone is too little to give a date.'
+              : `this alone gets you there in ${formatWeeks(date.weeks)}, about ${formatShortMonth(date.date)}.`
             : date.dates.late === null
               ? `${formatShortMonth(date.dates.early)} or later, ${formatWeeks(date.weeksSooner)} sooner.`
               : date.rough || formatShortMonth(date.dates.early) === formatShortMonth(date.dates.late)

@@ -32,7 +32,7 @@ export type AnswerSay =
   | 'forecast_range' | 'forecast_rough' | 'too_early' | 'no_start'
   | 'safe' | 'nothing_left'
   | 'goal_range' | 'goal_range_open' | 'goal_rough' | 'goal_met' | 'goal_no_fund' | 'goal_no_pace' | 'goal_too_early' | 'goal_no_records' | 'no_goals'
-  | 'what_if_sooner' | 'what_if_alone' | 'what_if_met' | 'no_saving' | 'goal'
+  | 'what_if_sooner' | 'what_if_alone' | 'what_if_too_small' | 'what_if_met' | 'no_saving' | 'goal'
   | 'debt_free' | 'no_debts' | 'never_paid_off'
 
 /** One line of an answer: its sentence, whom it is about and its figures, by slot. */
