@@ -11,6 +11,7 @@ import { isoDate, savingsFunds, type SavingsFunds } from '@budget/core'
 import { useAppData } from './app-data.js'
 import { listFundTransfers, listFunds, needsOneTimeUpdate, type Category, type FundRow, type LedgerRow } from './ledger.js'
 import { categoriesForCore } from './sheet-input.js'
+import { storedDay } from './lib/day.js'
 
 export type FundsState =
   | { readonly status: 'loading' }
@@ -79,8 +80,8 @@ export function fundsOf(asOf: string, categories: readonly Category[], goals: re
       goalCents: g.target_cents,
       typedCents: g.saved_cents,
       typedOn: g.balance_as_of === null ? null : isoDate(g.balance_as_of),
-      startDate: g.start_date === null ? null : isoDate(g.start_date),
-      goalDate: g.target_date === null ? null : isoDate(g.target_date),
+      startDate: storedDay(g.start_date),
+      goalDate: storedDay(g.target_date),
     })),
     entries: rows.map((r) => ({ postedOn: isoDate(r.posted_on), amountCents: r.amount_cents, categoryId: r.category_id })),
   })

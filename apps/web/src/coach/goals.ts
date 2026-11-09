@@ -9,6 +9,7 @@
 import { isoDate, type DigestGoal, type ForecastGoal } from '@budget/core'
 import { goalSavedCents, type FundsState } from '../funds.js'
 import type { ListedGoalRow } from '../ledger.js'
+import { storedDay } from '../lib/day.js'
 
 export interface CoreGoal extends DigestGoal, ForecastGoal {
   /** What its hours are of, as the owner typed it; null for a goal in dollars. */
@@ -36,7 +37,7 @@ export function goalsForCore(goals: readonly ListedGoalRow[], funds: FundsState)
         savedCents: goalSavedCents(g, funds),
         unitCostCents: g.unit_cost_cents,
         unitLabel: g.unit_label,
-        targetDate: g.target_date === null ? null : isoDate(g.target_date),
+        targetDate: storedDay(g.target_date),
         fundCategoryId: on === null ? null : on.fund.categoryId,
         typedOn: on === null ? null : isoDate(on.typedOn),
       }

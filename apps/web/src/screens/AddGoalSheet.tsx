@@ -10,6 +10,7 @@ import { Field, Input } from '../components/ui/form.js'
 import { Sheet } from '../components/ui/sheet.js'
 import { GoalUnitFields, readUnit, unitText, type UnitText } from './GoalUnitFields.js'
 import { useStillOpen } from '../lib/still-open.js'
+import { isDay, NOT_A_DAY } from '../lib/day.js'
 
 /** What Add a goal opens with filled in, all of it changeable first: Getting started's flight goal (plan §8.1). */
 export interface GoalPreset {
@@ -72,7 +73,9 @@ export function AddGoalSheet({
                 ? (tooLargeInput(saved) ?? 'Type what is saved as an amount, like 150 or 150.00, or leave it empty for nothing yet.')
                 : 'problem' in inUnit
                   ? inUnit.problem
-                  : null
+                  : date !== '' && !isDay(date)
+                    ? `The target date ${NOT_A_DAY}`
+                    : null
     if (problem !== null || targetCents === null || savedCents === null || 'problem' in inUnit) {
       setError(problem)
       return

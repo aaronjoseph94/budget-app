@@ -6,6 +6,7 @@ import { Icon } from '../components/ui/icons.js'
 import { hashOf } from '../nav.js'
 import { LINE_LINK, SENTENCE_LINK } from '../components/ui/link.js'
 import { cn } from '../lib/cn.js'
+import { storedDay } from '../lib/day.js'
 
 /**
  * The main goal on the Week (F45): how far along it is, what each week needs
@@ -34,9 +35,10 @@ export function GoalCard({ weekSpentCents, today }: { weekSpentCents: number; to
   const spentAsTime = goal.unit_cost_cents !== null && weekSpentCents > 0 ? timeEquivalent({ amountCents: weekSpentCents, unitCostPerHourCents: goal.unit_cost_cents }) : null
   // From today, as what is saved is today's, whichever week is shown: from
   // a past week's Monday it was a figure true of neither day (e2e-plan-09).
+  const targetDate = storedDay(goal.target_date)
   const perWeek =
-    goal.target_date !== null && goal.target_date > today
-      ? requiredWeeklyContribution({ goal: saving, asOf: isoDate(today), targetDate: isoDate(goal.target_date) }).weeklyCents
+    targetDate !== null && targetDate > today
+      ? requiredWeeklyContribution({ goal: saving, asOf: isoDate(today), targetDate }).weeklyCents
       : null
 
   const bp = progress.percentCompleteBasisPoints

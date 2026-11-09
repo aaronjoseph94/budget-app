@@ -11,6 +11,7 @@ import { Field, Input } from '../components/ui/form.js'
 import { Sheet } from '../components/ui/sheet.js'
 import { GoalUnitFields, readUnit, unitText } from './GoalUnitFields.js'
 import { useStillOpen } from '../lib/still-open.js'
+import { isDay, NOT_A_DAY } from '../lib/day.js'
 
 /**
  * A fund's goal, typed where the workbook types it: the Goal Amount and Current
@@ -96,7 +97,11 @@ export function FundEditor({
                 : savedCents === null || savedCents < 0
                   ? (tooLargeInput(saved) ??
                     'Type what is saved as an amount, like 150 or 150.00, or leave it empty for nothing yet.')
-                  : null
+                  : start !== '' && !isDay(start)
+                    ? `The start date ${NOT_A_DAY}`
+                    : end !== '' && !isDay(end)
+                      ? `The goal date ${NOT_A_DAY}`
+                      : null
     if (problem !== null) {
       setError(problem)
       return
