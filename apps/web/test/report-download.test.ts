@@ -27,6 +27,7 @@ const rows: ReportRows = {
   asOf: '2026-09-24',
   month: '2026-08-01',
   readFrom: '2026-02-01',
+  statementEnds: [],
   rows: [
     row('t6', '2026-08-15', -50_000, 'flight', 'Transfer to savings'),
     row('t5', '2026-08-10', -56_000, 'dining', '=HYPERLINK("x")'),

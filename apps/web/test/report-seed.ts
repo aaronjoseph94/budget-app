@@ -14,7 +14,7 @@ export const REPORT_TODAY = new Date(2026, 8, 24, 12)
 
 const MONTHS = ['02', '03', '04', '05', '06', '07', '08']
 
-export function reportFake(): FakeSupabase {
+export function reportFake(periodEnd = '2026-09-20'): FakeSupabase {
   const cat = (id: string, name: string, kind: 'income' | 'bill' | 'variable' | 'savings', sort_order = 0) =>
     ({ id, name, kind, sort_order, weekly_budget_cents: null })
   let n = 0
@@ -32,6 +32,6 @@ export function reportFake(): FakeSupabase {
       row('2026-09-10', -200, 'dining'),
     ],
     category_plans: [{ id: 'p1', category_id: 'rent', effective_month: '2026-02-01', planned_cents: 120_000, due_day: 1 }],
-    ingest_batches: [{ id: 'b1', source: 'card_pdf', created_at: '2026-09-21T12:00:00Z', period_start: '2026-02-01', period_end: '2026-09-20' }],
+    ingest_batches: [{ id: 'b1', source: 'card_pdf', created_at: '2026-09-21T12:00:00Z', period_start: '2026-02-01', period_end: periodEnd }],
   })
 }

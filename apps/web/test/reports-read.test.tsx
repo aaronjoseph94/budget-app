@@ -35,6 +35,17 @@ describe('useReportRead', () => {
     await expectNoAxeViolations()
   })
 
+  it('reads the latest statement’s last day, so a month past it has no fall to call a win', async () => {
+    const { result } = read(reportFake('2026-08-30'), '2026-08-01')
+    await waitFor(() => expect(result.current.read.status).toBe('ready'))
+    const { read: done, categories } = result.current
+    if (done.status !== 'ready') throw new Error(done.status)
+    expect(done.rows.statementEnds).toEqual(['2026-08-30'])
+    const { report } = reportOf(done.rows, categories)
+    if (!('totals' in report)) throw new Error(report.status)
+    expect([report.importedThrough, report.movers.up.map((m) => m.categoryId), report.movers.down]).toEqual(['2026-08-30', ['dining'], []])
+  })
+
   it('says when a one-time update is missing, and when a read failed for another reason', async () => {
     const missing = reportFake()
     missing.fail('category_plans', '42P01')

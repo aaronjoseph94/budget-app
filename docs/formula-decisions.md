@@ -1984,6 +1984,13 @@ is about, whichever day it was answered.
   end known, both are as before. On 9 November, with a statement ending
   7 September, the Coach read "6 weeks within budget" and "$0.00 on
   Groceries in October … Brilliant!" of weeks and a month with no rows.
+- **Amended 2026-11-09 (bug bash, c03), the month in review (F36):**
+  while the days reviewed run past that day (the whole month for one
+  that is over, the 1st to today for this one), no fall is listed among
+  the biggest changes, so none is a headline's "win", and the screen
+  says the month is not all in yet. A rise is still listed: the rows in
+  already show it. October read "A win on Groceries: $258.92 less than
+  your usual month" with no October row in.
 - **Spent:** the week's Variable spending, net; below $0 in a week of
   refunds.
 - **The weekly budgets:** the sum of the Variable weekly budgets set, or

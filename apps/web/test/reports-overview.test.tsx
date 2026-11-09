@@ -61,6 +61,21 @@ describe('Reports, the Overview (plan §2.6, A15)', () => {
     expect(within(movers).getByText('Against your usual month over the 6 months before, Variable expenses only.')).toBeTruthy()
   })
 
+  it('calls no fall a win in a month past the latest statement, and says it is not all in yet', async () => {
+    go('/reports/2026-08')
+    // The statement runs to 30 August, so August's Groceries, $80.00 under its usual, may only be a row not in yet.
+    renderScreen(<Shell />, reportFake('2026-08-30'))
+
+    const movers = await card('Biggest changes')
+    expect(within(movers).getByText('$155.00 more than usual ($405.00)')).toBeTruthy()
+    expect(within(movers).queryByRole('heading', { name: 'Less than usual' })).toBeNull()
+    expect(within(movers).getByText('Your latest statement runs to 30 Aug, so August isn’t all in yet. No fall is listed until it is.')).toBeTruthy()
+    const review = await card('The month in review')
+    const headline = 'One to watch: Dining out, $155.00 more than your usual month.'
+    expect(within(review).getByText((_, el) => el?.tagName === 'P' && el.textContent === headline)).toBeTruthy()
+    expect(within(review).queryByText(/A win on/)).toBeNull()
+  })
+
   it('sets each category beside last month as bars, and as a list of the same figures', async () => {
     go('/reports/2026-08')
     renderScreen(<Shell />, reportFake())

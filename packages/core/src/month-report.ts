@@ -29,6 +29,8 @@ export interface MonthReportInput {
   readonly historyStart: IsoDate | null
   /** The first day `entries` covers; it must reach the month before the one reviewed. */
   readonly readFrom: IsoDate
+  /** The last day the latest statement covers, as the recap's (F42); null or left out when no statement gives one. */
+  readonly importedThrough?: IsoDate | null
   readonly categories: readonly PeriodCategory[]
   readonly planHistory: readonly PlanHistoryRow[]
   readonly entries: readonly PeriodEntry[]
@@ -81,7 +83,10 @@ export type MonthReport =
       readonly usual: UsualTotals | null
       /** How many complete months before this one the usual month stands on, 0 to 6. */
       readonly usualMonths: number
+      /** No fall is listed while the days reviewed are not all in yet. */
       readonly movers: { readonly up: readonly Mover[]; readonly down: readonly Mover[] }
+      /** The latest statement's last day, while the days reviewed run past it (F42's rule); null otherwise. */
+      readonly importedThrough: IsoDate | null
       /** Empty unless last month was compared. */
       readonly pairs: readonly PairedRow[]
     }
@@ -106,7 +111,10 @@ export function monthReport(input: MonthReportInput): MonthReport {
   const history = monthActuals({ categories: input.categories, entries: input.entries, months: before }).months
   const nowActuals = monthActuals({ categories: input.categories, entries: input.entries.filter((e) => e.postedOn <= window.to), months: [start] }).months[0]!
   const variable = input.categories.filter((c) => c.kind === 'variable')
-  const movers = biggestMovers({
+  // Past the latest statement the days reviewed are not all in yet, as the recap's week: less spent is no win (F42).
+  const through = input.importedThrough ?? null
+  const importedThrough = through !== null && window.to > through ? through : null
+  const all = biggestMovers({
     days,
     daysInMonth,
     categories: variable.map((c) => ({
@@ -120,7 +128,8 @@ export function monthReport(input: MonthReportInput): MonthReport {
   const comparison = periodComparison({ period: 'month', month: start, asOf, historyStart, categories: input.categories, planHistory: input.planHistory, entries: input.entries })
   const lastMonth = lastMonthOf(comparison)
   const pairs = comparison.status === 'compared' ? paired(variable, comparison.blocks.variable.rows) : []
-  return { status, month: start, window, totals, lastMonth, usual: running ? null : usualOf(input, before, totals), usualMonths: before.length, movers, pairs }
+  const movers = importedThrough === null ? all : { up: all.up, down: [] }
+  return { status, month: start, window, totals, lastMonth, usual: running ? null : usualOf(input, before, totals), usualMonths: before.length, movers, importedThrough, pairs }
 }
 
 type Compared = ReturnType<typeof periodComparison>

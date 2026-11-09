@@ -19,7 +19,7 @@ const MONTHS = 12
 export type TrendsRead =
   | { readonly status: 'loading' }
   | { readonly status: 'failed'; readonly missingUpdate: boolean }
-  | { readonly status: 'ready'; readonly rows: Omit<ReportRows, 'month'> }
+  | { readonly status: 'ready'; readonly rows: Omit<ReportRows, 'month' | 'statementEnds'> }
 
 /** The twelve months before asOf's, read again whenever the shared data changes. */
 export function useTrendsRead(asOf: string): TrendsRead {
@@ -55,7 +55,7 @@ export interface TrendFigures {
 }
 
 /** The rows, renamed for core, through monthlyTrend and categoryTrends over 6 or 12 months. Throws where the engine refuses a row. */
-export function trendsOf(rows: Omit<ReportRows, 'month'>, categories: readonly Category[], months: 6 | 12): TrendFigures {
+export function trendsOf(rows: Omit<ReportRows, 'month' | 'statementEnds'>, categories: readonly Category[], months: 6 | 12): TrendFigures {
   const input = {
     asOf: isoDate(rows.asOf),
     historyStart: historyFrom(rows.records),

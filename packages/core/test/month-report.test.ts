@@ -64,6 +64,22 @@ describe('monthReport (F36)', () => {
     expect(report.movers.down.map((m) => [m.categoryId, m.changeCents])).toEqual([['groceries', -8_000]])
   })
 
+  it('calls no fall a win while the days reviewed run past the latest statement (F42, amended 2026-11-09)', () => {
+    // A statement to 30 August: August is not all in yet, so Groceries' $80.00 less is no win; Dining out's rise still stands.
+    const short = monthReport({ ...base, importedThrough: d('2026-08-30') })
+    if (short.status !== 'complete') throw new Error(short.status)
+    expect(short.importedThrough).toBe('2026-08-30')
+    expect(short.movers.down).toEqual([])
+    expect(short.movers.up.map((m) => [m.categoryId, m.changeCents])).toEqual([['dining', 15_500]])
+    // To 31 August the month is all in; with no statement end known it is reviewed as before.
+    for (const through of [d('2026-08-31'), null]) {
+      const whole = monthReport({ ...base, importedThrough: through })
+      if (whole.status !== 'complete') throw new Error(whole.status)
+      expect(whole.importedThrough).toBeNull()
+      expect(whole.movers.down.map((m) => m.categoryId)).toEqual(['groceries'])
+    }
+  })
+
   it('sets each Variable category beside last month, the largest first, lengths from core', () => {
     const { pairs } = monthReport(base) as Extract<ReturnType<typeof monthReport>, { pairs: unknown }>
     // On a scale to $560.00: $450.00 is 8,035.7… bp, $380.00 6,785.7…, $300.00 5,357.1…; Coffee had nothing either month.

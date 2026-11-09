@@ -109,16 +109,24 @@ export function MoversCard({ report, nameOf }: { report: Reviewed; nameOf: (id: 
         </ul>
       </div>
     )
+  // Never "a steady month" or a fall for days no statement covers yet, as the check-in's recap (F42).
+  const notIn =
+    report.importedThrough === null ? null : (
+      <p>
+        Your latest statement runs to {formatDayMonth(report.importedThrough)}, so {formatMonthName(report.month)} isn’t all in yet. No fall is listed until it is.
+      </p>
+    )
   return (
     <Section title="Biggest changes" large>
       {report.usualMonths === 0 ? (
         <p>Your usual month needs a whole month of records before this one. Check back next month.</p>
       ) : up.length + down.length === 0 ? (
-        <p>Nothing moved far from its usual month. A steady month.</p>
+        (notIn ?? <p>Nothing moved far from its usual month. A steady month.</p>)
       ) : (
         <>
           {list('More than usual', up)}
           {list('Less than usual', down)}
+          {notIn}
         </>
       )}
       {report.usualMonths === 0 ? null : (

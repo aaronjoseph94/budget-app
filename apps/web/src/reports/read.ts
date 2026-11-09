@@ -9,7 +9,7 @@
 import { useEffect, useState } from 'react'
 import { isoDate, monthBounds, monthReport, shiftMonth, type MonthReport } from '@budget/core'
 import { useAppData } from '../app-data.js'
-import { listPlanHistory, listTransactions, needsOneTimeUpdate, readRecordsStart, type Category, type LedgerRow, type PlanRow } from '../ledger.js'
+import { latestStatementEnd, listPlanHistory, listTransactions, needsOneTimeUpdate, readRecordsStart, type Category, type LedgerRow, type PlanRow } from '../ledger.js'
 import { categoriesForCore, entriesForCore, historyFrom, type RecordsStart, plansForCore } from '../sheet-input.js'
 
 /** Months read before the one reviewed: the usual month's six. */
@@ -22,6 +22,8 @@ export interface ReportRows {
   readonly rows: readonly LedgerRow[]
   readonly plans: readonly PlanRow[]
   readonly records: RecordsStart
+  /** The latest statement's last day, as the check-in reads it; none before the first. */
+  readonly statementEnds: readonly string[]
 }
 
 export type ReportRead =
@@ -41,9 +43,9 @@ export function useReportRead(month: string, asOf: string): ReportRead {
     let live = true
     const { start, end } = monthBounds(isoDate(month))
     const readFrom = shiftMonth(start, -BEFORE)
-    Promise.all([listTransactions(supabase, { from: readFrom, to: end }), listPlanHistory(supabase, start, 'month'), readRecordsStart(supabase)])
-      .then(([rows, plans, records]) => {
-        if (live) setRead({ key, read: { status: 'ready', rows: { asOf, month: start, readFrom, rows, plans, records } } })
+    Promise.all([listTransactions(supabase, { from: readFrom, to: end }), listPlanHistory(supabase, start, 'month'), readRecordsStart(supabase), latestStatementEnd(supabase)])
+      .then(([rows, plans, records, statementEnds]) => {
+        if (live) setRead({ key, read: { status: 'ready', rows: { asOf, month: start, readFrom, rows, plans, records, statementEnds } } })
       })
       .catch((cause: unknown) => {
         if (live) setRead({ key, read: { status: 'failed', missingUpdate: needsOneTimeUpdate(cause) } })
@@ -71,6 +73,8 @@ export function reportOf(rows: ReportRows, categories: readonly Category[]): Rep
     month: isoDate(rows.month),
     historyStart: start,
     readFrom: isoDate(rows.readFrom),
+    // As the check-in's recap: days past the latest statement are not all in yet (F42).
+    importedThrough: rows.statementEnds.map((e) => isoDate(e)).sort().at(-1) ?? null,
     categories: categoriesForCore(categories),
     planHistory: plansForCore(rows.plans),
     entries: entriesForCore(rows.rows),
