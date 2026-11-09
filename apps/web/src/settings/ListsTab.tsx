@@ -1,6 +1,6 @@
 import { Fragment, useId, useRef, useState, type ReactNode } from 'react'
 import { useAppData } from '../app-data.js'
-import { appendToLists, isoDate, monthBounds, moveInList, type BillNudge, type BillsTotals } from '@budget/core'
+import { appendToLists, isoDate, monthBounds, moveInList, type BillNudge, type BillsTotals, type ResolvedPlan } from '@budget/core'
 import {
   addCategories,
   ensureCategory,
@@ -374,11 +374,11 @@ function ListCardView({
   const Title = level === 2 ? 'h2' : 'h3'
   const eyebrow = card.eyebrow ?? group
   const tone = card.kind === 'transfer' ? NOT_SPENDING_TONE : LIST_TONE[card.kind]
-  // Remove goes with its row: the next row's Remove takes focus, or the
-  // card's title once none is left (e2e-setup-06).
+  // Remove goes with its row: the next row's bin takes focus, which only
+  // asks its own question, or the card's title once none is left (e2e-setup-06).
   const list = useRef<HTMLUListElement>(null)
   const title = useRef<HTMLHeadingElement>(null)
-  const refocus = useFocusWhereItWas(list, rows.map((r) => r.id).join(' '), 'button[aria-label^="Remove "]', title)
+  const refocus = useFocusWhereItWas(list, rows.map((r) => r.id).join(' '), BIN, title)
 
   /** Run one write, then reload, or show why it was refused. */
   const write = async (change: () => Promise<unknown>): Promise<boolean> => {
@@ -431,7 +431,15 @@ function ListCardView({
           {paid !== null ? <PayHeadings /> : null}
           <ul ref={list} className={cn('divide-y border-b', plans === null && paid === null && 'mt-3 border-t')}>
             {rows.map((row, at) => (
-              <CategoryRow key={row.id} row={row} list={rows} write={write} onRemove={() => refocus(at)} onKept={() => refocus(null)}>
+              <CategoryRow
+                key={row.id}
+                row={row}
+                list={rows}
+                write={write}
+                goes={whatGoes(row, plans?.get(row.id), paid?.has(row.id) === true)}
+                onRemove={() => refocus(at)}
+                onKept={() => refocus(null)}
+              >
                 {plans !== null ? (
                   <PlanFields row={row} plan={plans.get(row.id)} month={month} write={write} onSaved={setNote} nudge={nudges.get(row.id)} />
                 ) : null}
@@ -468,17 +476,44 @@ function ListCardView({
   )
 }
 
+/** A row's bin, which opens the question before it is removed. */
+const BIN = 'button[aria-label^="Remove "]'
+
 /** A row's buttons: after the name, and after its fields from the card's @2xl. */
 const BUTTON_ORDER = 'order-1 @2xl:order-2'
 
 /** Not spending has no hue of its own (ADR 0010): a grey tile. */
 const NOT_SPENDING_TONE = { tile: 'bg-secondary', icon: 'text-muted-foreground', glyph: 'move' } as const
 
+/**
+ * What the database removes with a category (0008, 0009, 0011), for the
+ * question its bin asks: a sentence, or nothing. What this screen has read
+ * is named as the row's own. Budgets and goals typed on a month are not
+ * read here, so they are "any"; Not spending has none.
+ */
+function whatGoes(row: Category, plan: ResolvedPlan | undefined, paid: boolean): string {
+  const weekly = row.weekly_budget_cents !== null
+  const own = [
+    plan !== undefined && plan.plannedCents !== null ? 'monthly amount' : null,
+    plan !== undefined && plan.dueDay !== null ? 'day paid' : null,
+    paid ? 'payday' : null,
+    weekly ? 'weekly budget' : null,
+  ].filter((part) => part !== null)
+  // The Month calls them goals on Income and Savings, budgets on the rest.
+  const typed = row.kind === 'income' || row.kind === 'savings' ? 'monthly goals' : weekly ? 'other budgets' : 'budgets'
+  if (row.kind !== 'transfer') own.push(`any ${typed}`)
+  const last = own.pop()
+  if (last === undefined) return ''
+  if (own.length === 0) return last.startsWith('any ') ? ` Any ${typed} set for it go too.` : ` Its ${last} goes too.`
+  return ` Its ${own.join(', ')} and ${last} go too.`
+}
+
 /** One category: its name, edited where it stands, and anything its list adds on a line below. */
 function CategoryRow({
   row,
   list,
   write,
+  goes,
   onRemove,
   onKept,
   children,
@@ -487,12 +522,33 @@ function CategoryRow({
   /** The whole list it is on, in the order shown. */
   list: readonly Category[]
   write: (change: () => Promise<unknown>) => Promise<boolean>
-  /** Remove is pressed, and when it was refused. */
+  /** What goes with it, said in the question before it is removed. */
+  goes: string
+  /** The question's Remove is pressed, and when it was refused. */
   onRemove: () => void
   onKept: () => void
   children?: ReactNode
 }) {
   const { supabase, categories } = useAppData()
+  // The bin asks before it removes, as a goal's Remove does (GoalActions):
+  // it deleted at one tap, the next row slid under the finger, and a second
+  // tap deleted that too. Each row's bin opens only its own question.
+  const [asking, setAsking] = useState(false)
+  const [removing, setRemoving] = useState(false)
+  const item = useRef<HTMLLIElement>(null)
+  const keep = () => {
+    setAsking(false)
+    item.current?.querySelector<HTMLElement>(BIN)?.focus()
+  }
+  const remove = async () => {
+    setRemoving(true)
+    onRemove()
+    if (await write(() => removeCategory(supabase, row.id))) return
+    // Refused: the card says why, and the row stays with its bin.
+    onKept()
+    setRemoving(false)
+    keep()
+  }
   const [text, setText] = useState(row.name)
   // Follow a rename from elsewhere during render, not in an effect: a mount
   // effect can run after the first keystroke and put the old name back.
@@ -527,7 +583,7 @@ function CategoryRow({
   }
 
   return (
-    <li className="px-4 py-2 sm:px-5">
+    <li ref={item} className="px-4 py-2 sm:px-5">
       {/* The name keeps at least 4rem beside its four buttons; with the
         phone's text at 200% that is no longer room for all five, so the
         buttons wrap under the name rather than run off the screen (N58).
@@ -587,15 +643,35 @@ function CategoryRow({
           size="icon"
           className={cn('text-muted-foreground', BUTTON_ORDER)}
           aria-label={`Remove ${row.name}`}
-          onClick={() => {
-            onRemove()
-            void write(() => removeCategory(supabase, row.id)).then((removed) => {
-              if (!removed) onKept()
-            })
+          aria-expanded={asking}
+          onClick={() => setAsking((open) => !open)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape' && asking) keep()
           }}
         >
           <Icon name="trash" />
         </Button>
+        {/* Straight after the bin, so Tab reaches it next; drawn under the row. */}
+        {asking ? (
+          <div
+            className="order-3 basis-full space-y-2 rounded-lg border px-3 py-2 text-sm"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') keep()
+            }}
+          >
+            <p className="[overflow-wrap:anywhere]">
+              Remove {row.name}?{goes}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="destructive" size="sm" disabled={removing} onClick={() => void remove()}>
+                Remove
+              </Button>
+              <Button variant="outline" size="sm" onClick={keep}>
+                Keep it
+              </Button>
+            </div>
+          </div>
+        ) : null}
         {children}
       </div>
     </li>

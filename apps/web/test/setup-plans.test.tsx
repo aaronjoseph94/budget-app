@@ -110,7 +110,9 @@ describe('Lists, reading monthly amounts', () => {
     // the ones read before it still name Phone.
     let release = () => {}
     fake.server.hold = (table) => (table === 'category_plans' ? new Promise<void>((resolve) => (release = resolve)) : null)
+    // The bin asks first; the question's Remove is the one that deletes.
     fireEvent.click(bills.getByRole('button', { name: 'Remove Phone' }))
+    fireEvent.click(bills.getByRole('button', { name: 'Remove' }))
 
     await waitFor(() => expect(bills.queryByRole('textbox', { name: 'Rename Phone' })).toBeNull())
     expect(fake.tables.category_plans.map((p) => p.id)).toEqual(['p1', 'p3', 'p4'])

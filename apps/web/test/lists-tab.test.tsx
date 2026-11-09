@@ -201,40 +201,130 @@ describe('Lists, order and lists', () => {
 })
 
 describe('Lists, removing a category', () => {
-  it('removes one with nothing filed under it', async () => {
+  const bin = (name: string) => screen.findByRole('button', { name: `Remove ${name}` })
+  /** The question a row's bin opened, under that row. */
+  const asked = (button: HTMLElement) => within(button.closest('li')!)
+  /** Long enough for a write, had one been made, to have landed. */
+  const settled = () => new Promise((resolve) => setTimeout(resolve, 20))
+  /** Press a row's bin, then the question's Remove. */
+  const confirm = async (name: string) => {
+    const button = await bin(name)
+    fireEvent.click(button)
+    const remove = asked(button).getByRole<HTMLButtonElement>('button', { name: 'Remove' })
+    remove.focus()
+    fireEvent.click(remove)
+    return { button, remove }
+  }
+
+  // The bin deleted at one tap, the next row slid under the finger, and a second tap deleted that too.
+  it('asks first: one press of the bin removes nothing, and a second in the same place closes the question', async () => {
     const fake = seeded()
     renderScreen(<ListsTab />, fake)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Remove Phone' }))
+    const phone = await bin('Phone')
+    fireEvent.click(phone)
+    await settled()
+    expect(fake.tables.categories.map((c) => c.name)).toContain('Phone')
+    expect(asked(phone).getByText('Remove Phone? Any budgets set for it go too.')).toBeTruthy()
+    expect(asked(phone).getByRole('button', { name: 'Remove' })).toBeTruthy()
+    expect(asked(phone).getByRole('button', { name: 'Keep it' })).toBeTruthy()
+    expect(phone.getAttribute('aria-expanded')).toBe('true')
+    await expectNoAxeViolations()
+
+    fireEvent.click(phone)
+    await settled()
+    expect(asked(phone).queryByRole('button', { name: 'Remove' })).toBeNull()
+    expect(fake.tables.categories).toHaveLength(6)
+  })
+
+  it('removes one with nothing filed under it once Remove is pressed, which waits while it saves', async () => {
+    const fake = seeded()
+    renderScreen(<ListsTab />, fake)
+
+    const { remove } = await confirm('Phone')
+    expect(remove.disabled).toBe(true)
 
     await waitFor(async () => expect(await namesOn('Bills')).toEqual(['Rent']))
     expect(fake.tables.categories.some((c) => c.id === 'c4')).toBe(false)
   })
 
-  // e2e-setup-06: Remove went with its row, and focus fell to <body>.
-  it('keeps focus on the list: the next row’s Remove, then the card’s heading once it is empty', async () => {
-    renderScreen(<ListsTab />, seeded())
-    const press = (button: HTMLElement) => {
-      button.focus()
-      fireEvent.click(button)
-    }
+  it('keeps the row on Keep it or Escape, and puts focus back on its bin', async () => {
+    const fake = seeded()
+    renderScreen(<ListsTab />, fake)
 
-    press(await screen.findByRole('button', { name: 'Remove Phone' }))
+    const phone = await bin('Phone')
+    fireEvent.click(phone)
+    const keep = asked(phone).getByRole('button', { name: 'Keep it' })
+    keep.focus()
+    fireEvent.click(keep)
+    expect(asked(phone).queryByRole('button', { name: 'Remove' })).toBeNull()
+    expect(document.activeElement).toBe(phone)
+    expect(phone.getAttribute('aria-expanded')).toBe('false')
+
+    fireEvent.click(phone)
+    const remove = asked(phone).getByRole('button', { name: 'Remove' })
+    remove.focus()
+    fireEvent.keyDown(remove, { key: 'Escape' })
+    expect(asked(phone).queryByRole('button', { name: 'Remove' })).toBeNull()
+    expect(document.activeElement).toBe(phone)
+    await settled()
+    expect(fake.tables.categories).toHaveLength(6)
+  })
+
+  it('says what goes with the row, naming only what it has', async () => {
+    const fake = seeded()
+    fake.tables.categories[0] = { ...category('c1', 'Groceries', 'variable', 0), weekly_budget_cents: 12_000 }
+    fake.tables.category_plans.push(
+      { id: 'p1', category_id: 'c3', effective_month: '2026-01-01', planned_cents: 160_000, due_day: 1 },
+      { id: 'p2', category_id: 'c4', effective_month: '2026-01-01', planned_cents: null, due_day: 15 },
+    )
+    fake.tables.pay_schedules.push({ id: 's1', user_id: 'u1', category_id: 'c5', first_pay_date: '2026-09-04', frequency: 'weekly' })
+    renderScreen(<ListsTab />, fake)
+    await screen.findByRole('textbox', { name: 'Day paid for Rent' })
+    await screen.findByRole('combobox', { name: 'How often Pay pays' })
+
+    const said = async (name: string) => {
+      const button = await bin(name)
+      fireEvent.click(button)
+      return asked(button).getByText(/^Remove .+\?/).textContent
+    }
+    expect(await said('Rent')).toBe('Remove Rent? Its monthly amount, day paid and any budgets go too.')
+    expect(await said('Phone')).toBe('Remove Phone? Its day paid and any budgets go too.')
+    expect(await said('Pay')).toBe('Remove Pay? Its payday and any monthly goals go too.')
+    expect(await said('Groceries')).toBe('Remove Groceries? Its weekly budget and any other budgets go too.')
+    expect(await said('Restaurants')).toBe('Remove Restaurants? Any budgets set for it go too.')
+    // Not spending has no budget, amount or payday to lose.
+    expect(await said('Card payments')).toBe('Remove Card payments?')
+  })
+
+  // e2e-setup-06: Remove went with its row, and focus fell to <body>.
+  it('keeps focus on the list: the next row’s bin, which asks again, then the card’s heading once it is empty', async () => {
+    const fake = seeded()
+    renderScreen(<ListsTab />, fake)
+
+    await confirm('Phone')
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Remove Rent' })))
-    press(screen.getByRole('button', { name: 'Remove Rent' }))
+    // Where focus landed asks its own question: pressing it removes nothing.
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Rent' }))
+    await settled()
+    expect(fake.tables.categories.map((c) => c.name)).toContain('Rent')
+    fireEvent.click(screen.getByRole('button', { name: 'Keep it' }))
+    await confirm('Rent')
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('heading', { level: 2, name: 'Bills' })))
   })
 
-  it('says to move its charges first when something is still filed under it', async () => {
+  it('says to move its charges first when something is still filed under it, and closes the question', async () => {
     const fake = seeded()
     fake.tables.transactions.push({ id: 't1', posted_on: '2026-09-01', amount_cents: -160000, merchant_raw: 'LANDLORD', category_id: 'c3', source: 'typed' })
     renderScreen(<ListsTab />, fake)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Remove Rent' }))
+    const { button: rent } = await confirm('Rent')
 
     const card = within(screen.getByRole('region', { name: 'Bills' }))
     expect(await card.findByText('This category still has charges or learned shops. On the Month, use Move to… on each charge, with “Always file” ticked. (code 23503)')).toBeTruthy()
     expect(await namesOn('Bills')).toEqual(['Phone', 'Rent'])
+    await waitFor(() => expect(asked(rent).queryByRole('button', { name: 'Remove' })).toBeNull())
+    expect(document.activeElement).toBe(rent)
   })
 })
 

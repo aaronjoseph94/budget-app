@@ -149,7 +149,7 @@ export const ARTICLES: readonly Article[] = [
       'With few categories, press **Use the starter list** for names to rename.',
       'To add one, type its name at the foot of a list and press **Add**.',
       'To rename one, type over its name; a tick shows it saved.',
-      'The arrows move it, the two-arrow button changes its list, the bin removes it.',
+      'The arrows move it, the two-arrow button changes its list, the bin asks before removing.',
       'On Bills, Debts and Subscriptions, type **Day paid** and **Monthly amount**.',
       'On Income, choose **How often** and **First payday**.',
     ],
