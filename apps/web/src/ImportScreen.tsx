@@ -16,6 +16,9 @@ const DELIMITERS = [
   { value: '|', label: 'Pipe' },
 ] as const
 
+/** The Money in column's "none": no column has this index. */
+const ONE_AMOUNT_COLUMN = -1
+
 export type SaveRequest = ImportRequest
 
 export interface ImportScreenProps {
@@ -221,7 +224,7 @@ function SaveFooter({
  * signed, each proposed and each the owner's to change (FE-19).
  */
 function ColumnMapping({ mapping }: { mapping: Mapping }) {
-  const { delimiter, setDelimiter, decimal, setDecimal, choose, tokenized, analysis, dateIndex, merchantIndex, amountIndex, signKind, dateFormat, ambiguousDate, askHeader, otherMoney } =
+  const { delimiter, setDelimiter, decimal, setDecimal, choose, tokenized, analysis, dateIndex, merchantIndex, amountIndex, creditIndex, signKind, signUnclear, dateFormat, ambiguousDate, askHeader, otherMoney } =
     mapping
   return (
     <>
@@ -286,11 +289,23 @@ function ColumnMapping({ mapping }: { mapping: Mapping }) {
               onChange={(v) => choose('merchantIndex', v)}
             />
             <OptionSelect
-              label="Amount column"
+              label={creditIndex === null ? 'Amount column' : 'Money out column'}
               value={amountIndex}
               options={analysis.columns.map((c) => ({ value: c.index, label: columnName(c) }))}
               onChange={(v) => choose('amountIndex', v)}
             />
+            {/* Debit and Credit as two columns: offered where two columns read as money. */}
+            {creditIndex !== null || analysis.columns.filter((c) => c.readsAsAmount).length > 1 ? (
+              <OptionSelect
+                label="Money in column"
+                value={creditIndex ?? ONE_AMOUNT_COLUMN}
+                options={[
+                  { value: ONE_AMOUNT_COLUMN, label: 'None: one amount column' },
+                  ...analysis.columns.map((c) => ({ value: c.index, label: columnName(c) })),
+                ]}
+                onChange={(v) => choose('creditIndex', v === ONE_AMOUNT_COLUMN ? null : v)}
+              />
+            ) : null}
             <OptionSelect<DateFormat | ''>
               label="Date format"
               value={dateFormat ?? ''}
@@ -303,15 +318,18 @@ function ColumnMapping({ mapping }: { mapping: Mapping }) {
                 if (v !== '') choose('dateFormat', v)
               }}
             />
-            <OptionSelect
-              label="How amounts are written"
-              value={signKind}
-              options={[
-                { value: 'signed' as const, label: 'Purchases are negative' },
-                { value: 'debit_positive' as const, label: 'Purchases are positive' },
-              ]}
-              onChange={(v) => choose('signKind', v)}
-            />
+            {/* Two columns say which way each runs; one column's sign is the owner's to say. */}
+            {creditIndex === null ? (
+              <OptionSelect
+                label="How amounts are written"
+                value={signKind}
+                options={[
+                  { value: 'signed' as const, label: 'Purchases are negative' },
+                  { value: 'debit_positive' as const, label: 'Purchases are positive' },
+                ]}
+                onChange={(v) => choose('signKind', v)}
+              />
+            ) : null}
             {/* Declared, as the separator is: a European file writes -4,50 (e2e-money-07). */}
             <OptionSelect
               label="Decimal mark"
@@ -328,6 +346,13 @@ function ColumnMapping({ mapping }: { mapping: Mapping }) {
             <p className="mt-4 rounded-lg border border-border bg-muted p-3 text-sm">
               <strong className="font-medium">More than one column looks like money.</strong> Check that Amount is each
               purchase’s price, not a fee, a balance or a reference number.
+            </p>
+          ) : null}
+
+          {signUnclear ? (
+            <p className="mt-4 rounded-lg border border-border bg-muted p-3 text-sm">
+              <strong className="font-medium">Most amounts here are positive.</strong> Check which way your bank writes
+              purchases, under How amounts are written.
             </p>
           ) : null}
 

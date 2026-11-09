@@ -25,6 +25,8 @@ export interface Chosen {
   dateIndex?: number
   merchantIndex?: number
   amountIndex?: number
+  /** The money-in column of a Debit and Credit pair; null is the owner saying there is one amount column. */
+  creditIndex?: number | null
   dateFormat?: DateFormat
   signKind?: 'signed' | 'debit_positive'
   /** The owner's answer when the file cannot say whether its first row is column names. */
@@ -88,7 +90,15 @@ export function useCsvMapping(text: string) {
   const dateIndex = chosen.dateIndex ?? proposal?.dateIndex ?? 0
   const merchantIndex = chosen.merchantIndex ?? proposal?.merchantIndex ?? 1
   const amountIndex = chosen.amountIndex ?? proposal?.amountIndex ?? 2
-  const signKind = chosen.signKind ?? 'signed'
+  // Money out and money in as two columns: amountIndex is then the money
+  // out, and each row is the credit less the debit (statement-parsers).
+  const pickedCredit = chosen.creditIndex !== undefined ? chosen.creditIndex : (proposal?.creditIndex ?? null)
+  const creditIndex = pickedCredit === amountIndex ? null : pickedCredit
+  // The proposal's word on the sign is about the column it proposed.
+  const proposedSign = proposal !== null && creditIndex === null && amountIndex === proposal.amountIndex ? proposal : null
+  const signKind = chosen.signKind ?? proposedSign?.signKind ?? 'signed'
+  // Mostly positives could be purchases either way: said, never guessed.
+  const signUnclear = chosen.signKind === undefined && proposedSign?.signUnclear === true
   // A format is proposed only when the column admits exactly one. Where the
   // data is ambiguous the user is asked, never defaulted past.
   // It used to fall to MM/DD/YYYY here while the screen asked, and the rows
@@ -108,13 +118,14 @@ export function useCsvMapping(text: string) {
         dateIndex,
         merchantIndex,
         amountIndex,
+        ...(creditIndex === null ? {} : { creditIndex }),
         sign: { kind: signKind },
       },
       amountFormat,
       dateFormat,
       hasHeader: analysis.hasHeader,
     })
-  }, [tokenized, analysis, dateIndex, merchantIndex, amountIndex, dateFormat, signKind, amountFormat])
+  }, [tokenized, analysis, dateIndex, merchantIndex, amountIndex, creditIndex, dateFormat, signKind, amountFormat])
 
   const summary = useMemo(
     () =>
@@ -146,7 +157,9 @@ export function useCsvMapping(text: string) {
     dateIndex,
     merchantIndex,
     amountIndex,
+    creditIndex,
     signKind,
+    signUnclear,
     dateFormat,
     result,
     summary,
