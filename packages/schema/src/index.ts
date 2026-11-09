@@ -99,6 +99,7 @@ export {
   NoteTextSchema,
   WordsSchema,
   drawsAsNothing,
+  readsOneWay,
 } from './ai-apps.js'
 
 export { SUGGESTION_KINDS, StoredSuggestionSchema, type StoredSuggestion, type SuggestionKind } from './suggestions.js'

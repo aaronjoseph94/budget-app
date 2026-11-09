@@ -9,7 +9,7 @@
  */
 import type { CallToolResult, McpServer } from '@modelcontextprotocol/server'
 import type { z } from 'zod'
-import { AddNoteInputSchema } from '@budget/schema'
+import { AddNoteInputSchema, readsOneWay } from '@budget/schema'
 import { parseQuickEntry } from '@budget/statement-parsers'
 import { log } from '../log.js'
 import { cleanShop, money } from '../money.js'
@@ -41,7 +41,8 @@ export async function addNote(caller: Caller | null, input: AddNoteInput): Promi
     return refusal(owner.refused)
   }
   const read = parseQuickEntry({ text: input.text, asOf: owner.today, rules: new Map() })
-  const what = read.shop !== null && read.shop.length <= WORDS_LIMIT ? read.shop : null
+  // Words 0042 would refuse (a blank that is no space) are not read as what it was: asked for again, never sent.
+  const what = read.shop !== null && read.shop.length <= WORDS_LIMIT && readsOneWay(read.shop) ? read.shop : null
   if (read.amount === null || what === null || read.date === null) {
     log('tool_add_note_needs_more')
     const missing = [read.amount === null && 'amount', what === null && 'what', read.date === null && 'date'].filter((m) => m !== false)

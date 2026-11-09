@@ -129,6 +129,19 @@ describe('add_expense', () => {
     expect(rpcCalls).toHaveLength(1)
   })
 
+  // Backend review of 2026-11-09: words that read as 'Lunch at Subway' and hash apart were added over the one waiting.
+  it.each([
+    ['a no-break space between words', 'Lunch at\u00a0Subway'],
+    ['a thin space between words', 'Lunch at\u2009Subway'],
+    ['two spaces in a row', 'Lunch at  Subway'],
+    ['an accent as a letter and a mark', 'Cafe\u0301 lunch'],
+  ])('refuses %s before reading anything, saying what to send instead', async (_, what) => {
+    const { result, rpcCalls } = await add({ ...LUNCH, what })
+    expect(result.isError).toBe(true)
+    expect(JSON.stringify(result.content)).toContain('Expected one plain space between words, and each accented letter as one character')
+    expect(rpcCalls).toEqual([])
+  })
+
   it.each([
     ['already_waiting', 'Nothing was added: the same entry is already waiting in Review. For a second identical purchase the same day, set same_again to 2, 3 and so on.'],
     ['already_recorded', 'Nothing was added: the same entry is already in the owner’s approved records.'],
@@ -157,6 +170,14 @@ describe('add_note', () => {
     expect(result.structuredContent).toMatchObject({ status: 'added', entry: { date: '2026-09-29', what: 'Lunch at Subway', amount: $(-1250, '-$12.50') } })
   })
 
+  // The reader tidies a sentence (NFKC, one space between words), so the words sent are plain ones.
+  it('sends plain words for a sentence typed with a no-break space, two spaces or an accent as a letter and a mark', async () => {
+    const { rpcCalls } = await note({ text: 'Lunch at\u00a0Subway  12.50 yesterday' })
+    expect(body(rpcCalls[1])).toMatchObject({ p_words: 'Lunch at Subway', p_dedupe_hash: LUNCH_1 })
+    const accent = await note({ text: 'Cafe\u0301 4.50' })
+    expect(body(accent.rpcCalls[1])).toMatchObject({ p_words: 'Caf\u00e9' })
+  })
+
   it('sends a category as stored, and same_again as the occurrence', async () => {
     const { rpcCalls } = await note({ text: 'spent $12.50 on Lunch at Subway yesterday', category: 'Eating out', same_again: 2 })
     expect(body(rpcCalls[1])).toMatchObject({ p_words: 'Lunch at Subway', p_category_name: 'Eating out​', p_dedupe_hash: LUNCH_2 })
@@ -169,6 +190,8 @@ describe('add_note', () => {
     ['a day after today', 'coffee 4.50 2026-10-01', ['date'], { date: null, what: 'coffee', amount: $(-450, '-$4.50'), flow: 'spent' }],
     ['words past 120 characters', `${'x'.repeat(121)} 4.50`, ['what'], { date: '2026-09-30', what: null, amount: $(-450, '-$4.50'), flow: 'spent' }],
     ['words read so far, cleaned', 'coffee 4 or 5 1234567', ['amount'], { date: '2026-09-30', what: 'coffee 4 or 5 *******', amount: null, flow: 'spent' }],
+    // 0042 would refuse a blank that is no space (the Braille blank) inside the words: asked for again, never sent.
+    ['words with a blank that is no space', 'coffee\u2800shop 4.50', ['what'], { date: '2026-09-30', what: null, amount: $(-450, '-$4.50'), flow: 'spent' }],
   ])('adds nothing for %s, and says what is missing', async (_, text, missing, read_so_far) => {
     const { result, rpcCalls } = await note({ text })
     expect(rpcCalls).toHaveLength(1)

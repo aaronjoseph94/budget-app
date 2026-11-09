@@ -98,6 +98,10 @@ describe('propose_change', () => {
     ['a tag character in a new name', { kind: 'add_category', name: 'Groceries\u{E0078}', list: 'variable', ...why }],
     ['a variation selector in a new name', { kind: 'rename_category', category: 'Groceries', new_name: 'Food\u{FE0F}', ...why }],
     ['tag characters in a reason', { kind: 'set_weekly_limit', category: 'Groceries', amount: '120', reason: 'Fits.\u{E0053}\u{E0059}\u{E0053}' }],
+    // Backend review of 2026-11-09: a name that reads as one the owner has, by its spacing or its accents.
+    ['a no-break space inside a new name', { kind: 'add_category', name: 'Eating\u00a0out', list: 'variable', ...why }],
+    ['two spaces inside a new name', { kind: 'rename_category', category: 'Groceries', new_name: 'Eating  out', ...why }],
+    ['an accent as a letter and a mark in a new name', { kind: 'add_category', name: 'Cafe\u0301', list: 'variable', ...why }],
   ])('reads nothing for %s', async (_, change) => {
     const { result, rpcCalls } = await propose([change], () => ({}))
     expect(result.isError).toBe(true)

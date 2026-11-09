@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AmountTextSchema, ChangeSchema, ListSchema, NameSchema, NoteTextSchema, ReasonSchema, WordsSchema, drawsAsNothing } from '../src/index.js'
+import { AddExpenseInputSchema, AmountTextSchema, ChangeSchema, ListSchema, NameSchema, NoteTextSchema, ReasonSchema, WordsSchema, drawsAsNothing, readsOneWay } from '../src/index.js'
 
 // What an AI app may send the server's tools (PLAN §2.4).
 describe('AmountTextSchema', () => {
@@ -75,6 +75,48 @@ describe('the words an AI app sends', () => {
       if (drawsAsNothing(c) !== unicode.test(String.fromCodePoint(c))) differ.push(c.toString(16))
     }
     expect(differ).toEqual([])
+  })
+
+  // Backend review of 2026-11-09: a space that is not the ordinary one, two
+  // spaces in a row, or an accent as a letter and a mark, inside the words,
+  // drew as the plain words do and compared as different, past name_taken
+  // and "already waiting". Refused, not tidied: 0042 refuses the same.
+  const ODD_SPACES = [0xa0, 0x1680, 0x2000, 0x2001, 0x2009, 0x200a, 0x202f, 0x205f, 0x2800, 0x3000]
+  it.each(ODD_SPACES.map((c) => [c.toString(16).padStart(4, '0'), String.fromCodePoint(c)]))('refuses U+%s between words wherever an AI app writes words', (_, space) => {
+    expect(WordsSchema.safeParse(`Lunch at${space}Subway`).success).toBe(false)
+    expect(AddExpenseInputSchema.safeParse({ amount: '12.50', what: `Lunch at${space}Subway` }).success).toBe(false)
+    expect(ReasonSchema.safeParse(`Fits${space}recent spend.`).success).toBe(false)
+    expect(ChangeSchema.safeParse({ kind: 'add_category', name: `Eating${space}out`, list: 'variable', reason: 'r' }).success).toBe(false)
+    expect(ChangeSchema.safeParse({ kind: 'rename_category', category: 'Coffee', new_name: `Eating${space}out`, reason: 'r' }).success).toBe(false)
+  })
+
+  it('refuses two spaces in a row and an accent as a letter and a mark, and takes the plain words as they are', () => {
+    const [composed, decomposed] = ['Caf\u00e9', 'Cafe\u0301']
+    expect(decomposed.normalize('NFC')).toBe(composed)
+    for (const bad of ['Eating  out', decomposed, `${decomposed} cr\u00e8me`]) {
+      expect([bad, WordsSchema.safeParse(bad).success, ReasonSchema.safeParse(bad).success]).toEqual([bad, false, false])
+      expect(ChangeSchema.safeParse({ kind: 'add_category', name: bad, list: 'variable', reason: 'r' }).success).toBe(false)
+      expect(ChangeSchema.safeParse({ kind: 'rename_category', category: 'Coffee', new_name: bad, reason: 'r' }).success).toBe(false)
+    }
+    // One ordinary space between words, an accent as one character, and a mark no single character holds.
+    for (const good of ['Eating out', 'Eat in or out', composed, 'Cr\u00e8me br\u00fbl\u00e9e', 'x\u0301', '\u00a1Hola!', 'Tea\u2014two']) {
+      expect([good, WordsSchema.parse(good), ReasonSchema.parse(good)]).toEqual([good, good, good])
+      expect(ChangeSchema.parse({ kind: 'add_category', name: good, list: 'variable', reason: 'r' })).toMatchObject({ name: good })
+    }
+    // Either end is still trimmed, never refused, as before.
+    expect(WordsSchema.parse('\u00a0Lunch at Subway\u2009 ')).toBe('Lunch at Subway')
+  })
+
+  it('says what to send instead, without echoing the words', () => {
+    const issue = WordsSchema.safeParse('SECRET\u00a0shop').error?.issues[0]
+    expect(issue?.message).toBe('Expected one plain space between words, and each accented letter as one character')
+    expect(JSON.stringify(issue)).not.toContain('SECRET')
+  })
+
+  it('leaves a note\u2019s spacing and accents to its reader, and offers the same check for the words read out of it', () => {
+    expect(NoteTextSchema.safeParse('coffee\u00a0 4.50  yesterday').success).toBe(true)
+    expect(NoteTextSchema.safeParse('Cafe\u0301 4.50').success).toBe(true)
+    expect(['Lunch at Subway', 'Lunch at\u00a0Subway', 'Lunch at  Subway', 'Lunch\u2800at Subway', 'Cafe\u0301', 'Caf\u00e9'].map(readsOneWay)).toEqual([true, false, false, false, false, true])
   })
 
   it('holds a note to 300 characters', () => {

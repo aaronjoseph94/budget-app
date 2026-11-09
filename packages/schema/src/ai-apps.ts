@@ -7,7 +7,7 @@ import { IngestedTextSchema } from './primitives.js'
  * One-time updates can tell an old paste of `mcp-function.ts` from this
  * site's. Bumped with every change the owner must paste, as `YYYY-MM-DD.N`.
  */
-export const MCP_SERVER_VERSION = '2026-10-05.7'
+export const MCP_SERVER_VERSION = '2026-11-09.1'
 
 /*
  * What an AI app may send the server's tools (PLAN §2.4): each tool's input
@@ -75,8 +75,29 @@ const shown = (text: string) =>
     return code !== undefined && !drawsAsNothing(code)
   })
 
-/** What an AI app adds was: the owner's own words, held as ingested text, trimmed, every character visible. */
-export const WordsSchema = z.string().trim().max(120).pipe(IngestedTextSchema).refine(shown, 'Expected no invisible characters')
+/**
+ * A space that is not the ordinary one (Unicode's other space separators,
+ * and the Braille blank, which is none to Unicode and draws as one), or
+ * two ordinary spaces in a row, which a page draws as one.
+ */
+const ODD_SPACING = /[\u00A0\u1680\u2000-\u200A\u202F\u205F\u2800\u3000]| {2}/u
+
+/**
+ * Whether words read one way only: between them no space but one ordinary
+ * space, and each accented letter as one character (NFC). A no-break or
+ * thin space, two spaces in a row, or an 'e' followed by a combining
+ * accent draws exactly as the plain words do and compares as different,
+ * so 'Eating out' was suggested beside the owner's 'Eating out', and an
+ * entry added over the same one waiting (backend review of 2026-11-09).
+ * Refused, never tidied: what an AI app adds is hashed and shown exactly
+ * as given. 0042 refuses the same in the database. Letters that only look
+ * alike, another script's or a ligature, are not told apart here.
+ */
+export const readsOneWay = (text: string): boolean => !ODD_SPACING.test(text) && text === text.normalize('NFC')
+const ONE_WAY = 'Expected one plain space between words, and each accented letter as one character'
+
+/** What an AI app adds was: the owner's own words, held as ingested text, trimmed, every character visible, read one way only. */
+export const WordsSchema = z.string().trim().max(120).pipe(IngestedTextSchema).refine(shown, 'Expected no invisible characters').refine(readsOneWay, ONE_WAY)
 
 /**
  * A day an AI app asks about. Years before 1900 or after 2999 are no one's
@@ -88,7 +109,12 @@ const DaySchema = z.iso.date().refine((day) => day >= '1900-01-01' && day <= '29
 /** `list_categories` takes nothing. */
 export const ListCategoriesInputSchema = z.object({}).strict()
 
-/** Something the owner said, for `add_note`, read as Just type it reads it. */
+/**
+ * Something the owner said, for `add_note`, read as Just type it reads it.
+ * Its spacing and accents are the reader's to tidy (parseQuickEntry: NFKC,
+ * words joined by one space), so they are not refused here; add_note holds
+ * the words it reads out of it to readsOneWay before adding them.
+ */
 export const NoteTextSchema = z.string().trim().max(300).pipe(IngestedTextSchema).refine(shown, 'Expected no invisible characters')
 
 /**
@@ -189,11 +215,11 @@ export const AddNoteInputSchema = z.object({ text: NoteTextSchema, category: Nam
 /** A month as `YYYY-MM`; the server holds it to this month and the twelve after. */
 const MonthTextSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Expected a month like 2026-11')
 
-/** Why, in the AI app's words: one line, every character visible, at most 300 characters. */
-export const ReasonSchema = z.string().trim().min(1).max(300).pipe(IngestedTextSchema).refine(shown, 'Expected no invisible characters')
+/** Why, in the AI app's words: one line, every character visible, read one way only, at most 300 characters. */
+export const ReasonSchema = z.string().trim().min(1).max(300).pipe(IngestedTextSchema).refine(shown, 'Expected no invisible characters').refine(readsOneWay, ONE_WAY)
 
-/** A category's new name: a name, every character visible. */
-const NewNameSchema = NameSchema.pipe(IngestedTextSchema).refine(shown, 'Expected no invisible characters')
+/** A category's new name: a name, every character visible, read one way only, so it cannot read as a name the owner has and compare as new. */
+const NewNameSchema = NameSchema.pipe(IngestedTextSchema).refine(shown, 'Expected no invisible characters').refine(readsOneWay, ONE_WAY)
 
 /** An amount, or null for none: no budget, no weekly limit, a bill stopped. */
 const AmountOrNoneSchema = z.union([AmountTextSchema, z.null()])
