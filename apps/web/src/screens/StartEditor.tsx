@@ -65,6 +65,8 @@ export function StartEditor({
       onSaved(cents === null ? `${monthName}'s starting balance is cleared.` : `${monthName} started at ${formatCents(cents)}.`)
       // Re-reads the categories and, through `version`, the month itself.
       await refresh()
+      // Getting started keeps the editor open, and the same balance saved again does not redraw it.
+      if (open.current) setBusy(false)
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : 'Could not save the starting balance. Nothing was saved.'
       if (!open.current) {
