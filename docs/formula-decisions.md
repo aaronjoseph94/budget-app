@@ -1974,6 +1974,16 @@ is about, whichever day it was answered.
   monthly statement read "$0.00 … Well done!", the gap this rule is for.
   With no statement end known (typed entries alone, or a CSV with no
   period), the end cannot be told, and the week is recapped as before.
+- **Amended 2026-11-09 (bug bash, c03):** the same rule, on the same
+  day (`latestStatementEnd`), holds wherever a week or month is cheered.
+  **A streak** (F40): a complete week that ends after it is "not in
+  yet", never kept, so the run stops there, and the current streak is 0
+  while the last complete week is not in. **A personal best** (F40):
+  none while the last complete month ends after it. Entries typed after
+  the statement's end change neither, as in the recap; with no statement
+  end known, both are as before. On 9 November, with a statement ending
+  7 September, the Coach read "6 weeks within budget" and "$0.00 on
+  Groceries in October … Brilliant!" of weeks and a month with no rows.
 - **Spent:** the week's Variable spending, net; below $0 in a week of
   refunds.
 - **The weekly budgets:** the sum of the Variable weekly budgets set, or

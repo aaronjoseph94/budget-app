@@ -21,7 +21,7 @@ import {
   type WeekdayPattern,
 } from '@budget/core'
 import { useAppData } from '../app-data.js'
-import { listTransactions, needsOneTimeUpdate, readRecordsStart, type Category, type LedgerRow } from '../ledger.js'
+import { latestStatementEnd, listTransactions, needsOneTimeUpdate, readRecordsStart, type Category, type LedgerRow } from '../ledger.js'
 import { entriesForCore, historyFrom, type RecordsStart, weekCategoriesForCore } from '../sheet-input.js'
 
 /** Months read before this one. */
@@ -32,6 +32,8 @@ export interface HabitRows {
   readonly readFrom: string
   readonly rows: readonly LedgerRow[]
   readonly records: RecordsStart
+  /** The latest statement's last day, as the check-in reads it; none before the first. */
+  readonly statementEnds: readonly string[]
 }
 
 export type HabitsRead =
@@ -50,9 +52,9 @@ export function useHabitsRead(asOf: string): HabitsRead {
     if (version === 0) return
     let live = true
     const readFrom = shiftMonth(isoDate(asOf), -MONTHS)
-    Promise.all([listTransactions(supabase, { from: readFrom, to: asOf }), readRecordsStart(supabase)])
-      .then(([rows, records]) => {
-        if (live) setRead({ key, read: { status: 'ready', rows: { asOf, readFrom, rows, records } } })
+    Promise.all([listTransactions(supabase, { from: readFrom, to: asOf }), readRecordsStart(supabase), latestStatementEnd(supabase)])
+      .then(([rows, records, statementEnds]) => {
+        if (live) setRead({ key, read: { status: 'ready', rows: { asOf, readFrom, rows, records, statementEnds } } })
       })
       .catch((cause: unknown) => {
         if (live) setRead({ key, read: { status: 'failed', missingUpdate: needsOneTimeUpdate(cause) } })
@@ -79,6 +81,8 @@ export function habitsOf(rows: HabitRows, categories: readonly Category[]): Habi
     asOf: isoDate(rows.asOf),
     historyStart: historyFrom(rows.records),
     readFrom: isoDate(rows.readFrom),
+    // As the check-in's recap: a week or month past the latest statement is not all in yet (F42).
+    importedThrough: rows.statementEnds.map((e) => isoDate(e)).sort().at(-1) ?? null,
     categories: weekCategoriesForCore(categories),
     entries: entriesForCore(rows.rows),
   }

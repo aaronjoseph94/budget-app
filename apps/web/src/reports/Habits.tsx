@@ -145,7 +145,7 @@ function StreakCard({ streaks }: { streaks: Streaks }) {
       </Section>
     )
   }
-  const { weeks, current, best, bestEnded } = streaks
+  const { weeks, current, best, bestEnded, importedThrough } = streaks
   if (weeks.length === 0) {
     return (
       <Section title="Weeks within budget" large>
@@ -157,15 +157,18 @@ function StreakCard({ streaks }: { streaks: Streaks }) {
     <Section title="Weeks within budget" large>
       {current > 0 && current === best ? <p className="font-medium">Your best run yet. Keep it going!</p> : null}
       <dl className="divide-y">
-        <Row label="In a row now" value={formatWeeks(current)} />
+        <Row label="In a row now" value={importedThrough === null ? formatWeeks(current) : 'not in yet'} />
         <Row label="Your longest run" value={bestEnded === null ? 'none yet' : formatWeeks(best)} />
       </dl>
       {bestEnded === null ? null : <p className="text-muted-foreground">Your longest run ended with the week of {formatDayMonth(bestEnded)}.</p>}
+      {/* Never "✓ within budget" for a week no statement covers yet, as the check-in's recap (F42). */}
+      {importedThrough === null ? null : <p>Your latest statement runs to {formatDayMonth(importedThrough)}, so later weeks aren’t all in yet.</p>}
       <p className="text-muted-foreground">A week counts when the Week’s Left to spend stays at $0.00 or more.</p>
       <ul className="space-y-1">
         {weeks.slice(-WEEKS_LISTED).reverse().map((w) => (
           <li key={w.start} className="tnum">
-            Week of {formatDayMonth(w.start)}: {w.kept ? `✓ within budget, ${formatCents(w.leftCents)} left` : `✗ ${formatMagnitude(w.leftCents)} over`}
+            Week of {formatDayMonth(w.start)}:{' '}
+            {w.notInYet ? 'not in yet' : w.kept ? `✓ within budget, ${formatCents(w.leftCents)} left` : `✗ ${formatMagnitude(w.leftCents)} over`}
           </li>
         ))}
       </ul>
@@ -223,6 +226,15 @@ function BestsCard({ bests, nameOf }: { bests: PersonalBests; nameOf: (id: strin
     )
   }
   const month = formatMonthTitle(bests.month)
+  if (bests.status === 'not_in_yet') {
+    return (
+      <Section title="Personal bests" large>
+        <p>
+          Your latest statement runs to {formatDayMonth(bests.importedThrough)}, so {month} isn’t all in yet.
+        </p>
+      </Section>
+    )
+  }
   return (
     <Section title="Personal bests" large>
       {bests.bests.length === 0 ? (

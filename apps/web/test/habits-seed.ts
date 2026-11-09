@@ -11,7 +11,7 @@ import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 export const HABITS_TODAY = new Date(2026, 8, 24, 12)
 const DINING: Readonly<Record<string, number>> = { '02': 300, '03': 320, '04': 280, '05': 350, '06': 310, '07': 330, '08': 250 }
 
-export function habitsFake(periodStart = '2026-02-01', budgets = true): FakeSupabase {
+export function habitsFake(periodStart = '2026-02-01', budgets = true, periodEnd = '2026-09-20'): FakeSupabase {
   const cat = (id: string, name: string, kind: 'bill' | 'variable', sort_order: number, weekly: number | null) => ({
     id,
     name,
@@ -33,6 +33,6 @@ export function habitsFake(periodStart = '2026-02-01', budgets = true): FakeSupa
       ...['02', '03', '04', '05', '06', '07', '08', '09'].map((m) => row(`2026-${m}-01`, 1_200, 'rent')),
       row('2026-09-21', 5, 'coffee'),
     ].filter((r) => r.posted_on >= periodStart),
-    ingest_batches: [{ id: 'b1', source: 'card_pdf', created_at: '2026-09-21T12:00:00Z', period_start: periodStart, period_end: '2026-09-20' }],
+    ingest_batches: [{ id: 'b1', source: 'card_pdf', created_at: '2026-09-21T12:00:00Z', period_start: periodStart, period_end: periodEnd }],
   })
 }

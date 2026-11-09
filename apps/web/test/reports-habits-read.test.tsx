@@ -35,6 +35,17 @@ describe('useHabitsRead', () => {
     expect(habits.bests).toMatchObject({ status: 'ready', months: 7, bests: [{ categoryId: 'dining', cents: 25_000, nextCents: 28_000, nextMonth: '2026-04-01' }] })
   })
 
+  it('reads the latest statement’s last day, so a week or month past it is not kept and no best', async () => {
+    const { result } = read(habitsFake('2026-02-01', true, '2026-08-30'))
+    await waitFor(() => expect(result.current.read.status).toBe('ready'))
+    const { read: done, categories } = result.current
+    if (done.status !== 'ready') throw new Error(done.status)
+    expect(done.rows.statementEnds).toEqual(['2026-08-30'])
+    const habits = habitsOf(done.rows, categories)
+    expect(habits.streaks).toMatchObject({ status: 'ready', current: 0, best: 4, bestEnded: '2026-08-03', importedThrough: '2026-08-30' })
+    expect(habits.bests).toEqual({ status: 'not_in_yet', month: '2026-08-01', importedThrough: '2026-08-30' })
+  })
+
   it('says when a one-time update is missing, and when a read failed for another reason', async () => {
     const missing = habitsFake()
     missing.fail('transactions', '42P01')

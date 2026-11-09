@@ -350,6 +350,13 @@ describe('factsDigest: habits (F40)', () => {
     ])
   })
 
+  it('cheers no week and no month that ends after the latest statement (F42, amended 2026-11-09)', () => {
+    // A statement to Sunday 30 August: the weeks since, and August itself, are not all in yet.
+    expect(winsOf({ ...habits, latestStatementEnd: d('2026-08-30') })).toEqual([])
+    // To Sunday 20 September, the last complete week and August are both in.
+    expect(winsOf({ ...habits, latestStatementEnd: d('2026-09-20') }).map((f) => f.kind)).toEqual(['spending_streak', 'personal_best'])
+  })
+
   it('says nothing of a single week, of a streak with no weekly budget, or of habits it was not asked about', () => {
     const one = { ...habits, entries: [...habits.entries, spend('2026-09-08', 7_001, DINING)] }
     expect(winsOf(one).map((f) => f.kind)).toEqual(['personal_best'])

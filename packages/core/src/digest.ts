@@ -644,7 +644,8 @@ function habitWins(input: FactsDigestInput): Fact[] {
   if (input.habits === undefined) return []
   const weekly = new Map(input.habits.weeklyBudgets.map((b) => [b.categoryId, b.weeklyBudgetCents]))
   const categories = input.categories.map((c) => ({ ...c, weeklyBudgetCents: weekly.get(c.id) ?? null }))
-  const habits = { asOf: input.asOf, historyStart: input.historyStart, readFrom: input.readFrom, categories, entries: input.entries }
+  // A week or month past the latest statement is not all in yet, and no win (F42).
+  const habits = { asOf: input.asOf, historyStart: input.historyStart, readFrom: input.readFrom, importedThrough: input.latestStatementEnd, categories, entries: input.entries }
   const out: Fact[] = []
   const run = streaks(habits)
   const last = run.status === 'ready' ? run.weeks[run.weeks.length - 1] : undefined

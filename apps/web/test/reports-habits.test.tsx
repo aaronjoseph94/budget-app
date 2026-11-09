@@ -134,6 +134,25 @@ describe('Reports, Habits: streaks, weekdays and personal bests (plan §2.6, A18
     expect(within(best).getByText('$250.00 in August 2026, your lowest in 7 whole months. Next lowest: $280.00 in April 2026.')).toBeTruthy()
   })
 
+  it('keeps no week and names no best past the latest statement: not in yet, as the check-in says it', async () => {
+    go('/reports')
+    // The statement runs to Sunday 30 August: the three weeks since, and August, are not all in yet.
+    renderScreen(<Shell />, habitsFake('2026-02-01', true, '2026-08-30'))
+    await openHabits()
+
+    const streak = await card('Weeks within budget')
+    expect(figure(streak, 'In a row now')).toBe('not in yet')
+    expect(within(streak).getByText('Your latest statement runs to 30 Aug, so later weeks aren’t all in yet.')).toBeTruthy()
+    expect(within(streak).queryByText('Your best run yet. Keep it going!')).toBeNull()
+    expect(figure(streak, 'Your longest run')).toBe('4 weeks')
+    const listed = within(streak).getAllByRole('listitem').map((li) => li.textContent)
+    expect(listed.slice(0, 4)).toEqual(['Week of 14 Sep: not in yet', 'Week of 7 Sep: not in yet', 'Week of 31 Aug: not in yet', 'Week of 24 Aug: ✓ within budget, $150.00 left'])
+
+    const best = await card('Personal bests')
+    expect(within(best).getByText('Your latest statement runs to 30 Aug, so August 2026 isn’t all in yet.')).toBeTruthy()
+    expect(within(best).queryByText(/your lowest in/)).toBeNull()
+  })
+
   it('says what each needs and when, with records only from 1 September', async () => {
     go('/reports')
     renderScreen(<Shell />, habitsFake('2026-09-01'))

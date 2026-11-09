@@ -27,6 +27,12 @@ export interface HabitsInput {
   readonly historyStart: IsoDate | null
   /** The first day `entries` covers: a day before it was not read, and is not $0. */
   readonly readFrom: IsoDate
+  /**
+   * The last day the latest statement covers, as the recap's (F42); null or
+   * left out when no statement gives one. A week or month that ends after it
+   * is not all in yet: never kept, and never a best.
+   */
+  readonly importedThrough?: IsoDate | null
   /** Every category the entries name, each with its one weekly budget (0004). */
   readonly categories: readonly WeekCategory[]
   readonly entries: readonly PeriodEntry[]
@@ -191,8 +197,10 @@ export interface KeptWeek {
   readonly start: IsoDate
   /** The Week's Left to spend (F5): the Variable weekly budgets less what was spent. */
   readonly leftCents: Cents
-  /** At or under its weekly budgets: Left to spend is $0 or more. */
+  /** At or under its weekly budgets: Left to spend is $0 or more. Never when not all in yet. */
   readonly kept: boolean
+  /** It ends after the latest statement's last day (F42's rule), so what it came to is not known. */
+  readonly notInYet: boolean
 }
 
 export type Streaks =
@@ -200,12 +208,14 @@ export type Streaks =
       readonly status: 'ready'
       /** Every complete week read, oldest first. */
       readonly weeks: readonly KeptWeek[]
-      /** Kept weeks in a row, ending with the last complete week. */
+      /** Kept weeks in a row, ending with the last complete week: 0 while that week is not all in yet. */
       readonly current: number
       /** The longest run of kept weeks read. */
       readonly best: number
       /** The Monday of the best run's last week, the latest of equal runs; null with none. */
       readonly bestEnded: IsoDate | null
+      /** The latest statement's last day, while the last complete week ends after it; null otherwise. */
+      readonly importedThrough: IsoDate | null
     }
   /** No Variable category has a weekly budget, so no week can be kept. */
   | { readonly status: 'no_budget' }
@@ -213,17 +223,21 @@ export type Streaks =
 /**
  * F40: complete weeks in a row at or under the Variable weekly budgets, as
  * the Week shows them (weekSheet's Left to spend, F5), judged against
- * today's budgets, since the Week keeps one set for every week (0004).
+ * today's budgets, since the Week keeps one set for every week (0004). A
+ * week that ends after the latest statement is not all in yet, as the
+ * recap's (F42): it is not kept, and the run stops there.
  */
 export function streaks(input: HabitsInput): Streaks {
   if (!input.categories.some((c) => c.kind === 'variable' && c.weeklyBudgetCents !== null)) return { status: 'no_budget' }
   const all = completeWeeks(input)
   const starts = all.status === 'none' ? [] : all.starts
+  const through = input.importedThrough ?? null
   const weeks = starts.map((start): KeptWeek => {
     // Only the Variable block is read, which no planned bill touches.
     const sheet = weekSheet({ asOf: start, categories: input.categories, entries: input.entries, planHistory: [], statementPeriodEnds: [], startingBalanceCents: null })
     const leftCents = sheet.summary.leftToSpendCents
-    return { start, leftCents, kept: leftCents >= 0 }
+    const notInYet = through !== null && addDays(start, 6) > through
+    return { start, leftCents, kept: !notInYet && leftCents >= 0, notInYet }
   })
   let run = 0
   let best = 0
@@ -236,7 +250,8 @@ export function streaks(input: HabitsInput): Streaks {
       bestEnded = w.start
     }
   }
-  return { status: 'ready', weeks, current: run, best, bestEnded }
+  const last = weeks[weeks.length - 1]
+  return { status: 'ready', weeks, current: run, best, bestEnded, importedThrough: last !== undefined && last.notInYet ? through : null }
 }
 
 export interface PersonalBestRow {
@@ -260,6 +275,8 @@ export type PersonalBests =
     }
   /** Under 3 complete months. `possibleFrom` is the month a best becomes possible; null with no records. */
   | { readonly status: 'not_enough'; readonly months: number; readonly possibleFrom: IsoDate | null }
+  /** The last complete month ends after the latest statement's last day (F42's rule): not all in yet, so no best. */
+  | { readonly status: 'not_in_yet'; readonly month: IsoDate; readonly importedThrough: IsoDate }
 
 const BEST_MONTHS = 12
 const BEST_NEEDS = 3
@@ -281,6 +298,8 @@ export function personalBest(input: HabitsInput): PersonalBests {
     return { status: 'not_enough', months: n, possibleFrom: byToday > byRecords ? byToday : byRecords }
   }
   // Newest first, as completeMonths gives them.
+  const through = input.importedThrough ?? null
+  if (through !== null && monthBounds(months[0]!).end > through) return { status: 'not_in_yet', month: months[0]!, importedThrough: through }
   const read = monthActuals({ categories: input.categories, entries: input.entries, months }).months
   const [last, ...earlier] = read
   const bests = input.categories

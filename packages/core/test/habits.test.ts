@@ -202,17 +202,18 @@ describe('streaks (F40)', () => {
     expect(streaks(weeks)).toEqual({
       status: 'ready',
       weeks: [
-        { start: '2026-08-10', leftCents: 16_000, kept: true },
-        { start: '2026-08-17', leftCents: 21_000, kept: true },
-        { start: '2026-08-24', leftCents: 21_000, kept: true },
-        { start: '2026-08-31', leftCents: -500, kept: false },
-        { start: '2026-09-07', leftCents: 21_000, kept: true },
+        { start: '2026-08-10', leftCents: 16_000, kept: true, notInYet: false },
+        { start: '2026-08-17', leftCents: 21_000, kept: true, notInYet: false },
+        { start: '2026-08-24', leftCents: 21_000, kept: true, notInYet: false },
+        { start: '2026-08-31', leftCents: -500, kept: false, notInYet: false },
+        { start: '2026-09-07', leftCents: 21_000, kept: true, notInYet: false },
         // $70 + $136 + $4 of Coffee, which has no budget and still takes its $4 off: exactly $0 left.
-        { start: '2026-09-14', leftCents: 0, kept: true },
+        { start: '2026-09-14', leftCents: 0, kept: true, notInYet: false },
       ],
       current: 2,
       best: 3,
       bestEnded: '2026-08-24',
+      importedThrough: null,
     })
   })
 
@@ -223,10 +224,26 @@ describe('streaks (F40)', () => {
     expect(level).toMatchObject({ current: 2, best: 2, bestEnded: '2026-09-14' })
   })
 
+  it('keeps no week that ends after the latest statement, and stops the run there (F42, amended 2026-11-09)', () => {
+    // The statement runs to Sunday 6 September: the weeks of 7 and 14 September are not all in yet.
+    const run = streaks({ ...weeks, importedThrough: d('2026-09-06') })
+    expect(run).toMatchObject({ current: 0, best: 3, bestEnded: '2026-08-24', importedThrough: '2026-09-06' })
+    expect(run.status === 'ready' && run.weeks.slice(-3)).toEqual([
+      { start: '2026-08-31', leftCents: -500, kept: false, notInYet: false },
+      { start: '2026-09-07', leftCents: 21_000, kept: false, notInYet: true },
+      { start: '2026-09-14', leftCents: 0, kept: false, notInYet: true },
+    ])
+    // A week that ends on the statement's last day is all in; one day short, it is not.
+    expect(streaks({ ...weeks, importedThrough: d('2026-09-20') })).toMatchObject({ current: 2, importedThrough: null })
+    expect(streaks({ ...weeks, importedThrough: d('2026-09-19') })).toMatchObject({ current: 0, best: 3, importedThrough: '2026-09-19' })
+    // With no statement end known the end cannot be told, and every complete week is judged, as the recap's.
+    expect(streaks({ ...weeks, importedThrough: null })).toMatchObject({ current: 2, importedThrough: null })
+  })
+
   it('has nothing to keep without a Variable weekly budget, and no run without a complete week', () => {
     const categories = CATEGORIES.map((c) => (c.kind === 'variable' ? { ...c, weeklyBudgetCents: null } : c))
     expect(streaks({ ...weeks, categories })).toEqual({ status: 'no_budget' })
-    expect(streaks(habits({ historyStart: d('2026-09-22') }))).toEqual({ status: 'ready', weeks: [], current: 0, best: 0, bestEnded: null })
+    expect(streaks(habits({ historyStart: d('2026-09-22') }))).toEqual({ status: 'ready', weeks: [], current: 0, best: 0, bestEnded: null, importedThrough: null })
   })
 })
 
@@ -265,6 +282,12 @@ describe('personalBest (F40)', () => {
         { categoryId: 'groceries', cents: 40_000, nextCents: 40_100, nextMonth: '2026-05-01' },
       ],
     })
+  })
+
+  it('names no best while the last whole month ends after the latest statement (F42, amended 2026-11-09)', () => {
+    expect(personalBest({ ...seven, importedThrough: d('2026-08-30') })).toEqual({ status: 'not_in_yet', month: '2026-08-01', importedThrough: '2026-08-30' })
+    expect(personalBest({ ...seven, importedThrough: d('2026-08-31') })).toMatchObject({ status: 'ready', months: 7 })
+    expect(personalBest({ ...seven, importedThrough: null })).toMatchObject({ status: 'ready', months: 7 })
   })
 
   it('reads the last 12 whole months at most', () => {
