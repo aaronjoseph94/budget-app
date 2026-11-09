@@ -195,9 +195,14 @@ to paste, so GitHub is not needed. Easiest on a computer.
 the Supabase plugin, each checked afterwards):**
 - Part D is done: `0015` to `0041` are in. `schema_level()` answers 41
   and the AI apps line 40. A second paste only says "already in".
-- Step 17 is done: the `ai` helper is `2026-10-08.2` (deploy 9, JWT
-  verification on). Its bytes equal this repository's file, and it
-  answers a call.
+- Step 17 was done: the `ai` helper there is `2026-10-08.2` (deploy 9,
+  JWT verification on), and it answers a call. This repository's helper
+  is `2026-11-09.1` since 2026-11-09, so step 17 is to do again:
+  One-time updates says "paste the AI helper's new version" until it is.
+  Until then a request that runs out of time before any AI service is
+  asked (a receipt photo sent on a weak signal) is still answered "AI
+  isn't set up yet", which is untrue; the new copy says the helper
+  couldn't finish and to try again.
 - Step 18 is done: there is no `read-receipt`.
 - Step 19 is done: keys for OpenRouter, Groq and Gemini are saved. Your
   own order, Groq then OpenRouter then Gemini, is kept; 0041 moves only
@@ -403,8 +408,9 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
     AI helper", paste it over everything in the editor. **Enforce JWT
     verification**: keep it **on** while One-time updates shows **Signing
     key** with a ✗, **off** once it shows ✓ (step 21). **Deploy**.
-    One-time updates shows ✓ once version `2026-10-08.2` or later answers
-    (the speed test and the free-first order, ADR 0015).
+    One-time updates shows ✓ once version `2026-11-09.1` or later answers
+    (the speed test and the free-first order, ADR 0015; and, out of time
+    before any service was asked, it says so, not "AI isn't set up").
 18. **read-receipt: delete it.** Supabase → **Edge Functions →
     read-receipt** (only if it is listed) → `⋯` → **Delete** → confirm.
     The helper reads receipts without it. (To keep it instead, open its

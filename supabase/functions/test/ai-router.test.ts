@@ -283,6 +283,52 @@ describe('failing over, in the owner’s order', () => {
     expect(answeredAt - started).toBe(79_600)
   })
 
+  // Review of 2026-11-09: with no room for a first attempt the router fell through to the
+  // no-key answers, and the app said "AI isn't set up yet" to an owner whose key works.
+  it('says it could not finish, never that AI is not set up, when no time is left for a first attempt', async () => {
+    const ask = { system: 'Answer.', data: {}, schema: { type: 'object' }, maxOutputTokens: 64 }
+    // 51 s gone: a test attempt needs 10 s (claim) + 20 s (attempt) + 20 s (note, key mark) of the 100 s.
+    const late = await world({ services: { gemini: answers.gemini } })
+    const [status, body] = (await route(ENV, USER, 'test', ask, Date.now() - 51_000, late.fetchFn)) as [number, Answer]
+    expect([status, body.code, body.tried]).toEqual([503, 'helper_error', []])
+    // Nothing was claimed and no service asked: there was no room.
+    expect(late.calls.map((c) => c.url)).toEqual([`${PROJECT}/rest/v1/rpc/ai_context_for`])
+    expect(lines.map((l) => (JSON.parse(l) as { code: string }).code)).toEqual(['out_of_time', 'run_helper_error'])
+    // Nor "every service is resting", when one that is not was passed over for the time alone.
+    const rested = await world({ saved: ['groq'], resting: [{ provider: 'gemini', model: 'gemini-3.5-flash-lite' }], services: { groq: answers.groq } })
+    const [status2, body2] = (await route(ENV, USER, 'test', ask, Date.now() - 51_000, rested.fetchFn)) as [number, Answer]
+    expect([status2, body2.code, body2.tried]).toEqual([503, 'helper_error', [{ provider: 'gemini', model: 'gemini-3.5-flash-lite', result: 'resting' }]])
+    // With time in hand the same key answers: AI is set up.
+    const [status3, body3] = (await route(ENV, USER, 'test', ask, Date.now() - 50_000, late.fetchFn)) as [number, Answer]
+    expect([status3, body3.provider]).toEqual([200, 'gemini'])
+  })
+
+  it('counts the time a request took to arrive: a receipt photo 45 s on its way leaves no room, and is not "not set up"', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    const { calls, fetchFn } = await world({ services: { gemini: answers.gemini } })
+    const receipt = JSON.stringify({ action: 'run', task: 'receipt', data: { image: 'A'.repeat(400), mimeType: 'image/jpeg' } })
+    // The body arrives 45 s after the request's headers did; a receipt attempt needs 60 s of the 100 s.
+    const slowBody = new ReadableStream<Uint8Array>({
+      start(controller) {
+        setTimeout(() => {
+          controller.enqueue(new TextEncoder().encode(receipt))
+          controller.close()
+        }, 45_000)
+      },
+    })
+    const req = new Request(`${PROJECT}/functions/v1/ai`, {
+      method: 'POST',
+      headers: { authorization: 'Bearer e30.e30.caller-token', 'content-type': 'application/json' },
+      body: slowBody,
+      duplex: 'half',
+    } as RequestInit)
+    const pending = handle(req, ENV, fetchFn)
+    await vi.advanceTimersByTimeAsync(45_000)
+    const res = await pending
+    const r = summary(res.status, await res.text(), calls)
+    expect([r.status, r.body.code, r.services, r.rpc('ai_usage_claim')]).toEqual([503, 'helper_error', [], []])
+  })
+
   it('keeps a good reply when only noting its outcome failed (backend-b-07)', async () => {
     const r = await ran({ noteStatus: 500, services: { gemini: answers.gemini } })
     expect([r.status, r.body]).toEqual([200, { ok: true, provider: 'gemini', model: 'gemini-3.5-flash-lite', text: '{"ok":true}', ms: expect.any(Number) }])

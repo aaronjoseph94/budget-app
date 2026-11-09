@@ -124,7 +124,7 @@ export type AiAction = AiRequest['action']
  * new version to be pasted over it. Bumped with every change to the
  * helper, as `YYYY-MM-DD.N`.
  */
-export const AI_HELPER_VERSION = '2026-10-08.2'
+export const AI_HELPER_VERSION = '2026-11-09.1'
 
 /**
  * read-receipt's version, which it answers to GET from this one on, so
@@ -138,8 +138,9 @@ export const READ_RECEIPT_VERSION = '2026-10-01.1'
 /**
  * Every failure the helper answers with, as a code the app turns into a
  * sentence (plan §3.2). Codes only, so each is safe to log. `helper_error`
- * is the helper's own trouble: a secret it needs is missing, or its
- * database answered with something other than "not there yet".
+ * is the helper's own trouble: a secret it needs is missing, its database
+ * answered with something other than "not there yet", or no time was left
+ * to ask even one service.
  */
 export const AI_CODES = [
   'not_signed_in',

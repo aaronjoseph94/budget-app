@@ -27,7 +27,7 @@
 import { z } from 'npm:zod@4.6.7'
 
 /** Which copy is deployed, so One-time updates can tell an old paste from this one. */
-export const VERSION = '2026-10-08.2'
+export const VERSION = '2026-11-09.1'
 
 // Browsers allowed to call this, as read-receipt's: the Cloudflare and
 // Netlify sites and a local dev server, plus exact https origins in the
@@ -270,6 +270,7 @@ type LogCode =
   | 'db_unreachable'
   | 'db_status'
   | 'db_shape'
+  | 'out_of_time'
   | `key_${KeyStatus}`
   | `attempt_${Outcome}`
   | `run_${'ok' | Code}`
@@ -1381,6 +1382,8 @@ export async function route(env: Env, user: string, task: TaskName, ask: Ask, st
   const tried: Tried[] = []
   const keyTrouble = new Set<'rejected' | 'locked'>()
   let attempts = 0
+  // Whether the loop stopped because no further attempt fitted in what was left.
+  let outOfTime = false
   const end = (code: Code): Reply => {
     log(`run_${code}`, { attempts, tried: tried.length })
     return [STATUS_OF[code], { ok: false, code, tried }]
@@ -1421,7 +1424,10 @@ export async function route(env: Env, user: string, task: TaskName, ask: Ask, st
     // claim, its own timeout, and the note and key mark after it, each of
     // which the database may take BACKEND_MS to answer. So the helper always
     // answers inside DEADLINE_MS, before the app stops waiting (review-r-01).
-    if (Date.now() - started + BACKEND_MS + ms + 2 * BACKEND_MS > DEADLINE_MS) break
+    if (Date.now() - started + BACKEND_MS + ms + 2 * BACKEND_MS > DEADLINE_MS) {
+      outOfTime = true
+      break
+    }
 
     const claim = await callDb(
       env,
@@ -1473,6 +1479,14 @@ export async function route(env: Env, user: string, task: TaskName, ask: Ask, st
   }
 
   if (attempts > 0) return end('all_failed')
+  // A service that could have been asked was not, for the time alone: the
+  // request was slow to arrive, or the database to answer. That is the
+  // helper's own trouble and worth trying again, never "not set up", a key
+  // to paste again, or every service resting (review of 2026-11-09).
+  if (outOfTime) {
+    log('out_of_time')
+    return end('helper_error')
+  }
   if (tried.some((t) => t.result !== 'locked')) return end('all_resting')
   if (keyTrouble.has('locked')) return end('keys_locked')
   if (keyTrouble.has('rejected')) return end('key_rejected')
