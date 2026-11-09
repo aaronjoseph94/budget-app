@@ -794,11 +794,20 @@ Debt Calculator!D27   =SUM(J26, O26, … DP26)   [20958]   E26 =SUM(I26 …)+SUM
   never by today (CLAUDE.md).
 - **Paid** is the starting balance less the balance (I495), net of
   interest. The workbook's goes below zero for a debt whose interest outruns its
-  minimum; `amortize` refuses such a debt and says which, so here it never
-  does. **Remaining** is the balance itself (I496).
+  minimum; `amortize` refuses a debt that is never paid off and says
+  which. **Remaining** is the balance itself (I496).
 - **Progress** is paid over the starting balance, E20, in basis points,
   half-up as F13 and F17 round. With no starting balance at all (no debts,
   or every one typed as 0) there is no progress, where E20 divides by 0.
+- **Amended 2026-11-09 (review):** this entry said paid never goes below
+  zero here. It does: a minimum under the monthly interest with an extra
+  payment typed for a later month is paid off, so `amortize` keeps it, and
+  its balance stands above its start until that payment lands. `debtStatus`
+  threw there, and Debts showed no debt at all. **Paid** is then below
+  zero, as I495 is. **Progress** diverges from the workbook: E20 would show a
+  figure below 0% (workbook value, $1,000.00 started and $1,009.80 owed:
+  −0.98%); chosen value **0%**, for a debt and for the total, because
+  nothing net has been paid off and a ring cannot draw less than nothing.
 - **Before a debt's start month** its balance is its starting balance and
   nothing is paid; the workbook's MATCH finds no row there and shows `#N/A`. After
   its last payment, its balance is 0.

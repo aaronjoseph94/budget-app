@@ -119,6 +119,29 @@ describe('DebtsScreen', () => {
     expect(within(summary).getByText('Not in these totals, because they are never paid off: Store card.')).toBeTruthy()
   })
 
+  it('shows a debt that stands above where it started until a typed extra payment clears it', async () => {
+    // $1,000.00 at 24% from July, $10.00 a month, under its $20.00 of monthly
+    // interest; $2,000.00 extra in June 2027 pays it off. July 990.00, August
+    // 999.80, September 1,009.80: $9.80 above its start, so nothing is paid.
+    const fake = createFakeSupabase({
+      debts: [debt('card', 'Store card', 100_000, 1_000, 2_400, '2026-07-01', 0)],
+      debt_extra_payments: [{ id: 'x1', debt_id: 'card', month: '2027-06-01', amount_cents: 200_000 }],
+    })
+    renderScreen(<DebtsScreen />, fake)
+    const summary = await screen.findByRole('region', { name: 'Debt summary' })
+    expect(screen.queryByText(/could not be read as the app expects/)).toBeNull()
+    expect([...summary.querySelectorAll('dt, dd')].map((e) => e.textContent)).toEqual([
+      'Current debt total', '$1,009.80',
+      'Debt-free by', 'June 2027',
+      'Paid this month', '$10.00',
+      'Payoff progress', '0%-$9.80 of $1,000.00',
+    ])
+    const card = screen.getByRole('region', { name: 'Store card' })
+    expect(within(card).getByText('$1,009.80')).toBeTruthy()
+    expect(within(card).getByText('June 2027')).toBeTruthy()
+    expect(within(card).getByRole('img', { name: 'Store card: paid and left' }).querySelector('.chart-debt-paid')).toBeNull()
+  })
+
   it('says so with no debts, and why when they cannot be read', async () => {
     renderScreen(<DebtsScreen />, createFakeSupabase())
     expect(await screen.findByText('No debts yet. Add one to see when it is paid off.')).toBeTruthy()

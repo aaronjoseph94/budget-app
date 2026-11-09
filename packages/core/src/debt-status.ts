@@ -10,12 +10,15 @@
  *     today; this reads `asOf`, and never a clock.
  *   - I495 `=J18-H9` ("Balance Paid") is the starting balance less that
  *     balance, net of interest. In the workbook it goes below zero for a debt
- *     whose interest outruns its payment; amortize() refuses such a debt,
- *     so here it never does. I496 `=H9` ("Remaining Balance") is the
- *     balance itself.
+ *     whose interest outruns its payment. amortize() refuses a debt that
+ *     is never paid off, but not one a later extra payment clears: until
+ *     that payment lands its balance stands above its start, and paid is
+ *     below zero here too. I496 `=H9` ("Remaining Balance") is the balance
+ *     itself.
  *   - E20 `=100%-(B10/D26)` is paid over starting, here in basis points,
  *     half-up (F13, F17). With nothing started from, E20 divides by zero;
- *     here there is no progress.
+ *     here there is no progress. With paid below zero E20 goes below 0%;
+ *     here progress is 0, because nothing net has been paid off (F22).
  *   - D27 `=SUM(J26, O26, …)` is what a month started from: the prior
  *     row's closing balances. E26 `=SUM(I26 …)+SUM(H26 …)` is the month's
  *     payments with extras. The final month's payment includes its
@@ -45,9 +48,9 @@ export interface DebtStanding {
   readonly paymentCents: Cents
   /** H9 and I496: the balance at the end of `asOf`'s month. */
   readonly balanceCents: Cents
-  /** I495: starting less balance. */
+  /** I495: starting less balance; below zero while the balance stands above its start. */
   readonly paidCents: Cents
-  /** Paid over starting, in basis points; null for a debt started at 0. */
+  /** Paid over starting, in basis points, 0 with paid below zero; null for a debt started at 0. */
   readonly progressBp: number | null
   /** The month its last payment is made (Months Until Paid Off, J21, from the start). */
   readonly paidOffIn: IsoDate
@@ -63,7 +66,7 @@ export interface DebtTotals {
   /** B10, Current Debt Total. */
   readonly balanceCents: Cents
   readonly paidCents: Cents
-  /** E20, Payoff Progress; null with nothing started from. */
+  /** E20, Payoff Progress, 0 with paid below zero; null with nothing started from. */
   readonly progressBp: number | null
 }
 
@@ -124,7 +127,12 @@ function monthOf(start: IsoDate, asOf: IsoDate): number | null {
   return to < from ? null : monthsBetween(from, to) + 1
 }
 
-/** `paid` of `starting` in basis points, half-up; none with nothing started from. */
+/**
+ * `paid` of `starting` in basis points, half-up; none with nothing started
+ * from. A balance above its start has paid below zero, which no share
+ * describes: progress is then 0, never below it.
+ */
 function progressOf(paid: Cents, starting: Cents): number | null {
-  return starting <= 0 ? null : shareOf(paid, starting)
+  if (starting <= 0) return null
+  return paid < 0 ? 0 : shareOf(paid, starting)
 }
