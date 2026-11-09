@@ -63,6 +63,20 @@ describe('Type it', () => {
   })
 })
 
+describe('Type it, after an entry was added', () => {
+  it('takes the last entry’s "Added" away when the next press adds nothing', async () => {
+    const fake = seeded()
+    renderScreen(<AddScreen />, fake)
+    await typed({ amount: '8', what: 'Bus fare' })
+    expect(await screen.findByText('Added $8.00 — Bus fare.')).toBeTruthy()
+
+    // The form is empty again; Add now only says what is missing.
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+    expect(await screen.findByText(/Still needed: an amount/)).toBeTruthy()
+    expect(screen.queryByText('Added $8.00 — Bus fare.')).toBeNull()
+  })
+})
+
 describe('Just type it', () => {
   async function justType(text: string) {
     fireEvent.click(await screen.findByRole('tab', { name: /Type it/ }))

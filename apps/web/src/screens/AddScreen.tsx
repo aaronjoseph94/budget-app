@@ -457,7 +457,11 @@ function TypedEntry() {
     if (busy) return
     // Add stays pressable, and says what is missing, rather than sitting
     // greyed out with no reason given (FE-8).
-    if (!ready) return setTried((n) => n + 1)
+    if (!ready) {
+      // The last entry's "Added" is not this press's answer.
+      setOutcome(null)
+      return setTried((n) => n + 1)
+    }
     if (accountId === null) return setOutcome({ ok: false, message: NO_ACCOUNT })
     if (cents === null) return
     // The form is being sent, so a Just type it reading still out would
