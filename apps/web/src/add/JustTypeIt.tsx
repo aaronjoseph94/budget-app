@@ -34,8 +34,9 @@ function stopped(help: Extract<QuickHelp, { kind: 'stopped' }>): ReactNode {
   }
 }
 
-function said(help: QuickHelp): ReactNode {
-  if (help.kind === 'not_needed') return 'Filled in from what you typed. Check it, then press Add.'
+function said(help: QuickHelp, dated: boolean): ReactNode {
+  // The day is left empty when the line named one the app will not guess (F47): said, not "filled in".
+  if (help.kind === 'not_needed') return dated ? 'Filled in from what you typed. Check it, then press Add.' : 'Filled in, except the date. Choose it, then press Add.'
   if (help.kind === 'asked' && help.filled > 0) return '✨ The AI filled in the rest. Check each field, then press Add.'
   return help.kind === 'stopped' ? (
     <>
@@ -56,6 +57,8 @@ export function JustTypeIt({ onFill, edits }: { onFill: (fill: QuickFill) => voi
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
   const [help, setHelp] = useState<QuickHelp | null>(null)
+  // Whether the last reading found a day.
+  const [dated, setDated] = useState(true)
   // Which reading is current. A slow AI's answer is dropped once the owner
   // has changed or sent the form meanwhile (`edits`, counted by the form),
   // so it never writes over what they typed (FE-4).
@@ -75,6 +78,7 @@ export function JustTypeIt({ onFill, edits }: { onFill: (fill: QuickFill) => voi
       if (!current()) return
       onFill(read.fill)
       setHelp(read.help)
+      setDated(read.fill.date !== '')
     } catch {
       if (current()) setHelp({ kind: 'unreadable' })
     } finally {
@@ -109,7 +113,7 @@ export function JustTypeIt({ onFill, edits }: { onFill: (fill: QuickFill) => voi
         </Button>
       </div>
       <p aria-live="polite" className="text-sm text-muted-foreground">
-        {help === null ? 'Say what, how much and when; “got paid 2100” is money in. Nothing is added until you press Add.' : said(help)}
+        {help === null ? 'Say what, how much and when; “got paid 2100” is money in. Nothing is added until you press Add.' : said(help, dated)}
       </p>
     </form>
   )

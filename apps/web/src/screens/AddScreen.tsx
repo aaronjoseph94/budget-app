@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import { applySignConvention, type AcceptedRow } from '@budget/statement-parsers'
 import { isoDate } from '@budget/core'
-import { parseMoneyInput, useAppData } from '../app-data.js'
+import { parseMoneyInput, tooLargeInput, useAppData } from '../app-data.js'
 import { addTypedTransaction, ensureCategory, saveImport } from '../ledger.js'
 import { ImportScreen, type SaveRequest } from '../ImportScreen.js'
 import { readStatementFile, type PdfImport } from '../pdf-import.js'
@@ -17,6 +17,7 @@ import { Icon, type IconName } from '../components/ui/icons.js'
 import { MonthTitle } from '../components/ui/type.js'
 import { hashOf, navigate } from '../nav.js'
 import { cn } from '../lib/cn.js'
+import { isDay } from '../lib/day.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { JustTypeIt } from '../add/JustTypeIt.js'
 import type { QuickFill } from '../add/quick-add.js'
@@ -432,7 +433,8 @@ function TypedEntry() {
     setDirection(f.flow)
     setNewKind(f.flow === 'spent' ? 'variable' : 'income')
     setAmount(f.amount)
-    setMerchant(f.shop)
+    // Just type it reads a longer line than the field itself takes.
+    setMerchant(f.shop.slice(0, WHAT_MAX))
     setDate(f.date)
     setCategoryId(f.categoryId)
     setAiAmount(f.byAi.has('amount'))
@@ -444,7 +446,7 @@ function TypedEntry() {
     cents === null || cents <= 0 ? 'an amount' : null,
     merchant.trim().length === 0 ? 'what it was' : null,
     // The browser checked these while it validated the form; now this does.
-    !/^\d{4}-\d{2}-\d{2}$/.test(date) || date > todayIso() ? 'a date no later than today' : null,
+    dateNeeded(date),
     creating && newCategory.trim().length === 0 ? "the new category's name" : null,
     creating && newKind === '' ? 'which list it goes on' : null,
     !creating && categoryId === '' ? 'a category' : null,
@@ -563,7 +565,7 @@ function TypedEntry() {
             </p>
           ) : null}
           <Field label="What was it?">
-            <Input placeholder="e.g. Farmers market" value={merchant} maxLength={120} onChange={(e) => setMerchant(e.target.value)} required />
+            <Input placeholder="e.g. Farmers market" value={merchant} maxLength={WHAT_MAX} onChange={(e) => setMerchant(e.target.value)} required />
           </Field>
           <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
             <Field label="Date">
@@ -616,9 +618,22 @@ function NotMoney({ amount, cents, id }: { amount: string; cents: number | null;
   if (amount.trim().length === 0 || cents !== null) return null
   return (
     <p id={id} className="text-sm text-spend">
-      That amount is not a number of dollars and cents.
+      {tooLargeInput(amount) ?? 'That amount is not a number of dollars and cents.'}
     </p>
   )
+}
+
+/** The most a description holds, as its field and the database allow. */
+const WHAT_MAX = 120
+
+/**
+ * What a typed date still needs, or null. A computer's date field reads
+ * "26" typed for the year as the year 0026, which the browser calls valid
+ * and no screen could then find; a statement's dates stop at 1900 too.
+ */
+function dateNeeded(date: string): string | null {
+  if (date !== '' && !isDay(date)) return 'a date with its full year, like 2026'
+  return date === '' || date > todayIso() ? 'a date no later than today' : null
 }
 
 /** What a form still needs, focused as it appears so it is read out; re-keyed on each press. */
@@ -693,7 +708,7 @@ function PhotoEntry() {
   const needed = [
     merchant.trim().length === 0 ? 'where it was' : null,
     cents === null || cents <= 0 ? 'the total spent' : null,
-    !/^\d{4}-\d{2}-\d{2}$/.test(date) || date > todayIso() ? 'a date no later than today' : null,
+    dateNeeded(date),
   ].filter((n): n is string => n !== null)
   const ready = needed.length === 0
 
@@ -866,7 +881,7 @@ function PhotoEntry() {
             >
               <p className="text-xs text-muted-foreground">Every field is needed.</p>
               <Field label="Where">
-                <Input value={merchant} maxLength={120} onChange={(e) => setMerchant(e.target.value)} required readOnly={sent !== null} />
+                <Input value={merchant} maxLength={WHAT_MAX} onChange={(e) => setMerchant(e.target.value)} required readOnly={sent !== null} />
               </Field>
               <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
                 <Field label="Total spent">
