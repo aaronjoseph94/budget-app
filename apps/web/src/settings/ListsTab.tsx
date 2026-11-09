@@ -10,7 +10,7 @@ import {
   setCategoryOrder,
   type Category,
 } from '../ledger.js'
-import { alreadyOn, atEndOf, groupByList, LIST_HEADING, LISTS, starterList, type CategoryKind } from '../lists.js'
+import { alreadyOn, atEndOf, groupByList, LIST_HEADING, LISTS, starterList, takenByAnother, type CategoryKind } from '../lists.js'
 import { saveDisplayName } from '../profile.js'
 import { formatCents, formatMonthTitle, todayIso } from '../format.js'
 import { Alert, SavedNote } from '../components/ui/feedback.js'
@@ -573,7 +573,11 @@ function CategoryRow({
       setText(row.name)
       return
     }
-    if (await write(() => renameCategory(supabase, row.id, name))) setSaved(true)
+    // Another category's name, in any capitals, is refused here, in the
+    // database's own words for it: its rule tells "Rent" from "rent" (0001).
+    const taken = takenByAnother(categories, row.id, name)
+    const change = taken === null ? () => renameCategory(supabase, row.id, name) : () => Promise.reject(new Error(taken))
+    if (await write(change)) setSaved(true)
     else setText(row.name)
   }
 

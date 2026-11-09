@@ -166,6 +166,54 @@ describe('Lists, changing a list', () => {
   })
 })
 
+// The database's unique rule tells "Rent" from "rent" (0001), so the forms check.
+describe('Lists, a name that differs only in its capitals', () => {
+  const TAKEN = 'You already have a category with that name, on this list or another. Use a different name.'
+  const names = (fake: FakeSupabase) => fake.tables.categories.map((c) => c.name)
+
+  it('is not added: on its own list it is named, on another the name is refused', async () => {
+    const fake = seeded()
+    renderScreen(<ListsTab />, fake)
+    const bills = within(await screen.findByRole('region', { name: 'Bills' }))
+    await bills.findByRole('textbox', { name: 'Rename Rent' })
+    const input = bills.getByRole<HTMLInputElement>('textbox', { name: 'New Bills category' })
+    const add = (name: string) => {
+      fireEvent.change(input, { target: { value: name } })
+      fireEvent.click(bills.getByRole('button', { name: /Add/ }))
+    }
+
+    add('rent')
+    await waitFor(() => expect(bills.getByRole('alert').textContent).toBe('Rent is already on this list.'))
+    add(' GROCERIES')
+    await waitFor(() => expect(bills.getByRole('alert').textContent).toBe(TAKEN))
+    expect(input.value).toBe(' GROCERIES')
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(names(fake)).toEqual(['Groceries', 'Restaurants', 'Rent', 'Phone', 'Pay', 'Card payments'])
+  })
+
+  it('is not taken by a rename, but a category may change its own capitals', async () => {
+    const fake = seeded()
+    renderScreen(<ListsTab />, fake)
+    const rename = async (from: string, to: string) => {
+      const field = await screen.findByRole('textbox', { name: `Rename ${from}` })
+      fireEvent.change(field, { target: { value: to } })
+      fireEvent.blur(field)
+    }
+
+    await rename('Phone', 'RENT')
+    const bills = within(screen.getByRole('region', { name: 'Bills' }))
+    expect((await bills.findByRole('alert')).textContent).toBe(TAKEN)
+    await rename('Phone', 'groceries ')
+    await waitFor(() => expect(bills.getByRole('alert').textContent).toBe(TAKEN))
+    expect(names(fake)).toContain('Phone')
+
+    await rename('Rent', 'RENT')
+    await waitFor(() => expect(names(fake)).toContain('RENT'))
+    expect(names(fake)).not.toContain('Rent')
+    await waitFor(() => expect(bills.queryByRole('alert')).toBeNull())
+  })
+})
+
 describe('Lists, order and lists', () => {
   it('moves a row up and down its list', async () => {
     const fake = seeded()

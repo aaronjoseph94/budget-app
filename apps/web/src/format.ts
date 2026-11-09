@@ -169,6 +169,9 @@ export type SetupAction = 'add' | 'rename' | 'move' | 'reorder' | 'remove'
 // The name domain (0001, 0025) refuses control and format characters and empty names.
 const NAME_REFUSED = 'That name has characters the app cannot store. Use letters, numbers and ordinary punctuation.'
 
+/** A category's name is taken: the database's refusal (23505), and the forms' own check, which ignores capitals (lists.tsx). */
+export const NAME_TAKEN = 'You already have a category with that name, on this list or another. Use a different name.'
+
 /**
  * Setup's own sentences for the refusals its writes can meet.
  *
@@ -182,7 +185,7 @@ const NAME_REFUSED = 'That name has characters the app cannot store. Use letters
 const SETUP_FAILURES: Readonly<Record<SetupAction, Readonly<Record<string, string>>>> = {
   add: { '23514': NAME_REFUSED },
   rename: {
-    '23505': 'You already have a category with that name, on this list or another. Use a different name.',
+    '23505': NAME_TAKEN,
     '23514': NAME_REFUSED,
   },
   // 0009's trigger raises check_violation while an amount is in effect this

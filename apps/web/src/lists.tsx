@@ -9,6 +9,7 @@
 import { endOfList } from '@budget/core'
 import { CategoryKindSchema, type CategoryKind } from '@budget/schema'
 import { NativeSelect } from './components/ui/form.js'
+import { NAME_TAKEN } from './format.js'
 
 export type { CategoryKind }
 
@@ -60,18 +61,37 @@ export function atEndOf(
 }
 
 /**
+ * One name, whatever its capitals and outer spaces. The database's unique
+ * rule tells "Rent" from "rent" (0001), so the forms that add and rename a
+ * category check with this first.
+ */
+const sameName = (a: string, b: string) => a.trim().toLocaleLowerCase() === b.trim().toLocaleLowerCase()
+
+/**
  * Why a name typed into a list's own Add is not added, or null when it can
- * be: it is on that list already. ensureCategory hands back the row that
- * is there, as Add › Type it wants; a list's Add took that for a new row
- * and emptied its field, with nothing added and nothing said.
+ * be. On that list already, it is named as it is spelt there:
+ * ensureCategory hands back the row that is there, as Add › Type it wants,
+ * and a list's Add took that for a new row and emptied its field, with
+ * nothing added and nothing said. On another list in other capitals, the
+ * name is taken; spelt the same there, ensureCategory says which list.
  */
 export function alreadyOn(
   categories: readonly { readonly name: string; readonly kind: CategoryKind }[],
   name: string,
   kind: CategoryKind,
 ): string | null {
-  const there = categories.find((c) => c.kind === kind && c.name === name)
-  return there === undefined ? null : `${there.name} is already on this list.`
+  const here = categories.find((c) => c.kind === kind && sameName(c.name, name))
+  if (here !== undefined) return `${here.name} is already on this list.`
+  if (categories.some((c) => c.name === name)) return null
+  return categories.some((c) => sameName(c.name, name)) ? NAME_TAKEN : null
+}
+
+/**
+ * Why a category cannot take this name, or null when it can: another has
+ * it, in any capitals. Its own name in other capitals is free.
+ */
+export function takenByAnother(categories: readonly { readonly id: string; readonly name: string }[], id: string, name: string): string | null {
+  return categories.some((c) => c.id !== id && sameName(c.name, name)) ? NAME_TAKEN : null
 }
 
 /**

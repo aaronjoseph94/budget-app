@@ -79,6 +79,29 @@ describe('SettingsScreen, adding a category', () => {
     expect(name.value).toBe('Groceries')
     expect(fake.tables.categories).toHaveLength(1)
   })
+
+  // The database's unique rule tells "Rent" from "rent" (0001), so the form checks.
+  it('adds no name that differs from one you have only in its capitals', async () => {
+    const cat = (id: string, name: string, kind: Category['kind']): Category => ({ id, name, kind, sort_order: 0, weekly_budget_cents: null })
+    const fake = createFakeSupabase({ categories: [cat('c1', 'Groceries', 'variable'), cat('c2', 'Rent', 'bill')] })
+    renderScreen(<SettingsScreen tab="budgets" />, fake)
+
+    const name = await screen.findByPlaceholderText<HTMLInputElement>('New category')
+    await screen.findByRole('textbox', { name: 'Weekly budget for Groceries' })
+    const add = (typed: string) => {
+      fireEvent.change(name, { target: { value: typed } })
+      fireEvent.click(screen.getByRole('button', { name: /Add/ }))
+    }
+    add('groceries')
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toBe('Groceries is already on this list.'))
+    add('RENT')
+    await waitFor(() =>
+      expect(screen.getByRole('alert').textContent).toBe('You already have a category with that name, on this list or another. Use a different name.'),
+    )
+    expect(name.value).toBe('RENT')
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(fake.tables.categories.map((c) => c.name)).toEqual(['Groceries', 'Rent'])
+  })
 })
 
 describe('SettingsScreen, weekly budgets', () => {
