@@ -4942,21 +4942,24 @@ begin
   foreach c in array array[x'00AC', x'034E', x'0350', x'061B', x'061D', x'115E', x'1161', x'17B3', x'17B6', x'180A', x'1810',
       x'200A', x'2010', x'202F', x'205F', x'2070', x'3163', x'3165', x'FDFF', x'FE10', x'FEFE', x'FF00', x'FF9F', x'FFA1',
       x'FFEF', x'FFF9', x'0001BC9F', x'0001BCA4', x'0001D172', x'0001D17B', x'000DFFFF', x'000E1000']::int[] loop
-    if not public._ai_app_words_shown('Cof' || chr(c) || 'fee', 60) then
+    -- Three of them are spaces, which 0042 refuses inside an AI app's words
+    -- (checked in its own section); a shop's name as shown keeps them.
+    if not public._ai_app_words_shown('Cof' || chr(c) || 'fee', 60) and c not in (x'200A'::int, x'202F'::int, x'205F'::int) then
       raise exception 'U+% is refused in an AI app''s words, though it is drawn', upper(to_hex(c));
     end if;
     if public._ai_app_shown_shop('Cof' || chr(c) || 'fee') <> 'Cof' || chr(c) || 'fee' then
       raise exception 'a shop''s name as shown loses U+%, which is drawn', upper(to_hex(c));
     end if;
   end loop;
-  -- A space of any kind at either end, as JavaScript's trim takes off;
-  -- inside the words, one is still a space.
+  -- A space of any kind at either end, as JavaScript's trim takes off.
+  -- Inside the words 0040 left each one a space; since 0042 only the
+  -- ordinary space is one there.
   foreach c in array array[x'0020', x'00A0', x'1680', x'2000', x'2009', x'200A', x'202F', x'205F', x'3000']::int[] loop
     if public._ai_app_words_shown('Coffee' || chr(c), 60) or public._ai_app_words_shown(chr(c) || 'Coffee', 60) then
       raise exception 'NOT REFUSED: U+% at the end of an AI app''s words', upper(to_hex(c));
     end if;
-    if not public._ai_app_words_shown('Cof' || chr(c) || 'fee', 60) then
-      raise exception 'U+% inside an AI app''s words is refused', upper(to_hex(c));
+    if public._ai_app_words_shown('Cof' || chr(c) || 'fee', 60) is distinct from (c = x'0020'::int) then
+      raise exception 'U+% inside an AI app''s words: only the ordinary space is one', upper(to_hex(c));
     end if;
   end loop;
   -- The server's cleanShop, tags and all: a number split by one is masked whole.
@@ -5097,7 +5100,7 @@ end $$;
 
 do $$
 begin
-  if public.ai_app_updates_in() <> 40 or public.ai_app_update_level() <> 40 then
+  if public.ai_app_updates_in() < 40 or public.ai_app_update_level() < 40 then
     raise exception 'with 0040 in, ai_app_updates_in() says % and ai_app_update_level() %', public.ai_app_updates_in(), public.ai_app_update_level();
   end if;
 end $$;
@@ -5170,18 +5173,18 @@ begin
 end $$;
 rollback;
 
--- 0038 leaves no '(0038)' mark; 0039, then 0040, re-created
+-- 0038 and 0041 leave no mark; 0039, then 0040, then 0042 re-created
 -- ai_app_updates_in() with a mark for each AI-app update, its own too
--- (docs/adr/0012-mcp-server.md, ADR 0013), so it answers 40 with
+-- (docs/adr/0012-mcp-server.md, ADR 0013), so it answers 42 with
 -- everything in. The next AI-app update re-creates it again with its own
--- mark; when it does, change 40 here.
+-- mark; when it does, change 42 here.
 do $$
 begin
-  if public.ai_app_updates_in() <> 40 then
-    raise exception 'ai_app_updates_in() says %, not 40: if a new AI-app update is in, see ADR 0012 and update this check', public.ai_app_updates_in();
+  if public.ai_app_updates_in() <> 42 then
+    raise exception 'ai_app_updates_in() says %, not 42: if a new AI-app update is in, see ADR 0012 and update this check', public.ai_app_updates_in();
   end if;
-  if public.ai_app_update_level() <> 40 then raise exception 'ai_app_update_level() says %, not 40', public.ai_app_update_level(); end if;
-  raise notice 'ai_app_updates_in() names the last AI-app update, 0040';
+  if public.ai_app_update_level() <> 42 then raise exception 'ai_app_update_level() says %, not 42', public.ai_app_update_level(); end if;
+  raise notice 'ai_app_updates_in() names the last AI-app update, 0042';
 end $$;
 
 -- ---------------------------------------------------------------------------
@@ -5216,7 +5219,8 @@ end $$;
 
 -- 0041 re-created ai_context_for with one literal changed, and
 -- schema_level(); every other function is as it stood before, with the
--- same settings and grants.
+-- same settings and grants. Read as they stood before 0042, which changes
+-- the AI app's add and words check and is checked on its own.
 do $$
 declare
   r record;
@@ -5224,7 +5228,7 @@ declare
   n int := 0;
 begin
   for r in select * from verify.before_0041 loop
-    select prosrc, prosecdef, provolatile, proconfig, proacl::text as acl into p from pg_proc where oid = r.fn::regprocedure;
+    select prosrc, prosecdef, provolatile, proconfig, acl into p from verify.before_0042 where fn = r.fn;
     if not found then raise exception '% is gone after 0041', r.fn; end if;
     if r.fn = 'ai_context_for(uuid)' then
       if p.prosrc = r.prosrc
@@ -5279,11 +5283,245 @@ begin
 end $$;
 rollback;
 
+-- ---------------------------------------------------------------------------
+-- 0042: what an AI app writes reads one way only (backend review of
+-- 2026-11-09). Inside its words, a space that is not the ordinary one, two
+-- ordinary spaces in a row, and an accent written as a letter and a
+-- separate mark each drew as the plain words do and compared as different,
+-- past name_taken and "already waiting". Refused now, never rewritten.
+-- ---------------------------------------------------------------------------
+reset role;
+do $$
+declare
+  c int;
+begin
+  -- Every space Unicode lists but the ordinary one, and the Braille blank.
+  foreach c in array array[x'00A0', x'1680', x'2000', x'2001', x'2009', x'200A', x'202F', x'205F', x'2800', x'3000']::int[] loop
+    if public._ai_app_words_shown('Eating' || chr(c) || 'out', 60) then
+      raise exception 'NOT REFUSED: U+% inside an AI app''s words', upper(to_hex(c));
+    end if;
+  end loop;
+  -- The characters just beside each are drawn, and still words: the class
+  -- is no wider.
+  foreach c in array array[x'00A1', x'167F', x'1681', x'1FFE', x'2010', x'2030', x'205E', x'27FF', x'2801', x'2FF0', x'3001']::int[] loop
+    if not public._ai_app_words_shown('Eating' || chr(c) || 'out', 60) then
+      raise exception 'U+% inside an AI app''s words is refused, though it is drawn', upper(to_hex(c));
+    end if;
+  end loop;
+  if public._ai_app_words_shown('Eating  out', 60) or not public._ai_app_words_shown('Eating out', 60)
+     or not public._ai_app_words_shown('Eat in or out', 60) then
+    raise exception 'two ordinary spaces in a row are an AI app''s words, or one between words is not';
+  end if;
+  -- The same accent as a letter and a mark (NFD) and as one character (NFC).
+  if public._ai_app_words_shown('Cafe' || chr(x'0301'::int), 60) or not public._ai_app_words_shown('Caf' || chr(x'00E9'::int), 60) then
+    raise exception 'an accent as a letter and a mark is an AI app''s words, or as one character is not';
+  end if;
+  -- A mark with no one-character form can be written no other way: still words.
+  if not public._ai_app_words_shown('x' || chr(x'0301'::int), 60) then
+    raise exception 'a letter and a mark with no one-character form is refused';
+  end if;
+  raise notice 'an AI app''s words refuse a space that is not one ordinary space, and an accent as a letter and a mark';
+end $$;
+
+-- Through the AI app's own calls, beside names the owner has and an entry
+-- that waits (the review's own cases). Each add carries the hash of its
+-- own words, so the words alone are what is refused.
+begin;
+update public.ai_app_usage set calls = 0 where user_id = '11111111-1111-4111-8111-111111111111';
+insert into public.categories (user_id, name, kind) values
+  ('11111111-1111-4111-8111-111111111111', 'Eating out 42', 'variable'),
+  ('11111111-1111-4111-8111-111111111111', 'Caf' || chr(x'00E9'::int) || ' 42', 'variable');
+create table verify.ai_hash_42 as
+  select w.n, w.words,
+         public._ai_app_dedupe_hash('aaaaaaaa-0000-4000-8000-000000000001', (now() at time zone 'UTC')::date - 3, -1250, w.words, 1) as hash
+    from (values (1, 'Lunch at Subway 42'), (2, 'Lunch at' || chr(x'00A0'::int) || 'Subway 42'), (3, 'Lunch at  Subway 42'),
+                 (4, 'Cafe' || chr(x'0301'::int) || ' lunch 42'), (5, 'Caf' || chr(x'00E9'::int) || ' lunch 42')) as w(n, words);
+grant select on verify.ai_hash_42 to app_user;
+set role app_user;
+do $$
+declare
+  day  constant date := (now() at time zone 'UTC')::date - 3;
+  acc  constant uuid := 'aaaaaaaa-0000-4000-8000-000000000001';
+  mine constant text := 'cccccccc-0000-4000-8000-000000003901';
+  nb   constant text := chr(x'00A0'::int);
+  h    verify.ai_hash_42;
+  r    jsonb;
+  i    int;
+begin
+  perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+  perform set_config('request.jwt.claims', '{"sub": "11111111-1111-4111-8111-111111111111", "role": "authenticated", "client_id": "99999999-9999-4999-8999-999999999999", "session_id": "55555555-5555-4555-8555-555555555555"}', true);
+  r := public.ai_app_propose(jsonb_build_array(
+    jsonb_build_object('kind', 'add_category', 'name', 'Eating out 42', 'list', 'variable', 'reason', 'r'),
+    jsonb_build_object('kind', 'add_category', 'name', 'Eating' || nb || 'out 42', 'list', 'variable', 'reason', 'r'),
+    jsonb_build_object('kind', 'add_category', 'name', 'Cafe' || chr(x'0301'::int) || ' 42', 'list', 'variable', 'reason', 'r'),
+    jsonb_build_object('kind', 'add_category', 'name', 'Eating' || chr(x'2009'::int) || 'out 42', 'list', 'variable', 'reason', 'r'),
+    jsonb_build_object('kind', 'rename_category', 'category', mine, 'new_name', 'Eating  out 42', 'reason', 'r'),
+    jsonb_build_object('kind', 'set_weekly_limit', 'category', mine, 'amount', 1, 'reason', 'Fits' || nb || 'well.'),
+    jsonb_build_object('kind', 'add_category', 'name', 'Eating in 42', 'list', 'variable', 'reason', 'Plain words, one space between each.'),
+    jsonb_build_object('kind', 'add_category', 'name', 'Cr' || chr(x'00E8'::int) || 'merie 42', 'list', 'variable', 'reason', 'r')));
+  -- The owner's own name, exactly: name_taken, as before.
+  if r #>> '{results,0,refused}' is distinct from 'name_taken' then
+    raise exception 'the owner''s own category name was not name_taken: %', r -> 'results' -> 0;
+  end if;
+  -- A name that reads as one the owner has, a rename to one, and a reason.
+  for i in 1 .. 5 loop
+    if r -> 'results' -> i ->> 'refused' is distinct from 'bad_words' then
+      raise exception 'NOT REFUSED as bad_words (change %): %', i, r -> 'results' -> i;
+    end if;
+  end loop;
+  -- Plain words, and an accent as one character, are still suggested.
+  for i in 6 .. 7 loop
+    if r -> 'results' -> i ->> 'status' is distinct from 'suggested' then
+      raise exception 'plain words were not suggested (change %): %', i, r -> 'results' -> i;
+    end if;
+  end loop;
+
+  select * into h from verify.ai_hash_42 where n = 1;
+  r := public.ai_app_add_candidate(acc, day, -1250, h.words, 1, h.hash, 1, null);
+  if r ->> 'status' is distinct from 'added' then raise exception 'plain words were not added: %', r; end if;
+  r := public.ai_app_add_candidate(acc, day, -1250, h.words, 1, h.hash, 1, null);
+  if r ->> 'status' is distinct from 'already_waiting' then raise exception 'the same entry again is not already waiting: %', r; end if;
+  -- The same entry with a no-break space or two spaces inside, and an accent as a letter and a mark.
+  for h in select * from verify.ai_hash_42 where n in (2, 3, 4) order by n loop
+    r := public.ai_app_add_candidate(acc, day, -1250, h.words, 1, h.hash, 1, null);
+    if r ->> 'refused' is distinct from 'bad_words' then
+      raise exception 'NOT REFUSED: words that read as plain ones and hash apart (case %): %', h.n, r;
+    end if;
+  end loop;
+  select * into h from verify.ai_hash_42 where n = 5;
+  r := public.ai_app_add_candidate(acc, day, -1250, h.words, 1, h.hash, 1, null);
+  if r ->> 'status' is distinct from 'added' then raise exception 'an accent as one character was not added: %', r; end if;
+  raise notice 'an AI app cannot suggest a name, or add an entry, that reads as another by its spacing or its accents';
+end $$;
+reset role;
+rollback;
+
+-- 0042 added two lines to the add, re-created the words check and the two
+-- level functions, and changed nothing else; every function keeps its
+-- settings and grants, and every earlier mark.
+do $$
+declare
+  r  record;
+  p  record;
+  at constant text := E'     or p_words ~ ''^[ \\u00A0\\u1680\\u2000-\\u200A\\u202F\\u205F\\u3000]|[ \\u00A0\\u1680\\u2000-\\u200A\\u202F\\u205F\\u3000]$'' -- a space of any kind at either end (0040)\n';
+  n  int := 0;
+begin
+  for r in select * from verify.before_0042 loop
+    select prosrc, prosecdef, provolatile, proconfig, proacl::text as acl into p from pg_proc where oid = r.fn::regprocedure;
+    if not found then raise exception '% is gone after 0042', r.fn; end if;
+    if r.fn = 'ai_app_add_candidate(uuid,date,bigint,text,integer,text,integer,text)' then
+      -- Its two lines, each marked, straight after 0040's; without them, the old body.
+      if strpos(r.prosrc, at) = 0 or strpos(p.prosrc, at || '     or p_words ~ ') = 0
+         or (length(p.prosrc) - length(replace(p.prosrc, '(0042)', ''))) / length('(0042)') <> 2
+         or regexp_replace(p.prosrc, E'[^\\n]*\\(0042\\)\\n', '', 'g') <> r.prosrc then
+        raise exception 'ai_app_add_candidate is not its old body plus 0042''s lines';
+      end if;
+      n := n + 1;
+    elsif r.fn = '_ai_app_words_shown(text,integer)' then
+      if strpos(p.prosrc, '(0042)') = 0 or strpos(p.prosrc, '(0040)') = 0 then
+        raise exception '_ai_app_words_shown has no (0042) mark, or lost 0040''s';
+      end if;
+      n := n + 1;
+    elsif r.fn not in ('ai_app_updates_in()', 'ai_app_update_level()') and p.prosrc <> r.prosrc then
+      raise exception '% changed in 0042', r.fn;
+    end if;
+    if (p.prosecdef, p.provolatile, p.proconfig, p.acl) is distinct from (r.prosecdef, r.provolatile, r.proconfig, r.acl) then
+      raise exception '% changed its settings or grants in 0042', r.fn;
+    end if;
+  end loop;
+  if n <> 2 then raise exception '0042''s two changed functions were not both checked'; end if;
+  if (select count(*) from pg_proc where pronamespace = 'public'::regnamespace) <> (select count(*) from verify.before_0042) then
+    raise exception '0042 added or dropped a function';
+  end if;
+  raise notice '0042 changed only the add''s two lines and the words check';
+end $$;
+
+-- 0042's marks are its own: with the words check's gone, 0042 is read as
+-- not in, and 0040 as the last.
+begin;
+do $$
+begin
+  execute replace(pg_get_functiondef('public._ai_app_words_shown(text,integer)'::regprocedure), '(0042)', '(----)');
+  if public.ai_app_updates_in() <> 40 then
+    raise exception 'with 0042''s mark gone, ai_app_updates_in() says %, not 40', public.ai_app_updates_in();
+  end if;
+end $$;
+rollback;
+
+-- 0042 refuses to run before 0040, and when it is already in. Its own
+-- check, taken from the file.
+\set paste_check_42 `sed -n '/^-- paste-order-check start$/,/^-- paste-order-check end$/p' supabase/migrations/0042_ai_words_read_one_way.sql`
+begin;
+set local verify.paste_check = :'paste_check_42';
+do $$
+declare
+  pass int;
+begin
+  for pass in 1..3 loop
+    if pass = 2 then
+      create or replace function public.ai_app_updates_in() returns integer language sql stable as $f$ select 39 $f$;
+    elsif pass = 3 then
+      drop function public.ai_app_updates_in();
+    end if;
+    begin
+      execute current_setting('verify.paste_check');
+      raise exception 'NOT REFUSED: 0042 ran (pass %)', pass;
+    exception when raise_exception then
+      if sqlerrm not like (case pass when 1 then '0042 is already in; nothing to do' else 'Paste 0040 first%' end) then raise; end if;
+    end;
+  end loop;
+  raise notice '0042 says it is already in, or to paste 0040 first';
+end $$;
+rollback;
+
+-- 0030 pasted again over 0042 reads 0039 as missing; 0039 and then 0040
+-- pasted again put back their own weaker words check and answer 40, so
+-- One-time updates offers 0042 again, and 0042 pasted again puts back
+-- only what was taken: the add keeps its two lines once.
+\set repaste_42 `sed '/^begin;$/d;/^commit;$/d' supabase/migrations/0042_ai_words_read_one_way.sql`
+begin;
+:repaste_30
+:repaste_39
+:repaste_40
+do $$
+declare
+  add constant text := (select prosrc from pg_proc where oid = 'public.ai_app_add_candidate(uuid,date,bigint,text,integer,text,integer,text)'::regprocedure);
+begin
+  if public.ai_app_updates_in() <> 40 then
+    raise exception 'with 0030, 0039 and 0040 pasted again over 0042, ai_app_updates_in() says %, not 40', public.ai_app_updates_in();
+  end if;
+  if not public._ai_app_words_shown('Eating' || chr(x'00A0'::int) || 'out', 60) then
+    raise exception '0040 pasted again did not put back its own words check';
+  end if;
+  if (length(add) - length(replace(add, '(0042)', ''))) / length('(0042)') <> 2 then
+    raise exception '0040 pasted again took 0042''s lines out of the add';
+  end if;
+end $$;
+:repaste_42
+do $$
+declare
+  add constant text := (select prosrc from pg_proc where oid = 'public.ai_app_add_candidate(uuid,date,bigint,text,integer,text,integer,text)'::regprocedure);
+begin
+  if public.ai_app_updates_in() <> 42 or public.ai_app_update_level() <> 42 then
+    raise exception '0042 pasted again did not put itself back: % and %', public.ai_app_updates_in(), public.ai_app_update_level();
+  end if;
+  if public._ai_app_words_shown('Eating' || chr(x'00A0'::int) || 'out', 60) or public._ai_app_words_shown('Cof' || chr(x'000E0041'::int) || 'fee', 60) then
+    raise exception '0042 pasted again did not put back its words check, or lost 0040''s';
+  end if;
+  if (length(add) - length(replace(add, '(0042)', ''))) / length('(0042)') <> 2
+     or (length(add) - length(replace(add, '(0040)', ''))) / length('(0040)') <> 2 then
+    raise exception '0042 pasted again changed the add twice';
+  end if;
+  raise notice '0030, 0039 and 0040 pasted again over 0042 are read as 0042 missing, and pasting 0042 again puts it back';
+end $$;
+rollback;
+
 -- The two levels the app reads name the last update in this folder: the
 -- review fixes' schema_level() (0021) and the AI-app updates'
 -- ai_app_updates_in() (0035), one of them its number. So a new update that
 -- forgets to raise its own fails here. 0039 and 0040 are AI-app updates and
--- left schema_level() at 38 (ADR 0013); 0041 moves it to 41 (ADR 0015).
+-- left schema_level() at 38 (ADR 0013); 0041 moves it to 41 (ADR 0015);
+-- 0042 is an AI-app update again, and leaves it at 41.
 \set last_migration `ls supabase/migrations | tail -1 | cut -c1-4`
 set verify.last_migration = :'last_migration';
 set role app_user;
@@ -5293,7 +5531,7 @@ begin
     raise exception 'schema_level() answers % and ai_app_updates_in() %, but the last update is %',
       public.schema_level(), public.ai_app_updates_in(), current_setting('verify.last_migration');
   end if;
-  if public.schema_level() <> 41 then raise exception 'schema_level() answers %, not 41: 0041 moves it, and 0039 and 0040 must not', public.schema_level(); end if;
+  if public.schema_level() <> 41 then raise exception 'schema_level() answers %, not 41: 0041 moves it, and 0039, 0040 and 0042 must not', public.schema_level(); end if;
   raise notice 'schema_level() and ai_app_updates_in() name the last update';
 end $$;
 reset role;
