@@ -3,6 +3,7 @@ import {
   US_AMOUNT_FORMAT,
   detectHeaderRow,
   explainsAsRunningBalance,
+  firstRecordReadsAsData,
   profileColumns,
   tokenizeCsv,
   type CsvRow,
@@ -35,6 +36,21 @@ describe('detectHeaderRow', () => {
     expect(detectHeaderRow(rowsOf('a,b,c'), US_AMOUNT_FORMAT)).toBe('ambiguous')
     expect(detectHeaderRow([], US_AMOUNT_FORMAT)).toBe('ambiguous')
     expect(detectHeaderRow(rowsOf('a,b\nc,d'), US_AMOUNT_FORMAT)).toBe('ambiguous')
+  })
+})
+
+describe('firstRecordReadsAsData', () => {
+  it('is true when the first record holds a date or an amount, as a charge does', () => {
+    // A closing line makes the verdict ambiguous; the first record may be the oldest charge.
+    const rows = rowsOf('03/04/2025,COFFEE,-4.50\n03/05/2025,GAS,-40.00\n,END OF STATEMENT,')
+    expect(detectHeaderRow(rows, US_AMOUNT_FORMAT)).toBe('ambiguous')
+    expect(firstRecordReadsAsData(rows, US_AMOUNT_FORMAT)).toBe(true)
+    expect(firstRecordReadsAsData(rowsOf('\n\n03/04/2025,COFFEE,-4.50'), US_AMOUNT_FORMAT)).toBe(true)
+  })
+
+  it('is false for a row of labels, and for no rows at all', () => {
+    expect(firstRecordReadsAsData(rowsOf('Date,Description,Amount\n,END OF STATEMENT,'), US_AMOUNT_FORMAT)).toBe(false)
+    expect(firstRecordReadsAsData([], US_AMOUNT_FORMAT)).toBe(false)
   })
 })
 

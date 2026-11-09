@@ -9,6 +9,7 @@
 import { useMemo, useState } from 'react'
 import {
   detectHeaderRow,
+  firstRecordReadsAsData,
   profileColumns,
   proposeMapping,
   readStatement,
@@ -26,6 +27,8 @@ export interface Chosen {
   amountIndex?: number
   dateFormat?: DateFormat
   signKind?: 'signed' | 'debit_positive'
+  /** The owner's answer when the file cannot say whether its first row is column names. */
+  hasHeader?: boolean
 }
 
 export function useCsvMapping(text: string) {
@@ -54,14 +57,20 @@ export function useCsvMapping(text: string) {
   const analysis = useMemo(() => {
     if (!tokenized.ok) return null
     const verdict = detectHeaderRow(tokenized.rows, amountFormat)
-    const hasHeader = verdict !== 'data'
+    // 'ambiguous' was read as "a header", so a file with no heading row and
+    // a closing line lost its first charge, in no count. When the first
+    // record holds a date or an amount, as a charge does, the owner is
+    // asked; nothing is read until they answer (null).
+    const askable = verdict === 'ambiguous' && firstRecordReadsAsData(tokenized.rows, amountFormat)
+    const hasHeader = askable ? (chosen.hasHeader ?? null) : verdict !== 'data'
+    // Unanswered, the columns are described as a file without names has them.
     const columns = profileColumns({
       rows: tokenized.rows,
-      hasHeader,
+      hasHeader: hasHeader ?? false,
       amountFormat,
     })
-    return { verdict, hasHeader, columns }
-  }, [tokenized, amountFormat])
+    return { verdict, askable, hasHeader, columns }
+  }, [tokenized, amountFormat, chosen.hasHeader])
 
   // A proposal, applied once, that the user can override. It is never
   // re-applied after they touch a control: a screen that silently re-picks a
@@ -69,7 +78,7 @@ export function useCsvMapping(text: string) {
   // The guess itself is statement-parsers' (architecture-c2-01).
   const proposal = useMemo(() => {
     if (!tokenized.ok || analysis === null) return null
-    return proposeMapping({ rows: tokenized.rows, hasHeader: analysis.hasHeader, columns: analysis.columns, amountFormat })
+    return proposeMapping({ rows: tokenized.rows, hasHeader: analysis.hasHeader ?? false, columns: analysis.columns, amountFormat })
   }, [tokenized, analysis, amountFormat])
 
   // The mapping actually in force: the user's choice where they made one, the
@@ -93,7 +102,7 @@ export function useCsvMapping(text: string) {
   const dateFormat: DateFormat | null = chosen.dateFormat ?? soleFormat ?? (ambiguousDate === null ? 'MM/DD/YYYY' : null)
 
   const result: StatementRead | null = useMemo(() => {
-    if (!tokenized.ok || analysis === null || dateFormat === null) return null
+    if (!tokenized.ok || analysis === null || analysis.hasHeader === null || dateFormat === null) return null
     return readStatement(tokenized.rows, {
       mapping: {
         dateIndex,
@@ -120,6 +129,7 @@ export function useCsvMapping(text: string) {
   const otherMoney =
     chosen.amountIndex === undefined && proposal !== null && proposal.amountCandidates.length > 1
 
+  const askHeader = analysis !== null && analysis.hasHeader === null
 
   // Back to the proposal, as a new file would start.
   const clear = () => setChosen({})
@@ -141,6 +151,7 @@ export function useCsvMapping(text: string) {
     result,
     summary,
     ambiguousDate,
+    askHeader,
     otherMoney,
   }
 }

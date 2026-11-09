@@ -65,6 +65,19 @@ export function detectHeaderRow(rows: readonly CsvRow[], format: AmountFormat): 
   return 'ambiguous'
 }
 
+/**
+ * Whether the first record holds a date or an amount, as a transaction does.
+ *
+ * What makes an 'ambiguous' verdict worth a question. A first record with
+ * neither is a transaction under no reading, so taking it for the heading
+ * loses no charge; one with either may be the file's oldest charge, and only
+ * the owner can say.
+ */
+export function firstRecordReadsAsData(rows: readonly CsvRow[], format: AmountFormat): boolean {
+  const first = rows.find((r) => !isBlankRow(r))
+  return first !== undefined && first.fields.some((f) => readsAsTyped(f, format))
+}
+
 function readsAsTyped(value: string, format: AmountFormat): boolean {
   if (value.length === 0) return false
   if (parseAmountToCents(value, format).ok) return true

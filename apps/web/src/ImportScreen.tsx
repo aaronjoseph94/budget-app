@@ -221,7 +221,7 @@ function SaveFooter({
  * signed, each proposed and each the owner's to change (FE-19).
  */
 function ColumnMapping({ mapping }: { mapping: Mapping }) {
-  const { delimiter, setDelimiter, decimal, setDecimal, choose, tokenized, analysis, dateIndex, merchantIndex, amountIndex, signKind, dateFormat, ambiguousDate, otherMoney } =
+  const { delimiter, setDelimiter, decimal, setDecimal, choose, tokenized, analysis, dateIndex, merchantIndex, amountIndex, signKind, dateFormat, ambiguousDate, askHeader, otherMoney } =
     mapping
   return (
     <>
@@ -258,6 +258,21 @@ function ColumnMapping({ mapping }: { mapping: Mapping }) {
               options={DELIMITERS.map((d) => ({ value: d.value as string, label: d.label }))}
               onChange={setDelimiter}
             />
+            {/* Asked only when the file cannot settle it; the answer stays changeable. */}
+            {analysis.askable ? (
+              <OptionSelect<'' | 'names' | 'data'>
+                label="First row"
+                value={analysis.hasHeader === null ? '' : analysis.hasHeader ? 'names' : 'data'}
+                options={[
+                  ...(analysis.hasHeader === null ? [{ value: '' as const, label: 'Choose…' }] : []),
+                  { value: 'names' as const, label: 'Column names' },
+                  { value: 'data' as const, label: 'A transaction' },
+                ]}
+                onChange={(v) => {
+                  if (v !== '') choose('hasHeader', v === 'names')
+                }}
+              />
+            ) : null}
             <OptionSelect
               label="Date column"
               value={dateIndex}
@@ -313,6 +328,13 @@ function ColumnMapping({ mapping }: { mapping: Mapping }) {
             <p className="mt-4 rounded-lg border border-border bg-muted p-3 text-sm">
               <strong className="font-medium">More than one column looks like money.</strong> Check that Amount is each
               purchase’s price, not a fee, a balance or a reference number.
+            </p>
+          ) : null}
+
+          {askHeader ? (
+            <p className="mt-4 rounded-lg border border-border bg-muted p-3 text-sm">
+              <strong className="font-medium">Is the first row column names?</strong> It has a date or an amount, as a
+              transaction would. Nothing is read until you choose under First row.
             </p>
           ) : null}
 

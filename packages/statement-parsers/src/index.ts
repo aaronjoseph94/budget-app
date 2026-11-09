@@ -20,6 +20,7 @@ export {
 export {
   detectHeaderRow,
   explainsAsRunningBalance,
+  firstRecordReadsAsData,
   profileColumns,
   type ColumnProfile,
   type HeaderVerdict,
