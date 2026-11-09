@@ -84,7 +84,7 @@ describe('goalForecast (F33)', () => {
 
   it('has no date when the middle pace saves nothing', () => {
     const forecast = goalForecast({ ...base, entries: [moveIn('2026-09-15', 300)] })
-    expect(forecast.pace).toEqual({ status: 'no_pace', months: 4, evidence: 'some' })
+    expect(forecast.pace).toEqual({ status: 'no_pace', months: 4, evidence: 'some', tooSlow: false })
     expect(forecast.paceWeeklyCents).toBeNull()
   })
 

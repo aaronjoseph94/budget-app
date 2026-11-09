@@ -1289,6 +1289,17 @@ G1 made goals plural, so it holds for every active goal.
 - **No pace.** When the middle weekly pace is $0 or less, there is no date
   ("no date at your current pace"), and the top lever (F34) says how long it
   alone would take.
+- **Amended 2026-11-09 (review): a date past year 9999 is no date.** A
+  date here is written with a four-digit year, and `projectGoal` threw
+  when ⌈remaining ÷ weekly⌉ weeks ran past 31 December 9999; one such goal
+  took every goal's date and lever off the Coach, Savings and Forecast.
+  Now it gives its weeks and no date. A **low** pace that slow has no late
+  date, as a low pace of $0 has none: the range reads "or later". A
+  **middle** pace that slow is no pace, marked too slow: the card says too
+  little is moved in, where at $0 it says nothing is, and levers are set
+  against no pace. Example: $115,000.00 to go on 15 October 2026, the low
+  month $1.00 ($0.23 a week): 500,000 weeks, about 9,582 years, so the
+  range is "Nov 2045 or later". No date within year 9999 changes.
 - **The weekly amount needed** for a goal with a target date after `asOf`
   is `requiredWeeklyContribution`, as written in `goal.ts`; none for a goal
   with no date, a date passed, or the target met.

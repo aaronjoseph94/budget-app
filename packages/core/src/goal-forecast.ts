@@ -53,8 +53,8 @@ export type GoalPace =
   | { readonly status: 'no_fund' }
   /** No complete month yet; `possibleFrom` is the day the first one completes, null with no records. */
   | { readonly status: 'too_early'; readonly possibleFrom: IsoDate | null }
-  /** The middle pace saves nothing, so there is no date. */
-  | { readonly status: 'no_pace'; readonly months: number; readonly evidence: Evidence }
+  /** The middle pace saves nothing, or (`tooSlow`) so little that its date is past year 9999: no date. */
+  | { readonly status: 'no_pace'; readonly months: number; readonly evidence: Evidence; readonly tooSlow: boolean }
   /** One or two complete months: the middle pace's one date, labelled rough. */
   | { readonly status: 'rough'; readonly months: number; readonly evidence: Evidence; readonly weeklyCents: Cents; readonly date: IsoDate }
   | {
@@ -62,7 +62,7 @@ export type GoalPace =
       readonly months: number
       readonly evidence: Evidence
       readonly weekly: Paces
-      /** Early from the high pace, middle from the middle; no late date when the low pace saves nothing. */
+      /** Early from the high pace, middle from the middle; no late date when the low pace saves nothing, or too little to land by year 9999. */
       readonly dates: { readonly early: IsoDate; readonly middle: IsoDate; readonly late: IsoDate | null }
     }
 
@@ -102,12 +102,14 @@ export function goalForecast(input: GoalForecastInput): GoalForecast {
   )
   const evidence = evidenceOf(months.length)
   const middle = weekly(median({ values }))
-  if (middle <= 0) return without({ status: 'no_pace', months: months.length, evidence })
+  if (middle <= 0) return without({ status: 'no_pace', months: months.length, evidence, tooSlow: false })
 
   const dateAt = (weeklyCents: Cents): IsoDate | null => projectGoal({ goal: asSavingsGoal, weeklyContributionCents: weeklyCents, asOf }).projectedDate
   const paced = (pace: GoalPace): GoalForecast => ({ remainingCents: remaining, pace, paceWeeklyCents: middle, neededWeeklyCents: needed })
-  // A middle pace above $0 always lands, so its date is never null.
-  const middleDate = dateAt(middle) ?? missing(fund.id)
+  // A middle pace above $0 lands, but a few cents a week on a large goal
+  // lands past year 9999, where there is no date to give: no pace, as at $0.
+  const middleDate = dateAt(middle)
+  if (middleDate === null) return without({ status: 'no_pace', months: months.length, evidence, tooSlow: true })
   if (months.length < 3) return paced({ status: 'rough', months: months.length, evidence, weeklyCents: middle, date: middleDate })
 
   const low = weekly(quantile({ values, pBp: 2_500 }))
@@ -117,7 +119,7 @@ export function goalForecast(input: GoalForecastInput): GoalForecast {
     months: months.length,
     evidence,
     weekly: { low, middle, high },
-    // The high pace is at least the middle, so it lands too.
+    // The high pace is at least the middle, so it lands no later; the low may not land at all.
     dates: { early: dateAt(high) ?? missing(fund.id), middle: middleDate, late: dateAt(low) },
   })
 }
@@ -139,7 +141,7 @@ export function firstComplete(input: Pick<GoalForecastInput, 'historyStart' | 'r
   return shiftMonth(whole, 1)
 }
 
-/** The engine's own sheets list every category given, and a pace above $0 always lands, so neither can miss. */
+/** The engine's own sheets list every category given, and a pace at least the middle one lands by its date, so neither can miss. */
 function missing(categoryId: string): never {
   throw new RangeError(`The pace of fund ${categoryId} could not be read from its sheets`)
 }

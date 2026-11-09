@@ -61,13 +61,21 @@ export function goalProgress(goal: SavingsGoal): GoalProgress {
 
 export interface GoalProjection {
   readonly weeksRemaining: number | null
+  /** Null with nothing saved a week, and when the date would be past year 9999. */
   readonly projectedDate: IsoDate | null
 }
+
+/** The last day an IsoDate can write. */
+const LAST_DAY = '9999-12-31' as IsoDate
 
 /**
  * When a weekly contribution lands the goal. Returns nulls rather than a
  * fabricated date when the contribution is zero — "never" is the honest
  * answer, and CONSTRAINTS.md forbids a silent numeric fallback here.
+ *
+ * A contribution so small that the goal lands after year 9999 has its
+ * weeks and no date: no date can be written there, and one slow goal must
+ * not be a throw that takes every other goal's date with it (F33).
  */
 export function projectGoal(input: {
   readonly goal: SavingsGoal
@@ -82,7 +90,9 @@ export function projectGoal(input: {
   if (weekly <= 0) return { weeksRemaining: null, projectedDate: null }
 
   const weeks = Math.ceil(remainingCents / weekly)
-  return { weeksRemaining: weeks, projectedDate: addDays(asOf, weeks * 7) }
+  // Whole weeks left in the calendar, so weeks × 7 is never worked out past what a number holds exactly.
+  const weeksLeft = Math.floor(daysBetween(asOf, LAST_DAY) / 7)
+  return { weeksRemaining: weeks, projectedDate: weeks > weeksLeft ? null : addDays(asOf, weeks * 7) }
 }
 
 /** The weekly contribution that lands the goal on `targetDate`. */
