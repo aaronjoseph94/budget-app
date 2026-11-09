@@ -224,7 +224,8 @@ function PdfPreview({
         <Icon name="file" className="size-4 shrink-0 text-muted-foreground" />
         <span className="truncate text-sm font-medium">{name}</span>
       </div>
-      <Button variant="outline" size="sm" onClick={onReset}>
+      {/* Waits for a save: its answer is this file's, not the next one's. */}
+      <Button variant="outline" size="sm" onClick={onReset} disabled={saving}>
         Choose another
       </Button>
     </div>
@@ -749,6 +750,8 @@ function PhotoEntry() {
     if (!ready) return setTried((n) => n + 1)
     if (accountId === null) return setOutcome({ ok: false, message: NO_ACCOUNT })
     if (cents === null) return
+    // The photo this send is for: its answer is not the next photo's (reset).
+    const mine = reading.current
     setBusy(true)
     setOutcome(null)
     try {
@@ -769,19 +772,23 @@ function PhotoEntry() {
           },
         ],
       })
-      setOutcome({
-        ok: true,
-        message:
-          counts.autoApproved > 0
-            ? 'Added — filed automatically from your past choices.'
-            : counts.deduped > 0
-              ? 'This photo was already sent, so nothing was added.'
-              : 'Sent to Review. Pick a category there and it counts.',
-      })
-      setSent(counts.autoApproved === 0 && counts.deduped === 0 ? 'waiting' : 'done')
+      if (reading.current === mine) {
+        setOutcome({
+          ok: true,
+          message:
+            counts.autoApproved > 0
+              ? 'Added — filed automatically from your past choices.'
+              : counts.deduped > 0
+                ? 'This photo was already sent, so nothing was added.'
+                : 'Sent to Review. Pick a category there and it counts.',
+        })
+        setSent(counts.autoApproved === 0 && counts.deduped === 0 ? 'waiting' : 'done')
+      }
       await refresh()
     } catch (cause) {
-      setOutcome({ ok: false, message: cause instanceof Error ? cause.message : 'Nothing was saved.' })
+      const message = cause instanceof Error ? cause.message : 'Nothing was saved.'
+      // Said even with another photo on screen: that receipt is in neither Review nor the ledger.
+      setOutcome({ ok: false, message: reading.current === mine ? message : `The photo before this one was not sent. ${message}` })
     } finally {
       setBusy(false)
     }

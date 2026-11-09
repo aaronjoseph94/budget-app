@@ -49,7 +49,8 @@ export function ImportScreen({ fileName, text, onReset, onSave, saving = false, 
           <Label>File</Label>
           <div className="truncate text-sm font-medium">{fileName}</div>
         </div>
-        <Button variant="outline" onClick={reset}>
+        {/* Waits for a save: its answer is this file's, not the next one's. */}
+        <Button variant="outline" onClick={reset} disabled={saving}>
           Choose another
         </Button>
       </div>
