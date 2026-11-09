@@ -64,6 +64,21 @@ describe('SettingsScreen, adding a category', () => {
     await waitFor(() => expect(fake.tables.categories.map((c) => c.name)).toEqual(['Rent', 'Pet food']))
     await waitFor(() => expect(screen.queryByText(/You already have/)).toBeNull())
   })
+
+  // The field emptied as if it had worked: nothing was added and nothing was said.
+  it('says a name is already on the list chosen, and keeps what was typed', async () => {
+    const fake = createFakeSupabase({ categories: [{ id: 'c1', name: 'Groceries', kind: 'variable', sort_order: 0, weekly_budget_cents: null }] })
+    renderScreen(<SettingsScreen tab="budgets" />, fake)
+
+    const name = await screen.findByPlaceholderText<HTMLInputElement>('New category')
+    await screen.findByRole('textbox', { name: 'Weekly budget for Groceries' })
+    fireEvent.change(name, { target: { value: 'Groceries' } })
+    fireEvent.click(screen.getByRole('button', { name: /Add/ }))
+
+    expect((await screen.findByRole('alert')).textContent).toBe('Groceries is already on this list.')
+    expect(name.value).toBe('Groceries')
+    expect(fake.tables.categories).toHaveLength(1)
+  })
 })
 
 describe('SettingsScreen, weekly budgets', () => {

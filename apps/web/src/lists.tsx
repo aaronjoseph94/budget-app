@@ -60,6 +60,21 @@ export function atEndOf(
 }
 
 /**
+ * Why a name typed into a list's own Add is not added, or null when it can
+ * be: it is on that list already. ensureCategory hands back the row that
+ * is there, as Add › Type it wants; a list's Add took that for a new row
+ * and emptied its field, with nothing added and nothing said.
+ */
+export function alreadyOn(
+  categories: readonly { readonly name: string; readonly kind: CategoryKind }[],
+  name: string,
+  kind: CategoryKind,
+): string | null {
+  const there = categories.find((c) => c.kind === kind && c.name === name)
+  return there === undefined ? null : `${there.name} is already on this list.`
+}
+
+/**
  * The workbook's example names, for Setup's "Use the starter list" (plan §7).
  * They are placeholders to rename: START HERE's rows in its own order
  * (Income B8:B12, Savings H7:H10, Bills B18:B24, Debts D18:D21,

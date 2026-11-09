@@ -4,7 +4,7 @@ import { SPENDING_LISTS } from '@budget/core'
 import { readBudgetInput, useAppData } from '../app-data.js'
 import { ensureCategory, setWeeklyBudget, type Category } from '../ledger.js'
 import { formatForInput } from '../format.js'
-import { atEndOf, groupByList, ListSelect, type CategoryKind } from '../lists.js'
+import { alreadyOn, atEndOf, groupByList, ListSelect, type CategoryKind } from '../lists.js'
 import { MonthTitle } from '../components/ui/type.js'
 import { Section } from '../forecast/parts.js'
 import { Alert } from '../components/ui/feedback.js'
@@ -142,6 +142,9 @@ function BudgetsCard() {
     if (name === '' || newKind === '') return
     // Why the last one was refused goes with the next try, as on Setup's cards (e2e-setup-07).
     setError(null)
+    // Said, with the field left as typed: nothing was added.
+    const there = alreadyOn(categories, name, newKind)
+    if (there !== null) return setError(there)
     try {
       await ensureCategory(supabase, userId, atEndOf(categories, name, newKind))
       setNewName('')

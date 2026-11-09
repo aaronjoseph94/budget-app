@@ -148,6 +148,22 @@ describe('Lists, changing a list', () => {
     await waitFor(async () => expect(await namesOn('Bills')).toEqual(['Phone', 'Rent', 'Water']))
     expect(fake.tables.categories.find((c) => c.name === 'Water')).toMatchObject({ kind: 'bill', sort_order: 2 })
   })
+
+  // The field emptied as if it had worked: nothing was added and nothing was said.
+  it('says a name is already on the list, and keeps what was typed', async () => {
+    const fake = seeded()
+    renderScreen(<ListsTab />, fake)
+
+    const input = await screen.findByRole<HTMLInputElement>('textbox', { name: 'New Bills category' })
+    const bills = within(screen.getByRole('region', { name: 'Bills' }))
+    await bills.findByRole('textbox', { name: 'Rename Rent' })
+    fireEvent.change(input, { target: { value: ' Rent ' } })
+    fireEvent.click(bills.getByRole('button', { name: /Add/ }))
+
+    expect((await bills.findByRole('alert')).textContent).toBe('Rent is already on this list.')
+    expect(input.value).toBe(' Rent ')
+    expect(fake.tables.categories).toHaveLength(6)
+  })
 })
 
 describe('Lists, order and lists', () => {

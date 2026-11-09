@@ -10,7 +10,7 @@ import {
   setCategoryOrder,
   type Category,
 } from '../ledger.js'
-import { atEndOf, groupByList, LIST_HEADING, LISTS, starterList, type CategoryKind } from '../lists.js'
+import { alreadyOn, atEndOf, groupByList, LIST_HEADING, LISTS, starterList, type CategoryKind } from '../lists.js'
 import { saveDisplayName } from '../profile.js'
 import { formatCents, formatMonthTitle, todayIso } from '../format.js'
 import { Alert, SavedNote } from '../components/ui/feedback.js'
@@ -397,6 +397,12 @@ function ListCardView({
   const add = async () => {
     const name = newName.trim()
     if (name === '') return
+    const there = alreadyOn(categories, name, card.kind)
+    if (there !== null) {
+      // Said, with the field left as typed: nothing was added.
+      setNote(null)
+      return setMessage(there)
+    }
     // Cleared only if it still holds what was added: the next name may be typed while this one saves.
     if (await write(() => ensureCategory(supabase, userId, atEndOf(categories, name, card.kind)))) setNewName((now) => (now.trim() === name ? '' : now))
   }
