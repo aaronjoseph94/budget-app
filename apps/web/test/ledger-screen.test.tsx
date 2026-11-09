@@ -155,6 +155,49 @@ describe('LedgerScreen, removing a transaction', () => {
   })
 })
 
+describe('LedgerScreen, changing your mind about a removal', () => {
+  it('puts the bin back on Escape, with the focus, and removes nothing', async () => {
+    const fake = seeded()
+    await open(fake)
+    fireEvent.click(rowOf('CORNER MARKET').getByRole('button', { name: 'Remove this transaction' }))
+    fireEvent.keyDown(rowOf('CORNER MARKET').getByRole('button', { name: 'Remove' }), { key: 'Escape' })
+
+    expect(rowOf('CORNER MARKET').queryByRole('button', { name: 'Remove' })).toBeNull()
+    await waitFor(() => expect(document.activeElement).toBe(rowOf('CORNER MARKET').getByRole('button', { name: 'Remove this transaction' })))
+    expect(fake.tables.transactions).toHaveLength(3)
+  })
+
+  it('puts the bin back when focus leaves Remove', async () => {
+    await open(seeded())
+    fireEvent.click(rowOf('CORNER MARKET').getByRole('button', { name: 'Remove this transaction' }))
+    fireEvent.blur(rowOf('CORNER MARKET').getByRole('button', { name: 'Remove' }))
+    expect(rowOf('CORNER MARKET').queryByRole('button', { name: 'Remove' })).toBeNull()
+  })
+
+  it('is not still armed after stepping to another month and back', async () => {
+    await open(seeded())
+    fireEvent.click(rowOf('CORNER MARKET').getByRole('button', { name: 'Remove this transaction' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Previous month' }))
+    await screen.findByText('AUGUST CAFE')
+    fireEvent.click(screen.getByRole('button', { name: 'Next month' }))
+    await screen.findByText('CORNER MARKET')
+    expect(rowOf('CORNER MARKET').queryByRole('button', { name: 'Remove' })).toBeNull()
+  })
+
+  it('does not carry a refused removal’s words to another month', async () => {
+    const fake = seeded()
+    fake.fail('DELETE transactions', '42501')
+    await open(fake)
+    fireEvent.click(rowOf('CORNER MARKET').getByRole('button', { name: 'Remove this transaction' }))
+    fireEvent.click(rowOf('CORNER MARKET').getByRole('button', { name: 'Remove' }))
+    expect(await screen.findByText('Something went wrong')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Previous month' }))
+    await screen.findByText('AUGUST CAFE')
+    expect(screen.queryByText('Something went wrong')).toBeNull()
+  })
+})
+
 describe('LedgerScreen, finding a transaction', () => {
   it('steps back a month, and not past this one', async () => {
     await open(seeded())

@@ -20,8 +20,14 @@ export function LedgerScreen() {
   const { supabase, categories, refresh } = useAppData()
   const [month, setMonth] = useState(() => shiftMonth(isoDate(todayIso()), 0))
   const [query, setQuery] = useState('')
-  const [removeError, setRemoveError] = useState<string | null>(null)
-  const [confirming, setConfirming] = useState<string | null>(null)
+  // Each kept with the month it was said or asked in: neither a refusal's
+  // words nor an armed Remove follows the owner to another month.
+  const [refused, setRefused] = useState<{ month: string; message: string } | null>(null)
+  const [asked, setAsked] = useState<{ month: string; id: string } | null>(null)
+  const removeError = refused?.month === month ? refused.message : null
+  const confirming = asked?.month === month ? asked.id : null
+  const setRemoveError = (message: string | null) => setRefused(message === null ? null : { month, message })
+  const setConfirming = (id: string | null) => setAsked(id === null ? null : { month, id })
   // Removed here: off the list at once, before the month is read again.
   const [removed, setRemoved] = useState<ReadonlySet<string>>(new Set())
   const bounds = useMemo(() => monthBounds(month), [month])
@@ -54,6 +60,11 @@ export function LedgerScreen() {
   }, [visible])
 
   const isCurrent = shiftMonth(isoDate(todayIso()), 0) === month
+  // Another month: a Remove left armed in this one is not waiting on the way back.
+  const step = (by: 1 | -1) => {
+    setAsked(null)
+    setMonth(shiftMonth(month, by))
+  }
 
   // Remove gives way to nothing, and focus fell to the page: once the row
   // is off the list, the next row's trash button takes it, or the one
@@ -69,6 +80,14 @@ export function LedgerScreen() {
     const next = id === '' ? null : list.current?.querySelector<HTMLButtonElement>(`[data-row="${id}"] button`)
     ;(next ?? search.current)?.focus()
   }, [visible])
+  // Escape on an armed Remove: the bin it replaced is drawn again, and takes the focus back.
+  const disarmed = useRef<string | null>(null)
+  useEffect(() => {
+    const id = disarmed.current
+    if (id === null || confirming !== null) return
+    disarmed.current = null
+    list.current?.querySelector<HTMLButtonElement>(`[data-row="${id}"] button`)?.focus()
+  }, [confirming])
 
   const remove = async (id: string) => {
     const shown = visible ?? []
@@ -104,9 +123,9 @@ export function LedgerScreen() {
           </p>
         </div>
         <div className="flex items-stretch rounded-md border bg-card">
-          <StepButton label="Previous month" icon="chevronLeft" onClick={() => setMonth(shiftMonth(month, -1))} />
+          <StepButton label="Previous month" icon="chevronLeft" onClick={() => step(-1)} />
           <span className="tnum flex items-center border-x px-3.5 text-[0.9375rem] font-medium whitespace-nowrap">{formatShortMonth(month)}</span>
-          <StepButton label="Next month" icon="chevronRight" disabled={isCurrent} onClick={() => setMonth(shiftMonth(month, 1))} />
+          <StepButton label="Next month" icon="chevronRight" disabled={isCurrent} onClick={() => step(1)} />
         </div>
       </header>
 
@@ -180,7 +199,19 @@ export function LedgerScreen() {
                   </span>
                   {confirming === r.id ? (
                     // Takes focus from the trash button it replaces, which went (e2e-money-03).
-                    <Button variant="destructive" size="sm" autoFocus onClick={() => void remove(r.id)}>
+                    // Escape, or focus going elsewhere, is a change of mind: the bin comes back.
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      autoFocus
+                      onClick={() => void remove(r.id)}
+                      onBlur={() => setConfirming(null)}
+                      onKeyDown={(e) => {
+                        if (e.key !== 'Escape') return
+                        disarmed.current = r.id
+                        setConfirming(null)
+                      }}
+                    >
                       Remove
                     </Button>
                   ) : (
