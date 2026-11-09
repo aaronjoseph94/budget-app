@@ -31,10 +31,12 @@ import { TryAgain } from '../try-again.js'
  * The workbook's Weekly Budget: the Month's summary and six blocks over the
  * Monday-to-Sunday week (D14), with the main goal beside them (F45).
  *
- * Every figure comes from packages/core: weekSheet over the week's ledger,
- * the monthly amounts typed up to its last month and each category's weekly
- * budget; goalProgress and timeEquivalent for the goal. This screen formats
- * them. Nothing unreviewed is in it.
+ * Every figure comes from packages/core: weekSheet over the ledger of the
+ * months the week touches (it counts the week's days, and reads the rest
+ * only to see a bill already charged that month, F54), the monthly amounts
+ * typed up to its last month and each category's weekly budget;
+ * goalProgress and timeEquivalent for the goal. This screen formats them.
+ * Nothing unreviewed is in it.
  *
  * `monday` is the week the address names (`#/week/2026-09-21`, ADR 0006),
  * or null for this week. The arrows write the week they land on into the
@@ -50,6 +52,10 @@ export function WeekScreen({ monday }: { monday: string | null }) {
   // A weekly budget refused after its editor closed, kept until another opens.
   const [unsaved, setUnsaved] = useState<string | null>(null)
   const bounds = useMemo(() => weekBounds(asOf), [asOf])
+  // Every month the week touches, whole: a bill charged on another day of
+  // its month is not planned again in the week of its due day (F54).
+  const monthsFrom = monthBounds(bounds.start).start
+  const monthsTo = monthBounds(bounds.end).end
   // The category whose charges are open, by id; another week closes it.
   const [opened, setOpened] = useState<string | null>(null)
   useEffect(() => setOpened(null), [bounds.start])
@@ -61,19 +67,23 @@ export function WeekScreen({ monday }: { monday: string | null }) {
     let live = true
     setError(null)
     Promise.all([
-      listTransactions(supabase, { from: bounds.start, to: bounds.end }),
+      listTransactions(supabase, { from: monthsFrom, to: monthsTo }),
       // Up to the week's last month: a week across a month end pays each
       // month's amount on its own due day (D13).
       listPlanHistory(supabase, monthBounds(bounds.end).start, 'week'),
       latestStatementEnd(supabase),
       countPendingBetween(supabase, { from: bounds.start, to: bounds.end }),
     ])
-      .then(([rows, plans, ends, pendingHere]) => live && setLoaded({ start: bounds.start, rows, plans, ends, pendingHere }))
+      .then(([monthRows, plans, ends, pendingHere]) => {
+        // The week's own rows, for an opened row's charges; core counts by date itself.
+        const rows = monthRows.filter((r) => r.posted_on >= bounds.start && r.posted_on <= bounds.end)
+        if (live) setLoaded({ start: bounds.start, rows, monthRows, plans, ends, pendingHere })
+      })
       .catch((e: unknown) => live && setError(e instanceof Error ? e.message : 'Could not load this week.'))
     return () => {
       live = false
     }
-  }, [supabase, bounds.start, bounds.end, version])
+  }, [supabase, bounds.start, bounds.end, monthsFrom, monthsTo, version])
 
   // A week's rows only ever fill that week: while the next one loads, the
   // screen waits rather than count the last one's, none of which fall in it,
@@ -86,7 +96,7 @@ export function WeekScreen({ monday }: { monday: string | null }) {
         asOf,
         categories: weekCategoriesForCore(categories),
         planHistory: plansForCore(here.plans),
-        entries: entriesForCore(here.rows),
+        entries: entriesForCore(here.monthRows),
         statementPeriodEnds: here.ends.map((e) => isoDate(e)),
         // Nothing types a balance for a week, so there is no start, and no end (D17).
         startingBalanceCents: null,
@@ -100,8 +110,10 @@ export function WeekScreen({ monday }: { monday: string | null }) {
   const sheet = typeof week === 'string' ? null : week
 
   // Last week, to the same weekday while this one runs (F25, D26). Read on
-  // its own, so if it fails only the comparison goes.
-  const earlier = useEarlier({ from: shiftWeek(bounds.start, -1), to: shiftWeek(bounds.end, -1) })
+  // its own, so if it fails only the comparison goes. From its month's
+  // first day when it began in a month the week's own read does not hold (F54).
+  const lastMonday = shiftWeek(bounds.start, -1)
+  const earlier = useEarlier({ from: lastMonday < monthsFrom ? monthBounds(lastMonday).start : lastMonday, to: shiftWeek(bounds.end, -1) })
   const comparison = useMemo((): PeriodComparison | 'failed' | null => {
     if (here === null || earlier === null) return null
     if (earlier === 'failed') return 'failed'
@@ -113,13 +125,14 @@ export function WeekScreen({ monday }: { monday: string | null }) {
         historyStart: earlier.historyStart === null ? null : isoDate(earlier.historyStart),
         categories: categoriesForCore(categories),
         planHistory: plansForCore(here.plans),
-        entries: entriesForCore([...here.rows, ...earlier.rows]),
+        // Each row once: the earlier read's days from this week's first month on are already here.
+        entries: entriesForCore([...here.monthRows, ...earlier.rows.filter((r) => r.posted_on < monthsFrom)]),
       })
     } catch {
       // As the week's own sheet: a row naming a category that did not load.
       return 'failed'
     }
-  }, [here, earlier, categories, bounds.start, today])
+  }, [here, earlier, categories, bounds.start, monthsFrom, today])
 
   const isThisWeek = weekBounds(today).start === bounds.start
   // Back on this week, the address is the bare #/week again, so it keeps
@@ -204,7 +217,10 @@ export function WeekScreen({ monday }: { monday: string | null }) {
 
 interface Loaded {
   readonly start: string
+  /** The week's own rows. */
   readonly rows: readonly LedgerRow[]
+  /** The rows of every month the week touches, the week's among them (F54). */
+  readonly monthRows: readonly LedgerRow[]
   /** Every monthly amount typed from the week's last month or before it. */
   readonly plans: readonly PlanRow[]
   readonly ends: readonly string[]

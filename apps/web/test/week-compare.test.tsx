@@ -92,6 +92,21 @@ describe('the Week beside last week (D26)', () => {
     expect((await line()).getByText(text('14 – 20 Sep: $155.00 spent · 7 – 13 Sep: $12.00'))).toBeTruthy()
   })
 
+  // F54: last week began in September, a month this week's own read does not
+  // hold. Rent, due on the 30th, was charged on 2 September, so last week
+  // planned none: without September's rows it would read $900.00.
+  it("reads last week's month too, so a bill charged earlier in it is not planned in last week", async () => {
+    vi.setSystemTime(new Date(2026, 9, 14, 12))
+    window.location.hash = '/week/2026-10-05'
+    const fake = seeded()
+    fake.tables.categories.push({ id: 'rent', name: 'Rent', kind: 'bill', sort_order: 0, weekly_budget_cents: null })
+    fake.tables.category_plans.push({ id: 'pl1', category_id: 'rent', effective_month: '2026-01-01', planned_cents: 90000, due_day: 30 })
+    fake.tables.transactions.push({ ...tx('t9', '2026-09-02', -90000), category_id: 'rent' }, tx('t10', '2026-10-06', -2000))
+    renderScreen(<WeekScreen />, fake)
+
+    expect((await line()).getByText(text('5 – 11 Oct: $20.00 spent · 28 Sep – 4 Oct: $0.00'))).toBeTruthy()
+  })
+
   it('says which statement to import when last week starts before the records (F24)', async () => {
     renderScreen(<WeekScreen />, seeded('2026-09-15'))
 

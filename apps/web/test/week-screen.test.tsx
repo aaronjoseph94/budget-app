@@ -169,6 +169,47 @@ describe('WeekScreen', () => {
     await waitFor(async () => expect(await cells('Bills', 'Rent')).toEqual(['1,700.00planned', '1,700.00planned', '0.00']))
   })
 
+  // F54, the tester's September 2026: Netflix, due on the 23rd, was charged
+  // on the 1st, so the Month and the Bill calendar count that charge alone.
+  // The gym, due the same day and charged nowhere, is still planned.
+  it('does not plan a bill again in the week of its due day once it was charged that month', async () => {
+    vi.setSystemTime(new Date(2026, 8, 30, 12))
+    window.location.hash = '/week/2026-09-21'
+    const plan = (id: string, planned_cents: number) => ({ id: `pl-${id}`, category_id: id, effective_month: '2026-01-01', planned_cents, due_day: 23 })
+    const fake = createFakeSupabase({
+      categories: [
+        { id: 'netflix', name: 'Netflix', kind: 'subscription', sort_order: 0, weekly_budget_cents: null },
+        { id: 'gym', name: 'Gym', kind: 'subscription', sort_order: 1, weekly_budget_cents: null },
+      ],
+      transactions: [{ id: 't1', posted_on: '2026-09-01', amount_cents: -1799, merchant_raw: 'STREAMFLIX', category_id: 'netflix', source: 'card_pdf' }],
+      category_plans: [plan('netflix', 1799), plan('gym', 4000)],
+    })
+    renderScreen(<WeekScreen />, fake)
+
+    expect(await summary('Spent')).toBe('$40.00')
+    expect(await cells('Subscriptions', 'Gym')).toEqual(['40.00planned', '40.00planned', '0.00'])
+    // Netflix is a row with nothing in it this week, folded with the empty ones.
+    const block = within(screen.getByRole('region', { name: 'Subscriptions' }))
+    expect(block.queryByRole('rowheader', { name: 'Netflix' })).toBeNull()
+    fireEvent.click(block.getByRole('button', { name: 'Show 1 empty' }))
+    expect(await cells('Subscriptions', 'Netflix')).toEqual(['', '', ''])
+    // Its sheet says what is true: nothing filed this week, and no amount standing in.
+    fireEvent.click(block.getByRole('button', { name: 'Netflix' }))
+    const sheet = within(screen.getByRole('dialog', { name: 'Netflix' }))
+    expect(sheet.getByText('No charges filed here in 21 – 27 Sep.')).toBeTruthy()
+    expect(sheet.queryByText(/STREAMFLIX|planned|monthly amount/)).toBeNull()
+    fireEvent.click(sheet.getByRole('button', { name: 'Close' }))
+
+    // The week before has nothing; the week of the charge, three back, shows it, real.
+    fireEvent.click(screen.getByRole('button', { name: 'Previous week' }))
+    await waitFor(async () => expect(await summary('Spent')).toBe('$0.00'))
+    for (const monday of ['2026-09-07', '2026-08-31']) {
+      fireEvent.click(screen.getByRole('button', { name: 'Previous week' }))
+      await waitFor(() => expect(window.location.hash).toBe(`#/week/${monday}`))
+    }
+    await waitFor(async () => expect(await summary('Spent')).toBe('$17.99'))
+  })
+
   // Hand-derived: 8,450 of 30,000 is 28% with 21,550 to go; 21,550 over the
   // two weeks to 25 March is 10,775 a week; 130.12 at 275.00 an hour is 28 min.
   it('shows the goal, what it needs each week, and the week as goal time', async () => {
