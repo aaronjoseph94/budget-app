@@ -45,6 +45,15 @@ const DEFAULT: Address = { screen: HOME, param: null }
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/
 
 /**
+ * The years an address may name. The engine's calendar runs 0000 to 9999
+ * and a screen steps a period either side of the one it shows, so
+ * `#/month/9999-12` and `#/week/0000-01-03` were read as periods and then
+ * could not be drawn. No budget is kept outside these.
+ */
+const inYears = (text: string): boolean => text >= '1900' && text < '3000'
+const isMonth = (text: string): boolean => MONTH.test(text) && inYears(text)
+
+/**
  * The Setup and AI settings screens are Settings' Lists and AI tabs (ADR
  * 0014 §2). Their old addresses still open, as the tab, so a bookmark or
  * an older link lands where it meant to; useAddress then writes the new
@@ -58,7 +67,7 @@ const OLD: ReadonlyMap<string, Address> = new Map([
 /** A real calendar day: `2026-02-30` is refused, not rolled into March. */
 function isDay(text: string): boolean {
   try {
-    return isoDate(text) === text
+    return isoDate(text) === text && inYears(text)
   } catch {
     return false
   }
@@ -66,10 +75,10 @@ function isDay(text: string): boolean {
 
 /** The rule each screen that takes a param reads it by; a screen not here takes none. */
 const PARAM: Partial<Record<Screen, (param: string) => boolean>> = {
-  month: (p) => MONTH.test(p),
-  year: (p) => MONTH.test(p),
-  calendar: (p) => MONTH.test(p),
-  reports: (p) => MONTH.test(p),
+  month: isMonth,
+  year: isMonth,
+  calendar: isMonth,
+  reports: isMonth,
   paycheck: isDay,
   // A week is named by its Monday, so each week has one address.
   week: (p) => isDay(p) && weekBounds(isoDate(p)).start === p,

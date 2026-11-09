@@ -240,7 +240,7 @@ export function Shell() {
 
 /** The screen the address names, each but the Month fetched on first use. */
 function Screens({ screen, param }: { screen: Screen; param: string | null }) {
-  return <ScreenBoundary screen={screen}>{VIEWS[screen].render(param)}</ScreenBoundary>
+  return <ScreenBoundary screen={screen} param={param}>{VIEWS[screen].render(param)}</ScreenBoundary>
 }
 
 /** "Search or jump to…": Help, its search box focused, for now (ADR 0011). */

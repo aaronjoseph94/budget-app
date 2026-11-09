@@ -20,11 +20,13 @@ function ScreenFailed() {
  * Holds one screen: "Loading…" while its chunk arrives, and a note with a
  * Reload button if the chunk does not arrive or the screen throws, where
  * either once unmounted the whole app to a blank page (FE-1). Keyed by the
- * screen, so moving to another screen tries again.
+ * screen, so moving to another screen tries again, and so does another
+ * period of the same screen: one month that cannot be drawn does not keep
+ * the Month from opening this one.
  */
-export function ScreenBoundary({ screen, children }: { screen: Screen; children: ReactNode }) {
+export function ScreenBoundary({ screen, param = null, children }: { screen: Screen; param?: string | null; children: ReactNode }) {
   return (
-    <ErrorBoundary key={screen} fallback={<ScreenFailed />}>
+    <ErrorBoundary key={screen} retryOn={param} fallback={<ScreenFailed />}>
       <Suspense fallback={<p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>}>{children}</Suspense>
     </ErrorBoundary>
   )
