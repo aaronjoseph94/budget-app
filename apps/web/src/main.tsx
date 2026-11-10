@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import { App } from './App.js'
 import { restoreAddress } from './nav.js'
+import { rememberScroll } from './scroll-memory.js'
 import { isConsentPath } from './ai-apps/consent-path.js'
 import { takeTokensOutOfAddress } from './auth.js'
 import { reloadOnceOnPreloadError } from './shell/preload-reload.js'
@@ -36,6 +37,8 @@ takeTokensOutOfAddress()
 const consent = isConsentPath(window.location.pathname)
 // Not on the consent page, so a remembered screen can never replace it.
 if (!consent) restoreAddress(storage('localStorage'))
+// Before the app draws, so Back finds the position of the page it left.
+if (!consent) rememberScroll()
 
 createRoot(root).render(
   <StrictMode>

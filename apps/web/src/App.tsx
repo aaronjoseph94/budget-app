@@ -14,6 +14,7 @@ import { Count, Dot, Suggested, labelOf } from './shell/marks.js'
 import { Sidebar } from './shell/Sidebar.js'
 import { ScreenBoundary } from './shell/ScreenBoundary.js'
 import { VIEWS } from './shell/screens.js'
+import { returning } from './scroll-memory.js'
 import { TopBar } from './shell/TopBar.js'
 import { askForHelpSearch, searchKeyIsCommand } from './help/search-focus.js'
 import { useSidebarState } from './shell/sidebar-state.js'
@@ -304,8 +305,9 @@ function useAnnounceScreen(screen: Screen, param: string | null, main: { readonl
     document.title = `${SCREEN_NAME[screen]} · Budget`
     if (shown.current !== null && shown.current !== page) {
       // The tabs are links now (FE-20), so the scroll navigate() gave them
-      // happens here, for however the screen was reached.
-      window.scrollTo({ top: 0 })
+      // happens here, for however the screen was reached. Not on Back or
+      // Forward: scroll-memory.ts puts back where that page was.
+      if (!returning()) window.scrollTo({ top: 0 })
       // Unless the new page has put focus in itself, as Help's search does.
       const taken = document.activeElement !== before.current && main.current?.contains(document.activeElement) === true
       if (!taken) main.current?.focus({ preventScroll: true })
