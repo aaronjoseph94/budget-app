@@ -93,15 +93,20 @@ export function PeriodSummary({
   const noBudgets = sheet.blocks.variable.rows.every((r) => r.budgetCents === null)
   return (
     <section aria-label="Summary">
-      <dl className="grid h-full grid-cols-1 gap-3 min-[480px]:grid-cols-2 md:gap-4">
-        <StatCard label="Spent" icon="bag" extra={<CompareLine comparison={comparison} label={compareLabel} earlier={earlier} />}>
+      {/* One across, two from 480 px; a card whose figure is too long for
+        half the row takes the row, as on the Month. */}
+      <dl className="flex h-full flex-wrap gap-3 md:gap-4">
+        <StatCard label="Spent" icon="bag" extra={<CompareLine comparison={comparison} label={compareLabel} earlier={earlier} />} className={WEEK_SHARE}>
           <Figure>{formatCents(spentCents)}</Figure>
         </StatCard>
         {/* The workbook takes a blank budget as $0 (F5), and only Variable expenses count. */}
-        <StatCard label="Left to spend" icon="sparkles" hero hint={noBudgets ? noBudgetsHint : null}>
+        <StatCard label="Left to spend" icon="sparkles" hero hint={noBudgets ? noBudgetsHint : null} className={WEEK_SHARE}>
           <Figure className={cn(left < 0 && NEGATIVE_FIGURE)}>{formatCents(left)}</Figure>
         </StatCard>
       </dl>
     </section>
   )
 }
+
+/** A Week stat card's share of the row: all of it below 480 px, half from there, less half the gap. */
+const WEEK_SHARE = 'grow basis-full min-[480px]:basis-[calc(50%-0.375rem)] md:basis-[calc(50%-0.5rem)]'

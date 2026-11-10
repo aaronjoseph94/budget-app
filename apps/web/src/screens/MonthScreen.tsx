@@ -611,9 +611,12 @@ function Block({
           </span>
           <div className="min-w-0 flex-1">
             <h2 className="text-lg font-semibold leading-snug max-sm:text-base">{heading}</h2>
-            <p className="text-[0.9375rem] text-muted-foreground">
+            {/* A total too long for the head even alone scrolls in its own line. */}
+            <p className="overflow-x-auto text-[0.9375rem] text-muted-foreground">
               <Figure className="font-semibold text-foreground">{formatCents(block.actualTotalCents)}</Figure>
-              {budgeted ? <span className="tnum whitespace-nowrap"> of {formatCents(block.effectiveBudgetTotalCents)}</span> : null}
+              {/* The space stands outside the two figures, so the line can
+                turn there and nowhere inside either. */}
+              {budgeted ? <>{' '}<span className="tnum whitespace-nowrap">of {formatCents(block.effectiveBudgetTotalCents)}</span></> : null}
               {/* Under $1 is the same (F26), and a chip saying so on every quiet list is noise. */}
               {/* Kept whole where it fits; with the phone's text at 200% it was
                 wider than the card and pushed the Month sideways (N58). */}

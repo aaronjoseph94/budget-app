@@ -12,9 +12,18 @@ export function Label({ children }: { children: ReactNode }) {
 
 export function Stat({ label, value, tone }: { label: string; value: string; tone?: 'spend' | 'income' }) {
   return (
-    <div className="px-4 py-3">
+    // The value is one line: an amount never breaks inside itself or drops
+    // its minus sign. In a cell under 152 px, half a 320 px phone, it is set
+    // smaller, and one too long even so scrolls in its own box.
+    <div className="@container min-w-0 px-4 py-3">
       <Label>{label}</Label>
-      <div className={cn('tnum mt-1 text-xl font-semibold', tone === 'spend' && 'text-spend', tone === 'income' && 'text-income')}>
+      <div
+        className={cn(
+          'tnum mt-1 overflow-x-auto whitespace-nowrap text-xl font-semibold @max-[9.5rem]:text-base',
+          tone === 'spend' && 'text-spend',
+          tone === 'income' && 'text-income',
+        )}
+      >
         {value}
       </div>
     </div>

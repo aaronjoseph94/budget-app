@@ -64,8 +64,9 @@ export function MonthSummary({
       {/* Mockup A's four stat cards, in design-review P1 item 3's order: Left
         to spend first, as the one card with the accent's gradient, then End
         of month with the forecast under it, Start and Spent. Two across on
-        a phone, one below 360 px, four from 1280 px. */}
-      <dl className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2 md:gap-4 xl:grid-cols-4">
+        a phone, one below 360 px, four from 1280 px. A card whose figure
+        is too long for its share takes the row (STAT_SHARE). */}
+      <dl className="flex flex-wrap gap-3 md:gap-4">
         <StatCard
           label="Left to spend"
           icon="sparkles"
@@ -73,13 +74,14 @@ export function MonthSummary({
           // The workbook takes a blank budget as $0, so every dollar spent comes off
           // (F5). Only Variable expenses count here, so the hint names them.
           hint={noBudgets ? 'No budgets on Variable expenses yet.' : null}
+          className={STAT_SHARE}
         >
           <Figure className={cn(left < 0 && NEGATIVE_FIGURE)}>{formatCents(left)}</Figure>
         </StatCard>
-        <StatCard label="End of month" icon="calendar" extra={forecast}>
+        <StatCard label="End of month" icon="calendar" extra={forecast} className={STAT_SHARE}>
           {end === null ? <Waiting>Shown once Start is typed</Waiting> : <Figure>{formatCents(end)}</Figure>}
         </StatCard>
-        <StatCard label="Start" icon="wallet">
+        <StatCard label="Start" icon="wallet" className={STAT_SHARE}>
           <button
             type="button"
             ref={opener}
@@ -95,7 +97,7 @@ export function MonthSummary({
             {start === null ? <Waiting>Type your starting bank balance</Waiting> : <Figure>{formatCents(start)}</Figure>}
           </button>
         </StatCard>
-        <StatCard label="Spent" icon="bag">
+        <StatCard label="Spent" icon="bag" className={STAT_SHARE}>
           <Figure>{formatCents(spentCents)}</Figure>
         </StatCard>
       </dl>
@@ -120,6 +122,12 @@ export function MonthSummary({
 }
 
 /**
+ * A stat card's share of the Month's row: all of it below 360 px, half on
+ * a phone and a quarter from 1280 px, each less its part of the gaps.
+ */
+const STAT_SHARE = 'grow basis-full min-[360px]:basis-[calc(50%-0.375rem)] md:basis-[calc(50%-0.5rem)] xl:basis-[calc(25%-0.75rem)]'
+
+/**
  * One stat card: its label with an icon tile in the accent, then its
  * number, then any hint or line under it. Only the hero takes a gradient
  * (design-review P2 item 6); its words take `canvas-muted`, as #6b7280 reads
@@ -132,6 +140,7 @@ export function StatCard({
   hero = false,
   hint = null,
   extra = null,
+  className,
   children,
 }: {
   label: string
@@ -139,11 +148,14 @@ export function StatCard({
   hero?: boolean
   hint?: string | null
   extra?: ReactNode
+  className?: string
   children: ReactNode
 }) {
   const quiet = hero ? 'text-canvas-muted' : 'text-muted-foreground'
   return (
-    <div className={cn('min-w-0 rounded-xl border p-4 md:px-6 md:pt-5 md:pb-6', hero ? 'bg-linear-to-b from-card to-primary-tint' : 'bg-card')}>
+    // Never narrower than its figure, which is one line (Figure): in a row
+    // that wraps, a card too narrow for its number takes a row of its own.
+    <div className={cn('min-w-min rounded-xl border p-4 md:px-6 md:pt-5 md:pb-6', hero ? 'bg-linear-to-b from-card to-primary-tint' : 'bg-card', className)}>
       <dt className={cn('flex items-center justify-between gap-2 text-sm md:text-base', quiet)}>
         {label}
         <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">

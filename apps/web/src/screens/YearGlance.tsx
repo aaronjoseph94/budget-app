@@ -62,10 +62,13 @@ export function YearGlance({
         <Card>
           {/* The grid is the list itself: a <div> of pairs inside the <dl>
             was one level too deep for a screen reader to pair them (FE-11). */}
-          <dl className="grid grid-cols-2 gap-2">
-            <Amount label="Left over" cents={sheet.leftOverCents} hint="Income, less expenses and savings" className="col-span-2" />
-            <Amount label="Starting balance" cents={start} />
-            <Amount label="Ending balance" cents={end} />
+          {/* The two balances side by side while each fits on one line; one
+            too long for half the card takes the row, and the other goes
+            under it, rather than break inside the number. */}
+          <dl className="flex flex-wrap gap-2">
+            <Amount label="Left over" cents={sheet.leftOverCents} hint="Income, less expenses and savings" className="basis-full" />
+            <Amount label="Starting balance" cents={start} className="min-w-min grow basis-[calc(50%-0.25rem)]" />
+            <Amount label="Ending balance" cents={end} className="min-w-min grow basis-[calc(50%-0.25rem)]" />
           </dl>
           {start === null ? (
             <TypeStartLink startMonth={sheet.startMonth} className="mt-2 text-xs" />

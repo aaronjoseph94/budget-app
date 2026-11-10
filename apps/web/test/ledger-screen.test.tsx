@@ -35,6 +35,20 @@ describe('LedgerScreen', () => {
     expect(screen.getByText(/Every row as it is, card payments and savings moves included/)).toBeTruthy()
     await expectNoAxeViolations()
   })
+
+  // At 320 px each total had half the row, and "-$2,771.99" put its minus
+  // sign on a line of its own. Each card is now never narrower than its
+  // figure, and a row that cannot hold both puts one under the other.
+  it('puts Money in under Money out, rather than break a total, when both do not fit', async () => {
+    const fake = createFakeSupabase({
+      categories: [{ id: 'c1', name: 'Groceries', kind: 'variable', sort_order: 0, weekly_budget_cents: null }],
+      transactions: [{ id: 't1', posted_on: '2026-09-02', amount_cents: -1234567, merchant_raw: 'CORNER MARKET', category_id: 'c1', source: 'card_pdf' }],
+    })
+    renderScreen(<LedgerScreen />, fake)
+    const out = (await screen.findByText('Money out')).parentElement
+    expect(out?.className.split(' ')).toEqual(expect.arrayContaining(['min-w-min', 'grow']))
+    expect(out?.parentElement?.className.split(' ')).toEqual(expect.arrayContaining(['flex', 'flex-wrap']))
+  })
 })
 
 /** Two charges in September and one in August, all invented. */

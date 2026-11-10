@@ -3,6 +3,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { within } from '@testing-library/dom'
 import { afterEach, describe, expect, it } from 'vitest'
 import { Figure, MonthTitle } from '../src/components/ui/type.js'
+import { Stat } from '../src/ui.js'
 import { expectNoAxeViolations } from './axe.js'
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true })
@@ -44,6 +45,26 @@ describe('Figure', () => {
   it('adds only tabular figures, leaving size and colour to the caller', () => {
     const el = render(<Figure className="text-4xl text-income">$248.31</Figure>)
     const figure = within(el).getByText('$248.31')
-    expect([...figure.classList]).toEqual(['tnum', '[overflow-wrap:anywhere]', 'text-4xl', 'text-income'])
+    expect([...figure.classList]).toEqual(['tnum', 'whitespace-nowrap', 'text-4xl', 'text-income'])
+  })
+
+  // At 320 px "-$2,771.99" put its minus sign on a line of its own, and
+  // "$12,345.67" broke after the 6: an amount never wraps inside itself.
+  // The box around it gives way instead (bug bash, phone).
+  it('keeps an amount on one line, minus sign and all', () => {
+    const el = render(<Figure>-$2,771.99</Figure>)
+    const classes = [...within(el).getByText('-$2,771.99').classList]
+    expect(classes).toContain('whitespace-nowrap')
+    expect(classes.filter((c) => /^(break-|wrap-|\[overflow-wrap)/.test(c))).toEqual([])
+  })
+})
+
+describe('Stat', () => {
+  it('keeps its value on one line, smaller in a narrow cell, and scrolls it in its own box past that', () => {
+    const el = render(<Stat label="Money out" value="-$12,345.67" tone="spend" />)
+    const value = within(el).getByText('-$12,345.67')
+    expect([...value.classList]).toEqual(expect.arrayContaining(['whitespace-nowrap', 'overflow-x-auto', '@max-[9.5rem]:text-base']))
+    expect(value.parentElement?.classList.contains('@container')).toBe(true)
+    expect(value.parentElement?.classList.contains('min-w-0')).toBe(true)
   })
 })

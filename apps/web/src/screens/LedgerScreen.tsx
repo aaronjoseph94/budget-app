@@ -18,6 +18,13 @@ import { HelpButton } from '../help/HelpButton.js'
 /** The end of an open-ended read: any date a row can carry. */
 const LAST_DAY = '9999-12-31'
 
+/**
+ * A total's card: half the row less half the gap, and never narrower than
+ * its own figure, which is one line (Figure). Below 360 px its 12 px edges
+ * keep two four-figure totals side by side.
+ */
+const TOTAL_CARD = 'min-w-min grow basis-[calc(50%-0.5rem)] p-4 max-[359px]:p-3 md:px-6 md:py-5'
+
 /** All transactions: everything that reached the ledger, a month at a time. */
 export function LedgerScreen() {
   const { supabase, categories, refresh } = useAppData()
@@ -143,14 +150,17 @@ export function LedgerScreen() {
       {totals !== null ? (
         // White, not the mockup's rose and green: those hues name the Debts
         // and Income lists (ADR 0010), and these totals are every row.
-        <div className="grid grid-cols-2 gap-3 md:gap-4">
-          <Card className="min-w-0 p-4 md:px-6 md:py-5">
+        // Two across while both totals fit on one line each; a total too
+        // long for half the screen takes the row, and the other goes under
+        // it, rather than break inside the number or lose its minus sign.
+        <div className="flex flex-wrap gap-3 md:gap-4">
+          <Card className={TOTAL_CARD}>
             <p className="text-sm text-muted-foreground md:text-[0.9375rem]">Money out</p>
             <p className="mt-1 text-xl font-bold tracking-[-0.02em] md:text-2xl xl:text-[2rem]">
               <Figure>{formatCents(totals.outflowCents)}</Figure>
             </p>
           </Card>
-          <Card className="min-w-0 p-4 md:px-6 md:py-5">
+          <Card className={TOTAL_CARD}>
             <p className="text-sm text-muted-foreground md:text-[0.9375rem]">Money in</p>
             <p className="mt-1 text-xl font-bold tracking-[-0.02em] text-income md:text-2xl xl:text-[2rem]">
               <Figure>{formatCents(totals.inflowCents)}</Figure>
@@ -158,7 +168,7 @@ export function LedgerScreen() {
           </Card>
           {/* A plain sum of the rows, so a card payment is money in here and
             never on the Month; said, so neither reads as the Month's Spent. */}
-          <p className="col-span-2 text-xs text-muted-foreground md:text-[0.8125rem]">
+          <p className="basis-full text-xs text-muted-foreground md:text-[0.8125rem]">
             Every row as it is, card payments and savings moves included. The Month counts spending by list.
           </p>
         </div>

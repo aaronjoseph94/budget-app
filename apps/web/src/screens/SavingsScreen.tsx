@@ -419,7 +419,8 @@ function GoalFigures({ figures: f, goal }: { figures: FundFigures; goal: FundRow
     <>
       <p>
         <Figure className="text-3xl font-bold">{formatCents(f.balanceCents)}</Figure>
-        <span className="tnum whitespace-nowrap text-sm text-muted-foreground"> saved of {formatCents(f.goalCents)}</span>
+        {' '}
+        <span className="tnum whitespace-nowrap text-sm text-muted-foreground">saved of {formatCents(f.goalCents)}</span>
       </p>
       <Bar figures={f} />
       <div className="rounded-lg bg-savings-needed px-3 py-2.5">
