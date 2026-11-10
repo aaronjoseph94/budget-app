@@ -76,6 +76,8 @@ export function DebtEditor({
     if (minimumPaymentCents === null || minimumPaymentCents < 0) return setError(tooLargeInput(minimum) ?? 'Type the minimum payment as an amount, like 150.')
     if (aprBasisPoints === null || aprBasisPoints < 0) return setError('Type the APR as a percentage, like 19.99, or leave it empty for 0%.')
     if (!/^\d{4}-\d{2}$/.test(start)) return setError('Choose the month the balance is as of.')
+    // A plan from year 9999 runs off the calendar, and Debts could not load again (bug bash, d01).
+    if (start < '1900-01' || start > '2999-12') return setError('Choose a month from 1900 to 2999.')
     if (extras.some((e) => e.month < startMonth)) {
       return setError('This debt has extra payments before that month. Remove them first, or choose an earlier month.')
     }

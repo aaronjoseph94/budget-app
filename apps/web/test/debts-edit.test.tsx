@@ -77,6 +77,18 @@ describe('DebtsScreen, typing debts', () => {
     expect(fake.tables.debts[0]?.start_date).toBe('2026-07-01')
   })
 
+  it('refuses an As of month outside 1900 to 2999, which no payoff plan can run from (bug bash, d01)', async () => {
+    const fake = seeded()
+    renderScreen(<DebtsScreen />, fake)
+    await edit()
+    for (const month of ['9999-06', '0001-01', '1899-12', '3000-01']) {
+      type(/^As of/, month)
+      fireEvent.click(within(sheet()).getByRole('button', { name: 'Save debt' }))
+      expect([month, within(sheet()).queryByText('Choose a month from 1900 to 2999.')]).not.toEqual([month, null])
+    }
+    expect(fake.tables.debts[0]?.start_date).toBe('2026-07-01')
+  })
+
   it("says so in the sheet when the server refuses, as for a name already used", async () => {
     const fake = seeded()
     fake.fail('PATCH debts', '23505')

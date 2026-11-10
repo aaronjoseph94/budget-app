@@ -4176,3 +4176,16 @@ and the done line reads "the weekly budget for Groceries".
 week. That needs weekly budgets with history (a dated row per change,
 as `category_budgets` keeps monthly ones), a migration, and streaks,
 the recap and the Week reading the row in effect for each week.
+
+## N-next (one far-off debt stops Debts loading)
+
+**Seen:** 2026-11-10, bug bash (d01): a debt saved "As of" June 9999 made
+Debts fail to load, so the debt could not be opened to fix it.
+
+**Done here:** the debt editor refuses a month outside 1900 to 2999.
+
+**Left:** a row already stored that way (typed before this, or written
+another way) still stops Debts, the Forecast's debt-free card and Ask's
+debt-free answer, since `debtsForCore` hands every row to one payoff
+plan. Leaving it out would change every total, so the screens would have
+to say that one debt could not be read and offer to edit or remove it.
