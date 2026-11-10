@@ -233,6 +233,16 @@ describe('the Sunday check-in', () => {
     expect(within(section('Your goal')).getByText('46 h of 109 h')).toBeTruthy()
   })
 
+  it('has no goal line once the main goal’s target is met: never "Keep going!" for a goal already there', async () => {
+    const fake = checkinFake()
+    fake.tables.savings_goals[0] = { ...fake.tables.savings_goals[0]!, saved_cents: 3_000_000 }
+    renderScreen(<Shell />, fake)
+
+    const card = (await screen.findByRole('heading', { name: 'Your goal', level: 2 })).closest('div.rounded-xl') as HTMLElement
+    expect(within(card).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Flight training109 h of 109 h'])
+    expect(within(card).queryByText(/closer/)).toBeNull()
+  })
+
   // Goals are plural (G1): each active goal, the main goal first, hours only where a goal has a cost an hour.
   it('lists every active goal under the goal line, the main goal first', async () => {
     const fake = checkinFake()

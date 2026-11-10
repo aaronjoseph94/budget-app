@@ -184,6 +184,15 @@ describe('the Coach’s goals, more than one (G1)', () => {
     expect(within(list).getByRole('link', { name: 'All your goals on Savings' }).getAttribute('href')).toBe('#/savings')
   })
 
+  it('cheers no goal on once its target is met, where the card says so', async () => {
+    go('/coach')
+    renderScreen(<Shell />, withGoal(3_000_000))
+    expect(await screen.findByText('Target met. Mark it reached on Savings when you are done.')).toBeTruthy()
+    // The forecast's card comes with the day's words, the goal line among them.
+    expect(await screen.findByRole('heading', { name: 'Where September is heading' }, { timeout: 4_000 })).toBeTruthy()
+    expect(screen.queryByText(/closer/)).toBeNull()
+  })
+
   it('cheers the main goal on in the app’s own words, in the owner’s tone', async () => {
     const fake = withGoal(1_265_000)
     fake.tables.savings_goals.push(other('g2', 'Travel', { sort_order: 1 }))

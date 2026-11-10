@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { isoDate } from '@budget/core'
 import { proseProblem, type CheckinReply } from '@budget/schema'
-import { TONES, checkCheckinReply, checkinBrief, checkinFacts, checkinWords, mergeCheckin, renderSegments, type CheckinFacts } from '../src/index.js'
+import { TONES, checkCheckinReply, checkinBrief, checkinFacts, checkinWords, goalLineFor, mergeCheckin, renderSegments, type CheckinFacts } from '../src/index.js'
 import { CHECKIN, GOALS, checkinOf, nameOf } from './checkin-fixture.js'
 
 /** The check-in in the app's own words, and a model's checked against what it was offered (ADR 0005 §4). */
@@ -37,6 +37,20 @@ describe('checkinWords', () => {
       tryThis: 'Try keeping {{B.name}} under {{B.limit}} next week.',
       goal: 'Every lighter week brings {{D.name}} closer. Keep going!',
     })
+  })
+
+  it('has no goal line once the main goal’s target is met, so it never says "Keep going!" beside "Target met"', () => {
+    const met = checkinFacts({ ...checkinOf(CHECKIN), goals: GOALS.map((g) => (g.main ? { ...g, met: true } : g)), nameOf })
+    for (const tone of TONES) expect(checkinWords({ facts: met, tone }).goal).toBeNull()
+    expect(mergeCheckin({ own: checkinWords({ facts: met, tone: 'cheerleader' }), ai: { recap: null, win: null, tryThis: null, goal: 'Keep going on {{D.name}}.' } }).goal).toBeNull()
+    // Another goal met, the main one not: the line stays.
+    const other = checkinFacts({ ...checkinOf(CHECKIN), goals: GOALS.map((g) => (g.main ? g : { ...g, met: true })), nameOf })
+    expect(checkinWords({ facts: other, tone: 'cheerleader' }).goal).toBe('Every lighter week brings {{D.name}} closer. Keep going!')
+    expect([goalLineFor({ goal: GOALS[0], tone: 'straight' }), goalLineFor({ goal: { ...GOALS[0]!, met: true }, tone: 'straight' }), goalLineFor({ goal: undefined, tone: 'straight' })]).toEqual([
+      'Each week you spend less moves {{A.name}} closer.',
+      null,
+      null,
+    ])
   })
 
   it('says what was left of a kept week, and has no recap or goal line without a covered week or a goal', () => {

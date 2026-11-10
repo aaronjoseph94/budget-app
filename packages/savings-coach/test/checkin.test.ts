@@ -31,7 +31,7 @@ describe('checkinFacts', () => {
     expect([recap, top, impulse, mainGoal]).toEqual(['A', 'B', null, 'D'])
     // Over the budgets, but less than the week before: that is the win.
     expect(win).toEqual({ letter: 'A', reason: 'less' })
-    expect(goals['E']).toEqual({ key: 'goal:travel', subject: { label: 'Travel' }, figures: {}, main: false, unit: 'dollars' })
+    expect(goals['E']).toEqual({ key: 'goal:travel', subject: { label: 'Travel' }, figures: {}, main: false, unit: 'dollars', met: false })
   })
 
   it('calls a week kept within its budgets the win, and says what was left', () => {

@@ -343,6 +343,15 @@ export const GOAL_LINE_TEMPLATES: Tones<string> = {
   straight: 'Each week you spend less moves {{A.name}} closer.',
 }
 
+/**
+ * The goal line for the main goal, or none: with no goal, or once its
+ * target is met, when "closer" is untrue and the goal's own card already
+ * says "Target met" (bug bash, c04).
+ */
+export function goalLineFor(input: { readonly goal: { readonly met: boolean } | undefined; readonly tone: Tone }): string | null {
+  return input.goal === undefined || input.goal.met ? null : GOAL_LINE_TEMPLATES[input.tone]
+}
+
 /** Which card template a fact is worded by; null for a kind that is never a card. */
 export function cardTemplateKey(fact: Fact): CardTemplateKey | null {
   switch (fact.kind) {

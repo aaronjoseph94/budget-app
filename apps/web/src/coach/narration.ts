@@ -11,7 +11,7 @@
  * so reused words never carry yesterday's numbers.
  */
 import type { Fact } from '@budget/core'
-import { GOAL_LINE_TEMPLATES, cardWords, type Card, type LibraryEntry, type ModelPayload, type PayloadGoal, type Tone } from '@budget/savings-coach'
+import { cardWords, goalLineFor, type Card, type LibraryEntry, type ModelPayload, type PayloadGoal, type Tone } from '@budget/savings-coach'
 import type { NarrateReply } from '@budget/schema'
 import type { Note } from './ai-cache.js'
 import type { Named } from './words.js'
@@ -69,10 +69,11 @@ export function ownWords(day: Day): Narration {
     }),
   )
   const main = day.goals[0]
+  const goal = goalLineFor({ goal: main, tone: day.tone })
   return {
     line: day.line === null ? null : { text: day.line.text, names: { A: day.line.fact }, ai: false },
     cards,
-    goal: main === undefined ? null : { text: GOAL_LINE_TEMPLATES[day.tone], names: { A: goalName(main) }, ai: false },
+    goal: goal === null || main === undefined ? null : { text: goal, names: { A: goalName(main) }, ai: false },
     quote: null,
   }
 }
@@ -125,7 +126,8 @@ function overlay(base: Narration, day: Day, reply: NarrateReply, keys: Readonly<
   const goal = only(GOAL_PART, null) ? aiWords(reply.goal, keys, live) : null
   // A quote pick belongs to its whole pack, which has no part signature of its own.
   const quote = reply.quote !== null && only('quote', null) && day.quotes.some((q) => q.id === reply.quote?.id) ? { id: reply.quote.id, why: aiWords(reply.quote.why, keys, live) } : null
-  return { line: line ?? base.line, cards, goal: goal ?? base.goal, quote: quote ?? base.quote }
+  // No goal line of the app's own (a met target), none of the AI's either: its words were for a goal still to reach.
+  return { line: line ?? base.line, cards, goal: base.goal === null ? null : (goal ?? base.goal), quote: quote ?? base.quote }
 }
 
 /** A reply just checked against today's brief: its letters are the brief's. */

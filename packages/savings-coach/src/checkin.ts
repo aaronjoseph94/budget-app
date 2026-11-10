@@ -35,6 +35,8 @@ export interface CheckinGoal {
   readonly figures: Readonly<Record<string, Figure>>
   readonly main: boolean
   readonly unit: 'hours' | 'dollars'
+  /** Its target is met, so the goal line is not drawn. */
+  readonly met: boolean
 }
 
 /** Why the week's win is one: kept within the budgets, less than the week before, or days with none. */
@@ -107,7 +109,7 @@ export function checkinFacts(input: {
     return i === -1 ? null : letterOf(i)
   }
   const goals = Object.fromEntries(
-    input.goals.map((g, i): [string, CheckinGoal] => [letterOf(list.length + i), { key: `goal:${g.id}`, subject: { label: g.name }, figures: {}, main: g.main, unit: g.hasHours ? 'hours' : 'dollars' }]),
+    input.goals.map((g, i): [string, CheckinGoal] => [letterOf(list.length + i), { key: `goal:${g.id}`, subject: { label: g.name }, figures: {}, main: g.main, unit: g.hasHours ? 'hours' : 'dollars', met: g.met }]),
   )
 
   // A win first (ADR 0005 §9): kept within the budgets, else less than the week before, else days with none.

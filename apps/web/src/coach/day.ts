@@ -7,7 +7,7 @@
  * send one brief and share its words.
  */
 import { useMemo } from 'react'
-import type { FactsDigest } from '@budget/core'
+import { goalsProgress, type FactsDigest } from '@budget/core'
 import { forecastCard } from '@budget/savings-coach'
 import { useAppData } from '../app-data.js'
 import type { FundsState } from '../funds.js'
@@ -51,6 +51,8 @@ export function useCoachDay(read: DigestRows | 'failed' | null, funds: FundsStat
   const day = useMemo((): Day | null => {
     if (facts === null || settings === null || dismissed === null) return null
     const { tone, shareShopNames } = settings
+    // Whose target is met, as core says it (F45): the goal line does not urge a met goal on.
+    const met = new Set((coreGoals === null ? [] : goalsProgress({ goals: coreGoals }).goals).filter((g) => g.targetMet).map((g) => g.id))
     return {
       tone,
       shareShopNames,
@@ -58,9 +60,9 @@ export function useCoachDay(read: DigestRows | 'failed' | null, funds: FundsStat
       cards: [...todaysCards(facts, dismissed), ...(forecast === null ? [] : [forecast])],
       goals: goals
         .filter((g) => g.status === 'active')
-        .map((g) => ({ id: g.id, name: g.name, main: g.id === mainGoal?.id, hasHours: g.unit_cost_cents !== null })),
+        .map((g) => ({ id: g.id, name: g.name, main: g.id === mainGoal?.id, hasHours: g.unit_cost_cents !== null, met: met.has(g.id) })),
       quotes: pick.shortlist,
     }
-  }, [facts, forecast, settings, dismissed, goals, mainGoal, pick.shortlist])
+  }, [facts, forecast, settings, dismissed, goals, mainGoal, coreGoals, pick.shortlist])
   return { digest, day, pick, asOf, dismissals }
 }

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { goalsProgress, impulseShare, isoDate } from '@budget/core'
 import { checkinFacts, type Checkin, type CheckinFacts } from '@budget/savings-coach'
 import { useAppData } from '../app-data.js'
-import { goalSavedCents, useFunds } from '../funds.js'
+import { goalSavedCents, useFunds, type FundsState } from '../funds.js'
 import { formatCents, formatDateRange, formatDayMonth, todayIso } from '../format.js'
 import { setWeeklyBudget } from '../ledger.js'
 import { hashOf } from '../nav.js'
@@ -51,16 +51,19 @@ export function CheckinScreen() {
   // The impulse share as it stands, with each answer given here.
   const impulse = useMemo(() => (read === null || read === 'failed' ? null : impulseShare({ asOf: isoDate(read.asOf), answers: answers.rows })), [read, answers.rows])
   const { goals, mainGoal } = useAppData()
+  const funds = useFunds()
   // Worked out once, as the check-in opens: tapping the weekly limit re-reads the app's data,
   // and last week's check-in must not change under the owner, or ask the AI again, when it does.
   const [opened, setOpened] = useState<{ figures: CheckinFigures; facts: CheckinFacts } | 'failed' | null>(null)
   useEffect(() => {
-    if (opened !== null || computed === null) return
+    // The funds too, so a goal whose target is met is known as the check-in opens.
+    if (opened !== null || computed === null || funds.status === 'loading') return
     if (computed === 'failed') return setOpened('failed')
     const active = goals.filter((g) => g.status === 'active')
-    const named = active.map((g) => ({ id: g.id, name: g.name, main: g.id === mainGoal?.id, hasHours: g.unit_cost_cents !== null }))
+    const progress = goalsProgress({ goals: active.map((g) => ({ id: g.id, targetCents: g.target_cents, savedCents: goalSavedCents(g, funds), unitCostCents: g.unit_cost_cents })) }).goals
+    const named = active.map((g, i) => ({ id: g.id, name: g.name, main: g.id === mainGoal?.id, hasHours: g.unit_cost_cents !== null, met: progress[i]!.targetMet }))
     setOpened({ figures: computed, facts: checkinFacts({ ...computed, goals: named, nameOf: (id) => categories.find((c) => c.id === id)?.name ?? 'A category' }) })
-  }, [opened, computed, goals, mainGoal, categories])
+  }, [opened, computed, goals, mainGoal, categories, funds])
   const figures = opened === null || opened === 'failed' ? opened : opened.figures
   const facts = opened === null || opened === 'failed' ? null : opened.facts
   const shops = useMemo(() => new Map(read === null || read === 'failed' ? [] : read.rows.map((r) => [r.id, r.merchant_raw])), [read])
@@ -88,7 +91,7 @@ export function CheckinScreen() {
           <LastWeek figures={figures} facts={facts} words={words} />
           <CheckinQuestions questions={figures.questions} week={figures.recap.week.start} answers={answers} impulse={impulse} shops={shops} />
           <TryThis figures={figures} facts={facts} words={words} />
-          <Goals facts={facts} words={words} />
+          <Goals facts={facts} words={words} funds={funds} />
           <Whose state={said} />
         </>
       )}
@@ -208,9 +211,8 @@ function TryThis({ figures, facts, words }: { figures: CheckinFigures; facts: Ch
 }
 
 /** A line for the goals, then each active goal's progress, the main goal first (G1). */
-function Goals({ facts, words }: { facts: CheckinFacts; words: Checkin }) {
+function Goals({ facts, words, funds }: { facts: CheckinFacts; words: Checkin; funds: FundsState }) {
   const { goals, mainGoal } = useAppData()
-  const funds = useFunds()
   const active = goals.filter((g) => g.status === 'active').sort((a, b) => (a.id === mainGoal?.id ? -1 : b.id === mainGoal?.id ? 1 : 0))
   if (active.length === 0) return null
   const { goals: figures } = goalsProgress({

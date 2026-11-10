@@ -26,6 +26,8 @@ export interface PayloadGoal {
   readonly name: string
   readonly main: boolean
   readonly hasHours: boolean
+  /** Its target is met (core's goalsProgress): the goal line has nothing to urge on. Never sent to a model. */
+  readonly met: boolean
 }
 
 export interface ModelPayloadInput {

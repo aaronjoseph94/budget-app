@@ -18,8 +18,8 @@ const { brief, keys } = modelPayload({
   line: factOf(line.factKey),
   cards,
   goals: [
-    { id: 'g1', name: 'Flight training', main: true, hasHours: true },
-    { id: 'g2', name: 'Emergency fund', main: false, hasHours: false },
+    { id: 'g1', name: 'Flight training', main: true, hasHours: true, met: false },
+    { id: 'g2', name: 'Emergency fund', main: false, hasHours: false, met: false },
   ],
   quotes: LIBRARY.slice(0, 6),
 })

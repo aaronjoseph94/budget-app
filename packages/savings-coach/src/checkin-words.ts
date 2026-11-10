@@ -12,7 +12,7 @@
 import type { CheckinPart, CheckinReply, NarrateCheckin } from '@budget/schema'
 import type { CheckinFacts, WinReason } from './checkin.js'
 import { type CheckDropReason, type PartWords, partOf, sentenceProblem } from './check-reply.js'
-import { GOAL_LINE_TEMPLATES, type Tone } from './templates.js'
+import { type Tone, goalLineFor } from './templates.js'
 
 type Tones = Readonly<Record<Tone, string>>
 
@@ -76,6 +76,7 @@ const as = (text: string, name: string, letter: string) => text.replaceAll(`{{${
  */
 export function checkinWords(input: { readonly facts: CheckinFacts; readonly tone: Tone }): CheckinWords {
   const { facts, tone } = input
+  const goal = goalLineFor({ goal: facts.mainGoal === null ? undefined : facts.goals[facts.mainGoal], tone })
   const spent = facts.recap === null ? null : facts.facts[facts.recap]!
   const recap =
     spent === null
@@ -90,7 +91,7 @@ export function checkinWords(input: { readonly facts: CheckinFacts; readonly ton
     recap,
     win: facts.win === null ? CHECKIN_WIN.general[tone] : as(CHECKIN_WIN[facts.win.reason][tone], 'W', facts.win.letter),
     tryThis: facts.top === null ? CHECKIN_TRY.general[tone] : as(CHECKIN_TRY.limit[tone], 'T', facts.top),
-    goal: facts.mainGoal === null ? null : as(GOAL_LINE_TEMPLATES[tone], 'A', facts.mainGoal),
+    goal: goal === null || facts.mainGoal === null ? null : as(goal, 'A', facts.mainGoal),
   }
 }
 

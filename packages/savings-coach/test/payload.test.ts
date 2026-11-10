@@ -29,8 +29,8 @@ type CarriesNumber<T> = T extends number | bigint
         : true
 
 const GOALS = [
-  { id: 'g1', name: 'Flight training', main: true, hasHours: true },
-  { id: 'g2', name: 'Emergency fund', main: false, hasHours: false },
+  { id: 'g1', name: 'Flight training', main: true, hasHours: true, met: false },
+  { id: 'g2', name: 'Emergency fund', main: false, hasHours: false, met: false },
 ]
 
 function inputFor(facts: readonly Fact[], over: Partial<ModelPayloadInput> = {}): ModelPayloadInput {

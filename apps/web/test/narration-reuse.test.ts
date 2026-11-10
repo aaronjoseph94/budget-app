@@ -31,7 +31,7 @@ function dayWith(diningSept: number): Day {
     tone: 'cheerleader',
     line: { fact: facts.find((f) => f.key === line.factKey)!, text: line.text },
     cards: rankCards({ facts, dismissed: new Set() }).cards,
-    goals: [{ id: 'g1', name: 'Flight training', main: true, hasHours: true }, { id: 'g2', name: 'Emergency fund', main: false, hasHours: false }],
+    goals: [{ id: 'g1', name: 'Flight training', main: true, hasHours: true, met: false }, { id: 'g2', name: 'Emergency fund', main: false, hasHours: false, met: false }],
     quotes: LIBRARY.slice(0, 6),
     shareShopNames: true,
   }

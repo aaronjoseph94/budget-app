@@ -24,7 +24,7 @@ function day(diningCents: number, tone: Tone = 'cheerleader'): Day {
     tone,
     line: { fact: facts.find((f) => f.key === line.factKey)!, text: line.text },
     cards: rankCards({ facts, dismissed: new Set() }).cards,
-    goals: [{ id: 'g1', name: 'Flight training', main: true, hasHours: true }, { id: 'g2', name: 'Travel', main: false, hasHours: false }],
+    goals: [{ id: 'g1', name: 'Flight training', main: true, hasHours: true, met: false }, { id: 'g2', name: 'Travel', main: false, hasHours: false, met: false }],
     quotes: [],
     shareShopNames: true,
   }

@@ -35,8 +35,8 @@ export const CHECKIN: CheckinInput = {
 export const nameOf = (id: string) => CHECKIN.categories.find((c) => c.id === id)?.name ?? id
 
 export const GOALS: readonly PayloadGoal[] = [
-  { id: 'flight', name: 'Flight training', main: true, hasHours: true },
-  { id: 'travel', name: 'Travel', main: false, hasHours: false },
+  { id: 'flight', name: 'Flight training', main: true, hasHours: true, met: false },
+  { id: 'travel', name: 'Travel', main: false, hasHours: false, met: false },
 ]
 
 /** The example's three engine results, with the answers given. */
