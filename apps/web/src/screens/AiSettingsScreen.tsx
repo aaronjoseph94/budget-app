@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AiProvider, AiServiceStatus, AiStatusReply } from '@budget/schema'
 import { useAppData } from '../app-data.js'
-import { aiStatus, NOT_SET_UP_HERE, type AiView } from '../ai/client.js'
+import { aiStatus, KEY_REJECTED_HERE, NOT_SET_UP_HERE, type AiView } from '../ai/client.js'
 import { ChoicesLine, ChoicesPanel, useAiChoices, UseAiSwitch } from '../ai/ChoicesPanel.js'
 import { CoachPanel } from '../ai/CoachPanel.js'
 import { KeyCard } from '../ai/KeyCard.js'
@@ -75,7 +75,7 @@ export function AiSettingsScreen() {
           </div>
         </div>
         <p aria-live="polite" className="text-lg font-semibold leading-snug">
-          {view === null ? 'Checking the AI helper…' : view.state === 'not_set_up' ? NOT_SET_UP_HERE : view.sentence}
+          {view === null ? 'Checking the AI helper…' : view.state === 'not_set_up' ? NOT_SET_UP_HERE : view.state === 'key_rejected' ? KEY_REJECTED_HERE : view.sentence}
         </p>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           {view === null || view.help === null ? null : (

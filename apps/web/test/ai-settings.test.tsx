@@ -74,6 +74,16 @@ describe('AI settings (ADR 0015)', () => {
     await expectNoAxeViolations()
   })
 
+  // On AI settings itself it said "Paste it again in AI settings."
+  it('says where to paste a turned-down key again: below, the key fields being on this tab', async () => {
+    const fake = createFakeSupabase()
+    fake.functions.aiStatus = aiStatusReply({
+      services: aiStatusReply().services.map((s) => (s.provider === 'groq' ? { ...s, source: 'saved' as const, hint: 'abcd', status: 'rejected' as const } : s)),
+    })
+    await open(fake, 'An AI service turned down its key. Paste it again below.')
+    expect(screen.queryByText(/Paste it again in AI settings/)).toBeNull()
+  })
+
   it('lists the free services in the owner’s own order', async () => {
     const fake = createFakeSupabase({ ai_settings: [{ user_id: 'u1', provider_order: ['gemini', 'openai', 'groq'] }] })
     await open(fake, 'AI isn’t set up yet. Everything still works in the app’s own words. Turn on free AI below, in about 2 minutes.')

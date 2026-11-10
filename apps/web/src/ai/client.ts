@@ -97,6 +97,9 @@ const STATE_OF: Readonly<Record<AiCode, Exclude<AiState, 'on'>>> = {
  */
 export const NOT_SET_UP_HERE = 'AI isn’t set up yet. Everything still works in the app’s own words. Turn on free AI below, in about 2 minutes.'
 
+/** A key turned down, as AI settings says it, where the key fields are below; it said "in AI settings" there. */
+export const KEY_REJECTED_HERE = 'An AI service turned down its key. Paste it again below.'
+
 export function viewOf(state: Exclude<AiState, 'on'>, status: AiStatusReply | null = null): AiView {
   return { state, ...SAID[state], status }
 }
