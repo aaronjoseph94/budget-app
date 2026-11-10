@@ -3917,6 +3917,12 @@ this month could not be added up"; a later migration adds
 
 ---
 
+**Partly settled 2026-11-10 (review fixes):** `parseAmountToCents` now
+stops at `MAX_TYPED_CENTS` both ways, so a statement row past it is one
+refused row ("This amount is too large to be a transaction.") and the
+preview never throws. Still open: a database CHECK on the amount, and the
+period screens' catch-all wording for a row that is somehow stored.
+
 ## N169 — Mistral's free API tier could not be confirmed, so it is not a fourth free service
 
 **Seen:** 2026-10-08, ADR 0015's research. Ministral 3 and Mistral Small 4
