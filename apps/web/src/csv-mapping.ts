@@ -92,7 +92,9 @@ export function useCsvMapping(text: string) {
   // Where nothing was found, the first three columns stand, for the owner to
   // change; the preview below shows what each reads.
   const dateIndex = chosen.dateIndex ?? proposal?.dateIndex ?? 0
-  const merchantIndex = chosen.merchantIndex ?? proposal?.merchantIndex ?? 1
+  // No text column, no description: it fell to column 2, and "Date,Amount"
+  // took each amount as its shop. Nothing is read until the owner picks one.
+  const merchantIndex = chosen.merchantIndex ?? proposal?.merchantIndex ?? null
   const amountIndex = chosen.amountIndex ?? proposal?.amountIndex ?? 2
   // Money out and money in as two columns: amountIndex is then the money
   // out, and each row is the credit less the debit (statement-parsers).
@@ -116,7 +118,7 @@ export function useCsvMapping(text: string) {
   const dateFormat: DateFormat | null = chosen.dateFormat ?? soleFormat ?? (ambiguousDate === null ? 'MM/DD/YYYY' : null)
 
   const result: StatementRead | null = useMemo(() => {
-    if (analysis === null || analysis.hasHeader === null || dateFormat === null) return null
+    if (analysis === null || analysis.hasHeader === null || dateFormat === null || merchantIndex === null) return null
     return readStatement(analysis.rows, {
       mapping: {
         dateIndex,

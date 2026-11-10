@@ -46,7 +46,8 @@ export function ImportScreen({ fileName, text, onReset, onSave, saving = false, 
   // Nothing to map in bytes that are not text, or a file with no rows: say
   // so, never columns of noise or none (e2e-money-10).
   const notText = useMemo(() => !looksLikeText(text), [text])
-  const noRows = result !== null && result.parsed === 0
+  // No columns at all is no rows, before any column is chosen to read them.
+  const noRows = (mapping.analysis !== null && mapping.analysis.columns.length === 0) || (result !== null && result.parsed === 0)
 
   const reset = () => {
     clear()
@@ -318,11 +319,17 @@ function ColumnMapping({ mapping }: { mapping: Mapping }) {
               options={analysis.columns.map((c) => ({ value: c.index, label: columnName(c) }))}
               onChange={(v) => choose('dateIndex', v)}
             />
-            <OptionSelect
+            <OptionSelect<number | ''>
               label="Description column"
-              value={merchantIndex}
-              options={analysis.columns.map((c) => ({ value: c.index, label: columnName(c) }))}
-              onChange={(v) => choose('merchantIndex', v)}
+              value={merchantIndex ?? ''}
+              options={[
+                // No column reads as one: nothing is chosen until the owner picks.
+                ...(merchantIndex === null ? [{ value: '' as const, label: 'Choose…' }] : []),
+                ...analysis.columns.map((c) => ({ value: c.index, label: columnName(c) })),
+              ]}
+              onChange={(v) => {
+                if (v !== '') choose('merchantIndex', v)
+              }}
             />
             <OptionSelect
               label={creditIndex === null ? 'Amount column' : 'Money out column'}
@@ -382,6 +389,13 @@ function ColumnMapping({ mapping }: { mapping: Mapping }) {
             <p className="mt-4 rounded-lg border border-border bg-muted p-3 text-sm">
               <strong className="font-medium">More than one column looks like money.</strong> Check that Amount is each
               purchase’s price, not a fee, a balance or a reference number.
+            </p>
+          ) : null}
+
+          {merchantIndex === null ? (
+            <p className="mt-4 rounded-lg border border-border bg-muted p-3 text-sm">
+              <strong className="font-medium">No column reads as a description.</strong> Each row needs one. Choose a
+              column under Description column.
             </p>
           ) : null}
 

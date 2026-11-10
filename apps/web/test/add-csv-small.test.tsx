@@ -35,3 +35,20 @@ describe('AddScreen, a description too long to keep', () => {
     expect(screen.queryByText(/could show as something other/)).toBeNull()
   })
 })
+
+describe('AddScreen, a CSV with no description column', () => {
+  afterEach(cleanup)
+
+  // "Date,Amount" was proposed with Amount as the description too, so
+  // "-4.50" became the shop name of every row.
+  it('proposes no description, says one is needed, and reads nothing until one is chosen', async () => {
+    await choose(['Date,Amount', '2026-10-01,-4.50', '2026-10-02,-45.10'].join('\n'))
+    expect(screen.getByLabelText<HTMLSelectElement>('Description column').value).toBe('')
+    expect(screen.getByText('No column reads as a description.')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /review queue|unreadable/ })).toBeNull()
+    expect(screen.queryByText('-4.50')).toBeNull()
+
+    fireEvent.change(screen.getByLabelText('Description column'), { target: { value: '1' } })
+    expect(screen.getByRole('button', { name: 'Send 2 to the review queue' })).toBeTruthy()
+  })
+})
