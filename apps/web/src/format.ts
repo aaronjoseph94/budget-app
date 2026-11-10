@@ -640,9 +640,14 @@ export function formatDateRange(from: string, to: string, today?: string): strin
   return fm === tm ? `${Number(fd)} – ${end}` : `${Number(fd)} ${fromMonth} – ${end}`
 }
 
-/** Basis points from the engine, shown as a whole percentage. Display only. */
+/**
+ * Basis points from the engine, shown as a whole percentage. Display only.
+ * Anything short of the whole reads 99%, never 100%: a goal $150.00 short
+ * is not done (bug bash, s08). A bar drawn from the same figure may fill.
+ */
 export function formatBasisPoints(bp: number): string {
-  return `${Math.round(bp / 100)}%`
+  const whole = Math.round(bp / 100)
+  return `${whole === 100 && bp < 10_000 ? 99 : whole}%`
 }
 
 /** An APR as typed, in hundredths of a percent: 1999 is "19.99%", 500 is "5%". Display only. */

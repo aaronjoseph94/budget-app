@@ -179,6 +179,10 @@ describe('the smaller display helpers', () => {
   it('shows basis points as a whole percentage', () => {
     expect(formatBasisPoints(6_500)).toBe('65%')
     expect(formatBasisPoints(12_000)).toBe('120%')
+    // Short of the whole never reads 100%: $29,850.00 of $30,000.00 is 9,950 bp, and $150.00 is still needed.
+    expect([formatBasisPoints(9_949), formatBasisPoints(9_950), formatBasisPoints(9_999), formatBasisPoints(10_000), formatBasisPoints(10_049)]).toEqual([
+      '99%', '99%', '99%', '100%', '100%',
+    ])
     expect([formatShare(1), formatShare(49), formatShare(50), formatShare(4_792)]).toEqual([
       'under 1%', 'under 1%', '1%', '48%',
     ])
