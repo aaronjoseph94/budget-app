@@ -240,7 +240,7 @@ export const UPDATES: readonly Update[] = [
   {
     // An AI-app update again: it needs 0040, whose words check it tightens (backend review of 2026-11-09), and leaves schema_level() alone.
     file: '0042_ai_words_read_one_way.sql',
-    adds: 'Stops an AI app adding or suggesting words that read the same as others by their spaces or accents',
+    adds: 'Stops an AI app sending look-alike words, with odd spaces or accents',
     checks: [{ kind: 'level', level: 42 }],
   },
   { file: HELPER_FILE, adds: 'The AI helper, which every AI feature goes through', checks: [{ kind: 'helper' }] },

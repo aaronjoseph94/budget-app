@@ -286,6 +286,10 @@ describe('failing over, in the owner’s order', () => {
   // Review of 2026-11-09: with no room for a first attempt the router fell through to the
   // no-key answers, and the app said "AI isn't set up yet" to an owner whose key works.
   it('says it could not finish, never that AI is not set up, when no time is left for a first attempt', async () => {
+    // The clock stands still, so "50 s gone" stays 50 s at the check: real
+    // milliseconds passing made the last case's exact 50 s too little under load.
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(Date.parse('2026-11-09T17:00:00Z'))
     const ask = { system: 'Answer.', data: {}, schema: { type: 'object' }, maxOutputTokens: 64 }
     // 51 s gone: a test attempt needs 10 s (claim) + 20 s (attempt) + 20 s (note, key mark) of the 100 s.
     const late = await world({ services: { gemini: answers.gemini } })
