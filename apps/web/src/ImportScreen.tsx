@@ -1,6 +1,7 @@
-import { useMemo, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { DATE_FORMATS, looksLikeText, type ColumnProfile, type DateFormat } from '@budget/statement-parsers'
 import { useAppData } from './app-data.js'
+import { navigate } from './nav.js'
 import { useCsvMapping } from './csv-mapping.js'
 import type { ImportRequest } from './ledger.js'
 import { IngestedText, Label, Stat } from './ui.js'
@@ -187,6 +188,9 @@ function SaveFooter({
   saving: boolean
   outcome: { readonly ok: boolean; readonly message: string } | null
 }) {
+  // The rows Send was last tapped for; sent once that save has worked.
+  const [sentRows, setSentRows] = useState<Mapping['result']>(null)
+  const sent = outcome?.ok === true && sentRows === result
   return (
     <>
       {afterToday !== null ? (
@@ -208,24 +212,36 @@ function SaveFooter({
           review queue rather than ending on a screen that is about
           to be navigated away from.
         */}
-        <Button
-          disabled={result.parsed === 0}
-          aria-disabled={saving}
-          onClick={() => {
-            void onSave({
-              accepted: result.accepted,
-              rejected: result.rejected,
-              parsed: result.parsed,
-              source: 'card_csv',
-            })
-          }}
-        >
-          {saving
-            ? 'Saving…'
-            : result.accepted.length === 0
-              ? `Record ${count(result.rejected.length, 'unreadable row', 'unreadable rows')}`
-              : `Send ${result.accepted.length} to the review queue`}
-        </Button>
+        {/*
+          Once these rows are saved, Go to review takes Send's place, as on
+          the PDF and Photo paths: Send stayed, and a second tap sent the
+          file again. A changed setting reads new rows, and Send returns.
+        */}
+        {sent ? (
+          <Button variant="outline" autoFocus onClick={() => navigate('review')}>
+            Go to review
+          </Button>
+        ) : (
+          <Button
+            disabled={result.parsed === 0}
+            aria-disabled={saving}
+            onClick={() => {
+              setSentRows(result)
+              void onSave({
+                accepted: result.accepted,
+                rejected: result.rejected,
+                parsed: result.parsed,
+                source: 'card_csv',
+              })
+            }}
+          >
+            {saving
+              ? 'Saving…'
+              : result.accepted.length === 0
+                ? `Record ${count(result.rejected.length, 'unreadable row', 'unreadable rows')}`
+                : `Send ${result.accepted.length} to the review queue`}
+          </Button>
+        )}
         {outcome !== null ? (
           <p
             className={`text-sm ${outcome.ok ? 'text-income' : 'text-spend'}`}
