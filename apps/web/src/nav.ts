@@ -79,6 +79,7 @@ const PARAM: Partial<Record<Screen, (param: string) => boolean>> = {
   year: isMonth,
   calendar: isMonth,
   reports: isMonth,
+  ledger: isMonth,
   paycheck: isDay,
   // A week is named by its Monday, so each week has one address.
   week: (p) => isDay(p) && weekBounds(isoDate(p)).start === p,

@@ -52,7 +52,7 @@ describe('a screen loading', () => {
     ['when you are paid', <PaycheckScreen day={null} />, 'pay_schedules'],
     ['your savings goals', <SavingsScreen />, 'transactions'],
     ['your debts', <DebtsScreen />, 'debts'],
-    ['this month’s transactions', <LedgerScreen />, 'transactions'],
+    ['this month’s transactions', <LedgerScreen month={null} />, 'transactions'],
   ])('says it is loading %s, the same way on every screen', async (what, page, table) => {
     const fake = createFakeSupabase()
     fake.server.hold = (target) => (target === table ? new Promise<void>(() => undefined) : null)

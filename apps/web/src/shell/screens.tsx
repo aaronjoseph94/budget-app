@@ -58,7 +58,7 @@ export const VIEWS: { readonly [S in Screen]: View } = {
   review: { wide: never, render: () => <ReviewScreen /> },
   add: { wide: never, render: () => <AddScreen /> },
   more: { wide: never, render: () => <MoreScreen /> },
-  ledger: { wide: never, render: () => <LedgerScreen /> },
+  ledger: { wide: never, render: (param) => <LedgerScreen month={param} /> },
   // nav.ts reads Settings' param only as one of its tabs (ADR 0014 §2).
   settings: { wide: always, render: (param) => <SettingsScreen tab={SETTINGS_TABS.find((t) => t === param) ?? null} /> },
   savings: { wide: always, render: () => <SavingsScreen /> },

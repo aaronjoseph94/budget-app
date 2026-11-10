@@ -72,6 +72,16 @@ describe('readAddress', () => {
     }
   })
 
+  // All transactions kept its month in the screen alone, and a reload or
+  // Back showed this month again (bug bash, phone).
+  it('reads All transactions by its month, and only a month', () => {
+    expect(readAddress('#/ledger/2026-09')).toEqual({ screen: 'ledger', param: '2026-09' })
+    expect(readAddress('#/ledger')).toEqual({ screen: 'ledger', param: null })
+    for (const hash of ['#/ledger/2026-13', '#/ledger/2026-9', '#/ledger/2026-09-01', '#/ledger/september']) {
+      expect(readAddress(hash), hash).toEqual({ screen: HOME, param: null })
+    }
+  })
+
   it('reads a help topic only when it is one of the committed ones', () => {
     for (const topic of HELP_TOPICS) expect(readAddress(`#/help/${topic}`)).toEqual({ screen: 'help', param: topic })
     for (const hash of ['#/help/nowhere', '#/help/Updates', '#/help/updates/more', '#/help/2026-09']) {
@@ -129,7 +139,7 @@ describe('readAddress', () => {
   it('writes back what it reads', () => {
     for (const hash of [
       '#/month/2026-09', '#/month', '#/settings', '#/year/2025-04', '#/paycheck/2026-09-11', '#/calendar/2026-02',
-      '#/coach', '#/coach/checkin', '#/forecast', '#/reports/2026-08', '#/ask', '#/ask/coach', '#/help', '#/help/updates', '#/start', '#/week/2026-09-21', '#/settings/ai',
+      '#/coach', '#/coach/checkin', '#/forecast', '#/reports/2026-08', '#/ledger/2026-09', '#/ask', '#/ask/coach', '#/help', '#/help/updates', '#/start', '#/week/2026-09-21', '#/settings/ai',
     ]) expect(hashOf(readAddress(hash))).toBe(hash)
   })
 })

@@ -11,6 +11,7 @@ import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
 import { Figure, MonthTitle } from '../components/ui/type.js'
 import { StepButton } from './MonthScreen.js'
+import { navigate } from '../nav.js'
 import { cn } from '../lib/cn.js'
 import { useRead } from '../lib/use-read.js'
 import { HelpButton } from '../help/HelpButton.js'
@@ -25,10 +26,24 @@ const LAST_DAY = '9999-12-31'
  */
 const TOTAL_CARD = 'min-w-min grow basis-[calc(50%-0.5rem)] p-4 max-[359px]:p-3 md:px-6 md:py-5'
 
-/** All transactions: everything that reached the ledger, a month at a time. */
-export function LedgerScreen() {
+/**
+ * All transactions: everything that reached the ledger, a month at a time.
+ * `month` is the address's `YYYY-MM` (`#/ledger/2026-09`), or null for this
+ * month, so a reload or Back lands on the month that was showing, as the
+ * Month's and Reports' do; it was held in the screen alone and fell back to
+ * this month (bug bash, phone).
+ */
+export function LedgerScreen({ month: param }: { month: string | null }) {
   const { supabase, categories, refresh } = useAppData()
-  const [month, setMonth] = useState(() => shiftMonth(isoDate(todayIso()), 0))
+  const thisMonth = shiftMonth(isoDate(todayIso()), 0)
+  const month = param === null ? thisMonth : shiftMonth(isoDate(`${param}-01`), 0)
+  // This month is the bare address, as the screen opens from More.
+  const step = (by: number) => {
+    const next = shiftMonth(month, by)
+    // Another month: a Remove left armed in this one is not waiting on the way back.
+    setAsked(null)
+    navigate('ledger', next === thisMonth ? null : next.slice(0, 7))
+  }
   const [query, setQuery] = useState('')
   // Each kept with the month it was said or asked in: neither a refusal's
   // words nor an armed Remove follows the owner to another month.
@@ -48,7 +63,6 @@ export function LedgerScreen() {
   // From this month on the read has no end, so a row dated later (a
   // statement read with day and month swapped) is found: Next month stopped
   // at this month, and such a row could never be reached or removed.
-  const thisMonth = shiftMonth(isoDate(todayIso()), 0)
   const openEnded = month >= thisMonth
   const read = useRead(month, () => listTransactions(supabase, { from: bounds.start, to: openEnded ? LAST_DAY : bounds.end }))
   const kept = useMemo(() => (read.status === 'ready' ? read.value.filter((r) => !removed.has(r.id)) : null), [read, removed])
@@ -78,11 +92,6 @@ export function LedgerScreen() {
 
   // Forward to this month, and past it while a later month has rows.
   const lastStep = openEnded && !later
-  // Another month: a Remove left armed in this one is not waiting on the way back.
-  const step = (by: 1 | -1) => {
-    setAsked(null)
-    setMonth(shiftMonth(month, by))
-  }
 
   // Remove gives way to nothing, and focus fell to the page: once the row
   // is off the list, the next row's trash button takes it, or the one

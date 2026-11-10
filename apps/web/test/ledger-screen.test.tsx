@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { LedgerScreen } from '../src/screens/LedgerScreen.js'
+import { useAddress } from '../src/nav.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { expectNoAxeViolations } from './axe.js'
@@ -8,11 +9,20 @@ import { expectNoAxeViolations } from './axe.js'
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date('2026-09-23T12:00:00'))
+  // A month stepped is an address, and navigate() scrolls to the top: jsdom has no scrolling.
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined)
 })
 afterEach(() => {
   cleanup()
   vi.useRealTimers()
+  vi.restoreAllMocks()
+  window.location.hash = ''
 })
+
+/** The screen as the app draws it: its month from the address. */
+function Routed() {
+  return <LedgerScreen month={useAddress().param} />
+}
 
 describe('LedgerScreen', () => {
   it('is headed with the name More gives it, and says its totals count every row', async () => {
@@ -26,7 +36,7 @@ describe('LedgerScreen', () => {
         { id: 't2', posted_on: '2026-09-03', amount_cents: 20000, merchant_raw: 'PAYMENT, THANK YOU', category_id: 'c2', source: 'card_pdf' },
       ],
     })
-    renderScreen(<LedgerScreen />, fake)
+    renderScreen(<Routed />, fake)
 
     expect(await screen.findByRole('heading', { level: 1, name: 'All transactions' })).toBeTruthy()
     await screen.findByText('CORNER MARKET')
@@ -44,7 +54,7 @@ describe('LedgerScreen', () => {
       categories: [{ id: 'c1', name: 'Groceries', kind: 'variable', sort_order: 0, weekly_budget_cents: null }],
       transactions: [{ id: 't1', posted_on: '2026-09-02', amount_cents: -1234567, merchant_raw: 'CORNER MARKET', category_id: 'c1', source: 'card_pdf' }],
     })
-    renderScreen(<LedgerScreen />, fake)
+    renderScreen(<Routed />, fake)
     const out = (await screen.findByText('Money out')).parentElement
     expect(out?.className.split(' ')).toEqual(expect.arrayContaining(['min-w-min', 'grow']))
     expect(out?.parentElement?.className.split(' ')).toEqual(expect.arrayContaining(['flex', 'flex-wrap']))
@@ -77,7 +87,7 @@ async function open(fake: FakeSupabase) {
     if (target === 'transactions') reads += 1
     return null
   }
-  renderScreen(<LedgerScreen />, fake)
+  renderScreen(<Routed />, fake)
   await waitFor(() => expect(reads).toBe(1))
   await screen.findByText('CORNER MARKET')
   fake.server.hold = null
@@ -224,6 +234,27 @@ describe('LedgerScreen, finding a transaction', () => {
     expect(await screen.findByText('CORNER MARKET')).toBeTruthy()
   })
 
+  // Held in the screen alone, the month fell back to this one on a reload
+  // or Back (bug bash, phone). It is in the address, as the Month's is, and
+  // this month is the bare address.
+  it('keeps the month it shows in the address, this month as the bare #/ledger', async () => {
+    window.location.hash = '#/ledger'
+    await open(seeded())
+    fireEvent.click(screen.getByRole('button', { name: 'Previous month' }))
+    expect(await screen.findByText('AUGUST CAFE')).toBeTruthy()
+    expect(window.location.hash).toBe('#/ledger/2026-08')
+    fireEvent.click(screen.getByRole('button', { name: 'Next month' }))
+    expect(await screen.findByText('CORNER MARKET')).toBeTruthy()
+    expect(window.location.hash).toBe('#/ledger')
+  })
+
+  it('opens on the month its address names', async () => {
+    renderScreen(<LedgerScreen month="2026-08" />, seeded())
+    expect(await screen.findByText('AUGUST CAFE')).toBeTruthy()
+    expect(screen.getByText('August 2026')).toBeTruthy()
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Next month' }).disabled).toBe(false)
+  })
+
   it('narrows the month to a merchant or a category typed in the search', async () => {
     await open(seeded())
     const search = screen.getByRole('searchbox', { name: "Search this month's transactions" })
@@ -291,6 +322,8 @@ describe('LedgerScreen, a row dated after this month', () => {
     expect(screen.queryByText('GARDEN CENTRE')).toBeNull()
 
     for (const month of ['Oct 2026', 'Nov 2026', 'Dec 2026']) {
+      // Next month waits for the month's read to say whether a later month has rows.
+      await waitFor(() => expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Next month' }).disabled).toBe(false))
       fireEvent.click(screen.getByRole('button', { name: 'Next month' }))
       await screen.findByText(month)
     }
