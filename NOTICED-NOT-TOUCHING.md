@@ -1938,7 +1938,7 @@ digest facts; A12 adds them to the AI's pack if its words need them.
 
 ---
 
-## N74 — requiredWeeklyContribution divides by a fraction of weeks
+## N74 — requiredWeeklyContribution divides by a fraction of weeks *(settled 2026-11-10, review)*
 
 **Seen:** 2026-09-25, building A08, which shows its figure ("To reach it
 by 30 Jun 2027: $426.17 a week").
@@ -1957,6 +1957,13 @@ its own test at a boundary.
 **To settle:** rewrite it in integers (BigInt, as `stats.ts` does), with
 a test where the float and the integer answers differ, seen failing
 first.
+
+**Settled:** `requiredWeeklyContribution` works out ⌈remaining × 7 ÷
+days⌉ in BigInt. `goal-weekly-exact.test.ts` was seen failing first:
+$9,999.99 over 143 days gave $489.52, where 999,999 × 7 ÷ 143 is exactly
+48,951 cents, and 2,350 whole-dollar amounts to $3,000 over spans to two
+years were a cent high. Still rounded up to the whole cent; its one
+pinned figure ($287.28 a week) and F33's worked example are unchanged.
 
 ---
 

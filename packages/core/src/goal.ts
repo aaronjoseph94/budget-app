@@ -95,7 +95,11 @@ export function projectGoal(input: {
   return { weeksRemaining: weeks, projectedDate: weeks > weeksLeft ? null : addDays(asOf, weeks * 7) }
 }
 
-/** The weekly contribution that lands the goal on `targetDate`. */
+/**
+ * The weekly contribution that lands the goal on `targetDate`: remaining ×
+ * 7 ÷ days, rounded up to the whole cent, in BigInt so a figure that is
+ * exactly whole is never a cent high (N74).
+ */
 export function requiredWeeklyContribution(input: {
   readonly goal: SavingsGoal
   readonly asOf: IsoDate
@@ -111,7 +115,8 @@ export function requiredWeeklyContribution(input: {
       `Target date ${targetDate} is not after ${asOf}; no weekly contribution can reach it.`,
     )
   }
-  return { weeklyCents: cents(Math.ceil(remainingCents / (days / 7))) }
+  const d = BigInt(days)
+  return { weeklyCents: cents(Number((BigInt(remainingCents) * 7n + d - 1n) / d)) }
 }
 
 export interface TimeEquivalent {
