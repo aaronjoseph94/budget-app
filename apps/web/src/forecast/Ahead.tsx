@@ -4,7 +4,7 @@ import { debtPlan, type CashFlow30, type ScaledSeries } from '@budget/core'
 import { useAppData } from '../app-data.js'
 import { debtsForCore } from '../debts.js'
 import { listDebtExtras, listDebts, needsOneTimeUpdate } from '../ledger.js'
-import { formatCents, formatDayMonth, formatMonthTitle } from '../format.js'
+import { formatCents, formatDayMonth, formatMonthName, formatMonthTitle } from '../format.js'
 import { hashOf } from '../nav.js'
 import { SvgChart, fitted } from '../components/ui/chart.js'
 import { Section } from './parts.js'
@@ -57,10 +57,11 @@ export function NextDaysCard({ flow, line, asOf, names }: { flow: CashFlow30; li
       ) : (
         <ul className="divide-y border-t">
           {flow.billsNext7.map((b) => (
-            <li key={`${b.date} ${b.categoryId}`} className="flex items-baseline justify-between gap-3 py-2">
+            // On a month's last day this month's unseen bill and next month's share a day (F32): the month keeps them apart.
+            <li key={`${b.date} ${b.categoryId} ${b.month}`} className="flex items-baseline justify-between gap-3 py-2">
               <span className="min-w-0">
                 <span className="text-muted-foreground">{formatDayMonth(b.date)}</span> <span className="[overflow-wrap:anywhere]">{names(b.categoryId)}</span>
-                {b.seen === 'not_seen' ? <span className="block text-xs text-muted-foreground">Due, not seen yet</span> : null}
+                {b.seen === 'not_seen' ? <span className="block text-xs text-muted-foreground">{formatMonthName(b.month)}’s, not seen yet</span> : null}
               </span>
               <span className="tnum whitespace-nowrap font-medium">{formatCents(b.cents)}</span>
             </li>

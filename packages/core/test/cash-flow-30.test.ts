@@ -34,10 +34,10 @@ describe('cashFlow30 (F32)', () => {
     ])
     // Rent paid on the 1st is not counted again this month (D5).
     expect(flow.bills).toEqual([
-      { date: '2026-09-25', categoryId: NET, cents: 8_000, seen: 'not_seen' },
-      { date: '2026-09-28', categoryId: PHONE, cents: 6_000, seen: 'due' },
-      { date: '2026-10-01', categoryId: RENT, cents: 120_000, seen: 'due' },
-      { date: '2026-10-20', categoryId: NET, cents: 8_000, seen: 'due' },
+      { date: '2026-09-25', categoryId: NET, cents: 8_000, seen: 'not_seen', month: '2026-09-01' },
+      { date: '2026-09-28', categoryId: PHONE, cents: 6_000, seen: 'due', month: '2026-09-01' },
+      { date: '2026-10-01', categoryId: RENT, cents: 120_000, seen: 'due', month: '2026-10-01' },
+      { date: '2026-10-20', categoryId: NET, cents: 8_000, seen: 'due', month: '2026-10-01' },
     ])
     expect(flow.billsNext7.map((b) => b.categoryId)).toEqual([NET, PHONE, RENT])
   })
@@ -58,9 +58,9 @@ describe('cashFlow30 (F32)', () => {
       ],
     })
     expect(flow.bills.filter((b) => b.categoryId === GYM || b.categoryId === PARKING)).toEqual([
-      { date: '2026-09-25', categoryId: PARKING, cents: 2_500, seen: 'not_seen' },
-      { date: '2026-09-30', categoryId: GYM, cents: 4_000, seen: 'due' },
-      { date: '2026-10-01', categoryId: PARKING, cents: 2_500, seen: 'due' },
+      { date: '2026-09-25', categoryId: PARKING, cents: 2_500, seen: 'not_seen', month: '2026-09-01' },
+      { date: '2026-09-30', categoryId: GYM, cents: 4_000, seen: 'due', month: '2026-09-01' },
+      { date: '2026-10-01', categoryId: PARKING, cents: 2_500, seen: 'due', month: '2026-10-01' },
     ])
   })
 
@@ -94,8 +94,18 @@ describe('cashFlow30 (F32)', () => {
     const flow = cashFlow30({ ...example, asOf: d('2026-09-28') })
     // Phone, due today, and Internet, due on the 20th, both tomorrow, in the Bills list's order.
     expect(flow.bills.slice(0, 2)).toEqual([
-      { date: '2026-09-29', categoryId: PHONE, cents: 6_000, seen: 'not_seen' },
-      { date: '2026-09-29', categoryId: NET, cents: 8_000, seen: 'not_seen' },
+      { date: '2026-09-29', categoryId: PHONE, cents: 6_000, seen: 'not_seen', month: '2026-09-01' },
+      { date: '2026-09-29', categoryId: NET, cents: 8_000, seen: 'not_seen', month: '2026-09-01' },
+    ])
+  })
+
+  it('names whose month each bill is, so this month’s unseen one and next month’s on the same day are told apart (F32)', () => {
+    // 30 September, Rent not charged this month: September’s moves to tomorrow, the 1st, October’s own due day.
+    const entries = example.entries.filter((e) => !(e.categoryId === RENT && e.postedOn >= '2026-09-01'))
+    const flow = cashFlow30({ ...example, asOf: d('2026-09-30'), entries })
+    expect(flow.billsNext7.filter((b) => b.categoryId === RENT)).toEqual([
+      { date: '2026-10-01', categoryId: RENT, cents: 120_000, seen: 'not_seen', month: '2026-09-01' },
+      { date: '2026-10-01', categoryId: RENT, cents: 120_000, seen: 'due', month: '2026-10-01' },
     ])
   })
 

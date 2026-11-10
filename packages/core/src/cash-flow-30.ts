@@ -21,6 +21,12 @@ export interface CashFlowBill {
   readonly cents: Cents
   /** `not_seen`: its day has come this month with no charge yet, so it counts tomorrow. */
   readonly seen: 'due' | 'not_seen'
+  /**
+   * Whose month it is, by its first day. On a month's last day this month's
+   * unseen bill moves to the 1st, next month's due day, so both can fall on
+   * one day (F32): this tells them apart.
+   */
+  readonly month: IsoDate
 }
 
 export interface CashFlowPay {
@@ -88,7 +94,7 @@ export function cashFlow30(input: MonthForecastInput): CashFlow30 {
       const thisMonth = month === monthStart
       const late = thisMonth && (onDay === null || onDay <= asOf)
       const date = late ? addDays(asOf, 1) : (onDay ?? month)
-      if (date > asOf && date <= last) bills.push({ date, categoryId: plan.categoryId, cents: cents(plan.plannedCents), seen: late ? 'not_seen' : 'due' })
+      if (date > asOf && date <= last) bills.push({ date, categoryId: plan.categoryId, cents: cents(plan.plannedCents), seen: late ? 'not_seen' : 'due', month })
     }
   }
   const rank = (id: string) => {

@@ -124,11 +124,29 @@ describe('the Forecast (plan §2.5, A13)', () => {
     expect([Number(dot?.getAttribute('cx')), Number(dot?.getAttribute('cy'))]).toEqual(points[14])
     expect(within(card).getByText('Counts $34.82 a day of everyday spending, your average over the last 90 days.')).toBeTruthy()
     expect(within(card).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
-      '25 Sep InternetDue, not seen yet$80.00',
+      '25 Sep InternetSeptember’s, not seen yet$80.00',
       '28 Sep Phone$60.00',
       '1 Oct Rent$1,200.00',
     ])
     expect(within(card).getByText('Leaves out $200.00 you still plan to move to savings this month.')).toBeTruthy()
+  })
+
+  it('on a month’s last day lists this month’s unseen bill and next month’s apart, each with its own key (F32)', async () => {
+    // 31 October, nothing charged since September: October’s bills move to tomorrow, November’s Rent is due then too.
+    vi.setSystemTime(new Date(2026, 9, 31, 12))
+    const errors = vi.spyOn(console, 'error')
+    go('/forecast')
+    renderScreen(<Shell />, forecastFake())
+
+    const card = (await screen.findByRole('heading', { name: 'The next 30 days' })).closest('div.rounded-xl') as HTMLElement
+    const bills = within(card).getAllByRole('list').at(-1) as HTMLElement
+    expect(within(bills).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
+      '1 Nov RentOctober’s, not seen yet$1,200.00',
+      '1 Nov Rent$1,200.00',
+      '1 Nov PhoneOctober’s, not seen yet$60.00',
+      '1 Nov InternetOctober’s, not seen yet$80.00',
+    ])
+    expect(errors.mock.calls.flat().some((m) => String(m).includes('same key'))).toBe(false)
   })
 
   it('names pay it cannot count, and says where to give it a schedule or a goal', async () => {
