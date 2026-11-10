@@ -23,6 +23,7 @@ import { JustTypeIt } from '../add/JustTypeIt.js'
 import type { QuickFill } from '../add/quick-add.js'
 import { SENTENCE_LINK } from '../components/ui/link.js'
 import { arrowIndex } from '../lib/roving.js'
+import { decodeStatementText } from '../statement-text.js'
 
 type Mode = 'statement' | 'photo' | 'typed'
 type Loaded =
@@ -135,7 +136,8 @@ export function StatementImport() {
         const result = await readStatementFile(file)
         setLoaded({ kind: 'pdf', name: file.name, result })
       } else {
-        setLoaded({ kind: 'csv', name: file.name, text: await file.text() })
+        // In the encoding it was saved in, not always UTF-8 (statement-text.ts).
+        setLoaded({ kind: 'csv', name: file.name, text: decodeStatementText(new Uint8Array(await file.arrayBuffer())) })
       }
     } catch {
       setLoaded({ kind: 'wrong', name: file.name, message: 'This file could not be read. Nothing was imported.' })

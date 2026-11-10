@@ -227,7 +227,8 @@ describe('AddScreen, a file the phone cannot read (CR-7)', () => {
     await screen.findByText('Choose a statement')
     // A file in iCloud that is not on the phone rejects when it is read.
     const file = new File([''], 'statement.csv', { type: 'text/csv' })
-    Object.defineProperty(file, 'text', { value: () => Promise.reject(new Error('NotReadableError')) })
+    // Every way of reading it, since the screen reads the bytes (add-csv-encoding.test.tsx).
+    for (const read of ['text', 'arrayBuffer']) Object.defineProperty(file, read, { value: () => Promise.reject(new Error('NotReadableError')) })
     pick('Choose a statement', file)
 
     expect(await screen.findByText('This file could not be read. Nothing was imported.')).toBeTruthy()
