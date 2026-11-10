@@ -547,6 +547,9 @@ async function ensureNamed(
     .select('*')
     .single()
   if (createError === null) return created as Named
+  // A category refused is said in Setup's words, as a rename's is: the
+  // import's "the numbers did not add up" is not true of a name (23514).
+  if (createError.code !== '23505' && table === 'categories') throw refused(describeSetupFailure('add', createError), createError)
   if (createError.code !== '23505') fail(createError)
 
   const { data: found, error: findError } = await supabase

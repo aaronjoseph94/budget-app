@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ListsTab } from '../src/settings/ListsTab.js'
-import { addCategories, type Category } from '../src/ledger.js'
+import { addCategories, ensureCategory, type Category } from '../src/ledger.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { expectNoAxeViolations } from './axe.js'
@@ -163,6 +163,32 @@ describe('Lists, changing a list', () => {
     expect((await bills.findByRole('alert')).textContent).toBe('Rent is already on this list.')
     expect(input.value).toBe(' Rent ')
     expect(fake.tables.categories).toHaveLength(6)
+  })
+})
+
+describe('Lists, a name the database refuses', () => {
+  const REFUSED = 'That name has characters the app cannot store. Use letters, numbers and ordinary punctuation. (code 23514)'
+
+  // An add said a statement's sentence: "The numbers did not add up… a fault in the import, not your file."
+  it('says so on an add in the words a rename already had, and keeps what was typed', async () => {
+    const fake = seeded()
+    fake.fail('POST categories', '23514')
+    renderScreen(<ListsTab />, fake)
+
+    const bills = within(await screen.findByRole('region', { name: 'Bills' }))
+    const input = bills.getByRole<HTMLInputElement>('textbox', { name: 'New Bills category' })
+    fireEvent.change(input, { target: { value: 'Water' } })
+    fireEvent.click(bills.getByRole('button', { name: /Add/ }))
+
+    expect((await bills.findByRole('alert')).textContent).toBe(REFUSED)
+    expect(input.value).toBe('Water')
+  })
+
+  it('says the same from ensureCategory, which Add › Type it and a new goal use', async () => {
+    const fake = seeded()
+    fake.fail('POST categories', '23514')
+    const cause = await ensureCategory(fake.client, 'u1', { name: 'Water', kind: 'bill', sortOrder: 2 }).catch((e: unknown) => e)
+    expect(cause instanceof Error ? cause.message : cause).toBe(REFUSED)
   })
 })
 
