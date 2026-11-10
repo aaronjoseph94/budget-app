@@ -69,7 +69,12 @@ export function PaycheckPeriod({
   // The category whose charges are open, by id; another period closes it (N48).
   const [opened, setOpened] = useState<string | null>(null)
   useEffect(() => setOpened(null), [start])
-  const step = (periods: number) => navigate('paycheck', shiftPayPeriod({ schedule, asOf: start, periods }).start)
+  // Back on the period holding today the address is bare again, as the Week's,
+  // so it keeps meaning today's period when reopened later.
+  const step = (periods: number) => {
+    const next = shiftPayPeriod({ schedule, asOf: start, periods }).start
+    navigate('paycheck', next === payPeriod({ schedule, asOf: today }).start ? null : next)
+  }
 
   useEffect(() => {
     if (version === 0) return

@@ -51,7 +51,11 @@ export function ReportsScreen({ month }: { month: string | null }) {
   // Stable while the categories are, so nothing drawn from it is worked out again every render.
   const nameOf = useCategoryName()
   const thisMonth = `${asOf.slice(0, 7)}-01`
-  const step = (by: number) => shiftMonth(isoDate(shown), by).slice(0, 7)
+  // Back on this month the link is the bare #/reports, as the Week's, so it keeps meaning this month.
+  const step = (by: number) => {
+    const next = shiftMonth(isoDate(shown), by)
+    return next === thisMonth ? null : next.slice(0, 7)
+  }
   const [tab, setTab] = useState<ReportTab>(rememberedTab)
   const tabs = useRef<(HTMLButtonElement | null)[]>([])
   // Trends and Habits read to today whatever month is shown, so the arrows step aside, and "So far" with them.

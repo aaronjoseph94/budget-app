@@ -244,6 +244,9 @@ function StartPicker({ start, today }: { start: string; today: string }) {
   const thisYear = Number(today.slice(0, 4))
   const from = Math.min(thisYear - 5, Number(year))
   const years = Array.from({ length: Math.max(thisYear + 1, Number(year)) - from + 1 }, (_, i) => String(from + i))
+  // January of this year is the bare #/year, as the Week's own week is
+  // #/week, so it keeps meaning this year when reopened next year.
+  const pick = (y: string, m: string) => navigate('year', `${y}-${m}` === `${thisYear}-01` ? null : `${y}-${m}`)
   // Mockup A's two select pills: the native picker, a wheel on a phone,
   // 44px tall with the chevron the app's selects draw. A field is as wide
   // as its box, so each box is as wide as its longest choice.
@@ -255,7 +258,7 @@ function StartPicker({ start, today }: { start: string; today: string }) {
           aria-label="Start month"
           className="font-medium"
           value={month}
-          onChange={(e) => navigate('year', `${year}-${e.target.value}`)}
+          onChange={(e) => pick(year, e.target.value)}
         >
           {MONTH_NAMES.map((name, i) => (
             <option key={name} value={String(i + 1).padStart(2, '0')}>
@@ -269,7 +272,7 @@ function StartPicker({ start, today }: { start: string; today: string }) {
           aria-label="Start year"
           className="font-medium"
           value={year}
-          onChange={(e) => navigate('year', `${e.target.value}-${month}`)}
+          onChange={(e) => pick(e.target.value, month)}
         >
           {years.map((y) => (
             <option key={y}>{y}</option>

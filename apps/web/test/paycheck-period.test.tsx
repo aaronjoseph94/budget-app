@@ -132,8 +132,9 @@ describe('PaycheckPeriod', () => {
     expect(screen.getByText('25 Sep – 8 Oct · Day job, paid bi-weekly')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Next pay period' }))
     expect(window.location.hash).toBe('#/paycheck/2026-10-09')
+    // 11 Sep is today's period, whose address is the bare one.
     fireEvent.click(screen.getByRole('button', { name: 'Previous pay period' }))
-    expect(window.location.hash).toBe('#/paycheck/2026-09-11')
+    expect(window.location.hash).toBe('#/paycheck')
   })
 
   it('shows the whole monthly amount to someone paid monthly, and a week’s share to someone paid weekly', async () => {
@@ -204,5 +205,14 @@ describe('PaycheckPeriod, a row opened (N48)', () => {
     const block = within(await screen.findByRole('region', { name: 'Bills' }))
     fireEvent.click(block.getByRole('button', { name: 'Rent' }))
     expect(within(screen.getByRole('dialog', { name: 'Rent' })).getByText(/The amount above is its monthly amount from Lists\./)).toBeTruthy()
+  })
+})
+
+describe('PaycheckPeriod, stepping back to this pay period', () => {
+  it('writes the bare address on the period holding today, so it still means today’s next time', async () => {
+    // 28 Aug – 10 Sep, the period before today's 11 – 24 Sep.
+    show(seeded(), '2026-08-30')
+    fireEvent.click(await screen.findByRole('button', { name: 'Next pay period' }))
+    expect(window.location.hash).toBe('#/paycheck')
   })
 })

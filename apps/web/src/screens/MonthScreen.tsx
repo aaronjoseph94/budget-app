@@ -77,7 +77,12 @@ const MonthForecastLine = lazyPart(() => import('./MonthForecastLine.js'))
 export function MonthScreen({ month }: { month: string | null }) {
   const { supabase, categories, pendingTotal, loadError, status, version, today } = useAppData()
   const { start, end } = monthBounds(isoDate(month === null ? today : `${month}-01`))
-  const step = (months: number) => navigate('month', shiftMonth(start, months).slice(0, 7))
+  // Back on this month the address is the bare #/month again, as the Week's,
+  // so a reopen next month still opens that month.
+  const step = (months: number) => {
+    const next = shiftMonth(start, months)
+    navigate('month', next === monthBounds(isoDate(today)).start ? null : next.slice(0, 7))
+  }
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [error, setError] = useState<string | null>(null)
   // The category whose charges are open, by id; a new month closes it.

@@ -133,8 +133,9 @@ describe('the Month header', () => {
 
     expect(within(title.parentElement!).getByRole('button', { name: 'Help with this screen' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Previous month' }).nextElementSibling?.textContent).toBe('Aug 2026')
+    // September is this month, whose address is the bare one.
     fireEvent.click(screen.getByRole('button', { name: 'Next month' }))
-    expect(window.location.hash).toBe('#/month/2026-09')
+    expect(window.location.hash).toBe('#/month')
     await expectNoAxeViolations()
   })
 })

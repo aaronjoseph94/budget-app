@@ -444,3 +444,15 @@ describe('YearScreen, debts', () => {
     expect(screen.queryByRole('button', { name: 'Add your debts to see them here' })).toBeNull()
   })
 })
+
+describe('YearScreen, picking this year from January', () => {
+  it('writes the bare address, which is this calendar year whatever year it is opened in', async () => {
+    renderScreen(<YearScreen start="2026-04" />, seeded())
+    fireEvent.change(await screen.findByRole('combobox', { name: 'Start month' }), { target: { value: '01' } })
+    expect(window.location.hash).toBe('#/year')
+    cleanup()
+    renderScreen(<YearScreen start="2025-01" />, seeded())
+    fireEvent.change(await screen.findByRole('combobox', { name: 'Start year' }), { target: { value: '2026' } })
+    expect(window.location.hash).toBe('#/year')
+  })
+})

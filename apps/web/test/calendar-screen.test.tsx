@@ -306,3 +306,11 @@ describe('CalendarScreen, a bill opened (N51)', () => {
     expect(sheet.getByText(/^No charges filed here in September\. The amount above is its monthly amount from Lists\./)).toBeTruthy()
   })
 })
+
+describe('CalendarScreen, stepping back to this month', () => {
+  it('writes the bare address on this month, so it still means this month next month', async () => {
+    renderScreen(<CalendarScreen month="2026-08" />, seeded())
+    fireEvent.click(await screen.findByRole('button', { name: 'Next month' }))
+    expect(window.location.hash).toBe('#/calendar')
+  })
+})

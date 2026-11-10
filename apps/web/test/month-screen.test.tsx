@@ -721,3 +721,16 @@ describe('MonthScreen, on a first run', () => {
     expect(screen.queryByRole('region', { name: 'Start here' })).toBeNull()
   })
 })
+
+describe('MonthScreen, stepping back to this month', () => {
+  // The tester's 28 November: away to October and back, the address was
+  // #/month/2026-11, kept, and the app opened November again on 1 December.
+  it('writes the bare address on this month, so it still means this month next month', async () => {
+    vi.setSystemTime(new Date(2026, 10, 28, 12))
+    renderScreen(<MonthScreen month="2026-10" />, seeded())
+    fireEvent.click(await screen.findByRole('button', { name: 'Next month' }))
+    expect(window.location.hash).toBe('#/month')
+    fireEvent.click(screen.getByRole('button', { name: 'Previous month' }))
+    expect(window.location.hash).toBe('#/month/2026-09')
+  })
+})

@@ -30,7 +30,11 @@ import { TryAgain } from '../try-again.js'
 export function CalendarScreen({ month }: { month: string | null }) {
   const { supabase, categories, loadError, version, today } = useAppData()
   const { start, end } = monthBounds(isoDate(month === null ? today : `${month}-01`))
-  const step = (months: number) => navigate('calendar', shiftMonth(start, months).slice(0, 7))
+  // Back on this month the address is bare again, as the Week's, so it keeps meaning this month.
+  const step = (months: number) => {
+    const next = shiftMonth(start, months)
+    navigate('calendar', next === monthBounds(isoDate(today)).start ? null : next.slice(0, 7))
+  }
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [error, setError] = useState<string | null>(null)
   // The bill whose charges are open; another month closes it (N51).

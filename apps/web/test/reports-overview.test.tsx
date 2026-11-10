@@ -169,4 +169,13 @@ describe('Save as PDF', () => {
     for (const bar of screen.getAllByRole('navigation', { name: 'Screens' })) expect(bar.closest('.print\\:hidden')).not.toBeNull()
     expect(screen.getByRole('button', { name: 'Save as PDF' }).classList.contains('print:hidden')).toBe(true)
   })
+
+  // As the Week's: back on this month the address is bare, so it still means this month next month.
+  it('steps back to this month by the bare address', async () => {
+    go('/reports/2026-08')
+    renderScreen(<Shell />, reportFake())
+    await card('Income, Spent and Saved')
+    expect(screen.getByRole('link', { name: 'Next month' }).getAttribute('href')).toBe('#/reports')
+    expect(screen.getByRole('link', { name: 'Previous month' }).getAttribute('href')).toBe('#/reports/2026-07')
+  })
 })
