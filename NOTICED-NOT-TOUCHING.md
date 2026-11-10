@@ -4177,7 +4177,7 @@ week. That needs weekly budgets with history (a dated row per change,
 as `category_budgets` keeps monthly ones), a migration, and streaks,
 the recap and the Week reading the row in effect for each week.
 
-## N-next (one far-off debt stops Debts loading)
+## N181 — One far-off debt stops Debts loading
 
 **Seen:** 2026-11-10, bug bash (d01): a debt saved "As of" June 9999 made
 Debts fail to load, so the debt could not be opened to fix it.
