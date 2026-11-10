@@ -167,7 +167,10 @@ function TryThis({ figures, facts, words }: { figures: CheckinFigures; facts: Ch
   const { supabase, categories, refresh } = useAppData()
   const [state, setState] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle')
   const { limit } = figures
-  const name = limit === null ? null : (categories.find((c) => c.id === limit.categoryId)?.name ?? null)
+  const category = limit === null ? undefined : categories.find((c) => c.id === limit.categoryId)
+  const name = category?.name ?? null
+  // Already its weekly budget, as after a tap and the check-in opened again: nothing to set, so no offer.
+  const alreadySet = limit !== null && state === 'idle' && category?.weekly_budget_cents === limit.limitCents
   const commit = async () => {
     if (limit === null) return
     setState('saving')
@@ -185,14 +188,20 @@ function TryThis({ figures, facts, words }: { figures: CheckinFigures; facts: Ch
       <p className="[overflow-wrap:anywhere]">
         <Said part={words.tryThis} facts={facts} />
       </p>
-      {limit === null || name === null ? null : (
+      {limit === null || name === null || alreadySet ? null : (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-primary-soft p-3 md:px-4">
-          <p className="min-w-0 font-semibold [overflow-wrap:anywhere]">
-            Keep {name} under <span className="tnum">{formatCents(limit.limitCents)}</span> next week?
-          </p>
+          <div className="min-w-0 space-y-1">
+            <p className="font-semibold [overflow-wrap:anywhere]">
+              Keep {name} under <span className="tnum">{formatCents(limit.limitCents)}</span> next week?
+            </p>
+            {/* F40: every week is judged by today's weekly budgets (0004 keeps one set), so say so before the tap. */}
+            {state === 'saved' ? null : (
+              <p className="text-sm text-muted-foreground [overflow-wrap:anywhere]">This becomes the weekly budget for {name}, and past weeks are judged by it too.</p>
+            )}
+          </div>
           {state === 'saved' ? (
             <p role="status">
-              Done: {name}’s weekly budget is {formatCents(limit.limitCents)}. It shows on the{' '}
+              Done: the weekly budget for {name} is {formatCents(limit.limitCents)}. It shows on the{' '}
               <a href={hashOf({ screen: 'week', param: null })} className={SENTENCE_LINK}>
                 Week
               </a>

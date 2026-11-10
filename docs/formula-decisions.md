@@ -2034,6 +2034,11 @@ category.
 - **Never above the category's own weekly budget.** When a budget is set
   and the rule gives more, the offer is the budget as it is, so the
   one-tap commitment never loosens a limit the owner chose.
+- **Amended 2026-11-10 (bug bash, c04):** the check-in shows no button
+  when the limit already is the category's weekly budget: there is
+  nothing to set. Before the tap it says past weeks are judged by the new
+  budget too, as F40 judges every week by today's (N-next, check-in
+  budget rewrites past weeks).
 - None when the recap is not covered or had no top category.
 
 **The impulse share** (`impulseShare`). Answers whose `asked_week` is one

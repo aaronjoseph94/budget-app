@@ -162,14 +162,30 @@ describe('the Sunday check-in', () => {
 
     const button = await screen.findByRole('button', { name: 'Yes, set it' })
     expect(screen.getByText(whole('P', 'Keep Dining out under $65.00 next week?'))).toBeTruthy()
+    // What the tap changes, said before it (F40: every week is judged by today's weekly budgets).
+    expect(screen.getByText('This becomes the weekly budget for Dining out, and past weeks are judged by it too.')).toBeTruthy()
     // Everything has drawn, and nothing is written.
     expect(fake.tables.categories.find((c) => c.id === 'dining')?.weekly_budget_cents).toBe(7_000)
     fireEvent.click(button)
-    expect(await screen.findByText(whole('P', 'Done: Dining out’s weekly budget is $65.00. It shows on the Week.'))).toBeTruthy()
+    expect(await screen.findByText(whole('P', 'Done: the weekly budget for Dining out is $65.00. It shows on the Week.'))).toBeTruthy()
     expect(fake.tables.categories.find((c) => c.id === 'dining')?.weekly_budget_cents).toBe(6_500)
     // The check-in holds still after the save's re-read, and asks the AI no more.
     expect(screen.getByText(whole('P', 'Keep Dining out under $65.00 next week?'))).toBeTruthy()
     expect(fake.functions.calls).toHaveLength(1)
+  })
+
+  it('does not offer again a weekly budget already set, in the check-in opened after or any other', async () => {
+    const fake = checkinFake()
+    renderScreen(<Shell />, fake)
+    fireEvent.click(await screen.findByRole('button', { name: 'Yes, set it' }))
+    expect(await screen.findByText(/^Done: /)).toBeTruthy()
+    cleanup()
+
+    // Opened again: the stored budget is the offer, so there is nothing to set.
+    renderScreen(<Shell />, fake)
+    expect(await screen.findByText(whole('P', 'Try keeping Dining out under $65.00 next week.'))).toBeTruthy()
+    expect(screen.queryByText(/^Keep Dining out under/)).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Yes, (set|keep) it$/ })).toBeNull()
   })
 
   it('says so in one line when the weekly budget is not saved', async () => {

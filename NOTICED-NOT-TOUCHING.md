@@ -4154,3 +4154,25 @@ and the key cannot disagree. Until then a test pins both
 
 **Settled:** `useSearchKey` in App.tsx now calls `searchKeyIsCommand()`,
 so there is one test for which key is the search shortcut.
+
+## N180 — The check-in budget rewrites past weeks
+
+**Seen:** 2026-11-10, bug bash (c04): with the clock on Tuesday 8
+September 2026 the Coach said "On a roll: 35 weeks within budget" and the
+check-in said last week was within budget. Tapping "Yes, set it" on "Keep
+Groceries under $55.00 next week?" (Groceries' weekly budget $150.00 to
+$55.00) ended the streak, turned last week's recap into "That went $69.52
+past your weekly budgets" and marked it ✗ in Habits.
+
+**Why:** F40 judges every week against today's weekly budgets, and 0004
+keeps one weekly budget per category, with no history. A budget set
+today is applied to every past week. The engine does what is recorded.
+
+**Done here:** the offer says before the tap that past weeks are judged
+by the new budget, the check-in no longer offers a budget already set,
+and the done line reads "the weekly budget for Groceries".
+
+**Left:** a past week's verdict should follow the budget in effect that
+week. That needs weekly budgets with history (a dated row per change,
+as `category_budgets` keeps monthly ones), a migration, and streaks,
+the recap and the Week reading the row in effect for each week.
