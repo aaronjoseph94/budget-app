@@ -2663,3 +2663,59 @@ blank where it read **17.99 planned**; September's weeks add up to
 where it read **65.00 planned**. Netflix charged on the 29th instead: the
 week of 21 Sep is blank and the week of 28 Sep shows 17.99, real. Charged
 on the 22nd: the week of 21 Sep shows 17.99 against a planned 17.99.
+
+---
+
+## F55 — A bill with no day paid, in a same-days comparison (amends F25)
+
+**Decided 2026-11-09. Engineering default. Not from the workbook.** Found
+by a tester on 2026-11-09. The workbook compares no period with another
+(D26), so there is no cell to follow; this amends F25, which says F8
+"applies to each side the same way".
+
+**What F25 did.** F8 counts a monthly amount with no day paid in a whole
+calendar month and in no other window. A same-days comparison gives one
+side a whole month and the other a part of one on two kinds of day:
+
+- the **last day of a month shorter than the one before** (30 Sep, 30 Nov,
+  28 Feb…): 1–30 Sep is whole, 1–30 Aug is not;
+- the **days of a longer month from the earlier month's length on** (28–30
+  Mar, 30 May…): 1–30 Mar is not whole, 1–28 Feb is.
+
+**Value before.** Gas Bill, $62.00 a month with no day paid, no real
+charge. On 30 Sep 2026 the Month's comparison read now **$62.00**, before
+**$0.00**: "+62.00 more" for a bill that had not changed, and the line
+above it jumped by the same $62.00 for that one day. On 30 Mar 2027 it
+read now $0.00, before $62.00: "62.00 less".
+
+**Options considered**
+
+- **A — never count it while the period runs.** Both sides leave it out
+  until the month is over. Simple, but on the last day "1–30 Sep" would
+  name a figure $62.00 under the Month's Spent for the same thirty days.
+- **B — both sides follow the current window.** When today ends the
+  current month, the amount counts on both sides; before that, on
+  neither, even where the earlier window is a whole month.
+
+**Chosen: B.** The comparison is "by this day": the current window says
+how far the month has run, and the earlier one is judged by the same
+rule. On the month's last day the current figure is then the Month's own
+Spent. `periodSheet` takes `undatedCount`, which only `periodComparison`
+passes, for the last month of each window of a month or a Year still
+running. A period already over is whole against whole, where F8 counts
+the amount on both sides by itself. A week never holds a whole month, so
+it counts it on neither side, and a pay period counts shares (F15); both
+are unchanged.
+
+**Unchanged: a due day of 29–31 (D6).** Water Bill, $45.50 due on the
+31st, counts on 30 Sep, September's last day, and not in 1–30 Aug, whose
+31st had not come by "this day". That "+45.50 more" follows D6 and stays.
+
+**Worked examples.** Gas $62.00, no day paid; Water $45.50, due the 31st;
+no real charges. 29 Sep 2026 (1–29 Sep against 1–29 Aug): Gas 0 and 0.
+30 Sep (1–30 Sep against 1–30 Aug): Gas **62.00 and 62.00**, about the
+same; Water 45.50 and 0; Spent 107.50 against 62.00. 1 Oct, September
+whole against August whole: Gas 62.00 and 62.00, Water 45.50 and 45.50.
+30 Mar 2027 (1–30 Mar against 1–28 Feb): Gas **0 and 0**. A Year from
+January 2029 on 28 Feb 2029, against 1 Jan–28 Feb 2028 (a leap year):
+Gas 124.00 on each side.

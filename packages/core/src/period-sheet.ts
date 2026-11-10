@@ -57,6 +57,10 @@
  *   row; so a week leaves a monthly amount out when its month holds a real
  *   row on another day, earlier or later, as the Bill calendar does (F20).
  *   A week must therefore be given the rows of every month it touches.
+ * - F55, an amount with no day paid, in a comparison. F8 counts it in a
+ *   whole month and in no other window, so 1–30 September against 1–30
+ *   August counted it on one side. `undatedCount` lets compare.ts say how
+ *   both sides count it; nothing else passes it.
  * - F10, which months count planned amounts. The month tabs never gate them
  *   on a date (Dec!E22 is 800 whatever today is), so a month here never
  *   does, and a future month shows its planned bills. Only the Year will
@@ -157,9 +161,16 @@ export interface PeriodSheetInput {
    * 0010); null when none was, which is never read as $0 (D17).
    */
   readonly startingBalanceCents: number | null
+  /**
+   * Whether a monthly amount with no day paid counts. Left out, F8 decides:
+   * in a whole calendar month it does, in any other window it does not. A
+   * same-days comparison says so itself, so that both of its sides count
+   * such an amount or neither does (F55).
+   */
+  readonly undatedCount?: boolean
 }
 
-export interface MonthSheetInput extends Omit<PeriodSheetInput, 'from' | 'to' | 'budgets' | 'plans'> {
+export interface MonthSheetInput extends Omit<PeriodSheetInput, 'from' | 'to' | 'budgets' | 'plans' | 'undatedCount'> {
   /** Any day of the month to show. */
   readonly asOf: IsoDate
   /** Every budget and goal typed, for any month (0008); resolved here for this one. */
@@ -305,11 +316,14 @@ export function periodSheet(input: PeriodSheetInput): PeriodSheet {
     else earlier.push(p)
   }
   const wholeMonth = input.from === monthBounds(input.from).start && input.to === monthBounds(input.from).end
+  // F8: an amount with no day paid counts in a whole month alone, unless a
+  // comparison says how both of its sides count it (F55).
+  const undatedCount = input.undatedCount === undefined ? wholeMonth : input.undatedCount
   const counts = (p: PeriodPlan): p is PeriodPlan & { plannedCents: number } => {
     if (p.plannedCents === null) return false
-    if (wholeMonth || p.spread === true) return true
-    if (p.dueDay === null) return false
-    return dueInWindow(p.dueDay, input.from, input.to, p.month)
+    if (p.spread === true) return true
+    if (p.dueDay === null) return undatedCount
+    return wholeMonth || dueInWindow(p.dueDay, input.from, input.to, p.month)
   }
   // Every month's amount paid in the window. Two only when the day paid
   // moved at a month end and both days fall in it: both were paid.

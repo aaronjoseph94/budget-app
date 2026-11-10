@@ -163,3 +163,78 @@ describe('periodComparison (F26)', () => {
     expect(periodComparison({ ...INPUT, month: isoDate('2026-10-01') })).toEqual({ status: 'not_started' })
   })
 })
+
+describe('periodComparison, a bill with no day paid (F55)', () => {
+  // The tester's bills: Gas, $62.00 a month with no day paid, and Water,
+  // $45.50 due on the 31st. Neither has a real charge.
+  const plan = (categoryId: string, plannedCents: number, dueDay: number | null) => ({
+    categoryId,
+    effectiveMonth: isoDate('2026-01-01'),
+    plannedCents,
+    dueDay,
+  })
+  const bills = (asOf: string, month: string) => {
+    const c = periodComparison({
+      period: 'month',
+      month: isoDate(month),
+      asOf: isoDate(asOf),
+      historyStart: EARLY,
+      categories: [cat('gas', 'bill'), cat('water', 'bill', 1)],
+      planHistory: [plan('gas', 6200, null), plan('water', 4550, 31)],
+      entries: [],
+    })
+    if (c.status !== 'compared') throw new Error(`expected a comparison, got ${c.status}`)
+    const of = (id: string) => c.blocks.bill.rows.find((r) => r.categoryId === id)
+    return { c, gas: of('gas'), water: of('water') }
+  }
+
+  it('counts it on neither side while the month runs', () => {
+    const { c, gas } = bills('2026-09-29', '2026-09-01')
+    expect([c.now, c.before]).toEqual([window('2026-09-01', '2026-09-29'), window('2026-08-01', '2026-08-29')])
+    expect(gas).toMatchObject({ nowCents: 0, beforeCents: 0, direction: 'same' })
+  })
+
+  it('counts it on both sides on the last day of a month shorter than the one before', () => {
+    // 30 September: 1–30 Sep is the whole month, 1–30 Aug is not. Gas was
+    // $62.00 on this side alone, "+62.00 more" for a bill that did not change.
+    const { c, gas, water } = bills('2026-09-30', '2026-09-01')
+    expect([c.sameDays, c.now, c.before]).toEqual([true, window('2026-09-01', '2026-09-30'), window('2026-08-01', '2026-08-30')])
+    expect(gas).toMatchObject({ nowCents: 6200, beforeCents: 6200, changeCents: 0, direction: 'same' })
+    // Water is due on the 31st: September's last day holds it (D6), 1–30 August does not.
+    expect(water).toMatchObject({ nowCents: 4550, beforeCents: 0, changeCents: 4550 })
+    expect(c.summary.spent).toMatchObject({ nowCents: 10750, beforeCents: 6200, changeCents: 4550 })
+  })
+
+  it('counts it on neither side while a longer month runs past the length of the one before', () => {
+    // 30 March 2027: 1–30 Mar is not the whole month, 1–28 Feb is. Gas was
+    // $62.00 on the earlier side alone, "62.00 less".
+    const { c, gas } = bills('2027-03-30', '2027-03-01')
+    expect([c.now, c.before]).toEqual([window('2027-03-01', '2027-03-30'), window('2027-02-01', '2027-02-28')])
+    expect(gas).toMatchObject({ nowCents: 0, beforeCents: 0, direction: 'same' })
+  })
+
+  it('counts it on both sides once the month is over, whole against whole', () => {
+    const { c, gas, water } = bills('2026-10-01', '2026-09-01')
+    expect(c.sameDays).toBe(false)
+    expect(gas).toMatchObject({ nowCents: 6200, beforeCents: 6200 })
+    expect(water).toMatchObject({ nowCents: 4550, beforeCents: 4550 })
+  })
+
+  it('follows the last month of a Year the same way', () => {
+    // 28 February 2029 against 28 February 2028, a leap year: this side's
+    // February is whole and the earlier one is not.
+    const c = periodComparison({
+      period: 'year',
+      startMonth: isoDate('2029-01-01'),
+      asOf: isoDate('2029-02-28'),
+      historyStart: EARLY,
+      categories: [cat('gas', 'bill')],
+      planHistory: [plan('gas', 6200, null)],
+      entries: [],
+    })
+    if (c.status !== 'compared') throw new Error(`expected a comparison, got ${c.status}`)
+    expect(c.before).toEqual(window('2028-01-01', '2028-02-28'))
+    // January and February on each side.
+    expect(c.blocks.bill.rows[0]).toMatchObject({ nowCents: 12400, beforeCents: 12400 })
+  })
+})

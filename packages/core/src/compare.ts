@@ -181,15 +181,22 @@ const KINDS: readonly BlockKind[] = ['income', 'savings', 'variable', 'bill', 'd
  * F25 and F26: each window through periodSheet, and each figure set against
  * its twin. A month, week or Year is counted month by month, each month
  * with its own monthly amounts, so a planned bill counts on its due day on
- * both sides (F8, D13). A pay period is counted as the Paycheck counts it,
+ * both sides (F8, D13), and one with no day paid on both or on neither
+ * (F55). A pay period is counted as the Paycheck counts it,
  * each side with its own payday month's shares (F15). Only Actuals are
  * compared, so no budget is read.
  */
 export function periodComparison(input: PeriodComparisonInput): PeriodComparison {
   const window = comparisonWindow(input)
   if (window.status !== 'compared') return window
-  const now = added(sheets(input, window.now))
-  const before = added(sheets(input, window.before))
+  // F55: while a month or a Year runs, an amount with no day paid counts in
+  // each window's last month as the current one counts it: on both sides
+  // when today ends its month, on neither before that. Windows already over
+  // are whole months, where F8 counts it by itself.
+  const running = window.sameDays && (input.period === 'month' || input.period === 'year')
+  const undated = running ? window.now.to === monthBounds(window.now.to).end : undefined
+  const now = added(sheets(input, window.now, undated))
+  const before = added(sheets(input, window.before, undated))
   const blocks = Object.fromEntries(
     KINDS.map((kind): [BlockKind, BlockChange] => {
       const earlier = new Map(before.blocks[kind].rows.map((r) => [r.categoryId, r.actualCents]))
@@ -222,8 +229,12 @@ export function periodComparison(input: PeriodComparisonInput): PeriodComparison
   }
 }
 
-/** One window's sheets: one per month it touches, or the pay period's one. */
-function sheets(input: PeriodComparisonInput, window: DateWindow): PeriodSheet[] {
+/**
+ * One window's sheets: one per month it touches, or the pay period's one.
+ * `undated` says whether the window's last month counts an amount with no
+ * day paid (F55); undefined leaves it to F8.
+ */
+function sheets(input: PeriodComparisonInput, window: DateWindow, undated?: boolean): PeriodSheet[] {
   const sheet = (from: IsoDate, to: IsoDate, plans: readonly PeriodPlan[]): PeriodSheet =>
     periodSheet({
       from,
@@ -234,6 +245,7 @@ function sheets(input: PeriodComparisonInput, window: DateWindow): PeriodSheet[]
       entries: input.entries,
       statementPeriodEnds: [],
       startingBalanceCents: null,
+      ...(undated === undefined || to !== window.to ? {} : { undatedCount: undated }),
     })
   if (input.period === 'pay') {
     // Each window starts on a payday, whose month's shares it counts (F15).
