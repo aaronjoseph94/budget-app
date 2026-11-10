@@ -25,7 +25,6 @@ export default defineConfig({
       { test: { name: 'charts', root: './packages/chart-specs', include: ['test/**/*.test.ts'], exclude: ['**/dist/**'] } },
       { test: { name: 'coach', root: './packages/savings-coach', include: ['test/**/*.test.ts'], exclude: ['**/dist/**'] } },
       { test: { name: 'export', root: './packages/report-export', include: ['test/**/*.test.ts'], exclude: ['**/dist/**'] } },
-      { test: { name: 'ai-apps', root: './packages/ai-apps', include: ['test/**/*.test.ts'], exclude: ['**/dist/**'] } },
       // Split by extension: a .tsx test renders a component and needs a DOM,
       // a .ts test checks plain functions and keeps Node's faster, stricter
       // environment, where reaching for `window` by accident is an error.
@@ -96,8 +95,6 @@ export default defineConfig({
         'packages/chart-specs/src/**': { lines: 80, functions: 80, branches: 75 },
         'packages/savings-coach/src/**': { lines: 80, functions: 80, branches: 75 },
         'packages/report-export/src/**': { lines: 80, functions: 80, branches: 75 },
-        // The AI apps server (ADR 0012): what an outside AI app may reach.
-        'packages/ai-apps/src/**': { lines: 80, functions: 80, branches: 75 },
         // The code that holds a provider key is held to the same bar.
         'supabase/functions/**': { lines: 80, functions: 80, branches: 75 },
         // The app as a whole, .tsx included, now held to the bar every module

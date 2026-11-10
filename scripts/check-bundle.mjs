@@ -11,10 +11,6 @@
 // 3. The one-time updates under setup/ (ADR 0007) are exactly every
 //    migration from 0015 on, the AI helper and read-receipt, each byte for byte as
 //    committed: nothing more is published, and nothing is changed on the way.
-//    Beside them, mcp-function.ts, the AI apps server built from
-//    packages/ai-apps (ADR 0012): it must open with its banner, import
-//    nothing (the SDK and zod are bundled), and name no service key and no
-//    AI host.
 // 4. The JavaScript a browser runs names no AI service's API host and no
 //    service-role key: every AI call goes through the `ai` helper (ADR 0004).
 //    setup/ is left out, since it is the functions' own source, and is never
@@ -99,7 +95,7 @@ try {
   ])
   const setup = join(out, 'setup')
   const published = existsSync(setup) ? readdirSync(setup).sort() : []
-  const wanted = [...sources.keys(), 'mcp-function.ts'].sort()
+  const wanted = [...sources.keys()].sort()
   if (published.join() !== wanted.join()) {
     console.log(`FAIL: setup/ holds ${published.join(', ') || 'nothing'}; it must hold exactly ${wanted.join(', ')}`)
     failed = true
@@ -107,23 +103,6 @@ try {
   for (const name of published.filter((n) => sources.has(n))) {
     if (!readFileSync(join(setup, name)).equals(readFileSync(sources.get(name)))) {
       console.log(`FAIL: setup/${name} is not byte for byte the committed file`)
-      failed = true
-    }
-  }
-  // Statements only: a line that starts an import or re-export, or an
-  // import() call. The file keeps the engine's comments, and a comment's
-  // words ("from "never set"") are not an import.
-  const IMPORTS = /^\s*(?:import|export)\b[^'";]*?\bfrom\s*["']([^"']+)["']|^\s*import\s*["']([^"']+)["']|\bimport\s*\(\s*["']([^"']+)["']/gm
-  if (published.includes('mcp-function.ts')) {
-    const server = readFileSync(join(setup, 'mcp-function.ts'), 'utf8')
-    // Nothing at all: the SDK and zod are bundled at the locked versions, so
-    // no deploy resolves a version nobody reviewed (security review mcp-3-04).
-    // Comment lines first: the bundled SDK's JSDoc names types as import('…').
-    const statements = server.split('\n').filter((line) => !/^\s*(\*|\/\/|\/\*)/.test(line)).join('\n')
-    const strays = [...new Set([...statements.matchAll(IMPORTS)].map((m) => m[1] ?? m[2] ?? m[3]))]
-    const keys = [...PROVIDER_HOSTS, 'service_role', 'secret_keys'].filter((k) => server.toLowerCase().includes(k))
-    if (!server.startsWith('// mcp-function.ts — ') || strays.length > 0 || keys.length > 0) {
-      console.log(`FAIL: setup/mcp-function.ts must open with its banner, import nothing, and name no key or AI host; it imports ${strays.join(', ') || 'nothing'} and names ${keys.join(', ') || 'none'}`)
       failed = true
     }
   }

@@ -137,18 +137,6 @@ module.exports = {
       },
     },
     {
-      name: 'app-never-ships-the-ai-apps-server',
-      severity: 'error',
-      comment:
-        'packages/ai-apps is the server AI apps call, built into a file the owner pastes. ' +
-        'Only the /setup/ build plugin may reach it; in the page it would be dead weight ' +
-        'at best, and at worst a second place that checks tokens. One test may read ' +
-        'it: the parity test, which proves the server renames rows for the engine as ' +
-        'the app does (MCP plan 2.4), so a chat cannot quote a figure the screen does not show.',
-      from: { path: '^apps/web/(src|test)/', pathNot: '^apps/web/test/ai-apps-parity\\.test\\.ts$' },
-      to: { path: '^packages/ai-apps/' },
-    },
-    {
       name: 'packages-never-import-the-app',
       severity: 'error',
       comment:
@@ -226,23 +214,6 @@ module.exports = {
       from: { path: '^packages/savings-coach/' },
       to: { path: ['^packages/(schema|money-primitives)/src/'], dependencyTypes: ['type-only'] },
     },
-    // The AI apps server (ADR 0012, PLAN §2.15): the engine and the packages
-    // below it, zod, and the official MCP SDK. Nothing else, and never the
-    // app; the database only by RPC over fetch, which is no import.
-    {
-      from: { path: '^packages/ai-apps/' },
-      to: {
-        path: [
-          '^packages/(core|money-primitives|statement-parsers|schema)/src/',
-          'node_modules/(zod|@modelcontextprotocol/server)/',
-        ],
-      },
-    },
-    // Its build script, which makes the pasteable file at site build (M3),
-    // uses vite and Node; the bundle test builds and runs that file.
-    { from: { path: '^packages/ai-apps/build\\.ts$' }, to: { path: 'node_modules/vite/' } },
-    { from: { path: '^packages/ai-apps/build\\.ts$' }, to: { dependencyTypes: ['core'] } },
-    { from: { path: '^packages/ai-apps/test/' }, to: { path: '^packages/ai-apps/build\\.ts$' } },
     // Its tests hold its templates to schema's text rule itself (ModelProse,
     // plan A12), so the app's words and a model's pass the one rule; the
     // source still names schema's types only.
@@ -296,12 +267,6 @@ module.exports = {
     // Node's fs, for the /setup/ plugin, its test, and the Copy button's test, which serves those same files.
     { from: { path: '^apps/web/(setup-files\\.ts|test/setup-files\\.test\\.ts|test/updates-copy\\.test\\.tsx)$' }, to: { dependencyTypes: ['core'] } },
     { from: { path: '^apps/web/test/setup-files\\.test\\.ts$' }, to: { path: '^apps/web/setup-files\\.ts$' } },
-    // The one arrow from the app into the AI apps server: the /setup/ plugin
-    // builds mcp-function.ts with it at site build (ADR 0012). Nothing in
-    // apps/web/src may reach it, so none of it ships in the page.
-    { from: { path: '^apps/web/setup-files\\.ts$' }, to: { path: '^packages/ai-apps/build\\.ts$' } },
-    // And the parity test, which feeds the same rows to the app and the server.
-    { from: { path: '^apps/web/test/ai-apps-parity\\.test\\.ts$' }, to: { path: '^packages/ai-apps/src/' } },
   ],
   options: {
     doNotFollow: { path: 'node_modules' },
