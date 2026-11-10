@@ -9,7 +9,7 @@
  * query this server does not understand fails loudly rather than returning
  * an empty list that a test could mistake for "nothing there".
  */
-import { createClient, type OAuthAuthorizationDetails, type OAuthGrant, type OAuthRedirect } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js'
 import type {
   BudgetRow,
   Category,
@@ -29,7 +29,7 @@ import type {
 } from '../src/ledger.js'
 import type { SupabaseClient } from '../src/supabase.js'
 import { watchNetwork } from '../src/offline.js'
-import { AI_HELPER_VERSION, MCP_SERVER_VERSION, READ_RECEIPT_VERSION, type AiStatusReply } from '@budget/schema'
+import { AI_HELPER_VERSION, READ_RECEIPT_VERSION, type AiStatusReply } from '@budget/schema'
 
 /**
  * The public key the page is built with, as One-time updates sends it to
@@ -55,7 +55,7 @@ export interface FakeTables {
   savings_goals: (GoalRow &
     Partial<Pick<FundRow, 'category_id' | 'start_date' | 'balance_as_of'>> &
     Partial<Pick<ListedGoalRow, 'created_at' | 'sort_order' | 'status' | 'reached_on'>> & { readonly user_id?: string })[]
-  /** `period_start` and `period_end` only for a statement with a period (0007); `ai_client_id` for an AI app's (0020). */
+  /** `period_start` and `period_end` only for a statement with a period (0007). */
   ingest_batches: (UnreadableBatch & { readonly period_start?: string | null; readonly period_end?: string | null; readonly ai_client_id?: string | null })[]
   /** `dismissed_at` once dismissed (0012); absent reads as null, still waiting. */
   ingest_unreadable_lines: (UnreadableLine & { readonly dismissed_at?: string | null })[]
@@ -87,12 +87,6 @@ export interface FakeTables {
   insight_dismissals: { readonly user_id?: string; readonly insight_key: string }[]
   /** The check-in's answers (0017). */
   coach_answers: Row[]
-  /** The owner's switch for AI apps (0020). */
-  ai_app_access: Row[]
-  /** When each AI app last asked something (0020). */
-  ai_app_last_use: Row[]
-  /** What AI apps suggested (0039), as stored. */
-  ai_app_proposals: Row[]
 }
 
 export interface RpcCall {
@@ -156,8 +150,6 @@ export interface FakeSupabase {
     readonly receiptCalls: Readonly<Record<string, unknown>>[]
     /** What a deployed read-receipt answers to GET: by default this app's version. */
     readReceiptVersion: () => Response | Promise<Response>
-    /** `functions/v1/mcp/health`, the AI apps server's; null is one never deployed. By default it answers with this app's version. */
-    mcpHealth: (() => Response | Promise<Response>) | null
     /**
      * As a browser reaches the platform: a request with the sign-in headers
      * is preflighted, and the platform answers that preflight for a function
@@ -166,34 +158,12 @@ export interface FakeSupabase {
      */
     inBrowser: boolean
   }
-  /**
-   * Supabase's OAuth server (ADR 0012): `grants` are the AI apps the owner
-   * allowed, which Settings lists; null, the default, is the server
-   * switched off, which Supabase answers 404 feature_disabled. Each client
-   * id Disconnect revokes is kept in `revoked`. `requests` are the sign-ins
-   * waiting on the consent page, by id: what it shows, or a reply with only
-   * a `redirect_url` (an app allowed before); an id not there is answered
-   * 404, as an expired one. Each Allow or Deny is kept in `consents` and
-   * answered with `answer`'s address, by default the request's callback
-   * with a code or `access_denied`. All need `signIn()`. `metadata` is what
-   * the server publishes at `/.well-known/oauth-authorization-server/auth/v1`
-   * while it is on: by default with dynamic registration and S256.
-   */
-  readonly oauth: {
-    metadata: Readonly<Record<string, unknown>>
-    grants: OAuthGrant[] | null
-    readonly revoked: string[]
-    readonly requests: Record<string, OAuthAuthorizationDetails | OAuthRedirect>
-    readonly consents: { readonly id: string; readonly action: string }[]
-    answer: ((id: string, action: string) => string) | null
-  }
   /** The signed-in user as the auth server holds it, `user_metadata` included. */
   readonly user: { id: string; email: string; user_metadata: Record<string, unknown> }
   /**
    * Give the client a session, which `auth.updateUser` needs. `fail('auth/user', …)` makes updates fail.
-   * `alg` is the key the token says signed it, which One-time updates reads: by default ES256, Supabase's new key.
    */
-  signIn(alg?: string): Promise<void>
+  signIn(): Promise<void>
   /** The server itself, for what the app asks with the browser's own fetch, not the client's: stub the global with it. */
   readonly fetch: typeof fetch
   /**
@@ -256,9 +226,6 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     ai_notes: [],
     insight_dismissals: [],
     coach_answers: [],
-    ai_app_access: [],
-    ai_app_last_use: [],
-    ai_app_proposals: [],
     ...seed,
   }
   const rpcCalls: RpcCall[] = []
@@ -272,15 +239,8 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     // 0018: answered by suggest() and clearSuggestion() below.
     suggest_candidate_categories: 0,
     clear_candidate_suggestion: false,
-    // 0019: returns nothing for the owner's own session.
-    _not_an_ai_app: null,
-    // 0030 on: which AI-app security update is in, the latest by default.
-    ai_app_update_level: 34,
-    ai_app_updates_in: 42,
     // 0021 on: the last update to move it, 0041 by default.
     schema_level: 41,
-    // 0039: answered by decide() below.
-    decide_suggestion: true,
   }
   const failures = new Map<string, string>()
   const server: FakeSupabase['server'] = { refuse: null, maxRows: null, afterRead: null, hold: null, lacks: {}, offline: false, signupsOff: true }
@@ -298,16 +258,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     readReceipt: null,
     receiptCalls: [],
     readReceiptVersion: () => json({ ok: true, version: READ_RECEIPT_VERSION }),
-    mcpHealth: () => json({ ok: true, version: MCP_SERVER_VERSION, tools: 0 }),
     inBrowser: false,
-  }
-  const oauth: FakeSupabase['oauth'] = {
-    metadata: { registration_endpoint: 'http://fake.supabase.test/auth/v1/oauth/clients/register', code_challenge_methods_supported: ['S256'] },
-    grants: null,
-    revoked: [],
-    requests: {},
-    consents: [],
-    answer: null,
   }
   let nextId = 1
 
@@ -331,16 +282,6 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     if (moving === undefined || !known) return pgError('42501', 403)
     tables.transactions[row] = { ...moving, category_id: String(args['p_category']) }
     return new Response(null, { status: 204 })
-  }
-
-  // What 0039's decide_suggestion does: only a waiting suggestion not past its day is decided, once.
-  function decide(args: Readonly<Record<string, unknown>>): Response {
-    const now = new Date().toISOString()
-    const at = tables.ai_app_proposals.findIndex((r) => r['id'] === args['p_id'] && r['status'] === 'pending' && String(r['expires_at']) > now)
-    const row = tables.ai_app_proposals[at]
-    if (row === undefined) return json(false)
-    tables.ai_app_proposals[at] = { ...row, status: args['p_outcome'] }
-    return json(true)
   }
 
   // What 0009's trigger on categories asks before a move: is an amount in
@@ -445,32 +386,10 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     const url = new URL(input instanceof Request ? input.url : String(input))
     const method = init?.method ?? 'GET'
     const headers = new Headers(init?.headers)
-    const oauthOff = () => json({ code: 404, error_code: 'feature_disabled', msg: 'OAuth server is disabled' }, 404)
-    if (url.pathname === '/.well-known/oauth-authorization-server/auth/v1') return oauth.grants === null ? oauthOff() : json(oauth.metadata)
     if (url.pathname === '/auth/v1/settings') {
       // As Supabase's gateway, which refuses a request without the public key.
       if (headers.get('apikey') !== PUBLIC_KEY) return json({ message: 'No API key found in request' }, 401)
       return json({ disable_signup: server.signupsOff, external: { email: true } })
-    }
-    if (url.pathname === '/auth/v1/user/oauth/grants') {
-      if (oauth.grants === null) return oauthOff()
-      if (method === 'GET') return json(oauth.grants)
-      const revoked = url.searchParams.get('client_id')
-      oauth.revoked.push(String(revoked))
-      oauth.grants = oauth.grants.filter((g) => g.client.id !== revoked)
-      return new Response(null, { status: 204 })
-    }
-    const authorization = /^\/auth\/v1\/oauth\/authorizations\/([^/]+)(\/consent)?$/.exec(url.pathname)
-    if (authorization !== null) {
-      const id = decodeURIComponent(authorization[1] ?? '')
-      const request = oauth.requests[id]
-      if (request === undefined) return json({ code: 404, error_code: 'not_found', msg: 'authorization not found' }, 404)
-      if (authorization[2] === undefined) return json(request)
-      const action = String((JSON.parse(String(init?.body)) as { action?: unknown }).action)
-      oauth.consents.push({ id, action })
-      const callback = 'redirect_uri' in request ? request.redirect_uri : request.redirect_url.split('?')[0]
-      const said = action === 'approve' ? 'code=fake-code' : 'error=access_denied'
-      return json({ redirect_url: oauth.answer?.(id, action) ?? `${callback}?${said}&state=fake-state` })
     }
     if (url.pathname === '/auth/v1/user') {
       // GET when a session is set, PUT for updateUser, which merges `data`
@@ -484,11 +403,11 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     }
     const fn = /^\/functions\/v1\/([^/]+)/.exec(url.pathname)?.[1]
     if (fn !== undefined) {
-      const deployed = fn === 'ai' ? functions.ai !== null : fn === 'mcp' ? functions.mcpHealth !== null : fn === 'read-receipt' ? functions.readReceipt !== null : false
+      const deployed = fn === 'ai' ? functions.ai !== null : fn === 'read-receipt' ? functions.readReceipt !== null : false
       const signed = ['authorization', 'apikey', 'x-client-info'].some((h) => headers.has(h))
       if (functions.inBrowser && signed && !deployed) throw new TypeError('Load failed')
       // The platform's JWT check, on for the helper and read-receipt, refuses a request with no sign-in.
-      if (!signed && deployed && fn !== 'mcp') return json({ code: 'UNAUTHORIZED_NO_AUTH_HEADER', message: 'Missing authorization header' }, 401)
+      if (!signed && deployed) return json({ code: 'UNAUTHORIZED_NO_AUTH_HEADER', message: 'Missing authorization header' }, 401)
     }
     if (url.pathname === '/functions/v1/ai') {
       const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
@@ -496,12 +415,8 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       if (functions.ai === null) return notDeployed()
       return unlessAborted(functions.ai(body), init?.signal)
     }
-    if (url.pathname === '/functions/v1/mcp/health') {
-      if (functions.mcpHealth === null) return notDeployed()
-      return functions.mcpHealth()
-    }
     if (url.pathname === '/functions/v1/read-receipt' && method === 'GET') {
-      // Its version, from 2026-10-01.1 on (One-time updates, mcp-3-03); null is one never deployed.
+      // Its version, from 2026-10-01.1 on (One-time updates); null is one never deployed.
       if (functions.readReceipt === null) return notDeployed()
       return functions.readReceiptVersion()
     }
@@ -530,7 +445,6 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
       if (name === 'approve_candidate') return approve(args)
       if (name === 'suggest_candidate_categories') return suggest(args)
       if (name === 'clear_candidate_suggestion') return clearSuggestion(args)
-      if (name === 'decide_suggestion') return decide(args)
       return json(rpcReplies[name] ?? null)
     }
 
@@ -748,12 +662,12 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
   // A token of the right shape, made here rather than written out: the client
   // only decodes it for its expiry, and nothing checks the signature.
   const part = (value: unknown) => btoa(JSON.stringify(value)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_')
-  const signIn = async (alg = 'ES256') => {
-    const token = [part({ alg }), part({ sub: user.id, exp: 4102444800 }), part('fake')].join('.')
+  const signIn = async () => {
+    const token = [part({ alg: 'ES256' }), part({ sub: user.id, exp: 4102444800 }), part('fake')].join('.')
     const { error } = await client.auth.setSession({ access_token: token, refresh_token: 'fake-refresh' })
     if (error !== null) throw error
   }
   const fetch: typeof globalThis.fetch = (input, init) => serve(input, init)
 
-  return { client, tables, rpcCalls, rpcReplies, functions, fail: (t, code) => void failures.set(t, code), heal: (t) => void failures.delete(t), oauth, user, signIn, fetch, server }
+  return { client, tables, rpcCalls, rpcReplies, functions, fail: (t, code) => void failures.set(t, code), heal: (t) => void failures.delete(t), user, signIn, fetch, server }
 }
