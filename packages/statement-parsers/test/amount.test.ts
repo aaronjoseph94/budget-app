@@ -225,4 +225,15 @@ describe('parseTypedAmount', () => {
     }
     expect(readTypedAmount('$12.50')).toEqual({ ok: true, value: 1250 })
   })
+
+  // A tester's Start field: 1000000000 was "too large", and twenty 9s was
+  // "type it as an amount", because past what a number holds exactly the
+  // digits fail to read at all. Digits alone are an amount, too large.
+  it('calls any amount of digits past the most too large, however many there are', () => {
+    for (const text of ['99999999999999999999', '-99999999999999999999.99', '$12,345,678,901,234,567,890']) {
+      expect(readTypedAmount(text), text).toEqual({ ok: false, reason: 'too_large' })
+    }
+    expect(readTypedAmount('99999999999999999999.999')).toEqual({ ok: false, reason: 'not_an_amount' })
+    expect(readTypedAmount('9999999999999999,9999')).toEqual({ ok: false, reason: 'not_an_amount' })
+  })
 })

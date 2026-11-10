@@ -215,6 +215,9 @@ export function parseTypedAmount(text: string): Cents | null {
  */
 export const MAX_TYPED_CENTS: Cents = cents(99_999_999_999)
 
+/** A typed amount's shape once its cents are padded: a sign, a $, digits grouped or not, two decimals. */
+const WELL_FORMED = /^-?\$?(\d+|\d{1,3}(,\d{3})+)\.\d{2}$/
+
 /** A typed amount, or why it is not one: not an amount at all, or past MAX_TYPED_CENTS. */
 export type TypedAmount =
   | { readonly ok: true; readonly value: Cents }
@@ -226,7 +229,9 @@ export function readTypedAmount(text: string): TypedAmount {
   if (trimmed.length === 0) return { ok: false, reason: 'not_an_amount' }
   const withCents = /\.\d{2}$/.test(trimmed) ? trimmed : /\.\d$/.test(trimmed) ? `${trimmed}0` : `${trimmed}.00`
   const parsed = parseAmountToCents(withCents, US_AMOUNT_FORMAT)
-  if (!parsed.ok) return { ok: false, reason: 'not_an_amount' }
+  // Well-formed digits refused only because no number holds them exactly
+  // (twenty 9s) are an amount too large, as 1000000000 is, not "no amount".
+  if (!parsed.ok) return { ok: false, reason: WELL_FORMED.test(withCents) ? 'too_large' : 'not_an_amount' }
   if (parsed.value > MAX_TYPED_CENTS || parsed.value < -MAX_TYPED_CENTS) return { ok: false, reason: 'too_large' }
   return { ok: true, value: parsed.value }
 }
