@@ -75,9 +75,6 @@ importers:
         specifier: ^4.6.7
         version: 4.6.7
     devDependencies:
-      '@budget/ai-apps':
-        specifier: workspace:*
-        version: link:../../packages/ai-apps
       '@tailwindcss/vite':
         specifier: ^4.3.3
         version: 4.3.3(vite@8.3.7(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0))
@@ -108,31 +105,6 @@ importers:
       typescript:
         specifier: ~5.9.3
         version: 5.9.3
-      vite:
-        specifier: ^8.3.7
-        version: 8.3.7(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)
-
-  packages/ai-apps:
-    dependencies:
-      '@budget/core':
-        specifier: workspace:*
-        version: link:../core
-      '@budget/money-primitives':
-        specifier: workspace:*
-        version: link:../money-primitives
-      '@budget/schema':
-        specifier: workspace:*
-        version: link:../schema
-      '@budget/statement-parsers':
-        specifier: workspace:*
-        version: link:../statement-parsers
-      '@modelcontextprotocol/server':
-        specifier: 2.3.1
-        version: 2.3.1
-      zod:
-        specifier: 4.6.7
-        version: 4.6.7
-    devDependencies:
       vite:
         specifier: ^8.3.7
         version: 8.3.7(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)
@@ -544,16 +516,8 @@ packages:
     resolution: {integrity: sha512-09BHFaNVBe5pB2AhzCfLj0cqmsKLERvZQ4FblzP90UMGLaXVqdZPByFjURwsUYCmxonUW2yAwgTTvle+8O2/8w==}
     engines: {node: '>=20'}
 
-  '@modelcontextprotocol/core@2.3.1':
-    resolution: {integrity: sha512-laVmIhPGpWi7rG9q+0UigblRN0Hws/Yjlb6qLFtVqryXVLkc4h+yN8z731POD2LnAGQlFe7/tXhUm7Bi0YB91g==}
-    engines: {node: '>=20'}
-
   '@modelcontextprotocol/server@2.3.0':
     resolution: {integrity: sha512-+6b0LdsQLmHsvS7J6sQJ4weTpzUn61fU1JKS+321/+IyDYoHW5CR2Tgqcs6GgAAQvlesCo6yX3xttgmx+XGtJw==}
-    engines: {node: '>=20'}
-
-  '@modelcontextprotocol/server@2.3.1':
-    resolution: {integrity: sha512-e59MfWuSssj6DoQ96JCTqdW1AXT5/XtnTl0WWd6MU1Ka434fFUGGosCLJbGNySDhHGvxQWoRWK137FXYFkYNWw==}
     engines: {node: '>=20'}
 
   '@oxc-parser/binding-android-arm-eabi@0.152.0':
@@ -2446,18 +2410,9 @@ snapshots:
     dependencies:
       zod: 4.6.7
 
-  '@modelcontextprotocol/core@2.3.1':
-    dependencies:
-      zod: 4.6.7
-
   '@modelcontextprotocol/server@2.3.0':
     dependencies:
       '@modelcontextprotocol/core': 2.3.0
-      zod: 4.6.7
-
-  '@modelcontextprotocol/server@2.3.1':
-    dependencies:
-      '@modelcontextprotocol/core': 2.3.1
       zod: 4.6.7
 
   '@oxc-parser/binding-android-arm-eabi@0.152.0':
