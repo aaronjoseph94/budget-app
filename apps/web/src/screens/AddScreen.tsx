@@ -586,7 +586,8 @@ function TypedEntry() {
             </Field>
           </div>
           {creating ? (
-            <div className="grid grid-cols-2 gap-3">
+            // One above the other on a phone: "Variable expenses" needs more than half of 320 px.
+            <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2">
               <Field label="New category name">
                 <Input value={newCategory} maxLength={60} onChange={(e) => setNewCategory(e.target.value)} />
               </Field>
