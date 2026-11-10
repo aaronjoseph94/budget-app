@@ -23,7 +23,7 @@ import type { RejectionReason } from '@budget/schema'
  * stored code is the database's enum, which has no value for these; a row
  * refused for one is kept under the code beside it.
  */
-export type RejectionDetail = 'amount_too_large'
+export type RejectionDetail = 'amount_too_large' | 'merchant_too_long'
 
 export type ParseOutcome<T> =
   | { readonly ok: true; readonly value: T }

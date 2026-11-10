@@ -24,3 +24,14 @@ describe('AddScreen, a CSV heading with a blank cell', () => {
     expect(options('Amount column')[3]).toBe('Column 4')
   })
 })
+
+describe('AddScreen, a description too long to keep', () => {
+  afterEach(cleanup)
+
+  // It was refused as having characters that could show as something else.
+  it('says it is too long, not that its characters are wrong', async () => {
+    await choose(['Date,Description,Amount', `2026-10-01,${'CORNER MARKET '.repeat(37)},-4.50`, '2026-10-02,LITWARE BOOKS,-45.10'].join('\n'))
+    expect(screen.getByText('The description is longer than 512 characters.')).toBeTruthy()
+    expect(screen.queryByText(/could show as something other/)).toBeNull()
+  })
+})

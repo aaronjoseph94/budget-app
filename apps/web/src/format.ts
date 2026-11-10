@@ -64,6 +64,8 @@ const REASONS: Record<string, string> = {
   unparseable_amount: 'The amount could not be read as money in the format you chose.',
   // A detail the preview has, kept in Review as unparseable_amount (no such enum value).
   amount_too_large: 'This amount is too large to be a transaction.',
+  // Likewise kept as invalid_merchant.
+  merchant_too_long: 'The description is longer than 512 characters.',
   unparseable_date: 'The date could not be read in the format you chose.',
   missing_merchant: 'This row had no description.',
   invalid_merchant: 'The description has characters that could show as something other than what is stored.',

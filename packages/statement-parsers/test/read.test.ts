@@ -252,4 +252,14 @@ describe('sign, issuer id and headerless files', () => {
     expect(r.accepted).toHaveLength(2)
     expect(r.accepted[0]?.line).toBe(1)
   })
+
+  it('says a description is too long apart from one whose characters are refused', () => {
+    // Both are stored as invalid_merchant; only the preview's words differ.
+    const r = read(`${HEADER}\n03/04/2025,${'C'.repeat(513)},-4.50\n03/05/2025,GAS‮,-40.00\n03/06/2025,${'C'.repeat(512)},-1.00`)
+    expect(r.rejected).toEqual([
+      { line: 2, reason: 'invalid_merchant', detail: 'merchant_too_long' },
+      { line: 3, reason: 'invalid_merchant' },
+    ])
+    expect(r.accepted).toHaveLength(1)
+  })
 })

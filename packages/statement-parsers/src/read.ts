@@ -139,8 +139,12 @@ function readRow(row: CsvRow, width: number, options: ReadOptions): RowOutcome {
   if (merchantCell.length === 0) return { reason: 'missing_merchant' }
   // The text rules live in one place. Re-implementing them here would let the
   // two disagree, and this is the field a charge's issuer chooses.
-  if (!IngestedTextSchema.safeParse(merchantCell).success) {
-    return { reason: 'invalid_merchant' }
+  const text = IngestedTextSchema.safeParse(merchantCell)
+  if (!text.success) {
+    // Too long is said as too long: it was put as characters that could show
+    // as something else. Stored as invalid_merchant either way.
+    const tooLong = text.error.issues.some((issue) => issue.code === 'too_big')
+    return tooLong ? { reason: 'invalid_merchant', detail: 'merchant_too_long' } : { reason: 'invalid_merchant' }
   }
 
   const issuerIndex = mapping.issuerIdIndex
