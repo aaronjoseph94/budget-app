@@ -226,6 +226,11 @@ describe('WeekScreen', () => {
     const card = screen.getByRole('region', { name: 'Flight training' })
     expect(card.className.split(' ')).toEqual(expect.arrayContaining(['bg-linear-to-b', 'to-primary-tint']))
     expect(card.querySelector('circle[pathLength]')?.getAttribute('stroke-dasharray')).toBe('28.17 100')
+    // A 60-letter name with no space made the Week 1182 px wide on a 390 px
+    // phone: the heading wraps anywhere, as the Savings card's does.
+    expect(screen.getByRole('heading', { name: 'Flight training' }).className.split(' ')).toEqual(
+      expect.arrayContaining(['min-w-0', '[overflow-wrap:anywhere]']),
+    )
     expect(screen.getByText('$8,450.00')).toBeTruthy()
     expect(screen.getByText('of $30,000.00 · $21,550.00 to go')).toBeTruthy()
     expect(screen.getByText('$10,775.00')).toBeTruthy()

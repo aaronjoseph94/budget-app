@@ -149,7 +149,8 @@ export function FundEditor({
       >
         {goal === null ? null : (
           <Field label="Name">
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
+            {/* The 60 that Add a goal and Lists hold a name to. */}
+            <Input value={name} maxLength={60} onChange={(e) => setName(e.target.value)} />
           </Field>
         )}
         <div className="grid grid-cols-2 gap-3">

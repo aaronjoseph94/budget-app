@@ -95,7 +95,8 @@ export function DebtEditor({
         }}
       >
         <Field label="Name">
-          <Input value={name} onChange={(e) => setName(e.target.value)} />
+          {/* The 60 that Lists holds a name to. */}
+          <Input value={name} maxLength={60} onChange={(e) => setName(e.target.value)} />
         </Field>
         {/* The notes on Debt Calculator!J18, J19 and J20. */}
         <div className="grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">

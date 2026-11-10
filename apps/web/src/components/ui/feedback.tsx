@@ -94,7 +94,9 @@ export function Alert({
           'border-income/40 bg-income/5 [--muted-foreground:var(--canvas-muted)]'
         : 'bg-card'
   return (
-    <div ref={own} id={id} role={tone === 'error' ? 'alert' : says ? undefined : 'status'} className={cn('rounded-lg border px-4 py-3 text-sm', look)}>
+    // A name in it, a debt's or a goal's, may be one long word: it wraps
+    // anywhere rather than push the page sideways (bug bash, phone).
+    <div ref={own} id={id} role={tone === 'error' ? 'alert' : says ? undefined : 'status'} className={cn('rounded-lg border px-4 py-3 text-sm [overflow-wrap:anywhere]', look)}>
       {title !== undefined ? <p className="font-medium">{title}</p> : null}
       {children !== undefined ? (
         <div className={cn(title !== undefined && 'mt-1', tone === 'error' ? '' : 'text-muted-foreground')}>
@@ -125,7 +127,7 @@ export function SavedNote({ className, children }: { className?: string; childre
     announce?.(children)
   }, [announce, children])
   return (
-    <p role={announce === null ? 'status' : undefined} className={className}>
+    <p role={announce === null ? 'status' : undefined} className={cn('[overflow-wrap:anywhere]', className)}>
       {children}
     </p>
   )

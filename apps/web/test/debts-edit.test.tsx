@@ -42,6 +42,13 @@ describe('DebtsScreen, typing debts', () => {
     expect(button.textContent).toBe('Edit')
   })
 
+  // Lists holds a name to 60; Edit took any length (bug bash, phone).
+  it('holds a debt name to 60 characters, as Lists does', async () => {
+    renderScreen(<DebtsScreen />, seeded())
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit Loan' }))
+    expect(field(/^Name/).getAttribute('maxlength')).toBe('60')
+  })
+
   it("adds a debt at the end of the list, from this month, and shows its card", async () => {
     const fake = seeded()
     renderScreen(<DebtsScreen />, fake)
@@ -52,7 +59,10 @@ describe('DebtsScreen, typing debts', () => {
     type(/^Minimum payment/, '150')
     type(/^APR/, '19.99%')
     fireEvent.click(within(sheet()).getByRole('button', { name: 'Save debt' }))
-    expect(await screen.findByText('Line <of> credit is saved.')).toBeTruthy()
+    // The notice wraps anywhere: a 60-letter name with no space made the
+    // page 443 px wide at 320 (bug bash, phone).
+    const saved = (await screen.findByText('Line <of> credit is saved.')).closest('.rounded-lg')
+    expect(saved?.className.split(' ')).toContain('[overflow-wrap:anywhere]')
     expect(fake.tables.debts[1]).toMatchObject({
       user_id: 'u1', name: 'Line <of> credit', starting_balance_cents: 300_000, minimum_payment_cents: 15_000,
       apr_basis_points: 1_999, start_date: '2026-09-01', sort_order: 5,

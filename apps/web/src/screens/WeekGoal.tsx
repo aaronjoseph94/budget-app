@@ -61,7 +61,7 @@ export function GoalCard({ weekSpentCents, today }: { weekSpentCents: number; to
         <div className="min-w-0 flex-1 space-y-1.5 text-[0.9375rem]">
           <div className="flex min-w-0 items-center gap-2">
             <Icon name={goal.unit_cost_cents === null ? 'piggy' : 'plane'} className="size-4 text-primary" />
-            <h2 className="text-lg font-semibold leading-snug">{goal.name}</h2>
+            <h2 className="min-w-0 text-lg font-semibold leading-snug [overflow-wrap:anywhere]">{goal.name}</h2>
           </div>
           <p>
             <span className="tnum font-semibold">{formatCents(savedCents)}</span>

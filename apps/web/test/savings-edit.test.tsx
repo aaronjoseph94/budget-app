@@ -131,6 +131,8 @@ describe('SavingsScreen, setting and linking goals', () => {
     const fake = seeded()
     renderScreen(<SavingsScreen />, fake)
     fireEvent.click(within(await card('Travel')).getByRole('button', { name: 'Edit goal' }))
+    // Add a goal holds a name to 60; Edit goal took any length (bug bash, phone).
+    expect(screen.getByLabelText(/^Name$/).getAttribute('maxlength')).toBe('60')
     type(/^Name$/, 'Holiday')
     fireEvent.click(screen.getByRole('button', { name: 'Save goal' }))
     expect(await screen.findByText("Holiday's goal is saved.")).toBeTruthy()
