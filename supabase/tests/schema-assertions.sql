@@ -1310,12 +1310,15 @@ begin
   exception when foreign_key_violation then null;
   end;
 
+  -- A refusal under ON DELETE RESTRICT is restrict_violation from PostgreSQL 18
+  -- (commit 086c84b23) and foreign_key_violation before it; each delete
+  -- below that a RESTRICT key refuses takes either.
   -- Removing the category would lose the goal and its typed balance, so it is
   -- refused while the fund names it.
   begin
     delete from public.categories where id = fund;
     raise exception 'NOT REFUSED: a fund''s category was removed from under it';
-  exception when foreign_key_violation then null;
+  exception when foreign_key_violation or restrict_violation then null;
   end;
 
   -- Unlinked, the fund is a typed balance again and the category can go.
@@ -2270,7 +2273,7 @@ begin
   begin
     delete from public.categories where id = 'cccccccc-0000-4000-8000-000000000183';
     raise exception 'NOT REFUSED: removing a category an owner-filled row names';
-  exception when foreign_key_violation then null;
+  exception when foreign_key_violation or restrict_violation then null;
   end;
   raise notice 'a proposal never stops a category being removed';
 end $$;
@@ -2870,7 +2873,7 @@ begin
   begin
     delete from public.categories where id = kept;
     raise exception 'NOT REFUSED: a category a ledger row names was removed';
-  exception when foreign_key_violation then null;
+  exception when foreign_key_violation or restrict_violation then null;
   end;
   if not exists (select 1 from public.ingest_candidates where id = cand and status = 'approved' and category_id = kept) then
     raise exception 'a refused delete still changed the approval behind a ledger row';

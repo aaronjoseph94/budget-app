@@ -4195,3 +4195,24 @@ another way) still stops Debts, the Forecast's debt-free card and Ask's
 debt-free answer, since `debtsForCore` hands every row to one payoff
 plan. Leaving it out would change every total, so the screens would have
 to say that one debt could not be read and offer to edit or remove it.
+
+## N182 — PostgreSQL 18 names a RESTRICT refusal differently
+
+**Seen:** 2026-11-10, the gates job on GitHub: `ubuntu-latest` became
+Ubuntu 26.04, whose newest PostgreSQL is 18, and the schema gate failed
+where a test removes a category a savings goal names. From PostgreSQL 18
+(commit 086c84b23) a delete an `ON DELETE RESTRICT` key refuses is
+`restrict_violation` (23001), not `foreign_key_violation` (23503). An
+`ON DELETE NO ACTION` key, and an insert naming a row that is not there,
+still give 23503.
+
+**Done here:** the three schema assertions whose delete a RESTRICT key
+refuses take either code. Each still fails if the delete goes through.
+
+**Left:** the hosted project runs PostgreSQL 17.11, so nothing the owner
+sees has changed yet. On 18, Lists' remove would read 23001, which
+`describeSetupFailure` does not know, so the owner would see the generic
+words with "(code 23001)" in place of "This category still has charges or
+learned shops…". When the project is upgraded, 23001 needs the same words
+as 23503 in `remove` and `SETUP_ANY` (apps/web/src/format.ts), and the
+fake database a way to answer with it.
