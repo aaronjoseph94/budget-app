@@ -11,6 +11,7 @@ import { Button } from '../components/ui/button.js'
 import { NativeSelect } from '../components/ui/form.js'
 import { cn } from '../lib/cn.js'
 import { useFocusDrawn } from '../lib/return-focus.js'
+import { NOT_SPENDING } from './not-spending.js'
 
 /** Charges drawn before "Show all" (PERF-4). */
 const FIRST = 30
@@ -173,8 +174,7 @@ export function MonthCharges({
   )
 }
 
-/** Opens Not spending's charges, which have no block of their own (N26). */
-export const NOT_SPENDING = 'not-spending'
+export { NOT_SPENDING }
 
 /** A period other than a month: its dates as a title, and as said in a sentence. */
 interface Period {

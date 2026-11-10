@@ -52,7 +52,7 @@ import { cn } from '../lib/cn.js'
 import { LINE_BUTTON, SENTENCE_LINK } from '../components/ui/link.js'
 import { useReturnFocus } from '../lib/return-focus.js'
 import { BudgetEditor } from './BudgetEditor.js'
-import { NOT_SPENDING, OpenedCharges } from './MonthCharges.js'
+import { NOT_SPENDING } from './not-spending.js'
 import { MonthCharts } from './MonthCharts.js'
 import { MonthSummary } from './MonthSummary.js'
 import { HelpButton } from '../help/HelpButton.js'
@@ -62,6 +62,8 @@ import { TryAgain } from '../try-again.js'
 // The coach line and the forecast line are their own chunks, fetched once the Month has drawn (D27).
 const MonthCoachLine = lazyPart(() => import('./MonthCoachLine.js'))
 const MonthForecastLine = lazyPart(() => import('./MonthForecastLine.js'))
+// A row's charges, fetched the first time one is opened: the Month draws without them.
+const OpenedCharges = lazyPart(() => import('./MonthCharges.js').then((m) => ({ default: m.OpenedCharges })))
 
 /**
  * One of the workbook's month tabs (plan §6.2, §6.3). `month` is the address's `YYYY-MM`,
@@ -350,15 +352,17 @@ export function MonthScreen({ month }: { month: string | null }) {
           </div>
           <TransfersNote cents={sheet.transfersCents} onOpen={() => setOpened(NOT_SPENDING)} />
           {here !== null && opened !== null ? (
-            <OpenedCharges
-              blocks={sheet.blocks}
-              transfersCents={sheet.transfersCents}
-              rows={here.rows}
-              categoryId={opened}
-              month={start}
-              compared={compared}
-              onClose={() => setOpened(null)}
-            />
+            <Suspense fallback={null}>
+              <OpenedCharges
+                blocks={sheet.blocks}
+                transfersCents={sheet.transfersCents}
+                rows={here.rows}
+                categoryId={opened}
+                month={start}
+                compared={compared}
+                onClose={() => setOpened(null)}
+              />
+            </Suspense>
           ) : null}
         </>
       ) : null}
