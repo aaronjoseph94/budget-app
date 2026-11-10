@@ -6,8 +6,9 @@
  * expenses category, measured against its own usual month (F27), never an
  * invented ideal: a tenth, a quarter, or "your best month", the gap
  * between the usual month and the lowest one the owner has actually had
- * (docs/ideas/savings-coach.md, "Proven-floor targets"). Every figure is
- * rounded to $5, because "trim it by $101.25" reads as false precision.
+ * (docs/ideas/savings-coach.md, "Proven-floor targets"), a month of net
+ * refunds counted as $0. Every figure is rounded to $5, because "trim it
+ * by $101.25" reads as false precision.
  */
 import { type Cents, type IsoDate, cents } from '@budget/money-primitives'
 import { timeEquivalent } from './goal.js'
@@ -77,7 +78,9 @@ export function goalLevers(input: GoalLeversInput): GoalLevers {
     const totals = sheets.map((m) => ({ month: m.month, cents: m.actuals.get(c.id) ?? missing(c.id) }))
     const usual = usualMonth({ totals }).usualCents
     if (usual === null || usual <= 0) return []
-    const lowest = Math.min(...totals.map((t) => t.cents))
+    // A month refunds took below $0 (D8) counts as $0, the least a month can
+    // spend: the gap to it is then never more than the usual month itself.
+    const lowest = Math.max(0, Math.min(...totals.map((t) => t.cents)))
     // A tenth is usual × 1,000 ÷ 10,000 and a quarter usual × 2,500 ÷ 10,000,
     // each taken straight to the nearest $5 so nothing is rounded twice.
     const savings: readonly (readonly [LeverKind, number])[] = [

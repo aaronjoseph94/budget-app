@@ -1349,6 +1349,17 @@ questions (plan §5, §11; built in slice A08), for every active goal.
   it, and **your best month**, the usual month less the lowest of those
   complete months, only when that difference is at least $5.00 before
   rounding. A lever that rounds to $0 is left out.
+- **Amended 2026-11-09 (review): a best month is never below $0.** A
+  month whose refunds were larger than its spending has an Actual below
+  zero (D8), and it was taken as the lowest month, so the lever came to
+  more than the whole usual month. Workbook value: none (not from the
+  workbook). Was: Clothes at $200.00 a usual month, with one month at
+  −$500.00 after a $600.00 refund, read "Trim Clothes by $700.00 a month".
+  Chosen: the lowest month counts as $0.00 when it is below it, so that
+  lever is $200.00, the usual month itself before rounding to $5.00.
+  Reason: a trim cannot save more than is spent, and a refund is not a
+  month the owner spent less than nothing (F30 and F35 count such a month
+  as $0 too).
 - **Weekly** = monthly × 12 ÷ 52, half-up.
 - **Weeks sooner,** at the goal's middle pace (F33): ⌈remaining ÷ pace⌉ −
   ⌈remaining ÷ (pace + weekly)⌉. With no pace, the lever alone gets there
