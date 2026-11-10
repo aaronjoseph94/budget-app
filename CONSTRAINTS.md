@@ -85,10 +85,7 @@ it, while each function still imports zod by Deno's pinned URL
 `depcruise`. Each part was seen `RED` once: a type error in the function
 (`tsc`), `console.error` outside the log helper (`eslint`), the function
 importing `packages/schema` and its test importing the engine (`depcruise`),
-and its tests moved away (coverage at 0% against 80). Its built file's checks
-(M3) were seen `RED` by a third import and by a service key's name planted
-in the source (`check-bundle.mjs` and the bundle test), and an import of
-the package from `apps/web/src` (`depcruise`).
+and its tests moved away (coverage at 0% against 80).
 
 The "browser holds no AI key" row was added on 2026-09-25 (plan A09).
 Every AI call goes through the `ai` Edge Function on the Supabase

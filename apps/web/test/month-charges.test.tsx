@@ -154,6 +154,20 @@ describe('Moving a charge from the Month', () => {
     expect(variable.getByRole('rowheader', { name: 'Restaurants' }).closest('tr')?.textContent).toBe('Restaurants89.12-89.12')
   })
 
+  // 0032 learns no shop from a row an AI app added (that feature is gone, ADR
+  // 0016), so the move promises none: only this charge moves.
+  it('offers no "Always file" for a charge from a source that is gone, and moves only it', async () => {
+    const fake = seeded()
+    fake.tables.transactions.push({ ...tx('t5', '2026-09-15', -1250, 'groceries', 'Lunch at Subway'), source: 'ai_app' })
+    const sheet = await startMoving(fake, 'Lunch at Subway')
+    expect(sheet.queryByRole('checkbox', { name: /Always file/ })).toBeNull()
+    expect(sheet.getByText('Only this charge moves.')).toBeTruthy()
+    fireEvent.change(sheet.getByRole('combobox', { name: 'Move to' }), { target: { value: 'dining' } })
+    fireEvent.click(sheet.getByRole('button', { name: 'Move' }))
+    await sheet.findByRole('status')
+    expect(fake.rpcCalls).toEqual([{ name: 'recategorise_transaction', args: { p_transaction: 't5', p_category: 'dining', p_learn: false } }])
+  })
+
   it('moves only this charge when "Always file" is turned off', async () => {
     const fake = seeded()
     const sheet = await startMoving(fake, 'CONTOSO MARKET')

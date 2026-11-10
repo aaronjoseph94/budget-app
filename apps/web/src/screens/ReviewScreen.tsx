@@ -173,7 +173,10 @@ export function ReviewScreen() {
         const outcome = await approveCandidate(supabase, row.id, categoryId)
         setNote(
           outcome === 'approved'
-            ? 'Added. Future charges from this merchant will be filed the same way automatically.'
+            ? // A row from a source that is gone (an AI app's, ADR 0016) teaches no shop (0032).
+              row.source === 'ai_app'
+              ? 'Added.'
+              : 'Added. Future charges from this merchant will be filed the same way automatically.'
             : outcome === 'already_in_ledger'
               ? 'You already had that one, so nothing was added.'
               : 'That one had already been handled.',
@@ -264,7 +267,9 @@ export function ReviewScreen() {
         reads.current += 1
         setRows((now) => now?.filter((r) => r.id !== row.id) ?? null)
       }
-      setNote(`Filed ${done}. Future charges from these shops will be filed the same way automatically.`)
+      // A row from a source that is gone teaches no shop (0032), so only the others promise one.
+      const taught = list.filter(({ row }) => row.source !== 'ai_app').length
+      setNote(`Filed ${done}.` + (taught > 0 ? ' Future charges from these shops will be filed the same way automatically.' : ''))
     } catch (cause) {
       const why = cause instanceof Error ? cause.message : 'That did not work.'
       // Those filed were saved: never "nothing was saved" after them (e2e-money-09).

@@ -69,6 +69,12 @@ describe('ReviewScreen', () => {
     expect(screen.queryByText(/AI app|suggested change/i)).toBeNull()
     expect(screen.queryByRole('heading', { name: /Suggested changes/ })).toBeNull()
     await expectNoAxeViolations()
+
+    // 0032 learns no shop from such a row, so approving it promises nothing of the next charges.
+    fireEvent.change(lunch.getByRole('combobox', { name: 'Category' }), { target: { value: 'c1' } })
+    fireEvent.click(lunch.getByRole('button', { name: /Approve/ }))
+    expect(await screen.findByText('Added.')).toBeTruthy()
+    expect(screen.queryByText(/Future charges/)).toBeNull()
   })
 
   it("groups the picker under the workbook's lists, each in its own order, then by name", async () => {
