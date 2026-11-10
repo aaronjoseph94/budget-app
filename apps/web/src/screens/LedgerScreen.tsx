@@ -227,9 +227,7 @@ export function LedgerScreen({ month: param }: { month: string | null }) {
                       <Badge variant="secondary" className="[overflow-wrap:anywhere]">
                         {names.get(r.category_id) ?? 'Unknown'}
                       </Badge>
-                      {r.source === 'typed' || r.source === 'ai_app' ? (
-                        <span className="text-xs text-muted-foreground">{r.source === 'typed' ? 'added by hand' : 'added by an AI app'}</span>
-                      ) : null}
+                      {r.source === 'typed' ? <span className="text-xs text-muted-foreground">added by hand</span> : null}
                     </div>
                   </div>
                   <span className={cn('tnum shrink-0 text-sm font-bold md:text-base', r.amount_cents > 0 && 'text-income')}>

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Button } from '../components/ui/button.js'
-import { HELPER_FILE, READ_RECEIPT_FILE, SERVER_FILE } from './updates.js'
+import { HELPER_FILE, READ_RECEIPT_FILE } from './updates.js'
 
 /** What Copy calls each Edge Function; a migration is called by its file name. */
-const NAMED: Readonly<Record<string, string>> = { [HELPER_FILE]: 'the AI helper', [READ_RECEIPT_FILE]: 'read-receipt', [SERVER_FILE]: 'the AI apps server' }
+const NAMED: Readonly<Record<string, string>> = { [HELPER_FILE]: 'the AI helper', [READ_RECEIPT_FILE]: 'read-receipt' }
 
-/** The updates the site carries under /setup/ (ADR 0007): 0015 on, the AI helper, read-receipt and the AI apps server. */
+/** The updates the site carries under /setup/ (ADR 0007): 0015 on, the AI helper and read-receipt. */
 export function isCopyable(file: string): boolean {
   return file in NAMED || Number(/^(\d{4})_[a-z0-9_]+\.sql$/.exec(file)?.[1] ?? 0) >= 15
 }
@@ -21,7 +21,6 @@ function looksRight(file: string, text: string): boolean {
   const first = text.slice(0, text.indexOf('\n')).replace(/\r$/, '')
   if (file === HELPER_FILE) return first.startsWith('// ai — the AI helper')
   if (file === READ_RECEIPT_FILE) return first.startsWith('// read-receipt — a photo of a receipt in')
-  if (file === SERVER_FILE) return first.startsWith('// mcp-function.ts — ')
   return first === `-- ${file}`
 }
 
@@ -54,12 +53,7 @@ export function CopyFile({ file }: { file: string }) {
   }, [file])
 
   if (got.kind === 'failed') {
-    // The server is built with the site, so GitHub has no copy of it to open.
-    return file === SERVER_FILE ? (
-      <p>Couldn’t get the file here. Check your connection, then press Check again.</p>
-    ) : (
-      <p>Couldn’t get the file here. Open it on GitHub below instead.</p>
-    )
+    return <p>Couldn’t get the file here. Open it on GitHub below instead.</p>
   }
   const copy = async (text: string) => {
     try {

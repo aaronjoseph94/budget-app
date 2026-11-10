@@ -108,7 +108,6 @@ export const ARTICLES: readonly Article[] = [
     summary: 'Nothing counts until you approve it here.',
     steps: [
       'Open **Review**.',
-      'Under **Suggested changes**, press **Apply** or **Dismiss** on each AI app suggestion.',
       'Check each row’s category: **✨ Suggested: …** is the AI’s guess; **Suggested** is your own rule.',
       'Pick another category where it is wrong, or press **Not this**.',
       'Press **Approve**, or **Approve these 12**, then **Approve all 12**.',
@@ -118,7 +117,7 @@ export const ARTICLES: readonly Article[] = [
     done: 'Review says “Nothing waiting.”',
     stuck:
       'A shop you approved once is filed the same way next time. To stop that, press **Forget** under **Shops filed by themselves** in Settings. A wrong number: approve what waits, bring in the latest statement, check **Start**. A charge counted twice: remove the typed one in **All transactions**.',
-    related: ['add', 'ai-apps'],
+    related: ['add', 'updates'],
   },
   {
     id: 'budgets',
@@ -225,35 +224,13 @@ export const ARTICLES: readonly Article[] = [
     done: 'it says “AI is on”.',
     stuck:
       'A busy service rests and the next is asked. Past the **Daily limit** the app uses its own words. Free services may keep what they are sent.',
-    related: ['coach', 'ai-apps', 'updates'],
+    related: ['coach', 'updates'],
     terms: [
       {
         term: 'What the AI sees',
         meaning:
           'Coach and Review: kinds of change and names, never an amount, a balance or a date. Just type it and a photo: what you typed or the photo, today’s date, your category names.',
       },
-    ],
-  },
-  {
-    id: 'ai-apps',
-    title: 'Connect Claude or ChatGPT',
-    summary: 'Claude or ChatGPT reads your budget; additions wait in Review.',
-    steps: [
-      'In **Settings**, then **Account**, turn on **Let AI apps connect**.',
-      'Press **Connect a new AI app**, then connect within 15 minutes.',
-      'In Claude, add a custom connector **Budget**; choose **Register automatically**.',
-      'In ChatGPT, turn on **Developer mode** and add **Budget**.',
-      'On **Connect an AI app**, check **claude.ai** or **chatgpt.com**, and **Allow**.',
-    ],
-    done: 'it answers with your figures; suggestions wait for **Apply**.',
-    stuck:
-      'In an emergency, in order: **Disconnect** each app; turn off **Let AI apps connect**. Then in Supabase run delete from auth.sessions; last, turn off **OAuth Server**.',
-    related: ['review', 'ai', 'updates'],
-    terms: [
-      { term: 'It can', meaning: 'read your figures, add to Review, suggest changes you apply.' },
-      { term: 'It cannot', meaning: 'approve, change or delete anything; see a photo; use your keys.' },
-      { term: 'Its sign-in', meaning: 'reaches your Supabase account until it ends; **Disconnect** ends it.' },
-      { term: 'Who sees it', meaning: 'Anthropic or OpenAI: figures, names, dates; never password or keys.' },
     ],
   },
   {
@@ -264,14 +241,14 @@ export const ARTICLES: readonly Article[] = [
       'In Supabase, press **SQL Editor**, then **New query**.',
       'Press **Copy** under Next, paste it there, press **Run**, and wait for Success.',
       'Press **Check again**, and do the next one the same way.',
-      'The AI helper and AI apps steps list their clicks here.',
+      'The AI helper step lists its clicks here.',
       'Last, open **Settings**, then **AI**, and turn on free AI.',
       'Sign in with **Email address** and **Password**, or **Email me a link instead**.',
     ],
     done: 'this page says “All done”.',
     stuck:
       'If Supabase says anything but Success, stop: nothing is lost. Press **Forgot your password?** to set a new one by email. On an iPhone: **Safari**, **Share**, then **Add to Home Screen**.',
-    related: ['ai', 'ai-apps', 'start'],
+    related: ['ai', 'start'],
     terms: [
       {
         term: 'A code in brackets',

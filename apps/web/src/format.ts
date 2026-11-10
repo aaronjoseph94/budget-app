@@ -1,7 +1,7 @@
 /**
  * The one place money becomes a string: money-primitives' formatCents,
- * re-exported, so the app and the AI apps server share exactly one display
- * helper (CLAUDE.md invariant 2, ADR 0012).
+ * re-exported, so the app has exactly one display helper (CLAUDE.md
+ * invariant 2).
  */
 import { formatCents } from '@budget/money-primitives/format'
 

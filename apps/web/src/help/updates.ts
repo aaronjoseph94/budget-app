@@ -14,9 +14,8 @@
  * as a dropped connection, is "could not check", never "missing": telling
  * the owner to paste something already in would be refused, and worry them.
  */
-import { AI_HELPER_VERSION, MCP_SERVER_VERSION, READ_RECEIPT_VERSION } from '@budget/schema'
+import { AI_HELPER_VERSION, READ_RECEIPT_VERSION } from '@budget/schema'
 import { askAi } from '../ai/client.js'
-import { serverAddress } from '../ai-apps/access.js'
 import { readEnv } from '../env.js'
 import type { SupabaseClient } from '../supabase.js'
 
@@ -26,27 +25,14 @@ type Check =
   | { readonly kind: 'function'; readonly name: string; readonly args: Readonly<Record<string, unknown>> }
   /** The AI helper answers `ping` once it is deployed; Supabase answers 404 until then. */
   | { readonly kind: 'helper' }
-  /** The AI apps server answers `/mcp/health` with its version once it is deployed (ADR 0012). */
-  | { readonly kind: 'server' }
   /**
    * read-receipt: in when deleted (Supabase's 404) or when it answers GET
    * with a version at least READ_RECEIPT_VERSION; an older copy answers 405
-   * and relies on the gateway's JWT switch alone (security review mcp-3-03).
+   * and relies on the gateway's JWT switch alone.
    */
   | { readonly kind: 'read_receipt' }
-  /** Which key Supabase signs the owner's sign-in with, read from the owner's own token. */
-  | { readonly kind: 'signing_key' }
-  /** Supabase's OAuth server, from the settings it publishes for AI apps to find. */
-  | { readonly kind: 'oauth' }
   /** Allow new users to sign up, off: from the settings Supabase's auth server publishes (backend-b-06). */
   | { readonly kind: 'signups' }
-  /**
-   * An AI-app security update (0030 on): they change only functions the
-   * owner's session cannot tell apart. Each is in when the last one in is
-   * at least `level`: as ai_app_updates_in() reads it from the functions
-   * (0035), or, before 0035, the number each left in ai_app_update_level().
-   */
-  | { readonly kind: 'level'; readonly level: number }
   /**
    * One of the review fixes (0021 to 0029, and 0038): each re-creates
    * schema_level() (0021) to answer its own number, and is in when that
@@ -63,13 +49,6 @@ export const HELPER_FILE = 'ai-function.ts'
  * 2026-09-30 lets anyone holding the app's public key spend the Gemini key.
  */
 export const READ_RECEIPT_FILE = 'read-receipt-function.ts'
-
-/** The AI apps server, built at site build and served under /setup/ (ADR 0012). */
-export const SERVER_FILE = 'mcp-function.ts'
-
-/** Two steps made in Supabase's settings, with no file to paste (PLAN §1, steps 3 and 4). */
-export const SIGNING_KEY = 'signing-key'
-export const OAUTH_SERVER = 'oauth-server'
 
 /**
  * Turning off Allow new users to sign up: a setting, first on the list.
@@ -90,7 +69,7 @@ export interface Update {
 
 const NIL = '00000000-0000-0000-0000-000000000000'
 
-/** Sign-ups off, 0005 to 0029, 0035, 0030 to 0041, the AI helper, the two settings and the AI apps server, each with what it adds. */
+/** Sign-ups off, 0005 to 0018, 0021 to 0029, 0038, 0041 and the AI helper and read-receipt, each with what it adds. */
 export const UPDATES: readonly Update[] = [
   // First: it needs nothing, and it is what keeps strangers out.
   { file: SIGNUPS_OFF, name: 'Sign-ups off', adds: 'Stops anyone who finds the site making an account', checks: [{ kind: 'signups' }] },
@@ -145,19 +124,6 @@ export const UPDATES: readonly Update[] = [
     adds: 'Where Review keeps the AI’s suggested categories',
     checks: [{ kind: 'function', name: 'clear_candidate_suggestion', args: { p_candidate: NIL } }],
   },
-  {
-    // The owner's own session is not an AI app, so this returns and changes nothing.
-    // Listed after 0018, so it is offered only once 0018 is in, which it needs.
-    file: '0019_ai_apps_cannot_write.sql',
-    adds: 'Stops an AI app you connect from changing your records itself',
-    checks: [{ kind: 'function', name: '_not_an_ai_app', args: {} }],
-  },
-  {
-    // Listed after 0019, so it is offered only once 0019 is in, which it needs.
-    file: '0020_ai_apps.sql',
-    adds: 'What an AI app you connect may read, and adding to Review, with a switch and daily limits',
-    checks: [{ kind: 'table', table: 'ai_app_access' }],
-  },
   // The review fixes: each needs the one before it, and 0021 only 0018.
   { file: '0021_category_holds.sql', adds: 'Lets a category go once only a rejected guess or a removed charge names it', checks: [{ kind: 'schema', level: 21 }] },
   { file: '0022_removed_charge_waits.sql', adds: 'A charge you removed waits in Review when its statement comes in again', checks: [{ kind: 'schema', level: 22 }] },
@@ -169,79 +135,16 @@ export const UPDATES: readonly Update[] = [
   { file: '0028_ai_words_no_invisible_characters.sql', adds: 'Keeps invisible characters out of the AI’s kept words', checks: [{ kind: 'schema', level: 28 }] },
   { file: '0029_lookalike_charge_waits.sql', adds: 'A charge already in your records under another statement waits in Review', checks: [{ kind: 'schema', level: 29 }] },
   {
-    // Out of number order on purpose: it needs only 0020, and once it is in
-    // the checks below read what 0030 to 0034 left, so pasting one again
-    // never offers a later one that is already in.
-    file: '0035_ai_app_updates_in.sql',
-    adds: 'Lets One-time updates see exactly which AI app safety updates are in',
-    checks: [{ kind: 'function', name: 'ai_app_updates_in', args: {} }],
-  },
-  {
-    // Listed after 0020, so it is offered only once 0020 is in, which it needs.
-    file: '0030_ai_app_gate_live_session.sql',
-    adds: 'Stops an AI app the moment you disconnect it',
-    checks: [{ kind: 'level', level: 30 }],
-  },
-  {
-    file: '0031_ai_app_hash_own_kind.sql',
-    adds: 'Keeps what an AI app adds from hiding a real charge on your statement',
-    checks: [{ kind: 'level', level: 31 }],
-  },
-  {
-    file: '0032_ai_rows_teach_no_rule.sql',
-    adds: 'Keeps an AI app’s words from becoming a shop the app files by itself',
-    checks: [{ kind: 'level', level: 32 }],
-  },
-  {
-    file: '0033_ai_search_masked.sql',
-    adds: 'Keeps the long numbers in shop names hidden from an AI app’s searches',
-    checks: [{ kind: 'level', level: 33 }],
-  },
-  {
-    file: '0034_ai_words_visible.sql',
-    adds: 'Keeps an AI app from adding entries that look alike but are not',
-    checks: [{ kind: 'level', level: 34 }],
-  },
-  {
-    file: '0036_ai_search_as_shown.sql',
-    adds: 'Keeps an AI app’s searches to the shop names it is shown',
-    checks: [{ kind: 'level', level: 36 }],
-  },
-  {
-    file: '0037_ai_rows_before_the_fixes.sql',
-    adds: 'Tidies anything an AI app added before these safety updates',
-    checks: [{ kind: 'level', level: 37 }],
-  },
-  {
-    // Last: it needs 0029 and 0037. It deletes duplicate learned shops, so HANDOFF §3 asks for a backup first.
+    // Last of these: it needs 0029. It deletes duplicate learned shops, so HANDOFF §3 asks for a backup first.
     file: '0038_intuit_prefix_merchants.sql',
     adds: 'Makes IN*SHOP and SHOP one shop. It deletes duplicate learned shops. First export merchant_rules from the Table Editor as a CSV',
     checks: [{ kind: 'schema', level: 38 }],
-  },
-  {
-    // An AI-app update (ADR 0013): it needs 0037, and comes after 0038 in HANDOFF's order.
-    file: '0039_ai_apps_suggest_changes.sql',
-    adds: 'Lets an AI app suggest changes, which wait in Review until you apply them',
-    checks: [{ kind: 'level', level: 39 }],
-  },
-  {
-    // An AI-app update: it needs 0039, whose words check it tightens (testing db-01),
-    // and lets a budget from a month on put that month's own back (skills-02).
-    file: '0040_ai_words_every_character_shown.sql',
-    adds: 'Stops an AI app adding or suggesting words with hidden characters. Lets it suggest putting a month back to your usual budget',
-    checks: [{ kind: 'level', level: 40 }],
   },
   {
     // A review fix in kind: it moves schema_level() on from 0038's 38, and needs 0038 and 0016 (ADR 0015).
     file: '0041_ai_free_order.sql',
     adds: 'Tries the free, quick AI services first: OpenRouter, then Groq, then Gemini',
     checks: [{ kind: 'schema', level: 41 }],
-  },
-  {
-    // An AI-app update again: it needs 0040, whose words check it tightens (backend review of 2026-11-09), and leaves schema_level() alone.
-    file: '0042_ai_words_read_one_way.sql',
-    adds: 'Stops an AI app sending look-alike words, with odd spaces or accents',
-    checks: [{ kind: 'level', level: 42 }],
   },
   { file: HELPER_FILE, adds: 'The AI helper, which every AI feature goes through', checks: [{ kind: 'helper' }] },
   {
@@ -250,9 +153,6 @@ export const UPDATES: readonly Update[] = [
     adds: 'Deleted, or its new version: the AI helper reads receipts without it',
     checks: [{ kind: 'read_receipt' }],
   },
-  { file: SIGNING_KEY, name: 'Signing key', adds: 'The key Supabase signs your sign-in with, which ChatGPT needs', checks: [{ kind: 'signing_key' }] },
-  { file: OAUTH_SERVER, name: 'Sign-in for AI apps', adds: 'Lets Claude or ChatGPT ask you to allow them', checks: [{ kind: 'oauth' }] },
-  { file: SERVER_FILE, adds: 'The AI apps server, which Claude or ChatGPT connect to', checks: [{ kind: 'server' }] },
 ]
 
 /** What 0005's absence means: start where HANDOFF's list starts. */
@@ -261,7 +161,7 @@ export const FIRST_FILE = '0003_save_import_atomically.sql'
 /** The first database update the list checks, 0005: missing, the owner starts at FIRST_FILE. */
 const FIRST_CHECKED = '0005_category_kinds.sql'
 
-/** `old`: a function (the AI helper, read-receipt or the AI apps server) answers, but is a copy older than this app expects (N78). */
+/** `old`: a function (the AI helper or read-receipt) answers, but is a copy older than this app expects (N78). */
 export type UpdateState = 'in' | 'missing' | 'old' | 'unknown'
 
 export interface Checked {
@@ -274,55 +174,13 @@ const MISSING: Readonly<Record<Check['kind'], ReadonlySet<string>>> = {
   column: new Set(['42703']),
   function: new Set(['PGRST202', '42883']),
   helper: new Set(),
-  server: new Set(),
   read_receipt: new Set(),
-  signing_key: new Set(),
-  oauth: new Set(),
   signups: new Set(),
-  level: new Set(['PGRST202', '42883']),
   schema: new Set(['PGRST202', '42883']),
 }
 
-/**
- * The key that signed the owner's own session, read from its header here
- * and sent nowhere. Supabase gives ChatGPT the ID token it asks for only
- * when it signs with an asymmetric key (PLAN §2.3): ES256, or RS256, is
- * in; the legacy shared secret, HS256, is the step still to do. Anything
- * else, or no session, could not be checked.
- */
-async function signingKey(supabase: SupabaseClient): Promise<UpdateState> {
-  const { data } = await supabase.auth.getSession()
-  const head = data.session?.access_token.split('.')[0]
-  if (head === undefined) return 'unknown'
-  try {
-    const { alg } = JSON.parse(atob(head.replaceAll('-', '+').replaceAll('_', '/'))) as { alg?: unknown }
-    return alg === 'ES256' || alg === 'RS256' ? 'in' : alg === 'HS256' ? 'missing' : 'unknown'
-  } catch {
-    return 'unknown'
-  }
-}
-
-/**
- * Whether Supabase's OAuth server is on and lets apps register themselves,
- * from the settings it publishes for Claude and ChatGPT to find (PLAN
- * §2.11). Asked with the browser's own fetch and nothing of the owner's,
- * so no token leaves and the browser needs no preflight. Supabase's own
- * 404 `feature_disabled` is off; on without a registration address (the
- * step's last switch), or without the S256 ChatGPT requires, is not done
- * either. Anything else could not be checked (PLAN K13).
- */
-async function signInForAiApps(supabase: SupabaseClient): Promise<UpdateState> {
-  try {
-    const reply = await fetch(`${new URL(serverAddress(supabase)).origin}/.well-known/oauth-authorization-server/auth/v1`)
-    const said = (await reply.json()) as Record<string, unknown> | null
-    if (reply.status === 404) return said?.['error_code'] === 'feature_disabled' ? 'missing' : 'unknown'
-    if (!reply.ok || typeof said !== 'object' || said === null) return 'unknown'
-    const methods = said['code_challenge_methods_supported']
-    return typeof said['registration_endpoint'] === 'string' && Array.isArray(methods) && methods.includes('S256') ? 'in' : 'missing'
-  } catch {
-    return 'unknown'
-  }
-}
+/** This project's address, as the client itself names it, never typed or stored. */
+const projectOrigin = (supabase: SupabaseClient): string => supabase.from('categories').url.origin
 
 /**
  * Whether Allow new users to sign up is off, from the settings Supabase's
@@ -334,7 +192,7 @@ async function signupsOff(supabase: SupabaseClient): Promise<UpdateState> {
   const env = readEnv()
   if (!env.ok) return 'unknown'
   try {
-    const reply = await fetch(`${new URL(serverAddress(supabase)).origin}/auth/v1/settings`, { headers: { apikey: env.env.VITE_SUPABASE_ANON_KEY } })
+    const reply = await fetch(`${projectOrigin(supabase)}/auth/v1/settings`, { headers: { apikey: env.env.VITE_SUPABASE_ANON_KEY } })
     if (!reply.ok) return 'unknown'
     const said = (await reply.json()) as Record<string, unknown> | null
     const off = typeof said === 'object' && said !== null ? said['disable_signup'] : null
@@ -355,7 +213,7 @@ async function signupsOff(supabase: SupabaseClient): Promise<UpdateState> {
  */
 async function isDeployed(supabase: SupabaseClient, path: string): Promise<boolean | null> {
   try {
-    const reply = await fetch(`${new URL(serverAddress(supabase)).origin}/functions/v1/${path}`)
+    const reply = await fetch(`${projectOrigin(supabase)}/functions/v1/${path}`)
     if (reply.status !== 404) return true
     const said: unknown = await reply.json().catch(() => null)
     return typeof said === 'object' && said !== null && 'code' in said && said.code === 'NOT_FOUND' ? false : null
@@ -371,8 +229,6 @@ const codeOf = (error: { code?: unknown }): string => (typeof error.code === 'st
 
 async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateState> {
   if (check.kind === 'signups') return signupsOff(supabase)
-  if (check.kind === 'signing_key') return signingKey(supabase)
-  if (check.kind === 'oauth') return signInForAiApps(supabase)
   if (check.kind === 'helper') {
     const answer = await askAi(supabase, { action: 'ping' })
     if (answer.ok) return isOlder(versionOf(answer.data)) ? 'old' : 'in'
@@ -390,25 +246,6 @@ async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateStat
       return status.status === 404 ? 'in' : status.status === 405 ? 'old' : 'unknown'
     }
     return isOlder(versionOf(data), READ_RECEIPT_VERSION) ? 'old' : 'in'
-  }
-  if (check.kind === 'server') {
-    if ((await isDeployed(supabase, 'mcp/health')) === false) return 'missing'
-    const { data, error } = await supabase.functions.invoke('mcp/health', { method: 'GET' })
-    if (error !== null) {
-      const reply = (error as { context?: unknown }).context
-      return reply instanceof Response && reply.status === 404 ? 'missing' : 'unknown'
-    }
-    return isOlder(versionOf(data), MCP_SERVER_VERSION) ? 'old' : 'in'
-  }
-  if (check.kind === 'level') {
-    for (const name of ['ai_app_updates_in', 'ai_app_update_level']) {
-      const { data, error } = await supabase.rpc(name, {})
-      const gone = error !== null && MISSING.level.has(codeOf(error))
-      if (gone && name === 'ai_app_updates_in') continue
-      if (error !== null) return gone ? 'missing' : 'unknown'
-      return typeof data !== 'number' ? 'unknown' : data >= check.level ? 'in' : 'missing'
-    }
-    return 'unknown'
   }
   if (check.kind === 'schema') {
     const { data, error } = await supabase.rpc('schema_level', {})
@@ -448,46 +285,6 @@ async function checkOne(supabase: SupabaseClient, update: Update): Promise<Check
 /** Every update's state, all asked at once. */
 export async function checkUpdates(supabase: SupabaseClient): Promise<Checked[]> {
   return Promise.all(UPDATES.map((update) => checkOne(supabase, update)))
-}
-
-/**
- * What must be in before AI apps may be switched on or a connection
- * allowed (security review mcp-3-03), as 0020 already is: sign-ups off,
- * since the AI apps server takes any account's token and a stranger who
- * made one could connect an app to it (review of 2026-10-02); 0019, which
- * stops an AI app writing; 0020; 0030 to 0034, 0036 and 0037, which close
- * what the security review found open in 0020 (a disconnected app's token,
- * an AI row hiding a statement line or teaching a shop, a search reading
- * masked numbers, invisible characters) and clean up what was left before; the AI helper from 2026-09-30.1, the
- * first to refuse an AI app's token (an older one would let it spend the
- * owner's keys or save one of its own); read-receipt deleted or replaced;
- * and the AI apps server at this app's version, whose hashes 0031 checks.
- * Ready, or the first not in (null when one could not be checked: off
- * until it can be).
- */
-const BEFORE_AI_APPS: readonly string[] = [
-  SIGNUPS_OFF,
-  '0019_ai_apps_cannot_write.sql',
-  '0020_ai_apps.sql',
-  '0030_ai_app_gate_live_session.sql',
-  '0031_ai_app_hash_own_kind.sql',
-  '0032_ai_rows_teach_no_rule.sql',
-  '0033_ai_search_masked.sql',
-  '0034_ai_words_visible.sql',
-  '0036_ai_search_as_shown.sql',
-  '0037_ai_rows_before_the_fixes.sql',
-  HELPER_FILE,
-  READ_RECEIPT_FILE,
-  SERVER_FILE,
-]
-
-export type Readiness = { readonly ready: true } | { readonly ready: false; readonly file: string | null }
-
-export async function aiAppsReady(supabase: SupabaseClient): Promise<Readiness> {
-  const checked = await Promise.all(UPDATES.filter((u) => BEFORE_AI_APPS.includes(u.file)).map((u) => checkOne(supabase, u)))
-  const first = checked.find((c) => c.state === 'missing' || c.state === 'old')
-  if (first !== undefined) return { ready: false, file: first.update.file }
-  return checked.every((c) => c.state === 'in') ? { ready: true } : { ready: false, file: null }
 }
 
 export type NextStep =

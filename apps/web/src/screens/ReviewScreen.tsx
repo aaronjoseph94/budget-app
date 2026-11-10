@@ -32,8 +32,6 @@ import { ApproveAll, ApproveAllButton } from '../review/ApproveAll.js'
 import { SuggestButton, SuggestLine, suggestOffered } from '../review/SuggestBar.js'
 import { MonthTitle } from '../components/ui/type.js'
 import { useSuggestions } from '../review/use-suggestions.js'
-import { addedBy } from '../ai-apps/access.js'
-import { SuggestedChanges } from '../review/SuggestedChanges.js'
 
 /** `busy` while Approve these N works through its rows: every row waits. */
 const ALL = '__all__'
@@ -70,17 +68,12 @@ interface NewName {
  * approval made for them. Only an exact rule match at import time approves
  * without a tap, and those never reach this screen.
  */
-/** The line under the title with no charges waiting but an AI app's suggestions above. */
-const suggestedWaiting = (n: number) => `No charges waiting. ${n === 1 ? '1 suggested change waits' : `${n} suggested changes wait`} below.`
-
 export function ReviewScreen() {
-  const { supabase, userId, categories, refresh, version, status, suggestedTotal } = useAppData()
+  const { supabase, userId, categories, refresh, version, status } = useAppData()
   const [rows, setRows] = useState<readonly PendingCandidate[] | null>(null)
   const [unreadable, setUnreadable] = useState<UnreadablePage | null>(null)
   const [total, setTotal] = useState(0)
   const [rules, setRules] = useState<ReadonlyMap<string, string>>(new Map())
-  // Which AI app added each such row, by its grant's name (PLAN §2.9).
-  const [byApp, setByApp] = useState<ReadonlyMap<string, string>>(new Map())
   const [picked, setPicked] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -125,16 +118,6 @@ export function ReviewScreen() {
   useEffect(() => {
     void load()
   }, [load, version])
-
-  useEffect(() => {
-    const added = (rows ?? []).filter((r) => r.source === 'ai_app')
-    if (added.length === 0) return
-    let live = true
-    void addedBy(supabase, added).then((names) => {
-      if (live) setByApp(names)
-    })
-    return () => void (live = false)
-  }, [supabase, rows])
 
   // The AI's suggestions are stored; a similar shop's category is worked
   // out here, for rows with neither a rule nor a stored suggestion.
@@ -190,10 +173,7 @@ export function ReviewScreen() {
         const outcome = await approveCandidate(supabase, row.id, categoryId)
         setNote(
           outcome === 'approved'
-            ? // An AI app's entry teaches no shop (0032), so nothing is promised of its next charges.
-              row.source === 'ai_app'
-              ? 'Added.'
-              : 'Added. Future charges from this merchant will be filed the same way automatically.'
+            ? 'Added. Future charges from this merchant will be filed the same way automatically.'
             : outcome === 'already_in_ledger'
               ? 'You already had that one, so nothing was added.'
               : 'That one had already been handled.',
@@ -284,12 +264,7 @@ export function ReviewScreen() {
         reads.current += 1
         setRows((now) => now?.filter((r) => r.id !== row.id) ?? null)
       }
-      const fromApps = list.filter(({ row }) => row.source === 'ai_app').length
-      setNote(
-        `Filed ${done}.` +
-          (fromApps < done ? ' Future charges from these shops will be filed the same way automatically.' : '') +
-          (fromApps > 0 ? ' An AI app’s entries teach no shop.' : ''),
-      )
+      setNote(`Filed ${done}. Future charges from these shops will be filed the same way automatically.`)
     } catch (cause) {
       const why = cause instanceof Error ? cause.message : 'That did not work.'
       // Those filed were saved: never "nothing was saved" after them (e2e-money-09).
@@ -340,7 +315,7 @@ export function ReviewScreen() {
             <HelpButton screen="review" />
           </div>
           <p className="mt-1 text-sm text-muted-foreground md:text-base">
-            {rows === null ? 'Loading…' : total > 0 ? `${total} waiting for a category.` : suggestedTotal > 0 ? suggestedWaiting(suggestedTotal) : 'Nothing waiting.'}
+            {rows === null ? 'Loading…' : total > 0 ? `${total} waiting for a category.` : 'Nothing waiting.'}
           </p>
         </div>
         {suggestOffered(suggestions.status, suggestions.waiting) || (ready.length >= 2 && !confirming) ? (
@@ -372,11 +347,7 @@ export function ReviewScreen() {
         {(error ?? loadError) !== null ? <Alert tone="error" title="That did not work">{error ?? loadError}</Alert> : null}
       </div>
 
-      {/* What a connected AI app suggested, above the rows waiting (ADR 0013). */}
-      <SuggestedChanges />
-
-      {/* Not "All caught up" while an AI app's suggestions wait above. */}
-      {rows !== null && rows.length === 0 && unreadable?.total === 0 && suggestedTotal === 0 ? (
+      {rows !== null && rows.length === 0 && unreadable?.total === 0 ? (
         <Card>
           <Empty icon={<Icon name="check" />} title="All caught up">
             Import a statement; anything from a shop you have not filed before waits here.
@@ -400,7 +371,6 @@ export function ReviewScreen() {
               categoryId={categoryFor(row)}
               suggestion={suggestion?.kind ?? null}
               suggestedName={suggestion === null ? null : (named.get(suggestion.id) ?? null)}
-              addedBy={byApp.get(row.id) ?? 'an AI app'}
               categories={categories}
               busy={busy === row.id || busy === ALL}
               onPick={onPick}
@@ -443,7 +413,6 @@ const ReviewRow = memo(function ReviewRow({
   categoryId,
   suggestion,
   suggestedName,
-  addedBy,
   categories,
   busy,
   onPick,
@@ -455,8 +424,6 @@ const ReviewRow = memo(function ReviewRow({
   categoryId: string
   suggestion: SuggestionKind | null
   suggestedName: string | null
-  /** The AI app that added it, when its source is one; drawn as text. */
-  addedBy: string
   categories: readonly Category[]
   busy: boolean
   onPick: (rowId: string, id: string) => void
@@ -492,7 +459,6 @@ const ReviewRow = memo(function ReviewRow({
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground md:text-[0.8125rem]">
               {formatIsoDate(row.posted_on)}
-              {row.source === 'ai_app' ? ` · Added by ${addedBy}` : ''}
             </p>
           </div>
           <span className={cn('tnum shrink-0 text-lg font-bold tracking-[-0.01em]', row.amount_cents < 0 ? 'text-foreground' : 'text-income')}>
@@ -581,7 +547,8 @@ const SOURCE: Record<IngestSource, string> = {
   card_pdf: 'Card statement (PDF)',
   receipt_photo: 'Receipt photo',
   typed: 'Typed entry',
-  ai_app: 'Added by an AI app',
+  // Rows from a route that no longer exists still read: they are drawn, not refused.
+  ai_app: 'Another source',
 }
 
 /**

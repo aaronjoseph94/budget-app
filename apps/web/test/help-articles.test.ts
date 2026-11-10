@@ -3,7 +3,6 @@ import { ARTICLES, articleFor, boldParts } from '../src/help/articles.js'
 import { HELP_TOPICS } from '../src/help/topics.js'
 import { SCREEN_HELP } from '../src/help/screen-help.js'
 import { SCREENS } from '../src/nav.js'
-import { CONNECT_MINUTES } from '../src/ai-apps/access.js'
 
 /** The words plan §8 keeps out of Help; a button's own name, in bold, may still say it. */
 const ENGINEERING = /\b(migrations?|edge functions?|postgres|sql|rls|jwt|endpoints?|api|schema|database)\b/i
@@ -65,13 +64,13 @@ describe('Help articles', () => {
   })
 
   // HANDOFF's three steps, as One-time updates says them (plan §10.2, A28): the
-  // page itself lists the AI helper's and the AI apps' clicks, so the article
+  // page itself lists the AI helper's clicks, so the article
   // names no count or click to go stale (M1, PRD 03).
   it('walks One-time updates to the end: Copy, Run, Check again, the clicks on the page, then free AI', () => {
     const updates = articleFor('updates')
     expect(updates?.steps.some((s) => s.includes('**Copy**') && s.includes('**Run**'))).toBe(true)
     expect(updates?.steps.some((s) => s.startsWith('Press **Check again**'))).toBe(true)
-    expect(updates?.steps).toContain('The AI helper and AI apps steps list their clicks here.')
+    expect(updates?.steps).toContain('The AI helper step lists its clicks here.')
     expect(updates?.steps.some((s) => /\*\*Settings\*\*, then \*\*AI\*\*, and turn on free AI/.test(s))).toBe(true)
   })
 
@@ -114,47 +113,13 @@ describe('Help articles', () => {
     expect(articleFor('coach')?.steps).toContain('Open **Reports** for the month in review, **Trends**, **Shops** and **Habits**.')
   })
 
-  // MCP plan M12a: a connection starts from Connect a new AI app, inside its window.
-  it('connects Claude and ChatGPT from Connect a new AI app, and says what an AI app may do and who sees it', () => {
-    const apps = articleFor('ai-apps')
-    const steps = apps?.steps ?? []
-    expect(steps[1]).toMatch(new RegExp(`^Press \\*\\*Connect a new AI app\\*\\*.* within ${CONNECT_MINUTES} minutes\\.$`))
-    expect(steps.some((s) => s.includes('**Allow**'))).toBe(true)
-    expect(steps.join(' ')).toMatch(/\*\*Register automatically\*\*/)
-    expect(steps.join(' ')).toContain('**claude.ai**')
-    expect(steps.join(' ')).toMatch(/\*\*Developer mode\*\*.*\*\*chatgpt\.com\*\*/)
-    const said = [apps?.stuck, ...(apps?.terms ?? []).map((t) => `${t.term}: ${t.meaning}`)].join(' ')
-    for (const words of [/Anthropic or OpenAI/, /It cannot: approve, change or delete anything/, /It can: read your figures, add to Review/]) expect(said).toMatch(words)
-    expect(apps?.related).toEqual(['review', 'ai', 'updates'])
-  })
-
-  // ADR 0013: a suggestion waits in Review, and only Apply changes anything.
-  it('says a suggestion waits in Review until Apply', () => {
-    expect(articleFor('ai-apps')?.done).toContain('**Apply**')
-    expect(articleFor('review')?.steps.some((s) => s.includes('**Suggested changes**') && s.includes('**Apply**'))).toBe(true)
-  })
-
-  // Security review mcp-3-01: the emergency steps end each sign-in, and Disconnect
-  // comes before the OAuth Server goes off, which would leave nothing to disconnect.
-  it('puts Disconnect first in an emergency, ends every sign-in, and turns the OAuth Server off last', () => {
-    const stuck = articleFor('ai-apps')?.stuck ?? ''
-    const emergency = stuck.slice(stuck.indexOf('In an emergency'))
-    const at = (words: string) => emergency.indexOf(words)
-    expect(at('In an emergency')).toBe(0)
-    for (const words of ['**Disconnect**', '**Let AI apps connect**', 'delete from auth.sessions;', '**OAuth Server**']) expect(at(words), words).toBeGreaterThan(0)
-    expect(at('**Disconnect**')).toBeLessThan(at('**Let AI apps connect**'))
-    expect(at('**Let AI apps connect**')).toBeLessThan(at('delete from auth.sessions;'))
-    expect(at('delete from auth.sessions;')).toBeLessThan(at('**OAuth Server**'))
-    expect(stuck).not.toMatch(/stops every AI app at once/)
-  })
-
-  // Security review mcp-2-03: what the switch does not do, and what a sign-in can.
-  it('never says an AI app can do nothing while switched off, and says its sign-in reaches the account', () => {
-    const terms = articleFor('ai-apps')?.terms ?? []
-    const meaning = (term: string) => terms.find((t) => t.term === term)?.meaning ?? ''
-    expect(meaning('It cannot')).not.toMatch(/do anything while/)
-    // Disconnect ending the session is HANDOFF check 21, not yet run: "should", and the emergency steps make sure.
-    expect(meaning('Its sign-in')).toMatch(/your Supabase account until it ends; \*\*Disconnect\*\* ends it/)
+  // The AI apps feature is gone: no article, no step and no related link names it.
+  it('has no article about AI apps, and no other article names them or sends the owner to one', () => {
+    expect(articleFor('ai-apps')).toBeUndefined()
+    for (const a of ARTICLES) {
+      const text = [a.title, a.summary, a.done, a.stuck, ...a.steps, ...a.related, ...(a.terms ?? []).flatMap((t) => [t.term, t.meaning])].join(' ')
+      expect(text, a.id).not.toMatch(/ai[- ]?apps?\b|chatgpt|claude|oauth|mcp|consent|suggested changes/i)
+    }
   })
 
   it('finds no article for a topic not written yet', () => {
@@ -177,10 +142,10 @@ const sentencesOf = (a: (typeof ARTICLES)[number]) =>
     .map((s) => s.trim())
     .filter(Boolean)
 
-// The owner's brevity rule (PRD 03, 2026-10-08): twelve short articles.
+// The owner's brevity rule (PRD 03, 2026-10-08): short articles.
 describe('Help’s length', () => {
-  it('is twelve articles of at most 150 words each, 3,000 in all, in Help’s order', () => {
-    expect(ARTICLES.map((a) => a.id)).toEqual(['start', 'getting-around', 'add', 'review', 'budgets', 'lists', 'savings', 'debts', 'coach', 'ai', 'ai-apps', 'updates'])
+  it('is eleven articles of at most 150 words each, 3,000 in all, in Help’s order', () => {
+    expect(ARTICLES.map((a) => a.id)).toEqual(['start', 'getting-around', 'add', 'review', 'budgets', 'lists', 'savings', 'debts', 'coach', 'ai', 'updates'])
     for (const a of ARTICLES) expect(wordsOf(a), `${a.id}: ${wordsOf(a)} words`).toBeLessThanOrEqual(150)
     expect(ARTICLES.reduce((n, a) => n + wordsOf(a), 0)).toBeLessThanOrEqual(3000)
   })
@@ -226,8 +191,8 @@ const SOURCES: Record<string, string> = import.meta.glob(['../src/**/*.{ts,tsx}'
 })
 const APP_WORDS = Object.values(SOURCES).join('\n')
 
-/** Names on someone else's screen, which the app cannot draw: Supabase's, Claude's, ChatGPT's and Safari's. */
-const OUTSIDE = new Set(['New query', 'Register automatically', 'Developer mode', 'Add to Home Screen'])
+/** Names on someone else's screen, which the app cannot draw: Supabase's and Safari's. */
+const OUTSIDE = new Set(['New query', 'Add to Home Screen'])
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 /** A count in a name ("Approve these 12", "Today: N of 40") or "…" stands for whatever the app fills in there. */
@@ -248,7 +213,7 @@ const boldNames = (a: (typeof ARTICLES)[number]) =>
   )
 
 describe('Help’s bold names', () => {
-  it('are each a name the app draws, or a name on Supabase’s, Claude’s, ChatGPT’s or Safari’s own screen', () => {
+  it('are each a name the app draws, or a name on Supabase’s or Safari’s own screen', () => {
     const used = new Set<string>()
     for (const a of ARTICLES) {
       for (const name of boldNames(a)) {

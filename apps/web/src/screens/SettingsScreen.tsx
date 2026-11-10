@@ -15,7 +15,6 @@ import { navigate } from '../nav.js'
 import { HelpButton } from '../help/HelpButton.js'
 import { SETTINGS_TAB_HELP } from '../help/screen-help.js'
 import { LearnedShopsCard } from './LearnedShops.js'
-import { AiAppsCard } from '../ai-apps/AiAppsCard.js'
 import { signOutHere } from '../sign-out.js'
 import { cn } from '../lib/cn.js'
 import { arrowIndex } from '../lib/roving.js'
@@ -28,7 +27,7 @@ const AiSettingsScreen = lazyPart(() => import('./AiSettingsScreen.js').then((m)
 /**
  * Settings (ADR 0014 §2): one screen, four tabs. Lists is the workbook's
  * START HERE; Budgets & goals the weekly budgets, and where the goals are;
- * AI is AI settings; Account the learned shops, AI apps and Sign out. The
+ * AI is AI settings; Account the learned shops and Sign out. The
  * tab showing is in the address (`#/settings/ai`); bare, it opens the tab
  * last seen on this device, as Reports does.
  */
@@ -105,14 +104,13 @@ function BudgetsTab() {
   )
 }
 
-/** The learned shops beside AI apps and the account from 1280px. */
+/** The learned shops beside the account from 1280px. */
 function AccountTab() {
   const { supabase, email } = useAppData()
   return (
     <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
       <LearnedShopsCard />
       <div className="space-y-5">
-        <AiAppsCard />
         <Section large title="Account">
           <div className="flex flex-wrap items-center justify-between gap-3">
             {/* An address is one long word: it breaks only where it cannot fit. */}

@@ -77,7 +77,7 @@ describe('Month row charges', () => {
     expect(document.querySelector('[role="dialog"] img')).toBeNull()
   })
 
-  it('says a charge was added by hand or by an AI app (0020)', async () => {
+  it('says a charge was added by hand, and nothing of one from a source that is gone', async () => {
     const fake = seeded()
     fake.tables.transactions.push(
       { ...tx('t4', '2026-09-14', -450, 'dining', 'Coffee with Sam'), source: 'typed' },
@@ -88,7 +88,7 @@ describe('Month row charges', () => {
 
     const sheet = openRow('Variable expenses', 'Restaurants')
     expect(sheet.getAllByRole('listitem').map((li: HTMLElement) => li.textContent)).toEqual([
-      'Lunch at Subway15 Sep 2026 · added by an AI app-$12.50Move to…',
+      'Lunch at Subway15 Sep 2026-$12.50Move to…',
       'Coffee with Sam14 Sep 2026 · added by hand-$4.50Move to…',
       'TAILSPIN GRILL12 Sep 2026-$25.00Move to…',
     ])
@@ -163,19 +163,6 @@ describe('Moving a charge from the Month', () => {
 
     await sheet.findByRole('status')
     expect(fake.rpcCalls[0]?.args).toEqual({ p_transaction: 't1', p_category: 'card', p_learn: false })
-  })
-
-  // 0032 (security review mcp-2-02): an AI app's words never become a learned shop.
-  it('offers no "Always file" for a charge an AI app added, and never asks to learn from it', async () => {
-    const fake = seeded()
-    fake.tables.transactions.push({ ...tx('t5', '2026-09-15', -1250, 'groceries', 'Lunch at Subway'), source: 'ai_app' })
-    const sheet = await startMoving(fake, 'Lunch at Subway')
-    expect(sheet.queryByRole('checkbox')).toBeNull()
-    expect(sheet.getByText('An AI app added this, so its words are not learned as a shop.')).toBeTruthy()
-    fireEvent.change(sheet.getByRole('combobox', { name: 'Move to' }), { target: { value: 'dining' } })
-    fireEvent.click(sheet.getByRole('button', { name: 'Move' }))
-    await sheet.findByRole('status')
-    expect(fake.rpcCalls[0]?.args).toEqual({ p_transaction: 't5', p_category: 'dining', p_learn: false })
   })
 
   it("offers every other category under the workbook's headings, in list order", async () => {

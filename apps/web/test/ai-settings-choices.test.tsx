@@ -94,9 +94,9 @@ describe('Use AI', () => {
     fireEvent.click(use)
     await waitFor(() => expect(fake.tables.ai_settings).toEqual([{ user_id: 'u1', daily_cap: 60, enabled: false }]))
     expect(await screen.findByText(/^AI is off\./)).toBeTruthy()
-    // The switch stops the helper alone; an AI app the owner connects keeps its own switch (review-r-04). Three short sentences (ADR 0015).
+    // Two short sentences (ADR 0015).
     expect(
-      screen.getByText('Off: the Coach, suggestions, Just type it and receipt photos use the app’s own words. Nothing is sent to any AI service. AI apps you connect have their own switch in Settings.'),
+      screen.getByText('Off: the Coach, suggestions, Just type it and receipt photos use the app’s own words. Nothing is sent to any AI service.'),
     ).toBeTruthy()
     await waitFor(() => expect(use.getAttribute('aria-disabled')).toBe('false'))
     fake.functions.aiStatus = aiStatusReply()

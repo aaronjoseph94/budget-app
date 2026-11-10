@@ -42,8 +42,8 @@ export function PaycheckScreen({ day }: { day: string | null }) {
   // Income sources only, in Lists' order. 0011 refuses a schedule anywhere
   // else, but not moving an income source that has one to another list
   // (N27); a schedule left behind on, say, a savings fund pays nobody.
-  // A tie on Setup's order goes in English order, as the AI apps server's
-  // paySources does, so both offer the same first source on any device.
+  // A tie on Setup's order goes in English order, so the same first source
+  // is offered on any device.
   const paid = categories
     .filter((c) => c.kind === 'income')
     .sort((a, b) => a.sort_order - b.sort_order || NAMES.compare(a.name, b.name))

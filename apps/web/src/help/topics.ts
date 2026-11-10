@@ -17,7 +17,6 @@ export const HELP_TOPICS = [
   'debts',
   'coach',
   'ai',
-  'ai-apps',
   'updates',
 ] as const
 

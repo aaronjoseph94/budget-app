@@ -122,29 +122,17 @@ describe('the sidebar (ADR 0011)', () => {
     expect(fold('Inbox').getAttribute('aria-label')).toBeNull()
   })
 
-  // ADR 0013: a second count, the suggested changes waiting, never added to the first.
-  it('carries how many changes an AI app suggested beside it, in words where there is room', async () => {
-    const fake = createFakeSupabase({
-      ingest_candidates: [
-        { id: 'p1', posted_on: '2026-09-10', amount_cents: -1349, merchant: 'LITWARE COFFEE', merchant_raw: 'LITWARE COFFEE', status: 'pending' },
-      ],
-      ai_app_proposals: [{ id: 's1', status: 'pending', expires_at: '2999-01-01T00:00:00+00:00' }, { id: 's2', status: 'pending', expires_at: '2999-01-01T00:00:00+00:00' }, { id: 's3', status: 'applied', expires_at: '2999-01-01T00:00:00+00:00' }],
-    })
-    renderScreen(<Shell />, fake)
-    const review = await within(sidebar()).findByRole('link', { name: 'Review, 1 waiting, 2 suggested' })
-    expect(within(review).getByText('2 suggested').classList.contains('text-primary')).toBe(true)
-    expect(within(phoneBar()).getByRole('link', { name: 'Review, 1 waiting, 2 suggested' })).toBeTruthy()
-  })
-
-  it('opens the app with no suggested count when the suggestions cannot be counted', async () => {
+  // Changes an AI app suggested were once counted beside it, in a second badge. That feature is gone.
+  it('carries one count, the charges waiting, and never a second for suggested changes', async () => {
     const fake = createFakeSupabase({
       ingest_candidates: [
         { id: 'p1', posted_on: '2026-09-10', amount_cents: -1349, merchant: 'LITWARE COFFEE', merchant_raw: 'LITWARE COFFEE', status: 'pending' },
       ],
     })
-    fake.fail('ai_app_proposals', 'PGRST301')
     renderScreen(<Shell />, fake)
-    expect(await within(sidebar()).findByRole('link', { name: 'Review, 1 waiting' })).toBeTruthy()
+    await within(sidebar()).findByRole('link', { name: 'Review, 1 waiting' })
+    expect(within(phoneBar()).getByRole('link', { name: 'Review, 1 waiting' })).toBeTruthy()
+    expect(document.body.textContent).not.toMatch(/suggested/i)
   })
 })
 

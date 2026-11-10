@@ -3,7 +3,7 @@ import { useAppData } from '../app-data.js'
 import { Button } from '../components/ui/button.js'
 import { cn } from '../lib/cn.js'
 import { CopyFile, isCopyable } from './CopyFile.js'
-import { FIRST_FILE, HELPER_FILE, OAUTH_SERVER, READ_RECEIPT_FILE, SERVER_FILE, SIGNING_KEY, SIGNUPS_OFF, checkUpdates, nextStep, type Checked } from './updates.js'
+import { FIRST_FILE, HELPER_FILE, READ_RECEIPT_FILE, SIGNUPS_OFF, checkUpdates, nextStep, type Checked } from './updates.js'
 import { LINE_LINK } from '../components/ui/link.js'
 
 /** The repository's files on GitHub. */
@@ -15,44 +15,19 @@ const sourceOf = (file: string) =>
 /**
  * The exact clicks for the AI helper, which goes in the Edge Functions
  * editor, not the SQL Editor (plan §10.2), first or over an older copy
- * (N78). Its gateway check stays on only while Supabase signs with the old
- * shared secret: Supabase warns a changed key can break a function with it
- * on, and the helper checks every caller itself (ADR 0012).
+ * (N78). Its gateway check stays off: the helper checks every caller itself.
  */
-function helperSteps(again: boolean, newKey: boolean): string[] {
-  const check = newKey ? 'Turn Enforce JWT verification off' : 'Keep Enforce JWT verification on'
+function helperSteps(again: boolean): string[] {
+  const check = 'Turn Enforce JWT verification off'
   return again
     ? ['In Supabase, open Edge Functions, then the function named ai, then its code.', 'Paste the new version over everything in the editor.', `${check}, and deploy it.`]
     : [
         'In Supabase, open Edge Functions, then Deploy a new function, then Via Editor.',
         'Name it exactly ai.',
         'Paste the helper over everything in the editor.',
-        `${check}, and press Deploy.${newKey ? ' The helper checks every caller itself.' : ''}`,
+        `${check}, and press Deploy. The helper checks every caller itself.`,
       ]
 }
-
-/**
- * Moving Supabase to its new signing key, which ChatGPT's sign-in needs
- * (PLAN §1, step 3): each helper's gateway check off first. read-receipt's
- * copy from before 2026-09-30 has no caller check of its own (PLAN §6,
- * finding 7), so it is replaced or deleted before its switch comes off;
- * this page cannot tell which copy is deployed.
- */
-const SIGNING_KEY_STEPS = [
-  'In Supabase, open Edge Functions, then the function named ai, then its settings. Turn Enforce JWT verification off, and save.',
-  'If read-receipt is listed, replace it with Copy read-receipt below, or delete it. Its older copy relies on that switch alone: with it off, anyone could use your Gemini key. Then turn its switch off the same way.',
-  'Open Project Settings, then JWT Keys, and press Rotate keys. The current key is then the ECC (P-256) one. Do not revoke the old key.',
-  'Sign out of this app and back in, then press Check again.',
-]
-
-/** Supabase's OAuth server, which finds the consent page from Site URL (PLAN §1, steps 4 and 5). */
-const oauthSteps = (site: string) => [
-  `In Supabase, open Authentication, then URL Configuration, and check Site URL is ${site}.`,
-  'Open Authentication, then OAuth Server, and press Enable.',
-  'Set Authorization Path to /oauth/consent.',
-  'Turn on dynamic client registration, so Claude and ChatGPT can register themselves. Press Save.',
-  'Under Sign In / Providers, keep Allow new users to sign up off. Under Email, keep Secure email change on.',
-]
 
 /**
  * Allow new users to sign up, off (backend-b-06): the switch's place moved
@@ -65,28 +40,10 @@ const SIGNUPS_STEPS = [
   'Press Check again.',
 ]
 
-/**
- * The clicks for the AI apps server (ADR 0012). It checks every caller
- * itself, and Claude and ChatGPT find their sign-in only through its own
- * 401, which Supabase's JWT check would answer first.
- */
-const SERVER_STEPS = [
-  'In Supabase, open Edge Functions, then Deploy a new function, then Via Editor.',
-  'Name it exactly mcp.',
-  'Paste the server over everything in the editor.',
-  'Turn Enforce JWT verification off, and press Deploy. The server checks every caller itself.',
-]
-
-/** read-receipt from before 2026-10-01: deleted, as the helper reads receipts, or replaced (security review mcp-3-03). */
+/** read-receipt from before 2026-10-01: deleted, as the helper reads receipts, or replaced. */
 const READ_RECEIPT_STEPS = [
   'In Supabase, open Edge Functions, then read-receipt, then its ⋯ menu, and press Delete.',
   'Or keep it: paste the new version from Copy below over its code, and deploy.',
-]
-
-const SERVER_AGAIN_STEPS = [
-  'In Supabase, open Edge Functions, then the function named mcp, then its code.',
-  'Paste the new version over everything in the editor, and deploy it.',
-  'Open its settings and check Enforce JWT verification is still off.',
 ]
 
 const MARK = {
@@ -126,9 +83,7 @@ export function UpdatesPanel() {
   const count = checked?.filter((c) => c.state === 'in').length
   const next = checked === null ? null : nextStep(checked)
   const helperOld = checked?.some((c) => c.update.file === HELPER_FILE && c.state === 'old') === true
-  const newKey = checked?.some((c) => c.update.file === SIGNING_KEY && c.state === 'in') === true
   const source = next?.kind === 'paste' ? sourceOf(next.file) : null
-  const serverOld = checked?.some((c) => c.update.file === SERVER_FILE && c.state === 'old') === true
   return (
     <section aria-labelledby="updates-status" className="space-y-3 rounded-xl border bg-card p-4">
       <h2 id="updates-status" className="font-semibold" aria-live="polite">
@@ -169,30 +124,12 @@ export function UpdatesPanel() {
                   ? 'Next: paste the AI helper’s new version over the one you have. About 5 minutes, easiest on a computer.'
                   : 'Next: install the AI helper. About 5 minutes, easiest on a computer.'}
               </p>
-              <Steps steps={helperSteps(helperOld, newKey)} />
-            </>
-          ) : next.file === SIGNING_KEY || next.file === OAUTH_SERVER ? (
-            <>
-              <p>
-                {next.file === SIGNING_KEY
-                  ? 'Next: move Supabase to its new signing key, which ChatGPT needs to sign in. About 5 minutes, on a computer.'
-                  : 'Next: turn on sign-in for AI apps in Supabase, so Claude or ChatGPT can ask to connect. About 5 minutes, on a computer.'}
-              </p>
-              <Steps steps={next.file === SIGNING_KEY ? SIGNING_KEY_STEPS : oauthSteps(window.location.origin)} />
+              <Steps steps={helperSteps(helperOld)} />
             </>
           ) : next.file === READ_RECEIPT_FILE ? (
             <>
               <p>Next: delete read-receipt, or paste its new version over it. About 2 minutes, on a computer.</p>
               <Steps steps={READ_RECEIPT_STEPS} />
-            </>
-          ) : next.file === SERVER_FILE ? (
-            <>
-              <p>
-                {serverOld
-                  ? 'Next: paste the AI apps server’s new version over the one you have. About 5 minutes, on a computer.'
-                  : 'Next: install the AI apps server, which Claude or ChatGPT connect to. About 5 minutes, on a computer.'}
-              </p>
-              <Steps steps={serverOld ? SERVER_AGAIN_STEPS : SERVER_STEPS} />
             </>
           ) : (
             <>
@@ -216,14 +153,12 @@ export function UpdatesPanel() {
               Open {next.file === HELPER_FILE ? 'the AI helper' : next.file} on GitHub
             </a>
           ) : null}
-          {next.kind === 'paste' && (next.file === HELPER_FILE || next.file === SIGNING_KEY) ? (
+          {next.kind === 'paste' && next.file === HELPER_FILE ? (
             <>
-              {next.file === HELPER_FILE ? (
-                <p>
-                  If Edge Functions also lists read-receipt, replace it the same way, or delete it. The AI helper reads receipts
-                  without it. Its older copy lets anyone with the app’s public key use your Gemini key.
-                </p>
-              ) : null}
+              <p>
+                If Edge Functions also lists read-receipt, replace it the same way, or delete it. The AI helper reads receipts
+                without it. Its older copy lets anyone with the app’s public key use your Gemini key.
+              </p>
               <CopyFile file={READ_RECEIPT_FILE} />
               <a
                 href={`${REPO}supabase/functions/read-receipt/index.ts`}

@@ -281,9 +281,9 @@ describe('LedgerScreen, in Mockup A (step 10)', () => {
   })
 })
 
-// How a row came in, where it was not a statement (0020's ai_app beside typed).
+// How a row came in, where it was not a statement: typed by hand. A row from a source that is gone says nothing.
 describe('LedgerScreen, where a row came from', () => {
-  it('says added by hand or added by an AI app, and nothing on a statement row', async () => {
+  it('says added by hand, and nothing on a statement row or one from a source that is gone', async () => {
     const fake = seeded()
     fake.tables.transactions.push(
       { id: 't4', posted_on: '2026-09-06', amount_cents: -450, merchant_raw: 'Coffee with Sam', category_id: 'c1', source: 'typed' },
@@ -292,7 +292,7 @@ describe('LedgerScreen, where a row came from', () => {
     await open(fake)
 
     expect(rowOf('Coffee with Sam').getByText('added by hand')).toBeTruthy()
-    expect(rowOf('Lunch at Subway').getByText('added by an AI app')).toBeTruthy()
+    expect(rowOf('Lunch at Subway').queryByText(/AI app|added by/)).toBeNull()
     expect(rowOf('CORNER MARKET').queryByText(/added by/)).toBeNull()
     // At 320 px "added by hand" ran on past the category, over the amount:
     // the line wraps, and a long category name breaks anywhere in its pill.

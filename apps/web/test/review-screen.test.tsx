@@ -55,37 +55,20 @@ describe('ReviewScreen', () => {
     await expectNoAxeViolations()
   })
 
-  // An AI app's addition (0020) waits like any other row, and says where it came from.
-  it('says a row was added by an AI app, and no other row', async () => {
+  // The AI apps feature is gone. A row it left (the live database has none) still reads: it is drawn like any other, with no word of where it came from.
+  it('draws a row from a source that no longer exists like any other, and does not fall over', async () => {
     const fake = seeded()
     fake.tables.ingest_candidates.push({
       id: 'p4', posted_on: '2026-03-12', amount_cents: -1250, merchant: 'Lunch at Subway', merchant_raw: 'Lunch at Subway', status: 'pending', source: 'ai_app',
     })
     renderScreen(<ReviewScreen />, fake)
 
-    expect((await row('Lunch at Subway')).getByText(/Added by an AI app/)).toBeTruthy()
-    expect(screen.getAllByText(/Added by an AI app/)).toHaveLength(1)
+    const lunch = await row('Lunch at Subway')
+    expect(lunch.getByText(/12\.50/)).toBeTruthy()
+    expect(lunch.getByRole('combobox', { name: 'Category' })).toBeTruthy()
+    expect(screen.queryByText(/AI app|suggested change/i)).toBeNull()
+    expect(screen.queryByRole('heading', { name: /Suggested changes/ })).toBeNull()
     await expectNoAxeViolations()
-  })
-
-  // The AI app's name from its grant, matched on the import's ai_client_id, which 0020 takes from the app's own token.
-  it('names the AI app that added a row, while it is still connected', async () => {
-    const fake = seeded()
-    const ai = { posted_on: '2026-03-12', amount_cents: -1250, status: 'pending', source: 'ai_app' } as const
-    fake.tables.ingest_candidates.push(
-      { ...ai, id: 'p4', merchant: 'Lunch at Subway', merchant_raw: 'Lunch at Subway', batch_id: 'b-claude' },
-      { ...ai, id: 'p5', merchant: 'Coffee', merchant_raw: 'Coffee', batch_id: 'b-gone' },
-    )
-    fake.tables.ingest_batches.push(
-      { id: 'b-claude', source: 'ai_app', created_at: '2026-03-12T12:00:00Z', ai_client_id: 'id-claude' },
-      { id: 'b-gone', source: 'ai_app', created_at: '2026-03-12T12:00:00Z', ai_client_id: 'id-disconnected' },
-    )
-    fake.oauth.grants = [{ client: { id: 'id-claude', name: 'Claude', uri: '', logo_uri: '' }, scopes: ['email'], granted_at: '2026-03-01T12:00:00Z' }]
-    await fake.signIn()
-    renderScreen(<ReviewScreen />, fake)
-
-    expect(await (await row('Lunch at Subway')).findByText(/Added by Claude/)).toBeTruthy()
-    expect((await row('Coffee')).getByText(/Added by an AI app/)).toBeTruthy()
   })
 
   it("groups the picker under the workbook's lists, each in its own order, then by name", async () => {

@@ -28,11 +28,10 @@ afterEach(() => {
   window.location.hash = ''
 })
 
-/** Every step done: signed in with Supabase's new key, sign-in for AI apps on, and the browser's own fetch reaching the fake. */
-async function ready(alg = 'ES256'): Promise<FakeSupabase> {
+/** Every step done: signed in, and the browser's own fetch reaching the fake. */
+async function ready(): Promise<FakeSupabase> {
   const fake = createFakeSupabase()
-  await fake.signIn(alg)
-  fake.oauth.grants = []
+  await fake.signIn()
   vi.stubGlobal('fetch', fake.fetch)
   // The public values the page is built with, which the sign-ups check sends.
   vi.stubEnv('VITE_SUPABASE_URL', 'https://abcdefghijklmnopqrst.supabase.co')
@@ -43,9 +42,8 @@ async function ready(alg = 'ES256'): Promise<FakeSupabase> {
 /** The row for a file, as a reader hears it: "Not in yet: 0008_…". */
 const row = (file: string) => screen.getByText(file, { selector: 'li span' }).closest('li')?.textContent
 
-/** The next step's clicks, in order, and the GitHub links beside them. */
+/** The next step's clicks, in order. */
 const clicks = () => [...document.querySelectorAll('[aria-labelledby="updates-status"] ol > li')].map((li) => li.textContent)
-const githubLinks = () => screen.queryAllByRole('link', { name: /on GitHub$/ }).map((a) => a.textContent)
 
 async function open(fake: FakeSupabase, status: string) {
   renderScreen(<Shell />, fake)
@@ -126,11 +124,13 @@ describe('One-time updates', () => {
     expect(row('ai-function.ts')).toBe('✗Not in yet: ai-function.tsThe AI helper, which every AI feature goes through')
     expect(screen.getByText('Next: install the AI helper. About 5 minutes, easiest on a computer.')).toBeTruthy()
     expect(screen.getByText('Name it exactly ai.')).toBeTruthy()
+    // The helper checks every caller itself, so Supabase's own check is off.
+    expect(screen.getByText('Turn Enforce JWT verification off, and press Deploy. The helper checks every caller itself.')).toBeTruthy()
     const link = screen.getByRole('link', { name: 'Open the AI helper on GitHub' })
     expect(link.getAttribute('href')).toBe('https://github.com/aaronjoseph94/budget-app/blob/main/supabase/functions/ai/index.ts')
   })
 
-  // Security review mcp-3-03: an older read-receipt is a step of its own, after the helper.
+  // An older read-receipt is a step of its own, after the helper.
   it('names an older read-receipt next, to delete or replace, with its Copy', async () => {
     const fake = await ready()
     fake.functions.readReceipt = () => new Response('{}')
@@ -144,62 +144,6 @@ describe('One-time updates', () => {
     ])
   })
 
-  it('names the AI apps server last, with its clicks: JWT verification off, and no GitHub link', async () => {
-    const fake = await ready()
-    fake.functions.mcpHealth = null
-    await open(fake, ONE_LEFT)
-    expect(row('mcp-function.ts')).toBe('✗Not in yet: mcp-function.tsThe AI apps server, which Claude or ChatGPT connect to')
-    expect(screen.getByText('Name it exactly mcp.')).toBeTruthy()
-    expect(screen.getByText('Turn Enforce JWT verification off, and press Deploy. The server checks every caller itself.')).toBeTruthy()
-    expect(screen.queryByRole('link', { name: /on GitHub$/ })).toBeNull()
-    fake.functions.mcpHealth = () => new Response(JSON.stringify({ ok: true, version: '2026-09-29.1' }), { headers: { 'content-type': 'application/json' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Check again' }))
-    // Greyed while it checks, never disabled, which drops focus (FE-6, e2e-setup-01).
-    const checking = screen.getByRole<HTMLButtonElement>('button', { name: 'Checking…' })
-    expect([checking.disabled, checking.getAttribute('aria-disabled')]).toEqual([false, 'true'])
-    await screen.findByText('Open its settings and check Enforce JWT verification is still off.')
-  })
-
-  // ChatGPT's sign-in needs Supabase's new key (PLAN §1, step 3): each helper's gateway check comes off first.
-  it('names the signing key after the AI helper, with its clicks, and keeps the helper’s JWT check on only with the old key', async () => {
-    const fake = await ready('HS256')
-    await open(fake, ONE_LEFT)
-    expect(row('Signing key')).toBe('✗Not in yet: Signing keyThe key Supabase signs your sign-in with, which ChatGPT needs')
-    expect(screen.getByText(/^Next: move Supabase to its new signing key/)).toBeTruthy()
-    // read-receipt's older copy relies on the gateway alone, so it is replaced or deleted before its switch comes off.
-    expect(clicks()).toEqual([
-      'In Supabase, open Edge Functions, then the function named ai, then its settings. Turn Enforce JWT verification off, and save.',
-      'If read-receipt is listed, replace it with Copy read-receipt below, or delete it. Its older copy relies on that switch alone: with it off, anyone could use your Gemini key. Then turn its switch off the same way.',
-      'Open Project Settings, then JWT Keys, and press Rotate keys. The current key is then the ECC (P-256) one. Do not revoke the old key.',
-      'Sign out of this app and back in, then press Check again.',
-    ])
-    expect(githubLinks()).toEqual(['Open read-receipt on GitHub'])
-    fake.functions.ai = null
-    fireEvent.click(screen.getByRole('button', { name: 'Check again' }))
-    expect(await screen.findByText('Keep Enforce JWT verification on, and press Deploy.')).toBeTruthy()
-
-    cleanup()
-    const later = await ready()
-    later.functions.ai = () => new Response(JSON.stringify({ ok: true, version: '2026-09-25.1' }), { headers: { 'content-type': 'application/json' } })
-    await open(later, ONE_LEFT)
-    expect(screen.getByText('Turn Enforce JWT verification off, and deploy it.')).toBeTruthy()
-  })
-
-  it('names sign-in for AI apps before the server, with its clicks and this site as Site URL', async () => {
-    const fake = await ready()
-    fake.oauth.grants = null
-    await open(fake, ONE_LEFT)
-    expect(row('Sign-in for AI apps')).toBe('✗Not in yet: Sign-in for AI appsLets Claude or ChatGPT ask you to allow them')
-    expect(clicks()).toEqual([
-      `In Supabase, open Authentication, then URL Configuration, and check Site URL is ${window.location.origin}.`,
-      'Open Authentication, then OAuth Server, and press Enable.',
-      'Set Authorization Path to /oauth/consent.',
-      'Turn on dynamic client registration, so Claude and ChatGPT can register themselves. Press Save.',
-      'Under Sign In / Providers, keep Allow new users to sign up off. Under Email, keep Secure email change on.',
-    ])
-    expect(githubLinks()).toEqual([])
-  })
-
   it('asks for the helper’s new version over an older copy, with the clicks for replacing it', async () => {
     const fake = await ready()
     fake.functions.ai = () => new Response(JSON.stringify({ ok: true, version: '2026-09-25.1' }), { headers: { 'content-type': 'application/json' } })
@@ -207,6 +151,7 @@ describe('One-time updates', () => {
     expect(row('ai-function.ts')).toBe('✗An older copy: ai-function.tsThe AI helper, which every AI feature goes through: an older copy is in')
     expect(screen.getByText('Next: paste the AI helper’s new version over the one you have. About 5 minutes, easiest on a computer.')).toBeTruthy()
     expect(screen.getByText('Paste the new version over everything in the editor.')).toBeTruthy()
+    expect(screen.getByText('Turn Enforce JWT verification off, and deploy it.')).toBeTruthy()
     expect(screen.queryByText('Name it exactly ai.')).toBeNull()
   })
 

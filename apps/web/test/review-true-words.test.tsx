@@ -5,10 +5,9 @@ import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 
 /**
- * What Review says after an approval is true of the row approved. An entry
- * an AI app added teaches no shop (0032), so it is never promised that the
- * shop's next charges file themselves. And Approve these N keeps the
- * keyboard's place: its question takes focus, and Cancel gives it back.
+ * What Review says after an approval is true of the row approved, and
+ * Approve these N keeps the keyboard's place: its question takes focus,
+ * and Cancel gives it back.
  */
 const LEARNS = /will be filed the same way automatically/
 
@@ -17,7 +16,7 @@ function seeded(): FakeSupabase {
     categories: [{ id: 'c1', name: 'Groceries', kind: 'variable', sort_order: 0, weekly_budget_cents: null }],
     ingest_candidates: [
       { id: 'p1', posted_on: '2026-03-09', amount_cents: -1349, merchant: 'CORNER MARKET', merchant_raw: 'CORNER MARKET #12', status: 'pending' },
-      { id: 'p2', posted_on: '2026-03-12', amount_cents: -1250, merchant: 'Lunch at Subway', merchant_raw: 'Lunch at Subway', status: 'pending', source: 'ai_app' },
+      { id: 'p2', posted_on: '2026-03-12', amount_cents: -1250, merchant: 'Lunch at Subway', merchant_raw: 'Lunch at Subway', status: 'pending' },
     ],
   })
 }
@@ -45,25 +44,14 @@ describe('what Review says after approving', () => {
     expect(await screen.findByText(LEARNS)).toBeTruthy()
   })
 
-  it('does not promise it for an entry an AI app added, which teaches no shop', async () => {
-    const fake = seeded()
-    renderScreen(<ReviewScreen />, fake)
-    await pick('Lunch at Subway')
-    fireEvent.click((await row('Lunch at Subway')).getByRole('button', { name: /Approve/ }))
-    await waitFor(() => expect(fake.rpcCalls.filter((c) => c.name === 'approve_candidate')).toHaveLength(1))
-    expect(await screen.findByText(/^Added\./)).toBeTruthy()
-    expect(screen.queryByText(LEARNS)).toBeNull()
-  })
-
-  it('says which of several teach nothing when Approve these N files an AI app’s entry too', async () => {
-    const fake = seeded()
-    renderScreen(<ReviewScreen />, fake)
+  it('says the same after Approve these N, which files each shop the same way', async () => {
+    renderScreen(<ReviewScreen />, seeded())
     await pick('CORNER MARKET #12')
     await pick('Lunch at Subway')
     fireEvent.click(await screen.findByRole('button', { name: 'Approve these 2' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Approve all 2' }))
     expect(await screen.findByText(/Filed 2\./)).toBeTruthy()
-    expect(screen.getByText(/An AI app’s entries teach no shop\./)).toBeTruthy()
+    expect(screen.getByText(LEARNS)).toBeTruthy()
   })
 })
 

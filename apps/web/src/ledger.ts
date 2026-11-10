@@ -763,7 +763,7 @@ function refused(sentence: string, error: { code?: string | null } | null): Read
 /** A table, column or function a one-time update adds, not there yet (Help → One-time updates). */
 const NOT_YET_PASTED: ReadonlySet<string> = new Set(['PGRST205', '42P01', '42703', 'PGRST204', 'PGRST202', '42883'])
 
-/** A Supabase error as the AI and AI-apps settings say it: a one-time update not pasted yet, or anything else. */
+/** A Supabase error as the AI settings say it: a one-time update not pasted yet, or anything else. */
 export function whyRefused(error: { message: string; code: string }): 'needs_update' | 'unreachable' {
   return needsOneTimeUpdate(new ReadRefused(error.message, error.code)) ? 'needs_update' : 'unreachable'
 }

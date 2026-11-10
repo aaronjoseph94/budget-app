@@ -54,10 +54,10 @@ describe('Settings, one screen with four tabs (ADR 0014 §2)', () => {
     await expectNoAxeViolations()
   })
 
-  it('puts the shops filed by themselves, AI apps and Sign out on Account, and the name band and the lists on Lists', async () => {
+  it('puts the shops filed by themselves and Sign out on Account, and the name band and the lists on Lists', async () => {
     renderScreen(<SettingsScreen tab="account" />, createFakeSupabase())
-    expect([...panel().querySelectorAll('h2')].map((h) => h.textContent)).toEqual(['Shops filed by themselves', 'AI apps', 'Account'])
-    // The shops beside AI apps and the account from 1280px; the address and Sign out share one row.
+    expect([...panel().querySelectorAll('h2')].map((h) => h.textContent)).toEqual(['Shops filed by themselves', 'Account'])
+    // The shops beside the account from 1280px; the address and Sign out share one row.
     expect(cardOf('Shops filed by themselves').parentElement?.className).toContain('xl:grid-cols-2')
     expect(within(cardOf('Account')).getByRole('button', { name: 'Sign out' })).toBeTruthy()
     await screen.findByText(/None yet|Learned shops/)
@@ -142,8 +142,8 @@ describe('Settings, one screen with four tabs (ADR 0014 §2)', () => {
     expect(selected()).toBe('Lists')
   })
 
-  it('gives each tab its own article for the ?: Lists, Budgets and bills, AI, and AI apps for Account', () => {
-    expect(SETTINGS_TAB_HELP).toEqual({ lists: 'lists', budgets: 'budgets', ai: 'ai', account: 'ai-apps' })
+  it('gives each tab its own article for the ?: Lists, Budgets and bills, AI, and Review for Account', () => {
+    expect(SETTINGS_TAB_HELP).toEqual({ lists: 'lists', budgets: 'budgets', ai: 'ai', account: 'review' })
   })
 })
 

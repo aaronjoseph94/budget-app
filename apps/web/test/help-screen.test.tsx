@@ -55,13 +55,14 @@ describe('Help', () => {
     // A button's name counts as its words, without the stars around it.
     fireEvent.change(search, { target: { value: 'add to home screen' } })
     expect(titles()).toEqual(['One-time updates and signing in'])
-    // The newer articles are found by their own words: getting around, Setup's lists, AI apps.
+    // The newer articles are found by their own words: getting around, Setup's lists.
     fireEvent.change(search, { target: { value: 'sidebar' } })
     expect(titles()).toEqual(['Getting around'])
     fireEvent.change(search, { target: { value: 'Rename' } })
     expect(titles()).toEqual(['Your lists'])
-    fireEvent.change(search, { target: { value: 'disconnect' } })
-    expect(titles()).toEqual(['Connect Claude or ChatGPT'])
+    // The AI apps article is gone, so its words find nothing.
+    fireEvent.change(search, { target: { value: 'chatgpt' } })
+    expect(onScreen().queryByRole('list')).toBeNull()
 
     fireEvent.change(search, { target: { value: 'zeppelin' } })
     expect(onScreen().queryByRole('list')).toBeNull()
@@ -77,9 +78,9 @@ describe('Help', () => {
     const page = (await screen.findByRole('heading', { level: 1, name: 'Review' })).closest('article')!
 
     const steps = within(page).getAllByRole('listitem').slice(0, 7)
-    expect(steps[1]?.textContent).toBe('Under Suggested changes, press Apply or Dismiss on each AI app suggestion.')
-    expect(steps[4]?.textContent).toBe('Press Approve, or Approve these 12, then Approve all 12.')
-    expect([...(steps[4]?.querySelectorAll('strong') ?? [])].map((b) => b.textContent)).toEqual(['Approve', 'Approve these 12', 'Approve all 12'])
+    expect(steps[0]?.textContent).toBe('Open Review.')
+    expect(steps[3]?.textContent).toBe('Press Approve, or Approve these 12, then Approve all 12.')
+    expect([...(steps[3]?.querySelectorAll('strong') ?? [])].map((b) => b.textContent)).toEqual(['Approve', 'Approve these 12', 'Approve all 12'])
     expect(within(page).getByRole('region', { name: 'You’re done when…' }).textContent).toContain('Review says “Nothing waiting.”')
     // Side by side, the two cards stretch to one height (V18).
     expect(within(page).getByRole('region', { name: 'You’re done when…' }).parentElement?.className).not.toContain('items-start')
@@ -87,7 +88,7 @@ describe('Help', () => {
     const related = within(within(page).getByRole('region', { name: 'Related' })).getAllByRole('link')
     expect(related.map((a) => [a.textContent, a.getAttribute('href')])).toEqual([
       ['Add a charge: statement, photo, typed', '#/help/add'],
-      ['Connect Claude or ChatGPT', '#/help/ai-apps'],
+      ['One-time updates and signing in', '#/help/updates'],
     ])
     expect(within(page).getByRole('link', { name: '‹ Help' }).getAttribute('href')).toBe('#/help')
   })
