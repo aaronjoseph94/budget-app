@@ -1,5 +1,6 @@
 import { useMemo, type ReactNode } from 'react'
 import { DATE_FORMATS, looksLikeText, type ColumnProfile, type DateFormat } from '@budget/statement-parsers'
+import { useAppData } from './app-data.js'
 import { useCsvMapping } from './csv-mapping.js'
 import type { ImportRequest } from './ledger.js'
 import { IngestedText, Label, Stat } from './ui.js'
@@ -34,6 +35,13 @@ export interface ImportScreenProps {
 /** A CSV export: preview the column mapping, then send to the review queue. */
 export function ImportScreen({ fileName, text, onReset, onSave, saving = false, outcome = null }: ImportScreenProps) {
   const mapping = useCsvMapping(text)
+  const { today } = useAppData()
+  // Rows dated after today, which the typed form would refuse: said above
+  // Send, never blocked. ISO dates order as text.
+  const afterToday = useMemo(() => {
+    const later = mapping.result === null ? [] : mapping.result.accepted.map((r) => r.postedOn).filter((d) => d > today)
+    return later.length === 0 ? null : { rows: later.length, latest: later.reduce((a, b) => (b > a ? b : a)) }
+  }, [mapping.result, today])
   const { clear, result, summary } = mapping
   // Nothing to map in bytes that are not text, or a file with no rows: say
   // so, never columns of noise or none (e2e-money-10).
@@ -77,6 +85,7 @@ export function ImportScreen({ fileName, text, onReset, onSave, saving = false, 
               <SaveFooter
                 result={result}
                 skippedAbove={mapping.analysis === null ? 0 : mapping.analysis.preambleSkipped}
+                afterToday={afterToday}
                 onSave={onSave}
                 saving={saving}
                 outcome={outcome}
@@ -163,6 +172,7 @@ function ReadRows({ result, summary }: { result: NonNullable<Mapping['result']>;
 function SaveFooter({
   result,
   skippedAbove,
+  afterToday,
   onSave,
   saving,
   outcome,
@@ -170,12 +180,22 @@ function SaveFooter({
   result: NonNullable<Mapping['result']>
   /** Lines a bank printed above the table: not transactions, so not in `parsed`. */
   skippedAbove: number
+  /** How many readable rows are dated after today, and the latest of them. */
+  afterToday: { readonly rows: number; readonly latest: string } | null
   onSave: ImportScreenProps['onSave']
   saving: boolean
   outcome: { readonly ok: boolean; readonly message: string } | null
 }) {
   return (
     <>
+      {afterToday !== null ? (
+        <p className="rounded-lg border border-border bg-muted p-3 text-sm">
+          {afterToday.rows === 1
+            ? `1 row is dated after today (${formatIsoDate(afterToday.latest)}).`
+            : `${afterToday.rows} rows are dated after today (latest: ${formatIsoDate(afterToday.latest)}).`}{' '}
+          Check the date format.
+        </p>
+      ) : null}
       <div className="flex flex-col items-center gap-2">
         {/*
           Saveable when ANYTHING was read, readable or not. It used to
