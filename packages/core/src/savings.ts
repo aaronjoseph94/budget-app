@@ -18,6 +18,10 @@
  *   no dates (D15), a goal date before the start (V14 `#NUM!`), or less than
  *   a whole month after it (V14 0) (D22). $0 a month would read as nothing
  *   left to save.
+ * - Once the goal is met or passed (B9 at or below zero), Z14 would be $0 or
+ *   below; the engine returns no contribution and says the goal is reached
+ *   (D31): a negative amount to save a month means nothing. B9 keeps its
+ *   minus sign.
  *
  * The current amount is given, not worked out here: on the Savings screen it
  * is `fundBalance` (D16), the typed amount plus the transfers since.
@@ -41,9 +45,10 @@ export interface SavingsFundPlanInput {
  * Why there is, or is not, a monthly contribution:
  * `'planned'` there is one; `'no-dates'` a date is missing (D15);
  * `'goal-before-start'` the goal date is before the start date (D22);
- * `'under-a-month'` the goal date is less than a whole month after it (D22).
+ * `'under-a-month'` the goal date is less than a whole month after it (D22);
+ * `'reached'` the goal is met or passed, so nothing is left to save (D31).
  */
-export type SavingsPlanStatus = 'planned' | 'no-dates' | 'goal-before-start' | 'under-a-month'
+export type SavingsPlanStatus = 'planned' | 'no-dates' | 'goal-before-start' | 'under-a-month' | 'reached'
 
 export interface SavingsFundPlan {
   /** Savings!B9: goal − current. Below zero once the goal is passed. */
@@ -56,6 +61,12 @@ export interface SavingsFundPlan {
 }
 
 export function savingsFundPlan(input: SavingsFundPlanInput): SavingsFundPlan {
+  const plan = byDates(input)
+  // Nothing left to save: no figure a month, whatever the dates say (D31).
+  return plan.amountNeededCents <= 0 ? { ...plan, monthlyContributionCents: null, status: 'reached' } : plan
+}
+
+function byDates(input: SavingsFundPlanInput): SavingsFundPlan {
   const needed = subCents(cents(input.goalCents), cents(input.currentCents))
   const none = (status: SavingsPlanStatus, monthsRemaining: number | null = null): SavingsFundPlan => ({
     amountNeededCents: needed,

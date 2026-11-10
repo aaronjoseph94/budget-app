@@ -892,3 +892,23 @@ totals, Left to spend, the Year and every golden test.
 
 **Why.** Bills are usually planned and rarely budgeted, so the pill read
 "2422%" for bills paid exactly as planned (N130).
+
+---
+
+## D31 — A savings fund past its goal has no monthly contribution
+
+**Date:** 2026-11-10
+**Sheet / cells:** Savings!Z14 `=IFERROR((F14-J14)/V14, 0)` and B9
+`=SUM(B7-B5)`; formula decision F21 (amended 2026-11-10)
+**Settled:** engineering default, as D15 and D22. It was not put to the owner.
+
+**Workbook behaviour.** Once the current amount reaches the goal, F14 −
+J14 is zero or below, so Z14 shows $0 a month, or a negative amount when
+the goal is passed: $850.00 of $800.00 over 8 months is −6.25.
+
+**Chosen behaviour.** No monthly contribution, and Savings says "Goal
+reached, so there is nothing more to save each month." Amount needed
+keeps its minus sign, as B9 does (D8). Months remaining is unchanged.
+
+**Why.** A negative amount to save each month means nothing to anyone,
+and $0 reads as a plan rather than a goal already met.

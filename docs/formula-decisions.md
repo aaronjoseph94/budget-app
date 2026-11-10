@@ -766,6 +766,13 @@ months are counted from the start date, the monthly figure goes down as the
 fund fills, not up as the goal date nears; that is also what the workbook does
 each time its current amount is retyped (NOTICED N54).
 
+**Amended 2026-11-10 (bug bash, s10; D31).** Once the goal is met or
+passed (Amount needed $0 or below) there is **no monthly contribution**,
+whatever the dates: the plan says the goal is reached. Z14 would give
+$0 or a negative amount; Car Repair Fund, $850.00 of $800.00 over 8
+months, read "Monthly contribution −$6.25". Amount needed keeps its
+minus sign (D8).
+
 ---
 
 ## F22 — What a debt's status is on a day

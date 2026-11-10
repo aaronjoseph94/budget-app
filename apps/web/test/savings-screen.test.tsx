@@ -112,7 +112,8 @@ describe('SavingsScreen', () => {
     renderScreen(<SavingsScreen />, seeded())
     const travel = await card('Travel <b>fund</b>')
     expect(lines(travel)).toContain('Amount needed · goal reached')
-    expect(lines(travel)).toContain('No dates yet. Add a start date and a goal date to see what to save each month.')
+    // Reached says more than its missing dates: nothing is left to save (D31).
+    expect(lines(travel)).toContain('Goal reached, so there is nothing more to save each month.')
     expect(within(travel).getAllByText('—')).toHaveLength(2)
     expect(within(travel).getByText('100%')).toBeTruthy()
     expect(lines(await card('House'))).toEqual(['House', 'No goal yet.'])

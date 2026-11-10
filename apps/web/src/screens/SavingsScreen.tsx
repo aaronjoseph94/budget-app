@@ -440,11 +440,12 @@ function GoalFigures({ figures: f, goal }: { figures: FundFigures; goal: FundRow
   )
 }
 
-/** Why a fund has no monthly figure, where the workbook would show $0 (D15, D22). */
+/** Why a fund has no monthly figure, where the workbook would show $0 or less (D15, D22, D31). */
 const WHY_NO_MONTHLY: Readonly<Record<Exclude<SavingsFundPlan['status'], 'planned'>, string>> = {
   'no-dates': 'No dates yet. Add a start date and a goal date to see what to save each month.',
   'goal-before-start': 'The goal date is before the start date, so there is no monthly figure.',
   'under-a-month': 'The goal date is less than a month after the start date, so there is no monthly figure.',
+  reached: 'Goal reached, so there is nothing more to save each month.',
 }
 
 /** The card's bar: Savings' amber over its tile, its length core's basis points. */

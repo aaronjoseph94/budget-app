@@ -39,19 +39,15 @@ describe('savingsFundPlan', () => {
     expect(p.monthlyContributionCents).toBe(60_000)
   })
 
-  it('keeps the minus sign once the goal is passed, as Savings!B9 has no floor', () => {
-    const p = plan(100_000, 100_500, '2026-01-01', '2026-03-01')
-    expect(p.amountNeededCents).toBe(-500)
-    // −250 a month exactly; a remainder rounds towards zero.
-    expect(p.monthlyContributionCents).toBe(-250)
-    expect(plan(100_000, 100_500, '2026-01-01', '2026-04-01').monthlyContributionCents).toBe(-166)
+  it('keeps the minus sign on Amount needed once the goal is passed, as Savings!B9 has no floor, and has no monthly figure (D31)', () => {
+    expect(plan(100_000, 100_500, '2026-01-01', '2026-03-01')).toEqual({ amountNeededCents: -500, monthsRemaining: 2, monthlyContributionCents: null, status: 'reached' })
+    expect(plan(100_000, 100_500, '2026-01-01', '2026-04-01')).toMatchObject({ monthlyContributionCents: null, status: 'reached' })
   })
 
-  it('needs nothing a month once the goal is met exactly', () => {
-    const p = plan(100_000, 100_000, '2026-01-01', '2026-04-01')
-    expect(p.amountNeededCents).toBe(0)
-    expect(p.monthlyContributionCents).toBe(0)
-    expect(Object.is(p.monthlyContributionCents, -0)).toBe(false)
+  it('has no monthly figure once the goal is met exactly, nor with a date missing: nothing is left to save (D31)', () => {
+    expect(plan(100_000, 100_000, '2026-01-01', '2026-04-01')).toEqual({ amountNeededCents: 0, monthsRemaining: 3, monthlyContributionCents: null, status: 'reached' })
+    expect(plan(100_000, 100_500, null, null)).toEqual({ amountNeededCents: -500, monthsRemaining: null, monthlyContributionCents: null, status: 'reached' })
+    expect(plan(100_000, 100_000, '2026-05-01', '2026-05-31')).toEqual({ amountNeededCents: 0, monthsRemaining: 0, monthlyContributionCents: null, status: 'reached' })
   })
 
   it('has no months and no contribution with either date missing (D15)', () => {
