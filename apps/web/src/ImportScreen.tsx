@@ -413,7 +413,8 @@ function ColumnMapping({ mapping }: { mapping: Mapping }) {
 }
 
 function columnName(column: ColumnProfile): string {
-  const label = column.header === null ? `Column ${column.index + 1}` : column.header
+  // A blank heading cell ("Date,Description,Amount,") is no name either.
+  const label = column.header === null || column.header.trim() === '' ? `Column ${column.index + 1}` : column.header
   const hints: string[] = []
   if (column.dateFormats.length > 0) hints.push('dates')
   if (column.readsAsAmount) hints.push('money')
