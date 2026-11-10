@@ -1,10 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import {
   countPendingBetween,
+  ensureAccount,
   hasImportedStatement,
   latestStatementEnd,
   listBudgetHistory,
+  listCategories,
+  listGoals,
+  listPending,
+  listRules,
   listTransactions,
+  listUnreadable,
+  readRecordsStart,
   type BudgetRow,
   type LedgerRow,
 } from '../src/ledger.js'
@@ -175,5 +182,41 @@ describe('hasImportedStatement', () => {
     const fake = createFakeSupabase()
     fake.fail('ingest_batches', '42501')
     await expect(hasImportedStatement(fake.client)).rejects.toThrow(/does not allow this/)
+  })
+})
+
+// N176, N28: a read that failed said "Something went wrong and nothing was
+// saved", when nothing was being saved. Every read here says it was a read.
+describe('a read that fails says so, never that nothing was saved', () => {
+  const reads: [string, string, (fake: ReturnType<typeof createFakeSupabase>) => Promise<unknown>][] = [
+    ['listTransactions', 'transactions', (f) => listTransactions(f.client, SEPTEMBER)],
+    ['latestStatementEnd', 'ingest_batches', (f) => latestStatementEnd(f.client)],
+    ['hasImportedStatement', 'ingest_batches', (f) => hasImportedStatement(f.client)],
+    ['readRecordsStart (statements)', 'ingest_batches', (f) => readRecordsStart(f.client)],
+    ['readRecordsStart (ledger)', 'transactions', (f) => readRecordsStart(f.client)],
+    ['countPendingBetween', 'ingest_candidates', (f) => countPendingBetween(f.client, SEPTEMBER)],
+    ['listPending', 'ingest_candidates', (f) => listPending(f.client)],
+    ['listUnreadable', 'ingest_unreadable_lines', (f) => listUnreadable(f.client)],
+    ['listRules', 'merchant_rules', (f) => listRules(f.client)],
+    ['listCategories', 'categories', (f) => listCategories(f.client)],
+    ['listGoals', 'savings_goals', (f) => listGoals(f.client)],
+    ['ensureAccount', 'accounts', (f) => ensureAccount(f.client, 'u1', 'Card')],
+  ]
+  it.each(reads)('%s', async (_, table, read) => {
+    const fake = createFakeSupabase()
+    fake.fail(table, '57014')
+    await expect(read(fake)).rejects.toThrow('Something went wrong reading your data. Try again. (code 57014)')
+  })
+
+  it('keeps the sign-in sentences, without "nothing was saved", and says a lost connection plainly', async () => {
+    const said = async (code: string) => {
+      const fake = createFakeSupabase()
+      fake.fail('transactions', code)
+      return listTransactions(fake.client, SEPTEMBER).then(() => 'read', (e: unknown) => (e instanceof Error ? e.message : ''))
+    }
+    expect(await said('42501')).toBe('Your sign-in does not allow this. Signing out and back in usually fixes it. (code 42501)')
+    expect(await said('PGRST303')).toBe('Your session expired. Sign in again to see your data. (code PGRST303)')
+    expect(await said('28000')).toBe('You are not signed in any more. Sign in again to see your data. (code 28000)')
+    expect(await said('PGRST205')).toBe('This needs a one-time update, so it cannot be shown. (code PGRST205)')
   })
 })

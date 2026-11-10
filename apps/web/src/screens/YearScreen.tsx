@@ -69,7 +69,7 @@ export function YearScreen({ start: address }: { start: string | null }) {
       // Worded for the year: under "Could not load this year" they said "this month" (N42).
       listBudgetHistory(supabase, last, 'year'),
       listPlanHistory(supabase, last, 'year'),
-      getMonthBalance(supabase, start),
+      getMonthBalance(supabase, start, 'year'),
       countPendingBetween(supabase, { from: start, to: end }),
     ])
       .then(([rows, budgets, plans, balance, pendingHere]) => live && setLoaded({ start, rows, budgets, plans, balance, pendingHere }))

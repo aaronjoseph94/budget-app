@@ -151,6 +151,29 @@ export function describeWriteFailure(error: WriteError | null | undefined): stri
 }
 
 /**
+ * A failed read as a sentence, by the same rule as describeWriteFailure: the
+ * code alone is read, never the message. Nothing was being saved, so nothing
+ * says it was not (N28, N176). The sign-in codes keep their own sentences,
+ * worded for a read, as the plan and budget readers word theirs.
+ */
+const READ_FAILURES: Record<string, string> = {
+  '42501': 'Your sign-in does not allow this. Signing out and back in usually fixes it.',
+  '28000': 'You are not signed in any more. Sign in again to see your data.',
+  PGRST301: 'Your session expired. Sign in again to see your data.',
+  // Still refused after the client asked again a moment later (N176).
+  PGRST303: 'Your session expired. Sign in again to see your data.',
+  '': 'Could not reach the database to read your data. Check your connection and try again.',
+  ...Object.fromEntries(MISSING_UPDATE.map((code) => [code, 'This needs a one-time update, so it cannot be shown.'])),
+}
+
+export function describeReadFailure(error: WriteError | null | undefined): string {
+  const code = typeof error?.code === 'string' ? error.code : ''
+  const body = READ_FAILURES[code]
+  if (body === undefined) return `Something went wrong reading your data. Try again. (code ${code || 'unknown'})`
+  return code === '' ? body : `${body} (code ${code})`
+}
+
+/**
  * A refusal's sentence for a batch that saved some before it stopped: its
  * "nothing was saved" would deny those, so it goes (e2e-money-09). The
  * caller says how many went in.
@@ -447,8 +470,8 @@ export function scheduleShownBy(reader: Exclude<ScheduleAction, 'save'>): string
   return reader === 'read' ? 'it is' : reader === 'calendar' ? 'this calendar is' : 'this pay period is'
 }
 
-/** What the Month was doing with its starting balance when a request failed. */
-export type BalanceAction = 'read' | 'save'
+/** What the Month was doing with its starting balance when a request failed; 'year' is the Year's read of its start month's. */
+export type BalanceAction = 'read' | 'year' | 'save'
 
 /**
  * Why a month's starting balance could not be read or saved (0010).
@@ -469,6 +492,12 @@ const BALANCE_FAILURES: Readonly<Record<BalanceAction, Readonly<Record<string, s
     '': 'Could not reach the database to read your starting balance. Check your connection and try again.',
     PGRST301: 'Your session expired. Sign in again to see this month.',
   },
+  year: {
+    PGRST205: `${BALANCE_NOT_APPLIED}, so this year cannot be shown.`,
+    '42P01': `${BALANCE_NOT_APPLIED}, so this year cannot be shown.`,
+    '': 'Could not reach the database to read your starting balance. Check your connection and try again.',
+    PGRST301: 'Your session expired. Sign in again to see this year.',
+  },
   save: {
     PGRST205: `${BALANCE_NOT_APPLIED}. Nothing was saved.`,
     '42P01': `${BALANCE_NOT_APPLIED}. Nothing was saved.`,
@@ -481,7 +510,7 @@ export function describeBalanceFailure(action: BalanceAction, error: WriteError 
   if (body !== undefined) return code === '' ? body : `${body} (code ${code})`
   return action === 'save'
     ? describeWriteFailure(error)
-    : `Your starting balance could not be read, so this month is not shown. Try again. (code ${code})`
+    : `Your starting balance could not be read, so this ${action === 'year' ? 'year' : 'month'} is not shown. Try again. (code ${code})`
 }
 
 /** What the Savings screen was doing when a request failed. */

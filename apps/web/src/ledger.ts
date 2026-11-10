@@ -22,6 +22,7 @@ import {
   describeDebtFailure,
   describeFundFailure,
   describeMoveFailure,
+  describeReadFailure,
   describePlanFailure,
   describeScheduleFailure,
   describeSetupFailure,
@@ -29,6 +30,7 @@ import {
   describeWriteFailure,
   scheduleShownBy,
   shownBy,
+  type BalanceAction,
   type BudgetAction,
   type PlanAction,
   type ScheduleAction,
@@ -197,6 +199,11 @@ function fail(error: { code?: string | null } | null): never {
   throw refused(describeWriteFailure(error), error)
 }
 
+/** As fail, for a read: nothing was being saved, so it never says nothing was (N176). */
+function failRead(error: { code?: string | null } | null): never {
+  throw refused(describeReadFailure(error), error)
+}
+
 /** As fail, for the functions that say a category, account or line they cannot find with 42501. */
 function failIngest(error: { code?: string | null } | null): never {
   throw refused(describeIngestFailure(error), error)
@@ -241,7 +248,7 @@ export async function listPending(supabase: SupabaseClient, limit = 300): Promis
     .eq('status', 'pending')
     .order('posted_on', { ascending: true })
     .limit(limit)
-  if (error !== null) fail(error)
+  if (error !== null) failRead(error)
   const rows = (data ?? []) as PendingCandidate[]
   // The true size, or a refusal: the page's length is the cap the count is
   // there to see past (architecture-b-04).
@@ -337,7 +344,7 @@ export async function listUnreadable(supabase: SupabaseClient, limit = 200): Pro
     .order('batch_id', { ascending: true })
     .order('source_line', { ascending: true })
     .limit(limit)
-  if (error !== null) fail(error)
+  if (error !== null) failRead(error)
   const lines = ((data ?? []) as UnreadableLine[]).map((l) => ({ ...l, source_line: Number(l.source_line) }))
   if (count === null) throw new Error('The lines no import could read could not be counted. Try again.')
   if (lines.length === 0) return { batches: [], lines, total: count }
@@ -347,7 +354,7 @@ export async function listUnreadable(supabase: SupabaseClient, limit = 200): Pro
     .select('id, source, created_at')
     .in('id', [...new Set(lines.map((l) => l.batch_id))])
     .order('created_at', { ascending: false })
-  if (imports.error !== null) fail(imports.error)
+  if (imports.error !== null) failRead(imports.error)
   return { batches: (imports.data ?? []) as UnreadableBatch[], lines, total: count }
 }
 
@@ -378,7 +385,7 @@ export async function latestStatementEnd(supabase: SupabaseClient): Promise<read
     .not('period_end', 'is', null)
     .order('period_end', { ascending: false })
     .limit(1)
-  if (error !== null) fail(error)
+  if (error !== null) failRead(error)
   return ((data ?? []) as { period_end: string }[]).map((b) => b.period_end)
 }
 
@@ -389,7 +396,7 @@ export async function latestStatementEnd(supabase: SupabaseClient): Promise<read
  */
 export async function hasImportedStatement(supabase: SupabaseClient): Promise<boolean> {
   const { data, error } = await supabase.from('ingest_batches').select('id').in('source', ['card_csv', 'card_xlsx', 'card_pdf']).limit(1)
-  if (error !== null) fail(error)
+  if (error !== null) failRead(error)
   return (data ?? []).length > 0
 }
 
@@ -410,8 +417,8 @@ export async function readRecordsStart(
       .limit(1),
     supabase.from('transactions').select('posted_on').order('posted_on', { ascending: true }).limit(1),
   ])
-  if (batches.error !== null) fail(batches.error)
-  if (entries.error !== null) fail(entries.error)
+  if (batches.error !== null) failRead(batches.error)
+  if (entries.error !== null) failRead(entries.error)
   return {
     statementStarts: ((batches.data ?? []) as { period_start: string }[]).map((b) => b.period_start),
     entryDates: ((entries.data ?? []) as { posted_on: string }[]).map((t) => t.posted_on),
@@ -434,7 +441,7 @@ export async function countPendingBetween(
     .gte('posted_on', range.from)
     .lte('posted_on', range.to)
     .limit(1)
-  if (error !== null) fail(error)
+  if (error !== null) failRead(error)
   if (count === null) throw new Error('The review queue could not be counted. Try again.')
   return count
 }
@@ -446,7 +453,7 @@ export async function listRules(supabase: SupabaseClient): Promise<ReadonlyMap<s
   // A shop's name is unique to its owner (0001), so it orders the pages.
   const rules = await readAll<{ match_merchant: string; category_id: string }>(
     (from, to) => supabase.from('merchant_rules').select('match_merchant, category_id', { count: 'exact' }).order('match_merchant').range(from, to),
-    { changed: 'The shops the app has learned changed while they were read. Try again.', describe: describeWriteFailure },
+    { changed: 'The shops the app has learned changed while they were read. Try again.', describe: describeReadFailure },
     (r) => r.match_merchant,
   )
   return new Map(rules.map((r) => [r.match_merchant, r.category_id]))
@@ -571,7 +578,7 @@ async function ensureNamed(
  */
 export async function ensureAccount(supabase: SupabaseClient, userId: string, name: string): Promise<Named> {
   const { data, error } = await supabase.from('accounts').select('*').eq('name', name).maybeSingle()
-  if (error !== null) fail(error)
+  if (error !== null) failRead(error)
   return data === null ? ensureNamed(supabase, 'accounts', userId, name, {}) : (data as Named)
 }
 
@@ -642,7 +649,7 @@ export async function listCategories(supabase: SupabaseClient): Promise<readonly
     .select('id, name, kind, sort_order, weekly_budget_cents')
     .order('sort_order')
     .order('name')
-  if (error !== null) fail(error)
+  if (error !== null) failRead(error)
   return ((data ?? []) as Category[]).map((c) => ({
     ...c,
     sort_order: Number(c.sort_order),
@@ -841,7 +848,7 @@ export async function listTransactions(
         .range(from, to),
     {
       changed: 'Your transactions changed while this period was being read, so nothing is shown. Try again.',
-      describe: describeWriteFailure,
+      describe: describeReadFailure,
     },
   )
   return rows.map((r) => ({ ...r, amount_cents: Number(r.amount_cents) }))
@@ -1137,13 +1144,17 @@ export interface MonthBalanceRow {
  * none was (D17). That month's alone: the workbook has it typed on every tab
  * (Jan!D9), never carried from the month before.
  */
-export async function getMonthBalance(supabase: SupabaseClient, month: string): Promise<number | null> {
+export async function getMonthBalance(
+  supabase: SupabaseClient,
+  month: string,
+  reader: Exclude<BalanceAction, 'save'> = 'read',
+): Promise<number | null> {
   const { data, error } = await supabase
     .from('month_balances')
     .select('starting_balance_cents')
     .eq('month', month)
     .maybeSingle()
-  if (error !== null) throw refused(describeBalanceFailure('read', error), error)
+  if (error !== null) throw refused(describeBalanceFailure(reader, error), error)
   return data === null ? null : Number((data as Pick<MonthBalanceRow, 'starting_balance_cents'>).starting_balance_cents)
 }
 
@@ -1222,13 +1233,13 @@ export async function listGoals(supabase: SupabaseClient): Promise<GoalsRead> {
     .order('created_at')
     .order('id')
   if (placed.error === null) return { goals: ((placed.data ?? []) as ListedGoalRow[]).map(goalNumbers), ordered: true }
-  if (placed.error.code !== '42703') fail(placed.error)
+  if (placed.error.code !== '42703') failRead(placed.error)
   const before = await supabase
     .from('savings_goals')
     .select('id, name, target_cents, saved_cents, target_date, unit_cost_cents, unit_label, created_at')
     .order('created_at')
     .order('id')
-  if (before.error !== null) fail(before.error)
+  if (before.error !== null) failRead(before.error)
   const rows = (before.data ?? []) as (GoalRow & { readonly created_at: string })[]
   return {
     goals: rows.map((g) => goalNumbers({ ...g, sort_order: 0, status: 'active', reached_on: null })),

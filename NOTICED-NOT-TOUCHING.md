@@ -4077,8 +4077,17 @@ to renew (`supabase.ts`, `format.ts`, tests in `supabase-client.test.tsx`).
 Infrastructure → Upgrade, or Restart project) so the API itself is fixed.
 The AI apps server (`packages/ai-apps`) calls PostgREST with a connected
 app's pass and has no such retry; if Claude or ChatGPT see the same 401
-right after a sign-in, give it the same one retry. A read that fails still
-borrows the import's "nothing was saved" wording in a few places.
+right after a sign-in, give it the same one retry.
+
+**Done 2026-11-10:** every read in `ledger.ts` that borrowed the import's
+"nothing was saved" wording now says it was a read (`describeReadFailure`
+in `format.ts`: "Something went wrong reading your data. Try again."), its
+sign-in sentences worded for a read: the ledger, the statement end, the
+records start, the review counts and queue, unreadable lines, learned
+shops, categories, goals and the card account's lookup. The Year's read
+of its starting balance names the year. Still borrowing it: the three
+reads in `review/suggested-changes.ts` (suggested changes, their count,
+and the charges they name), left beside Review's own work.
 
 ## N177 — A browser cannot read Supabase's 404 for a function that is not there
 

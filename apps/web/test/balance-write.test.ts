@@ -65,4 +65,17 @@ describe('setMonthBalance and getMonthBalance', () => {
       'Your sign-in does not allow this. Signing out and back in usually fixes it. (code 42501)',
     )
   })
+
+  // The Year read the start month's balance and said "so this month is not shown" (N42's kind).
+  it('names the year when the Year reads it', async () => {
+    const fake = createFakeSupabase()
+    fake.fail('month_balances', '57014')
+    await expect(getMonthBalance(fake.client, '2026-01-01', 'year')).rejects.toThrow(
+      'Your starting balance could not be read, so this year is not shown. Try again. (code 57014)',
+    )
+    fake.fail('month_balances', 'PGRST205')
+    await expect(getMonthBalance(fake.client, '2026-01-01', 'year')).rejects.toThrow(
+      'Starting balances need a one-time update, so this year cannot be shown. (code PGRST205)',
+    )
+  })
 })
