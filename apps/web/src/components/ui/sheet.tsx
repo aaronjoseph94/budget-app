@@ -32,6 +32,8 @@ export function Sheet({
     close.current = onClose
   })
 
+  useBackCloses(close)
+
   useEffect(() => {
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
     panel.current?.focus()
@@ -78,7 +80,91 @@ export function Sheet({
   )
 }
 
-const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+/**
+ * Back closes the sheet, as on a phone's own sheets. Opening one added no
+ * history entry, so the Back gesture left the screen and dropped what was
+ * typed in it (bug bash, phone). Each sheet now stands on an entry of its
+ * own, at the same address: Back pops it and closes the sheet; closed by
+ * its own buttons, Escape or the backdrop, it takes its entry back off, so
+ * the next Back leaves the screen. A same-address entry fires popstate and
+ * no hashchange, so nav.ts's address and scroll-memory.ts never see it.
+ *
+ * Going back is not instant, so a sheet opened before it lands waits to
+ * push its own (two sheets in a row, React's development double mount).
+ */
+const SHEET = 'sheet'
+let made = 0
+/** Unique to this page load: an entry left from before a reload is never taken for an open sheet's. */
+const visit = Math.random().toString(36).slice(2, 8)
+const open = new Set<string>()
+let landing: Promise<void> | null = null
+/** The state of the entry showing, as last seen: where a popstate came from. */
+let shown: unknown = null
+
+function tokenOf(state: unknown): string | null {
+  const token = typeof state === 'object' && state !== null ? (state as Record<string, unknown>)[SHEET] : undefined
+  return typeof token === 'string' ? token : null
+}
+const keyOf = (state: unknown): unknown => (typeof state === 'object' && state !== null ? (state as Record<string, unknown>).scrollKey : undefined)
+
+function useBackCloses(close: { readonly current: () => void }): void {
+  useEffect(() => {
+    const token = `${visit}-${++made}`
+    let pushed = false
+    let gone = false
+    const onPop = () => {
+      if (tokenOf(window.history.state) === token) return
+      window.removeEventListener('popstate', onPop)
+      open.delete(token)
+      gone = true
+      close.current()
+    }
+    const push = () => {
+      if (gone) return
+      window.history.pushState({ ...(window.history.state as object | null), [SHEET]: token }, '')
+      shown = window.history.state
+      pushed = true
+      open.add(token)
+      window.addEventListener('popstate', onPop)
+    }
+    if (landing === null) push()
+    else void landing.then(push)
+    return () => {
+      window.removeEventListener('popstate', onPop)
+      open.delete(token)
+      const wasOpen = !gone
+      gone = true
+      if (!pushed || !wasOpen || tokenOf(window.history.state) !== token) return
+      landing = new Promise<void>((resolve) => window.addEventListener('popstate', () => resolve(), { once: true })).then(() => {
+        landing = null
+      })
+      window.history.back()
+    }
+  }, [close])
+}
+
+/**
+ * A sheet's entry left behind when its sheet saved and moved to another
+ * screen. Back from that screen lands on it, showing the screen the sheet
+ * was on; a second Back would change nothing, so it is stepped over, on in
+ * the direction the owner was going.
+ */
+function stepOverLeftEntries(): void {
+  const before = shown
+  shown = window.history.state
+  const token = tokenOf(shown)
+  if (token === null || landing !== null || open.has(token)) return
+  const forward = keyOf(before) !== undefined && keyOf(before) === keyOf(shown) && tokenOf(before) === null
+  if (forward) window.history.forward()
+  else window.history.back()
+}
+if (typeof window !== 'undefined') {
+  window.addEventListener('popstate', stepOverLeftEntries)
+  // Once every listener has run: scroll-memory.ts keys a new entry in its own.
+  window.addEventListener('hashchange', () => void setTimeout(() => (shown = window.history.state)))
+}
+
+const FOCUSABLE ='a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 /**
  * Tab and Shift+Tab wrap around inside the open sheet. Without this a

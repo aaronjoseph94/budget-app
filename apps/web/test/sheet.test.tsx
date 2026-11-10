@@ -89,3 +89,97 @@ describe('Sheet', () => {
     expect(document.querySelector('[role="dialog"] b')).toBeNull()
   })
 })
+
+/**
+ * The Back gesture with a sheet open left the screen and dropped what was
+ * typed (bug bash, phone). Each sheet now stands on a history entry of its
+ * own at the same address. jsdom's history moves land a moment later, so
+ * each step waits for its popstate or hashchange.
+ */
+describe('Sheet and the Back gesture', () => {
+  const popped = () => new Promise<void>((resolve) => window.addEventListener('popstate', () => resolve(), { once: true }))
+  const moved = () => new Promise<void>((resolve) => window.addEventListener('hashchange', () => resolve(), { once: true }))
+  const settled = () => new Promise((resolve) => setTimeout(resolve, 0))
+  // A fresh pair of addresses for each test: setting the address it already has moves nothing.
+  let run = 0
+  let before = ''
+  let here = ''
+  async function at(hash: string): Promise<void> {
+    const there = moved()
+    window.location.hash = hash
+    await there
+  }
+  async function onScreen(): Promise<void> {
+    run += 1
+    before = `#/before-${run}`
+    here = `#/savings-${run}`
+    await at(before)
+    await at(here)
+  }
+  async function back(): Promise<void> {
+    const landed = popped()
+    window.history.back()
+    await landed
+  }
+
+  it('closes on Back, staying on the screen, with focus back on what opened it', async () => {
+    await onScreen()
+    render(<Opener />)
+    const opener = open()
+    await back()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(window.location.hash).toBe(here)
+    expect(document.activeElement).toBe(opener)
+    // The next Back leaves the screen.
+    await back()
+    expect(window.location.hash).toBe(before)
+  })
+
+  it('takes its entry back off when closed by its own button, so Back leaves the screen at once', async () => {
+    await onScreen()
+    render(<Opener />)
+    open()
+    const off = popped()
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    await off
+    expect(window.location.hash).toBe(here)
+    await back()
+    expect(window.location.hash).toBe(before)
+  })
+
+  it('opens a second sheet at once after the first, and Back closes the second', async () => {
+    await onScreen()
+    render(<Opener />)
+    open()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    open()
+    // The first sheet's entry comes off before the second's goes on.
+    await popped()
+    await settled()
+    expect(screen.getByRole('dialog')).toBeTruthy()
+    await back()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(window.location.hash).toBe(here)
+    await back()
+    expect(window.location.hash).toBe(before)
+  })
+
+  it('steps over the entry a sheet left when it moved to another screen', async () => {
+    await onScreen()
+    const { unmount } = render(<Opener />)
+    open()
+    // "Show me" in Help's sheet: a link to another screen, which takes the sheet with it.
+    await at(`#/help-${run}`)
+    unmount()
+    await settled()
+    const stepped = popped()
+    await back()
+    expect(window.location.hash).toBe(here)
+    // That entry is stepped over, so the next Back leaves the screen
+    // rather than land on the sheet's old entry and change nothing.
+    await stepped
+    await popped()
+    await back()
+    expect(window.location.hash).toBe(before)
+  })
+})
