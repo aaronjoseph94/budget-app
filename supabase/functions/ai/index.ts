@@ -24,7 +24,7 @@
 // It exports `handle` so the gates can test it with a fake fetch, and serves
 // only when it runs under Deno.
 
-import { z } from 'npm:zod@4.6.5'
+import { z } from 'npm:zod@4.6.7'
 
 /** Which copy is deployed, so One-time updates can tell an old paste from this one. */
 export const VERSION = '2026-10-08.2'

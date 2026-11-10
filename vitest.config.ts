@@ -74,7 +74,7 @@ export default defineConfig({
           include: ['test/**/*.test.ts'],
           exclude: ['**/dist/**'],
         },
-        resolve: { alias: { 'npm:zod@4.6.5': 'zod' } },
+        resolve: { alias: { 'npm:zod@4.6.7': 'zod' } },
       },
     ],
     coverage: {

@@ -9,6 +9,6 @@
   "exports": { ".": "./src/index.ts" },
   "dependencies": {
     "@budget/money-primitives": "workspace:*",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   }
 }

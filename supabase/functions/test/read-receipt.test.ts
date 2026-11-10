@@ -245,7 +245,7 @@ describe('read-receipt can still be pasted as one file', () => {
   it('imports zod by its pinned URL and nothing else, relative paths included', () => {
     const source = readFileSync(new URL('../read-receipt/index.ts', import.meta.url), 'utf8')
     const specifiers = [...source.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*)['"]([^'"]+)['"]/g)].map((m) => m[1])
-    expect(specifiers).toEqual(['npm:zod@4.6.5'])
+    expect(specifiers).toEqual(['npm:zod@4.6.7'])
   })
 })
 

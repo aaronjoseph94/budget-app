@@ -24,7 +24,7 @@
 // It exports `handle` so the gates can test it with a fake fetch, and serves
 // only when it runs under Deno.
 
-import { z } from 'npm:zod@4.6.5'
+import { z } from 'npm:zod@4.6.7'
 
 // The only host this function will ever call. The model name is chosen by a
 // setting, but it is validated and placed into this fixed URL; a setting can

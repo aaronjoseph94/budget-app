@@ -13,3 +13,9 @@ ignoredBuiltDependencies:
 # the install until it is named here, allowed or ignored, rather than
 # passing with a warning no one reads (SEC-6). pnpm 10's default is false.
 strictDepBuilds: true
+# The browser suite's runner pins zod 4.6.1, which has a high advisory
+# (memory exhaustion validating oversized collections, fixed in 4.6.6). A
+# patch release of the same zod the app uses, rather than a jump to a newer
+# runner whose 0.x releases may change its API. Drop once e2e is upgraded.
+overrides:
+  'e2e>zod': 4.6.7

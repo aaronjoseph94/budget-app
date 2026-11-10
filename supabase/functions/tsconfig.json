@@ -8,7 +8,7 @@
     // Each function imports zod the way Deno does, pinned in its own URL, so
     // it can be pasted into the dashboard as one file. Here that name means
     // this package's zod, the version the web app uses.
-    "paths": { "npm:zod@4.6.5": ["./node_modules/zod"] }
+    "paths": { "npm:zod@4.6.7": ["./node_modules/zod"] }
   },
   "include": ["deno-env.d.ts", "*/index.ts", "test/**/*"],
   // Tests only: the reply a function passes on is checked against the app's
