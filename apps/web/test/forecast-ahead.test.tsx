@@ -72,6 +72,22 @@ describe('the next three months on the Forecast (plan §2.5, A14, F35)', () => {
     expect(scroller.tabIndex).toBe(0)
     expect(scroller.classList.contains('overflow-x-auto')).toBe(true)
     expect(scroller.contains(within(card).getByRole('table'))).toBe(true)
+    // At 390 px the table still ran past its box with no cue, and "about
+    // $380" cut at the edge read as "about $38" (bug bash, phone). Below
+    // 384 px of card the table gives way to a block a month, the same
+    // figures under one another, none cut.
+    expect(scroller.parentElement?.className.split(' ')).toEqual(['hidden', '@[24rem]:block'])
+    expect(scroller.parentElement?.parentElement?.className).toBe('@container')
+    const blocks = within(card).getByRole('list', { name: 'The next three months, month by month' })
+    expect(blocks.className.split(' ')).toContain('@[24rem]:hidden')
+    const months = within(blocks).getAllByRole('listitem')
+    expect(months.map((m) => m.querySelector('p')?.textContent)).toEqual(['Oct 2026', 'Nov 2026', 'Dec 2026'])
+    const figures = (i: number) => [...months[i]!.querySelectorAll('dd')].map((dd) => dd.textContent)
+    expect(months.map((_, i) => figures(i)[4])).toEqual(rowOf(card, 'Left over'))
+    expect(months.map((_, i) => figures(i)[6])).toEqual(rowOf(card, 'Most likely end'))
+    expect([...months[0]!.querySelectorAll('dt')].map((dt) => dt.textContent)).toEqual(
+      within(card).getAllByRole('rowheader').map((th) => th.textContent),
+    )
     await expectNoAxeViolations()
   })
 
