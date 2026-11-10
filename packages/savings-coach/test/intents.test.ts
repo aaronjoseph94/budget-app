@@ -70,6 +70,53 @@ describe('matchQuestion', () => {
   })
 })
 
+describe('matchQuestion refuses what it cannot answer, rather than answer another question (bug bash, a01)', () => {
+  it('answers a month’s saving from the month explained, and refuses one it cannot place', () => {
+    expect(match('How much did I save in September?')).toMatchObject({ intent: 'explain_month', period: { kind: 'month', month: 'september', year: 'this' } })
+    expect(match('How much did I save last month?')).toMatchObject({ intent: 'explain_month', period: { kind: 'last_month' } })
+    expect(match('How much did I save this year?')).toEqual({ kind: 'cannot' })
+    // Saving is the what-if’s and the goals’ own word.
+    expect(intent(match('What if I saved $50 a month?'))).toBe('what_if_cut')
+    expect(intent(match('When will I reach my savings goal?'))).toBe('goal_date')
+  })
+
+  it('places a year it can, this one or last, and refuses any other; a month with a year is that month or nothing', () => {
+    expect(match('How much did I spend in 2025?')).toMatchObject({ intent: 'spend_in', period: { kind: 'last_year' } })
+    expect(match('How much did I spend in 2026?')).toMatchObject({ intent: 'spend_in', period: { kind: 'this_year' } })
+    expect(match('How much did I spend in 2019?')).toEqual({ kind: 'cannot' })
+    expect(match('How much did I spend in February 2030?')).toEqual({ kind: 'cannot' })
+    expect(match('How much did I spend in February 2025?')).toMatchObject({ period: { kind: 'month', month: 'february', year: 'last' } })
+    // December 2026 is still to come, and is said so; never moved to last December.
+    expect(match('How much did I spend in December 2026?')).toMatchObject({ period: { kind: 'month', month: 'december', year: 'this' } })
+    // An amount is not a year.
+    expect(match('What if I saved 2000 a month?')).toMatchObject({ intent: 'what_if_cut', period: null, amountText: '2000' })
+  })
+
+  it('refuses a day, a debt’s size, a balance, a single biggest charge and a shop it has no figure for', () => {
+    for (const q of [
+      'how much did I spend yesterday',
+      'How much do I owe?',
+      'How much debt do I have?',
+      'What is my balance?',
+      'How much is my balance?',
+      'What is my biggest expense?',
+      'how much did i spend at corner market',
+    ]) {
+      expect([q, match(q)]).toEqual([q, { kind: 'cannot' }])
+    }
+    expect(intent(match('When will I be debt-free?'))).toBe('debt_free')
+    expect(intent(match('Which shops did I spend most at this month?'))).toBe('top_shops')
+    expect(intent(match('Where did my money go last month?'))).toBe('top_categories')
+  })
+
+  it('matches a Help topic by what the question is about, never by "what", "is" or "my"', () => {
+    const topics = [...TOPICS, { id: 'ai-reads', title: 'What the AI reads' }]
+    const read = (question: string) => matchQuestion({ question, today: '2026-09-27', categories: CATEGORIES, topics })
+    expect(read('What is my balance?')).toEqual({ kind: 'cannot' })
+    expect(read('What does the AI read?')).toEqual({ kind: 'help', topic: 'ai-reads' })
+  })
+})
+
 describe('readOf and queryOf', () => {
   it('turns the AI’s aliases back into categories, leaving out any not offered', () => {
     const plan: AskPlan = { kind: 'intent', intent: 'spend_in', aliases: ['c2', 'c9'], period: { kind: 'last_month' }, amountText: null }

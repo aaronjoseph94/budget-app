@@ -2392,6 +2392,16 @@ works out every figure. The AI never sees a figure and never writes one.
   otherwise the category's F34 quarter lever, or its best month when the
   quarter rounds to nothing. With neither, there is nothing to suggest.
 
+- **Amended 2026-11-10 (bug bash, a01): what the app's own matching
+  refuses.** A question that names what no intent counts (what is owed,
+  a balance outside the forecast, a single biggest charge, a shop by
+  name, yesterday) is "I can't answer that yet", never the spending
+  figure. A year is this year or last, and a month with its year is that
+  month, or the question is refused, never moved to another year. "How
+  much did I save in <month>" is the month explained, whose Saved is
+  the Month's; saving over any other stretch is refused. A Help topic is
+  matched by the question's words less "what", "does" and the like.
+
 **Worked example, Thursday 24 September 2026, records from 1 June.**
 Coffee: $4.50 on 5 August, $5.50 on 20 August, $7.00 on 28 August, $5.00
 on 3 September and $6.00 on 10 September. Groceries: $80.00 on 12 August,

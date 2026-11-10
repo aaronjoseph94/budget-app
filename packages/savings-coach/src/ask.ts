@@ -90,6 +90,26 @@ const INTENT_WORDS: readonly (readonly [Exclude<AskIntentName, 'help'>, RegExp])
 ]
 const HELP_WORDS = /^(how (do|can|should) i|how to|where (do|can|is)|what (is|does|are)|why)\b/
 
+type Intent = Exclude<AskIntentName, 'help'>
+/**
+ * Words naming something no intent answers, each with the intents whose own
+ * word it is. Read as the spending figure, such a question was answered as
+ * another one ("How much do I owe?" as "You spent …"; bug bash, a01), so it
+ * is refused instead.
+ */
+const NO_INTENT: readonly (readonly [RegExp, readonly Intent[]])[] = [
+  [/\bow(e|ed|es|ing)\b|\bhow much\b.*\bdebts?\b/, []],
+  [/\bbalance\b/, ['forecast', 'safe_to_spend']],
+  [/\b(biggest|largest|dearest) (single )?(expense|charge|purchase|payment|transaction)s?\b/, []],
+  [/\byesterday\b/, []],
+  // A shop by name: only the top shops are counted by shop.
+  [/\bat (?!all\b|the end\b|least\b|most\b|this\b|last\b)\p{L}/u, ['top_shops', 'forecast', 'safe_to_spend', 'what_if_cut', 'goal_date', 'debt_free', 'subscriptions']],
+]
+/** Saving, which the what-if and the goals use; a month's saving is the month explained's own figure (F48). */
+const SAVE_WORDS = /\bsav(e|ed|es|ing|ings)\b/
+const SAVE_INTENTS: readonly Intent[] = ['what_if_cut', 'goal_date', 'safe_to_spend', 'forecast']
+const ONE_MONTH: readonly (AskPeriodPick['kind'] | undefined)[] = ['month', 'this_month', 'last_month', undefined]
+
 const PERIOD_WORDS: readonly (readonly [AskPeriodName, RegExp])[] = [
   ['this_week', /\bthis week\b/],
   ['last_week', /\blast week\b/],
@@ -125,11 +145,22 @@ export function matchQuestion(input: MatchQuestionInput): AskRead {
     const topic = topicOf(text, input.topics)
     if (topic !== null) return { kind: 'help', topic }
   }
-  return { kind: 'intent', intent: found[0], categoryIds: categoriesIn(text, input.categories), period: periodIn(text, input.today), amountText: amountIn(input.question) }
+  let intent: Intent = found[0]
+  const period = periodIn(text, input.today)
+  // A year or a month's year it cannot place is never moved to another (bug bash, a01).
+  if (period === 'refused' || NO_INTENT.some(([words, own]) => words.test(text) && !own.includes(intent))) return { kind: 'cannot' }
+  if (SAVE_WORDS.test(text) && !SAVE_INTENTS.includes(intent)) {
+    if (!ONE_MONTH.includes(period?.kind)) return { kind: 'cannot' }
+    intent = 'explain_month'
+  }
+  return { kind: 'intent', intent, categoryIds: categoriesIn(text, input.categories), period, amountText: amountIn(input.question) }
 }
 
+/** Words that say nothing about which Help topic is meant. */
+const STOP_WORDS = new Set(['what', 'does', 'have', 'your', 'when', 'where', 'which', 'with', 'this', 'that', 'there', 'about', 'should', 'could', 'would'])
+
 /** A word of four or more letters, less a plural's s, as two words are compared. */
-const stems = (text: string) => text.split(' ').filter((w) => w.length >= 4).map((w) => w.replace(/s$/, ''))
+const stems = (text: string) => text.split(' ').filter((w) => w.length >= 4 && !STOP_WORDS.has(w)).map((w) => w.replace(/s$/, ''))
 
 /** The Help topic whose title shares the most such words with the question; none on a tie or nothing shared. */
 function topicOf(text: string, topics: readonly AskTopic[]): string | null {
@@ -152,13 +183,28 @@ function categoriesIn(text: string, categories: MatchQuestionInput['categories']
   return at.sort((a, b) => a.at - b.at).slice(0, 3).map((c) => c.id)
 }
 
-function periodIn(text: string, today: string): AskPeriodPick | null {
+/** A period, or 'refused' for a year that is neither this one nor last, which no period can hold. */
+function periodIn(text: string, today: string): AskPeriodPick | null | 'refused' {
   const named = PERIOD_WORDS.find(([, words]) => words.test(text))
   if (named !== undefined) return { kind: named[0] }
+  const thisYear = Number(today.slice(0, 4))
+  const yearOf = (digits: string): 'this' | 'last' | 'refused' => (Number(digits) === thisYear ? 'this' : Number(digits) === thisYear - 1 ? 'last' : 'refused')
   const month = MONTH_WORD.exec(text)
-  if (month === null || (month[2] === 'may' && !MAY_MONTH.test(text))) return null
+  if (month === null || (month[2] === 'may' && !MAY_MONTH.test(text))) {
+    // A year alone, after a word that names a time: "in 2025" is last year, never an amount.
+    const year = /\b(?:in|during|for|of|since) (\d{4})\b/.exec(text)
+    if (year === null) return null
+    const which = yearOf(year[1]!)
+    return which === 'refused' ? which : { kind: which === 'this' ? 'this_year' : 'last_year' }
+  }
   const index = MONTHS.findIndex((m) => m.startsWith(month[2]!.slice(0, 3)))
   const name = MONTHS[index]!
+  // A month with its year is that month, or refused: never moved to another year.
+  const year = /^ (\d{4})\b/.exec(text.slice(month.index + month[0].length))
+  if (year !== null) {
+    const which = yearOf(year[1]!)
+    return which === 'refused' ? which : { kind: 'month', month: name, year: which }
+  }
   // A month named alone is the latest one: in September, "December" is last December.
   const later = index + 1 > Number(today.slice(5, 7))
   return { kind: 'month', month: name, year: month[1] === 'last' || later ? 'last' : 'this' }
