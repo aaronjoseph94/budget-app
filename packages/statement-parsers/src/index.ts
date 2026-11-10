@@ -13,6 +13,7 @@ export {
   readTypedAmount,
   type AmountFormat,
   type ParseOutcome,
+  type RejectionDetail,
   type SignConvention,
   type TypedAmount,
 } from './amount.js'

@@ -70,6 +70,7 @@ export {
 
 export {
   summariseImport,
+  summariseImportWithin,
   type ImportSummary,
   type ImportSummaryInput,
 } from './import-summary.js'

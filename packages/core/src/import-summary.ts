@@ -38,3 +38,17 @@ export function summariseImport(input: ImportSummaryInput): ImportSummary {
     outflowCents: outflows.length === 0 ? ZERO_CENTS : sumCents(outflows),
   }
 }
+
+/**
+ * The summary, or 'too_large' when the amounts cannot be added up as whole
+ * cents. Each statement row is held to a transaction's limit, but enough
+ * of them still pass the largest whole number, and the import preview adds
+ * them up while it draws: summariseImport's RangeError there took the whole
+ * Add screen down. Every partial sum stays within the reach of all the
+ * amounts' sizes added together, so a reach within range cannot throw.
+ */
+export function summariseImportWithin(input: ImportSummaryInput): ImportSummary | 'too_large' {
+  let reach = 0
+  for (const amount of input.amountsCents) reach += Math.abs(amount)
+  return reach > Number.MAX_SAFE_INTEGER ? 'too_large' : summariseImport(input)
+}

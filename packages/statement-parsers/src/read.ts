@@ -11,7 +11,7 @@
  */
 import { type Cents, type IsoDate } from '@budget/money-primitives'
 import { IngestedTextSchema, type RejectionReason } from '@budget/schema'
-import { type AmountFormat, type ParseOutcome, type SignConvention, applySignConvention, parseAmountToCents, parseDebitCredit } from './amount.js'
+import { type AmountFormat, type ParseOutcome, type RejectionDetail, type SignConvention, applySignConvention, parseAmountToCents, parseDebitCredit } from './amount.js'
 import { type DateFormat, parseStatementDate } from './date.js'
 import { type CsvRow, isBlankRow } from './csv.js'
 
@@ -50,6 +50,8 @@ export interface AcceptedRow {
 export interface RejectedRow {
   readonly line: number
   readonly reason: RejectionReason
+  /** What the code alone cannot say, for the preview's words; never stored. */
+  readonly detail?: RejectionDetail
 }
 
 export interface StatementRead {
@@ -82,7 +84,7 @@ export function readStatement(rows: readonly CsvRow[], options: ReadOptions): St
   for (const row of data) {
     const outcome = readRow(row, width, options)
     if (outcome.reason === undefined) accepted.push(outcome.row)
-    else rejected.push({ line: row.line, reason: outcome.reason })
+    else rejected.push({ line: row.line, reason: outcome.reason, ...(outcome.detail === undefined ? {} : { detail: outcome.detail }) })
   }
 
   // Counted from the INPUT, not from the two output lists. Defining it as
@@ -95,7 +97,7 @@ export function readStatement(rows: readonly CsvRow[], options: ReadOptions): St
 
 type RowOutcome =
   | { readonly reason: undefined; readonly row: AcceptedRow }
-  | { readonly reason: RejectionReason }
+  | { readonly reason: RejectionReason; readonly detail?: RejectionDetail }
 
 /**
  * Read one record.
@@ -132,7 +134,7 @@ function readRow(row: CsvRow, width: number, options: ReadOptions): RowOutcome {
   const creditCell = mapping.creditIndex === undefined ? undefined : row.fields[mapping.creditIndex]
   if (mapping.creditIndex !== undefined && creditCell === undefined) return { reason: 'row_shape_mismatch' }
   const amount = creditCell === undefined ? readSigned(amountCell, options) : parseDebitCredit(amountCell, creditCell, options.amountFormat)
-  if (!amount.ok) return { reason: amount.reason }
+  if (!amount.ok) return amount
 
   if (merchantCell.length === 0) return { reason: 'missing_merchant' }
   // The text rules live in one place. Re-implementing them here would let the

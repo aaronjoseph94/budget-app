@@ -18,7 +18,7 @@ import {
   type DateFormat,
   type StatementRead,
 } from '@budget/statement-parsers'
-import { summariseImport } from '@budget/core'
+import { summariseImportWithin } from '@budget/core'
 
 /** Only what the user has explicitly picked; everything else falls to the proposal. */
 export interface Chosen {
@@ -131,7 +131,8 @@ export function useCsvMapping(text: string) {
     () =>
       result === null
         ? null
-        : summariseImport({ amountsCents: result.accepted.map((r) => r.amountCents) }),
+        : // 'too_large' when the rows cannot be added up: said, never thrown while drawing.
+          summariseImportWithin({ amountsCents: result.accepted.map((r) => r.amountCents) }),
     [result],
   )
 

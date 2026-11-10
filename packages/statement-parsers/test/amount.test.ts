@@ -81,7 +81,7 @@ describe('parseAmountToCents', () => {
     ['a double negative', '-(12.34)'],
     ['an unclosed parenthesis', '(12.34'],
     ['nothing before the point', '.34'],
-    ['beyond safe integer range', '99999999999999999999.99'],
+    // Beyond safe integer range is refused as too large: amount-bound.test.ts.
   ])('rejects %s for the review queue', (_label, raw) => {
     expect(parsed(raw)).toEqual({ ok: false, reason: 'unparseable_amount' })
   })

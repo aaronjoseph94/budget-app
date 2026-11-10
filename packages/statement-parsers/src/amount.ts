@@ -18,9 +18,30 @@
 import { type Cents, cents, subCents } from '@budget/money-primitives'
 import type { RejectionReason } from '@budget/schema'
 
+/**
+ * What a rejection code alone cannot say, for the preview's words. The
+ * stored code is the database's enum, which has no value for these; a row
+ * refused for one is kept under the code beside it.
+ */
+export type RejectionDetail = 'amount_too_large'
+
 export type ParseOutcome<T> =
   | { readonly ok: true; readonly value: T }
-  | { readonly ok: false; readonly reason: RejectionReason }
+  | { readonly ok: false; readonly reason: RejectionReason; readonly detail?: RejectionDetail }
+
+/**
+ * The most an amount may be, either way: $999,999,999.99, typed in a money
+ * field or read from a statement row. Far past any household figure, and
+ * far enough inside whole-number range that the engine can add a year of
+ * every budget without refusing. Taken unbounded, 90071992547409.91 was
+ * saved, then every Month, Week and Year that added it up failed to draw,
+ * and hid the editor that could undo it (e2e-plan-01); a statement row past
+ * it, or a reference number read as the amount, stopped the import preview
+ * from drawing at all (N168).
+ */
+export const MAX_TYPED_CENTS: Cents = cents(99_999_999_999)
+
+const TOO_LARGE = { ok: false, reason: 'unparseable_amount', detail: 'amount_too_large' } as const
 
 export interface AmountFormat {
   /**
@@ -124,12 +145,11 @@ export function parseAmountToCents(raw: string, format: AmountFormat): ParseOutc
   const minor = fraction.padEnd(2, '0')
   const magnitude = Number(whole) * 100 + Number(minor)
 
-  try {
-    return { ok: true, value: cents(negate(magnitude, negative)) }
-  } catch {
-    // Swallows the RangeError deliberately: its message names the amount.
-    return { ok: false, reason: 'unparseable_amount' }
-  }
+  // Past the limit is refused by name, before `cents()` can throw a
+  // RangeError whose message would carry the amount. Digits enough to lose
+  // precision as a number are far past it too, so nothing inexact is kept.
+  if (magnitude > MAX_TYPED_CENTS) return TOO_LARGE
+  return { ok: true, value: cents(negate(magnitude, negative)) }
 }
 
 /**
@@ -205,7 +225,8 @@ export function parseDebitCredit(debit: string, credit: string, format: AmountFo
   if (paidIn !== null && !paidIn.ok) return paidIn
   if (out === null) return paidIn ?? { ok: false, reason: 'missing_amount' }
   if (paidIn === null) return { ok: true, value: cents(negate(out.value, true)) }
-  return { ok: true, value: subCents(paidIn.value, out.value) }
+  const net = subCents(paidIn.value, out.value)
+  return net > MAX_TYPED_CENTS || net < -MAX_TYPED_CENTS ? TOO_LARGE : { ok: true, value: net }
 }
 
 /**
@@ -221,19 +242,6 @@ export function parseTypedAmount(text: string): Cents | null {
   return read.ok ? read.value : null
 }
 
-/**
- * The most a person may type in a money field, either way: $999,999,999.99.
- * Far past any household figure, and far enough inside whole-number range
- * that the engine can add a year of every budget without refusing. Taken
- * unbounded, 90071992547409.91 was saved, then every Month, Week and Year
- * that added it up failed to draw, and hid the editor that could undo it
- * (e2e-plan-01).
- */
-export const MAX_TYPED_CENTS: Cents = cents(99_999_999_999)
-
-/** A typed amount's shape once its cents are padded: a sign, a $, digits grouped or not, two decimals. */
-const WELL_FORMED = /^-?\$?(\d+|\d{1,3}(,\d{3})+)\.\d{2}$/
-
 /** A typed amount, or why it is not one: not an amount at all, or past MAX_TYPED_CENTS. */
 export type TypedAmount =
   | { readonly ok: true; readonly value: Cents }
@@ -245,9 +253,6 @@ export function readTypedAmount(text: string): TypedAmount {
   if (trimmed.length === 0) return { ok: false, reason: 'not_an_amount' }
   const withCents = /\.\d{2}$/.test(trimmed) ? trimmed : /\.\d$/.test(trimmed) ? `${trimmed}0` : `${trimmed}.00`
   const parsed = parseAmountToCents(withCents, US_AMOUNT_FORMAT)
-  // Well-formed digits refused only because no number holds them exactly
-  // (twenty 9s) are an amount too large, as 1000000000 is, not "no amount".
-  if (!parsed.ok) return { ok: false, reason: WELL_FORMED.test(withCents) ? 'too_large' : 'not_an_amount' }
-  if (parsed.value > MAX_TYPED_CENTS || parsed.value < -MAX_TYPED_CENTS) return { ok: false, reason: 'too_large' }
+  if (!parsed.ok) return { ok: false, reason: parsed.detail === 'amount_too_large' ? 'too_large' : 'not_an_amount' }
   return { ok: true, value: parsed.value }
 }

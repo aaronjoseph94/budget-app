@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { summariseImport } from '../src/index.js'
+import { summariseImport, summariseImportWithin } from '../src/index.js'
 
 describe('summariseImport', () => {
   it('separates the two directions by sign, not by list', () => {
@@ -34,5 +34,27 @@ describe('summariseImport', () => {
 
   it('refuses a fractional amount rather than rounding it', () => {
     expect(() => summariseImport({ amountsCents: [1.5] })).toThrow(RangeError)
+  })
+})
+
+describe('summariseImportWithin', () => {
+  // A statement's preview adds up every row it read while the screen draws.
+  // Rows each within a transaction's limit can still add up past the
+  // largest whole number of cents, and the screen must not throw for it.
+  const AT_LIMIT = -99_999_999_999
+
+  it('is the summary when the rows can be added up', () => {
+    expect(summariseImportWithin({ amountsCents: [-450, 250000] })).toEqual(summariseImport({ amountsCents: [-450, 250000] }))
+  })
+
+  it('says too large, rather than throwing, when they cannot', () => {
+    const amountsCents = Array.from({ length: 90_073 }, () => AT_LIMIT)
+    expect(() => summariseImport({ amountsCents })).toThrow(RangeError)
+    expect(summariseImportWithin({ amountsCents })).toBe('too_large')
+  })
+
+  it('says too large when one direction cannot be added up, though the net is zero', () => {
+    const out = Array.from({ length: 90_073 }, () => AT_LIMIT)
+    expect(summariseImportWithin({ amountsCents: [...out, ...out.map((a) => -a)] })).toBe('too_large')
   })
 })

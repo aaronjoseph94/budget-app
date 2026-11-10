@@ -62,6 +62,8 @@ const REASONS: Record<string, string> = {
   missing_amount: 'This row had no amount.',
   missing_date: 'This row had no date.',
   unparseable_amount: 'The amount could not be read as money in the format you chose.',
+  // A detail the preview has, kept in Review as unparseable_amount (no such enum value).
+  amount_too_large: 'This amount is too large to be a transaction.',
   unparseable_date: 'The date could not be read in the format you chose.',
   missing_merchant: 'This row had no description.',
   invalid_merchant: 'The description has characters that could show as something other than what is stored.',

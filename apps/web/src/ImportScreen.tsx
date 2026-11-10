@@ -106,8 +106,8 @@ function ReadRows({ result, summary }: { result: NonNullable<Mapping['result']>;
         <div className="grid grid-cols-2 divide-x divide-border sm:grid-cols-4">
           <Stat label="Would import" value={String(result.accepted.length)} />
           <Stat label="Needs a look" value={String(result.rejected.length)} />
-          <Stat label="Money out" value={formatCents(summary.outflowCents)} tone="spend" />
-          <Stat label="Money in" value={formatCents(summary.inflowCents)} tone="income" />
+          <Stat label="Money out" value={summary === 'too_large' ? 'Too large' : formatCents(summary.outflowCents)} tone="spend" />
+          <Stat label="Money in" value={summary === 'too_large' ? 'Too large' : formatCents(summary.inflowCents)} tone="income" />
         </div>
       </Card>
 
@@ -118,7 +118,7 @@ function ReadRows({ result, summary }: { result: NonNullable<Mapping['result']>;
             {result.rejected.map((r) => (
               <li key={r.line} className="flex gap-3 text-sm">
                 <span className="tnum shrink-0 text-muted-foreground">Line {r.line}</span>
-                <span>{describeReason(r.reason)}</span>
+                <span>{describeReason(r.detail ?? r.reason)}</span>
               </li>
             ))}
           </ul>
