@@ -204,6 +204,14 @@ describe('the sidebar’s foot (ADR 0011)', () => {
     expect(signOut).toHaveBeenCalledTimes(1)
   })
 
+  // "😀 Sam" drew half of the emoji, a broken "�", in the badge.
+  it('draws a name’s first character whole in the badge, an emoji included', async () => {
+    renderScreen(<Shell />, createFakeSupabase(), '😀 Sam')
+    await screen.findByRole('heading', { name: 'September 2026' })
+    const aside = within(screen.getByRole('complementary', { name: 'Sidebar' }))
+    expect(aside.getByText('😀').getAttribute('aria-hidden')).toBe('true')
+  })
+
   it('signs out on this device even when the server cannot be reached, and says so (security-a-06)', async () => {
     vi.stubEnv('VITE_SUPABASE_URL', 'https://abcdefghijklmnopqrst.supabase.co')
     vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'a-public-anon-key-of-some-length')

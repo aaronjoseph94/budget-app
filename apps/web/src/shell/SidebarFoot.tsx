@@ -60,6 +60,19 @@ function MainGoal() {
   )
 }
 
+/**
+ * The first character as a person sees it. charAt(0) took half of an
+ * emoji, which drew as "�"; a flag or a family emoji is several code
+ * points, so it is one grapheme where the browser can say, else one code point.
+ */
+function firstCharacter(text: string): string {
+  if (typeof Intl.Segmenter === 'function') {
+    for (const { segment } of new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text)) return segment
+    return ''
+  }
+  return Array.from(text)[0] ?? ''
+}
+
 function Owner({ folded }: { folded: boolean }) {
   const { displayName, email, supabase } = useAppData()
   const name = displayName.trim()
@@ -67,7 +80,7 @@ function Owner({ folded }: { folded: boolean }) {
   return (
     <div className={cn('flex items-center justify-center gap-3 pt-2', !folded && 'lg:justify-start')}>
       <span aria-hidden="true" className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft font-semibold text-primary">
-        {(name === '' ? email : name).charAt(0).toUpperCase()}
+        {firstCharacter(name === '' ? email : name).toUpperCase()}
       </span>
       <span className={cn(full, 'min-w-0 flex-1 flex-col')}>
         {name === '' ? null : <span className="truncate text-[15px] font-semibold">{name}</span>}
