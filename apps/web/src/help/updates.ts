@@ -39,6 +39,13 @@ type Check =
    * answer is at least `level`.
    */
   | { readonly kind: 'schema'; readonly level: number }
+  /**
+   * One of 0030 to 0037: written for the AI apps feature, since removed
+   * (ADR 0016), and still needed because 0038 refuses to run without 0037.
+   * In when ai_app_updates_in() (0035) answers at least `level`, or, before
+   * 0035, the number each left in ai_app_update_level().
+   */
+  | { readonly kind: 'chain'; readonly level: number }
 
 /** The AI helper's source, as One-time updates names it and /setup/ serves it (ADR 0007). */
 export const HELPER_FILE = 'ai-function.ts'
@@ -69,7 +76,24 @@ export interface Update {
 
 const NIL = '00000000-0000-0000-0000-000000000000'
 
-/** Sign-ups off, 0005 to 0018, 0021 to 0029, 0038, 0041 and the AI helper and read-receipt, each with what it adds. */
+/** 0030 to 0037's files, in the order they are pasted. */
+const CHAIN_FILES = {
+  30: '0030_ai_app_gate_live_session.sql',
+  31: '0031_ai_app_hash_own_kind.sql',
+  32: '0032_ai_rows_teach_no_rule.sql',
+  33: '0033_ai_search_masked.sql',
+  34: '0034_ai_words_visible.sql',
+  36: '0036_ai_search_as_shown.sql',
+  37: '0037_ai_rows_before_the_fixes.sql',
+} as const
+
+/**
+ * What a step for the removed AI apps feature says (ADR 0016): it is listed
+ * only because a later update needs it.
+ */
+const KEPT_FOR_LATER = 'Needed by the updates after it. Changes nothing you see'
+
+/** Sign-ups off, 0005 to 0041 and the AI helper and read-receipt, each with what it adds. */
 export const UPDATES: readonly Update[] = [
   // First: it needs nothing, and it is what keeps strangers out.
   { file: SIGNUPS_OFF, name: 'Sign-ups off', adds: 'Stops anyone who finds the site making an account', checks: [{ kind: 'signups' }] },
@@ -124,6 +148,9 @@ export const UPDATES: readonly Update[] = [
     adds: 'Where Review keeps the AI’s suggested categories',
     checks: [{ kind: 'function', name: 'clear_candidate_suggestion', args: { p_candidate: NIL } }],
   },
+  // 0019 and 0020 need 0018, and 0030 to 0037 need them; 0038 needs 0037.
+  { file: '0019_ai_apps_cannot_write.sql', adds: KEPT_FOR_LATER, checks: [{ kind: 'function', name: '_not_an_ai_app', args: {} }] },
+  { file: '0020_ai_apps.sql', adds: KEPT_FOR_LATER, checks: [{ kind: 'table', table: 'ai_app_access' }] },
   // The review fixes: each needs the one before it, and 0021 only 0018.
   { file: '0021_category_holds.sql', adds: 'Lets a category go once only a rejected guess or a removed charge names it', checks: [{ kind: 'schema', level: 21 }] },
   { file: '0022_removed_charge_waits.sql', adds: 'A charge you removed waits in Review when its statement comes in again', checks: [{ kind: 'schema', level: 22 }] },
@@ -134,8 +161,12 @@ export const UPDATES: readonly Update[] = [
   { file: '0027_receipt_photo_twice_waits.sql', adds: 'A second photo of the same receipt waits in Review', checks: [{ kind: 'schema', level: 27 }] },
   { file: '0028_ai_words_no_invisible_characters.sql', adds: 'Keeps invisible characters out of the AI’s kept words', checks: [{ kind: 'schema', level: 28 }] },
   { file: '0029_lookalike_charge_waits.sql', adds: 'A charge already in your records under another statement waits in Review', checks: [{ kind: 'schema', level: 29 }] },
+  // Out of number order on purpose: 0035 needs only 0020, and once it is in
+  // the checks below read what 0030 to 0034 left.
+  { file: '0035_ai_app_updates_in.sql', adds: KEPT_FOR_LATER, checks: [{ kind: 'function', name: 'ai_app_updates_in', args: {} }] },
+  ...([30, 31, 32, 33, 34, 36, 37] as const).map((n) => ({ file: CHAIN_FILES[n], adds: KEPT_FOR_LATER, checks: [{ kind: 'chain', level: n }] as const })),
   {
-    // Last of these: it needs 0029. It deletes duplicate learned shops, so HANDOFF §3 asks for a backup first.
+    // Last of these: it needs 0029 and 0037. It deletes duplicate learned shops, so HANDOFF §3 asks for a backup first.
     file: '0038_intuit_prefix_merchants.sql',
     adds: 'Makes IN*SHOP and SHOP one shop. It deletes duplicate learned shops. First export merchant_rules from the Table Editor as a CSV',
     checks: [{ kind: 'schema', level: 38 }],
@@ -177,6 +208,7 @@ const MISSING: Readonly<Record<Check['kind'], ReadonlySet<string>>> = {
   read_receipt: new Set(),
   signups: new Set(),
   schema: new Set(['PGRST202', '42883']),
+  chain: new Set(['PGRST202', '42883']),
 }
 
 /** This project's address, as the client itself names it, never typed or stored. */
@@ -246,6 +278,16 @@ async function probe(supabase: SupabaseClient, check: Check): Promise<UpdateStat
       return status.status === 404 ? 'in' : status.status === 405 ? 'old' : 'unknown'
     }
     return isOlder(versionOf(data), READ_RECEIPT_VERSION) ? 'old' : 'in'
+  }
+  if (check.kind === 'chain') {
+    for (const name of ['ai_app_updates_in', 'ai_app_update_level']) {
+      const { data, error } = await supabase.rpc(name, {})
+      const gone = error !== null && MISSING.chain.has(codeOf(error))
+      if (gone && name === 'ai_app_updates_in') continue
+      if (error !== null) return gone ? 'missing' : 'unknown'
+      return typeof data !== 'number' ? 'unknown' : data >= check.level ? 'in' : 'missing'
+    }
+    return 'unknown'
   }
   if (check.kind === 'schema') {
     const { data, error } = await supabase.rpc('schema_level', {})

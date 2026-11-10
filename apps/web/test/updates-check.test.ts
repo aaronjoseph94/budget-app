@@ -26,7 +26,7 @@ describe('checking the one-time updates', () => {
   it('finds each one in when everything it adds answers', async () => {
     const fake = await ready()
     const checked = await checkUpdates(fake.client)
-    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['sign', '0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0021', '0022', '0023', '0024', '0025', '0026', '0027', '0028', '0029', '0038', '0041', 'ai-f', 'read'])
+    expect(checked.map((c) => c.update.file.slice(0, 4))).toEqual(['sign', '0005', '0006', '0007', '0008', '0009', '0010', '0011', '0012', '0013', '0014', '0015', '0016', '0017', '0018', '0019', '0020', '0021', '0022', '0023', '0024', '0025', '0026', '0027', '0028', '0029', '0035', '0030', '0031', '0032', '0033', '0034', '0036', '0037', '0038', '0041', 'ai-f', 'read'])
     expect(missing(checked)).toEqual([])
     expect(nextStep(checked)).toEqual({ kind: 'done' })
   })
@@ -250,22 +250,57 @@ describe('checking the one-time updates', () => {
       { name: 'dismiss_unreadable_line', args: { p_line: nil } },
       { name: 'ai_key_status', args: {} },
       { name: 'clear_candidate_suggestion', args: { p_candidate: nil } },
-      // Each of 0021 to 0029, 0038 and 0041 reads schema_level, a number and nothing else.
-      ...Array.from({ length: 11 }, () => ({ name: 'schema_level', args: {} })),
+      { name: '_not_an_ai_app', args: {} },
+      // Each reads a number and nothing else: schema_level for 0021 to 0029,
+      // ai_app_updates_in for 0035 and then each of 0030 to 0034, 0036 and
+      // 0037, and schema_level again for 0038 and 0041.
+      ...Array.from({ length: 9 }, () => ({ name: 'schema_level', args: {} })),
+      ...Array.from({ length: 8 }, () => ({ name: 'ai_app_updates_in', args: {} })),
+      ...Array.from({ length: 2 }, () => ({ name: 'schema_level', args: {} })),
     ])
     // The helper is only pinged.
     expect(fake.functions.calls).toEqual([{ action: 'ping' }])
     expect(UPDATES.every((u) => u.adds.trim() !== '')).toBe(true)
   })
 
-  // The AI apps feature is gone (the owner does not use it): no step names it, and nothing asks the database about it.
-  it('lists no step for AI apps, and asks for no AI-app function, table or server', async () => {
-    expect(UPDATES.filter((u) => /ai[-_ ]?app|mcp|oauth|chatgpt|claude|signing/i.test(`${u.file} ${u.name ?? ''} ${u.adds}`))).toEqual([])
+  // The AI apps feature is gone (the owner does not use it): no step is worded
+  // for it. Its updates 0019, 0020 and 0030 to 0037 stay listed, said to
+  // change nothing, because 0038 refuses to run without 0037 (ADR 0016).
+  it('words no step for AI apps, and lists the updates 0038 needs as changing nothing', async () => {
+    expect(UPDATES.filter((u) => /ai[-_ ]?app|mcp|oauth|chatgpt|claude|signing/i.test(`${u.name ?? ''} ${u.adds}`))).toEqual([])
+    const kept = UPDATES.filter((u) => /^00(19|20|3[0-7])_/.test(u.file))
+    expect(kept.map((u) => u.file.slice(0, 4))).toEqual(['0019', '0020', '0035', '0030', '0031', '0032', '0033', '0034', '0036', '0037'])
+    expect(new Set(kept.map((u) => u.adds))).toEqual(new Set(['Needed by the updates after it. Changes nothing you see']))
     const fake = await ready()
     const asked: string[] = []
     vi.stubGlobal('fetch', (input: RequestInfo | URL, init?: RequestInit) => (asked.push(String(input)), fake.fetch(input, init)))
     await checkUpdates(fake.client)
-    expect(asked.filter((a) => /mcp|oauth|ai_app/i.test(a))).toEqual([])
-    expect(fake.rpcCalls.filter((c) => /ai_app/.test(c.name))).toEqual([])
+    expect(asked.filter((a) => /mcp|oauth/i.test(a))).toEqual([])
+  })
+
+  // A new database with 0029 but not 0037: 0038 says "Paste 0037 first",
+  // so the list names 0037's chain from where it stops, never 0038 (review of 2026-11-10).
+  it('names 0019 after 0018, then 0035 and 0030 to 0037 before 0038, read from what each left', async () => {
+    const fake = await ready()
+    delete fake.rpcReplies['_not_an_ai_app']
+    delete fake.rpcReplies['ai_app_updates_in']
+    delete fake.rpcReplies['ai_app_update_level']
+    fake.rpcReplies['schema_level'] = 29
+    let checked = await checkUpdates(fake.client)
+    expect(nextStep(checked)).toEqual({ kind: 'paste', file: '0019_ai_apps_cannot_write.sql', fromStart: false })
+    // Before 0035 the level is what 0030 to 0034 each left in ai_app_update_level().
+    fake.rpcReplies['_not_an_ai_app'] = null
+    fake.rpcReplies['ai_app_update_level'] = 31
+    checked = await checkUpdates(fake.client)
+    expect(nextStep(checked)).toEqual({ kind: 'paste', file: '0035_ai_app_updates_in.sql', fromStart: false })
+    expect(stateOf(checked, '0031')).toBe('in')
+    expect(stateOf(checked, '0032')).toBe('missing')
+    fake.rpcReplies['ai_app_updates_in'] = 36
+    checked = await checkUpdates(fake.client)
+    expect(nextStep(checked)).toEqual({ kind: 'paste', file: '0037_ai_rows_before_the_fixes.sql', fromStart: false })
+    expect(stateOf(checked, '0038')).toBe('missing')
+    fake.rpcReplies['ai_app_updates_in'] = 37
+    checked = await checkUpdates(fake.client)
+    expect(nextStep(checked)).toEqual({ kind: 'paste', file: '0038_intuit_prefix_merchants.sql', fromStart: false })
   })
 })

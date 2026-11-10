@@ -87,6 +87,8 @@ export interface FakeTables {
   insight_dismissals: { readonly user_id?: string; readonly insight_key: string }[]
   /** The check-in's answers (0017). */
   coach_answers: Row[]
+  // 0020's, for the removed AI apps (ADR 0016): read only by One-time updates, and always empty.
+  ai_app_access: Row[]
 }
 
 export interface RpcCall {
@@ -226,6 +228,7 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     ai_notes: [],
     insight_dismissals: [],
     coach_answers: [],
+    ai_app_access: [],
     ...seed,
   }
   const rpcCalls: RpcCall[] = []
@@ -241,6 +244,11 @@ export function createFakeSupabase(seed: Partial<FakeTables> = {}): FakeSupabase
     clear_candidate_suggestion: false,
     // 0021 on: the last update to move it, 0041 by default.
     schema_level: 41,
+    // 0019, 0035 and the levels 0030 to 0042 left: One-time updates reads them
+    // to name the updates 0038 needs (ADR 0016).
+    _not_an_ai_app: null,
+    ai_app_update_level: 34,
+    ai_app_updates_in: 42,
   }
   const failures = new Map<string, string>()
   const server: FakeSupabase['server'] = { refuse: null, maxRows: null, afterRead: null, hold: null, lacks: {}, offline: false, signupsOff: true }
