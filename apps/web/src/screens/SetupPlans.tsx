@@ -232,11 +232,9 @@ export function PlanFields({
     setProblem(null)
     queue.current = queue.current.then(async () => {
       const edit = { userId, categoryId: row.id, month, plannedCents: cents, dueDay }
+      // Refused or lost, what was typed stays in the fields, as Add's does,
+      // so leaving one again tries again; the card says why.
       if (await write(() => setPlan(supabase, edit))) onSaved(note)
-      else {
-        setDay(shown.day)
-        setAmount(shown.amount)
-      }
     })
   }
 

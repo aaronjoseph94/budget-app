@@ -308,7 +308,31 @@ describe('Lists, monthly amounts saved in quick succession or refused', () => {
     await waitFor(async () => expect((await field('Bills', 'Day paid for Phone')).value).toBe('12'))
   })
 
-  it("says the list can't have an amount when the category moved on another device, and puts the field back", async () => {
+  // Offline, the amount and day typed snapped back while the card said the save may or may not have happened.
+  it('keeps an amount and a day typed when the save fails, and saves them when the field is left again', async () => {
+    const fake = seeded()
+    renderScreen(<ListsTab />, fake)
+    await waitFor(async () => expect((await field('Bills', 'Monthly amount for Phone, from September on')).value).toBe('85.00'))
+    fake.server.offline = true
+
+    const amount = await type('Bills', 'Monthly amount for Phone, from September on', '72.50')
+    expect(await (await card('Bills')).findByRole('alert')).toBeTruthy()
+    expect(amount.value).toBe('72.50')
+    const day = await type('Bills', 'Day paid for Phone', '21')
+    await waitFor(async () => expect((await card('Bills')).getAllByRole('alert')).toHaveLength(1))
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(day.value).toBe('21')
+    expect(amount.value).toBe('72.50')
+    expect(september(fake)).toEqual([])
+
+    fake.server.offline = false
+    fireEvent.blur(day)
+    await waitFor(() => expect(september(fake)).toEqual([['phone', 7_250, 21]]))
+    await waitFor(() => expect(amount.value).toBe('72.50'))
+    expect(day.value).toBe('21')
+  })
+
+  it("says the list can't have an amount when the category moved on another device, and keeps what was typed", async () => {
     const fake = seeded()
     renderScreen(<ListsTab />, fake)
     await waitFor(async () => expect((await field('Bills', 'Monthly amount for Phone, from September on')).value).toBe('85.00'))
@@ -321,7 +345,7 @@ describe('Lists, monthly amounts saved in quick succession or refused', () => {
     expect(alert.textContent).toBe(
       "That list can't have a monthly amount: only Bills, Debts and Subscriptions can. It may have been moved on another device. Nothing was saved. (code 23514)",
     )
-    expect(amount.value).toBe('85.00')
+    expect(amount.value).toBe('90')
     expect(september(fake)).toEqual([])
   })
 })

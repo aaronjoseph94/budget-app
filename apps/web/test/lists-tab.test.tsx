@@ -125,8 +125,9 @@ describe('Lists, changing a list', () => {
     expect(fake.tables.categories.find((c) => c.id === 'c3')?.name).toBe('Rent')
   })
 
-  it('refuses a name another category has, in words, and keeps the old one', async () => {
-    renderScreen(<ListsTab />, seeded())
+  it('refuses a name another category has, in words, keeping the old one and what was typed', async () => {
+    const fake = seeded()
+    renderScreen(<ListsTab />, fake)
 
     const field = await screen.findByRole<HTMLInputElement>('textbox', { name: 'Rename Rent' })
     fireEvent.change(field, { target: { value: 'Groceries' } })
@@ -134,7 +135,29 @@ describe('Lists, changing a list', () => {
 
     const card = within(screen.getByRole('region', { name: 'Bills' }))
     expect(await card.findByText(/^You already have a category with that name/)).toBeTruthy()
-    expect(field.value).toBe('Rent')
+    expect(fake.tables.categories.find((c) => c.id === 'c3')?.name).toBe('Rent')
+    expect(field.value).toBe('Groceries')
+  })
+
+  // Offline, a rename snapped back to the old name while the card said the save may or may not have happened.
+  it('keeps a new name typed when the save fails, and saves it when the field is left again', async () => {
+    const fake = seeded()
+    renderScreen(<ListsTab />, fake)
+    const field = await screen.findByRole<HTMLInputElement>('textbox', { name: 'Rename Phone' })
+    fake.server.offline = true
+
+    fireEvent.change(field, { target: { value: 'Mobile' } })
+    fireEvent.blur(field)
+    const card = within(screen.getByRole('region', { name: 'Bills' }))
+    expect(await card.findByRole('alert')).toBeTruthy()
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(field.value).toBe('Mobile')
+
+    fake.server.offline = false
+    fireEvent.keyDown(field, { key: 'Enter' })
+    fireEvent.blur(field)
+    await waitFor(() => expect(fake.tables.categories.find((c) => c.id === 'c4')?.name).toBe('Mobile'))
+    await waitFor(async () => expect(await namesOn('Bills')).toEqual(['Mobile', 'Rent']))
   })
 
   it('adds a category to the bottom of the list it was typed into', async () => {

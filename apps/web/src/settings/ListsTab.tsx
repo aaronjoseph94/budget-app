@@ -577,8 +577,9 @@ function CategoryRow({
     // database's own words for it: its rule tells "Rent" from "rent" (0001).
     const taken = takenByAnother(categories, row.id, name)
     const change = taken === null ? () => renameCategory(supabase, row.id, name) : () => Promise.reject(new Error(taken))
+    // Refused or lost, what was typed stays in the field, as Add's does, so
+    // leaving it again or Enter tries again; Escape puts the stored name back.
     if (await write(change)) setSaved(true)
-    else setText(row.name)
   }
 
   const step = (direction: 'up' | 'down') => {
