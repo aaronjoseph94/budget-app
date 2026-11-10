@@ -15,6 +15,9 @@ import { cn } from '../lib/cn.js'
 import { useRead } from '../lib/use-read.js'
 import { HelpButton } from '../help/HelpButton.js'
 
+/** The end of an open-ended read: any date a row can carry. */
+const LAST_DAY = '9999-12-31'
+
 /** All transactions: everything that reached the ledger, a month at a time. */
 export function LedgerScreen() {
   const { supabase, categories, refresh } = useAppData()
@@ -35,8 +38,15 @@ export function LedgerScreen() {
   // The month's rows by the shared read protocol (lib/use-read.ts): a read
   // again after a removal keeps the rows on screen, and the scroll with
   // them, until it lands; only a new month shows "Loading…" (bc1fced).
-  const read = useRead(month, () => listTransactions(supabase, { from: bounds.start, to: bounds.end }))
-  const rows = useMemo(() => (read.status === 'ready' ? read.value.filter((r) => !removed.has(r.id)) : null), [read, removed])
+  // From this month on the read has no end, so a row dated later (a
+  // statement read with day and month swapped) is found: Next month stopped
+  // at this month, and such a row could never be reached or removed.
+  const thisMonth = shiftMonth(isoDate(todayIso()), 0)
+  const openEnded = month >= thisMonth
+  const read = useRead(month, () => listTransactions(supabase, { from: bounds.start, to: openEnded ? LAST_DAY : bounds.end }))
+  const kept = useMemo(() => (read.status === 'ready' ? read.value.filter((r) => !removed.has(r.id)) : null), [read, removed])
+  const rows = useMemo(() => (kept === null ? null : kept.filter((r) => r.posted_on <= bounds.end)), [kept, bounds])
+  const later = kept !== null && kept.some((r) => r.posted_on > bounds.end)
   const readError = read.status === 'failed' ? (read.error instanceof Error ? read.error.message : 'Could not load the ledger.') : null
   const error = removeError ?? readError
 
@@ -59,7 +69,8 @@ export function LedgerScreen() {
     return [...groups.entries()]
   }, [visible])
 
-  const isCurrent = shiftMonth(isoDate(todayIso()), 0) === month
+  // Forward to this month, and past it while a later month has rows.
+  const lastStep = openEnded && !later
   // Another month: a Remove left armed in this one is not waiting on the way back.
   const step = (by: 1 | -1) => {
     setAsked(null)
@@ -125,7 +136,7 @@ export function LedgerScreen() {
         <div className="flex items-stretch rounded-md border bg-card">
           <StepButton label="Previous month" icon="chevronLeft" onClick={() => step(-1)} />
           <span className="tnum flex items-center border-x px-3.5 text-[0.9375rem] font-medium whitespace-nowrap">{formatShortMonth(month)}</span>
-          <StepButton label="Next month" icon="chevronRight" disabled={isCurrent} onClick={() => step(1)} />
+          <StepButton label="Next month" icon="chevronRight" disabled={lastStep} onClick={() => step(1)} />
         </div>
       </header>
 

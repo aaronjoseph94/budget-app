@@ -251,3 +251,32 @@ describe('LedgerScreen, where a row came from', () => {
     expect(rowOf('CORNER MARKET').queryByText(/added by/)).toBeNull()
   })
 })
+
+// A row dated after this month (a statement read with day and month the
+// wrong way round) could never be reached: Next month stopped at this
+// month, so the row could not be found or removed.
+describe('LedgerScreen, a row dated after this month', () => {
+  it('steps forward to it, removes it, and stops where nothing is later', async () => {
+    const fake = seeded()
+    fake.tables.transactions.push({ id: 't9', posted_on: '2026-12-05', amount_cents: -2550, merchant_raw: 'GARDEN CENTRE', category_id: 'c1', source: 'card_csv' })
+    await open(fake)
+    expect(screen.queryByText('GARDEN CENTRE')).toBeNull()
+
+    for (const month of ['Oct 2026', 'Nov 2026', 'Dec 2026']) {
+      fireEvent.click(screen.getByRole('button', { name: 'Next month' }))
+      await screen.findByText(month)
+    }
+    await screen.findByText('GARDEN CENTRE')
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Next month' }).disabled).toBe(true)
+
+    fireEvent.click(rowOf('GARDEN CENTRE').getByRole('button', { name: 'Remove this transaction' }))
+    fireEvent.click(rowOf('GARDEN CENTRE').getByRole('button', { name: 'Remove' }))
+    await waitFor(() => expect(screen.queryByText('GARDEN CENTRE')).toBeNull())
+    expect(fake.tables.transactions.map((t) => t.id)).toEqual(['t1', 't2', 't3'])
+  })
+
+  it('keeps Next month off in this month when nothing is dated later', async () => {
+    await open(seeded())
+    expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Next month' }).disabled).toBe(true)
+  })
+})
