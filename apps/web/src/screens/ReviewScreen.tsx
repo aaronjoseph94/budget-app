@@ -15,7 +15,8 @@ import {
   type PendingCandidate,
   type UnreadablePage,
 } from '../ledger.js'
-import { afterSomeSaved, describeReason, formatCents, formatIsoDate, localDateOf } from '../format.js'
+import { afterSomeSaved, formatCents, formatIsoDate, localDateOf } from '../format.js'
+import { describeReason } from '../import-words.js'
 import { IngestedText } from '../ui.js'
 import { atEndOf, CategoryOptions, ListSelect, NEW_CATEGORY, type CategoryKind } from '../lists.js'
 import { Card } from '../components/ui/card.js'

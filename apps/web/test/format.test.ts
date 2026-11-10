@@ -2,11 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   describeBalanceFailure,
   describeBudgetFailure,
-  describeFailure,
   describeIngestFailure,
   describePlanFailure,
   describeScheduleFailure,
-  describeReason,
   describeSetupFailure,
   describeWriteFailure,
   formatAmount,
@@ -28,6 +26,7 @@ import {
   localDateOf,
   todayIso,
 } from '../src/format.js'
+import { describeFailure, describeReason } from '../src/import-words.js'
 
 describe('formatCents', () => {
   it.each([

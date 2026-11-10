@@ -9,7 +9,8 @@ import { Button } from './components/ui/button.js'
 import { Card } from './components/ui/card.js'
 import { OptionSelect } from './components/ui/form.js'
 
-import { describeFailure, describeReason, formatCents, formatIsoDate } from './format.js'
+import { formatCents, formatIsoDate } from './format.js'
+import { describeFailure, describeReason } from './import-words.js'
 
 const DELIMITERS = [
   { value: ',', label: 'Comma  (most banks)' },
