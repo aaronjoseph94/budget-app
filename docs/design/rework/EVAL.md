@@ -119,7 +119,7 @@ was the old cards screen.
 | 1. Week · Month · Year; Paycheck its own screen under Plan | ADR 0014, PRD 01 (`01-plan-order.md`). The switch has three segments. Paycheck sits in the sidebar's Plan group beside Bill calendar, and under More on a phone. |
 | 2. The Month opens | Unchanged: `HOME` is the Month (`nav.ts`). |
 | 3. One Settings screen: Lists · Budgets & goals · AI · Account; sidebar group More: Settings, Help | ADR 0014 §2, PRD 02 (`02-one-settings.md`). The tab is in the address, and `#/setup` and `#/ai` open their tabs. The Setup screen and name are gone. |
-| 4. No Meta Muse | ADR 0015, decision 4: no service joins the allowlist. Mistral was looked at and left out (N169). |
+| 4. No new AI service | ADR 0015, decision 4: no service joins the allowlist. Mistral was looked at and left out (N169). |
 | 5. Help is about 12 short articles | PRD 03 (`03-brevity.md`). 12 articles, each 150 words or fewer, 1,658 in all. Tests hold both limits. |
 | 6. Getting started is a first-run guide, opened from Help | PRD 02. It opens by itself once, at a new account's first sign-in. After that, only Help's Start here opens it. No Settings card. |
 | AI: OpenRouter, Groq, then any fast free service | ADR 0015 and migration `0041_ai_free_order.sql`. Below. |
