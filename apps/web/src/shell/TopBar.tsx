@@ -4,6 +4,7 @@ import { LINE_BUTTON } from '../components/ui/link.js'
 import { cn } from '../lib/cn.js'
 import { crumbsOf } from './places.js'
 import { RING } from './marks.js'
+import { searchKeyIsCommand } from '../help/search-focus.js'
 
 /**
  * The white panel's top bar, from 768px (ADR 0011): the sidebar toggle,
@@ -26,6 +27,8 @@ export function TopBar({
   onSearch: () => void
 }) {
   const crumbs = crumbsOf(screen, param)
+  // The key App.tsx takes here: ⌘K on a Mac, and ⌘K or Ctrl+K elsewhere.
+  const command = searchKeyIsCommand()
   // 44px on a touch screen (plan §9); a mouse keeps the mockup's 36 and 40.
   const tall = 'pointer-coarse:min-h-11 pointer-coarse:min-w-11'
   return (
@@ -60,13 +63,13 @@ export function TopBar({
       <button
         type="button"
         onClick={onSearch}
-        aria-keyshortcuts="Meta+K Control+K"
+        aria-keyshortcuts={command ? 'Meta+K' : 'Meta+K Control+K'}
         className={cn(RING, 'flex h-10 items-center gap-2.5 rounded-md border px-3 text-[15px] text-muted-foreground hover:bg-accent md:w-[min(360px,30vw)]', tall)}
       >
         <Icon name="search" className="size-4 shrink-0" />
         <span className="min-w-0 flex-1 truncate text-left">Search or jump to…</span>
         <kbd aria-hidden="true" className="rounded-sm border bg-muted px-1.5 font-sans text-xs">
-          ⌘K
+          {command ? '⌘K' : 'Ctrl K'}
         </kbd>
       </button>
       <a

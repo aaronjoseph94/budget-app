@@ -137,6 +137,26 @@ describe('Help', () => {
     expect(titles()).toHaveLength(ARTICLES.length)
   })
 
+  // ArrowDown and Enter in the search did nothing: focus stayed in the box.
+  it('moves from the search to its results with the arrow keys, each result a link Enter opens', async () => {
+    renderScreen(<HelpScreen topic={null} />, createFakeSupabase())
+    const box = await screen.findByRole('searchbox', { name: 'Search help' })
+    fireEvent.change(box, { target: { value: 'budget' } })
+    const links = within(screen.getByRole('list')).getAllByRole('link')
+    expect(links.length).toBeGreaterThan(1)
+    act(() => box.focus())
+
+    expect(fireEvent.keyDown(box, { key: 'ArrowDown' })).toBe(false)
+    expect(document.activeElement).toBe(links[0])
+    fireEvent.keyDown(links[0]!, { key: 'ArrowDown' })
+    expect(document.activeElement).toBe(links[1])
+    fireEvent.keyDown(links[1]!, { key: 'ArrowUp' })
+    expect(document.activeElement).toBe(links[0])
+    fireEvent.keyDown(links[0]!, { key: 'ArrowUp' })
+    expect(document.activeElement).toBe(box)
+    expect(links[0]!.getAttribute('href')?.startsWith('#/help/')).toBe(true)
+  })
+
   // A pasted link made "Nothing matches “…”" one unbroken word, and the page scrolled sideways at 390.
   it('breaks a long search that matches nothing where it must, so the page never scrolls sideways', async () => {
     renderScreen(<HelpScreen topic={null} />, createFakeSupabase())

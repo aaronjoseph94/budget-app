@@ -106,6 +106,26 @@ describe('the top bar (ADR 0011)', () => {
     expect(window.location.hash).toBe('#/help')
   })
 
+  // The hint said ⌘K on Windows and Linux, where the shortcut is Ctrl+K.
+  it('shows the shortcut this computer takes: Ctrl K on Windows and Linux, ⌘K on a Mac', async () => {
+    const agent = vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0')
+    renderScreen(<Shell />, createFakeSupabase())
+    await screen.findByRole('heading', { name: 'September 2026' })
+    expect(search().querySelector('kbd')?.textContent).toBe('Ctrl K')
+    expect(fireEvent.keyDown(window, { key: 'k', ctrlKey: true })).toBe(false)
+    expect(window.location.hash).toBe('#/help')
+    cleanup()
+    window.location.hash = ''
+
+    agent.mockReturnValue('Mozilla/5.0 (Macintosh; Intel Mac OS X 14_6) AppleWebKit/605.1.15')
+    renderScreen(<Shell />, createFakeSupabase())
+    await screen.findByRole('heading', { name: 'September 2026' })
+    expect(search().querySelector('kbd')?.textContent).toBe('⌘K')
+    expect(search().getAttribute('aria-keyshortcuts')).toBe('Meta+K')
+    expect(fireEvent.keyDown(window, { key: 'k', metaKey: true })).toBe(false)
+    expect(window.location.hash).toBe('#/help')
+  })
+
   // e2e-setup-09: Ctrl+K in Setup's name field went to Help, and the name typed was lost.
   it('saves a field that saves when left before Ctrl+K or ⌘K leaves its screen, as pressing Search does', async () => {
     const fake = createFakeSupabase()

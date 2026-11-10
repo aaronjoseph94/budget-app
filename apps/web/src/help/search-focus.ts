@@ -26,3 +26,12 @@ export function useHelpSearchFocus(box: RefObject<HTMLInputElement | null>): voi
     return () => window.removeEventListener(EVENT, take)
   }, [box])
 }
+
+/**
+ * Whether this computer's search shortcut is ⌘K, a Mac's, rather than
+ * Ctrl+K. The test App.tsx's own key handler makes, so the top bar's hint
+ * says the key that works (it said ⌘K on Windows and Linux).
+ */
+export function searchKeyIsCommand(): boolean {
+  return /Mac|iPhone|iPad|iPod/.test(navigator.userAgent)
+}

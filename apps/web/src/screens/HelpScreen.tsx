@@ -1,4 +1,4 @@
-import { Suspense, useRef, useState, type RefObject } from 'react'
+import { Suspense, useRef, useState, type KeyboardEvent, type RefObject } from 'react'
 import { lazyPart } from '../lib/lazy-part.js'
 import { articleFor, searchArticles, type Article } from '../help/articles.js'
 import { hashOf } from '../nav.js'
@@ -51,7 +51,7 @@ function HelpIndex({ unwritten }: { unwritten: boolean }) {
         </p>
       ) : null}
       <SearchBox box={box} query={query} onQuery={setQuery} />
-      <IndexList query={query} current={null} />
+      <IndexList box={box} query={query} current={null} />
     </div>
   )
 }
@@ -68,7 +68,7 @@ function SideIndex({ current }: { current: string }) {
         <p className="text-muted-foreground">Short answers, one step at a time.</p>
       </div>
       <SearchBox box={box} query={query} onQuery={setQuery} />
-      <IndexList query={query} current={current} />
+      <IndexList box={box} query={query} current={current} />
     </nav>
   )
 }
@@ -82,15 +82,39 @@ function SearchBox({ box, query, onQuery }: { box: RefObject<HTMLInputElement | 
       placeholder="Search help, such as “budget”"
       value={query}
       onChange={(e) => onQuery(e.target.value)}
+      onKeyDown={(e) => {
+        // Down to the first result, which the list's own arrows go on from.
+        if (e.key !== 'ArrowDown') return
+        const first = document.getElementById(RESULTS)?.querySelector('a')
+        if (first === null || first === undefined) return
+        e.preventDefault()
+        first.focus()
+      }}
       autoComplete="off"
       spellCheck={false}
     />
   )
 }
 
-/** Every article matching the search; beside an article, titles alone. */
-function IndexList({ query, current }: { query: string; current: string | null }) {
+/** The results' list, which the search box's ArrowDown goes to. One list is drawn at a time. */
+const RESULTS = 'help-results'
+
+/**
+ * Every article matching the search; beside an article, titles alone.
+ * The arrows step along the results, each a link Enter opens; up from
+ * the first goes back to the search box (ArrowDown in the box did nothing).
+ */
+function IndexList({ box, query, current }: { box: RefObject<HTMLInputElement | null>; query: string; current: string | null }) {
   const found = searchArticles(query)
+  const step = (e: KeyboardEvent<HTMLAnchorElement>) => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
+    const item = e.currentTarget.closest('li')
+    const next = e.key === 'ArrowDown' ? item?.nextElementSibling : item?.previousElementSibling
+    const to = next?.querySelector('a') ?? (e.key === 'ArrowUp' ? box.current : null)
+    if (to === null || to === undefined) return
+    e.preventDefault()
+    to.focus()
+  }
   if (found.length === 0) {
     return (
       // What was typed may be one long word, such as a pasted link: it breaks where it must.
@@ -100,12 +124,13 @@ function IndexList({ query, current }: { query: string; current: string | null }
     )
   }
   return (
-    <ul className="divide-y overflow-hidden rounded-xl border bg-card">
+    <ul id={RESULTS} className="divide-y overflow-hidden rounded-xl border bg-card">
       {found.map((a) => (
         <li key={a.id}>
           <a
             href={hashOf({ screen: 'help', param: a.id })}
             aria-current={a.id === current ? 'page' : undefined}
+            onKeyDown={step}
             className={cn(
               'flex min-h-11 w-full items-center gap-3 px-4 text-left outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
               current === null ? 'py-3.5' : 'py-3 text-sm',

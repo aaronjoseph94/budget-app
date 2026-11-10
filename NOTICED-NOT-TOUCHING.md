@@ -4131,3 +4131,14 @@ asked, answers `helper_error`, not `not_set_up`.
   a limit are refused by one and not the other. Neither lets more
   through than its own limit.
 
+
+## N179 — The search shortcut is decided in two places
+
+**Seen:** 2026-11-10, fixing the top bar's hint, which said ⌘K on Windows
+and Linux. The hint now asks `searchKeyIsCommand()` in
+`help/search-focus.ts`; App.tsx's `useSearchKey` still makes the same test
+inline, and App.tsx was not this change's to edit.
+
+**Left:** `useSearchKey` could call `searchKeyIsCommand()`, so the hint
+and the key cannot disagree. Until then a test pins both
+(`topbar.test.tsx`, "shows the shortcut this computer takes").
