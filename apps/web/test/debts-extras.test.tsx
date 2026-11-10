@@ -55,6 +55,23 @@ describe('DebtsScreen, extra payments', () => {
     await expectNoAxeViolations()
   })
 
+  // At 320 px the month kept its own width beside the amount, which was
+  // left 35 px: "1,250.00" showed as "1" (bug bash, phone). Below 384 px
+  // inside, the month takes a line, and the amount the rest of the next.
+  it('gives the month a line of its own and the amount the rest of the next, until the sheet is wide', async () => {
+    renderScreen(<DebtsScreen />, seeded())
+    await edit()
+    const extras = within(sheet()).getByRole('region', { name: 'Extra payments' })
+    expect(extras.className.split(' ')).toContain('@container')
+    const row = (within(extras).getByLabelText(/^Month/).closest('label')?.parentElement?.parentElement ?? null) as HTMLElement | null
+    expect(row?.className.split(' ')).toEqual(
+      expect.arrayContaining(['grid-cols-[minmax(0,1fr)_auto]', '@sm:grid-cols-[auto_minmax(0,1fr)_auto]']),
+    )
+    expect(within(extras).getByLabelText(/^Month/).closest('label')?.parentElement?.className.split(' ')).toEqual(
+      expect.arrayContaining(['col-span-2', 'min-w-0', '@sm:col-span-1']),
+    )
+  })
+
   it('keeps one extra a month, replacing its amount, and moves the payoff month', async () => {
     const fake = seeded()
     renderScreen(<DebtsScreen />, fake)

@@ -63,7 +63,7 @@ export function DebtExtras({
   }
 
   return (
-    <section aria-label="Extra payments" className="space-y-3 border-t p-4">
+    <section aria-label="Extra payments" className="@container space-y-3 border-t p-4">
       <h3 className="text-sm font-semibold">Extra payments</h3>
       <p className="text-xs">A one-off payment on top of the minimum, in the month you make it.</p>
       <ul className="space-y-1 text-sm">
@@ -77,13 +77,20 @@ export function DebtExtras({
           </li>
         ))}
       </ul>
-      <div className="grid grid-cols-[1fr_1fr_auto] items-end gap-2">
-        <Field label="Month">
-          <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} />
-        </Field>
-        <Field label="Extra ($)">
-          <Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
-        </Field>
+      {/* The month on a line of its own, and the amount and Add under it,
+        until the sheet is 384 px inside: side by side on a phone, the month
+        kept its own width and left the amount 35 px at 320 (bug bash). */}
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 @sm:grid-cols-[auto_minmax(0,1fr)_auto]">
+        <div className="col-span-2 min-w-0 @sm:col-span-1">
+          <Field label="Month">
+            <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} />
+          </Field>
+        </div>
+        <div className="min-w-0">
+          <Field label="Extra ($)">
+            <Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          </Field>
+        </div>
         <Button variant="outline" disabled={busy} onClick={add}>
           Add
         </Button>
