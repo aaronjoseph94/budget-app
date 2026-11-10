@@ -93,7 +93,8 @@ function IndexList({ query, current }: { query: string; current: string | null }
   const found = searchArticles(query)
   if (found.length === 0) {
     return (
-      <p role="status" className="py-4 text-sm text-muted-foreground">
+      // What was typed may be one long word, such as a pasted link: it breaks where it must.
+      <p role="status" className="py-4 text-sm text-muted-foreground [overflow-wrap:anywhere]">
         Nothing matches “{query.trim()}”. Try one word, such as “statement”.
       </p>
     )

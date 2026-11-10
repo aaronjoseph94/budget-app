@@ -136,6 +136,15 @@ describe('Help', () => {
     expect(screen.getByText('That page is not written yet. Here is everything that is.').getAttribute('role')).toBe('status')
     expect(titles()).toHaveLength(ARTICLES.length)
   })
+
+  // A pasted link made "Nothing matches “…”" one unbroken word, and the page scrolled sideways at 390.
+  it('breaks a long search that matches nothing where it must, so the page never scrolls sideways', async () => {
+    renderScreen(<HelpScreen topic={null} />, createFakeSupabase())
+    const query = 'https://example.com/a-very-long-pasted-address'
+    fireEvent.change(await screen.findByRole('searchbox', { name: 'Search help' }), { target: { value: query } })
+    const said = screen.getByText(`Nothing matches “${query}”. Try one word, such as “statement”.`)
+    expect(said.classList.contains('[overflow-wrap:anywhere]')).toBe(true)
+  })
 })
 
 describe('an article’s words', () => {
