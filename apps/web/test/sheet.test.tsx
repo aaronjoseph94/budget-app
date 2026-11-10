@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Sheet } from '../src/components/ui/sheet.js'
 import { expectNoAxeViolations } from './axe.js'
 
@@ -181,5 +181,20 @@ describe('Sheet and the Back gesture', () => {
     await popped()
     await back()
     expect(window.location.hash).toBe(before)
+  })
+
+  // A test's page is taken down when its file ends, and an address change
+  // just before then leaves this timer behind. It read a window already
+  // gone, and the unhandled error failed a suite whose tests all passed.
+  it('reads no window that has gone, once an address change has passed', () => {
+    vi.useFakeTimers()
+    try {
+      window.dispatchEvent(new HashChangeEvent('hashchange'))
+      vi.stubGlobal('window', undefined)
+      expect(() => vi.runOnlyPendingTimers()).not.toThrow()
+    } finally {
+      vi.unstubAllGlobals()
+      vi.useRealTimers()
+    }
   })
 })

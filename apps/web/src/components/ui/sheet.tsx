@@ -161,7 +161,8 @@ function stepOverLeftEntries(): void {
 if (typeof window !== 'undefined') {
   window.addEventListener('popstate', stepOverLeftEntries)
   // Once every listener has run: scroll-memory.ts keys a new entry in its own.
-  window.addEventListener('hashchange', () => void setTimeout(() => (shown = window.history.state)))
+  // By then a test's page may be gone, so the window is looked for again.
+  window.addEventListener('hashchange', () => void setTimeout(() => (shown = typeof window === 'undefined' ? shown : window.history.state)))
 }
 
 const FOCUSABLE ='a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
