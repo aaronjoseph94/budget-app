@@ -38,6 +38,20 @@ describe('Lists, when income is paid', () => {
     await expectNoAxeViolations()
   })
 
+  // A fixed 7.5rem cut "Bi-weekly" to "Bi-weekl" at every width, and at
+  // 320 px the date lost its year beside it (bug bash, phone). The choice
+  // is as wide as its longest word, as a select is by itself, and the date
+  // goes under it before it is narrower than a whole date and Clear.
+  it('sizes the choice to its longest word, and moves the date under it rather than cut it', async () => {
+    renderScreen(<ListsTab />, seeded())
+    const card = await income()
+    const often = await card.findByRole('combobox', { name: 'How often Side work pays' })
+    const sized = [often, often.parentElement!].flatMap((e) => e.className.split(' ')).filter((c) => /^(w|min-w|max-w|basis)-/.test(c) && c !== 'w-full')
+    expect(sized).toEqual([])
+    const date = card.getByLabelText('First payday for Side work').parentElement!
+    expect(date.className.split(' ')).toEqual(expect.arrayContaining(['basis-44', 'flex-1', 'min-w-0']))
+  })
+
   it('saves once both halves are there, and says what it saved', async () => {
     const fake = seeded()
     renderScreen(<ListsTab />, fake)

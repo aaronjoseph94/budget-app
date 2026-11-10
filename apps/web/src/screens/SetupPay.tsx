@@ -58,8 +58,8 @@ export function PayHeadings() {
       </p>
       <ColumnHeads>
         {/* Laid out as each row's fields are, so each head sits over its field. */}
-        <span className="flex min-w-0 flex-wrap gap-x-2 @2xl:w-[20.5rem] @2xl:flex-nowrap">
-          <span className="w-[7.5rem] shrink-0">How often</span>
+        <span className="flex min-w-0 flex-wrap gap-x-2 @2xl:w-[21.5rem] @2xl:flex-nowrap">
+          <span className="w-32 shrink-0">How often</span>
           <span className="min-w-0 flex-1">First payday</span>
         </span>
       </ColumnHeads>
@@ -140,8 +140,10 @@ export function PayFields({
       {/* Side by side while both fit; with the phone's text at 200% the day
         and Clear go under the choice, rather than push Clear off the
         screen (N58). */}
-      <div className="flex flex-wrap items-center gap-2 @2xl:order-1 @2xl:w-[20.5rem] @2xl:shrink-0 @2xl:flex-nowrap">
-        <div className="w-[7.5rem] shrink-0">
+      <div className="flex flex-wrap items-center gap-2 @2xl:order-1 @2xl:w-[21.5rem] @2xl:shrink-0 @2xl:flex-nowrap">
+        {/* As wide as its longest choice, as a select is by itself: a fixed
+          7.5rem left "Bi-weekly" cut to "Bi-weekl" at every width. */}
+        <div className="shrink-0">
           <NativeSelect
             aria-label={`How often ${row.name} pays`}
             {...refused}
@@ -160,8 +162,10 @@ export function PayFields({
             ))}
           </NativeSelect>
         </div>
-        {/* Shrinks on a phone rather than push Clear past the card. */}
-        <div className="flex min-w-0 flex-1 basis-32 items-center gap-1">
+        {/* Shrinks on a phone rather than push Clear past the card, but no
+          narrower than a whole date and Clear: below that it goes under the
+          choice. At basis-32 the date lost its year at 320 px. */}
+        <div className="flex min-w-0 flex-1 basis-44 items-center gap-1">
           <Input
             size="sm"
             type="date"
