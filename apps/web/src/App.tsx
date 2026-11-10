@@ -15,7 +15,7 @@ import { Sidebar } from './shell/Sidebar.js'
 import { ScreenBoundary } from './shell/ScreenBoundary.js'
 import { VIEWS } from './shell/screens.js'
 import { TopBar } from './shell/TopBar.js'
-import { askForHelpSearch } from './help/search-focus.js'
+import { askForHelpSearch, searchKeyIsCommand } from './help/search-focus.js'
 import { useSidebarState } from './shell/sidebar-state.js'
 import { SCREEN_NAME } from './shell/places.js'
 import { cn } from './lib/cn.js'
@@ -260,7 +260,8 @@ function openHelpSearch(): void {
 function useSearchKey(): void {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const mac = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent)
+      // The same test the top bar's hint makes, so the key and its hint cannot disagree.
+      const mac = searchKeyIsCommand()
       if (!(mac ? e.metaKey : e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || e.key.toLowerCase() !== 'k') return
       e.preventDefault()
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur()

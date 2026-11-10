@@ -4132,7 +4132,7 @@ asked, answers `helper_error`, not `not_set_up`.
   through than its own limit.
 
 
-## N179 — The search shortcut is decided in two places
+## N179 — The search shortcut is decided in two places *(settled 2026-11-10, at the merge)*
 
 **Seen:** 2026-11-10, fixing the top bar's hint, which said ⌘K on Windows
 and Linux. The hint now asks `searchKeyIsCommand()` in
@@ -4142,3 +4142,6 @@ inline, and App.tsx was not this change's to edit.
 **Left:** `useSearchKey` could call `searchKeyIsCommand()`, so the hint
 and the key cannot disagree. Until then a test pins both
 (`topbar.test.tsx`, "shows the shortcut this computer takes").
+
+**Settled:** `useSearchKey` in App.tsx now calls `searchKeyIsCommand()`,
+so there is one test for which key is the search shortcut.
