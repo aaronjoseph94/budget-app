@@ -266,9 +266,11 @@ function ColumnMapping({ mapping }: { mapping: Mapping }) {
       ) : null}
 
       {analysis !== null ? (
-        <Card className="p-4">
+        // Columns by the card's own width, not the window's: four from lg up
+        // cut every choice off in a column about 600 px wide on a computer.
+        <Card className="@container p-4">
           <Label>What the file looks like</Label>
-          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-3 grid grid-cols-1 gap-3 @md:grid-cols-2">
             <OptionSelect
               label="Column separator"
               value={delimiter}
