@@ -153,7 +153,8 @@ changes, and never saying a change was made. `prompts/list` and
    `bad_change`; marks the caller's waiting rows past `expires_at` as
    `expired`; per item: kind and keys exactly as §2, every id the caller's,
    the lists and ranges of §2, the reason's characters as `0034` checks
-   words (every character visible, trimmed), SQL befores read here,
+   words (every character visible, trimmed; from `0042`, one ordinary
+   space between words and each accent as one character), SQL befores read here,
    `same_as_now` (for a budget from a month on, that month's own `only`
    value the same too, 0040), `has_monthly_amount` (a move 0009's trigger refuses),
    `dismissed_recently` (the same kind, target, `after` and `before`

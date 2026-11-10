@@ -193,8 +193,10 @@ to paste, so GitHub is not needed. Easiest on a computer.
 
 **Already done on the hosted project (2026-10-08, by the agent through
 the Supabase plugin, each checked afterwards):**
-- Part D is done: `0015` to `0041` are in. `schema_level()` answers 41
+- Part D was done: `0015` to `0041` are in. `schema_level()` answers 41
   and the AI apps line 40. A second paste only says "already in".
+  `0042_ai_words_read_one_way.sql` was added on 2026-11-09 and is not
+  in yet: paste it (step 15), and One-time updates offers it until then.
 - Step 17 was done: the `ai` helper there is `2026-10-08.2` (deploy 9,
   JWT verification on), and it answers a call. This repository's helper
   is `2026-11-09.1` since 2026-11-09, so step 17 is to do again:
@@ -319,7 +321,7 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
     `main-tnlcto` first, waits for the green **gates** run, and only then
     pushes that same commit to `main`.
 
-### Part D: the database updates, 0015 to 0041, about 20 minutes, once
+### Part D: the database updates, 0015 to 0042, about 20 minutes, once
 
 13. **A backup first.** Some of these updates change saved rows, and
     `0038` **permanently deletes** a learned shop where two would end up
@@ -377,7 +379,13 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
     first, OpenRouter, then Groq, then Gemini (ADR 0015); an order you
     never changed follows, one you changed stays. It needs `0038` and
     `0016`, says "Paste 0038 first" or "Paste 0016 first" without them,
-    and deletes nothing.
+    and deletes nothing. Then paste `0042_ai_words_read_one_way.sql`
+    last: it stops an AI app adding an entry, or suggesting a category
+    name, that reads the same as another by its spaces (a no-break or
+    thin space, two spaces in a row) or by how an accent is written, so
+    it cannot make a second category that reads like one you have (the
+    review of 2026-11-09). It needs `0040`, says "Paste 0040 first"
+    without it, and deletes nothing.
 
     Each update refuses to run before the one it needs ("Paste 0018
     first", "Paste 0035 first" and so on) and changes nothing then.
@@ -388,7 +396,8 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
     `0035` again takes back part of it, and One-time updates offers
     `0039` again: paste it again, and it puts back only what they took
     (your **Let AI apps suggest changes** choice stays); then it offers
-    `0040` again, which puts back only what `0039` took. If one says
+    `0040` again, which puts back only what `0039` took, and then `0042`
+    again, the same way. If one says
     anything else, stop there:
     nothing is lost, and the next agent needs that message word for word
     (MCP plan K10, K11).
@@ -461,10 +470,12 @@ connect an AI app to it.
     One-time updates says "an older copy": **Edge Functions → mcp → Code**,
     paste, **Deploy**, then open its **Settings** and check the switch is
     still off: Supabase has been seen to turn it back on.) Version
-    `2026-10-05.7` or later is current (it also refuses, and leaves out of
+    `2026-11-09.1` or later is current (it also refuses, and leaves out of
     every name it hands an AI app, the characters that draw as nothing,
-    stops every request at 20 seconds, whichever app is asking, and
-    carries the fixes of 2026-10-05's testing to debts, amounts and dates):
+    stops every request at 20 seconds, whichever app is asking, carries
+    the fixes of 2026-10-05's testing to debts, amounts and dates, and
+    refuses words that read the same as others by their spaces or
+    accents, as `0042` does):
     after `0039`, paste the server again this way, as One-time updates
     asks. Until you do, **Let AI apps
     connect** cannot be turned on and a new connection's page offers no

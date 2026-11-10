@@ -237,6 +237,12 @@ export const UPDATES: readonly Update[] = [
     adds: 'Tries the free, quick AI services first: OpenRouter, then Groq, then Gemini',
     checks: [{ kind: 'schema', level: 41 }],
   },
+  {
+    // An AI-app update again: it needs 0040, whose words check it tightens (backend review of 2026-11-09), and leaves schema_level() alone.
+    file: '0042_ai_words_read_one_way.sql',
+    adds: 'Stops an AI app adding or suggesting words that read the same as others by their spaces or accents',
+    checks: [{ kind: 'level', level: 42 }],
+  },
   { file: HELPER_FILE, adds: 'The AI helper, which every AI feature goes through', checks: [{ kind: 'helper' }] },
   {
     file: READ_RECEIPT_FILE,

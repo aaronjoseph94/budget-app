@@ -4095,3 +4095,32 @@ read-receipt reads a deleted one as unreachable. Both could ask
 `isDeployed` before choosing their words. The owner's AI helper ping
 also failed in Safari on 2026-10-16 while it is deployed; that cause is
 not known yet (no request reached the helper in its logs).
+
+## N178 — What 0042 leaves: a name the owner typed with an unusual space, and the helper's "try again" pointing at One-time updates
+
+**Seen:** 2026-11-09, fixing the backend review's two findings (0042, and
+the AI helper `2026-11-09.1`).
+
+**Done here:** an AI app's words are refused when they read as plain
+words and are other characters (a space that is not the ordinary one,
+two spaces, an accent as a letter and a mark), in the database and the
+AI apps server; and the helper, out of time before any service was
+asked, answers `helper_error`, not `not_set_up`.
+
+**Left:**
+- The owner's own category names are stored as typed (`unique (user_id,
+  name)`, byte for byte; `ensureCategory` and `renameCategory` send what
+  was typed). One typed or pasted with a no-break space or a decomposed
+  accent is not `name_taken` beside an AI app's plain suggestion of the
+  same words, and Setup itself lets the owner make "Eating out" twice
+  that way. Fixing it means tidying names where the owner types them,
+  which is the screens' and their own slice.
+- `helper_error`'s sentence is true for a run that ran out of time
+  ("couldn't finish that… try again later"), but its link goes to
+  One-time updates (`SAID` in `apps/web/src/ai/client.ts`), where there
+  is nothing to do for it.
+- A word's length is counted in UTF-16 units by the server's schemas
+  and in characters by the database, so words of astral characters near
+  a limit are refused by one and not the other. Neither lets more
+  through than its own limit.
+
