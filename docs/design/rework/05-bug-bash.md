@@ -44,7 +44,7 @@ the suite.
 
 ## Looked wrong, was not
 
-- **Let AI apps connect stays off on Space.** Switching on first checks
+- **Let AI apps connect stays off on Space.** (AI apps were removed: ADR 0016) Switching on first checks
   `/auth/v1/settings`, which the fake does not answer. The app says it
   could not check, as it should. WebKit's console line for that refused
   fetch is the same thing.

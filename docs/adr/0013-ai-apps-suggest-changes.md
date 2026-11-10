@@ -1,7 +1,13 @@
 # ADR 0013 — AI apps suggest changes; the owner applies them
 
+**Status: Superseded by ADR 0016 (the feature was removed on 2026-11-10).**
+The text below is kept as history and describes code that is no longer
+there. The design documents it names, `docs/design/mcp/PLAN.md` and
+`docs/design/mcp/PROPOSALS.md`, were deleted with the feature; git history
+keeps them.
+
 **Date:** 2026-10-05 · **Decided by:** the engineer, on the owner's request
-of 2026-10-05 (quoted below) · **Status:** accepted
+of 2026-10-05 (quoted below) · **Status:** Superseded by ADR 0016 (the feature was removed on 2026-11-10)
 **Amends:** ADR 0012 (an AI app may now also *suggest* changes and file
 category suggestions on rows waiting in Review; a third daily limit,
 `propose`; thirteen tools and one prompt instead of ten tools). ADR 0008 is

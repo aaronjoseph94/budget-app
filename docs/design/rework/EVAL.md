@@ -157,7 +157,7 @@ each service's row times one real call from the owner's own phone.
   holds `0001` to `0041`) and deployed the helper `2026-10-08.2`
   (deploy 9, byte-equal to the repository's file). No real AI service
   has been timed yet: **Test** on each row in Settings › AI does that.
-  Left for the owner: `OWNER_USER_ID`, and Part F for AI apps.
+  Left for the owner: `OWNER_USER_ID`, and Part F for AI apps. (AI apps were removed: ADR 0016)
 - **The browser suite on GitHub** failed on all five pushes from
   `9de9a7b` to `5a32ffd`. Each stopped at the 2-minute start-up wait
   (APP_UNREACHABLE), before any test ran. Vite listened on IPv6 alone;

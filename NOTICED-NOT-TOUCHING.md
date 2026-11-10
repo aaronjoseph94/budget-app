@@ -3257,6 +3257,8 @@ no `rounded-xl` element there has a shadow, and check 390 and 1440.
 
 ## N139 — "Model text carries no numbers" reads wider than it is kept
 
+*(AI apps were removed: ADR 0016)*
+
 **Seen:** 2026-09-30, MCP slice M1a (PLAN.md §2.15). CONSTRAINTS.md's row
 says "every string a model writes" is held to ADR 0005's text rule. The
 receipt path has always read that as the app's own AI's words only: a
@@ -3275,6 +3277,8 @@ added words) as held to `IngestedTextSchema` instead.
 
 ## N140 — read-receipt took the public anon key as a sign-in *(settled 2026-09-30)*
 
+*(AI apps were removed: ADR 0016)*
+
 **Seen:** 2026-09-30, the MCP plan's review (PLAN.md §6, finding 7).
 `read-receipt` checked only that a `Bearer ` header was there and relied
 on the gateway's "Enforce JWT verification", which accepts the app's
@@ -3291,6 +3295,8 @@ updates offers both beside the AI helper's step.
 ---
 
 ## N141 — The measured first load has grown since CONSTRAINTS recorded it
+
+*(AI apps were removed: ADR 0016)*
 
 **Seen:** 2026-09-30, building the MCP plan's M3. `check-bundle.mjs`
 measured 188.82 KB gzipped of first-load JavaScript; CONSTRAINTS.md's
@@ -3310,6 +3316,8 @@ and look at what moved into the entry chunk since 2026-09-28.
 
 ## N142 — The MCP SDK prints one warning each time the server starts
 
+*(AI apps were removed: ADR 0016)*
+
 **Seen:** 2026-09-30, M2a. `createMcpHandler` with `responseMode: 'json'`
 writes one fixed line through `console.warn` when it is built: that JSON
 replies drop mid-call notifications. It carries no request content, so
@@ -3325,6 +3333,8 @@ wrapping `console` around the SDK, which is more code than the noise costs.
 ---
 
 ## N143 — The AI apps server's version has not moved since its tools began *(settled 2026-10-01)*
+
+*(AI apps were removed: ADR 0016)*
 
 **Seen:** 2026-09-30, M5b. `MCP_SERVER_VERSION` is still `2026-09-30.1`,
 the version of the empty server, while the built `mcp-function.ts` now
@@ -3359,6 +3369,8 @@ as the card (N90's remedy). No wait was raised.
 ---
 
 ## N145 — §2.7's 24 KB cap on a result is not built
+
+*(AI apps were removed: ADR 0016)*
 
 **Seen:** 2026-10-01, M8b. PLAN §2.7 lists "a result's size: 24 KB of
 JSON; a last check trims trailing rows and sets `truncated: true`;
@@ -3433,6 +3445,8 @@ is refused with a `RangeError`. Testing fuzz-07 found the same cause in
 
 ## N148 — All transactions and the Month's charges do not name the AI app
 
+*(AI apps were removed: ADR 0016)*
+
 **Seen:** 2026-10-01, M10b. Review now says "Added by Claude", by the
 name of the grant matched on the row's import's `ai_client_id`. Once
 such a row is approved, All transactions (`LedgerScreen.tsx`) and the
@@ -3452,6 +3466,8 @@ app" kept for an app since disconnected.
 ---
 
 ## N149 — A time zone the database does not know reads as "try again"
+
+*(AI apps were removed: ADR 0016)*
 
 **Seen:** 2026-10-01, reviewing M10a. Every save in Settings → AI apps
 sends the browser's time zone, and 0020's trigger refuses one missing
@@ -3475,6 +3491,8 @@ card test whose fake refuses the zone.
 
 ## N150 — HANDOFF's §2 and §6 do not mention AI apps yet
 
+*(AI apps were removed: ADR 0016)*
+
 **Seen:** 2026-10-01, writing M12b's owner steps into HANDOFF §3 and §4.
 §2 ("What is new") lists nothing about Claude or ChatGPT, and its
 "Underneath" paragraph still says the database is `0001` to `0018` and
@@ -3492,6 +3510,8 @@ under "Underneath", and add K1 to K13 and K5 to §6.
 ---
 
 ## N151 — The netlify.app origin is still trusted after the Netlify site goes
+
+*(AI apps were removed: ADR 0016)*
 
 **Seen:** 2026-10-01, in the AI-apps security review (mcp-3-05, dropped
 as unproven). `https://aaron-budget-app.netlify.app` is still in the
@@ -3516,6 +3536,8 @@ site".
 
 ## N152 — vitest still aliases the server's two npm: imports
 
+*(AI apps were removed: ADR 0016)*
+
 **Seen:** 2026-10-01, bundling the SDK and zod into the pasted server
 (mcp-3-04). `vitest.config.ts` aliases `npm:zod@4.6.5` and
 `npm:@modelcontextprotocol/server@2.2.0` for the ai-apps project, which
@@ -3533,6 +3555,8 @@ vitest.config.ts, and the bundle test passes without them.
 ---
 
 ## N153 — Update numbers 0030-0039 are reserved for the AI-app security line
+
+*(AI apps were removed: ADR 0016)*
 
 **Seen:** 2026-10-01, security review second pass. The line in
 `budget-app-fixes` is at `0028_ai_words_no_invisible_characters.sql`;
@@ -3565,6 +3589,8 @@ update of any kind is `0039`, and an AI-app one there re-creates
 
 ## N154 — The merged schema gate needs three changes
 
+*(AI apps were removed: ADR 0016)*
+
 **Seen:** 2026-10-01, security review second pass. Put this line's
 `0030`-`0037`, their `before/` files and `local-stub.sql` beside the
 other line's, and its `verify-migrations` fails twice before reaching
@@ -3596,6 +3622,8 @@ before `0022`, the first later change to a guarded function.
 ---
 
 ## N155 — 0020 writes four invisible characters as themselves *(settled 2026-10-02)*
+
+*(AI apps were removed: ADR 0016)*
 
 **Seen:** 2026-10-01, review of ecd31c8. Line 527 of
 `0020_ai_apps.sql`, the `bad_words` check in the AI apps' add-purchase
@@ -3729,6 +3757,8 @@ pass unchanged, bar a wasted first read some of them waited for.
 
 ## N160 — Updates pasted again set schema_level() back *(settled 2026-10-02)*
 
+*(AI apps were removed: ADR 0016)*
+
 **Seen:** 2026-10-02, review of 54cfa0a. With `0001`-`0038` in, pasting
 `0021`, `0022` or `0026`-`0029` again ran: each set `schema_level()`
 back to its own number, and `0022`, `0027` and `0029` added their
@@ -3754,6 +3784,8 @@ runs again to the same result.
 
 ## N161 — "Paste 00NN first" was "function does not exist" with the level missing *(settled 2026-10-02)*
 
+*(AI apps were removed: ADR 0016)*
+
 **Seen:** 2026-10-02, while fixing N160. `0023`-`0029` and `0038`
 checked `to_regprocedure('public.schema_level()') is null or
 public.schema_level() < N`, and `0032`-`0034` the same with
@@ -3770,6 +3802,8 @@ first".
 ---
 
 ## N162 — CONSTRAINTS.md says the AI apps server's file imports two npm: packages
+
+*(AI apps were removed: ADR 0016)*
 
 **Seen:** 2026-10-02, cleanup. The "AI apps server" row says
 `setup/mcp-function.ts` "imports only `npm:zod@4.6.5` and
@@ -3804,6 +3838,8 @@ commit.
 ---
 
 ## N164 — The AI helper's kept words still let tag characters through in the database
+
+*(AI apps were removed: ADR 0016)*
 
 **Seen:** 2026-10-05, fixing testing db-01. `ai_text_is_clean` (0017,
 0028), the database's backstop for `ai_notes`, refuses fifteen characters
@@ -3853,6 +3889,8 @@ the rows it changes in one migration, as 0038 did for `IN*`.
 
 ## N166 — Review's card for "back to the usual budget" reads "$400.00 → $400.00"
 
+*(AI apps were removed: ADR 0016)*
+
 **Seen:** 2026-10-07, fixing skills-02. 0040 now lets an AI app suggest
 "Groceries $400 from November on" when $400 is the onward budget and
 November has its own $250, because applying it puts November back to
@@ -3890,6 +3928,8 @@ with `useFocusWhereItWas` (lib/return-focus.ts) as the fallback.
 ---
 
 ## N168 — A statement amount past $999,999,999.99 still reaches Review, and the Month blames a category
+
+*(AI apps were removed: ADR 0016)*
 
 *(Recorded as N164 in commit e72d346; renumbered N168 when test-fixes, whose
 N164 0040 cites, was merged.)*
@@ -3942,6 +3982,8 @@ a row in the Free AI card.
 ---
 
 ## N170 — packages/ai-apps/test/mcp-add.test.ts fails now and then
+
+*(AI apps were removed: ADR 0016)*
 
 **Seen:** 2026-10-08, gating slice AI-5d on rework-ai: "refuses a day the
 app cannot read before reading anything, as a bad date" failed in one
@@ -4060,6 +4102,8 @@ row to leave before it asks where focus is, as N170 asks of its test.
 
 ## N176 — Supabase's API refuses a pass a moment after renewing it (PGRST303)
 
+*(AI apps were removed: ADR 0016)*
+
 **Seen:** 2026-10-08, by the owner: the Week said "Could not load your
 data … (code PGRST303)". The project's logs at 19:32:19 and 21:10:59 UTC
 show the same thing twice: a pass renewal succeeded, then four reads left
@@ -4097,6 +4141,8 @@ and the charges they name), left beside Review's own work.
 
 ## N177 — A browser cannot read Supabase's 404 for a function that is not there
 
+*(AI apps were removed: ADR 0016)*
+
 **Seen:** 2026-10-16, by the owner in Safari: One-time updates said "?"
 for the AI helper, read-receipt and the AI apps server, and "Some could
 not be checked". Supabase's logs show only the browser's permission
@@ -4119,6 +4165,8 @@ also failed in Safari on 2026-10-16 while it is deployed; that cause is
 not known yet (no request reached the helper in its logs).
 
 ## N178 — What 0042 leaves: a name the owner typed with an unusual space, and the helper's "try again" pointing at One-time updates
+
+*(AI apps were removed: ADR 0016)*
 
 **Seen:** 2026-11-09, fixing the backend review's two findings (0042, and
 the AI helper `2026-11-09.1`).
@@ -4216,3 +4264,25 @@ words with "(code 23001)" in place of "This category still has charges or
 learned shops…". When the project is upgraded, 23001 needs the same words
 as 23503 in `remove` and `SETUP_ANY` (apps/web/src/format.ts), and the
 fake database a way to answer with it.
+
+## N183 — The database still holds AI-app objects
+
+**Seen:** 2026-11-10, removing the AI apps feature (ADR 0016). Migrations
+`0018` to `0042` made four tables whose names start `ai_app`
+(`ai_app_access`, `ai_app_usage`, `ai_app_last_use`, `ai_app_proposals`),
+about twenty functions, and the value `ai_app` as the source of an entry.
+
+**Done here:** the code, the screens, the Help text and the documents for
+the feature are removed. The database objects are left on purpose:
+migrations are forward-only, and dropping them is a destructive migration,
+which CLAUDE.md ("Ask first") wants in its own commit after a verified
+`pg_dump`. They are empty (the hosted database held no AI-app rows and no
+proposals), behind row-level security, and nothing in the app calls them.
+
+**Left:** (1) a later migration, `0043`, that drops the four tables, the
+functions and the `ai_app` source value, after a verified `pg_dump`; until
+then a new, empty database still runs `0018` to `0042` in order, because
+later files check for earlier ones. (2) On the owner's side, not done by
+code: switch off Supabase's OAuth server (**Authentication → OAuth
+Server** in the dashboard) and remove any OAuth client registered there;
+and, if the `mcp` Edge Function was ever pasted in, delete it.

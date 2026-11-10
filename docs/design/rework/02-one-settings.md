@@ -3,7 +3,7 @@
 2026-10-08. Owner decision 3 of six (binding): "One Settings screen with
 four tabs: Lists (today's Setup) · Budgets & goals · AI (today's AI
 settings) · Account (learned shops, AI apps, sign out). The Setup screen
-and name go away. Sidebar group 'Setup' becomes 'More': Settings, Help."
+and name go away. Sidebar group 'Setup' becomes 'More': Settings, Help." (AI apps were removed: ADR 0016)
 Decision 6: Getting started is a first-run guide, opened from Help and on
 first run; no Settings card. Recorded as ADR 0014 §2.
 

@@ -5,6 +5,12 @@ the owner's list of 2026-09-24) was finished on branch `main-tnlcto`. It
 tells the owner and the next agent what is new, what the owner does after
 it reaches `main`, how to check each screen, and what is still open.
 
+**The AI apps feature was removed on 2026-11-10** (ADR 0016): the
+connection for Claude or ChatGPT, its consent page, its Settings card, and
+the suggestions it left in Review. Where this file still names a step by its
+old number, the number is kept so references stay true, and says it is gone.
+The owner's own AI helper is untouched.
+
 **The owner is not a software engineer.** Explain in plain language. Do not ask
 them to judge engineering choices — make the call, say what you chose and why,
 and only raise what they would actually notice.
@@ -55,7 +61,7 @@ it is merged into `main` (§3).
   calendar. The Month still opens first.
 - **One Settings screen** with four tabs: **Lists** (what Setup was: your
   name, lists, bills, pay days) · **Budgets & goals** · **AI** (what AI
-  settings was) · **Account** (learned shops, AI apps, sign out). The tab is
+  settings was) · **Account** (learned shops, sign out). The tab is
   in the address (`#/settings/ai`); `#/setup` and `#/ai` still open theirs.
   The sidebar's last group is **More**: Settings, Help.
 - **Getting started** opens on the first run and from Help's **Start
@@ -160,7 +166,7 @@ the calendar's payday pills (N131).
 | Ask | A question about your money in your own words; the answer's figure is the engine's |
 | Savings, Debts | Every goal in your order; every debt and when it is paid off |
 | Add, Review | A statement, a photo, one typed or "just typed"; everything waits in Review, with suggested categories |
-| Settings | Four tabs (ADR 0014): Lists, your name, lists, bills and pay days; Budgets & goals; AI, on or off, keys, services, limit, tone; Account, learned shops, AI apps, sign out |
+| Settings | Four tabs (ADR 0014): Lists, your name, lists, bills and pay days; Budgets & goals; AI, on or off, keys, services, limit, tone; Account, learned shops, sign out |
 | Help, Getting started | Twelve short articles (PRD 03), the last of them One-time updates and signing in; nine steps to set up, opened from Help's Start here and on the first run |
 
 **Underneath:** all arithmetic is in `packages/core`, checked against the
@@ -182,7 +188,8 @@ without asking me questions" (quoted in `docs/ai-first-plan.md` §1).
 ## 3. What the owner does, in this order
 
 One list, in the order to do it, rewritten 2026-10-02 after the review
-fixes and the AI apps build were merged. Supabase project ref:
+fixes were merged, and trimmed on 2026-11-10 when the AI apps feature was
+removed (ADR 0016). Supabase project ref:
 `bnodrfghxbavlopxkgju`; "Supabase" below means
 supabase.com/dashboard → that project. More detail for each step is in
 `docs/setup.md`. In the app, **Help → One-time updates** checks most of
@@ -193,10 +200,10 @@ to paste, so GitHub is not needed. Easiest on a computer.
 
 **Already done on the hosted project (2026-10-08, by the agent through
 the Supabase plugin, each checked afterwards):**
-- Part D was done: `0015` to `0041` are in. `schema_level()` answers 41
-  and the AI apps line 40. A second paste only says "already in".
-  `0042_ai_words_read_one_way.sql` was added on 2026-11-09 and is not
-  in yet: paste it (step 15), and One-time updates offers it until then.
+- Part D was done: `0015` to `0041` are in. `schema_level()` answers 41.
+  A second paste only says "already in".
+  `0042_ai_words_read_one_way.sql` (written for the AI apps) is not needed
+  now; paste nothing for it (ADR 0016).
 - Step 17 was done: the `ai` helper there is `2026-10-08.2` (deploy 9,
   JWT verification on), and it answers a call. This repository's helper
   is `2026-11-09.1` since 2026-11-09, so step 17 is to do again:
@@ -209,9 +216,9 @@ the Supabase plugin, each checked afterwards):**
 - Step 19 is done: keys for OpenRouter, Groq and Gemini are saved. Your
   own order, Groq then OpenRouter then Gemini, is kept; 0041 moves only
   an order never chosen. Press **Test** on each row to time it.
-- Left for you: step 16 (`OWNER_USER_ID`), Part F (the `mcp` function is
-  too large for the plugin, and the OAuth server is a dashboard switch),
-  and whether the second account in **Authentication → Users** stays.
+- Left for you: step 16 (`OWNER_USER_ID`), and whether the second account
+  in **Authentication → Users** stays. If you ever switched on Supabase's
+  OAuth server, switch it off (ADR 0016).
 
 **The agent pushes `main` first, and that is safe.** Cloudflare deploys
 the site when `main` changes. Netlify, until it is stopped in step 10,
@@ -321,7 +328,7 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
     `main-tnlcto` first, waits for the green **gates** run, and only then
     pushes that same commit to `main`.
 
-### Part D: the database updates, 0015 to 0042, about 20 minutes, once
+### Part D: the database updates, 0015 to 0041, about 20 minutes, once
 
 13. **A backup first.** Some of these updates change saved rows, and
     `0038` **permanently deletes** a learned shop where two would end up
@@ -353,54 +360,37 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
     `0025_ingested_text_format_characters.sql`,
     `0026_goal_check_on_link.sql`, `0027_receipt_photo_twice_waits.sql`,
     `0028_ai_words_no_invisible_characters.sql`,
-    `0029_lookalike_charge_waits.sql`, then
-    `0035_ai_app_updates_in.sql` (out of number order on purpose: it only
-    reads and needs `0020`), then the AI-app safety fixes
+    `0029_lookalike_charge_waits.sql`, then `0035_ai_app_updates_in.sql`,
     `0030_ai_app_gate_live_session.sql`, `0031_ai_app_hash_own_kind.sql`,
     `0032_ai_rows_teach_no_rule.sql`, `0033_ai_search_masked.sql`,
     `0034_ai_words_visible.sql`, `0036_ai_search_as_shown.sql`,
     `0037_ai_rows_before_the_fixes.sql`.
+    `0019`, `0020` and `0030` to `0037` were for the AI apps, which are
+    removed (ADR 0016). They do nothing the app uses; they stay in the list
+    only because the files after them check for them, so a new, empty
+    database still takes them in this order.
 15. **Before `0038`, the backup again if you have used the app since step
     13**, the same way, named `budget-before-0038.sql`. Then paste
     `0038_intuit_prefix_merchants.sql`. (It was written as `0030` and
     renumbered `0038` when two lines of updates merged on 2026-10-02;
     neither number was ever applied.) Then paste
-    `0039_ai_apps_suggest_changes.sql`: it lets an AI app you
-    connect suggest changes that wait in Review until you apply them
-    (ADR 0013). It needs `0037`, says "Paste 0037 first" without it, and
-    deletes nothing. Then paste `0040_ai_words_every_character_shown.sql`
-    last: it stops an AI app adding or suggesting words with characters
-    you cannot see, so two entries in Review that look the same always
-    are, and lets it suggest a budget from a month on that puts that
-    month's own "just this month" budget back to the usual one, which it
-    was told was "already so" (testing of 2026-10-05). It needs `0039`,
-    says "Paste 0039 first" without it, and deletes nothing. Then paste
+    `0039_ai_apps_suggest_changes.sql` and
+    `0040_ai_words_every_character_shown.sql` (AI apps only, removed: they
+    delete nothing and do nothing the app uses, ADR 0016). Then paste
     `0041_ai_free_order.sql`: the AI services are tried free and quick
     first, OpenRouter, then Groq, then Gemini (ADR 0015); an order you
     never changed follows, one you changed stays. It needs `0038` and
     `0016`, says "Paste 0038 first" or "Paste 0016 first" without them,
-    and deletes nothing. Then paste `0042_ai_words_read_one_way.sql`
-    last: it stops an AI app adding an entry, or suggesting a category
-    name, that reads the same as another by its spaces (a no-break or
-    thin space, two spaces in a row) or by how an accent is written, so
-    it cannot make a second category that reads like one you have (the
-    review of 2026-11-09). It needs `0040`, says "Paste 0040 first"
-    without it, and deletes nothing.
+    and deletes nothing. `0042_ai_words_read_one_way.sql` is not needed.
 
     Each update refuses to run before the one it needs ("Paste 0018
     first", "Paste 0035 first" and so on) and changes nothing then.
     Pasting one again by mistake is harmless: it is refused with nothing
     changed ("is already in; nothing to do", "already exists", "is not as
     0019 left it" or similar), or, for `0030`, `0031`, `0035` and `0037`,
-    it runs again to the same result. After `0039`, pasting `0030` or
-    `0035` again takes back part of it, and One-time updates offers
-    `0039` again: paste it again, and it puts back only what they took
-    (your **Let AI apps suggest changes** choice stays); then it offers
-    `0040` again, which puts back only what `0039` took, and then `0042`
-    again, the same way. If one says
-    anything else, stop there:
-    nothing is lost, and the next agent needs that message word for word
-    (MCP plan K10, K11).
+    it runs again to the same result. If one says anything else, stop
+    there: nothing is lost, and the next agent needs that message word for
+    word.
 
 ### Part E: the AI helper and free AI, about 15 minutes, once
 
@@ -415,8 +405,7 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
     function → Via Editor** (if `ai` is already listed: **Edge Functions
     → ai → Code**). Name it exactly `ai`. In the app, **Copy** beside "The
     AI helper", paste it over everything in the editor. **Enforce JWT
-    verification**: keep it **on** while One-time updates shows **Signing
-    key** with a ✗, **off** once it shows ✓ (step 21). **Deploy**.
+    verification**: keep it **on**. **Deploy**.
     One-time updates shows ✓ once version `2026-11-09.1` or later answers
     (the speed test and the free-first order, ADR 0015; and, out of time
     before any service was asked, it says so, not "AI isn't set up").
@@ -437,81 +426,13 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
     says "Already on". To stop all AI later, turn off **Use AI** at the
     top of Settings › AI.
 
-### Part F: Claude and ChatGPT (AI apps), about 20 minutes, on a computer
+### Part F: removed
 
-Only if you want them. They need Parts A, B, D and E done: **Let AI apps
-connect** will not turn on, and the connect page offers no **Allow**,
-until sign-ups are off, and `0019`, `0020`, `0030` to `0037`, the helper,
-read-receipt (deleted or new) and the AI apps server are in. Sign-ups come
-first because the AI apps server accepts any account's sign-in: with
-**Allow new users to sign up** on, a stranger could make an account and
-connect an AI app to it.
-
-20. **Sign-in for AI apps.** Supabase → **Authentication → URL
-    Configuration**: check **Site URL** is
-    `https://aaron-budget-app.pages.dev`. Then **Authentication → OAuth
-    Server → Enable** → **Authorization Path** `/oauth/consent` → turn on
-    dynamic client registration (the switch that lets apps register
-    themselves) → **Save**. Then **Authentication → Sign In / Providers**:
-    **Allow new users to sign up** stays off; under **Email**, keep
-    **Secure email change** on, and turn on **Secure password change**
-    (the setting that asks for the current password before a change).
-21. **The signing key**, only if One-time updates shows **Signing key**
-    with a ✗ (ChatGPT needs it; Claude does not). First **Edge Functions
-    → ai → Settings** → turn **Enforce JWT verification** off → **Save**
-    (and the same for read-receipt only if you kept it and pasted its new
-    version in step 18). Then **Project Settings → JWT Keys → Rotate
-    keys**, so the current key is **ECC (P-256)**. Do not revoke the old
-    key. Sign out of the app and back in, and press **Check again**.
-22. **Deploy the AI apps server.** Supabase → **Edge Functions → Deploy a
-    new function → Via Editor**. Name it exactly `mcp`. In the app,
-    **Copy** beside "The AI apps server", paste it over everything, turn
-    **Enforce JWT verification off**, **Deploy**. (Already deployed, and
-    One-time updates says "an older copy": **Edge Functions → mcp → Code**,
-    paste, **Deploy**, then open its **Settings** and check the switch is
-    still off: Supabase has been seen to turn it back on.) Version
-    `2026-11-09.1` or later is current (it also refuses, and leaves out of
-    every name it hands an AI app, the characters that draw as nothing,
-    stops every request at 20 seconds, whichever app is asking, carries
-    the fixes of 2026-10-05's testing to debts, amounts and dates, and
-    refuses words that read the same as others by their spaces or
-    accents, as `0042` does):
-    after `0039`, paste the server again this way, as One-time updates
-    asks. Until you do, **Let AI apps
-    connect** cannot be turned on and a new connection's page offers no
-    **Allow**; AI apps already connected keep reading, but cannot
-    suggest changes.
-23. **Check again** on One-time updates: it should say **All done**.
-24. **Connect Claude** (any plan): in the app, **Settings → Account → AI apps** →
-    turn on **Let AI apps connect** → **Connect a new AI app** (copies the
-    address; you have 15 minutes). On claude.ai: **Customize → Connectors
-    → Add custom connector** → name **Budget** → paste the address → if
-    asked, **Sign in now** and **Register automatically** (not "Use
-    Claude's published identity") → **Add → Connect** → on the budget
-    app's **Connect an AI app** page check it says **claude.ai** in bold →
-    **Allow**. Then, to have Claude look over everything, type "Review my
-    whole budget and suggest any changes" in a chat with **Budget** on;
-    what it suggests waits in the app's **Review → Suggested changes**
-    until you press **Apply** (Help → Connect Claude or ChatGPT).
-25. **Connect ChatGPT** (Plus or higher, chatgpt.com only): **Connect a
-    new AI app** again first. On chatgpt.com: **Settings → Security and
-    login → Developer mode** on → go to chatgpt.com/plugins → **+** → name
-    **Budget** → paste the address → **OAuth** (and **DCR** if asked how to
-    register) → **Create** → on the connect page check it says
-    **chatgpt.com** in bold → **Allow**.
-26. **The first-connection checks**, §4 steps 15 to 24, in order,
-    stopping at the first that fails: the server's health page answers
-    `{"ok":true,…,"tools":13}`; sign-in opens the budget app's page with
-    **claude.ai** in bold; "list my categories" lists yours (if it says
-    the app did not recognise the sign-in as an AI app's, at once, in
-    this order: **Disconnect**; **Let AI apps connect** off;
-    `delete from auth.sessions;` in the SQL Editor; then the **OAuth
-    Server** off, as §4 step 18 says); "How is my month going?" matches the
-    Month; "add a test coffee for $1.00 today" waits in Review as "Added
-    by Claude" (press **✕**); a suggested change waits under **Review →
-    Suggested changes** (press **Dismiss**); **Disconnect** lowers
-    `select count(*) from auth.sessions;` by one; ChatGPT's page says
-    **chatgpt.com**; and step 24 is done with the next agent.
+Part F (steps 20 to 26) set up Claude and ChatGPT as AI apps. The feature
+was removed on 2026-11-10 (ADR 0016), so there is nothing to do. The step
+numbers are not reused: Part G still starts at 27. If you ever switched on
+Supabase's OAuth server, switch it off (**Authentication → OAuth Server**)
+and remove any client listed there; neither is needed for the app to work.
 
 ### Part G: your call, no rush
 
@@ -570,91 +491,9 @@ One-time updates, which names what is missing.
     larger (**aA** in Safari) and look again: nothing should need scrolling
     sideways. Only Chromium could be checked here (N41); tell the next
     agent which screen if anything is squashed or cut off.
-**AI apps, the first connection** (MCP plan `docs/design/mcp/PLAN.md`
-§2.14, K1 to K13). None of this could run here: it needs the live
-project. Do them in order, and stop at the first that fails: each says
-what to do, and reporting the words on the screen is enough.
 
-15. **The server answers** (K4, K6). In a browser tab, open
-    `https://bnodrfghxbavlopxkgju.supabase.co/functions/v1/mcp/health`.
-    Expect `{"ok":true,"version":"…","tools":13}`. A 401 means **Enforce
-    JWT verification** is on for `mcp`: turn it off. Anything else, or
-    `"tools":0`, means the server did not start: report what it shows.
-16. **Sign-in starts** (K3, K8). After **Connect a new AI app** and
-    **Connect** in Claude, the browser opens the budget app's **Connect an
-    AI app** page. If Claude shows an error before that, report it word
-    for word. If nothing happens at all, check **Enforce JWT
-    verification** is still off for `mcp` (§3 step 22).
-17. **The page** (K7, K12). Its address starts
-    `aaron-budget-app.pages.dev/oauth/consent?authorization_id=`, and it
-    says **claude.ai** in bold above **Allow**. If the address is not
-    found, or the page says "This isn't a connection request", stop and
-    report it: nothing has been connected.
-18. **The first question** (K1, the one that matters most). Ask Claude
-    "list my categories". It should list yours. **If it says the budget
-    app did not recognise this sign-in as an AI app's, at once, in this
-    order: Settings → Account → AI apps → Disconnect beside Claude; turn off Let AI
-    apps connect; Supabase → SQL Editor → run `delete from auth.sessions;`
-    (it signs you out too: sign in again after); then Supabase →
-    Authentication → OAuth Server → turn it off; and report it.** Turning
-    the OAuth Server off first would leave nothing in the app to
-    disconnect, and the switch alone does not end the AI app's sign-in. That answer would mean
-    the database cannot tell an AI app's sign-in from your own: the server
-    turns the AI app away, but its sign-in, used without the server, could
-    change your records. One-time updates then lists **Sign-in for AI
-    apps** as not in: leave it off until the next agent says otherwise. If
-    instead every question gets "Something went wrong in the budget app's
-    server", turn off **Let AI apps connect** and report that. **If every
-    question says "This connection to the budget app has ended"** right
-    after you connected, report it: `0030` could not see the sign-in as
-    live (the token carries no `session_id`, or the database may not read
-    Supabase's sign-ins table). Nothing is at risk; the AI app is only
-    refused.
-19. **Your figures** (K11). Ask "How is my month going?": the figures match
-    the Month. If every answer says the app could not read your records,
-    turn off **Let AI apps connect** and report it.
-20. **An addition, then a suggestion.** Ask "add a test coffee for $1.00
-    today". **Review** shows it, with "Added by Claude"; press **✕** on
-    it. Then ask "suggest raising my Groceries weekly budget by $1"
-    (or another category of yours). **Review → Suggested changes** shows
-    it, from → to, with "Claude's reason"; press **Dismiss**. If Claude
-    says suggesting is switched off, turn on **Settings → Account → AI apps → Let AI
-    apps suggest changes**; if it says the budget app needs an update,
-    paste `0039` (§3 step 15). Report anything else word for word.
-21. **Disconnect** (K2). **Settings → Account → AI apps → Connected apps** lists
-    Claude, "Last asked" today. First, in Supabase's **SQL Editor**, run
-    `select count(*) from auth.sessions;` and note the number. Press
-    **Disconnect**, then **Yes, disconnect**, and ask Claude something: it
-    can no longer reach your budget. Run the same line again: the number
-    should be one lower. If it is not, report it: Disconnect then ends the
-    server's access but not, for up to an hour, a copy of the token used
-    another way (`0030` relies on that row going). Connect it again with
-    **Connect a new AI app** if you want it.
-22. **ChatGPT** (K3, K8, K9). Its connect page says **chatgpt.com** in
-    bold, with **Allow**. If it says instead "This app would send you to
-    chatgpt.com, which is not Claude or ChatGPT", press **Deny** and
-    report it: ChatGPT used a callback address the app does not know yet,
-    and adding it is a one-line change. If sign-in fails before the page,
-    check §3 step 21's signing key.
-23. **One-time updates** (K13). If **Signing key** or **Sign-in for AI
-    apps** still says "Could not check" after you did them, look at the
-    setting in Supabase by eye and report it; nothing else depends on it.
-    If **Sign-ups off** says "Could not check", look by eye that
-    **Authentication → Sign In / Providers → Allow new users to sign up**
-    is off, and report it: until the app can read it, One-time updates
-    cannot say **All done**, and AI apps stay off.
-
-24. **What an AI app's sign-in can do to your account** (K5, MCP plan
-    risk 2, security review mcp-2-03). Not yours to check alone: with the
-    next agent, on the live project, send an AI app's token to Supabase's
-    `PUT /auth/v1/user` asking to change the password, the email and the
-    profile data, with and without a second sign-in factor (MFA), with
-    **Secure password change** on. Record what Supabase allowed in ADR
-    0012. If a password change goes through, turn on a second factor and
-    test again, or adopt the Custom Access Token hook (PLAN risk 3). The
-    consent page, Settings and Help already say the sign-in reaches the
-    account until **Disconnect**. Until this is done, connect only from
-    your own computer, and **Disconnect** any app you stop using.
+Steps 15 to 24 were the AI apps' first-connection checks. They were removed
+with the feature on 2026-11-10 (ADR 0016); the numbers are not reused.
 
 ## 5. Questions for the owner
 

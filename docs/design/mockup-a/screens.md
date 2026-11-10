@@ -169,7 +169,7 @@ One screen, four tabs (ADR 0014 §2): "Settings" + ? (the showing tab's article)
 
 ### Account tab
 - Learned shops card "Shops filed by themselves" — "Each shop you have approved or moved with “Always file” is filed the same way from then on. Forget one and its next charge waits in Review again. Charges already filed stay where they are." rows SHOP / category [Forget]; "Show all 42"; note "Forgotten. The next charge from SHOP waits in Review for a category."
-- AI apps card (ADR 0012, 0013)
+- AI apps card (ADR 0012, 0013) (AI apps were removed: ADR 0016)
 - Account: email; [Sign out]
 
 ### AI tab — AiSettingsScreen.tsx, ai/KeyCard.tsx, ai/ChoicesPanel.tsx, ai/CoachPanel.tsx

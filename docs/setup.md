@@ -35,8 +35,8 @@ do", "already exists" or similar), or, for `0030`, `0031`, `0035` and
 | `0016_ai_foundation.sql` | Where AI keeps your settings (on or off, the order services are tried, paid services, the daily limit, the coach's tone, sharing shop names), your AI keys, locked so the browser can never read them, and today's use. Without it, Settings › AI and the AI's words say they need a one-time update, and every screen uses the app's own words |
 | `0017_coach_memory.sql` | Where the Coach keeps the AI's checked words (never a digit or a currency sign: the database refuses them), the cards you dismissed, and your check-in answers. Without it, AI words still show but are asked for afresh, ✕ on a card is hidden, and the check-in's questions say they need the update |
 | `0018_category_suggestions.sql` | Where Review keeps the category the AI suggested for a row, until you approve or change it. Without it, Review works as before and says suggestions need the update |
-| `0019_ai_apps_cannot_write.sql` | Stops an AI app you connect (Claude, ChatGPT) from changing anything itself: the database refuses every write from an AI app's sign-in, and every function that writes says "AI apps cannot do this" to one. Your own sign-in is unaffected. It stops with "Paste 0018 first" if `0018` is not in |
-| `0020_ai_apps.sql` | What an AI app may read, and its one way to add something to Review, always waiting for you; the switch in Settings → Account → AI apps, its daily limits, and when each app last asked. Without it, Settings → Account → AI apps says it needs the update. It stops with "Paste 0019 first" if `0019` is not in |
+| `0019_ai_apps_cannot_write.sql` | For the removed AI apps feature (ADR 0016): nothing in the app uses it now, and the file stays because later files check for it. It stopped an AI app's sign-in from writing anything. It stops with "Paste 0018 first" if `0018` is not in |
+| `0020_ai_apps.sql` | For the removed AI apps feature (ADR 0016): nothing in the app uses it now, and the file stays because later files check for it. It made the tables for what an AI app could read and add. It stops with "Paste 0019 first" if `0019` is not in |
 | `0021_category_holds.sql` | Lets you remove a category that only a rejected guess or a charge you removed still names: before it, Setup said it "still has charges". It stops with "Paste 0018 first" if `0018` is not in |
 | `0022_removed_charge_waits.sql` | A charge you removed from All transactions waits in Review when its statement comes in again, instead of a learned shop filing it straight back. It stops with "Paste 0021 first" if `0021` is not in |
 | `0023_typed_entry_once.sql` | Pressing Add again after an answer that never arrived adds a typed purchase once, not twice |
@@ -46,21 +46,29 @@ do", "already exists" or similar), or, for `0030`, `0031`, `0035` and
 | `0027_receipt_photo_twice_waits.sql` | A second photo of a receipt already brought in waits in Review, even for a learned shop |
 | `0028_ai_words_no_invisible_characters.sql` | The AI's kept words refuse characters that draw as nothing |
 | `0029_lookalike_charge_waits.sql` | A charge that looks like one already in the ledger (same card, amount and shop, within three days) waits in Review, so a PDF and a CSV of the same statement do not count it twice. Each of `0023` to `0029` stops with "Paste 00NN first" if the one before is not in |
-| `0030_ai_app_gate_live_session.sql` | Stops an AI app the moment you press Disconnect: before it, a copy of the app's sign-in could still reach your budget for up to an hour. Changes nothing you see. It stops with "Paste 0020 first" if `0020` is not in. Numbered from 0030 so it never collides with other updates in preparation |
-| `0031_ai_app_hash_own_kind.sql` | Keeps what an AI app adds from ever hiding a real charge: before it, an AI app could add an entry that matched next month's statement line exactly, and the real charge was skipped on import as already waiting. Now both wait in Review. It stops with "Paste 0030 first" if `0030` is not in |
-| `0032_ai_rows_teach_no_rule.sql` | Approving or moving something an AI app added no longer teaches the app a shop: before it, one approval could make every later statement charge from that shop file itself into the AI's category without Review. It stops with "Paste 0031 first" if `0031` is not in |
-| `0033_ai_search_masked.sql` | An AI app's search sees shop names as it is shown them, with long numbers (card, phone and reference numbers) masked: before it, counting what matched could read a masked number back one digit at a time. It stops with "Paste 0032 first" if `0032` is not in |
-| `0034_ai_words_visible.sql` | What an AI app adds may not hold characters that draw as nothing (zero-width spaces and the like): before it, two entries could look the same in Review while being different. It stops with "Paste 0033 first" if `0033` is not in |
-| `0035_ai_app_updates_in.sql` | Lets One-time updates see exactly which AI-app safety updates are in. It only reads, needs nothing but `0020`, and is pasted **before** `0030` (One-time updates lists it there) |
-| `0036_ai_search_as_shown.sql` | An AI app's searches match shop names only as it is shown them. It stops with "Paste 0035 first" unless `0030` to `0035` are all in |
-| `0037_ai_rows_before_the_fixes.sql` | Tidies anything an AI app added before these safety updates. It stops with "Paste 0036 first" if `0036` is not in |
+| `0030_ai_app_gate_live_session.sql` | For the removed AI apps feature (ADR 0016): nothing in the app uses it now, and the file stays because later files check for it. It stopped an AI app the moment it was disconnected. It stops with "Paste 0020 first" if `0020` is not in |
+| `0031_ai_app_hash_own_kind.sql` | For the removed AI apps feature (ADR 0016): nothing in the app uses it now, and the file stays because later files check for it. It kept what an AI app added from hiding a real charge. It stops with "Paste 0030 first" if `0030` is not in |
+| `0032_ai_rows_teach_no_rule.sql` | For the removed AI apps feature (ADR 0016): nothing in the app uses it now, and the file stays because later files check for it. It kept an AI app's entries from teaching a shop rule. It stops with "Paste 0031 first" if `0031` is not in |
+| `0033_ai_search_masked.sql` | For the removed AI apps feature (ADR 0016): nothing in the app uses it now, and the file stays because later files check for it. It masked long numbers in an AI app's search. It stops with "Paste 0032 first" if `0032` is not in |
+| `0034_ai_words_visible.sql` | For the removed AI apps feature (ADR 0016): nothing in the app uses it now, and the file stays because later files check for it. It refused invisible characters in what an AI app added. It stops with "Paste 0033 first" if `0033` is not in |
+| `0035_ai_app_updates_in.sql` | For the removed AI apps feature (ADR 0016): nothing in the app uses it now, and the file stays because later files check for it. It let One-time updates see which AI-app updates were in. It only reads, and was pasted **before** `0030` |
+| `0036_ai_search_as_shown.sql` | For the removed AI apps feature (ADR 0016): nothing in the app uses it now, and the file stays because later files check for it. It made an AI app's searches match shop names as shown. It stops with "Paste 0035 first" unless `0030` to `0035` are all in |
+| `0037_ai_rows_before_the_fixes.sql` | For the removed AI apps feature (ADR 0016): nothing in the app uses it now, and the file stays because later files check for it. It tidied entries an AI app had added. It stops with "Paste 0036 first" if `0036` is not in |
 | `0038_intuit_prefix_merchants.sql` | Tidies shop names stored with Intuit's `IN*` prefix, so `IN*ACME` and `ACME` are one shop. **It permanently deletes** a learned shop where two would end up with one name (the one made or used most recently stays), so take a backup first (HANDOFF §3, steps 13 and 15). It stops with "Paste 0029 first" or "Paste 0037 first". Written as `0030` and renumbered at the merge of two lines of updates (2026-10-02) |
-| `0039_ai_apps_suggest_changes.sql` | Lets an AI app you connect suggest changes (a budget, a weekly budget, a bill, a goal, a category, a charge's category, a shop always filed somewhere), each waiting in Review under Suggested changes until you apply it; the switch Settings → Account → AI apps → Let AI apps suggest changes; 60 suggestion requests a day, at most 100 waiting, 14 days each (ADR 0013). Deletes nothing. Pasted after `0038`: it stops with "Paste 0037 first" if `0037` is not in, and "0039 is already in; nothing to do" if pasted again. Paste the `mcp` server again after it |
-| `0040_ai_words_every_character_shown.sql` | Stops an AI app adding or suggesting words with characters you cannot see (tag characters, variation selectors and the like, or an unusual space at either end), so two entries in Review that look the same always are; and lets it suggest a budget "from a month on" that puts that month's own "just this month" budget back to the usual one, which it was told was "already so" (testing of 2026-10-05). Deletes nothing. Pasted after `0039`: it stops with "Paste 0039 first" if `0039` is not in, and "0040 is already in; nothing to do" if pasted again. If One-time updates offers `0039` again (after `0030` or `0035` was pasted again), paste `0039`, then `0040` |
+| `0039_ai_apps_suggest_changes.sql` | For the removed AI apps feature (ADR 0016): nothing in the app uses it now, and the file stays because later files check for it. It made the table for changes an AI app could suggest, and its switch. Deletes nothing. It stops with "Paste 0037 first" if `0037` is not in |
+| `0040_ai_words_every_character_shown.sql` | For the removed AI apps feature (ADR 0016): nothing in the app uses it now, and the file stays because later files check for it. It refused more invisible characters in what an AI app added or suggested. Deletes nothing. It stops with "Paste 0039 first" if `0039` is not in |
 | `0041_ai_free_order.sql` | Tries the free, quick AI services first: OpenRouter, then Groq, then Gemini, then any paid one you switch on (ADR 0015). An order you never changed follows; one you changed is left alone. Deletes nothing. Pasted after `0040`: it stops with "Paste 0038 first" or "Paste 0016 first" if either is not in, and "0041 is already in; nothing to do" if pasted again |
-| `0042_ai_words_read_one_way.sql` | Stops an AI app adding an entry, or suggesting a category name or a reason, whose words read the same as others while being different characters: a no-break, thin or other unusual space between words, two spaces in a row, or an accent written as a letter and a separate mark. So it cannot add an entry over the same one waiting, or suggest a second category that reads like one you have (the review of 2026-11-09). Such words are refused, never changed. Deletes nothing. Pasted last, after `0040`: it stops with "Paste 0040 first" if `0040` is not in, and "0042 is already in; nothing to do" if pasted again. If One-time updates offers `0039` and `0040` again, paste them, then `0042` |
+| `0042_ai_words_read_one_way.sql` | For the removed AI apps feature (ADR 0016): nothing in the app uses it now, and the file stays because later files check for it. It refused look-alike spaces and accents in what an AI app added or suggested. Deletes nothing. It stops with "Paste 0040 first" if `0040` is not in. **Not needed:** the app no longer asks for it |
 
-**`0015` to `0042` can be pasted after `main-tnlcto` is merged into
+**The AI apps feature was removed on 2026-11-10 (ADR 0016).** The files
+marked "removed AI apps feature" above (`0019`, `0020`, `0030` to `0037`,
+`0039`, `0040`, `0042`) change nothing the app shows now. They stay in
+`supabase/migrations/` because migrations are forward-only and the files
+after them check for them; the hosted project already has them up to
+`0041`, and `0042` is not needed. A new, empty database still takes every
+file in order.
+
+**`0015` to `0041` can be pasted after `main-tnlcto` is merged into
 `main`.** Nothing the app needs to open depends on them: each new part
 says in one line that it needs a one-time update until its file is in
 (HANDOFF §3). In the app, **Help → One-time updates** shows which are
@@ -117,16 +125,14 @@ through one Edge Function, `ai`, called "the AI helper" in the app. Chosen
 in `docs/adr/0004-ai-providers-and-keys.md`; the rules that keep numbers
 out of the AI's words are `docs/adr/0005-grounded-ai-text.md`. Everything
 works without it, in the app's own words. About 15 minutes, once, easiest
-on a computer, after `0015` to `0020` above.
+on a computer, after `0015` to `0018` above.
 
 1. **Paste the helper.** Supabase → **Edge Functions** → **Deploy a new
    function** → **Via Editor**. Name it exactly `ai`. In the app, Help →
    One-time updates → **Copy** beside "The AI helper" (the file is
    `supabase/functions/ai/index.ts`), paste it over everything in the
-   editor, and press **Deploy**. Keep **Enforce JWT verification** on
-   while Supabase signs with its old key, and off once it signs with the
-   new one (the signing key, under AI apps below); One-time updates says
-   which. Since 2026-09-30 the helper checks every caller itself.
+   editor, and press **Deploy**. Keep **Enforce JWT verification** on.
+   Since 2026-09-30 the helper also checks every caller itself.
 2. **One new secret, `OWNER_USER_ID`.** Supabase → **Authentication →
    Users** → your row → copy **User UID**; then **Edge Functions →
    Secrets** (or **Project Settings → Edge Functions → Secrets**) → **Add
@@ -173,14 +179,13 @@ without it. Chosen in docs/adr/0002-gemini-free-tier-for-receipts.md.
    Google account, and choose **Create API key**. Copy it.
 2. **Add the function.** In Supabase: **Edge Functions → Deploy a new function
    → Via Editor**. Name it exactly `read-receipt`, replace the sample code with
-   the whole of `supabase/functions/read-receipt/index.ts`, and deploy. Set
-   **Enforce JWT verification** as for the AI helper. Turning off **Allow
+   the whole of `supabase/functions/read-receipt/index.ts`, and deploy. Keep
+   **Enforce JWT verification** on, as for the AI helper. Turning off **Allow
    new users to sign up** (Authentication → Sign In / Providers) is what
    stops strangers: any account on your project can call the helper and
    this function. Setting the `OWNER_USER_ID` secret to your own user id
    (step 2 of the AI helper, above) makes both refuse every other account
-   too. The function checks every caller itself, so the JWT switch can
-   come off when the signing key changes.
+   too. The function checks every caller itself as well.
 3. **Add the key.** **Edge Functions → Secrets → Add new secret**: name
    `GEMINI_API_KEY`, value the key from step 1.
 
@@ -205,59 +210,19 @@ listed for shutdown around 16–20 October 2026. If you set `GEMINI_MODEL` to
 The key is a password to your Google account's quota. It goes only in that
 Supabase secret — never in the app, never in this repository.
 
-## AI apps: Claude and ChatGPT (MCP)
+## AI apps: removed
 
-Lets your own Claude or ChatGPT read your figures, add items to Review,
-and suggest changes that wait in Review until you apply them, over MCP.
-Chosen in `docs/adr/0012-mcp-server.md` and, for suggestions,
-`docs/adr/0013-ai-apps-suggest-changes.md`; the design and every check is
-`docs/design/mcp/PLAN.md` and `docs/design/mcp/PROPOSALS.md`. The steps, in order, are
-HANDOFF §3 Part F; One-time updates checks each one. What they leave set:
+The feature that let your own Claude or ChatGPT read your figures and add to
+Review (ADR 0012 and 0013) was removed on 2026-11-10 (`docs/adr/0016-remove-ai-apps.md`).
+Nothing in the app or in this setup needs it. If you ever switched any of it
+on in Supabase, you can undo it; none of this is needed for the app to work:
 
-| Where in Supabase | Setting |
+| Where in Supabase | What to do |
 |---|---|
-| **Authentication → URL Configuration** | Site URL `https://aaron-budget-app.pages.dev`: Supabase sends an AI app's sign-in to Site URL + Authorization Path |
-| **Authentication → OAuth Server** | Enabled; Authorization Path `/oauth/consent`; dynamic client registration on |
-| **Authentication → Sign In / Providers** | Allow new users to sign up off; Email: Secure email change on |
-| **Project Settings → JWT Keys** | The current key is ECC (P-256); the old key not revoked |
-| **Edge Functions → `mcp`** | The AI apps server, pasted from One-time updates' **Copy**; **Enforce JWT verification off** |
-| **Edge Functions → `ai`, `read-receipt`** | **Enforce JWT verification off** once the key is ECC, and only on their versions of 2026-09-30 or later, which check every caller themselves (`read-receipt`'s older copy relies on the switch alone: paste it again or delete it first) |
+| **Authentication → OAuth Server** | Switch it off, if it is on. Remove any registered OAuth client or app listed there |
+| **Edge Functions → `mcp`** | Delete it, if it is listed: **⋯ → Delete** |
 
-`mcp` needs no secrets: `SUPABASE_URL`, `SUPABASE_ANON_KEY` and
-`SUPABASE_PUBLISHABLE_KEYS` are provided by Supabase (the publishable key
-is used first, so retiring the legacy keys signs no AI app out), and `EXTRA_ORIGINS`, if set for the other
-functions, is read the same way. It never holds a service key or an AI
-key. Check it at
-`https://bnodrfghxbavlopxkgju.supabase.co/functions/v1/mcp/health`:
-`{"ok":true,"version":"…","tools":13}`. After `0039`, paste the server
-again from One-time updates' **Copy**: its version `2026-10-05.1` brought
-the three tools that suggest changes, and the prompt `review_my_budget`;
-`2026-10-05.2` also refuses every character that draws as nothing (tag
-characters and variation selectors too) and leaves them out of the names
-it hands out (testing mcp-01); `2026-10-05.3` holds a 2025-era request to
-the 20-second deadline too, which it had stopped watching once the SDK
-began its answer (testing mcp-02); `2026-10-05.4` carries the engine's
-fixes to a debt never paid off, amounts and dates long ago (testing
-fuzz-03, fuzz-04, fuzz-07); `2026-10-05.5` leaves the day of a note empty for a year before 1900 (testing fuzz-06); `2026-10-05.6` refuses a day before 1900 or after 2999 in get_period and search_transactions, saying which days it reads (testing mcp-04); `2026-10-05.7` takes the bearer scheme in any letter case, as RFC 7235 has it (testing mcp-06); `2026-11-09.1` refuses, in what an AI app adds or suggests, a space that is not one ordinary space between words and an accent written as a letter and a separate mark, as `0042` does in the database (the review of 2026-11-09).
-
-**Enforce JWT verification on `mcp` must stay off.** With it on,
-Supabase answers Claude and ChatGPT before the server can, without the
-pointer to the sign-in, and connecting silently fails. Supabase has been
-seen to turn it back on after an update, so check it after every paste.
-
-**Connecting** is Help → **Connect Claude or ChatGPT**, each
-starting from Settings → Account → AI apps → **Connect a new AI app**, which lets
-a new app connect for 15 minutes. The first-connection checks are HANDOFF
-§4, 15 to 23.
-
-**Now and then:** Claude registers a new app in **Authentication → OAuth
-Apps** each time it connects afresh, and anyone can register one there
-(none gets past the connect page without your 15 minutes). Delete any
-that Settings → Account → AI apps → **Connected apps** does not list.
-
-**To switch it all off:** Settings → Account → AI apps → turn off **Let AI apps
-connect**, which stops every AI app at once; then **Authentication →
-OAuth Server** → off, so none can sign in again.
+Your own AI helper (`ai`, above) is a different thing and is not touched.
 
 ## iPhone: install it
 

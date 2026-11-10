@@ -2562,7 +2562,7 @@ payment, if any, stands against none.
 
 **Decided 2026-10-01. Engineering default. Not from the workbook.** Decided
 by the engineer under the owner's 2026-09-30 request that AI apps "answer
-questions" (ADR 0012; MCP plan §2.4, tool 7). The workbook has no search,
+questions" (ADR 0012; MCP plan §2.4, tool 7). (AI apps were removed: ADR 0016) The workbook has no search,
 so there is no cell to follow. Without a total from the engine, "how much
 did I spend at the grocery store this year" would be the AI adding up at
 most 50 rows itself, which CLAUDE.md's first invariant forbids.

@@ -1,9 +1,15 @@
 # ADR 0012 — Outside AI apps connect over MCP; they read figures and add to Review, nothing more
 
+**Status: Superseded by ADR 0016 (the feature was removed on 2026-11-10).**
+The text below is kept as history and describes code that is no longer
+there. The design documents it names, `docs/design/mcp/PLAN.md` and
+`docs/design/mcp/PROPOSALS.md`, were deleted with the feature; git history
+keeps them.
+
 **Date:** 2026-09-30 · **Decided by:** the engineer, on the owner's request
 of 2026-09-30; the words quoted below are the owner's, as relayed in the
-brief for this design · **Status:** accepted; both confirmations given
-by the owner on 2026-09-30 (below)
+brief for this design · **Status:** Superseded by ADR 0016 (the feature was removed on 2026-11-10);
+it was accepted, with both confirmations given by the owner on 2026-09-30 (below)
 **Amends:** ADR 0004 (the AI helper and `read-receipt` refuse AI apps'
 tokens; "JWT verification stays on" holds only while the project signs with
 the legacy secret), ADR 0007 (`/setup/` carries one file built at site
