@@ -124,8 +124,9 @@ describe('One-time updates', () => {
     expect(row('ai-function.ts')).toBe('✗Not in yet: ai-function.tsThe AI helper, which every AI feature goes through')
     expect(screen.getByText('Next: install the AI helper. About 5 minutes, easiest on a computer.')).toBeTruthy()
     expect(screen.getByText('Name it exactly ai.')).toBeTruthy()
-    // The helper checks every caller itself, so Supabase's own check is off.
-    expect(screen.getByText('Turn Enforce JWT verification off, and press Deploy. The helper checks every caller itself.')).toBeTruthy()
+    // Supabase's own check stays on, as the deployed helper has it.
+    expect(screen.getByText('Keep Enforce JWT verification on, and press Deploy.')).toBeTruthy()
+    expect(screen.queryByText(/Turn Enforce JWT verification off/)).toBeNull()
     const link = screen.getByRole('link', { name: 'Open the AI helper on GitHub' })
     expect(link.getAttribute('href')).toBe('https://github.com/aaronjoseph94/budget-app/blob/main/supabase/functions/ai/index.ts')
   })
@@ -151,7 +152,7 @@ describe('One-time updates', () => {
     expect(row('ai-function.ts')).toBe('✗An older copy: ai-function.tsThe AI helper, which every AI feature goes through: an older copy is in')
     expect(screen.getByText('Next: paste the AI helper’s new version over the one you have. About 5 minutes, easiest on a computer.')).toBeTruthy()
     expect(screen.getByText('Paste the new version over everything in the editor.')).toBeTruthy()
-    expect(screen.getByText('Turn Enforce JWT verification off, and deploy it.')).toBeTruthy()
+    expect(screen.getByText('Keep Enforce JWT verification on, and deploy it.')).toBeTruthy()
     expect(screen.queryByText('Name it exactly ai.')).toBeNull()
   })
 

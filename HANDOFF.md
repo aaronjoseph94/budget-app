@@ -202,8 +202,9 @@ to paste, so GitHub is not needed. Easiest on a computer.
 the Supabase plugin, each checked afterwards):**
 - Part D was done: `0015` to `0041` are in. `schema_level()` answers 41.
   A second paste only says "already in".
-  `0042_ai_words_read_one_way.sql` (written for the AI apps) is not needed
-  now; paste nothing for it (ADR 0016).
+  `0042_ai_words_read_one_way.sql` (written for the AI apps) was applied on
+  2026-11-10, before the feature was removed. It is harmless and needs
+  nothing more (ADR 0016).
 - Step 17 was done: the `ai` helper there is `2026-10-08.2` (deploy 9,
   JWT verification on), and it answers a call. This repository's helper
   is `2026-11-09.1` since 2026-11-09, so step 17 is to do again:
@@ -381,7 +382,7 @@ Skip 5 if `https://aaron-budget-app.pages.dev` already opens the app.
     first, OpenRouter, then Groq, then Gemini (ADR 0015); an order you
     never changed follows, one you changed stays. It needs `0038` and
     `0016`, says "Paste 0038 first" or "Paste 0016 first" without them,
-    and deletes nothing. `0042_ai_words_read_one_way.sql` is not needed.
+    and deletes nothing. `0042_ai_words_read_one_way.sql` is not needed (it was applied on 2026-11-10).
 
     Each update refuses to run before the one it needs ("Paste 0018
     first", "Paste 0035 first" and so on) and changes nothing then.

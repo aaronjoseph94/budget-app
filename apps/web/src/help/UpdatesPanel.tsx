@@ -15,17 +15,18 @@ const sourceOf = (file: string) =>
 /**
  * The exact clicks for the AI helper, which goes in the Edge Functions
  * editor, not the SQL Editor (plan §10.2), first or over an older copy
- * (N78). Its gateway check stays off: the helper checks every caller itself.
+ * (N78). Its gateway check stays on, as the deployed helper has it: the
+ * helper checks every caller itself too, so the two guard each other.
  */
 function helperSteps(again: boolean): string[] {
-  const check = 'Turn Enforce JWT verification off'
+  const check = 'Keep Enforce JWT verification on'
   return again
     ? ['In Supabase, open Edge Functions, then the function named ai, then its code.', 'Paste the new version over everything in the editor.', `${check}, and deploy it.`]
     : [
         'In Supabase, open Edge Functions, then Deploy a new function, then Via Editor.',
         'Name it exactly ai.',
         'Paste the helper over everything in the editor.',
-        `${check}, and press Deploy. The helper checks every caller itself.`,
+        `${check}, and press Deploy.`,
       ]
 }
 
