@@ -120,7 +120,8 @@ function ReadRows({ result, summary }: { result: NonNullable<Mapping['result']>;
   return (
     <>
       <Card>
-        <div className="grid grid-cols-2 divide-x divide-border sm:grid-cols-4">
+        {/* A line between cells only: divide-x also drew one at the card's right edge, two to a row. */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 [&>*]:border-border [&>:nth-child(even)]:border-l sm:[&>:nth-child(3)]:border-l">
           <Stat label="Would import" value={String(result.accepted.length)} />
           <Stat label="Needs a look" value={String(result.rejected.length)} />
           <Stat label="Money out" value={summary === 'too_large' ? 'Too large' : formatCents(summary.outflowCents)} tone="spend" />
