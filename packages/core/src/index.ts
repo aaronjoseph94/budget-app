@@ -88,8 +88,11 @@ export {
 } from './list-order.js'
 
 export {
+  onwardReach,
   resolveBudgets,
   type BudgetHistoryRow,
+  type OnwardReach,
+  type OnwardReachInput,
   type ResolveBudgetsInput,
   type ResolveBudgetsOutput,
   type ResolvedBudget,

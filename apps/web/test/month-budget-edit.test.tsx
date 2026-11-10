@@ -31,6 +31,12 @@ function seeded(...budgets: ReturnType<typeof typed>[]): FakeSupabase {
   })
 }
 
+/** A June charge, so Groceries has a row in June to type on. */
+function withJune(fake: FakeSupabase): FakeSupabase {
+  fake.tables.transactions.push({ id: 't6', posted_on: '2026-06-04', amount_cents: -3000, merchant_raw: 'SYNTHETIC MARKET', category_id: 'groceries', source: 'card_pdf' })
+  return fake
+}
+
 const variable = () => within(screen.getByRole('region', { name: 'Variable expenses' }))
 const groceries = () =>
   within(variable().getByRole('rowheader', { name: 'Groceries' }).closest('tr')!).getAllByRole('cell').map((c) => c.textContent)
@@ -116,6 +122,33 @@ describe('Typing a budget on the Month', () => {
 
     renderScreen(<MonthScreen month="2026-10" />, fake)
     expect(await screen.findByRole('button', { name: 'Budget for Groceries, $200.00' })).toBeTruthy()
+  })
+
+  // The tester's June: $250.00 already "from September on". A new "from this
+  // month on" in June stops at August (D12), so the words say where.
+  it('says where "from this month on" stops when a later month has its own, before and after saving', async () => {
+    const fake = withJune(seeded(typed('b1', '2026-09-01', 'onward', 25000), typed('b2', '2026-07-01', 'only', 9000)))
+    const field = await edit(fake, '2026-06')
+    expect(await screen.findByText('June to August. September on keeps $250.00.')).toBeTruthy()
+    expect(screen.queryByText(/every month after it/)).toBeNull()
+    // "Just this month" keeps its own words.
+    fireEvent.click(screen.getByRole('radio', { name: 'Just this month' }))
+    expect(screen.getByText('June only. Other months keep theirs.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('radio', { name: 'From this month on' }))
+
+    fireEvent.change(field, { target: { value: '100' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    expect((await variable().findByRole('status')).textContent).toBe('Groceries: $100.00 from June to August.')
+    cleanup()
+
+    // With no later month of its own, the words are as they were; a "no budget" later is named as one.
+    await edit(withJune(seeded(typed('b1', '2026-03-01', 'onward', 25000))), '2026-06')
+    expect(await screen.findByText('June and every month after it, except a month given its own.')).toBeTruthy()
+    cleanup()
+    const none = withJune(seeded())
+    none.tables.category_budgets.push({ ...typed('b1', '2026-07-01', 'onward', 0), budget_cents: null })
+    await edit(none, '2026-06')
+    expect(await screen.findByText('June only. July on keeps no budget.')).toBeTruthy()
   })
 
   it('refuses what is not an amount, or is below zero, in words, and saves nothing', async () => {

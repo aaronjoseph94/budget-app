@@ -1,8 +1,9 @@
-import { useId, useState } from 'react'
-import type { PeriodRow } from '@budget/core'
+import { useEffect, useId, useState } from 'react'
+import { isoDate, onwardReach, type OnwardReach, type PeriodRow } from '@budget/core'
 import { parseMoneyInput, tooLargeInput, useAppData } from '../app-data.js'
-import { setBudget } from '../ledger.js'
-import { formatCents, formatForInput, formatMonthName } from '../format.js'
+import { listLaterBudgets, setBudget } from '../ledger.js'
+import { budgetsForCore } from '../sheet-input.js'
+import { formatCents, formatForInput, formatMonthName, formatMonthTitle } from '../format.js'
 import { Alert } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Input, refusal } from '../components/ui/form.js'
@@ -20,6 +21,10 @@ import { useStillOpen } from '../lib/still-open.js'
  * which re-reads the month, so every figure shown is core's again. A refusal
  * that answers once the editor has closed (another row or month opened while
  * it saved) is handed to `onFailedAfterClose`, so it is never lost.
+ *
+ * A later month typed "from this month on" stops this one there (D12), so
+ * the words say where, from core's onwardReach over the category's later
+ * values, read when the editor opens.
  */
 export function BudgetEditor({
   row,
@@ -47,6 +52,21 @@ export function BudgetEditor({
   const lower = word.toLowerCase()
   const monthName = formatMonthName(month)
   const open = useStillOpen()
+  // Where "from this month on" stops: null while it is read, 'unknown' if that read failed.
+  const [reach, setReach] = useState<OnwardReach | 'unknown' | null>(null)
+  useEffect(() => {
+    let live = true
+    listLaterBudgets(supabase, row.categoryId, month)
+      .then((later) => live && setReach(onwardReach({ categoryId: row.categoryId, month: isoDate(month), history: budgetsForCore(later) })))
+      .catch(() => live && setReach('unknown'))
+    return () => {
+      live = false
+    }
+  }, [supabase, row.categoryId, month])
+  const known = reach === null || reach === 'unknown' ? null : reach
+  // A month in another year is named with its year.
+  const nameOf = (m: string) => (m.slice(0, 4) === month.slice(0, 4) ? formatMonthName(m) : formatMonthTitle(m))
+  const stops = known === null || known.until === null || known.next === null ? null : { until: known.until, next: known.next }
 
   const save = async (clear: boolean) => {
     const cents = clear ? null : parseMoneyInput(text)
@@ -63,7 +83,8 @@ export function BudgetEditor({
     try {
       await setBudget(supabase, { userId, categoryId: row.categoryId, month, applies, budgetCents: cents, replacesOnly })
       const amount = cents === null ? `no ${lower}` : formatCents(cents)
-      onSaved(`${row.name}: ${amount} ${applies === 'onward' ? `from ${monthName} on` : `in ${monthName} only`}.`)
+      const months = applies === 'only' ? `in ${monthName} only` : stops === null ? `from ${monthName} on` : `from ${monthName} to ${nameOf(stops.until)}`
+      onSaved(`${row.name}: ${amount} ${months}.`)
       // Re-reads the categories and, through `version`, the month itself.
       await refresh()
     } catch (cause) {
@@ -126,9 +147,15 @@ export function BudgetEditor({
         ))}
       </fieldset>
       <p className="text-xs text-muted-foreground">
-        {applies === 'onward'
-          ? `${monthName} and every month after it, except a month given its own.`
-          : `${monthName} only. Other months keep theirs.`}
+        {applies === 'only'
+          ? `${monthName} only. Other months keep theirs.`
+          : reach === null || reach === 'unknown'
+            ? `${monthName} on, until a later month given its own.`
+            : stops === null
+              ? `${monthName} and every month after it, except a month given its own.`
+              : `${stops.until === month ? `${monthName} only` : `${monthName} to ${nameOf(stops.until)}`}. ${nameOf(stops.next.month)} on keeps ${
+                  stops.next.budgetCents === null ? `no ${lower}` : formatCents(stops.next.budgetCents)
+                }.`}
       </p>
       {error !== null ? (
         <Alert tone="error" id={errorId}>

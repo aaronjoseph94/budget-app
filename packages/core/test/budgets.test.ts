@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { isoDate } from '@budget/money-primitives'
-import { resolveBudgets, type BudgetHistoryRow } from '../src/budgets.js'
+import { onwardReach, resolveBudgets, type BudgetHistoryRow } from '../src/budgets.js'
 import { monthSheet } from '../src/period-sheet.js'
 
 /**
@@ -113,5 +113,26 @@ describe('monthSheet budgets (suite)', () => {
         startingBalanceCents: null,
       }).blocks.variable.rows[0]!.budgetCents
     expect([month('2025-12-31'), month('2026-02-28'), month('2026-03-31'), month('2026-04-01')]).toEqual([null, 10_000, 5_000, 10_000])
+  })
+})
+
+describe('onwardReach: how far a "from this month on" typed in a month carries (D12)', () => {
+  const reach = (month: string, history: BudgetHistoryRow[]) => onwardReach({ categoryId: 'food', month: isoDate(`${month}-01`), history })
+
+  it('stops before the next month typed "from this month on", and says what that month holds', () => {
+    // The tester's Restaurants: $250.00 from September on, then $100.00 typed in June.
+    const history = [typed('food', '2026-09', 'onward', 25_000), typed('food', '2026-12', 'onward', 30_000)]
+    expect(reach('2026-06', history)).toEqual({ until: '2026-08-01', next: { month: '2026-09-01', budgetCents: 25_000 } })
+    // Typed in the month that has its own, it runs to the one after.
+    expect(reach('2026-09', history)).toEqual({ until: '2026-11-01', next: { month: '2026-12-01', budgetCents: 30_000 } })
+  })
+
+  it('holds for every later month when none has its own, and a "just this month" does not stop it', () => {
+    expect(reach('2026-06', [typed('food', '2026-08', 'only', 5_000), typed('food', '2026-05', 'onward', 1_000)])).toEqual({ until: null, next: null })
+    expect(reach('2026-06', [typed('other', '2026-09', 'onward', 25_000)])).toEqual({ until: null, next: null })
+  })
+
+  it('names a typed "no budget" as the next value, and stops at the very next month', () => {
+    expect(reach('2026-06', [typed('food', '2026-07', 'onward', null)])).toEqual({ until: '2026-06-01', next: { month: '2026-07-01', budgetCents: null } })
   })
 })

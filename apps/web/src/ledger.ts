@@ -919,6 +919,23 @@ export async function listBudgetHistory(
   return rows.map((r) => ({ ...r, budget_cents: r.budget_cents === null ? null : Number(r.budget_cents) }))
 }
 
+/**
+ * A category's "from this month on" values typed for months after `after`,
+ * for the budget editor to say where a new one stops (core's onwardReach).
+ * A handful at most: one per month typed.
+ */
+export async function listLaterBudgets(supabase: SupabaseClient, categoryId: string, after: string): Promise<readonly BudgetRow[]> {
+  const { data, error } = await supabase
+    .from('category_budgets')
+    .select('id, category_id, month, applies, budget_cents')
+    .eq('category_id', categoryId)
+    .eq('applies', 'onward')
+    .gt('month', after)
+    .order('month', { ascending: true })
+  if (error !== null) throw refused(describeBudgetFailure('read', error), error)
+  return ((data ?? []) as BudgetRow[]).map((r) => ({ ...r, budget_cents: r.budget_cents === null ? null : Number(r.budget_cents) }))
+}
+
 export interface BudgetEdit {
   readonly userId: string
   readonly categoryId: string

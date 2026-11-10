@@ -25,7 +25,7 @@
  * the same way.
  */
 import { type Cents, type IsoDate, cents } from '@budget/money-primitives'
-import { monthBounds } from './week.js'
+import { monthBounds, shiftMonth } from './week.js'
 
 export interface BudgetHistoryRow {
   readonly categoryId: string
@@ -92,4 +92,38 @@ export function resolveBudgets(input: ResolveBudgetsInput): ResolveBudgetsOutput
     budgets.push({ categoryId, budgetCents: inEffect.budgetCents === null ? null : cents(inEffect.budgetCents) })
   }
   return { budgets }
+}
+
+export interface OnwardReachInput {
+  readonly categoryId: string
+  /** The first day of the month a "from this month on" value is typed in. */
+  readonly month: IsoDate
+  /** Every row typed for the category, for any month, later ones included. */
+  readonly history: readonly BudgetHistoryRow[]
+}
+
+export interface OnwardReach {
+  /** The last month it applies, by its first day; null when it holds for every later month. */
+  readonly until: IsoDate | null
+  /** The next month with a "from this month on" value of its own, and that value; null when none. */
+  readonly next: { readonly month: IsoDate; readonly budgetCents: Cents | null } | null
+}
+
+/**
+ * How far a "from this month on" value typed in `month` carries under the
+ * rule above: up to the month before the next 'onward' row for the category,
+ * which holds from there. An 'only' row in between changes its own month
+ * alone and does not stop it. So the screen can say where it stops.
+ */
+export function onwardReach(input: OnwardReachInput): OnwardReach {
+  let next: BudgetHistoryRow | null = null
+  for (const row of input.history) {
+    if (row.categoryId !== input.categoryId || row.applies !== 'onward' || row.month <= input.month) continue
+    if (next === null || row.month < next.month) next = row
+  }
+  if (next === null) return { until: null, next: null }
+  return {
+    until: shiftMonth(next.month, -1),
+    next: { month: next.month, budgetCents: next.budgetCents === null ? null : cents(next.budgetCents) },
+  }
 }
