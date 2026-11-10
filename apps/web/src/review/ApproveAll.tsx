@@ -58,11 +58,14 @@ export function ApproveAll({ items, busy, onConfirm, onCancel }: {
       <p className="mt-1 text-sm text-muted-foreground">Each goes into your budget under the category shown. Change any row below first if it is wrong.</p>
       <ul className="mt-3 max-h-72 space-y-1 overflow-y-auto text-sm">
         {items.map((item) => (
+          // Both wrap rather than end in "…": at 320 px a statement's shop
+          // and even "Income 1" were cut, and a phone has no tooltip to read
+          // the rest. The category keeps its width up to 45% of the row.
           <li key={item.id} className="flex min-w-0 justify-between gap-3">
-            <span className="min-w-0 truncate" title={item.shop}>
+            <span className="line-clamp-3 min-w-0 [overflow-wrap:anywhere]" title={item.shop}>
               <IngestedText>{item.shop}</IngestedText>
             </span>
-            <span className="max-w-[45%] min-w-0 truncate text-right text-muted-foreground" title={item.category}>
+            <span className="max-w-[45%] shrink-0 text-right text-muted-foreground [overflow-wrap:anywhere]" title={item.category}>
               {item.byAi ? (
                 <>
                   <Icon name="sparkles" aria-hidden="true" className="mr-1 inline size-3.5 align-[-0.125em] text-primary" />

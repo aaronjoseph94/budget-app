@@ -264,6 +264,15 @@ describe('LedgerScreen, where a row came from', () => {
     expect(rowOf('Lunch at Subway').getByText('added by an AI app')).toBeTruthy()
     expect(rowOf('CORNER MARKET').queryByText(/added by/)).toBeNull()
   })
+
+  // Cut to one line, 27 of 44 names ended in "…" at 320 px, and a refund
+  // read as the purchase under it: a phone has no way to read the rest.
+  it('lets a shop name wrap to three lines, breaking anywhere, rather than cut it', async () => {
+    await open(seeded())
+    const name = rowOf('CORNER MARKET').getByText('CORNER MARKET').closest('p')!
+    expect(name.className.split(' ')).toEqual(expect.arrayContaining(['line-clamp-3', '[overflow-wrap:anywhere]']))
+    expect(name.className.split(' ')).not.toContain('truncate')
+  })
 })
 
 // A row dated after this month (a statement read with day and month the

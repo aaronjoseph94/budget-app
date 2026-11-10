@@ -204,8 +204,11 @@ export function LedgerScreen() {
               {items.map((r) => (
                 <li key={r.id} data-row={r.id} className="flex flex-wrap items-center gap-3 px-4 py-3 md:px-5 md:py-3.5">
                   <div className="min-w-0 flex-1">
-                    {/* As the statement printed it, in the mockup's fixed-width face. */}
-                    <p className="truncate font-mono text-sm">
+                    {/* As the statement printed it, in the mockup's fixed-width face.
+                      Up to three lines, breaking anywhere: cut to one line, 27 of
+                      44 names ended in "…" at 320 px, and a refund read as the
+                      purchase under it, with no way on a phone to read the rest. */}
+                    <p className="line-clamp-3 font-mono text-sm [overflow-wrap:anywhere]">
                       <IngestedText>{r.merchant_raw}</IngestedText>
                     </p>
                     <div className="mt-0.5 flex items-center gap-1.5">

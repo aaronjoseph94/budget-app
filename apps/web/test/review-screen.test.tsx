@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useAppData, type AppData } from '../src/app-data.js'
 import { ReviewScreen } from '../src/screens/ReviewScreen.js'
+import { ApproveAll } from '../src/review/ApproveAll.js'
 import { createFakeSupabase, type FakeSupabase } from './fake-supabase.js'
 import { renderScreen } from './render-screen.js'
 import { expectNoAxeViolations } from './axe.js'
@@ -648,5 +649,21 @@ describe('ReviewScreen, in Mockup A (step 10)', () => {
     const section = await screen.findByRole('region', { name: '1 line could not be read' })
     expect(['bg-waiting', 'border-waiting-border'].every((c) => section.className.split(' ').includes(c))).toBe(true)
     await expectNoAxeViolations()
+  })
+})
+
+// At 320 px a statement's shop and even "Income 1" ended in "…" in the
+// question, and a phone has no tooltip: both wrap now.
+describe('Approve these N, its list', () => {
+  it('wraps a long shop and its category rather than cut them', () => {
+    renderScreen(
+      <ApproveAll items={[{ id: 'a', shop: 'NORTHWIND DINER ANYTOWN AB', category: 'Income 1', byAi: false }]} busy={false} onConfirm={() => undefined} onCancel={() => undefined} />,
+      createFakeSupabase({}),
+    )
+    const shop = screen.getByText('NORTHWIND DINER ANYTOWN AB').closest('li > span')!
+    const category = screen.getByText('Income 1')
+    expect(shop.className.split(' ')).toEqual(expect.arrayContaining(['line-clamp-3', '[overflow-wrap:anywhere]']))
+    expect(category.className.split(' ')).toEqual(expect.arrayContaining(['shrink-0', '[overflow-wrap:anywhere]']))
+    expect([shop, category].flatMap((e) => e.className.split(' '))).not.toContain('truncate')
   })
 })

@@ -86,7 +86,8 @@ function TopShopsCard({ figures }: { figures: ShopFigures }) {
           {top.shops.map((s) => (
             <li key={s.shop} className="flex items-baseline gap-3 py-2">
               <div className="min-w-0 flex-1">
-                <p className="truncate font-medium" title={s.shop}>
+                {/* Up to three lines, not one with "…": a phone has no tooltip. */}
+                <p className="line-clamp-3 font-medium [overflow-wrap:anywhere]" title={s.shop}>
                   {s.shop}
                 </p>
                 <p className="text-muted-foreground">

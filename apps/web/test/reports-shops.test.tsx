@@ -44,6 +44,8 @@ describe('Reports, Shops: top shops', () => {
     const top = await card('Top shops')
     expect(within(top).getByText(/^1 – 24 Sep, against 1 – 24 Aug/)).toBeTruthy()
     const rows = within(top).getAllByRole('listitem')
+    // Three lines, not one with "…": a phone has no tooltip to read the rest.
+    expect(rows[0]?.querySelector('p')?.className.split(' ')).toEqual(expect.arrayContaining(['line-clamp-3', '[overflow-wrap:anywhere]']))
     expect(rows.map((li) => li.textContent)).toEqual([
       'FURNITURE CO1 charge · $450.00 more than August$450.00',
       'CAFE4 charges · $155.00 more than August$255.00',
