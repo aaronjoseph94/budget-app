@@ -6,10 +6,7 @@
  * puts exactly the committed files there, byte for byte, and nothing else:
  * every migration numbered 0015 or later (the owner pasted 0001–0014 on
  * 2026-09-24), the AI helper's source as ai-function.ts, and read-receipt's
- * as read-receipt-function.ts (the MCP plan's M1b). One more is built, not
- * copied: mcp-function.ts, the AI apps server, bundled from
- * packages/ai-apps by the same build (ADR 0012). Nothing from
- * the environment is read. The list is worked out from the folder, so a
+ * as read-receipt-function.ts. Nothing from the environment is read. The list is worked out from the folder, so a
  * new migration joins when it is committed.
  *
  * The files are public on the site. They hold no secret (gitleaks scans them
@@ -18,15 +15,11 @@
  */
 import { readFileSync, readdirSync } from 'node:fs'
 import type { Plugin } from 'vite'
-import { bundleMcpFunction } from '@budget/ai-apps/build'
 
 const REPO = new URL('../../', import.meta.url)
 const MIGRATION = /^(\d{4})_[a-z0-9_]+\.sql$/
 /** The first update the Copy buttons carry. */
 const FIRST_COPIED = 15
-/** The one file under /setup/ that is built rather than committed. */
-export const BUILT = 'mcp-function.ts'
-
 /** Each file the site serves under /setup/, by its name there, and where it is committed. */
 export function setupFiles(repo: URL = REPO): ReadonlyMap<string, URL> {
   const folder = new URL('supabase/migrations/', repo)
@@ -45,14 +38,9 @@ export function setupFiles(repo: URL = REPO): ReadonlyMap<string, URL> {
  * anything else under /setup/ (so it never falls through to the app's own
  * page, or to a file Vite may read), or null for a path that is not its.
  */
-export async function serveSetup(
-  url: string,
-  files = setupFiles(),
-  build = bundleMcpFunction,
-): Promise<{ status: 200 | 404; body: Buffer | null } | null> {
+export async function serveSetup(url: string, files = setupFiles()): Promise<{ status: 200 | 404; body: Buffer | null } | null> {
   const path = url.split(/[?#]/)[0] ?? ''
   if (!path.startsWith('/setup/')) return null
-  if (path === `/setup/${BUILT}`) return { status: 200, body: Buffer.from(await build()) }
   const source = files.get(path.slice('/setup/'.length))
   return source === undefined ? { status: 404, body: null } : { status: 200, body: readFileSync(source) }
 }
@@ -70,11 +58,10 @@ export function setupFilesPlugin(): Plugin {
         }, next)
       })
     },
-    async generateBundle() {
+    generateBundle() {
       for (const [name, source] of setupFiles()) {
         this.emitFile({ type: 'asset', fileName: `setup/${name}`, source: readFileSync(source) })
       }
-      this.emitFile({ type: 'asset', fileName: `setup/${BUILT}`, source: await bundleMcpFunction() })
     },
   }
 }

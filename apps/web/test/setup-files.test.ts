@@ -1,11 +1,10 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { BUILT, serveSetup, setupFiles, setupFilesPlugin } from '../setup-files.js'
+import { serveSetup, setupFiles, setupFilesPlugin } from '../setup-files.js'
 
 /**
  * What the site serves under /setup/ for One-time updates' Copy buttons
- * (ADR 0007): the committed files, byte for byte, the AI apps server built
- * from its package (ADR 0012), and nothing else.
+ * (ADR 0007): the committed files, byte for byte, and nothing else.
  */
 const repo = new URL('../../../', import.meta.url)
 const committed = (path: string) => readFileSync(new URL(path, repo))
@@ -34,9 +33,9 @@ describe('the files under /setup/', () => {
     expect((await serveSetup('/setup/read-receipt-function.ts'))?.body?.equals(committed('supabase/functions/read-receipt/index.ts'))).toBe(true)
   })
 
-  it('serve the AI apps server as it is built', async () => {
-    const answer = await serveSetup(`/setup/${BUILT}?t=1`, setupFiles(), async () => '// built')
-    expect(answer).toEqual({ status: 200, body: Buffer.from('// built') })
+  it('no longer serve the retired AI apps server file', async () => {
+    expect(await serveSetup('/setup/mcp-function.ts')).toEqual({ status: 404, body: null })
+    expect([...setupFiles().keys()]).not.toContain('mcp-function.ts')
   })
 
   it('answer 404 for anything else under /setup/, and leave every other path to the app', async () => {
@@ -47,17 +46,16 @@ describe('the files under /setup/', () => {
     expect(await serveSetup('/assets/index.js')).toBeNull()
   })
 
-  it('are emitted into the build, the committed ones byte for byte, under setup/', async () => {
+  it('are emitted into the build, byte for byte, under setup/', async () => {
     const emitted: { fileName: string; source: Buffer | string }[] = []
     const hook = setupFilesPlugin().generateBundle
     const run = typeof hook === 'function' ? hook : hook?.handler
     await run?.call({ emitFile: (f: { fileName: string; source: Buffer }) => void emitted.push(f) } as never, {} as never, {}, false)
-    expect(emitted.map((f) => f.fileName)).toEqual([...expected, BUILT].map((n) => `setup/${n}`))
-    for (const f of emitted.slice(0, -1)) {
+    expect(emitted.map((f) => f.fileName)).toEqual(expected.map((n) => `setup/${n}`))
+    for (const f of emitted) {
       expect(Buffer.from(f.source).equals(readFileSync(setupFiles().get(f.fileName.slice(6)) as URL)), f.fileName).toBe(true)
     }
-    expect(String(emitted.at(-1)?.source)).toMatch(/^\/\/ mcp-function\.ts — /)
-  }, 60_000)
+  })
 })
 
 /**

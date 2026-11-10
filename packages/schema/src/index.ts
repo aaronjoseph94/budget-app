@@ -76,35 +76,6 @@ export {
 export { ModelProse, proseProblem, type ProseProblem } from './prose.js'
 
 export {
-  AddExpenseInputSchema,
-  AddNoteInputSchema,
-  AmountTextSchema,
-  ChangeSchema,
-  type Change,
-  GetDebtsInputSchema,
-  GetForecastInputSchema,
-  GetPeriodInputSchema,
-  GetSavingsGoalsInputSchema,
-  GetSpendingInputSchema,
-  ListCategoriesInputSchema,
-  ListReviewQueueInputSchema,
-  ListSchema,
-  ListSuggestionsInputSchema,
-  MCP_SERVER_VERSION,
-  NameSchema,
-  ProposeChangeInputSchema,
-  ReasonSchema,
-  SearchTransactionsInputSchema,
-  SuggestReviewCategoriesInputSchema,
-  NoteTextSchema,
-  WordsSchema,
-  drawsAsNothing,
-  readsOneWay,
-} from './ai-apps.js'
-
-export { SUGGESTION_KINDS, StoredSuggestionSchema, type StoredSuggestion, type SuggestionKind } from './suggestions.js'
-
-export {
   FACT_LETTER,
   NARRATE_LIMITS,
   NARRATE_PROMPT_VERSION,
