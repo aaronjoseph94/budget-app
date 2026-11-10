@@ -31,6 +31,7 @@ export {
 export {
   MAX_FIELD_CHARS,
   MAX_ROWS,
+  dropPreamble,
   isBlankRow,
   looksLikeText,
   tokenizeCsv,

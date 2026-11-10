@@ -74,7 +74,13 @@ export function ImportScreen({ fileName, text, onReset, onSave, saving = false, 
           {result !== null && summary !== null ? (
             <>
               <ReadRows result={result} summary={summary} />
-              <SaveFooter result={result} onSave={onSave} saving={saving} outcome={outcome} />
+              <SaveFooter
+                result={result}
+                skippedAbove={mapping.analysis === null ? 0 : mapping.analysis.preambleSkipped}
+                onSave={onSave}
+                saving={saving}
+                outcome={outcome}
+              />
             </>
           ) : null}
         </>
@@ -156,11 +162,14 @@ function ReadRows({ result, summary }: { result: NonNullable<Mapping['result']>;
 /** Sending what was read to Review, and what came of it (FE-19). */
 function SaveFooter({
   result,
+  skippedAbove,
   onSave,
   saving,
   outcome,
 }: {
   result: NonNullable<Mapping['result']>
+  /** Lines a bank printed above the table: not transactions, so not in `parsed`. */
+  skippedAbove: number
   onSave: ImportScreenProps['onSave']
   saving: boolean
   outcome: { readonly ok: boolean; readonly message: string } | null
@@ -214,6 +223,11 @@ function SaveFooter({
         {count(result.parsed, 'row', 'rows')} read · {result.accepted.length} readable · {result.rejected.length} not ·{' '}
         {count(result.blankSkipped, 'blank line', 'blank lines')} skipped
       </p>
+      {skippedAbove > 0 ? (
+        <p className="text-center text-xs text-muted-foreground">
+          {count(skippedAbove, 'line', 'lines')} above the table {skippedAbove === 1 ? 'was' : 'were'} skipped.
+        </p>
+      ) : null}
     </>
   )
 }

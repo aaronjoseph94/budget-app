@@ -296,3 +296,30 @@ function readQuoted(src: string, from: number, startLine: number): QuotedRead {
 export function isBlankRow(row: CsvRow): boolean {
   return row.fields.every((f) => f.length === 0)
 }
+
+/** How many records above a table are looked through for its heading. */
+const MAX_PREAMBLE = 20
+
+/**
+ * The file from its table on: lines a bank prints above it ("Account: …",
+ * "Statement period: …") are dropped, and counted.
+ *
+ * The table starts at the first record as wide as most of the records
+ * after it. Every reader here took the first non-blank record as the
+ * heading, so a preamble line became the column names and every
+ * transaction under it was refused for its column count. A file with no
+ * such lines comes back as it went in. Blank lines are kept, so they are
+ * still counted; a preamble line is no transaction, so it is not `parsed`.
+ */
+export function dropPreamble(rows: readonly CsvRow[]): { readonly rows: readonly CsvRow[]; readonly skipped: number } {
+  const records = rows.filter((r) => !isBlankRow(r))
+  for (let i = 0; i < Math.min(records.length - 1, MAX_PREAMBLE); i++) {
+    const width = records[i]?.fields.length
+    const after = records.slice(i + 1)
+    if (after.filter((r) => r.fields.length === width).length * 2 <= after.length) continue
+    if (i === 0) return { rows, skipped: 0 }
+    const above = new Set(records.slice(0, i))
+    return { rows: rows.filter((r) => !above.has(r)), skipped: i }
+  }
+  return { rows, skipped: 0 }
+}
