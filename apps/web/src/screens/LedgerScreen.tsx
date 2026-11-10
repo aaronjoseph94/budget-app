@@ -211,8 +211,13 @@ export function LedgerScreen() {
                     <p className="line-clamp-3 font-mono text-sm [overflow-wrap:anywhere]">
                       <IngestedText>{r.merchant_raw}</IngestedText>
                     </p>
-                    <div className="mt-0.5 flex items-center gap-1.5">
-                      <Badge variant="secondary">{names.get(r.category_id) ?? 'Unknown'}</Badge>
+                    {/* Wraps under the category rather than run over the amount:
+                      "added by hand" was drawn over it at 320 px, and over a
+                      long category's row at 390. */}
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                      <Badge variant="secondary" className="[overflow-wrap:anywhere]">
+                        {names.get(r.category_id) ?? 'Unknown'}
+                      </Badge>
                       {r.source === 'typed' || r.source === 'ai_app' ? (
                         <span className="text-xs text-muted-foreground">{r.source === 'typed' ? 'added by hand' : 'added by an AI app'}</span>
                       ) : null}

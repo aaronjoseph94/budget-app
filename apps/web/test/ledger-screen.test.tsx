@@ -263,6 +263,11 @@ describe('LedgerScreen, where a row came from', () => {
     expect(rowOf('Coffee with Sam').getByText('added by hand')).toBeTruthy()
     expect(rowOf('Lunch at Subway').getByText('added by an AI app')).toBeTruthy()
     expect(rowOf('CORNER MARKET').queryByText(/added by/)).toBeNull()
+    // At 320 px "added by hand" ran on past the category, over the amount:
+    // the line wraps, and a long category name breaks anywhere in its pill.
+    const line = rowOf('Coffee with Sam').getByText('added by hand').parentElement!
+    expect(line.className.split(' ')).toEqual(expect.arrayContaining(['flex', 'flex-wrap']))
+    expect(rowOf('Coffee with Sam').getByText('Groceries').className.split(' ')).toContain('[overflow-wrap:anywhere]')
   })
 
   // Cut to one line, 27 of 44 names ended in "…" at 320 px, and a refund
