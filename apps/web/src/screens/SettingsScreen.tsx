@@ -252,6 +252,10 @@ function BudgetRow({ category, onError }: { category: Category; onError: (m: str
             setProblem(null)
           }}
           onBlur={() => void commit()}
+          // Enter saves, as on Lists: by leaving the field, so it saves once.
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.blur()
+          }}
         />
       </div>
       {problem !== null ? (

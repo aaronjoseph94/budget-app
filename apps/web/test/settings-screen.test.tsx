@@ -134,6 +134,20 @@ describe('SettingsScreen, weekly budgets', () => {
     expect(lists).toEqual(['Which list?', 'Bills', 'Debts', 'Subscriptions', 'Variable expenses'])
   })
 
+  // Only leaving the field saved; on Lists, Enter saves too.
+  it('saves a weekly budget on Enter, as Lists does', async () => {
+    const fake = createFakeSupabase({
+      categories: [{ id: 'c1', name: 'Groceries', kind: 'variable', sort_order: 0, weekly_budget_cents: null }],
+    })
+    renderScreen(<SettingsScreen tab="budgets" />, fake)
+
+    const field = await screen.findByRole<HTMLInputElement>('textbox', { name: 'Weekly budget for Groceries' })
+    field.focus()
+    fireEvent.change(field, { target: { value: '80' } })
+    fireEvent.keyDown(field, { key: 'Enter' })
+    await waitFor(() => expect(fake.tables.categories[0]?.weekly_budget_cents).toBe(8000))
+  })
+
   it('saves a weekly budget when the field is left, and clears it when emptied', async () => {
     const fake = createFakeSupabase({
       categories: [{ id: 'c1', name: 'Groceries', kind: 'variable', sort_order: 0, weekly_budget_cents: 15000 }],
