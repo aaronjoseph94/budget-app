@@ -13,7 +13,7 @@ import {
 import { alreadyOn, atEndOf, groupByList, LIST_HEADING, LISTS, starterList, takenByAnother, type CategoryKind } from '../lists.js'
 import { saveDisplayName } from '../profile.js'
 import { formatCents, formatMonthTitle, todayIso } from '../format.js'
-import { Alert, SavedNote } from '../components/ui/feedback.js'
+import { Alert, Loading, SavedNote } from '../components/ui/feedback.js'
 import { Button } from '../components/ui/button.js'
 import { Input } from '../components/ui/form.js'
 import { Icon } from '../components/ui/icons.js'
@@ -90,7 +90,7 @@ export function ListsTab() {
 
   const view = ({ card, group }: { card: ListCard; group: string }) => (
     <Fragment key={card.kind}>
-      {card.kind === 'income' && schedules.status === 'failed' ? <Alert tone="error">{schedules.message}</Alert> : null}
+      {card.kind === 'income' ? <ReadProblem read={schedules} /> : null}
       {card.kind === 'bill' ? <AmountsProblem amounts={amounts} /> : null}
       <ListCardView
         card={card}
@@ -145,7 +145,7 @@ export function SetupLists({ kinds, starter = false }: { kinds: readonly Categor
       {starter && version > 0 && categories.length < FEW_CATEGORIES ? <StarterCard onAdded={setAdded} /> : null}
       {added !== null ? <StarterAdded count={added} /> : null}
       {kinds.some((k) => RECURRING.has(k)) ? <AmountsProblem amounts={amounts} /> : null}
-      {kinds.includes('income') && schedules.status === 'failed' ? <Alert tone="error">{schedules.message}</Alert> : null}
+      {kinds.includes('income') ? <ReadProblem read={schedules} /> : null}
       {cards.map(({ card, group }) => (
         <ListCardView
           key={card.kind}
@@ -199,7 +199,7 @@ function FixedTotal({ amounts, month }: { amounts: MonthlyAmounts; month: string
 
 /** Why monthly amounts are not shown, once, above the three cards that would show them. */
 function AmountsProblem({ amounts }: { amounts: MonthlyAmounts }) {
-  if (amounts.status === 'failed') return <Alert tone="error">{amounts.message}</Alert>
+  if (amounts.status === 'failed') return <ReadProblem read={amounts} />
   if (amounts.status === 'ready' && amounts.mismatch) {
     return (
       <Alert tone="error">
@@ -208,6 +208,22 @@ function AmountsProblem({ amounts }: { amounts: MonthlyAmounts }) {
     )
   }
   return null
+}
+
+/**
+ * Why a read failed, with the way to read again after it, as Savings
+ * says it; the sentence said "Try again" with nothing to press. Not for a
+ * read that needs a one-time update, which Try again cannot fix.
+ */
+function ReadProblem({ read }: { read: MonthlyAmounts | PaySchedules }) {
+  if (read.status !== 'failed') return null
+  // As a string alone, so the Alert adds its way to One-time updates.
+  if (read.missingUpdate) return <Alert tone="error">{read.message}</Alert>
+  return (
+    <Alert tone="error">
+      {read.message} <TryAgain />.
+    </Alert>
+  )
 }
 
 /**
@@ -433,6 +449,9 @@ function ListCardView({
         <p className="px-4 py-3 text-sm text-muted-foreground sm:px-5">Nothing here yet.</p>
       ) : (
         <>
+          {/* The names show at once; a card's fields come with their read. */}
+          {amounts?.status === 'loading' ? <Loading what="monthly amounts" /> : null}
+          {schedules?.status === 'loading' ? <Loading what="when you are paid" /> : null}
           {plans !== null ? <PlanHeadings month={month} /> : null}
           {paid !== null ? <PayHeadings /> : null}
           <ul ref={list} className={cn('divide-y border-b', plans === null && paid === null && 'mt-3 border-t')}>

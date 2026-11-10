@@ -189,6 +189,63 @@ describe('Lists, changing a list', () => {
   })
 })
 
+describe('Lists, reading amounts and paydays', () => {
+  const READS = new Set(['category_plans', 'pay_schedules'])
+  const card = (name: string) => within(screen.getByRole('region', { name }))
+
+  // Income and Bills showed bare names, with no fields and no word, while the two reads were slow.
+  it('says the cards that will get fields are loading, until they come', async () => {
+    const fake = seeded()
+    let release = () => {}
+    const held = new Promise<void>((resolve) => (release = resolve))
+    fake.server.hold = (table) => (READS.has(table) ? held : null)
+    renderScreen(<ListsTab />, fake)
+
+    await screen.findByRole('textbox', { name: 'Rename Rent' })
+    expect(card('Bills').getByRole('status', { name: 'Loading monthly amounts' })).toBeTruthy()
+    expect(card('Income').getByRole('status', { name: 'Loading when you are paid' })).toBeTruthy()
+    // No rows, or no fields to come: nothing said.
+    expect(card('Debts').queryByRole('status')).toBeNull()
+    expect(card('Variable expenses').queryByRole('status')).toBeNull()
+
+    release()
+    expect(await card('Bills').findByRole('textbox', { name: 'Day paid for Rent' })).toBeTruthy()
+    expect(await card('Income').findByRole('combobox', { name: 'How often Pay pays' })).toBeTruthy()
+    expect(screen.queryByRole('status', { name: /^Loading / })).toBeNull()
+  })
+
+  // "…Try again. (code 57014)" offered nothing to press.
+  it('offers Try again when a read fails, which reads them again', async () => {
+    const fake = seeded()
+    fake.server.refuse = (table) => (READS.has(table) ? '57014' : null)
+    renderScreen(<ListsTab />, fake)
+
+    const alerts = await screen.findAllByRole('alert')
+    await waitFor(() => expect(screen.getAllByRole('alert')).toHaveLength(2))
+    const paid = alerts.find((a) => a.textContent?.startsWith('When you are paid could not be read'))
+    const amounts = screen.getAllByRole('alert').find((a) => a.textContent?.startsWith('Your monthly amounts could not be read'))
+    expect(paid === undefined ? null : within(paid).getByRole('button', { name: 'Try again' })).toBeTruthy()
+    expect(amounts === undefined ? null : within(amounts).getByRole('button', { name: 'Try again' })).toBeTruthy()
+    await expectNoAxeViolations()
+
+    fake.server.refuse = null
+    fireEvent.click(within(amounts!).getByRole('button', { name: 'Try again' }))
+    expect(await card('Bills').findByRole('textbox', { name: 'Day paid for Rent' })).toBeTruthy()
+    expect(await card('Income').findByRole('combobox', { name: 'How often Pay pays' })).toBeTruthy()
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull())
+  })
+
+  it('offers no Try again where the read needs a one-time update', async () => {
+    const fake = seeded()
+    fake.server.refuse = (table) => (table === 'pay_schedules' ? 'PGRST205' : null)
+    renderScreen(<ListsTab />, fake)
+
+    const alert = await screen.findByRole('alert')
+    expect(alert.textContent).toMatch(/^Pay schedules need a one-time update/)
+    expect(within(alert).queryByRole('button', { name: 'Try again' })).toBeNull()
+  })
+})
+
 describe('Lists, a name the database refuses', () => {
   const REFUSED = 'That name has characters the app cannot store. Use letters, numbers and ordinary punctuation. (code 23514)'
 

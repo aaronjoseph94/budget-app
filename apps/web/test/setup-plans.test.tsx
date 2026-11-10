@@ -94,7 +94,8 @@ describe('Lists, reading monthly amounts', () => {
     fake.tables.category_plans.push({ ...plan('p9', 'rent', '2026-02', 5_000, 3), effective_month: '2026-02-15' })
     renderScreen(<ListsTab />, fake)
 
-    expect((await screen.findByRole('alert')).textContent).toBe('Your monthly amounts could not be shown.')
+    // With the way to read again after it, as Savings offers (a read that failed offered nothing to press).
+    expect((await screen.findByRole('alert')).textContent).toBe('Your monthly amounts could not be shown. Try again.')
     const bills = await card('Bills')
     expect(bills.getByRole('textbox', { name: 'Rename Rent' })).toBeTruthy()
     expect(bills.queryByRole('textbox', { name: /^Day paid/ })).toBeNull()

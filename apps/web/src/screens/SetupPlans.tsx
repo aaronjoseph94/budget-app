@@ -1,7 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import { billsTotals, isoDate, resolvePlans, type BillNudge, type BillsTotals, type ResolvedPlan } from '@budget/core'
 import { parseMoneyInput, useAppData } from '../app-data.js'
-import { listPlanHistory, setPlan, type Category, type PlanRow } from '../ledger.js'
+import { listPlanHistory, needsOneTimeUpdate, setPlan, type Category, type PlanRow } from '../ledger.js'
 import { formatCents, formatForInput, formatMonthName } from '../format.js'
 import { Button } from '../components/ui/button.js'
 import { Input, refusal } from '../components/ui/form.js'
@@ -16,7 +16,8 @@ import { Figure } from '../components/ui/type.js'
 /** Setup's monthly amounts: loading, refused with a sentence, or what core resolved for this month. */
 export type MonthlyAmounts =
   | { readonly status: 'loading' }
-  | { readonly status: 'failed'; readonly message: string }
+  /** `missingUpdate` when the read met a one-time update not yet pasted (0009): Try again cannot help. */
+  | { readonly status: 'failed'; readonly message: string; readonly missingUpdate: boolean }
   | {
       readonly status: 'ready'
       /** In effect this month, by category; a category never given one is absent. */
@@ -41,7 +42,7 @@ export type MonthlyAmounts =
 export function useMonthlyAmounts(month: string): MonthlyAmounts {
   const { supabase, categories, version } = useAppData()
   const [loaded, setLoaded] = useState<{ month: string; version: number; rows: readonly PlanRow[] } | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<{ readonly message: string; readonly missingUpdate: boolean } | null>(null)
 
   useEffect(() => {
     if (version === 0) return
@@ -55,7 +56,7 @@ export function useMonthlyAmounts(month: string): MonthlyAmounts {
       .catch((e: unknown) => {
         if (!live) return
         setLoaded(null)
-        setError(e instanceof Error ? e.message : 'Your monthly amounts could not be read. Try again.')
+        setError({ message: e instanceof Error ? e.message : 'Your monthly amounts could not be read. Try again.', missingUpdate: needsOneTimeUpdate(e) })
       })
     return () => {
       live = false
@@ -63,7 +64,7 @@ export function useMonthlyAmounts(month: string): MonthlyAmounts {
   }, [supabase, month, version])
 
   return useMemo((): MonthlyAmounts => {
-    if (error !== null) return { status: 'failed', message: error }
+    if (error !== null) return { status: 'failed', ...error }
     if (loaded === null || loaded.month !== month) return { status: 'loading' }
     const history = loaded.rows.map((r) => ({
       categoryId: r.category_id,
@@ -78,7 +79,7 @@ export function useMonthlyAmounts(month: string): MonthlyAmounts {
     } catch {
       // Core refuses what 0009 refuses; the database never sends it, so this
       // is a fault, said plainly and never as its message.
-      return { status: 'failed', message: 'Your monthly amounts could not be shown.' }
+      return { status: 'failed', message: 'Your monthly amounts could not be shown.', missingUpdate: false }
     }
     try {
       const totals = billsTotals({ month: asOf, categories: categories.map((c) => ({ id: c.id, kind: c.kind })), planHistory: history })

@@ -69,8 +69,8 @@ describe('checksOf (plan §8.1)', () => {
   it('says a read that failed is can’t check yet, and one on its way is not answered', () => {
     const failed = checksOf({
       ...done,
-      schedules: { status: 'failed', message: 'x' },
-      amounts: { status: 'failed', message: 'x' },
+      schedules: { status: 'failed', message: 'x', missingUpdate: false },
+      amounts: { status: 'failed', message: 'x', missingUpdate: false },
       statement: { status: 'failed' },
       balance: { status: 'failed' },
       ai: viewOf('unreachable'),

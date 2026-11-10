@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { isoDate } from '@budget/core'
 import { useAppData } from '../app-data.js'
-import { listPaySchedules, removePaySchedule, setPaySchedule, type Category, type PayFrequency, type PayScheduleRow } from '../ledger.js'
+import { listPaySchedules, needsOneTimeUpdate, removePaySchedule, setPaySchedule, type Category, type PayFrequency, type PayScheduleRow } from '../ledger.js'
 import { formatIsoDate } from '../format.js'
 import { Button } from '../components/ui/button.js'
 import { Input, NativeSelect, refusal } from '../components/ui/form.js'
@@ -17,7 +17,8 @@ import { ColumnHeads } from './SetupPlans.js'
 /** Setup's pay schedules: loading, refused with a sentence, or by income source. */
 export type PaySchedules =
   | { readonly status: 'loading' }
-  | { readonly status: 'failed'; readonly message: string }
+  /** `missingUpdate` when the read met a one-time update not yet pasted (0011): Try again cannot help. */
+  | { readonly status: 'failed'; readonly message: string; readonly missingUpdate: boolean }
   | { readonly status: 'ready'; readonly byCategory: ReadonlyMap<string, PayScheduleRow> }
 
 /** Every pay schedule, re-read whenever the app's data is (`version`), not before its first load. */
@@ -30,7 +31,7 @@ export function usePaySchedules(): PaySchedules {
     listPaySchedules(supabase, 'read')
       .then((rows) => live && setState({ status: 'ready', byCategory: new Map(rows.map((r) => [r.category_id, r])) }))
       .catch((e: unknown) => {
-        if (live) setState({ status: 'failed', message: e instanceof Error ? e.message : 'When you are paid could not be read.' })
+        if (live) setState({ status: 'failed', message: e instanceof Error ? e.message : 'When you are paid could not be read.', missingUpdate: needsOneTimeUpdate(e) })
       })
     return () => {
       live = false
