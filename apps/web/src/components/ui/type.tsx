@@ -1,4 +1,4 @@
-import type { HTMLAttributes, ReactNode } from 'react'
+import { useState, type HTMLAttributes, type ReactNode } from 'react'
 import { cn } from '../../lib/cn.js'
 
 /**
@@ -19,9 +19,23 @@ export function MonthTitle({ children }: { children: ReactNode }) {
  * A big number standing on its own, in tabular figures so it does not
  * shift as it changes. Size and colour belong to the caller, so this sets
  * neither.
+ *
+ * When its value changes it cross-fades in place (`figure-change`, after
+ * transitions.dev's "number subtle change"): drawn anew under a new key, so
+ * the fade plays each time, and never on its first draw, so a screen that
+ * opens does not flicker every number at once.
  */
-export function Figure({ className, ...props }: HTMLAttributes<HTMLSpanElement>) {
+export function Figure({ className, children, ...props }: HTMLAttributes<HTMLSpanElement>) {
+  const text = typeof children === 'string' || typeof children === 'number' ? String(children) : null
+  // The value last drawn, and how many times it has changed (React's
+  // pattern for keeping what an earlier render saw).
+  const [seen, setSeen] = useState({ text, changes: 0 })
+  if (text !== seen.text) setSeen({ text, changes: seen.changes + 1 })
   // May break inside the number, and only when it cannot fit its box at all:
   // with text enlarged to 200% a total ran out of its card instead (FE-17).
-  return <span className={cn('tnum whitespace-nowrap', className)} {...props} />
+  return (
+    <span key={seen.changes} className={cn('tnum whitespace-nowrap', seen.changes > 0 && 'figure-change', className)} {...props}>
+      {children}
+    </span>
+  )
 }

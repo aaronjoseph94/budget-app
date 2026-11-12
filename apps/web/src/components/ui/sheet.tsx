@@ -54,14 +54,14 @@ export function Sheet({
 
   return (
     <div className="fixed inset-0 z-30 flex items-end justify-center md:items-center md:p-6">
-      <div className="absolute inset-0 bg-black/40" aria-hidden="true" onClick={() => close.current()} />
+      <div className="backdrop-in absolute inset-0 bg-black/40" aria-hidden="true" onClick={() => close.current()} />
       <div
         ref={panel}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="safe-bottom relative flex max-h-[85dvh] w-full flex-col rounded-t-2xl border bg-card text-card-foreground shadow-lg outline-none md:max-w-lg md:rounded-2xl"
+        className="sheet-in safe-bottom relative flex max-h-[85dvh] w-full flex-col rounded-t-2xl border bg-card text-card-foreground shadow-lg outline-none md:max-w-lg md:rounded-2xl"
       >
         <div className="flex items-start gap-3 border-b px-4 py-3">
           <div className="min-w-0 flex-1">

@@ -663,3 +663,81 @@
     animation-timeline: scroll(x self);
   }
 }
+
+/* Motion, after transitions.dev's rules, written for this app (2026-11-12):
+   one scale of durations and one easing, used by every piece below; only
+   transform, opacity and filter move, so nothing lays the page out again;
+   and someone who asked for reduced motion sees each change at once, with
+   nothing moving, the change itself still made. Short, so the app stays
+   calm: a quarter of a second at most. */
+:root {
+  --motion-quick: 160ms;
+  --motion-base: 220ms;
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* A sheet's backdrop fades in under it. */
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+.backdrop-in {
+  animation: backdrop-in var(--motion-base) var(--motion-ease);
+}
+
+/* A sheet rises into place from the bottom of a phone; on a computer,
+   where it is centred, it grows the last few percent as it fades in. */
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem);
+  }
+}
+@keyframes sheet-in-centred {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.97);
+  }
+}
+.sheet-in {
+  animation: sheet-in var(--motion-base) var(--motion-ease);
+}
+@media (min-width: 48rem) {
+  .sheet-in {
+    animation-name: sheet-in-centred;
+  }
+}
+
+/* A notice, a saved note or a refusal rises a little out of a soft blur. */
+@keyframes notice-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.25rem);
+    filter: blur(2px);
+  }
+}
+.notice-in {
+  animation: notice-in var(--motion-base) var(--motion-ease);
+}
+
+/* A figure whose value changed cross-fades in place: it does not move, so
+   the column it stands in stays still (Figure, components/ui/type.tsx). */
+@keyframes figure-change {
+  from {
+    opacity: 0.2;
+    filter: blur(1.5px);
+  }
+}
+.figure-change {
+  animation: figure-change var(--motion-quick) var(--motion-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop-in,
+  .sheet-in,
+  .notice-in,
+  .figure-change {
+    animation: none;
+  }
+}
